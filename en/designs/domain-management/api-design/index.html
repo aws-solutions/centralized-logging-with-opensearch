@@ -1,0 +1,3476 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://awslabs.github.io/log-hub/designs/domain-management/api-design/">
+      
+      <link rel="icon" href="../../../images/aws-solutions.png">
+      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-8.3.2">
+    
+    
+      
+        <title>API Design - Log Hub</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.5d38496d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.cbb835fc.min.css">
+        
+      
+      
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="none" data-md-color-accent="none">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#domain-management-api-design" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-component="outdated" hidden>
+        <aside class="md-banner md-banner--warning">
+          
+        </aside>
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="Log Hub" class="md-header__button md-logo" aria-label="Log Hub" data-md-component="logo">
+      
+  <img src="../../../images/aws-solutions.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Log Hub
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              API Design
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <div class="md-header__option">
+        <div class="md-select">
+          
+          <button class="md-header__button md-icon" aria-label="Select language">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.52 17.52 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04M18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12m-2.62 7 1.62-4.33L19.12 17h-3.24Z"/></svg>
+          </button>
+          <div class="md-select__inner">
+            <ul class="md-select__list">
+              
+                <li class="md-select__item">
+                  <a href="/log-hub/en/" hreflang="en" class="md-select__link">
+                    English
+                  </a>
+                </li>
+                
+                <li class="md-select__item">
+                  <a href="/log-hub/zh/" hreflang="zh" class="md-select__link">
+                    简体中文
+                  </a>
+                </li>
+                
+            </ul>
+          </div>
+        </div>
+      </div>
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/awslabs/log-hub" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    awslabs/log-hub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-tabs__inner md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        Implementation Guide
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../updates/roadmap/" class="md-tabs__link">
+        Roadmap
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../workshop/introduction/" class="md-tabs__link">
+        Workshop
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+    
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../" class="md-tabs__link md-tabs__link--active">
+        Technical Designs
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="Log Hub" class="md-nav__button md-logo" aria-label="Log Hub" data-md-component="logo">
+      
+  <img src="../../../images/aws-solutions.png" alt="logo">
+
+    </a>
+    Log Hub
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/awslabs/log-hub" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    awslabs/log-hub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1" type="checkbox" id="__nav_1" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1">
+          Implementation Guide
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Implementation Guide" data-md-level="1">
+        <label class="md-nav__title" for="__nav_1">
+          <span class="md-nav__icon md-icon"></span>
+          Implementation Guide
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/cost/" class="md-nav__link">
+        Cost
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/architecture/" class="md-nav__link">
+        Architecture Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/considerations/" class="md-nav__link">
+        Considerations
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_5" type="checkbox" id="__nav_1_5" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1_5">
+          Deployment
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Deployment" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_5">
+          <span class="md-nav__icon md-icon"></span>
+          Deployment
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/deployment/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/deployment/global-region/" class="md-nav__link">
+        Launch in Global Regions
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/deployment/china-region/" class="md-nav__link">
+        Launch in China Regions
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_6" type="checkbox" id="__nav_1_6" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1_6">
+          Getting Started
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Getting Started" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_6">
+          <span class="md-nav__icon md-icon"></span>
+          Getting Started
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/getting-started/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/getting-started/1.import-domain/" class="md-nav__link">
+        Step 1. Import Domain
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/getting-started/2.create-proxy/" class="md-nav__link">
+        Step 2. Create Proxy
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/getting-started/3.build-cloudtrail-pipeline/" class="md-nav__link">
+        Step 3. Ingest CloudTrail Logs
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/getting-started/4.view-dashboard/" class="md-nav__link">
+        Step 4. View Dashboard
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_7" type="checkbox" id="__nav_1_7" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1_7">
+          Domain Management
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Domain Management" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_7">
+          <span class="md-nav__icon md-icon"></span>
+          Domain Management
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/domains/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/domains/import/" class="md-nav__link">
+        Domain Operations
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/domains/proxy/" class="md-nav__link">
+        Access Proxy
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/domains/alarms/" class="md-nav__link">
+        Alarms
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_8" type="checkbox" id="__nav_1_8" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1_8">
+          AWS Services Logs
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="AWS Services Logs" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_8">
+          <span class="md-nav__icon md-icon"></span>
+          AWS Services Logs
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/aws-services/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/aws-services/cloudtrail/" class="md-nav__link">
+        Amazon CloudTrail
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/aws-services/s3/" class="md-nav__link">
+        Amazon S3
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/aws-services/rds/" class="md-nav__link">
+        Amazon RDS/Aurora
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/aws-services/cloudfront/" class="md-nav__link">
+        Amazon CloudFront
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/aws-services/lambda/" class="md-nav__link">
+        AWS Lambda
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/aws-services/elb/" class="md-nav__link">
+        Elastic Load Balancing
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/aws-services/waf/" class="md-nav__link">
+        AWS WAF
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9" type="checkbox" id="__nav_1_9" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1_9">
+          Applications Logs
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Applications Logs" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_9">
+          <span class="md-nav__icon md-icon"></span>
+          Applications Logs
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/applications/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9_2" type="checkbox" id="__nav_1_9_2" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1_9_2">
+          Prerequisites
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Prerequisites" data-md-level="3">
+        <label class="md-nav__title" for="__nav_1_9_2">
+          <span class="md-nav__icon md-icon"></span>
+          Prerequisites
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/applications/create-log-source/" class="md-nav__link">
+        Create a Log Source
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/applications/create-applog-pipeline/" class="md-nav__link">
+        Create an application pipeline
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/applications/apache/" class="md-nav__link">
+        Apache HTTP Server
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/applications/nginx/" class="md-nav__link">
+        Nginx
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/applications/single-line-text/" class="md-nav__link">
+        Single-line Text
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/applications/multi-line-text/" class="md-nav__link">
+        Multiline-line Text
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/applications/json/" class="md-nav__link">
+        JSON
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_10" type="checkbox" id="__nav_1_10" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1_10">
+          FAQ & Troubleshooting
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="FAQ & Troubleshooting" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_10">
+          <span class="md-nav__icon md-icon"></span>
+          FAQ & Troubleshooting
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/faq/" class="md-nav__link">
+        FAQ
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/trouble-shooting/" class="md-nav__link">
+        Troubleshooting
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_11" type="checkbox" id="__nav_1_11" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1_11">
+          Resources
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Resources" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_11">
+          <span class="md-nav__icon md-icon"></span>
+          Resources
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/resources/open-ssl/" class="md-nav__link">
+        OpenSSL Installation
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/resources/aws-services/" class="md-nav__link">
+        AWS Services
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/revisions/" class="md-nav__link">
+        Revisions
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2" type="checkbox" id="__nav_2" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2">
+          Roadmap
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Roadmap" data-md-level="1">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          Roadmap
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../updates/roadmap/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3">
+          Workshop
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Workshop" data-md-level="1">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          Workshop
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../workshop/introduction/" class="md-nav__link">
+        1. Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_2" type="checkbox" id="__nav_3_2" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3_2">
+          2. Pre-requisites
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="2. Pre-requisites" data-md-level="2">
+        <label class="md-nav__title" for="__nav_3_2">
+          <span class="md-nav__icon md-icon"></span>
+          2. Pre-requisites
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../workshop/deployment/must-read/" class="md-nav__link">
+        2.0 Must Read
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../workshop/deployment/key-pair/" class="md-nav__link">
+        2.1 EC2 Key Pair
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../workshop/deployment/service-linked-role/" class="md-nav__link">
+        2.2 Create service linked role
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../workshop/deployment/acm-certification/" class="md-nav__link">
+        2.3 Get ACM Certification
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../workshop/deployment/deploy-demo-web-site/" class="md-nav__link">
+        2.4 Deploy Demo Web Site
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../workshop/deployment/deploy-log-hub/" class="md-nav__link">
+        3. Deploy Log Hub
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_4" type="checkbox" id="__nav_3_4" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3_4">
+          4. Domain Management
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="4. Domain Management" data-md-level="2">
+        <label class="md-nav__title" for="__nav_3_4">
+          <span class="md-nav__icon md-icon"></span>
+          4. Domain Management
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../workshop/domain-management/import-domain/" class="md-nav__link">
+        4.1 Import Domain
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../workshop/domain-management/create-proxy/" class="md-nav__link">
+        4.2 Create Proxy
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../workshop/domain-management/access-proxy/" class="md-nav__link">
+        4.3 Access Proxy
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_5" type="checkbox" id="__nav_3_5" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3_5">
+          5. Log Ingestion and Visualization
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="5. Log Ingestion and Visualization" data-md-level="2">
+        <label class="md-nav__title" for="__nav_3_5">
+          <span class="md-nav__icon md-icon"></span>
+          5. Log Ingestion and Visualization
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../workshop/log-analytics-pipelines/cloudfront-log/" class="md-nav__link">
+        5.1 Ingest Service Logs via Log Hub Console
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../workshop/log-analytics-pipelines/application-log/" class="md-nav__link">
+        5.2 Ingest Application Logs via Log Hub Console
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../workshop/log-analytics-pipelines/elb-log/" class="md-nav__link">
+        5.3 Ingest Logs via CloudFormation Stack
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../workshop/clean-up/" class="md-nav__link">
+        6. Clean Up
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4" type="checkbox" id="__nav_4" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4">
+          Technical Designs
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Technical Designs" data-md-level="1">
+        <label class="md-nav__title" for="__nav_4">
+          <span class="md-nav__icon md-icon"></span>
+          Technical Designs
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/" class="md-nav__link">
+        Concepts
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../solution/high-level-design/" class="md-nav__link">
+        High Level Design
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_4" type="checkbox" id="__nav_4_4" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4_4">
+          Domain Management
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Domain Management" data-md-level="2">
+        <label class="md-nav__title" for="__nav_4_4">
+          <span class="md-nav__icon md-icon"></span>
+          Domain Management
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../component-design/" class="md-nav__link">
+        Component Design
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../process-design/" class="md-nav__link">
+        Process Design
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          API Design
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        API Design
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    Overview
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#domain-apis" class="md-nav__link">
+    Domain APIs
+  </a>
+  
+    <nav class="md-nav" aria-label="Domain APIs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#list-domain-names" class="md-nav__link">
+    List Domain Names
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#import-domain" class="md-nav__link">
+    Import Domain
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#remove-domain" class="md-nav__link">
+    Remove Domain
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#list-imported-domains" class="md-nav__link">
+    List Imported Domains
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-domain-details" class="md-nav__link">
+    Get Domain Details
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-domain-vpc" class="md-nav__link">
+    Get Domain VPC
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#create-proxy-for-opensearch" class="md-nav__link">
+    Create Proxy For OpenSearch
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delete-proxy-for-opensearch" class="md-nav__link">
+    Delete Proxy For OpenSearch
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#create-alarm-for-opensearch" class="md-nav__link">
+    Create Alarm For OpenSearch
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delete-alarm-for-opensearch" class="md-nav__link">
+    Delete Alarm For OpenSearch
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#resource-apis" class="md-nav__link">
+    Resource APIs
+  </a>
+  
+    <nav class="md-nav" aria-label="Resource APIs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#list-resources" class="md-nav__link">
+    List Resources
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#put-resource-logging-bucket" class="md-nav__link">
+    Put Resource Logging Bucket
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-resource-logging-bucket" class="md-nav__link">
+    Get Resource Logging Bucket
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data-model-design/" class="md-nav__link">
+        Data Model Design
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_5" type="checkbox" id="__nav_4_5" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4_5">
+          Service Log Analytics
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Service Log Analytics" data-md-level="2">
+        <label class="md-nav__title" for="__nav_4_5">
+          <span class="md-nav__icon md-icon"></span>
+          Service Log Analytics
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../service-log/component-design/" class="md-nav__link">
+        Component Design
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../service-log/process-design/" class="md-nav__link">
+        Process Design
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../service-log/api-design/" class="md-nav__link">
+        API Design
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../service-log/data-model-design/" class="md-nav__link">
+        Data Model Design
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../service-log/tutorial-extend-service-log/" class="md-nav__link">
+        Tutorial: Extend Service Logs
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_6" type="checkbox" id="__nav_4_6" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4_6">
+          Application Log
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Application Log" data-md-level="2">
+        <label class="md-nav__title" for="__nav_4_6">
+          <span class="md-nav__icon md-icon"></span>
+          Application Log
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../app-log/log-analytics-pipeline-app/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../app-log/architecture-design/" class="md-nav__link">
+        Architecture Design
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../app-log/process-design/" class="md-nav__link">
+        Process Design
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../app-log/api-design/" class="md-nav__link">
+        API Design
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../app-log/data-model-design/" class="md-nav__link">
+        Data Model Design
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_7" type="checkbox" id="__nav_4_7" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4_7">
+          EKS Cluster Log
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="EKS Cluster Log" data-md-level="2">
+        <label class="md-nav__title" for="__nav_4_7">
+          <span class="md-nav__icon md-icon"></span>
+          EKS Cluster Log
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../eks-log/architecture-design/" class="md-nav__link">
+        Architecture Design
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../eks-log/process-design/" class="md-nav__link">
+        Process Design
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../eks-log/api-design/" class="md-nav__link">
+        API Design
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../assets/" class="md-nav__link">
+        Assets
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    Overview
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#domain-apis" class="md-nav__link">
+    Domain APIs
+  </a>
+  
+    <nav class="md-nav" aria-label="Domain APIs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#list-domain-names" class="md-nav__link">
+    List Domain Names
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#import-domain" class="md-nav__link">
+    Import Domain
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#remove-domain" class="md-nav__link">
+    Remove Domain
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#list-imported-domains" class="md-nav__link">
+    List Imported Domains
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-domain-details" class="md-nav__link">
+    Get Domain Details
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-domain-vpc" class="md-nav__link">
+    Get Domain VPC
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#create-proxy-for-opensearch" class="md-nav__link">
+    Create Proxy For OpenSearch
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delete-proxy-for-opensearch" class="md-nav__link">
+    Delete Proxy For OpenSearch
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#create-alarm-for-opensearch" class="md-nav__link">
+    Create Alarm For OpenSearch
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delete-alarm-for-opensearch" class="md-nav__link">
+    Delete Alarm For OpenSearch
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#resource-apis" class="md-nav__link">
+    Resource APIs
+  </a>
+  
+    <nav class="md-nav" aria-label="Resource APIs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#list-resources" class="md-nav__link">
+    List Resources
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#put-resource-logging-bucket" class="md-nav__link">
+    Put Resource Logging Bucket
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-resource-logging-bucket" class="md-nav__link">
+    Get Resource Logging Bucket
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+  <a href="https://github.com/awslabs/log-hub/edit/master/docs/designs/domain-management/api-design.md" title="Edit this page" class="md-content__button md-icon">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
+  </a>
+
+
+
+<h1 id="domain-management-api-design">Domain Management API Design</h1>
+<h2 id="overview">Overview</h2>
+<p>This document is about the API Design for <strong>Domain Management</strong> component. To learn more information about the component, refer to <a href="../component-design">Component Design</a></p>
+<h2 id="domain-apis">Domain APIs</h2>
+<p>Domain APIs are a list of operations on top of Amazon OpenSearch Service (AOS). </p>
+<p>The following operations are available in the solution's Domain APIs.</p>
+<h3 id="list-domain-names">List Domain Names</h3>
+<p><strong>Type:</strong> Query</p>
+<p><strong>Description:</strong>  List all existing Amazon OpenSearch domains in a region</p>
+<p><strong>Resolver:</strong> Lambda</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>region</td>
+<td>String</td>
+<td>No</td>
+<td>current region</td>
+<td>To support cross region listing (in the same account)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Simple Request &amp; Response:</strong></p>
+<p>Request with region </p>
+<div class="highlight"><pre><span></span><code>query example{
+  listDomainNames(region: &quot;us-west-2&quot;) {
+    domainNames
+  }
+}
+</code></pre></div>
+<p>Request without region</p>
+<div class="highlight"><pre><span></span><code>query example {
+  listDomainNames {
+    domainNames
+  }
+}
+</code></pre></div>
+<p>Response:</p>
+<div class="highlight"><pre><span></span><code>{
+  &quot;data&quot;: {
+    &quot;listDomainNames&quot;: {
+      &quot;domainNames&quot;: [
+        &quot;dev&quot;,
+        &quot;test&quot;
+      ]
+    }
+  }
+}
+</code></pre></div>
+<h3 id="import-domain">Import Domain</h3>
+<p><strong>Type:</strong> Mutation</p>
+<p><strong>Description:</strong>  Import an Exisiting Amazon OpenSearch Domain,  store general info from DynamoDB table.</p>
+<p><strong>Resolver:</strong> Lambda</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>domainName</td>
+<td>String</td>
+<td>Yes</td>
+<td></td>
+<td>Amazon OpenSearch Domain Name</td>
+</tr>
+<tr>
+<td>region</td>
+<td>String</td>
+<td>No</td>
+<td>current region</td>
+<td>To support cross region Amazon OpenSearch import</td>
+</tr>
+<tr>
+<td>vpc</td>
+<td>K-V</td>
+<td>Yes</td>
+<td></td>
+<td>Log processing vpc</td>
+</tr>
+<tr>
+<td>tags</td>
+<td>K-V</td>
+<td>No</td>
+<td></td>
+<td>Custom tags for the imported domain</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Simple Request &amp; Response:</strong></p>
+<p>Request:</p>
+<div class="highlight"><pre><span></span><code>mutation example{
+  importDomain(
+    domainName: &quot;dev&quot;, 
+    tags: {key: &quot;project&quot;, value: &quot;Loghub&quot;},
+    vpc: {
+        securityGroupId: &quot;sg-1&quot;, 
+        vpcId: &quot;vpc-1&quot;, 
+        privateSubnetIds: &quot;subnet-a,subnet-b&quot;, 
+        publicSubnetIds: &quot;subnet-c,subnet-d&quot;
+    },
+    region: &quot;us-west-2&quot;
+  )
+}
+</code></pre></div>
+<p>Response:</p>
+<div class="highlight"><pre><span></span><code>{
+  &quot;data&quot;: {
+    &quot;importDomain&quot;: &quot;OK&quot;
+  }
+}
+</code></pre></div>
+<p>Exceptions:</p>
+<ul>
+<li>Domain is already imported</li>
+<li>Elasticsearch Domain Not Found</li>
+<li>Public network type is not supported, only Amazon OpenSearch domain within VPC can be imported</li>
+<li>The domain to be imported must be active</li>
+<li>Unknown exception, please check Lambda log for more details</li>
+</ul>
+<div class="highlight"><pre><span></span><code>{
+  &quot;data&quot;: {
+    &quot;importDomain&quot;: null
+  },
+  &quot;errors&quot;: [
+    {
+      &quot;path&quot;: [
+        &quot;importDomain&quot;
+      ],
+      &quot;data&quot;: null,
+      &quot;errorType&quot;: &quot;Lambda:Unhandled&quot;,
+      &quot;errorInfo&quot;: null,
+      &quot;locations&quot;: [
+        {
+          &quot;line&quot;: 8,
+          &quot;column&quot;: 3,
+          &quot;sourceName&quot;: null
+        }
+      ],
+      &quot;message&quot;: &quot;Domain is already imported&quot;
+    }
+  ]
+}
+</code></pre></div>
+<h3 id="remove-domain">Remove Domain</h3>
+<p><strong>Type:</strong> Mutation</p>
+<p><strong>Description:</strong>  Remove an Amazon OpenSearch Domain record from DynamoDB table. This will not remove the backend AOS domain.</p>
+<p><strong>Resolver:</strong> Lambda</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>String</td>
+<td>Yes</td>
+<td></td>
+<td>Amazon OpenSearch Domain Arn (key in DynamoDB)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Simple Request &amp; Response:</strong></p>
+<p>Request:</p>
+<div class="highlight"><pre><span></span><code>mutation example {
+  removeDomain(id: &quot;439239da8014f9a419c92b1b0c72a5fc&quot;)
+}
+</code></pre></div>
+<p>Response:</p>
+<div class="highlight"><pre><span></span><code>{
+  &quot;data&quot;: {
+    &quot;removeDomain&quot;: &quot;OK&quot;
+  }
+}
+</code></pre></div>
+<p>Exceptions:</p>
+<ul>
+<li>Unknown exception, please check Lambda log for more details</li>
+</ul>
+<div class="highlight"><pre><span></span><code>{
+  &quot;data&quot;: {
+    &quot;removeDomain&quot;: null
+  },
+  &quot;errors&quot;: [
+    {
+      &quot;path&quot;: [
+        &quot;removeDomain&quot;
+      ],
+      &quot;data&quot;: null,
+      &quot;errorType&quot;: &quot;Lambda:Unhandled&quot;,
+      &quot;errorInfo&quot;: null,
+      &quot;locations&quot;: [
+        {
+          &quot;line&quot;: 32,
+          &quot;column&quot;: 3,
+          &quot;sourceName&quot;: null
+        }
+      ],
+      &quot;message&quot;: &quot;Unknown exception, please check Lambda log for more details&quot;
+    }
+  ]
+}
+</code></pre></div>
+<h3 id="list-imported-domains">List Imported Domains</h3>
+<p><strong>Type:</strong> Query</p>
+<p><strong>Description:</strong>  List all existing Amazon OpenSearch domains in a region</p>
+<p><strong>Resolver:</strong> Lambda</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>metrics</td>
+<td>Boolean</td>
+<td>No</td>
+<td>FALSE</td>
+<td>To decide wheather need to query domain metrix (additional request)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Simple Request &amp; Response:</strong></p>
+<p>Request: </p>
+<div class="highlight"><pre><span></span><code>query example {
+  listImportedDomains(metrics: true) {
+    domainName
+    endpoint
+    id
+    metrics {
+      freeStorageSpace
+      health
+      searchableDocs
+    }
+    version
+    engine
+  }
+}
+</code></pre></div>
+<p>Response:</p>
+<div class="highlight"><pre><span></span><code>{
+  &quot;data&quot;: {
+    &quot;listImportedDomains&quot;: [
+      {
+        &quot;id&quot;: &quot;439239da8014f9a419c92b1b0c72a5fc&quot;,
+        &quot;domainName&quot;: &quot;dev&quot;,
+        &quot;endpoint&quot;: &quot;vpc-dev-3ze2yoxxxxxxxxx.us-west-2.es.amazonaws.com&quot;,
+        &quot;metrics&quot;: {
+          &quot;freeStorageSpace&quot;: 16058.91,
+          &quot;health&quot;: &quot;GREEN&quot;,
+          &quot;searchableDocs&quot;: 13159
+        },
+        &quot;version&quot;: &quot;1.0&quot;,
+        &quot;engine&quot;: &quot;OpenSearch&quot;
+      }
+    ]
+  }
+}
+</code></pre></div>
+<h3 id="get-domain-details">Get Domain Details</h3>
+<p><strong>Type:</strong> Query</p>
+<p><strong>Description:</strong>  Get details of an imported domain.</p>
+<p><strong>Resolver:</strong> Lambda</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>String</td>
+<td>Yes</td>
+<td></td>
+<td>Amazon OpenSearch Domain Arn (key in DynamoDB)</td>
+</tr>
+<tr>
+<td>metrics</td>
+<td>Boolean</td>
+<td>No</td>
+<td>FALSE</td>
+<td>Whether to include metrics</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Simple Request &amp; Response:</strong></p>
+<p>Request:</p>
+<div class="highlight"><pre><span></span><code>query example {
+  getDomainDetails(id: &quot;439239da8014f9a419c92b1b0c72a5fc&quot;) {
+    domainName
+    endpoint
+    id
+    nodes {
+      coldEnabled
+      dedicatedMasterCount
+      dedicatedMasterEnabled
+      dedicatedMasterType
+      instanceCount
+      instanceType
+      warmCount
+      warmEnabled
+      warmType
+      zoneAwarenessEnabled
+    }
+    tags {
+      key
+      value
+    }
+    storageType
+    volume {
+      size
+      type
+    }
+    vpc {
+      privateSubnetIds
+      publicSubnetIds
+      securityGroupId
+      vpcId
+    }
+    metrics {
+      freeStorageSpace
+      health
+      searchableDocs
+    }
+    engine
+    version
+    proxyALB
+    proxyError
+    proxyInput {
+      certificateArn
+      cognitoEndpoint
+      customEndpoint
+      keyName
+      vpc {
+        privateSubnetIds
+        publicSubnetIds
+        securityGroupId
+        vpcId
+      }
+    }
+    proxyStatus
+    alarmError
+    alarmInput {
+      email
+      phone
+      alarms {
+        type
+        value
+      }
+    }
+    alarmStatus
+    cognito {
+      domain
+      enabled
+      identityPoolId
+      userPoolId
+      roleArn
+    }
+    accountId
+    domainArn
+    region
+  }
+}
+</code></pre></div>
+<p>Response:</p>
+<div class="highlight"><pre><span></span><code>{
+  &quot;data&quot;: {
+    &quot;getDomainDetails&quot;: {
+      &quot;id&quot;: &quot;439239da8014f9a419c92b1b0c72a5fc&quot;,
+      &quot;domainName&quot;: &quot;dev&quot;,
+      &quot;endpoint&quot;: &quot;vpc-dev-3ze2yoxxxxxxxxx.us-west-2.es.amazonaws.com&quot;,
+      &quot;engine&quot;: &quot;OpenSearch&quot;,
+      &quot;version&quot;: &quot;1.0&quot;
+      &quot;vpc&quot;: {
+        &quot;privateSubnetIds&quot;: &quot;subnet-1234&quot;,
+        &quot;publicSubnetIds&quot;: &quot;subnet-6789&quot;,
+        &quot;securityGroupId&quot;: &quot;sg-1&quot;,
+        &quot;vpcId&quot;: &quot;vpc-1&quot;
+      },
+      &quot;cognito&quot;: {
+        &quot;domain&quot;: &quot;&quot;,
+        &quot;enabled&quot;: false,
+        &quot;identityPoolId&quot;: &quot;N/A&quot;,
+        &quot;userPoolId&quot;: &quot;N/A&quot;,
+        &quot;roleArn&quot;: &quot;N/A&quot;
+      }
+      &quot;nodes&quot;: {
+        &quot;coldEnabled&quot;: false,
+        &quot;dedicatedMasterCount&quot;: 0,
+        &quot;dedicatedMasterEnabled&quot;: false,
+        &quot;dedicatedMasterType&quot;: &quot;N/A&quot;,
+        &quot;instanceCount&quot;: 1,
+        &quot;instanceType&quot;: &quot;r6g.large.elasticsearch&quot;,
+        &quot;warmCount&quot;: 0,
+        &quot;warmEnabled&quot;: false,
+        &quot;warmType&quot;: &quot;N/A&quot;,
+        &quot;zoneAwarenessEnabled&quot;: false
+      },
+      &quot;tags&quot;: [
+        {
+          &quot;key&quot;: &quot;project&quot;,
+          &quot;value&quot;: &quot;Loghub&quot;
+        }
+      ],
+      &quot;storageType&quot;: &quot;EBS&quot;,
+      &quot;volume&quot;: {
+        &quot;size&quot;: 100,
+        &quot;type&quot;: &quot;gp2&quot;
+      }
+      &quot;esVpc&quot;: {
+        &quot;availabilityZones&quot;: [
+          &quot;us-west-2b&quot;
+        ],
+        &quot;securityGroupIds&quot;: [
+          &quot;sg-07cdfb011fba47e27&quot;
+        ],
+        &quot;subnetIds&quot;: [
+          &quot;subnet-0f88a069&quot;
+        ],
+        &quot;vpcId&quot;: &quot;vpc-538e702a&quot;
+      },  
+      &quot;metrics&quot;: {
+        &quot;freeStorageSpace&quot;: 1,
+        &quot;health&quot;: &quot;GREEN&quot;,
+        &quot;searchableDocs&quot;: 1
+      },
+      &quot;alarmError&quot;: &quot;&quot;,
+      &quot;alarmInput&quot;: {
+        &quot;email&quot;: &quot;test@example.com&quot;,
+        &quot;phone&quot;: null,
+        &quot;alarms&quot;: [
+          {
+            &quot;type&quot;: &quot;CLUSTER_RED&quot;,
+            &quot;value&quot;: &quot;true&quot;
+          }
+        ]
+      },
+      &quot;alarmStatus&quot;: &quot;ENABLED&quot;,
+      &quot;proxyStatus&quot;: &quot;ENABLED&quot;,
+      &quot;proxyALB&quot;: &quot;LogHu-LoadB-xxx.us-west-2.elb.amazonaws.com&quot;,
+      &quot;proxyError&quot;: &quot;&quot;
+      &quot;proxyInput&quot;: {
+        &quot;certificateArn&quot;: &quot;arn:aws:es:us-west-2:123456789012:domain/mycert&quot;,
+        &quot;cognitoEndpoint&quot;: &quot;&quot;,
+        &quot;customEndpoint&quot;: &quot;www.example.com&quot;,
+        &quot;keyName&quot;: &quot;my-key&quot;,
+        &quot;vpc&quot;: {
+          &quot;publicSubnetIds&quot;: &quot;subnet-1234,subnet-1235&quot;,
+          &quot;privateSubnetIds&quot;: &quot;subnet-5678,subnet-5679&quot;,
+          &quot;securityGroupId&quot;: &quot;sg-1234&quot;,
+          &quot;vpcId&quot;: &quot;vpc-1234&quot;
+        }
+      }
+    }
+  }
+}
+</code></pre></div>
+<p>Exceptions:</p>
+<ul>
+<li>Cannot find domain in the imported list</li>
+<li>Unknown exception, please check Lambda log for more details</li>
+</ul>
+<h3 id="get-domain-vpc">Get Domain VPC</h3>
+<p><strong>Type:</strong> Query</p>
+<p><strong>Description:</strong>  Get VPC info of an Amazon OpenSearch domain in a region</p>
+<p><strong>Resolver:</strong> Lambda</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>region</td>
+<td>String</td>
+<td>No</td>
+<td>current region</td>
+<td>To support cross region listing (in the same account)</td>
+</tr>
+<tr>
+<td>domainName</td>
+<td>String</td>
+<td>Yes</td>
+<td></td>
+<td>Domain Name</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Simple Request &amp; Response:</strong></p>
+<p>Request with region </p>
+<div class="highlight"><pre><span></span><code>query example {
+  getDomainVpc(domainName: &quot;dev&quot;, region: &quot;eu-west-1&quot;) {
+    availabilityZones
+    securityGroupIds
+    subnetIds
+    vpcId
+  }
+}
+</code></pre></div>
+<p>Request without region</p>
+<div class="highlight"><pre><span></span><code>query example {
+  getDomainVpc(domainName: &quot;dev&quot;) {
+    availabilityZones
+    securityGroupIds
+    subnetIds
+    vpcId
+  }
+}
+</code></pre></div>
+<p>Response:</p>
+<div class="highlight"><pre><span></span><code>{
+  &quot;data&quot;: {
+    &quot;getDomainVpc&quot;: {
+      &quot;availabilityZones&quot;: [
+        &quot;eu-west-1a&quot;
+      ],
+      &quot;securityGroupIds&quot;: [
+        &quot;sg-07cdfb011fba47e27&quot;
+      ],
+      &quot;subnetIds&quot;: [
+        &quot;subnet-0f88a069&quot;
+      ],
+      &quot;vpcId&quot;: &quot;vpc-538e702a&quot;
+    }
+  }
+}
+</code></pre></div>
+<h3 id="create-proxy-for-opensearch">Create Proxy For OpenSearch</h3>
+<p><strong>Type:</strong> Mutation</p>
+<p><strong>Description:</strong>  Create a Nginx Proxy for Amazon OpenSearch in vpc</p>
+<p><strong>Resolver:</strong> Lambda</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>customEndpoint</td>
+<td>String</td>
+<td>Yes</td>
+<td></td>
+<td>Custom Domain to access Kibana</td>
+</tr>
+<tr>
+<td>cognitoEndpoint</td>
+<td>String</td>
+<td>No</td>
+<td></td>
+<td>Cognito Domain for Amazon OpenSearch, blank if Amazon OpenSearch doesn't have cognito enabled</td>
+</tr>
+<tr>
+<td>id</td>
+<td>String</td>
+<td>Yes</td>
+<td></td>
+<td>Amazon OpenSearch Domain Arn</td>
+</tr>
+<tr>
+<td>keyName</td>
+<td>String</td>
+<td>Yes?</td>
+<td></td>
+<td>EC2 (nginx) key name</td>
+</tr>
+<tr>
+<td>vpc</td>
+<td>K-V</td>
+<td>Yes</td>
+<td></td>
+<td>VPC for EC2 (nginx)</td>
+</tr>
+<tr>
+<td>certificateArn</td>
+<td>String</td>
+<td>Yes</td>
+<td></td>
+<td>ACM certificate Arn for ELB</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Simple Request &amp; Response:</strong></p>
+<p>Request:</p>
+<div class="highlight"><pre><span></span><code>mutation example {
+  createProxyForOpenSearch(
+    nginx: {
+        vpc: {
+            securityGroupId: &quot;sg-1234&quot;, 
+            privateSubnetIds: &quot;subnet-1234,subnet-1235&quot;,
+            publicSubnetIds: &quot;subnet-5678,subnet-5679&quot;, 
+            vpcId: &quot;vpc-1234&quot;
+        }, 
+        certificateArn: &quot;arn:aws:es:us-west-2:123456789012:domain/mycert&quot;, 
+        keyName: &quot;my-key&quot;,
+        cognitoEndpoint: &quot;hello.auth.us-west-2.amazoncognito.com&quot;, 
+        customEndpoint: &quot;www.example.com&quot;,
+    }, 
+
+    id: &quot;439239da8014f9a419c92b1b0c72a5fc&quot;
+  )
+}
+</code></pre></div>
+<p>Response:</p>
+<div class="highlight"><pre><span></span><code>{
+  &quot;data&quot;: {
+    &quot;createNginxProxyForOpenSearch&quot;: &quot;OK&quot;
+  }
+}
+</code></pre></div>
+<p>Exceptions:</p>
+<ul>
+<li>Unknown exception, please check Lambda log for more details</li>
+</ul>
+<h3 id="delete-proxy-for-opensearch">Delete Proxy For OpenSearch</h3>
+<p><strong>Type:</strong> Mutation</p>
+<p><strong>Description:</strong>  Remove an Amazon OpenSearch Nginx Proxy Stack</p>
+<p><strong>Resolver:</strong> Lambda</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>String</td>
+<td>Yes</td>
+<td></td>
+<td>Amazon OpenSearch Domain Arn (key in DynamoDB)</td>
+</tr>
+</tbody>
+</table>
+<p>Request:</p>
+<div class="highlight"><pre><span></span><code>mutation example {
+  deleteProxyForOpenSearch(id: &quot;439239da8014f9a419c92b1b0c72a5fc&quot;)
+}
+</code></pre></div>
+<p>Response:</p>
+<div class="highlight"><pre><span></span><code>{
+  &quot;data&quot;: {
+    &quot;deleteProxyForOpenSearch&quot;: &quot;OK&quot;
+  }
+}
+</code></pre></div>
+<p>Exceptions:</p>
+<ul>
+<li>Unknown exception, please check Lambda log for more details</li>
+</ul>
+<h3 id="create-alarm-for-opensearch">Create Alarm For OpenSearch</h3>
+<p><strong>Type:</strong> Mutation</p>
+<p><strong>Description:</strong>  Create an Alarm for opensearch domain</p>
+<p><strong>Resolver:</strong> Lambda</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>String</td>
+<td>Yes</td>
+<td></td>
+<td>Amazon OpenSearch Domain Arn</td>
+</tr>
+<tr>
+<td>email</td>
+<td>String</td>
+<td>Yes?</td>
+<td></td>
+<td>Email to receive notification</td>
+</tr>
+<tr>
+<td>alarms</td>
+<td>List</td>
+<td>Yes</td>
+<td></td>
+<td>List of k-v for alarm parameters</td>
+</tr>
+<tr>
+<td>phone</td>
+<td>String</td>
+<td>No</td>
+<td></td>
+<td>Phone number to receive notification</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Simple Request &amp; Response:</strong></p>
+<p>Request:</p>
+<div class="highlight"><pre><span></span><code>mutation example {
+  createAlarmForOpenSearch(
+    id: &quot;439239da8014f9a419c92b1b0c72a5fc&quot;, 
+    input: {
+        email: &quot;test@example.com&quot;, 
+        alarms: [
+            {Type: CLUSTER_RED, value: &quot;true&quot;},
+            {Type: FREE_STORAGE_SPACE, value: &quot;20&quot;}
+            ...
+    })
+}
+</code></pre></div>
+<p>Response:</p>
+<div class="highlight"><pre><span></span><code>{
+  &quot;data&quot;: {
+    &quot;createAlarmForOpenSearch&quot;: &quot;OK&quot;
+  }
+}
+</code></pre></div>
+<p>Exceptions:</p>
+<ul>
+<li>Unknown exception, please check Lambda log for more details</li>
+</ul>
+<h3 id="delete-alarm-for-opensearch">Delete Alarm For OpenSearch</h3>
+<p><strong>Type:</strong> Mutation</p>
+<p><strong>Description:</strong>  Remove an Alarm Stack</p>
+<p><strong>Resolver:</strong> Lambda</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>String</td>
+<td>Yes</td>
+<td></td>
+<td>Amazon OpenSearch Domain Arn (key in DynamoDB)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Simple Request &amp; Response:</strong></p>
+<p>Request:</p>
+<div class="highlight"><pre><span></span><code>mutation example {
+  deleteAlarmForOpenSearch(id: &quot;439239da8014f9a419c92b1b0c72a5fc&quot;)
+}
+</code></pre></div>
+<p>Response:</p>
+<div class="highlight"><pre><span></span><code>{
+  &quot;data&quot;: {
+    &quot;deleteAlarmForOpenSearch&quot;: &quot;OK&quot;
+  }
+}
+</code></pre></div>
+<p>Exceptions:</p>
+<ul>
+<li>Unknown exception, please check Lambda log for more details</li>
+</ul>
+<h2 id="resource-apis">Resource APIs</h2>
+<p>Resource APIs are a list of helper functions for AWS Resources that are used in the solution, such as listing VPCs etc.</p>
+<h3 id="list-resources">List Resources</h3>
+<p><strong>Type:</strong> Query</p>
+<p><strong>Description:</strong>  List AWS Resources (Services) in current region</p>
+<p><strong>Resolver:</strong> Lambda</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>type</td>
+<td>String</td>
+<td>Yes</td>
+<td></td>
+<td>Available List: S3Bucket, VPC, Subnet, SecurityGroup, Certificate, KeyName, Trail</td>
+</tr>
+<tr>
+<td>parentId</td>
+<td>String</td>
+<td>No</td>
+<td></td>
+<td>To filter by parent Id if any, if not provided, all are returned</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Simple Request &amp; Response:</strong></p>
+<p>Request for list S3Bucket</p>
+<div class="highlight"><pre><span></span><code>query example {
+  listResources(Type:S3Bucket) {
+    id
+    name
+    parentId
+  }
+}
+</code></pre></div>
+<p>Response:</p>
+<div class="highlight"><pre><span></span><code>{
+  &quot;data&quot;: {
+    &quot;listResources&quot;: [
+      {
+        &quot;id&quot;: &quot;bucketa&quot;,
+        &quot;name&quot;: &quot;bucketa&quot;,
+        &quot;parentId&quot;: null
+      },
+      {
+        &quot;id&quot;: &quot;bucketb&quot;,
+        &quot;name&quot;: &quot;bucketb&quot;,
+        &quot;parentId&quot;: null
+      }
+    ]
+  }
+}
+</code></pre></div>
+<p>Request for list VPC Id</p>
+<div class="highlight"><pre><span></span><code>query example {
+  listResources(Type:VPC) {
+    id
+    name
+    parentId
+  }
+}
+</code></pre></div>
+<p>Response:</p>
+<div class="highlight"><pre><span></span><code>{
+  &quot;data&quot;: {
+    &quot;listResources&quot;: [
+      {
+        &quot;id&quot;: &quot;vpc-040e5096a29a457db&quot;,
+        &quot;name&quot;: &quot;test-vpc&quot;,
+        &quot;parentId&quot;: null
+      },
+      {
+        &quot;id&quot;: &quot;vpc-538e702a&quot;,
+        &quot;name&quot;: &quot;default-vpc&quot;,
+        &quot;parentId&quot;: null
+      },
+      {
+        &quot;id&quot;: &quot;vpc-1112456&quot;,
+        &quot;name&quot;: &quot;-&quot;,
+        &quot;parentId&quot;: null
+      }
+    ]
+  }
+}
+</code></pre></div>
+<p>Request for list Subnet Id</p>
+<div class="highlight"><pre><span></span><code>query example {
+  listResources(Type:Subnet, parentId: &quot;vpc-088c09a3e0b797406&quot;) {
+    id
+    description
+    name
+    parentId
+  }
+}
+</code></pre></div>
+<p>Response:</p>
+<div class="highlight"><pre><span></span><code>{
+  &quot;data&quot;: {
+    &quot;listResources&quot;: [
+      {
+        &quot;id&quot;: &quot;subnet-00a5510951c6b4bad&quot;,
+        &quot;description&quot;: &quot;eu-west-1a&quot;,
+        &quot;name&quot;: &quot;LogHub/LogHubVPC/DefaultVPC/publicSubnet1&quot;,
+        &quot;parentId&quot;: &quot;vpc-088c09a3e0b797406&quot;
+      },
+      {
+        &quot;id&quot;: &quot;subnet-066f81646e30f0e48&quot;,
+        &quot;description&quot;: &quot;eu-west-1b&quot;,
+        &quot;name&quot;: &quot;LogHub/LogHubVPC/DefaultVPC/publicSubnet2&quot;,
+        &quot;parentId&quot;: &quot;vpc-088c09a3e0b797406&quot;
+      },
+      {
+        &quot;id&quot;: &quot;subnet-06c232cfb88789980&quot;,
+        &quot;description&quot;: &quot;eu-west-1a&quot;,
+        &quot;name&quot;: &quot;LogHub/LogHubVPC/DefaultVPC/privateSubnet1&quot;,
+        &quot;parentId&quot;: &quot;vpc-088c09a3e0b797406&quot;
+      },
+      {
+        &quot;id&quot;: &quot;subnet-04324df4484d33cfb&quot;,
+        &quot;description&quot;: &quot;eu-west-1b&quot;,
+        &quot;name&quot;: &quot;LogHub/LogHubVPC/DefaultVPC/privateSubnet2&quot;,
+        &quot;parentId&quot;: &quot;vpc-088c09a3e0b797406&quot;
+      },
+      {
+        &quot;id&quot;: &quot;subnet-065c2b45471b08568&quot;,
+        &quot;description&quot;: &quot;eu-west-1b&quot;,
+        &quot;name&quot;: &quot;LogHub/LogHubVPC/DefaultVPC/isolatedSubnet2&quot;,
+        &quot;parentId&quot;: &quot;vpc-088c09a3e0b797406&quot;
+      },
+      {
+        &quot;id&quot;: &quot;subnet-0934357dfce96eba3&quot;,
+        &quot;description&quot;: &quot;eu-west-1a&quot;,
+        &quot;name&quot;: &quot;LogHub/LogHubVPC/DefaultVPC/isolatedSubnet1&quot;,
+        &quot;parentId&quot;: &quot;vpc-088c09a3e0b797406&quot;
+      }
+    ]
+  }
+} 
+</code></pre></div>
+<p>Request for list lambda functions</p>
+<div class="highlight"><pre><span></span><code>query example {
+  listResources(Type:Lambda) {
+    description
+    id
+    name
+  }
+}
+</code></pre></div>
+<p>Response:</p>
+<div class="highlight"><pre><span></span><code>{
+  &quot;data&quot;: {
+    &quot;listResources&quot;: [
+      {
+        &quot;description&quot;: &quot;Log Hub - Helper function to handle CloudFormation deployment&quot;,
+        &quot;id&quot;: &quot;LogHub-LogHubCfnFlowCfnHelperD9302B91-VZNJXLqIZjVu&quot;,
+        &quot;name&quot;: &quot;LogHub-LogHubCfnFlowCfnHelperD9302B91-VZNJXLqIZjVu-$LATEST&quot;
+      },
+      ...
+    ]
+  }
+}
+</code></pre></div>
+<p>Request for list RDS instances</p>
+<div class="highlight"><pre><span></span><code>query example {
+  listResources(Type:RDS) {
+    description
+    id
+    name
+  }
+}
+</code></pre></div>
+<p>Response:</p>
+<div class="highlight"><pre><span></span><code>{
+  &quot;data&quot;: {
+    &quot;listResources&quot;: [
+      {
+        &quot;description&quot;: &quot;/aws/rds/instance/database-1&quot;,
+        &quot;id&quot;: &quot;database-1&quot;,
+        &quot;name&quot;: &quot;database-1 (mysql)&quot;
+      },
+      {
+        &quot;description&quot;: &quot;/aws/rds/cluster/demodb&quot;,
+        &quot;id&quot;: &quot;demodb-instance-1&quot;,
+        &quot;name&quot;: &quot;demodb-instance-1 (aurora-mysql)&quot;
+      }
+    ]
+  }
+}
+</code></pre></div>
+<h3 id="put-resource-logging-bucket">Put Resource Logging Bucket</h3>
+<p><strong>Type:</strong> Mutation</p>
+<p><strong>Description:</strong>  Put Logging bucket for resource in current region</p>
+<p><strong>Resolver:</strong> Lambda</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>type</td>
+<td>String</td>
+<td>Yes</td>
+<td></td>
+<td>Available List: S3Bucket, CloudFront</td>
+</tr>
+<tr>
+<td>resourceName</td>
+<td>String</td>
+<td>Yes</td>
+<td></td>
+<td>The resource name or ID</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Simple Request &amp; Response:</strong></p>
+<p>Request</p>
+<div class="highlight"><pre><span></span><code>query example {
+  putResourceLoggingBucket(resourceName: &quot;test-bucket&quot;, Type: S3Bucket) {
+    bucket
+    prefix
+    enabled
+  }
+}
+</code></pre></div>
+<p>Response:</p>
+<div class="highlight"><pre><span></span><code>{
+  &quot;data&quot;: {
+    &quot;putResourceLoggingBucket&quot;: {
+      &quot;bucket&quot;: &quot;loghub-loghubloggingbucket0fa53b76-mkvj68ix2ufo&quot;,
+      &quot;prefix&quot;: &quot;s3/test-bucket/&quot;,
+      &quot;enabled&quot;: true
+    }
+  }
+} 
+</code></pre></div>
+<h3 id="get-resource-logging-bucket">Get Resource Logging Bucket</h3>
+<p><strong>Type:</strong> Query</p>
+<p><strong>Description:</strong>  Get Logging bucket for resource in current region</p>
+<p><strong>Resolver:</strong> Lambda</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>type</td>
+<td>String</td>
+<td>Yes</td>
+<td></td>
+<td>Available List: S3Bucket, Trail</td>
+</tr>
+<tr>
+<td>resourceName</td>
+<td>String</td>
+<td>Yes</td>
+<td></td>
+<td>The resource name or ID</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Simple Request &amp; Response:</strong></p>
+<p>Request</p>
+<div class="highlight"><pre><span></span><code>query example {
+  getResourceLoggingBucket(Type: Trail, resourceName: &quot;testtrail&quot;) {
+    bucket
+    prefix
+    enabled
+  }
+}
+</code></pre></div>
+<p>Response:</p>
+<div class="highlight"><pre><span></span><code>{
+  &quot;data&quot;: {
+    &quot;getResourceLoggingBucket&quot;: {
+      &quot;bucket&quot;: &quot;aws-cloudtrail-logs-123456789012-222dcf7b&quot;,
+      &quot;prefix&quot;: &quot;AWSLogs/123456789012/CloudTrail/&quot;,
+      &quot;enabled: true
+    }
+  }
+}
+</code></pre></div>
+
+              
+            </article>
+            
+          </div>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+    <nav class="md-footer__inner md-grid" aria-label="Footer" >
+      
+        
+        <a href="../process-design/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Process Design" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Process Design
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../data-model-design/" class="md-footer__link md-footer__link--next" aria-label="Next: Data Model Design" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Data Model Design
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.b028fd86.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": "v1.0.0"}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.7f366e99.min.js"></script>
+      
+    
+  </body>
+</html>
