@@ -1,0 +1,16 @@
+<match LOGHUB_CONFIG_TAG>
+  @type                 kinesis_streams
+  stream_name           LOGHUB_CONFIG_KDS_NAME
+  region                LOGHUB_CONFIG_KDS_REGION
+  <buffer>
+    chunk_limit_size    1m
+    flush_interval      10s
+    flush_thread_count  2
+  </buffer>
+  debug                 false
+  <inject>
+    time_key time
+    time_type string
+    time_format %Y-%m-%dT%H:%M:%SZ
+  </inject>
+</match>

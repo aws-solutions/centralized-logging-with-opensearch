@@ -1,0 +1,206 @@
+{
+  "aliases": {},
+  "mappings": {
+    "properties": {
+      "@timestamp": {
+        "type": "alias",
+        "path": "timestamp"
+      },
+      "actions_executed": {
+        "type": "keyword"
+      },
+      "chosen_cert_arn": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      },
+      "classification": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      },
+      "classification_reason": {
+        "type": "keyword"
+      },
+      "client_ip": {
+        "type": "ip"
+      },
+      "geo_location": {
+        "type": "geo_point"
+      },
+      "geo_iso_code": {
+        "type": "keyword"
+      },
+      "geo_country": {
+        "type": "keyword"
+      },
+      "geo_city": {
+        "type": "keyword"
+      },
+      "ua_browser": {
+        "type": "keyword"
+      },
+      "ua_browser_version": {
+        "type": "keyword"
+      },
+      "ua_os": {
+        "type": "keyword"
+      },
+      "ua_os_version": {
+        "type": "keyword"
+      },
+      "ua_device": {
+        "type": "keyword"
+      },
+      "ua_category": {
+        "type": "keyword"
+      },
+      "client_port": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      },
+      "domain_name": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      },
+      "elb": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      },
+      "elb_status_code": {
+        "type": "keyword"
+      },
+      "error_reason": {
+        "type": "keyword"
+      },
+      "matched_rule_priority": {
+        "type": "keyword"
+      },
+      "received_bytes": {
+        "type": "long"
+      },
+      "redirect_url": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      },
+      "request_creation_time": {
+        "type": "date"
+      },
+      "request_processing_time": {
+        "type": "float"
+      },
+      "request_proto": {
+        "type": "keyword"
+      },
+      "request_url": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      },
+      "request_verb": {
+        "type": "keyword"
+      },
+      "response_processing_time": {
+        "type": "float"
+      },
+      "sent_bytes": {
+        "type": "long"
+      },
+      "ssl_cipher": {
+        "type": "keyword"
+      },
+      "ssl_protocol": {
+        "type": "keyword"
+      },
+      "target_group_arn": {
+        "type": "keyword"
+      },
+      "target_ip": {
+        "type": "keyword"
+      },
+      "target_port": {
+        "type": "keyword"
+      },
+      "target_port_list": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      },
+      "target_processing_time": {
+        "type": "float"
+      },
+      "target_status_code": {
+        "type": "keyword"
+      },
+      "target_status_code_list": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      },
+      "timestamp": {
+        "type": "date"
+      },
+      "trace_id": {
+        "type": "keyword"
+      },
+      "type": {
+        "type": "keyword"
+      },
+      "user_agent": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      }
+    }
+  },
+  "settings": {
+    "index": {
+      "number_of_shards": "5",
+      "number_of_replicas": "1"
+    }
+  }
+}

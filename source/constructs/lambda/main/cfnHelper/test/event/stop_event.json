@@ -1,0 +1,6 @@
+{
+    "action": "STOP",
+    "args": {
+        "stackId": "0"
+    }
+}

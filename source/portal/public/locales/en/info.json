@@ -1,0 +1,146 @@
+{
+  "learnMore": "Learn more",
+  "accessProxy": {
+    "name": "Access Proxy",
+    "tip1": "Access Proxy creates a Nginx based proxy (behind ",
+    "alb": "Application Load Balancer",
+    "tip2": ") which allows you to access the OpenSearch Dashboards through Internet.",
+    "prerequisites": "Prerequisites",
+    "pre1": "1. Domain name",
+    "pre2": "2. The domain associated SSL certificate in ",
+    "acm": "Amazon Certificate Manager (ACM)",
+    "pre3": "3. An EC2 public key",
+    "createProxy": "Create an Access Proxy"
+  },
+  "alarm": {
+    "name": "Alarms",
+    "tip1": "Amazon OpenSearch provides a set of ",
+    "tip2": "recommended CloudWatch alarms",
+    "tip3": ", Log Hub can help customers to create the alarms automatically, and sent notification to your email (or SMS) via SNS.",
+    "createAlarm": "Create OpenSearch Alarms"
+  },
+  "apacheLogFormat": {
+    "name": "Apache Log Format",
+    "tip1": "Apache HTTP Server capture detailed information about errors and request in log files. You can find the log format configuration in Apache HTTP Server configuration file, such as the ",
+    "tip2": " file. The log format directive starts with ",
+    "sample": "Sample Configuration",
+    "apacheLog": "Apache HTTP Server Log Files"
+  },
+  "apacheLogParsing": {
+    "name": "Sample log parsing",
+    "tip1": "Please provide your apache log in Apache log file such as ",
+    "sampleLog": "Sample Log",
+    "configLogApache": "Configuring Logging in Apache"
+  },
+  "creationMethod": {
+    "name": "Creation method",
+    "tip1": "When import OpenSearch domains, you need to specify the networking configuration associated with the Log Processing Layer. Log Hub will automatically place Lambda (or other compute resource) in this layer. The Log Processing Layer must have access to the OpenSearch domain.",
+    "auto": "Automatic",
+    "tip21": "Log Hub will detect if there is a need to create a ",
+    "tip22": "VPC Peering Connection",
+    "tip23": ". If needed, Log Hub will automatically create a VPC Peering Connection, update route table, and update the security group of OpenSearch domain.",
+    "manual": "Manual",
+    "tip3": " Manually specify the Log Processing Layer networking information. You may need to create VPC Peering Connection, update route table and security group of OpenSearch domain.",
+    "importDomain": "Import OpenSearch domain"
+  },
+  "ingestionCreationMethod": {
+    "name": "Log enabling",
+    "tip1": "Log Hub can automatically detect the log location, or you can specify the log location manually.",
+    "auto": "Automatic",
+    "tip2": "Log Hub will automatically detect the log location of the selected AWS service. If needed, it will enable the service log and save to a centralized log bucket.",
+    "manual": "Manual",
+    "tip3": "Manually input the AWS service source and its log location . Log Hub will read logs from the location you specified."
+  },
+  "instanceGroupCreationMethod": {
+    "name": "Instance Group Creation",
+    "tip1": "Create a new instance group, or choose an existing Instance Group created before.",
+    "instanceGroup": "Instance Group"
+  },
+  "logConfigPath": {
+    "name": "Log Path",
+    "tip1": "Specify the log file locations. If you have multiple locations, please write all the locations and split using ' , '. e.g.",
+    "eks": {
+      "title": "If the log path for EKS Log, for Sidecar and DamonSet, refer to the following instructions for configuration:",
+      "dtip1": "For nginx as an example, when Amazon Linux2 is selected as the image of the node, if the user deploys the same application under the same EKS Cluster and uses the name space to distinguish different environments, it is recommended to use the following log path",
+      "dtip2": "The prod-ns/staging-ns is the corresponding name space that distinguishes different environments, app-nginx-demo is the name of the deployed application, and the name is defined in the Yaml file. This is different from deploying nginx on EC2, where log names are often used under EC2. For access.log, the log name is defined in nginx.conf. When creating a configuration file in Log Hub, pay attention to the path location.",
+      "stip1": "That is, attach a dedicated log collection container to the Pod, and use emtyDir to share the log directory to allow the Fluent Bit container to read the data. Fluent Bit containers share storage, network and other resources with application containers. The volume defined in Log Hub is named app-log. For example: log path",
+      "stip2": ",The corresponding deployed emtyDir shared volume is named app-log, refer to the following figure:"
+    }
+  },
+  "logLifecycle": {
+    "name": "Log lifecycle",
+    "tip1": "Log Hub will insert an ",
+    "ism": "Index State Management (ISM)",
+    "tip2": " into the OpenSearch domain. The life cycle will periodically move your indices in OpenSearch to save cost.",
+    "ismLink": "Index State Management"
+  },
+  "logProcessing": {
+    "name": "Log Processing",
+    "tip1": "Log Hub will provision Lambda (or other compute resource) to process logs using these networking configurations. You can specify the log processing networking layer when import OpenSearch domains.",
+    "note": "Note",
+    "tip2": "The log processing layer has access to the OpenSearch domain.",
+    "importDomain": "Import OpenSearch domain"
+  },
+  "logProcessingNetwork": {
+    "name": "Log processing network",
+    "tip1": "When import OpenSearch domains, you need to specify the networking configuration associated with the Log Processing Layer. Log Hub will automatically place Lambda (or other compute resource) in this layer. The Log Processing Layer must have access to the OpenSearch domain.",
+    "s3Access": "S3 Service access",
+    "tip21": "By default, Log Hub will output error logs to Amazon S3. Please guarantee the log processing layer has network access to S3. You can do it by place the log processing layer in public subnets, use ",
+    "tip22": "AWS PrivateLink for Amazon S3",
+    "tip23": " or via ",
+    "tip24": " NAT Gateways",
+    "cwLogs": "CloudWatch Logs access",
+    "tip31": " Many AWS services output service logs to ",
+    "tip32": "CloudWatch Logs",
+    "tip33": ". If you use Log Hub to ingest service logs. Please guarantee the log processing layer has network access to CloudWatch Logs.",
+    "kdsAccess": "Kinesis Data Streams access",
+    "tip4": "Application logs are sent to Kinesis Data Streams in Log Hub. Please guarantee the log processing layer has networking access to Kinesis Data Streams."
+  },
+  "nginxLogFormat": {
+    "name": "Nginx Log Format",
+    "tip1": "Nginx capture detailed information about errors and request in log files. You can find the log format configuration in Nginx configuration file, such as the ",
+    "tip2": "format directive starts with ",
+    "sample": "Sample Configuration",
+    "configNginx": "Configuring Logging in Nginx",
+    "alert1": "Note: Nginx type log configuration does not support Nginx configuration in JSON format. If your Nginx configuration is in JSON format, please select the log type as JSON."
+  },
+  "nginxLogParsing": {
+    "name": "Sample log parsing",
+    "tip1": "Please provide your nginx log in Nginx log file such as ",
+    "sample": "Sample Log",
+    "configNginx": "Configuring Logging in Nginx"
+  },
+  "regExLogFormat": {
+    "name": "RegEx Log Format",
+    "tip1": "Log Hub uses custom Ruby Regular Expression to parse logs. It supports both single-line log format and multiple input format. Write the regular expression in ",
+    "rubular": "Rubular",
+    "tip2": " to validate first and input the value here.",
+    "link1": "Regular Expression",
+    "link2": "Rubular: A Rudy-based regular expression editor",
+    "link3": "Regular Expression in Fluent Bit"
+  },
+  "sampleDashboard": {
+    "name": "Sample dashboard",
+    "tip1": "Log Hub will insert a pre-configured dashboard into the OpenSearch domain if ",
+    "tip2": " being selected. The dashboard name will be consistent with your index name."
+  },
+  "s3FileType": {
+    "name": "File Type",
+    "tips": "You can choose a specific file type for logs stored in S3. Gzip only supports the compression of a single file."
+  },
+  "eksPattern": {
+    "name": "Pattern",
+    "tip1": " ensures that all (or some) Nodes run a copy of a Pod. As nodes are added to the cluster, Pods are added to them.",
+    "tip2": " is a separate container that runs alongside an application container in a Kubernetes pod."
+  },
+  "eksIamRole": {
+    "name": "IAM Role ARN",
+    "tip1": "When importing an EKS cluster, we automatically create an EKS IAM role for use in EKS delivery streams."
+  },
+  "configTimeFormat": {
+    "name": "Time format",
+    "strftime": "strftime function",
+    "tip1": "Log Hub supports all time formats provided by the ",
+    "tip2": ". That is, log time strings that can be formatted by the strftime function can be parsed and used by Log Hub."
+  }
+}

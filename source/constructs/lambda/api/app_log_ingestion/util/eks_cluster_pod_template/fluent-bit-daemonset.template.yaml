@@ -1,0 +1,81 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fluent-bit
+  namespace: $LOGHUB_NAMESPACE
+  labels:
+    app.kubernetes.io/name: fluent-bit-$LOGHUB_NAMESPACE
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "2022"
+    prometheus.io/path: /api/v1/metrics/prometheus
+spec:
+  selector:
+    matchLabels:
+      app: fluent-bit-$LOGHUB_NAMESPACE
+  updateStrategy:
+        type: RollingUpdate    
+  template:
+    metadata:
+      labels:
+        app: fluent-bit-$LOGHUB_NAMESPACE
+        version: v1
+        kubernetes.io/cluster-service: "true"
+    spec:
+      containers:
+      - name: fluent-bit
+        image: $LOGHUB_FLUENT_BIT_IMAGE
+        imagePullPolicy: Always
+        env:
+          - name: CLUSTER_NAME
+            value: "$LOGHUB_EKS_CLUSTER_NAME"
+        ports:
+          - containerPort: 2022
+        # command: ["/fluent-bit/bin/fluent-bit", "-c"]
+        # args:
+        # - /fluent-bit/etc/fluent-bit.conf
+        resources:
+            limits:
+              memory: 500Mi
+            requests:
+              cpu: 500m
+              memory: 100Mi
+        volumeMounts:
+        #reference volume name
+        - name: fluentbitstate
+          mountPath: /var/fluent-bit/state  
+        - name: var-log
+          mountPath: /var/log
+        - name: var-lib-docker-containers
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+        - name: fluent-bit-config
+          mountPath: /fluent-bit/etc/    
+          readOnly: true
+      terminationGracePeriodSeconds: 10
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      volumes:
+      #define volume name  
+      - name: fluentbitstate
+        hostPath:
+          path: /var/fluent-bit/state    
+      - name: var-log
+        hostPath:
+          path: /var/log
+      - name: var-lib-docker-containers
+        hostPath:
+          path: /var/lib/docker/containers
+      - name: fluent-bit-config
+        configMap:
+          name: fluent-bit-config 
+      serviceAccountName: fluent-bit
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
+      - operator: "Exists"
+        effect: "NoExecute"
+      - operator: "Exists"
+        effect: "NoSchedule"

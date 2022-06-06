@@ -1,0 +1,40 @@
+site_name: Log Hub
+site_url: https://awslabs.github.io/log-hub/
+repo_url: https://github.com/awslabs/log-hub
+repo_name: awslabs/log-hub
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+  favicon: images/aws-solutions.png
+  logo: images/aws-solutions.png
+  icon:
+      repo: fontawesome/brands/github
+  language: en
+
+extra:
+  generator: false
+  copyright: Copyright &copy; 2020 - 2022 Amazon Web Services
+  alternate:
+    - name: English
+      link: /log-hub/en/
+      lang: en
+    - name: 简体中文
+      link: /log-hub/zh/
+      lang: zh
+  bucket: aws-gcr-solutions
+  version: v1.0.0
+
+plugins:
+  - search
+  - include-markdown
+  - macros
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - pymdownx.details
+  - pymdownx.superfences
+
+

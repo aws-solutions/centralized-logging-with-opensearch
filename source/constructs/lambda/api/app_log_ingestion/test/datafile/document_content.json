@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "2.2",
+  "description": "Download Fluent-Bit config file and reboot the Fluent-Bit",
+  "parameters": {
+    "INSTANCEID": {
+      "default": "",
+      "description": "(Required) Instance Id",
+      "type": "String"
+    }
+  },
+  "mainSteps": [
+    {
+      "inputs": {
+        "runCommand": [
+          "sudo service fluent-bit stop"
+        ]
+      },
+      "name": "stopFluentBit",
+      "action": "aws:runShellScript"
+    },
+    {
+      "inputs": {
+        "sourceInfo": "{\"path\":\"https://loghub-loghubloggingbucket0fa53b76-ysyv4acbp8m7.s3.us-east-1.amazonaws.com/app_log_config/{{INSTANCEID}}/applog_parsers.conf\"}",
+        "sourceType": "S3",
+        "destinationPath": "/opt/fluent-bit/etc"
+      },
+      "name": "downloadFluentBitParserConfig",
+      "action": "aws:downloadContent"
+    },
+    {
+      "inputs": {
+        "sourceInfo": "{\"path\":\"https://loghub-loghubloggingbucket0fa53b76-ysyv4acbp8m7.s3.us-east-1.amazonaws.com/app_log_config/{{INSTANCEID}}/fluent-bit.conf\"}",
+        "sourceType": "S3",
+        "destinationPath": "/opt/fluent-bit/etc"
+      },
+      "name": "downloadFluentBitConfig",
+      "action": "aws:downloadContent"
+    },
+    {
+      "inputs": {
+        "runCommand": [
+          "sudo systemctl enable fluent-bit.service",
+          "sudo service fluent-bit start"
+        ]
+      },
+      "name": "startFluentBit",
+      "action": "aws:runShellScript"
+    }
+  ]
+}

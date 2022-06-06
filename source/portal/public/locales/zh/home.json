@@ -1,0 +1,47 @@
+{
+  "analytics": "分析",
+  "subTitle": "基于 Amazon OpenSearch 构建日志分析管道",
+  "subDesc": "Log Hub 是一个简化日志分析管道的构建的解决方案，包括日志摄取、日志处理和日志可视化。",
+  "benefits": {
+    "title": "优点和特点",
+    "consoleTitle": "Log Hub 控制台",
+    "consoleDesc": "只需在 Log Hub 控制台上单击几下，即可创建和管理您的日志分析管道。",
+    "ingestionTitle": "统一日志摄取",
+    "ingestionDesc": "在统一的 Web 控制台中将 AWS 服务日志和应用程序日志提取到 Amazon OpenSearch。",
+    "codelessTitle": "无代码日志处理",
+    "codelessDesc": "通过 AWS 开发或AWS验证的日志处理器插件，无需编写代码即可整理和丰富日志数据。",
+    "insightTitle": "加速数据洞察",
+    "insightDesc": "方案内置 AWS 服务和常用软件（如，Nginx, Apache HTTP 服务器等）日志分析的可视化模板，快速获得数据洞察力。 "
+  },
+  "useCase": {
+    "title": "使用场景",
+    "troubleTitle": "故障排除",
+    "troubleDesc": "将AWS服务日志和您的应用程序日志提取到 Amazon OpenSearch。了解哪里出了问题以及为什么，然后修复它，解决软件开发中的难题。",
+    "complianceTitle": "合规与安全",
+    "complianceDesc": "存储您的日志数据并使其可供审计。保持您的工作量满足合规性要求，例如 MLPS、GDPR。"
+  },
+  "getStarted": {
+    "title": "开始使用",
+    "domain": "Amazon OpenSearch域",
+    "domainDesc": "导入 Amazon OpenSearch 域到 Log Hub",
+    "pipeline": "AWS 服务日志分析管道",
+    "pipelineDesc": "为 AWS 服务创建日志分析管道",
+    "appPipeline": "应用程序日志分析管道",
+    "appPipelineDesc": "为应用程序创建日志分析管道"
+  },
+  "gettingStarted": {
+    "title": "入门",
+    "withLogHub": "Log Hub 入门",
+    "analyseLog": "分析 CloudTrail 日志",
+    "workingWithJSON": "使用 JSON 格式的日志",
+    "workingWithSpringBoot": "使用 Spring Boot 日志",
+    "loghubWorkShop": "Log Hub 动手实验"
+  },
+  "moreResource": {
+    "title": "更多资源",
+    "doc": "文档",
+    "faq": "常见问题",
+    "issue": "问题反馈",
+    "openSearch": "Amazon OpenSearch 服务"
+  }
+}

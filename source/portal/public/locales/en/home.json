@@ -1,0 +1,47 @@
+{
+  "analytics": "Analytics",
+  "subTitle": "Build log analytics pipelines on Amazon OpenSearch",
+  "subDesc": "Log Hub is an AWS Solution that simplifies the build of log analytics pipelines, including log ingestion, log processing and log visualization.",
+  "benefits": {
+    "title": "Benefits and features",
+    "consoleTitle": "Log Hub console",
+    "consoleDesc": "Create and manage your log analytics pipelines with a few simple clicks on the Lob Hub console.",
+    "ingestionTitle": "Log ingestion",
+    "ingestionDesc": "Ingest both AWS service logs and application logs into Amazon OpenSearch in a single web console.",
+    "codelessTitle": "Codeless log processing",
+    "codelessDesc": "Cleanup and enrich the log data without writing code via AWS developed or AWS verified log processor plugins.",
+    "insightTitle": "Bootstrap data insights",
+    "insightDesc": "Bootstrap the creation of Kibana templates to get data insights with a collection of build-in Kibana templates for AWS services and commonly used software. e.g. Nginx, Apache HTTP Server."
+  },
+  "useCase": {
+    "title": "Use cases",
+    "troubleTitle": "Troubleshooting",
+    "troubleDesc": "Ingest both AWS Service logs and your application logs into Amazon OpenSearch. Understand what went wrong and why, and fix it. Assemble the puzzle in software development.",
+    "complianceTitle": "Compliance & Security",
+    "complianceDesc": "Store your log data and have it available for audit. Keep your workload to meet compliance requirement such as MLPS, GDPR."
+  },
+  "getStarted": {
+    "title": "Get started",
+    "domain": "Amazon OpenSearch domain",
+    "domainDesc": "Import Amazon OpenSearch domain into Log Hub",
+    "pipeline": "AWS Service Log Analytics Pipeline",
+    "pipelineDesc": "Create log analytics pipeline for AWS Service",
+    "appPipeline": "Application Log Analytics Pipeline",
+    "appPipelineDesc": "Create log analytics pipeline for Application"
+  },
+  "gettingStarted": {
+    "title": "Getting started",
+    "withLogHub": "Getting started with Log Hub",
+    "analyseLog": "Analyse CloudTrail logs",
+    "workingWithJSON": "Working with JSON format logs",
+    "workingWithSpringBoot": "Working with Spring Boot logs",
+    "loghubWorkShop": "Log Hub workshop"
+  },
+  "moreResource": {
+    "title": "More resources",
+    "doc": "Documentation",
+    "faq": "FAQ",
+    "issue": "Submit issues",
+    "openSearch": "Amazon OpenSearch Service"
+  }
+}

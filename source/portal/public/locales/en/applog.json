@@ -1,0 +1,168 @@
+{
+  "name": "Application Log",
+  "title": "Application Log Pipelines",
+  "list": {
+    "os": "OpenSearch",
+    "indexName": "Index name",
+    "streamName": "Stream Name",
+    "created": "Created time",
+    "status": "Status"
+  },
+  "delete": "Delete Application Log",
+  "deleteTips": "Are you sure you want to delete the application log ",
+  "detail": {
+    "config": "General configuration",
+    "osIndex": "OpenSearch Index",
+    "openShards": "Open shards",
+    "aos": "Amazon OpenSearch",
+    "fanout": "Consumers with enhanced fan-out",
+    "shards": "Shards (Kinesis Data Streams)",
+    "autoScaling": "(Auto Scaling)",
+    "created": "Created",
+    "tab": {
+      "ingestion": "Ingestion",
+      "permission": "Permission",
+      "lifecycle": "Lifecycle",
+      "tags": "Tags"
+    },
+    "ingestion": {
+      "logConfig": "Log Config",
+      "instanceGroup": "Instance Group",
+      "created": "Created time",
+      "delete": "Delete Ingestion",
+      "deleteTips": "Are you sure you want to delete the log ingestion(s)? "
+    },
+    "permission": {
+      "name": "Instance Permission",
+      "notYet": "Please waiting for pipeline creation.",
+      "alert": "Add permission to the instances",
+      "alertDesc": "Log Hub use Systems Manager to configure and update Log Agent, S3 to store configurations and Kinesis to collect data. Please grant the following permissions to your EC2 Instance Profile. Learn more about ",
+      "grant": "Grant permissions to EC2 instances."
+    },
+    "lifecycle": {
+      "name": "Lifecycle",
+      "warmLog": "Warm log transition(days)",
+      "coldLog": "Cold log transition(days)",
+      "logRetention": "Log retention(days)"
+    }
+  },
+  "create": {
+    "name": "Create",
+    "step": {
+      "ingestSetting": "Specify ingest setting",
+      "specifyOS": "Specify OpenSearch domain",
+      "createTags": "Create tags"
+    },
+    "ingestSetting": {
+      "index": "Index",
+      "indexName": "Index name",
+      "indexNameDesc": "Enter the index name of the log saved in Amazon OpenSearch.",
+      "indexNameError": "Please input an index name",
+      "indexNameFormatError": "Index name must start with a lowercase letter and can only support lowercase letter, number, - and _",
+      "buffer": "Buffer(Amazon Kinesis Data Streams)",
+      "shardNum": "Shard number",
+      "shardNumDesc": "Specify the number of Shards of the Kinesis Data Streams. Each shard can have up to 1,000 records per second and total data write rate of 1MB per second.",
+      "shardNumError": "Shard Number must be greater than or equal to 1",
+      "enableAutoS": "Enable auto scaling?",
+      "enableAutoSDesc": "Enable auto scaling of the Kinesis Data Streams shards?",
+      "maxShardNum": "Maximum Shard number",
+      "maxShardNumDesc": "Specify maximum number of shards.",
+      "maxShardNumError": "Max Shard Number must be greater than Shard number"
+    },
+    "specifyOS": {
+      "aosDomain": "Amazon OpenSearch domain",
+      "aosDomainDesc1": "Select an imported cluster. You must ",
+      "aosDomainDesc2": "import cluster",
+      "aosDomainDesc3": " before you select from the list.",
+      "aosDomainError": "Please select an OpenSearch Domain",
+      "selectDomain": "Select an OpenSearch Domain",
+      "logLifecycle": "Log Lifecycle",
+      "warmLog": "Warm log transition (days)",
+      "warmLogDesc1": "Move aged logs from hot storage to warm storage to save cost. You must enable ",
+      "warmLogDesc2": "UltraWarm",
+      "warmLogDesc3": " before using this.",
+      "warmLogInvalid": "Warm log transition invalid.",
+      "coldLog": "Cold log transition (days)",
+      "coldLogDesc1": "Move aged logs from warm storage to cold storage to save cost. You must enable ",
+      "coldLogDesc2": "Cold Storage",
+      "coldLogDesc3": " before using this.",
+      "coldLogInvalid": "Cold log transition invalid.",
+      "logRetention": "Log retention (days)",
+      "logRetentionDesc": "Delete aged logs from OpenSearch domain.",
+      "logRetentionError": "Log retention invalid."
+    }
+  },
+  "ingestion": {
+    "name": "Ingest",
+    "selectInstance": "Please select instances",
+    "selectOnlineInstance": "Please select log agent online instance or waiting all log agent installed successfully.",
+    "step": {
+      "createInstanceGroup": "Create instance group",
+      "chooseInstanceGroup": "Choose instance groups",
+      "applyConfig": "Apply log config",
+      "createTags": "Create tags"
+    },
+    "createInstanceGroup": {
+      "index": "Index",
+      "method": "Creation Method",
+      "new": "Create new",
+      "newDesc": "Create a new log group and select instances.",
+      "exists": "Choose exists",
+      "existsDesc": "Choose existing log groups on the next page."
+    },
+    "chooseInstanceGroup": {
+      "choose": "Choose instance groups",
+      "instanceGroupRequiredError": "Please select Instance Group.",
+      "chooseDesc": "Select multiple instance groups and apply the same Log Config.",
+      "list": {
+        "groups": "Groups",
+        "name": "Name",
+        "platform": "Platform",
+        "created": "Created time"
+      }
+    },
+    "applyConfig": {
+      "name": "Apply log config",
+      "nameDesc": "Create a new Log Config or select exists.",
+      "logConfig": "Log Config",
+      "method": "Creation Method",
+      "new": "Create new",
+      "newDesc": "Create a new log config.",
+      "exists": "Choose exists",
+      "existsDesc": "Choose existing log configs.",
+      "chooseExists": "Choose an existing log config.",
+      "chooseConfig": "Choose a Log Config",
+      "config": "Configuration",
+      "configRequiredError": "Please select a Log Config"
+    },
+    "s3": {
+      "ingestFromS3": "Ingest from S3",
+      "step": {
+        "specifySource": "Specify source",
+        "specifyConfig": "Specify log config"
+      },
+      "specifySource": {
+        "fromS3": "Ingest from S3 Bucket",
+        "s3": "S3 Bucket",
+        "s3Desc": "Select an S3 bucket where your application log lives",
+        "selectS3": "Please select a S3 Bucket",
+        "chooseS3": "Select a S3 Bucket",
+        "logPrefix": "Log Prefix",
+        "logPrefixDesc": "Specify the prefix of the logs",
+        "fileType": "File Type",
+        "fileTypeDesc": "Specify the way you compress your logs",
+        "selectFileType": "Please select a log file type",
+        "chooseFileType": "Choose a File Type",
+        "fileZipped": "The file is zipped"
+      },
+      "specifyConfig": {
+        "alert": "The 'Log Path' in the Log Config will be ignored as the S3 file path will be used when parsing your logs.",
+        "logConfig": "Log Config",
+        "selectConfig": "Please select a Log Config",
+        "configDesc": "Choose an existing log config for ",
+        "configDesc2": " file type specified as source. To create a new config, go to ",
+        "config": "Configuration"
+      }
+    }
+  }
+}

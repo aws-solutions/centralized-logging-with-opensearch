@@ -1,0 +1,19 @@
+    [INPUT]
+        Name                tail
+        Tag                 $LOGHUB_CONFIG_TAG
+        Path                $LOGHUB_CONFIG_PATH
+        Path_Key            file_name
+        DB                  $LOGHUB_CHECKPOINT
+        DB.locking          True    
+        Multiline           $LOGHUB_MULTILINE_SWITCH
+        $LOGHUB_PARSER
+        Mem_Buf_Limit       50MB
+        storage.type        filesystem
+        Read_from_Head      True
+
+    [OUTPUT]
+        Name                kinesis_streams
+        Match               $LOGHUB_CONFIG_TAG
+        Region              $LOGHUB_CONFIG_REGION
+        Stream              $LOGHUB_CONFIG_KDS_NAME
+        Retry_Limit         False

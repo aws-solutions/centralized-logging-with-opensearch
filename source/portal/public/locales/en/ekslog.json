@@ -1,0 +1,115 @@
+{
+  "name": "EKS Clusters",
+  "clusters": "Clusters",
+  "list": {
+    "clusterName": "Cluster Name",
+    "pattern": "Pattern",
+    "os": "OpenSearch",
+    "created": "Created"
+  },
+  "delete": "Delete imported EKS Cluster",
+  "deleteTips": "Are you sure you want to delete the imported EKS Cluster ",
+  "create": {
+    "name": "Create",
+    "step": {
+      "specifyEksSource": "Specify EKS Log Source",
+      "specifyOS": "Specify OpenSearch domain",
+      "createTags": "Create tags"
+    },
+    "eksSource": {
+      "eks": "Amazon EKS",
+      "eksCluster": "EKS Cluster",
+      "eksClusterDesc": "Select an exsiting EKS cluster from ",
+      "eksClusterError": "Please select an EKS Cluster",
+      "curAccount": "current AWS account",
+      "agent": "Agent",
+      "eksAgentPattern": "Pattern",
+      "eksAgentPatternDesc": "Please choose the pattern which will be used to deploy logging agent."
+    }
+  },
+  "detail": {
+    "config": "General Configurations",
+    "clusterName": "EKS Cluster",
+    "deploymentPattern": "Pattern",
+    "aos": "Amazon Opensearch",
+    "iamRole": "IAM Role ARN",
+    "created": "Created",
+    "tab": {
+      "ingestions": "App Log Ingestions",
+      "daemonsetGuide": "DaemonSet Guide",
+      "tags": "Tags"
+    },
+    "ingestions": {
+      "osIndex": "Opensearch Index",
+      "pipeline": "App Log Pipeline",
+      "logConfig": "Log Config",
+      "created": "Created",
+      "status": "Status",
+      "deleteTips": "Are you sure you want to delete the log ingestion(s)? Note: the App Log Pipeline will not be deleted. "
+    },
+    "daemonsetGuide": {
+      "alert": "",
+      "alertDesc": "All steps in this procedure are to deploy Fluent-bit agent as a DaemonSet. By default, the namespace \"logging\" is used",
+      "step1": "You will need to copy and paste all the content below in a file ~/fluent-bit-logging.yaml",
+      "step2": "Use the kubectl command to deploy fluent-bit as DaemonSet."
+    }
+  },
+  "select": "Select an EKS Cluster",
+  "ingest": {
+    "ingest": "Ingest",
+    "step": {
+      "specifyPipeline": "Specify Pipeline Settings",
+      "specifyConfig": "Specify Log Config",
+      "createTags": "Create Tags"
+    },
+    "specifyPipeline": {
+      "alert": "The pipeline you are creating or chosing form are conneted with OpenSearch Cluster:",
+      "creationMethod": "Creation Method",
+      "createNew": "Create new",
+      "createNewDesc": "Create a new Application Log Pipeline",
+      "chooseExists": "Choose exists",
+      "chooseExistsDesc": "Choose existing Application Log Pipeline",
+      "index": "Index",
+      "indexPrefix": "Index Prefix",
+      "indexPrefixDesc": "Enter the index of the log saved in Amazon OpenSearch",
+      "choosePipeline": "Choose Pipeline",
+      "pipeline": "Pipeline",
+      "filterPipeline": "Filter the existing pipeline",
+      "selectPipeline": "Select a pipeline",
+      "pipelineConfig": "Pipeline Configuration",
+      "osIndexPrefix": "OpenSearch Index Prefix",
+      "aos": "Amazon OpenSearch",
+      "kds": "Kinesis Data Streams",
+      "created": "Created",
+      "pipelineRequiredError": "Please select a pipeline."
+    },
+    "specifyLogConfig": {
+      "config": "Log Config"
+    },
+    "detail": {
+      "ingestionDetail": "Ingestion Detail",
+      "osIndexPrefix": "OpenSearch Index Prefix",
+      "kds": "Kinesis Data Stream",
+      "pipeline": "Pipeline",
+      "created": "Created",
+      "sidecar": "Sidecar",
+      "daemonset": "DaemonSet",
+      "logConfig": "Log Config",
+      "tag": "Tags",
+      "sidecarTab": {
+        "guide": "Sidecar Guide",
+        "alert": "You will need to deploy Fluent-bit agent as a sidecar in your pod."
+      },
+      "daemonsetTab": {
+        "guide": "DaemonSet Guide",
+        "alert": "For DaemonSet pattern. All ingestions share the same deployment guide. Please find it at "
+      },
+      "configTab": {
+        "config": "Log Config",
+        "name": "Name",
+        "type": "Type",
+        "created": "Created"
+      }
+    }
+  }
+}

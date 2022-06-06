@@ -1,0 +1,168 @@
+{
+  "name": "应用日志",
+  "title": "应用日志管道",
+  "list": {
+    "os": "OpenSearch",
+    "indexName": "索引名称",
+    "streamName": "数据流名称",
+    "created": "创建时间",
+    "status": "状态"
+  },
+  "delete": "删除应用日志",
+  "deleteTips": "您是否确定要删除应用日志 ",
+  "detail": {
+    "config": "基础配置",
+    "osIndex": "OpenSearch 索引",
+    "openShards": "开放分区",
+    "aos": "Amazon OpenSearch",
+    "fanout": "使用增强型扇出功能的使用者",
+    "shards": "分区 (Kinesis Data Streams)",
+    "autoScaling": "(Auto Scaling)",
+    "created": "创建时间",
+    "tab": {
+      "ingestion": "摄取",
+      "permission": "权限",
+      "lifecycle": "生命周期",
+      "tags": "标签"
+    },
+    "ingestion": {
+      "logConfig": "日志配置",
+      "instanceGroup": "实例组",
+      "created": "创建时间",
+      "delete": "删除摄取",
+      "deleteTips": "您确定要删除这些日志摄取吗? "
+    },
+    "permission": {
+      "name": "实例权限",
+      "notYet": "请等待管道的创建完成.",
+      "alert": "为实例添加权限",
+      "alertDesc": "Log Hub 使用 Systems Manager 配置和更新 Log Agent，使用 S3 存储配置，使用 Kinesis 收集数据。 请向您的 EC2 实例配置文件授予以下权限。 学习更多关于",
+      "grant": "向 EC2 实例授予权限。"
+    },
+    "lifecycle": {
+      "name": "生命周期",
+      "warmLog": "暖日志转换（天）",
+      "coldLog": "冷日志转换（天）",
+      "logRetention": "日志保留（天）"
+    }
+  },
+  "create": {
+    "name": "创建",
+    "step": {
+      "ingestSetting": "指定摄取设置",
+      "specifyOS": "指定 OpenSearch 域",
+      "createTags": "创建标签"
+    },
+    "ingestSetting": {
+      "index": "索引",
+      "indexName": "索引名称",
+      "indexNameDesc": "输入保存在 Amazon OpenSearch 中的日志的索引名称。",
+      "indexNameError": "请输入索引名称",
+      "indexNameFormatError": "索引名必须以小写字母开头，并且只能包含小写字母、数字、-和_",
+      "buffer": "缓冲区(Amazon Kinesis Data Streams)",
+      "shardNum": "分片个数",
+      "shardNumDesc": "指定 Kinesis Data Streams 的分片数。 每个分片每秒最多可以有 1,000 条记录，总数据写入速率为每秒 1MB。",
+      "shardNumError": "分片个数必须大于或者等于 1",
+      "enableAutoS": "启用弹性伸缩？",
+      "enableAutoSDesc": "启用 Kinesis Data Streams 分片的弹性伸缩？",
+      "maxShardNum": "最大分片数",
+      "maxShardNumDesc": "指定最大分片数。",
+      "maxShardNumError": "最大分片数必须大于分片个数"
+    },
+    "specifyOS": {
+      "aosDomain": "Amazon OpenSearch 域",
+      "aosDomainDesc1": "在您从列表中选择之前。你必须先",
+      "aosDomainDesc2": "导入集群",
+      "aosDomainDesc3": "再进行选择。",
+      "aosDomainError": "请选择一个 OpenSearch 域",
+      "selectDomain": "选择一个 OpenSearch 域",
+      "logLifecycle": "日志生命周期",
+      "warmLog": "暖日志转换（天）",
+      "warmLogDesc1": "将过期的日志从热存储移动到暖存储以节省成本。 在使用之前您必须启用",
+      "warmLogDesc2": "UltraWarm",
+      "warmLogDesc3": "。",
+      "warmLogInvalid": "无效的暖日志转换。",
+      "coldLog": "冷日志转换（天）",
+      "coldLogDesc1": "将老化的原木从暖库移至冷库以节省成本。 在使用之前您必须启用",
+      "coldLogDesc2": "Cold Storage",
+      "coldLogDesc3": "。",
+      "coldLogInvalid": "无效的冷日志转换。",
+      "logRetention": "日志保留（天）",
+      "logRetentionDesc": "从 OpenSearch 域中删除过期日志。",
+      "logRetentionError": "无效的日志保留。"
+    }
+  },
+  "ingestion": {
+    "name": "摄取",
+    "selectInstance": "请选择实例",
+    "selectOnlineInstance": "请选择日志代理在线实例或等待所有日志代理安装成功。",
+    "step": {
+      "createInstanceGroup": "创建实例组",
+      "chooseInstanceGroup": "选择实例组",
+      "applyConfig": "应用日志配置",
+      "createTags": "创建标签"
+    },
+    "createInstanceGroup": {
+      "index": "索引",
+      "method": "创建方式",
+      "new": "创建新的",
+      "newDesc": "创建一个新的日志组并选择实例。",
+      "exists": "选择已存在的",
+      "existsDesc": "在下一页上选择现有的日志组。"
+    },
+    "chooseInstanceGroup": {
+      "choose": "选择实例组",
+      "chooseDesc": "选择多个实例组并应用相同的日志配置。",
+      "instanceGroupRequiredError": "请选择实例组。",
+      "list": {
+        "groups": "组",
+        "name": "名称",
+        "platform": "平台",
+        "created": "创建时间"
+      }
+    },
+    "applyConfig": {
+      "name": "应用日志配置",
+      "nameDesc": "创建一个新的日志配置或选择存在。",
+      "logConfig": "日志配置",
+      "method": "创建方式",
+      "new": "创建新的",
+      "newDesc": "创建一个新的日志配置。",
+      "exists": "选择已存在的",
+      "existsDesc": "选择现有的日志配置。",
+      "chooseExists": "选择现有的日志配置。",
+      "chooseConfig": "选择日志配置",
+      "config": "配置",
+      "configRequiredError": "请选择一个日志配置"
+    },
+    "s3": {
+      "ingestFromS3": "从S3摄取",
+      "step": {
+        "specifySource": "指定日志源",
+        "specifyConfig": "指定日志配置"
+      },
+      "specifySource": {
+        "fromS3": "从S3存储桶摄取",
+        "s3": "S3 存储桶",
+        "s3Desc": "选择您的应用程序日志所在的 S3 存储桶",
+        "selectS3": "请选择一个 S3 存储桶",
+        "chooseS3": "选择一个 S3 存储桶",
+        "logPrefix": "日志前缀",
+        "logPrefixDesc": "指定日志的前缀",
+        "fileType": "文件格式",
+        "fileTypeDesc": "指定文件格式",
+        "selectFileType": "请选择日志文件格式",
+        "chooseFileType": "请选择一种日志文件格式",
+        "fileZipped": "文件已压缩"
+      },
+      "specifyConfig": {
+        "alert": "日志配置中的“日志路径”将被忽略，因为解析日志时将使用 S3 文件路径。",
+        "logConfig": "日志配置",
+        "selectConfig": "请选择一个日志配置",
+        "configDesc": "选择一个现有的日志配置为 ",
+        "configDesc2": " 指定为源的文件类型。 要创建新配置，请转到",
+        "config": "日志配置"
+      }
+    }
+  }
+}

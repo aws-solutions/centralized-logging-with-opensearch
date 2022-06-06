@@ -1,0 +1,144 @@
+{
+  "group": {
+    "name": "实例组",
+    "groups": "组",
+    "list": {
+      "name": "名称",
+      "platform": "平台",
+      "created": "创建时间"
+    },
+    "delete": "删除实例组",
+    "deleteTips": "您确定要删除实例组",
+    "detail": {
+      "general": "基础配置",
+      "name": "名称",
+      "instanceSelection": "实例选择",
+      "platform": "平台",
+      "created": "创建时间",
+      "list": {
+        "groups": "组",
+        "name": "名称",
+        "instanceId": "实例 ID",
+        "primaryIP": "主IP",
+        "agent": "代理",
+        "agentStatus": "代理状态"
+      },
+      "notExist": "实例组不存在."
+    },
+    "create": {
+      "name": "创建",
+      "selectInstance": "请选择实例",
+      "selectStatus": "请选择日志代理在线的实例或等待所有日志代理安装成功。"
+    },
+    "comp": {
+      "selectInstance": "请选择实例",
+      "instanceGroup": "实例组",
+      "instanceGroupDesc": "实例组是实例的集合。目前仅支持与 Log Hub 同区域的实例。请确保您的实例满足以下先决条件。",
+      "tips1": "安装在实例上的 AWS Systems Manager 代理（SSM 代理）。",
+      "tips2": "与实例关联的 AmazonSSMManagedInstanceCore 策略。",
+      "tips3": "这些实例具有对 AWS Systems Manager 的网络访问权限。",
+      "tips4": "这些实例具有对 Amazon Kinesis Data Streams 的网络访问权限。",
+      "tips5": "Fluent Bit 代理依赖 OpenSSL 1.1，请确保 Linux 实例上安装了 OpenSSL 1.1。",
+      "settings": "设置",
+      "groupName": "组名",
+      "groupNameDesc": "输入日志组的名称。名称必须是唯一的，并且只能包含小写字母和 -。",
+      "groupNameError": "请输入组名称",
+      "instances": {
+        "title": "实例",
+        "name": "名称",
+        "instanceId": "实例 ID",
+        "primaryIp": "主IP",
+        "logAgent": "日志代理",
+        "pendingStatus": "状态",
+        "filter": "按实例ID过滤实例"
+      }
+    }
+  },
+  "config": {
+    "name": "日志配置",
+    "create": "创建",
+    "edit": "编辑",
+    "type": {
+      "nginx": "Nginx",
+      "json": "JSON",
+      "apache": "Apache HTTP 服务",
+      "singleLine": "单行文本日志",
+      "multiLine": "多行文本日志"
+    },
+    "list": {
+      "config": "配置",
+      "name": "名称",
+      "type": "类型",
+      "agent": "代理",
+      "created": "创建时间"
+    },
+    "delete": "删除日志配置",
+    "deleteTips": "您确定要删除日志配置吗",
+    "detail": {
+      "general": "基础配置",
+      "name": "名称",
+      "type": "类型",
+      "agent": "代理",
+      "created": "创建时间",
+      "logConfig": "日志配置",
+      "path": "日志路径",
+      "nginxFormat": "Nginx 日志格式",
+      "apacheFormat": "Apache 日志格式",
+      "springbootFormat": "Spring Boot 日志格式",
+      "jsonFormat": "JSON 日志格式",
+      "regExp": "正则表达式",
+      "logSpecs": "日志规范",
+      "specName": "名称",
+      "specType": "类型",
+      "specFormat": "格式",
+      "timeFormat": "时间格式",
+      "notExist": "日志配置不存在."
+    },
+    "common": {
+      "configName": "配置名称",
+      "configNameDesc": "输入日志配置的名称。 名称必须是唯一的，并且只能包含小写字母和 -。",
+      "configNameError": "请输入日志配置名称",
+      "logPath": "日志路径",
+      "logPathDesc": "输入日志文件的位置。将包含指定文件夹下的所有文件。使用','分隔多个路径。",
+      "logType": "日志类型",
+      "logTypeDesc": "选择内置插件来解析来自日志代理的日志数据。",
+      "logTypeError": "请选择日志类型",
+      "chooseLogType": "选择日志类型",
+      "regName": "正则表达式:",
+      "nginxFormat": "Nginx日志格式",
+      "nginxFormatDesc": "Nginx 的日志格式配置。",
+      "nginxFormatInvalid": "指定的格式无效，标准的Nginx配置文件通常以 log_format 开头",
+      "apacheFormat": "Apache 日志格式",
+      "apacheFormatDesc": "Apache的日志格式配置。 例如. LogFormat \"%h %l %u %t \\\"%r\\\" %>s %b\" common",
+      "apacheFormatError": "指定的格式无效，标准的 Apache 配置文件通常以 LogFormat 开头。",
+      "regexFormat": "正则表达式",
+      "regexFormatDesc": "输入日志的正则表达式。",
+      "sampleParsing": "示例日志解析",
+      "parser": "解析器",
+      "parserDesc": "选择支持的解析器。",
+      "chooseParser": "选择解析器",
+      "springbootLogFormat": "日志格式",
+      "springbootLogFormatDesc": "在 Spring Boot 应用程序中输入日志格式配置。",
+      "firstLineRegEx": "首行正则表达式",
+      "firstLineRegExDesc": "输入正则表达式以提取日志的首行。"
+    },
+    "parsing": {
+      "alert": "正则表达式无效，请检查您的日志格式。",
+      "sampleLog": "日志样例",
+      "sampleLogDesc": "输入一行示例日志以验证正则表达式。",
+      "sampleLogJSONDesc": "输入一个JSON的样例日志用于解析",
+      "valid": "验证成功。",
+      "invalid": "验证失败。 确保示例日志与指定的 log_format 匹配。",
+      "parseLog": "解析日志",
+      "parseLogDesc": "样例日志的日志相关属性",
+      "key": "键",
+      "type": "类型",
+      "value": "值",
+      "dateTips": "您必须使用键 “time” 指定日志的日期时间。如果未指定，将添加系统时间。",
+      "timeFormat": "时间格式",
+      "timeFormatDesc": "输入日志中使用的时间戳格式。",
+      "sampleRequired": "请输入示例日志并解析日志以检查日志配置和正则表达式是否有效。",
+      "regexLogParseError": "请确认示例日志已被解析，并确保日志配置与示例日志匹配。"
+    }
+  }
+}

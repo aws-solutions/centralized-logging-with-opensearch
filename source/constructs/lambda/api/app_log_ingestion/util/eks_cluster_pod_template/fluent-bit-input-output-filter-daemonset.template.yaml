@@ -1,0 +1,49 @@
+    [INPUT]
+        Name                tail
+        Tag                 $LOGHUB_CONFIG_TAG
+        Exclude_Path        /var/log/containers/cloudwatch-agent*, /var/log/containers/fluent-bit*, /var/log/containers/aws-node*, /var/log/containers/kube-proxy*
+        Path                $LOGHUB_CONFIG_PATH
+        Path_Key            file_name
+        $LOGHUB_CONTAINER_PARSER
+        DB                  $LOGHUB_CHECKPOINT
+        DB.locking          True
+        Docker_Mode         $LOGHUB_DOCKER_MODE_SWITCH
+        $LOGHUB_DOCKER_MODE_PARSER
+        Mem_Buf_Limit       50MB
+        Refresh_Interval    10
+        Rotate_Wait         30
+        storage.type        filesystem
+        Read_from_Head      True
+
+    [OUTPUT]
+        Name                kinesis_streams
+        Match               $LOGHUB_CONFIG_TAG
+        Region              $LOGHUB_CONFIG_REGION
+        Stream              $LOGHUB_CONFIG_KDS_NAME
+        Retry_Limit         False
+
+$LOGHUB_FLUENT_BIT_MULTILINE_FILTER
+
+    [FILTER]
+        Name                parser
+        Match               $LOGHUB_CONFIG_TAG
+        Key_Name            $LOGHUB_FILTER_PARSER_KEY_NAME
+        Parser              $LOGHUB_PARSER_NAME
+
+    [FILTER]
+        Name                kubernetes
+        Match               $LOGHUB_CONFIG_TAG
+        Kube_Tag_Prefix     $LOGHUB_CONFIG_TAG_PREFIX
+
+        Kube_URL            https://kubernetes.default.svc:443
+        Kube_CA_File        /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        Kube_Token_File     /var/run/secrets/kubernetes.io/serviceaccount/token
+
+        Merge_Log           On
+        Merge_Log_Trim      On
+        Merge_Log_Key       log_processed
+
+        Buffer_Size         64k
+        Use_Kubelet         True
+        Kubelet_Port        10250
+

@@ -1,0 +1,74 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluent-bit-config
+  namespace: $LOGHUB_NAMESPACE
+  labels:
+    k8s-app: fluent-bit
+data:
+  # Configuration files: server, input, filters and output
+  # ======================================================
+  uniform-time-format.lua: |
+    function cb_print(tag, timestamp, record)
+        record['time'] = string.format(
+            '%s.%sZ',
+            os.date('%Y-%m-%dT%H:%M:%S', timestamp['sec']),
+            string.sub(string.format('%06d', timestamp['nsec']), 1, 6)
+        )
+        return 2, timestamp, record
+    end
+    
+  fluent-bit.conf: |
+    [SERVICE]
+        Flush                       5
+        Daemon                      off
+        Log_level                   Info
+        Http_server                 On
+        Http_listen                 0.0.0.0
+        Http_port                   2022
+        Parsers_File                parsers.conf
+        storage.path                /var/fluent-bit/state/flb-storage/
+        storage.sync                normal
+        storage.checksum            off
+        storage.backlog.mem_limit   5M
+    
+$LOGHUB_FLUENT_BIT_INPUT_OUTPUT_FILTER
+    [FILTER]
+        Name                modify
+        Match               *
+        Set                 cluster ${CLUSTER_NAME}
+
+    [FILTER]
+        Name                lua
+        Match               *
+        time_as_table       on
+        script              uniform-time-format.lua
+        call                cb_print
+    
+
+  parsers.conf: |
+    [PARSER]
+        Name   json
+        Format json
+        Time_Key time
+        Time_Format %Y-%m-%dT%H:%M:%S.%LZ
+
+    [PARSER]
+        Name         docker
+        Format       json
+        Time_Key     container_log_time
+        Time_Format  %Y-%m-%dT%H:%M:%S.%LZ
+        Time_Keep    On
+
+    [PARSER]
+        Name        cri_regex
+        Format      regex
+        Regex       ^(?<container_log_time>[^ ]+) (?<stream>stdout|stderr) (?<logtag>[^ ]*) (?<message>.*)$      
+        Time_Key    container_log_time
+        Time_Format %Y-%m-%dT%H:%M:%S.%LZ
+        Time_Keep    On        
+
+$LOGHUB_USER_DEFINE_DOCKER_FIRSTLINE_PARSER
+$LOGHUB_USER_DEFINE_PARSER
+$LOGHUB_USER_DEFINE_MULTILINE_PARSER
