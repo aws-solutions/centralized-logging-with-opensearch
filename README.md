@@ -42,8 +42,8 @@ domains on the web console, and the reference dashboards can further facilitate 
 
 ## Quick start
 
-* [Launch Log Hub in AWS global regions](https://awslabs.github.io/log-hub/implementation-guide/deployment/global-region/)
-* [Launch Log Hub in AWS China regions](https://awslabs.github.io/log-hub/implementation-guide/deployment/china-region/)
+* [Launch Log Hub in AWS global regions](https://awslabs.github.io/log-hub/en/implementation-guide/deployment/global-region/)
+* [Launch Log Hub in AWS China regions](https://awslabs.github.io/log-hub/en/implementation-guide/deployment/china-region/)
 
 ## License
 
