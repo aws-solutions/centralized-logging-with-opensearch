@@ -2,457 +2,457 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://awslabs.github.io/log-hub/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/designs/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/designs/FAQ/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/designs/assets/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/designs/concepts/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/designs/log-analytics-pipeline-service/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/designs/user-stories/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/designs/UI/help-panel/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/designs/app-log/api-design/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/designs/app-log/architecture-design/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/designs/app-log/data-model-design/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/designs/app-log/log-analytics-pipeline-app/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/designs/app-log/process-design/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/designs/domain-management/api-design/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/designs/domain-management/component-design/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/designs/domain-management/data-model-design/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/designs/domain-management/eks-auto-import/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/designs/domain-management/process-design/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/designs/eks-log/api-design/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/designs/eks-log/architecture-design/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/designs/eks-log/process-design/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/designs/service-log/api-design/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/designs/service-log/component-design/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/designs/service-log/data-model-design/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/designs/service-log/process-design/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/designs/service-log/tutorial-extend-service-log/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/designs/solution/high-level-design/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/architecture/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/considerations/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/cost/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/faq/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/revisions/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/solution-components/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/trouble-shooting/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/applications/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/applications/apache/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/applications/create-applog-pipeline/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/applications/create-log-ingestion/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/applications/create-log-source/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/applications/fluent-bit-install-guide/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/applications/include-prerequisites/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/applications/include-supported-app-logs/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/applications/json/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/applications/multi-line-text/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/applications/nginx/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/applications/single-line-text/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/aws-services/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/aws-services/cloudfront/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/aws-services/cloudtrail/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/aws-services/elb/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/aws-services/include-cfn-common/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/aws-services/include-dashboard/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/aws-services/include-supported-service-logs/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/aws-services/lambda/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/aws-services/rds/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/aws-services/s3/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/aws-services/waf/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/deployment/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/deployment/china-region/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/deployment/global-region/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/domains/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/domains/alarms/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/domains/import/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/domains/proxy/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/getting-started/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/getting-started/1.import-domain/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/getting-started/2.create-proxy/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/getting-started/3.build-cloudtrail-pipeline/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/getting-started/4.view-dashboard/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/resources/aws-services/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/implementation-guide/resources/open-ssl/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/updates/roadmap/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/workshop/clean-up/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/workshop/introduction/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/workshop/dashboard-data/generate-logs/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/workshop/dashboard-data/view-dashboard/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/workshop/deployment/acm-certification/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/workshop/deployment/deploy-demo-web-site/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/workshop/deployment/deploy-log-hub/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/workshop/deployment/key-pair/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/workshop/deployment/must-read/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/workshop/deployment/service-linked-role/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/workshop/domain-management/access-proxy/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/workshop/domain-management/create-proxy/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/workshop/domain-management/import-domain/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/workshop/log-analytics-pipelines/application-log/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/workshop/log-analytics-pipelines/cloudfront-log/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/workshop/log-analytics-pipelines/elb-log/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/workshop/log-analytics-pipelines/multi-line-dashboard/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://awslabs.github.io/log-hub/workshop/log-analytics-pipelines/rds-log/</loc>
-         <lastmod>2022-06-06</lastmod>
+         <lastmod>2022-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
 </urlset>
