@@ -20,6 +20,7 @@ import * as elbv2 from '@aws-cdk/aws-elasticloadbalancingv2';
 import * as au from '@aws-cdk/aws-autoscaling';
 import * as acm from '@aws-cdk/aws-certificatemanager';
 import * as path from 'path';
+import * as iam from '@aws-cdk/aws-iam'; 
 
 const { VERSION } = process.env;
 
@@ -164,6 +165,12 @@ export class NginxForOpenSearchStack extends Stack {
         //user data for Nginx proxy
         const ud_ec2 = ec2.UserData.forLinux();
 
+        //create ec2 role
+        const ec2Role = new iam.Role(this, "ec2Role",{
+            assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
+        });
+        ec2Role.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore'));
+
         const customEndpointNotProvided = new CfnCondition(this, 'customEndpointProvided', {
             expression: Fn.conditionEquals("", elbDomain),
         });
@@ -175,6 +182,7 @@ export class NginxForOpenSearchStack extends Stack {
                 machineImage: new ec2.AmazonLinuxImage({ generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2 }),
                 vpc: nginxVpc,
                 userData: ud_ec2,
+                role: ec2Role,
                 keyName: keyName.valueAsString,
                 securityGroup: ec2SecurityGroup,
                 maxCapacity: 4,

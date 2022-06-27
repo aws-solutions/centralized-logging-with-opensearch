@@ -24,7 +24,7 @@ extra:
       link: /log-hub/zh/
       lang: zh
   bucket: aws-gcr-solutions
-  version: v1.0.0
+  version: latest
 
 plugins:
   - search

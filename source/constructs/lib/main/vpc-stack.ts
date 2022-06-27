@@ -168,6 +168,7 @@ export class VpcStack extends Construct {
         })
         this.processSg.addIngressRule(this.proxySg, Port.tcp(443), "Allow inbound https traffic from Proxy SG only")
         this.processSg.addEgressRule(Peer.anyIpv4(), Port.tcp(443), "Allow outbound https traffic")
+        this.processSg.addEgressRule(Peer.anyIpv4(), Port.tcp(80), "Allow outbound http traffic")
         const cfnProcessSg = this.processSg.node.defaultChild as CfnSecurityGroup
         cfnProcessSg.overrideLogicalId('ProcessSecurityGroup')
         addCfnNagSuppressRules(cfnProcessSg, [
