@@ -9,7 +9,7 @@
 
 1. Go to the <a href="https://console.aws.amazon.com/console/home?region=us-east-1" target="_blank">AWS Management Console</a> and select the button below to launch the ```WorkshopDemo``` AWS CloudFormation template.
     
-    <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/create/template?stackName=WorkshopDemo&templateURL=https://aws-gcr-solutions.s3.amazonaws.com/log-hub-workshop/v1.0.0/LoghubWorkshop.template" target="_blank">![Launch Web Site](../../images/launch-stack.png)</a>
+    <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/create/template?stackName=WorkshopDemo&templateURL=https://aws-gcr-solutions.s3.amazonaws.com/log-hub-workshop/{{ version }}/LoghubWorkshop.template" target="_blank">![Launch Web Site](../../images/launch-stack.png)</a>
 
 2. We launch this template in **US East (N. Virginia)** Region, please check the region on the right-upper corner and make sure it's correct.
 
