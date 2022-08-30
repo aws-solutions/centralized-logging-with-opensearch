@@ -11,7 +11,7 @@
         <link rel="canonical" href="https://awslabs.github.io/log-hub/implementation-guide/aws-services/lambda/">
       
       <link rel="icon" href="../../../images/aws-solutions.png">
-      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-8.3.8">
+      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.4.2">
     
     
       
@@ -19,7 +19,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.1d29e8d0.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.69437709.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.cbb835fc.min.css">
@@ -38,7 +38,9 @@
       
     
     
-    <script>__md_scope=new URL("../../..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+      <link rel="stylesheet" href="../../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -72,9 +74,7 @@
     </div>
     
       <div data-md-component="outdated" hidden>
-        <aside class="md-banner md-banner--warning">
-          
-        </aside>
+        
       </div>
     
     
@@ -173,7 +173,7 @@
         <a href="https://github.com/awslabs/log-hub" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.1.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
     awslabs/log-hub
@@ -294,7 +294,7 @@
       <a href="https://github.com/awslabs/log-hub" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.1.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
     awslabs/log-hub
@@ -436,8 +436,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../deployment/global-region/" class="md-nav__link">
-        Launch in Global Regions
+      <a href="../../deployment/with-cognito/" class="md-nav__link">
+        With Cognito User Pool
       </a>
     </li>
   
@@ -450,8 +450,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../deployment/china-region/" class="md-nav__link">
-        Launch in China Regions
+      <a href="../../deployment/with-oidc/" class="md-nav__link">
+        With OpenID Connect
       </a>
     </li>
   
@@ -821,6 +821,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#sample-dashboard" class="md-nav__link">
+    Sample Dashboard
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -852,6 +859,34 @@
     <li class="md-nav__item">
       <a href="../waf/" class="md-nav__link">
         AWS WAF
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../vpc/" class="md-nav__link">
+        VPC Flow Log
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config/" class="md-nav__link">
+        AWS Config
       </a>
     </li>
   
@@ -1048,26 +1083,14 @@
   
   
   
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_10" type="checkbox" id="__nav_1_10" >
-      
-      
-      
-      
-        <label class="md-nav__link" for="__nav_1_10">
-          FAQ & Troubleshooting
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" aria-label="FAQ & Troubleshooting" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_10">
-          <span class="md-nav__icon md-icon"></span>
-          FAQ & Troubleshooting
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
+    <li class="md-nav__item">
+      <a href="../../link-account/" class="md-nav__link">
+        Cross-Account Ingestion
+      </a>
+    </li>
+  
+
+            
           
             
               
@@ -1097,8 +1120,29 @@
 
             
           
-        </ul>
-      </nav>
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../upgrade/" class="md-nav__link">
+        Upgrading
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../uninstall/" class="md-nav__link">
+        Uninstalling
+      </a>
     </li>
   
 
@@ -1113,18 +1157,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_11" type="checkbox" id="__nav_1_11" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_15" type="checkbox" id="__nav_1_15" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_11">
+        <label class="md-nav__link" for="__nav_1_15">
           Resources
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Resources" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_11">
+        <label class="md-nav__title" for="__nav_1_15">
           <span class="md-nav__icon md-icon"></span>
           Resources
         </label>
@@ -1138,6 +1182,20 @@
     <li class="md-nav__item">
       <a href="../../resources/open-ssl/" class="md-nav__link">
         OpenSSL Installation
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../resources/upload-ssl-certificate/" class="md-nav__link">
+        Upload Certificate
       </a>
     </li>
   
@@ -1171,8 +1229,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../revisions/" class="md-nav__link">
-        Revisions
+      <a href="../../release-notes/" class="md-nav__link">
+        Release Notes
       </a>
     </li>
   
@@ -1371,6 +1429,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../workshop/deployment/create-eks/" class="md-nav__link">
+        2.5 (Optional) Create EKS Cluster
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -1529,6 +1601,20 @@
     <li class="md-nav__item">
       <a href="../../../workshop/log-analytics-pipelines/elb-log/" class="md-nav__link">
         5.3 Ingest Logs via CloudFormation Stack
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../workshop/log-analytics-pipelines/eks-log/" class="md-nav__link">
+        5.4 (Optional) Ingest EKS Pod Logs via Log Hub Console
       </a>
     </li>
   
@@ -2075,6 +2161,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#sample-dashboard" class="md-nav__link">
+    Sample Dashboard
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2111,7 +2204,7 @@
 <li>Choose the <strong>Create a log ingestion</strong> button.</li>
 <li>In the <strong>AWS Services</strong> section, choose <strong>AWS Lambda</strong>.</li>
 <li>Choose <strong>Next</strong>.</li>
-<li>Under <strong>Specify settings</strong>, choose the Lambda function from the dropdown list.</li>
+<li>Under <strong>Specify settings</strong>, choose the Lambda function from the dropdown list. (Optional) If you are ingesting logs from another account, select a <a href="../../link-account/">linked account</a> from the <strong>Account</strong> dropdown first.</li>
 <li>Choose <strong>Next</strong>.</li>
 <li>In the <strong>Specify OpenSearch domain</strong> section, select an imported domain for <strong>Amazon OpenSearch domain</strong>.</li>
 <li>Choose <strong>Yes</strong> for <strong>Sample dashboard</strong> if you want to ingest an associated templated AOS dashboard.</li>
@@ -2123,9 +2216,6 @@
 </ol>
 <h3 id="using-the-cloudformation-stack">Using the CloudFormation Stack</h3>
 <p>This automated AWS CloudFormation template deploys the <em>Log Hub - Lambda Log Ingestion</em> solution in the AWS Cloud.</p>
-<ol>
-<li>
-<p>Log in to the AWS Management Console and select the button to launch the AWS CloudFormation template. You can also download the template as a starting point for your own implementation.</p>
 <table>
 <thead>
 <tr>
@@ -2147,9 +2237,13 @@
 </tr>
 </tbody>
 </table>
+<!-- BEGIN INCLUDE include-cw-cfn-common.md -->
+<ol>
+<li>
+<p>Log in to the AWS Management Console and select the button to launch the AWS CloudFormation template. You can also download the template as a starting point for your own implementation.</p>
 </li>
 <li>
-<p>To launch the stack in a different AWS Region, use the Region selector in the console navigation bar.</p>
+<p>To launch the Log Hub in a different AWS Region, use the Region selector in the console navigation bar.</p>
 </li>
 <li>
 <p>On the <strong>Create stack</strong> page, verify that the correct template URL shows in the <strong>Amazon S3 URL</strong> text box and choose <strong>Next</strong>.</p>
@@ -2171,7 +2265,32 @@
 <tr>
 <td>LogGroupNames</td>
 <td><code>&lt;Requires input&gt;</code></td>
-<td>The names of the CloudWatch log group for Lambda logs.</td>
+<td>The names of the CloudWatch log group for the logs.</td>
+</tr>
+<tr>
+<td>Log Bucket Name</td>
+<td><code>&lt;Requires input&gt;</code></td>
+<td>A S3 bucket name to export the the logs.</td>
+</tr>
+<tr>
+<td>Log Bucket Prefix</td>
+<td><code>&lt;Requires input&gt;</code></td>
+<td>The S3 bucket path prefix which stores the the logs.</td>
+</tr>
+<tr>
+<td>Log Source Account ID</td>
+<td><code>&lt;Optional input&gt;</code></td>
+<td>The AWS Account ID of the CloudWatch log group. Required for cross-account log ingestion (Please <a href="../../link-account/">link an account</a> first). By default, the Account ID you logged in at <strong>Step 1</strong> will be used.</td>
+</tr>
+<tr>
+<td>Log Source Region</td>
+<td><code>&lt;Optional input&gt;</code></td>
+<td>The AWS Region of the CloudWatch log group. By default, the Region you selected at <strong>Step 2</strong> will be used.</td>
+</tr>
+<tr>
+<td>Log Source Account Assume Role</td>
+<td><code>&lt;Optional input&gt;</code></td>
+<td>The IAM Role ARN used for cross-account log ingestion. Required for cross-account log ingestion (Please <a href="../../link-account/">link an account</a> first).</td>
 </tr>
 <tr>
 <td>KDSShardNumber</td>
@@ -2184,49 +2303,74 @@
 <td>The retention hours of Kinesis Data Streams.</td>
 </tr>
 <tr>
-<td>EngineType</td>
+<td>Engine Type</td>
 <td>OpenSearch</td>
 <td>The engine type of the OpenSearch. Select OpenSearch or Elasticsearch.</td>
 </tr>
 <tr>
-<td>DomainName</td>
+<td>OpenSearch Domain Name</td>
 <td><code>&lt;Requires input&gt;</code></td>
 <td>The domain name of the Amazon OpenSearch cluster.</td>
 </tr>
 <tr>
-<td>Endpoint</td>
+<td>OpenSearch Endpoint</td>
 <td><code>&lt;Requires input&gt;</code></td>
 <td>The OpenSearch endpoint URL. For example, <code>vpc-your_opensearch_domain_name-xcvgw6uu2o6zafsiefxubwuohe.us-east-1.es.amazonaws.com</code></td>
 </tr>
 <tr>
-<td>IndexPrefix</td>
+<td>Index Prefix</td>
 <td><code>&lt;requires input&gt;</code></td>
-<td>The target index prefix name in the OpenSearch domain. The solution will append the suffix <code>-YYYY-MM-DD</code> to the index name.</td>
+<td>The common prefix of OpenSearch index for the log. The index name will be <code>&lt;Index Prefix&gt;-&lt;log-type&gt;-&lt;YYYY-MM-DD&gt;</code>.</td>
 </tr>
 <tr>
-<td>CreateDashboard</td>
-<td><code>Yes</code></td>
+<td>Create Sample Dashboard</td>
+<td>Yes</td>
 <td>Whether to create a sample OpenSearch dashboard.</td>
 </tr>
 <tr>
-<td>VPCId</td>
+<td>VPC ID</td>
 <td><code>&lt;requires input&gt;</code></td>
-<td>Select a VPC which has access to the OpenSearch domain. The log processing Lambda will be reside in the selected VPC.</td>
+<td>Select a VPC which has access to the OpenSearch domain. The log processing Lambda will be resides in the selected VPC.</td>
 </tr>
 <tr>
-<td>SecurityGroupId</td>
+<td>Subnet IDs</td>
 <td><code>&lt;requires input&gt;</code></td>
-<td>Select a Security Group which will be associated with the log processing Lambda. Make sure the Security Group has access to the OpenSearch domain.</td>
+<td>Select at least two subnets which has access to the OpenSearch domain. The log processing Lambda will resides in the subnets. Please make sure the subnets has access to the Amazon S3 service.</td>
 </tr>
 <tr>
-<td>SubnetIds</td>
+<td>Security Group ID</td>
 <td><code>&lt;requires input&gt;</code></td>
-<td>Select at least two subnets which have access to the OpenSearch domain. The log processing Lambda will reside in the subnets. Make sure the subnets have access to the Amazon S3 service.</td>
+<td>Select a Security Group which will be associated to the log processing Lambda. Please make sure the Security Group has access to the OpenSearch domain.</td>
 </tr>
 <tr>
-<td>FailedLogBucket</td>
-<td><code>&lt;requires input&gt;</code></td>
-<td>All failed logs will be saved to this S3 bucket under the path <code>s3://&lt;failed-log-buckets&gt;/&lt;account-id&gt;/rds/&lt;stack-name&gt;</code></td>
+<td>S3 Backup Bucket</td>
+<td><code>&lt;Requires input&gt;</code></td>
+<td>The S3 backup bucket name to store the failed ingestion logs.</td>
+</tr>
+<tr>
+<td>Number Of Shards</td>
+<td>5</td>
+<td>Number of shards to distribute the index evenly across all data nodes. Keep the size of each shard between 10-50 GiB.</td>
+</tr>
+<tr>
+<td>Number of Replicas</td>
+<td>1</td>
+<td>Number of replicas for OpenSearch Index. Each replica is a full copy of an index.</td>
+</tr>
+<tr>
+<td>Days to Warm Storage</td>
+<td>0</td>
+<td>The number of days required to move the index into warm storage. This takes effect only when the value is larger than 0 and warm storage is enabled in OpenSearch.</td>
+</tr>
+<tr>
+<td>Days to Cold Storage</td>
+<td>0</td>
+<td>The number of days required to move the index into cold storage. This takes effect only when the value is larger than 0 and cold storage is enabled in OpenSearch.</td>
+</tr>
+<tr>
+<td>Days to Retain</td>
+<td>0</td>
+<td>The total number of days to retain the index. If value is 0, the index will not be deleted.</td>
 </tr>
 </tbody>
 </table>
@@ -2244,7 +2388,20 @@
 <p>Choose <strong>Create</strong> stack to deploy the stack.</p>
 </li>
 </ol>
-<p>You can view the status of the stack in the AWS CloudFormation console in the <strong>Status</strong> column. You should receive a <strong>CREATE_COMPLETE</strong> status in approximately 10 minutes.</p>
+<p>You can view the status of the stack in the AWS CloudFormation console in the <strong>Status</strong> column. You should receive
+a <strong>CREATE_COMPLETE</strong> status in approximately 15 minutes.</p>
+<!-- END INCLUDE -->
+
+<h2 id="sample-dashboard">Sample Dashboard</h2>
+<!-- BEGIN INCLUDE include-dashboard.md -->
+<p>You can access the built-in dashboard in Amazon OpenSearch to view log data. For more information, see <a href="../../getting-started/4.view-dashboard/">View Dashboard</a>.</p>
+<p>You can click the below image to view the high-resolution sample dashboard.</p>
+<!-- END INCLUDE -->
+
+<p><a href="../../../images/dashboards/lambda-db.png"><img alt="lambda-db" src="../../../images/dashboards/lambda-db.png" /></a></p>
+
+
+
 
               
             </article>
@@ -2307,10 +2464,11 @@
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.b97dbffb.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": "latest"}</script>
+    
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.ecf98df9.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": "latest"}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.0238f547.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.9c69f0bc.min.js"></script>
       
     
   </body>

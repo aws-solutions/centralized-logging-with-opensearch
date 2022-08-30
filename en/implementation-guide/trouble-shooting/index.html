@@ -11,7 +11,7 @@
         <link rel="canonical" href="https://awslabs.github.io/log-hub/implementation-guide/trouble-shooting/">
       
       <link rel="icon" href="../../images/aws-solutions.png">
-      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-8.3.8">
+      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.4.2">
     
     
       
@@ -19,7 +19,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.1d29e8d0.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.69437709.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.cbb835fc.min.css">
@@ -38,7 +38,9 @@
       
     
     
-    <script>__md_scope=new URL("../..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -72,9 +74,7 @@
     </div>
     
       <div data-md-component="outdated" hidden>
-        <aside class="md-banner md-banner--warning">
-          
-        </aside>
+        
       </div>
     
     
@@ -173,7 +173,7 @@
         <a href="https://github.com/awslabs/log-hub" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.1.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
     awslabs/log-hub
@@ -294,7 +294,7 @@
       <a href="https://github.com/awslabs/log-hub" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.1.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
     awslabs/log-hub
@@ -436,8 +436,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../deployment/global-region/" class="md-nav__link">
-        Launch in Global Regions
+      <a href="../deployment/with-cognito/" class="md-nav__link">
+        With Cognito User Pool
       </a>
     </li>
   
@@ -450,8 +450,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../deployment/china-region/" class="md-nav__link">
-        Launch in China Regions
+      <a href="../deployment/with-oidc/" class="md-nav__link">
+        With OpenID Connect
       </a>
     </li>
   
@@ -795,6 +795,34 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../aws-services/vpc/" class="md-nav__link">
+        VPC Flow Log
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../aws-services/config/" class="md-nav__link">
+        AWS Config
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -984,29 +1012,15 @@
               
   
   
-    
   
+    <li class="md-nav__item">
+      <a href="../link-account/" class="md-nav__link">
+        Cross-Account Ingestion
+      </a>
+    </li>
   
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
-      
-      
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_10" type="checkbox" id="__nav_1_10" checked>
-      
-      
-      
-      
-        <label class="md-nav__link" for="__nav_1_10">
-          FAQ & Troubleshooting
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" aria-label="FAQ & Troubleshooting" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_10">
-          <span class="md-nav__icon md-icon"></span>
-          FAQ & Troubleshooting
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
+
+            
           
             
               
@@ -1076,6 +1090,20 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#erroruser-xxx-is-not-authorized-to-perform-stsassumerole-on-resource" class="md-nav__link">
+    Error：User xxx is not authorized to perform sts:AssumeRole on resource
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#error-putrecords-api-responded-with-errorinvalidsignatureexception" class="md-nav__link">
+    Error: PutRecords API responded with error='InvalidSignatureException'
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#error-putrecords-api-responded-with-erroraccessdeniedexception" class="md-nav__link">
     Error: PutRecords API responded with error='AccessDeniedException'
   </a>
@@ -1095,6 +1123,27 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#q-my-cloudformation-stack-is-stuck-on-deleting-an-awslambdafunction-resource-when-i-update-the-stack-how-to-resolve-it" class="md-nav__link">
+    Q. My CloudFormation stack is stuck on deleting an AWS::Lambda::Function resource when I update the stack. How to resolve it?
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#q-the-agent-status-is-offline-after-i-restart-the-ec2-instance-how-can-i-make-it-auto-start-on-instance-restart" class="md-nav__link">
+    Q. The agent status is offline after I restart the EC2 instance, how can I make it auto start on instance restart?
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#q-i-have-switched-to-global-tenant-however-i-still-cannot-find-the-dashboard-in-opensearch" class="md-nav__link">
+    Q. I have switched to Global tenant. However, I still cannot find the dashboard in OpenSearch.
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1104,8 +1153,29 @@
 
             
           
-        </ul>
-      </nav>
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../upgrade/" class="md-nav__link">
+        Upgrading
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../uninstall/" class="md-nav__link">
+        Uninstalling
+      </a>
     </li>
   
 
@@ -1120,18 +1190,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_11" type="checkbox" id="__nav_1_11" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_15" type="checkbox" id="__nav_1_15" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_11">
+        <label class="md-nav__link" for="__nav_1_15">
           Resources
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Resources" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_11">
+        <label class="md-nav__title" for="__nav_1_15">
           <span class="md-nav__icon md-icon"></span>
           Resources
         </label>
@@ -1145,6 +1215,20 @@
     <li class="md-nav__item">
       <a href="../resources/open-ssl/" class="md-nav__link">
         OpenSSL Installation
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../resources/upload-ssl-certificate/" class="md-nav__link">
+        Upload Certificate
       </a>
     </li>
   
@@ -1178,8 +1262,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../revisions/" class="md-nav__link">
-        Revisions
+      <a href="../release-notes/" class="md-nav__link">
+        Release Notes
       </a>
     </li>
   
@@ -1378,6 +1462,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../workshop/deployment/create-eks/" class="md-nav__link">
+        2.5 (Optional) Create EKS Cluster
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -1536,6 +1634,20 @@
     <li class="md-nav__item">
       <a href="../../workshop/log-analytics-pipelines/elb-log/" class="md-nav__link">
         5.3 Ingest Logs via CloudFormation Stack
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../workshop/log-analytics-pipelines/eks-log/" class="md-nav__link">
+        5.4 (Optional) Ingest EKS Pod Logs via Log Hub Console
       </a>
     </li>
   
@@ -2070,6 +2182,20 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#erroruser-xxx-is-not-authorized-to-perform-stsassumerole-on-resource" class="md-nav__link">
+    Error：User xxx is not authorized to perform sts:AssumeRole on resource
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#error-putrecords-api-responded-with-errorinvalidsignatureexception" class="md-nav__link">
+    Error: PutRecords API responded with error='InvalidSignatureException'
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#error-putrecords-api-responded-with-erroraccessdeniedexception" class="md-nav__link">
     Error: PutRecords API responded with error='AccessDeniedException'
   </a>
@@ -2086,6 +2212,27 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#q-my-cloudformation-stack-is-stuck-on-deleting-an-awslambdafunction-resource-when-i-update-the-stack-how-to-resolve-it" class="md-nav__link">
+    Q. My CloudFormation stack is stuck on deleting an AWS::Lambda::Function resource when I update the stack. How to resolve it?
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#q-the-agent-status-is-offline-after-i-restart-the-ec2-instance-how-can-i-make-it-auto-start-on-instance-restart" class="md-nav__link">
+    Q. The agent status is offline after I restart the EC2 instance, how can I make it auto start on instance restart?
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#q-i-have-switched-to-global-tenant-however-i-still-cannot-find-the-dashboard-in-opensearch" class="md-nav__link">
+    Q. I have switched to Global tenant. However, I still cannot find the dashboard in OpenSearch.
+  </a>
   
 </li>
       
@@ -2117,6 +2264,17 @@
 <h2 id="error-unable-to-add-backend-role">Error: Unable to add backend role</h2>
 <p>Log Hub only supports AOS domain with <a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/fgac.html">Fine-grained access control</a> enabled.
 You need to go to AOS console, and edit the <strong>Access policy</strong> for the AOS domain.</p>
+<h2 id="erroruser-xxx-is-not-authorized-to-perform-stsassumerole-on-resource">Error：User xxx is not authorized to perform sts:AssumeRole on resource</h2>
+<p><img alt="" src="../../images/faq/assume-role-latency.png" /></p>
+<p>If you see this error, please make sure you have entered the correct information during <a href="../link-account/">cross account setup</a>, and then please wait for several minutes.</p>
+<p>Log Hub uses <a href="https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html">AssumeRole</a> for cross-account access.
+This is the best practice to temporary access the AWS resources in your sub-account. 
+However, these roles created during <a href="../link-account/">cross account setup</a> take seconds or minutes to be affective.</p>
+<h2 id="error-putrecords-api-responded-with-errorinvalidsignatureexception">Error: PutRecords API responded with error='InvalidSignatureException'</h2>
+<p>Fluent-bit agent reports PutRecords API responded with error='InvalidSignatureException', message='The request signature we calculated does not match the signature you provided. Check your AWS Secret Access Key and signing method. Consult the service documentation for details.'</p>
+<p>Please restart the fluent-bit agent. Eg. on EC2 with Amazon Linux2, run command:
+<div class="highlight"><pre><span></span><code>sudo service fluent-bit restart
+</code></pre></div></p>
 <h2 id="error-putrecords-api-responded-with-erroraccessdeniedexception">Error: PutRecords API responded with error='AccessDeniedException'</h2>
 <p>Fluent-bit agent deployed on EKS Cluster reports "AccessDeniedException" when sending records to Kinesis</p>
 <h3 id="verify-that-the-iam-role-trust-relations-are-correctly-set">Verify that the IAM role trust relations are correctly set.</h3>
@@ -2129,6 +2287,29 @@ You need to go to AOS console, and edit the <strong>Access policy</strong> for t
 <li>Choose the <strong>Trust relationships</strong> to verify that the OIDC Provider, the service account namespace and conditions are correctly set.</li>
 </ol>
 <p>You can get more information from Amazon EKS <a href="https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts-technical-overview.html#iam-role-configuration">IAM role configuration</a></p>
+<h2 id="q-my-cloudformation-stack-is-stuck-on-deleting-an-awslambdafunction-resource-when-i-update-the-stack-how-to-resolve-it">Q. My CloudFormation stack is stuck on deleting an <code>AWS::Lambda::Function</code> resource when I update the stack. How to resolve it?</h2>
+<p><img alt="" src="../../images/faq/cloudformation-stuck.png" />
+The Lambda function resides in a VPC, and you need to wait for the associated ENI resource to be deleted.</p>
+<h2 id="q-the-agent-status-is-offline-after-i-restart-the-ec2-instance-how-can-i-make-it-auto-start-on-instance-restart">Q. The agent status is offline after I restart the EC2 instance, how can I make it auto start on instance restart?</h2>
+<p>This usually happens if you have installed the logging agent, but restart the instance before you create any Log Ingestion. The Logging
+Agent will auto restart if there is at least one Log Ingestion. If you have a log ingestion, but the problem still exists, you can use <code>systemctl status fluent-bit</code>
+to check its status inside the instance.</p>
+<h2 id="q-i-have-switched-to-global-tenant-however-i-still-cannot-find-the-dashboard-in-opensearch">Q. I have switched to Global tenant. However, I still cannot find the dashboard in OpenSearch.</h2>
+<p>This is usually because Log Hub received 403 error from OpenSearch when creating the index template and dashboard. This 
+can be fixed by re-run the Lambda function manually by following the steps below:</p>
+<p>With the Log Hub console:</p>
+<ol>
+<li>Open the Log Hub console, and find the AWS Service Log pipeline which has this issue.</li>
+<li>Copy the first 5 characters from the ID section. Eg. you should copy <code>c169c</code> from ID <code>c169cb23-88f3-4a7e-90d7-4ab4bc18982c</code></li>
+<li>Go to AWS Console &gt; Lambda. Paste in function filters. This will filter in all the lambda function created for this AWS Service Log ingestion.</li>
+<li>Click the Lambda function whose name contains "OpenSearchHelperFn".</li>
+<li>In the <strong>Test</strong> tab, create a new event with any Event name.</li>
+<li>Click the <strong>Test</strong> button to trigger the Lambda, and wait the lambda function to complete.</li>
+<li>The dashboard should be available in OpenSearch</li>
+</ol>
+
+
+
 
               
             </article>
@@ -2160,13 +2341,13 @@ You need to go to AOS console, and edit the <strong>Access policy</strong> for t
       
       
         
-        <a href="../resources/open-ssl/" class="md-footer__link md-footer__link--next" aria-label="Next: OpenSSL Installation" rel="next">
+        <a href="../upgrade/" class="md-footer__link md-footer__link--next" aria-label="Next: Upgrading" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              OpenSSL Installation
+              Upgrading
             </div>
           </div>
           <div class="md-footer__button md-icon">
@@ -2191,10 +2372,11 @@ You need to go to AOS console, and edit the <strong>Access policy</strong> for t
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs"], "search": "../../assets/javascripts/workers/search.b97dbffb.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": "latest"}</script>
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs"], "search": "../../assets/javascripts/workers/search.ecf98df9.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": "latest"}</script>
     
     
-      <script src="../../assets/javascripts/bundle.0238f547.min.js"></script>
+      <script src="../../assets/javascripts/bundle.9c69f0bc.min.js"></script>
       
     
   </body>

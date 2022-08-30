@@ -11,7 +11,7 @@
         <link rel="canonical" href="https://awslabs.github.io/log-hub/implementation-guide/cost/">
       
       <link rel="icon" href="../../images/aws-solutions.png">
-      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-8.3.8">
+      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.4.2">
     
     
       
@@ -19,7 +19,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.1d29e8d0.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.69437709.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.cbb835fc.min.css">
@@ -38,7 +38,9 @@
       
     
     
-    <script>__md_scope=new URL("../..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -72,9 +74,7 @@
     </div>
     
       <div data-md-component="outdated" hidden>
-        <aside class="md-banner md-banner--warning">
-          
-        </aside>
+        
       </div>
     
     
@@ -173,7 +173,7 @@
         <a href="https://github.com/awslabs/log-hub" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.1.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
     awslabs/log-hub
@@ -294,7 +294,7 @@
       <a href="https://github.com/awslabs/log-hub" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.1.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
     awslabs/log-hub
@@ -388,6 +388,21 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#amazon-opensearch-cost" class="md-nav__link">
+    Amazon OpenSearch Cost
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#processing-cost" class="md-nav__link">
+    Processing Cost
+  </a>
+  
+    <nav class="md-nav" aria-label="Processing Cost">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#aws-service-logs" class="md-nav__link">
     AWS Service Logs
   </a>
@@ -406,8 +421,8 @@
     </nav>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#application-logs" class="md-nav__link">
     Application Logs
   </a>
@@ -416,9 +431,21 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#ingest-logs-from-amazon-ec2-or-amazon-eks" class="md-nav__link">
-    Ingest logs from Amazon EC2 or Amazon EKS
+  <a href="#ingest-logs-from-amazon-ec2" class="md-nav__link">
+    Ingest logs from Amazon EC2
   </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ingest-logs-from-amazon-eks" class="md-nav__link">
+    Ingest logs from Amazon EKS
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -428,16 +455,29 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#additional-features-cost" class="md-nav__link">
+    Additional Features Cost
+  </a>
+  
+    <nav class="md-nav" aria-label="Additional Features Cost">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#access-proxy" class="md-nav__link">
     Access Proxy
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#alarms" class="md-nav__link">
     Alarms
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -524,8 +564,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../deployment/global-region/" class="md-nav__link">
-        Launch in Global Regions
+      <a href="../deployment/with-cognito/" class="md-nav__link">
+        With Cognito User Pool
       </a>
     </li>
   
@@ -538,8 +578,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../deployment/china-region/" class="md-nav__link">
-        Launch in China Regions
+      <a href="../deployment/with-oidc/" class="md-nav__link">
+        With OpenID Connect
       </a>
     </li>
   
@@ -883,6 +923,34 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../aws-services/vpc/" class="md-nav__link">
+        VPC Flow Log
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../aws-services/config/" class="md-nav__link">
+        AWS Config
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -1073,26 +1141,14 @@
   
   
   
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_10" type="checkbox" id="__nav_1_10" >
-      
-      
-      
-      
-        <label class="md-nav__link" for="__nav_1_10">
-          FAQ & Troubleshooting
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" aria-label="FAQ & Troubleshooting" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_10">
-          <span class="md-nav__icon md-icon"></span>
-          FAQ & Troubleshooting
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
+    <li class="md-nav__item">
+      <a href="../link-account/" class="md-nav__link">
+        Cross-Account Ingestion
+      </a>
+    </li>
+  
+
+            
           
             
               
@@ -1122,8 +1178,29 @@
 
             
           
-        </ul>
-      </nav>
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../upgrade/" class="md-nav__link">
+        Upgrading
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../uninstall/" class="md-nav__link">
+        Uninstalling
+      </a>
     </li>
   
 
@@ -1138,18 +1215,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_11" type="checkbox" id="__nav_1_11" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_15" type="checkbox" id="__nav_1_15" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_11">
+        <label class="md-nav__link" for="__nav_1_15">
           Resources
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Resources" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_11">
+        <label class="md-nav__title" for="__nav_1_15">
           <span class="md-nav__icon md-icon"></span>
           Resources
         </label>
@@ -1163,6 +1240,20 @@
     <li class="md-nav__item">
       <a href="../resources/open-ssl/" class="md-nav__link">
         OpenSSL Installation
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../resources/upload-ssl-certificate/" class="md-nav__link">
+        Upload Certificate
       </a>
     </li>
   
@@ -1196,8 +1287,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../revisions/" class="md-nav__link">
-        Revisions
+      <a href="../release-notes/" class="md-nav__link">
+        Release Notes
       </a>
     </li>
   
@@ -1396,6 +1487,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../workshop/deployment/create-eks/" class="md-nav__link">
+        2.5 (Optional) Create EKS Cluster
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -1554,6 +1659,20 @@
     <li class="md-nav__item">
       <a href="../../workshop/log-analytics-pipelines/elb-log/" class="md-nav__link">
         5.3 Ingest Logs via CloudFormation Stack
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../workshop/log-analytics-pipelines/eks-log/" class="md-nav__link">
+        5.4 (Optional) Ingest EKS Pod Logs via Log Hub Console
       </a>
     </li>
   
@@ -2074,6 +2193,21 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#amazon-opensearch-cost" class="md-nav__link">
+    Amazon OpenSearch Cost
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#processing-cost" class="md-nav__link">
+    Processing Cost
+  </a>
+  
+    <nav class="md-nav" aria-label="Processing Cost">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#aws-service-logs" class="md-nav__link">
     AWS Service Logs
   </a>
@@ -2092,8 +2226,8 @@
     </nav>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#application-logs" class="md-nav__link">
     Application Logs
   </a>
@@ -2102,9 +2236,21 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#ingest-logs-from-amazon-ec2-or-amazon-eks" class="md-nav__link">
-    Ingest logs from Amazon EC2 or Amazon EKS
+  <a href="#ingest-logs-from-amazon-ec2" class="md-nav__link">
+    Ingest logs from Amazon EC2
   </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ingest-logs-from-amazon-eks" class="md-nav__link">
+    Ingest logs from Amazon EKS
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -2114,16 +2260,29 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#additional-features-cost" class="md-nav__link">
+    Additional Features Cost
+  </a>
+  
+    <nav class="md-nav" aria-label="Additional Features Cost">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#access-proxy" class="md-nav__link">
     Access Proxy
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#alarms" class="md-nav__link">
     Alarms
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2146,49 +2305,318 @@
 
 
 <h1 id="cost-estimation">Cost Estimation</h1>
-<p>You will be responsible for the cost of using each of the AWS services when running the solution. As of June 2022, the main factors affecting the solution cost include:</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>The cost estimation in this section is just examples. They are calculated based on assumptions, and may vary in your environment.</p>
+</div>
+<p>You will be responsible for the cost of using each of the AWS services when running the solution. As of June 2022, the 
+main factors affecting the solution cost include:</p>
 <ul>
 <li>Type of logs to be ingested</li>
 <li>Volume of logs to be ingested/processed</li>
+<li>Size of the log message</li>
 <li>Location of logs</li>
-<li>Features of Log Hub</li>
+<li>Additional features</li>
 </ul>
-<div class="admonition important">
-<p class="admonition-title">Important</p>
-<p>The cost estimation does not include the cost of Amazon OpenSearch cluster. All price models are calculated based on the AWS service price of US East (N. Virginia) region.</p>
-</div>
-<h2 id="aws-service-logs">AWS Service Logs</h2>
-<p>Depending on the log location, the cost of ingesting and processing service logs may vary. </p>
-<h3 id="logs-in-amazon-s3">Logs in Amazon S3</h3>
-<p>Assume AWS Services save logs to Amazon S3 every 5 minutes in a file, and the maximum log file size is 10 MB. 
-The Lambda memory is 128 MB. The average Lambda runtime for processing a log file less than 5 MB is 500ms, and the average Lambda runtime for processing a log file less than 10 MB is 1000ms.</p>
-<p><strong>Example: 1 GB/day</strong></p>
-<p>You have 1 GB service log saved to S3 per day. The cost estimation is as follows: </p>
+<p>This section will walk you through the cost estimation of 10/100/1000 GB daily log ingestion. The total cost is composed of 
+the <a href="#amazon-opensearch-cost"><strong>Amazon OpenSearch cost</strong></a>, the <a href="#processing-cost"><strong>Processing Cost</strong></a>, and the <a href="#additional-features-cost"><strong>Additional Features Cost</strong></a>.
+All the cost estimation is All price models are calculated based on the AWS service price of US East (N. Virginia) region.</p>
+<h2 id="amazon-opensearch-cost">Amazon OpenSearch Cost</h2>
 <ul>
-<li>Lambda Cost = 288 log file per day (3.47 MB per file) x 500 ms x $0.0000000021 per ms x 30 days = $0.009/month</li>
-<li>SQS Cost = 288 requests per day x 30 days = Within free tier</li>
-<li>S3 Storage Cost = $0.023 per GB x 30 GB / month = $0.69/month</li>
-<li>S3 Requests Cost = 288 requests per day x 30 days x $0.005 per 1000 requests = $0.04/month</li>
+<li><strong>OD</strong>: On Demand</li>
+<li><strong>AURI_1</strong>: All Upfront Reserved Instance 1 Year</li>
+<li><strong>Tiering</strong>: The days stored in each tier. For example, 7H + 23W + 60C represents the log is stored in hot tier for 7 days,  warm tier for 23 days, and cold tier for 60 days.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Daily log Volume (GB)</th>
+<th>Retention (days)</th>
+<th>Tiering</th>
+<th>Replica</th>
+<th>Dedicated Master</th>
+<th>Data Node</th>
+<th>EBS (GB)</th>
+<th>UW Nodes</th>
+<th>UW/Cold S3 Storage (GB)</th>
+<th>OD Monthly ($)</th>
+<th>OD cost per GB ($)</th>
+<th>AURI_1 Monthly ($)</th>
+<th>AURI_1 cost per GB ($)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>10</td>
+<td>30</td>
+<td>30H</td>
+<td>0</td>
+<td>N/A</td>
+<td>c6g.large[2]</td>
+<td>380</td>
+<td>N/A</td>
+<td>0</td>
+<td>216.28</td>
+<td>0.72093</td>
+<td>158.54</td>
+<td>0.52847</td>
+</tr>
+<tr>
+<td>10</td>
+<td>30</td>
+<td>30H</td>
+<td>1</td>
+<td>N/A</td>
+<td>m6g.large[2]</td>
+<td>760</td>
+<td>N/A</td>
+<td>0</td>
+<td>289.35</td>
+<td>0.9645</td>
+<td>223.94</td>
+<td>0.74647</td>
+</tr>
+<tr>
+<td>100</td>
+<td>30</td>
+<td>7H + 23W</td>
+<td>0</td>
+<td>m6g.large[3]</td>
+<td>m6g.large[2]</td>
+<td>886</td>
+<td>medium[2]</td>
+<td>0</td>
+<td>989.49</td>
+<td>0.32983</td>
+<td>825.97</td>
+<td>0.27532</td>
+</tr>
+<tr>
+<td>100</td>
+<td>30</td>
+<td>7H + 23W</td>
+<td>1</td>
+<td>m6g.large[3]</td>
+<td>m6g.large[4]</td>
+<td>1772</td>
+<td>medium[2]</td>
+<td>0</td>
+<td>1295.85</td>
+<td>0.43195</td>
+<td>1066.92</td>
+<td>0.35564</td>
+</tr>
+<tr>
+<td>100</td>
+<td>90</td>
+<td>7H + 23W + 60C</td>
+<td>0</td>
+<td>m6g.large[3]</td>
+<td>m6g.large[2]</td>
+<td>886</td>
+<td>medium[2]</td>
+<td>8300</td>
+<td>1133.49</td>
+<td>0.12594</td>
+<td>969.97</td>
+<td>0.10777</td>
+</tr>
+<tr>
+<td>100</td>
+<td>90</td>
+<td>7H + 23W + 60C</td>
+<td>1</td>
+<td>m6g.large[3]</td>
+<td>m6g.large[4]</td>
+<td>1772</td>
+<td>medium[2]</td>
+<td>8300</td>
+<td>1439.85</td>
+<td>0.15998</td>
+<td>1210.92</td>
+<td>0.13455</td>
+</tr>
+<tr>
+<td>100</td>
+<td>180</td>
+<td>7H + 23W + 150C</td>
+<td>0</td>
+<td>m6g.large[3]</td>
+<td>m6g.large[2]</td>
+<td>886</td>
+<td>medium[2]</td>
+<td>17300</td>
+<td>1349.49</td>
+<td>0.07497</td>
+<td>1185.97</td>
+<td>0.06589</td>
+</tr>
+<tr>
+<td>100</td>
+<td>180</td>
+<td>7H + 23W + 150C</td>
+<td>1</td>
+<td>m6g.large[3]</td>
+<td>m6g.large[4]</td>
+<td>1772</td>
+<td>medium[2]</td>
+<td>17300</td>
+<td>1655.85</td>
+<td>0.09199</td>
+<td>1426.92</td>
+<td>0.07927</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>30</td>
+<td>7H + 23W</td>
+<td>0</td>
+<td>m6g.large[3]</td>
+<td>r6g.xlarge[6]</td>
+<td>8856</td>
+<td>medium[15]</td>
+<td>23000</td>
+<td>6101.15</td>
+<td>0.20337</td>
+<td>5489.48</td>
+<td>0.18298</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>30</td>
+<td>7H + 23W</td>
+<td>1</td>
+<td>m6g.large[3]</td>
+<td>r6g.2xlarge[6]</td>
+<td>17712</td>
+<td>medium[15]</td>
+<td>23000</td>
+<td>8759.49</td>
+<td>0.29198</td>
+<td>7635.8</td>
+<td>0.25453</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>90</td>
+<td>7H + 23W + 60C</td>
+<td>0</td>
+<td>m6g.large[3]</td>
+<td>r6g.xlarge[6]</td>
+<td>8856</td>
+<td>medium[15]</td>
+<td>83000</td>
+<td>8027.33</td>
+<td>0.08919</td>
+<td>7245.45</td>
+<td>0.0805</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>90</td>
+<td>7H + 23W + 60C</td>
+<td>1</td>
+<td>m6g.large[3]</td>
+<td>r6g.2xlarge[6]</td>
+<td>17712</td>
+<td>medium[15]</td>
+<td>83000</td>
+<td>10199.49</td>
+<td>0.11333</td>
+<td>9075.8</td>
+<td>0.10084</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>180</td>
+<td>7H + 23W + 150C</td>
+<td>0</td>
+<td>m6g.large[3]</td>
+<td>r6g.xlarge[6]</td>
+<td>8856</td>
+<td>medium[15]</td>
+<td>173000</td>
+<td>9701.15</td>
+<td>0.0539</td>
+<td>9089.48</td>
+<td>0.0505</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>180</td>
+<td>7H + 23W + 150C</td>
+<td>1</td>
+<td>m6g.large[3]</td>
+<td>r6g.2xlarge[6]</td>
+<td>17712</td>
+<td>medium[15]</td>
+<td>173000</td>
+<td>12644.19</td>
+<td>0.07025</td>
+<td>11420.86</td>
+<td>0.06345</td>
+</tr>
+</tbody>
+</table>
+<h2 id="processing-cost">Processing Cost</h2>
+<h3 id="aws-service-logs">AWS Service Logs</h3>
+<p>Depending on the log location, the cost of ingesting and processing service logs may vary. </p>
+<h4 id="logs-in-amazon-s3">Logs in Amazon S3</h4>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Ingest AWS service logs from S3 will incur SQS and S3 request fees which are very low, usually within the free tier.</p>
+</div>
+<p>Here are the assumptions:</p>
+<ul>
+<li>AWS Services save logs to Amazon S3 every 5 minutes in gzip format (most of AWS services output logs in gzip). </li>
+<li>A 4MB compressed log file in S3 is roughly 100MB in raw log size</li>
+<li>A Lambda with 1GB memory takes about 26 seconds to process a 4MB log file, namely 260 ms per MB raw logs. </li>
+<li>The maximum compressed log file size is 5MB.</li>
+</ul>
+<p>You have <code>N</code> GB raw log per day, and the daily cost estimation is as follows: </p>
+<ul>
+<li>Lambda Cost = 260 ms per MB x 1024 MB x <code>N</code> GB/day x $0.0000000167 per ms</li>
+<li>S3 Storage Cost = $0.023 per GB x <code>N</code>GB/day * 4% (compression)</li>
 </ul>
 <p>The total monthly cost for ingesting AWS service logs is:</p>
-<ul>
-<li><strong>Total Monthly Charges</strong> = $0.018 Lambda Cost + $0.69 S3 Storage Cost + $0.04 S3 Requests Cost = <strong>$0.742</strong></li>
-</ul>
-<p><strong>Example 2: 100 GB/day</strong></p>
-<p>You have 100 GB service log saved to S3 per day. The cost estimation is as follows: </p>
-<ul>
-<li>Lambda Cost = 10000 log file per day (10 MB per file) x 1000 ms x $0.0000000021 per ms x 30 days = $0.63/month</li>
-<li>SQS Cost = 10000 requests per day x 30 days = Within free tier</li>
-<li>S3 Storage Cost = $0.023 per GB x 3,000 GB / month = $69/month</li>
-<li>S3 Requests Cost = 10000 requests per day x 30 days x $0.005 per 1000 requests = $1.5/month</li>
-</ul>
-<p>The total monthly cost for ingesting AWS service logs is as follows:</p>
-<ul>
-<li><strong>Total Monthly Charges</strong> = $1.26 Lambda Cost + $69 S3 Storage Cost + $1.5 S3 Requests Cost = <strong>$71.13</strong></li>
-</ul>
-<h2 id="application-logs">Application Logs</h2>
+<p><strong>Total Monthly Charges</strong> = (Lambda Cost + S3 Storage Cost) x 30 days</p>
+<table>
+<thead>
+<tr>
+<th>Daily Log Volume</th>
+<th>Daily Lambda Cost $</th>
+<th>Daily S3 Storage Cost $</th>
+<th>Monthly $</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>10</td>
+<td>0.044</td>
+<td>0.009</td>
+<td>1.610</td>
+</tr>
+<tr>
+<td>100</td>
+<td>0.445</td>
+<td>0.092</td>
+<td>16.099</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>4.446</td>
+<td>0.920</td>
+<td>160.986</td>
+</tr>
+</tbody>
+</table>
+<h3 id="application-logs">Application Logs</h3>
 <p>Depending on the log location, the cost of ingesting and processing application logs may vary.</p>
-<h3 id="ingest-logs-from-amazon-ec2-or-amazon-eks">Ingest logs from Amazon EC2 or Amazon EKS</h3>
+<h4 id="ingest-logs-from-amazon-ec2">Ingest logs from Amazon EC2</h4>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>If you have multiple log format (index), you need to estimate each of them.</p>
+</div>
 <p>The cost estimation is based on the following assumptions and facts:</p>
 <ul>
 <li>30% more shards are provided to handle traffic jitter. </li>
@@ -2197,25 +2625,63 @@ The Lambda memory is 128 MB. The average Lambda runtime for processing a log fil
 <li>Every Lambda invocation process 1 MB logs.</li>
 <li>One Lambda invocation simultaneously to process one shard of Kinesis. </li>
 <li>The Lambda runtime to process log less than 5 MB is 500ms.</li>
+<li>One Kinesis shard intake log size is =  1 MB /second x 3600 seconds per hour x 24 hours x 0.7 = 60.48 GB/day.</li>
+<li>The daily log volume is <code>X</code> GB.</li>
+<li>The desired Kinesis Shard number <code>S</code> is = Round_up_to_next_integer(Daily log volume <code>X</code> / 60.48).</li>
 </ul>
-<p>Based on the assumptions, one Kinesis shard intake log size is =  1 MB /second x 3600 seconds per hour x 24 hours x 0.7 = 60.48 GB/day</p>
-<p><strong>Example: 1 GB/day</strong></p>
-<p>You have 1 GB application log sending from EC2 or EKS to KDS, namely 1 million log message per day. </p>
+<p>Based on the above assumptions, here is the daily cost estimation formula:</p>
 <ul>
-<li>Kinesis Shard Hour Cost = $0.015 / shard hour x 24 hours per day x 30 days per month = $10.8/month</li>
-<li>Kinesis PUT Payload Unit Cost = $0.014 per million units * 1 millions per day * 30 days per month = $0.42/month</li>
-<li>Lambda Cost = $0.0000000167 per 1ms x 500 ms per invocation x  1,000 invocations per day (1 GB / 1 MB per invocation) x 30 days per month = $7.52/month</li>
+<li>Kinesis Shard Hour Cost = $0.015 / shard hour x 24 hours per day x <code>S</code> shards</li>
+<li>Kinesis PUT Payload Unit Cost =  $0.014 per million units * 1 millions per GB x <code>X</code> GB per day</li>
+<li>Lambda Cost = $0.0000000167 per 1ms x 500 ms per invocation x 1,000 invocations per GB x <code>X</code> GB per day</li>
 </ul>
-<p><strong>Total Monthly Charges</strong> = $10.8 Kinesis Shard Hour Cost + $4.2 Kinesis PUT Payload Unit Cost + $2.51 Lambda Cost = <strong>$18.74</strong></p>
-<p><strong>Example: 100 GB/day</strong></p>
-<p>You have 100 GB application log sending from EC2 or EKS to KDS, namely 100 million log message per day.</p>
-<ul>
-<li>Kinesis Shard Hour Cost = $0.015 / shard hour x 2 shards x 24 hours per day x 30 days per month = $21.6/month</li>
-<li>Kinesis PUT Payload Unit Cost = $0.014 per million units * 100 millions per day * 30 days per month = $42/month</li>
-<li>Lambda Cost = $0.0000000167 per 1ms x 500 ms per invocation x  100,000 invocations per day (100 GB / 1 MB per invocation) x 30 days per month = $25.05/month</li>
-</ul>
-<p><strong>Total Monthly Charges</strong> = $183.6 Kinesis Shard Hour Cost + $420 Kinesis PUT Payload Unit Cost + $7,515 Lambda Cost = <strong>$88.65</strong></p>
-<h2 id="access-proxy">Access Proxy</h2>
+<p><strong>Total Monthly Charges</strong> = (Kinesis Shard Hour Cost + Kinesis PUT Payload Unit Cost + Lambda Cost) x 30 days</p>
+<table>
+<thead>
+<tr>
+<th>Daily Log Volume (GB)</th>
+<th>Shards</th>
+<th>Daily Kinesis Shard Hour Cost</th>
+<th>Daily Kinesis PUT Payload Unit Cost</th>
+<th>Daily Lambda Cost</th>
+<th>Monthly $</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>10</td>
+<td>1</td>
+<td>0.36</td>
+<td>0.14</td>
+<td>0.0835</td>
+<td>17.505</td>
+</tr>
+<tr>
+<td>100</td>
+<td>2</td>
+<td>0.72</td>
+<td>1.4</td>
+<td>0.835</td>
+<td>88.65</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>17</td>
+<td>6.12</td>
+<td>14</td>
+<td>8.35</td>
+<td>854.1</td>
+</tr>
+</tbody>
+</table>
+<h4 id="ingest-logs-from-amazon-eks">Ingest logs from Amazon EKS</h4>
+<p>Currently, there is no buffer layer between EKS and Amazon OpenSearch, and there is no additional cost.</p>
+<h2 id="additional-features-cost">Additional Features Cost</h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You will not be charged if you do not turn on the additional features in the Log Hub console.</p>
+</div>
+<h3 id="access-proxy">Access Proxy</h3>
 <p>If you deploy the <a href="../domains/proxy/">Access Proxy</a> through Log Hub, the following charges will apply.  </p>
 <ul>
 <li>EC2 Cost = t3.large 1Y RI All Upfront $426.612 x 2  / 12 months  = $71.1/month</li>
@@ -2223,8 +2689,11 @@ The Lambda memory is 128 MB. The average Lambda runtime for processing a log fil
 <li>Elastic Load Balancer Cost = $0.0225 per ALB-hour x 720 hours/month = $16.2/month</li>
 </ul>
 <p><strong>Total Monthly Charges</strong> = $71.1 EC2 Cost + $1.6 EBS Cost + $16.2 Elastic Load Balancer Cost = <strong>$88.9</strong></p>
-<h2 id="alarms">Alarms</h2>
+<h3 id="alarms">Alarms</h3>
 <p>If you deploy the <a href="../domains/alarms/">Alarms</a> through Log Hub, the <a href="https://aws.amazon.com/cloudwatch/pricing/">CloudWatch Price</a> will apply.</p>
+
+
+
 
               
             </article>
@@ -2287,10 +2756,11 @@ The Lambda memory is 128 MB. The average Lambda runtime for processing a log fil
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs"], "search": "../../assets/javascripts/workers/search.b97dbffb.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": "latest"}</script>
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs"], "search": "../../assets/javascripts/workers/search.ecf98df9.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": "latest"}</script>
     
     
-      <script src="../../assets/javascripts/bundle.0238f547.min.js"></script>
+      <script src="../../assets/javascripts/bundle.9c69f0bc.min.js"></script>
       
     
   </body>

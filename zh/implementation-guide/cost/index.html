@@ -11,7 +11,7 @@
         <link rel="canonical" href="https://awslabs.github.io/log-hub/implementation-guide/cost/">
       
       <link rel="icon" href="../../images/aws-solutions.png">
-      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-8.3.8">
+      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.4.2">
     
     
       
@@ -19,7 +19,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.1d29e8d0.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.69437709.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.cbb835fc.min.css">
@@ -38,7 +38,9 @@
       
     
     
-    <script>__md_scope=new URL("../..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -72,9 +74,7 @@
     </div>
     
       <div data-md-component="outdated" hidden>
-        <aside class="md-banner md-banner--warning">
-          
-        </aside>
+        
       </div>
     
     
@@ -173,7 +173,7 @@
         <a href="https://github.com/awslabs/log-hub" title="前往仓库" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.1.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
     awslabs/log-hub
@@ -282,7 +282,7 @@
       <a href="https://github.com/awslabs/log-hub" title="前往仓库" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.1.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
     awslabs/log-hub
@@ -459,7 +459,7 @@
   
     <li class="md-nav__item">
       <a href="../considerations/" class="md-nav__link">
-        区域支持
+        考虑因素
       </a>
     </li>
   
@@ -512,8 +512,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../deployment/global-region/" class="md-nav__link">
-        部署到海外区域
+      <a href="../deployment/with-cognito/" class="md-nav__link">
+        使用 Cognito User Pool
       </a>
     </li>
   
@@ -526,8 +526,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../deployment/china-region/" class="md-nav__link">
-        部署到中国区域
+      <a href="../deployment/with-oidc/" class="md-nav__link">
+        使用 OpenID Connect
       </a>
     </li>
   
@@ -871,6 +871,34 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../aws-services/vpc/" class="md-nav__link">
+        VPC Flow Log
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../aws-services/config/" class="md-nav__link">
+        AWS Config
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -1061,26 +1089,14 @@
   
   
   
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_10" type="checkbox" id="__nav_1_10" >
-      
-      
-      
-      
-        <label class="md-nav__link" for="__nav_1_10">
-          常见问题解答和故障排查
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" aria-label="常见问题解答和故障排查" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_10">
-          <span class="md-nav__icon md-icon"></span>
-          常见问题解答和故障排查
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
+    <li class="md-nav__item">
+      <a href="../link-account/" class="md-nav__link">
+        跨账户日志摄取
+      </a>
+    </li>
+  
+
+            
           
             
               
@@ -1089,7 +1105,7 @@
   
     <li class="md-nav__item">
       <a href="../faq/" class="md-nav__link">
-        常见问题解答
+        常见问题
       </a>
     </li>
   
@@ -1110,8 +1126,15 @@
 
             
           
-        </ul>
-      </nav>
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../upgrade/" class="md-nav__link">
+        更新
+      </a>
     </li>
   
 
@@ -1123,8 +1146,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../revisions/" class="md-nav__link">
-        版本更新
+      <a href="../uninstall/" class="md-nav__link">
+        卸载
       </a>
     </li>
   
@@ -1140,18 +1163,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_12" type="checkbox" id="__nav_1_12" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_15" type="checkbox" id="__nav_1_15" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_12">
+        <label class="md-nav__link" for="__nav_1_15">
           资源
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="资源" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_12">
+        <label class="md-nav__title" for="__nav_1_15">
           <span class="md-nav__icon md-icon"></span>
           资源
         </label>
@@ -1177,6 +1200,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../resources/upload-ssl-certificate/" class="md-nav__link">
+        上传证书
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../resources/aws-services/" class="md-nav__link">
         AWS 服务
       </a>
@@ -1187,6 +1224,20 @@
           
         </ul>
       </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../release-notes/" class="md-nav__link">
+        更新记录
+      </a>
     </li>
   
 
@@ -1355,32 +1406,29 @@
 <h2 id="aws">AWS 服务日志</h2>
 <p>摄取和处理服务日志的成本可能会根据日志位置等情况而有所不同。</p>
 <h3 id="amazon-s3">Amazon S3 中的日志</h3>
-<p>假设 AWS 服务每 5 分钟将日志保存到 Amazon S3 的文件中，并且最大日志文件大小为 10 MB。
-Lambda 内存为 128 MB。处理小于 5 MB 的日志文件的平均 Lambda 运行时间为 500 毫秒，处理小于 10 MB 的日志文件的平均 Lambda 运行时间为 1000 毫秒。</p>
+<p>假设 AWS 服务每 5 分钟将日志保存到 Amazon S3 的文件中，大部分AWS服务的日志都是采用gzip(.gz)压缩，1个4MB的压缩日志文件大概对应100MB的原始日志，Lambda（1GB内存）大概花费26秒处理该4MB文件，差不多就是每MB日志花费260ms。</p>
+<p>成本估算如下：</p>
 <p><strong>例如：1 GB/天</strong></p>
 <p>您每天有 1 GB 的服务日志保存到 S3。成本估算如下：</p>
 <ul>
-<li>Lambda 成本 = 每天 288 个日志文件（每个文件 3.47 MB）x 500 毫秒 x 每毫秒 0.0000000021 美元 x 30 天 = 0.009 美元/月</li>
+<li>Lambda 成本 = 260 毫秒每MB x 每毫秒 0.0000000167 美元 x 30 天 = 0.133 美元/月</li>
 <li>SQS 成本 = 每天 288 个请求 x 30 天 = 在免费套餐内</li>
-<li>S3 存储成本 = 每 GB 0.023 美元 x 30 GB/月 = 0.69 美元/月</li>
-<li>S3 请求成本 = 每天 288 个请求 x 30 天 x 每 1000 个请求 0.005 USD = 0.04 USD/月</li>
+<li>S3 存储成本 = 每 GB 0.023 美元 x 30 GB/月 x 4% （压缩比） = 0.028 美元/月</li>
+<li>S3 请求成本 = 每天 288 个请求 x 30 天 x 每 1000 个请求 0.005 美元 = 0.043 美元/月</li>
 </ul>
 <p>摄取 AWS 服务日志的每月总成本为：</p>
-<ul>
-<li><strong>每月总费用</strong> = 0.018 美元 Lambda 成本 + 0.69 美元 S3 存储成本 + 0.04 美元 S3 请求成本 = <strong>0.742 美元</strong></li>
-</ul>
+<p><strong>每月总费用</strong> = 0.133 美元 Lambda 成本 + 0.028 美元 S3 存储成本 + 0.043 美元 S3 请求成本 = <strong>0.20 美元</strong></p>
 <p><strong>示例 2：100 GB/天</strong></p>
-<p>您每天有 100 GB 的服务日志保存到 S3。成本估算如下：</p>
+<p>您每天有 100 GB 的原始服务日志，存储在S3上大概是4GB（gzip压缩后），按每个日志文件大概5MB算，差不多每天864个日志文件（每5分钟产生3个）。</p>
+<p>成本估算如下：</p>
 <ul>
-<li>Lambda 成本 = 每天 10000 个日志文件（每个文件 10 MB）x 1000 毫秒 x 每毫秒 0.0000000021 美元 x 30 天 = 0.63 美元/月</li>
-<li>SQS 成本 = 每天 10000 个请求 x 30 天 = 在免费套餐内</li>
-<li>S3 存储成本 = 每 GB 0.023 美元 x 3,000 GB/月 = 69 美元/月</li>
-<li>S3 请求成本 = 每天 10000 个请求 x 30 天 x 每 1000 个请求 0.005 USD = 1.5 USD/月</li>
+<li>Lambda 成本 = 260 毫秒每MB x 1024 MB x 100 x 每毫秒 0.0000000167 美元 x 30 天 = 13.34 美元/月</li>
+<li>SQS 成本 = 每天 864 个请求 x 30 天 = 在免费套餐内</li>
+<li>S3 存储成本 = 每 GB 0.023 美元 x 3,000 GB/月 x 4% （压缩比） = 2.76 美元/月</li>
+<li>S3 请求成本 = 每天 864 个请求 x 30 天 x 每 1000 个请求 0.005 美元 = 0.13 美元/月</li>
 </ul>
 <p>摄取 AWS 服务日志的每月总成本如下：</p>
-<ul>
-<li><strong>每月总费用</strong> = 1.26 美元 Lambda 成本 + 69 美元 S3 存储成本 + 1.5 美元 S3 请求成本 = <strong>71.13 美元</strong></li>
-</ul>
+<p><strong>每月总费用</strong> = 13.34 美元 Lambda 成本 + 2.76 美元 S3 存储成本 + 0.13 美元 S3 请求成本 = <strong>16.23 美元</strong></p>
 <h2 id="_2">应用日志</h2>
 <p>摄取和处理应用程序日志的成本可能会根据日志位置等情况而有所不同。</p>
 <h3 id="amazon-ec2-amazon-eks">从 Amazon EC2 或 Amazon EKS 收集日志</h3>
@@ -1399,9 +1447,9 @@ Lambda 内存为 128 MB。处理小于 5 MB 的日志文件的平均 Lambda 运�
 <ul>
 <li>Kinesis 分片小时成本 = 0.015 美元/分片小时 x 每天 24 小时 x 每月 30 天 = 10.8 美元/月</li>
 <li>Kinesis PUT 有效负载单位成本 = 每百万单位 0.014 美元 * 每天 1 百万 * 每月 30 天 = 0.42 美元/月</li>
-<li>Lambda 成本 = 每 1 毫秒 0.0000000167 美元 x 每次调用 500 毫秒 x 每天 1,000 次调用（每次调用 1 GB / 1 MB）x 每月 30 天 = 7.52 美元/月</li>
+<li>Lambda 成本 = 每 1 毫秒 0.0000000167 美元 x 每次调用 500 毫秒 x 每天 1,000 次调用（每次调用 1 GB / 1 MB）x 每月 30 天 = 0.25 美元/月</li>
 </ul>
-<p><strong>每月总费用</strong> = 10.8 美元 Kinesis 分片小时成本 + 4.2 美元 Kinesis PUT 有效负载单位成本 + 2.51 美元 Lambda 成本 = <strong>18.74 美元</strong></p>
+<p><strong>每月总费用</strong> = 10.8 美元 Kinesis 分片小时成本 + 0.42 美元 Kinesis PUT 有效负载单位成本 + 0.25 美元 Lambda 成本 = <strong>11.47 美元</strong></p>
 <p><strong>例如：100 GB/天</strong></p>
 <p>您有 100 GB 的应用程序日志从 EC2 或 EKS 发送到 KDS，即每天 1 亿条日志消息。</p>
 <ul>
@@ -1409,7 +1457,7 @@ Lambda 内存为 128 MB。处理小于 5 MB 的日志文件的平均 Lambda 运�
 <li>Kinesis PUT 有效负载单位成本 = 每百万单位 0.014 美元 * 每天 1 亿 * 每月 30 天 = 42 美元/月</li>
 <li>Lambda 成本 = 每 1 毫秒 0.0000000167 美元 x 每次调用 500 毫秒 x 每天 100,000 次调用（每次调用 100 GB / 1 MB）x 每月 30 天 = 25.05 美元/月</li>
 </ul>
-<p><strong>每月总费用</strong> = 183.6 美元 Kinesis Shard 小时成本 + 420 美元 Kinesis PUT 有效负载单位成本 + 7,515 美元 Lambda 成本 = <strong>88.65 美元</strong></p>
+<p><strong>每月总费用</strong> = 21.6 美元 Kinesis Shard 小时成本 + 42 美元 Kinesis PUT 有效负载单位成本 + 25.05 美元 Lambda 成本 = <strong>88.65 美元</strong></p>
 <h2 id="_3">访问代理</h2>
 <p>如果通过 Log Hub 部署并创建了<a href="../domains/proxy/">访问代理</a>，将收取以下费用。</p>
 <ul>
@@ -1420,6 +1468,9 @@ Lambda 内存为 128 MB。处理小于 5 MB 的日志文件的平均 Lambda 运�
 <p><strong>每月总费用</strong> = 71.1 美元 EC2 成本 + 1.6 美元 EBS 成本 + 16.2 美元弹性负载均衡器成本 = <strong>88.9 美元</strong></p>
 <h2 id="_4">告警</h2>
 <p>如果通过 Log Hub 部署并创建了<a href="../domains/alarms/">告警</a>，可参考<a href="https://aws.amazon.com/cloudwatch/pricing/">CloudWatch 价格</a>。</p>
+
+
+
 
               
             </article>
@@ -1482,10 +1533,11 @@ Lambda 内存为 128 MB。处理小于 5 MB 的日志文件的平均 Lambda 运�
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs"], "search": "../../assets/javascripts/workers/search.b97dbffb.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.config.lang": "ja", "search.config.pipeline": "trimmer, stemmer", "search.config.separator": "[\\s\\-\uff0c\u3002]+", "search.placeholder": "\u641c\u7d22", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version.title": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": "latest"}</script>
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs"], "search": "../../assets/javascripts/workers/search.ecf98df9.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.config.lang": "ja", "search.config.pipeline": "trimmer, stemmer", "search.config.separator": "[\\s\\-\uff0c\u3002]+", "search.placeholder": "\u641c\u7d22", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version.title": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": "latest"}</script>
     
     
-      <script src="../../assets/javascripts/bundle.0238f547.min.js"></script>
+      <script src="../../assets/javascripts/bundle.9c69f0bc.min.js"></script>
       
     
   </body>
