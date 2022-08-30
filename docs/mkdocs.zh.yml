@@ -9,11 +9,11 @@ nav:
       - 概览: index.md
       - 成本预估: implementation-guide/cost.md
       - 架构概述: implementation-guide/architecture.md
-      - 区域支持: implementation-guide/considerations.md
+      - 考虑因素: implementation-guide/considerations.md
       - 开始部署:
           - 概览: implementation-guide/deployment/index.md
-          - 部署到海外区域: implementation-guide/deployment/global-region.md
-          - 部署到中国区域: implementation-guide/deployment/china-region.md
+          - 使用 Cognito User Pool: implementation-guide/deployment/with-cognito.md
+          - 使用 OpenID Connect: implementation-guide/deployment/with-oidc.md
       - 快速入门:
           - 概览: implementation-guide/getting-started/index.md
           - 步骤 1. 导入 AOS 域: implementation-guide/getting-started/1.import-domain.md
@@ -34,6 +34,8 @@ nav:
           - AWS Lambda: implementation-guide/aws-services/lambda.md
           - Elastic Load Balancing: implementation-guide/aws-services/elb.md
           - AWS WAF: implementation-guide/aws-services/waf.md
+          - VPC Flow Log: implementation-guide/aws-services/vpc.md
+          - AWS Config: implementation-guide/aws-services/config.md
       -  应用日志:
           - 概览: implementation-guide/applications/index.md
           - 前提条件:
@@ -44,13 +46,16 @@ nav:
           - 单行文本: implementation-guide/applications/single-line-text.md
           - 多行文本: implementation-guide/applications/multi-line-text.md
           - JSON: implementation-guide/applications/json.md
-      - 常见问题解答和故障排查:
-          - 常见问题解答: implementation-guide/faq.md
-          - 故障排查: implementation-guide/trouble-shooting.md
-      - 版本更新: implementation-guide/revisions.md
+      - 跨账户日志摄取: implementation-guide/link-account/index.md
+      - 常见问题: implementation-guide/faq.md
+      - 故障排查: implementation-guide/trouble-shooting.md
+      - 更新: implementation-guide/upgrade.md
+      - 卸载: implementation-guide/uninstall.md
       - 资源:
           - OpenSSL 安装: implementation-guide/resources/open-ssl.md
+          - 上传证书: implementation-guide/resources/upload-ssl-certificate.md
           - AWS 服务: implementation-guide/resources/aws-services.md
+      - 更新记录: implementation-guide/release-notes.md
   - 路线图: "https://awslabs.github.io/log-hub/en/updates/roadmap/"
   - 动手实验: "https://awslabs.github.io/log-hub/en/workshop/introduction/"
   - 技术设计: "https://awslabs.github.io/log-hub/en/designs"

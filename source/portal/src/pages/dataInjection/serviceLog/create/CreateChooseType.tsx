@@ -32,12 +32,14 @@ import CloudFrontDesc from "./common/desc/CloudFrontDesc";
 import LambdaDesc from "./common/desc/LambdaDesc";
 import ELBDesc from "./common/desc/ELBDesc";
 import WAFDesc from "./common/desc/WAFDesc";
+import ConfigDesc from "./common/desc/ConfigDesc";
 import Breadcrumb from "components/Breadcrumb";
 import { useDispatch } from "react-redux";
 import { ActionType } from "reducer/appReducer";
 import HelpPanel from "components/HelpPanel";
 import SideMenu from "components/SideMenu";
 import { useTranslation } from "react-i18next";
+import VPCDesc from "./common/desc/VPCDesc";
 
 const CreateChooseType: React.FC = () => {
   const { t } = useTranslation();
@@ -125,6 +127,8 @@ const CreateChooseType: React.FC = () => {
                     {logType === ServiceLogType.Amazon_Lambda && <LambdaDesc />}
                     {logType === ServiceLogType.Amazon_ELB && <ELBDesc />}
                     {logType === ServiceLogType.Amazon_WAF && <WAFDesc />}
+                    {logType === ServiceLogType.Amazon_VPCLogs && <VPCDesc />}
+                    {logType === ServiceLogType.Amazon_Config && <ConfigDesc />}
                   </div>
                 </HeaderPanel>
               </PagePanel>

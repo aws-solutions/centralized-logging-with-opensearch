@@ -21,6 +21,7 @@ import { useTranslation } from "react-i18next";
 import { CloudFrontTaskProps } from "../cloudfront/CreateCloudFront";
 import { SupportPlugin } from "types";
 import { ELBTaskProps } from "../elb/CreateELB";
+import ExtLink from "components/ExtLink";
 
 interface LogProcessingProps {
   pipelineTask: CloudFrontTaskProps | ELBTaskProps;
@@ -137,6 +138,12 @@ const LogProcessing: React.FC<LogProcessingProps> = (
                   </label>
                 );
               })}
+            </div>
+            <div className="maxmind-copyright">
+              * {t("maxmindCopyRight")}
+              <ExtLink to="https://www.maxmind.com">
+                https://www.maxmind.com
+              </ExtLink>
             </div>
           </div>
         </HeaderPanel>

@@ -31,6 +31,7 @@ import SideMenu from "components/SideMenu";
 import { AntTab, AntTabs, TabPanel } from "components/Tab";
 import ValueWithLabel from "components/ValueWithLabel";
 import { getEKSClusterDetails } from "graphql/queries";
+import AccountName from "pages/comps/account/AccountName";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -141,6 +142,16 @@ const EksLogDetail: React.FC<RouteComponentProps<MatchParams>> = (
                           {curEksLogSource?.aosDomain?.domainName}
                         </ExtLink>
                       </ValueWithLabel>
+                      {curEksLogSource?.accountId && (
+                        <ValueWithLabel
+                          label={t("resource:crossAccount.account")}
+                        >
+                          <AccountName
+                            accountId={curEksLogSource?.accountId}
+                            region={amplifyConfig.aws_project_region}
+                          />
+                        </ValueWithLabel>
+                      )}
                     </div>
                     <div className="flex-1 border-left-c">
                       <ValueWithLabel

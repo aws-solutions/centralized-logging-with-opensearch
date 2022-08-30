@@ -17,8 +17,9 @@ You can create a log ingestion into AOS either by using the Log Hub console or b
 4. In the **AWS Services** section, choose **Elastic Load Balancer**.
 5. Choose **Next**.
 6. Under **Specify settings**, choose **Automatic** or **Manual**.
-   -  For **Automatic** mode, choose an application load balancer in the dropdown list. (If the selected ALB access log is not enabled, click **Enable** to enable the ALB access log.)
-   -  For **Manual** mode, enter the **Application Load Balancer identifier** and **Log location**.
+    - For **Automatic** mode, choose an application load balancer in the dropdown list. (If the selected ALB access log is not enabled, click **Enable** to enable the ALB access log.)
+    - For **Manual** mode, enter the **Application Load Balancer identifier** and **Log location**.
+    - (Optional) If you are ingesting logs from another account, select a [linked account](../link-account/index.md) from the **Account** dropdown first.
 7. Choose **Next**.
 8. In the **Specify OpenSearch domain** section, select an imported domain for **Amazon OpenSearch domain**.
 9. Choose **Yes** for **Sample dashboard** if you want to ingest an associated templated AOS dashboard.

@@ -5,9 +5,11 @@ import json
 import logging
 import re
 import sys
+import urllib.parse
 from abc import ABC, abstractmethod
 from copy import deepcopy
-import urllib.parse
+
+from util.protocol import get_protocal_code
 
 logger = logging.getLogger()
 
@@ -92,8 +94,7 @@ class ELB(LogType):
             for i, attr in enumerate(self._fields):
                 # print(f'{attr} = {result.group(i+1)}')
                 json_record[attr] = result.group(i + 1)
-        else:
-            logger.error("Unable to parse line: %s", line)
+
         return json_record
 
 
@@ -103,7 +104,70 @@ class CloudTrail(LogType):
     _format = "json"
 
     def parse(self, line: str):
-        return json.loads(line)["Records"]
+        try:
+            result = json.loads(line)["Records"]
+            return result
+        except Exception as e:
+            return []
+
+
+class Config(LogType):
+    """An implementation of LogType for Config Logs"""
+
+    _format = "json"
+
+    def _convert_cfg(self, cfg: dict):
+        """Unfiy all configuration format for different resources.
+
+        There are different configuration format in different resources.
+        Below logic is trying to unify the format
+        In order to load as much as possible
+        Otherwise, different format may be rejected with mapper_parsing_exception
+        """
+        # convert state from text to dict
+        if isinstance(cfg.get("state", "-"), dict):
+            cfg["state"] = cfg["state"].get("code", str(cfg["state"]))
+
+        # convert state from status to dict
+        if isinstance(cfg.get("status", "-"), dict):
+            cfg["status"] = cfg["status"].get("code", str(cfg["status"]))
+
+        # convert endpoint from text to dict
+        if isinstance(cfg.get("endpoint", None), str):
+            cfg["endpoint"]["address"] = cfg["endpoint"]
+
+        # convert zone from text to dict
+        if "availabilityZones" in cfg and isinstance(cfg["availabilityZones"], list):
+            if isinstance(cfg["availabilityZones"][0], str):
+                for az in cfg["availabilityZones"]:
+                    az["zoneName"] = az
+        else:
+            cfg["availabilityZones"] = []
+
+        # convert securitygroup from text to dict
+        if "securityGroups" in cfg and isinstance(cfg["securityGroups"], list):
+            if isinstance(cfg["securityGroups"][0], str):
+                for sg in cfg["securityGroups"]:
+                    sg["groupId"] = sg
+        else:
+            cfg["securityGroups"] = []
+
+    def parse(self, line: str):
+        json_records = []
+        try:
+            data = json.loads(line)
+        except json.JSONDecodeError as e:
+            return json_records
+        if "configSnapshotId" in data:
+            # Ignore Snapshots
+            return []
+        if "configurationItems" in data:
+            json_records = data["configurationItems"]
+            for rec in json_records:
+                if "configuration" in rec:
+                    self._convert_cfg(rec["configuration"])
+
+        return json_records
 
 
 class WAF(LogType):
@@ -112,21 +176,24 @@ class WAF(LogType):
     _format = "json"
 
     def parse(self, line: str):
-        json_record = json.loads(line)
+        try:
+            json_record = json.loads(line)
 
-        # Extract web acl name, host and user agent
-        json_record["webaclName"] = re.search(
-            "[^/]/webacl/([^/]*)", json_record["webaclId"]
-        ).group(1)
-        headers = json_record["httpRequest"]["headers"]
-        for header in headers:
-            if header["name"].lower() == "host":
-                json_record["host"] = header["value"]
-            elif header["name"].lower() == "user-agent":
-                json_record["userAgent"] = header["value"]
-            else:
-                continue
-        return json_record
+            # Extract web acl name, host and user agent
+            json_record["webaclName"] = re.search(
+                "[^/]/webacl/([^/]*)", json_record["webaclId"]
+            ).group(1)
+            headers = json_record["httpRequest"]["headers"]
+            for header in headers:
+                if header["name"].lower() == "host":
+                    json_record["host"] = header["value"]
+                elif header["name"].lower() == "user-agent":
+                    json_record["userAgent"] = header["value"]
+                else:
+                    continue
+            return json_record
+        except Exception as e:
+            return {}
 
 
 class S3(LogType):
@@ -176,8 +243,6 @@ class S3(LogType):
             for key in ["bytes_sent", "object_size", "turn_around_time", "total_time"]:
                 if json_record[key] == "-":
                     json_record[key] = "0"
-        else:
-            logger.error("Unable to parse line: %s", line)
 
         return json_record
 
@@ -222,11 +287,16 @@ class CloudFront(LogType):
 
     def parse(self, line) -> dict:
         if line.startswith("#Version") or line.startswith("#Fields"):
-            logger.info("Skipping line: %s", line)
+            # logger.info("Skipping line: %s", line)
             return {}
 
         json_record = {}
         result = line.strip("\n").split("\t")
+
+        if not len(result) == 33:
+            # cloudfront standard log must have 33 fields.
+            # otherwise, this log line is considered as invalid elb log.
+            return {}
 
         json_record["timestamp"] = f"{result[0]} {result[1]}"
 
@@ -243,6 +313,37 @@ class CloudFront(LogType):
             if json_record[key] == "-":
                 json_record[key] = "0"
         # print(json_record)
+        return json_record
+
+
+class VPCFlow(LogType):
+    """An implementation of LogType for VPC Flow Logs"""
+
+    def parse(self, line) -> dict:
+        json_record = {}
+        data = line.strip("\n").split()
+        if "start" in data:
+            # header row
+            self._fields = data
+        else:
+            if "start" in self._fields:
+                # start is a must for timestamp
+                for key, value in zip(self._fields, data):
+                    json_record[key] = value
+
+                src = json_record.get("srcaddr", "-")
+                dst = json_record.get("dstaddr", "-")
+                if src == "-" and dst == "-":
+                    # if both src and dst are missing, ignore the record.
+                    return {}
+
+                for key in ["packets", "bytes"]:
+                    if key in json_record and json_record[key] == "-":
+                        json_record[key] = "0"
+                if "protocol" in json_record:
+                    json_record["protocol-code"] = get_protocal_code(
+                        json_record["protocol"]
+                    )
         return json_record
 
 
@@ -319,9 +420,7 @@ class RDS(LogType):
         "sq-query",
     ]
 
-    _deadlock_log_pattern = (
-        r"MySQL thread\sid\s(\d+),\sOS\sthread\shandle\s(\w+),\squery\sid\s(\d+)\s(.*?)\s(\w+)\s(\w+)\s(.*)"
-    )
+    _deadlock_log_pattern = r"MySQL thread\sid\s(\d+),\sOS\sthread\shandle\s(\w+),\squery\sid\s(\d+)\s(.*?)\s(\w+)\s(\w+)\s(.*)"
 
     _deadlock_fields = [
         "deadlock-thread-id",
@@ -425,16 +524,28 @@ class RDS(LogType):
 
                 _json_records.append(deepcopy(_json_record))
             try:
-                json_record["deadlock-thread-id-1"] = _json_records[0]["deadlock-thread-id"]
-                json_record["deadlock-os-thread-handle-1"] = _json_records[0]["deadlock-os-thread-handle"]
-                json_record["deadlock-query-id-1"] = _json_records[0]["deadlock-query-id"]
+                json_record["deadlock-thread-id-1"] = _json_records[0][
+                    "deadlock-thread-id"
+                ]
+                json_record["deadlock-os-thread-handle-1"] = _json_records[0][
+                    "deadlock-os-thread-handle"
+                ]
+                json_record["deadlock-query-id-1"] = _json_records[0][
+                    "deadlock-query-id"
+                ]
                 json_record["deadlock-ip-1"] = _json_records[0]["deadlock-ip"]
                 json_record["deadlock-user-1"] = _json_records[0]["deadlock-user"]
                 json_record["deadlock-action-1"] = _json_records[0]["deadlock-action"]
                 json_record["deadlock-query-1"] = _json_records[0]["deadlock-query"]
-                json_record["deadlock-thread-id-2"] = _json_records[1]["deadlock-thread-id"]
-                json_record["deadlock-os-thread-handle-2"] = _json_records[1]["deadlock-os-thread-handle"]
-                json_record["deadlock-query-id-2"] = _json_records[1]["deadlock-query-id"]
+                json_record["deadlock-thread-id-2"] = _json_records[1][
+                    "deadlock-thread-id"
+                ]
+                json_record["deadlock-os-thread-handle-2"] = _json_records[1][
+                    "deadlock-os-thread-handle"
+                ]
+                json_record["deadlock-query-id-2"] = _json_records[1][
+                    "deadlock-query-id"
+                ]
                 json_record["deadlock-ip-2"] = _json_records[1]["deadlock-ip"]
                 json_record["deadlock-user-2"] = _json_records[1]["deadlock-user"]
                 json_record["deadlock-action-2"] = _json_records[1]["deadlock-action"]
@@ -448,13 +559,13 @@ class RDS(LogType):
         return json_record
 
     def parse(self, line) -> list:
-        if line.startswith("#Version") or line.startswith("#Fields"):
-            logger.info("Skipping line: %s", line)
-            return []
 
         json_records = []
         data_str = "[{}]".format(line.replace("}{", "},{"))
-        data_json = json.loads(data_str)
+        try:
+            data_json = json.loads(data_str)
+        except json.JSONDecodeError as e:
+            return json_records
 
         for i in range(len(data_json)):
             if data_json[i]["messageType"] != "DATA_MESSAGE":
@@ -527,10 +638,51 @@ class RDS(LogType):
                             db_identifier,
                         )
                     )
-                else:
-                    logger.info("Skipping unknown RDS log types.")
+                # else:
+                #     logger.info("Skipping unknown RDS log types.")
 
         # print(json_records)
+
+        return json_records
+
+
+class Lambda(LogType):
+    """An implementation of LogType for Lambda Function Logs"""
+
+    _fields = [
+        "time",
+        "log_group",
+        "log_stream",
+        "owner",
+        "log-detail",
+    ]
+
+    def parse(self, line) -> list:
+
+        json_records = []
+        data_str = "[{}]".format(line.replace("}{", "},{"))
+        try:
+            data_json = json.loads(data_str)
+        except json.JSONDecodeError as e:
+            return json_records
+
+        for i in range(len(data_json)):
+            if data_json[i]["messageType"] != "DATA_MESSAGE":
+                # logger.info("Skipping Kinesis Firehose Test Message.")
+                continue
+            log_group = data_json[i].get("logGroup")
+            log_stream = data_json[i].get("logStream")
+            owner = data_json[i].get("owner")
+            for log_event in data_json[i].get("logEvents"):
+                json_record = {}
+                timestamp = log_event["timestamp"]
+                log_message = log_event.get("message")
+                json_record["log_group"] = log_group
+                json_record["log_stream"] = log_stream
+                json_record["owner"] = owner
+                json_record["log-detail"] = log_message
+                json_record["time"] = timestamp
+                json_records.append(json_record)
 
         return json_records
 

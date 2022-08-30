@@ -1,6 +1,7 @@
-<match LOGHUB_CONFIG_TAG>
+<match $LOGHUB_CONFIG_TAG>
   @type                 kinesis_streams
   stream_name           LOGHUB_CONFIG_KDS_NAME
+  $LOGHUB_CONFIG_KDS_ROLE
   region                LOGHUB_CONFIG_KDS_REGION
   <buffer>
     chunk_limit_size    1m

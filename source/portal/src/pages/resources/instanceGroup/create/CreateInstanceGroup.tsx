@@ -57,6 +57,7 @@ const CreateInstanceGroup: React.FC = () => {
   const [createShowNameEmptyError, setCreateShowNameEmptyError] =
     useState(false);
   const [createButtonDisabled, setCreateButtonDisabled] = useState(false);
+  const [curAccountId, setCurAccountId] = useState("");
 
   const createLogInstanceGroup = async () => {
     // Check Name Empty
@@ -92,6 +93,7 @@ const CreateInstanceGroup: React.FC = () => {
     }
     const createInstanceGroupParam = {
       groupName: curCreateInstanceGroup.groupName,
+      accountId: curAccountId,
       instanceSet: checkedInstanceList.map((instance) => instance.id),
     };
     try {
@@ -126,6 +128,10 @@ const CreateInstanceGroup: React.FC = () => {
               <InstanceGroupComp
                 instanceGroup={curCreateInstanceGroup}
                 showNameEmptyError={createShowNameEmptyError}
+                accountId={curAccountId}
+                changeCurAccount={(id) => {
+                  setCurAccountId(id);
+                }}
                 setCreateDisabled={(disable) => {
                   console.info("disable:", disable);
                   setCreateButtonDisabled(disable);

@@ -27,12 +27,17 @@ interface AlertProps {
   title?: string;
   content: string | JSX.Element;
   actions?: ReactElement;
+  noMargin?: boolean;
 }
 
 const Alert: React.FC<AlertProps> = (props: AlertProps) => {
-  const { type, title, content, actions } = props;
+  const { type, title, content, actions, noMargin } = props;
   return (
-    <div className={`gsui-alert-wrap ${type?.toLowerCase()}`}>
+    <div
+      className={`gsui-alert-wrap ${
+        !noMargin ? "margin" : ""
+      } ${type?.toLowerCase()}`}
+    >
       <div className="icon">
         {(type === AlertType.Error || type === AlertType.Warning) && (
           <ReportProblemOutlinedIcon className="error-text" fontSize="small" />

@@ -14,34 +14,26 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-
-import * as cdk from '@aws-cdk/core';
-import { Match, Template } from "@aws-cdk/assertions";
-import * as alarm from '../lib/opensearch/alarm-for-opensearch-stack';
-
-import '@aws-cdk/assert/jest';
-
-
+import { Template } from "aws-cdk-lib/assertions";
+import { App } from "aws-cdk-lib";
+import * as alarm from "../lib/opensearch/alarm-for-opensearch-stack";
 
 describe("AlarmForOpenSearchStack", () => {
-    test('Test Alarm stack', () => {
-        const app = new cdk.App();
-        // WHEN
+  test("Test Alarm stack", () => {
+    const app = new App();
+    // WHEN
 
-        const stack = new alarm.AlarmForOpenSearchStack(app, 'MyAlarmStack', {
-        });
-        // Prepare the stack for assertions.
-        const template = Template.fromStack(stack);
+    const stack = new alarm.AlarmForOpenSearchStack(app, "MyAlarmStack", {});
+    // Prepare the stack for assertions.
+    const template = Template.fromStack(stack);
 
-        // THEN
-        template.hasResourceProperties("AWS::SNS::Topic", {
-            DisplayName: "AWS cloudwatch alarm topic",
-
-        });
-
-        template.hasResourceProperties("AWS::SNS::Subscription", {
-            Protocol: "email",
-        });
+    // THEN
+    template.hasResourceProperties("AWS::SNS::Topic", {
+      DisplayName: "AWS cloudwatch alarm topic",
     });
 
+    template.hasResourceProperties("AWS::SNS::Subscription", {
+      Protocol: "email",
+    });
+  });
 });

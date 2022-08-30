@@ -20,7 +20,7 @@
 | Application Log | Log Config                                   | Create a log agent configuration (e.g. log type, log file path) that applies to a certain version of log agent. |
 | Application Log | Log pipeline                                 | Create a log pipeline (on top of Amazon Kinesis Data Streams) which allows the log agent to collect and send logs. |
 | Application Log | JSON format log ingestion                    | Build an end-to-end pipeline to ingest JSON format log data. |
-| Deployment        | Web console CDK/CloudFormation deployment             | Deploy the solution via AWS CDK or Amazon CloudFormation. It will provision a stack with a build-in Log Hub web console. |
+| Deployment        | Web console CDK/CloudFormation deployment             | Deploy the solution via AWS CDK or Amazon CloudFormation. It will provision a stack with a built-in Log Hub web console. |
 | Deployment        | Standalone log pipeline CDK/CloudFormation deployment | Deploy a single log pipeline via AWS CDK or Amazon CloudFormation. All supported log type can be deployed as a standalone stack. |
 | Workshop | Data insights workshop | Demonstrate how to use Log Hub to build a centralized logging platform to explore the data insights. |
 
@@ -55,7 +55,7 @@
 | AWS Service Log         | VPC Flow Logs template                     | [VPC Flows Logs](https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs.html) log ingestion and visualization. |
 | AWS Service Log         | Cross-region/account region support         | Add support for cross-region/account service log ingestion.                 |
 | Application Log         | Cross-region/account support               | Add support for cross-region/account application log ingestion.                 |
-| Codeless Log Processors | Data Prepper integration                   | Allows customers to import existing [Data Prepper](https://github.com/opensearch-project/data-prepper) domain and use the build-in processors to process logs. This depends on whether Data Prepper supports log processing. |
+| Codeless Log Processors | Data Prepper integration                   | Allows customers to import existing [Data Prepper](https://github.com/opensearch-project/data-prepper) domain and use the built-in processors to process logs. This depends on whether Data Prepper supports log processing. |
 
 
 ## v1.2.0, Q4/2022

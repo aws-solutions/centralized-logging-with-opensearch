@@ -15,16 +15,16 @@ limitations under the License.
 */
 
 
-import * as cdk from '@aws-cdk/core';
-import { Match, Template } from "@aws-cdk/assertions";
+import { 
+    App,
+  } from "aws-cdk-lib";
+import {Template } from "aws-cdk-lib/assertions";
 import * as ngx from '../lib/opensearch/nginx-for-opensearch-stack';
-
-import '@aws-cdk/assert/jest';
 
 
 describe("NginxForOpenSearchStack", () => {
     test('Test Nginx Proxy stack', () => {
-        const app = new cdk.App();
+        const app = new App();
         // WHEN
 
 

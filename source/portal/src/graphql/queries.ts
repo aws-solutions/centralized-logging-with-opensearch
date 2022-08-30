@@ -1,18 +1,3 @@
-/*
-Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
 /* tslint:disable */
 /* eslint-disable */
 // this is an auto generated file. This will be overwritten
@@ -184,9 +169,15 @@ export const listResources = /* GraphQL */ `
   query ListResources(
     $type: ResourceType!
     $parentId: String
+    $accountId: String
     $region: String
   ) {
-    listResources(type: $type, parentId: $parentId, region: $region) {
+    listResources(
+      type: $type
+      parentId: $parentId
+      accountId: $accountId
+      region: $region
+    ) {
       id
       name
       parentId
@@ -194,20 +185,32 @@ export const listResources = /* GraphQL */ `
     }
   }
 `;
+export const checkServiceExisting = /* GraphQL */ `
+  query CheckServiceExisting(
+    $type: ResourceType!
+    $accountId: String
+    $region: String
+  ) {
+    checkServiceExisting(type: $type, accountId: $accountId, region: $region)
+  }
+`;
 export const getResourceLoggingBucket = /* GraphQL */ `
   query GetResourceLoggingBucket(
     $type: ResourceType!
     $resourceName: String!
+    $accountId: String
     $region: String
   ) {
     getResourceLoggingBucket(
       type: $type
       resourceName: $resourceName
+      accountId: $accountId
       region: $region
     ) {
       enabled
       bucket
       prefix
+      source
     }
   }
 `;
@@ -216,6 +219,8 @@ export const listInstanceGroups = /* GraphQL */ `
     listInstanceGroups(page: $page, count: $count) {
       instanceGroups {
         id
+        accountId
+        region
         groupName
         instanceSet
         createdDt
@@ -229,6 +234,8 @@ export const getInstanceGroup = /* GraphQL */ `
   query GetInstanceGroup($id: ID!) {
     getInstanceGroup(id: $id) {
       id
+      accountId
+      region
       groupName
       instanceSet
       createdDt
@@ -242,8 +249,8 @@ export const listLogConfs = /* GraphQL */ `
       logConfs {
         id
         confName
-        logPath
         logType
+        logPath
         multilineLogParser
         createdDt
         userLogFormat
@@ -264,8 +271,8 @@ export const getLogConf = /* GraphQL */ `
     getLogConf(id: $id) {
       id
       confName
-      logPath
       logType
+      logPath
       multilineLogParser
       createdDt
       userLogFormat
@@ -308,6 +315,8 @@ export const listAppPipelines = /* GraphQL */ `
         }
         createdDt
         status
+        kdsRoleArn
+        ec2RoleArn
         tags {
           key
           value
@@ -345,6 +354,8 @@ export const getAppPipeline = /* GraphQL */ `
       }
       createdDt
       status
+      kdsRoleArn
+      ec2RoleArn
       tags {
         key
         value
@@ -383,6 +394,8 @@ export const listAppLogIngestions = /* GraphQL */ `
             s3Name
             s3Prefix
             archiveFormat
+            defaultVpcId
+            defaultSubnetIds
           }
           eksSource {
             id
@@ -415,6 +428,15 @@ export const listAppLogIngestions = /* GraphQL */ `
         stackId
         stackName
         appPipelineId
+        kdsRoleArn
+        kdsRoleName
+        ec2RoleArn
+        ec2RoleName
+        logPath
+        sourceId
+        sourceType
+        accountId
+        region
         createdDt
         status
         tags {
@@ -444,6 +466,8 @@ export const getAppLogIngestion = /* GraphQL */ `
           s3Name
           s3Prefix
           archiveFormat
+          defaultVpcId
+          defaultSubnetIds
         }
         eksSource {
           id
@@ -481,6 +505,15 @@ export const getAppLogIngestion = /* GraphQL */ `
       stackId
       stackName
       appPipelineId
+      kdsRoleArn
+      kdsRoleName
+      ec2RoleArn
+      ec2RoleName
+      logPath
+      sourceId
+      sourceType
+      accountId
+      region
       createdDt
       status
       tags {
@@ -496,12 +529,16 @@ export const listInstances = /* GraphQL */ `
     $nextToken: String
     $instanceSet: [String]
     $tags: [TagFilterInput]
+    $region: String
+    $accountId: String
   ) {
     listInstances(
       maxResults: $maxResults
       nextToken: $nextToken
       instanceSet: $instanceSet
       tags: $tags
+      region: $region
+      accountId: $accountId
     ) {
       instances {
         id
@@ -527,8 +564,16 @@ export const getInstanceMeta = /* GraphQL */ `
   }
 `;
 export const getLogAgentStatus = /* GraphQL */ `
-  query GetLogAgentStatus($instanceId: String!) {
-    getLogAgentStatus(instanceId: $instanceId)
+  query GetLogAgentStatus(
+    $instanceId: String!
+    $region: String
+    $accountId: String
+  ) {
+    getLogAgentStatus(
+      instanceId: $instanceId
+      region: $region
+      accountId: $accountId
+    )
   }
 `;
 export const validateVpcCidr = /* GraphQL */ `
@@ -550,6 +595,8 @@ export const getLogSource = /* GraphQL */ `
         s3Name
         s3Prefix
         archiveFormat
+        defaultVpcId
+        defaultSubnetIds
       }
       eksSource {
         id
@@ -601,6 +648,8 @@ export const listLogSources = /* GraphQL */ `
           s3Name
           s3Prefix
           archiveFormat
+          defaultVpcId
+          defaultSubnetIds
         }
         eksSource {
           id
@@ -681,16 +730,31 @@ export const getEKSDaemonSetConfig = /* GraphQL */ `
   }
 `;
 export const getEKSDeploymentConfig = /* GraphQL */ `
-  query GetEKSDeploymentConfig($eksClusterId: String!, $ingestionId: String!) {
+  query GetEKSDeploymentConfig(
+    $eksClusterId: String!
+    $ingestionId: String!
+    $openExtraMetadataFlag: Boolean
+  ) {
     getEKSDeploymentConfig(
       eksClusterId: $eksClusterId
       ingestionId: $ingestionId
+      openExtraMetadataFlag: $openExtraMetadataFlag
     )
   }
 `;
 export const listEKSClusterNames = /* GraphQL */ `
-  query ListEKSClusterNames($nextToken: String!, $isListAll: Boolean) {
-    listEKSClusterNames(nextToken: $nextToken, isListAll: $isListAll) {
+  query ListEKSClusterNames(
+    $accountId: String
+    $region: String
+    $nextToken: String!
+    $isListAll: Boolean
+  ) {
+    listEKSClusterNames(
+      accountId: $accountId
+      region: $region
+      nextToken: $nextToken
+      isListAll: $isListAll
+    ) {
       clusters
       nextToken
     }
@@ -732,6 +796,91 @@ export const listImportedEKSClusters = /* GraphQL */ `
         }
       }
       total
+    }
+  }
+`;
+export const checkTimeFormat = /* GraphQL */ `
+  query CheckTimeFormat($timeStr: String!, $formatStr: String!) {
+    checkTimeFormat(timeStr: $timeStr, formatStr: $formatStr) {
+      isMatch
+    }
+  }
+`;
+export const listSubAccountLinks = /* GraphQL */ `
+  query ListSubAccountLinks($page: Int, $count: Int) {
+    listSubAccountLinks(page: $page, count: $count) {
+      subAccountLinks {
+        id
+        subAccountId
+        region
+        subAccountName
+        subAccountRoleArn
+        agentInstallDoc
+        agentConfDoc
+        subAccountBucketName
+        subAccountStackId
+        subAccountKMSKeyArn
+        subAccountVpcId
+        subAccountPublicSubnetIds
+        createdDt
+        status
+        tags {
+          key
+          value
+        }
+      }
+      total
+    }
+  }
+`;
+export const getSubAccountLink = /* GraphQL */ `
+  query GetSubAccountLink($id: ID!) {
+    getSubAccountLink(id: $id) {
+      id
+      subAccountId
+      region
+      subAccountName
+      subAccountRoleArn
+      agentInstallDoc
+      agentConfDoc
+      subAccountBucketName
+      subAccountStackId
+      subAccountKMSKeyArn
+      subAccountVpcId
+      subAccountPublicSubnetIds
+      createdDt
+      status
+      tags {
+        key
+        value
+      }
+    }
+  }
+`;
+export const getSubAccountLinkByAccountIdRegion = /* GraphQL */ `
+  query GetSubAccountLinkByAccountIdRegion(
+    $accountId: String!
+    $region: String
+  ) {
+    getSubAccountLinkByAccountIdRegion(accountId: $accountId, region: $region) {
+      id
+      subAccountId
+      region
+      subAccountName
+      subAccountRoleArn
+      agentInstallDoc
+      agentConfDoc
+      subAccountBucketName
+      subAccountStackId
+      subAccountKMSKeyArn
+      subAccountVpcId
+      subAccountPublicSubnetIds
+      createdDt
+      status
+      tags {
+        key
+        value
+      }
     }
   }
 `;

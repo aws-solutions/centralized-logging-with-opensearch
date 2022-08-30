@@ -102,16 +102,19 @@ def action_create_index_template(props: dict):
     logger.info("CreateIndexTemplate props=%s", props)
 
     the_log_type = props.get("log_type", "").lower()
+    createDashboard = props.get("createDashboard", "no").lower()
+    logger.info("CreateDashboard:%s", createDashboard)
 
     if the_log_type in ["nginx", "apache"]:
         # {
         #     "action": "CreateIndexTemplate",
         #     "props": {
         #         "log_type": "nginx/apache",
+        #         "createDashboard": "yes/no"
         #     }
         # }
 
-        logger.info(f"{aos.create_predefined_index_template.__name__} of {the_log_type}")
+        logger.info(f"{aos.create_predefined_index_template.__name__} of {the_log_type} : {createDashboard}")
 
         # TODO: How to de-duplicate the index template or dashboards?
 
@@ -121,11 +124,12 @@ def action_create_index_template(props: dict):
                             number_of_shards=number_of_shards,
                             number_of_replicas=number_of_replicas)
 
-        logger.info(f"{aos.import_saved_object.__name__} of {the_log_type}")
+        if createDashboard.lower() == "yes":
+            logger.info(f"{aos.import_saved_object.__name__} of {the_log_type}")
 
-        run_func_with_retry(aos.import_saved_object,
-                            aos.import_saved_object.__name__,
-                            log_type=the_log_type)
+            run_func_with_retry(aos.import_saved_object,
+                                aos.import_saved_object.__name__,
+                                log_type=the_log_type)
 
     elif the_log_type in ["regex", "multilinetext", "singlelinetext", "json"]:
         # {

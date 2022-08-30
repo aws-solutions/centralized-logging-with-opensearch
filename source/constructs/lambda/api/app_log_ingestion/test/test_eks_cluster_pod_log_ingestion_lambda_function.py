@@ -7,7 +7,7 @@ import boto3
 import pytest
 
 from uuid import UUID
-from moto import mock_dynamodb, mock_stepfunctions
+from moto import mock_dynamodb, mock_stepfunctions, mock_sts
 from .conftest import init_ddb, make_graphql_lambda_event
 
 
@@ -18,7 +18,8 @@ def sfn_client():
         response = sfn.create_state_machine(
             name="LogHubAPIPipelineFlowSM",
             definition=json.dumps({
-                "Comment": "A Hello World example of the Amazon States Language using Pass states",
+                "Comment":
+                "A Hello World example of the Amazon States Language using Pass states",
                 "StartAt": "Hello",
                 "States": {
                     "Hello": {
@@ -45,13 +46,19 @@ def ddb_client():
                     "coldLogTransition": 0,
                     "domainName": "wch-private",
                     "engine": "OpenSearch",
-                    "failedLogBucket": "loghub-loghubloggingbucket0fa53b76-1jyvyptgjbge9",
+                    "failedLogBucket":
+                    "loghub-loghubloggingbucket0fa53b76-1jyvyptgjbge9",
                     "indexPrefix": "helloworld",
                     "logRetention": 0,
-                    "opensearchArn": "arn:aws:es:us-west-2:1234567890AB:domain/wch-private",
-                    "opensearchEndpoint": "vpc-wch-private-hbgb2ktamqnb5cedzrty3blelu.us-west-2.es.amazonaws.com",
+                    "shardNumbers": 1,
+                    "replicaNumbers": 0,
+                    "opensearchArn":
+                    "arn:aws:es:us-west-2:1234567890AB:domain/wch-private",
+                    "opensearchEndpoint":
+                    "vpc-wch-private-hbgb2ktamqnb5cedzrty3blelu.us-west-2.es.amazonaws.com",
                     "vpc": {
-                        "privateSubnetIds": "subnet-01f09e14e5b70c11f,subnet-06843d01e3da35b7d",
+                        "privateSubnetIds":
+                        "subnet-01f09e14e5b70c11f,subnet-06843d01e3da35b7d",
                         "publicSubnetIds": "",
                         "securityGroupId": "sg-0ec6c9b448792d1e6",
                         "vpcId": "vpc-05a90814226d2c713"
@@ -61,98 +68,172 @@ def ddb_client():
                 "createdDt": "2022-05-05T07:43:55Z",
                 "error": "",
                 "kdsParas": {
-                    "enableAutoScaling": False,
-                    "kdsArn": "arn:aws:kinesis:us-west-2:1234567890AB:stream/LogHub-EKS-Cluster-PodLog-Pipeline-f34b2-Stream790BDEE4-aGeLDuMS7B1i",
-                    "maxShardNumber": 0,
-                    "osHelperFnArn": "arn:aws:lambda:us-west-2:1234567890AB:function:LogHub-EKS-Cluster-PodLog-Pipel-OpenSearchHelperFn-ef8PiCbL9ixp",
-                    "regionName": "us-west-2",
-                    "startShardNumber": 1,
-                    "streamName": "LogHub-EKS-Cluster-PodLog-Pipeline-f34b2-Stream790BDEE4-aGeLDuMS7B1i"
+                    "enableAutoScaling":
+                    False,
+                    "kdsArn":
+                    "arn:aws:kinesis:us-west-2:1234567890AB:stream/LogHub-EKS-Cluster-PodLog-Pipeline-f34b2-Stream790BDEE4-aGeLDuMS7B1i",
+                    "maxShardNumber":
+                    0,
+                    "osHelperFnArn":
+                    "arn:aws:lambda:us-west-2:1234567890AB:function:LogHub-EKS-Cluster-PodLog-Pipel-OpenSearchHelperFn-ef8PiCbL9ixp",
+                    "regionName":
+                    "us-west-2",
+                    "startShardNumber":
+                    1,
+                    "streamName":
+                    "LogHub-EKS-Cluster-PodLog-Pipeline-f34b2-Stream790BDEE4-aGeLDuMS7B1i"
                 },
-                "stackId": "arn:aws:cloudformation:us-west-2:1234567890AB:stack/LogHub-EKS-Cluster-PodLog-Pipeline-f34b2/1e8e2860-cc47-11ec-8d95-06039fb616cf",
+                "stackId":
+                "arn:aws:cloudformation:us-west-2:1234567890AB:stack/LogHub-EKS-Cluster-PodLog-Pipeline-f34b2/1e8e2860-cc47-11ec-8d95-06039fb616cf",
                 "status": "ACTIVE",
                 "tags": []
             },
             os.environ["APP_LOG_CONFIG_TABLE_NAME"]: [
                 {
-                    "id": "e8e52b70-e7bc-4bdb-ad60-5f1addf17387",
-                    "confName": "SpringBoot0220",
-                    "createdDt": "2022-02-20T08:05:39Z",
-                    "logPath": "/var/log/loghub/springboot/*.log",
-                    "logType": "MultiLineText",
-                    "multilineLogParser": "JAVA_SPRING_BOOT",
-                    "regularExpression": "(?<time>\\d{4}-\\d{2}-\\d{2}\\s*\\d{2}:\\d{2}:\\d{2}.\\d{3})\\s*(?<level>\\S+)\\s*\\[(?<thread>\\S+)\\]\\s*(?<logger>\\S+)\\s*:\\s*(?<message>[\\s\\S]+)",
-                    "regularSpecs": [
-                        {
-                            "format": "yyyy-MM-dd HH:mm:ss.SSS",
-                            "key": "time",
-                            "type": "date"
-                        },
-                        {
-                            "format": "",
-                            "key": "level",
-                            "type": "text"
-                        },
-                        {
-                            "format": "",
-                            "key": "thread",
-                            "type": "text"
-                        },
-                        {
-                            "format": "",
-                            "key": "logger",
-                            "type": "text"
-                        },
-                        {
-                            "format": "",
-                            "key": "message",
-                            "type": "text"
-                        }
-                    ],
-                    "status": "ACTIVE",
-                    "updatedDt": "2022-02-20T08:08:31Z",
-                    "userLogFormat": "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger : %msg%n"
+                    "id":
+                    "e8e52b70-e7bc-4bdb-ad60-5f1addf17387",
+                    "confName":
+                    "SpringBoot0220",
+                    "createdDt":
+                    "2022-02-20T08:05:39Z",
+                    "logPath":
+                    "/var/log/loghub/springboot/*.log",
+                    "logType":
+                    "MultiLineText",
+                    "multilineLogParser":
+                    "JAVA_SPRING_BOOT",
+                    "regularExpression":
+                    "(?<time>\\d{4}-\\d{2}-\\d{2}\\s*\\d{2}:\\d{2}:\\d{2}.\\d{3})\\s*(?<level>\\S+)\\s*\\[(?<thread>\\S+)\\]\\s*(?<logger>\\S+)\\s*:\\s*(?<message>[\\s\\S]+)",
+                    "regularSpecs": [{
+                        "format": "yyyy-MM-dd HH:mm:ss.SSS",
+                        "key": "time",
+                        "type": "date"
+                    }, {
+                        "format": "",
+                        "key": "level",
+                        "type": "text"
+                    }, {
+                        "format": "",
+                        "key": "thread",
+                        "type": "text"
+                    }, {
+                        "format": "",
+                        "key": "logger",
+                        "type": "text"
+                    }, {
+                        "format": "",
+                        "key": "message",
+                        "type": "text"
+                    }],
+                    "status":
+                    "ACTIVE",
+                    "updatedDt":
+                    "2022-02-20T08:08:31Z",
+                    "userLogFormat":
+                    "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger : %msg%n"
                 },
             ],
-            os.environ["APPLOGINGESTION_TABLE"]: []
+            os.environ["EKS_CLUSTER_SOURCE_TABLE_NAME"]: [
+                {
+                    "id":
+                    "8df489745b1c4cb5b0ef81c6144f9283",
+                    "accountId":
+                    "056627083435",
+                    "aosDomainId":
+                    "40485c141648f8d0acbbec6eda19a4a7",
+                    "createdDt":
+                    "2022-07-13T13:42:39Z",
+                    "cri":
+                    "docker",
+                    "eksClusterArn":
+                    "arn:aws:eks:us-west-2:056627083435:cluster/test-cross-acount-sidecar",
+                    "eksClusterName":
+                    "test-cross-acount-sidecar",
+                    "eksClusterSGId":
+                    "sg-0309ace781f7bb196",
+                    "endpoint":
+                    "https://495B50BAB232BED64A48C40F334C9B09.gr7.us-west-2.eks.amazonaws.com",
+                    "logAgentRoleArn":
+                    "arn:aws:iam::056627083435:role/LogHub-EKS-LogAgent-Role-063f2640e504461296cd6a8186434f01",
+                    "oidcIssuer":
+                    "https://oidc.eks.us-west-2.amazonaws.com/id/495B50BAB232BED64A48C40F334C9B09",
+                    "region":
+                    "us-west-2",
+                    "status":
+                    "ACTIVE",
+                    "subnetIds": [
+                        "subnet-07004ac7f2e2164dd", "subnet-0fc8749589c18edf9",
+                        "subnet-014eadb944d87d020", "subnet-0d1d910c8c4399a9d"
+                    ],
+                    "tags": [],
+                    "updatedDt":
+                    "2022-07-13T13:42:39Z",
+                    "vpcId":
+                    "vpc-0d1d79173ff9e6f53"
+                },
+            ],
+            os.environ["APPLOGINGESTION_TABLE"]: [],
+            os.environ["SUB_ACCOUNT_LINK_TABLE_NAME"]: []
         })
 
 
-def test_create_eks_cluster_pod_log_ingestion(
-    ddb_client, sfn_client
-):
+@pytest.fixture
+def sts_client():
+    with mock_sts():
+        boto3.client("sts", region_name=os.environ.get("AWS_REGION"))
+        yield
+
+
+def test_create_eks_cluster_pod_log_ingestion(ddb_client, sfn_client,
+                                              sts_client):
     from eks_cluster_pod_log_ingestion_lambda_function import lambda_handler
 
-    evt = make_graphql_lambda_event('createEKSClusterPodLogIngestion', {
-        "confId": "e8e52b70-e7bc-4bdb-ad60-5f1addf17387",
-        "eksClusterId": "8df489745b1c4cb5b0ef81c6144f9283",
-        "aosParas": {
-            "opensearchArn": "arn:aws:es:us-west-2:1234567890AB:domain/wch-private",
-            "domainName": "wch-private",
-            "opensearchEndpoint": "vpc-private-hbgb2ktamqnb5cedzrty3blelu.us-west-2.es.amazonaws.com",
-            "indexPrefix": "test",
-            "warmLogTransition": 0,
-            "coldLogTransition": 0,
-            "logRetention": 0,
-            "engine": "OpenSearch",
-            "vpc": {
-                "privateSubnetIds": "subnet-01f09e14e5b70c11f,subnet-06843d01e3da35b7d",
-                "publicSubnetIds": "",
-                "securityGroupId": "sg-0ec6c9b448792d1e6",
-                "vpcId": "vpc-05a90814226d2c713"
+    evt = make_graphql_lambda_event(
+        'createEKSClusterPodLogIngestion', {
+            "confId": "e8e52b70-e7bc-4bdb-ad60-5f1addf17387",
+            "eksClusterId": "8df489745b1c4cb5b0ef81c6144f9283",
+            "aosParas": {
+                "opensearchArn":
+                "arn:aws:es:us-west-2:1234567890AB:domain/wch-private",
+                "domainName":
+                "wch-private",
+                "opensearchEndpoint":
+                "vpc-private-hbgb2ktamqnb5cedzrty3blelu.us-west-2.es.amazonaws.com",
+                "indexPrefix":
+                "test",
+                "warmLogTransition":
+                0,
+                "coldLogTransition":
+                0,
+                "shardNumbers":
+                1,
+                "replicaNumbers":
+                0,
+                "logRetention":
+                0,
+                "engine":
+                "OpenSearch",
+                "vpc": {
+                    "privateSubnetIds":
+                    "subnet-01f09e14e5b70c11f,subnet-06843d01e3da35b7d",
+                    "publicSubnetIds": "",
+                    "securityGroupId": "sg-0ec6c9b448792d1e6",
+                    "vpcId": "vpc-05a90814226d2c713"
+                },
+                "failedLogBucket":
+                "loghub-loghubloggingbucket0fa53b76-1jyvyptgjbge9",
             },
-            "failedLogBucket": "loghub-loghubloggingbucket0fa53b76-1jyvyptgjbge9",
-        },
-        "kdsParas": {
-            "kdsArn": "",
-            "streamName": "",
-            "enableAutoScaling": False,
-            "startShardNumber": 1,
-            "maxShardNumber": 0,
-            "regionName": ""
-        },
-        "tags": [],
-    })
+            "kdsParas": {
+                "kdsArn": "",
+                "streamName": "",
+                "enableAutoScaling": False,
+                "startShardNumber": 1,
+                "maxShardNumber": 0,
+                "regionName": ""
+            },
+            "createDashboard": "Yes",
+            "tags": [],
+        })
 
     res = lambda_handler(evt, None)
 

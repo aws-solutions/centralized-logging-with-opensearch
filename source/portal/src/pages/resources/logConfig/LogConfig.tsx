@@ -76,8 +76,6 @@ const LogConfig: React.FC = () => {
   };
 
   const handlePageChange = (event: any, value: number) => {
-    console.info("event:", event);
-    console.info("value:", value);
     setCurPage(value);
   };
 

@@ -13,7 +13,7 @@ Service Pipeline APIs are a list of operations to manage end to end Log analytic
 
 **Type:** Mutation
 
-**Description:**  Create a record in DynamoDB, start an execution of Step function,  trigger cloudformation template to run
+**Description:**  Create a record in DynamoDB, start an execution of Step function,  trigger CloudFormation template to run
 
 **Resolver:** Lambda
 
@@ -72,7 +72,7 @@ Response:
 
 **Type:** Mutation
 
-**Description:**  mask the record in DynamoDB as Inactive, start an execution of Step function,  trigger cloudformation template to delete
+**Description:**  mask the record in DynamoDB as Inactive, start an execution of Step function,  trigger CloudFormation template to delete
 
 **Resolver:** Lambda
 

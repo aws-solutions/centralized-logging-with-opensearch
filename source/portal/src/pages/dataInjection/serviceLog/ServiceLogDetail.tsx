@@ -29,12 +29,14 @@ import { getServicePipeline } from "graphql/queries";
 import { Parameter, ServicePipeline, ServiceType, Tag } from "API";
 import {
   buildCloudFrontLink,
+  buildConfigLink,
   buildELBLink,
   buildESLink,
   buildLambdaLink,
   buildRDSLink,
   buildS3Link,
   buildTrailLink,
+  buildVPCLink,
   buildWAFLink,
   formatLocalTime,
 } from "assets/js/utils";
@@ -45,6 +47,7 @@ import { ServiceTypeMap } from "assets/js/const";
 import HelpPanel from "components/HelpPanel";
 import SideMenu from "components/SideMenu";
 import { useTranslation } from "react-i18next";
+import AccountName from "pages/comps/account/AccountName";
 
 interface MatchParams {
   id: string;
@@ -64,6 +67,7 @@ export interface ServiceLogDetailProps {
   logRetention: number | string;
   shardNumbers: number | string;
   replicaNumbers: number | string;
+  logSourceAccountId: string;
   tags: (Tag | null)[] | null | undefined;
 }
 
@@ -125,7 +129,9 @@ const ServiceLogDetail: React.FC<RouteComponentProps<MatchParams>> = (
         dataPipelne.type === ServiceType.CloudTrail ||
         dataPipelne.type === ServiceType.CloudFront ||
         dataPipelne.type === ServiceType.ELB ||
-        dataPipelne.type === ServiceType.WAF
+        dataPipelne.type === ServiceType.WAF ||
+        dataPipelne.type === ServiceType.VPC ||
+        dataPipelne.type === ServiceType.Config
       ) {
         tmpLogLocation = `s3://${getParamValueByKey(
           dataPipelne.parameters,
@@ -166,6 +172,9 @@ const ServiceLogDetail: React.FC<RouteComponentProps<MatchParams>> = (
           getParamValueByKey(dataPipelne.parameters, "shardNumbers") || "-",
         replicaNumbers:
           getParamValueByKey(dataPipelne.parameters, "replicaNumbers") || "-",
+        logSourceAccountId:
+          getParamValueByKey(dataPipelne.parameters, "logSourceAccountId") ||
+          "-",
         tags: dataPipelne.tags,
       });
       setLoadingData(false);
@@ -196,6 +205,16 @@ const ServiceLogDetail: React.FC<RouteComponentProps<MatchParams>> = (
                       <ValueWithLabel label={t("servicelog:detail.type")}>
                         <div>{ServiceTypeMap[curPipeline?.type || ""]}</div>
                       </ValueWithLabel>
+                      {curPipeline?.logSourceAccountId && (
+                        <ValueWithLabel
+                          label={t("resource:crossAccount.account")}
+                        >
+                          <AccountName
+                            accountId={curPipeline?.logSourceAccountId}
+                            region={amplifyConfig.aws_project_region}
+                          />
+                        </ValueWithLabel>
+                      )}
                     </div>
                     <div className="flex-1 border-left-c">
                       {curPipeline?.type === ServiceType.Lambda && (
@@ -249,10 +268,23 @@ const ServiceLogDetail: React.FC<RouteComponentProps<MatchParams>> = (
                           </ExtLink>
                         </ValueWithLabel>
                       )}
-                      {curPipeline?.type === ServiceType.WAF && (
+                      {(curPipeline?.type === ServiceType.WAF ||
+                        curPipeline?.type === ServiceType.WAFSampled) && (
                         <ValueWithLabel label={t("servicelog:detail.wafName")}>
                           <ExtLink
                             to={buildWAFLink(amplifyConfig.aws_project_region)}
+                          >
+                            {curPipeline?.source}
+                          </ExtLink>
+                        </ValueWithLabel>
+                      )}
+                      {curPipeline?.type === ServiceType.VPC && (
+                        <ValueWithLabel label={t("servicelog:detail.vpcId")}>
+                          <ExtLink
+                            to={buildVPCLink(
+                              curPipeline?.source,
+                              amplifyConfig.aws_project_region
+                            )}
                           >
                             {curPipeline?.source}
                           </ExtLink>
@@ -265,6 +297,17 @@ const ServiceLogDetail: React.FC<RouteComponentProps<MatchParams>> = (
                           <ExtLink
                             to={buildTrailLink(
                               curPipeline?.source || "",
+                              amplifyConfig.aws_project_region
+                            )}
+                          >
+                            {curPipeline?.source}
+                          </ExtLink>
+                        </ValueWithLabel>
+                      )}
+                      {curPipeline?.type === ServiceType.Config && (
+                        <ValueWithLabel label={t("servicelog:detail.config")}>
+                          <ExtLink
+                            to={buildConfigLink(
                               amplifyConfig.aws_project_region
                             )}
                           >

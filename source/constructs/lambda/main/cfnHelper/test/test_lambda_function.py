@@ -5,7 +5,7 @@ import json
 import pytest
 import os
 import boto3
-from moto import mock_cloudformation, mock_s3
+from moto import mock_cloudformation, mock_s3, mock_sts, mock_dynamodb
 
 
 @pytest.fixture
@@ -46,8 +46,31 @@ def s3_client():
         yield
 
 
+@pytest.fixture
+def sts_client():
+    with mock_sts():
+        boto3.client("sts", region_name=os.environ.get("AWS_REGION"))
+        yield
+
+
+@pytest.fixture
+def ddb_client():
+    with mock_dynamodb():
+        region = os.environ.get("AWS_REGION")
+
+        _ddb_client = boto3.client("dynamodb", region_name=region)
+        # Mock the Sub account link table
+        _ddb_client.create_table(
+            TableName=os.environ.get("SUB_ACCOUNT_LINK_TABLE_NAME"),
+            KeySchema=[{"AttributeName": "id", "KeyType": "HASH"}],
+            AttributeDefinitions=[{"AttributeName": "id", "AttributeType": "S"}],
+            ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
+        )
+        yield
+
+
 @mock_cloudformation
-def test_lambda_function_start(start_event, s3_client):
+def test_lambda_function_start(start_event, s3_client, sts_client, ddb_client):
     import lambda_function
 
     result = lambda_function.lambda_handler(start_event, None)

@@ -12,7 +12,7 @@ You can create a log ingestion into AOS either by using the Log Hub console or b
 3. Click the **Create a log ingestion** button.
 4. In the **AWS Services** section, choose **Amazon CloudTrail**.
 5. Choose **Next**.
-6. Under **Specify settings**, for **Trail**, select one from the dropdown list. 
+6. Under **Specify settings**, for **Trail**, select one from the dropdown list. (Optional) If you are ingesting CloudTrail logs from another account, select a [linked account](../link-account/index.md) from the **Account** dropdown list first.
 7. Choose **Next**.
 8. In the **Specify OpenSearch domain** section, select an imported domain for **Amazon OpenSearch domain**. 
 9. Choose **Yes** for **Sample dashboard** if you want to ingest an associated built-in AOS dashboard.
@@ -28,7 +28,7 @@ This automated AWS CloudFormation template deploys the *Log Hub - CloudTrail Log
 |                      | Launch in AWS Console                                        | Download Template                                            |
 | -------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | AWS Standard Regions | [![Launch Stack](../../images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/template?stackName=LogHub-CloudTrail&templateURL=https://{{ bucket }}.s3.amazonaws.com/log-hub/{{ version }}/CloudTrailLog.template){target=_blank} | [Template](https://{{ bucket }}.s3.amazonaws.com/log-hub/{{ version }}/CloudTrailLog.template) |
-| AWS China Regions    | [![Launch Stack](../../images/launch-stack.png)](https://console.amazonaws.cn/cloudformation/home#/stacks/create/template?stackName=LogHub-CloudTrail&templateURL=https://aws-gcr-solutions.s3.cn-north-1.amazonaws.com.cn/log-hub/{{ version }}/CloudTrailLog.template){target=_blank} | [Template](https://aws-gcr-solutions.s3.cn-north-1.amazonaws.com.cn/log-hub/latest/CloudTrailLog.template) |
+| AWS China Regions    | [![Launch Stack](../../images/launch-stack.png)](https://console.amazonaws.cn/cloudformation/home#/stacks/create/template?stackName=LogHub-CloudTrail&templateURL=https://{{ bucket }}.s3.cn-north-1.amazonaws.com.cn/log-hub/{{ version }}/CloudTrailLog.template){target=_blank} | [Template](https://{{ bucket }}.s3.cn-north-1.amazonaws.com.cn/log-hub/{{ version }}/CloudTrailLog.template) |
 
 {%
 include-markdown "include-cfn-common.md"

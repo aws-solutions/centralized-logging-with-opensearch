@@ -35,6 +35,7 @@ import HelpPanel from "components/HelpPanel";
 import SideMenu from "components/SideMenu";
 import Permission from "./detail/Permission";
 import { useTranslation } from "react-i18next";
+import Status from "components/Status/Status";
 
 interface MatchParams {
   id: string;
@@ -141,27 +142,35 @@ const ApplicationLogDetail: React.FC<RouteComponentProps<MatchParams>> = (
                         <div>{curPipeline?.aosParas?.replicaNumbers}</div>
                       </ValueWithLabel>
                     </div>
-                    <div className="flex-1 border-left-c">
-                      <ValueWithLabel label={t("applog:detail.shards")}>
-                        <div>
-                          <ExtLink
-                            to={buildKDSLink(
-                              amplifyConfig.aws_project_region,
-                              curPipeline?.kdsParas?.streamName || ""
-                            )}
-                          >
-                            {curPipeline?.kdsParas?.streamName || "-"}
-                          </ExtLink>
-                          {curPipeline?.kdsParas?.enableAutoScaling
-                            ? t("applog:detail.autoScaling")
-                            : ""}
-                        </div>
-                      </ValueWithLabel>
-                    </div>
+                    {!curPipeline?.ec2RoleArn && (
+                      <div className="flex-1 border-left-c">
+                        <ValueWithLabel label={t("applog:detail.shards")}>
+                          <div>
+                            <ExtLink
+                              to={buildKDSLink(
+                                amplifyConfig.aws_project_region,
+                                curPipeline?.kdsParas?.streamName || ""
+                              )}
+                            >
+                              {curPipeline?.kdsParas?.streamName || "-"}
+                            </ExtLink>
+                            {curPipeline?.kdsParas?.enableAutoScaling
+                              ? t("applog:detail.autoScaling")
+                              : ""}
+                          </div>
+                        </ValueWithLabel>
+                      </div>
+                    )}
+
                     <div className="flex-1 border-left-c">
                       <ValueWithLabel label={t("applog:detail.created")}>
                         <div>
                           {formatLocalTime(curPipeline?.createdDt || "")}
+                        </div>
+                      </ValueWithLabel>
+                      <ValueWithLabel label={t("applog:list.status")}>
+                        <div>
+                          <Status status={curPipeline?.status || ""} />
                         </div>
                       </ValueWithLabel>
                     </div>
@@ -182,7 +191,15 @@ const ApplicationLogDetail: React.FC<RouteComponentProps<MatchParams>> = (
                     <AntTab label={t("applog:detail.tab.tags")} />
                   </AntTabs>
                   <TabPanel value={activeTab} index={0}>
-                    <Ingestion pipelineInfo={curPipeline} />
+                    <Ingestion
+                      changeTab={(id) => {
+                        setActiveTab(id);
+                      }}
+                      pipelineInfo={curPipeline}
+                      upgradeToNewPipeline={() => {
+                        getPipelineById();
+                      }}
+                    />
                   </TabPanel>
                   <TabPanel value={activeTab} index={1}>
                     <Permission pipelineInfo={curPipeline} />

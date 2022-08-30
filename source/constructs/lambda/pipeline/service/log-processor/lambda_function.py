@@ -13,10 +13,9 @@ from datetime import datetime
 from io import StringIO
 from pathlib import Path
 from typing import Tuple
-
-import boto3
 from botocore.client import Config
 
+from boto3_client import get_resource
 from util.log_parser import LogParser
 from util.osutil import OpenSearch
 
@@ -33,7 +32,6 @@ solution_id = os.environ.get("SOLUTION_ID", "SO8025")
 user_agent_extra = f"AwsSolution/{solution_id}/{solution_version}"
 # Add user agent.
 default_config = Config(user_agent_extra=user_agent_extra)
-s3 = boto3.resource("s3", config=default_config)
 
 # batch size can be overwritten via Env. var.
 batch_size = int(os.environ.get("BULK_BATCH_SIZE", DEFAULT_BULK_BATCH_SIZE))
@@ -62,6 +60,9 @@ if plugins:
 else:
     plugin_modules = []
 
+is_local_session = log_type in ["RDS", "Lambda"]
+s3 = get_resource('s3', is_local_session)
+
 
 def lambda_handler(event, context):
     # print(event)
@@ -89,9 +90,9 @@ def lambda_handler(event, context):
             export_prefix = get_export_prefix(key)
 
             # Start processing log file
-            for part, (batch_total, batch_processed, failed_records) in enumerate(
-                process_log_file(parser, key, index_name)
-            ):
+            for part, (batch_total, batch_processed,
+                       failed_records) in enumerate(
+                           process_log_file(parser, key, index_name)):
                 total, processed, failed_number = (
                     total + batch_total,
                     processed + batch_processed,
@@ -100,8 +101,7 @@ def lambda_handler(event, context):
                 if failed_records:
                     export_key = f"{export_prefix}.{part}.{export_format}"
                     status_code = export_failed_records(
-                        failed_records, backup_bucket_name, export_key
-                    )
+                        failed_records, backup_bucket_name, export_key)
                     logger.info("Export status: %d", status_code)
 
     logger.info(
@@ -197,14 +197,17 @@ def bulk_load_records(records: list, index_name: str) -> list:
                 # print(item[BULK_ACTION]['status'])
                 if item[BULK_ACTION]["status"] >= 300:
                     # records[idx]['index_name'] = index_name
-                    records[idx]["error_type"] = item[BULK_ACTION]["error"]["type"]
-                    records[idx]["error_reason"] = item[BULK_ACTION]["error"]["reason"]
+                    records[idx]["error_type"] = item[BULK_ACTION]["error"][
+                        "type"]
+                    records[idx]["error_reason"] = item[BULK_ACTION]["error"][
+                        "reason"]
                     failed_records.append(records[idx])
 
             break
 
         if retry >= TOTAL_RETRIES:
-            raise RuntimeError(f"Unable to bulk load the records after {retry} retries")
+            raise RuntimeError(
+                f"Unable to bulk load the records after {retry} retries")
 
         logger.error("Bulk load failed: %s", response.text)
         logger.info("Sleep 10 seconds and retry...")
@@ -228,7 +231,8 @@ def check_index_template():
         if result:
             break
         if retry >= TOTAL_RETRIES:
-            raise RuntimeError(f"Unable to check index template after {retry} retries")
+            raise RuntimeError(
+                f"Unable to check index template after {retry} retries")
 
         logger.info("Sleep 10 seconds and retry...")
         retry += 1
@@ -259,8 +263,7 @@ def get_object_key(event) -> str:
             if "s3" in event_record:
                 # s3 event message
                 key = urllib.parse.unquote_plus(
-                    event_record["s3"]["object"]["key"], encoding="utf-8"
-                )
+                    event_record["s3"]["object"]["key"], encoding="utf-8")
                 keys.append(key)
 
         return keys
@@ -276,7 +279,7 @@ def read_file(key: str):
     try:
         logger.info("Start reading file...")
         body = obj.get()["Body"]
-        if key.endswith(".gz") or log_type in ["RDS"]:
+        if key.endswith(".gz") or log_type in ["RDS", "Lambda"]:
             with gzip.GzipFile(fileobj=body) as f:
                 while line := f.readline():
                     yield line
@@ -290,9 +293,8 @@ def read_file(key: str):
         raise RuntimeError(f"Unable to process log file {key}")
 
 
-def process_log_file(
-    parser: LogParser, key: str, index_name: str
-) -> Tuple[int, int, list]:
+def process_log_file(parser: LogParser, key: str,
+                     index_name: str) -> Tuple[int, int, list]:
     """Read with log file and process the record and load into AOS
 
     Args:
@@ -309,7 +311,7 @@ def process_log_file(
     # Read file
     records = []
     failed_records, processed_records = [], []
-    count, total, processed = 0, 0, 0
+    count, total, processed, skipped_lines = 0, 0, 0, 0
 
     for line in read_file(key):
         # First step is to parse line by line
@@ -326,6 +328,8 @@ def process_log_file(
             else:
                 records.append(result)
                 count += 1
+        else:
+            skipped_lines += 1
 
         # To avoid consuming too much memory
         # Start processing in small batches
@@ -341,8 +345,10 @@ def process_log_file(
             # logger.info(f">>> check batch : {total}, {len(processed_records)}")
 
         if len(processed_records) >= batch_size:
-            failed_records.extend(bulk_load_records(processed_records, index_name))
-            processed, processed_records = processed + len(processed_records), []
+            failed_records.extend(
+                bulk_load_records(processed_records, index_name))
+            processed, processed_records = processed + len(
+                processed_records), []
 
             if len(failed_records) >= batch_size:
                 yield total, processed, failed_records
@@ -354,6 +360,7 @@ def process_log_file(
 
     failed_records.extend(bulk_load_records(processed_records, index_name))
     total, processed = total + count, processed + len(processed_records)
+    logger.info("Skipped Lines: %d", skipped_lines)
     yield total, processed, failed_records
 
 

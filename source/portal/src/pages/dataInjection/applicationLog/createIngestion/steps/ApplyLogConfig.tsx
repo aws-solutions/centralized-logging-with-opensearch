@@ -36,16 +36,21 @@ import {
   buildSpringBootRegExFromConfig,
 } from "assets/js/utils";
 import { useTranslation } from "react-i18next";
+import CreateSampleDashboard from "pages/dataInjection/applicationLog/common/CreateSampleDashboard";
+import { InfoBarTypes } from "reducer/appReducer";
+import TextInput from "components/TextInput";
 
 interface ApplyConfigProps {
   ingestionInfo: IngestionPropsType;
   changeCurLogConfig: (config: ExLogConf | undefined) => void;
+  changeSampleDashboard: (yesNo: string) => void;
   hideNameError: () => void;
   hideTypeError: () => void;
   changeLoadingConfig: (loading: boolean) => void;
   changeLogCreationMethod: (method: string) => void;
   changeUserLogFormatError: (error: boolean) => void;
   changeSampleLogFormatInvalid: (invalid: boolean) => void;
+  changeLogPath: (path: string) => void;
 }
 
 const ApplyLogConfig: React.FC<ApplyConfigProps> = (
@@ -54,12 +59,14 @@ const ApplyLogConfig: React.FC<ApplyConfigProps> = (
   const {
     ingestionInfo,
     changeCurLogConfig,
+    changeSampleDashboard,
     hideNameError,
     hideTypeError,
     changeLoadingConfig,
     changeLogCreationMethod,
     changeUserLogFormatError,
     changeSampleLogFormatInvalid,
+    changeLogPath,
   } = props;
   const { t } = useTranslation();
 
@@ -146,6 +153,31 @@ const ApplyLogConfig: React.FC<ApplyConfigProps> = (
         desc={t("applog:ingestion.applyConfig.nameDesc")}
       >
         <div className="mt-20">
+          <HeaderPanel title={t("resource:config.common.logPath")}>
+            <FormItem
+              infoType={InfoBarTypes.LOG_CONFIG_PATH}
+              optionTitle={t("resource:config.common.logPath")}
+              optionDesc={t("resource:config.common.logPathDesc")}
+              errorText={
+                ingestionInfo.logPathEmptyError
+                  ? t("applog:ingestion.applyConfig.inputLogPath")
+                  : ""
+              }
+            >
+              <div className="flex align-center m-w-75p">
+                <div style={{ flex: 1 }}>
+                  <TextInput
+                    value={ingestionInfo.logPath}
+                    placeholder="/var/log/app1/*.log, /var/log/app2/*.log"
+                    onChange={(event) => {
+                      changeLogPath(event.target.value);
+                    }}
+                  />
+                </div>
+              </div>
+            </FormItem>
+          </HeaderPanel>
+
           <HeaderPanel title={t("applog:ingestion.applyConfig.logConfig")}>
             <div>
               <FormItem
@@ -197,6 +229,11 @@ const ApplyLogConfig: React.FC<ApplyConfigProps> = (
                 </FormItem>
               )}
             </div>
+            <CreateSampleDashboard
+              logType={ingestionInfo.curLogConfig?.logType}
+              createDashboard={ingestionInfo.createDashboard}
+              changeSampleDashboard={changeSampleDashboard}
+            />
           </HeaderPanel>
 
           <LogConfigComp
@@ -224,13 +261,6 @@ const ApplyLogConfig: React.FC<ApplyConfigProps> = (
               const tmpConfig: any = {
                 ...ingestionInfo.curLogConfig,
                 confName: name,
-              };
-              changeCurLogConfig(tmpConfig);
-            }}
-            changeLogConfPath={(path: string) => {
-              const tmpConfig: any = {
-                ...ingestionInfo.curLogConfig,
-                logPath: path,
               };
               changeCurLogConfig(tmpConfig);
             }}

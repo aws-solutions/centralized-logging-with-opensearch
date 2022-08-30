@@ -13,24 +13,25 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
+import { Construct } from "constructs";
 import {
-  Construct,
-  Duration,
-  RemovalPolicy,
-  Fn,
   Aws,
+  Fn,
+  Duration,
   CfnCondition,
-} from "@aws-cdk/core";
-import * as appsync from "@aws-cdk/aws-appsync";
-import * as lambda from "@aws-cdk/aws-lambda";
+  aws_dynamodb as ddb,
+  aws_iam as iam,
+  aws_s3 as s3,
+  aws_lambda as lambda,
+  SymlinkFollowMode,
+} from "aws-cdk-lib";
+
+import { CfnDocument } from "aws-cdk-lib/aws-ssm";
+import * as appsync from "@aws-cdk/aws-appsync-alpha";
 import * as path from "path";
-import * as s3 from "@aws-cdk/aws-s3";
-import * as ddb from "@aws-cdk/aws-dynamodb";
-import * as iam from "@aws-cdk/aws-iam";
-import { CfnDocument } from "@aws-cdk/aws-ssm";
 
 import { appIngestionFlowStack } from "../api/app-log-ingestion-flow";
+import { EKSAgent2AOSPipelineFlowStack } from "../api/eks-agent-to-aos-flow";
 
 import { EKSClusterPodLogPipelineFlowStack } from "./eks-cluster-pod-log-pipeline-flow";
 export interface AppLogIngestionStackProps {
@@ -67,18 +68,20 @@ export interface AppLogIngestionStackProps {
    *
    * @default - None.
    */
-  readonly cmkKeyArn: string
+  readonly cmkKeyArn: string;
 
-  instanceGroupTable: ddb.Table;
-  instanceMetaTable: ddb.Table;
-  logConfTable: ddb.Table;
-  appPipelineTable: ddb.Table;
-  ec2LogSourceTable: ddb.Table;
-  s3LogSourceTable: ddb.Table;
-  eksClusterLogSourceTable: ddb.Table;
-  configFileBucket: s3.Bucket;
-  appLogIngestionTable: ddb.Table;
-  logAgentEKSDeploymentKindTable:ddb.Table
+  readonly instanceGroupTable: ddb.Table;
+  readonly instanceMetaTable: ddb.Table;
+  readonly logConfTable: ddb.Table;
+  readonly appPipelineTable: ddb.Table;
+  readonly ec2LogSourceTable: ddb.Table;
+  readonly s3LogSourceTable: ddb.Table;
+  readonly eksClusterLogSourceTable: ddb.Table;
+  readonly configFileBucket: s3.Bucket;
+  readonly appLogIngestionTable: ddb.Table;
+  readonly logAgentEKSDeploymentKindTable: ddb.Table;
+  readonly subAccountLinkTable: ddb.Table;
+  readonly centralAssumeRolePolicy: iam.ManagedPolicy;
 }
 export class AppLogIngestionStack extends Construct {
   constructor(scope: Construct, id: string, props: AppLogIngestionStackProps) {
@@ -169,12 +172,13 @@ export class AppLogIngestionStack extends Construct {
       "AppLogIngestionEC2AsyncHandler",
       {
         code: lambda.AssetCode.fromAsset(
-          path.join(__dirname, "../../lambda/api/app_log_ingestion")
+          path.join(__dirname, "../../lambda/api/app_log_ingestion"),
+          { followSymlinks: SymlinkFollowMode.ALWAYS }
         ),
         runtime: lambda.Runtime.PYTHON_3_9,
         handler: "ec2_as_source_lambda_function.lambda_handler",
         timeout: Duration.minutes(15),
-        memorySize: 2048,
+        memorySize: 1024,
         environment: {
           APPLOGINGESTION_TABLE: props.appLogIngestionTable.tableName,
           SSM_LOG_CONFIG_DOCUMENT_NAME: downloadLogConfigDocument.ref,
@@ -187,6 +191,7 @@ export class AppLogIngestionStack extends Construct {
           S3_LOG_SOURCE_TABLE_NAME: props.s3LogSourceTable.tableName!,
           EKS_CLUSTER_SOURCE_TABLE_NAME:
             props.eksClusterLogSourceTable.tableName!,
+          SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
           SOLUTION_ID: solution_id,
           SOLUTION_VERSION: process.env.VERSION
             ? process.env.VERSION
@@ -214,6 +219,7 @@ export class AppLogIngestionStack extends Construct {
     props.eksClusterLogSourceTable.grantReadWriteData(
       appLogIngestionEC2AsyncHandler
     );
+    props.subAccountLinkTable.grantReadData(appLogIngestionEC2AsyncHandler);
 
     appLogIngestionEC2AsyncHandler.addToRolePolicy(
       new iam.PolicyStatement({
@@ -234,6 +240,22 @@ export class AppLogIngestionStack extends Construct {
         resources: ["*"],
       })
     );
+    appLogIngestionEC2AsyncHandler.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: [
+          "iam:PutRolePolicy",
+          "iam:CreateRole",
+          "iam:GetRole",
+          "iam:UpdateAssumeRolePolicy",
+        ],
+        effect: iam.Effect.ALLOW,
+        resources: ["*"],
+      })
+    );
+
+    props.centralAssumeRolePolicy.attachToRole(
+      appLogIngestionEC2AsyncHandler.role!
+    );
 
     // Create the async child lambda to handle time-consuming tasks for S3 source.
     const appLogIngestionS3AsyncHandler = new lambda.Function(
@@ -241,12 +263,13 @@ export class AppLogIngestionStack extends Construct {
       "AppLogIngestionS3AsyncHandler",
       {
         code: lambda.AssetCode.fromAsset(
-          path.join(__dirname, "../../lambda/api/app_log_ingestion")
+          path.join(__dirname, "../../lambda/api/app_log_ingestion"),
+          { followSymlinks: SymlinkFollowMode.ALWAYS }
         ),
         runtime: lambda.Runtime.PYTHON_3_9,
         handler: "s3_as_source_lambda_function.lambda_handler",
         timeout: Duration.minutes(15),
-        memorySize: 2048,
+        memorySize: 1024,
         environment: {
           APPLOGINGESTION_TABLE: props.appLogIngestionTable.tableName,
           SSM_LOG_CONFIG_DOCUMENT_NAME: downloadLogConfigDocument.ref,
@@ -259,6 +282,7 @@ export class AppLogIngestionStack extends Construct {
           S3_LOG_SOURCE_TABLE_NAME: props.s3LogSourceTable.tableName!,
           EKS_CLUSTER_SOURCE_TABLE_NAME:
             props.eksClusterLogSourceTable.tableName!,
+          SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
           SOLUTION_ID: solution_id,
           SOLUTION_VERSION: process.env.VERSION
             ? process.env.VERSION
@@ -284,6 +308,7 @@ export class AppLogIngestionStack extends Construct {
     props.eksClusterLogSourceTable.grantReadWriteData(
       appLogIngestionS3AsyncHandler
     );
+    props.subAccountLinkTable.grantReadData(appLogIngestionS3AsyncHandler);
 
     appLogIngestionS3AsyncHandler.addToRolePolicy(
       new iam.PolicyStatement({
@@ -304,6 +329,21 @@ export class AppLogIngestionStack extends Construct {
         resources: ["*"],
       })
     );
+    appLogIngestionS3AsyncHandler.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: [
+          "iam:PutRolePolicy",
+          "iam:CreateRole",
+          "iam:GetRole",
+          "iam:UpdateAssumeRolePolicy",
+        ],
+        effect: iam.Effect.ALLOW,
+        resources: ["*"],
+      })
+    );
+    props.centralAssumeRolePolicy.attachToRole(
+      appLogIngestionS3AsyncHandler.role!
+    );
 
     // Create a Step Functions to orchestrate pipeline flow
     const appIngestionFlow = new appIngestionFlowStack(this, "PipelineFlowSM", {
@@ -317,7 +357,8 @@ export class AppLogIngestionStack extends Construct {
       "AppLogIngestionHandler",
       {
         code: lambda.AssetCode.fromAsset(
-          path.join(__dirname, "../../lambda/api/app_log_ingestion")
+          path.join(__dirname, "../../lambda/api/app_log_ingestion"),
+          { followSymlinks: SymlinkFollowMode.ALWAYS }
         ),
         runtime: lambda.Runtime.PYTHON_3_9,
         handler: "lambda_function.lambda_handler",
@@ -339,6 +380,7 @@ export class AppLogIngestionStack extends Construct {
             props.eksClusterLogSourceTable.tableName!,
           STATE_MACHINE_ARN: appIngestionFlow.stateMachineArn!,
           INSTANCE_GROUP_TABLE_NAME: props.instanceGroupTable.tableName!,
+          SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
           LOG_AGENT_VPC_ID: props.defaultVPC,
           LOG_AGENT_SUBNETS_IDS: Fn.join(",", props.defaultPublicSubnets),
           DEFAULT_CMK_ARN: props.cmkKeyArn!,
@@ -365,7 +407,7 @@ export class AppLogIngestionStack extends Construct {
     props.configFileBucket.grantReadWrite(appLogIngestionHandler);
     props.s3LogSourceTable.grantReadWriteData(appLogIngestionHandler);
     props.eksClusterLogSourceTable.grantReadWriteData(appLogIngestionHandler);
-
+    props.subAccountLinkTable.grantReadData(appLogIngestionHandler);
     // Grant SSM Policy to the InstanceMeta lambda
     const ssmPolicy = new iam.PolicyStatement({
       actions: [
@@ -396,9 +438,15 @@ export class AppLogIngestionStack extends Construct {
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
         resources: ["*"],
-        actions: ["iam:PutRolePolicy"],
+        actions: [
+          "iam:PutRolePolicy",
+          "iam:CreateRole",
+          "iam:GetRole",
+          "iam:UpdateAssumeRolePolicy",
+        ],
       })
     );
+    props.centralAssumeRolePolicy.attachToRole(appLogIngestionHandler.role!);
 
     // Add appLogIngestion table as a Datasource
     const appLogIngestionDynamoDS = props.graphqlApi.addDynamoDbDataSource(
@@ -455,7 +503,8 @@ export class AppLogIngestionStack extends Construct {
       "EKSClusterPodLogPipelineStfnLambdaHandle",
       {
         code: lambda.AssetCode.fromAsset(
-          path.join(__dirname, "../../lambda/api/app_log_ingestion")
+          path.join(__dirname, "../../lambda/api/app_log_ingestion"),
+          { followSymlinks: SymlinkFollowMode.ALWAYS }
         ),
         runtime: lambda.Runtime.PYTHON_3_9,
         handler:
@@ -480,7 +529,7 @@ export class AppLogIngestionStack extends Construct {
 
           EKS_CLUSTER_SOURCE_TABLE_NAME:
             props.eksClusterLogSourceTable.tableName!,
-
+          SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName!,
         },
         description: "Log Hub - Updating EKS Cluster Pod Log Ingestion APIs",
       }
@@ -494,9 +543,14 @@ export class AppLogIngestionStack extends Construct {
     );
     eksClusterPodLogPipelineStfnLambdaHandle.addToRolePolicy(
       new iam.PolicyStatement({
+        actions: [
+          "iam:PutRolePolicy",
+          "iam:CreateRole",
+          "iam:GetRole",
+          "iam:UpdateAssumeRolePolicy",
+        ],
         effect: iam.Effect.ALLOW,
         resources: ["*"],
-        actions: ["iam:PutRolePolicy"],
       })
     );
 
@@ -515,6 +569,13 @@ export class AppLogIngestionStack extends Construct {
     props.eksClusterLogSourceTable.grantReadWriteData(
       eksClusterPodLogPipelineStfnLambdaHandle
     );
+    props.subAccountLinkTable.grantReadData(
+      eksClusterPodLogPipelineStfnLambdaHandle
+    );
+
+    props.centralAssumeRolePolicy.attachToRole(
+      eksClusterPodLogPipelineStfnLambdaHandle.role!
+    );
 
     const eksClusterPodlogPipeLineFlow = new EKSClusterPodLogPipelineFlowStack(
       this,
@@ -527,13 +588,25 @@ export class AppLogIngestionStack extends Construct {
           eksClusterPodLogPipelineStfnLambdaHandle.functionArn,
       }
     );
+    const eksAgent2AOSPipelineFlow = new EKSAgent2AOSPipelineFlowStack(
+      this,
+      "EKSAgent2AOSPipelineFlowSM",
+      {
+        applogPipelineTableArn: props.appPipelineTable.tableArn,
+        applogIngestionTableArn: props.appLogIngestionTable.tableArn,
+        cfnFlowSMArn: props.cfnFlowSMArn,
+        eksAgent2AOSPipelineStfnLambdaArn:
+          eksClusterPodLogPipelineStfnLambdaHandle.functionArn,
+      }
+    );
     // Create a lambda to handle all appLogIngestion related APIs.
     const eksClusterPodLogIngestionLambdaHandler = new lambda.Function(
       this,
       "EKSClusterPodLogIngestionLambdaHandler",
       {
         code: lambda.AssetCode.fromAsset(
-          path.join(__dirname, "../../lambda/api/app_log_ingestion")
+          path.join(__dirname, "../../lambda/api/app_log_ingestion"),
+          { followSymlinks: SymlinkFollowMode.ALWAYS }
         ),
         runtime: lambda.Runtime.PYTHON_3_9,
         handler: "eks_cluster_pod_log_ingestion_lambda_function.lambda_handler",
@@ -557,6 +630,7 @@ export class AppLogIngestionStack extends Construct {
 
           EKS_CLUSTER_SOURCE_TABLE_NAME:
             props.eksClusterLogSourceTable.tableName!,
+          SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
           STATE_MACHINE_ARN: eksClusterPodlogPipeLineFlow.stateMachineArn!,
         },
         description: "Log Hub - EKS Cluster Pod Log Ingestion APIs Resolver",
@@ -583,6 +657,9 @@ export class AppLogIngestionStack extends Construct {
     props.eksClusterLogSourceTable.grantReadWriteData(
       eksClusterPodLogIngestionLambdaHandler
     );
+    props.subAccountLinkTable.grantReadData(
+      eksClusterPodLogIngestionLambdaHandler
+    );
 
     eksClusterPodLogIngestionLambdaHandler.addToRolePolicy(
       new iam.PolicyStatement({
@@ -598,7 +675,6 @@ export class AppLogIngestionStack extends Construct {
         actions: ["states:StartExecution"],
       })
     );
-
     // Add eksClusterAsSourceIngestion lambda as a Datasource
     const eksClusterPodLogIngestionLambdaDS =
       props.graphqlApi.addLambdaDataSource(
@@ -614,7 +690,118 @@ export class AppLogIngestionStack extends Construct {
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
+    props.centralAssumeRolePolicy.attachToRole(
+      eksClusterPodLogIngestionLambdaHandler.role!
+    );
 
+    //Agent to AOS
+    const eksLogWithoutDataBufferIngestionLambdaHandler = new lambda.Function(
+      this,
+      "EKSLogIngestionWithoutDataBufferLambdaHandler",
+      {
+        code: lambda.AssetCode.fromAsset(
+          path.join(__dirname, "../../lambda/api/app_log_ingestion"),
+          { followSymlinks: SymlinkFollowMode.ALWAYS }
+        ),
+        runtime: lambda.Runtime.PYTHON_3_9,
+        handler:
+          "pod_log_without_data_buffer_ingestion_lambda_function.lambda_handler",
+        timeout: Duration.seconds(60),
+        memorySize: 1024,
+        environment: {
+          SOLUTION_ID: solution_id,
+          SOLUTION_VERSION: process.env.VERSION
+            ? process.env.VERSION
+            : "v1.0.0",
+          CONFIG_FILE_S3_BUCKET_NAME: props.configFileBucket.bucketName!,
+
+          INSTANCE_META_TABLE_NAME: props.instanceMetaTable.tableName!,
+          APP_PIPELINE_TABLE_NAME: props.appPipelineTable.tableName!,
+          APP_LOG_CONFIG_TABLE_NAME: props.logConfTable.tableName!,
+          INSTANCE_GROUP_TABLE_NAME: props.instanceGroupTable.tableName!,
+          APPLOGINGESTION_TABLE: props.appLogIngestionTable.tableName,
+
+          EC2_LOG_SOURCE_TABLE_NAME: props.ec2LogSourceTable.tableName!,
+          S3_LOG_SOURCE_TABLE_NAME: props.s3LogSourceTable.tableName!,
+
+          EKS_CLUSTER_SOURCE_TABLE_NAME:
+            props.eksClusterLogSourceTable.tableName!,
+          SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
+          STATE_MACHINE_ARN: eksAgent2AOSPipelineFlow.stateMachineArn!,
+        },
+        description:
+          "Log Hub - EKS Cluster Pod Log Ingestion APIs Resolver(No Data Buffer)",
+      }
+    );
+
+    // Grant permissions to the eksLogWithoutDataBufferIngestionLambdaHandler lambda
+    props.instanceMetaTable.grantReadWriteData(
+      eksLogWithoutDataBufferIngestionLambdaHandler
+    );
+    props.appPipelineTable.grantReadWriteData(
+      eksLogWithoutDataBufferIngestionLambdaHandler
+    );
+    props.logConfTable.grantReadWriteData(
+      eksLogWithoutDataBufferIngestionLambdaHandler
+    );
+    props.instanceGroupTable.grantReadWriteData(
+      eksLogWithoutDataBufferIngestionLambdaHandler
+    );
+    props.appLogIngestionTable.grantReadWriteData(
+      eksLogWithoutDataBufferIngestionLambdaHandler
+    );
+
+    props.eksClusterLogSourceTable.grantReadWriteData(
+      eksLogWithoutDataBufferIngestionLambdaHandler
+    );
+    props.subAccountLinkTable.grantReadData(
+      eksLogWithoutDataBufferIngestionLambdaHandler
+    );
+
+    eksLogWithoutDataBufferIngestionLambdaHandler.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ["lambda:InvokeFunction"],
+        effect: iam.Effect.ALLOW,
+        resources: ["*"],
+      })
+    );
+    eksLogWithoutDataBufferIngestionLambdaHandler.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        resources: [eksAgent2AOSPipelineFlow.stateMachineArn],
+        actions: ["states:StartExecution"],
+      })
+    );
+    eksLogWithoutDataBufferIngestionLambdaHandler.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        resources: ["*"],
+        actions: [
+          "iam:PutRolePolicy",
+          "iam:CreateRole",
+          "iam:GetRole",
+          "iam:UpdateAssumeRolePolicy",
+        ],
+      })
+    );
+    // Add eksClusterAsSourceWithoutDataBufferIngestion lambda as a Datasource
+    const eksLogWithoutDataBufferIngestionLambdaDS =
+      props.graphqlApi.addLambdaDataSource(
+        "EKSLogWithoutDataBufferIngestionLambdaDS",
+        eksLogWithoutDataBufferIngestionLambdaHandler,
+        {
+          description: "Lambda Resolver Datasource",
+        }
+      );
+    eksLogWithoutDataBufferIngestionLambdaDS.createResolver({
+      typeName: "Mutation",
+      fieldName: "createEKSClusterPodLogWithoutDataBufferIngestion",
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+    props.centralAssumeRolePolicy.attachToRole(
+      eksLogWithoutDataBufferIngestionLambdaHandler.role!
+    );
 
     // Create a lambda to handle all appLogIngestion related APIs.
     const eksDaemonSetSidecarConfigGenerate = new lambda.Function(
@@ -622,7 +809,8 @@ export class AppLogIngestionStack extends Construct {
       "EKSDaemonSetSidecarConfigGenerate",
       {
         code: lambda.AssetCode.fromAsset(
-          path.join(__dirname, "../../lambda/api/app_log_ingestion")
+          path.join(__dirname, "../../lambda/api/app_log_ingestion"),
+          { followSymlinks: SymlinkFollowMode.ALWAYS }
         ),
         runtime: lambda.Runtime.PYTHON_3_9,
         handler: "eks_daemonset_sidecar_config_lambda_function.lambda_handler",
@@ -633,7 +821,7 @@ export class AppLogIngestionStack extends Construct {
           SOLUTION_VERSION: process.env.VERSION
             ? process.env.VERSION
             : "v1.0.0",
-          SSM_LOG_CONFIG_DOCUMENT_NAME: downloadLogConfigDocument.ref,  
+          SSM_LOG_CONFIG_DOCUMENT_NAME: downloadLogConfigDocument.ref,
           CONFIG_FILE_S3_BUCKET_NAME: props.configFileBucket.bucketName!,
 
           INSTANCE_META_TABLE_NAME: props.instanceMetaTable.tableName!,
@@ -645,19 +833,24 @@ export class AppLogIngestionStack extends Construct {
           EC2_LOG_SOURCE_TABLE_NAME: props.ec2LogSourceTable.tableName!,
           S3_LOG_SOURCE_TABLE_NAME: props.s3LogSourceTable.tableName!,
 
-          EKS_CLUSTER_SOURCE_TABLE_NAME: props.eksClusterLogSourceTable.tableName!,
-          LOG_AGENT_EKS_DEPLOYMENT_KIND_TABLE : props.logAgentEKSDeploymentKindTable.tableName!
+          EKS_CLUSTER_SOURCE_TABLE_NAME:
+            props.eksClusterLogSourceTable.tableName!,
+          LOG_AGENT_EKS_DEPLOYMENT_KIND_TABLE:
+            props.logAgentEKSDeploymentKindTable.tableName!,
+          SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName!,
+          DEFAULT_OPEN_EXTRA_METADATA_FLAG: "true",
+          FLUENT_BIT_IMAGE:
+            "public.ecr.aws/aws-observability/aws-for-fluent-bit:2.25.1",
         },
-        description: "Log Hub - EKS Cluster DaemonSet And Sidecar Config APIs Resolver",
+        description:
+          "Log Hub - EKS Cluster DaemonSet And Sidecar Config APIs Resolver",
       }
     );
 
     props.appPipelineTable.grantReadWriteData(
       eksDaemonSetSidecarConfigGenerate
     );
-    props.logConfTable.grantReadWriteData(
-      eksDaemonSetSidecarConfigGenerate
-    );
+    props.logConfTable.grantReadWriteData(eksDaemonSetSidecarConfigGenerate);
     props.appLogIngestionTable.grantReadWriteData(
       eksDaemonSetSidecarConfigGenerate
     );
@@ -675,6 +868,9 @@ export class AppLogIngestionStack extends Construct {
         effect: iam.Effect.ALLOW,
         resources: ["*"],
       })
+    );
+    props.centralAssumeRolePolicy.attachToRole(
+      eksDaemonSetSidecarConfigGenerate.role!
     );
 
     // Add eksClusterAsSourceIngestion lambda as a Datasource

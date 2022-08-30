@@ -1,6 +1,15 @@
 {
-  "name": "Log Hub",
+  "name": "日志通",
+  "title": "日志通控制台",
   "version": "版本号",
+  "signin": {
+    "signInToLogHub": "登录到日志通",
+    "email": "邮箱地址 *",
+    "inputEmail": "输入您的邮箱地址",
+    "password": "密码 *",
+    "inputPassword": "输入您的密码",
+    "signIn": "登录"
+  },
   "header": {
     "name": "亚马逊云科技解决方案",
     "welcome": "欢迎您",
@@ -20,6 +29,7 @@
     "resource": "资源管理",
     "instanceGroup": "实例组",
     "logConfig": "日志配置",
+    "crossAccount": "多账户",
     "doc": "文档"
   },
   "bottom": {
@@ -72,7 +82,14 @@
     "loadMoreInstance": "加载更多实例",
     "importEksCluster": "导入一个集群",
     "fromInstance": "从实例组",
-    "fromS3": "从S3存储桶"
+    "fromS3": "从S3存储桶",
+    "validate": "验证",
+    "changeIndex": "修改索引名称",
+    "linkAnAccount": "链接一个账户",
+    "link": "链接",
+    "forceCreate": "继续创建",
+    "createSameAccountIngestion": "创建同帐户摄取",
+    "upgrade": "升级"
   },
   "status": {
     "unknown": "未知",
@@ -97,5 +114,7 @@
   "noData": "暂无数据",
   "info": "信息",
   "optional": "可选",
-  "noMoreInstance": "已加载所有实例"
+  "noMoreInstance": "已加载所有实例",
+  "unknown": "未知",
+  "maxmindCopyRight": "日志通利用 MaxMind 创建的 GeoLite2 数据，详情请访问 "
 }

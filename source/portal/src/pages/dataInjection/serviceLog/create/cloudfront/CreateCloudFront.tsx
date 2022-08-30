@@ -56,6 +56,8 @@ export interface CloudFrontTaskProps {
   tags: Tag[];
   source: string;
   target: string;
+  logSourceAccountId: string;
+  logSourceRegion: string;
   params: {
     // [index: string]: string | any;
     engineType: string;
@@ -90,6 +92,8 @@ const DEFAULT_TASK_VALUE: CloudFrontTaskProps = {
   source: "",
   target: "",
   tags: [],
+  logSourceAccountId: "",
+  logSourceRegion: "",
   params: {
     engineType: "",
     warmEnable: false,
@@ -165,7 +169,10 @@ const CreateCloudFront: React.FC = () => {
     createPipelineParams.source = cloudFrontPipelineTask.source;
     createPipelineParams.target = cloudFrontPipelineTask.target;
     createPipelineParams.tags = cloudFrontPipelineTask.tags;
-    // cloudFrontPipelineTask.params.
+    createPipelineParams.logSourceAccountId =
+      cloudFrontPipelineTask.logSourceAccountId;
+    createPipelineParams.logSourceRegion = amplifyConfig.aws_project_region;
+
     const tmpParamList: any = [];
     Object.keys(cloudFrontPipelineTask.params).forEach((key) => {
       console.info("key");
@@ -295,6 +302,14 @@ const CreateCloudFront: React.FC = () => {
                     }}
                     manualS3EmptyError={manualS3EmpryError}
                     autoS3EmptyError={autoS3EmptyError}
+                    changeCrossAccount={(id) => {
+                      setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
+                        return {
+                          ...prev,
+                          logSourceAccountId: id,
+                        };
+                      });
+                    }}
                     manualChangeBucket={(srcBucketName) => {
                       setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
                         return {
@@ -326,10 +341,10 @@ const CreateCloudFront: React.FC = () => {
                       setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
                         return {
                           ...prev,
-                          source: cloudFrontObj?.value,
+                          source: cloudFrontObj?.value || "",
                           params: {
                             ...prev.params,
-                            indexPrefix: cloudFrontObj?.value,
+                            indexPrefix: cloudFrontObj?.value || "",
                             cloudFrontObj: cloudFrontObj,
                           },
                         };

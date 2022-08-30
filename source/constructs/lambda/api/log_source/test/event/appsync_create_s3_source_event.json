@@ -7,6 +7,9 @@
         "accountId": null,
         "region": "us-east-1",
         "archiveFormat": "json",
+        "subAccountLinkId": "4512fd67-5bbf-4170-8aea-03107a500c72",
+        "subAccountVpcId": "vpc-1001",
+        "subAccountPublicSubnetIds": "sub-001,sub-002",
         "tags": null
     },
     "identity": {
@@ -78,7 +81,10 @@
             "s3Name": "loghub-logs-123456789012",
             "s3Prefix": "test",
             "region": "us-east-1",
-            "archiveFormat": "json"
+            "archiveFormat": "json",
+            "subAccountLinkId": "4512fd67-5bbf-4170-8aea-03107a500c72",
+            "subAccountVpcId": "vpc-1001",
+            "subAccountPublicSubnetIds": "sub-001,sub-002"
         }
     },
     "error": null,

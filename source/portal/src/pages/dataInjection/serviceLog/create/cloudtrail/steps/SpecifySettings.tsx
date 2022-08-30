@@ -32,15 +32,17 @@ import { AmplifyConfigType } from "types";
 import { useSelector } from "react-redux";
 import { AppStateProps } from "reducer/appReducer";
 import { useTranslation } from "react-i18next";
+import CrossAccountSelect from "pages/comps/account/CrossAccountSelect";
 
 interface SpecifySettingsProps {
   cloudTrailTask: CloudTrailTaskProps;
-  changeCloudTrailObj: (trail: OptionType) => void;
+  changeCloudTrailObj: (trail: OptionType | null) => void;
   // changeTrail: (trailName: string) => void;
   changeBucket: (bucket: string) => void;
   changeLogPath: (logPath: string) => void;
   trailEmptyError: boolean;
   setISChanging: (changing: boolean) => void;
+  changeCrossAccount: (id: string) => void;
 }
 
 const SpecifySettings: React.FC<SpecifySettingsProps> = (
@@ -53,30 +55,30 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     changeLogPath,
     trailEmptyError,
     setISChanging,
+    changeCrossAccount,
   } = props;
   const { t } = useTranslation();
   const amplifyConfig: AmplifyConfigType = useSelector(
     (state: AppStateProps) => state.amplifyConfig
   );
 
-  const [cloudTrail, setCloudTrail] = useState<OptionType | null>(
-    cloudTrailTask.params.curTrailObj
-  );
   const [cloudTrailOptionList, setCloudTrailOptionList] = useState<
     SelectItem[]
   >([]);
   const [loadingCloudTrail, setLoadingCloudTrail] = useState(false);
   const [loadingBucket, setloadingBucket] = useState(false);
+  const [disableTrail, setDisableTrail] = useState(false);
 
   // const [successText, setSuccessText] = useState("");
   const [showSuccessText, setShowSuccessText] = useState(false);
   const [previewS3Path, setPreviewS3Path] = useState("");
 
-  const getS3List = async () => {
+  const getCloudTrailList = async (accountId: string) => {
     try {
       setLoadingCloudTrail(true);
       const resData: any = await appSyncRequestQuery(listResources, {
         type: ResourceType.Trail,
+        accountId: accountId,
       });
       console.info("domainNames:", resData.data);
       const dataList: Resource[] = resData.data.listResources;
@@ -100,6 +102,8 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     const resData: any = await appSyncRequestQuery(getResourceLoggingBucket, {
       type: ResourceType.Trail,
       resourceName: trailName,
+      accountId: cloudTrailTask.logSourceAccountId,
+      region: amplifyConfig.aws_project_region,
     });
     console.info("getTrailBucketAndPrefix:", resData.data);
     const logginBucket: LoggingBucket = resData?.data?.getResourceLoggingBucket;
@@ -120,16 +124,18 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     changeBucket("");
     changeLogPath("");
     setShowSuccessText(false);
-    console.info("cloudTrail:", cloudTrail);
-    if (cloudTrail && cloudTrail.value) {
+    if (
+      cloudTrailTask.params.curTrailObj &&
+      cloudTrailTask.params.curTrailObj.value
+    ) {
       // changeTrail(cloudTrail.name);
-      getTrailBucketAndPrefix(cloudTrail.value);
+      getTrailBucketAndPrefix(cloudTrailTask.params.curTrailObj.value);
     }
-  }, [cloudTrail]);
+  }, [cloudTrailTask.params.curTrailObj]);
 
   useEffect(() => {
-    getS3List();
-  }, []);
+    getCloudTrailList(cloudTrailTask.logSourceAccountId);
+  }, [cloudTrailTask.logSourceAccountId]);
 
   return (
     <div>
@@ -139,6 +145,16 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
             <div>
               <Alert content={t("servicelog:trail.alert")} />
               <div className="pb-50">
+                <CrossAccountSelect
+                  accountId={cloudTrailTask.logSourceAccountId}
+                  changeAccount={(id) => {
+                    changeCrossAccount(id);
+                    changeCloudTrailObj(null);
+                  }}
+                  loadingAccount={(loading) => {
+                    setDisableTrail(loading);
+                  }}
+                />
                 <FormItem
                   optionTitle={t("servicelog:trail.trail")}
                   optionDesc={
@@ -165,19 +181,18 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                   }
                 >
                   <AutoComplete
-                    disabled={loadingBucket}
+                    outerLoading
+                    disabled={loadingBucket || disableTrail}
                     className="m-w-75p"
                     placeholder={t("servicelog:trail.selectTrail")}
-                    loading={loadingCloudTrail}
+                    loading={loadingCloudTrail || loadingBucket}
                     optionList={cloudTrailOptionList}
-                    value={cloudTrail}
+                    value={cloudTrailTask.params.curTrailObj}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>,
                       data
                     ) => {
-                      setCloudTrail(data);
                       changeCloudTrailObj(data);
-                      // changeLogBucketObj(data.value);
                     }}
                   />
                 </FormItem>

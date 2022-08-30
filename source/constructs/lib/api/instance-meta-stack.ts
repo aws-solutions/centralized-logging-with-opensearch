@@ -13,17 +13,23 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
-import { Construct, Duration, RemovalPolicy, Aws, CfnCondition, Fn, CfnOutput } from '@aws-cdk/core';
-import * as appsync from '@aws-cdk/aws-appsync';
-import * as lambda from '@aws-cdk/aws-lambda';
+import {
+    Construct,
+} from 'constructs';
+import {
+    Aws, CfnCondition, Fn,
+    Duration,
+    RemovalPolicy,
+    aws_dynamodb as ddb,
+    aws_iam as iam,
+    aws_lambda as lambda,
+    aws_events as events,
+    aws_events_targets as targets,
+    SymlinkFollowMode,
+} from 'aws-cdk-lib';
+import * as appsync from "@aws-cdk/aws-appsync-alpha";
 import * as path from 'path';
-import * as ddb from '@aws-cdk/aws-dynamodb';
-import * as iam from "@aws-cdk/aws-iam";
-import * as events from '@aws-cdk/aws-events';
-import * as targets from '@aws-cdk/aws-events-targets';
-import { CfnDocument } from '@aws-cdk/aws-ssm';
-
+import { CfnDocument } from 'aws-cdk-lib/aws-ssm';
 import { addCfnNagSuppressRules } from "../main-stack";
 
 export interface InstanceStackProps {
@@ -34,7 +40,8 @@ export interface InstanceStackProps {
      * @default - None.
      */
     readonly graphqlApi: appsync.GraphqlApi
-
+    readonly subAccountLinkTable: ddb.Table
+    readonly centralAssumeRolePolicy: iam.ManagedPolicy;
 }
 export class InstanceMetaStack extends Construct {
     instanceMetaTable: ddb.Table;
@@ -133,7 +140,7 @@ export class InstanceMetaStack extends Construct {
                             name: "downloadFluentBit",
                             inputs: {
                                 sourceType: "S3",
-                                sourceInfo: `{\"path\":\"https://${s3Address}/aws-for-fluent-bit%3A2.21.1/fluent-bit{{ARCHITECTURE}}.tar.gz\"}`,
+                                sourceInfo: `{\"path\":\"https://${s3Address}/aws-for-fluent-bit%3A2.25.1/fluent-bit{{ARCHITECTURE}}.tar.gz\"}`,
                                 destinationPath: "/opt"
                             }
                         },
@@ -182,7 +189,8 @@ export class InstanceMetaStack extends Construct {
 
         // Create a lambda to handle all instanceGroup related APIs.
         const instanceMetaHandler = new lambda.Function(this, 'InstanceHandler', {
-            code: lambda.AssetCode.fromAsset(path.join(__dirname, '../../lambda/api/instance_meta')),
+            code: lambda.AssetCode.fromAsset(path.join(__dirname, '../../lambda/api/instance_meta'),
+                { followSymlinks: SymlinkFollowMode.ALWAYS },),
             runtime: lambda.Runtime.PYTHON_3_9,
             handler: 'lambda_function.lambda_handler',
             timeout: Duration.seconds(600),
@@ -191,6 +199,7 @@ export class InstanceMetaStack extends Construct {
                 AGENT_INSTALLATION_DOCUMENT: this.installLogAgentDocument.ref,
                 INSTANCEMETA_TABLE: this.instanceMetaTable.tableName,
                 AGENTSTATUS_TABLE: this.logAgentStatusTable.tableName,
+                SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
                 SOLUTION_ID: solution_id,
                 SOLUTION_VERSION: process.env.VERSION ? process.env.VERSION : 'v1.0.0',
             },
@@ -201,6 +210,7 @@ export class InstanceMetaStack extends Construct {
         // Grant permissions to the InstanceMeta lambda
         this.instanceMetaTable.grantReadWriteData(instanceMetaHandler)
         this.logAgentStatusTable.grantReadWriteData(instanceMetaHandler)
+        props.subAccountLinkTable.grantReadData(instanceMetaHandler)
 
         // Grant SSM Policy to the InstanceMeta lambda, and Owen will add more
         const ssmPolicy = new iam.PolicyStatement({
@@ -216,22 +226,26 @@ export class InstanceMetaStack extends Construct {
             resources: ['*']
         })
         instanceMetaHandler.addToRolePolicy(ssmPolicy)
+        props.centralAssumeRolePolicy.attachToRole(instanceMetaHandler.role!)
 
         // Create a lambda to query instance app log agent status.
         const instanceAgentStatusHandler = new lambda.Function(this, 'InstanceAgentStatusHandler', {
-            code: lambda.AssetCode.fromAsset(path.join(__dirname, '../../lambda/api/log_agent_status')),
+            code: lambda.AssetCode.fromAsset(path.join(__dirname, '../../lambda/api/log_agent_status'),
+                { followSymlinks: SymlinkFollowMode.ALWAYS },),
             runtime: lambda.Runtime.PYTHON_3_9,
             handler: 'lambda_function.lambda_handler',
             timeout: Duration.minutes(5),
             memorySize: 1024,
             environment: {
                 AGENTSTATUS_TABLE: this.logAgentStatusTable.tableName,
+                SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
                 SOLUTION_ID: solution_id,
                 SOLUTION_VERSION: process.env.VERSION ? process.env.VERSION : 'v1.0.0',
             },
             description: 'Log Hub - Instance Agent Status Query Resolver',
         })
         this.logAgentStatusTable.grantReadWriteData(instanceAgentStatusHandler)
+        props.subAccountLinkTable.grantReadData(instanceAgentStatusHandler)
         instanceAgentStatusHandler.node.addDependency(this.logAgentStatusTable)
 
         // Grant SSM Policy to the InstanceMeta lambda
@@ -247,6 +261,7 @@ export class InstanceMetaStack extends Construct {
             resources: ['*']
         })
         instanceAgentStatusHandler.addToRolePolicy(agentStatusSsmPolicy)
+        props.centralAssumeRolePolicy.attachToRole(instanceAgentStatusHandler.role!)
 
         // Schedule CRON event to trigger agent status query job per minute
         // Trigger is enabled by default, since health check and install has been decoupled

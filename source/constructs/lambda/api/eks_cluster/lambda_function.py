@@ -1,7 +1,6 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-
 import json
 import logging
 import os
@@ -19,9 +18,7 @@ user_agent_config = {
 }
 default_config = config.Config(**user_agent_config)
 
-
 eks_cluster_manager = EksClusterManager()
-
 
 
 def handle_error(func):
@@ -36,8 +33,7 @@ def handle_error(func):
         except Exception as e:
             logger.error(e)
             raise RuntimeError(
-                "Unknown exception, please check Lambda log for more details"
-            )
+                "Unknown exception, please check Lambda log for more details")
 
     return wrapper
 
@@ -62,4 +58,3 @@ def lambda_handler(event, context):
     else:
         logger.info("Event received: " + json.dumps(event, indent=2))
         raise APIException(f"Unknown action {action}")
-

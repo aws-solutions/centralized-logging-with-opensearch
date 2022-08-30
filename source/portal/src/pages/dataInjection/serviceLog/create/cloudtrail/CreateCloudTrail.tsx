@@ -51,6 +51,8 @@ export interface CloudTrailTaskProps {
   tags: Tag[];
   source: string;
   target: string;
+  logSourceAccountId: string;
+  logSourceRegion: string;
   params: {
     // [index: string]: string | any;
     engineType: string;
@@ -80,6 +82,8 @@ const DEFAULT_TRAIL_TASK_VALUE: CloudTrailTaskProps = {
   tags: [],
   source: "",
   target: "",
+  logSourceAccountId: "",
+  logSourceRegion: "",
   params: {
     engineType: "",
     esDomainId: "",
@@ -148,7 +152,10 @@ const CreateCloudTrail: React.FC = () => {
     createPipelineParams.source = cloudTrailPipelineTask.source;
     createPipelineParams.target = cloudTrailPipelineTask.target;
     createPipelineParams.tags = cloudTrailPipelineTask.tags;
-    // cloudTrailPipelineTask.params.
+    createPipelineParams.logSourceAccountId =
+      cloudTrailPipelineTask.logSourceAccountId;
+    createPipelineParams.logSourceRegion = amplifyConfig.aws_project_region;
+
     const tmpParamList: any = [];
     Object.keys(cloudTrailPipelineTask.params).forEach((key) => {
       console.info("key");
@@ -244,6 +251,14 @@ const CreateCloudTrail: React.FC = () => {
                       setTrailISChanging(status);
                     }}
                     trailEmptyError={trailEmptyError}
+                    changeCrossAccount={(id) => {
+                      setCloudTrailPipelineTask((prev: CloudTrailTaskProps) => {
+                        return {
+                          ...prev,
+                          logSourceAccountId: id,
+                        };
+                      });
+                    }}
                     changeCloudTrailObj={(trail) => {
                       setTrailEmptyError(false);
                       setCloudTrailPipelineTask((prev: CloudTrailTaskProps) => {

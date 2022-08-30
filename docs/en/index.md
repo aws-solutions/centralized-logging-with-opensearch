@@ -12,6 +12,6 @@ This guide includes a [getting started](./implementation-guide/getting-started/i
 
 This implementation guide describes architectural considerations and configuration steps for deploying the Log Hub solution in the AWS cloud. It includes links to [CloudFormation][cloudformation] templates that launches and configures the AWS services required to deploy this solution using AWS best practices for security and availability.
 
-The guide is intended for IT architects, developers, DevOps, data engineers with practical experience architecting in the AWS Cloud.
+The guide is intended for IT architects, developers, DevOps, data engineers with practical experience architecting on the AWS Cloud.
 
 [cloudformation]: https://aws.amazon.com/en/cloudformation/

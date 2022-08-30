@@ -24,7 +24,15 @@
       "curAccount": "当前 AWS 账户",
       "agent": "代理",
       "eksAgentPattern": "模式",
-      "eksAgentPatternDesc": "请选择将用于部署日志代理的模式。"
+      "eksAgentPatternDesc": "请选择将用于部署日志代理的模式。",
+      "networkConfig": "网络配置",
+      "networkConfigDesc": "要将 EKS 日志摄入 OpenSearch，需要连接 EKS 集群的 VPC 和 OpenSearch的 VPC。如果未连接，您可以按照以下步骤创建 VPC 对等连接。",
+      "vpc1": "1. 创建并接受 VPC 对等连接参考 ",
+      "vpc2": "2. 更新路由表参考",
+      "vpc3": "3. 更新安全组参考",
+      "guide": "操作指南",
+      "acknowledge": "请在继续之前确认复选框。",
+      "confirmed": "我确认了 EKS 集群和 OpenSearch 的 VPC 已连接。"
     }
   },
   "detail": {
@@ -45,13 +53,15 @@
       "logConfig": "日志配置",
       "created": "创建时间",
       "status": "状态",
-      "deleteTips": "您确定要删除日志提取吗？ 注意：应用日志管道不会被删除。 "
+      "delete": "删除摄取",
+      "deleteTips": "您确定要删除日志摄取吗？ 注意：应用日志管道不会被删除。 "
     },
     "daemonsetGuide": {
       "alert": "",
-      "alertDesc": "此过程中的所有步骤都是将 Fluent-bit 代理部署为 DaemonSet。 默认情况下，使用命名空间 'logging'",
+      "alertDesc": "请确保您所创建的所有的摄取都处于已创建状态，然后再继续执行以下步骤。此过程中的所有步骤都是将 Fluent-bit 代理部署为 DaemonSet。 默认情况下，使用命名空间 'logging'",
       "step1": "您需要将以下所有内容复制并粘贴到文件 ~/fluent-bit-logging.yaml 中",
-      "step2": "使用 kubectl 命令将 fluent-bit 部署为 DaemonSet。"
+      "step2": "使用 kubectl 命令将 fluent-bit 部署为 DaemonSet。",
+      "createIngestion": "请先创建一个摄取"
     }
   },
   "select": "选择 EKS 集群",
@@ -98,7 +108,7 @@
       "tag": "标签",
       "sidecarTab": {
         "guide": "Sidecar 指南",
-        "alert": "您需要将 Fluent-bit 代理部署为 pod 中的 sidecar。"
+        "alert": "您需要将 Fluent-bit 代理部署作为您的 pod 中的 sidecar，并且请确保您创建的所有摄取都处于以创建状态，然后再继续。"
       },
       "daemonsetTab": {
         "guide": "DaemonSet 指南",

@@ -14,8 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import { ImportedDomain } from "API";
-import { PIPELINE_TASK_ES_USER_DEFAULT } from "assets/js/const";
+import {
+  DOC_VPC_ACCEPT_LINK,
+  DOC_VPC_ROUTE_TABLE_LINK,
+  DOC_VPC_SECURITY_GROUP_LINK,
+  PIPELINE_TASK_ES_USER_DEFAULT,
+} from "assets/js/const";
 import { appSyncRequestQuery } from "assets/js/request";
+import Alert from "components/Alert";
 import ExtLink from "components/ExtLink";
 import FormItem from "components/FormItem";
 import HeaderPanel from "components/HeaderPanel";
@@ -30,6 +36,9 @@ interface SpecifyDomainProps {
   changeOpenSearchCluster: (clusterId: string | undefined) => void;
   changeLoadingDomain: (loading: boolean) => void;
   esDomainEmptyError: boolean;
+  changeConfirmNetwork: (comfirm: boolean) => void;
+  confirmNetworkError: boolean;
+  userIsConfirm: boolean;
 }
 
 const SpecifyDomain: React.FC<SpecifyDomainProps> = (
@@ -40,6 +49,9 @@ const SpecifyDomain: React.FC<SpecifyDomainProps> = (
     changeOpenSearchCluster,
     changeLoadingDomain,
     esDomainEmptyError,
+    changeConfirmNetwork,
+    confirmNetworkError,
+    userIsConfirm,
   } = props;
 
   const { t } = useTranslation();
@@ -135,6 +147,51 @@ const SpecifyDomain: React.FC<SpecifyDomainProps> = (
             }}
           />
         </FormItem>
+      </HeaderPanel>
+      <HeaderPanel title={t("ekslog:create.eksSource.networkConfig")}>
+        <Alert content={t("ekslog:create.eksSource.networkConfigDesc")} />
+        <div className="config-list">
+          <div className="list-item">
+            {t("ekslog:create.eksSource.vpc1")}
+            <ExtLink to={DOC_VPC_ACCEPT_LINK}>
+              {t("ekslog:create.eksSource.guide")}
+            </ExtLink>
+          </div>
+          <div className="list-item">
+            {t("ekslog:create.eksSource.vpc2")}
+            <ExtLink to={DOC_VPC_ROUTE_TABLE_LINK}>
+              {t("ekslog:create.eksSource.guide")}
+            </ExtLink>
+          </div>
+          <div className="list-item">
+            {t("ekslog:create.eksSource.vpc3")}
+            <ExtLink to={DOC_VPC_SECURITY_GROUP_LINK}>
+              {t("ekslog:create.eksSource.guide")}
+            </ExtLink>
+          </div>
+          <FormItem
+            optionTitle=""
+            optionDesc=""
+            errorText={
+              confirmNetworkError
+                ? t("ekslog:create.eksSource.acknowledge")
+                : ""
+            }
+          >
+            <div className="list-item">
+              <label className="label">
+                <input
+                  checked={userIsConfirm}
+                  type="checkbox"
+                  onChange={(e) => {
+                    changeConfirmNetwork(e.target.checked);
+                  }}
+                />
+                <b>{t("ekslog:create.eksSource.confirmed")}</b>
+              </label>
+            </div>
+          </FormItem>
+        </div>
       </HeaderPanel>
     </div>
   );

@@ -14,26 +14,28 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React from "react";
-import { LogConf, LogType, MultiLineLogParser } from "API";
+import { LogType, MultiLineLogParser } from "API";
+import { ExLogConf } from "pages/resources/common/LogConfigComp";
 import ValueWithLabel from "components/ValueWithLabel";
 import TextArea from "components/TextArea";
 import { useTranslation } from "react-i18next";
 
 interface ConfDetailProps {
-  curLogConfig: LogConf | undefined;
+  curLogConfig: ExLogConf | undefined;
+  logPath?: string;
 }
 
 const ConfigDetailComps: React.FC<ConfDetailProps> = (
   props: ConfDetailProps
 ) => {
   const { t } = useTranslation();
-  const { curLogConfig } = props;
+  const { curLogConfig, logPath } = props;
   return (
     <div>
       <div className="flex value-label-span">
         <div className="flex-1">
           <ValueWithLabel label={t("resource:config.detail.path")}>
-            <div>{curLogConfig?.logPath || "-"}</div>
+            <div>{logPath ? logPath : curLogConfig?.logPath || "-"}</div>
           </ValueWithLabel>
 
           {curLogConfig?.logType === LogType.Nginx && (
@@ -147,14 +149,22 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
             curLogConfig?.logType === LogType.SingleLineText ||
             curLogConfig?.logType === LogType.MultiLineText) &&
             curLogConfig.regularSpecs &&
-            curLogConfig.regularSpecs.length > 0 && (
-              <div className="mt-10">
-                <ValueWithLabel label={t("resource:config.detail.timeFormat")}>
-                  {curLogConfig.regularSpecs.find((ele) => ele?.key === "time")
-                    ?.format || "-"}
-                </ValueWithLabel>
-              </div>
-            )}
+            curLogConfig.regularSpecs.length > 0 &&
+            curLogConfig.regularSpecs.map((element) => {
+              if (element?.type === "date") {
+                return (
+                  <div className="mt-10">
+                    <ValueWithLabel
+                      label={`${t("resource:config.detail.timeFormat")}(${
+                        element.key
+                      })`}
+                    >
+                      {element.format || "-"}
+                    </ValueWithLabel>
+                  </div>
+                );
+              }
+            })}
         </div>
       </div>
     </div>

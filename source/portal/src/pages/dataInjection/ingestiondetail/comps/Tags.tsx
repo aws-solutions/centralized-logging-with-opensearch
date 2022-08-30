@@ -17,21 +17,22 @@ import React from "react";
 import HeaderPanel from "components/HeaderPanel";
 import { useTranslation } from "react-i18next";
 import { EksDetailProps } from "../EksIngestionDetail";
+import { AppLogIngestion } from "API";
 
 interface TagProps {
-  eskIngestionInfo: EksDetailProps | undefined | null;
+  ingestionInfo: EksDetailProps | AppLogIngestion | undefined | null;
 }
 
-const Tags: React.FC<TagProps> = ({ eskIngestionInfo }: TagProps) => {
+const Tags: React.FC<TagProps> = ({ ingestionInfo }: TagProps) => {
   const { t } = useTranslation();
   return (
     <div>
       <HeaderPanel
         title={t("tag.name")}
-        count={eskIngestionInfo?.tags?.length}
+        count={ingestionInfo?.tags?.length}
         contentNoPadding
       >
-        {eskIngestionInfo?.tags?.length || 0 > 0 ? (
+        {ingestionInfo?.tags?.length || 0 > 0 ? (
           <div>
             <div className="flex show-tag-list">
               <div className="tag-key">
@@ -41,7 +42,7 @@ const Tags: React.FC<TagProps> = ({ eskIngestionInfo }: TagProps) => {
                 <b>{t("tag.value")}</b>
               </div>
             </div>
-            {eskIngestionInfo?.tags?.map((tag, index) => {
+            {ingestionInfo?.tags?.map((tag, index) => {
               return (
                 <div key={index} className="flex show-tag-list">
                   <div className="tag-key">{tag?.key}</div>

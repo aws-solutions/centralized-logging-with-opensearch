@@ -5,11 +5,7 @@ metadata:
   name: fluent-bit
   namespace: $LOGHUB_NAMESPACE
   labels:
-    app.kubernetes.io/name: fluent-bit-$LOGHUB_NAMESPACE
-  annotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "2022"
-    prometheus.io/path: /api/v1/metrics/prometheus
+    app.kubernetes.io/name: fluent-bit-$LOGHUB_NAMESPACE  
 spec:
   selector:
     matchLabels:
@@ -22,6 +18,10 @@ spec:
         app: fluent-bit-$LOGHUB_NAMESPACE
         version: v1
         kubernetes.io/cluster-service: "true"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "2022"
+        prometheus.io/path: /api/v1/metrics/prometheus    
     spec:
       containers:
       - name: fluent-bit

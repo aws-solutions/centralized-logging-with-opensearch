@@ -24,6 +24,8 @@ import { RDSTaskProps } from "../rds/CreateRDS";
 import { ELBTaskProps } from "../elb/CreateELB";
 import { useTranslation } from "react-i18next";
 import { WAFTaskProps } from "../waf/CreateWAF";
+import { VpcLogTaskProps } from "../vpc/CreateVPC";
+import { ConfigTaskProps } from "../config/CreateConfig";
 
 interface CreateTagsProps {
   pipelineTask:
@@ -33,7 +35,9 @@ interface CreateTagsProps {
     | LambdaTaskProps
     | RDSTaskProps
     | ELBTaskProps
-    | WAFTaskProps;
+    | WAFTaskProps
+    | VpcLogTaskProps
+    | ConfigTaskProps;
   changeTags: (tags: any) => void;
 }
 

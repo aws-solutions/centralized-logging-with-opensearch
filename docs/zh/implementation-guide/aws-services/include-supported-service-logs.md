@@ -8,7 +8,9 @@
 | Amazon CloudFront | [Standard access logs](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/AccessLogs.html) | S3 | 是 | 是 |
 | Application Load Balancer | [Access logs](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-access-logs.html) | S3 | 是 | 是 |
 | AWS WAF | [Web ACL logs](https://docs.aws.amazon.com/waf/latest/developerguide/logging.html) | S3 | 是 | 是 |
-| AWS Lambda | N/A | CloudWatch Logs | 是 | 否 |
+| AWS Lambda | N/A | CloudWatch Logs | 是 | 是 |
+| Amazon VPC | [Flow logs](https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs.html) | S3 | 是 | 是 |
+| AWS Config | N/A | S3 | 是 | 是 |
 
 * **自动摄取**: 该解决方案自动检测资源的日志位置，然后读取日志。
 * **内置仪表板**: 指定 AWS 服务的开箱即用仪表板。 该解决方案将自动将仪表板引入 AOS。

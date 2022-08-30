@@ -17,6 +17,7 @@ You can create a log ingestion into AOS either by using the Log Hub console or b
 6. Under **Specify settings**, choose **Automatic** or **Manual** for **CloudFront logs enabling**. The automatic mode will detect the CloudFront log location automatically.
     - For **Automatic mode**, choose the CloudFront distribution from the dropdown list.
     - For **Manual mode**, enter the **CloudFront Distribution ID** and **CloudFront Standard Log location**.
+    - (Optional) If you are ingesting CloudFront logs from another account, select a [linked account](../link-account/index.md) from the **Account** dropdown list first.
 7. Choose **Next**.
 8. In the **Specify OpenSearch domain** section, select an imported domain for **Amazon OpenSearch domain**.
 9. Choose **Yes** for **Sample dashboard** if you want to ingest an associated templated AOS dashboard.

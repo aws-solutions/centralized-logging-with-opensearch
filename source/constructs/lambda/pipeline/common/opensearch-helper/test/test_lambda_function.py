@@ -162,6 +162,7 @@ def test_event():
         "action": "CreateIndexTemplate",
         "props": {
             "log_type": "nignx",
+            "createDashboard": "Yes",
             "mappings": {"a": "b"},
         },
     }

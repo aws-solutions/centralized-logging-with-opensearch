@@ -6,7 +6,7 @@ import os
 
 import boto3
 import pytest
-from moto import mock_dynamodb, mock_events
+from moto import mock_dynamodb, mock_events, mock_sts
 
 instance_group_data = {
     "id": {"S": "fa2eacd9-fafe-4341-b6ee-e2e2682d7dd4"},
@@ -59,6 +59,20 @@ def ddb_client():
         for data in data_list:
             _ddb_client.put_item(TableName=instance_group_table_name, Item=data)
 
+        # Mock the Sub account link table
+        _ddb_client.create_table(
+            TableName=os.environ.get("SUB_ACCOUNT_LINK_TABLE_NAME"),
+            KeySchema=[{"AttributeName": "id", "KeyType": "HASH"}],
+            AttributeDefinitions=[{"AttributeName": "id", "AttributeType": "S"}],
+            ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
+        )
+        yield
+
+
+@pytest.fixture
+def sts_client():
+    with mock_sts():
+        boto3.client("sts", region_name=os.environ.get("AWS_REGION"))
         yield
 
 
@@ -86,6 +100,7 @@ def test_lambda_handler_group(
     update_group_event,
     ddb_client,
     eventbridge_client,
+    sts_client,
 ):
     # Can only import here, as the environment variables need to be set first.
     import lambda_function
@@ -96,6 +111,8 @@ def test_lambda_handler_group(
     assert get_response["total"] == 2
     assert {
         "id": "fa2eacd9-fafe-4341-b6ee-e2e2682d7dd4",
+        "accountId": "123456789012",
+        "region": "us-east-1",
         "groupName": "test-1",
         "createdDt": "2022-05-17T05:45:45Z",
         "instanceSet": ["i-04ae114f5330ba500"],
@@ -125,13 +142,13 @@ def test_lambda_handler_group(
     )
 
 
-def test_delete_all_instance_group(delete_group_event, ddb_client, eventbridge_client):
+def test_delete_all_instance_group(delete_group_event, ddb_client, eventbridge_client, sts_client):
     import lambda_function
     # Test Delete the Instance Group
     lambda_function.lambda_handler(delete_group_event, None)
 
 
-def test_id_not_found(ddb_client, eventbridge_client):
+def test_id_not_found(ddb_client, eventbridge_client, sts_client):
     import lambda_function
 
     with pytest.raises(lambda_function.APIException):
@@ -152,7 +169,7 @@ def test_id_not_found(ddb_client, eventbridge_client):
         )
 
 
-def test_args_error(ddb_client, eventbridge_client):
+def test_args_error(ddb_client, eventbridge_client, sts_client):
     import lambda_function
 
     with pytest.raises(RuntimeError):

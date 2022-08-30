@@ -17,7 +17,25 @@ aws iam create-service-linked-role --aws-service-name appsync.amazonaws.com
 Log Hub only supports AOS domain with [Fine-grained access control](https://docs.aws.amazon.com/opensearch-service/latest/developerguide/fgac.html) enabled.
 You need to go to AOS console, and edit the **Access policy** for the AOS domain.
 
+## Error：User xxx is not authorized to perform sts:AssumeRole on resource
 
+![](../images/faq/assume-role-latency.png)
+
+If you see this error, please make sure you have entered the correct information during [cross account setup](./link-account/index.md), and then please wait for several minutes.
+
+Log Hub uses [AssumeRole](https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html) for cross-account access.
+This is the best practice to temporary access the AWS resources in your sub-account. 
+However, these roles created during [cross account setup](./link-account/index.md) take seconds or minutes to be affective.
+
+
+## Error: PutRecords API responded with error='InvalidSignatureException'
+
+Fluent-bit agent reports PutRecords API responded with error='InvalidSignatureException', message='The request signature we calculated does not match the signature you provided. Check your AWS Secret Access Key and signing method. Consult the service documentation for details.'
+
+Please restart the fluent-bit agent. Eg. on EC2 with Amazon Linux2, run command:
+```commandline
+sudo service fluent-bit restart
+```
 
 ## Error: PutRecords API responded with error='AccessDeniedException'
 
@@ -34,3 +52,29 @@ With the Log Hub console:
 5. Choose the **Trust relationships** to verify that the OIDC Provider, the service account namespace and conditions are correctly set.
 
 You can get more information from Amazon EKS [IAM role configuration](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts-technical-overview.html#iam-role-configuration)
+
+## Q. My CloudFormation stack is stuck on deleting an `AWS::Lambda::Function` resource when I update the stack. How to resolve it?
+![](../images/faq/cloudformation-stuck.png)
+The Lambda function resides in a VPC, and you need to wait for the associated ENI resource to be deleted.
+
+
+## Q. The agent status is offline after I restart the EC2 instance, how can I make it auto start on instance restart?
+
+This usually happens if you have installed the logging agent, but restart the instance before you create any Log Ingestion. The Logging
+Agent will auto restart if there is at least one Log Ingestion. If you have a log ingestion, but the problem still exists, you can use `systemctl status fluent-bit`
+to check its status inside the instance.
+
+## Q. I have switched to Global tenant. However, I still cannot find the dashboard in OpenSearch.
+
+This is usually because Log Hub received 403 error from OpenSearch when creating the index template and dashboard. This 
+can be fixed by re-run the Lambda function manually by following the steps below:
+
+With the Log Hub console:
+
+1. Open the Log Hub console, and find the AWS Service Log pipeline which has this issue.
+2. Copy the first 5 characters from the ID section. Eg. you should copy `c169c` from ID `c169cb23-88f3-4a7e-90d7-4ab4bc18982c`
+3. Go to AWS Console > Lambda. Paste in function filters. This will filter in all the lambda function created for this AWS Service Log ingestion.
+4. Click the Lambda function whose name contains "OpenSearchHelperFn".
+5. In the **Test** tab, create a new event with any Event name.
+6. Click the **Test** button to trigger the Lambda, and wait the lambda function to complete.
+7. The dashboard should be available in OpenSearch

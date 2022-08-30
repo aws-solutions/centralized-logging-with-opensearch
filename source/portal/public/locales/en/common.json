@@ -1,6 +1,15 @@
 {
   "name": "Log Hub",
+  "title": "Log Hub web console",
   "version": "Version",
+  "signin": {
+    "signInToLogHub": "Sign in to Log Hub",
+    "email": "Email *",
+    "inputEmail": "Enter your email",
+    "password": "Password *",
+    "inputPassword": "Enter your password",
+    "signIn": "Sign In"
+  },
   "header": {
     "name": "AWS Solutions",
     "welcome": "Welcome",
@@ -15,11 +24,12 @@
     "serviceLog": "AWS Service Log",
     "appLog": "Application Log",
     "containers": "Containers",
-    "logSource": "Log Source",
+    "logSource": "Log Sources",
     "eksLog": "EKS Clusters",
     "resource": "Resources",
-    "instanceGroup": "Instance Group",
-    "logConfig": "Log Config",
+    "instanceGroup": "Instance Groups",
+    "logConfig": "Log Configs",
+    "crossAccount": "Cross Account",
     "doc": "Documentation"
   },
   "bottom": {
@@ -72,7 +82,14 @@
     "loadMoreInstance": "Load More Instances",
     "importEksCluster": "Import a Cluster",
     "fromInstance": "From Instance Group",
-    "fromS3": "From S3 Bucket"
+    "fromS3": "From S3 Bucket",
+    "validate": "Validate",
+    "changeIndex": "Change Index Name",
+    "linkAnAccount": "Link an Account",
+    "link": "Link",
+    "forceCreate": "Force Create",
+    "createSameAccountIngestion": "Create same account ingestion",
+    "upgrade": "Upgrade"
   },
   "status": {
     "unknown": "Unknown",
@@ -97,5 +114,7 @@
   "noData": "No Data",
   "info": "Info",
   "optional": "optional",
-  "noMoreInstance": "No more instances"
+  "noMoreInstance": "No more instances",
+  "unknown": "Unknown",
+  "maxmindCopyRight": "Log Hub leverages GeoLite2 data created by MaxMind, available from "
 }

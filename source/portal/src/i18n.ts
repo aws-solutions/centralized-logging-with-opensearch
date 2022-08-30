@@ -49,6 +49,11 @@ i18n
     interpolation: {
       escapeValue: false, // not needed for react as it escapes by default
     },
+    backend: {
+      loadPath:
+        "/locales/{{lng}}/{{ns}}.json?v=" +
+        process.env.REACT_APP_LOGHUB_VERSION,
+    },
   });
 
 export default i18n;

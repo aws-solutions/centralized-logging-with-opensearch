@@ -99,6 +99,18 @@ const EditLogConfig: React.FC<RouteComponentProps<MatchParams>> = (
   const updateLogConfig = async () => {
     const createLogConfigParam = curConfig;
 
+    if (
+      curConfig.logType === LogType.MultiLineText ||
+      curConfig.logType === LogType.SingleLineText
+    ) {
+      createLogConfigParam.regularExpression = curConfig.regularExpression
+        ?.trim()
+        .replace(/[\n\t\r]/g, "");
+      createLogConfigParam.userLogFormat = curConfig.userLogFormat
+        ?.trim()
+        .replace(/[\n\t\r]/g, "");
+    }
+
     if (!curConfig.confName?.trim()) {
       setShowNameRequiredError(true);
       return;
@@ -182,14 +194,6 @@ const EditLogConfig: React.FC<RouteComponentProps<MatchParams>> = (
                   changeLogConfName={(name: string) => {
                     setCurConfig((prev: ExLogConf) => {
                       return { ...prev, confName: name };
-                    });
-                  }}
-                  changeLogConfPath={(path: string) => {
-                    setCurConfig((prev: ExLogConf) => {
-                      return {
-                        ...prev,
-                        logPath: path,
-                      };
                     });
                   }}
                   changeLogType={(type: LogType) => {

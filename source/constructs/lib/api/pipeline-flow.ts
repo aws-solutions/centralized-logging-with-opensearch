@@ -13,15 +13,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
-import { Construct, Fn } from '@aws-cdk/core';
-import * as sfn from '@aws-cdk/aws-stepfunctions'
-import * as tasks from '@aws-cdk/aws-stepfunctions-tasks'
-import { Table, ITable } from '@aws-cdk/aws-dynamodb';
-import { IFunction } from '@aws-cdk/aws-lambda';
-import * as logs from '@aws-cdk/aws-logs';
-import * as iam from '@aws-cdk/aws-iam';
-
+import {
+    Construct,
+  } from 'constructs';
+import { 
+    Fn,
+    aws_stepfunctions_tasks as tasks,
+    aws_stepfunctions as sfn,
+    aws_iam as iam,
+    aws_logs as logs
+    
+ } from 'aws-cdk-lib';  
+ 
+import { Table, ITable } from 'aws-cdk-lib/aws-dynamodb';
 export interface PipelineFlowProps {
 
     /**
@@ -40,6 +44,10 @@ export interface PipelineFlowProps {
 
 }
 
+interface KeyVal<T> {
+    [key: string]: T
+}
+
 /**
  * Stack to provision a Step Functions State Machine to orchestrate pipeline flow
  * This flow will call CloudFormation Deployment Flow (Child Flow)
@@ -48,23 +56,60 @@ export class PipelineFlowStack extends Construct {
 
     readonly stateMachineArn: string
 
-    private updateStatus(table: ITable, status: string) {
+    private updateStatus(table: ITable, status: string, extra?: KeyVal<tasks.DynamoAttributeValue>) {
+        const base = {
+            status: tasks.DynamoAttributeValue.fromString(status),
+            stackId: tasks.DynamoAttributeValue.fromString(sfn.JsonPath.stringAt('$.result.stackId')),
+            error: tasks.DynamoAttributeValue.fromString(sfn.JsonPath.stringAt('$.result.error'))
+        };
+
+        interface TmpType {
+            eans: KeyVal<string>
+            eavs: KeyVal<tasks.DynamoAttributeValue>
+        }
+
+        const merged = Object.assign(base, extra);
+        const eanvs = Object.entries(merged).reduce((acc, [k, v]) => {
+            const words = k.split('.');
+            const o = words.map<TmpType>((word, index) => {
+                const o: TmpType = {
+                    eans: {},
+                    eavs: {},
+                };
+                if (index === (words.length - 1)) {
+                    o.eans['#' + word] = word;
+                    o.eavs[':' + words.join('_')] = v;
+                } else {
+                    o.eans['#' + word] = word;
+                };
+                return o;
+            });
+            return acc.concat(o);
+        }, [] as TmpType[]);
+
+        const expressionAttributeNames = eanvs.reduce((acc, cur) => {
+            return Object.assign(acc, cur.eans);
+        }, {} as KeyVal<string>);
+
+        const expressionAttributeValues = eanvs.reduce((acc, cur) => {
+            return Object.assign(acc, cur.eavs);
+        }, {} as KeyVal<tasks.DynamoAttributeValue>);
+
+        const fields = Object.entries(merged).map(([k, _]) => {
+            const words = k.split('.');
+            return `#${words.join('.#')} = :${words.join('_')}`
+        });
+
+        const updateExpression = `SET ${fields.join(', ')}`;
+
         return new tasks.DynamoUpdateItem(this, `Set ${status} Status`, {
             key: {
                 id: tasks.DynamoAttributeValue.fromString(sfn.JsonPath.stringAt('$.id'))
             },
             table: table,
-            expressionAttributeNames: {
-                '#status': 'status',
-                '#sid': 'stackId',
-                '#error': 'error',
-            },
-            expressionAttributeValues: {
-                ':status': tasks.DynamoAttributeValue.fromString(status),
-                ':id': tasks.DynamoAttributeValue.fromString(sfn.JsonPath.stringAt('$.result.stackId')),
-                ':error': tasks.DynamoAttributeValue.fromString(sfn.JsonPath.stringAt('$.result.error')),
-            },
-            updateExpression: 'SET #status = :status, #sid = :id, #error = :error',
+            expressionAttributeNames,
+            expressionAttributeValues,
+            updateExpression,
             resultPath: sfn.JsonPath.DISCARD,
         })
     };
@@ -76,7 +121,9 @@ export class PipelineFlowStack extends Construct {
         const table = Table.fromTableArn(this, 'Table', props.tableArn);
 
 
-        const activeStatus = this.updateStatus(table, 'ACTIVE')
+        const activeStatus = this.updateStatus(table, 'ACTIVE', {
+            'bufferArn': tasks.DynamoAttributeValue.fromString(sfn.JsonPath.stringAt('$.result.outputs[0].OutputValue')), // KDS or SQS or Firehose ARN
+        })
         const errorStatus = this.updateStatus(table, 'ERROR')
         const inactiveStatus = this.updateStatus(table, 'INACTIVE')
 

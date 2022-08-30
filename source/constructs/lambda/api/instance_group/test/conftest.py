@@ -25,3 +25,5 @@ def default_environment_variables():
     os.environ["EKS_CLUSTER_SOURCE_TABLE_NAME"] = "mocked-eks-log-source-table-name"
     os.environ["LOG_AGENT_EKS_DEPLOYMENT_KIND_TABLE"] = "mocked-log-agent-eks-deployment-kind-table"
     os.environ["EVENTBRIDGE_RULE"] = "mocked-eventbridge-rule-name"
+    os.environ["SUB_ACCOUNT_LINK_TABLE_NAME"] = "mocked-sub-account-link-table-name"
+    os.environ["SUB_ACCOUNT_LINK_TABLE"] = "mocked-sub-account-link-table-name"

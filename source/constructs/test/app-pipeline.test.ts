@@ -15,14 +15,14 @@ limitations under the License.
 */
 
 
-import * as cdk from '@aws-cdk/core';
-import { Match, Template } from "@aws-cdk/assertions";
+import { App } from "aws-cdk-lib";
+import {Template } from "aws-cdk-lib/assertions";
 import * as kds from '../lib/kinesis/kds-stack';
-import '@aws-cdk/assert/jest';
+
 
 describe("Application Log Stack", () => {
     test('Test kds stack with auto-scaling', () => {
-        const app = new cdk.App();
+        const app = new App();
         // WHEN
         const stack = new kds.KDSStack(app, 'MyTestStack', {
             enableAutoScaling: true
@@ -54,7 +54,7 @@ describe("Application Log Stack", () => {
 
 
     test('Test kds stack without auto-scaling', () => {
-        const app = new cdk.App();
+        const app = new App();
         // WHEN
         const stack = new kds.KDSStack(app, 'MyTestStack', {
             enableAutoScaling: false

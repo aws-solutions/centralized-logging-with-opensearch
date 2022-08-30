@@ -70,6 +70,8 @@ export interface RDSTaskProps {
   tags: Tag[];
   source: string;
   target: string;
+  logSourceAccountId: string;
+  logSourceRegion: string;
   params: {
     // [index: string]: string | any;
     engineType: string;
@@ -113,6 +115,8 @@ const DEFAULT_TASK_VALUE: RDSTaskProps = {
   source: "",
   target: "",
   tags: [],
+  logSourceAccountId: "",
+  logSourceRegion: "",
   params: {
     engineType: "",
     warmEnable: false,
@@ -197,7 +201,10 @@ const CreateRDS: React.FC = () => {
     createPipelineParams.source = rdsPipelineTask.source;
     createPipelineParams.target = rdsPipelineTask.target;
     createPipelineParams.tags = rdsPipelineTask.tags;
-    // rdsPipelineTask.params.
+    createPipelineParams.logSourceAccountId =
+      rdsPipelineTask.logSourceAccountId;
+    createPipelineParams.logSourceRegion = amplifyConfig.aws_project_region;
+
     const tmpParamList: any = [];
     Object.keys(rdsPipelineTask.params).forEach((key) => {
       console.info("key");
@@ -361,6 +368,14 @@ const CreateRDS: React.FC = () => {
                     }}
                     manualRDSEmptyError={manualRDSEmpryError}
                     autoRDSEmptyError={autoRDSEmptyError}
+                    changeCrossAccount={(id) => {
+                      setRDSPipelineTask((prev: RDSTaskProps) => {
+                        return {
+                          ...prev,
+                          logSourceAccountId: id,
+                        };
+                      });
+                    }}
                     manualChangeDBIdentifier={(dbIdentifier) => {
                       setAutoRDSEmptyError(false);
                       setManualRDSEmpryError(false);
@@ -451,10 +466,10 @@ const CreateRDS: React.FC = () => {
                       setRDSPipelineTask((prev: RDSTaskProps) => {
                         return {
                           ...prev,
-                          source: rdsObj?.name,
+                          source: rdsObj?.name || "",
                           params: {
                             ...prev.params,
-                            indexPrefix: rdsObj?.value,
+                            indexPrefix: rdsObj?.value || "",
                             rdsObj: rdsObj,
                             autoLogGroupPrefix: rdsObj?.description || "",
                             // Reset Select

@@ -13,16 +13,20 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
-import { Construct, Duration, RemovalPolicy } from '@aws-cdk/core';
-import * as appsync from '@aws-cdk/aws-appsync';
-import * as lambda from '@aws-cdk/aws-lambda';
+import {
+    Construct,
+} from 'constructs';
+import {
+    Duration,
+    RemovalPolicy,
+    aws_dynamodb as ddb,
+    aws_lambda as lambda,
+    aws_iam as iam,
+    Fn
+} from 'aws-cdk-lib';
+import * as appsync from "@aws-cdk/aws-appsync-alpha";
 import * as path from 'path';
-import * as ddb from '@aws-cdk/aws-dynamodb';
-
-
 import { addCfnNagSuppressRules } from "../main-stack";
-
 export interface LogSourceStackProps {
 
     /**
@@ -31,12 +35,29 @@ export interface LogSourceStackProps {
      * @default - None.
      */
     readonly graphqlApi: appsync.GraphqlApi
+    readonly eksClusterLogSourceTable: ddb.Table
+    readonly centralAssumeRolePolicy: iam.ManagedPolicy;
+
+    /**
+     * Default VPC ID for Log Agent
+     *
+     * @default - None.
+     */
+    readonly defaultVPC: string;
+
+    /**
+     * Default Subnets ID for Log Agent
+     *
+     * @default - None.
+     */
+    readonly defaultPublicSubnets: string[];
+
+    readonly asyncCrossAccountHandler: lambda.Function
 
 }
 export class LogSourceStack extends Construct {
     ec2LogSourceTable: ddb.Table;
     s3LogSourceTable: ddb.Table;
-    eksClusterLogSourceTable: ddb.Table;
 
     constructor(scope: Construct, id: string, props: LogSourceStackProps) {
         super(scope, id);
@@ -93,33 +114,6 @@ export class LogSourceStack extends Construct {
             },
         ])
 
-        // Create a table to store ekscluster logging logSource info
-        this.eksClusterLogSourceTable = new ddb.Table(this, 'EKSClusterLogSourceTable', {
-            partitionKey: {
-                name: 'id',
-                type: ddb.AttributeType.STRING
-            },
-            billingMode: ddb.BillingMode.PROVISIONED,
-            removalPolicy: RemovalPolicy.DESTROY,
-            encryption: ddb.TableEncryption.DEFAULT,
-            pointInTimeRecovery: true,
-        })
-
-        const cfnEKSClusterLogSourceTable = this.eksClusterLogSourceTable.node.defaultChild as ddb.CfnTable;
-        cfnEKSClusterLogSourceTable.overrideLogicalId('EKSClusterLogSourceTable')
-        addCfnNagSuppressRules(cfnEKSClusterLogSourceTable, [
-            {
-                id: 'W73',
-                reason: 'This table has billing mode as PROVISIONED'
-            },
-            {
-                id: 'W74',
-                reason: 'This table is set to use DEFAULT encryption, the key is owned by DDB.'
-            },
-        ])
-
-
-
         // Create a lambda to handle all logSource related APIs.
         const logSourceHandler = new lambda.Function(this, 'LogSourceHandler', {
             code: lambda.AssetCode.fromAsset(path.join(__dirname, '../../lambda/api/log_source')),
@@ -131,7 +125,10 @@ export class LogSourceStack extends Construct {
                 //  TODO: using EC2_LOG_SOURCE_TABLE to store ec2 log path
                 EC2_LOG_SOURCE_TABLE_NAME: this.ec2LogSourceTable.tableName,
                 S3_LOG_SOURCE_TABLE_NAME: this.s3LogSourceTable.tableName,
-                EKS_CLUSTER_SOURCE_TABLE_NAME: this.eksClusterLogSourceTable.tableName,
+                EKS_CLUSTER_SOURCE_TABLE_NAME: props.eksClusterLogSourceTable.tableName,
+                LOG_AGENT_VPC_ID: props.defaultVPC,
+                LOG_AGENT_SUBNETS_IDS: Fn.join(",", props.defaultPublicSubnets),
+                ASYNC_CROSS_ACCOUNT_LAMBDA_ARN: props.asyncCrossAccountHandler.functionArn,
                 SOLUTION_ID: solution_id,
                 SOLUTION_VERSION: process.env.VERSION ? process.env.VERSION : 'v1.0.0',
             },
@@ -141,7 +138,15 @@ export class LogSourceStack extends Construct {
         // Grant permissions to the logSource lambda
         this.ec2LogSourceTable.grantReadWriteData(logSourceHandler)
         this.s3LogSourceTable.grantReadWriteData(logSourceHandler)
-        this.eksClusterLogSourceTable.grantReadWriteData(logSourceHandler)
+        props.eksClusterLogSourceTable.grantReadWriteData(logSourceHandler)
+        props.centralAssumeRolePolicy.attachToRole(logSourceHandler.role!)
+        logSourceHandler.addToRolePolicy(
+            new iam.PolicyStatement({
+                actions: ["lambda:InvokeFunction", "lambda:InvokeAsync"],
+                effect: iam.Effect.ALLOW,
+                resources: ["*"],
+            })
+        );
 
         // Add logSource lambda as a Datasource
         const LogSourceLambdaDS = props.graphqlApi.addLambdaDataSource('LogSourceLambdaDS', logSourceHandler, {

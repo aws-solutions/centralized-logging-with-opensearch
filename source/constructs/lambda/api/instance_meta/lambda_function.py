@@ -11,9 +11,8 @@ import concurrent.futures
 
 import boto3
 import time
-from boto3.dynamodb.conditions import Attr
 from botocore import config
-from multiprocessing import Process
+from aws_svc_mgr import (SvcManager, Boto3API, DocumentType)
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -27,22 +26,21 @@ default_config = config.Config(**user_agent_config)
 
 # Get DDB resource.
 dynamodb = boto3.resource('dynamodb', config=default_config)
-# Get SSM resource
-ssm = boto3.client('ssm', config=default_config)
-# Get EC2 resource
-ec2 = boto3.client('ec2', config=default_config)
 
 instance_meta_table_name = os.environ.get('INSTANCEMETA_TABLE')
 agent_status_table_name = os.environ.get('AGENTSTATUS_TABLE')
 instance_meta_table = dynamodb.Table(instance_meta_table_name)
 log_agent_status_table = dynamodb.Table(agent_status_table_name)
 default_region = os.environ.get('AWS_REGION')
-document_name = os.environ.get('AGENT_INSTALLATION_DOCUMENT')
 
 http = urllib3.PoolManager()
 
+sts = boto3.client("sts", config=default_config)
+account_id = sts.get_caller_identity()["Account"]
+
 
 class APIException(Exception):
+
     def __init__(self, message):
         self.message = message
 
@@ -100,62 +98,74 @@ def create_instance_meta(**args):
             'groupId': args['groupId'],
             'createdDt': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
             'status': 'ACTIVE',
-
-        }
-    )
+        })
     return id
 
 
-def create_log_agent_status(instance_id, command_id, status):
+def create_log_agent_status(instance_id,
+                            command_id,
+                            status,
+                            accountId=account_id,
+                            region=default_region):
     """  Create a LogAgentStatus """
     logger.info('create LogAgentStatus')
     log_agent_status_table.put_item(
         Item={
             'instanceId': instance_id,
             'id': command_id,
+            'accountId': accountId,
+            'region': region,
             'createDt': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
             'status': status,
             'updatedDt': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-        }
-    )
+        })
     return id
 
 
-def list_instances(maxResults=10, nextToken='', instanceSet=set(), tags=list()):
+def list_instances(maxResults=10,
+                   nextToken='',
+                   instanceSet=set(),
+                   tags=list(),
+                   accountId=account_id,
+                   region=default_region):
     """  List instance from ssm describe_instance_information API """
     max_results = maxResults  # args['maxResults']
     next_token = nextToken  # args['nextToken']
     instance_set = instanceSet  # args['instanceSet']
     if max_results > 50 or max_results < 5:
-        raise APIException('maxResults have to be more than 4 or less than or equal to 50')
+        raise APIException(
+            'maxResults have to be more than 4 or less than or equal to 50')
 
     logger.info(
-        f'List Instances from Boto3 API in MaxResults {max_results} with {next_token}, the InstanceSet is {instance_set}')
+        f'List Instances from Boto3 API in MaxResults {max_results} with {next_token}, the InstanceSet is {instance_set}'
+    )
     filters = []
     if tags:
         filters = tags
     else:
         filters = [{
             'Key': 'PingStatus',
-            'Values': [
-                'Online'
-            ]
-        },
-            {
+            'Values': ['Online']
+        }, {
             'Key': 'PlatformTypes',
-            'Values': [
-                'Linux'
-            ]
+            'Values': ['Linux']
         }]
         if instance_set:
-            filter_instance_ids = {'Key': 'InstanceIds', 'Values': instance_set}
+            filter_instance_ids = {
+                'Key': 'InstanceIds',
+                'Values': instance_set
+            }
             filters.append(filter_instance_ids)
     try:
-        resp = ssm.describe_instance_information(
-            Filters=filters,
-            MaxResults=max_results,
-            NextToken=next_token
-        )
+        # Get SSM resource
+        svcMgr = SvcManager()
+        ssm = svcMgr.get_client(sub_account_id=accountId,
+                                service_name='ssm',
+                                type=Boto3API.CLIENT,
+                                region=region)
+        resp = ssm.describe_instance_information(Filters=filters,
+                                                 MaxResults=max_results,
+                                                 NextToken=next_token)
     except Exception as e:
         err_message = str(e)
         trimed_message = err_message.split(':', 1)[1]
@@ -166,7 +176,13 @@ def list_instances(maxResults=10, nextToken='', instanceSet=set(), tags=list()):
     instances = []
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-        futures = [executor.submit(parse_ssm_instance_info, instance_info) for instance_info in instance_information_list]
+        futures = [
+            executor.submit(parse_ssm_instance_info,
+                            instance_info,
+                            accountId=accountId,
+                            region=region)
+            for instance_info in instance_information_list
+        ]
         for future in concurrent.futures.as_completed(futures):
             try:
                 instance = future.result()
@@ -183,39 +199,49 @@ def list_instances(maxResults=10, nextToken='', instanceSet=set(), tags=list()):
         'instances': instances,
     }
 
-def parse_ssm_instance_info(instance_info):
+
+def parse_ssm_instance_info(instance_info, accountId, region=default_region):
     instance = {}
     instance['id'] = instance_info['InstanceId']
     instance['platformName'] = instance_info['PlatformName']
     instance['ipAddress'] = instance_info['IPAddress']
     instance['computerName'] = instance_info['ComputerName']
     instance['name'] = '-'
-
-    instance_tags = ec2.describe_tags(
-        Filters=[
-            {
-                'Name': 'resource-id',
-                'Values': [
-                    instance_info['InstanceId'],
-                ],
-            },
-        ]
-    )
+    # Get EC2 resource
+    svcMgr = SvcManager()
+    ec2 = svcMgr.get_client(sub_account_id=accountId,
+                            service_name='ec2',
+                            type=Boto3API.CLIENT,
+                            region=region)
+    instance_tags = ec2.describe_tags(Filters=[
+        {
+            'Name': 'resource-id',
+            'Values': [
+                instance_info['InstanceId'],
+            ],
+        },
+    ])
     for tag in instance_tags['Tags']:
         if tag['Key'] == 'Name':
             instance['name'] = tag['Value']
             break
     return instance
 
-def get_log_agent_status(instanceId: str) -> str:
+
+def get_log_agent_status(instanceId: str,
+                         accountId=account_id,
+                         region=default_region) -> str:
     """ Get log agent status from dynamodb status table """
     logger.info('Checking instance log agent status')
-    agentStatus = check_agent_status(instanceId)
+    agentStatus = check_agent_status(instance_id=instanceId,
+                                     accountId=accountId,
+                                     region=region)
 
     return agentStatus
 
 
-def request_install_log_agent(instanceIdSet=set()):
+def request_install_log_agent(
+        instanceIdSet=set(), accountId=account_id, region=default_region):
     """ Use SSM SendCommand API to install logging agent """
     logger.info('Run documentation')
     logger.info(instanceIdSet)
@@ -223,27 +249,26 @@ def request_install_log_agent(instanceIdSet=set()):
     if len(instanceIdSet) == 0:
         logger.info("Empty instance set input received!")
         return unsuccessInstances
-    with concurrent.futures.ThreadPoolExecutor(max_workers=len(instanceIdSet)) as executor:
-        futures = [executor.submit(single_agent_installation, instanceId) for instanceId in instanceIdSet]
+    with concurrent.futures.ThreadPoolExecutor(
+            max_workers=len(instanceIdSet)) as executor:
+        futures = [
+            executor.submit(single_agent_installation,
+                            instanceId,
+                            accountId=accountId,
+                            region=region) for instanceId in instanceIdSet
+        ]
         concurrent.futures.wait(futures)
-    with concurrent.futures.ThreadPoolExecutor(max_workers=len(instanceIdSet)) as executor:
-        futures = [executor.submit(update_agent_status, instanceId, "Installing") for instanceId in instanceIdSet]
+    with concurrent.futures.ThreadPoolExecutor(
+            max_workers=len(instanceIdSet)) as executor:
+        futures = [
+            executor.submit(update_agent_status,
+                            instance_id=instanceId,
+                            status="Installing",
+                            accountId=accountId,
+                            region=region) for instanceId in instanceIdSet
+        ]
         concurrent.futures.wait(futures)
-    # Decouple install with health check
-    # unsuccessInstances = agent_health_check(instanceIdSet)
-    # logger.info("Start retry process for unsuccessful instances: " + str(unsuccessInstances))
-    # loop = 1
-    # if len(unsuccessInstances) > 0:
-    #     for loop in range(1, 2):
-    #         with concurrent.futures.ThreadPoolExecutor(max_workers=len(unsuccessInstances)) as executor:
-    #             futures = [executor.submit(single_agent_installation, instanceId) for instanceId in unsuccessInstances]
-    #             concurrent.futures.wait(futures)
-    #         unsuccessInstances = agent_health_check(unsuccessInstances)
-    #         loop += 1
-    #         logger.info("Retry times: " + str(loop) + ", unsuccessful instance left: " + str(unsuccessInstances))
-    # logger.info("Installation request (whole process) complete!")
-    # logger.info("Unsuccessful instances (after 2 retries): " + str(unsuccessInstances))
-    # return str(unsuccessInstances)
+
 
 def update_instance_meta(**args):
     """ set confIdset, groupIdSet in InstanceMeta table """
@@ -255,7 +280,8 @@ def update_instance_meta(**args):
 
     instance_meta_table.update_item(
         Key={'id': id},
-        UpdateExpression='SET #confIdset = :cset, #groupIdset = :gset, #updatedDt= :uDt',
+        UpdateExpression=
+        'SET #confIdset = :cset, #groupIdset = :gset, #updatedDt= :uDt',
         ExpressionAttributeNames={
             '#confIdset': 'confIdset',
             '#groupIdset': 'groupIdset',
@@ -265,38 +291,56 @@ def update_instance_meta(**args):
             ':cset': set(args['confIdset']),
             ':gset': set(args['groupIdset']),
             ':uDt': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-        }
-    )
+        })
 
 
-def check_agent_status(instance_id):
+def check_agent_status(instance_id,
+                       accountId=account_id,
+                       region=default_region):
     """ check agent status in ddb table """
     logger.info('Checking LogAgentStatus Status in DynamoDB')
     resp = log_agent_status_table.get_item(Key={'instanceId': instance_id})
     if 'Item' not in resp:
-        logger.info("InstanceId: " + instance_id + " not found in table, creating empty record!")
-        create_log_agent_status(instance_id, "Empty_Command_Id", "Not_Installed")
+        logger.info("InstanceId: " + instance_id +
+                    " not found in table, creating empty record!")
+        create_log_agent_status(instance_id, "Empty_Command_Id",
+                                "Not_Installed", accountId, region)
         return "Not_Installed"
     logger.info(resp)
     return resp['Item']['status']
 
 
-def get_agent_commandId(instance_id):
+def get_agent_commandId(instance_id,
+                        accountId=account_id,
+                        region=default_region):
     """ check agent commandId in ddb table """
-    logger.info('Getting agent commandId in DynamoDB for instance: ' + instance_id)
+    logger.info('Getting agent commandId in DynamoDB for instance: ' +
+                instance_id)
     resp = log_agent_status_table.get_item(Key={'instanceId': instance_id})
     if 'Item' not in resp:
-        logger.info("InstanceId: " + instance_id + " not found in table, creating empty record!")
-        create_log_agent_status(instance_id, "Empty_Command_Id", "Not_Installed")
+        logger.info("InstanceId: " + instance_id +
+                    " not found in table, creating empty record!")
+
+        create_log_agent_status(instance_id=instance_id,
+                                command_id="Empty_Command_Id",
+                                status="Not_Installed",
+                                accountId=accountId,
+                                region=region)
         return "Not_Installed"
     logger.info(resp)
     return resp['Item']['id']
 
 
-def update_agent_status(instance_id, status):
+def update_agent_status(instance_id,
+                        status,
+                        accountId=account_id,
+                        region=default_region):
     """ set agent status and update date in LogAgentStatus"""
-    agentStatus = check_agent_status(instance_id)
-    logger.info("Previous agent status for: " + instance_id + " is: " + agentStatus)
+    agentStatus = check_agent_status(instance_id=instance_id,
+                                     accountId=accountId,
+                                     region=region)
+    logger.info("Previous agent status for: " + instance_id + " is: " +
+                agentStatus)
     logger.info("Change status to: " + status)
     logger.info('Updating LogAgentStatus Status in DynamoDB')
 
@@ -310,28 +354,43 @@ def update_agent_status(instance_id, status):
         ExpressionAttributeValues={
             ':sset': status,
             ':uDt': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-        }
-    )
+        })
     return "Updated"
 
 
-def single_agent_installation(instance_id):
+def single_agent_installation(instance_id,
+                              accountId=account_id,
+                              region=default_region):
     """ retry unsuccess installation"""
-    agentStatus = check_agent_status(instance_id)
+    agentStatus = check_agent_status(instance_id=instance_id,
+                                     accountId=accountId,
+                                     region=region)
     if agentStatus == "Online":
         return
     else:
+        # Get EC2 resource
+        svcMgr = SvcManager()
+        ec2 = svcMgr.get_client(sub_account_id=accountId,
+                                service_name='ec2',
+                                type=Boto3API.CLIENT,
+                                region=region)
         describeInstanceResponse = ec2.describe_instances(
-            InstanceIds=[instance_id]
-        )
+            InstanceIds=[instance_id])
         reservations = describeInstanceResponse['Reservations'][0]
         instances = reservations['Instances'][0]
         architecture = instances['Architecture']
         filter_instance_ids = {'Key': 'InstanceIds', 'Values': [instance_id]}
+
+        #Get SSM resource
+        ssm = svcMgr.get_client(sub_account_id=accountId,
+                                service_name='ssm',
+                                type=Boto3API.CLIENT,
+                                region=region)
+        logger.info('ready for installation')
         describeInstanceInfoResponse = ssm.describe_instance_information(
-            Filters=[filter_instance_ids],
-        )
-        instance_information_list = describeInstanceInfoResponse['InstanceInformationList']
+            Filters=[filter_instance_ids], )
+        instance_information_list = describeInstanceInfoResponse[
+            'InstanceInformationList']
         platform_name = instance_information_list[0]['PlatformName']
         systemd_location = "/usr/lib"
         arch_append = ""
@@ -339,6 +398,11 @@ def single_agent_installation(instance_id):
             arch_append = "-arm64"
         if platform_name == "Ubuntu":
             systemd_location = "/etc"
+        document_name = svcMgr.get_document_name(
+            sub_account_id=accountId,
+            type=DocumentType.AGENT_INSTALL,
+            region=region)
+        logger.info(f'document_name is {document_name}')
         response = ssm.send_command(
             InstanceIds=[instance_id],
             DocumentName=document_name,
@@ -350,29 +414,56 @@ def single_agent_installation(instance_id):
         logger.info('Successfully triggered installation')
         command = response['Command']
         commandId = command['CommandId']
-        create_log_agent_status(instance_id, commandId, "Installing")
+        create_log_agent_status(instance_id=instance_id,
+                                command_id=commandId,
+                                status="Installing",
+                                accountId=accountId,
+                                region=region)
 
 
-def agent_health_check(instanceIdSet=set()):
+def agent_health_check(
+        instanceIdSet=set(), accountId=account_id, region=default_region):
     unsuccessInstances = set()
-    with concurrent.futures.ThreadPoolExecutor(max_workers=len(instanceIdSet)) as executor:
-        futures = [executor.submit(get_instance_invocation, instanceId) for instanceId in instanceIdSet]
+    with concurrent.futures.ThreadPoolExecutor(
+            max_workers=len(instanceIdSet)) as executor:
+        futures = [
+            executor.submit(get_instance_invocation,
+                            instanceId=instanceId,
+                            accountId=accountId,
+                            region=region) for instanceId in instanceIdSet
+        ]
         concurrent.futures.wait(futures)
     try:
         """send command to check agent status"""
+        svcMgr = SvcManager()
+        ssm = svcMgr.get_client(sub_account_id=accountId,
+                                service_name='ssm',
+                                type=Boto3API.CLIENT,
+                                region=region)
         response = ssm.send_command(
             InstanceIds=list(instanceIdSet),
             DocumentName="AWS-RunShellScript",
-            Parameters={'commands': ['curl -s http://127.0.0.1:2022/api/v1/health']}, )
+            Parameters={
+                'commands': ['curl -s http://127.0.0.1:2022/api/v1/health']
+            },
+        )
         command_id = response['Command']['CommandId']
     except Exception as e:
         logger.error(e)
         return unsuccessInstances
     time.sleep(5)
     try:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=len(instanceIdSet)) as executor:
-            futures = [executor.submit(get_agent_health_check_output, command_id, instanceId,
-                                       unsuccessInstances) for instanceId in instanceIdSet]
+        with concurrent.futures.ThreadPoolExecutor(
+                max_workers=len(instanceIdSet)) as executor:
+            futures = [
+                executor.submit(get_agent_health_check_output,
+                                command_id,
+                                instanceId,
+                                unsuccessInstances,
+                                accountId=account_id,
+                                region=default_region)
+                for instanceId in instanceIdSet
+            ]
             concurrent.futures.wait(futures)
     except Exception as e:
         logger.error(e)
@@ -380,27 +471,60 @@ def agent_health_check(instanceIdSet=set()):
     return unsuccessInstances
 
 
-def get_instance_invocation(instanceId):
+def get_instance_invocation(instanceId,
+                            accountId=account_id,
+                            region=default_region):
     """check command output"""
-    commandId = get_agent_commandId(instanceId)
+    commandId = get_agent_commandId(instanceId,
+                                    accountId=accountId,
+                                    region=region)
     if commandId == "Empty_Command_Id":
         return "Not_Installed"
-    response = ssm.get_command_invocation(CommandId=commandId, InstanceId=instanceId)
+
+    svcMgr = SvcManager()
+    ssm = svcMgr.get_client(sub_account_id=accountId,
+                            service_name='ssm',
+                            type=Boto3API.CLIENT,
+                            region=region)
+    response = ssm.get_command_invocation(CommandId=commandId,
+                                          InstanceId=instanceId)
     commandStatus = response['Status']
-    logger.info("InstanceId: " + instanceId + " Command Status: " + commandStatus)
-    if commandStatus == "TimedOut" or commandStatus == "Cancelled" :
-        update_agent_status(instanceId, "Offline")
+    logger.info("InstanceId: " + instanceId + " Command Status: " +
+                commandStatus)
+    if commandStatus == "TimedOut" or commandStatus == "Cancelled":
+        update_agent_status(instance_id=instanceId,
+                            status="Offline",
+                            accountId=account_id,
+                            region=default_region)
     return response
 
 
-def get_agent_health_check_output(command_id, instanceId, unsuccessInstances=set()):
+def get_agent_health_check_output(command_id,
+                                  instanceId,
+                                  unsuccessInstances=set(),
+                                  accountId=account_id,
+                                  region=default_region):
+    svcMgr = SvcManager()
+    ssm = svcMgr.get_client(sub_account_id=accountId,
+                            service_name='ssm',
+                            type=Boto3API.CLIENT,
+                            region=region)
     output = ssm.get_command_invocation(
         CommandId=command_id,
-        InstanceId=instanceId, )
-    if (len(output['StandardOutputContent']) > 0) and ('fluent-bit' in output['StandardOutputContent']):
+        InstanceId=instanceId,
+    )
+    if (len(output['StandardOutputContent']) >
+            0) and ('fluent-bit' in output['StandardOutputContent']):
         logger.info("Instance %s is Online" % instanceId)
-        update_agent_status(instanceId, "Online")
+        update_agent_status(instance_id=instanceId,
+                            status="Online",
+                            accountId=accountId,
+                            region=region)
     else:
         logger.info("Instance %s is Offline" % instanceId)
-        update_agent_status(instanceId, "Offline")
+        update_agent_status(instance_id=instanceId,
+                            status="Offline",
+                            accountId=accountId,
+                            region=region)
+
         unsuccessInstances.add(instanceId)

@@ -46,6 +46,7 @@ import { AppStateProps } from "reducer/appReducer";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Alert } from "assets/js/alert";
+import AccountName from "pages/comps/account/AccountName";
 
 interface MatchParams {
   id: string;
@@ -100,12 +101,16 @@ const InstanceGroupDetail: React.FC<RouteComponentProps<MatchParams>> = (
       const dataInstanceInfo = await appSyncRequestQuery(listInstances, {
         maxResults: 50,
         nextToken: "",
+        accountId: curInstanceGroup?.accountId || "",
+        region: amplifyConfig.aws_project_region,
         instanceSet: instanceIdList[i],
       });
       const dataInstanceStatusInfo = await appSyncRequestQuery(
         getLogAgentStatus,
         {
           instanceId: instanceIdList[i],
+          region: amplifyConfig.aws_project_region,
+          accountId: curInstanceGroup?.accountId || "",
         }
       );
       tmpInstanceInfoList.push({
@@ -165,6 +170,16 @@ const InstanceGroupDetail: React.FC<RouteComponentProps<MatchParams>> = (
                         <ValueWithLabel label={t("resource:group.detail.name")}>
                           <div>{curInstanceGroup?.groupName}</div>
                         </ValueWithLabel>
+                        {curInstanceGroup?.accountId && (
+                          <ValueWithLabel
+                            label={t("resource:crossAccount.account")}
+                          >
+                            <AccountName
+                              accountId={curInstanceGroup?.accountId}
+                              region={amplifyConfig.aws_project_region}
+                            />
+                          </ValueWithLabel>
+                        )}
                       </div>
                       <div className="flex-1 border-left-c">
                         <ValueWithLabel
@@ -204,7 +219,7 @@ const InstanceGroupDetail: React.FC<RouteComponentProps<MatchParams>> = (
                         id: "Name",
                         header: t("resource:group.detail.list.name"),
                         cell: (e: InstanceWithStatus) => {
-                          return e.name;
+                          return e.name || t("unknown");
                         },
                       },
                       {
@@ -225,12 +240,11 @@ const InstanceGroupDetail: React.FC<RouteComponentProps<MatchParams>> = (
                           );
                         },
                       },
-
                       {
                         id: "ip",
                         header: t("resource:group.detail.list.primaryIP"),
                         cell: (e: InstanceWithStatus) => {
-                          return e.ipAddress;
+                          return e.ipAddress || t("unknown");
                         },
                       },
                       {

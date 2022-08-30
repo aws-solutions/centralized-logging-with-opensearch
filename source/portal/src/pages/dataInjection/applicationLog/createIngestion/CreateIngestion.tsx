@@ -29,7 +29,7 @@ import HelpPanel from "components/HelpPanel";
 import SideMenu from "components/SideMenu";
 import ApplyLogConfig from "./steps/ApplyLogConfig";
 import { InstanceGroup } from "API";
-import { CreationMethod } from "types";
+import { CreationMethod, YesNo } from "types";
 import { appSyncRequestMutation } from "assets/js/request";
 import {
   createAppLogIngestion,
@@ -55,6 +55,10 @@ export interface IngestionPropsType {
   showSampleLogRequiredError: boolean;
   showUserLogFormatError: boolean;
   showSampleLogInvalidError: boolean;
+  logPathEmptyError: boolean;
+  createDashboard: string;
+  accountId: string;
+  logPath: string;
   tags: Tag[];
 }
 
@@ -99,6 +103,10 @@ const CreateIngestion: React.FC<RouteComponentProps<MatchParams>> = (
     showSampleLogRequiredError: false,
     showUserLogFormatError: false,
     showSampleLogInvalidError: false,
+    logPathEmptyError: false,
+    createDashboard: YesNo.Yes,
+    accountId: "",
+    logPath: "",
     tags: [],
   });
 
@@ -174,8 +182,20 @@ const CreateIngestion: React.FC<RouteComponentProps<MatchParams>> = (
     }
 
     const createLogConfigParam = ingestionInfo?.curLogConfig;
-    createLogConfigParam.logPath =
-      ingestionInfo?.curLogConfig.logPath || "/**/";
+
+    if (
+      ingestionInfo?.curLogConfig.logType === LogType.MultiLineText ||
+      ingestionInfo?.curLogConfig.logType === LogType.SingleLineText
+    ) {
+      createLogConfigParam.regularExpression =
+        ingestionInfo?.curLogConfig.regularExpression
+          ?.trim()
+          .replace(/[\n\t\r]/g, "");
+      createLogConfigParam.userLogFormat =
+        ingestionInfo?.curLogConfig.userLogFormat
+          ?.trim()
+          .replace(/[\n\t\r]/g, "");
+    }
 
     try {
       setLoadingCreateLogConfig(true);
@@ -245,6 +265,7 @@ const CreateIngestion: React.FC<RouteComponentProps<MatchParams>> = (
     }
     const createInstanceGroupParam = {
       groupName: ingestionInfo.curInstanceGroup.groupName,
+      accountId: ingestionInfo.accountId,
       instanceSet: ingestionInfo.instanceGroupCheckedInstances.map(
         (instance) => instance.id
       ),
@@ -280,6 +301,8 @@ const CreateIngestion: React.FC<RouteComponentProps<MatchParams>> = (
       sourceType: LogSourceType.EC2,
       confId: ingestionInfo.curLogConfig?.id,
       sourceIds: ingestionInfo.chooseInstanceGroup.map((a) => a.id),
+      createDashboard: ingestionInfo.createDashboard,
+      logPath: ingestionInfo.logPath,
       stackId: "",
       stackName: "",
       tags: ingestionInfo.tags,
@@ -330,20 +353,26 @@ const CreateIngestion: React.FC<RouteComponentProps<MatchParams>> = (
                     },
                   ]}
                   activeIndex={curStep}
-                  selectStep={(step: number) => {
-                    setCurStep(step);
-                  }}
                 />
               </div>
               <div className="create-content m-w-1024">
                 {curStep === 0 && (
                   <StepCreateInstanceGroup
+                    pipelineId={id}
                     emptyError={ingestionInfo.instanceGroupNameEmpty}
                     clearEmptyError={() => {
                       setIngestionInfo((prev) => {
                         return {
                           ...prev,
                           instanceGroupNameEmpty: false,
+                        };
+                      });
+                    }}
+                    changeCurAccountId={(id) => {
+                      setIngestionInfo((prev) => {
+                        return {
+                          ...prev,
+                          accountId: id,
                         };
                       });
                     }}
@@ -394,6 +423,15 @@ const CreateIngestion: React.FC<RouteComponentProps<MatchParams>> = (
                 {curStep === 2 && (
                   <ApplyLogConfig
                     ingestionInfo={ingestionInfo}
+                    changeLogPath={(path) => {
+                      setIngestionInfo((prev) => {
+                        return {
+                          ...prev,
+                          logPath: path,
+                          logPathEmptyError: false,
+                        };
+                      });
+                    }}
                     changeUserLogFormatError={(error) => {
                       setIngestionInfo((prev) => {
                         return {
@@ -443,6 +481,14 @@ const CreateIngestion: React.FC<RouteComponentProps<MatchParams>> = (
                         return {
                           ...prev,
                           logConfigMethod: method,
+                        };
+                      });
+                    }}
+                    changeSampleDashboard={(yesNo) => {
+                      setIngestionInfo((prev) => {
+                        return {
+                          ...prev,
+                          createDashboard: yesNo,
                         };
                       });
                     }}
@@ -516,14 +562,24 @@ const CreateIngestion: React.FC<RouteComponentProps<MatchParams>> = (
                           );
                           return;
                         }
-                        if (
-                          curStep === 2 &&
-                          ingestionInfo.logConfigMethod ===
-                            CreationMethod.New &&
-                          !ingestionInfo.curLogConfig?.id
-                        ) {
-                          createLogConfig();
-                          return;
+                        if (curStep === 2) {
+                          if (!ingestionInfo.logPath) {
+                            setIngestionInfo((prev) => {
+                              return {
+                                ...prev,
+                                logPathEmptyError: true,
+                              };
+                            });
+                            return;
+                          }
+                          if (
+                            ingestionInfo.logConfigMethod ===
+                              CreationMethod.New &&
+                            !ingestionInfo.curLogConfig?.id
+                          ) {
+                            createLogConfig();
+                            return;
+                          }
                         }
                         setCurStep((curStep) => {
                           return curStep + 1 > 3 ? 3 : curStep + 1;

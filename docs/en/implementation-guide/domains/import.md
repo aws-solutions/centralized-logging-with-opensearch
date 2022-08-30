@@ -2,14 +2,12 @@
  
 Once logged into the Log Hub console, you can import an AOS domain. Log Hub supports OpenSearch domain with [fine-grained access control](https://docs.aws.amazon.com/opensearch-service/latest/developerguide/fgac.html) enabled [within a VPC](https://docs.aws.amazon.com/opensearch-service/latest/developerguide/vpc.html) only. 
 
-!!! Note "Note"
-    
-    Currently, Log Hub supports Amazon Elasticsearch 7.10 and later, or Amazon OpenSearch 1.0 and later.
-
 ## Prerequisite
 
-At least one AOS domain within VPC. If you don't have an AOS domain yet, you can create an AOS domain within VPC. See [Launching your Amazon OpenSearch Service domains within a VPC][vpc].
-
+1. Log Hub supports Amazon OpenSearch Service, engine version Elasticsearch 7.10 and above, and engine version OpenSearch 1.0 and above.
+2. Log Hub supports OpenSearch clusters within VPC. If you don't have an AOS domain yet, you can create an AOS domain within VPC. See [Launching your Amazon OpenSearch Service domains within a VPC][vpc].
+3. Log Hub supports OpenSearch clusters with [fine-grained access control](https://docs.aws.amazon.com/opensearch-service/latest/developerguide/fgac.html) only. In the security configuration, the Access policy should look like the image below:
+   ![](../../images/domain/policy.png)
 
 ## Import an AOS Domain
 
@@ -60,7 +58,7 @@ Follow this section to create VPC peering, update security group and update rout
 3. Select the subnet, and choose the **Route table** tab.
 4. Select the associated route table of the subnet to open the route table configuration page.
 5. Select the **Routes** tab, and choose **Edit routes**.
-6. Add a route `10.255.0.0/16` (the CIDR of Log Hub) pointing to the Peering Connection you just created.
+6. Add a route `10.255.0.0/16` (the CIDR of Log Hub， if you created Log Hub with existing VPC, please change this value) pointing to the Peering Connection you just created.
 7. Go back to the Log Hub console.
 8. Click the VPC ID under the **OpenSearch domain network** section.
 9. Select the VPC ID on the VPC Console and find its **IPv4 CIDR**.
@@ -71,7 +69,7 @@ Follow this section to create VPC peering, update security group and update rout
 
 1. On the Log Hub console, under the **OpenSearch domain network** section, select the Security Group ID in **Security Groups** to open the Security Group in a new tab.
 2. On the console, select **Edit inbound rules**.
-3. Add the rule `ALLOW TCP/443 from 10.255.0.0/16`.
+3. Add the rule `ALLOW TCP/443 from 10.255.0.0/16` (the CIDR of Log Hub， if you created Log Hub with existing VPC, please change this value).
    ![](../../images/domain/add-sg-rules.png)
 4. Choose **Save rules**.
 

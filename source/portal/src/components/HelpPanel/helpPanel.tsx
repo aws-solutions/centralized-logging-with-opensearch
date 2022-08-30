@@ -34,6 +34,7 @@ import LogLifeCycle from "help/LogLifecycle";
 import NginxLogFormat from "help/NginxLogFormat";
 import NginxSampleLogParsing from "help/NginxSampleLogParsing";
 import LogConfigPath from "help/LogConfigPath";
+import LogConfigPathEKS from "help/LogConfigPathEKS";
 import ApacheLogFormat from "help/ApacheLogFormat";
 import ApacheSampleLogParsing from "help/ApacheSampleLogParsing";
 import RegExLogFormat from "help/RegExLogFormat";
@@ -119,6 +120,9 @@ export const HelpPanel: React.FC<HelpPanelProps> = (props: HelpPanelProps) => {
             <ApacheSampleLogParsing />
           )}
           {infoBarType === InfoBarTypes.LOG_CONFIG_PATH && <LogConfigPath />}
+          {infoBarType === InfoBarTypes.LOG_CONFIG_PATH_EKS && (
+            <LogConfigPathEKS />
+          )}
           {infoBarType === InfoBarTypes.S3_FILE_TYPE && <S3FileType />}
           {infoBarType === InfoBarTypes.EKS_PATTERN && <EKSPattern />}
           {infoBarType === InfoBarTypes.EKS_IAM_ROLE && <EKSIAMRole />}

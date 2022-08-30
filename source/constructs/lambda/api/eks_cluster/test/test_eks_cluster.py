@@ -136,6 +136,20 @@ def ddb_client():
             }
         })
 
+        ddb.create_table(
+            TableName=os.environ.get("SUB_ACCOUNT_LINK_TABLE_NAME"),
+            KeySchema=[{"AttributeName": "id", "KeyType": "HASH"}],
+            AttributeDefinitions=[{"AttributeName": "id", "AttributeType": "S"}],
+            ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
+        )
+
+        yield
+
+
+@pytest.fixture
+def sts_client():
+    with mock_sts():
+        boto3.client("sts", region_name=os.environ.get("AWS_REGION"))
         yield
 
 

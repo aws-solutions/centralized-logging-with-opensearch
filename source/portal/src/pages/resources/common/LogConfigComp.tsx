@@ -45,7 +45,6 @@ interface LogConfigProps {
   headerTitle: string;
   curConfig: LogConf | undefined;
   changeLogConfName?: (name: string) => void;
-  changeLogConfPath?: (path: string) => void;
   changeLogType?: (type: LogType) => void;
   changeUserLogFormat?: (format: string) => void;
   changeRegExpSpecs?: (specs: any) => void;
@@ -56,7 +55,6 @@ interface LogConfigProps {
   inputDisable?: boolean;
   userLogFormatError?: boolean;
   sampleLogRequiredError?: boolean;
-  hidePath?: boolean;
   isLoading?: boolean;
   sampleLogInvalid: boolean;
   changeSampleLogInvalid?: (invalid: boolean) => void;
@@ -67,7 +65,6 @@ const LogConfigComp: React.FC<LogConfigProps> = (props: LogConfigProps) => {
     headerTitle,
     curConfig,
     changeLogConfName,
-    changeLogConfPath,
     changeLogType,
     changeUserLogFormat,
     changeRegExpSpecs,
@@ -78,7 +75,6 @@ const LogConfigComp: React.FC<LogConfigProps> = (props: LogConfigProps) => {
     inputDisable,
     userLogFormatError,
     sampleLogRequiredError,
-    hidePath,
     isLoading,
     sampleLogInvalid,
     changeSampleLogInvalid,
@@ -112,28 +108,6 @@ const LogConfigComp: React.FC<LogConfigProps> = (props: LogConfigProps) => {
                 placeholder="log-example-config"
               />
             </FormItem>
-
-            {!hidePath && (
-              <FormItem
-                infoType={InfoBarTypes.LOG_CONFIG_PATH}
-                optionTitle={t("resource:config.common.logPath")}
-                optionDesc={t("resource:config.common.logPathDesc")}
-              >
-                <div className="flex align-center m-w-75p">
-                  <div style={{ flex: 1 }}>
-                    <TextInput
-                      disabled={inputDisable}
-                      value={curConfig?.logPath || ""}
-                      placeholder="/var/log/app1/*.log, /var/log/app2/*.log"
-                      onChange={(event) => {
-                        changeLogConfPath &&
-                          changeLogConfPath(event.target.value);
-                      }}
-                    />
-                  </div>
-                </div>
-              </FormItem>
-            )}
 
             <FormItem
               optionTitle={t("resource:config.common.logType")}

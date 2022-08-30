@@ -53,6 +53,8 @@ export interface LambdaTaskProps {
   tags: Tag[];
   source: string;
   target: string;
+  logSourceAccountId: string;
+  logSourceRegion: string;
   params: {
     // [index: string]: string | any;
     engineType: string;
@@ -73,6 +75,8 @@ export interface LambdaTaskProps {
     daysToWarm: string;
     daysToCold: string;
     daysToRetain: string;
+    logBucketName: string;
+    logBucketPrefix: string;
     shardNumbers: string;
     replicaNumbers: string;
   };
@@ -83,6 +87,8 @@ const DEFAULT_LAMBDA_TASK_VALUE: LambdaTaskProps = {
   tags: [],
   source: "",
   target: "",
+  logSourceAccountId: "",
+  logSourceRegion: "",
   params: {
     engineType: "",
     esDomainId: "",
@@ -95,13 +101,15 @@ const DEFAULT_LAMBDA_TASK_VALUE: LambdaTaskProps = {
     kdsShardNumber: "",
     kdsRetentionHours: "",
     indexPrefix: "",
-    createDashboard: YesNo.No,
+    createDashboard: YesNo.Yes,
     vpcId: "",
     subnetIds: "",
     securityGroupId: "",
     daysToWarm: "0",
     daysToCold: "0",
     daysToRetain: "0",
+    logBucketName: "",
+    logBucketPrefix: "",
     shardNumbers: "5",
     replicaNumbers: "1",
   },
@@ -136,6 +144,7 @@ const CreateLambda: React.FC = () => {
   const [lambdaEmptyError, setLambdaEmptyError] = useState(false);
   const [esDomainEmptyError, setEsDomainEmptyError] = useState(false);
   const [domainListIsLoading, setDomainListIsLoading] = useState(false);
+  const [lambdaIsChanging, setLambdaIsChanging] = useState(false);
 
   const [aosInputValidRes, setAosInputValidRes] = useState<AOSInputValidRes>({
     shardsInvalidError: false,
@@ -151,7 +160,10 @@ const CreateLambda: React.FC = () => {
     createPipelineParams.source = lambdaPipelineTask.source;
     createPipelineParams.target = lambdaPipelineTask.target;
     createPipelineParams.tags = lambdaPipelineTask.tags;
-    // lambdaPipelineTask.params.
+    createPipelineParams.logSourceAccountId =
+      lambdaPipelineTask.logSourceAccountId;
+    createPipelineParams.logSourceRegion = amplifyConfig.aws_project_region;
+
     const tmpParamList: any = [];
     Object.keys(lambdaPipelineTask.params).forEach((key) => {
       console.info("key");
@@ -166,6 +178,12 @@ const CreateLambda: React.FC = () => {
     tmpParamList.push({
       parameterKey: "backupBucketName",
       parameterValue: amplifyConfig.default_logging_bucket,
+    });
+
+    // Add defaultCmkArnParam
+    tmpParamList.push({
+      parameterKey: "defaultCmkArnParam",
+      parameterValue: amplifyConfig.default_cmk_arn,
     });
 
     createPipelineParams.parameters = tmpParamList;
@@ -235,13 +253,36 @@ const CreateLambda: React.FC = () => {
                 {curStep === 0 && (
                   <SpecifySettings
                     lambdaEmptyError={lambdaEmptyError}
+                    setISChanging={(status) => {
+                      setLambdaIsChanging(status);
+                    }}
+                    changeCrossAccount={(id) => {
+                      setLambdaPipelineTask((prev: LambdaTaskProps) => {
+                        return {
+                          ...prev,
+                          logSourceAccountId: id,
+                        };
+                      });
+                    }}
+                    changeLambdaBucket={(bucket, prefix) => {
+                      setLambdaPipelineTask((prev: LambdaTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            logBucketName: bucket,
+                            logBucketPrefix: prefix,
+                          },
+                        };
+                      });
+                    }}
                     changeLambdaObj={(lambda) => {
                       console.info("changeLambdaObj:", lambda);
                       setLambdaEmptyError(false);
                       setLambdaPipelineTask((prev: LambdaTaskProps) => {
                         return {
                           ...prev,
-                          source: lambda?.value,
+                          source: lambda?.value || "",
                           params: {
                             ...prev.params,
                             logGroupNames:
@@ -252,7 +293,7 @@ const CreateLambda: React.FC = () => {
                         };
                       });
                     }}
-                    LambdaTask={lambdaPipelineTask}
+                    lambdaTask={lambdaPipelineTask}
                   />
                 )}
                 {curStep === 1 && (
@@ -429,7 +470,7 @@ const CreateLambda: React.FC = () => {
 
                   {curStep < 2 && (
                     <Button
-                      disabled={domainListIsLoading}
+                      disabled={lambdaIsChanging || domainListIsLoading}
                       btnType="primary"
                       onClick={() => {
                         if (curStep === 0) {

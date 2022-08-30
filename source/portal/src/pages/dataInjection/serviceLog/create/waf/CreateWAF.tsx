@@ -39,8 +39,9 @@ import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Alert } from "assets/js/alert";
 import { splitStringToBucketAndPrefix } from "assets/js/utils";
+import { IngestOption } from "./steps/IngestOptionSelect";
 
-const EXCLUDE_PARAMS = [
+const EXCLUDE_PARAMS_COMMON = [
   "esDomainId",
   "wafObj",
   "taskType",
@@ -49,13 +50,33 @@ const EXCLUDE_PARAMS = [
   "warmEnable",
   "coldEnable",
   "needCreateLogging",
+  "ingestOption",
+  "webACLType",
+  "logSource",
 ];
+
+const EXCLUDE_PARAMS_FULL = [
+  ...EXCLUDE_PARAMS_COMMON,
+  "webACLNames",
+  "interval",
+];
+
+const EXCLUDE_PARAMS_SAMPLED = [
+  ...EXCLUDE_PARAMS_COMMON,
+  "logBucketPrefix",
+  "defaultCmkArnParam",
+  "logBucketName",
+  "backupBucketName",
+];
+
 export interface WAFTaskProps {
   type: ServiceType;
   tags: Tag[];
   arnId: string;
   source: string;
   target: string;
+  logSourceAccountId: string;
+  logSourceRegion: string;
   params: {
     // [index: string]: string | any;
     needCreateLogging: boolean;
@@ -81,6 +102,11 @@ export interface WAFTaskProps {
     daysToRetain: string;
     shardNumbers: string;
     replicaNumbers: string;
+    webACLNames: string;
+    ingestOption: string;
+    interval: string;
+    webACLType: string;
+    logSource: string;
   };
 }
 
@@ -90,6 +116,8 @@ const DEFAULT_TASK_VALUE: WAFTaskProps = {
   target: "",
   arnId: "",
   tags: [],
+  logSourceAccountId: "",
+  logSourceRegion: "",
   params: {
     needCreateLogging: false,
     engineType: "",
@@ -114,6 +142,11 @@ const DEFAULT_TASK_VALUE: WAFTaskProps = {
     daysToRetain: "0",
     shardNumbers: "5",
     replicaNumbers: "1",
+    webACLNames: "",
+    ingestOption: IngestOption.SampledRequest,
+    interval: "",
+    webACLType: "",
+    logSource: "",
   },
 };
 
@@ -143,6 +176,7 @@ const CreateWAF: React.FC = () => {
     useState<WAFTaskProps>(DEFAULT_TASK_VALUE);
 
   const [autoWAFEmptyError, setAutoWAFEmptyError] = useState(false);
+  const [manualWebACLEmptyError, setManualWebACLEmptyError] = useState(false);
   const [manualWAFEmpryError, setManualWAFEmpryError] = useState(false);
   const [esDomainEmptyError, setEsDomainEmptyError] = useState(false);
 
@@ -150,6 +184,7 @@ const CreateWAF: React.FC = () => {
   const [wafISChanging, setWAFISChanging] = useState(false);
   const [needEnableAccessLog, setNeedEnableAccessLog] = useState(false);
   const [domainListIsLoading, setDomainListIsLoading] = useState(false);
+  const [intervalValueError, setIntervalValueError] = useState(false);
 
   const [aosInputValidRes, setAosInputValidRes] = useState<AOSInputValidRes>({
     shardsInvalidError: false,
@@ -158,35 +193,79 @@ const CreateWAF: React.FC = () => {
     logRetentionInvalidError: false,
   });
 
+  const checkSampleScheduleValue = () => {
+    // Check Sample Schedule Interval
+    console.info(
+      "wafPipelineTask.params.ingestOption === IngestOption.SampledRequest",
+      wafPipelineTask.params.ingestOption === IngestOption.SampledRequest
+    );
+    console.info(
+      "parseInt(wafPipelineTask.params.interval):",
+      parseInt(wafPipelineTask.params.interval)
+    );
+    if (wafPipelineTask.params.ingestOption === IngestOption.SampledRequest) {
+      if (
+        !wafPipelineTask.params.interval.trim() ||
+        parseInt(wafPipelineTask.params.interval) < 2 ||
+        parseInt(wafPipelineTask.params.interval) > 180
+      ) {
+        setIntervalValueError(true);
+        return false;
+      }
+    }
+    return true;
+  };
+
   const confirmCreatePipeline = async () => {
     console.info("wafPipelineTask:", wafPipelineTask);
     const createPipelineParams: any = {};
-    createPipelineParams.type = ServiceType.WAF;
+    createPipelineParams.type =
+      wafPipelineTask.params.ingestOption === IngestOption.SampledRequest
+        ? ServiceType.WAFSampled
+        : ServiceType.WAF;
     createPipelineParams.source = wafPipelineTask.source;
     createPipelineParams.target = wafPipelineTask.target;
     createPipelineParams.tags = wafPipelineTask.tags;
-    // wafPipelineTask.params.
-    const tmpParamList: any = [];
-    Object.keys(wafPipelineTask.params).forEach((key) => {
-      console.info("key");
-      if (EXCLUDE_PARAMS.indexOf(key) < 0) {
-        tmpParamList.push({
-          parameterKey: key,
-          parameterValue: (wafPipelineTask.params as any)?.[key] || "",
-        });
-      }
-    });
-    // Add Default Failed Log Bucket
-    tmpParamList.push({
-      parameterKey: "backupBucketName",
-      parameterValue: amplifyConfig.default_logging_bucket,
-    });
+    createPipelineParams.logSourceAccountId =
+      wafPipelineTask.logSourceAccountId;
+    createPipelineParams.logSourceRegion = amplifyConfig.aws_project_region;
 
-    // Add defaultCmkArnParam
-    tmpParamList.push({
-      parameterKey: "defaultCmkArnParam",
-      parameterValue: amplifyConfig.default_cmk_arn,
-    });
+    const tmpParamList: any = [];
+    if (wafPipelineTask.params.ingestOption === IngestOption.SampledRequest) {
+      Object.keys(wafPipelineTask.params).forEach((key) => {
+        console.info("key");
+        if (EXCLUDE_PARAMS_SAMPLED.indexOf(key) < 0) {
+          tmpParamList.push({
+            parameterKey: key,
+            parameterValue: (wafPipelineTask.params as any)?.[key] || "",
+          });
+        }
+      });
+    } else {
+      Object.keys(wafPipelineTask.params).forEach((key) => {
+        console.info("key");
+        if (EXCLUDE_PARAMS_FULL.indexOf(key) < 0) {
+          tmpParamList.push({
+            parameterKey: key,
+            parameterValue: (wafPipelineTask.params as any)?.[key] || "",
+          });
+        }
+      });
+    }
+
+    if (wafPipelineTask.params.ingestOption === IngestOption.FullRequest) {
+      // Add Default Failed Log Bucket
+      tmpParamList.push({
+        parameterKey: "backupBucketName",
+        parameterValue: amplifyConfig.default_logging_bucket,
+      });
+
+      // Add defaultCmkArnParam
+      tmpParamList.push({
+        parameterKey: "defaultCmkArnParam",
+        parameterValue: amplifyConfig.default_cmk_arn,
+      });
+    }
 
     createPipelineParams.parameters = tmpParamList;
     try {
@@ -254,10 +333,21 @@ const CreateWAF: React.FC = () => {
                         wafPipelineTask.params.taskType ===
                         CreateLogMethod.Manual
                       ) {
-                        if (!wafPipelineTask.params.logBucketName) {
+                        if (!wafPipelineTask.params.webACLNames) {
+                          setManualWebACLEmptyError(true);
+                          return;
+                        }
+                        if (
+                          !wafPipelineTask.params.logBucketName &&
+                          wafPipelineTask.params.ingestOption ===
+                            IngestOption.FullRequest
+                        ) {
                           setManualWAFEmpryError(true);
                           return;
                         }
+                      }
+                      if (!checkSampleScheduleValue()) {
+                        return;
                       }
                     }
                     if (curStep === 1) {
@@ -279,20 +369,66 @@ const CreateWAF: React.FC = () => {
                     setISChanging={(status) => {
                       setWAFISChanging(status);
                     }}
+                    manualAclEmptyError={manualWebACLEmptyError}
                     manualWAFEmptyError={manualWAFEmpryError}
                     autoWAFEmptyError={autoWAFEmptyError}
                     changeNeedEnableLogging={(need: boolean) => {
                       setNeedEnableAccessLog(need);
                     }}
-                    manualChangeBucket={(srcBucketName) => {
+                    changeLogSource={(source) => {
                       setWAFPipelineTask((prev: WAFTaskProps) => {
                         return {
                           ...prev,
-                          source: srcBucketName,
                           params: {
                             ...prev.params,
-                            manualBucketName: srcBucketName,
-                            indexPrefix: srcBucketName,
+                            logSource: source,
+                          },
+                        };
+                      });
+                    }}
+                    changeCrossAccount={(id) => {
+                      setWAFPipelineTask((prev: WAFTaskProps) => {
+                        return {
+                          ...prev,
+                          logSourceAccountId: id,
+                        };
+                      });
+                    }}
+                    changeIngestionOption={(option) => {
+                      setWAFPipelineTask((prev: WAFTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            ingestOption: option,
+                          },
+                        };
+                      });
+                    }}
+                    intervalValueError={intervalValueError}
+                    changeScheduleInterval={(interval) => {
+                      setIntervalValueError(false);
+                      setWAFPipelineTask((prev: WAFTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            interval: interval,
+                          },
+                        };
+                      });
+                    }}
+                    manualChangeACL={(webACLName) => {
+                      setManualWebACLEmptyError(false);
+                      setWAFPipelineTask((prev: WAFTaskProps) => {
+                        return {
+                          ...prev,
+                          source: webACLName,
+                          params: {
+                            ...prev.params,
+                            webACLNames: webACLName,
+                            manualBucketName: webACLName,
+                            indexPrefix: webACLName,
                           },
                         };
                       });
@@ -311,15 +447,19 @@ const CreateWAF: React.FC = () => {
                     }}
                     changeWAFObj={(wafObj) => {
                       setAutoWAFEmptyError(false);
+                      console.info("wafObj:", wafObj);
                       setWAFPipelineTask((prev: WAFTaskProps) => {
                         return {
                           ...prev,
-                          source: wafObj?.name,
-                          arnId: wafObj?.value,
+                          source: wafObj?.name || "",
+                          arnId: wafObj?.value || "",
                           params: {
                             ...prev.params,
-                            indexPrefix: wafObj?.name,
+                            webACLNames: wafObj?.name || "",
+                            indexPrefix: wafObj?.name || "",
                             wafObj: wafObj,
+                            webACLType: wafObj?.description || "",
+                            ingestOption: IngestOption.SampledRequest,
                           },
                         };
                       });
@@ -568,10 +708,21 @@ const CreateWAF: React.FC = () => {
                             wafPipelineTask.params.taskType ===
                             CreateLogMethod.Manual
                           ) {
-                            if (!wafPipelineTask.params.logBucketName) {
+                            if (!wafPipelineTask.params.webACLNames) {
+                              setManualWebACLEmptyError(true);
+                              return;
+                            }
+                            if (
+                              !wafPipelineTask.params.logBucketName &&
+                              wafPipelineTask.params.ingestOption ===
+                                IngestOption.FullRequest
+                            ) {
                               setManualWAFEmpryError(true);
                               return;
                             }
+                          }
+                          if (!checkSampleScheduleValue()) {
+                            return;
                           }
                         }
                         if (curStep === 1) {

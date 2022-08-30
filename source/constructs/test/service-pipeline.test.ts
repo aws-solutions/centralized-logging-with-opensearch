@@ -15,11 +15,11 @@ limitations under the License.
 */
 
 
-import * as cdk from '@aws-cdk/core';
-import { Match, Template } from "@aws-cdk/assertions";
+import { 
+    App,
+  } from "aws-cdk-lib";
+import {Template } from "aws-cdk-lib/assertions";
 import * as svc from '../lib/pipeline/service/service-log-pipeline-stack';
-
-import '@aws-cdk/assert/jest';
 
 beforeEach(() => {
     jest.resetModules()
@@ -29,7 +29,7 @@ beforeEach(() => {
 describe("Service Log Stack", () => {
 
     test('Test service log', () => {
-        const app = new cdk.App();
+        const app = new App();
         // WHEN
         const stack = new svc.ServiceLogPipelineStack(app, 'MyTestStack', {
             logType: "WAF"
@@ -60,7 +60,7 @@ describe("Service Log Stack", () => {
     });
 
     test('Test service log with env', () => {
-        const app = new cdk.App();
+        const app = new App();
         process.env["VERSION"] = "vX.Y.Z"
 
         // WHEN
@@ -84,7 +84,7 @@ describe("Service Log Stack", () => {
     });
 
     test('Test s3 access logs stack', () => {
-        const app = new cdk.App();
+        const app = new App();
         // WHEN
         const stack = new svc.ServiceLogPipelineStack(app, 'MyTestStack', {
             logType: "S3"
@@ -105,7 +105,7 @@ describe("Service Log Stack", () => {
     });
 
     test('Test waf logs stack', () => {
-        const app = new cdk.App();
+        const app = new App();
         // WHEN
         const stack = new svc.ServiceLogPipelineStack(app, 'MyTestStack', {
             logType: "WAF"
@@ -127,7 +127,7 @@ describe("Service Log Stack", () => {
 
 
     test('Test cloudtrail logs stack', () => {
-        const app = new cdk.App();
+        const app = new App();
         // WHEN
         const stack = new svc.ServiceLogPipelineStack(app, 'MyTestStack', {
             logType: "CloudTrail"
@@ -149,7 +149,7 @@ describe("Service Log Stack", () => {
 
 
     test('Test cloudfront logs stack', () => {
-        const app = new cdk.App();
+        const app = new App();
         // WHEN
         const stack = new svc.ServiceLogPipelineStack(app, 'MyTestStack', {
             logType: "CloudFront"
@@ -172,7 +172,7 @@ describe("Service Log Stack", () => {
 
 
     test('Test elb logs stack', () => {
-        const app = new cdk.App();
+        const app = new App();
         // WHEN
         const stack = new svc.ServiceLogPipelineStack(app, 'MyTestStack', {
             logType: "ELB"
@@ -194,7 +194,7 @@ describe("Service Log Stack", () => {
 
 
     test('Test rds logs stack', () => {
-        const app = new cdk.App();
+        const app = new App();
         // WHEN
         const stack = new svc.ServiceLogPipelineStack(app, 'MyTestStack', {
             logType: "RDS"
@@ -216,7 +216,7 @@ describe("Service Log Stack", () => {
 
 
     test('Test lambda logs stack', () => {
-        const app = new cdk.App();
+        const app = new App();
         // WHEN
         const stack = new svc.ServiceLogPipelineStack(app, 'MyTestStack', {
             logType: "Lambda"

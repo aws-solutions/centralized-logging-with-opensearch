@@ -16,7 +16,7 @@ Most of AWS managed services output logs to Amazon CloudWatch Logs, Amazon S3, A
 include-markdown "include-supported-service-logs.md"
 %}
 
-Most of supported AWS services in Log Hub offers build-in dashboard when creating the log analytics pipelines. You go to the OpenSearch Dashboards to view the dashboards after the pipeline being provisioned.
+Most of supported AWS services in Log Hub offers built-in dashboard when creating the log analytics pipelines. You go to the OpenSearch Dashboards to view the dashboards after the pipeline being provisioned.
 
 In this chapter, you will learn how to create log ingestion and dashboards for the following AWS services:
 
@@ -27,4 +27,6 @@ In this chapter, you will learn how to create log ingestion and dashboards for t
 - [AWS Lambda](lambda.md)
 - [Elastic Load Balancing](elb.md)
 - [AWS WAF](waf.md)
+- [Amazon VPC](vpc.md)
+- [AWS Config](config.md)
 

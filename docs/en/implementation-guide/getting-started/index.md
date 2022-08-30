@@ -2,7 +2,7 @@
 
 After [deploying the solution](../deployment/index.md), you can read this chapter first to learn quickly how to leverage Log Hub for log ingestion (Amazon CloudTrail logs as an example), and log visualization. 
 
-You can also choose to start [Domain management](../domains/index.md) , building [AWS Service Log Analytics Pipelines](../aws-services/index.md) and [Application Log Analytics Pipelines](../applications/index.md).
+You can also choose to start with [Domain management](../domains/index.md) , then build [AWS Service Log Analytics Pipelines](../aws-services/index.md) and [Application Log Analytics Pipelines](../applications/index.md).
 
 ## Steps 
 

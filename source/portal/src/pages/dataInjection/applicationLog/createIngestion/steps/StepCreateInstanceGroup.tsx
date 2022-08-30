@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React from "react";
+import React, { useState, useEffect } from "react";
 import HeaderPanel from "components/HeaderPanel";
 import FormItem from "components/FormItem";
 import { IngestionPropsType } from "../CreateIngestion";
@@ -25,8 +25,13 @@ import { CreationMethod } from "types";
 import { InstanceGroupType } from "pages/resources/instanceGroup/create/CreateInstanceGroup";
 import { InfoBarTypes } from "reducer/appReducer";
 import { useTranslation } from "react-i18next";
+import LoadingText from "components/LoadingText";
+import { AppPipeline } from "API";
+import { appSyncRequestQuery } from "assets/js/request";
+import { getAppPipeline } from "graphql/queries";
 
 interface IngestSettingProps {
+  pipelineId: string;
   ingestionInfo: IngestionPropsType;
   changeCreationMethod: (method: string) => void;
   disableSelect?: boolean;
@@ -35,6 +40,7 @@ interface IngestSettingProps {
   changeInstanceGroup: (instanceGroup: InstanceGroupType) => void;
   changeSelectInstanceSet: (sets: InstanceWithStatus[]) => void;
   changeLoadingRefresh: (refresh: boolean) => void;
+  changeCurAccountId: (id: string) => void;
 }
 
 const StepCreateInstanceGroup: React.FC<IngestSettingProps> = (
@@ -42,6 +48,7 @@ const StepCreateInstanceGroup: React.FC<IngestSettingProps> = (
 ) => {
   // console.info(props);
   const {
+    pipelineId,
     ingestionInfo,
     emptyError,
     clearEmptyError,
@@ -49,12 +56,40 @@ const StepCreateInstanceGroup: React.FC<IngestSettingProps> = (
     changeInstanceGroup,
     changeSelectInstanceSet,
     changeLoadingRefresh,
+    changeCurAccountId,
   } = props;
   const { t } = useTranslation();
+  const [loadingPipeline, setLoadingPipeline] = useState(false);
+  const [hideAccountSetting, setHideAccountSetting] = useState(false);
+
+  const getPipelineById = async () => {
+    try {
+      setLoadingPipeline(true);
+      const resData: any = await appSyncRequestQuery(getAppPipeline, {
+        id: pipelineId,
+      });
+      console.info("resData:", resData);
+      const dataPipelne: AppPipeline = resData.data.getAppPipeline;
+      setHideAccountSetting(dataPipelne.kdsRoleArn ? false : true);
+      setLoadingPipeline(false);
+    } catch (error) {
+      setLoadingPipeline(false);
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    if (
+      pipelineId &&
+      ingestionInfo.instanceGroupMethod === CreationMethod.New
+    ) {
+      getPipelineById();
+    }
+  }, [pipelineId]);
 
   return (
     <div>
-      <HeaderPanel title={t("applog:ingestion.createInstanceGroup.index")}>
+      <HeaderPanel title={t("applog:ingestion.createInstanceGroup.method")}>
         <div>
           <FormItem
             infoType={InfoBarTypes.INSTANCE_GROUP_CREATION_METHOD}
@@ -87,31 +122,39 @@ const StepCreateInstanceGroup: React.FC<IngestSettingProps> = (
         </div>
       </HeaderPanel>
 
-      {ingestionInfo.instanceGroupMethod === CreationMethod.New && (
-        <div className="mb-20">
-          <InstanceGroupComp
-            showNameEmptyError={emptyError}
-            instanceGroup={ingestionInfo.curInstanceGroup}
-            setCreateDisabled={(disable) => {
-              // console.info("disable");
-              changeLoadingRefresh(disable);
-            }}
-            changeGroupName={(name) => {
-              console.info("name:", name);
-              clearEmptyError();
-              const tmpConfig: any = {
-                ...ingestionInfo.curInstanceGroup,
-                groupName: name,
-              };
-              changeInstanceGroup(tmpConfig);
-            }}
-            changeInstanceSet={(sets) => {
-              console.info("sets:", sets);
-              changeSelectInstanceSet(sets);
-            }}
-          />
-        </div>
-      )}
+      {ingestionInfo.instanceGroupMethod === CreationMethod.New &&
+        (loadingPipeline ? (
+          <LoadingText />
+        ) : (
+          <div className="mb-20">
+            <InstanceGroupComp
+              hideAccountSetting={hideAccountSetting}
+              showNameEmptyError={emptyError}
+              instanceGroup={ingestionInfo.curInstanceGroup}
+              setCreateDisabled={(disable) => {
+                // console.info("disable");
+                changeLoadingRefresh(disable);
+              }}
+              accountId={ingestionInfo.accountId}
+              changeCurAccount={(id) => {
+                changeCurAccountId(id);
+              }}
+              changeGroupName={(name) => {
+                console.info("name:", name);
+                clearEmptyError();
+                const tmpConfig: any = {
+                  ...ingestionInfo.curInstanceGroup,
+                  groupName: name,
+                };
+                changeInstanceGroup(tmpConfig);
+              }}
+              changeInstanceSet={(sets) => {
+                console.info("sets:", sets);
+                changeSelectInstanceSet(sets);
+              }}
+            />
+          </div>
+        ))}
     </div>
   );
 };

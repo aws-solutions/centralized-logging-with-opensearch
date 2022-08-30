@@ -1,5 +1,7 @@
 # Log Hub Web Console
 
+To run the console locally, you need to save the `aws-exports.json` in `public` folder.
+
 ## Available Scripts
 
 In the project directory, you can run:

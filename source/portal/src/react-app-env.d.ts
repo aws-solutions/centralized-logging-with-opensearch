@@ -14,3 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 /// <reference types="react-scripts" />
+declare namespace NodeJS {
+  interface ProcessEnv {
+    NODE_ENV: "development" | "production" | "test";
+    PUBLIC_URL: string;
+    REACT_APP_LOGHUB_VERSION: string;
+  }
+}

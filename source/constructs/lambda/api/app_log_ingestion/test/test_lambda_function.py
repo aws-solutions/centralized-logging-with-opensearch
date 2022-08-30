@@ -8,7 +8,7 @@ import zipfile
 
 import boto3
 import pytest
-from moto import mock_lambda, mock_iam, mock_dynamodb, mock_stepfunctions
+from moto import mock_lambda, mock_iam, mock_dynamodb, mock_stepfunctions, mock_sts
 from .datafile import ddb_mock_data
 from botocore.exceptions import ClientError
 
@@ -224,6 +224,13 @@ def ddb_client():
         with app_log_ingestion_table.batch_writer() as batch:
             for data in data_list:
                 batch.put_item(Item=data)
+        
+        ddb.create_table(
+            TableName=os.environ.get("SUB_ACCOUNT_LINK_TABLE_NAME"),
+            KeySchema=[{"AttributeName": "id", "KeyType": "HASH"}],
+            AttributeDefinitions=[{"AttributeName": "id", "AttributeType": "S"}],
+            ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
+        )
         yield
 
 
@@ -240,6 +247,13 @@ simple_definition = """
   }
 }
 """
+
+
+@pytest.fixture
+def sts_client():
+    with mock_sts():
+        boto3.client("sts", region_name=os.environ.get("AWS_REGION"))
+        yield
 
 
 @pytest.fixture
@@ -266,6 +280,7 @@ def test_lambda_handler(
     lambda_client,
     ddb_client,
     sfn_client,
+    sts_client,
 ):
     # Can only import here, as the environment variables need to be set first.
     import lambda_function
@@ -286,6 +301,8 @@ def test_lambda_handler(
         "status": "ERROR",
         "tags": [],
         "confName": "s3-source-config-01",
+        "kdsRoleArn": "arn:aws:iam::111111111:role/LogHub-EKS-Cluster-PodLog-DataBufferKDSRole7BCBC83-1II64RIV25JN3",
+        "kdsRoleName": "LogHub-EKS-Cluster-PodLog-DataBufferKDSRole7BCBC83-1II64RIV25JN3",
         "sourceInfo": {},
     } in response["appLogIngestions"]
 

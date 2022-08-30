@@ -31,7 +31,8 @@
 5. 在 **实例** 部分中，选择要从中收集日志的实例。 您最多可以添加 5 个标签来过滤实例。
 6. 验证所有选中的实例**状态**都是**在线**。
 7. （可选步骤）如果选中的实例“状态”为空，点击**安装日志代理**按钮，等待**状态**变为**在线**。
-8. 选择**创建**。
+8. （可选步骤）如果需要跨账户摄取日志，在 **账户设置** 部分，选择一个[链接的 AWS 账户](../link-account/index.md)，就可以创建一个跨账户的实例组。
+9. 选择**创建**。
 
 !!! warning "已知问题"
     在 **北京 (cn-north-1)和宁夏 (cn-northwest-1)** 区域的 Ubuntu 实例上使用 Log Hub 控制台安装 Fluent Bit 代理会导致安装错误。 Fluent Bit 安装包不能
@@ -43,18 +44,23 @@ Log Hub 中的 [EKS Cluster][eks] 是指您要从中收集 pod 日志的 Amazon 
 
 !!! important "重要"
 
-    Log Hub 不支持将一个 EKS 集群中的日志同时发送到多个 Amazon OpenSearch 域。
+    * Log Hub 不支持将一个 EKS 集群中的日志同时发送到多个 Amazon OpenSearch 域。
+    * 如果作为日志源的 EKS 和 发送目的地的 OpenSearch 不在同一个 VPC 中，必须要建立 VPC 对等连接。
 
 1. 登录 Log Hub 控制台。
 2. 在左侧边栏中的 **日志源** 下，选择 **EKS Cluster**。
 3. 单击**导入集群**按钮。
-4. 选择 Log Hub 从中收集日志的 **EKS 集群**。
+4. 选择 Log Hub 从中收集日志的 **EKS 集群**。（可选步骤）如果需要跨账户摄取日志，在 **账户** 部分，选择一个[链接的 AWS 账户](../link-account/index.md)，就可以导入一个其他账户的 EKS 集群。
 5. 选择 **DaemonSet** 或 **Sidecar** 作为日志代理的部署模式。
 6. 选择**下一步**。
 7. 指定 Log Hub 将日志发送到的 **Amazon OpenSearch**。
-8. 选择**下一步**。
-9. 如果需要，添加标签。
-10. 选择**创建**。
+8. 按照以下步骤建立 EKS 和 OpenSearch 之间的 VPC 对等连接。
+    - [创建并接受 VPC 对等连接](https://docs.aws.amazon.com/vpc/latest/peering/create-vpc-peering-connection.html)
+    - [为 VPC 对等连接更新路由表](https://docs.aws.amazon.com/vpc/latest/peering/vpc-peering-routing.html)
+    - [更新您的安全组以引用对等 VPC 组](https://docs.aws.amazon.com/vpc/latest/peering/vpc-peering-security-groups.html)
+9. 选择**下一步**。
+10. 如果需要，添加标签。
+11. 选择**创建**。
 
 ## 使用 Amazon S3 作为日志源
 !!! note

@@ -9,7 +9,13 @@
         DB.locking          True
         Docker_Mode         $LOGHUB_DOCKER_MODE_SWITCH
         $LOGHUB_DOCKER_MODE_PARSER
-        Mem_Buf_Limit       50MB
+        Mem_Buf_Limit       10M
+        # Since "Skip_Long_Lines" is set to "On", be sure to adjust the "Buffer_Chunk_Size","Buffer_Max_Size" according to the actual log. If the parameters are adjusted too much, the number of duplicate records will increase. If the value is too small, data will be lost. 
+        # https://docs.fluentbit.io/manual/pipeline/inputs/tail
+        Buffer_Chunk_Size   512k
+        Buffer_Max_Size     5M
+        Skip_Long_Lines     On
+        Skip_Empty_Lines    On
         Refresh_Interval    10
         Rotate_Wait         30
         storage.type        filesystem
@@ -19,8 +25,9 @@
         Name                kinesis_streams
         Match               $LOGHUB_CONFIG_TAG
         Region              $LOGHUB_CONFIG_REGION
-        Stream              $LOGHUB_CONFIG_KDS_NAME
+        Stream              $LOGHUB_CONFIG_KDS_NAME        
         Retry_Limit         False
+        $LOGHUB_KDS_ROLE_ARN
 
 $LOGHUB_FLUENT_BIT_MULTILINE_FILTER
 
@@ -30,20 +37,5 @@ $LOGHUB_FLUENT_BIT_MULTILINE_FILTER
         Key_Name            $LOGHUB_FILTER_PARSER_KEY_NAME
         Parser              $LOGHUB_PARSER_NAME
 
-    [FILTER]
-        Name                kubernetes
-        Match               $LOGHUB_CONFIG_TAG
-        Kube_Tag_Prefix     $LOGHUB_CONFIG_TAG_PREFIX
 
-        Kube_URL            https://kubernetes.default.svc:443
-        Kube_CA_File        /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-        Kube_Token_File     /var/run/secrets/kubernetes.io/serviceaccount/token
-
-        Merge_Log           On
-        Merge_Log_Trim      On
-        Merge_Log_Key       log_processed
-
-        Buffer_Size         64k
-        Use_Kubelet         True
-        Kubelet_Port        10250
 

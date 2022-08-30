@@ -26,6 +26,8 @@ interface AutoEnableProps {
   desc: string;
   resourceType: ResourceType;
   resourceName: string;
+  accountId?: string;
+  region?: string;
   link?: string;
   changeLogBucketAndPrefix: (
     bucket: string,
@@ -33,6 +35,7 @@ interface AutoEnableProps {
     enabled: boolean
   ) => void;
   changeEnableStatus: (status: boolean) => void;
+  changeLogSource?: (source: string) => void;
 }
 
 const AutoEnableLogging: React.FC<AutoEnableProps> = (
@@ -44,8 +47,10 @@ const AutoEnableLogging: React.FC<AutoEnableProps> = (
     desc,
     resourceType,
     resourceName,
+    accountId,
     changeLogBucketAndPrefix,
     changeEnableStatus,
+    changeLogSource,
   } = props;
   const [autoCreating, setAutoCreating] = useState(false);
 
@@ -55,6 +60,7 @@ const AutoEnableLogging: React.FC<AutoEnableProps> = (
     const putResourceLoggingBucketParams = {
       type: resourceType,
       resourceName: resourceName,
+      accountId: accountId,
     };
     try {
       const createRes = await appSyncRequestMutation(
@@ -72,6 +78,9 @@ const AutoEnableLogging: React.FC<AutoEnableProps> = (
         loggingBucketResData.prefix || "",
         loggingBucketResData.enabled || false
       );
+      if (changeLogSource) {
+        changeLogSource(loggingBucketResData.source || "");
+      }
     } catch (error) {
       changeEnableStatus(false);
       setAutoCreating(false);

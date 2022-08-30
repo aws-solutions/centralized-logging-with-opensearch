@@ -28,17 +28,27 @@ import { getLogConf, listLogConfs } from "graphql/queries";
 import Select, { SelectItem } from "components/Select/select";
 import { EksIngestionPropsType } from "../EksLogIngest";
 import ExtLink from "components/ExtLink";
+import CreateSampleDashboard from "pages/dataInjection/applicationLog/common/CreateSampleDashboard";
+import { InfoBarTypes } from "reducer/appReducer";
+import TextInput from "components/TextInput";
 
 interface SpecifyLogConfigProp {
   eksIngestionInfo: EksIngestionPropsType;
   changeLogConfig: (configId: string) => void;
+  changeSampleDashboard: (yesNo: string) => void;
+  changeLogConfPath: (path: string) => void;
 }
 
 const SpecifyLogConfig: React.FC<SpecifyLogConfigProp> = (
   props: SpecifyLogConfigProp
 ) => {
   const { t } = useTranslation();
-  const { eksIngestionInfo, changeLogConfig } = props;
+  const {
+    eksIngestionInfo,
+    changeLogConfig,
+    changeSampleDashboard,
+    changeLogConfPath,
+  } = props;
   const [curConfig, setCurConfig] = useState<LogConf>();
   const [loadingData, setLoadingData] = useState(false);
   const [loadingConfig, setLoadingConfig] = useState(false);
@@ -105,6 +115,31 @@ const SpecifyLogConfig: React.FC<SpecifyLogConfigProp> = (
   return (
     <div>
       <PagePanel title={t("applog:ingestion.s3.step.specifyConfig")}>
+        <HeaderPanel title={t("resource:config.common.logPath")}>
+          <FormItem
+            infoType={InfoBarTypes.LOG_CONFIG_PATH_EKS}
+            optionTitle={t("resource:config.common.logPath")}
+            optionDesc={t("resource:config.common.logPathDescEKS")}
+            errorText={
+              eksIngestionInfo.logPathEmptyError
+                ? t("applog:ingestion.applyConfig.inputLogPath")
+                : ""
+            }
+          >
+            <div className="flex align-center m-w-75p">
+              <div style={{ flex: 1 }}>
+                <TextInput
+                  value={eksIngestionInfo?.logPath || ""}
+                  placeholder="/var/log/containers/<app-name><name-space>*"
+                  onChange={(event) => {
+                    changeLogConfPath(event.target.value);
+                  }}
+                />
+              </div>
+            </div>
+          </FormItem>
+        </HeaderPanel>
+
         <HeaderPanel title={t("applog:ingestion.s3.specifyConfig.logConfig")}>
           <FormItem
             optionTitle={t("applog:ingestion.s3.specifyConfig.logConfig")}
@@ -140,6 +175,12 @@ const SpecifyLogConfig: React.FC<SpecifyLogConfigProp> = (
               />
             </div>
           </FormItem>
+
+          <CreateSampleDashboard
+            logType={curConfig?.logType}
+            createDashboard={eksIngestionInfo.createDashboard}
+            changeSampleDashboard={changeSampleDashboard}
+          />
         </HeaderPanel>
         <LogConfigComp
           sampleLogInvalid={false}

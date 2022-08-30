@@ -6,14 +6,20 @@
 
 确保您要部署解决方案的目标区域满足以下条件：
 
-- 至少能有1个空缺创建新的 VPC。
-- 至少能创建2个弹性 IP (EIP) 地址。
+- 如果您启动时选择创建新的VPC, 至少能有1个新的 VPC 空缺。
+- 如果您启动时选择创建新的VPC, 至少需要2个弹性 IP (EIP) 地址空缺。
 - 至少能创建8个 S3 存储桶。
-- 在[必需的 AWS 服务](../resources/aws-services.md) 中列出的所有 AWS 服务均可用。
+- 检查所有的[考虑因素](../considerations.md)。
 
-## 部署解决方案
-您可以选择在 AWS 海外区域或 AWS 中国区域部署解决方案。有关支持区域的更多信息，请参阅 [可部署区域](../considerations.md)。
+## 在 AWS 海外区域部署
+Log Hub 提供了两种方式来验证和登录 Log Hub 控制台。 Cognito 用户池在一些 AWS 区域
+缺失（例如: 香港）。 在这些地区，您需要按照说明使用 OpenID Connect 的方式启动解决方案。
+有关受支持区域的更多信息，请参阅 [区域部署](../considerations.md)。
 
-* [在 AWS 海外区域部署](./global-region.md)
-* [在 AWS 中国区域部署](./china-region.md)
+* [使用 Cognito User Pool 启动](./with-cognito.md)
+* [使用 OpenID Connect 启动](./with-oidc.md)
 
+## 在 AWS 中国区域部署
+AWS 中国区域没有 Cognito User Pool，请按照以下说明在中国区域部署解决方案。
+
+* [使用 OpenID Connect 启动](./with-oidc.md)

@@ -27,13 +27,7 @@ def lambda_handler(event, context):
 
 
 def make_graphql_lambda_event(name, args):
-    return {
-        "arguments": args,
-        "info": {
-            "fieldName": name
-
-        }
-    }
+    return {"arguments": args, "info": {"fieldName": name}}
 
 
 def init_ddb(config):
@@ -47,9 +41,18 @@ def init_ddb(config):
     for table_name, value in config.items():
         table = ddb.create_table(
             TableName=table_name,
-            KeySchema=[{"AttributeName": "id", "KeyType": "HASH"}],
-            AttributeDefinitions=[{"AttributeName": "id", "AttributeType": "S"}],
-            ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
+            KeySchema=[{
+                "AttributeName": "id",
+                "KeyType": "HASH"
+            }],
+            AttributeDefinitions=[{
+                "AttributeName": "id",
+                "AttributeType": "S"
+            }],
+            ProvisionedThroughput={
+                "ReadCapacityUnits": 5,
+                "WriteCapacityUnits": 5
+            },
         )
 
         if isinstance(value, dict):
@@ -80,10 +83,20 @@ def default_environment_variables():
     os.environ["CONFIG_FILE_S3_BUCKET_NAME"] = "mocked-s3-bucket-name"
     os.environ["INSTANCE_META_TABLE_NAME"] = "mocked-instance-meta-table-name"
     os.environ["APP_PIPELINE_TABLE_NAME"] = "mocked-app-pipeline-table-name"
-    os.environ["APP_LOG_CONFIG_TABLE_NAME"] = "mocked-app-log-config-table-name"
-    os.environ["INSTANCE_GROUP_TABLE_NAME"] = "mocked-instance-group-table-name"
+    os.environ[
+        "APP_LOG_CONFIG_TABLE_NAME"] = "mocked-app-log-config-table-name"
+    os.environ[
+        "INSTANCE_GROUP_TABLE_NAME"] = "mocked-instance-group-table-name"
     os.environ["APPLOGINGESTION_TABLE"] = "mocked-app-log-ingestion-table-name"
-    os.environ["EC2_LOG_SOURCE_TABLE_NAME"] = "mocked-ec2-log-source-table-name"
+    os.environ[
+        "EC2_LOG_SOURCE_TABLE_NAME"] = "mocked-ec2-log-source-table-name"
     os.environ["S3_LOG_SOURCE_TABLE_NAME"] = "mocked-s3-log-source-table-name"
-    os.environ["EKS_CLUSTER_SOURCE_TABLE_NAME"] = "mocked-eks-log-source-table-name"
-    os.environ["LOG_AGENT_EKS_DEPLOYMENT_KIND_TABLE"] = "mocked-log-agent-eks-deployment-kind-table"
+    os.environ[
+        "EKS_CLUSTER_SOURCE_TABLE_NAME"] = "mocked-eks-log-source-table-name"
+    os.environ[
+        "LOG_AGENT_EKS_DEPLOYMENT_KIND_TABLE"] = "mocked-log-agent-eks-deployment-kind-table"
+    os.environ[
+        "SUB_ACCOUNT_LINK_TABLE_NAME"] = "mocked-sub-account-link-table-name"
+    os.environ["SUB_ACCOUNT_LINK_TABLE"] = "mocked-sub-account-link-table-name"
+    os.environ[
+        "DEFAULT_CMK_ARN"] = "arn:aws:kms:us-east-1:849664593843:key/16ae67ab-0991-4ddb-a65b-1dd91cec52dd"

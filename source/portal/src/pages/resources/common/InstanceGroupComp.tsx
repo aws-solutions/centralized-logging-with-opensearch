@@ -37,17 +37,21 @@ import { useSelector } from "react-redux";
 import { AppStateProps } from "reducer/appReducer";
 import { useTranslation } from "react-i18next";
 import TagFilter from "components/TagFilter";
+import CrossAccountSelect from "pages/comps/account/CrossAccountSelect";
 
 export interface InstanceWithStatus extends Instance {
   instanceStatus: string;
   isChecked: boolean;
 }
 interface InstanceGroupCompProps {
+  accountId: string;
   instanceGroup?: InstanceGroupType;
   changeGroupName: (name: string) => void;
   changeInstanceSet: (sets: InstanceWithStatus[]) => void;
   showNameEmptyError: boolean;
   setCreateDisabled: (disable: boolean) => void;
+  changeCurAccount: (accountId: string) => void;
+  hideAccountSetting?: boolean;
 }
 
 const PAGE_SIZE = 50;
@@ -56,11 +60,14 @@ const InstanceGroupComp: React.FC<InstanceGroupCompProps> = (
   props: InstanceGroupCompProps
 ) => {
   const {
+    accountId,
     instanceGroup,
     changeGroupName,
     showNameEmptyError,
     changeInstanceSet,
     setCreateDisabled,
+    changeCurAccount,
+    hideAccountSetting,
   } = props;
   const amplifyConfig: AmplifyConfigType = useSelector(
     (state: AppStateProps) => state.amplifyConfig
@@ -94,6 +101,8 @@ const InstanceGroupComp: React.FC<InstanceGroupCompProps> = (
         maxResults: PAGE_SIZE,
         nextToken: nextToken,
         tags: tagFilter,
+        accountId: accountId,
+        region: amplifyConfig.aws_project_region,
       });
       const dataInstanceList: InstanceWithStatus[] =
         moreInstanceData.data.listInstances.instances;
@@ -134,6 +143,8 @@ const InstanceGroupComp: React.FC<InstanceGroupCompProps> = (
       maxResults: PAGE_SIZE,
       nextToken: "",
       tags: tagFilter,
+      accountId: accountId,
+      region: amplifyConfig.aws_project_region,
     });
     const dataInstanceList: InstanceWithStatus[] =
       resInstanceData.data.listInstances.instances;
@@ -178,6 +189,8 @@ const InstanceGroupComp: React.FC<InstanceGroupCompProps> = (
         requestInstallLogAgent,
         {
           instanceIdSet: installIds,
+          region: amplifyConfig.aws_project_region,
+          accountId: accountId,
         }
       );
       console.info("installRes:", installRes);
@@ -255,7 +268,12 @@ const InstanceGroupComp: React.FC<InstanceGroupCompProps> = (
   // Get instance group list when page rendered.
   useEffect(() => {
     getAllInstanceWithStatus();
-  }, [tagFilter]);
+  }, [tagFilter, accountId]);
+
+  useEffect(() => {
+    clearInterval(getStatusInterval);
+    setStartCheckStatus(false);
+  }, [accountId]);
 
   // Auto Loop to check instance status
   useEffect(() => {
@@ -307,6 +325,18 @@ const InstanceGroupComp: React.FC<InstanceGroupCompProps> = (
               <li>{t("resource:group.comp.tips5")}</li>
             </ul>
           </div>
+
+          {!hideAccountSetting && (
+            <HeaderPanel title={t("resource:crossAccount.accountSettings")}>
+              <CrossAccountSelect
+                accountId={accountId || ""}
+                changeAccount={(id) => {
+                  console.info(id);
+                  changeCurAccount(id);
+                }}
+              />
+            </HeaderPanel>
+          )}
 
           <HeaderPanel
             title={t("resource:group.comp.settings")}

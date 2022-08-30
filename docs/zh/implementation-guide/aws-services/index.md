@@ -27,4 +27,6 @@ Log Hub 中大多数受支持的 AWS 服务在创建日志分析管道时都提�
 - [AWS Lambda](lambda.md)
 - [Elastic Load Balancing](elb.md)
 - [AWS WAF](waf.md)
+- [Amazon VPC](vpc.md)
+- [AWS Config](config.md)
 

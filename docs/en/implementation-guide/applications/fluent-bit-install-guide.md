@@ -12,8 +12,12 @@ sudo yum install openssl11
 ## CentOS 7
 
 ```bash
-wget https://github.com/openssl/openssl/archive/OpenSSL_1_1_1-stable.zip
-sudo yum -y install gcc
+cd /tmp
+sudo yum install -y unzip gcc perl
+curl -SL https://github.com/openssl/openssl/archive/OpenSSL_1_1_1-stable.zip -o OpenSSL_1_1_1-stable.zip
+unzip OpenSSL_1_1_1-stable.zip
+cd openssl-OpenSSL_1_1_1-stable/
+./config
 sudo make install
 sudo echo "/usr/local/lib64/" >> /etc/ld.so.conf
 sudo ldconfig

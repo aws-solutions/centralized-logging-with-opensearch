@@ -29,7 +29,7 @@ import StepChooseSource from "./steps/StepChooseSource";
 import { SelectItem } from "components/Select/select";
 import SpecifyLogConfig from "./steps/SpecifyLogConfig";
 import { createAppLogIngestion, createLogSource } from "graphql/mutations";
-import { AmplifyConfigType } from "types";
+import { AmplifyConfigType, YesNo } from "types";
 import { appSyncRequestMutation } from "assets/js/request";
 
 export interface IngestionFromS3PropsType {
@@ -39,6 +39,12 @@ export interface IngestionFromS3PropsType {
   isGzip: boolean;
   s3SourceId: string;
   logConfigId: string;
+  accountId: string;
+  logPath: string;
+  createDashboard: string;
+  subAccountVpcId: string;
+  subAccountPublicSubnetIds: string;
+  subAccountLinkId: string;
   tags: Tag[];
 }
 
@@ -80,6 +86,12 @@ const CreateS3Ingestion: React.FC<RouteComponentProps<MatchParams>> = (
     isGzip: false,
     s3SourceId: "",
     logConfigId: "",
+    accountId: "",
+    logPath: "",
+    createDashboard: YesNo.No,
+    subAccountVpcId: "",
+    subAccountPublicSubnetIds: "",
+    subAccountLinkId: "",
     tags: [],
   });
 
@@ -88,8 +100,20 @@ const CreateS3Ingestion: React.FC<RouteComponentProps<MatchParams>> = (
   const [s3BucketRequireError, setS3BucketRequireError] = useState(false);
   const [fileTypeRequireError, setFileTypeRequireError] = useState(false);
   const [logConfigRequireError, setLogConfigRequireError] = useState(false);
+  const [vpcRequiredError, setVpcRequiredError] = useState(false);
+  const [subnetsRequiredError, setSubnetsRequiredError] = useState(false);
 
   const createS3LogSource = async () => {
+    if (ingestionInfo.accountId) {
+      if (!ingestionInfo.subAccountVpcId) {
+        setVpcRequiredError(true);
+        return;
+      }
+      if (!ingestionInfo.subAccountPublicSubnetIds) {
+        setSubnetsRequiredError(true);
+        return;
+      }
+    }
     if (!ingestionInfo.s3Object) {
       setS3BucketRequireError(true);
       return;
@@ -102,8 +126,12 @@ const CreateS3Ingestion: React.FC<RouteComponentProps<MatchParams>> = (
       sourceType: LogSourceType.S3,
       archiveFormat: ingestionInfo.isGzip ? "gzip" : ingestionInfo.fileType,
       region: amplifyConfig.aws_project_region,
+      accountId: ingestionInfo.accountId,
       s3Name: ingestionInfo.s3Object?.value,
       s3Prefix: ingestionInfo.indexPrefix,
+      subAccountVpcId: ingestionInfo.subAccountVpcId,
+      subAccountPublicSubnetIds: ingestionInfo.subAccountPublicSubnetIds,
+      subAccountLinkId: ingestionInfo.subAccountLinkId,
     };
     try {
       setLoadingCreateSource(true);
@@ -134,6 +162,8 @@ const CreateS3Ingestion: React.FC<RouteComponentProps<MatchParams>> = (
       confId: ingestionInfo.logConfigId,
       sourceIds: [ingestionInfo.s3SourceId],
       tags: ingestionInfo.tags,
+      createDashboard: YesNo.No,
+      logPath: `s3://${ingestionInfo.s3Object?.value}/${ingestionInfo.indexPrefix}`,
       stackId: "",
       stackName: "",
     };
@@ -204,6 +234,38 @@ const CreateS3Ingestion: React.FC<RouteComponentProps<MatchParams>> = (
                       ingestionInfo={ingestionInfo}
                       showS3RequireError={s3BucketRequireError}
                       showFileTypeError={fileTypeRequireError}
+                      showVpcRequiredError={vpcRequiredError}
+                      showSubnetsRequiredError={subnetsRequiredError}
+                      changeCurAccount={(id, account) => {
+                        setIngestionInfo((prev) => {
+                          return {
+                            ...prev,
+                            accountId: id,
+                            subAccountLinkId: account?.id || "",
+                            subAccountVpcId: account?.subAccountVpcId || "",
+                            subAccountPublicSubnetIds:
+                              account?.subAccountPublicSubnetIds || "",
+                          };
+                        });
+                      }}
+                      changeLinkedAccountVPC={(vpc) => {
+                        setVpcRequiredError(false);
+                        setIngestionInfo((prev) => {
+                          return {
+                            ...prev,
+                            subAccountVpcId: vpc,
+                          };
+                        });
+                      }}
+                      changeLinkedAccountSubnets={(subnets) => {
+                        setSubnetsRequiredError(false);
+                        setIngestionInfo((prev) => {
+                          return {
+                            ...prev,
+                            subAccountPublicSubnetIds: subnets,
+                          };
+                        });
+                      }}
                       changeIsGzip={(gzip) => {
                         setIngestionInfo((prev) => {
                           return {

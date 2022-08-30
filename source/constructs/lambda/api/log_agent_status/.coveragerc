@@ -1,0 +1,9 @@
+[run]
+omit =
+    tests/*
+    .venv-*/*
+    test/*
+    */__init__.py
+    aws_svc_mgr.py
+source =
+    .

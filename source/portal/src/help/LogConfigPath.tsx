@@ -15,9 +15,8 @@ limitations under the License.
 */
 import React from "react";
 import { useTranslation } from "react-i18next";
-import SIDE_CAR_IMG from "assets/images/sidecar.jpg";
 
-const InfoSampleToCopy: React.FC = () => {
+const LogConfigPath: React.FC = () => {
   const { t } = useTranslation();
   return (
     <div className="gsui-help-container">
@@ -27,37 +26,8 @@ const InfoSampleToCopy: React.FC = () => {
           <code>/var/log/app1/*.log,/var/log/app2/*.log</code>
         </pre>
       </div>
-      <div>
-        <hr />
-      </div>
-      <div className="gsui-help-content">
-        <div className="mt-10">{t("info:logConfigPath.eks.title")}</div>
-        <div className="mt-10">
-          <b>DaemonSet:</b>
-          {t("info:logConfigPath.eks.dtip1")}
-          <pre className="code">
-            <code>
-              /var/log/containers/app-nginx-demo*prod-ns*
-              <br />
-              /var/log/containers/app-nginx-demo*staging-ns*
-            </code>
-          </pre>
-          {t("info:logConfigPath.eks.dtip2")}
-        </div>
-        <div className="mt-5">
-          <b>Sidecar:</b>
-          {t("info:logConfigPath.eks.stip1")}
-          <pre className="code">
-            <code>/var/log/nginx/access.log</code>
-          </pre>
-          {t("info:logConfigPath.eks.stip2")}
-        </div>
-        <div className="mt-5">
-          <img width="100%" src={SIDE_CAR_IMG} />
-        </div>
-      </div>
     </div>
   );
 };
 
-export default InfoSampleToCopy;
+export default LogConfigPath;

@@ -15,12 +15,13 @@ limitations under the License.
 */
 
 
-import * as cdk from '@aws-cdk/core';
-import { Match, Template } from "@aws-cdk/assertions";
+import { 
+    App,
+    Stack,
+    aws_ec2 as ec2,
+ } from "aws-cdk-lib";
+import {Template } from "aws-cdk-lib/assertions";
 import * as init from '../lib/pipeline/common/opensearch-init-stack';
-import * as ec2 from '@aws-cdk/aws-ec2';
-
-import '@aws-cdk/assert/jest';
 
 beforeEach(() => {
     jest.resetModules()
@@ -30,9 +31,9 @@ beforeEach(() => {
 describe("Common OpenSearch Init Stack", () => {
 
     test('Test init stack', () => {
-        const app = new cdk.App();
+        const app = new App();
         // WHEN
-        const stack = new cdk.Stack(app, "TestStack");
+        const stack = new Stack(app, "TestStack");
 
         const vpc = new ec2.Vpc(stack, 'VPC');
         const sg = new ec2.SecurityGroup(stack, 'SecurityGroup', {
@@ -76,11 +77,11 @@ describe("Common OpenSearch Init Stack", () => {
     });
 
     test('Test init stack with env', () => {
-        const app = new cdk.App();
+        const app = new App();
         process.env["VERSION"] = "vX.Y.Z"
 
         // WHEN
-        const stack = new cdk.Stack(app, "TestStack");
+        const stack = new Stack(app, "TestStack");
 
         const vpc = new ec2.Vpc(stack, 'VPC');
         const sg = new ec2.SecurityGroup(stack, 'SecurityGroup', {

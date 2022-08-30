@@ -1,18 +1,3 @@
-/*
-Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
 /* tslint:disable */
 /* eslint-disable */
 // this is an auto generated file. This will be overwritten
@@ -44,6 +29,8 @@ export const createServicePipeline = /* GraphQL */ `
     $target: String
     $parameters: [ParameterInput]
     $tags: [TagInput]
+    $logSourceAccountId: String
+    $logSourceRegion: String
   ) {
     createServicePipeline(
       type: $type
@@ -51,6 +38,8 @@ export const createServicePipeline = /* GraphQL */ `
       target: $target
       parameters: $parameters
       tags: $tags
+      logSourceAccountId: $logSourceAccountId
+      logSourceRegion: $logSourceRegion
     )
   }
 `;
@@ -83,22 +72,35 @@ export const putResourceLoggingBucket = /* GraphQL */ `
   mutation PutResourceLoggingBucket(
     $type: ResourceType!
     $resourceName: String!
+    $accountId: String
     $region: String
   ) {
     putResourceLoggingBucket(
       type: $type
       resourceName: $resourceName
+      accountId: $accountId
       region: $region
     ) {
       enabled
       bucket
       prefix
+      source
     }
   }
 `;
 export const createInstanceGroup = /* GraphQL */ `
-  mutation CreateInstanceGroup($groupName: String!, $instanceSet: [String!]!) {
-    createInstanceGroup(groupName: $groupName, instanceSet: $instanceSet)
+  mutation CreateInstanceGroup(
+    $accountId: String
+    $region: String
+    $groupName: String!
+    $instanceSet: [String!]!
+  ) {
+    createInstanceGroup(
+      accountId: $accountId
+      region: $region
+      groupName: $groupName
+      instanceSet: $instanceSet
+    )
   }
 `;
 export const deleteInstanceGroup = /* GraphQL */ `
@@ -111,18 +113,21 @@ export const updateInstanceGroup = /* GraphQL */ `
     $id: ID!
     $groupName: String!
     $instanceSet: [String!]!
+    $accountId: String
+    $region: String
   ) {
     updateInstanceGroup(
       id: $id
       groupName: $groupName
       instanceSet: $instanceSet
+      accountId: $accountId
+      region: $region
     )
   }
 `;
 export const createLogConf = /* GraphQL */ `
   mutation CreateLogConf(
     $confName: String!
-    $logPath: String!
     $logType: LogType!
     $multilineLogParser: MultiLineLogParser
     $userLogFormat: String
@@ -131,7 +136,6 @@ export const createLogConf = /* GraphQL */ `
   ) {
     createLogConf(
       confName: $confName
-      logPath: $logPath
       logType: $logType
       multilineLogParser: $multilineLogParser
       userLogFormat: $userLogFormat
@@ -149,7 +153,6 @@ export const updateLogConf = /* GraphQL */ `
   mutation UpdateLogConf(
     $id: ID!
     $confName: String!
-    $logPath: String!
     $logType: LogType!
     $multilineLogParser: MultiLineLogParser
     $userLogFormat: String
@@ -159,7 +162,6 @@ export const updateLogConf = /* GraphQL */ `
     updateLogConf(
       id: $id
       confName: $confName
-      logPath: $logPath
       logType: $logType
       multilineLogParser: $multilineLogParser
       userLogFormat: $userLogFormat
@@ -172,14 +174,25 @@ export const createAppPipeline = /* GraphQL */ `
   mutation CreateAppPipeline(
     $kdsParas: KDSParameterInput!
     $aosParas: AOSParameterInput!
+    $force: Boolean
     $tags: [TagInput]
   ) {
-    createAppPipeline(kdsParas: $kdsParas, aosParas: $aosParas, tags: $tags)
+    createAppPipeline(
+      kdsParas: $kdsParas
+      aosParas: $aosParas
+      force: $force
+      tags: $tags
+    )
   }
 `;
 export const deleteAppPipeline = /* GraphQL */ `
   mutation DeleteAppPipeline($id: ID!) {
     deleteAppPipeline(id: $id)
+  }
+`;
+export const upgradeAppPipeline = /* GraphQL */ `
+  mutation UpgradeAppPipeline($ids: [ID!]!) {
+    upgradeAppPipeline(ids: $ids)
   }
 `;
 export const createAppLogIngestion = /* GraphQL */ `
@@ -190,7 +203,10 @@ export const createAppLogIngestion = /* GraphQL */ `
     $stackId: String
     $stackName: String
     $appPipelineId: String!
+    $createDashboard: String!
+    $force: Boolean
     $tags: [TagInput]
+    $logPath: String!
   ) {
     createAppLogIngestion(
       confId: $confId
@@ -199,7 +215,10 @@ export const createAppLogIngestion = /* GraphQL */ `
       stackId: $stackId
       stackName: $stackName
       appPipelineId: $appPipelineId
+      createDashboard: $createDashboard
+      force: $force
       tags: $tags
+      logPath: $logPath
     )
   }
 `;
@@ -209,8 +228,16 @@ export const deleteAppLogIngestion = /* GraphQL */ `
   }
 `;
 export const requestInstallLogAgent = /* GraphQL */ `
-  mutation RequestInstallLogAgent($instanceIdSet: [String!]!) {
-    requestInstallLogAgent(instanceIdSet: $instanceIdSet)
+  mutation RequestInstallLogAgent(
+    $instanceIdSet: [String!]!
+    $accountId: String
+    $region: String
+  ) {
+    requestInstallLogAgent(
+      instanceIdSet: $instanceIdSet
+      accountId: $accountId
+      region: $region
+    )
   }
 `;
 export const createLogSource = /* GraphQL */ `
@@ -222,6 +249,9 @@ export const createLogSource = /* GraphQL */ `
     $accountId: String
     $region: String
     $archiveFormat: ArchiveFormat
+    $subAccountVpcId: String
+    $subAccountPublicSubnetIds: String
+    $subAccountLinkId: String
     $tags: [TagInput]
   ) {
     createLogSource(
@@ -232,6 +262,9 @@ export const createLogSource = /* GraphQL */ `
       accountId: $accountId
       region: $region
       archiveFormat: $archiveFormat
+      subAccountVpcId: $subAccountVpcId
+      subAccountPublicSubnetIds: $subAccountPublicSubnetIds
+      subAccountLinkId: $subAccountLinkId
       tags: $tags
     )
   }
@@ -278,6 +311,9 @@ export const createEKSClusterPodLogIngestion = /* GraphQL */ `
     $aosParas: AOSParameterInput!
     $confId: String!
     $eksClusterId: String!
+    $logPath: String!
+    $createDashboard: String!
+    $force: Boolean
     $tags: [TagInput]
   ) {
     createEKSClusterPodLogIngestion(
@@ -285,7 +321,93 @@ export const createEKSClusterPodLogIngestion = /* GraphQL */ `
       aosParas: $aosParas
       confId: $confId
       eksClusterId: $eksClusterId
+      logPath: $logPath
+      createDashboard: $createDashboard
+      force: $force
       tags: $tags
     )
+  }
+`;
+export const createEKSClusterPodLogWithoutDataBufferIngestion = /* GraphQL */ `
+  mutation CreateEKSClusterPodLogWithoutDataBufferIngestion(
+    $aosParas: AOSParameterInput!
+    $confId: String!
+    $eksClusterId: String!
+    $logPath: String!
+    $createDashboard: String!
+    $force: Boolean
+    $tags: [TagInput]
+  ) {
+    createEKSClusterPodLogWithoutDataBufferIngestion(
+      aosParas: $aosParas
+      confId: $confId
+      eksClusterId: $eksClusterId
+      logPath: $logPath
+      createDashboard: $createDashboard
+      force: $force
+      tags: $tags
+    )
+  }
+`;
+export const generateErrorCode = /* GraphQL */ `
+  mutation GenerateErrorCode($code: ErrorCode) {
+    generateErrorCode(code: $code)
+  }
+`;
+export const createSubAccountLink = /* GraphQL */ `
+  mutation CreateSubAccountLink(
+    $subAccountId: String!
+    $region: String
+    $subAccountName: String!
+    $subAccountRoleArn: String!
+    $agentInstallDoc: String!
+    $agentConfDoc: String!
+    $subAccountBucketName: String!
+    $subAccountStackId: String!
+    $subAccountKMSKeyArn: String!
+    $tags: [TagInput]
+  ) {
+    createSubAccountLink(
+      subAccountId: $subAccountId
+      region: $region
+      subAccountName: $subAccountName
+      subAccountRoleArn: $subAccountRoleArn
+      agentInstallDoc: $agentInstallDoc
+      agentConfDoc: $agentConfDoc
+      subAccountBucketName: $subAccountBucketName
+      subAccountStackId: $subAccountStackId
+      subAccountKMSKeyArn: $subAccountKMSKeyArn
+      tags: $tags
+    )
+  }
+`;
+export const updateSubAccountLink = /* GraphQL */ `
+  mutation UpdateSubAccountLink(
+    $id: ID!
+    $subAccountName: String!
+    $agentInstallDoc: String!
+    $agentConfDoc: String!
+    $subAccountBucketName: String!
+    $subAccountStackId: String!
+    $subAccountKMSKeyArn: String!
+    $subAccountVpcId: String
+    $subAccountPublicSubnetIds: String
+  ) {
+    updateSubAccountLink(
+      id: $id
+      subAccountName: $subAccountName
+      agentInstallDoc: $agentInstallDoc
+      agentConfDoc: $agentConfDoc
+      subAccountBucketName: $subAccountBucketName
+      subAccountStackId: $subAccountStackId
+      subAccountKMSKeyArn: $subAccountKMSKeyArn
+      subAccountVpcId: $subAccountVpcId
+      subAccountPublicSubnetIds: $subAccountPublicSubnetIds
+    )
+  }
+`;
+export const deleteSubAccountLink = /* GraphQL */ `
+  mutation DeleteSubAccountLink($id: ID!) {
+    deleteSubAccountLink(id: $id)
   }
 `;

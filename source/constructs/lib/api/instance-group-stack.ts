@@ -14,15 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Construct,  Duration,  RemovalPolicy } from '@aws-cdk/core';
-import * as appsync from '@aws-cdk/aws-appsync';
-import * as lambda from '@aws-cdk/aws-lambda';
+import {
+    Construct,
+  } from 'constructs';
+import { 
+    Duration,  
+    RemovalPolicy,
+    aws_dynamodb as ddb,
+    aws_iam as iam,
+    aws_lambda as lambda,
+    
+ } from 'aws-cdk-lib';  
+import * as appsync from "@aws-cdk/aws-appsync-alpha"; 
 import * as path from 'path';
-import * as ddb from '@aws-cdk/aws-dynamodb';
-import * as iam from "@aws-cdk/aws-iam";
-import * as events from '@aws-cdk/aws-events';
-
-
+import * as events from 'aws-cdk-lib/aws-events';
 import { addCfnNagSuppressRules } from "../main-stack";
 
 export interface InstanceGroupStackProps {
@@ -34,7 +39,7 @@ export interface InstanceGroupStackProps {
      */
     readonly graphqlApi: appsync.GraphqlApi,
     readonly eventBridgeRule: events.Rule
-
+    readonly centralAssumeRolePolicy: iam.ManagedPolicy;
 }
 export class InstanceGroupStack extends Construct {
     instanceGroupTable: ddb.Table;
@@ -102,6 +107,7 @@ export class InstanceGroupStack extends Construct {
             resources: [props.eventBridgeRule.ruleArn]
         })
         instanceGroupHandler.addToRolePolicy(eventBridgePolicy)
+        props.centralAssumeRolePolicy.attachToRole(instanceGroupHandler.role!)
 
         // Add instanceGroup table as a Datasource
         const instanceGroupDynamoDS = props.graphqlApi.addDynamoDbDataSource('InstanceGroupDynamoDS', this.instanceGroupTable, {

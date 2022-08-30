@@ -27,6 +27,23 @@ import gql from "graphql-tag";
 import { AMPLIFY_CONFIG_JSON } from "./const";
 import { Auth } from "aws-amplify";
 import { AmplifyConfigType, AppSyncAuthType } from "types";
+import { ErrorCode } from "API";
+
+const IGNORE_ERROR_CODE: string[] = [ErrorCode.AccountNotFound];
+
+// Remove Error Code From Error Message
+export const refineErrorMessage = (message: string) => {
+  let errorCode = "";
+  if (message.trim().startsWith("[")) {
+    const groups = message.match(/\[(\S+)\]/);
+    errorCode = groups && groups.length >= 2 ? groups[1] : "";
+    message = message.replace(/\[\S+\]/, "");
+  }
+  return {
+    errorCode,
+    message,
+  };
+};
 
 const buildAppsyncLink = () => {
   const configJSONObj: AmplifyConfigType = localStorage.getItem(
@@ -87,13 +104,12 @@ export const appSyncRequestQuery = (query: any, params?: any): any => {
       resolve(result);
     } catch (error) {
       const showError: any = error;
-      console.info("ERRROR:", showError.message);
-      console.info("error:", showError.errors?.[0].message);
-      Swal.fire(
-        "Oops...",
-        showError.message || showError.errors?.[0].message,
-        "error"
+      const { errorCode, message } = refineErrorMessage(
+        showError.message || showError.errors?.[0].message
       );
+      if (!IGNORE_ERROR_CODE.includes(errorCode)) {
+        Swal.fire("Oops...", message, "error");
+      }
       reject(error);
     }
   });
@@ -117,13 +133,12 @@ export const appSyncRequestMutation = (mutation: any, params?: any): any => {
       resolve(result);
     } catch (error) {
       const showError: any = error;
-      console.info("ERRROR:", showError.message);
-      console.info("error:", showError.errors?.[0].message);
-      Swal.fire(
-        "Oops...",
-        showError.message || showError.errors?.[0].message,
-        "error"
+      const { errorCode, message } = refineErrorMessage(
+        showError.message || showError.errors?.[0].message
       );
+      if (!IGNORE_ERROR_CODE.includes(errorCode)) {
+        Swal.fire("Oops...", message, "error");
+      }
       reject(error);
     }
   });

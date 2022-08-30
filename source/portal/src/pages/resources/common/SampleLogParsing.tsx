@@ -32,6 +32,8 @@ import {
   JsonToDotNotate,
   replaceSpringbootTimeFormat,
 } from "assets/js/utils";
+import { appSyncRequestQuery } from "assets/js/request";
+import { checkTimeFormat } from "graphql/queries";
 
 interface SampleLogParsingProps {
   changeSpecs: (specs: any) => void;
@@ -41,6 +43,16 @@ interface SampleLogParsingProps {
   showSampleLogRequiredError?: boolean;
   sampleLogInvalid: boolean;
   changeSampleLogInvalid: (valid: boolean) => void;
+}
+
+interface RegexListType {
+  key: string;
+  type: string;
+  format: string;
+  value: string;
+  loadingCheck: boolean;
+  showError: boolean;
+  showSuccess: boolean;
 }
 
 const SampleLogParsing: React.FC<SampleLogParsingProps> = (
@@ -57,9 +69,11 @@ const SampleLogParsing: React.FC<SampleLogParsingProps> = (
   } = props;
   const { t } = useTranslation();
   const [logResMap, setLogResMap] = useState<any>({});
-  const [regexKeyList, setRegexKeyList] = useState<any[]>([]);
+  const [regexKeyList, setRegexKeyList] = useState<RegexListType[]>([]);
   const [showValidInfo, setShowValidInfo] = useState(false);
-  const [timeFormat, setTimeFormat] = useState("");
+  const [timeFormatForSpringBoot, setTimeFormatForSpringBoot] = useState("");
+
+  const NOT_SUPPORT_FORMAT_STRS = ["%L"];
 
   const getDefaultType = (key: string, value?: string): string => {
     if (key === "time") {
@@ -141,26 +155,31 @@ const SampleLogParsing: React.FC<SampleLogParsingProps> = (
       logType === LogType.SingleLineText ||
       logType === LogType.MultiLineText
     ) {
-      const initArr = [];
+      const initArr: RegexListType[] = [];
       if (found && found.length > 0) {
         setShowValidInfo(true);
         changeSampleLogInvalid(false);
         for (let i = 0; i < found?.length; i++) {
           let tmpKeyName = "";
-          const keys = Object.keys(found?.groups);
-          if (i > 0) {
-            if (foundLength - 1 === groupLength) {
-              tmpKeyName = keys[i - 1];
+          if (found?.groups) {
+            const keys = Object.keys(found?.groups);
+            if (i > 0) {
+              if (foundLength - 1 === groupLength) {
+                tmpKeyName = keys[i - 1];
+              }
+              initArr.push({
+                key: tmpKeyName,
+                type: getDefaultType(tmpKeyName, found[i]),
+                format: "",
+                value:
+                  found[i]?.length > 450
+                    ? found[i].substr(0, 448) + "..."
+                    : found[i],
+                loadingCheck: false,
+                showError: false,
+                showSuccess: false,
+              });
             }
-            initArr.push({
-              key: tmpKeyName,
-              type: getDefaultType(tmpKeyName, found[i]),
-              format: "",
-              value:
-                found[i]?.length > 450
-                  ? found[i].substr(0, 448) + "..."
-                  : found[i],
-            });
           }
         }
       } else {
@@ -171,16 +190,40 @@ const SampleLogParsing: React.FC<SampleLogParsingProps> = (
     }
   };
 
+  const validateTimeFormat = async (
+    index: number,
+    timeStr: string,
+    formatStr: string
+  ) => {
+    setRegexKeyList((prev) => {
+      const tmpData: RegexListType[] = JSON.parse(JSON.stringify(prev));
+      tmpData[index].loadingCheck = true;
+      return tmpData;
+    });
+    const resData: any = await appSyncRequestQuery(checkTimeFormat, {
+      timeStr: timeStr,
+      formatStr: formatStr,
+    });
+    setRegexKeyList((prev) => {
+      const tmpData: RegexListType[] = JSON.parse(JSON.stringify(prev));
+      tmpData[index].loadingCheck = false;
+      tmpData[index].showSuccess =
+        resData?.data?.checkTimeFormat?.isMatch || false;
+      tmpData[index].showError = !resData?.data?.checkTimeFormat?.isMatch;
+      return tmpData;
+    });
+    console.info("resData:", resData);
+  };
+
   useEffect(() => {
     setShowValidInfo(false);
     setRegexKeyList([]);
     setLogResMap({});
-    setTimeFormat("");
+    setTimeFormatForSpringBoot("");
   }, [logConfig.logType, logConfig.multilineLogParser]);
 
   useEffect(() => {
     if (logConfig.userLogFormat) {
-      console.info("userLogFormatChanged:", logConfig.userLogFormat);
       if (
         logConfig.logType === LogType.MultiLineText &&
         logConfig.multilineLogParser === MultiLineLogParser.JAVA_SPRING_BOOT
@@ -188,26 +231,40 @@ const SampleLogParsing: React.FC<SampleLogParsingProps> = (
         let tmpTimeFormat = getLogFormatByUserLogConfig(
           logConfig.userLogFormat
         );
-        // console.info("tmpTimeFormat:tmpTimeFormat", tmpTimeFormat);
         tmpTimeFormat = replaceSpringbootTimeFormat(tmpTimeFormat);
-        setTimeFormat(tmpTimeFormat);
+        setTimeFormatForSpringBoot(tmpTimeFormat);
       }
     }
   }, [logConfig.userLogFormat]);
 
   useEffect(() => {
+    // set format undefine when format is empty
     if (regexKeyList && regexKeyList.length > 0) {
       const tmpSpecList = [];
       for (let i = 0; i < regexKeyList.length; i++) {
-        tmpSpecList.push({
-          key: regexKeyList[i].key,
-          type: regexKeyList[i].type,
-          format: regexKeyList[i].key === "time" ? timeFormat : undefined,
-        });
+        if (
+          logConfig.logType === LogType.MultiLineText &&
+          logConfig.multilineLogParser === MultiLineLogParser.JAVA_SPRING_BOOT
+        ) {
+          tmpSpecList.push({
+            key: regexKeyList[i].key,
+            type: regexKeyList[i].type,
+            format:
+              regexKeyList[i].key === "time"
+                ? timeFormatForSpringBoot
+                : undefined,
+          });
+        } else {
+          tmpSpecList.push({
+            key: regexKeyList[i].key,
+            type: regexKeyList[i].type,
+            format: regexKeyList[i].format ? regexKeyList[i].format : undefined,
+          });
+        }
       }
       changeSpecs(tmpSpecList);
     }
-  }, [regexKeyList, timeFormat]);
+  }, [regexKeyList, timeFormatForSpringBoot]);
 
   useEffect(() => {
     if (logConfig.logType !== LogType.JSON) {
@@ -353,10 +410,12 @@ const SampleLogParsing: React.FC<SampleLogParsingProps> = (
                             const tmpArr = JSON.parse(
                               JSON.stringify(regexKeyList)
                             );
+                            // set format to empty when change type
+                            tmpArr[index].format = "";
                             tmpArr[index].type = event.target.value;
                             setRegexKeyList(tmpArr);
                           }}
-                          placeholder={"type"}
+                          placeholder="type"
                         />
                       )}
                     </div>
@@ -379,21 +438,78 @@ const SampleLogParsing: React.FC<SampleLogParsingProps> = (
               (logConfig.logType === LogType.MultiLineText &&
                 logConfig.multilineLogParser ===
                   MultiLineLogParser.CUSTOM)) && (
-              <div className="mt-20">
-                <FormItem
-                  optionTitle={t("resource:config.parsing.timeFormat")}
-                  optionDesc={t("resource:config.parsing.timeFormatDesc")}
-                  infoType={InfoBarTypes.CONFIG_TIME_FORMAT}
-                >
-                  <TextInput
-                    value={timeFormat}
-                    placeholder="%Y-%m-%d %H:%M:%S.%L"
-                    onChange={(event) => {
-                      setTimeFormat(event.target.value);
-                    }}
-                  />
-                </FormItem>
-              </div>
+              <>
+                {regexKeyList.map((element, index) => {
+                  return (
+                    <div key={index}>
+                      {element.type === "date" && (
+                        <div className="mt-20 m-w-75p">
+                          <FormItem
+                            key={index}
+                            optionTitle={`${t(
+                              "resource:config.parsing.timeFormat"
+                            )} (${element.key})`}
+                            optionDesc={t(
+                              "resource:config.parsing.timeFormatDesc"
+                            )}
+                            infoType={InfoBarTypes.CONFIG_TIME_FORMAT}
+                            successText={
+                              element.showSuccess
+                                ? t("resource:config.parsing.formatSuccess")
+                                : ""
+                            }
+                            errorText={
+                              element.showError
+                                ? t("resource:config.parsing.formatError")
+                                : ""
+                            }
+                          >
+                            <div className="flex">
+                              <div className="flex-1">
+                                <TextInput
+                                  value={element.format}
+                                  placeholder="%Y-%m-%d %H:%M:%S.%L"
+                                  onChange={(event) => {
+                                    const tmpArr = JSON.parse(
+                                      JSON.stringify(regexKeyList)
+                                    );
+                                    tmpArr[index].showSuccess = false;
+                                    tmpArr[index].showError = false;
+                                    tmpArr[index].format =
+                                      event.target.value || undefined;
+                                    setRegexKeyList(tmpArr);
+                                  }}
+                                />
+                              </div>
+                              <div className="ml-10">
+                                {
+                                  <Button
+                                    disabled={NOT_SUPPORT_FORMAT_STRS.some(
+                                      (substring) =>
+                                        element?.format?.includes(substring)
+                                    )}
+                                    loadingColor="#666"
+                                    loading={element.loadingCheck}
+                                    onClick={() => {
+                                      validateTimeFormat(
+                                        index,
+                                        element.value,
+                                        element.format
+                                      );
+                                    }}
+                                  >
+                                    {t("button.validate")}
+                                  </Button>
+                                }
+                              </div>
+                            </div>
+                          </FormItem>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </>
             )}
         </div>
       </FormItem>

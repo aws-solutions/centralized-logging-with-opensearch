@@ -156,6 +156,32 @@ npm run build
 
 construct_dir=$source_dir/constructs
 
+cd $construct_dir
+
+rm -vf ./lambda/pipeline/service/log-processor/boto3_client.py
+rm -vf ./lambda/api/pipeline/aws_svc_mgr.py
+rm -vf ./lambda/api/app_pipeline/util/assume_role.py
+rm -vrf ./lambda/api/app_pipeline/util/assume_role_template
+rm -vf ./lambda/api/app_pipeline/common.py
+rm -vf ./lambda/api/app_log_ingestion/util/aws_svc_mgr.py
+rm -vf ./lambda/api/app_log_ingestion/common.py
+rm -vf ./lambda/api/log_agent_status/aws_svc_mgr.py
+rm -vf ./lambda/api/instance_meta/aws_svc_mgr.py
+rm -vf ./lambda/api/resource/aws_svc_mgr.py
+rm -vf ./lambda/main/cfnHelper/aws_svc_mgr.py
+
+cp -vf ./lambda/pipeline/service/log-processor/../../common/custom-resource/boto3_client.py ./lambda/pipeline/service/log-processor/boto3_client.py
+cp -vf ./lambda/api/pipeline/../common/aws_svc_mgr.py ./lambda/api/pipeline/aws_svc_mgr.py
+cp -vf ./lambda/api/app_pipeline/util/../../app_log_ingestion/util/assume_role.py ./lambda/api/app_pipeline/util/assume_role.py
+cp -vrf ./lambda/api/app_pipeline/util/../../app_log_ingestion/util/assume_role_template ./lambda/api/app_pipeline/util/assume_role_template
+cp -vf ./lambda/api/app_pipeline/../common/common.py ./lambda/api/app_pipeline/common.py
+cp -vf ./lambda/api/app_log_ingestion/util/../../common/aws_svc_mgr.py ./lambda/api/app_log_ingestion/util/aws_svc_mgr.py
+cp -vf ./lambda/api/app_log_ingestion/../common/common.py ./lambda/api/app_log_ingestion/common.py
+cp -vf ./lambda/api/log_agent_status/../common/aws_svc_mgr.py ./lambda/api/log_agent_status/aws_svc_mgr.py
+cp -vf ./lambda/api/instance_meta/../common/aws_svc_mgr.py ./lambda/api/instance_meta/aws_svc_mgr.py
+cp -vf ./lambda/api/resource/../common/aws_svc_mgr.py ./lambda/api/resource/aws_svc_mgr.py
+cp -vf ./lambda/main/cfnHelper/../../api/common/aws_svc_mgr.py ./lambda/main/cfnHelper/aws_svc_mgr.py
+
 # Test the CDK project
 run_cdk_project_test $construct_dir
 
@@ -167,7 +193,9 @@ run_python_test $construct_dir/lambda/plugin/standard plugin
 run_python_test $construct_dir/lambda/api/resource resource-api
 run_python_test $construct_dir/lambda/api/instance_meta instance-meta-api
 run_python_test $construct_dir/lambda/api/pipeline svc-pipeline-api
+run_python_test $construct_dir/lambda/api/log_agent_status log_agent_status
 run_python_test $construct_dir/lambda/main/cfnHelper cfnHelper
+run_python_test $construct_dir/lambda/main/sfnHelper sfnHelper
 run_python_test $construct_dir/lambda/custom-resource custom-resource
 run_python_test $construct_dir/lambda/api/app_log_ingestion app_log_ingestion
 run_python_test $construct_dir/lambda/api/eks_cluster eks_cluster
@@ -175,6 +203,9 @@ run_python_test $construct_dir/lambda/api/log_source log_source
 run_python_test $construct_dir/lambda/api/instance_group instance_group
 run_python_test $construct_dir/lambda/api/log_conf log_conf
 run_python_test $construct_dir/lambda/api/app_pipeline app_pipeline
+run_python_test $construct_dir/lambda/api/cross_account cross_account
+run_python_test $construct_dir/lambda/api/common common
+run_python_test $construct_dir/lambda/api/cluster aos_cluster
 
 # Return to the source/ level
 cd $source_dir

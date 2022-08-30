@@ -20,9 +20,9 @@ import SpecifyDomain from "./steps/SpecifyDomain";
 import CreateTags from "./steps/CreateTags";
 import Button from "components/Button";
 import Breadcrumb from "components/Breadcrumb";
-import { appSyncRequestMutation } from "assets/js/request";
+import { appSyncRequestMutation, refineErrorMessage } from "assets/js/request";
 import { useHistory } from "react-router-dom";
-import { Tag } from "API";
+import { ErrorCode, Tag } from "API";
 import { ActionType, AppStateProps } from "reducer/appReducer";
 import { useDispatch, useSelector } from "react-redux";
 import HelpPanel from "components/HelpPanel";
@@ -31,6 +31,7 @@ import { createAppPipeline } from "graphql/mutations";
 import { AmplifyConfigType } from "types";
 import { useTranslation } from "react-i18next";
 import { checkIndexNameValidate } from "assets/js/utils";
+import Swal from "sweetalert2";
 export interface ApplicationLogType {
   warmEnable: boolean;
   coldEnable: boolean;
@@ -123,6 +124,7 @@ const ImportOpenSearchCluster: React.FC = () => {
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [indexEmptyError, setIndexEmptyError] = useState(false);
   const [indexNameFormatError, setIndexNameFormatError] = useState(false);
+  const [indexDuplicatedError, setIndexDuplicatedError] = useState(false);
   const [shardInvalidError, setShardInvalidError] = useState(false);
   const [maxShardInvalidError, setMaxShardInvalidError] = useState(false);
   const [warmLogInvalidError, setWarmLogInvalidError] = useState(false);
@@ -196,7 +198,7 @@ const ImportOpenSearchCluster: React.FC = () => {
     return true;
   };
 
-  const confirmCreateApplicationLog = async () => {
+  const confirmCreateApplicationLog = async (isForce = false) => {
     // set warm age and code age as number
     const createAppLogParam = JSON.parse(JSON.stringify(curApplicationLog));
     createAppLogParam.aosParas.warmLogTransition =
@@ -221,6 +223,7 @@ const ImportOpenSearchCluster: React.FC = () => {
       parseInt(createAppLogParam.kdsParas.startShardNumber) || 0;
     createAppLogParam.kdsParas.maxShardNumber =
       parseInt(createAppLogParam.kdsParas.maxShardNumber) || 0;
+    createAppLogParam.force = isForce;
     try {
       setLoadingCreate(true);
       const createRes = await appSyncRequestMutation(
@@ -232,9 +235,60 @@ const ImportOpenSearchCluster: React.FC = () => {
       history.push({
         pathname: "/log-pipeline/application-log",
       });
-    } catch (error) {
+    } catch (error: any) {
+      const { errorCode, message } = refineErrorMessage(error.message);
+      if (
+        errorCode === ErrorCode.DuplicatedIndexPrefix ||
+        errorCode === ErrorCode.OverlapIndexPrefix
+      ) {
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          cancelButtonColor: "#ec7211",
+          showCancelButton: true,
+          confirmButtonText: t("button.cancel"),
+          cancelButtonText: t("button.changeIndex"),
+          text:
+            (errorCode === ErrorCode.DuplicatedIndexPrefix
+              ? t("applog:create.ingestSetting.duplicatedWithPrefix")
+              : t("applog:create.ingestSetting.overlapWithPrefix")) +
+            `(${message})`,
+        }).then((result) => {
+          if (result.isDismissed) {
+            setCurStep(0);
+            setIndexDuplicatedError(true);
+          }
+        });
+      }
+      if (
+        errorCode === ErrorCode.DuplicatedWithInactiveIndexPrefix ||
+        errorCode === ErrorCode.OverlapWithInactiveIndexPrefix
+      ) {
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          cancelButtonColor: "#ec7211",
+          showCancelButton: true,
+          showDenyButton: true,
+          confirmButtonText: t("button.cancel"),
+          denyButtonText: t("button.forceCreate"),
+          cancelButtonText: t("button.changeIndex"),
+          text:
+            (errorCode === ErrorCode.DuplicatedWithInactiveIndexPrefix
+              ? t("applog:create.ingestSetting.duplicatedWithInvalidPrefix")
+              : t("applog:create.ingestSetting.overlapWithInvalidPrefix")) +
+            `(${message})`,
+        }).then((result) => {
+          if (result.isDismissed) {
+            setCurStep(0);
+            setIndexDuplicatedError(true);
+          } else if (result.isDenied) {
+            confirmCreateApplicationLog(true);
+          }
+        });
+      }
       setLoadingCreate(false);
-      console.error(error);
+      console.error(error.message);
     }
   };
 
@@ -291,6 +345,7 @@ const ImportOpenSearchCluster: React.FC = () => {
                     changeIndexPrefix={(index) => {
                       setIndexEmptyError(false);
                       setIndexNameFormatError(false);
+                      setIndexDuplicatedError(false);
                       setCurApplicationLog((prev) => {
                         return {
                           ...prev,
@@ -339,6 +394,7 @@ const ImportOpenSearchCluster: React.FC = () => {
                     }}
                     indexFormatError={indexNameFormatError}
                     indexEmptyError={indexEmptyError}
+                    indexDuplicatedError={indexDuplicatedError}
                     shardNumInvalidError={shardInvalidError}
                     maxShardNumInvalidError={maxShardInvalidError}
                   />

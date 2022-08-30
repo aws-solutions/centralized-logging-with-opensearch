@@ -1100,8 +1100,8 @@ Response:
 | appPipelineId | K-V      | Yes      |         | Selected Amazonn OpenSearch related parameters.                                                                                                                                      |
 | confId        | K-V      | Yes      |         | Created Kinesis Data Stream related parameters.                                                                                                                                      |
 | groupIds      | String[] | Yes      |         | Created Kinesis Data Stream related parameters.                                                                                                                                      |
-| stackId       | String   | Yes      |         | In the process of creating an application log pipeline, KDS and Lambda are created through the cloudformation stack. This item can be obtained through the listAppLogIngestions API. |
-| stackName     | String   | Yes      |         | In the process of creating an application log pipeline, KDS and Lambda are created through the cloudformation stack. This item can be obtained through the listAppLogIngestions API. |
+| stackId       | String   | Yes      |         | In the process of creating an application log pipeline, KDS and Lambda are created through the CloudFormation stack. This item can be obtained through the listAppLogIngestions API. |
+| stackName     | String   | Yes      |         | In the process of creating an application log pipeline, KDS and Lambda are created through the CloudFormation stack. This item can be obtained through the listAppLogIngestions API. |
 
 **Simple Request & Response:**
 

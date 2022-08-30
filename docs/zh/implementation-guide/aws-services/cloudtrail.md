@@ -14,7 +14,7 @@ Amazon CloudTrail 监控和记录您的 AWS 基础设施中的账户活动。它
 3. 单击 **创建日志摄取** 按钮。
 4. 在 **AWS 服务** 部分，选择 **Amazon CloudTrail**。
 5. 选择**下一步**。
-6. 在 **指定设置**，对于 **Trail**，从下拉列表中选择一项。
+6. 在 **指定设置**，对于 **Trail**，从下拉列表中选择一项。（可选步骤）如果需要夸账户摄取日志，需要先在 **账户** 的下拉列表中选择一个[链接的 AWS 账户](../link-account/index.md)。
 7. 选择**下一步**。
 8. 在 **指定 OpenSearch 域** 部分，为 **Amazon OpenSearch 域** 选择一个导入的域。
 9. 如果要摄取关联的内置 AOS 仪表板，请为 **示例仪表板** 选择 **是**。
@@ -30,7 +30,7 @@ Amazon CloudTrail 监控和记录您的 AWS 基础设施中的账户活动。它
 | | 在 AWS 控制台中启动 |下载模板 |
 | -------------------- | -------------------------------------------------- ---------- | -------------------------------------------------- ---------- |
 | AWS 海外区域 | [![启动堆栈](../../images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/template?stackName=LogHub-CloudTrail&templateURL=https://{{ bucket }}.s3.amazonaws.com/log-hub/{{ version }}/CloudTrailLog.template){target=_blank} | [模板](https://{{ bucket }}.s3.amazonaws.com/log-hub/{{ version }}/CloudTrailLog.template)  |
-| AWS 中国区域 | [![启动堆栈](../../images/launch-stack.png)](https://console.amazonaws.cn/cloudformation/home#/stacks/create/template?stackName=LogHub-CloudTrail&templateURL= https://aws-gcr-solutions.s3.cn-north-1.amazonaws.com.cn/log-hub/{{版本}}/CloudTrailLog.template){target=_blank} | [模板](https://aws-gcr-solutions.s3.cn-north-1.amazonaws.com.cn/log-hub/latest/CloudTrailLog.template) |
+| AWS 中国区域 | [![启动堆栈](../../images/launch-stack.png)](https://console.amazonaws.cn/cloudformation/home#/stacks/create/template?stackName=LogHub-CloudTrail&templateURL= https://{{ bucket }}.s3.cn-north-1.amazonaws.com.cn/log-hub/{{ version }}/CloudTrailLog.template){target=_blank} | [模板](https://{{ bucket }}.s3.cn-north-1.amazonaws.com.cn/log-hub/{{ version }}/CloudTrailLog.template) |
 
 {%
 include-markdown "include-cfn-common.md"

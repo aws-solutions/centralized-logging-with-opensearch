@@ -26,14 +26,17 @@ dynamodb = boto3.resource('dynamodb', config=default_config)
 table_name = os.environ.get('INSTRANCEGROUP_TABLE')
 instance_group_table = dynamodb.Table(table_name)
 default_region = os.environ.get('AWS_REGION')
-print(f'region is {default_region}')
 
 # Get Event Bridge resource
 event = boto3.client('events', config=default_config)
 event_rule_name = os.environ.get("EVENTBRIDGE_RULE")
 
+sts = boto3.client("sts", config=default_config)
+account_id = sts.get_caller_identity()["Account"]
+
 
 class APIException(Exception):
+
     def __init__(self, message):
         self.message = message
 
@@ -79,6 +82,8 @@ def create_instance_group(**args):
     """  Create a instance group """
     logger.info('create instance group')
     group_name = args['groupName']
+    sub_account_id = args.get('accountId') or account_id
+    region = args.get('region') or default_region
     resp = list_instance_groups(groupName=group_name)
     total = resp['total']
     """Check if the groupName exists """
@@ -91,18 +96,21 @@ def create_instance_group(**args):
         Item={
             'id': id,
             'groupName': group_name,
+            'accountId': sub_account_id,
+            'region': region,
             'instanceSet': set(instance_set),
             'createdDt': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
             'status': 'ACTIVE',
-        }
-    )
+        })
     enable_agent_status_regular_check()
     return id
 
 
 def list_instance_groups(page=1, count=20, groupName=None):
     """  List instance groups """
-    logger.info(f'List InstanceGroup from DynamoDB in page {page} with {count} of records')
+    logger.info(
+        f'List InstanceGroup from DynamoDB in page {page} with {count} of records'
+    )
     conditions = Attr('status').eq('ACTIVE')
 
     if groupName:
@@ -110,12 +118,13 @@ def list_instance_groups(page=1, count=20, groupName=None):
 
     response = instance_group_table.scan(
         FilterExpression=conditions,
-        ProjectionExpression="id, #groupName, #status, instanceSet,createdDt ",
+        ProjectionExpression=
+        "id,accountId,#region,#groupName, #status, instanceSet,createdDt ",
         ExpressionAttributeNames={
             '#groupName': 'groupName',
             '#status': 'status',
-        }
-    )
+            '#region': 'region',
+        })
 
     # Assume all items are returned in the scan request
     items = response['Items']
@@ -134,6 +143,8 @@ def list_instance_groups(page=1, count=20, groupName=None):
     for item in items:
         result = {}
         result['id'] = item['id']
+        result['accountId'] = item.get('accountId', account_id)
+        result['region'] = item.get('region', default_region)
         result['groupName'] = item['groupName']
         result['createdDt'] = item['createdDt']
         result['instanceSet'] = list(item['instanceSet'])
@@ -142,7 +153,7 @@ def list_instance_groups(page=1, count=20, groupName=None):
     results.sort(key=lambda x: x['createdDt'], reverse=True)
     return {
         'total': len(items),
-        'instanceGroups': results[start: end],
+        'instanceGroups': results[start:end],
     }
 
 
@@ -163,12 +174,15 @@ def delete_instance_group(id: str) -> str:
         ExpressionAttributeValues={
             ':s': 'INACTIVE',
             ':uDt': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-        }
-    )
+        })
     disable_agent_status_regular_check()
 
 
-def update_instance_group(id, groupName, instanceSet):
+def update_instance_group(id,
+                          groupName,
+                          instanceSet,
+                          accountId=account_id,
+                          region=default_region):
     """ update groupName,instanceSet in InstanceGroup table """
     logger.info('Update groupName  in DynamoDB')
     resp = instance_group_table.get_item(Key={'id': id})
@@ -180,38 +194,35 @@ def update_instance_group(id, groupName, instanceSet):
     """Check if the groupName exists """
     if total > 0 and groups[0]['id'] != id:
         raise APIException('GroupName already exists')
-
     """update  """
     instance_group_table.update_item(
         Key={'id': id},
-        UpdateExpression='SET #groupName = :g, #instanceSet=:st, #updatedDt= :uDt',
+        UpdateExpression=
+        'SET #accountId=:acctId,#region=:region,#groupName = :g, #instanceSet=:st, #updatedDt= :uDt',
         ExpressionAttributeNames={
+            '#accountId': 'accountId',
+            '#region': 'region',
             '#groupName': 'groupName',
             '#instanceSet': 'instanceSet',
             '#updatedDt': 'updatedDt',
-
         },
         ExpressionAttributeValues={
+            ':acctId': accountId,
+            ':region': region,
             ':g': groupName,
             ':st': set(instanceSet),
             ':uDt': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-
-        }
-    )
+        })
 
 
 def enable_agent_status_regular_check():
-    response = event.describe_rule(
-        Name=event_rule_name
-    )
+    response = event.describe_rule(Name=event_rule_name)
     if 'State' in response:
         print(response['State'])
         if response['State'] == 'ENABLED':
             return
         else:
-            event.enable_rule(
-                Name=event_rule_name,
-            )
+            event.enable_rule(Name=event_rule_name, )
             logger.info("Enable the agent status regular check")
             return
     else:
@@ -226,13 +237,11 @@ def disable_agent_status_regular_check():
         ProjectionExpression="id, #status, instanceSet,createdDt ",
         ExpressionAttributeNames={
             '#status': 'status',
-        }
-    )
+        })
     if 'Items' not in response:
         raise APIException('Instance group table Not Found')
     if len(response['Items']) == 0:
-        logger.info("The count of instance group is 0, disable the event bridge.")
-        event.disable_rule(
-            Name=event_rule_name,
-        )
+        logger.info(
+            "The count of instance group is 0, disable the event bridge.")
+        event.disable_rule(Name=event_rule_name, )
     return

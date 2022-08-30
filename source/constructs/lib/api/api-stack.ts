@@ -13,20 +13,32 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
-import { Construct, CfnOutput, Duration, Aws, RemovalPolicy, CustomResource, Fn } from '@aws-cdk/core';
-import { ISubnet, IVpc } from "@aws-cdk/aws-ec2";
-import * as cognito from '@aws-cdk/aws-cognito';
-import * as appsync from '@aws-cdk/aws-appsync';
-import * as lambda from '@aws-cdk/aws-lambda';
+import {
+    Construct,
+} from 'constructs';
+import {
+    CfnOutput,
+    Duration,
+    Aws,
+    RemovalPolicy,
+    CustomResource,
+    custom_resources as cr,
+    Fn,
+    aws_iam as iam,
+    aws_lambda as lambda,
+    aws_cognito as cognito,
+    aws_dynamodb as ddb,
+    SymlinkFollowMode,
+} from 'aws-cdk-lib';
+import * as appsync from "@aws-cdk/aws-appsync-alpha";
+import {
+    IVpc,
+} from 'aws-cdk-lib/aws-ec2';
 import * as path from 'path';
-import * as iam from '@aws-cdk/aws-iam';
-import * as ddb from '@aws-cdk/aws-dynamodb';
-import * as cr from "@aws-cdk/custom-resources";
-
 import { AuthType, addCfnNagSuppressRules } from "../main-stack";
 import { PipelineFlowStack } from "./pipeline-flow";
 import { ClusterFlowStack } from "./cluster-flow";
+import { CrossAccountStack } from "./cross-account-stack";
 
 
 export interface APIProps {
@@ -97,6 +109,12 @@ export interface APIProps {
      */
     readonly oidcClientId: string
 
+    /**
+     * A table to store cross account info.
+     *
+     * @default - None.
+     */
+    subAccountLinkTable: ddb.Table;
 }
 
 /**
@@ -111,6 +129,10 @@ export class APIStack extends Construct {
     readonly userPoolClientId: string
     // readonly userPoolApiClient?: cognito.UserPoolClient
     readonly clusterTable: ddb.Table;
+    readonly appPipelineTable: ddb.Table;
+    readonly eksClusterLogSourceTable: ddb.Table;
+    readonly centralAssumeRolePolicy: iam.ManagedPolicy
+    readonly asyncCrossAccountHandler: lambda.Function
     constructor(scope: Construct, id: string, props: APIProps) {
         super(scope, id);
 
@@ -209,7 +231,7 @@ export class APIStack extends Construct {
         const appSyncServiceLinkRoleFn = new lambda.Function(this, 'AppSyncServiceLinkRoleFn', {
             runtime: lambda.Runtime.PYTHON_3_9,
             code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda/custom-resource')),
-            handler: 'crete_service_linked_role.lambda_handler',
+            handler: 'create_service_linked_role.lambda_handler',
             timeout: Duration.seconds(60),
             memorySize: 128,
             description: 'Log Hub - Service Linked Role Create Handler'
@@ -238,6 +260,97 @@ export class APIStack extends Construct {
 
         appSyncServiceLinkRoleFnTrigger.node.addDependency(appSyncServiceLinkRoleFnProvider)
         this.graphqlApi.node.addDependency(appSyncServiceLinkRoleFnTrigger);
+
+        // Create a table to store logging pipeline info
+        const pipelineTable = new ddb.Table(this, 'PipelineTable', {
+            partitionKey: {
+                name: 'id',
+                type: ddb.AttributeType.STRING
+            },
+            billingMode: ddb.BillingMode.PROVISIONED,
+            removalPolicy: RemovalPolicy.DESTROY,
+            encryption: ddb.TableEncryption.DEFAULT,
+            pointInTimeRecovery: true,
+        })
+
+        const cfnPipelineTable = pipelineTable.node.defaultChild as ddb.CfnTable;
+        cfnPipelineTable.overrideLogicalId('PipelineTable')
+        addCfnNagSuppressRules(cfnPipelineTable, [
+            {
+                id: 'W73',
+                reason: 'This table has billing mode as PROVISIONED'
+            },
+            {
+                id: 'W74',
+                reason: 'This table is set to use DEFAULT encryption, the key is owned by DDB.'
+            },
+        ])
+
+        // Create a table to store ekscluster logging logSource info
+        this.eksClusterLogSourceTable = new ddb.Table(this, 'EKSClusterLogSourceTable', {
+            partitionKey: {
+                name: 'id',
+                type: ddb.AttributeType.STRING
+            },
+            billingMode: ddb.BillingMode.PROVISIONED,
+            removalPolicy: RemovalPolicy.DESTROY,
+            encryption: ddb.TableEncryption.DEFAULT,
+            pointInTimeRecovery: true,
+        })
+
+        const cfnEKSClusterLogSourceTable = this.eksClusterLogSourceTable.node.defaultChild as ddb.CfnTable;
+        cfnEKSClusterLogSourceTable.overrideLogicalId('EKSClusterLogSourceTable')
+        addCfnNagSuppressRules(cfnEKSClusterLogSourceTable, [
+            {
+                id: 'W73',
+                reason: 'This table has billing mode as PROVISIONED'
+            },
+            {
+                id: 'W74',
+                reason: 'This table is set to use DEFAULT encryption, the key is owned by DDB.'
+            },
+        ])
+
+
+        // Create the Cross Account API stack
+        const crossAccountStack = new CrossAccountStack(
+            this,
+            `CrossAccountStack`,
+            {
+                graphqlApi: this.graphqlApi,
+                subAccountLinkTable: props.subAccountLinkTable,
+            }
+        );
+        this.centralAssumeRolePolicy = crossAccountStack.centralAssumeRolePolicy
+        this.asyncCrossAccountHandler = crossAccountStack.asyncCrossAccountHandler
+
+        // Create a table to store logging appPipeline info
+        this.appPipelineTable = new ddb.Table(this, "AppPipelineTable", {
+            partitionKey: {
+                name: "id",
+                type: ddb.AttributeType.STRING,
+            },
+            billingMode: ddb.BillingMode.PROVISIONED,
+            removalPolicy: RemovalPolicy.DESTROY,
+            encryption: ddb.TableEncryption.DEFAULT,
+            pointInTimeRecovery: true,
+        });
+
+        const cfnAppPipelineTable = this.appPipelineTable.node
+            .defaultChild as ddb.CfnTable;
+        cfnAppPipelineTable.overrideLogicalId("AppPipelineTable");
+        addCfnNagSuppressRules(cfnAppPipelineTable, [
+            {
+                id: "W73",
+                reason: "This table has billing mode as PROVISIONED",
+            },
+            {
+                id: "W74",
+                reason:
+                    "This table is set to use DEFAULT encryption, the key is owned by DDB.",
+            },
+        ]);
+
 
         // Create a table to store imported domain
         this.clusterTable = new ddb.Table(this, 'ClusterTable', {
@@ -296,6 +409,9 @@ export class APIStack extends Construct {
             environment: {
                 PARTITION: Aws.PARTITION,
                 CLUSTER_TABLE: this.clusterTable.tableName,
+                APP_PIPELINE_TABLE_NAME: this.appPipelineTable.tableName,
+                SVC_PIPELINE_TABLE: pipelineTable.tableName,
+                EKS_CLUSTER_SOURCE_TABLE_NAME: this.eksClusterLogSourceTable.tableName,
                 STATE_MACHINE_ARN: clusterFlow.stateMachineArn,
                 SOLUTION_ID: solution_id,
                 SOLUTION_VERSION: process.env.VERSION ? process.env.VERSION : 'v1.0.0',
@@ -308,6 +424,10 @@ export class APIStack extends Construct {
 
         // Grant permissions to the cluster lambda
         this.clusterTable.grantReadWriteData(clusterHandler)
+        this.appPipelineTable.grantReadData(clusterHandler)
+        pipelineTable.grantReadData(clusterHandler)
+        this.eksClusterLogSourceTable.grantReadData(clusterHandler)
+
         const clusterHandlerPolicy = new iam.Policy(this, 'ClusterHandlerPolicy', {
             statements: [
                 new iam.PolicyStatement({
@@ -374,6 +494,7 @@ export class APIStack extends Construct {
                 }),
             ]
         })
+        this.centralAssumeRolePolicy.attachToRole(clusterHandler.role!)
 
         // Create a lambda to handle all cluster related APIs.
         clusterHandler.role!.attachInlinePolicy(clusterHandlerPolicy)
@@ -383,8 +504,6 @@ export class APIStack extends Construct {
                 reason: 'This policy needs to be able to have access to all resources'
             }
         ])
-
-
 
         // Add cluster lambda as a Datasource
         const clusterLambdaDS = this.graphqlApi.addLambdaDataSource('ClusterAPILambdaDS', clusterHandler, {
@@ -469,33 +588,10 @@ export class APIStack extends Construct {
             requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
             responseMappingTemplate: appsync.MappingTemplate.lambdaResult()
         })
-        
 
 
-        // Create a table to store logging pipeline info
-        const pipelineTable = new ddb.Table(this, 'PipelineTable', {
-            partitionKey: {
-                name: 'id',
-                type: ddb.AttributeType.STRING
-            },
-            billingMode: ddb.BillingMode.PROVISIONED,
-            removalPolicy: RemovalPolicy.DESTROY,
-            encryption: ddb.TableEncryption.DEFAULT,
-            pointInTimeRecovery: true,
-        })
 
-        const cfnPipelineTable = pipelineTable.node.defaultChild as ddb.CfnTable;
-        cfnPipelineTable.overrideLogicalId('PipelineTable')
-        addCfnNagSuppressRules(cfnPipelineTable, [
-            {
-                id: 'W73',
-                reason: 'This table has billing mode as PROVISIONED'
-            },
-            {
-                id: 'W74',
-                reason: 'This table is set to use DEFAULT encryption, the key is owned by DDB.'
-            },
-        ])
+
 
         // Create a Step Functions to orchestrate pipeline flow
         const pipeFlow = new PipelineFlowStack(this, 'PipelineFlowSM', {
@@ -505,7 +601,8 @@ export class APIStack extends Construct {
 
         // Create a lambda to handle all pipeline related APIs.
         const pipelineHandler = new lambda.Function(this, 'PipelineHandler', {
-            code: lambda.AssetCode.fromAsset(path.join(__dirname, '../../lambda/api/pipeline')),
+            code: lambda.AssetCode.fromAsset(path.join(__dirname, '../../lambda/api/pipeline'),
+                { followSymlinks: SymlinkFollowMode.ALWAYS }),
             runtime: lambda.Runtime.PYTHON_3_9,
             handler: 'lambda_function.lambda_handler',
             timeout: Duration.seconds(60),
@@ -515,12 +612,14 @@ export class APIStack extends Construct {
                 PIPELINE_TABLE: pipelineTable.tableName,
                 SOLUTION_ID: solution_id,
                 SOLUTION_VERSION: process.env.VERSION ? process.env.VERSION : 'v1.0.0',
+                SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
             },
             description: 'Log Hub - Pipeline APIs Resolver',
         })
 
         // Grant permissions to the pipeline lambda
         pipelineTable.grantReadWriteData(pipelineHandler)
+        props.subAccountLinkTable.grantReadData(pipelineHandler)
         pipelineHandler.addToRolePolicy(new iam.PolicyStatement({
             effect: iam.Effect.ALLOW,
             resources: [pipeFlow.stateMachineArn],
@@ -528,6 +627,7 @@ export class APIStack extends Construct {
                 'states:StartExecution'
             ]
         }))
+        this.centralAssumeRolePolicy.attachToRole(pipelineHandler.role!)
 
         // Add pipeline table as a Datasource
         const pipeDynamoDS = this.graphqlApi.addDynamoDbDataSource('PipelineDynamoDS', pipelineTable, {
@@ -554,6 +654,12 @@ export class APIStack extends Construct {
             responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultItem()
         })
 
+        pipeLambdaDS.createResolver({
+            typeName: 'Query',
+            fieldName: 'checkServiceExisting',
+            requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+            responseMappingTemplate: appsync.MappingTemplate.lambdaResult()
+        })
 
         pipeLambdaDS.createResolver({
             typeName: 'Mutation',
@@ -571,7 +677,9 @@ export class APIStack extends Construct {
 
         // Create a lambda to handle all AWS resource related APIs.
         const resourceHandler = new lambda.Function(this, 'ResourceHandler', {
-            code: lambda.AssetCode.fromAsset(path.join(__dirname, '../../lambda/api/resource')),
+            code: lambda.AssetCode.fromAsset(path.join(__dirname, '../../lambda/api/resource'),
+                { followSymlinks: SymlinkFollowMode.ALWAYS },
+            ),
             runtime: lambda.Runtime.PYTHON_3_9,
             handler: 'lambda_function.lambda_handler',
             timeout: Duration.seconds(60),
@@ -580,13 +688,29 @@ export class APIStack extends Construct {
                 DEFAULT_LOGGING_BUCKET: props.defaultLoggingBucket,
                 SOLUTION_ID: solution_id,
                 SOLUTION_VERSION: process.env.VERSION ? process.env.VERSION : 'v1.0.0',
+                SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
             },
             description: 'Log Hub - Resource APIs Resolver',
         })
+        props.subAccountLinkTable.grantReadData(resourceHandler)
 
         // Grant permissions to the resourceHandler lambda
         const resourceHandlerPolicy = new iam.Policy(this, 'ResourceHandlerPolicy', {
             statements: [
+                new iam.PolicyStatement({
+                    effect: iam.Effect.ALLOW,
+                    resources: ['*'],
+                    actions: [
+                        'iam:GetRole',
+                        'iam:PassRole',
+                        'iam:CreateRole',
+                        'iam:PutRolePolicy',
+                        'iam:CreateServiceLinkedRole',
+
+                        'firehose:CreateDeliveryStream',
+                        'firehose:DescribeDeliveryStream',
+                    ]
+                }),
                 new iam.PolicyStatement({
                     effect: iam.Effect.ALLOW,
                     resources: ['*'],
@@ -605,6 +729,8 @@ export class APIStack extends Construct {
                         's3:PutAccessPointPolicyForObjectLambda',
                         's3:PutBucketPolicy',
                         's3:PutMultiRegionAccessPointPolicy',
+                        's3:PutBucketAcl',
+                        's3:PutBucketOwnershipControls',
                         's3:GetAccessPointPolicy',
                         's3:GetAccessPointPolicyForObjectLambda',
                         's3:GetAccessPointPolicyStatus',
@@ -620,6 +746,8 @@ export class APIStack extends Construct {
                     effect: iam.Effect.ALLOW,
                     resources: ['*'],
                     actions: [
+                        'ec2:CreateFlowLogs',
+                        'ec2:DescribeFlowLogs',
                         'ec2:DescribeVpcs',
                         'ec2:DescribeSubnets',
                         'ec2:DescribeSecurityGroups',
@@ -682,6 +810,14 @@ export class APIStack extends Construct {
                         'wafv2:GetLoggingConfiguration',
                         'wafv2:ListWebACLs',
                         'wafv2:PutLoggingConfiguration',
+                        'wafv2:GetWebACL',
+                    ]
+                }),
+                new iam.PolicyStatement({
+                    effect: iam.Effect.ALLOW,
+                    resources: ['*'],
+                    actions: [
+                        'config:DescribeDeliveryChannels'
                     ]
                 }),
                 new iam.PolicyStatement({
@@ -699,6 +835,7 @@ export class APIStack extends Construct {
         })
 
         resourceHandler.role!.attachInlinePolicy(resourceHandlerPolicy)
+        this.centralAssumeRolePolicy.attachToRole(resourceHandler.role!)
         addCfnNagSuppressRules(resourceHandlerPolicy.node.defaultChild as iam.CfnPolicy, [
             {
                 id: 'W12',

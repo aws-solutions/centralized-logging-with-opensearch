@@ -100,7 +100,17 @@ const CreateLogConfig: React.FC = () => {
     }
 
     const createLogConfigParam = curConfig;
-    createLogConfigParam.logPath = curConfig.logPath?.trim();
+    if (
+      curConfig.logType === LogType.MultiLineText ||
+      curConfig.logType === LogType.SingleLineText
+    ) {
+      createLogConfigParam.regularExpression = curConfig.regularExpression
+        ?.trim()
+        .replace(/[\n\t\r]/g, "");
+      createLogConfigParam.userLogFormat = curConfig.userLogFormat
+        ?.trim()
+        .replace(/[\n\t\r]/g, "");
+    }
 
     try {
       setLoadingCreate(true);
@@ -143,14 +153,6 @@ const CreateLogConfig: React.FC = () => {
                   setShowNameRequiredError(false);
                   setCurConfig((prev: ExLogConf) => {
                     return { ...prev, confName: name };
-                  });
-                }}
-                changeLogConfPath={(path: string) => {
-                  setCurConfig((prev: ExLogConf) => {
-                    return {
-                      ...prev,
-                      logPath: path,
-                    };
                   });
                 }}
                 changeLogType={(type: LogType) => {

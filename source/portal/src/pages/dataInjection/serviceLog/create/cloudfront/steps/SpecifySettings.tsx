@@ -36,19 +36,21 @@ import { AmplifyConfigType } from "types";
 import { AppStateProps, InfoBarTypes } from "reducer/appReducer";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
+import CrossAccountSelect from "pages/comps/account/CrossAccountSelect";
 // import Select from "components/Select";
 
 interface SpecifySettingsProps {
   cloudFrontTask: CloudFrontTaskProps;
   changeTaskType: (type: string) => void;
   changeS3Bucket: (bucket: string) => void;
-  changeCloudFrontObj: (s3: OptionType) => void;
+  changeCloudFrontObj: (s3: OptionType | null) => void;
   changeLogPath: (logPath: string) => void;
   manualChangeBucket: (bucket: string) => void;
   autoS3EmptyError: boolean;
   manualS3EmptyError: boolean;
   setNextStepDisableStatus: (status: boolean) => void;
   setISChanging: (changing: boolean) => void;
+  changeCrossAccount: (id: string) => void;
 }
 
 const SpecifySettings: React.FC<SpecifySettingsProps> = (
@@ -65,6 +67,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     manualS3EmptyError,
     setNextStepDisableStatus,
     setISChanging,
+    changeCrossAccount,
   } = props;
 
   const amplifyConfig: AmplifyConfigType = useSelector(
@@ -72,9 +75,9 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
   );
   const { t } = useTranslation();
 
-  const [cloudFront, setCloudFront] = useState(
-    cloudFrontTask.params.cloudFrontObj
-  );
+  // const [cloudFront, setCloudFront] = useState(
+  //   cloudFrontTask.params.cloudFrontObj
+  // );
 
   const [loadingCloudFrontList, setLoadingCloudFrontList] = useState(false);
   const [loadingBucket, setLoadingBucket] = useState(false);
@@ -87,12 +90,14 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
   // const [successText, setSuccessText] = useState("");
   const [showSuccessText, setShowSuccessText] = useState(false);
   const [previewS3Path, setPreviewS3Path] = useState("");
+  const [disabeCloudFront, setDisableCloudFront] = useState(false);
 
-  const getCloudFrontList = async () => {
+  const getCloudFrontList = async (accountId: string) => {
     try {
       setLoadingCloudFrontList(true);
       const resData: any = await appSyncRequestQuery(listResources, {
         type: ResourceType.Distribution,
+        accountId: accountId,
       });
       console.info("getCloudFrontList:", resData.data);
       const dataList: Resource[] = resData.data.listResources;
@@ -118,6 +123,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     const resData: any = await appSyncRequestQuery(getResourceLoggingBucket, {
       type: ResourceType.Distribution,
       resourceName: cloudFront,
+      accountId: cloudFrontTask.logSourceAccountId,
     });
     console.info("getBucketPrefix:", resData.data);
     const logginBucket: LoggingBucket = resData?.data?.getResourceLoggingBucket;
@@ -136,20 +142,22 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
   };
 
   useEffect(() => {
-    console.info("cloudFront:", cloudFront);
     setShowSuccessText(false);
     setShowInfoText(false);
     setNextStepDisableStatus(false);
-    if (cloudFront && cloudFront.value) {
-      getBucketPrefix(cloudFront.value);
+    if (
+      cloudFrontTask.params.cloudFrontObj &&
+      cloudFrontTask.params.cloudFrontObj.value
+    ) {
+      getBucketPrefix(cloudFrontTask.params.cloudFrontObj.value);
     }
-  }, [cloudFront]);
+  }, [cloudFrontTask.params.cloudFrontObj]);
 
   useEffect(() => {
     if (cloudFrontTask.params.taskType === CreateLogMethod.Automatic) {
-      getCloudFrontList();
+      getCloudFrontList(cloudFrontTask.logSourceAccountId);
     }
-  }, []);
+  }, [cloudFrontTask.logSourceAccountId]);
 
   return (
     <div>
@@ -166,11 +174,11 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                   value={cloudFrontTask.params.taskType}
                   onChange={(event) => {
                     changeTaskType(event.target.value);
-                    setCloudFront(null);
+                    changeCloudFrontObj(null);
                     // setCreationMethod(event.target.value);
                     if (event.target.value === CreateLogMethod.Automatic) {
                       changeLogPath("");
-                      getCloudFrontList();
+                      // getCloudFrontList();
                     }
                   }}
                   items={[
@@ -193,6 +201,16 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
           <HeaderPanel title={t("servicelog:create.service.cloudfront")}>
             <div>
               <Alert content={t("servicelog:cloudfront.alert")} />
+              <CrossAccountSelect
+                accountId={cloudFrontTask.logSourceAccountId}
+                changeAccount={(id) => {
+                  changeCrossAccount(id);
+                  changeCloudFrontObj(null);
+                }}
+                loadingAccount={(loading) => {
+                  setDisableCloudFront(loading);
+                }}
+              />
               {cloudFrontTask.params.taskType === CreateLogMethod.Automatic && (
                 <div className="pb-50">
                   <FormItem
@@ -228,19 +246,23 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                     }
                   >
                     <AutoComplete
-                      disabled={loadingBucket}
+                      outerLoading
+                      disabled={
+                        loadingCloudFrontList ||
+                        loadingBucket ||
+                        disabeCloudFront
+                      }
                       className="m-w-75p"
                       placeholder={t(
                         "servicelog:cloudfront.selectDistribution"
                       )}
-                      loading={loadingCloudFrontList}
+                      loading={loadingCloudFrontList || loadingBucket}
                       optionList={cloudFrontOptionList}
-                      value={cloudFront}
+                      value={cloudFrontTask.params.cloudFrontObj}
                       onChange={(
                         event: React.ChangeEvent<HTMLInputElement>,
                         data
                       ) => {
-                        setCloudFront(data);
                         changeCloudFrontObj(data);
                       }}
                     />

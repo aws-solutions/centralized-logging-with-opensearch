@@ -8,7 +8,10 @@
 
 ## 前提条件
 
-VPC 内至少有一个 AOS 域。如果您还没有 AOS 域，您可以在 VPC 中创建一个 AOS 域。请参阅 [在 VPC 中启动您的 Amazon OpenSearch 服务域][vpc]。
+1. VPC 内至少有一个 AOS 域。如果您还没有 AOS 域，您可以在 VPC 中创建一个 AOS 域。请参阅 [在 VPC 中启动您的 Amazon OpenSearch 服务域][vpc]。
+2. Log Hub 仅支持启用了 [细粒度访问控制](https://docs.aws.amazon.com/opensearch-service/latest/developerguide/fgac.html) 的 AOS 域。
+在 security configuration（安全配置）中，您的 access policy （访问策略）应该和下图类似：
+    ![](../../images/domain/policy.png)
 
 ## 导入 AOS 域
 
@@ -59,7 +62,7 @@ VPC 内至少有一个 AOS 域。如果您还没有 AOS 域，您可以在 VPC �
 3. 选择子网，然后选择 **路由表** 选项卡。
 4. 选择子网关联的路由表，打开路由表配置页面。
 5. 选择 **路由表** 选项卡，然后选择 **编辑路由**。
-6. 添加一个路由`10.255.0.0/16`（Log Hub 的CIDR）指向您刚刚创建的对等连接。
+6. 添加一个路由`10.255.0.0/16`（Log Hub 的 CIDR，如果您是从现有的 VPC 中部署 Log Hub，请使用相应的 CIDR）指向您刚刚创建的对等连接。
 7. 返回 Log Hub 控制台。
 8. 单击 **OpenSearch 集群网络** 部分下的 VPC ID。
 9. 在 VPC 控制台上选择 VPC ID 并找到它的 **IPv4 CIDR**。
@@ -70,7 +73,7 @@ VPC 内至少有一个 AOS 域。如果您还没有 AOS 域，您可以在 VPC �
 
 1. 在 Log Hub 控制台的 **OpenSearch 集群网络** 部分下，选择 **安全组** 中的安全组 ID 以在新选项卡中打开安全组。
 2. 在控制台上，选择**编辑入站规则**。
-3. 添加规则 "ALLOW TCP/443 from 10.255.0.0/16"。
+3. 添加规则 "ALLOW TCP/443 from 10.255.0.0/16"（Log Hub 的 CIDR，如果您是从现有的 VPC 中部署 Log Hub，请使用相应的 CIDR）
    ![](../../images/domain/add-sg-rules.png)
 4. 选择**保存规则**。
 

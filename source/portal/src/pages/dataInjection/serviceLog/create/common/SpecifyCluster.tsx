@@ -23,7 +23,7 @@ import ExtLink from "components/ExtLink";
 import { appSyncRequestQuery } from "assets/js/request";
 import { getDomainDetails, listImportedDomains } from "graphql/queries";
 import { SelectItem } from "components/Select/select";
-import { DomainDetails, ImportedDomain, ServiceType } from "API";
+import { DomainDetails, ImportedDomain } from "API";
 import Select from "components/Select";
 import { S3TaskProps } from "../s3/CreateS3";
 import { CloudFrontTaskProps } from "../cloudfront/CreateCloudFront";
@@ -44,6 +44,8 @@ import {
 } from "assets/js/const";
 import { InfoBarTypes } from "reducer/appReducer";
 import { useTranslation } from "react-i18next";
+import { VpcLogTaskProps } from "../vpc/CreateVPC";
+import { ConfigTaskProps } from "../config/CreateConfig";
 interface SpecifyOpenSearchClusterProps {
   taskType: ServiceLogType;
   pipelineTask:
@@ -53,7 +55,9 @@ interface SpecifyOpenSearchClusterProps {
     | LambdaTaskProps
     | RDSTaskProps
     | ELBTaskProps
-    | WAFTaskProps;
+    | WAFTaskProps
+    | VpcLogTaskProps
+    | ConfigTaskProps;
   changeBucketIndex: (prefix: string) => void;
   changeOpenSearchCluster: (domain: DomainDetails | undefined) => void;
   changeSampleDashboard: (yesNo: string) => void;
@@ -83,6 +87,8 @@ export const checkOpenSearchInput = (
     | RDSTaskProps
     | ELBTaskProps
     | WAFTaskProps
+    | VpcLogTaskProps
+    | ConfigTaskProps
 ) => {
   const validRes: AOSInputValidRes = {
     shardsInvalidError: false,
@@ -240,38 +246,34 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
                 }}
               />
             </FormItem>
-            {pipelineTask.type !== ServiceType.Lambda ? (
-              <FormItem
-                infoType={InfoBarTypes.SAMPLE_DASHBAORD}
-                optionTitle={t("servicelog:cluster.sampleDashboard")}
-                optionDesc={t("servicelog:cluster.sampleDashboardDesc")}
-              >
-                {Object.values(YesNo).map((key) => {
-                  return (
-                    <div key={key}>
-                      <label>
-                        <input
-                          value={pipelineTask.params.createDashboard}
-                          onChange={(event) => {
-                            console.info(event);
-                          }}
-                          onClick={() => {
-                            console.info(key);
-                            changeSampleDashboard(key);
-                          }}
-                          checked={pipelineTask.params.createDashboard === key}
-                          name="sampleDashboard"
-                          type="radio"
-                        />{" "}
-                        {t(key.toLocaleLowerCase())}
-                      </label>
-                    </div>
-                  );
-                })}
-              </FormItem>
-            ) : (
-              ""
-            )}
+            <FormItem
+              infoType={InfoBarTypes.SAMPLE_DASHBAORD}
+              optionTitle={t("servicelog:cluster.sampleDashboard")}
+              optionDesc={t("servicelog:cluster.sampleDashboardDesc")}
+            >
+              {Object.values(YesNo).map((key) => {
+                return (
+                  <div key={key}>
+                    <label>
+                      <input
+                        value={pipelineTask.params.createDashboard}
+                        onChange={(event) => {
+                          console.info(event);
+                        }}
+                        onClick={() => {
+                          console.info(key);
+                          changeSampleDashboard(key);
+                        }}
+                        checked={pipelineTask.params.createDashboard === key}
+                        name="sampleDashboard"
+                        type="radio"
+                      />{" "}
+                      {t(key.toLocaleLowerCase())}
+                    </label>
+                  </div>
+                );
+              })}
+            </FormItem>
 
             <div>
               <div

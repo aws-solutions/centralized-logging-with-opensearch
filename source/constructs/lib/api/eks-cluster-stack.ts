@@ -13,14 +13,20 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
-import { Construct, Duration, RemovalPolicy, Aws } from '@aws-cdk/core';
-import * as appsync from '@aws-cdk/aws-appsync';
-import * as lambda from '@aws-cdk/aws-lambda';
-import * as path from "path";
-import * as ddb from '@aws-cdk/aws-dynamodb';
-import * as iam from "@aws-cdk/aws-iam";
-import { PythonFunction } from "@aws-cdk/aws-lambda-python";
+import {
+    Construct,
+} from 'constructs';
+import {
+    Aws,
+    Duration,
+    RemovalPolicy,
+    aws_dynamodb as ddb,
+    aws_iam as iam,
+    aws_lambda as lambda,
+    SymlinkFollowMode,
+} from 'aws-cdk-lib';
+import * as appsync from "@aws-cdk/aws-appsync-alpha";
+import * as path from 'path';
 import { addCfnNagSuppressRules } from "../main-stack";
 
 export interface EksStackProps {
@@ -33,15 +39,17 @@ export interface EksStackProps {
     readonly graphqlApi: appsync.GraphqlApi
     readonly eksClusterLogSourceTable: ddb.Table
     readonly appLogIngestionTable: ddb.Table
-    readonly aosDomainTable:ddb.Table
+    readonly aosDomainTable: ddb.Table
+    readonly subAccountLinkTable: ddb.Table
+    readonly centralAssumeRolePolicy: iam.ManagedPolicy;
 
 }
 
 export class EKSClusterStack extends Construct {
-    
+
     readonly logAgentEKSDeploymentKindTable: ddb.Table;
 
-    
+
     constructor(scope: Construct, id: string, props: EksStackProps) {
         super(scope, id);
 
@@ -74,6 +82,7 @@ export class EKSClusterStack extends Construct {
         // Create a lambda layer with required python packages.
         const eksLayer = new lambda.LayerVersion(this, 'LogHubEKSClusterLayer', {
             code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda/api/eks_cluster'), {
+                followSymlinks: SymlinkFollowMode.ALWAYS,
                 bundling: {
                     image: lambda.Runtime.PYTHON_3_9.bundlingImage,
                     command: [
@@ -83,6 +92,7 @@ export class EKSClusterStack extends Construct {
                 },
             }),
             compatibleRuntimes: [lambda.Runtime.PYTHON_3_9],
+            //compatibleArchitectures: [lambda.Architecture.X86_64, lambda.Architecture.ARM_64],
             description: 'Log Hub Default Lambda layer for EKS Cluster',
         });
 
@@ -91,31 +101,34 @@ export class EKSClusterStack extends Construct {
             this,
             "EKSClusterLogSourceHandler",
             {
-              code: lambda.AssetCode.fromAsset(
-                path.join(__dirname, "../../lambda/api/eks_cluster")
-              ),
-              layers: [eksLayer],
-              runtime: lambda.Runtime.PYTHON_3_9,
-              handler: "lambda_function.lambda_handler",
-              memorySize: 1024,
-              environment: {
-                  EKS_CLUSTER_LOG_SOURCE_TABLE: props.eksClusterLogSourceTable.tableName,
-                  LOG_AGENT_EKS_DEPLOYMENT_KIND_TABLE:this.logAgentEKSDeploymentKindTable.tableName,                    
-                  AOS_DOMAIN_TABLE:props.aosDomainTable.tableName,
-                  APP_LOG_INGESTION_TABLE:props.appLogIngestionTable.tableName,
-                  EKS_OIDC_PROVIDER_ARN_PREFIX:`arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:oidc-provider/`,
-                  EKS_OIDC_CLIENT_ID:'sts.amazonaws.com',
-                  SOLUTION_ID: solution_id,
-                  SOLUTION_VERSION: process.env.VERSION ? process.env.VERSION : 'v1.0.0',
-              },
-              timeout: Duration.seconds(60),
-              description: 'Log Hub - EKS Cluster APIs Resolver',
+                code: lambda.AssetCode.fromAsset(
+                    path.join(__dirname, "../../lambda/api/eks_cluster"),
+                    { followSymlinks: SymlinkFollowMode.ALWAYS },
+                ),
+                layers: [eksLayer],
+                runtime: lambda.Runtime.PYTHON_3_9,
+                handler: "lambda_function.lambda_handler",
+                memorySize: 1024,
+                environment: {
+                    EKS_CLUSTER_LOG_SOURCE_TABLE: props.eksClusterLogSourceTable.tableName,
+                    LOG_AGENT_EKS_DEPLOYMENT_KIND_TABLE: this.logAgentEKSDeploymentKindTable.tableName,
+                    AOS_DOMAIN_TABLE: props.aosDomainTable.tableName,
+                    APP_LOG_INGESTION_TABLE: props.appLogIngestionTable.tableName,
+                    SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
+                    EKS_OIDC_PROVIDER_ARN_PREFIX: `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:oidc-provider/`,
+                    EKS_OIDC_CLIENT_ID: 'sts.amazonaws.com',
+                    SOLUTION_ID: solution_id,
+                    SOLUTION_VERSION: process.env.VERSION ? process.env.VERSION : 'v1.0.0',
+                },
+                timeout: Duration.seconds(60),
+                description: 'Log Hub - EKS Cluster APIs Resolver',
+                //architecture: lambda.Architecture.ARM_64,
             }
-          );
+        );
 
         // add eks policy documents    
         eksClusterLogSourceHandler.addToRolePolicy(new iam.PolicyStatement({
-            sid:"eks",
+            sid: "eks",
             actions: [
                 "eks:DescribeCluster",
                 "eks:ListIdentityProviderConfigs",
@@ -127,9 +140,9 @@ export class EKSClusterStack extends Construct {
                 `arn:${Aws.PARTITION}:eks:*:${Aws.ACCOUNT_ID}:cluster/*`,
             ]
         }))
-        
+
         eksClusterLogSourceHandler.addToRolePolicy(new iam.PolicyStatement({
-            sid:"iam",
+            sid: "iam",
             actions: [
                 "iam:GetServerCertificate",
                 "iam:DetachRolePolicy",
@@ -140,7 +153,7 @@ export class EKSClusterStack extends Construct {
                 "iam:TagPolicy",
                 "iam:GetOpenIDConnectProvider",
                 "iam:TagOpenIDConnectProvider",
-                "iam:CreateOpenIDConnectProvider"              
+                "iam:CreateOpenIDConnectProvider"
             ],
             effect: iam.Effect.ALLOW,
             resources: [
@@ -151,18 +164,20 @@ export class EKSClusterStack extends Construct {
             ]
         }))
 
-        
+
         // Grant permissions to the eksClusterLogSource lambda
         props.eksClusterLogSourceTable.grantReadWriteData(eksClusterLogSourceHandler)
         this.logAgentEKSDeploymentKindTable.grantReadWriteData(eksClusterLogSourceHandler)
         props.aosDomainTable.grantReadData(eksClusterLogSourceHandler)
         props.appLogIngestionTable.grantReadData(eksClusterLogSourceHandler)
-        
+        props.subAccountLinkTable.grantReadData(eksClusterLogSourceHandler)
+        props.centralAssumeRolePolicy.attachToRole(eksClusterLogSourceHandler.role!)
+
         // Add eksClusterLogSource lambda as a Datasource
         const eksClusterLogSourceLambdaDS = props.graphqlApi.addLambdaDataSource('EKSClusterLogSourceLambdaDS', eksClusterLogSourceHandler, {
             description: 'Lambda Resolver Datasource'
         });
-        
+
         eksClusterLogSourceLambdaDS.createResolver({
             typeName: 'Query',
             fieldName: 'getEKSClusterDetails',

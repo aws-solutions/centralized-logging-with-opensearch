@@ -33,6 +33,7 @@ import Status from "components/Status/Status";
 import { deleteAppPipeline } from "graphql/mutations";
 import { formatLocalTime } from "assets/js/utils";
 import { useTranslation } from "react-i18next";
+import { AUTO_REFRESH_INT } from "assets/js/const";
 
 const PAGE_SIZE = 10;
 
@@ -59,11 +60,13 @@ const ApplicationLog: React.FC = () => {
   const [curPage, setCurPage] = useState(1);
 
   // Get Application Log List
-  const getApplicationLogList = async () => {
-    setSelectedApplicationLog([]);
+  const getApplicationLogList = async (hideLoading = false) => {
     try {
-      setLoadingData(true);
-      setApplicationLogs([]);
+      if (!hideLoading) {
+        setSelectedApplicationLog([]);
+        setApplicationLogs([]);
+        setLoadingData(true);
+      }
       const resData: any = await appSyncRequestQuery(listAppPipelines, {
         page: curPage,
         count: PAGE_SIZE,
@@ -100,6 +103,7 @@ const ApplicationLog: React.FC = () => {
       setLoadingDelete(false);
       setOpenDeleteModel(false);
       getApplicationLogList();
+      setSelectedApplicationLog([]);
     } catch (error) {
       setLoadingDelete(false);
       setOpenDeleteModel(false);
@@ -141,6 +145,14 @@ const ApplicationLog: React.FC = () => {
     }
   }, [selectedApplicationLog]);
 
+  // Auto Refresh List
+  useEffect(() => {
+    const refreshInterval = setInterval(() => {
+      getApplicationLogList(true);
+    }, AUTO_REFRESH_INT);
+    return () => clearInterval(refreshInterval);
+  }, [curPage]);
+
   return (
     <div className="lh-main-content">
       <SideMenu />
@@ -151,6 +163,7 @@ const ApplicationLog: React.FC = () => {
             <div className="table-data">
               <TablePanel
                 title={t("applog:title")}
+                defaultSelectItem={selectedApplicationLog}
                 changeSelected={(item) => {
                   console.info("item:", item);
                   setSelectedApplicationLog(item);

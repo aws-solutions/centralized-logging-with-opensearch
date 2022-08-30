@@ -1,7 +1,6 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-
 import json
 import logging
 import os
@@ -12,6 +11,7 @@ from datetime import datetime
 import boto3
 from botocore import config
 
+from util.aws_svc_mgr import SvcManager
 from util.log_ingestion_svc import LogIngestionSvc
 from util.sys_enum_type import SOURCETYPE
 from util.exception import APIException
@@ -26,15 +26,19 @@ user_agent_config = {
 }
 default_config = config.Config(**user_agent_config)
 
+sts = boto3.client("sts", config=default_config)
+account_id = sts.get_caller_identity()["Account"]
+region = os.environ.get("AWS_REGION")
+
 awslambda = boto3.client('lambda', config=default_config)
 sfn = boto3.client('stepfunctions', config=default_config)
 iam = boto3.client('iam', config=default_config)
 async_ec2_child_lambda_arn = os.environ.get('ASYNC_EC2_CHILD_LAMBDA_ARN')
 async_s3_child_lambda_arn = os.environ.get('ASYNC_S3_CHILD_LAMBDA_ARN')
-failedLogBucket = os.environ.get('CONFIG_FILE_S3_BUCKET_NAME')
-logAgentVpcId = os.environ.get('LOG_AGENT_VPC_ID')
-logAgentSubnetIds = os.environ.get('LOG_AGENT_SUBNETS_IDS')
-stateMachineArn = os.environ.get('STATE_MACHINE_ARN')
+failed_log_bucket = os.environ.get('CONFIG_FILE_S3_BUCKET_NAME')
+log_agent_vpc_id = os.environ.get('LOG_AGENT_VPC_ID')
+log_agent_subnet_ids = os.environ.get('LOG_AGENT_SUBNETS_IDS')
+state_machine_arn = os.environ.get('STATE_MACHINE_ARN')
 default_cmk_arn = os.environ.get('DEFAULT_CMK_ARN')
 
 # Get DDB resource.
@@ -48,8 +52,10 @@ instance_group_table = dynamodb.Table(group_table_name)
 conf_table_name = os.environ.get('APP_LOG_CONFIG_TABLE_NAME')
 log_conf_table = dynamodb.Table(conf_table_name)
 app_pipeline_table = dynamodb.Table(os.environ.get('APP_PIPELINE_TABLE_NAME'))
-s3_log_source_table = dynamodb.Table(os.environ.get('S3_LOG_SOURCE_TABLE_NAME'))
-eks_cluster_log_source_table = dynamodb.Table(os.environ.get("EKS_CLUSTER_SOURCE_TABLE_NAME"))
+s3_log_source_table = dynamodb.Table(
+    os.environ.get('S3_LOG_SOURCE_TABLE_NAME'))
+eks_cluster_log_source_table = dynamodb.Table(
+    os.environ.get("EKS_CLUSTER_SOURCE_TABLE_NAME"))
 
 default_region = os.environ.get('AWS_REGION')
 
@@ -114,28 +120,32 @@ def create_app_log_ingestion(**args):
     # Asynchronous
     # ec2 as source
     if args['sourceType'] == SOURCETYPE.EC2.value:
-        log_ingestion_svc.remote_create_index_template(args['appPipelineId'], args['confId'],
-                                                       multiline_log_parser=current_conf.get('multilineLogParser'))
+        log_ingestion_svc.remote_create_index_template(
+            args['appPipelineId'],
+            args['confId'],
+            args['createDashboard'],
+            multiline_log_parser=current_conf.get('multilineLogParser'))
 
-        logger.info("Send the async job to child lambda for creating ec2 ingestion.")
-        async_resp = awslambda.invoke(
-            FunctionName=async_ec2_child_lambda_arn,
-            InvocationType="Event",
-            Payload=json.dumps(args)
-        )
+        logger.info(
+            "Send the async job to child lambda for creating ec2 ingestion.")
+        async_resp = awslambda.invoke(FunctionName=async_ec2_child_lambda_arn,
+                                      InvocationType="Event",
+                                      Payload=json.dumps(args))
         process_async_lambda_resp(async_resp)
     # s3 as source
     elif args['sourceType'] == SOURCETYPE.S3.value:
-        logger.info("Send the async job to child lambda for creating s3 ingestion.")
-        async_resp = awslambda.invoke(
-            FunctionName=async_s3_child_lambda_arn,
-            InvocationType="Event",
-            Payload=json.dumps(args)
-        )
+        logger.info(
+            "Send the async job to child lambda for creating s3 ingestion.")
+        async_resp = awslambda.invoke(FunctionName=async_s3_child_lambda_arn,
+                                      InvocationType="Event",
+                                      Payload=json.dumps(args))
         process_async_lambda_resp(async_resp)
 
-        log_ingestion_svc.remote_create_index_template(args['appPipelineId'], args['confId'],
-                                                       multiline_log_parser=current_conf.get('multilineLogParser'))
+        log_ingestion_svc.remote_create_index_template(
+            args['appPipelineId'],
+            args['confId'],
+            args['createDashboard'],
+            multiline_log_parser=current_conf.get('multilineLogParser'))
 
         create_s3_source_app_pipeline(**args)
     # EKS
@@ -162,8 +172,7 @@ def update_app_log_ingestion(id, status):
         ExpressionAttributeValues={
             ':s': status,
             ':uDt': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-        }
-    )
+        })
 
 
 def delete_app_log_ingestion(ids):
@@ -183,20 +192,16 @@ def delete_app_log_ingestion(ids):
     ec2_ids, s3_ids, eks_ids = separate_ingestion_ids_by_type(ids)
     if len(ec2_ids) > 0:
         args = {'action': "asyncDeleteAppLogIngestion", 'ids': ec2_ids}
-        async_resp = awslambda.invoke(
-            FunctionName=async_ec2_child_lambda_arn,
-            InvocationType="Event",
-            Payload=json.dumps(args)
-        )
+        async_resp = awslambda.invoke(FunctionName=async_ec2_child_lambda_arn,
+                                      InvocationType="Event",
+                                      Payload=json.dumps(args))
         process_async_lambda_resp(async_resp)
 
     if len(s3_ids) > 0:
         args = {'action': "asyncDeleteAppLogIngestion", 'ids': s3_ids}
-        async_resp = awslambda.invoke(
-            FunctionName=async_s3_child_lambda_arn,
-            InvocationType="Event",
-            Payload=json.dumps(args)
-        )
+        async_resp = awslambda.invoke(FunctionName=async_s3_child_lambda_arn,
+                                      InvocationType="Event",
+                                      Payload=json.dumps(args))
         process_async_lambda_resp(async_resp)
 
         for ingestion_id in s3_ids:
@@ -218,29 +223,82 @@ def create_s3_source_app_pipeline(**args):
         id = args['source_ingestion_map'].get(source_id)
         stack_name = create_stack_name(id)
 
-        app_pipe_table_resp = app_pipeline_table.get_item(Key={'id': args['appPipelineId']})
+        app_pipe_table_resp = app_pipeline_table.get_item(
+            Key={'id': args['appPipelineId']})
         app_pipe_table_item = app_pipe_table_resp['Item']
 
-        s3_log_source_table_resp = s3_log_source_table.get_item(Key={'id': source_id})
+        s3_log_source_table_resp = s3_log_source_table.get_item(
+            Key={'id': source_id})
         s3_log_source_table_item = s3_log_source_table_resp['Item']
+
+        kds_role_arn = app_pipe_table_item.get('kdsRoleArn', '')
+
+        deploy_account_id = s3_log_source_table_item.get("accountId") or account_id
+        deploy_region = s3_log_source_table_item.get("region") or region
+
+        # Handle cross account scenario
+        if deploy_account_id != account_id:
+            svcMgr = SvcManager()
+            link_account = svcMgr.get_link_account(
+                sub_account_id=deploy_account_id, region=deploy_region)
+
+            _failed_log_bucket = link_account.get("subAccountBucketName")
+            _log_agent_vpc_id = link_account.get("subAccountVpcId")
+            _log_agent_subnet_ids = link_account.get("subAccountPublicSubnetIds")
+            _default_cmk_arn = link_account.get("subAccountKMSKeyArn")
+        else:
+            _failed_log_bucket = failed_log_bucket
+            _log_agent_vpc_id = log_agent_vpc_id
+            _log_agent_subnet_ids = log_agent_subnet_ids
+            _default_cmk_arn = default_cmk_arn
 
         sfn_args = {
             'stackName': stack_name,
             'pattern': 'S3toKDSStack',
+            'deployAccountId': deploy_account_id,
+            'deployRegion': deploy_region,
             'parameters': [
-                {'ParameterKey': 'agentSourceIdParam', 'ParameterValue': str(source_id)},
-                {'ParameterKey': 'defaultCmkArnParam', 'ParameterValue': str(default_cmk_arn)},
+                {
+                    'ParameterKey': 'agentSourceIdParam',
+                    'ParameterValue': str(source_id)
+                },
+                {
+                    'ParameterKey': 'defaultCmkArnParam',
+                    'ParameterValue': str(_default_cmk_arn)
+                },
                 # Kinesis
-                {'ParameterKey': 'kinesisStreamNameParam', 'ParameterValue': str(
-                    app_pipe_table_item['kdsParas']['streamName'])},
+                {
+                    'ParameterKey':
+                    'kinesisStreamNameParam',
+                    'ParameterValue':
+                    str(app_pipe_table_item['kdsParas']['streamName'])
+                },
+                {
+                    'ParameterKey': 'kdsRoleARN',
+                    'ParameterValue': str(kds_role_arn)
+                },
                 # S3
-                {'ParameterKey': 'failedLogBucketParam', 'ParameterValue': str(failedLogBucket)},
-                {'ParameterKey': 'sourceLogBucketParam', 'ParameterValue': str(s3_log_source_table_item['s3Name'])},
-                {'ParameterKey': 'sourceLogBucketPrefixParam',
-                 'ParameterValue': str(s3_log_source_table_item['s3Prefix'])},
+                {
+                    'ParameterKey': 'failedLogBucketParam',
+                    'ParameterValue': str(_failed_log_bucket)
+                },
+                {
+                    'ParameterKey': 'sourceLogBucketParam',
+                    'ParameterValue': str(s3_log_source_table_item['s3Name'])
+                },
+                {
+                    'ParameterKey': 'sourceLogBucketPrefixParam',
+                    'ParameterValue': str(s3_log_source_table_item['s3Prefix'])
+                },
                 # VPC
-                {'ParameterKey': 'logAgentVpcIdParam', 'ParameterValue': str(logAgentVpcId)},
-                {'ParameterKey': 'logAgentSubnetIdsParam', 'ParameterValue': str(logAgentSubnetIds)},
+                {
+                    'ParameterKey': 'logAgentVpcIdParam',
+                    'ParameterValue': str(_log_agent_vpc_id)
+                },
+                {
+                    'ParameterKey': 'logAgentSubnetIdsParam',
+                    'ParameterValue': str(_log_agent_subnet_ids)
+                },
             ]
         }
 
@@ -257,8 +315,20 @@ def delete_s3_source_app_pipeline(ingestion_id):
         raise APIException('S3 Source AppPipeline Not Found')
 
     stack_id = resp['Item']['stackId']
+    source_id = resp['Item']['sourceId']
+    s3_log_source_table_resp = s3_log_source_table.get_item(
+        Key={'id': source_id})
+    s3_log_source_table_item = s3_log_source_table_resp['Item']
+
+    deploy_account_id = s3_log_source_table_item.get("accountId", account_id)
+    deploy_region = s3_log_source_table_item.get("region", region)
+
     if stack_id:
-        args = {'stackId': stack_id}
+        args = {
+            'stackId': stack_id,
+            'deployAccountId': deploy_account_id,
+            'deployRegion': deploy_region
+        }
         # Start the pipeline flow
         exec_sfn_flow(ingestion_id, 'STOP', args)
 
@@ -274,7 +344,7 @@ def create_stack_name(id):
 
 def exec_sfn_flow(id: str, action='START', args=None):
     """ Helper function to execute a step function flow """
-    logger.info(f'Execute Step Function Flow: {stateMachineArn}')
+    logger.info(f'Execute Step Function Flow: {state_machine_arn}')
 
     if args is None:
         args = {}
@@ -287,7 +357,7 @@ def exec_sfn_flow(id: str, action='START', args=None):
     random_code = str(uuid.uuid4())[:5]
     sfn.start_execution(
         name=f'{id}-{random_code}-{action}',
-        stateMachineArn=stateMachineArn,
+        stateMachineArn=state_machine_arn,
         input=json.dumps(input),
     )
 
@@ -298,7 +368,8 @@ def separate_ingestion_ids_by_type(ids):
     s3_ids = []
     eks_ids = []
     for ingestion_id in ids:
-        log_ingestion_resp = app_log_ingestion_table.get_item(Key={'id': ingestion_id})
+        log_ingestion_resp = app_log_ingestion_table.get_item(
+            Key={'id': ingestion_id})
         source_type = log_ingestion_resp['Item'].get('sourceType', 'EC2')
         if source_type == SOURCETYPE.EC2.value:
             ec2_ids.append(ingestion_id)

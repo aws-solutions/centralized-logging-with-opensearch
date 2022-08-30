@@ -14,3 +14,5 @@ def default_environment_variables():
     os.environ["LOG_AGENT_EKS_DEPLOYMENT_KIND_TABLE"] = "LogHub-LogAgentEKSDeploymentKindTable-FI0Z7PRZE6BT"
     os.environ["APP_LOG_PIPELINE_TABLE"] = "LogHub-AppPipelineTable-1A5LCWZNZ4RJZ"
     os.environ["AOS_DOMAIN_TABLE"] = "LogHub-ClusterTable-1OXKJHGWKVNJ"
+    os.environ["SUB_ACCOUNT_LINK_TABLE_NAME"] = "mocked-sub-account-link-table-name"
+    os.environ["SUB_ACCOUNT_LINK_TABLE"] = "mocked-sub-account-link-table-name"

@@ -1,36 +1,46 @@
+# 考虑因素
 
 ## 可部署区域
 此解决方案使用的服务目前可能并非在所有 AWS 区域都可用。请在提供所需服务的 AWS 区域中启动此解决方案。有关按区域划分的最新可用性，请参阅 [AWS 区域服务列表][services]。
 
-**支持部署的海外区域**
+Log Hub 提供两种类型的身份验证，使用 [Cognito 用户池](https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-identity-pools.html) 或
+使用 [OpenID Connect (OIDC ) 提供者](https://openid.net/connect/)。 如果您满足以下条件，您需要选择使用 OpenID Connect 启动
 
-|区域ID |区域名称 |
-| -------------- | ------------------------------------ |
-|us-east-1 |美国东部（弗吉尼亚北部） |
-|us-east-2 |美国东部（俄亥俄州）|
-|us-west-1 |美国西部（加利福尼亚北部） |
-|us-west-2 |美国西部（俄勒冈）|
-| ap-south-1 |亚太地区（孟买）|
-| ap-northeast-2 |亚太地区（首尔）|
-| ap-southeast-1 |亚太地区（新加坡）|
-| ap-southeast-2 |亚太地区（悉尼）|
-| ap-northeast-1 |亚太地区（东京） |
-| ca-central-1 |加拿大（中部） |
-| eu-central-1 |欧洲（法兰克福）|
-|eu-west-1 |欧洲（爱尔兰）|
-|eu-west-2 |欧洲（伦敦）|
-|eu-west-3 |欧洲（巴黎）|
-|eu-north-1 |欧洲（斯德哥尔摩）|
-|me-south-1 |中东（巴林）|
-|sa-east-1 |南美洲（圣保罗）|
+- 对于缺少 Cognito 用户池的 AWS 区域。
+- 您已经有一个 OpenID Connect 认证中心。
 
+**支持部署的区域**
 
-**支持部署的中国区域**
+| Region Name                               | 使用 Cognito User Pool                  | 使用 OpenID Connect                     |
+|-------------------------------------------|---------------------------------------|---------------------------------------|
+| US East (N. Virginia)                     | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
+| US East (Ohio)                            | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
+| US West (N. California)                   | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
+| US West (Oregon)                          | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
+| Africa (Cape Town)                        | :material-close-thick:{ .icon_cross } | :material-close-thick:{ .icon_cross } |
+| Asia Pacific (Hong Kong)                  | :material-close-thick:{ .icon_cross } | :material-check-bold:{ .icon_check }  |
+| Asia Pacific (Jakarta)                    | :material-close-thick:{ .icon_cross } | :material-close-thick:{ .icon_cross } |
+| Asia Pacific (Mumbai)                     | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
+| Asia Pacific (Osaka)                      | :material-close-thick:{ .icon_cross } | :material-check-bold:{ .icon_check }  |
+| Asia Pacific (Seoul)                      | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
+| Asia Pacific (Singapore)                  | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
+| Asia Pacific (Sydney)                     | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
+| Asia Pacific (Tokyo)                      | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
+| Canada (Central)                          | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
+| Europe (Frankfurt)                        | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
+| Europe (Ireland)                          | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
+| Europe (London)                           | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
+| Europe (Milan)                            | :material-close-thick:{ .icon_cross } |                                       |
+| Europe (Paris)                            | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
+| Europe (Stockholm)                        | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
+| Middle East (Bahrain)                     | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
+| South America (Sao Paulo)                 | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
+| China (Beijing) Region Operated by Sinnet | :material-close-thick:{ .icon_cross } | :material-check-bold:{ .icon_check }  |
+| China (Ningxia) Regions operated by NWCD  | :material-close-thick:{ .icon_cross } | :material-check-bold:{ .icon_check }  |
 
-|地区ID |地区名称 |
-| -------------- | ------------------------------------ |
-| cn-north-1 |由光环新网运营的亚马逊云科技中国（北京）区域|
-| cn-northwest-1 |由西云数据运营的亚马逊云科技中国（宁夏）区域|
+## 限制
+
+- 一个区域中只能有一个活动的 Log Hub 解决方案堆栈。 如果您的部署失败，请确保在重试部署之前已删除失败的堆栈。
 
 
 [services]: https://aws.amazon.com/about-aws/global-infrastructure/regional-product-services/?nc1=h_ls

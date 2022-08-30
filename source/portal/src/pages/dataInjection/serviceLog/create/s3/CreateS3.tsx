@@ -55,8 +55,9 @@ export interface S3TaskProps {
   tags: Tag[];
   source: string;
   target: string;
+  logSourceAccountId: string;
+  logSourceRegion: string;
   params: {
-    // [index: string]: string | any;
     needCreateLogging: boolean;
     engineType: string;
     warmEnable: boolean;
@@ -88,6 +89,8 @@ const DEFAULT_TASK_VALUE: S3TaskProps = {
   source: "",
   target: "",
   tags: [],
+  logSourceAccountId: "",
+  logSourceRegion: "",
   params: {
     needCreateLogging: false,
     engineType: "",
@@ -163,7 +166,9 @@ const CreateS3: React.FC = () => {
     createPipelineParams.source = s3PipelineTask.source;
     createPipelineParams.target = s3PipelineTask.target;
     createPipelineParams.tags = s3PipelineTask.tags;
-    // s3PipelineTask.params.
+    createPipelineParams.logSourceAccountId = s3PipelineTask.logSourceAccountId;
+    createPipelineParams.logSourceRegion = amplifyConfig.aws_project_region;
+
     const tmpParamList: any = [];
     Object.keys(s3PipelineTask.params).forEach((key) => {
       console.info("key");
@@ -174,6 +179,7 @@ const CreateS3: React.FC = () => {
         });
       }
     });
+
     // Add Default Failed Log Bucket
     tmpParamList.push({
       parameterKey: "backupBucketName",
@@ -282,6 +288,14 @@ const CreateS3: React.FC = () => {
                     changeNeedEnableLogging={(need: boolean) => {
                       setNeedEnableAccessLog(need);
                     }}
+                    changeCrossAccount={(id) => {
+                      setS3PipelineTask((prev: S3TaskProps) => {
+                        return {
+                          ...prev,
+                          logSourceAccountId: id,
+                        };
+                      });
+                    }}
                     manualChangeBucket={(srcBucketName) => {
                       setS3PipelineTask((prev: S3TaskProps) => {
                         return {
@@ -313,10 +327,10 @@ const CreateS3: React.FC = () => {
                       setS3PipelineTask((prev: S3TaskProps) => {
                         return {
                           ...prev,
-                          source: s3BucketObj?.value,
+                          source: s3BucketObj?.value || "",
                           params: {
                             ...prev.params,
-                            indexPrefix: s3BucketObj?.value,
+                            indexPrefix: s3BucketObj?.value || "",
                             logBucketObj: s3BucketObj,
                           },
                         };

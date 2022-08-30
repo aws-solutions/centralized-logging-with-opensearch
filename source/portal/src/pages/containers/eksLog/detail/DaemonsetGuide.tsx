@@ -22,6 +22,7 @@ import FormItem from "components/FormItem";
 import { appSyncRequestQuery } from "assets/js/request";
 import { getEKSDaemonSetConfig } from "graphql/queries";
 import CodeCopy from "components/CodeCopy";
+import LoadingText from "components/LoadingText";
 
 const KUBECTL_COMMAND = "kubectl apply -f ~/fluent-bit-logging.yaml";
 
@@ -35,7 +36,7 @@ const DaemonsetGuide: React.FC<DaemonsetGuideProps> = (
   const { eksLogSourceInfo } = props;
   const { t } = useTranslation();
   const [guide, setGuide] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     getDaemonsetGuide();
@@ -62,30 +63,34 @@ const DaemonsetGuide: React.FC<DaemonsetGuideProps> = (
   return (
     <div>
       <HeaderPanel title={t("ekslog:detail.tab.daemonsetGuide")}>
-        <div>
+        {guide ? (
           <div>
             <Alert
               title={t("ekslog:detail.daemonsetGuide.alert")}
               content={<div>{t("ekslog:detail.daemonsetGuide.alertDesc")}</div>}
             ></Alert>
+            <div className="mt-20">
+              <FormItem
+                optionTitle={`1. ${t("ekslog:detail.daemonsetGuide.step1")}`}
+                optionDesc=""
+              >
+                <CodeCopy loading={loading} code={guide} />
+              </FormItem>
+            </div>
+            <div className="mt-20">
+              <FormItem
+                optionTitle={`2. ${t("ekslog:detail.daemonsetGuide.step2")}`}
+                optionDesc=""
+              >
+                <CodeCopy code={KUBECTL_COMMAND} />
+              </FormItem>
+            </div>
           </div>
-          <div className="mt-20">
-            <FormItem
-              optionTitle={`1. ${t("ekslog:detail.daemonsetGuide.step1")}`}
-              optionDesc=""
-            >
-              <CodeCopy loading={loading} code={guide} />
-            </FormItem>
-          </div>
-          <div className="mt-20">
-            <FormItem
-              optionTitle={`2. ${t("ekslog:detail.daemonsetGuide.step2")}`}
-              optionDesc=""
-            >
-              <CodeCopy code={KUBECTL_COMMAND} />
-            </FormItem>
-          </div>
-        </div>
+        ) : loading ? (
+          <LoadingText />
+        ) : (
+          <Alert content={t("ekslog:detail.daemonsetGuide.createIngestion")} />
+        )}
       </HeaderPanel>
     </div>
   );

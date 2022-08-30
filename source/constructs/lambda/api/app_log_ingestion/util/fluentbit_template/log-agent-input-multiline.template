@@ -12,6 +12,15 @@
     DB.Sync Normal
     # https://docs.fluentbit.io/manual/administration/backpressure#mem_buf_limit
     Mem_Buf_Limit 30M
+    storage.type      filesystem
+    # Since "Skip_Long_Lines" is set to "On", be sure to adjust the "Buffer_Chunk_Size","Buffer_Max_Size" according to the actual log. If the parameters are adjusted too much, the number of duplicate records will increase. If the value is too small, data will be lost. 
+    # https://docs.fluentbit.io/manual/pipeline/inputs/tail
+    Buffer_Chunk_Size 512k
+    Buffer_Max_Size   5M
+    Skip_Long_Lines   On
+    Skip_Empty_Lines  On
+    Refresh_Interval  10
+    Rotate_Wait       30
     #parser
     Multiline on
     Parser_Firstline $LOGHUB_PARSER

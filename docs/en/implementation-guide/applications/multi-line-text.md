@@ -84,8 +84,12 @@ The steps are similar to creating an application log ingestion for single-line t
 ## Step 3: View logs in OpenSearch
 
 1. Open OpenSearch console in your browser.
-2. Go to **Discover** section in the left sidebar.
-3. Change active index pattern to `<the application pipeline>-*`.
+2. Create an Index Pattern
+    {%
+    include-markdown "../aws-services/include-index-pattern.md"
+    %}
+3. Go to **Discover** section in the left sidebar.
+4. Change active index pattern to `<the application pipeline>-*`.
 
 
 

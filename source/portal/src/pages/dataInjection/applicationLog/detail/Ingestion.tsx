@@ -30,7 +30,7 @@ import {
 import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
 import { listAppLogIngestions } from "graphql/queries";
 import Modal from "components/Modal";
-import { deleteAppLogIngestion } from "graphql/mutations";
+import { deleteAppLogIngestion, upgradeAppPipeline } from "graphql/mutations";
 import { buildS3Link, formatLocalTime } from "assets/js/utils";
 import { useTranslation } from "react-i18next";
 import Status, { StatusType } from "components/Status/Status";
@@ -38,16 +38,27 @@ import ButtonDropdown from "components/ButtonDropdown";
 import { AmplifyConfigType } from "types";
 import { AppStateProps } from "reducer/appReducer";
 import { useSelector } from "react-redux";
+import { AUTO_REFRESH_INT, buildLogHubDocsLink } from "assets/js/const";
+import ExtLink from "components/ExtLink";
+import Alert from "components/Alert";
+import { AlertType } from "components/Alert/alert";
 
 const PAGE_SIZE = 10;
 interface OverviewProps {
   pipelineInfo: AppPipeline | undefined;
+  upgradeToNewPipeline: () => void;
+  changeTab: (index: number) => void;
+}
+
+enum INGESTION_TYPE {
+  INSTANCE = "instance",
+  S3 = "s3",
 }
 
 const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
   console.info("props:", props);
-  const { pipelineInfo } = props;
-  const { t } = useTranslation();
+  const { pipelineInfo, changeTab, upgradeToNewPipeline } = props;
+  const { t, i18n } = useTranslation();
   const amplifyConfig: AmplifyConfigType = useSelector(
     (state: AppStateProps) => state.amplifyConfig
   );
@@ -58,9 +69,12 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
   );
   const [openDeleteModel, setOpenDeleteModel] = useState(false);
   const [loadingDelete, setLoadingDelete] = useState(false);
+  const [loadingUpgrade, setLoadingUpgrade] = useState(false);
   const [disableDelete, setDisableDelete] = useState(true);
   const [curPage, setCurPage] = useState(1);
   const [totoalCount, setTotoalCount] = useState(0);
+  const [userSelectType, setUserSelectType] = useState<string>("");
+  const [openNotice, setOpenNotice] = useState(false);
   const history = useHistory();
 
   const confirmRemoveLogIngestion = async () => {
@@ -85,10 +99,28 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
     }
   };
 
-  const getIngestionByAppPipelineId = async () => {
-    setIngestionList([]);
+  const upgradePipeline = async () => {
     try {
-      setLoadingData(true);
+      setLoadingUpgrade(true);
+      const upgradeRes = await appSyncRequestMutation(upgradeAppPipeline, {
+        ids: [pipelineInfo?.id],
+      });
+      console.info("upgradeRes:", upgradeRes);
+      setLoadingUpgrade(false);
+      setOpenNotice(false);
+      upgradeToNewPipeline();
+    } catch (error) {
+      setLoadingUpgrade(false);
+      console.error(error);
+    }
+  };
+
+  const getIngestionByAppPipelineId = async (hideLoading = false) => {
+    try {
+      if (!hideLoading) {
+        setLoadingData(true);
+        setIngestionList([]);
+      }
       const resData: any = await appSyncRequestQuery(listAppLogIngestions, {
         page: curPage,
         count: PAGE_SIZE,
@@ -108,8 +140,6 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
   };
 
   const handlePageChange = (event: any, value: number) => {
-    console.info("event:", event);
-    console.info("value:", value);
     setCurPage(value);
   };
 
@@ -138,8 +168,72 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
     }
   }, [selectedIngestion]);
 
+  // Check Assume Role
+  const checkAssumeRoleAndRedirect = (type: string) => {
+    setUserSelectType(type);
+    if (!pipelineInfo?.kdsRoleArn) {
+      setOpenNotice(true);
+    } else {
+      redirectToCreateIngestionPage(type);
+    }
+  };
+
+  // Redirect create ingestion page by ingestion type
+  const redirectToCreateIngestionPage = (type?: string) => {
+    const ingestionType = type || userSelectType;
+    if (ingestionType === INGESTION_TYPE.INSTANCE) {
+      history.push({
+        pathname: `/log-pipeline/application-log/detail/${pipelineInfo?.id}/create-ingestion-instance`,
+      });
+    }
+    if (ingestionType === INGESTION_TYPE.S3) {
+      history.push({
+        pathname: `/log-pipeline/application-log/detail/${pipelineInfo?.id}/create-ingestion-s3`,
+      });
+    }
+  };
+
+  // Auto Refresh List
+  useEffect(() => {
+    const refreshInterval = setInterval(() => {
+      getIngestionByAppPipelineId(true);
+    }, AUTO_REFRESH_INT);
+    return () => clearInterval(refreshInterval);
+  }, [curPage]);
+
   return (
     <div>
+      {pipelineInfo?.ec2RoleArn ? (
+        <Alert
+          content={
+            <div>
+              {t("applog:detail.ingestion.eksTips1")}
+              <Link to="/containers/eks-log">
+                {t("applog:detail.ingestion.eksTips2")}
+              </Link>{" "}
+              {t("applog:detail.ingestion.eksTips3")}
+            </div>
+          }
+        />
+      ) : (
+        <Alert
+          content={
+            <div>
+              {t("applog:detail.tip1")}
+              <span
+                onClick={() => {
+                  changeTab(1);
+                }}
+                className="link"
+              >
+                {t("applog:detail.tip2")}
+              </span>
+              {t("applog:detail.tip3")}
+            </div>
+          }
+        />
+      )}
+
       <TablePanel
         title={t("applog:detail.tab.ingestion")}
         changeSelected={(item) => {
@@ -163,13 +257,25 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
                   </Link>
                 );
               }
+              if (
+                e.sourceInfo?.sourceType === LogSourceType.EC2 ||
+                e.sourceInfo?.sourceType === LogSourceType.S3
+              ) {
+                return (
+                  <Link
+                    to={`/log-pipeline/application-log/ingestion/detail/${e.id}`}
+                  >
+                    {e.id}
+                  </Link>
+                );
+              }
               return e.id;
             },
           },
 
           {
             id: "type",
-            header: "Type",
+            header: t("applog:ingestion.type"),
             width: 120,
             cell: (e: AppLogIngestion) => {
               return e.sourceInfo?.sourceType;
@@ -178,7 +284,7 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
 
           {
             id: "source",
-            header: "Source",
+            header: t("applog:ingestion.source"),
             cell: (e: AppLogIngestion) => {
               if (e.sourceInfo?.sourceType === LogSourceType.S3) {
                 return (
@@ -271,30 +377,23 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
             >
               {t("button.delete")}
             </Button>
-            <ButtonDropdown
-              isI18N
-              items={[
-                { id: "instance", text: "button.fromInstance" },
-                { id: "s3", text: "button.fromS3" },
-              ]}
-              className="drop-down"
-              btnType="primary"
-              disabled={pipelineInfo?.status !== PipelineStatus.ACTIVE}
-              onItemClick={(item) => {
-                if (item.id === "instance") {
-                  history.push({
-                    pathname: `/log-pipeline/application-log/detail/${pipelineInfo?.id}/create-ingestion-instance`,
-                  });
-                }
-                if (item.id === "s3") {
-                  history.push({
-                    pathname: `/log-pipeline/application-log/detail/${pipelineInfo?.id}/create-ingestion-s3`,
-                  });
-                }
-              }}
-            >
-              {t("button.createAnIngestion")}
-            </ButtonDropdown>
+            {!pipelineInfo?.ec2RoleArn && (
+              <ButtonDropdown
+                isI18N
+                items={[
+                  { id: INGESTION_TYPE.INSTANCE, text: "button.fromInstance" },
+                  { id: INGESTION_TYPE.S3, text: "button.fromS3" },
+                ]}
+                className="drop-down"
+                btnType="primary"
+                disabled={pipelineInfo?.status !== PipelineStatus.ACTIVE}
+                onItemClick={(item) => {
+                  checkAssumeRoleAndRedirect(item.id);
+                }}
+              >
+                {t("button.createAnIngestion")}
+              </ButtonDropdown>
+            )}
           </div>
         }
         pagination={
@@ -348,6 +447,63 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
               );
             }
           )}
+        </div>
+      </Modal>
+
+      <Modal
+        title={t("applog:detail.ingestion.upgradeNotice")}
+        fullWidth={false}
+        isOpen={openNotice}
+        closeModal={() => {
+          setOpenNotice(false);
+        }}
+        actions={
+          <div className="button-action no-pb text-right">
+            <Button
+              btnType="text"
+              onClick={() => {
+                setOpenNotice(false);
+              }}
+            >
+              {t("button.cancel")}
+            </Button>
+            <Button
+              loading={loadingUpgrade}
+              btnType="primary"
+              onClick={() => {
+                upgradePipeline();
+              }}
+            >
+              {t("button.upgrade")}
+            </Button>
+            <Button
+              onClick={() => {
+                redirectToCreateIngestionPage();
+              }}
+            >
+              {t("button.createSameAccountIngestion")}
+            </Button>
+          </div>
+        }
+      >
+        <div className="modal-content alert-content">
+          <Alert
+            noMargin
+            type={AlertType.Error}
+            content={
+              <div>
+                {t("applog:detail.ingestion.upgradeNoticeDesc")}
+                <ExtLink
+                  to={buildLogHubDocsLink(
+                    i18n.language,
+                    "implementation-guide/revisions/"
+                  )}
+                >
+                  {t("applog:detail.ingestion.upgradeGuide")}
+                </ExtLink>
+              </div>
+            }
+          />
         </div>
       </Modal>
     </div>

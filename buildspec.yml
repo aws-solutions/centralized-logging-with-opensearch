@@ -3,9 +3,9 @@ version: 0.2
 phases:
   install:
     runtime-versions:
-      nodejs: 12
+      nodejs: 14
     commands:
-      - echo "nothing to do in install"
+      - npm install -g npm@8.11.0
   pre_build:
     commands:
       - echo "Installing dependencies and executing unit tests - `pwd`"
@@ -25,7 +25,7 @@ phases:
   post_build:
     commands:
       - echo "Retrieving next stage buildspec `date` in `pwd`"
-      - aws s3 cp s3://solutions-build-assets/changelog-spec.yml ../buildspec.yml
+      - aws s3 cp s3://solutions-build-assets/changelog-spec.yml ../buildspec.yml || true
       - echo "Retrieving next stage buildspec complete"
       - echo "Post build completed on `date`"
 

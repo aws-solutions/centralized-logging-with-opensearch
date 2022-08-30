@@ -8,7 +8,7 @@
     "health": "集群运行状况",
     "remove": "移除域",
     "removeConfirm": "您确定要移除域",
-    "removeTips": "从 Log Hub 中移除域不会删除 AWS 账户中的 Amazon OpenSearch 域。"
+    "removeTips": "从日志通中移除域不会删除 AWS 账户中的 Amazon OpenSearch 域。"
   },
   "detail": {
     "config": "基本配置",
@@ -62,8 +62,8 @@
         "clusterRed": "ClusterStatus.red 最大值 >= 1 持续1分钟，连续1次",
         "clusterYellow": "ClusterStatus.yellow 最大值 >= 1 持续1分钟，连续1次",
         "freeStorageSpace": "最小可用存储空间 (GiB)",
-        "writeBlocked": "ClusterIndexWritesBlocked >= 15分钟，连续1次",
-        "nodeUnreachable": "节点最小值 < x 1 天，连续1次",
+        "writeBlocked": "Index write blocked 错误在 5 分钟内出现的次数，连续 1 次",
+        "nodeUnreachable": "节点最小值 < x 每1天，连续1次",
         "snapshotFailed": "自动快照失败最大值 >= 1 持续1分钟，连续1次",
         "cpuUtilization": "CPUUtilization 或 WarmCPUUtilization 最大值 >= 80% 持续15分钟，连续3次",
         "jvmMemory": "JVMMemoryPressure 或 WarmJVMMemoryPressure 最大值 >= 80% 持续5分钟，连续3次",
@@ -97,7 +97,8 @@
     "emailFormatError": "邮箱地址格式不正确",
     "selectAlarmTips": "请至少选择一个告警选项",
     "alarm": "告警",
-    "value": "值"
+    "value": "值",
+    "forbidNegative": " 的值不能小于 0。"
   },
   "proxy": {
     "name": "创建访问代理",
@@ -122,7 +123,9 @@
     "lbSSLDesc2": "中配置",
     "chooseSSL": "选择 SSL 证书",
     "nginxKeyName": "Nginx 实例密钥名称",
-    "nginxKeyNameDesc": "指定 Nginx 代理的 EC2 密钥名称。",
+    "nginxKeyNameDesc1": "从",
+    "keyPairs": "EC2 密钥对",
+    "nginxKeyNameDesc2": " 中为 Nginx 实例选择一个 EC2 密钥。",
     "chooseKeyName": "选择 EC2 密钥",
     "subnetError": "请选择公共子网组",
     "sgError": "请选择公共安全组",
@@ -146,7 +149,7 @@
       "domain": "域",
       "domainDesc1": "集群必须与此解决方案位于同一区域，并且必须是 VPC 类型。或查看",
       "domainDesc2": "指南",
-      "domainDesc3": "创建一个集群。",
+      "domainDesc3": "创建一个集群。(* 确保您的 OpenSearch 的状态为有效，列表中只会显示状态为有效的 OpenSearch 域)",
       "domainError": "请选择一个域",
       "selectDomain": "选择一个 OpenSearch 域"
     },
@@ -162,7 +165,7 @@
       "manual": "手动",
       "manualDesc": "手动指定日志处理层和公共访问层网络设置。",
       "layerNetwork": "日志处理层网络",
-      "layerNetworkDesc": "Log Hub 需要一个日志处理子网组。日志处理功能将驻留在日志处理子网中并使用关联的安全组。",
+      "layerNetworkDesc": "日志通需要一个日志处理子网组。日志处理功能将驻留在日志处理子网中并使用关联的安全组。",
       "configTip": "配置网络",
       "configTipDesc": "您选择的VPC不是所选 Amazon OpenSearch 域的 VPC。请创建VPC对等连接，配置路由表，并确保资源可以访问域。",
       "vpc": "VPC",

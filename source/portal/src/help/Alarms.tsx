@@ -15,7 +15,10 @@ limitations under the License.
 */
 import React from "react";
 import OpenInNewIcon from "@material-ui/icons/OpenInNew";
-import { HELP_CLOUDWATCH_ALARM_LINK } from "assets/js/const";
+import {
+  CREATE_OS_ALARM_LINK,
+  HELP_CLOUDWATCH_ALARM_LINK,
+} from "assets/js/const";
 import { useTranslation } from "react-i18next";
 
 const Alarms: React.FC = () => {
@@ -37,7 +40,7 @@ const Alarms: React.FC = () => {
           </i>
         </div>
         <div className="gsui-help-link-item">
-          <a href="" target="_blank">
+          <a href={CREATE_OS_ALARM_LINK} target="_blank" rel="noreferrer">
             {t("info:alarm.createAlarm")}
           </a>
         </div>

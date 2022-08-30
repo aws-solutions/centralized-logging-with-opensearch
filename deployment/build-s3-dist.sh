@@ -276,6 +276,29 @@ echo "${bold}[Create] Templates${normal}"
 echo "------------------------------------------------------------------------------"
 
 if fn_exists create_template_${template_format}; then
+    rm -vf ./lambda/pipeline/service/log-processor/boto3_client.py
+    rm -vf ./lambda/api/pipeline/aws_svc_mgr.py
+    rm -vf ./lambda/api/app_pipeline/util/assume_role.py
+    rm -vrf ./lambda/api/app_pipeline/util/assume_role_template
+    rm -vf ./lambda/api/app_pipeline/common.py
+    rm -vf ./lambda/api/app_log_ingestion/util/aws_svc_mgr.py
+    rm -vf ./lambda/api/app_log_ingestion/common.py
+    rm -vf ./lambda/api/log_agent_status/aws_svc_mgr.py
+    rm -vf ./lambda/api/instance_meta/aws_svc_mgr.py
+    rm -vf ./lambda/api/resource/aws_svc_mgr.py
+    rm -vf ./lambda/main/cfnHelper/aws_svc_mgr.py
+
+    cp -vf ./lambda/pipeline/service/log-processor/../../common/custom-resource/boto3_client.py ./lambda/pipeline/service/log-processor/boto3_client.py
+    cp -vf ./lambda/api/pipeline/../common/aws_svc_mgr.py ./lambda/api/pipeline/aws_svc_mgr.py
+    cp -vf ./lambda/api/app_pipeline/util/../../app_log_ingestion/util/assume_role.py ./lambda/api/app_pipeline/util/assume_role.py
+    cp -vrf ./lambda/api/app_pipeline/util/../../app_log_ingestion/util/assume_role_template ./lambda/api/app_pipeline/util/assume_role_template
+    cp -vf ./lambda/api/app_pipeline/../common/common.py ./lambda/api/app_pipeline/common.py
+    cp -vf ./lambda/api/app_log_ingestion/util/../../common/aws_svc_mgr.py ./lambda/api/app_log_ingestion/util/aws_svc_mgr.py
+    cp -vf ./lambda/api/app_log_ingestion/../common/common.py ./lambda/api/app_log_ingestion/common.py
+    cp -vf ./lambda/api/log_agent_status/../common/aws_svc_mgr.py ./lambda/api/log_agent_status/aws_svc_mgr.py
+    cp -vf ./lambda/api/instance_meta/../common/aws_svc_mgr.py ./lambda/api/instance_meta/aws_svc_mgr.py
+    cp -vf ./lambda/api/resource/../common/aws_svc_mgr.py ./lambda/api/resource/aws_svc_mgr.py
+    cp -vf ./lambda/main/cfnHelper/../../api/common/aws_svc_mgr.py ./lambda/main/cfnHelper/aws_svc_mgr.py
     create_template_${template_format}
 else
     echo "Invalid setting for \$template_format: $template_format"

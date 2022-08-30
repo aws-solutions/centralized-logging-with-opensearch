@@ -36,6 +36,7 @@ import SideMenu from "components/SideMenu";
 import { useTranslation } from "react-i18next";
 import { emailIsValid } from "assets/js/utils";
 import { Alert } from "assets/js/alert";
+import classNames from "classnames";
 
 interface DomainAlarmProps {
   id: string;
@@ -72,11 +73,14 @@ const DomainAlarm: React.FC<RouteComponentProps<MatchParams>> = (
   const [domainInfo, setDomainInfo] = useState<
     DomainDetails | undefined | null
   >();
-  const [loadingData, setLoadingData] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
   const [loadingCreate, setLoadingCreate] = useState(false);
   // const [curDomain, setCurDomain] = useState<DomainDetails>();
   const [showRequireEmailError, setShowRequireEmailError] = useState(false);
   const [emailFormatError, setEmailFormatError] = useState(false);
+  const [minFreeStorageError, setMinFreeStorageError] = useState(false);
+  const [nodeMinError, setNodeMinError] = useState(false);
+  const [writeBlockError, setWriteBlockError] = useState(false);
   const [alarmData, setAlarmData] = useState<DomainAlarmProps>({
     id: decodeURIComponent(id),
     input: {
@@ -141,6 +145,57 @@ const DomainAlarm: React.FC<RouteComponentProps<MatchParams>> = (
         }
       }
     });
+    // Check Min Storage Value
+    if (
+      alarmData.input.alarmParams.find(
+        (element) => element.key === AlarmType.FREE_STORAGE_SPACE
+      )?.isChecked &&
+      minFreeStorageError
+    ) {
+      Alert(
+        t(
+          domainAlramList.find(
+            (element) => element.key === AlarmType.FREE_STORAGE_SPACE
+          )?.name || ""
+        ) + t("cluster:alarm.forbidNegative")
+      );
+      return;
+    }
+
+    // Check Write Block Value
+    if (
+      alarmData.input.alarmParams.find(
+        (element) => element.key === AlarmType.WRITE_BLOCKED
+      )?.isChecked &&
+      writeBlockError
+    ) {
+      Alert(
+        t(
+          domainAlramList.find(
+            (element) => element.key === AlarmType.WRITE_BLOCKED
+          )?.name || ""
+        ) + t("cluster:alarm.forbidNegative")
+      );
+      return;
+    }
+
+    // Check Node Min Value
+    if (
+      alarmData.input.alarmParams.find(
+        (element) => element.key === AlarmType.NODE_UNREACHABLE
+      )?.isChecked &&
+      nodeMinError
+    ) {
+      Alert(
+        t(
+          domainAlramList.find(
+            (element) => element.key === AlarmType.NODE_UNREACHABLE
+          )?.name || ""
+        ) + t("cluster:alarm.forbidNegative")
+      );
+      return;
+    }
+
     if (alarmsList.length <= 0) {
       Alert(t("cluster:alarm.selectAlarmTips"));
       return;
@@ -156,7 +211,6 @@ const DomainAlarm: React.FC<RouteComponentProps<MatchParams>> = (
     // alarmParamData.id = alarmData.id;
     // alarmParamData.input.alarms = ;
     console.info("alarmParamData:", alarmParamData);
-    // return;
     setLoadingCreate(true);
     const createRes = await appSyncRequestMutation(
       createAlarmForOpenSearch,
@@ -169,6 +223,38 @@ const DomainAlarm: React.FC<RouteComponentProps<MatchParams>> = (
 
   useEffect(() => {
     console.info("alarmData:", alarmData);
+    // Check Min Free Storage Value
+    const freeStorageValue =
+      (alarmData.input.alarmParams.find(
+        (element) => element.key === AlarmType.FREE_STORAGE_SPACE
+      )?.value as string) || "0";
+    if (parseFloat(freeStorageValue) < 0) {
+      setMinFreeStorageError(true);
+    } else {
+      setMinFreeStorageError(false);
+    }
+
+    // Check Write Block Value
+    const writeBlockValue =
+      (alarmData.input.alarmParams.find(
+        (element) => element.key === AlarmType.WRITE_BLOCKED
+      )?.value as string) || "0";
+    if (parseFloat(writeBlockValue) < 0) {
+      setWriteBlockError(true);
+    } else {
+      setWriteBlockError(false);
+    }
+
+    // Check Node Min Value
+    const nodeMinValue =
+      (alarmData.input.alarmParams.find(
+        (element) => element.key === AlarmType.NODE_UNREACHABLE
+      )?.value as string) || "0";
+    if (parseFloat(nodeMinValue) < 0) {
+      setNodeMinError(true);
+    } else {
+      setNodeMinError(false);
+    }
   }, [alarmData]);
 
   return (
@@ -347,6 +433,25 @@ const DomainAlarm: React.FC<RouteComponentProps<MatchParams>> = (
                         <div className="tag-value flex-1">
                           {element.isNumber ? (
                             <TextInput
+                              className={classNames(
+                                {
+                                  error:
+                                    element.key === AlarmType.WRITE_BLOCKED &&
+                                    writeBlockError,
+                                },
+                                {
+                                  error:
+                                    element.key ===
+                                      AlarmType.FREE_STORAGE_SPACE &&
+                                    minFreeStorageError,
+                                },
+                                {
+                                  error:
+                                    element.key ===
+                                      AlarmType.NODE_UNREACHABLE &&
+                                    nodeMinError,
+                                }
+                              )}
                               type="number"
                               value={element.value.toString()}
                               onChange={(event) => {
@@ -359,6 +464,17 @@ const DomainAlarm: React.FC<RouteComponentProps<MatchParams>> = (
                                       (item: any) => item.key === element.key
                                     );
                                   if (element.isNumber) {
+                                    if (
+                                      element.key ===
+                                      AlarmType.FREE_STORAGE_SPACE
+                                    ) {
+                                      setMinFreeStorageError(false);
+                                    }
+                                    if (
+                                      element.key === AlarmType.NODE_UNREACHABLE
+                                    ) {
+                                      setNodeMinError(false);
+                                    }
                                     prevObj.input.alarmParams[
                                       paramIndex
                                     ].value = event.target.value;

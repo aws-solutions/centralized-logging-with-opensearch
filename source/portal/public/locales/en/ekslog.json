@@ -24,7 +24,15 @@
       "curAccount": "current AWS account",
       "agent": "Agent",
       "eksAgentPattern": "Pattern",
-      "eksAgentPatternDesc": "Please choose the pattern which will be used to deploy logging agent."
+      "eksAgentPatternDesc": "Please choose the pattern which will be used to deploy logging agent.",
+      "networkConfig": "Network Configuration",
+      "networkConfigDesc": "To ingest EKS logs to Opensearch, the VPC of the EKS cluster and the VPC of OpenSearch need to be connected. If they are not connected, you could follow the steps to create VPC peering.",
+      "vpc1": "1. Create and accept VPC peering follow ",
+      "vpc2": "2. Update route table follow ",
+      "vpc3": "3. Update security group follow ",
+      "guide": "this guide",
+      "acknowledge": "Please acknowledge the checkbox before proceeding.",
+      "confirmed": "I confirmed that the VPCs of the EKS cluster and OpenSearch are connected."
     }
   },
   "detail": {
@@ -45,13 +53,15 @@
       "logConfig": "Log Config",
       "created": "Created",
       "status": "Status",
+      "delete": "Delete Ingestion",
       "deleteTips": "Are you sure you want to delete the log ingestion(s)? Note: the App Log Pipeline will not be deleted. "
     },
     "daemonsetGuide": {
       "alert": "",
-      "alertDesc": "All steps in this procedure are to deploy Fluent-bit agent as a DaemonSet. By default, the namespace \"logging\" is used",
+      "alertDesc": "Please ensure that all ingestions you have created are in the Created state before proceeding with the following steps. All steps in this procedure are to deploy Fluent-bit agent as a DaemonSet. By default, the namespace \"logging\" is used",
       "step1": "You will need to copy and paste all the content below in a file ~/fluent-bit-logging.yaml",
-      "step2": "Use the kubectl command to deploy fluent-bit as DaemonSet."
+      "step2": "Use the kubectl command to deploy fluent-bit as DaemonSet.",
+      "createIngestion": "Please create an ingestion first"
     }
   },
   "select": "Select an EKS Cluster",
@@ -98,7 +108,7 @@
       "tag": "Tags",
       "sidecarTab": {
         "guide": "Sidecar Guide",
-        "alert": "You will need to deploy Fluent-bit agent as a sidecar in your pod."
+        "alert": "You will need to deploy Fluent-bit agent as a sidecar in your pod and please ensure that all ingestions you have created are in the Created state before proceeding."
       },
       "daemonsetTab": {
         "guide": "DaemonSet Guide",

@@ -21,7 +21,7 @@ Based on different [log destinations](#service-log-output-destination), Differen
 
 - **Destination on Amazon S3**
 
-    Normally the logs on Amazon S3 are not for real-time analysis. Currently, this solution supports CloudTrail logs, CloudFront Standard logs, Amazon S3 Access logs and Elastic Load Balancing (ELB) logs
+    Normally the logs on Amazon S3 are not for real-time analysis. Currently, this solution supports CloudTrail logs, CloudFront Standard logs, Amazon S3 Access logs, Elastic Load Balancing (ELB) logs, VPC Flow logs, and Amazon Config logs.
 
     ![Service Pipeline (S3) Stack Architecture](../../images/architecture/service-pipeline-s3.png)
 
@@ -29,13 +29,15 @@ Based on different [log destinations](#service-log-output-destination), Differen
 
     1. AWS Services store logs on Amazon S3 bucket
 
-    1. A notification is sent to Amazon SQS when new log file is created
+    2. A notification is sent to Amazon SQS when new log file is created
 
-    1. Amazon SQS triggers the Lambda (Log processor) to run
+    3. Amazon SQS triggers the Lambda (Log processor) to run
 
-    1. The Log processor read and processes the log file and ingest the logs into Amazon OpenSearch service.
+    4. The Log processor read and processes the log file and ingest the logs into Amazon OpenSearch service.
 
+    For cross-account log ingestion, the AWS Services store logs on Amazon S3 bucket in one account, and other resources remain in Log Hub's Account:
 
+    ![Cross Account Service Pipeline (S3) Stack Architecture](../../images/architecture/service-pipeline-s3-ca.png)
 
 - **Destination on CloudWatch Logs**
 
@@ -53,6 +55,9 @@ Based on different [log destinations](#service-log-output-destination), Differen
 
     1. The Log processor read and processes the log records and ingest the logs into Amazon OpenSearch service.
 
+    For cross-account log ingestion, the AWS Services store logs on Amazon CloudWatch log group in one account, and other resources remain in Log Hub's Account:
+   
+    ![Service Pipeline (CW) Stack Architecture](../../images/architecture/service-pipeline-cw-ca.png)
 
 ### Process Design
 
@@ -109,7 +114,7 @@ Most of AWS Services output logs to Amazon CloudWatch Logs or Amazon S3, and som
 
 | Service log destination | AWS Services |
 | -- | -- |
-| Amazon S3 | CloudTrail, S3 Access Log, CloudFront Standard Logs, ELB Access Log, VPC Flow Logs, WAF Log |
+| Amazon S3 | CloudTrail, S3 Access Log, CloudFront Standard Logs, ELB Access Log, VPC Flow Logs, WAF Log, Config Log |
 | Amazon CloudWatch Logs | RDS, Lambda, Lambda@Edge, VPC Flow Logs, AppSync, API Gateway, WAF Log |
 | Kinesis Firehose | WAF Log |
 | Kinesis Data Streams | CloudFront Real-time logs, Amazon Pinpoint events |

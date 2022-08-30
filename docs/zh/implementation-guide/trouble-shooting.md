@@ -18,6 +18,24 @@ Log Hub 仅支持启用了[细粒度访问控制](https://docs.aws.amazon.com/op
 
 您需要转到 AOS 控制台，并编辑 AOS 域的**访问策略**。
 
+## Error：User xxx is not authorized to perform sts:AssumeRole on resource
+
+![](../images/faq/assume-role-latency.png)
+
+如果出现了次错误，请先确保您在[夸账户日志摄取设置](./link-account/index.md)中正确填写了所有信息。然后请等待大约1分钟左右后再重试。
+
+Log Hub 使用了 [AssumeRole](https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html) 来列出或创建您成员账户中的 AWS 资源。 
+这些 IAM 角色是在您[设置夸账户日志摄取](./link-account/index.md)时被创建的，他们需要几秒钟或者几分钟的时间才能生效。
+
+
+## Error: PutRecords API responded with error='InvalidSignatureException'
+
+Fluent-bit agent 报错 PutRecords API responded with error='InvalidSignatureException', message='The request signature we calculated does not match the signature you provided. Check your AWS Secret Access Key and signing method. Consult the service documentation for details.'
+
+请重启 fluent-bit agent. 比如在 Amazon Linux2 的 EC2 中, 运行一下命令:
+```commandline
+sudo service fluent-bit restart
+```
 
 ## Error: PutRecords API responded with error='AccessDeniedException'
 

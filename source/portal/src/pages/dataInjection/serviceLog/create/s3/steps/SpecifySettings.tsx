@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React, { useState, useEffect } from "react";
-
 import HeaderPanel from "components/HeaderPanel";
 import PagePanel from "components/PagePanel";
 import Tiles from "components/Tiles";
@@ -34,13 +33,14 @@ import TextInput from "components/TextInput";
 import { InfoBarTypes } from "reducer/appReducer";
 import { useTranslation } from "react-i18next";
 import AutoEnableLogging from "../../common/AutoEnableLogging";
+import CrossAccountSelect from "pages/comps/account/CrossAccountSelect";
 // import Select from "components/Select";
 
 interface SpecifySettingsProps {
   s3Task: S3TaskProps;
   changeTaskType: (type: string) => void;
   changeS3Bucket: (bucket: string) => void;
-  changeLogBucketObj: (s3: OptionType) => void;
+  changeLogBucketObj: (s3: OptionType | null) => void;
   changeLogPath: (logPath: string) => void;
   manualChangeBucket: (bucket: string) => void;
   autoS3EmptyError: boolean;
@@ -48,6 +48,7 @@ interface SpecifySettingsProps {
   setNextStepDisableStatus: (status: boolean) => void;
   setISChanging: (changing: boolean) => void;
   changeNeedEnableLogging: (need: boolean) => void;
+  changeCrossAccount: (id: string) => void;
 }
 
 const SpecifySettings: React.FC<SpecifySettingsProps> = (
@@ -65,31 +66,25 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     setNextStepDisableStatus,
     setISChanging,
     changeNeedEnableLogging,
+    changeCrossAccount,
   } = props;
   const { t } = useTranslation();
-  // const [creationMethod, setCreationMethod] = useState<string>(
-  //   s3Task.params.taskType || CreateLogMethod.Automatic
-  // );
-  const [s3Bucket, setS3Bucket] = useState(s3Task.params.logBucketObj);
-  // const [s3ManualBucketName, setS3ManualBucketName] = useState("");
-
   const [loadingS3List, setLoadingS3List] = useState(false);
   const [loadingBucket, setLoadingBucket] = useState(false);
+  const [disableBucket, setDisableBucket] = useState(false);
   const [s3BucketOptionList, setS3BucketOptionList] = useState<SelectItem[]>(
     []
   );
-
-  // const [infoText, setInfoText] = useState("");
   const [showInfoText, setShowInfoText] = useState(false);
-  // const [successText, setSuccessText] = useState("");
   const [showSuccessText, setShowSuccessText] = useState(false);
   const [previewS3Path, setPreviewS3Path] = useState("");
 
-  const getS3List = async () => {
+  const getS3List = async (accountId: string) => {
     try {
       setLoadingS3List(true);
       const resData: any = await appSyncRequestQuery(listResources, {
         type: ResourceType.S3Bucket,
+        accountId: accountId,
       });
       console.info("domainNames:", resData.data);
       const dataList: Resource[] = resData.data.listResources;
@@ -111,6 +106,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     setLoadingBucket(true);
     setISChanging(true);
     const resData: any = await appSyncRequestQuery(getResourceLoggingBucket, {
+      accountId: s3Task.logSourceAccountId,
       type: ResourceType.S3Bucket,
       resourceName: bucket,
     });
@@ -131,20 +127,19 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
   };
 
   useEffect(() => {
-    console.info("s3Bucket:", s3Bucket);
     setShowSuccessText(false);
     setShowInfoText(false);
     setNextStepDisableStatus(false);
-    if (s3Bucket && s3Bucket.value) {
-      getBucketPrefix(s3Bucket.value);
+    if (s3Task.params.logBucketObj && s3Task.params.logBucketObj.value) {
+      getBucketPrefix(s3Task.params.logBucketObj.value);
     }
-  }, [s3Bucket]);
+  }, [s3Task.params.logBucketObj]);
 
   useEffect(() => {
     if (s3Task.params.taskType === CreateLogMethod.Automatic) {
-      getS3List();
+      getS3List(s3Task.logSourceAccountId);
     }
-  }, []);
+  }, [s3Task.logSourceAccountId]);
 
   useEffect(() => {
     changeNeedEnableLogging(showInfoText);
@@ -165,11 +160,10 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                   value={s3Task.params.taskType}
                   onChange={(event) => {
                     changeTaskType(event.target.value);
-                    setS3Bucket(null);
-                    // setCreationMethod(event.target.value);
+                    changeLogBucketObj(null);
                     if (event.target.value === CreateLogMethod.Automatic) {
                       changeLogPath("");
-                      getS3List();
+                      getS3List(s3Task.logSourceAccountId);
                     }
                   }}
                   items={[
@@ -192,6 +186,16 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
           <HeaderPanel title={t("servicelog:s3.title")}>
             <div>
               <Alert content={t("servicelog:s3.alert")} />
+              <CrossAccountSelect
+                accountId={s3Task.logSourceAccountId}
+                changeAccount={(id) => {
+                  changeCrossAccount(id);
+                  changeLogBucketObj(null);
+                }}
+                loadingAccount={(loading) => {
+                  setDisableBucket(loading);
+                }}
+              />
               {s3Task.params.taskType === CreateLogMethod.Automatic && (
                 <div className="pb-50">
                   <FormItem
@@ -209,9 +213,6 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                         ? t("servicelog:s3.bucketEmptyError")
                         : ""
                     }
-                    // infoText={
-                    //   showInfoText ? t("servicelog:s3.notEnableTips") : ""
-                    // }
                     successText={
                       showSuccessText && previewS3Path
                         ? t("servicelog:s3.savedTips") + previewS3Path
@@ -219,19 +220,18 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                     }
                   >
                     <AutoComplete
-                      disabled={loadingBucket}
+                      outerLoading
+                      disabled={loadingS3List || loadingBucket || disableBucket}
                       className="m-w-75p"
                       placeholder={t("servicelog:s3.selectBucket")}
-                      loading={loadingS3List}
+                      loading={loadingS3List || loadingBucket}
                       optionList={s3BucketOptionList}
-                      value={s3Bucket}
+                      value={s3Task.params.logBucketObj}
                       onChange={(
                         event: React.ChangeEvent<HTMLInputElement>,
                         data
                       ) => {
-                        setS3Bucket(data);
                         changeLogBucketObj(data);
-                        // changeLogBucketObj(data.value);
                       }}
                     />
                   </FormItem>
@@ -243,6 +243,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                         previewS3Path +
                         " ?"
                       }
+                      accountId={s3Task.logSourceAccountId}
                       resourceType={ResourceType.S3Bucket}
                       resourceName={s3Task.source}
                       changeEnableStatus={(status) => {

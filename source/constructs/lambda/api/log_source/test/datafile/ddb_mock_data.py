@@ -13,5 +13,7 @@ s3_log_source_data = {
     "s3Prefix": "test",
     "sourceType": "S3",
     "status": "ACTIVE",
+    "defaultVpcId": "vpc-1001",
+    "defaultSubnetIds": "sub-001,sub-002",
     "tags": None,
 }

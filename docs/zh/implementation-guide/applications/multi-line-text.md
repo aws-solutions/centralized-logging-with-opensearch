@@ -88,8 +88,12 @@ include-markdown "include-prerequisites.md"
 ## 步骤 3: 在 OpenSearch 中查看您的日志
 
 1. 在浏览器中打开 OpenSearch 控制台。
-2. 转到左侧边栏中的**Discover**部分。
-3. 将活动索引模式更改为 `<pipeline-index-prefix>-*`。
+2. 创建索引
+    {%
+    include-markdown "../aws-services/include-index-pattern.md"
+    %}
+3. 转到左侧边栏中的**Discover**部分。
+4. 将活动索引模式更改为 `<pipeline-index-prefix>-*`。
 
 
 

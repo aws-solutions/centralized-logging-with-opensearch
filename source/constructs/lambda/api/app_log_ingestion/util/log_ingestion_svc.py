@@ -18,27 +18,24 @@ from boto3.dynamodb.conditions import Key
 from boto3.dynamodb.conditions import Attr
 from util.agent_type import AgentType
 from util.sys_enum_type import SOURCETYPE
-
 from util.exception import APIException
+from util.kds_role_mgr import KDSRoleMgr
+from util.aws_svc_mgr import SvcManager, Boto3API
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-solution = os.environ.get('SOLUTION', 'SO8025/' + os.environ['SOLUTION_VERSION'])
+solution = os.environ.get('SOLUTION',
+                          'SO8025/' + os.environ['SOLUTION_VERSION'])
 user_agent_config = {'user_agent_extra': f'AwsSolution/{solution}'}
 default_config = config.Config(**user_agent_config)
+default_region = os.environ.get("AWS_REGION")
 
 # Get SSM resource
-ssm = boto3.client('ssm', config=default_config)
 ssm_log_config_document_name = os.environ.get('SSM_LOG_CONFIG_DOCUMENT_NAME')
-
-# Get S3 resource
-s3 = boto3.resource('s3', config=default_config)
-config_file_s3_bucket_name = os.environ.get('CONFIG_FILE_S3_BUCKET_NAME')
 
 # Get Lambda resource
 awslambda = boto3.client('lambda', config=default_config)
-iam = boto3.client('iam', config=default_config)
 
 # Get DDB resource.
 dynamodb = boto3.resource('dynamodb', config=default_config)
@@ -49,7 +46,8 @@ instance_group_table_name = os.environ.get('INSTANCE_GROUP_TABLE_NAME')
 app_log_ingestion_table_name = os.environ.get('APPLOGINGESTION_TABLE')
 ec2_log_source_table_name = os.environ.get('EC2_LOG_SOURCE_TABLE_NAME')
 s3_log_source_table_name = os.environ.get('S3_LOG_SOURCE_TABLE_NAME')
-eks_cluster_log_source_table_name = os.environ.get('EKS_CLUSTER_SOURCE_TABLE_NAME')
+eks_cluster_log_source_table_name = os.environ.get(
+    'EKS_CLUSTER_SOURCE_TABLE_NAME')
 
 instance_meta_table = dynamodb.Table(instance_meta_table_name)
 app_pipeline_table = dynamodb.Table(app_pipeline_table_name)
@@ -58,10 +56,28 @@ instance_group_table = dynamodb.Table(instance_group_table_name)
 app_log_ingestion_table = dynamodb.Table(app_log_ingestion_table_name)
 ec2_log_source_table = dynamodb.Table(ec2_log_source_table_name)
 s3_log_source_table = dynamodb.Table(s3_log_source_table_name)
-eks_cluster_log_source_table = dynamodb.Table(eks_cluster_log_source_table_name)
+eks_cluster_log_source_table = dynamodb.Table(
+    eks_cluster_log_source_table_name)
+
+sts = boto3.client("sts", config=default_config)
+account_id = sts.get_caller_identity()["Account"]
 
 
 class LogIngestionSvc:
+
+    def __init__(self,
+                 sub_account_id=account_id,
+                 region=default_region) -> None:
+        self._svcMgr = SvcManager()
+        self._ssm = self._svcMgr.get_client(sub_account_id=sub_account_id,
+                                            region=region,
+                                            service_name='ssm',
+                                            type=Boto3API.CLIENT)
+        link_account = self._svcMgr.get_link_account(sub_account_id, region)
+        if link_account:
+            self._ssm_log_config_document_name = link_account['agentConfDoc']
+        else:
+            self._ssm_log_config_document_name = ssm_log_config_document_name
 
     def get_instances(self, group_id):
         """
@@ -83,8 +99,7 @@ class LogIngestionSvc:
         """
         response = instance_meta_table.query(
             IndexName='instanceId-index',
-            KeyConditionExpression=Key('instanceId').eq(instance_id)
-        )
+            KeyConditionExpression=Key('instanceId').eq(instance_id))
         if 'Items' not in response:
             raise APIException('Instance Metadata Not Found')
 
@@ -104,16 +119,23 @@ class LogIngestionSvc:
             for path, subdirs, files in os.walk(input_dir):
                 for file in files:
                     dest_path = path.replace(input_dir, "")
-                    __s3file = os.path.normpath(s3_path + '/' + dest_path + '/' + file)
+                    __s3file = os.path.normpath(s3_path + "/" + dest_path +
+                                                "/" + file)
                     __local_file = os.path.join(path, file)
-                    logger.info("Upload : %s  to Target: %s" % (__local_file, __s3file))
+                    logger.info(
+                        "Upload : %s  to Target: %s" %
+                        (__local_file, s3_bucket.name + "/" + __s3file))
                     s3_bucket.upload_file(__local_file, __s3file)
         except Exception as e:
             logger.error(" ... Failed!! Quitting Upload!!")
             logger.error(e)
             raise e
 
-    def upload_config_to_ec2(self, logAgent: AgentType, group_id, log_ingestion_id, new_config_id='',
+    def upload_config_to_ec2(self,
+                             logAgent: AgentType,
+                             group_id,
+                             log_ingestion_id,
+                             new_config_id='',
                              new_app_pipeline_id=''):
         """Upload the config file to EC2 by SSM"""
         instance_ids = self.get_instances(group_id)
@@ -123,24 +145,32 @@ class LogIngestionSvc:
             self.ssm_send_command(instance_id)
             # update the instance_meta_table
             if new_config_id != '':
-                self.create_instance_meta(instance_id, new_app_pipeline_id, new_config_id, group_id, log_ingestion_id)
+                self.create_instance_meta(instance_id, new_app_pipeline_id,
+                                          new_config_id, group_id,
+                                          log_ingestion_id)
         time.sleep(_health_check_retry_interval)
         # Retry process
         unsuccessful_instance_ids = logAgent.agent_health_check(instance_ids)
         if len(unsuccessful_instance_ids) > 0:
-            logger.info("Start retry config distribution for unsuccessful instances: " + str(unsuccessful_instance_ids))
+            logger.info(
+                "Start retry config distribution for unsuccessful instances: "
+                + str(unsuccessful_instance_ids))
             for i in range(_health_check_retry_interval):
                 for instance_id in unsuccessful_instance_ids:
                     self.ssm_send_command(instance_id)
                 time.sleep(_health_check_retry_interval)
-                unsuccessful_instance_ids = logAgent.agent_health_check(unsuccessful_instance_ids)
-                logger.info("Retry times: %d, unsuccessful instance left: %s" % (i + 1, str(unsuccessful_instance_ids)))
+                unsuccessful_instance_ids = logAgent.agent_health_check(
+                    unsuccessful_instance_ids)
+                logger.info("Retry times: %d, unsuccessful instance left: %s" %
+                            (i + 1, str(unsuccessful_instance_ids)))
                 if len(unsuccessful_instance_ids) == 0:
                     break
         if len(unsuccessful_instance_ids) > 0:
-            logger.info("Unsuccessful instances (after 2 retries): %s" % str(unsuccessful_instance_ids))
+            logger.info("Unsuccessful instances (after 2 retries): %s" %
+                        str(unsuccessful_instance_ids))
         else:
-            logger.info("Distributed agent config to: %s successfully" % str(instance_ids))
+            logger.info("Distributed agent config to: %s successfully" %
+                        str(instance_ids))
 
     def ssm_send_command(self, instance_id):
         """
@@ -149,18 +179,17 @@ class LogIngestionSvc:
         :return:
         """
         logger.info('Run SSM documentation on instance %s' % instance_id)
-        response = ssm.send_command(
+        response = self._ssm.send_command(
             InstanceIds=[instance_id],
-            DocumentName=ssm_log_config_document_name,
-            Parameters={
-                'INSTANCEID': [instance_id]
-            },
+            DocumentName=self._ssm_log_config_document_name,
+            Parameters={'INSTANCEID': [instance_id]},
         )
         logger.info('Triggered log config downloading to EC2 successfully')
         command_id = response['Command']['CommandId']
         return command_id
 
-    def create_instance_meta(self, instance_id, app_pipeline_id, config_id, group_id, log_ingestion_id):
+    def create_instance_meta(self, instance_id, app_pipeline_id, config_id,
+                             group_id, log_ingestion_id):
         """
         Create the instance meta item
         :param instance_id:
@@ -182,12 +211,10 @@ class LogIngestionSvc:
                 'logIngestionId': log_ingestion_id,
                 'status': 'ACTIVE',
                 'createdDt': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
-            }
-        )
+            })
         return id
 
-
-    def get_kinesis_data_stream_detail(self, app_pipeline_id):
+    def get_app_pipeline(self, app_pipeline_id):
         """
         Get kinesis data stream detail by app pipeline id
         :param app_pipeline_id:
@@ -197,9 +224,7 @@ class LogIngestionSvc:
         if 'Item' not in response:
             raise APIException('App Pipeline Not Found')
 
-        kds_paras = response['Item']['kdsParas']
-
-        return kds_paras
+        return response['Item']
 
     def get_config_detail(self, config_id):
         """
@@ -250,15 +275,23 @@ class LogIngestionSvc:
         # Validation will inclued historical inactive ingestions.
         # Which means even if users have deleted the ingestion,
         # new created ingestion still needs to be checked with deleted ones.
-        resp = self.list_app_log_ingestions(appPipelineId=args['appPipelineId'],
-                                            page=1, count=10,
-                                            no_page=True, include_inactive=True)
+        resp = self.list_app_log_ingestions(
+            appPipelineId=args['appPipelineId'],
+            page=1,
+            count=10,
+            no_page=True,
+            include_inactive=True)
         # Since the ingestion of INACTIVE is considered, it needs to be de-duplicated here
-        confIds = list(set([ingestion['confId'] for ingestion in resp['appLogIngestions']]))
+        confIds = list(
+            set([
+                ingestion['confId'] for ingestion in resp['appLogIngestions']
+            ]))
         if len(confIds) > 0:
             resp = self.do_batch_get({
                 app_log_config_table.name: {
-                    'Keys': [{'id': id_} for id_ in confIds]
+                    'Keys': [{
+                        'id': id_
+                    } for id_ in confIds]
                 }
             })
             ingestion_confs = resp[app_log_config_table.name]
@@ -266,10 +299,18 @@ class LogIngestionSvc:
                 ingestion_conf_type = ingestion_conf['logType']
 
                 if current_log_type != ingestion_conf_type:
-                    raise APIException(
-                        f"The current config type \"{current_log_type}\" must be the same as the "
-                        f"initial config type \"{ingestion_conf_type}\" of the ingestion.\n"
-                        f"If you want to ingest \"{current_log_type}\" type logs, please create a new App Pipeline.")
+                    if args.get('force'):
+                        logger.warn(
+                            f"Force continue: The current config type \"{current_log_type}\" must be the same as the "
+                            f"initial config type \"{ingestion_conf_type}\" of the ingestion.\n"
+                            f"If you want to ingest \"{current_log_type}\" type logs, please create a new App Pipeline."
+                        )
+                    else:
+                        raise APIException(
+                            f"The current config type \"{current_log_type}\" must be the same as the "
+                            f"initial config type \"{ingestion_conf_type}\" of the ingestion.\n"
+                            f"If you want to ingest \"{current_log_type}\" type logs, please create a new App Pipeline."
+                        )
                 self.validate_index_mapping(current_conf, ingestion_conf)
 
     def transform(self, lst: list, preserve_key=False) -> dict:
@@ -357,15 +398,18 @@ class LogIngestionSvc:
         assert isinstance(conf1, dict)
         assert isinstance(conf2, dict)
 
-        conf1_regex_specs_dict = self.transform(conf1.get('regularSpecs', []), preserve_key=True)
-        conf2_regex_specs_dict = self.transform(conf2.get('regularSpecs', []), preserve_key=True)
+        conf1_regex_specs_dict = self.transform(conf1.get('regularSpecs', []),
+                                                preserve_key=True)
+        conf2_regex_specs_dict = self.transform(conf2.get('regularSpecs', []),
+                                                preserve_key=True)
 
         for key in conf1_regex_specs_dict:
             val1 = conf1_regex_specs_dict[key]
             val2 = conf2_regex_specs_dict.get(key)
             if (val2 is not None) and (val2 != val1):
                 raise APIException(
-                    f"Invalid index mapping: config1={conf1.get('id')} index mapping={val1} and config2={conf2.get('id')} index mapping={val2} mismatch")
+                    f"Invalid index mapping: config1={conf1.get('id')} index mapping={val1} and config2={conf2.get('id')} index mapping={val2} mismatch"
+                )
 
     # See https://github.com/awsdocs/aws-doc-sdk-examples/blob/aff1457e152f5a38e6a176fce40a918d63ff7c07/python
     # /example_code/dynamodb/batching/dynamo_batching.py#L65:5
@@ -394,11 +438,12 @@ class LogIngestionSvc:
             unprocessed = response['UnprocessedKeys']
             if len(unprocessed) > 0:
                 batch_keys = unprocessed
-                unprocessed_count = sum(
-                    [len(batch_key['Keys']) for batch_key in batch_keys.values()])
-                logger.info(
-                    "%s unprocessed keys returned. Sleep, then retry.",
-                    unprocessed_count)
+                unprocessed_count = sum([
+                    len(batch_key['Keys'])
+                    for batch_key in batch_keys.values()
+                ])
+                logger.info("%s unprocessed keys returned. Sleep, then retry.",
+                            unprocessed_count)
                 tries += 1
                 if tries < max_tries:
                     logger.info("Sleeping for %s seconds.", sleepy_time)
@@ -420,45 +465,79 @@ class LogIngestionSvc:
             resp = self.list_app_log_ingestions(**args)
             if 'total' in resp and resp['total'] > 0:
                 raise APIException(
-                    f'please check sourceId {sourceId} and conId {args["confId"]},'
-                    f' they already exist in applineId {args["appPipelineId"]}')
+                    f'Please check source {resp["appLogIngestions"][0]["sourceInfo"]["sourceName"]} '
+                    f'and config {resp["appLogIngestions"][0]["confName"]},'
+                    f' they already exist in app pipeline {args["appPipelineId"]}'
+                )
 
         with app_log_ingestion_table.batch_writer() as batch:
             for sourceId in source_ids:
                 id = source_ingestion_map.get(sourceId)
+                if args['sourceType'] == SOURCETYPE.EC2.value:
+                    source_info = instance_group_table.get_item(
+                        Key={'id': sourceId})['Item']
+                elif args['sourceType'] == SOURCETYPE.S3.value:
+                    source_info = s3_log_source_table.get_item(
+                        Key={'id': sourceId})['Item']
+                elif args['sourceType'] == SOURCETYPE.EKS_CLUSTER.value:
+                    source_info = eks_cluster_log_source_table.get_item(
+                        Key={'id': sourceId})['Item']
+                else:
+                    raise APIException(
+                        f"Unknown sourceType ({args['sourceType']})")
+
                 batch.put_item(
                     Item={
-                        'id': id,
-                        'confId': args['confId'],
-                        'sourceId': sourceId,
-                        'stackId': args['stackId'],
-                        'stackName': args['stackName'],
-                        'appPipelineId': args['appPipelineId'],
-                        'createdDt': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
-                        'status': 'CREATING',
-                        'sourceType': args['sourceType'],
-                        'tags': args.get('tags', []),
-                    }
-                )
+                        'id':
+                        id,
+                        'confId':
+                        args['confId'],
+                        'sourceId':
+                        sourceId,
+                        'stackId':
+                        args.get('stackId', ''),
+                        'stackName':
+                        args.get('stackName', ''),
+                        'appPipelineId':
+                        args['appPipelineId'],
+                        'logPath':
+                        args.get('logPath', ''),
+                        'accountId':
+                        source_info.get('accountId', account_id),
+                        'region':
+                        source_info.get('region', default_region),
+                        'createdDt':
+                        datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
+                        'status':
+                        'CREATING',
+                        'sourceType':
+                        args['sourceType'],
+                        'tags':
+                        args.get('tags', []),
+                    })
         args['source_ingestion_map'] = source_ingestion_map
         args['action'] = "asyncCreateAppLogIngestion"
         return args
 
     def list_app_log_ingestions(self, **args):
         """  List app log ingestion """
-        page = args.get('page',1)
-        count = args.get('count',100)
-        logger.info(f'List AppLogIngestion from DynamoDB in page {page} with {count} of records')
-
+        page = args.get('page', 1)
+        count = args.get('count', 100)
+        logger.info(
+            f'List AppLogIngestion from DynamoDB in page {page} with {count} of records'
+        )
         """ build filter conditions """
-        conditions = Attr('status').is_in(['ACTIVE', 'CREATING', 'DELETING', 'ERROR'])
+        conditions = Attr('status').is_in(
+            ['ACTIVE', 'CREATING', 'DELETING', 'ERROR'])
 
         if 'status' in args and args['status'] and args['status'] != 'ACTIVE':
             conditions = Attr('status').eq(args['status'])
 
         if args.get('include_inactive'):
-            logger.info('List AppLogIngestion from DynamoDB with inactive items')
-            conditions = Attr('status').is_in(['ACTIVE', 'CREATING', 'DELETING', 'ERROR', 'INACTIVE'])
+            logger.info(
+                'List AppLogIngestion from DynamoDB with inactive items')
+            conditions = Attr('status').is_in(
+                ['ACTIVE', 'CREATING', 'DELETING', 'ERROR', 'INACTIVE'])
 
         if 'id' in args and args['id']:
             conditions = conditions.__and__(Attr('id').eq(args['id']))
@@ -467,20 +546,25 @@ class LogIngestionSvc:
             conditions = conditions.__and__(Attr('confId').eq(args['confId']))
 
         if 'sourceIds' in args and args['sourceIds']:
-            conditions = conditions.__and__(Attr('sourceId').is_in(args['sourceIds']))
+            conditions = conditions.__and__(
+                Attr('sourceId').is_in(args['sourceIds']))
         elif 'sourceId' in args and args['sourceId']:
-            conditions = conditions.__and__(Attr('sourceId').eq(args['sourceId']))
+            conditions = conditions.__and__(
+                Attr('sourceId').eq(args['sourceId']))
 
         if 'sourceType' in args and args['sourceType']:
-            conditions = conditions.__and__(Attr('sourceType').eq(args['sourceType']))
+            conditions = conditions.__and__(
+                Attr('sourceType').eq(args['sourceType']))
 
         if 'appPipelineId' in args and args['appPipelineId']:
-            conditions = conditions.__and__(Attr('appPipelineId').eq(args['appPipelineId']))
+            conditions = conditions.__and__(
+                Attr('appPipelineId').eq(args['appPipelineId']))
 
         response = app_log_ingestion_table.scan(
             FilterExpression=conditions,
-            ProjectionExpression="#id, createdDt, #confId, #sourceId, groupId, stackId, stackName, #appPipelineId, "
-                                 "#sourceType, #status, tags ",
+            ProjectionExpression=
+            "#id, createdDt, #confId, #sourceId, groupId, stackId, stackName, #appPipelineId, logPath,"
+            "#sourceType, #status, tags ",
             ExpressionAttributeNames={
                 '#id': 'id',
                 '#confId': 'confId',
@@ -488,9 +572,7 @@ class LogIngestionSvc:
                 '#sourceType': 'sourceType',
                 '#appPipelineId': 'appPipelineId',
                 '#status': 'status',
-
-            }
-        )
+            })
 
         # Assume all items are returned in the scan request
         items = response['Items']
@@ -501,7 +583,8 @@ class LogIngestionSvc:
         end = page * count
 
         if args.get('no_page'):
-            logger.info('List AppLogIngestion from DynamoDB under no paging mode')
+            logger.info(
+                'List AppLogIngestion from DynamoDB under no paging mode')
             start = 0
             end = len(items)
 
@@ -509,20 +592,42 @@ class LogIngestionSvc:
             start, end = 0, count
         logger.info(f'Return result from {start} to {end} in total of {total}')
         items.sort(key=lambda x: x['createdDt'], reverse=True)
-        results = items[start: end]
+        results = items[start:end]
         for result in results:
             result = self.compatible_historical_helper(result)
 
-            log_conf_resp = app_log_config_table.get_item(Key={'id': result['confId']})
+            #get conf Name
+            log_conf_resp = app_log_config_table.get_item(
+                Key={'id': result['confId']})
             if 'Item' in log_conf_resp:
                 result['confName'] = log_conf_resp['Item']['confName']
             else:
                 result['confName'] = ''
 
+            #get kds Role Name and Role ARN
+            app_pipleline_resp = app_pipeline_table.get_item(
+                Key={'id': result['appPipelineId']})
+            if 'Item' in app_pipleline_resp and app_pipleline_resp['Item'].get(
+                    'kdsRoleArn'):
+                result['kdsRoleArn'] = app_pipleline_resp['Item']['kdsRoleArn']
+                result['kdsRoleName'] = app_pipleline_resp['Item'][
+                    'kdsRoleName']
+            elif 'Item' in app_pipleline_resp and app_pipleline_resp[
+                    'Item'].get('ec2RoleArn'):
+                result['ec2RoleArn'] = app_pipleline_resp['Item']['ec2RoleArn']
+                result['ec2RoleName'] = app_pipleline_resp['Item'][
+                    'ec2RoleName']
+            else:
+                result['kdsRoleArn'] = ''
+                result['kdsRoleName'] = ''
+                result['ec2RoleArn'] = ''
+                result['ec2RoleName'] = ''
+
             source_type = result['sourceType']
 
             if source_type == SOURCETYPE.EC2.value:
-                instance_group_resp = instance_group_table.get_item(Key={'id': result['sourceId']})
+                instance_group_resp = instance_group_table.get_item(
+                    Key={'id': result['sourceId']})
                 sourceName = ''
                 if 'Item' in instance_group_resp:
                     sourceName = instance_group_resp['Item']['groupName']
@@ -533,7 +638,10 @@ class LogIngestionSvc:
                     "sourceType": source_type
                 }
             elif source_type == SOURCETYPE.S3.value:
-                s3_log_source_resp = s3_log_source_table.get_item(Key={'id': result['sourceId']})
+                log_agent_vpc_id = os.environ.get('LOG_AGENT_VPC_ID')
+                log_agent_subnet_ids = os.environ.get('LOG_AGENT_SUBNETS_IDS')
+                s3_log_source_resp = s3_log_source_table.get_item(
+                    Key={'id': result['sourceId']})
                 result['sourceInfo'] = {}
                 if 'Item' in s3_log_source_resp:
                     result['sourceInfo'] = {
@@ -544,13 +652,19 @@ class LogIngestionSvc:
                         "region": s3_log_source_resp['Item']['region'],
                         "accountId": '',
                         "s3Source": {
-                            "s3Name": s3_log_source_resp['Item']['s3Name'],
-                            "s3Prefix": s3_log_source_resp['Item']['s3Prefix'],
-                            "archiveFormat": s3_log_source_resp['Item']['archiveFormat']
-                        },
-
-                        "logPath": ''
-
+                            "s3Name":
+                            s3_log_source_resp['Item']['s3Name'],
+                            "s3Prefix":
+                            s3_log_source_resp['Item']['s3Prefix'],
+                            "archiveFormat":
+                            s3_log_source_resp['Item']['archiveFormat'],
+                            "defaultVpcId":
+                            s3_log_source_resp['Item'].get(
+                                "defaultVpcId", log_agent_vpc_id),
+                            "defaultSubnetIds":
+                            s3_log_source_resp['Item'].get(
+                                "defaultSubnetIds", log_agent_subnet_ids)
+                        }
                     }
                     result['sourceName'] = s3_log_source_resp['Item']['s3Name']
 
@@ -559,17 +673,23 @@ class LogIngestionSvc:
                 get EKS Cluster details
                 """
                 result['sourceInfo'] = {}
-                eks_cluster_log_source_resp = eks_cluster_log_source_table.get_item(Key={'id': result['sourceId']})
+                eks_cluster_log_source_resp = eks_cluster_log_source_table.get_item(
+                    Key={'id': result['sourceId']})
                 if 'Item' in eks_cluster_log_source_resp:
                     # get depolymentkind by eksClusterId
                     result['sourceInfo'] = {
-                        "sourceId": result['sourceId'],
-                        "sourceName": eks_cluster_log_source_resp['Item']['eksClusterName'],
-                        "sourceType": source_type,
-                        "createdDt": eks_cluster_log_source_resp['Item']['createdDt'],
-                        "region": eks_cluster_log_source_resp['Item']['region'],
-                        "accountId": eks_cluster_log_source_resp['Item']['accountId'],
-                        "logPath": ''
+                        "sourceId":
+                        result['sourceId'],
+                        "sourceName":
+                        eks_cluster_log_source_resp['Item']['eksClusterName'],
+                        "sourceType":
+                        source_type,
+                        "createdDt":
+                        eks_cluster_log_source_resp['Item']['createdDt'],
+                        "region":
+                        eks_cluster_log_source_resp['Item']['region'],
+                        "accountId":
+                        eks_cluster_log_source_resp['Item']['accountId']
                     }
         return {
             'total': len(items),
@@ -586,10 +706,17 @@ class LogIngestionSvc:
 
         return data
 
-    def remote_create_index_template(self, appPipelineId: str, confId: str, multiline_log_parser: str = None):
+    def remote_create_index_template(self,
+                                     appPipelineId: str,
+                                     confId: str,
+                                     createDashboard: str,
+                                     multiline_log_parser: str = None):
         resp = app_pipeline_table.get_item(Key={'id': appPipelineId})
         item = resp['Item']
-        os_helper_fn_arn = item['kdsParas']['osHelperFnArn']
+        if 'osHelperFnArn' in item:
+            os_helper_fn_arn = item['osHelperFnArn']
+        else:
+            os_helper_fn_arn = item['kdsParas']['osHelperFnArn']
 
         resp = app_log_config_table.get_item(Key={'id': confId})
         item = resp['Item']
@@ -600,12 +727,14 @@ class LogIngestionSvc:
         def _without_time_key(x):
             return not x.get('format')
 
-        mappings = self.transform(filter(_without_time_key, item.get('regularSpecs', [])))
+        mappings = self.transform(
+            filter(_without_time_key, item.get('regularSpecs', [])))
 
         payload = {
             'action': 'CreateIndexTemplate',
             'props': {
                 'log_type': log_type,
+                'createDashboard': createDashboard,
                 'mappings': mappings,
             },
         }
@@ -638,7 +767,9 @@ class LogIngestionSvc:
 
             resp = self.do_batch_get({
                 eks_cluster_log_source_table.name: {
-                    'Keys': [{'id': src_id} for src_id in source_ids]
+                    'Keys': [{
+                        'id': src_id
+                    } for src_id in source_ids]
                 }
             })
 
@@ -646,8 +777,10 @@ class LogIngestionSvc:
             query_args = dict()
             query_args['sourceIds'] = args['sourceIds']
             query_args['sourceType'] = args['sourceType']
-            app_log_ingestion_list_result = self.list_app_log_ingestions(**query_args)
-            app_log_ingestion_list = app_log_ingestion_list_result['appLogIngestions']
+            app_log_ingestion_list_result = self.list_app_log_ingestions(
+                **query_args)
+            app_log_ingestion_list = app_log_ingestion_list_result[
+                'appLogIngestions']
             logger.info(f'app_pipeline_list is {app_log_ingestion_list}')
             app_pipeline_ids = []
             for app_log_pipeline in app_log_ingestion_list:
@@ -658,36 +791,61 @@ class LogIngestionSvc:
             # get kds arn list by app_pipeline_ids
             query_pipeline_resp = self.do_batch_get({
                 app_pipeline_table.name: {
-                    'Keys': [{'id': pipeline_id} for pipeline_id in app_pipeline_ids]
+                    'Keys': [{
+                        'id': pipeline_id
+                    } for pipeline_id in app_pipeline_ids]
                 }
             })
 
             app_pipelines = query_pipeline_resp[app_pipeline_table.name]
             arns = []
-            for app_pipeline in app_pipelines:    
-                arns.append(app_pipeline['kdsParas']['kdsArn'])
-
+            for app_pipeline in app_pipelines:
+                if app_pipeline['status'] != 'ACTIVE':
+                    continue
+                if (not app_pipeline.get('kdsRoleArn')) and (
+                        not app_pipeline.get('ec2RoleArn')):
+                    raise APIException(
+                        f'This application log pipeline({app_pipeline["id"]}) does not create a role for Kinesis Data Stream or AOS, please create it manually through Lambda.'
+                    )
+                role_arn = app_pipeline.get('kdsRoleArn') or app_pipeline.get(
+                    'ec2RoleArn')
+                arns.append(role_arn)
             # update role
             for eks_log_src in resp[eks_cluster_log_source_table.name]:
-                logger.info(f"Put role policy to {eks_log_src['logAgentRoleArn']}")
+                logger.info(
+                    f"Put role policy to {eks_log_src['logAgentRoleArn']}")
+                iam = self._svcMgr.get_client(
+                    sub_account_id=eks_log_src.get('accountId', account_id),
+                    region=eks_log_src.get('region', default_region),
+                    service_name='iam',
+                    type=Boto3API.CLIENT)
                 iam.put_role_policy(
                     PolicyDocument=json.dumps({
-                        "Version": "2012-10-17",
+                        "Version":
+                        "2012-10-17",
                         "Statement": [{
                             "Effect": "Allow",
-                            "Action": [
-                                "kinesis:PutRecord",
-                                "kinesis:PutRecords"
-                            ],
+                            "Action": "sts:AssumeRole",
                             "Resource": list(filter(bool, arns))
                         }]
                     }),
                     PolicyName=f"eks-log-src-{eks_log_src['id'][:5]}",
-                    RoleName=self.role_arn2role_name(eks_log_src['logAgentRoleArn']),
+                    RoleName=self.role_arn2role_name(
+                        eks_log_src['logAgentRoleArn']),
                 )
+                _source_ids = []
+                _source_ids.append(eks_log_src['id'])
+                KDSRoleMgr.generate_kds_role_4_fluent_bit(
+                    app_pipeline_id=args['appPipelineId'],
+                    source_type=SOURCETYPE.EKS_CLUSTER,
+                    source_ids=_source_ids)
 
-            self.remote_create_index_template(args['appPipelineId'], args['confId'],
-                                              multiline_log_parser=args['current_conf'].get('multilineLogParser'))
+            self.remote_create_index_template(
+                args['appPipelineId'],
+                args['confId'],
+                args['createDashboard'],
+                multiline_log_parser=args['current_conf'].get(
+                    'multilineLogParser'))
 
         except Exception as e:
             args['error'] = str(e)
@@ -695,24 +853,27 @@ class LogIngestionSvc:
             self.batch_create_ingestion(**args)
             raise APIException(str(e))
 
-    def get_eks_cluster_list_by_name(self, eks_cluster_name: str, eks_account_id: str, region_name: str) -> list:
+    def get_eks_cluster_list_by_name(self, eks_cluster_name: str,
+                                     eks_account_id: str,
+                                     region_name: str) -> list:
         """
         get eks cluster list by eks cluster name
         """
         conditions = Attr('status').eq('ACTIVE')
-        conditions = conditions.__and__(Attr('eksClusterName').eq(eks_cluster_name))
+        conditions = conditions.__and__(
+            Attr('eksClusterName').eq(eks_cluster_name))
         conditions = conditions.__and__(Attr('accountId').eq(eks_account_id))
         conditions = conditions.__and__(Attr('region').eq(region_name))
         response = eks_cluster_log_source_table.scan(
             FilterExpression=conditions,
-            ProjectionExpression="id,aosDomainId,#region,#accountId,#eksClusterName,eksClusterArn,cri,subnetIds, vpcId, eksClusterSGId,oidcIssuer,endpoint,createdDt,logAgentRoleArn,tags,updatedDt,#status",
+            ProjectionExpression=
+            "id,aosDomainId,#region,#accountId,#eksClusterName,eksClusterArn,cri,subnetIds, vpcId, eksClusterSGId,oidcIssuer,endpoint,createdDt,logAgentRoleArn,tags,updatedDt,#status",
             ExpressionAttributeNames={
                 '#region': 'region',
                 '#status': 'status',
                 '#eksClusterName': 'eksClusterName',
                 '#accountId': 'accountId',
-            }
-        )
+            })
         if ('Items' in response) and (len(response['Items']) > 0):
             return response['Items']
         else:
@@ -722,9 +883,12 @@ class LogIngestionSvc:
         """
         Get EKS Cluster Log Source By Id
         """
-        eks_cluster_log_source_resp = eks_cluster_log_source_table.get_item(Key={'id': eksClusterId})
+        eks_cluster_log_source_resp = eks_cluster_log_source_table.get_item(
+            Key={'id': eksClusterId})
         if 'Item' not in eks_cluster_log_source_resp:
-            raise APIException(f'EKS Cluster Log Source Not Found, EKSCluster id is {eksClusterId}')
+            raise APIException(
+                f'EKS Cluster Log Source Not Found, EKSCluster id is {eksClusterId}'
+            )
         return eks_cluster_log_source_resp['Item']
 
     def create_eks_cluster_pod_log_ingestion(self, **args):
@@ -737,7 +901,8 @@ class LogIngestionSvc:
     def update_eks_cluster_pod_log_ingestion(self, **args):
         args['status'] = 'ACTIVE'
         args['error'] = ''
-        current_conf = app_log_config_table.get_item(Key={'id': args['confId']})['Item']
+        current_conf = app_log_config_table.get_item(
+            Key={'id': args['confId']})['Item']
         args['current_conf'] = current_conf
         self.attached_eks_cluster_account_role(**args)
         self.batch_set_ingestion_active(**args)
@@ -749,7 +914,8 @@ class LogIngestionSvc:
             id = args['source_ingestion_map'].get(sourceId)
             app_log_ingestion_table.update_item(
                 Key={'id': id},
-                UpdateExpression='SET #status = :status,#stackId=:stackId,#stackName=:stackName,#error=:error, #updatedDt= :uDt',
+                UpdateExpression=
+                'SET #status = :status,#stackId=:stackId,#stackName=:stackName,#error=:error, #updatedDt= :uDt',
                 ExpressionAttributeNames={
                     '#status': 'status',
                     '#stackId': 'stackId',
@@ -763,8 +929,7 @@ class LogIngestionSvc:
                     ':stackName': args['stackName'],
                     ':error': args['error'],
                     ':uDt': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-                }
-            )
+                })
 
     def batch_create_ingestion(self, **args):
         # Insert ingestion,status is Active
@@ -772,18 +937,35 @@ class LogIngestionSvc:
         with app_log_ingestion_table.batch_writer() as batch:
             for sourceId in source_ids:
                 id = args['source_ingestion_map'].get(sourceId)
+                eks_log_source_info = self.get_eks_cluster_log_source(sourceId)
                 batch.put_item(
                     Item={
-                        'id': id,
-                        'confId': args['confId'],
-                        'sourceId': sourceId,
-                        'stackId': args['stackId'],
-                        'stackName': args['stackName'],
-                        'appPipelineId': args['appPipelineId'],
-                        'createdDt': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
-                        'status': args['status'],
-                        'error': args['error'],
-                        'sourceType': args['sourceType'],
-                        'tags': args.get('tags', []),
-                    }
-                )
+                        'id':
+                        id,
+                        'confId':
+                        args['confId'],
+                        'sourceId':
+                        sourceId,
+                        'stackId':
+                        args['stackId'],
+                        'stackName':
+                        args['stackName'],
+                        'appPipelineId':
+                        args['appPipelineId'],
+                        'logPath':
+                        args.get('logPath', ''),
+                        'accountId':
+                        eks_log_source_info.get('accountId', account_id),
+                        'region':
+                        eks_log_source_info.get('region', default_region),
+                        'createdDt':
+                        datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
+                        'status':
+                        args['status'],
+                        'error':
+                        args['error'],
+                        'sourceType':
+                        args['sourceType'],
+                        'tags':
+                        args.get('tags', []),
+                    })

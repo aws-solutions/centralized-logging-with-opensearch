@@ -12,12 +12,15 @@
     | ---------- | ---------------- | ------------------------------------------------------------ |
     | Log Bucket Name | `<Requires input>` | The S3 bucket name which stores the logs. |
     | Log Bucket Prefix | `<Requires input>` | The S3 bucket path prefix which stores the logs. |
+    | Log Source Account ID | `<Optional input>`  | The AWS Account ID of the S3 bucket. Required for cross-account log ingestion (Please [link an account](../link-account/index.md) first). By default, the Account ID you logged in at **Step 1** will be used.  |
+    | Log Source Region | `<Optional input>` | The AWS Region of the S3 bucket. By default, the Region you selected at **Step 2** will be used. |
+    | Log Source Account Assume Role | `<Optional input>` | The IAM Role ARN used for cross-account log ingestion. Required for cross-account log ingestion (Please [link an account](../link-account/index.md) first). |
     | Engine Type | OpenSearch | The engine type of the OpenSearch. Select OpenSearch or Elasticsearch. |
     | OpenSearch Domain Name | `<Requires input>` | The domain name of the Amazon OpenSearch cluster. |
     | OpenSearch Endpoint | `<Requires input>` | The OpenSearch endpoint URL. For example, `vpc-your_opensearch_domain_name-xcvgw6uu2o6zafsiefxubwuohe.us-east-1.es.amazonaws.com` |
     | Index Prefix | `<Requires input>` | The common prefix of OpenSearch index for the log. The index name will be `<Index Prefix>-<log-type>-<YYYY-MM-DD>`. |
     | Create Sample Dashboard | Yes | Whether to create a sample OpenSearch dashboard. |
-    | VPC ID | `<requires input>` | Select a VPC which has access to the OpenSearch domain. The log processing Lambda will reside in the selected VPC. |
+    | VPC ID | `<Requires input>` | Select a VPC which has access to the OpenSearch domain. The log processing Lambda will reside in the selected VPC. |
     | Subnet IDs | `<Requires input>` | Select at least two subnets which have access to the OpenSearch domain. The log processing Lambda will reside in the subnets. Make sure the subnets have access to the Amazon S3 service. |
     | Security Group ID | `<Requires input>` | Select a Security Group which will be associated with the log processing Lambda. Make sure the Security Group has access to the OpenSearch domain. |
     | S3 Backup Bucket | `<Requires input>` | The S3 backup bucket name to store the failed ingestion logs.  |

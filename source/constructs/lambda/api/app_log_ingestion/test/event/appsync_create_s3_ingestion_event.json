@@ -5,7 +5,8 @@
         "sourceType": "S3",
         "stackId": "",
         "stackName": "",
-        "appPipelineId": "ab740668-fba3-4d86-879d-e9a5a446d69f"
+        "appPipelineId": "ab740668-fba3-4d86-879d-e9a5a446d69f",
+        "createDashboard": "Yes"
     },
     "identity": {
         "claims": {

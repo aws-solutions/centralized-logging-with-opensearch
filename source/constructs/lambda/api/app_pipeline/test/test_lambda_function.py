@@ -350,10 +350,11 @@ def ddb_no_ingestion_client(iam_roles, remote_lambda):
 def test_validate_index_prefix_overlap(
     ddb_client, sfn_client, iam_roles, remote_lambda
 ):
-    from lambda_function import validate_index_prefix_overlap, APIException
+    from common import AppPipelineValidator, APIException
 
     with pytest.raises(APIException):
-        validate_index_prefix_overlap('hello', 'helloworld')
+        v = AppPipelineValidator(ddb_client.Table(os.environ["APPPIPELINE_TABLE"]))
+        v.validate_index_prefix_overlap('hello', 'helloworld')
 
 
 def test_get_app_pipeline(

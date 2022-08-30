@@ -6,7 +6,7 @@ import os
 
 import boto3
 import pytest
-from moto import mock_s3
+from moto import mock_s3, mock_sts, mock_dynamodb
 
 
 @pytest.fixture
@@ -23,6 +23,13 @@ def s3_client():
         # Upload a test file.
         data = open("./test/datafile/elb.log.gz", "rb")
         s3.Bucket(bucket_name).put_object(Key=key, Body=data)
+        yield
+
+
+@pytest.fixture
+def sts_client():
+    with mock_sts():
+        boto3.client("sts", region_name="us-east-1")
         yield
 
 
@@ -136,7 +143,7 @@ load_failed_resp = Response(201, json.dumps(LOAD_ERR))
     ],
 )
 def test_lambda_handler(
-    mocker, s3_client, s3_event, resp, expected_total, expected_failed
+    mocker, s3_client, sts_client, s3_event, resp, expected_total, expected_failed
 ):
     # Can only import here, as the environment variables need to be set first.
     import lambda_function
@@ -157,7 +164,7 @@ def test_lambda_handler(
     ],
 )
 def test_lambda_handler_multi_events(
-    mocker, s3_client, s3_multi_events, resp, expected_total, expected_failed
+    mocker, s3_client, sts_client, s3_multi_events, resp, expected_total, expected_failed
 ):
     # Can only import here, as the environment variables need to be set first.
     import lambda_function
@@ -170,7 +177,7 @@ def test_lambda_handler_multi_events(
     assert failed == expected_failed
 
 
-def test_lambda_handler_direct_put_events(mocker, s3_client, put_event):
+def test_lambda_handler_direct_put_events(mocker, s3_client, sts_client, put_event):
     # Can only import here, as the environment variables need to be set first.
     import lambda_function
 

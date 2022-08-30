@@ -21,9 +21,9 @@ import Alert from "components/Alert";
 import AutoComplete from "components/AutoComplete";
 import FormItem from "components/FormItem";
 import { appSyncRequestQuery } from "assets/js/request";
-import { Resource, ResourceType } from "API";
+import { LoggingBucket, Resource, ResourceType } from "API";
 import { SelectItem } from "components/Select/select";
-import { listResources } from "graphql/queries";
+import { getResourceLoggingBucket, listResources } from "graphql/queries";
 import { OptionType } from "components/AutoComplete/autoComplete";
 import { LambdaTaskProps } from "../CreateLambda";
 import ExtLink from "components/ExtLink";
@@ -32,11 +32,15 @@ import { AppStateProps } from "reducer/appReducer";
 import { useSelector } from "react-redux";
 import { buildLambdaLink } from "assets/js/utils";
 import { useTranslation } from "react-i18next";
+import CrossAccountSelect from "pages/comps/account/CrossAccountSelect";
 
 interface SpecifySettingsProps {
-  LambdaTask: LambdaTaskProps;
-  changeLambdaObj: (lambda: OptionType) => void;
+  lambdaTask: LambdaTaskProps;
+  changeLambdaObj: (lambda: OptionType | null) => void;
   lambdaEmptyError: boolean;
+  changeCrossAccount: (id: string) => void;
+  changeLambdaBucket: (bucket: string, prefix: string) => void;
+  setISChanging: (changing: boolean) => void;
 }
 
 const SpecifySettings: React.FC<SpecifySettingsProps> = (
@@ -46,18 +50,38 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     (state: AppStateProps) => state.amplifyConfig
   );
   const { t } = useTranslation();
-  const { LambdaTask, changeLambdaObj, lambdaEmptyError } = props;
-  const [lambda, setLambda] = useState<OptionType | null>(
-    LambdaTask.params.curLambdaObj
-  );
+  const {
+    lambdaTask,
+    changeLambdaObj,
+    changeLambdaBucket,
+    setISChanging,
+    lambdaEmptyError,
+    changeCrossAccount,
+  } = props;
+
   const [lambdaOptionList, setLambdaOptionList] = useState<SelectItem[]>([]);
   const [loadingLambda, setLoadingLambda] = useState(false);
+  const [disableLambda, setDisableLambda] = useState(false);
 
-  const getLambdaFunctionList = async () => {
+  const getLambdaBucketPrefix = async (lambdaId: string) => {
+    setISChanging(true);
+    const resData: any = await appSyncRequestQuery(getResourceLoggingBucket, {
+      type: ResourceType.Lambda,
+      resourceName: lambdaId,
+      accountId: lambdaTask.logSourceAccountId,
+      region: amplifyConfig.aws_project_region,
+    });
+    const logginBucket: LoggingBucket = resData?.data?.getResourceLoggingBucket;
+    changeLambdaBucket(logginBucket?.bucket || "", logginBucket.prefix || "");
+    setISChanging(false);
+  };
+
+  const getLambdaFunctionList = async (accountId: string) => {
     try {
       setLoadingLambda(true);
       const resData: any = await appSyncRequestQuery(listResources, {
         type: ResourceType.Lambda,
+        accountId: accountId,
       });
       console.info("domainNames:", resData.data);
       const dataList: Resource[] = resData.data.listResources;
@@ -76,8 +100,15 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
   };
 
   useEffect(() => {
-    getLambdaFunctionList();
-  }, []);
+    getLambdaFunctionList(lambdaTask.logSourceAccountId);
+  }, [lambdaTask.logSourceAccountId]);
+
+  useEffect(() => {
+    if (lambdaTask.params.curLambdaObj?.value) {
+      // get lambda bucket info
+      getLambdaBucketPrefix(lambdaTask.params.curLambdaObj.value);
+    }
+  }, [lambdaTask.params.curLambdaObj]);
 
   return (
     <div>
@@ -87,6 +118,16 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
             <div>
               <Alert content={t("servicelog:lambda.alert")} />
               <div className="pb-50">
+                <CrossAccountSelect
+                  accountId={lambdaTask.logSourceAccountId}
+                  changeAccount={(id) => {
+                    changeCrossAccount(id);
+                    changeLambdaObj(null);
+                  }}
+                  loadingAccount={(loading) => {
+                    setDisableLambda(loading);
+                  }}
+                />
                 <FormItem
                   optionTitle={t("servicelog:lambda.name")}
                   optionDesc={
@@ -108,16 +149,17 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                   }
                 >
                   <AutoComplete
+                    outerLoading
+                    disabled={disableLambda || loadingLambda}
                     className="m-w-75p"
                     placeholder={t("servicelog:lambda.selectLambda")}
                     loading={loadingLambda}
                     optionList={lambdaOptionList}
-                    value={lambda}
+                    value={lambdaTask.params.curLambdaObj}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>,
                       data
                     ) => {
-                      setLambda(data);
                       changeLambdaObj(data);
                     }}
                   />

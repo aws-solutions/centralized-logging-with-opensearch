@@ -72,6 +72,84 @@ export const splitStringToBucketAndPrefix = (
   return tmpBucketObj;
 };
 
+export const bucketNameIsValid = (bucketName: string): boolean => {
+  // return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const REG1 = bucketName && /^[a-z\d.-]*$/.test(bucketName);
+  const REG2 = bucketName && /^[a-z\d]/.test(bucketName);
+  const REG3 = bucketName && !/-$/.test(bucketName);
+  const REG4 = bucketName && !/\.+\./.test(bucketName);
+  const REG5 = bucketName && !/-+\.$/.test(bucketName);
+  const REG6 =
+    bucketName &&
+    !/^(?:(?:^|\.)(?:2(?:5[0-5]|[0-4]\d)|1?\d?\d)){4}$/.test(bucketName);
+  const REG7 = bucketName && bucketName.length >= 3 && bucketName.length <= 63;
+
+  console.info(
+    "REG1 && REG2 && REG3 && REG4 && REG5 && REG6 && REG7:",
+    REG1,
+    REG2,
+    REG3,
+    REG4,
+    REG5,
+    REG6,
+    REG7
+  );
+
+  if (REG1 && REG2 && REG3 && REG4 && REG5 && REG6 && REG7) {
+    return true;
+  }
+  return false;
+};
+
+// check Cross Account Input Invalid
+export enum CrossAccountFiled {
+  ACCOUNT_ID = "ACCOUNT_ID",
+  CROSS_ACCOUNT_ROLE = "CROSS_ACCOUNT_ROLE",
+  INSATALL_DOC = "INSATALL_DOC",
+  CONFIG_DOC = "CONFIG_DOC",
+  S3_BUCKET = "S3_BUCKET",
+  STACK_ID = "STACK_ID",
+  KMS_KEY = "KMS_KEY",
+}
+export const checkCrossAccountValid = (
+  type: string,
+  value: string,
+  accountId?: string
+): boolean => {
+  if (type === CrossAccountFiled.ACCOUNT_ID) {
+    return /^\d{12}$/.test(value);
+  }
+  if (type === CrossAccountFiled.CROSS_ACCOUNT_ROLE) {
+    return new RegExp(
+      `^arn:(aws-cn|aws):iam::${accountId ? accountId : "\\d{12}"}:role\\/.+`
+    ).test(value);
+  }
+  if (type === CrossAccountFiled.INSATALL_DOC) {
+    return /.+-FluentBitDocumentInstallation-\w+/.test(value);
+  }
+  if (type === CrossAccountFiled.CONFIG_DOC) {
+    return /.+-FluentBitConfigDownloading-\w+/.test(value);
+  }
+  if (type === CrossAccountFiled.S3_BUCKET) {
+    return bucketNameIsValid(value);
+  }
+  if (type === CrossAccountFiled.STACK_ID) {
+    return new RegExp(
+      `^arn:(aws-cn|aws):cloudformation:\\w+-\\w+-\\d+:${
+        accountId ? accountId : "\\d{12}"
+      }:stack\\/\\S+`
+    ).test(value);
+  }
+  if (type === CrossAccountFiled.KMS_KEY) {
+    return new RegExp(
+      `^arn:(aws-cn|aws):kms:\\w+-\\w+-\\d:${
+        accountId ? accountId : "\\d{12}"
+      }:key\\/\\S+`
+    ).test(value);
+  }
+  return false;
+};
+
 // check index name is valid
 export const checkIndexNameValidate = (indexName: string): boolean => {
   const IndexRegEx = /^[a-z][a-z0-9_-]*$/;
@@ -428,10 +506,24 @@ export const replaceSpringbootTimeFormat = (srcTime: string) => {
   return destTime;
 };
 
+export const getLogFormatByUserLogConfig = (config: string): string => {
+  const withBraketReg = /(%d|%date){([^{}]+)}/g;
+  let m;
+  let tmpFormat = SPRINGBOOT_DEFAULT_TIME_FORMAT;
+  if ((m = withBraketReg.exec(config)) !== null) {
+    console.info("MMM:", m);
+    m.forEach((match, groupIndex) => {
+      if (groupIndex === 2) {
+        tmpFormat = match;
+      }
+    });
+  }
+  return tmpFormat;
+};
+
 // Spring Boot RegEx Generation
-const timeWordsArr = ["%d", "%date"];
-const timeWordsWithoutPercentArr = ["d", "date"];
-const loggerWordsArr = ["%c", "%lo", "%logger"];
+const timeWordsNameArr = ["d", "date"];
+const loggerWordsArr = ["c", "lo", "logger"];
 const messageGroupNameArr = ["m", "msg", "message"];
 const levelGroupNameArr = ["p", "le", "level"];
 const LineGroupNameArr = ["L", "line"];
@@ -477,115 +569,62 @@ const replaceTimeFormatToRegEx = (timeFormatStr: string): any => {
     .replaceAll("s", "\\d{1,2}");
 };
 
-export const getLogFormatByUserLogConfig = (config: string): string => {
-  const withBraketReg = /(%d|%date){([^{}]+)}/g;
-  let m;
-  let tmpFormat = SPRINGBOOT_DEFAULT_TIME_FORMAT;
-  if ((m = withBraketReg.exec(config)) !== null) {
-    console.info("MMM:", m);
-    m.forEach((match, groupIndex) => {
-      if (groupIndex === 2) {
-        tmpFormat = match;
-      }
-    });
-  }
-  return tmpFormat;
-};
-
 export const buildSpringBootRegExFromConfig = (
   logConfigString: string
 ): string => {
-  function repaceTimeD(match: any) {
-    return match.replaceAll("d", "\\d{1,2}");
-  }
-
-  // 首先找出 %X{XX} 这样的组合
-  function findPercentAndBracket(match: any) {
-    const stepMatch: any = match.match(/%\w+/);
-    if (timeWordsArr.includes(stepMatch[0])) {
-      const matchList = match.match(/{(.+)}/);
-      let afterReplaceStr = "";
-      if (matchList && matchList.length > 1) {
-        const dateFormatStr = matchList[1];
-        const tmpAfterReplaceStr = replaceTimeFormatToRegEx(dateFormatStr);
-        // replace single d in time format
-        const regexD = /[^\\](d)/gm;
-        afterReplaceStr = tmpAfterReplaceStr.replace(regexD, repaceTimeD);
-        console.info("afterReplaceStr:", afterReplaceStr);
+  console.info("================SPRINGBOOT LOG REG START====================");
+  // Replace With  %xx{xxxx} format
+  let finalaRegRegStr = logConfigString.replace(
+    /%(\w+)\{(.+?)\}/gi,
+    (match, key, str) => {
+      console.info("match with %xx{xxxx}");
+      // console.info("match:", match);
+      // console.info("key:", key);
+      // console.info("str:", str);
+      if (key === "X") {
+        // Customize Key, may be empty (space)
+        return `(?<${str}>\\S+|\\s)`;
       }
-      return "(?<time>" + afterReplaceStr + ")";
+      if (timeWordsNameArr.includes(key)) {
+        return `(?<time>${replaceTimeFormatToRegEx(str)})`;
+      }
+      return `(?<${key}>\\S+)`;
     }
-    if (loggerWordsArr.includes(stepMatch[0])) {
-      return "(?<logger>\\S+)";
-    }
-    const matchList = match.match(/{(.+)}/);
-    const mdcGroupName = matchList[1];
-    return "(?<" + mdcGroupName + ">\\S+)";
-  }
-  const regex = /%\w+{[^{}]+}/gm;
-  const afterPercentBracket = logConfigString.replace(
-    regex,
-    findPercentAndBracket
   );
-  console.info("afterPercentBracket:", afterPercentBracket);
 
-  // 匹配%开头的，不含%{}[]()
-  const percentRegEx = /%[^%\\[\]{}()\s]+/gm;
-  function findOnlyStartWithPercent(match: any) {
-    console.info("percent match:", match);
-    const groupName = match.match(/[a-zA-Z]+/)?.[0];
-    console.info("groupName:", groupName);
-    // 如果日期不包含日期格式如:{xxxx-xx-xx}, 则使用系统默认的时间都正则表达式
-    if (timeWordsWithoutPercentArr.includes(groupName)) {
-      return "(?<time>\\d{4}-\\d{2}-\\d{2}\\s\\d{2}:\\d{2}:\\d{2},\\d{3})";
-    }
+  // Find and Replace double [ ] 转义
+  finalaRegRegStr = finalaRegRegStr.replaceAll("[", "\\[");
+  finalaRegRegStr = finalaRegRegStr.replaceAll("]", "\\]");
+
+  // Replace % 开头，并且不含特殊字符
+  finalaRegRegStr = finalaRegRegStr.replace(/%([\w-]+)/gi, (match, key) => {
+    console.info("match with %xx");
+    // console.info("match:", match);
+    // console.info("key:", key);
+    key = key.replace(/[\W\d]+/, "");
     // 找到特殊的需要处理的正则表达式，如message(%m)，换行(%n)
-    if (levelGroupNameArr.includes(groupName)) {
+    if (levelGroupNameArr.includes(key)) {
       return "(?<level>[\\S]+)";
     }
-    if (threadGroupNameArr.includes(groupName)) {
+    if (threadGroupNameArr.includes(key)) {
       return "(?<thread>\\S+)";
     }
-    if (LineGroupNameArr.includes(groupName)) {
-      return "(?<line>[\\S]+)";
+    if (LineGroupNameArr.includes(key)) {
+      return "(?<line>[\\w]+)";
     }
-    if (messageGroupNameArr.includes(groupName)) {
+    if (messageGroupNameArr.includes(key)) {
       return "(?<message>[\\s\\S]+)";
     }
-    if (groupName === "n") {
+    if (loggerWordsArr.includes(key)) {
+      return "(?<logger>.+)";
+    }
+    if (key === "n") {
       return "";
     }
-    return "(?<" + groupName + ">\\S+)";
-  }
+    return `(?<${key}>\\S+)`;
+  });
 
-  // 处理中括号或者引号里面的情况, 如果是中括号，引号的情况，里面的内容实用 .+
-  function processQuoteSplitInside(match: any) {
-    const groupName = match.match(/[a-zA-Z]+/)?.[0];
-    return "(?<" + groupName + ">.+)";
-  }
-
-  // 找出存在 双引号 "", 中括号 [], 这样分隔符的字段进行按需替换
-  const regQuoteSplit = /("[^"]+")|(\[[^[\]].+\])/gm;
-  function replaceQuoteSplitItems(match: any) {
-    match = match.replace("[", "\\[").replace("]", "\\]");
-    const tmpRegStr = match.replace(percentRegEx, processQuoteSplitInside);
-    return tmpRegStr;
-  }
-  const afterReplaceQuoteSplit = afterPercentBracket.replace(
-    regQuoteSplit,
-    replaceQuoteSplitItems
-  );
-  console.info("afterReplaceQuoteSplit:", afterReplaceQuoteSplit);
-
-  const afterOnlyPercent = afterReplaceQuoteSplit.replace(
-    percentRegEx,
-    findOnlyStartWithPercent
-  );
-  console.log("afterOnlyPercent:", afterOnlyPercent);
-
-  const finalSpringBootReg = afterOnlyPercent.replace(/\s/gm, "\\s+");
-  console.info("finalSpringBootReg:", finalSpringBootReg);
-  return finalSpringBootReg;
+  return finalaRegRegStr;
 };
 
 export const domainIsValid = (domain: string): boolean => {
@@ -695,6 +734,13 @@ export const buildTrailLink = (trailName: string, region: string): string => {
   return `https://${region}.console.aws.amazon.com/cloudtrail/home?region=${region}#/trails`;
 };
 
+export const buildConfigLink = (region: string): string => {
+  if (region.startsWith("cn")) {
+    return `https://${region}.console.amazonaws.cn/config/home?region=${region}#/dashboard`;
+  }
+  return `https://${region}.console.aws.amazon.com/config/home?region=${region}#/dashboard`;
+};
+
 export const buildCloudFrontLink = (
   cloudFrontId: string,
   region: string
@@ -750,6 +796,13 @@ export const buildELBLink = (region: string): string => {
   return `https://${region}.console.aws.amazon.com/ec2/v2/home?region=${region}#LoadBalancers`;
 };
 
+export const buildKeyPairsLink = (region: string) => {
+  if (region.startsWith("cn")) {
+    return `https://${region}.console.amazonaws.cn/ec2/v2/home?region=${region}#KeyPairs:`;
+  }
+  return `https://${region}.console.aws.amazon.com/ec2/v2/home?region=${region}#KeyPairs:`;
+};
+
 export const buildEKSLink = (
   region: string,
   clusterName?: string | null | undefined
@@ -762,4 +815,14 @@ export const buildEKSLink = (
   return `https://${region}.console.aws.amazon.com/eks/home?region=${region}#/clusters${
     clusterName ? "/" + clusterName : ""
   }`;
+};
+
+export const buildCrossAccountTemplateLink = (
+  region: string,
+  version: string
+): string => {
+  if (region.startsWith("cn")) {
+    return `https://aws-gcr-solutions.s3.cn-north-1.amazonaws.com.cn/log-hub/${version}/CrossAccount.template`;
+  }
+  return `https://aws-gcr-solutions.s3.amazonaws.com/log-hub/${version}/CrossAccount.template`;
 };

@@ -21,6 +21,7 @@ export interface OptionType {
   name: string;
   value: string;
   description?: string;
+  ec2RoleArn?: string;
 }
 
 type AutoCompleteMenuProp = {
@@ -30,6 +31,7 @@ type AutoCompleteMenuProp = {
   className?: string;
   placeholder?: string;
   loading?: boolean;
+  outerLoading?: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onChange: (event: any, data: any) => void;
 };
@@ -41,6 +43,7 @@ const autoComplete: React.FC<AutoCompleteMenuProp> = (
     disabled,
     value,
     loading,
+    outerLoading,
     optionList,
     placeholder,
     className,
@@ -67,6 +70,11 @@ const autoComplete: React.FC<AutoCompleteMenuProp> = (
               autoComplete="off"
               {...params.inputProps}
             />
+            {outerLoading && loading && (
+              <span className="outer-loading">
+                <LoadingText />
+              </span>
+            )}
           </div>
         )}
       />

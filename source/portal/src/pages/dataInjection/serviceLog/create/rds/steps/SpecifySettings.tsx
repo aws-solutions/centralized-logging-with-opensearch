@@ -49,13 +49,14 @@ import { useSelector } from "react-redux";
 import { AppStateProps, InfoBarTypes } from "reducer/appReducer";
 import { buildRDSLink } from "assets/js/utils";
 import { useTranslation } from "react-i18next";
+import CrossAccountSelect from "pages/comps/account/CrossAccountSelect";
 // import Select from "components/Select";
 
 interface SpecifySettingsProps {
   rdsTask: RDSTaskProps;
   changeTaskType: (type: string) => void;
   changeS3Bucket: (bucket: string) => void;
-  changeRDSObj: (rds: OptionType) => void;
+  changeRDSObj: (rds: OptionType | null) => void;
   errorLogEnabled: (enable: boolean) => void;
   queryLogEnabled: (enable: boolean) => void;
   generalLogEnabled: (enable: boolean) => void;
@@ -72,6 +73,7 @@ interface SpecifySettingsProps {
   setNextStepDisableStatus: (status: boolean) => void;
   setISChanging: (changing: boolean) => void;
   changeRDSBucket: (bucket: string, prefix: string) => void;
+  changeCrossAccount: (id: string) => void;
 }
 
 const SpecifySettings: React.FC<SpecifySettingsProps> = (
@@ -97,23 +99,26 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     // setNextStepDisableStatus,
     setISChanging,
     changeRDSBucket,
+    changeCrossAccount,
   } = props;
 
   const amplifyConfig: AmplifyConfigType = useSelector(
     (state: AppStateProps) => state.amplifyConfig
   );
   const { t } = useTranslation();
-  const [rds, setRDS] = useState(rdsTask.params.rdsObj);
+  // const [rds, setRDS] = useState(rdsTask.params.rdsObj);
 
   const [loadingRDSList, setLoadingRDSList] = useState(false);
   const [rdsOptionList, setRDSOptionList] = useState<SelectItem[]>([]);
   const [showLogTypes, setShowLogTypes] = useState(false);
+  const [disabeRDS, setDisableRDS] = useState(false);
 
-  const getRDSList = async () => {
+  const getRDSList = async (accountId: string) => {
     try {
       setLoadingRDSList(true);
       const resData: any = await appSyncRequestQuery(listResources, {
         type: ResourceType.RDS,
+        accountId: accountId,
       });
       console.info("getRDSList:", resData.data);
       const dataList: Resource[] = resData.data.listResources;
@@ -137,6 +142,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     const resData: any = await appSyncRequestQuery(getResourceLoggingBucket, {
       type: ResourceType.RDS,
       resourceName: rdsId,
+      accountId: rdsTask.logSourceAccountId,
     });
     console.info("getBucketPrefix:", resData.data);
     const logginBucket: LoggingBucket = resData?.data?.getResourceLoggingBucket;
@@ -146,19 +152,19 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
 
   useEffect(() => {
     if (rdsTask.params.taskType === CreateLogMethod.Automatic) {
-      getRDSList();
+      getRDSList(rdsTask.logSourceAccountId);
     }
-  }, []);
+  }, [rdsTask.logSourceAccountId]);
 
   useEffect(() => {
-    if (rds?.value) {
+    if (rdsTask.params.rdsObj?.value) {
       setShowLogTypes(true);
       // get rds bucket info
-      getRDSBucketPrefix(rds.value);
+      getRDSBucketPrefix(rdsTask.params.rdsObj.value);
     } else {
       setShowLogTypes(false);
     }
-  }, [rds]);
+  }, [rdsTask.params.rdsObj]);
 
   return (
     <div>
@@ -175,11 +181,11 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                   value={rdsTask.params.taskType}
                   onChange={(event) => {
                     changeTaskType(event.target.value);
-                    setRDS(null);
+                    changeRDSObj(null);
                     // setCreationMethod(event.target.value);
-                    if (event.target.value === CreateLogMethod.Automatic) {
-                      getRDSList();
-                    }
+                    // if (event.target.value === CreateLogMethod.Automatic) {
+                    //   getRDSList();
+                    // }
                   }}
                   items={[
                     {
@@ -219,6 +225,16 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                   }
                 />
               )}
+              <CrossAccountSelect
+                accountId={rdsTask.logSourceAccountId}
+                changeAccount={(id) => {
+                  changeCrossAccount(id);
+                  changeRDSObj(null);
+                }}
+                loadingAccount={(loading) => {
+                  setDisableRDS(loading);
+                }}
+              />
               {rdsTask.params.taskType === CreateLogMethod.Automatic && (
                 <div>
                   <FormItem
@@ -242,17 +258,18 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                     }
                   >
                     <AutoComplete
-                      // disabled={loadingBucket}
+                      disabled={disabeRDS || loadingRDSList}
+                      outerLoading
                       className="m-w-75p"
                       placeholder={t("servicelog:rds.select")}
                       loading={loadingRDSList}
                       optionList={rdsOptionList}
-                      value={rds}
+                      value={rdsTask.params.rdsObj}
                       onChange={(
                         event: React.ChangeEvent<HTMLInputElement>,
                         data
                       ) => {
-                        setRDS(data);
+                        // setRDS(data);
                         changeRDSObj(data);
                       }}
                     />

@@ -18,6 +18,7 @@
 6. 在 **指定设置** 下，为 **CloudFront 日志启用**选择 **自动** 或 **手动**。自动模式将自动检测 CloudFront 日志位置。
     - 对于**自动模式**，从下拉列表中选择 CloudFront 分配。
     - 对于 **手动模式**，输入 **CloudFront Distribution ID** 和 **CloudFront 标准日志位置**。
+    - （可选步骤）如果需要夸账户摄取日志，需要先在 **账户** 的下拉列表中选择一个[链接的 AWS 账户](../link-account/index.md)。
 7. 选择**下一步**。
 8. 在 **指定 OpenSearch 域** 部分，为 **Amazon OpenSearch 域** 选择一个导入的域。
 9. 如果您要摄取关联的模板化 AOS 仪表板，请为 **示例仪表板** 选择 **是**。

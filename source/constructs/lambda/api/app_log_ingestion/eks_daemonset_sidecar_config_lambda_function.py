@@ -45,7 +45,13 @@ def lambda_handler(event, context):
 
     action = event['info']['fieldName']
     args = event['arguments']
-    deploy_config_mng = EKSClusterPodDeploymentConfigurationMng(eks_cluster_id=args['eksClusterId'])
+    open_extra_metadata_flag = False
+    if args.get("openExtraMetadataFlag"):
+        open_extra_metadata_flag = args.get("openExtraMetadataFlag")
+
+    deploy_config_mng = EKSClusterPodDeploymentConfigurationMng(
+        eks_cluster_id=args['eksClusterId'],
+        open_extra_metadata_flag=open_extra_metadata_flag)
     if action == 'getEKSDaemonSetConfig':
         return deploy_config_mng.get_configuration()
     elif action == 'getEKSSidecarConfig' or action == 'getEKSDeploymentConfig':

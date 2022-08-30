@@ -21,6 +21,7 @@ import CheckCircleOutlineIcon from "@material-ui/icons/CheckCircleOutline";
 import classNames from "classnames";
 import { InfoBarTypes } from "reducer/appReducer";
 import InfoSpan from "components/InfoSpan";
+import { useTranslation } from "react-i18next";
 interface FormItemProps {
   infoType?: InfoBarTypes;
   optionTitle: string;
@@ -33,7 +34,8 @@ interface FormItemProps {
   errorText?: string;
   infoText?: string;
   successText?: string;
-  warningText?: string;
+  warningText?: string | JSX.Element;
+  isOptional?: boolean;
 }
 
 const FormItem: React.FC<FormItemProps> = (props: FormItemProps) => {
@@ -46,13 +48,16 @@ const FormItem: React.FC<FormItemProps> = (props: FormItemProps) => {
     infoText,
     successText,
     warningText,
+    isOptional,
   } = props;
+  const { t } = useTranslation();
   return (
     <div
       className={classNames({ "gsui-formitem-wrap": true, invalid: errorText })}
     >
       <div className="formitem-title">
-        {optionTitle} {infoType && <InfoSpan spanType={infoType} />}
+        {optionTitle} {isOptional && <i> - {t("optional")}</i>}{" "}
+        {infoType && <InfoSpan spanType={infoType} />}
       </div>
       <div className="formitem-desc">{optionDesc}</div>
       {children}

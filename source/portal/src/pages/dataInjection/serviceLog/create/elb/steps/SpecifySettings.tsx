@@ -32,13 +32,14 @@ import TextInput from "components/TextInput";
 import { InfoBarTypes } from "reducer/appReducer";
 import { useTranslation } from "react-i18next";
 import AutoEnableLogging from "../../common/AutoEnableLogging";
+import CrossAccountSelect from "pages/comps/account/CrossAccountSelect";
 // import Select from "components/Select";
 
 interface SpecifySettingsProps {
   elbTask: ELBTaskProps;
   changeTaskType: (type: string) => void;
   changeELBBucket: (bucket: string) => void;
-  changeELBObj: (elb: OptionType) => void;
+  changeELBObj: (elb: OptionType | null) => void;
   changeLogPath: (logPath: string) => void;
   manualChangeBucket: (bucket: string) => void;
   autoELBEmptyError: boolean;
@@ -46,6 +47,7 @@ interface SpecifySettingsProps {
   setNextStepDisableStatus: (status: boolean) => void;
   setISChanging: (changing: boolean) => void;
   changeNeedEnableLogging: (need: boolean) => void;
+  changeCrossAccount: (id: string) => void;
 }
 
 const SpecifySettings: React.FC<SpecifySettingsProps> = (
@@ -63,9 +65,10 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     setNextStepDisableStatus,
     changeNeedEnableLogging,
     setISChanging,
+    changeCrossAccount,
   } = props;
   const { t } = useTranslation();
-  const [elb, setELB] = useState(elbTask.params.elbObj);
+  // const [elb, setELB] = useState(elbTask.params.elbObj);
   // const [elbManualBucketName, setELBManualBucketName] = useState("");
 
   const [loadingELBList, setLoadingELBList] = useState(false);
@@ -76,12 +79,14 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
   const [showInfoText, setShowInfoText] = useState(false);
   const [showSuccessText, setShowSuccessText] = useState(false);
   const [previewS3Path, setPreviewS3Path] = useState("");
+  const [disableELB, setDisableELB] = useState(false);
 
-  const getELBList = async () => {
+  const getELBList = async (accountId: string) => {
     try {
       setLoadingELBList(true);
       const resData: any = await appSyncRequestQuery(listResources, {
         type: ResourceType.ELB,
+        accountId: accountId,
       });
       console.info("domainNames:", resData.data);
       const dataList: Resource[] = resData.data.listResources;
@@ -105,6 +110,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     const resData: any = await appSyncRequestQuery(getResourceLoggingBucket, {
       type: ResourceType.ELB,
       resourceName: bucket,
+      accountId: elbTask.logSourceAccountId,
     });
     console.info("getBucketPrefix:", resData.data);
     const logginBucket: LoggingBucket = resData?.data?.getResourceLoggingBucket;
@@ -124,20 +130,19 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
   };
 
   useEffect(() => {
-    console.info("elb:", elb);
     setShowSuccessText(false);
     setShowInfoText(false);
     setNextStepDisableStatus(false);
-    if (elb && elb.value) {
-      getBucketPrefix(elb.value);
+    if (elbTask.params.elbObj && elbTask.params.elbObj.value) {
+      getBucketPrefix(elbTask.params.elbObj.value);
     }
-  }, [elb]);
+  }, [elbTask.params.elbObj]);
 
   useEffect(() => {
     if (elbTask.params.taskType === CreateLogMethod.Automatic) {
-      getELBList();
+      getELBList(elbTask.logSourceAccountId);
     }
-  }, []);
+  }, [elbTask.logSourceAccountId]);
 
   useEffect(() => {
     changeNeedEnableLogging(showInfoText);
@@ -158,11 +163,9 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                   value={elbTask.params.taskType}
                   onChange={(event) => {
                     changeTaskType(event.target.value);
-                    setELB(null);
-                    // setCreationMethod(event.target.value);
+                    changeELBObj(null);
                     if (event.target.value === CreateLogMethod.Automatic) {
                       changeLogPath("");
-                      getELBList();
                     }
                   }}
                   items={[
@@ -184,6 +187,16 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
 
           <HeaderPanel title={t("servicelog:elb.title")}>
             <div>
+              <CrossAccountSelect
+                accountId={elbTask.logSourceAccountId}
+                changeAccount={(id) => {
+                  changeCrossAccount(id);
+                  changeELBObj(null);
+                }}
+                loadingAccount={(loading) => {
+                  setDisableELB(loading);
+                }}
+              />
               {elbTask.params.taskType === CreateLogMethod.Automatic && (
                 <div className="pb-50">
                   <FormItem
@@ -199,17 +212,17 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                     }
                   >
                     <AutoComplete
-                      disabled={loadingBucket}
+                      outerLoading
+                      disabled={loadingBucket || disableELB || loadingELBList}
                       className="m-w-75p"
                       placeholder={t("servicelog:elb.selectALB")}
-                      loading={loadingELBList}
+                      loading={loadingELBList || loadingBucket}
                       optionList={elbOptionList}
-                      value={elb}
+                      value={elbTask.params.elbObj}
                       onChange={(
                         event: React.ChangeEvent<HTMLInputElement>,
                         data
                       ) => {
-                        setELB(data);
                         changeELBObj(data);
                       }}
                     />
@@ -222,6 +235,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                         previewS3Path +
                         " ?"
                       }
+                      accountId={elbTask.logSourceAccountId}
                       resourceType={ResourceType.ELB}
                       resourceName={elbTask.arnId}
                       changeEnableStatus={(status) => {

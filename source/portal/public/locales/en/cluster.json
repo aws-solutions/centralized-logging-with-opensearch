@@ -62,7 +62,7 @@
         "clusterRed": "ClusterStatus.red maximum is >= 1 for 1 minute, 1 consecutive time",
         "clusterYellow": "ClusterStatus.yellow maximum is >= 1 for 1 minute, 1 consecutive time",
         "freeStorageSpace": "Minimum FreeStorageSpace (GiB)",
-        "writeBlocked": "ClusterIndexWritesBlocked is >= 1 for 5 minutes, 1 consecutive time",
+        "writeBlocked": "Index writes blocked error occurs for >= x times in 5 minutes, 1 consecutive time. Input `0` to disable this alarm.",
         "nodeUnreachable": "Nodes minimum is < x for 1 day, 1 consecutive time",
         "snapshotFailed": "AutomatedSnapshotFailure maximum is >= 1 for 1 minute, 1 consecutive time",
         "cpuUtilization": "CPUUtilization or WarmCPUUtilization maximum is >= 80% for 15 minutes, 3 consecutive times",
@@ -97,7 +97,8 @@
     "emailFormatError": "Email must be a validate format",
     "selectAlarmTips": "Please at least select one alarm option",
     "alarm": "Alarm",
-    "value": "Value"
+    "value": "Value",
+    "forbidNegative": " cannot be negative."
   },
   "proxy": {
     "name": "Create access proxy",
@@ -122,7 +123,9 @@
     "lbSSLDesc2": " first.",
     "chooseSSL": "Choose a SSL certificate",
     "nginxKeyName": "Nginx Instance Key Name",
-    "nginxKeyNameDesc": "Specify the EC2 Key Name of the Nginx proxy.",
+    "nginxKeyNameDesc1": "Choose an existing EC2 key listed in ",
+    "keyPairs": "EC2 Key pairs",
+    "nginxKeyNameDesc2": " for the Nginx instance.",
     "chooseKeyName": "Choose a EC2 Key Name",
     "subnetError": "Please choose public subnets.",
     "sgError": "Please choose public security group",
@@ -144,9 +147,9 @@
     "selectDomain": {
       "osDomain": "OpenSearch Domain",
       "domain": "Domain",
-      "domainDesc1": "The cluster MUST be in the same region as this solution and must be VPC type. Or follow ",
+      "domainDesc1": "The cluster MUST be in the same region as Log Hub and must be enabled with VPC access. Or follow ",
       "domainDesc2": "this guide",
-      "domainDesc3": " to create a cluster.",
+      "domainDesc3": " to create a cluster. (* Make sure your OpenSearch status is Active, only domains with Active status will be displayed in the list)",
       "domainError": "Please select a domain",
       "selectDomain": "Select an OpenSearch Domain"
     },

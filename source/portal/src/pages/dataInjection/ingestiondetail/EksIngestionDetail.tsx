@@ -58,6 +58,7 @@ export interface EksDetailProps {
   appPipelineId: string;
   created: string;
   configId: string;
+  logPath: string;
   tags: (Tag | null)[] | null | undefined;
 }
 
@@ -126,6 +127,7 @@ const EksIngestionDetail: React.FC = () => {
         appPipelineId: tmpPipelineData.id,
         configId: tmpIngestionData.confId || "",
         created: tmpIngestionData.createdDt || "",
+        logPath: tmpIngestionData.logPath || "",
         tags: tmpIngestionData.tags,
       });
 
@@ -229,10 +231,13 @@ const EksIngestionDetail: React.FC = () => {
                   )}
                 </TabPanel>
                 <TabPanel value={activeTab} index={1}>
-                  <LogConfig configId={eksIngestionData?.configId} />
+                  <LogConfig
+                    logPath={eksIngestionData?.logPath}
+                    configId={eksIngestionData?.configId}
+                  />
                 </TabPanel>
                 <TabPanel value={activeTab} index={2}>
-                  <Tags eskIngestionInfo={eksIngestionData} />
+                  <Tags ingestionInfo={eksIngestionData} />
                 </TabPanel>
               </div>
             )}

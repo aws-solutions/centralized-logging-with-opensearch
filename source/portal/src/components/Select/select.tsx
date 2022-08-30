@@ -83,6 +83,7 @@ interface SelectProps {
   clickRefresh?: () => void;
   disabled?: boolean;
   isI18N?: boolean;
+  allowEmpty?: boolean;
 }
 
 const GSSelect: React.FC<SelectProps> = (props: SelectProps) => {
@@ -97,6 +98,7 @@ const GSSelect: React.FC<SelectProps> = (props: SelectProps) => {
     clickRefresh,
     disabled,
     isI18N,
+    allowEmpty,
   } = props;
   const { t } = useTranslation();
   // console.info("optionList:", optionList);
@@ -113,7 +115,9 @@ const GSSelect: React.FC<SelectProps> = (props: SelectProps) => {
           placeholder={placeholder}
           input={<BootstrapInput />}
           renderValue={
-            value !== ""
+            allowEmpty
+              ? undefined
+              : value !== ""
               ? undefined
               : () => <Placeholder>{placeholder}</Placeholder>
           }

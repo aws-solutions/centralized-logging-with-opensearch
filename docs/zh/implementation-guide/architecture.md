@@ -35,6 +35,9 @@ Log Hub 支持 AWS 服务的日志分析，例如 Amazon S3 访问日志和 Appl
 
 AWS 服务将日志输出到不同的目的地，包括 Amazon S3 存储桶、CloudWatch 日志组、Kinesis Data Streams 和 Kinesis Firehose。 该解决方案使用不同的工作流程摄取这些日志。
 
+!!! note "注意事项"
+    Log Hub 支持[跨账户日志摄取](./link-account/index.md)。 如果您想从同一帐户摄取日志，**Sources** 组中的资源需要与您的 Log Hub 帐户位于同一帐户中。 否则，它们将位于另一个 AWS 账户中。
+
 ### Amazon S3 中的日志
 
 有些服务输出日志到 Amazon S3。Amazon S3 中的日志一般不用于实时分析。
@@ -54,6 +57,7 @@ AWS 服务将日志输出到不同的目的地，包括 Amazon S3 存储桶、Cl
 
 5. 处理失败的日志导出到 Amazon S3 存储桶（备份桶）。
 
+对于跨账户的日志摄取, 如下图所示，AWS 服务日志将产生并且存放在当前账户的 s3 桶中，其余资源仍然在 Log Hub 的账户中。
 
 ### CloudWatch Logs 中的日志
 
@@ -74,10 +78,16 @@ AWS 服务将日志输出到不同的目的地，包括 Amazon S3 存储桶、Cl
 
 5. 处理失败的日志导出到 Amazon S3 存储桶（备份桶）。
 
+对于跨账户的日志摄取, 如下图所示，AWS 服务日志将产生并且存放在当前账户的 CloudWatch 中，其余资源仍然在 Log Hub 的账户中。
 
 ## 应用日志分析管道
 
 Log Hub 支持对应用程序日志进行日志分析，例如 Nginx/Apache HTTP 服务器日志或自定义应用程序日志。
+
+!!! note "注意事项"
+    Log Hub 支持[跨账户日志摄取](./link-account/index.md)。 如果您想从同一帐户摄取日志，**Sources** 组中的资源需要与您的 Log Hub 帐户位于同一帐户中。 否则，它们将位于另一个 AWS 账户中。
+
+### EC2 中的日志
 
 [![arch-app-log-pipeline]][arch-app-log-pipeline]
 图 4：应用程序日志分析架构
@@ -92,6 +102,16 @@ Log Hub 支持对应用程序日志进行日志分析，例如 Nginx/Apache HTTP
 
 4. 处理失败的日志导出到 Amazon S3 存储桶（Backup Bucket）。
 
+对于跨账户的日志摄取, 如下图所示，日志代理将安装在当前账户的应用服务器上，其余资源仍然在 Log Hub 的账户中。
+
+### EKS 中的日志
+
+!!! important "重要"
+    如果您的 EKS 集群和 OpenSearch 集群不在同一个 VPC 中，您需要使用 VPC [Peering Connection][peering-connection] 或 [Transit Gateway][tgw] 连接这些 VPC，并根据需要调整 OpenSearch 安全组。
+
+[![arch-eks-aos-pipeline]][arch-eks-aos-pipeline]
+
+1. [Fluent Bit](https://fluentbit.io/) 作为底层日志代理，从应用服务器收集日志并发送到 OpenSearch。
 
 [s3log]: https://docs.aws.amazon.com/AmazonS3/latest/userguide/ServerLogs.html
 [alblog]: https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-access-logs.html
@@ -106,5 +126,7 @@ Log Hub 支持对应用程序日志进行日志分析，例如 Nginx/Apache HTTP
 [arch]: ../images/architecture/arch.svg
 [arch-service-pipeline-s3]: ../images/architecture/service-pipeline-s3.svg
 [arch-service-pipeline-cw]: ../images/architecture/service-pipeline-cw.svg
-[arch-app-log-pipeline]: ../images/architecture/app-pipeline.svg
-
+[arch-app-log-pipeline]: ../images/architecture/ec2-pipeline.svg
+[arch-eks-aos-pipeline]: ../images/architecture/eks-aos-pipeline.svg
+[peering-connection]: https://docs.aws.amazon.com/vpc/latest/peering/working-with-vpc-peering.html
+[tgw]: https://docs.aws.amazon.com/vpc/latest/tgw/what-is-transit-gateway.html

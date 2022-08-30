@@ -38,6 +38,7 @@ import ValueWithLabel from "components/ValueWithLabel";
 import CopyText from "components/CopyText";
 import {
   buildACMLink,
+  buildKeyPairsLink,
   buildSGLink,
   buildSubnetLink,
   buildVPCLink,
@@ -299,7 +300,6 @@ const NginxForOpenSearch: React.FC<RouteComponentProps<MatchParams>> = (
 
   useEffect(() => {
     getDomainById();
-    // getResources(ResourceType.VPC);
     getResources(ResourceType.KeyPair);
     getResources(ResourceType.Certificate);
   }, []);
@@ -429,7 +429,7 @@ const NginxForOpenSearch: React.FC<RouteComponentProps<MatchParams>> = (
                     placeholder={t("cluster:proxy.chooseSubnet")}
                     hasRefresh
                     clickRefresh={() => {
-                      getResources(ResourceType.Subnet);
+                      getResources(ResourceType.Subnet, publicVpc);
                     }}
                   />
                 </FormItem>
@@ -465,14 +465,24 @@ const NginxForOpenSearch: React.FC<RouteComponentProps<MatchParams>> = (
                     placeholder={t("cluster:proxy.chooseSG")}
                     hasRefresh
                     clickRefresh={() => {
-                      getResources(ResourceType.SecurityGroup);
+                      getResources(ResourceType.SecurityGroup, publicVpc);
                     }}
                   />
                 </FormItem>
 
                 <FormItem
                   optionTitle={t("cluster:proxy.nginxKeyName")}
-                  optionDesc={t("cluster:proxy.nginxKeyNameDesc")}
+                  optionDesc={
+                    <div>
+                      {t("cluster:proxy.nginxKeyNameDesc1")}
+                      <ExtLink
+                        to={buildKeyPairsLink(amplifyConfig.aws_project_region)}
+                      >
+                        {t("cluster:proxy.keyPairs")}
+                      </ExtLink>
+                      {t("cluster:proxy.nginxKeyNameDesc2")}
+                    </div>
+                  }
                   errorText={keyEmptyError ? t("cluster:proxy.keyError") : ""}
                 >
                   <Select
@@ -493,7 +503,6 @@ const NginxForOpenSearch: React.FC<RouteComponentProps<MatchParams>> = (
                           };
                         }
                       );
-                      // changeVpc(event.target.value);
                     }}
                     placeholder={t("cluster:proxy.chooseKeyName")}
                     hasRefresh

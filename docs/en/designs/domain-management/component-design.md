@@ -116,20 +116,20 @@ The parameters in the CloudFormation template are listed as below:
 The parameters in the CloudFormation template are listed as below:
 
 
-| Parameter  | Default          | Description                                                  |
-| ---------- | ---------------- | ------------------------------------------------------------ |
+| Parameter  | Default            | Description                                                  |
+| ---------- |--------------------| ------------------------------------------------------------ |
 | Endpoint | `<Requires input>` | The endpoint of the OpenSearch domain, for example, `vpc-your_opensearch_domain_name-xcvgw6uu2o6zafsiefxubwuohe.us-east-1.es.amazonaws.com`. |
 | DomainName | `<Requires input>` | The name of the OpenSearch domain. |
 | Email | `<Requires input>` | The notification email address. Alarms will be sent to this email address via SNS. |
-| ClusterStatusRed | `Yes` | Whether to enable alarm when at least one primary shard and its replicas are not allocated to a node. |
-| ClusterStatusYellow | `Yes` | Whether to enable alarm when at least one replica shard is not allocated to a node. |
-| FreeStorageSpace | `10` | Whether to enable alarm when a node in your cluster is down to the free storage space you typed in GiB. We recommend setting it to 25% of the storage space for each node. `0` means the alarm is disabled.  |
-| ClusterIndexWritesBlocked | `Yes` | Whether to enable alarm when your cluster is blocking write requests. |
-| UnreachableNodeNumber | `3` | Nodes minimum is < x for 1 day, 1 consecutive time. `0` means the alarm is disabled. |
-| AutomatedSnapshotFailure | `Yes` | Whether to enable alarm when automated snapshot failed. AutomatedSnapshotFailure maximum is >= 1 for 1 minute, 1 consecutive time. |
-| CPUUtilization | `Yes` | Whether to enable alarm when sustained high usage of CPU occurred. CPUUtilization or WarmCPUUtilization maximum is >= 80% for 15 minutes, 3 consecutive times. |
-| JVMMemoryPressure | `Yes` | Whether to enable alarm when JVM RAM usage peak occurred. JVMMemoryPressure or WarmJVMMemoryPressure maximum is >= 80% for 5 minutes, 3 consecutive times. |
-| MasterCPUUtilization | `Yes` | Whether to enable alarm when sustained high usage of CPU occurred in master nodes. MasterCPUUtilization maximum is >= 50% for 15 minutes, 3 consecutive times. |
-| MasterJVMMemoryPressure | `Yes` | Whether to enable alarm when JVM RAM usage peak occurred in master nodes. MasterJVMMemoryPressure maximum is >= 80% for 15 minutes, 1 consecutive time. |
-| KMSKeyError | `Yes` | Whether to enable alarm when KMS encryption key is disabled. KMSKeyError is >= 1 for 1 minute, 1 consecutive time. |
-| KMSKeyInaccessible | `Yes` | Whether to enable alarm when KMS encryption key has been deleted or has revoked its grants to OpenSearch Service. KMSKeyInaccessible is >= 1 for 1 minute, 1 consecutive time. |
+| ClusterStatusRed | `Yes`              | Whether to enable alarm when at least one primary shard and its replicas are not allocated to a node. |
+| ClusterStatusYellow | `Yes`              | Whether to enable alarm when at least one replica shard is not allocated to a node. |
+| FreeStorageSpace | `10`               | Whether to enable alarm when a node in your cluster is down to the free storage space you typed in GiB. We recommend setting it to 25% of the storage space for each node. `0` means the alarm is disabled.  |
+| ClusterIndexWritesBlocked | `1`                | Index writes blocked error occurs for >= x times in 5 minutes, 1 consecutive time. Input `0` to disable this alarm.    |
+| UnreachableNodeNumber | `3`                | Nodes minimum is < x for 1 day, 1 consecutive time. `0` means the alarm is disabled. |
+| AutomatedSnapshotFailure | `Yes`              | Whether to enable alarm when automated snapshot failed. AutomatedSnapshotFailure maximum is >= 1 for 1 minute, 1 consecutive time. |
+| CPUUtilization | `Yes`              | Whether to enable alarm when sustained high usage of CPU occurred. CPUUtilization or WarmCPUUtilization maximum is >= 80% for 15 minutes, 3 consecutive times. |
+| JVMMemoryPressure | `Yes`              | Whether to enable alarm when JVM RAM usage peak occurred. JVMMemoryPressure or WarmJVMMemoryPressure maximum is >= 80% for 5 minutes, 3 consecutive times. |
+| MasterCPUUtilization | `Yes`              | Whether to enable alarm when sustained high usage of CPU occurred in master nodes. MasterCPUUtilization maximum is >= 50% for 15 minutes, 3 consecutive times. |
+| MasterJVMMemoryPressure | `Yes`              | Whether to enable alarm when JVM RAM usage peak occurred in master nodes. MasterJVMMemoryPressure maximum is >= 80% for 15 minutes, 1 consecutive time. |
+| KMSKeyError | `Yes`              | Whether to enable alarm when KMS encryption key is disabled. KMSKeyError is >= 1 for 1 minute, 1 consecutive time. |
+| KMSKeyInaccessible | `Yes`              | Whether to enable alarm when KMS encryption key has been deleted or has revoked its grants to OpenSearch Service. KMSKeyInaccessible is >= 1 for 1 minute, 1 consecutive time. |

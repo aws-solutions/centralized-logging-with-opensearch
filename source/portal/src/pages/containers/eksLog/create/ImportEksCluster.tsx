@@ -34,6 +34,7 @@ export interface EKSClusterLogSourceType {
   aosDomainId: string;
   eksClusterName: string;
   deploymentKind: EKSDeployKind;
+  accountId: string;
   tags: Tag[];
 }
 
@@ -41,6 +42,7 @@ export const DEFAULT_EMPTY_EKS_CLUSTER_LOG_SOURCE: EKSClusterLogSourceType = {
   aosDomainId: "",
   eksClusterName: "",
   deploymentKind: EKSDeployKind.DaemonSet,
+  accountId: "",
   tags: [],
 };
 
@@ -66,6 +68,8 @@ const ImportEksCluster: React.FC = () => {
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [eksEmptyError, setEksEmptyError] = useState(false);
   const [esDomainEmptyError, setEsDomainEmptyError] = useState(false);
+  const [confirmNetwork, setConfirmNetwork] = useState(false);
+  const [confirmNetworkError, setConfirmNetworkError] = useState(false);
 
   useEffect(() => {
     dispatch({ type: ActionType.CLOSE_SIDE_MENU });
@@ -135,17 +139,25 @@ const ImportEksCluster: React.FC = () => {
                     },
                   ]}
                   activeIndex={curStep}
-                  selectStep={(step: number) => {
-                    console.info("step:", step);
-                    setCurStep(step);
-                  }}
                 />
               </div>
-              <div className="create-content m-w-1024">
+              <div className="create-content m-w-800">
                 {curStep === 0 && (
                   <SpecifyEksSource
                     eksClusterLogSource={curEksClusterLogSourceInfo}
                     eksEmptyError={eksEmptyError}
+                    changeCurAccount={(id) => {
+                      setEksEmptyError(false);
+                      setCurEksClusterLogSourceInfo(
+                        (prev: EKSClusterLogSourceType) => {
+                          return {
+                            ...prev,
+                            eksClusterName: "",
+                            accountId: id,
+                          };
+                        }
+                      );
+                    }}
                     changeEksClusterSource={(clusterName: string) => {
                       if (clusterName) {
                         setEksEmptyError(false);
@@ -173,6 +185,12 @@ const ImportEksCluster: React.FC = () => {
                 )}
                 {curStep === 1 && (
                   <SpecifyDomain
+                    userIsConfirm={confirmNetwork}
+                    confirmNetworkError={confirmNetworkError}
+                    changeConfirmNetwork={(confirm) => {
+                      setConfirmNetwork(confirm);
+                      setConfirmNetworkError(false);
+                    }}
                     eksClusterLogSource={curEksClusterLogSourceInfo}
                     changeOpenSearchCluster={(clusterId) => {
                       if (clusterId) {
@@ -241,6 +259,10 @@ const ImportEksCluster: React.FC = () => {
                           if (!validateOpenSearchInput()) {
                             return;
                           }
+                          if (!confirmNetwork) {
+                            setConfirmNetworkError(true);
+                            return;
+                          }
                         }
                         setCurStep((curStep) => {
                           return curStep + 1 > 2 ? 2 : curStep + 1;
@@ -258,7 +280,7 @@ const ImportEksCluster: React.FC = () => {
                         confirmImportEksCluster();
                       }}
                     >
-                      {t("button.create")}
+                      {t("button.import")}
                     </Button>
                   )}
                 </div>

@@ -20,7 +20,7 @@ import PagePanel from "components/PagePanel";
 import HeaderPanel from "components/HeaderPanel";
 import FormItem from "components/FormItem";
 import Tiles from "components/Tiles";
-import { AmplifyConfigType, CreationMethod, YesNo } from "types";
+import { AmplifyConfigType, CreationMethod } from "types";
 import { useTranslation } from "react-i18next";
 import TextInput from "components/TextInput";
 import { useSelector } from "react-redux";
@@ -38,28 +38,15 @@ import ValueWithLabel from "components/ValueWithLabel";
 import { EksIngestionPropsType } from "../EksLogIngest";
 import { appSyncRequestQuery } from "assets/js/request";
 import { listAppPipelines } from "graphql/queries";
-import { AppPipeline } from "API";
-import { buildESLink, buildKDSLink, formatLocalTime } from "assets/js/utils";
+import { AppPipeline, PipelineStatus } from "API";
+import { buildESLink, formatLocalTime } from "assets/js/utils";
 import LoadingText from "components/LoadingText";
-
-const YESNO_LIST = [
-  {
-    name: "yes",
-    value: YesNo.Yes,
-  },
-  {
-    name: "no",
-    value: YesNo.No,
-  },
-];
 
 interface SpecifySettingProps {
   eksIngestionInfo: EksIngestionPropsType;
+  indexDuplicatedError: boolean;
   changeCreationMethod: (method: string) => void;
   changeIndexPrefix: (prefix: string) => void;
-  changeStartShardNum: (num: string) => void;
-  changeEnableAS: (enable: boolean) => void;
-  changeMaxShardNum: (num: string) => void;
   changeWarmTransition: (warmTrans: string) => void;
   changeColdTransition: (coldTrans: string) => void;
   changeLogRetention: (retention: string) => void;
@@ -74,11 +61,9 @@ const SpecifySettings: React.FC<SpecifySettingProps> = (
   const { t } = useTranslation();
   const {
     eksIngestionInfo,
+    indexDuplicatedError,
     changeCreationMethod,
     changeIndexPrefix,
-    changeStartShardNum,
-    changeEnableAS,
-    changeMaxShardNum,
     changeWarmTransition,
     changeColdTransition,
     changeLogRetention,
@@ -89,9 +74,7 @@ const SpecifySettings: React.FC<SpecifySettingProps> = (
   const amplifyConfig: AmplifyConfigType = useSelector(
     (state: AppStateProps) => state.amplifyConfig
   );
-  const [enableAS, setEnableAS] = useState(
-    eksIngestionInfo.kdsParas.enableAutoScaling ? YesNo.Yes : YesNo.No
-  );
+
   const [loadingPipeline, setLoadingPipeline] = useState(false);
   const [pipelineOptionList, setPipelineOptionList] = useState<OptionType[]>(
     []
@@ -117,11 +100,16 @@ const SpecifySettings: React.FC<SpecifySettingProps> = (
       const tmpPipelineIdMap: any = {};
       appPipelineArr.forEach((element) => {
         if (
-          element.aosParas?.domainName === eksIngestionInfo.aosParas.domainName
+          element.aosParas?.domainName ===
+            eksIngestionInfo.aosParas.domainName &&
+          element.status === PipelineStatus.ACTIVE &&
+          element.ec2RoleArn
         ) {
           tmpOptionList.push({
             name: `${element.id}(${element.aosParas.indexPrefix})`,
             value: element.id,
+            description: element.kdsRoleArn || "",
+            ec2RoleArn: element.ec2RoleArn || "",
           });
           tmpPipelineIdMap[element.id] = element;
         }
@@ -191,6 +179,8 @@ const SpecifySettings: React.FC<SpecifySettingProps> = (
                   ? t("applog:create.ingestSetting.indexNameError")
                   : eksIngestionInfo.indexPrefixFormatError
                   ? t("applog:create.ingestSetting.indexNameFormatError")
+                  : indexDuplicatedError
+                  ? t("applog:create.ingestSetting.indexNameDuplicated")
                   : ""
               }
             >
@@ -262,80 +252,6 @@ const SpecifySettings: React.FC<SpecifySettingProps> = (
                   </FormItem>
                 </>
               </div>
-            </div>
-          </HeaderPanel>
-
-          <HeaderPanel title={t("applog:create.ingestSetting.buffer")}>
-            <div>
-              <FormItem
-                optionTitle={t("applog:create.ingestSetting.shardNum")}
-                optionDesc={t("applog:create.ingestSetting.shardNumDesc")}
-                errorText={
-                  eksIngestionInfo.shardNumFormatError
-                    ? t("applog:create.ingestSetting.shardNumError")
-                    : ""
-                }
-              >
-                <TextInput
-                  className="m-w-45p"
-                  value={eksIngestionInfo.kdsParas.startShardNumber}
-                  type="number"
-                  onChange={(event) => {
-                    changeStartShardNum(event.target.value);
-                  }}
-                  placeholder={t("applog:create.ingestSetting.shardNum")}
-                />
-              </FormItem>
-
-              {!amplifyConfig.aws_project_region.startsWith("cn") ? (
-                <>
-                  <FormItem
-                    optionTitle={t("applog:create.ingestSetting.enableAutoS")}
-                    optionDesc={t(
-                      "applog:create.ingestSetting.enableAutoSDesc"
-                    )}
-                  >
-                    <Select
-                      isI18N
-                      className="m-w-45p"
-                      optionList={YESNO_LIST}
-                      value={enableAS}
-                      onChange={(event) => {
-                        setEnableAS(event.target.value);
-                        changeEnableAS(
-                          event.target.value === YesNo.Yes ? true : false
-                        );
-                      }}
-                      placeholder=""
-                    />
-                  </FormItem>
-
-                  <FormItem
-                    optionTitle={t("applog:create.ingestSetting.maxShardNum")}
-                    optionDesc={t(
-                      "applog:create.ingestSetting.maxShardNumDesc"
-                    )}
-                    errorText={
-                      eksIngestionInfo.maxShardNumFormatError
-                        ? t("applog:create.ingestSetting.maxShardNumError")
-                        : ""
-                    }
-                  >
-                    <TextInput
-                      disabled={!eksIngestionInfo.kdsParas.enableAutoScaling}
-                      className="m-w-45p"
-                      type="number"
-                      value={eksIngestionInfo.kdsParas.maxShardNumber}
-                      onChange={(event) => {
-                        changeMaxShardNum(event.target.value);
-                      }}
-                      placeholder={t("applog:create.ingestSetting.maxShardNum")}
-                    />
-                  </FormItem>
-                </>
-              ) : (
-                ""
-              )}
             </div>
           </HeaderPanel>
 
@@ -441,6 +357,7 @@ const SpecifySettings: React.FC<SpecifySettingProps> = (
             >
               <AutoComplete
                 // disabled={loadingPipeline}
+                outerLoading
                 className="m-w-75p"
                 placeholder={t("ekslog:ingest.specifyPipeline.selectPipeline")}
                 loading={loadingPipeline}
@@ -495,31 +412,7 @@ const SpecifySettings: React.FC<SpecifySettingProps> = (
                         </ExtLink>
                       </ValueWithLabel>
                     </div>
-                    <div className="flex-1 border-left-c">
-                      <ValueWithLabel
-                        label={t("ekslog:ingest.specifyPipeline.kds")}
-                      >
-                        <div>
-                          <ExtLink
-                            to={buildKDSLink(
-                              amplifyConfig.aws_project_region,
-                              pipelineIdMap?.[
-                                eksIngestionInfo.existsPipeline.value
-                              ]?.kdsParas?.streamName || ""
-                            )}
-                          >
-                            {pipelineIdMap?.[
-                              eksIngestionInfo.existsPipeline.value
-                            ]?.kdsParas?.streamName || "-"}
-                          </ExtLink>
-                          {pipelineIdMap?.[
-                            eksIngestionInfo.existsPipeline.value
-                          ]?.kdsParas?.enableAutoScaling
-                            ? t("applog:detail.autoScaling")
-                            : ""}
-                        </div>
-                      </ValueWithLabel>
-                    </div>
+
                     <div className="flex-1 border-left-c">
                       <ValueWithLabel
                         label={t("ekslog:ingest.specifyPipeline.created")}

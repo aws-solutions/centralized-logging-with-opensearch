@@ -19,6 +19,9 @@
     "shards": "分区 (Kinesis Data Streams)",
     "autoScaling": "(Auto Scaling)",
     "created": "创建时间",
+    "tip1": "在从实例组创建摄取之前，请确保您已将",
+    "tip2": "权限",
+    "tip3": "附加到实例",
     "tab": {
       "ingestion": "摄取",
       "permission": "权限",
@@ -30,13 +33,21 @@
       "instanceGroup": "实例组",
       "created": "创建时间",
       "delete": "删除摄取",
-      "deleteTips": "您确定要删除这些日志摄取吗? "
+      "deleteTips": "您确定要删除这些日志摄取吗? ",
+      "upgradeNotice": "升级通知",
+      "upgradeNoticeDesc": "您看到此消息是因为此应用程序日志管道是在日志通V1.0 中创建的，并且日志通在 V1.1 之后更新了所需的实例权限。 此更改仅影响来自实例组的新跨账摄取。 如果您尝试创建跨账户账户摄取，请按照以下步骤升级此管道",
+      "upgradeNoticeDescEKS": "您看到此消息是因为此 EKS 集群关联了在日志通V1.0 中创建的日志管道，您需要升级后才可以继续。",
+      "upgradeNoticeDescEKSExistsPipeline": "您会看到此消息是因为您选择的日志管道是在日志通V1.0 中创建的，您需要升级管道才能继续。",
+      "upgradeGuide": "升级指南",
+      "eksTips1": "如果需要在此管道中创建其他 EKS 摄取，请转到 ",
+      "eksTips2": "ESK 集群",
+      "eksTips3": " 创建摄取并选择当前管道。"
     },
     "permission": {
       "name": "实例权限",
       "notYet": "请等待管道的创建完成.",
       "alert": "为实例添加权限",
-      "alertDesc": "Log Hub 使用 Systems Manager 配置和更新 Log Agent，使用 S3 存储配置，使用 Kinesis 收集数据。 请向您的 EC2 实例配置文件授予以下权限。 学习更多关于",
+      "alertDesc": "日志通使用 Systems Manager 配置和更新 Log Agent，使用 S3 存储配置，使用 Kinesis 收集数据。 请向您的 EC2 实例配置文件授予以下权限。 学习更多关于",
       "grant": "向 EC2 实例授予权限。"
     },
     "lifecycle": {
@@ -59,15 +70,20 @@
       "indexNameDesc": "输入保存在 Amazon OpenSearch 中的日志的索引名称。",
       "indexNameError": "请输入索引名称",
       "indexNameFormatError": "索引名必须以小写字母开头，并且只能包含小写字母、数字、-和_",
+      "indexNameDuplicated": "请修改索引名称",
       "buffer": "缓冲区(Amazon Kinesis Data Streams)",
       "shardNum": "分片个数",
-      "shardNumDesc": "指定 Kinesis Data Streams 的分片数。 每个分片每秒最多可以有 1,000 条记录，总数据写入速率为每秒 1MB。",
+      "shardNumDesc": "指定 Kinesis Data Streams 的分片数。 每个分片每秒最多可以有 1,000 条记录，总数据写入速率为每秒 1MB。（* Kinesis 分片调整有间隔 24 小时限制）",
       "shardNumError": "分片个数必须大于或者等于 1",
       "enableAutoS": "启用弹性伸缩？",
       "enableAutoSDesc": "启用 Kinesis Data Streams 分片的弹性伸缩？",
       "maxShardNum": "最大分片数",
       "maxShardNumDesc": "指定最大分片数。",
-      "maxShardNumError": "最大分片数必须大于分片个数"
+      "maxShardNumError": "最大分片数必须大于分片个数",
+      "duplicatedWithPrefix": "您有一个使用此索引前缀的日志管道。",
+      "overlapWithPrefix": "索引前缀与您之前创建的索引前缀重叠。",
+      "duplicatedWithInvalidPrefix": "你有一条已删除的日志管道曾使用这个索引前缀。如果继续创建此日志管道，您的日志将会混合在一起。",
+      "overlapWithInvalidPrefix": "索引前缀与您之前删除的索引前缀重叠。 如果您继续创建此日志管道，您的日志将会混合在一起。"
     },
     "specifyOS": {
       "aosDomain": "Amazon OpenSearch 域",
@@ -96,6 +112,8 @@
     "name": "摄取",
     "selectInstance": "请选择实例",
     "selectOnlineInstance": "请选择日志代理在线实例或等待所有日志代理安装成功。",
+    "type": "类型",
+    "source": "源",
     "step": {
       "createInstanceGroup": "创建实例组",
       "chooseInstanceGroup": "选择实例组",
@@ -133,7 +151,8 @@
       "chooseExists": "选择现有的日志配置。",
       "chooseConfig": "选择日志配置",
       "config": "配置",
-      "configRequiredError": "请选择一个日志配置"
+      "configRequiredError": "请选择一个日志配置",
+      "inputLogPath": "请输入日志路径"
     },
     "s3": {
       "ingestFromS3": "从S3摄取",
@@ -153,7 +172,13 @@
         "fileTypeDesc": "指定文件格式",
         "selectFileType": "请选择日志文件格式",
         "chooseFileType": "请选择一种日志文件格式",
-        "fileZipped": "文件已压缩"
+        "fileZipped": "文件已压缩",
+        "vpcId": "VPC",
+        "vpcIdDesc": "选择的 VPC 将启动 EC2 实例以进行日志摄取。",
+        "chooseVpc": "请选择一个 VPC",
+        "subnetIds": "公有子网",
+        "subnetIdsDesc": "选择的公有子网将启动 EC2 实例以进行日志摄取。",
+        "chooseSubnet": "请选择公有子网"
       },
       "specifyConfig": {
         "alert": "日志配置中的“日志路径”将被忽略，因为解析日志时将使用 S3 文件路径。",

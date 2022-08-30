@@ -24,6 +24,12 @@
       border: 1px solid #eaeded;
     }
   }
+  &.error {
+    input {
+      border: 1px solid #d13212;
+      color: #d13212;
+    }
+  }
 }
 .input-tip {
   font-size: 14px;

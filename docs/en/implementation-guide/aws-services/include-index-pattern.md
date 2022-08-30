@@ -1,0 +1,3 @@
+- Click the **Stack Management** in the left sidebar, and select **Index Patterns**.
+- Choose **Create index pattern**, and type in the index pattern name. Click **Next step**.
+- Specify **time** field, and click **Create index pattern**.

@@ -13,16 +13,21 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
-import { Construct, Fn } from '@aws-cdk/core';
-import * as sfn from '@aws-cdk/aws-stepfunctions'
-import * as tasks from '@aws-cdk/aws-stepfunctions-tasks'
-import { Table, ITable } from '@aws-cdk/aws-dynamodb';
-import { Function, IFunction } from '@aws-cdk/aws-lambda';
-import * as logs from '@aws-cdk/aws-logs';
-import * as iam from '@aws-cdk/aws-iam';
-
-
+import {
+    Construct,
+} from 'constructs';
+import {
+    Fn,
+    aws_stepfunctions_tasks as tasks,
+    aws_stepfunctions as sfn,
+    aws_logs as logs,
+    aws_iam as iam
+} from 'aws-cdk-lib';
+import {
+    Table,
+    ITable
+} from 'aws-cdk-lib/aws-dynamodb';
+import { Function } from 'aws-cdk-lib/aws-lambda';
 export interface PipelineFlowProps {
 
     /**
@@ -138,9 +143,11 @@ export class EKSClusterPodLogPipelineFlowStack extends Construct {
         //AppLog Pipeline Status
         const appLogPipelineActiveStatus = this.updateStatus('ApplogPipeline', applogPipelineTable, 'ACTIVE', {
             'kdsParas.osHelperFnArn': tasks.DynamoAttributeValue.fromString(sfn.JsonPath.stringAt('$.result.outputs[0].OutputValue')), // OSInitHelperFn
-            'kdsParas.kdsArn': tasks.DynamoAttributeValue.fromString(sfn.JsonPath.stringAt('$.result.outputs[1].OutputValue')), // KinesisStreamArn
-            'kdsParas.streamName': tasks.DynamoAttributeValue.fromString(sfn.JsonPath.stringAt('$.result.outputs[3].OutputValue')), // KinesisStreamName
-            'kdsParas.regionName': tasks.DynamoAttributeValue.fromString(sfn.JsonPath.stringAt('$.result.outputs[4].OutputValue')), // KinesisStreamRegion
+            'kdsParas.kdsArn': tasks.DynamoAttributeValue.fromString(sfn.JsonPath.stringAt('$.result.outputs[2].OutputValue')), // KinesisStreamArn
+            'kdsRoleArn': tasks.DynamoAttributeValue.fromString(sfn.JsonPath.stringAt('$.result.outputs[1].OutputValue')), // KDSRoleArn
+            'kdsRoleName': tasks.DynamoAttributeValue.fromString(sfn.JsonPath.stringAt('$.result.outputs[4].OutputValue')), // KDSRoleName
+            'kdsParas.streamName': tasks.DynamoAttributeValue.fromString(sfn.JsonPath.stringAt('$.result.outputs[5].OutputValue')), // KinesisStreamName
+            'kdsParas.regionName': tasks.DynamoAttributeValue.fromString(sfn.JsonPath.stringAt('$.result.outputs[6].OutputValue')), // KinesisStreamRegion
         })
         const appLogPipelineErrorStatus = this.updateStatus('ApplogPipeline', applogPipelineTable, 'ERROR')
         const appLogPipelineInactiveStatus = this.updateStatus('ApplogPipeline', applogPipelineTable, 'INACTIVE')

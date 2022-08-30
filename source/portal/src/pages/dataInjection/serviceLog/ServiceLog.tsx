@@ -25,12 +25,12 @@ import Breadcrumb from "components/Breadcrumb";
 import { SelectType } from "components/TablePanel/tablePanel";
 import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
 import { listServicePipelines } from "graphql/queries";
-import { PipelineStatus, ServicePipeline } from "API";
+import { Parameter, PipelineStatus, ServicePipeline } from "API";
 import Modal from "components/Modal";
 import { deleteServicePipeline } from "graphql/mutations";
 // import Tooltip from "@material-ui/core/Tooltip";
 import LoadingText from "components/LoadingText";
-import { ServiceTypeMap } from "assets/js/const";
+import { AUTO_REFRESH_INT, ServiceTypeMap } from "assets/js/const";
 import HelpPanel from "components/HelpPanel";
 import SideMenu from "components/SideMenu";
 import { formatLocalTime } from "assets/js/utils";
@@ -58,11 +58,13 @@ const ServiceLog: React.FC = () => {
   const [curPage, setCurPage] = useState(1);
 
   // Get Service Log List
-  const getServiceLogList = async () => {
-    setSelectedServiceLog([]);
+  const getServiceLogList = async (hideLoading = false) => {
     try {
-      setLoadingData(true);
-      setServiceLogList([]);
+      if (!hideLoading) {
+        setServiceLogList([]);
+        setSelectedServiceLog([]);
+        setLoadingData(true);
+      }
       const resData: any = await appSyncRequestQuery(listServicePipelines, {
         page: curPage,
         count: PAGE_SIZE,
@@ -78,9 +80,20 @@ const ServiceLog: React.FC = () => {
   };
 
   const handlePageChange = (event: any, value: number) => {
-    console.info("event:", event);
-    console.info("value:", value);
     setCurPage(value);
+  };
+
+  const getParamValueByKey = (
+    params: Array<Parameter | null> | null | undefined,
+    key: string
+  ) => {
+    if (params && key) {
+      return (
+        params.find((element) => element?.parameterKey === key)
+          ?.parameterValue || "-"
+      );
+    }
+    return "-";
   };
 
   // Show Remove Service Log Dialog
@@ -100,6 +113,7 @@ const ServiceLog: React.FC = () => {
       setLoadingDelete(false);
       setOpenDeleteModel(false);
       getServiceLogList();
+      setSelectedServiceLog([]);
     } catch (error) {
       setLoadingDelete(false);
       console.error(error);
@@ -140,6 +154,15 @@ const ServiceLog: React.FC = () => {
     }
   }, [selectedServiceLog]);
 
+  // Auto Refresh List
+  useEffect(() => {
+    const refreshInterval = setInterval(() => {
+      getServiceLogList(true);
+    }, AUTO_REFRESH_INT);
+    console.info("refreshInterval:", refreshInterval);
+    return () => clearInterval(refreshInterval);
+  }, [curPage]);
+
   return (
     <div className="lh-main-content">
       <SideMenu />
@@ -149,9 +172,9 @@ const ServiceLog: React.FC = () => {
             <Breadcrumb list={breadCrumbList} />
             <div className="table-data">
               <TablePanel
+                defaultSelectItem={selectedServiceLog}
                 title={t("servicelog:title")}
                 changeSelected={(item) => {
-                  console.info("item:", item);
                   setSelectedServiceLog(item);
                 }}
                 loading={loadingData}
@@ -175,6 +198,17 @@ const ServiceLog: React.FC = () => {
                     header: t("servicelog:list.type"),
                     cell: (e: ServicePipeline) => {
                       return ServiceTypeMap[e.type];
+                    },
+                  },
+                  {
+                    width: 110,
+                    id: "account",
+                    header: t("servicelog:list.account"),
+                    cell: (e: ServicePipeline) => {
+                      return getParamValueByKey(
+                        e.parameters,
+                        "logSourceAccountId"
+                      );
                     },
                   },
                   {

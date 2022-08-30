@@ -1,20 +1,18 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-
 import json
 import logging
-from multiprocessing import Condition
 import os
 import uuid
 from datetime import datetime
 
 import boto3
-from boto3.dynamodb.conditions import Attr
+
 from botocore import config
 from util.log_ingestion_svc import LogIngestionSvc
 from util.sys_enum_type import SOURCETYPE
-from util.exception import APIException
+from common import AppPipelineValidator, APIException
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -34,7 +32,8 @@ stateMachineArn = os.environ.get('STATE_MACHINE_ARN')
 dynamodb = boto3.resource('dynamodb', config=default_config)
 
 app_pipeline_table = dynamodb.Table(os.environ.get('APP_PIPELINE_TABLE_NAME'))
-app_log_config_table = dynamodb.Table(os.environ.get('APP_LOG_CONFIG_TABLE_NAME'))
+app_log_config_table = dynamodb.Table(
+    os.environ.get('APP_LOG_CONFIG_TABLE_NAME'))
 
 log_ingestion_svc = LogIngestionSvc()
 
@@ -72,19 +71,21 @@ def lambda_handler(event, context):
 def create_eks_cluster_pod_log_ingestion(**args):
     """  Create a eks cluster pod log pipeline and ingestion """
 
-    #Check if index prefix is duplicated in the same opensearch
     aos_paras = args['aosParas']
-    index_prefix = str(aos_paras['indexPrefix'])
-    conditions = Attr('status').ne('INACTIVE')
-    conditions = conditions.__and__(Attr('aosParas.indexPrefix').eq(index_prefix))
-    conditions=conditions.__and__(Attr('aosParas.domainName').eq(str(aos_paras['domainName'])))
-    res = app_pipeline_table.scan(FilterExpression=conditions)
-    if res['Count'] > 0:
-        raise APIException(f'Duplicate index prefex: {index_prefix}')
 
-    app_log_conf_resp = app_log_config_table.get_item(Key={'id': args['confId']})
+    index_prefix = str(aos_paras['indexPrefix'])
+    domain_name = str(aos_paras['domainName'])
+
+    validator = AppPipelineValidator(app_pipeline_table)
+    validator.validate_duplicate_index_prefix(args)
+    validator.validate_index_prefix_overlap(index_prefix, domain_name,
+                                            args.get('force'))
+
+    app_log_conf_resp = app_log_config_table.get_item(
+        Key={'id': args['confId']})
     if 'Item' not in app_log_conf_resp:
-        raise APIException(f"Conf Id {args['confId']} Not Found, please check!")
+        raise APIException(
+            f"Conf Id {args['confId']} Not Found, please check!")
     args['current_conf'] = app_log_conf_resp['Item']
 
     logger.info('create eks cluster pod log pineline and ingestion')
@@ -103,8 +104,7 @@ def create_eks_cluster_pod_log_ingestion(**args):
             'tags': args.get('tags', []),
             'createdDt': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
             'status': 'CREATING',
-        }
-    )
+        })
     args['appPipelineId'] = app_log_pipeline_id
     args['stackId'] = ''
     args['stackName'] = ''
@@ -117,31 +117,86 @@ def create_eks_cluster_pod_log_ingestion(**args):
     logger.info(args)
     kds_paras = args['kdsParas']
     sfn_args = {
-        'stackName': stack_name,
-        'pattern': 'KDSStackNoAutoScaling',
+        'stackName':
+        stack_name,
+        'pattern':
+        'KDSStackNoAutoScaling',
         'parameters': [
             # Kinesis
-            {'ParameterKey': 'ShardCountParam', 'ParameterValue': str(kds_paras['startShardNumber'])},
+            {
+                'ParameterKey': 'ShardCountParam',
+                'ParameterValue': str(kds_paras['startShardNumber'])
+            },
             # Opensearch
-            {'ParameterKey': 'OpenSearchDomainParam', 'ParameterValue': str(aos_paras['domainName'])},
-            {'ParameterKey': 'CreateDashboardParam', 'ParameterValue': 'No'},
-            {'ParameterKey': 'OpenSearchDaysToWarmParam', 'ParameterValue': str(aos_paras['warmLogTransition'])},
-            {'ParameterKey': 'OpenSearchDaysToColdParam', 'ParameterValue': str(aos_paras['coldLogTransition'])},
-            {'ParameterKey': 'OpenSearchDaysToRetain', 'ParameterValue': str(aos_paras['logRetention'])},
-            {'ParameterKey': 'EngineTypeParam', 'ParameterValue': str(aos_paras['engine'])},
-            {'ParameterKey': 'OpenSearchEndpointParam', 'ParameterValue': str(aos_paras['opensearchEndpoint'])},
-            {'ParameterKey': 'OpenSearchIndexPrefix', 'ParameterValue': str(aos_paras['indexPrefix'])},
+            {
+                'ParameterKey': 'OpenSearchDomainParam',
+                'ParameterValue': str(aos_paras['domainName'])
+            },
+            {
+                'ParameterKey': 'CreateDashboardParam',
+                'ParameterValue': str(args['createDashboard'])
+            },
+            {
+                'ParameterKey': 'OpenSearchShardNumbersParam',
+                'ParameterValue': str(aos_paras['shardNumbers'])
+            },
+            {
+                'ParameterKey': 'OpenSearchReplicaNumbersParam',
+                'ParameterValue': str(aos_paras['replicaNumbers'])
+            },
+            {
+                'ParameterKey': 'OpenSearchDaysToWarmParam',
+                'ParameterValue': str(aos_paras['warmLogTransition'])
+            },
+            {
+                'ParameterKey': 'OpenSearchDaysToColdParam',
+                'ParameterValue': str(aos_paras['coldLogTransition'])
+            },
+            {
+                'ParameterKey': 'OpenSearchDaysToRetain',
+                'ParameterValue': str(aos_paras['logRetention'])
+            },
+            {
+                'ParameterKey': 'EngineTypeParam',
+                'ParameterValue': str(aos_paras['engine'])
+            },
+            {
+                'ParameterKey': 'OpenSearchEndpointParam',
+                'ParameterValue': str(aos_paras['opensearchEndpoint'])
+            },
+            {
+                'ParameterKey': 'OpenSearchIndexPrefix',
+                'ParameterValue': str(aos_paras['indexPrefix'])
+            },
             # VPC
-            {'ParameterKey': 'VpcIdParam', 'ParameterValue': str(aos_paras['vpc']['vpcId'])},
-            {'ParameterKey': 'SubnetIdsParam', 'ParameterValue': str(aos_paras['vpc']['privateSubnetIds'])},
-            {'ParameterKey': 'SecurityGroupIdParam', 'ParameterValue': str(aos_paras['vpc']['securityGroupId'])},
-            {'ParameterKey': 'FailedLogBucketParam', 'ParameterValue': str(aos_paras['failedLogBucket'])},
+            {
+                'ParameterKey': 'VpcIdParam',
+                'ParameterValue': str(aos_paras['vpc']['vpcId'])
+            },
+            {
+                'ParameterKey': 'SubnetIdsParam',
+                'ParameterValue': str(aos_paras['vpc']['privateSubnetIds'])
+            },
+            {
+                'ParameterKey': 'SecurityGroupIdParam',
+                'ParameterValue': str(aos_paras['vpc']['securityGroupId'])
+            },
+            {
+                'ParameterKey': 'FailedLogBucketParam',
+                'ParameterValue': str(aos_paras['failedLogBucket'])
+            },
         ]
     }
     if kds_paras['enableAutoScaling']:
         params = sfn_args['parameters']
-        params.append({'ParameterKey': 'MinCapacityParam', 'ParameterValue': str(kds_paras['startShardNumber'])})
-        params.append({'ParameterKey': 'MaxCapacityParam', 'ParameterValue': str(kds_paras['maxShardNumber'])})
+        params.append({
+            'ParameterKey': 'MinCapacityParam',
+            'ParameterValue': str(kds_paras['startShardNumber'])
+        })
+        params.append({
+            'ParameterKey': 'MaxCapacityParam',
+            'ParameterValue': str(kds_paras['maxShardNumber'])
+        })
         sfn_args['parameters'] = params
         sfn_args['pattern'] = 'KDSStack'
 

@@ -45,4 +45,6 @@ The web should look like this:
 
 !!! Note "Note"
 
-    If it shows code 502, please wait for 3 more minutes to let EC2 fully booted. Then refresh the web site again. If it doesn’t work, please terminate two EC2, which names are *LoghubWorkshop/workshopASG*, the auto-scaling group will create two new instances for you automatically. 
+    If it shows code 502, please wait for 3 more minutes to let EC2 fully booted. Then refresh the web site again. If it doesn’t work, please reboot two EC2, which names are *LoghubWorkshop/workshopASG*, the demo site will be restarted automatically within 2 minutes. 
+
+![Reboot web](../../images/workshop/workshop-web-reboot.png)

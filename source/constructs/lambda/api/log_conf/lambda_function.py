@@ -23,12 +23,13 @@ default_config = config.Config(**user_agent_config)
 
 # Get DDB resource.
 dynamodb = boto3.resource('dynamodb', config=default_config)
-table_name = os.environ.get('LOGCONF_TABLE')
-log_conf_table = dynamodb.Table(table_name)
+log_conf_table_name = os.environ.get('LOGCONF_TABLE')
+log_conf_table = dynamodb.Table(log_conf_table_name)
 default_region = os.environ.get('AWS_REGION')
 
 
 class APIException(Exception):
+
     def __init__(self, message):
         self.message = message
 
@@ -65,9 +66,25 @@ def lambda_handler(event, context):
         return list_log_confs(**args)
     elif action == "updateLogConf":
         return update_log_conf(**args)
+    elif action == "checkTimeFormat":
+        return check_time_format(**args)
     else:
         logger.info('Event received: ' + json.dumps(event, indent=2))
         raise RuntimeError(f'Unknown action {action}')
+
+
+def check_time_format(**args):
+    time_srt = args['timeStr']
+    format_str = args['formatStr']
+    isMatch = False
+    try:
+        res = datetime.strptime(time_srt, format_str)
+        if isinstance(res, datetime):
+            isMatch = True
+    except:
+        isMatch = False
+        pass
+    return {'isMatch': isMatch}
 
 
 def create_log_conf(**args):
@@ -78,29 +95,30 @@ def create_log_conf(**args):
     total = resp['total']
     """Check if the confName exists """
     if total > 0:
-        raise APIException('Log config name already exists, please use a new name.')
+        raise APIException(
+            'Log config name already exists, please use a new name.')
 
     id = str(uuid.uuid4())
     log_conf_table.put_item(
         Item={
             'id': id,
             'confName': args['confName'],
-            'logPath': args['logPath'],
             'logType': args['logType'],
             'createdDt': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
             'userLogFormat': args.get('userLogFormat', ''),
             'regularExpression': args.get('regularExpression', ''),
-            'regularSpecs': _validate_regular_specs(args.get('regularSpecs', [])),
+            'regularSpecs': _validate_regular_specs(
+                args.get('regularSpecs', [])),
             'multilineLogParser': args.get('multilineLogParser'),
             'status': 'ACTIVE',
-        }
-    )
+        })
     return id
 
 
 def list_log_confs(page=1, count=20, confName=None, logType=None):
     """  List logconfs """
-    logger.info(f'List LogConf from DynamoDB in page {page} with {count} of records')
+    logger.info(
+        f'List LogConf from DynamoDB in page {page} with {count} of records')
     conditions = Attr('status').eq('ACTIVE')
 
     if confName:
@@ -110,13 +128,12 @@ def list_log_confs(page=1, count=20, confName=None, logType=None):
 
     response = log_conf_table.scan(
         FilterExpression=conditions,
-        ProjectionExpression="id, #confName, logPath, #logType, createdDt, #status ",
+        ProjectionExpression="id, #confName, #logType, createdDt, #status ",
         ExpressionAttributeNames={
             '#confName': 'confName',
             '#logType': 'logType',
             '#status': 'status',
-        }
-    )
+        })
 
     # Assume all items are returned in the scan request
     items = response['Items']
@@ -132,7 +149,7 @@ def list_log_confs(page=1, count=20, confName=None, logType=None):
     items.sort(key=lambda x: x['createdDt'], reverse=True)
     return {
         'total': len(items),
-        'logConfs': items[start: end],
+        'logConfs': items[start:end],
     }
 
 
@@ -153,11 +170,11 @@ def delete_log_conf(id: str) -> str:
         ExpressionAttributeValues={
             ':s': 'INACTIVE',
             ':uDt': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-        }
-    )
+        })
 
 
-def update_log_conf(id, confName, logPath, logType, multilineLogParser, userLogFormat, regularExpression, regularSpecs):
+def update_log_conf(id, confName, logType, multilineLogParser, userLogFormat,
+                    regularExpression, regularSpecs):
     """ update confName in LogConf table """
     logger.info('Update LogConf  in DynamoDB')
     resp = log_conf_table.get_item(Key={'id': id})
@@ -172,40 +189,40 @@ def update_log_conf(id, confName, logPath, logType, multilineLogParser, userLogF
 
     log_conf_table.update_item(
         Key={'id': id},
-        UpdateExpression='SET #confName = :cfn, #logPath=:lp, #logType=:lt, #multilineLogParser=:multilineLogParser, #updatedDt= :uDt, #userLogFormat=:userLogFormat, #regularExpression=:regularExpression, #regularSpecs=:regularSpecs',
+        UpdateExpression=
+        'SET #confName = :cfn,  #logType=:lt, #multilineLogParser=:multilineLogParser, #updatedDt= :uDt, #userLogFormat=:userLogFormat, #regularExpression=:regularExpression, #regularSpecs=:regularSpecs',
         ExpressionAttributeNames={
             '#confName': 'confName',
-            '#logPath': 'logPath',
             '#logType': 'logType',
             '#multilineLogParser': 'multilineLogParser',
             '#updatedDt': 'updatedDt',
             '#userLogFormat': 'userLogFormat',
             '#regularExpression': 'regularExpression',
             '#regularSpecs': 'regularSpecs',
-
         },
         ExpressionAttributeValues={
             ':cfn': confName,
-            ':lp': logPath,
             ':lt': logType,
             ':multilineLogParser': multilineLogParser,
             ':uDt': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
             ':userLogFormat': userLogFormat,
             ':regularExpression': regularExpression,
             ':regularSpecs': _validate_regular_specs(regularSpecs),
-        }
-    )
+        })
 
 
 def _validate_regular_specs(lst: list) -> list:
     for each in lst:
         if not isinstance(each, dict):
-            raise APIException('Invalid regularSpecs: list item is not a dict.')
+            raise APIException(
+                'Invalid regularSpecs: list item is not a dict.')
         if not each.get('key'):
-            raise APIException('Invalid regularSpecs: can not found "key" field.')
+            raise APIException(
+                'Invalid regularSpecs: can not found "key" field.')
         if '' == each.get('format'):
             raise APIException('Invalid regularSpecs: empty format.')
         if ('date' == each.get('type')) and (not each.get('format')):
-            raise APIException('Invalid regularSpecs: "date" type must have "format"')
+            raise APIException(
+                'Invalid regularSpecs: "date" type must have "format"')
 
     return lst

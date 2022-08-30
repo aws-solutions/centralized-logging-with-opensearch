@@ -1,18 +1,3 @@
-/*
-Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
 /* tslint:disable */
 /* eslint-disable */
 //  This file was automatically generated and should not be edited.
@@ -37,7 +22,9 @@ export enum ServiceType {
   VPC = "VPC",
   Lambda = "Lambda",
   ELB = "ELB",
-  WAF = "WAF"
+  WAF = "WAF",
+  WAFSampled = "WAFSampled",
+  Config = "Config",
 }
 
 export type ParameterInput = {
@@ -76,7 +63,7 @@ export enum AlarmType {
   KMS_KEY_DISABLED = "KMS_KEY_DISABLED",
   KMS_KEY_INACCESSIBLE = "KMS_KEY_INACCESSIBLE",
   MASTER_CPU_UTILIZATION = "MASTER_CPU_UTILIZATION",
-  MASTER_JVM_MEMORY_PRESSURE = "MASTER_JVM_MEMORY_PRESSURE"
+  MASTER_JVM_MEMORY_PRESSURE = "MASTER_JVM_MEMORY_PRESSURE",
 }
 
 export enum ResourceType {
@@ -91,7 +78,8 @@ export enum ResourceType {
   RDS = "RDS",
   Lambda = "Lambda",
   ELB = "ELB",
-  WAF = "WAF"
+  WAF = "WAF",
+  Config = "Config",
 }
 
 export type LoggingBucket = {
@@ -99,7 +87,13 @@ export type LoggingBucket = {
   enabled?: boolean | null;
   bucket?: string | null;
   prefix?: string | null;
+  source?: LoggingBucketSource | null;
 };
+
+export enum LoggingBucketSource {
+  WAF = "WAF",
+  KinesisDataFirehoseForWAF = "KinesisDataFirehoseForWAF",
+}
 
 export enum LogType {
   JSON = "JSON",
@@ -107,12 +101,12 @@ export enum LogType {
   Nginx = "Nginx",
   Apache = "Apache",
   SingleLineText = "SingleLineText",
-  MultiLineText = "MultiLineText"
+  MultiLineText = "MultiLineText",
 }
 
 export enum MultiLineLogParser {
   JAVA_SPRING_BOOT = "JAVA_SPRING_BOOT",
-  CUSTOM = "CUSTOM"
+  CUSTOM = "CUSTOM",
 }
 
 export type RegularSpecInput = {
@@ -147,29 +141,37 @@ export type AOSParameterInput = {
 
 export enum EngineType {
   Elasticsearch = "Elasticsearch",
-  OpenSearch = "OpenSearch"
+  OpenSearch = "OpenSearch",
 }
 
 export enum LogSourceType {
   EC2 = "EC2",
   S3 = "S3",
-  EKSCluster = "EKSCluster"
+  EKSCluster = "EKSCluster",
 }
 
 export enum ArchiveFormat {
   gzip = "gzip",
   json = "json",
-  text = "text"
+  text = "text",
 }
 
 export enum CRI {
   containerd = "containerd",
-  docker = "docker"
+  docker = "docker",
 }
 
 export enum EKSDeployKind {
   DaemonSet = "DaemonSet",
-  Sidecar = "Sidecar"
+  Sidecar = "Sidecar",
+}
+
+export enum ErrorCode {
+  DuplicatedIndexPrefix = "DuplicatedIndexPrefix",
+  DuplicatedWithInactiveIndexPrefix = "DuplicatedWithInactiveIndexPrefix",
+  OverlapIndexPrefix = "OverlapIndexPrefix",
+  OverlapWithInactiveIndexPrefix = "OverlapWithInactiveIndexPrefix",
+  AccountNotFound = "AccountNotFound",
 }
 
 export type DomainNames = {
@@ -206,7 +208,7 @@ export enum DomainHealth {
   GREEN = "GREEN",
   RED = "RED",
   YELLOW = "YELLOW",
-  UNKNOWN = "UNKNOWN"
+  UNKNOWN = "UNKNOWN",
 }
 
 export type DomainDetails = {
@@ -261,19 +263,14 @@ export type Node = {
 
 export enum StorageType {
   EBS = "EBS",
-  Instance = "Instance"
+  Instance = "Instance",
 }
 
 export type Volume = {
   __typename: "Volume";
-  type: VolumeType;
+  type: string;
   size: number;
 };
-
-// Volume Type
-export enum VolumeType {
-  gp2 = "gp2"
-}
 
 export type Cognito = {
   __typename: "Cognito";
@@ -295,7 +292,7 @@ export enum StackStatus {
   DELETING = "DELETING",
   ERROR = "ERROR",
   ENABLED = "ENABLED",
-  DISABLED = "DISABLED"
+  DISABLED = "DISABLED",
 }
 
 export type ProxyInfo = {
@@ -350,7 +347,7 @@ export enum PipelineStatus {
   INACTIVE = "INACTIVE",
   CREATING = "CREATING",
   DELETING = "DELETING",
-  ERROR = "ERROR"
+  ERROR = "ERROR",
 }
 
 export type Resource = {
@@ -370,6 +367,8 @@ export type ListInstanceGroupResponse = {
 export type InstanceGroup = {
   __typename: "InstanceGroup";
   id: string;
+  accountId?: string | null;
+  region?: string | null;
   groupName?: string | null;
   instanceSet?: Array<string | null> | null;
   createdDt?: string | null;
@@ -386,8 +385,8 @@ export type LogConf = {
   __typename: "LogConf";
   id: string;
   confName?: string | null;
-  logPath?: string | null;
   logType?: LogType | null;
+  logPath?: string | null;
   multilineLogParser?: MultiLineLogParser | null;
   createdDt?: string | null;
   userLogFormat?: string | null;
@@ -416,6 +415,8 @@ export type AppPipeline = {
   aosParas?: AOSParameter | null;
   createdDt?: string | null;
   status?: PipelineStatus | null;
+  kdsRoleArn?: string | null;
+  ec2RoleArn?: string | null;
   tags?: Array<Tag | null> | null;
 };
 
@@ -460,6 +461,15 @@ export type AppLogIngestion = {
   stackId?: string | null;
   stackName?: string | null;
   appPipelineId?: string | null;
+  kdsRoleArn?: string | null;
+  kdsRoleName?: string | null;
+  ec2RoleArn?: string | null;
+  ec2RoleName?: string | null;
+  logPath?: string | null;
+  sourceId?: string | null;
+  sourceType?: string | null;
+  accountId?: string | null;
+  region?: string | null;
   createdDt?: string | null;
   status?: string | null;
   tags?: Array<Tag | null> | null;
@@ -483,6 +493,8 @@ export type S3Source = {
   s3Name?: string | null;
   s3Prefix?: string | null;
   archiveFormat?: string | null;
+  defaultVpcId?: string | null;
+  defaultSubnetIds?: string | null;
 };
 
 export type EKSClusterLogSource = {
@@ -544,7 +556,7 @@ export enum LogAgentStatus {
   Installing = "Installing",
   Installed = "Installed",
   Not_Installed = "Not_Installed",
-  Unknown = "Unknown"
+  Unknown = "Unknown",
 }
 
 export type ListLogSourceResponse = {
@@ -563,6 +575,36 @@ export type ListImportedEKSClustersResponse = {
   __typename: "ListImportedEKSClustersResponse";
   eksClusterLogSourceList?: Array<EKSClusterLogSource | null> | null;
   total?: number | null;
+};
+
+export type CheckTimeFormatRes = {
+  __typename: "CheckTimeFormatRes";
+  isMatch?: boolean | null;
+};
+
+export type ListSubAccountLinkResponse = {
+  __typename: "ListSubAccountLinkResponse";
+  subAccountLinks?: Array<SubAccountLink | null> | null;
+  total?: number | null;
+};
+
+export type SubAccountLink = {
+  __typename: "SubAccountLink";
+  id: string;
+  subAccountId?: string | null;
+  region?: string | null;
+  subAccountName?: string | null;
+  subAccountRoleArn?: string | null;
+  agentInstallDoc?: string | null;
+  agentConfDoc?: string | null;
+  subAccountBucketName?: string | null;
+  subAccountStackId?: string | null;
+  subAccountKMSKeyArn?: string | null;
+  subAccountVpcId?: string | null;
+  subAccountPublicSubnetIds?: string | null;
+  createdDt?: string | null;
+  status?: string | null;
+  tags?: Array<Tag | null> | null;
 };
 
 export type ImportDomainMutationVariables = {
@@ -592,6 +634,8 @@ export type CreateServicePipelineMutationVariables = {
   target?: string | null;
   parameters?: Array<ParameterInput | null> | null;
   tags?: Array<TagInput | null> | null;
+  logSourceAccountId?: string | null;
+  logSourceRegion?: string | null;
 };
 
 export type CreateServicePipelineMutation = {
@@ -649,6 +693,7 @@ export type DeleteAlarmForOpenSearchMutation = {
 export type PutResourceLoggingBucketMutationVariables = {
   type: ResourceType;
   resourceName: string;
+  accountId?: string | null;
   region?: string | null;
 };
 
@@ -659,10 +704,13 @@ export type PutResourceLoggingBucketMutation = {
     enabled?: boolean | null;
     bucket?: string | null;
     prefix?: string | null;
+    source?: LoggingBucketSource | null;
   } | null;
 };
 
 export type CreateInstanceGroupMutationVariables = {
+  accountId?: string | null;
+  region?: string | null;
   groupName: string;
   instanceSet: Array<string>;
 };
@@ -686,6 +734,8 @@ export type UpdateInstanceGroupMutationVariables = {
   id: string;
   groupName: string;
   instanceSet: Array<string>;
+  accountId?: string | null;
+  region?: string | null;
 };
 
 export type UpdateInstanceGroupMutation = {
@@ -695,7 +745,6 @@ export type UpdateInstanceGroupMutation = {
 
 export type CreateLogConfMutationVariables = {
   confName: string;
-  logPath: string;
   logType: LogType;
   multilineLogParser?: MultiLineLogParser | null;
   userLogFormat?: string | null;
@@ -720,7 +769,6 @@ export type DeleteLogConfMutation = {
 export type UpdateLogConfMutationVariables = {
   id: string;
   confName: string;
-  logPath: string;
   logType: LogType;
   multilineLogParser?: MultiLineLogParser | null;
   userLogFormat?: string | null;
@@ -736,6 +784,7 @@ export type UpdateLogConfMutation = {
 export type CreateAppPipelineMutationVariables = {
   kdsParas: KDSParameterInput;
   aosParas: AOSParameterInput;
+  force?: boolean | null;
   tags?: Array<TagInput | null> | null;
 };
 
@@ -753,6 +802,15 @@ export type DeleteAppPipelineMutation = {
   deleteAppPipeline?: string | null;
 };
 
+export type UpgradeAppPipelineMutationVariables = {
+  ids: Array<string>;
+};
+
+export type UpgradeAppPipelineMutation = {
+  // Upgrade a app pipeline to v1.1
+  upgradeAppPipeline?: string | null;
+};
+
 export type CreateAppLogIngestionMutationVariables = {
   confId: string;
   sourceIds?: Array<string> | null;
@@ -760,7 +818,10 @@ export type CreateAppLogIngestionMutationVariables = {
   stackId?: string | null;
   stackName?: string | null;
   appPipelineId: string;
+  createDashboard: string;
+  force?: boolean | null;
   tags?: Array<TagInput | null> | null;
+  logPath: string;
 };
 
 export type CreateAppLogIngestionMutation = {
@@ -779,6 +840,8 @@ export type DeleteAppLogIngestionMutation = {
 
 export type RequestInstallLogAgentMutationVariables = {
   instanceIdSet: Array<string>;
+  accountId?: string | null;
+  region?: string | null;
 };
 
 export type RequestInstallLogAgentMutation = {
@@ -794,6 +857,9 @@ export type CreateLogSourceMutationVariables = {
   accountId?: string | null;
   region?: string | null;
   archiveFormat?: ArchiveFormat | null;
+  subAccountVpcId?: string | null;
+  subAccountPublicSubnetIds?: string | null;
+  subAccountLinkId?: string | null;
   tags?: Array<TagInput | null> | null;
 };
 
@@ -849,12 +915,85 @@ export type CreateEKSClusterPodLogIngestionMutationVariables = {
   aosParas: AOSParameterInput;
   confId: string;
   eksClusterId: string;
+  logPath: string;
+  createDashboard: string;
+  force?: boolean | null;
   tags?: Array<TagInput | null> | null;
 };
 
 export type CreateEKSClusterPodLogIngestionMutation = {
   // create EKS Cluster Pod log pipeline & ingestion
   createEKSClusterPodLogIngestion?: string | null;
+};
+
+export type CreateEKSClusterPodLogWithoutDataBufferIngestionMutationVariables =
+  {
+    aosParas: AOSParameterInput;
+    confId: string;
+    eksClusterId: string;
+    logPath: string;
+    createDashboard: string;
+    force?: boolean | null;
+    tags?: Array<TagInput | null> | null;
+  };
+
+export type CreateEKSClusterPodLogWithoutDataBufferIngestionMutation = {
+  // create EKS Cluster Pod log pipeline & ingestion without data buffer
+  createEKSClusterPodLogWithoutDataBufferIngestion?: string | null;
+};
+
+export type GenerateErrorCodeMutationVariables = {
+  code?: ErrorCode | null;
+};
+
+export type GenerateErrorCodeMutation = {
+  // generate error code
+  generateErrorCode?: string | null;
+};
+
+export type CreateSubAccountLinkMutationVariables = {
+  subAccountId: string;
+  region?: string | null;
+  subAccountName: string;
+  subAccountRoleArn: string;
+  agentInstallDoc: string;
+  agentConfDoc: string;
+  subAccountBucketName: string;
+  subAccountStackId: string;
+  subAccountKMSKeyArn: string;
+  tags?: Array<TagInput | null> | null;
+};
+
+export type CreateSubAccountLinkMutation = {
+  // *The following belongs to cross account* #
+  // Create a new cross account link
+  createSubAccountLink?: string | null;
+};
+
+export type UpdateSubAccountLinkMutationVariables = {
+  id: string;
+  subAccountName: string;
+  agentInstallDoc: string;
+  agentConfDoc: string;
+  subAccountBucketName: string;
+  subAccountStackId: string;
+  subAccountKMSKeyArn: string;
+  subAccountVpcId?: string | null;
+  subAccountPublicSubnetIds?: string | null;
+};
+
+export type UpdateSubAccountLinkMutation = {
+  // Update a cross account link
+  updateSubAccountLink?: string | null;
+};
+
+export type DeleteSubAccountLinkMutationVariables = {
+  id: string;
+};
+
+export type DeleteSubAccountLinkMutation = {
+  // Remove a cross account link
+  deleteSubAccountLink?: string | null;
 };
 
 export type ListDomainNamesQueryVariables = {
@@ -954,7 +1093,7 @@ export type GetDomainDetailsQuery = {
     storageType: StorageType;
     volume?: {
       __typename: "Volume";
-      type: VolumeType;
+      type: string;
       size: number;
     } | null;
     cognito?: {
@@ -1073,6 +1212,7 @@ export type GetServicePipelineQuery = {
 export type ListResourcesQueryVariables = {
   type: ResourceType;
   parentId?: string | null;
+  accountId?: string | null;
   region?: string | null;
 };
 
@@ -1087,9 +1227,21 @@ export type ListResourcesQuery = {
   } | null> | null;
 };
 
+export type CheckServiceExistingQueryVariables = {
+  type: ResourceType;
+  accountId?: string | null;
+  region?: string | null;
+};
+
+export type CheckServiceExistingQuery = {
+  // Verify that service already exists in the pipeline
+  checkServiceExisting?: boolean | null;
+};
+
 export type GetResourceLoggingBucketQueryVariables = {
   type: ResourceType;
   resourceName: string;
+  accountId?: string | null;
   region?: string | null;
 };
 
@@ -1100,6 +1252,7 @@ export type GetResourceLoggingBucketQuery = {
     enabled?: boolean | null;
     bucket?: string | null;
     prefix?: string | null;
+    source?: LoggingBucketSource | null;
   } | null;
 };
 
@@ -1116,6 +1269,8 @@ export type ListInstanceGroupsQuery = {
     instanceGroups?: Array<{
       __typename: "InstanceGroup";
       id: string;
+      accountId?: string | null;
+      region?: string | null;
       groupName?: string | null;
       instanceSet?: Array<string | null> | null;
       createdDt?: string | null;
@@ -1134,6 +1289,8 @@ export type GetInstanceGroupQuery = {
   getInstanceGroup?: {
     __typename: "InstanceGroup";
     id: string;
+    accountId?: string | null;
+    region?: string | null;
     groupName?: string | null;
     instanceSet?: Array<string | null> | null;
     createdDt?: string | null;
@@ -1154,8 +1311,8 @@ export type ListLogConfsQuery = {
       __typename: "LogConf";
       id: string;
       confName?: string | null;
-      logPath?: string | null;
       logType?: LogType | null;
+      logPath?: string | null;
       multilineLogParser?: MultiLineLogParser | null;
       createdDt?: string | null;
       userLogFormat?: string | null;
@@ -1182,8 +1339,8 @@ export type GetLogConfQuery = {
     __typename: "LogConf";
     id: string;
     confName?: string | null;
-    logPath?: string | null;
     logType?: LogType | null;
+    logPath?: string | null;
     multilineLogParser?: MultiLineLogParser | null;
     createdDt?: string | null;
     userLogFormat?: string | null;
@@ -1236,6 +1393,8 @@ export type ListAppPipelinesQuery = {
       } | null;
       createdDt?: string | null;
       status?: PipelineStatus | null;
+      kdsRoleArn?: string | null;
+      ec2RoleArn?: string | null;
       tags?: Array<{
         __typename: "Tag";
         key?: string | null;
@@ -1281,6 +1440,8 @@ export type GetAppPipelineQuery = {
     } | null;
     createdDt?: string | null;
     status?: PipelineStatus | null;
+    kdsRoleArn?: string | null;
+    ec2RoleArn?: string | null;
     tags?: Array<{
       __typename: "Tag";
       key?: string | null;
@@ -1320,6 +1481,8 @@ export type ListAppLogIngestionsQuery = {
           s3Name?: string | null;
           s3Prefix?: string | null;
           archiveFormat?: string | null;
+          defaultVpcId?: string | null;
+          defaultSubnetIds?: string | null;
         } | null;
         eksSource?: {
           __typename: "EKSClusterLogSource";
@@ -1355,6 +1518,15 @@ export type ListAppLogIngestionsQuery = {
       stackId?: string | null;
       stackName?: string | null;
       appPipelineId?: string | null;
+      kdsRoleArn?: string | null;
+      kdsRoleName?: string | null;
+      ec2RoleArn?: string | null;
+      ec2RoleName?: string | null;
+      logPath?: string | null;
+      sourceId?: string | null;
+      sourceType?: string | null;
+      accountId?: string | null;
+      region?: string | null;
       createdDt?: string | null;
       status?: string | null;
       tags?: Array<{
@@ -1392,6 +1564,8 @@ export type GetAppLogIngestionQuery = {
         s3Name?: string | null;
         s3Prefix?: string | null;
         archiveFormat?: string | null;
+        defaultVpcId?: string | null;
+        defaultSubnetIds?: string | null;
       } | null;
       eksSource?: {
         __typename: "EKSClusterLogSource";
@@ -1433,6 +1607,15 @@ export type GetAppLogIngestionQuery = {
     stackId?: string | null;
     stackName?: string | null;
     appPipelineId?: string | null;
+    kdsRoleArn?: string | null;
+    kdsRoleName?: string | null;
+    ec2RoleArn?: string | null;
+    ec2RoleName?: string | null;
+    logPath?: string | null;
+    sourceId?: string | null;
+    sourceType?: string | null;
+    accountId?: string | null;
+    region?: string | null;
     createdDt?: string | null;
     status?: string | null;
     tags?: Array<{
@@ -1448,6 +1631,8 @@ export type ListInstancesQueryVariables = {
   nextToken?: string | null;
   instanceSet?: Array<string | null> | null;
   tags?: Array<TagFilterInput | null> | null;
+  region?: string | null;
+  accountId?: string | null;
 };
 
 export type ListInstancesQuery = {
@@ -1486,6 +1671,8 @@ export type GetInstanceMetaQuery = {
 
 export type GetLogAgentStatusQueryVariables = {
   instanceId: string;
+  region?: string | null;
+  accountId?: string | null;
 };
 
 export type GetLogAgentStatusQuery = {
@@ -1524,6 +1711,8 @@ export type GetLogSourceQuery = {
       s3Name?: string | null;
       s3Prefix?: string | null;
       archiveFormat?: string | null;
+      defaultVpcId?: string | null;
+      defaultSubnetIds?: string | null;
     } | null;
     eksSource?: {
       __typename: "EKSClusterLogSource";
@@ -1587,6 +1776,8 @@ export type ListLogSourcesQuery = {
         s3Name?: string | null;
         s3Prefix?: string | null;
         archiveFormat?: string | null;
+        defaultVpcId?: string | null;
+        defaultSubnetIds?: string | null;
       } | null;
       eksSource?: {
         __typename: "EKSClusterLogSource";
@@ -1685,6 +1876,7 @@ export type GetEKSDaemonSetConfigQuery = {
 export type GetEKSDeploymentConfigQueryVariables = {
   eksClusterId: string;
   ingestionId: string;
+  openExtraMetadataFlag?: boolean | null;
 };
 
 export type GetEKSDeploymentConfigQuery = {
@@ -1693,6 +1885,8 @@ export type GetEKSDeploymentConfigQuery = {
 };
 
 export type ListEKSClusterNamesQueryVariables = {
+  accountId?: string | null;
+  region?: string | null;
   nextToken: string;
   isListAll?: boolean | null;
 };
@@ -1752,5 +1946,115 @@ export type ListImportedEKSClustersQuery = {
       } | null> | null;
     } | null> | null;
     total?: number | null;
+  } | null;
+};
+
+export type CheckTimeFormatQueryVariables = {
+  timeStr: string;
+  formatStr: string;
+};
+
+export type CheckTimeFormatQuery = {
+  // Check Time format
+  checkTimeFormat?: {
+    __typename: "CheckTimeFormatRes";
+    isMatch?: boolean | null;
+  } | null;
+};
+
+export type ListSubAccountLinksQueryVariables = {
+  page?: number | null;
+  count?: number | null;
+};
+
+export type ListSubAccountLinksQuery = {
+  // *The following belongs to cross account* #
+  // List sub account info
+  listSubAccountLinks?: {
+    __typename: "ListSubAccountLinkResponse";
+    subAccountLinks?: Array<{
+      __typename: "SubAccountLink";
+      id: string;
+      subAccountId?: string | null;
+      region?: string | null;
+      subAccountName?: string | null;
+      subAccountRoleArn?: string | null;
+      agentInstallDoc?: string | null;
+      agentConfDoc?: string | null;
+      subAccountBucketName?: string | null;
+      subAccountStackId?: string | null;
+      subAccountKMSKeyArn?: string | null;
+      subAccountVpcId?: string | null;
+      subAccountPublicSubnetIds?: string | null;
+      createdDt?: string | null;
+      status?: string | null;
+      tags?: Array<{
+        __typename: "Tag";
+        key?: string | null;
+        value?: string | null;
+      } | null> | null;
+    } | null> | null;
+    total?: number | null;
+  } | null;
+};
+
+export type GetSubAccountLinkQueryVariables = {
+  id: string;
+};
+
+export type GetSubAccountLinkQuery = {
+  // Get sub account info by ID
+  getSubAccountLink?: {
+    __typename: "SubAccountLink";
+    id: string;
+    subAccountId?: string | null;
+    region?: string | null;
+    subAccountName?: string | null;
+    subAccountRoleArn?: string | null;
+    agentInstallDoc?: string | null;
+    agentConfDoc?: string | null;
+    subAccountBucketName?: string | null;
+    subAccountStackId?: string | null;
+    subAccountKMSKeyArn?: string | null;
+    subAccountVpcId?: string | null;
+    subAccountPublicSubnetIds?: string | null;
+    createdDt?: string | null;
+    status?: string | null;
+    tags?: Array<{
+      __typename: "Tag";
+      key?: string | null;
+      value?: string | null;
+    } | null> | null;
+  } | null;
+};
+
+export type GetSubAccountLinkByAccountIdRegionQueryVariables = {
+  accountId: string;
+  region?: string | null;
+};
+
+export type GetSubAccountLinkByAccountIdRegionQuery = {
+  // Get sub account info by Account Id and region
+  getSubAccountLinkByAccountIdRegion?: {
+    __typename: "SubAccountLink";
+    id: string;
+    subAccountId?: string | null;
+    region?: string | null;
+    subAccountName?: string | null;
+    subAccountRoleArn?: string | null;
+    agentInstallDoc?: string | null;
+    agentConfDoc?: string | null;
+    subAccountBucketName?: string | null;
+    subAccountStackId?: string | null;
+    subAccountKMSKeyArn?: string | null;
+    subAccountVpcId?: string | null;
+    subAccountPublicSubnetIds?: string | null;
+    createdDt?: string | null;
+    status?: string | null;
+    tags?: Array<{
+      __typename: "Tag";
+      key?: string | null;
+      value?: string | null;
+    } | null> | null;
   } | null;
 };

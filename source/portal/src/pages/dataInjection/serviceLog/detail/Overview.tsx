@@ -33,7 +33,7 @@ const Overview: React.FC<OverviewProps> = (props: OverviewProps) => {
         <div className="flex value-label-span">
           <div className="flex-1">
             <ValueWithLabel label={t("servicelog:overview.logLocation")}>
-              <div>{pipelineInfo?.logLocation}</div>
+              <div>{pipelineInfo?.logLocation || "-"}</div>
             </ValueWithLabel>
             <ValueWithLabel label={t("servicelog:overview.created")}>
               <div>{pipelineInfo?.createTime}</div>

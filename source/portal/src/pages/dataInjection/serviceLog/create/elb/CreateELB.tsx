@@ -59,6 +59,8 @@ export interface ELBTaskProps {
   arnId: string;
   source: string;
   target: string;
+  logSourceAccountId: string;
+  logSourceRegion: string;
   params: {
     // [index: string]: string | any;
     needCreateLogging: boolean;
@@ -95,6 +97,8 @@ const DEFAULT_TASK_VALUE: ELBTaskProps = {
   target: "",
   arnId: "",
   tags: [],
+  logSourceAccountId: "",
+  logSourceRegion: "",
   params: {
     needCreateLogging: false,
     engineType: "",
@@ -173,7 +177,10 @@ const CreateELB: React.FC = () => {
     createPipelineParams.source = elbPipelineTask.source;
     createPipelineParams.target = elbPipelineTask.target;
     createPipelineParams.tags = elbPipelineTask.tags;
-    // elbPipelineTask.params.
+    createPipelineParams.logSourceAccountId =
+      elbPipelineTask.logSourceAccountId;
+    createPipelineParams.logSourceRegion = amplifyConfig.aws_project_region;
+
     const tmpParamList: any = [];
     Object.keys(elbPipelineTask.params).forEach((key) => {
       console.info("key");
@@ -310,6 +317,14 @@ const CreateELB: React.FC = () => {
                     changeNeedEnableLogging={(need: boolean) => {
                       setNeedEnableAccessLog(need);
                     }}
+                    changeCrossAccount={(id) => {
+                      setELBPipelineTask((prev: ELBTaskProps) => {
+                        return {
+                          ...prev,
+                          logSourceAccountId: id,
+                        };
+                      });
+                    }}
                     manualChangeBucket={(srcBucketName) => {
                       setELBPipelineTask((prev: ELBTaskProps) => {
                         return {
@@ -340,11 +355,11 @@ const CreateELB: React.FC = () => {
                       setELBPipelineTask((prev: ELBTaskProps) => {
                         return {
                           ...prev,
-                          source: elbObj?.name,
-                          arnId: elbObj?.value,
+                          source: elbObj?.name || "",
+                          arnId: elbObj?.value || "",
                           params: {
                             ...prev.params,
-                            indexPrefix: elbObj?.name,
+                            indexPrefix: elbObj?.name || "",
                             elbObj: elbObj,
                           },
                         };

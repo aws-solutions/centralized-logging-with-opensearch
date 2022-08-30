@@ -1,0 +1,60 @@
+{
+    "aliases": {},
+    "mappings": {
+        "properties": {
+            "@timestamp": {
+                "type": "alias",
+                "path": "configurationItemCaptureTime"
+            },
+            "configurationItemCaptureTime": {
+                "type": "date"
+            },
+            "configurationItemVersion": {
+                "type": "keyword"
+            },
+            "availabilityZone": {
+                "type": "keyword"
+            },
+            "awsAccountId": {
+                "type": "keyword"
+            },
+            "awsRegion": {
+                "type": "keyword"
+            },
+            "resourceType": {
+                "type": "keyword"
+            },
+            "configuration": {
+                "properties": {
+                    "state": {
+                        "type": "keyword"
+                    },
+                    "lastUpdateStatus": {
+                        "type": "keyword"
+                    },
+                    "status": {
+                        "type": "keyword"
+                    },
+                    "availabilityZones": {
+                        "properties": {
+                            "zoneName": {
+                                "type": "keyword"
+                            }
+                        }
+                    }
+                }
+            },
+            "configurationItemStatus": {
+                "type": "keyword"
+            }
+        }
+    },
+    "settings": {
+        "index": {
+            "number_of_shards": "5",
+            "number_of_replicas": "1",
+            "mapping.total_fields.limit": 4000,
+            "mapping.ignore_malformed": true
+        }
+    }
+}

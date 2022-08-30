@@ -36,7 +36,7 @@ Amazon OpenSearch 提供一组[推荐的 CloudWatch 告警](https://docs.aws.ama
     | ClusterStatusRed | `是` |当至少一个主分片及其副本未分配给节点时是否启用告警。 |
     | ClusterStatusYellow | `是` |当至少一个副本分片未分配给节点时是否启用告警。 |
     | FreeStorageSpace | `10` |是否在集群中的节点下降到您在 GiB 中输入的可用存储空间时启用告警。我们建议将其设置为每个节点存储空间的 25%。 `0` 表示告警被禁用。 |
-    | ClusterIndexWritesBlocked | `是` |当您的集群阻止写入请求时是否启用告警。 |
+    | ClusterIndexWritesBlocked | `1` | 在 5 分钟出现集群阻止写入错误的次数，连续 1 次。`0`表示告警被禁用。 |
     | UnreachableNodeNumber | `3` |节点最小值为 < x 1 天，连续 1 次。 `0` 表示告警被禁用。 |
     | AutomatedSnapshotFailure | `是` |自动快照失败时是否开启告警。 AutomatedSnapshotFailure 最大值 >= 1 持续 1 分钟，连续 1 次。 |
     | CPUUtilization | `是` |发生持续高 CPU 使用率时是否启用告警。 CPUUtilization 或 WarmCPUUtilization 最大值 >= 80% 持续 15 分钟，连续 3 次。 |
@@ -59,6 +59,16 @@ Amazon OpenSearch 提供一组[推荐的 CloudWatch 告警](https://docs.aws.ama
 
 创建告警后，将向您的电子邮件地址发送一封确认电子邮件。 您需要单击电子邮件中的 ****确认**** 链接。
 
+您可以通过 Log Hub 控制台的 **基本配置 > 告警 > Cloudwatch 告警** 链接访问 Cloudwatch 中新创建的告警，链接位置如下图所示：
+
+![](../../images/domain/cloudwatch-alarm-link-zh.png)
+
+请确保所有的告警状态都是 **确定** 状态。因为任何在您确认订阅邮件提醒之前发出的告警并不会发送通知邮件。
+
+!!! Warning "注意"
+  
+    注意，在您订阅邮件提醒之前，告警并不会触发任何SNS通知！也就意味着，假如在您新创建 OpenSearch 告警功能时，您的某些指标已经触发警报，您会由于尚未订阅的缘故无法收到这些已触发的警报。我们建议您在创建完告警功能后，通过上文提到的链接前往 CloudWatch 页面检查每一个告警的状态，并优先解决已经触发的告警内容。
+    
 ## 删除告警
 
 1. 登录 Log Hub 控制台。

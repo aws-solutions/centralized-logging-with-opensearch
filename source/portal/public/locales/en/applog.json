@@ -19,6 +19,9 @@
     "shards": "Shards (Kinesis Data Streams)",
     "autoScaling": "(Auto Scaling)",
     "created": "Created",
+    "tip1": "Before creating an ingest from an instance group, make sure you have attached ",
+    "tip2": "permissions",
+    "tip3": " to the instances",
     "tab": {
       "ingestion": "Ingestion",
       "permission": "Permission",
@@ -30,7 +33,15 @@
       "instanceGroup": "Instance Group",
       "created": "Created time",
       "delete": "Delete Ingestion",
-      "deleteTips": "Are you sure you want to delete the log ingestion(s)? "
+      "deleteTips": "Are you sure you want to delete the log ingestion(s)? ",
+      "upgradeNotice": "Upgrade Notice",
+      "upgradeNoticeDesc": "You see this message because this Application Log Pipeline is created in Log Hub V1.0, and Log Hub has updated the instance permission required after V1.1. This change only affects the new cross-account ingestion from instance group. If you are trying to creating a cross-account account ingestion, please upgrade this pipeline following the ",
+      "upgradeNoticeDescEKS": "You see this message because this cluster has Log Pipeline created in Log Hub V1.0 and you need to upgrade the pipeline to continue.",
+      "upgradeNoticeDescEKSExistsPipeline": "You see this message because the Log Pipeline you select was created in Log Hub V1.0 and you need to upgrade the pipeline to continue.",
+      "upgradeGuide": "Upgrade Guide",
+      "eksTips1": "If you need to create additional EKS ingestions in this pipeline, go to ",
+      "eksTips2": "ESK Cluster",
+      "eksTips3": " create ingestion and select current pipeline."
     },
     "permission": {
       "name": "Instance Permission",
@@ -59,15 +70,20 @@
       "indexNameDesc": "Enter the index name of the log saved in Amazon OpenSearch.",
       "indexNameError": "Please input an index name",
       "indexNameFormatError": "Index name must start with a lowercase letter and can only support lowercase letter, number, - and _",
+      "indexNameDuplicated": "Please change index name",
       "buffer": "Buffer(Amazon Kinesis Data Streams)",
       "shardNum": "Shard number",
-      "shardNumDesc": "Specify the number of Shards of the Kinesis Data Streams. Each shard can have up to 1,000 records per second and total data write rate of 1MB per second.",
+      "shardNumDesc": "Specify the number of Shards of the Kinesis Data Streams. Each shard can have up to 1,000 records per second and total data write rate of 1MB per second. (* Kinesis shard adjustment limit per 24 hours)",
       "shardNumError": "Shard Number must be greater than or equal to 1",
       "enableAutoS": "Enable auto scaling?",
       "enableAutoSDesc": "Enable auto scaling of the Kinesis Data Streams shards?",
       "maxShardNum": "Maximum Shard number",
       "maxShardNumDesc": "Specify maximum number of shards.",
-      "maxShardNumError": "Max Shard Number must be greater than Shard number"
+      "maxShardNumError": "Max Shard Number must be greater than Shard number",
+      "duplicatedWithPrefix": "You have a log pipeline that used this index prefix.",
+      "overlapWithPrefix": "The index prefix overlaps with the index prefix you created earlier.",
+      "duplicatedWithInvalidPrefix": "You have a deleted log pipeline that used this index prefix. If you keep creating this log pipeline, your logs will get mixed up.",
+      "overlapWithInvalidPrefix": "The index prefix overlaps with the index prefix you removed earlier. If you continue to create this pipeline, your logs will get mixed up."
     },
     "specifyOS": {
       "aosDomain": "Amazon OpenSearch domain",
@@ -96,6 +112,8 @@
     "name": "Ingest",
     "selectInstance": "Please select instances",
     "selectOnlineInstance": "Please select log agent online instance or waiting all log agent installed successfully.",
+    "type": "Type",
+    "source": "Source",
     "step": {
       "createInstanceGroup": "Create instance group",
       "chooseInstanceGroup": "Choose instance groups",
@@ -133,7 +151,8 @@
       "chooseExists": "Choose an existing log config.",
       "chooseConfig": "Choose a Log Config",
       "config": "Configuration",
-      "configRequiredError": "Please select a Log Config"
+      "configRequiredError": "Please select a Log Config",
+      "inputLogPath": "Please input the log path"
     },
     "s3": {
       "ingestFromS3": "Ingest from S3",
@@ -153,7 +172,13 @@
         "fileTypeDesc": "Specify the way you compress your logs",
         "selectFileType": "Please select a log file type",
         "chooseFileType": "Choose a File Type",
-        "fileZipped": "The file is zipped"
+        "fileZipped": "The file is zipped",
+        "vpcId": "VPC",
+        "vpcIdDesc": "Select the VPC will start EC2 instances for log ingestion.",
+        "chooseVpc": "Please chooose a VPC",
+        "subnetIds": "Public Subnets",
+        "subnetIdsDesc": "Select the public subnets will start EC2 instances for log ingestion.",
+        "chooseSubnet": "Please chooose public subnets"
       },
       "specifyConfig": {
         "alert": "The 'Log Path' in the Log Config will be ignored as the S3 file path will be used when parsing your logs.",

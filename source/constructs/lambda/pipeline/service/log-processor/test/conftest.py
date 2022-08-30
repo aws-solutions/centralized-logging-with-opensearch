@@ -11,6 +11,7 @@ def default_environment_variables():
     os.environ["AWS_SESSION_TOKEN"] = "mocked-aws-session-token"
     os.environ["AWS_REGION"] = "us-east-1"
     os.environ["SOLUTION_VERSION"] = "v1.0.0"
+    os.environ["VERSION"] = "v1.0.0"
     os.environ["SOLUTION_ID"] = "SO8025"
 
     os.environ["LOG_BUCKET_NAME"] = "loghub-bucket"
@@ -18,4 +19,9 @@ def default_environment_variables():
     os.environ["INDEX_PREFIX"] = "hello"
     os.environ["ENDPOINT"] = "vpc-dev-abc.us-east-1.es.amazonaws.com"
     os.environ["LOG_TYPE"] = "ELB"
+    os.environ["ENGINE"] = "OpenSearch"
     os.environ["BULK_BATCH_SIZE"] = "10"
+    os.environ[
+        "LOG_SOURCE_ACCOUNT_ASSUME_ROLE"] = "arn:aws:iam::111111111:role/CrossAccount-CrossAccountRoleFACE29D1-1KM3QA0O84K34"
+    os.environ["WEB_ACL_NAMES"] = "mock-wafv2-webacl"
+    os.environ["INTERVAL"] = "1"

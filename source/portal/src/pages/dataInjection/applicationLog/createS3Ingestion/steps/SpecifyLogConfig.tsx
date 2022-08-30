@@ -27,7 +27,6 @@ import { appSyncRequestQuery } from "assets/js/request";
 import { getLogConf, listLogConfs } from "graphql/queries";
 import Select, { SelectItem } from "components/Select/select";
 import { IngestionFromS3PropsType } from "../CreateS3Ingestion";
-import Alert from "components/Alert";
 import ExtLink from "components/ExtLink";
 import { S3_FILE_TYPE_LIST } from "assets/js/const";
 
@@ -124,7 +123,6 @@ const SpecifyLogConfig: React.FC<SpecifyLogConfigProp> = (
   return (
     <div>
       <PagePanel title={t("applog:ingestion.s3.step.specifyConfig")}>
-        <Alert content={t("applog:ingestion.s3.specifyConfig.alert")} />
         <HeaderPanel title={t("applog:ingestion.s3.specifyConfig.logConfig")}>
           <FormItem
             optionTitle={t("applog:ingestion.s3.specifyConfig.logConfig")}
@@ -172,7 +170,6 @@ const SpecifyLogConfig: React.FC<SpecifyLogConfigProp> = (
           headerTitle={t("applog:ingestion.applyConfig.config")}
           inputDisable={true}
           curConfig={curConfig}
-          hidePath
         />
       </PagePanel>
     </div>

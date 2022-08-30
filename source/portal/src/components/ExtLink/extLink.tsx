@@ -24,6 +24,7 @@ interface ExtLinkProps {
 const INTERNAL_LINK_LIST = [
   "/clusters/import-opensearch-cluster",
   "/resources/log-config",
+  "/resources/cross-account",
 ];
 
 const extLink: React.FC<ExtLinkProps> = (props: ExtLinkProps) => {

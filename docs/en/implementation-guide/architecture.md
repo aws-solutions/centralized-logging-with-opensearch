@@ -35,6 +35,9 @@ Log Hub supports log analysis for AWS services, such as Amazon S3 access logs, a
 
 AWS services output logs to different destinations, including Amazon S3 bucket, CloudWatch log groups, Kinesis Data Streams, and Kinesis Firehose. The solution ingests those logs using different workflows.
 
+!!! note "Note"
+    Log Hub supports [Cross-Account log ingestion](./link-account/index.md). If you want to ingest the logs from another AWS account, the resources in the **Sources** group in the architecture diagram will be in the other account.
+
 ### Logs in Amazon S3
 
 Some services use Amazon S3 as the destination, and the logs in Amazon S3 are generally not for real-time analysis. 
@@ -54,6 +57,7 @@ The log pipeline runs the following workflow:
 
 5. The logs failed to be processed are exported to Amazon S3 bucket (Backup Bucket).
 
+For cross-account ingestion, the AWS Services store logs in Amazon S3 bucket in the linked account, and other resources remain in Log Hub's Account:
 
 ### Logs in Amazon CloudWatch
 
@@ -74,10 +78,18 @@ The log pipeline runs the following workflow:
 
 5. The logs failed to be processed are exported to Amazon S3 bucket (Backup Bucket).
 
+For cross-account ingestion, the AWS Services store logs on Amazon CloudWatch log group in the linked account, and other resources remain in Log Hub's Account:
+
 
 ## Application Log Analytics Pipeline
 
 Log Hub supports log analysis for application logs, such as Nginx/Apache HTTP Server logs or custom application logs. 
+
+!!! note "Note"
+    Log Hub supports [Cross-Account log ingestion](./link-account/index.md). If you want to ingest the logs from the same account, the resources in the **Sources** group will be in the same account as your Log Hub account.
+    Otherwise, they will be in the other AWS account.
+
+### Logs from EC2
 
 [![arch-app-log-pipeline]][arch-app-log-pipeline]
 Figure 4: Application log pipeline architecture
@@ -93,6 +105,16 @@ The log pipeline runs the following workflow:
 4. The logs failed to be processed are exported to Amazon S3 bucket (Backup Bucket).
 
 
+### Logs from EKS
+
+!!! important "Important"
+
+    If your EKS cluster and OpenSearch cluster is not in the same VPC, you need to use VPC [Peering Connection][peering-connection] or [Transit Gateway][tgw] to connect these VPCs, and adjust the OpenSearch Security group if needed.
+
+[![arch-eks-aos-pipeline]][arch-eks-aos-pipeline]
+
+1. [Fluent Bit](https://fluentbit.io/) works as the underlying log agent to collect logs and send them to the OpenSearch cluster.
+
 [s3log]: https://docs.aws.amazon.com/AmazonS3/latest/userguide/ServerLogs.html
 [alblog]: https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-access-logs.html
 [s3]: https://aws.amazon.com/s3/
@@ -106,5 +128,7 @@ The log pipeline runs the following workflow:
 [arch]: ../images/architecture/arch.svg
 [arch-service-pipeline-s3]: ../images/architecture/service-pipeline-s3.svg
 [arch-service-pipeline-cw]: ../images/architecture/service-pipeline-cw.svg
-[arch-app-log-pipeline]: ../images/architecture/app-pipeline.svg
-
+[arch-app-log-pipeline]: ../images/architecture/ec2-pipeline.svg
+[arch-eks-aos-pipeline]: ../images/architecture/eks-aos-pipeline.svg
+[peering-connection]: https://docs.aws.amazon.com/vpc/latest/peering/working-with-vpc-peering.html
+[tgw]: https://docs.aws.amazon.com/vpc/latest/tgw/what-is-transit-gateway.html

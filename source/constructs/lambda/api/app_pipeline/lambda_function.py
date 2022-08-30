@@ -10,6 +10,7 @@ from datetime import datetime
 import boto3
 from boto3.dynamodb.conditions import Attr
 from botocore import config
+from common import AppPipelineValidator, APIException
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -34,11 +35,6 @@ app_log_ingestion_table = dynamodb.Table(app_log_ingestion_table_name)
 
 # Get kinesis resource.
 kds = boto3.client('kinesis', config=default_config)
-
-
-class APIException(Exception):
-    def __init__(self, message):
-        self.message = message
 
 
 def handle_error(func):
@@ -92,49 +88,98 @@ def create_app_pipeline(**args):
     # Check if index prefix is duplicated in the same opensearch
     index_prefix = str(aos_paras['indexPrefix'])
     domain_name = str(aos_paras['domainName'])
-    conditions = Attr('status').ne('INACTIVE')
-    conditions = conditions.__and__(Attr('aosParas.indexPrefix').eq(index_prefix))
-    conditions = conditions.__and__(Attr('aosParas.domainName').eq(domain_name))
-    res = app_pipeline_table.scan(FilterExpression=conditions)
-    if res['Count'] > 0:
-        raise APIException(f'Duplicate index prefex: {index_prefix}')
 
-    validate_index_prefix_overlap(index_prefix, domain_name)
+    validator = AppPipelineValidator(app_pipeline_table)
+    validator.validate_duplicate_index_prefix(args)
+    validator.validate_index_prefix_overlap(index_prefix, domain_name,
+                                            args.get('force'))
 
     sfn_args = {
-        'stackName': stack_name,
-        'pattern': 'KDSStackNoAutoScaling',
+        'stackName':
+        stack_name,
+        'pattern':
+        'KDSStackNoAutoScaling',
         'parameters': [
             # Kinesis
-            {'ParameterKey': 'ShardCountParam', 'ParameterValue': str(kds_paras['startShardNumber'])},
+            {
+                'ParameterKey': 'ShardCountParam',
+                'ParameterValue': str(kds_paras['startShardNumber'])
+            },
             # Opensearch
-            {'ParameterKey': 'OpenSearchDomainParam', 'ParameterValue': str(aos_paras['domainName'])},
-            {'ParameterKey': 'CreateDashboardParam', 'ParameterValue': 'No'},
-            {'ParameterKey': 'OpenSearchShardNumbersParam', 'ParameterValue': str(aos_paras['shardNumbers'])},
-            {'ParameterKey': 'OpenSearchReplicaNumbersParam', 'ParameterValue': str(aos_paras['replicaNumbers'])},
-            {'ParameterKey': 'OpenSearchDaysToWarmParam', 'ParameterValue': str(aos_paras['warmLogTransition'])},
-            {'ParameterKey': 'OpenSearchDaysToColdParam', 'ParameterValue': str(aos_paras['coldLogTransition'])},
-            {'ParameterKey': 'OpenSearchDaysToRetain', 'ParameterValue': str(aos_paras['logRetention'])},
-            {'ParameterKey': 'EngineTypeParam', 'ParameterValue': str(aos_paras['engine'])},
-            {'ParameterKey': 'OpenSearchEndpointParam', 'ParameterValue': str(aos_paras['opensearchEndpoint'])},
-            {'ParameterKey': 'OpenSearchIndexPrefix', 'ParameterValue': str(aos_paras['indexPrefix'])},
+            {
+                'ParameterKey': 'OpenSearchDomainParam',
+                'ParameterValue': str(aos_paras['domainName'])
+            },
+            {
+                'ParameterKey': 'CreateDashboardParam',
+                'ParameterValue': 'No'
+            },
+            {
+                'ParameterKey': 'OpenSearchShardNumbersParam',
+                'ParameterValue': str(aos_paras['shardNumbers'])
+            },
+            {
+                'ParameterKey': 'OpenSearchReplicaNumbersParam',
+                'ParameterValue': str(aos_paras['replicaNumbers'])
+            },
+            {
+                'ParameterKey': 'OpenSearchDaysToWarmParam',
+                'ParameterValue': str(aos_paras['warmLogTransition'])
+            },
+            {
+                'ParameterKey': 'OpenSearchDaysToColdParam',
+                'ParameterValue': str(aos_paras['coldLogTransition'])
+            },
+            {
+                'ParameterKey': 'OpenSearchDaysToRetain',
+                'ParameterValue': str(aos_paras['logRetention'])
+            },
+            {
+                'ParameterKey': 'EngineTypeParam',
+                'ParameterValue': str(aos_paras['engine'])
+            },
+            {
+                'ParameterKey': 'OpenSearchEndpointParam',
+                'ParameterValue': str(aos_paras['opensearchEndpoint'])
+            },
+            {
+                'ParameterKey': 'OpenSearchIndexPrefix',
+                'ParameterValue': str(aos_paras['indexPrefix'])
+            },
             # VPC
-            {'ParameterKey': 'VpcIdParam', 'ParameterValue': str(aos_paras['vpc']['vpcId'])},
-            {'ParameterKey': 'SubnetIdsParam', 'ParameterValue': str(aos_paras['vpc']['privateSubnetIds'])},
-            {'ParameterKey': 'SecurityGroupIdParam', 'ParameterValue': str(aos_paras['vpc']['securityGroupId'])},
-            {'ParameterKey': 'FailedLogBucketParam', 'ParameterValue': str(aos_paras['failedLogBucket'])},
+            {
+                'ParameterKey': 'VpcIdParam',
+                'ParameterValue': str(aos_paras['vpc']['vpcId'])
+            },
+            {
+                'ParameterKey': 'SubnetIdsParam',
+                'ParameterValue': str(aos_paras['vpc']['privateSubnetIds'])
+            },
+            {
+                'ParameterKey': 'SecurityGroupIdParam',
+                'ParameterValue': str(aos_paras['vpc']['securityGroupId'])
+            },
+            {
+                'ParameterKey': 'FailedLogBucketParam',
+                'ParameterValue': str(aos_paras['failedLogBucket'])
+            },
         ]
     }
     if kds_paras['enableAutoScaling']:
         params = sfn_args['parameters']
-        params.append({'ParameterKey': 'MinCapacityParam', 'ParameterValue': str(kds_paras['startShardNumber'])})
-        params.append({'ParameterKey': 'MaxCapacityParam', 'ParameterValue': str(kds_paras['maxShardNumber'])})
+        params.append({
+            'ParameterKey': 'MinCapacityParam',
+            'ParameterValue': str(kds_paras['startShardNumber'])
+        })
+        params.append({
+            'ParameterKey': 'MaxCapacityParam',
+            'ParameterValue': str(kds_paras['maxShardNumber'])
+        })
         sfn_args['parameters'] = params
         sfn_args['pattern'] = 'KDSStack'
 
     # Start the pipeline flow
     exec_sfn_flow(id, 'START', sfn_args)
-
     app_pipeline_table.put_item(
         Item={
             'id': id,
@@ -143,16 +188,16 @@ def create_app_pipeline(**args):
             'tags': args.get('tags', []),
             'createdDt': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
             'status': 'CREATING',
-        }
-    )
+        })
 
     return id
 
 
 def list_app_pipelines(status: str = '', page=1, count=20):
     """  List app pipelines """
-    logger.info(f'List AppPipeline from DynamoDB in page {page} with {count} of records')
-
+    logger.info(
+        f'List AppPipeline from DynamoDB in page {page} with {count} of records'
+    )
     """ build filter conditions """
 
     if not status:
@@ -162,12 +207,11 @@ def list_app_pipelines(status: str = '', page=1, count=20):
 
     response = app_pipeline_table.scan(
         FilterExpression=conditions,
-        ProjectionExpression="id, kdsParas, aosParas, tags, #status, createdDt ",
+        ProjectionExpression=
+        "id, kdsParas, kdsRoleArn,ec2RoleArn,aosParas, tags, #status, createdDt ",
         ExpressionAttributeNames={
             '#status': 'status',
-
-        }
-    )
+        })
 
     # Assume all items are returned in the scan request
     items = response['Items']
@@ -183,7 +227,7 @@ def list_app_pipelines(status: str = '', page=1, count=20):
     items.sort(key=lambda x: x['createdDt'], reverse=True)
     return {
         'total': len(items),
-        'appPipelines': items[start: end],
+        'appPipelines': items[start:end],
     }
 
 
@@ -193,15 +237,17 @@ def get_app_pipeline(id: str) -> str:
     if 'Item' not in resp:
         raise APIException('AppPipeline Not Found')
 
-    kds_paras = resp['Item']['kdsParas']
-    if 'streamName' in kds_paras and kds_paras['streamName']:
-        kds_resp = kds.describe_stream_summary(
-            StreamName=kds_paras['streamName']
-        )
-        if 'StreamDescriptionSummary' in kds_resp:
-            kds_paras['openShardCount'] = kds_resp['StreamDescriptionSummary'].get('OpenShardCount')
-            kds_paras['consumerCount'] = kds_resp['StreamDescriptionSummary'].get('ConsumerCount')
-    resp['Item']['kdsParas'] = kds_paras
+    if 'kdsParas' in resp['Item']:
+        kds_paras = resp['Item']['kdsParas']
+        if 'streamName' in kds_paras and kds_paras['streamName']:
+            kds_resp = kds.describe_stream_summary(
+                StreamName=kds_paras['streamName'])
+            if 'StreamDescriptionSummary' in kds_resp:
+                kds_paras['openShardCount'] = kds_resp[
+                    'StreamDescriptionSummary'].get('OpenShardCount')
+                kds_paras['consumerCount'] = kds_resp[
+                    'StreamDescriptionSummary'].get('ConsumerCount')
+        resp['Item']['kdsParas'] = kds_paras
     return resp['Item']
 
 
@@ -220,10 +266,7 @@ def delete_app_pipeline(id: str):
     ingestion_resp = app_log_ingestion_table.scan(
         FilterExpression=conditions,
         ProjectionExpression="id,#status,sourceType,sourceId,appPipelineId ",
-        ExpressionAttributeNames={
-            '#status': 'status'
-        }
-    )
+        ExpressionAttributeNames={'#status': 'status'})
     # Assume all items are returned in the scan request
     items = ingestion_resp['Items']
     # logger.info(items)
@@ -248,8 +291,7 @@ def delete_app_pipeline(id: str):
         ExpressionAttributeValues={
             ':s': 'DELETING',
             ':uDt': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-        }
-    )
+        })
 
 
 def update_app_log_pipeline(**args):
@@ -271,8 +313,7 @@ def update_app_log_pipeline(**args):
             ':s': args['status'],
             ':kp': args['kdsParas'],
             ':uDt': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-        }
-    )
+        })
 
 
 def exec_sfn_flow(id: str, action='START', args=None):
@@ -298,28 +339,3 @@ def exec_sfn_flow(id: str, action='START', args=None):
 def create_stack_name(id):
     # TODO: prefix might need to come from env
     return 'LogHub-AppPipe-' + id[:5]
-
-
-def validate_index_prefix_overlap(index_prefix, domain_name):
-    app_pipelines = select_app_pipelines_by(aos_domain_name=domain_name, status='ACTIVE')
-    for app_pipe in app_pipelines:
-        the_index_prefix = app_pipe['aosParas']['indexPrefix']
-        if (index_prefix in the_index_prefix) or (the_index_prefix in index_prefix):
-            raise APIException(
-                f'Index prefix "{index_prefix}" overlaps "{the_index_prefix}" of app pipeline {app_pipe["id"]}')
-
-
-def select_app_pipelines_by(aos_domain_name: str = '', status: str = 'ACTIVE'):
-    response = app_pipeline_table.scan(
-        FilterExpression="#aosParas.#domainName = :domainName AND #status = :status",
-        ExpressionAttributeNames={
-            "#aosParas": "aosParas",
-            "#domainName": "domainName",
-            "#status": "status"
-        },
-        ExpressionAttributeValues={
-            ":domainName": aos_domain_name,
-            ":status": status
-        },
-    )
-    return response['Items']

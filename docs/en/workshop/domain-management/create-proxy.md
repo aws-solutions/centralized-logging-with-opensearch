@@ -6,7 +6,7 @@
      Please make sure you have finished the section [Deployment > Pre-requisites](../deployment/must-read.md) of this workshop guide before proceeding.
 
 By default, Amazon OpenSearch domain within VPC cannot be access from the Internet. There are a couple of ways to 
-access the build-in dashboard of OpenSearch using VPC. In Log Hub solution, you can deploy a Nginx based proxy to allows
+access the built-in dashboard of OpenSearch using VPC. In Log Hub solution, you can deploy a Nginx based proxy to allows
 public access to the OpenSearch domain. The following is the architecture diagram:
 
 ![](../../images/architecture/proxy.svg)

@@ -33,6 +33,7 @@ interface IngestSettingProps {
   disableSelect?: boolean;
   indexEmptyError: boolean;
   indexFormatError: boolean;
+  indexDuplicatedError: boolean;
   shardNumInvalidError?: boolean;
   maxShardNumInvalidError?: boolean;
 }
@@ -60,6 +61,7 @@ const IngestSetting: React.FC<IngestSettingProps> = (
     changeMaxShardNum,
     indexEmptyError,
     indexFormatError,
+    indexDuplicatedError,
     shardNumInvalidError,
     maxShardNumInvalidError,
   } = props;
@@ -83,6 +85,8 @@ const IngestSetting: React.FC<IngestSettingProps> = (
                 ? t("applog:create.ingestSetting.indexNameError")
                 : indexFormatError
                 ? t("applog:create.ingestSetting.indexNameFormatError")
+                : indexDuplicatedError
+                ? t("applog:create.ingestSetting.indexNameDuplicated")
                 : ""
             }
           >

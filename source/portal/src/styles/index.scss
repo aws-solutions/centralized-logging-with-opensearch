@@ -153,12 +153,20 @@
   text-align: right;
 }
 
+.pl-20 {
+  padding-left: 20px;
+}
+
 .mt-5 {
   margin-top: 5px;
 }
 
 .mt-10 {
   margin-top: 10px;
+}
+
+.mt-m10 {
+  margin-top: -10px;
 }
 
 .mt-20 {
@@ -305,6 +313,12 @@
   a {
     color: $blue !important;
   }
+}
+
+.link {
+  color: #0073bb;
+  text-decoration: none;
+  cursor: pointer;
 }
 
 .button-action {
@@ -546,6 +560,10 @@
   font-size: 16px;
   max-width: 520px;
   line-height: 1.5em;
+  &.alert-content {
+    max-width: 620px;
+    padding: 10px;
+  }
 }
 
 .page-bottom {
@@ -604,7 +622,6 @@
   }
   .privacy {
     float: right;
-    padding: 0 2em 0 2em;
     font-weight: regular;
     color: #eee;
     font-size: 12px;
@@ -620,6 +637,29 @@
   position: absolute;
   left: 40%;
   margin-top: -26px;
+}
+
+.cross-account {
+  .deploy-desc {
+    padding: 3px 0;
+  }
+  .deploy-steps {
+    padding-left: 15px;
+    line-height: 1.8em;
+  }
+}
+
+.config-list {
+  padding: 5px 0 5px 10px;
+  .list-item {
+    padding: 2px 0;
+    .label {
+      padding: 2px 0 0 0;
+    }
+    input {
+      margin: 0 5px 0 0;
+    }
+  }
 }
 
 /**material ui*/
@@ -656,4 +696,10 @@
 
 .swal2-container {
   z-index: 1999 !important;
+}
+
+.maxmind-copyright {
+  font-size: 12px;
+  padding: 30px 0 30px 4px;
+  color: #888;
 }

@@ -2,8 +2,8 @@
 
 Log Hub 支持从 EC2 实例、EKS 集群和 S3 存储桶中摄取应用程序日志。
 
-- 对于 EC2 实例，Log Hub 会自动安装 [logging agent](#logging-agent) ([Fluent Bit 1.8][fluent-bit])，收集 EC2 实例上的应用程序日志，然后将日志发送到 Amazon OpenSearch。
-- 对于 EKS 集群，Log Hub 将生成一体化配置文件供客户将 [logging agent](#logging-agent) ([Fluent Bit 1.8][fluent-bit]) 部署为 DaemonSet 或 Sidecar。 部署日志代理后，Log Hub 将开始收集 pod 日志并发送到 Amazon OpenSearch。
+- 对于 EC2 实例，Log Hub 会自动安装 [logging agent](#logging-agent) ([Fluent Bit 1.9][fluent-bit])，收集 EC2 实例上的应用程序日志，然后将日志发送到 Amazon OpenSearch。
+- 对于 EKS 集群，Log Hub 将生成一体化配置文件供客户将 [logging agent](#logging-agent) ([Fluent Bit 1.9][fluent-bit]) 部署为 DaemonSet 或 Sidecar。 部署日志代理后，Log Hub 将开始收集 pod 日志并发送到 Amazon OpenSearch。
 - 对于 S3 存储桶，Log hub 将直接收集存储在 S3 存储桶中的应用程序日志。
 
 ## 支持的日志格式和数据源
@@ -38,7 +38,7 @@ include-markdown "include-supported-app-logs.md"
 
 ### 日志代理 (Logging Agent)
 日志代理是一个程序，它从一个位置读取日志并将它们发送到另一个位置（例如，OpenSearch）。
-目前，Log Hub 仅支持自动安装的 [Fluent Bit 1.8][fluent-bit] 日志代理。 Fluent Bit 代理具有 [OpenSSL 1.1][open-ssl] 的依赖项。要了解如何在 Linux 实例上安装 OpenSSL，请参阅 [OpenSSL 安装](../resources/open-ssl.md)。
+目前，Log Hub 仅支持自动安装的 [Fluent Bit 1.9][fluent-bit] 日志代理。 Fluent Bit 代理具有 [OpenSSL 1.1][open-ssl] 的依赖项。要了解如何在 Linux 实例上安装 OpenSSL，请参阅 [OpenSSL 安装](../resources/open-ssl.md)。
 
 ### 日志源 (Log Source)
 日志源是指您希望 Log Hub 从中收集应用程序日志的 Amazon 服务。
@@ -65,5 +65,5 @@ Log Hub 中的 EKS 集群是指您要从中收集 pod 日志的 Amazon EKS。 Lo
 
 日志配置是一种配置，它告诉 Log Hub 日志在日志源上的存储位置、您要收集的日志类型、日志行包含哪些字段以及每个字段的类型。
 
-[fluent-bit]: https://docs.fluentbit.io/manual/v/1.8/
+[fluent-bit]: https://docs.fluentbit.io/manual/
 [open-ssl]: https://www.openssl.org/source/

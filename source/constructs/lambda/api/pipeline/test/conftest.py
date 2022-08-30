@@ -11,3 +11,6 @@ def default_environment_variables():
     os.environ["AWS_REGION"] = "us-east-1"
     os.environ["SOLUTION_VERSION"] = "v1.0.0"
     os.environ["SOLUTION_ID"] = "SO8025"
+    os.environ[
+        "SUB_ACCOUNT_LINK_TABLE_NAME"] = "mocked-sub-account-link-table-name"
+    os.environ["SUB_ACCOUNT_LINK_TABLE"] = "mocked-sub-account-link-table-name"

@@ -19,23 +19,35 @@ import boto3
 import os
 from botocore import config
 import logging
+from boto3_client import get_client
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 logGroupNamesString = os.environ.get('LOGGROUP_NAMES')
-destinationArn = os.environ.get('DESTINATION_ARN')
-roleArn = os.environ.get('ROLE_ARN')
-stackName = os.environ['STACK_NAME']
+kdsArn = os.environ.get('DESTINATION_ARN')
+kdsName = os.environ.get('DESTINATION_NAME')
 
+roleName = os.environ.get('ROLE_NAME')
+roleArn = os.environ.get('ROLE_ARN')
+
+stackName = os.environ['STACK_NAME']
 
 solution = os.environ.get('SOLUTION', 'SO8025/' + os.environ['VERSION'])
 user_agent_config = {'user_agent_extra': f'AwsSolution/{solution}'}
 default_config = config.Config(**user_agent_config)
 
+default_region = os.environ.get("AWS_REGION")
+sts = boto3.client("sts", config=default_config)
+account_id = sts.get_caller_identity()["Account"]
+
+log_source_account_id = os.environ.get("LOG_SOURCE_ACCOUNT_ID", account_id)
+
+log_source_account_assume_role = os.environ.get(
+    "LOG_SOURCE_ACCOUNT_ASSUME_ROLE", "")
+
 
 def lambda_handler(event, context):
-    print(event)
     request_type = event['RequestType']
     if request_type == 'Create' or request_type == 'Update':
         return on_create(event)
@@ -45,26 +57,65 @@ def lambda_handler(event, context):
 
 
 def on_create(event):
-    client = boto3.client('logs', config=default_config)
 
     log_group_names = logGroupNamesString.split(',')
 
     for log_group_name in log_group_names:
         logger.info("Log group name is %s" % log_group_name)
         # Create a subscription filter
-        if not is_log_group_exist(log_group_name):
-            logger.info("Log Group %s doesn't exist!" % log_group_name)
-            create_log_group(log_group_name)
         try:
-            client.put_subscription_filter(
-                destinationArn=destinationArn,
-                filterName=stackName,
-                filterPattern='',
-                logGroupName=log_group_name,
-                roleArn=roleArn,
-            )
+            destination_name = f'{stackName}-{kdsName}'
+            client = get_client('logs')
+            if not is_log_group_exist(log_group_name):
+                logger.info("Log Group %s doesn't exist!" % log_group_name)
+                create_log_group(log_group_name) if log_group_name else None
+            if log_source_account_assume_role:
+                cwl = get_client('logs', is_local_session=True)
+                resp = cwl.put_destination(
+                    destinationName=destination_name,
+                    targetArn=kdsArn,
+                    roleArn=roleArn,
+                )
+                destinationArn = resp['destination']['arn']
+                #setup cw put-destination-policy
+                access_policy = {
+                    "Version":
+                    "2012-10-17",
+                    "Statement": [{
+                        "Sid": "",
+                        "Effect": "Allow",
+                        "Principal": {
+                            "AWS": log_source_account_id
+                        },
+                        "Action": "logs:PutSubscriptionFilter",
+                        "Resource": destinationArn
+                    }]
+                }
+                cwl.put_destination_policy(
+                    destinationName=destination_name,
+                    accessPolicy=json.dumps(access_policy),
+                    forceUpdate=True)
+                logger.info(f'destinationArn is {destinationArn}')
+                client.put_subscription_filter(
+                    logGroupName=log_group_name,
+                    filterName=destination_name,
+                    filterPattern='',
+                    destinationArn=destinationArn,
+                )
+            else:
+
+                destinationArn = kdsArn
+                client.put_subscription_filter(
+                    logGroupName=log_group_name,
+                    filterName=destination_name,
+                    filterPattern='',
+                    destinationArn=destinationArn,
+                    roleArn=roleArn,
+                )
+
         except Exception as err:
-            print("Create log group subscription filter failed, %s" % err)
+            logger.info(f"Create log group subscription filter failed, %s" %
+                        err)
             raise
 
     return {
@@ -75,7 +126,7 @@ def on_create(event):
 
 def on_delete(event):
     # Create CloudWatchLogs client
-    client = boto3.client('logs', config=default_config)
+    client = client = get_client('logs')
 
     logGroupNames = logGroupNamesString.split(',')
 
@@ -83,14 +134,16 @@ def on_delete(event):
 
     for logGroupName in logGroupNames:
         # Delete a subscription filter
-        logger.info("Subscription of log group %s is going to be deleted." % logGroupName)
+        logger.info("Subscription of log group %s is going to be deleted." %
+                    logGroupName)
         try:
             client.delete_subscription_filter(
-                filterName=stackName,
+                filterName=f'{stackName}-{kdsName}',
                 logGroupName=logGroupName,
             )
         except Exception as err:
-            logger.info("Delete log group subscription filter failed, %s" % err)
+            logger.info("Delete log group subscription filter failed, %s" %
+                        err)
 
     return {
         'statusCode': 200,
@@ -99,16 +152,14 @@ def on_delete(event):
 
 
 def is_log_group_exist(logGroupName):
-    client = boto3.client('logs', config=default_config)
-    response = client.describe_log_groups(
-        logGroupNamePrefix=logGroupName
-    )
+    client = get_client('logs')
+    response = client.describe_log_groups(logGroupNamePrefix=logGroupName)
     return response["logGroups"] != []
-    
+
 
 def create_log_group(logGroupName):
     logger.info("Create Log Group: %s" % logGroupName)
-    client = boto3.client('logs', config=default_config)
+    client = get_client('logs')
     try:
         client.create_log_group(logGroupName=logGroupName)
     except Exception as err:

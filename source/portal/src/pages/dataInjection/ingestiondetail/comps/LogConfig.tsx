@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React, { useState, useEffect } from "react";
-import { LogConf } from "API";
+import { ExLogConf } from "pages/resources/common/LogConfigComp";
 import HeaderPanel from "components/HeaderPanel";
 import ValueWithLabel from "components/ValueWithLabel";
 import { formatLocalTime } from "assets/js/utils";
@@ -25,14 +25,15 @@ import ConfigDetailComps from "pages/resources/logConfig/ConfigDetailComps";
 import { useTranslation } from "react-i18next";
 
 interface LogConfigProps {
+  logPath?: string;
   configId?: string;
 }
 
 const LogConfig: React.FC<LogConfigProps> = (props: LogConfigProps) => {
-  const { configId } = props;
+  const { configId, logPath } = props;
   const { t } = useTranslation();
   const [loadingData, setLoadingData] = useState(false);
-  const [curConfig, setCurConfig] = useState<LogConf>();
+  const [curConfig, setCurConfig] = useState<ExLogConf>();
 
   const getLogConfigById = async () => {
     try {
@@ -87,7 +88,7 @@ const LogConfig: React.FC<LogConfigProps> = (props: LogConfigProps) => {
               </div>
             </div>
             <div>
-              <ConfigDetailComps curLogConfig={curConfig} />
+              <ConfigDetailComps logPath={logPath} curLogConfig={curConfig} />
             </div>
           </div>
         )}

@@ -69,11 +69,7 @@ The instance group is successfully created.
 
 2. Click **Create a log config**, type in the **Config Name** like: `spring-config`.
 
-3. Type in the following log path:
-```
-/tmp/springboot-sf4j-logback.log
-```
-     And choose the log type as **`Multi-line Text`**.
+3. Choose the log type as **`Multi-line Text`**.
 
      Choose the Parser as **`Java-Spring Boot`**.
 
@@ -112,9 +108,13 @@ We have successfully created a multi-line Spring Boot log config.
 
 3. Select the instance group you have just created and click **Next**
 
-4. Select **Choose exists** and  choose **spring-config**. The rest parameters will be auto filled for you.
+4. Type in the following log path:
+```
+/tmp/springboot-sf4j-logback.log
+```
+5. Select **Choose exists** and  choose **spring-config**. The rest parameters will be auto filled for you.
 
-5. Click **Next**, then click **Create**
+6. Click **Next**, then click **Create**
 
 We have successfully created one ingestion for Spring Boot Logs.
 

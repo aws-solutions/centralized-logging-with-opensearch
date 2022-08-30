@@ -25,6 +25,7 @@ import { ActionType } from "reducer/appReducer";
 import { AppStateProps } from "reducer/appReducer";
 import { buildLogHubDocsLink, SIDE_BAR_OPEN_STORAGE_ID } from "assets/js/const";
 import { useTranslation } from "react-i18next";
+import { AmplifyConfigType } from "types";
 
 interface SideMenuProps {
   className?: string;
@@ -90,6 +91,10 @@ const SIDE_MENU_LIST = [
         name: "menu.logConfig",
         link: "/resources/log-config",
       },
+      {
+        name: "menu.crossAccount",
+        link: "/resources/cross-account",
+      },
     ],
     open: true,
   },
@@ -104,6 +109,9 @@ export const SideMenu: React.FC<SideMenuProps> = (props: SideMenuProps) => {
   const [sideMenuList, setSideMenuList] = useState(SIDE_MENU_LIST);
   const dispatch = useDispatch();
   const location = useLocation();
+  const amplifyConfig: AmplifyConfigType = useSelector(
+    (state: AppStateProps) => state.amplifyConfig
+  );
   return (
     <div
       className={`${className} lh-side-menu`}
@@ -130,7 +138,7 @@ export const SideMenu: React.FC<SideMenuProps> = (props: SideMenuProps) => {
               }}
               className="close-icon"
             />
-            <div className="head-title">Log Hub</div>
+            <div className="head-title">{t("name")}</div>
             {sideMenuList.map((element, index) => {
               return (
                 <div className="menu-item" key={index}>
@@ -187,7 +195,13 @@ export const SideMenu: React.FC<SideMenuProps> = (props: SideMenuProps) => {
 
             <div className="external-link">
               <div>
-                <ExtLink to={buildLogHubDocsLink(i18n.language, "")}>
+                <ExtLink
+                  to={buildLogHubDocsLink(
+                    i18n.language,
+                    "",
+                    amplifyConfig.loghub_version
+                  )}
+                >
                   {t("menu.doc")}
                 </ExtLink>
               </div>

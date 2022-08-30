@@ -66,6 +66,7 @@ const Bottom: React.FC = () => {
     const newLang = JSON.parse(event.target.getAttribute("data-lang"));
     setCurrentLang(newLang);
     i18n.changeLanguage(newLang.id);
+    document.title = t("title");
     setShowLang(false);
   };
 

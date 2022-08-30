@@ -15,11 +15,13 @@ limitations under the License.
 */
 
 
-import * as cdk from '@aws-cdk/core';
-import { Match, Template } from "@aws-cdk/assertions";
+import { 
+  App,
+  Stack,
+} from "aws-cdk-lib";
+import {Match,Template } from "aws-cdk-lib/assertions";
 import * as main from '../lib/main-stack';
 import * as vs from '../lib/main/vpc-stack';
-import * as ec2 from '@aws-cdk/aws-ec2';
 
 beforeEach(() => {
   jest.resetModules()
@@ -31,7 +33,7 @@ describe("MainStack", () => {
 
 
   test("Test main stack with default setting", () => {
-    const app = new cdk.App();
+    const app = new App();
 
     // WHEN
     const stack = new main.MainStack(app, 'MyTestStack');
@@ -115,7 +117,7 @@ describe("MainStack", () => {
 
 
   test("Test main stack with oidc", () => {
-    const app = new cdk.App();
+    const app = new App();
 
     // WHEN
     const stack = new main.MainStack(app, 'MyTestStack', { authType: "OPENID_CONNECT" });
@@ -131,7 +133,7 @@ describe("MainStack", () => {
 
 
   test("Test main stack with existing vpc", () => {
-    const app = new cdk.App();
+    const app = new App();
 
     // WHEN
     const stack = new main.MainStack(app, 'MyTestStack', { existingVpc: true });
@@ -142,7 +144,7 @@ describe("MainStack", () => {
   });
 
   test("Test main stack with env", () => {
-    const app = new cdk.App();
+    const app = new App();
     process.env["VERSION"] = "vX.Y.Z"
     process.env["DIST_OUTPUT_BUCKET"] = "test-bucket"
 
@@ -171,10 +173,10 @@ describe("MainStack", () => {
 
 
   test('Test vpc stack', () => {
-    const app = new cdk.App();
+    const app = new App();
 
     // WHEN
-    const stack = new cdk.Stack(app, "TestStack");
+    const stack = new Stack(app, "TestStack");
 
     // Prepare the stack for assertions.
     new vs.VpcStack(stack, "VpcStack")

@@ -2,7 +2,7 @@
     # Flush
     # =====
     # set an interval of seconds before to flush records to a destination
-    flush        3
+    flush        5
     # Daemon
     # ======
     # instruct Fluent Bit to run in foreground or background mode.
@@ -49,3 +49,15 @@
     # to use when processing these records.
     #
     Parsers_File /opt/fluent-bit/etc/applog_parsers.conf
+
+[FILTER]
+    Name aws
+    Match *
+    az true
+    ec2_instance_id true
+    ec2_instance_type false
+    private_ip true
+    ami_id false
+    account_id false
+    hostname true
+    vpc_id false

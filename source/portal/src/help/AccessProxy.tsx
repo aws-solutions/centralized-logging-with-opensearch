@@ -15,7 +15,11 @@ limitations under the License.
 */
 import React from "react";
 import OpenInNewIcon from "@material-ui/icons/OpenInNew";
-import { HELP_ACM_LINK, HELP_ALB_LINK } from "assets/js/const";
+import {
+  CREATE_OS_PROXY_LINK,
+  HELP_ACM_LINK,
+  HELP_ALB_LINK,
+} from "assets/js/const";
 import { useTranslation } from "react-i18next";
 
 const AccessProxy: React.FC = () => {
@@ -50,7 +54,7 @@ const AccessProxy: React.FC = () => {
           </i>
         </div>
         <div className="gsui-help-link-item">
-          <a href="" target="_blank">
+          <a href={CREATE_OS_PROXY_LINK} target="_blank" rel="noreferrer">
             {t("info:accessProxy.createProxy")}
           </a>
         </div>

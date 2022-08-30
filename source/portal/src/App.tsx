@@ -30,6 +30,7 @@ import CreateS3 from "pages/dataInjection/serviceLog/create/s3/CreateS3";
 import CreateCloudTrail from "pages/dataInjection/serviceLog/create/cloudtrail/CreateCloudTrail";
 import CreateELB from "pages/dataInjection/serviceLog/create/elb/CreateELB";
 import CreateWAF from "pages/dataInjection/serviceLog/create/waf/CreateWAF";
+import CreateVPCLog from "pages/dataInjection/serviceLog/create/vpc/CreateVPC";
 import ESDomainList from "pages/clusters/domain/DomainList";
 import ESDomainDetail from "pages/clusters/domain/DomainDetail";
 import NginxForOpenSearch from "pages/clusters/domain/NginxForOpenSearch";
@@ -47,8 +48,10 @@ import CreateInstanceGroup from "pages/resources/instanceGroup/create/CreateInst
 import ApplicationLogDetail from "pages/dataInjection/applicationLog/ApplicationLogDetail";
 import CreatePipeline from "pages/dataInjection/applicationLog/create/CreatePipeline";
 import CreateIngestion from "pages/dataInjection/applicationLog/createIngestion/CreateIngestion";
+import CrossAccountList from "pages/resources/crossAccount/CrossAccountList";
+import LinkAnAccount from "pages/resources/crossAccount/LinkAnAccount";
 
-import { AMPLIFY_CONFIG_JSON } from "assets/js/const";
+import { AMPLIFY_CONFIG_JSON, AMPLIFY_ZH_DICT } from "assets/js/const";
 import { useDispatch } from "react-redux";
 import { ActionType } from "reducer/appReducer";
 import LoadingText from "components/LoadingText";
@@ -64,31 +67,38 @@ import EksLogIngest from "pages/containers/eksLog/createIngestion/EksLogIngest";
 import CreateS3Ingestion from "pages/dataInjection/applicationLog/createS3Ingestion/CreateS3Ingestion";
 import EksIngestionDetail from "pages/dataInjection/ingestiondetail/EksIngestionDetail";
 import { WebStorageStateStore } from "oidc-client-ts";
+import CreateConfig from "pages/dataInjection/serviceLog/create/config/CreateConfig";
+import CrossAccountDetail from "pages/resources/crossAccount/CrossAccountDetail";
+import AppIngestionDetail from "pages/dataInjection/ingestiondetail/AppIngestionDetail";
+import { useTranslation } from "react-i18next";
+import { I18n } from "aws-amplify";
 
 export interface SignedInAppProps {
   oidcSignOut?: () => void;
 }
 
 const AmplifyLoginPage: React.FC = () => {
+  const { t } = useTranslation();
   return (
     <div>
       <AmplifyAuthenticator>
         <AmplifySignIn
-          headerText="Sign in to Log Hub"
+          headerText={t("signin.signInToLogHub")}
           slot="sign-in"
           usernameAlias="username"
+          submitButtonText={t("signin.signIn")}
           formFields={[
             {
               type: "username",
-              label: "Email *",
-              placeholder: "Enter your email",
+              label: t("signin.email"),
+              placeholder: t("signin.inputEmail"),
               required: true,
               inputProps: { autoComplete: "off" },
             },
             {
               type: "password",
-              label: "Password *",
-              placeholder: "Enter your password",
+              label: t("signin.password"),
+              placeholder: t("signin.inputPassword"),
               required: true,
               inputProps: { autoComplete: "off" },
             },
@@ -184,6 +194,16 @@ const SignedInApp: React.FC<SignedInAppProps> = (props: SignedInAppProps) => {
               path="/log-pipeline/service-log/create/waf"
               component={CreateWAF}
             />
+            <Route
+              exact
+              path="/log-pipeline/service-log/create/vpclogs"
+              component={CreateVPCLog}
+            />
+            <Route
+              exact
+              path="/log-pipeline/service-log/create/config"
+              component={CreateConfig}
+            />
             {/* Application Log Router Start */}
             <Route
               exact
@@ -209,6 +229,11 @@ const SignedInApp: React.FC<SignedInAppProps> = (props: SignedInAppProps) => {
               exact
               path="/log-pipeline/application-log/detail/:id/create-ingestion-s3"
               component={CreateS3Ingestion}
+            />
+            <Route
+              exact
+              path="/log-pipeline/application-log/ingestion/detail/:id"
+              component={AppIngestionDetail}
             />
             {/* Application Log Router End */}
 
@@ -279,6 +304,24 @@ const SignedInApp: React.FC<SignedInAppProps> = (props: SignedInAppProps) => {
 
             {/* Log Config Router End */}
 
+            {/* Cross Account Router Start */}
+            <Route
+              exact
+              path="/resources/cross-account"
+              component={CrossAccountList}
+            />
+            <Route
+              exact
+              path="/resources/cross-account/link"
+              component={LinkAnAccount}
+            />
+            <Route
+              exact
+              path="/resources/cross-account/detail/:id"
+              component={CrossAccountDetail}
+            />
+            {/* Cross Account Router End */}
+
             <Route
               render={() => (
                 <div className="lh-main-content">
@@ -335,6 +378,9 @@ const AmplifyAppRouter: React.FC = () => {
 
 const OIDCAppRouter: React.FC = () => {
   const auth = useAuth();
+  const { t } = useTranslation();
+  const dispatch = useDispatch();
+
   // console.info("auth.activeNavigator:", auth.activeNavigator);
   // switch (auth.activeNavigator) {
   //   case "signinSilent":
@@ -353,7 +399,7 @@ const OIDCAppRouter: React.FC = () => {
   if (auth.isLoading) {
     return (
       <div className="pd-20 text-center">
-        <LoadingText text="Loading..." />
+        <LoadingText text={t("loading")} />
       </div>
     );
   }
@@ -367,9 +413,17 @@ const OIDCAppRouter: React.FC = () => {
   }
 
   if (auth.isAuthenticated) {
+    dispatch({
+      type: ActionType.UPDATE_USER_EMAIL,
+      email: auth.user?.profile?.email,
+    });
     return (
       <div>
-        <SignedInApp oidcSignOut={auth.removeUser} />
+        <SignedInApp
+          oidcSignOut={() => {
+            auth.removeUser();
+          }}
+        />
       </div>
     );
   }
@@ -377,7 +431,7 @@ const OIDCAppRouter: React.FC = () => {
   return (
     <div className="oidc-login">
       <div>
-        <div className="title">Log Hub</div>
+        <div className="title">{t("name")}</div>
       </div>
       {
         <div>
@@ -387,7 +441,7 @@ const OIDCAppRouter: React.FC = () => {
               auth.signinRedirect();
             }}
           >
-            Sign in to Log Hub
+            {t("signin.signInToLogHub")}
           </Button>
         </div>
       }
@@ -402,6 +456,9 @@ const App: React.FC = () => {
     AppSyncAuthType.OPEN_ID
   );
   const dispatch = useDispatch();
+  const { t, i18n } = useTranslation();
+  I18n.putVocabularies(AMPLIFY_ZH_DICT);
+  I18n.setLanguage(i18n.language);
 
   const initAuthentication = (configData: AmplifyConfigType) => {
     dispatch({
@@ -411,14 +468,17 @@ const App: React.FC = () => {
     setAuthType(configData.aws_appsync_authenticationType);
     if (configData.aws_appsync_authenticationType === AppSyncAuthType.OPEN_ID) {
       // Amplify.configure(configData);
-      setOidcConfig({
+      const settings = {
         userStore: new WebStorageStateStore({ store: window.localStorage }),
         authority: configData.aws_oidc_provider,
+        scope: "openid email profile offline_access",
+        automaticSilentRenew: true,
         client_id: configData.aws_oidc_client_id,
         redirect_uri: configData.aws_oidc_customer_domain
           ? configData.aws_oidc_customer_domain
           : "https://" + configData.aws_cloudfront_url,
-      });
+      };
+      setOidcConfig(settings);
     } else {
       Amplify.configure(configData);
     }
@@ -444,6 +504,7 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
+    document.title = t("title");
     if (window.performance) {
       if (performance.navigation.type === 1) {
         // console.info("This page is reloaded");
@@ -467,7 +528,7 @@ const App: React.FC = () => {
   if (loadingConfig) {
     return (
       <div className="pd-20 text-center">
-        <LoadingText text="Loading..." />
+        <LoadingText text={t("loading")} />
       </div>
     );
   }

@@ -46,6 +46,7 @@ import SideMenu from "components/SideMenu";
 import PagePanel from "components/PagePanel";
 import { Button } from "components/Button/button";
 import { useTranslation } from "react-i18next";
+import { AUTO_REFRESH_INT } from "assets/js/const";
 
 interface MatchParams {
   id: string;
@@ -105,6 +106,10 @@ const ESDomainDetail: React.FC<RouteComponentProps<MatchParams>> = (
 
   useEffect(() => {
     getDomainById();
+    const refreshInterval = setInterval(() => {
+      getDomainById(true);
+    }, AUTO_REFRESH_INT);
+    return () => clearInterval(refreshInterval);
   }, []);
 
   return (

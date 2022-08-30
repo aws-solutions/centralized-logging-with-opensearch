@@ -11,20 +11,6 @@ Log Hub uses Fluent Bit as the logging agent, which requires [OpenSSL 1.1][open-
 sudo yum install openssl11
 ```
 
-## CentOS 7
-
-```bash
-sudo yum -y install wget gcc unzip perl
-wget https://github.com/openssl/openssl/archive/OpenSSL_1_1_1-stable.zip
-unzip OpenSSL_1_1_1-stable.zip
-cd openssl-OpenSSL_1_1_1-stable
-./config 
-sudo make 
-sudo make install
-echo "/usr/local/lib64/" | sudo tee -a /etc/ld.so.conf > /dev/null
-sudo ldconfig
-```
-
 ## Ubuntu
 
 ### 20.04

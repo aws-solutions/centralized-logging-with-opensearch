@@ -24,19 +24,28 @@ import Button from "components/Button";
 import { useHistory, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import HelpPanel from "components/HelpPanel";
-import { EKSClusterLogSource, LogSourceType, Tag } from "API";
+import { EKSClusterLogSource, ErrorCode, LogSourceType, Tag } from "API";
 import { ActionType, AppStateProps } from "reducer/appReducer";
 import { useDispatch, useSelector } from "react-redux";
-import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
+import {
+  appSyncRequestMutation,
+  appSyncRequestQuery,
+  refineErrorMessage,
+} from "assets/js/request";
 import { getDomainDetails, getEKSClusterDetails } from "graphql/queries";
-import { AmplifyConfigType, CreationMethod } from "types";
+import { AmplifyConfigType, CreationMethod, YesNo } from "types";
 import LoadingText from "components/LoadingText";
 import {
   createAppLogIngestion,
-  createEKSClusterPodLogIngestion,
+  createEKSClusterPodLogWithoutDataBufferIngestion,
+  upgradeAppPipeline,
 } from "graphql/mutations";
 import { OptionType } from "components/AutoComplete/autoComplete";
 import { checkIndexNameValidate } from "assets/js/utils";
+import Swal from "sweetalert2";
+import Modal from "components/Modal";
+import Alert from "components/Alert";
+import { AlertType } from "components/Alert/alert";
 
 interface MatchParams {
   id: string;
@@ -53,13 +62,16 @@ export interface EksIngestionPropsType {
   shardsError?: boolean;
   pipelineRequiredError?: boolean;
   configRequiredError?: boolean;
+  logPathEmptyError?: boolean;
 
   createMethod: string;
   existsPipeline: OptionType;
   warmEnable: boolean;
   coldEnable: boolean;
   confId: string;
+  createDashboard: string;
   eksClusterId: string;
+  logPath: string;
   aosParas: {
     opensearchArn: string;
     domainName: string;
@@ -78,14 +90,6 @@ export interface EksIngestionPropsType {
       vpcId: string;
     };
   };
-  kdsParas: {
-    kdsArn: string;
-    streamName: string;
-    enableAutoScaling: boolean;
-    startShardNumber: string;
-    maxShardNumber: string;
-    regionName: string;
-  };
   tags: Tag[];
 }
 
@@ -101,9 +105,12 @@ const EksLogIngest: React.FC = () => {
   const [loadingEKSData, setLoadingEKSData] = useState(false);
   const [curStep, setCurStep] = useState(0);
   const [loadingCreate, setLoadingCreate] = useState(false);
+  const [indexDuplicatedError, setIndexDuplicatedError] = useState(false);
   const [curEksLogSource, setCurEksLogSource] = useState<
     EKSClusterLogSource | undefined
   >();
+  const [openNotice, setOpenNotice] = useState(false);
+  const [loadingUpgrade, setLoadingUpgrade] = useState(false);
 
   const breadCrumbList = [
     { name: t("name"), link: "/" },
@@ -130,7 +137,9 @@ const EksLogIngest: React.FC = () => {
       warmEnable: false,
       coldEnable: false,
       confId: "",
+      createDashboard: YesNo.Yes,
       eksClusterId: "",
+      logPath: "",
       aosParas: {
         opensearchArn: "",
         domainName: "",
@@ -148,14 +157,6 @@ const EksLogIngest: React.FC = () => {
           securityGroupId: "",
           vpcId: "",
         },
-      },
-      kdsParas: {
-        kdsArn: "",
-        streamName: "",
-        enableAutoScaling: false,
-        startShardNumber: "",
-        maxShardNumber: "",
-        regionName: "",
       },
       tags: [],
     });
@@ -225,38 +226,6 @@ const EksLogIngest: React.FC = () => {
       setCurStep(0);
       return;
     }
-    if (
-      eksIngestionInfo.kdsParas.startShardNumber === "" ||
-      parseInt(eksIngestionInfo.kdsParas.startShardNumber) <= 0
-    ) {
-      setEksIngestionInfo((prev) => {
-        return {
-          ...prev,
-          shardNumFormatError: true,
-        };
-      });
-      setCurStep(0);
-      return false;
-    }
-    const intStartShardNum = parseInt(
-      eksIngestionInfo.kdsParas.startShardNumber
-    );
-    const intMaxShardNum = parseInt(eksIngestionInfo.kdsParas.maxShardNumber);
-    if (
-      eksIngestionInfo.kdsParas.enableAutoScaling &&
-      (intMaxShardNum <= 0 ||
-        Number.isNaN(intMaxShardNum) ||
-        intMaxShardNum <= intStartShardNum)
-    ) {
-      setEksIngestionInfo((prev) => {
-        return {
-          ...prev,
-          maxShardNumFormatError: true,
-        };
-      });
-      setCurStep(0);
-      return false;
-    }
 
     // Check number of shard error
     if (parseInt(eksIngestionInfo.aosParas.shardNumbers) <= 0) {
@@ -303,7 +272,7 @@ const EksLogIngest: React.FC = () => {
     return true;
   };
 
-  const confirmCreateEksLogIngestionWithPipeline = async () => {
+  const confirmCreateEksLogIngestionWithPipeline = async (isForce = false) => {
     // set warm age and code age as number
     const createEKSLogParam = JSON.parse(JSON.stringify(eksIngestionInfo));
     createEKSLogParam.aosParas.warmLogTransition =
@@ -323,15 +292,11 @@ const EksLogIngest: React.FC = () => {
     createEKSLogParam.aosParas.failedLogBucket =
       amplifyConfig.default_logging_bucket;
 
-    // format shardNumber as number
-    createEKSLogParam.kdsParas.startShardNumber =
-      parseInt(createEKSLogParam.kdsParas.startShardNumber) || 0;
-    createEKSLogParam.kdsParas.maxShardNumber =
-      parseInt(createEKSLogParam.kdsParas.maxShardNumber) || 0;
+    createEKSLogParam.force = isForce;
     try {
       setLoadingCreate(true);
       const createRes = await appSyncRequestMutation(
-        createEKSClusterPodLogIngestion,
+        createEKSClusterPodLogWithoutDataBufferIngestion,
         createEKSLogParam
       );
       console.info("createRes:", createRes);
@@ -339,7 +304,58 @@ const EksLogIngest: React.FC = () => {
       history.push({
         pathname: `/containers/eks-log/detail/${id}`,
       });
-    } catch (error) {
+    } catch (error: any) {
+      const { errorCode, message } = refineErrorMessage(error.message);
+      if (
+        errorCode === ErrorCode.DuplicatedIndexPrefix ||
+        errorCode === ErrorCode.OverlapIndexPrefix
+      ) {
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          cancelButtonColor: "#ec7211",
+          showCancelButton: true,
+          confirmButtonText: t("button.cancel"),
+          cancelButtonText: t("button.changeIndex"),
+          text:
+            (errorCode === ErrorCode.DuplicatedIndexPrefix
+              ? t("applog:create.ingestSetting.duplicatedWithPrefix")
+              : t("applog:create.ingestSetting.overlapWithPrefix")) +
+            `(${message})`,
+        }).then((result) => {
+          if (result.isDismissed) {
+            setCurStep(0);
+            setIndexDuplicatedError(true);
+          }
+        });
+      }
+      if (
+        errorCode === ErrorCode.DuplicatedWithInactiveIndexPrefix ||
+        errorCode === ErrorCode.OverlapWithInactiveIndexPrefix
+      ) {
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          cancelButtonColor: "#ec7211",
+          showCancelButton: true,
+          showDenyButton: true,
+          confirmButtonText: t("button.cancel"),
+          denyButtonText: t("button.forceCreate"),
+          cancelButtonText: t("button.changeIndex"),
+          text:
+            (errorCode === ErrorCode.DuplicatedWithInactiveIndexPrefix
+              ? t("applog:create.ingestSetting.duplicatedWithInvalidPrefix")
+              : t("applog:create.ingestSetting.overlapWithInvalidPrefix")) +
+            `(${message})`,
+        }).then((result) => {
+          if (result.isDismissed) {
+            setCurStep(0);
+            setIndexDuplicatedError(true);
+          } else if (result.isDenied) {
+            confirmCreateEksLogIngestionWithPipeline(true);
+          }
+        });
+      }
       setLoadingCreate(false);
       console.error(error);
     }
@@ -351,6 +367,8 @@ const EksLogIngest: React.FC = () => {
       sourceIds: [eksIngestionInfo.eksClusterId],
       appPipelineId: eksIngestionInfo.existsPipeline.value,
       confId: eksIngestionInfo.confId,
+      logPath: eksIngestionInfo.logPath,
+      createDashboard: eksIngestionInfo.createDashboard,
       stackId: "",
       stackName: "",
       tags: eksIngestionInfo.tags,
@@ -366,8 +384,33 @@ const EksLogIngest: React.FC = () => {
       history.push({
         pathname: `/containers/eks-log/detail/${id}`,
       });
-    } catch (error) {
+    } catch (error: any) {
       setLoadingCreate(false);
+      console.error(error);
+    }
+  };
+
+  const upgradePipelines = async () => {
+    try {
+      setLoadingUpgrade(true);
+      const upgradeRes = await appSyncRequestMutation(upgradeAppPipeline, {
+        ids: [eksIngestionInfo.existsPipeline.value],
+      });
+      console.info("upgradeRes:", upgradeRes);
+      setLoadingUpgrade(false);
+      setOpenNotice(false);
+      setEksIngestionInfo((prev) => {
+        return {
+          ...prev,
+          existsPipeline: {
+            name: "",
+            value: "",
+          },
+        };
+      });
+      getEksLogById();
+    } catch (error) {
+      setLoadingUpgrade(false);
       console.error(error);
     }
   };
@@ -434,6 +477,15 @@ const EksLogIngest: React.FC = () => {
                         }
                       }
                       if (curStep === 1) {
+                        if (!eksIngestionInfo.logPath) {
+                          setEksIngestionInfo((prev) => {
+                            return {
+                              ...prev,
+                              logPathEmptyError: true,
+                            };
+                          });
+                          return;
+                        }
                         if (!eksIngestionInfo.confId) {
                           setEksIngestionInfo((prev) => {
                             return {
@@ -453,6 +505,7 @@ const EksLogIngest: React.FC = () => {
                     <SpecifySettings
                       eksIngestionInfo={eksIngestionInfo}
                       changeCreationMethod={(method) => {
+                        setIndexDuplicatedError(false);
                         setEksIngestionInfo((prev) => {
                           return {
                             ...prev,
@@ -469,6 +522,7 @@ const EksLogIngest: React.FC = () => {
                         });
                       }}
                       changeIndexPrefix={(prefix: string) => {
+                        setIndexDuplicatedError(false);
                         setEksIngestionInfo((prev) => {
                           return {
                             ...prev,
@@ -500,41 +554,6 @@ const EksLogIngest: React.FC = () => {
                             aosParas: {
                               ...prev.aosParas,
                               replicaNumbers: replicas,
-                            },
-                          };
-                        });
-                      }}
-                      changeStartShardNum={(num: string) => {
-                        setEksIngestionInfo((prev) => {
-                          return {
-                            ...prev,
-                            shardNumFormatError: false,
-                            kdsParas: {
-                              ...prev.kdsParas,
-                              startShardNumber: num,
-                            },
-                          };
-                        });
-                      }}
-                      changeEnableAS={(enable: boolean) => {
-                        setEksIngestionInfo((prev) => {
-                          return {
-                            ...prev,
-                            kdsParas: {
-                              ...prev.kdsParas,
-                              enableAutoScaling: enable,
-                            },
-                          };
-                        });
-                      }}
-                      changeMaxShardNum={(num: string) => {
-                        setEksIngestionInfo((prev) => {
-                          return {
-                            ...prev,
-                            maxShardNumFormatError: false,
-                            kdsParas: {
-                              ...prev.kdsParas,
-                              maxShardNumber: num,
                             },
                           };
                         });
@@ -584,6 +603,7 @@ const EksLogIngest: React.FC = () => {
                           };
                         });
                       }}
+                      indexDuplicatedError={indexDuplicatedError}
                     />
                   )}
                   {curStep === 1 && (
@@ -595,6 +615,23 @@ const EksLogIngest: React.FC = () => {
                             ...prev,
                             configRequiredError: false,
                             confId: confId,
+                          };
+                        });
+                      }}
+                      changeSampleDashboard={(yesNo) => {
+                        setEksIngestionInfo((prev) => {
+                          return {
+                            ...prev,
+                            createDashboard: yesNo,
+                          };
+                        });
+                      }}
+                      changeLogConfPath={(path) => {
+                        setEksIngestionInfo((prev) => {
+                          return {
+                            ...prev,
+                            logPathEmptyError: false,
+                            logPath: path,
                           };
                         });
                       }}
@@ -661,8 +698,26 @@ const EksLogIngest: React.FC = () => {
                               });
                               return;
                             }
+                            if (
+                              eksIngestionInfo.createMethod ===
+                                CreationMethod.Exists &&
+                              !eksIngestionInfo.existsPipeline?.description &&
+                              !eksIngestionInfo.existsPipeline?.ec2RoleArn
+                            ) {
+                              setOpenNotice(true);
+                              return;
+                            }
                           }
                           if (curStep === 1) {
+                            if (!eksIngestionInfo.logPath) {
+                              setEksIngestionInfo((prev) => {
+                                return {
+                                  ...prev,
+                                  logPathEmptyError: true,
+                                };
+                              });
+                              return;
+                            }
                             if (!eksIngestionInfo.confId) {
                               setEksIngestionInfo((prev) => {
                                 return {
@@ -707,6 +762,50 @@ const EksLogIngest: React.FC = () => {
         </div>
       </div>
       <HelpPanel />
+
+      <Modal
+        title={t("applog:detail.ingestion.upgradeNotice")}
+        fullWidth={false}
+        isOpen={openNotice}
+        closeModal={() => {
+          setOpenNotice(false);
+        }}
+        actions={
+          <div className="button-action no-pb text-right">
+            <Button
+              btnType="text"
+              onClick={() => {
+                setOpenNotice(false);
+              }}
+            >
+              {t("button.cancel")}
+            </Button>
+            <Button
+              loading={loadingUpgrade}
+              btnType="primary"
+              onClick={() => {
+                upgradePipelines();
+              }}
+            >
+              {t("button.upgrade")}
+            </Button>
+          </div>
+        }
+      >
+        <div className="modal-content alert-content">
+          <Alert
+            noMargin
+            type={AlertType.Error}
+            content={
+              <div>
+                {t(
+                  "applog:detail.ingestion.upgradeNoticeDescEKSExistsPipeline"
+                )}
+              </div>
+            }
+          />
+        </div>
+      </Modal>
     </div>
   );
 };

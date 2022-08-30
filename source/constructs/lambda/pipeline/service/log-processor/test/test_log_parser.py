@@ -42,6 +42,10 @@ class TestCloudTrail:
     def test_fields(self):
         pass
 
+    def test_parse_error(self):
+        record = self.ct.parse("invalid data")
+        assert record == []
+
 
 class TestS3:
     def setup(self):
@@ -60,6 +64,10 @@ class TestS3:
 
     def test_fields(self):
         assert "bucket" in self.s3.fields
+
+    def test_parse_error(self):
+        record = self.s3.parse("invalid data")
+        assert record == {}
 
 
 class TestCloudFront:
@@ -81,6 +89,10 @@ class TestCloudFront:
     def test_fields(self):
         assert "c-ip" in self.cf.fields
 
+    def test_parse_error(self):
+        record = self.cf.parse("invalid data")
+        assert record == {}
+
 
 class TestWAF:
     def setup(self):
@@ -95,6 +107,68 @@ class TestWAF:
             assert isinstance(record, dict)
             print(record)
             assert "action" in record
+
+    def test_parse_error(self):
+        record = self.waf.parse("invalid data")
+        assert record == {}
+
+
+class TestVPCFlow:
+    def setup(self):
+        with open("./test/datafile/vpcflow.log", encoding="utf-8") as f:
+            self.data = f.readlines()
+
+            assert len(self.data) == 18
+        self.vpcf = log_parser.VPCFlow()
+
+    def test_parse(self):
+        records = []
+        for line in self.data:
+            record = self.vpcf.parse(line)
+            assert isinstance(record, dict)
+            if record:
+                records.append(record)
+
+        assert len(records) == 10
+
+        example = records[0]
+        assert "bytes" in example
+        assert "start" in example
+        assert example["start"].isnumeric()
+        assert example["bytes"].isnumeric()
+
+    def test_parse_error(self):
+        record = self.vpcf.parse("invalid data")
+        assert record == {}
+
+
+class TestConfig:
+    def setup(self):
+        self.cfg = log_parser.Config()
+
+    def test_parse_history(self):
+
+        with open("./test/datafile/config-history.log", encoding="utf-8") as f:
+            history_data = f.readlines()
+            assert len(history_data) == 1
+            records = []
+            for line in history_data:
+                records = self.cfg.parse(line)
+                assert isinstance(records, list)
+                assert len(records) == 2
+
+    def test_parse_snapshot(self):
+        with open("./test/datafile/config-snapshot.log", encoding="utf-8") as f:
+            snapshot_data = f.readlines()
+            assert len(snapshot_data) == 1
+            for line in snapshot_data:
+                records = self.cfg.parse(line)
+                # snapshot data will be ignored
+                assert len(records) == 0
+
+    def test_parse_error(self):
+        record = self.cfg.parse("invalid data")
+        assert record == []
 
 
 class TestRDS:
@@ -114,6 +188,10 @@ class TestRDS:
             assert len(records) == 159
             rec = records[0]
             assert rec["db-identifier"] == "myaudb-instance-1"
+
+    def test_parse_error(self):
+        record = self.rds.parse("invalid data")
+        assert record == []
 
 
 class TestLogParser:

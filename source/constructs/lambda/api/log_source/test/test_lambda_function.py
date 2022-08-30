@@ -4,10 +4,13 @@
 import json
 import os
 from unittest import TestCase as tc
+import io
+import zipfile
 
 import boto3
 import pytest
-from moto import mock_dynamodb
+from moto import mock_dynamodb, mock_sts, mock_lambda, mock_iam
+from botocore.exceptions import ClientError
 from .datafile import ddb_mock_data
 
 
@@ -27,6 +30,65 @@ def appsync_delete_s3_source_event():
 def appsync_get_s3_source_event():
     with open("./test/event/appsync_get_s3_source_event.json", "r") as f:
         return json.load(f)
+
+
+@pytest.fixture
+def sts_client():
+    with mock_sts():
+        boto3.client("sts", region_name=os.environ.get("AWS_REGION"))
+        yield
+
+
+@pytest.fixture
+def lambda_client():
+    with mock_lambda():
+        region = os.environ.get("AWS_REGION")
+        client = boto3.client("lambda", region_name=region)
+        # Create mock_async_s3_child_lambda
+        response = client.create_function(
+            FunctionName="mock_async_cross_aacount_lambda",
+            Runtime="python3.8",
+            Role=get_role_name(),
+            Handler="lambda_function.lambda_handler",
+            Code={
+                "ZipFile": get_test_zip_file(),
+            },
+            Description="test lambda function",
+            Timeout=3,
+            MemorySize=128,
+            Publish=True,
+        )
+        os.environ["ASYNC_CROSS_ACCOUNT_LAMBDA_ARN"] = response["FunctionArn"]
+
+
+def get_role_name():
+    with mock_iam():
+        region = os.environ.get("AWS_REGION")
+        iam = boto3.client("iam", region_name=region)
+        try:
+            return iam.get_role(RoleName="my-role")["Role"]["Arn"]
+
+        except ClientError:
+            return iam.create_role(
+                RoleName="my-role",
+                AssumeRolePolicyDocument="some policy",
+                Path="/my-path/",
+            )["Role"]["Arn"]
+
+
+def get_test_zip_file():
+    pfunc = """
+    import json
+    def lambda_handler(event, context):
+        resp = {"value":"input_str"}
+        return json.dumps(resp)
+    """
+    zip_output = io.BytesIO()
+    zip_file = zipfile.ZipFile(zip_output, "w", zipfile.ZIP_DEFLATED)
+    zip_file.writestr("lambda_function.py", pfunc)
+    zip_file.close()
+    zip_output.seek(0)
+    return zip_output.read()
 
 
 @pytest.fixture
@@ -55,6 +117,8 @@ def test_lambda_handler_s3_source(
     appsync_delete_s3_source_event,
     appsync_get_s3_source_event,
     ddb_client,
+    sts_client,
+    lambda_client
 ):
     # Can only import here, as the environment variables need to be set first.
     import lambda_function
@@ -73,13 +137,18 @@ def test_lambda_handler_s3_source(
         "s3Prefix": "test",
         "sourceType": "S3",
         "status": "ACTIVE",
+        "defaultVpcId": "vpc-1001",
+        "defaultSubnetIds": "sub-001,sub-002",
         "tags": None,
         "s3Source": {
             "s3Name": "loghub-logs-123456789012",
             "s3Prefix": "test",
             "archiveFormat": "json",
+            "defaultVpcId": "vpc-1001",
+            "defaultSubnetIds": "sub-001,sub-002"
         },
     }
+    
     dummy_obj = tc()
     tc.assertEqual(dummy_obj, get_response, log_source_groud_truth)
 
@@ -115,7 +184,7 @@ def test_lambda_handler_s3_source(
     )
 
 
-def test_lambda_handler_ec2_source(ddb_client):
+def test_lambda_handler_ec2_source(ddb_client, sts_client, lambda_client):
     # Can only import here, as the environment variables need to be set first.
     import lambda_function
 
@@ -193,7 +262,7 @@ def test_lambda_handler_ec2_source(ddb_client):
     )
 
 
-def test_lambda_handler_eks_source(ddb_client):
+def test_lambda_handler_eks_source(ddb_client, sts_client, lambda_client):
     # Can only import here, as the environment variables need to be set first.
     import lambda_function
 
@@ -272,7 +341,7 @@ def test_lambda_handler_eks_source(ddb_client):
     )
 
 
-def test_id_not_found(ddb_client):
+def test_id_not_found(ddb_client, sts_client, lambda_client):
     import lambda_function
 
     with pytest.raises(RuntimeError):
@@ -292,7 +361,7 @@ def test_id_not_found(ddb_client):
         )
 
 
-def test_args_error(ddb_client):
+def test_args_error(ddb_client, sts_client, lambda_client):
     import lambda_function
 
     with pytest.raises(RuntimeError):

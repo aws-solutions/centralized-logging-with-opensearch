@@ -12,6 +12,9 @@
     | ---------- | ---------------- | ------------------------------------------------------------ |
     | Log Bucket Name | `<需要输入>` | 存储日志的 S3 存储桶名称。 |
     | Log Bucket Prefix | `<需要输入>` | 存储日志的 S3 存储桶路径前缀。 |
+    | Log Source Account ID | `<可选输入>`  | 存储日志的 S3 存储桶所在账户 ID. 对于夸账户日志摄取是必填 (需要先 [链接一个账户](../link-account/index.md)). 默认情况下, 会使用您在 **步骤 1** 中登录的账户 ID.  |
+    | Log Source Region | `<可选输入>` | 存储日志的 S3 存储桶所在的区域. 默认情况下, 会使用您在 **步骤 2** 中指定的区域 |
+    | Log Source Account Assume Role | `<可选输入>` | 夸账户日志摄取所需要使用的 IAM Role. 对于夸账户日志摄取是必填 (需要先 [链接一个账户](../link-account/index.md)). |
     | Engine Type | OpenSearch | OpenSearch 的引擎类型。选择 OpenSearch 或 Elasticsearch。 |
     | OpenSearch Domain Name | `<需要输入>` | Amazon OpenSearch 集群的域名。|
     | OpenSearch Endpoint | `<需要输入>` | OpenSearch 端点 URL。例如，`vpc-your_opensearch_domain_name-xcvgw6uu2o6zafsiefxubwuohe.us-east-1.es.amazonaws.com`。 |

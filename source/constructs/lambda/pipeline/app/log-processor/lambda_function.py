@@ -1,17 +1,17 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+import base64
+import csv
 import json
 import logging
 import os
-import csv
 import time
-import boto3
-import base64
-import urllib.parse
-
-from io import StringIO
 from datetime import datetime
+from io import StringIO
+
+import boto3
+
 from util.osutil import OpenSearch
 
 logger = logging.getLogger()
@@ -21,50 +21,56 @@ TOTAL_RETRIES = 3
 SLEEP_INTERVAL = 10
 BULK_BATCH_SIZE = 20000
 DEFAULT_BULK_BATCH_SIZE = 20000
-BULK_ACTION = 'index'
+BULK_ACTION = "index"
 
 s3 = boto3.resource("s3")
-batch_size = os.environ.get('BULK_BATCH_SIZE', DEFAULT_BULK_BATCH_SIZE)
-bucket_name = os.environ.get('LOG_BUCKET_NAME')
-failed_log_bucket_name = os.environ.get('FAILED_LOG_BUCKET_NAME')
+batch_size = int(os.environ.get('BULK_BATCH_SIZE', DEFAULT_BULK_BATCH_SIZE))
+bucket_name = os.environ.get("LOG_BUCKET_NAME")
+failed_log_bucket_name = os.environ.get("FAILED_LOG_BUCKET_NAME")
 
-index_prefix = os.environ.get('INDEX_PREFIX')
-endpoint = os.environ.get('ENDPOINT')
-default_region = os.environ.get('AWS_REGION')
-log_type = os.environ.get('LOG_TYPE')
-engine = os.environ.get('ENGINE')
+index_prefix = os.environ.get("INDEX_PREFIX")
+endpoint = os.environ.get("ENDPOINT")
+default_region = os.environ.get("AWS_REGION")
+log_type = os.environ.get("LOG_TYPE")
+engine = os.environ.get("ENGINE")
 
-aos = OpenSearch(region=default_region, endpoint=endpoint,
-                 index_prefix=index_prefix, engine=engine, log_type=log_type)
+aos = OpenSearch(
+    region=default_region,
+    endpoint=endpoint,
+    index_prefix=index_prefix,
+    engine=engine,
+    log_type=log_type,
+)
 
 
 def record2log(record):
-    return json.loads(base64.b64decode(record['kinesis']['data']).decode('utf-8'))
+    return json.loads(base64.b64decode(record["kinesis"]["data"]).decode("utf-8"))
 
 
 def lambda_handler(event, context):
     now = datetime.now()
-    logs = list(map(record2log, event['Records']))
+    logs = list(map(record2log, event["Records"]))
     total = len(logs)
 
-    logger.info('received %d logs, the last log is: %s', total, tail(logs))
+    logger.info("%d lines of logs received", total)
 
     index_name = f'{index_prefix}-{now.strftime("%Y%m%d")}'
     failed_logs = batch_bulk_load(logs, index_name)
 
-    logger.info('total %d logs, %d failed logs: %s', total, len(failed_logs), failed_logs)
+    logger.info(
+        "--> Total: %d Loaded: %d Failed: %d",
+        total,
+        total - len(failed_logs),
+        len(failed_logs),
+    )
 
-    nowstr = now.strftime('%Y%m%d-%H%M%S')
+    nowstr = now.strftime("%Y%m%d-%H%M%S")
 
     if failed_logs:
-        status_code = export_failed_records(failed_logs, failed_log_bucket_name, f'${index_prefix}/${nowstr}.json')
-        logger.error(f'Export status: {status_code}')
-
-
-def tail(lst: list):
-    if len(lst):
-        return lst[-1]
-    return None
+        status_code = export_failed_records(
+            failed_logs, failed_log_bucket_name, f"${index_prefix}/${nowstr}.json"
+        )
+        logger.error(f"Export status: {status_code}")
 
 
 def write_to_csv(json_records) -> str:
@@ -95,20 +101,17 @@ def export_failed_records(failed_records: list, bucket: str, key: str) -> str:
         bucket (str): export bucket
         key (str): export key
     """
-    logger.info(f'Export failed records to {bucket}/{key}')
+    logger.info(f"Export failed records to {bucket}/{key}")
 
     export_obj = s3.Object(bucket, key)
-    if key.endswith('.json'):
+    if key.endswith(".json"):
         body = json.dumps(failed_records)
     else:
         body = write_to_csv(failed_records)
     # print(body)
-    resp = export_obj.put(
-        ACL='bucket-owner-full-control',
-        Body=body
-    )
+    resp = export_obj.put(ACL="bucket-owner-full-control", Body=body)
     # logger.info(resp)
-    return resp['ResponseMetadata']['HTTPStatusCode']
+    return resp["ResponseMetadata"]["HTTPStatusCode"]
 
 
 def batch_bulk_load(records: list, index_name: str) -> list:
@@ -128,7 +131,8 @@ def batch_bulk_load(records: list, index_name: str) -> list:
     start = 0
     while start < total:
         batch_failed_records = bulk_load_records(
-            records[start: start + batch_size], index_name)
+            records[start: start + batch_size], index_name
+        )
         if batch_failed_records:
             failed_records.extend(batch_failed_records)
         start += batch_size
@@ -154,10 +158,10 @@ def bulk_load_records(records: list, index_name: str) -> list:
 
     # TODO: doc id
     for record in records:
-        bulk_body.append(json.dumps({BULK_ACTION: {}}) + '\n')
-        bulk_body.append(json.dumps(record) + '\n')
+        bulk_body.append(json.dumps({BULK_ACTION: {}}) + "\n")
+        bulk_body.append(json.dumps(record) + "\n")
 
-    data = ''.join(bulk_body)
+    data = "".join(bulk_body)
 
     retry = 1
     while True:
@@ -167,88 +171,23 @@ def bulk_load_records(records: list, index_name: str) -> list:
         # Retry if status code is >= 300
         if response.status_code < 300:
             resp_json = response.json()
-            for idx, item in enumerate(resp_json['items']):
+            for idx, item in enumerate(resp_json["items"]):
                 # Check and store failed records with error message
                 # print(item[BULK_ACTION]['status'])
-                if item[BULK_ACTION]['status'] >= 300:
-                    records[idx]['index_name'] = index_name
-                    records[idx]['error_type'] = item[BULK_ACTION]['error']['type']
-                    records[idx]['error_reason'] = item[BULK_ACTION]['error']['reason']
+                if item[BULK_ACTION]["status"] >= 300:
+                    records[idx]["index_name"] = index_name
+                    records[idx]["error_type"] = item[BULK_ACTION]["error"]["type"]
+                    records[idx]["error_reason"] = item[BULK_ACTION]["error"]["reason"]
                     failed_records.append(records[idx])
 
             break
 
         if retry >= TOTAL_RETRIES:
-            raise RuntimeError(
-                f'Unable to bulk load the records after {retry} retries')
+            raise RuntimeError(f"Unable to bulk load the records after {retry} retries")
         else:
-            logger.error(f'Bulk load failed: {response.text}')
-            logger.info('Sleep 10 seconds and retry...')
+            logger.error(f"Bulk load failed: {response.text}")
+            logger.info("Sleep 10 seconds and retry...")
             retry += 1
             time.sleep(SLEEP_INTERVAL)
 
     return failed_records
-
-
-def get_export_key(key: str, format='csv') -> str:
-    """Generate export key based on original key and index name
-
-    Args:
-        key (str): object key in S3 of log file
-        format (str, optional): Output file format. Defaults to 'csv'.
-
-    Returns:
-        str: export object key for failed records.
-    """
-    return f'error/{log_type}Log/{bucket_name}/{key}.{format}'
-
-
-def check_index_template():
-    """Check if an index template already exists or not
-
-    Index template contains index mapping,
-    and must exist before loading data
-    otherwise, the mapping can't be updated once data is loaded
-    """
-    # logger.info('Check if index template already exists or not...')
-    retry = 1
-    while True:
-        result = aos.exist_index_template()
-        if result:
-            break
-        if retry >= TOTAL_RETRIES:
-            raise RuntimeError(
-                f'Unable to check index template after {retry} retries')
-        else:
-            logger.info('Sleep 10 seconds and retry...')
-            retry += 1
-            time.sleep(SLEEP_INTERVAL)
-
-
-def get_object_key(event):
-    """Get log file path from event message"""
-    try:
-        event_record = event['Records'][0]
-        if 'body' in event_record:
-            # this is a message from sqs
-            event = json.loads(event_record['body'])
-            # skip test event
-            if 'Event' in event and event['Event'] == 's3:TestEvent':
-                logger.info('Test Message, do nothing...')
-                return ''
-            event_record = event['Records'][0]
-
-        # print(event)
-        if 's3' in event_record:
-            # s3 event message
-            # key = event_record['s3']['object']['key']
-            key = urllib.parse.unquote_plus(
-                event_record['s3']['object']['key'], encoding='utf-8')
-            # event_bucket = event_record['s3']['bucket']['name']
-            # if event_bucket != bucket_name:
-            #     raise RuntimeError(f'Unexpected Bucket {event_bucket}')
-            return key
-    except Exception as e:
-        # unknown format
-        logger.error(e)
-        raise RuntimeError(f'Unknown Event {event}')

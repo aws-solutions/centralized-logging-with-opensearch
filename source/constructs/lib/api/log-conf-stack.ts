@@ -14,13 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Construct, Duration, RemovalPolicy } from '@aws-cdk/core';
-import * as appsync from '@aws-cdk/aws-appsync';
-import * as lambda from '@aws-cdk/aws-lambda';
+import {
+    Construct,
+  } from 'constructs';
+import { 
+    Duration,  
+    RemovalPolicy,
+    aws_dynamodb as ddb,
+    aws_lambda as lambda,
+    
+ } from 'aws-cdk-lib';  
+import * as appsync from "@aws-cdk/aws-appsync-alpha";
 import * as path from 'path';
-import * as ddb from '@aws-cdk/aws-dynamodb';
-
-
 import { addCfnNagSuppressRules } from "../main-stack";
 
 export interface LogConfStackProps {
@@ -109,6 +114,13 @@ export class LogConfStack extends Construct {
         LogConfLambdaDS.createResolver({
             typeName: 'Query',
             fieldName: 'listLogConfs',
+            requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+            responseMappingTemplate: appsync.MappingTemplate.lambdaResult()
+        })
+
+        LogConfLambdaDS.createResolver({
+            typeName: 'Query',
+            fieldName: 'checkTimeFormat',
             requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
             responseMappingTemplate: appsync.MappingTemplate.lambdaResult()
         })

@@ -37,13 +37,13 @@ need to spend much time on log data preparation before ingesting it into the sea
 ### Out-of-box dashboard templates
 Offers a collection of reference designs of Kibana templates, for both commonly used software such as Nginx, Apache 
 HTTP Server, Spring Boot, and AWS services such as Amazon S3, Amazon CloudFront, AWS WAF, and Amazon CloudTrail. The 
-visualization templates help customers to insert build-in sample dashboards into the Amazon OpenSearch Service (AOS) 
+visualization templates help customers to insert built-in sample dashboards into the Amazon OpenSearch Service (AOS) 
 domains on the web console, and the reference dashboards can further facilitate the creation of customized dashboards.
 
 ## Quick start
 
-* [Launch Log Hub in AWS global regions](https://awslabs.github.io/log-hub/en/implementation-guide/deployment/global-region/)
-* [Launch Log Hub in AWS China regions](https://awslabs.github.io/log-hub/en/implementation-guide/deployment/china-region/)
+* [Launch Log Hub in AWS global regions](https://awslabs.github.io/log-hub/implementation-guide/deployment/global-region/)
+* [Launch Log Hub in AWS China regions](https://awslabs.github.io/log-hub/implementation-guide/deployment/china-region/)
 
 ## License
 

@@ -88,7 +88,6 @@ const TablePanel: React.FC<TablePanelProps> = (props: TablePanelProps) => {
   }, [items]);
 
   useEffect(() => {
-    console.info("isReloadisReloadisReload:", isReload);
     if (isReload) {
       setSelectItemsIds([]);
     }
@@ -126,16 +125,24 @@ const TablePanel: React.FC<TablePanelProps> = (props: TablePanelProps) => {
         setCheckAllStatus(UNCHECKED);
       }
     }
-    const tmpSelectedItemList: any = [];
-    if (selectItemsIds && selectItemsIds.length > 0) {
-      items.forEach((element) => {
-        if (selectItemsIds.includes(element.id)) {
-          tmpSelectedItemList.push(element);
-        }
-      });
+    if (selectType === SelectType.CHECKBOX) {
+      const tmpSelectedItemList: any = [];
+      if (selectItemsIds && selectItemsIds.length > 0) {
+        items.forEach((element) => {
+          if (selectItemsIds.includes(element.id)) {
+            tmpSelectedItemList.push(element);
+          }
+        });
+      }
+      changeSelected(tmpSelectedItemList);
     }
-    changeSelected(tmpSelectedItemList);
   }, [selectItemsIds, items]);
+
+  useEffect(() => {
+    if (selectType === SelectType.RADIO) {
+      setSelectItemsIds(defaultSelectItem?.map((element) => element.id) || []);
+    }
+  }, [defaultSelectItem]);
 
   return (
     <div className="gsui-table-pannel">
@@ -226,8 +233,11 @@ const TablePanel: React.FC<TablePanelProps> = (props: TablePanelProps) => {
                             <input
                               name="tableItem"
                               type="radio"
-                              // value={element?.id || ""}
-                              checked={element?.isChecked || false}
+                              checked={
+                                element?.isChecked ||
+                                selectItemsIds.includes(element.id) ||
+                                false
+                              }
                               onChange={(event) => {
                                 console.info("event:", event);
                               }}

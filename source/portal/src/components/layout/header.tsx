@@ -33,7 +33,6 @@ const LHeader: React.FC<SignedInAppProps> = (props: SignedInAppProps) => {
   );
   const oidcSignOUt = () => {
     localStorage.removeItem(AMPLIFY_CONFIG_JSON);
-    // auth.removeUser();
     if (oidcSignOut) {
       oidcSignOut();
     }
@@ -43,28 +42,28 @@ const LHeader: React.FC<SignedInAppProps> = (props: SignedInAppProps) => {
   return (
     <header className="lh-header">
       <div className="logo">{t("header.name")}</div>
-      {amplifyConfig.aws_appsync_authenticationType ===
-        AppSyncAuthType.OPEN_ID && (
-        <div className="user">
-          {t("header.welcome")} (
-          <span
-            className="cp sign-out"
-            onClick={() => {
-              oidcSignOUt();
-            }}
-          >
-            {t("header.logout")}
-          </span>
-          )
-        </div>
-      )}
-      {amplifyConfig.aws_appsync_authenticationType ===
-        AppSyncAuthType.AMAZON_COGNITO_USER_POOLS && (
+      {
         <div className="user">
           {t("header.welcome")}, {userEmail} (
-          <SignOut className="cp sign-out" />)
+          {amplifyConfig.aws_appsync_authenticationType ===
+            AppSyncAuthType.OPEN_ID && (
+            <span
+              className="cp sign-out"
+              onClick={() => {
+                oidcSignOUt();
+              }}
+            >
+              {t("header.logout")}
+            </span>
+          )}
+          {amplifyConfig.aws_appsync_authenticationType ===
+            AppSyncAuthType.AMAZON_COGNITO_USER_POOLS && (
+            <SignOut className="cp sign-out" />
+          )}
+          )
         </div>
-      )}
+      }
+      {}
     </header>
   );
 };

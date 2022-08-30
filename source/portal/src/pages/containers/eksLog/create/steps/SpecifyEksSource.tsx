@@ -22,6 +22,7 @@ import FormItem from "components/FormItem";
 import HeaderPanel from "components/HeaderPanel";
 import Select, { SelectItem } from "components/Select/select";
 import { listEKSClusterNames } from "graphql/queries";
+import CrossAccountSelect from "pages/comps/account/CrossAccountSelect";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -44,6 +45,7 @@ interface SpecifyEksSourceProps {
   eksEmptyError: boolean;
   changeEksClusterSource: (EksClusterName: string) => void;
   changeEksLogAgentPattern: (pattern: EKSDeployKind) => void;
+  changeCurAccount: (id: string) => void;
 }
 
 const SpecifyEksSource: React.FC<SpecifyEksSourceProps> = (
@@ -54,18 +56,20 @@ const SpecifyEksSource: React.FC<SpecifyEksSourceProps> = (
     eksEmptyError,
     changeEksClusterSource,
     changeEksLogAgentPattern,
+    changeCurAccount,
   } = props;
   const { t } = useTranslation();
   const amplifyConfig: AmplifyConfigType = useSelector(
     (state: AppStateProps) => state.amplifyConfig
   );
 
-  const [curEks, setCurEks] = useState<SelectItem>({
+  const [curEks, setCurEks] = useState<SelectItem | null>({
     name: eksClusterLogSource.eksClusterName,
     value: eksClusterLogSource.eksClusterName,
   });
   const [loadingEksList, setLoadingEksList] = useState(false);
   const [eksOptionList, setEksOptionList] = useState<SelectItem[]>([]);
+  const [loadingAccount, setLoadingAccount] = useState(false);
 
   const getEksClusterList = async () => {
     try {
@@ -88,6 +92,7 @@ const SpecifyEksSource: React.FC<SpecifyEksSourceProps> = (
   ): Promise<string[]> => {
     const resData: any = await appSyncRequestQuery(listEKSClusterNames, {
       nextToken: pageToken,
+      accountId: eksClusterLogSource.accountId,
       isListAll: false, // isListAll目前传False，True代表非AWS EKS
     });
     const nextPage = resData.data.listEKSClusterNames.nextToken;
@@ -103,13 +108,23 @@ const SpecifyEksSource: React.FC<SpecifyEksSourceProps> = (
   };
 
   useEffect(() => {
+    setCurEks(null);
     getEksClusterList();
-  }, []);
+  }, [eksClusterLogSource.accountId]);
 
   return (
     <div>
       <HeaderPanel title={t("ekslog:create.eksSource.eks")}>
         <div>
+          <CrossAccountSelect
+            accountId={eksClusterLogSource.accountId}
+            changeAccount={(id) => {
+              changeCurAccount(id);
+            }}
+            loadingAccount={(loading) => {
+              setLoadingAccount(loading);
+            }}
+          />
           <FormItem
             optionTitle={t("ekslog:create.eksSource.eksCluster")}
             optionDesc={
@@ -126,6 +141,8 @@ const SpecifyEksSource: React.FC<SpecifyEksSourceProps> = (
             }
           >
             <AutoComplete
+              disabled={loadingEksList || loadingAccount}
+              outerLoading
               className="m-w-75p"
               placeholder={t("ekslog:select")}
               value={curEks}

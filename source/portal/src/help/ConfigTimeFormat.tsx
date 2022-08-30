@@ -41,6 +41,11 @@ const ConfigTimeFormat: React.FC = () => {
             {t("info:configTimeFormat.strftime")}
           </a>
         </div>
+        <div className="gsui-help-link-item">
+          <a href="https://strftimer.com/" target="_blank" rel="noreferrer">
+            {t("info:configTimeFormat.generateFormat")}
+          </a>
+        </div>
       </div>
     </div>
   );

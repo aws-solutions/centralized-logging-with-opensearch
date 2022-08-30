@@ -33,7 +33,7 @@
     "comp": {
       "selectInstance": "请选择实例",
       "instanceGroup": "实例组",
-      "instanceGroupDesc": "实例组是实例的集合。目前仅支持与 Log Hub 同区域的实例。请确保您的实例满足以下先决条件。",
+      "instanceGroupDesc": "实例组是实例的集合。目前仅支持与日志通同区域的实例。请确保您的实例满足以下先决条件。",
       "tips1": "安装在实例上的 AWS Systems Manager 代理（SSM 代理）。",
       "tips2": "与实例关联的 AmazonSSMManagedInstanceCore 策略。",
       "tips3": "这些实例具有对 AWS Systems Manager 的网络访问权限。",
@@ -100,6 +100,7 @@
       "configNameError": "请输入日志配置名称",
       "logPath": "日志路径",
       "logPathDesc": "输入日志文件的位置。将包含指定文件夹下的所有文件。使用','分隔多个路径。",
+      "logPathDescEKS": "输入日志文件的位置。",
       "logType": "日志类型",
       "logTypeDesc": "选择内置插件来解析来自日志代理的日志数据。",
       "logTypeError": "请选择日志类型",
@@ -120,7 +121,7 @@
       "springbootLogFormat": "日志格式",
       "springbootLogFormatDesc": "在 Spring Boot 应用程序中输入日志格式配置。",
       "firstLineRegEx": "首行正则表达式",
-      "firstLineRegExDesc": "输入正则表达式以提取日志的首行。"
+      "firstLineRegExDesc": "输入正则表达式以摄取日志的首行。"
     },
     "parsing": {
       "alert": "正则表达式无效，请检查您的日志格式。",
@@ -138,7 +139,69 @@
       "timeFormat": "时间格式",
       "timeFormatDesc": "输入日志中使用的时间戳格式。",
       "sampleRequired": "请输入示例日志并解析日志以检查日志配置和正则表达式是否有效。",
-      "regexLogParseError": "请确认示例日志已被解析，并确保日志配置与示例日志匹配。"
+      "regexLogParseError": "请确认示例日志已被解析，并确保日志配置与示例日志匹配。",
+      "formatSuccess": "验证成功",
+      "formatError": "验证失败"
+    }
+  },
+  "crossAccount": {
+    "name": "多账户",
+    "accountSettings": "账户设置",
+    "account": "账户",
+    "currentAccount": "当前账户",
+    "selectDesc1": "选择存储日志的 AWS 账户。 要链接帐户，请转到",
+    "linkAccount": "链接一个账户",
+    "detail": "详细信息",
+    "list": {
+      "accounts": "账户",
+      "accountId": "账户 ID",
+      "accountName": "账户名称",
+      "iamRole": "IAM 角色",
+      "created": "创建时间",
+      "removeLink": "移除账户链接",
+      "removeLinkTips": "您是否确定要移除账户链接 "
+    },
+    "link": {
+      "name": "链接",
+      "stepOneTitle": "步骤1: 设置关联账户",
+      "stepOneTipsDesc": "请在尝试链接到当前日志通帐户的帐户中部署 CloudFormation 堆栈。",
+      "stepOne1": "1. 访问 CloudFormation 控制台",
+      "stepOne2": "2. 切换到与日志通部署一致的区域 ",
+      "stepOne3": "3. 从 S3 模板 url 创建新堆栈：",
+      "stepOne4": "4. 等待部署完成",
+      "stepTwoTitle": "步骤2: 关联账户",
+      "accountName": "帐户名称",
+      "accountNameDesc": "输入帐户的昵称，账户名称必须是唯一的。例如: sub-account-1",
+      "inputAccountName": "请输入账户名称",
+      "accountId": "帐户 ID",
+      "accountIdDesc": "AWS 12位数字账户 ID",
+      "inputAccountId": "请输入账号 ID",
+      "accountIdFormatError": "账号 ID 格式错误",
+      "accountRoles": "跨账户角色 ARN",
+      "accountRolesDesc": "输入步骤 1 的 CloudFormation 输出中的 CrossAccountRoleARN。",
+      "inputAccountRoles": "请输入跨账户角色 ARN",
+      "accountRolesFormatError": "跨账户角色 ARN 格式错误",
+      "installDocs": "FluentBit 代理安装文档",
+      "installDocsDesc": "在步骤 1 的 CloudFormation 输出中的 AgentInstallDocument。",
+      "inputInstallDocs": "请输入代理安装文件",
+      "installDocsFormatError": "代理安装文件格式错误",
+      "configDocs": "FluentBit 代理配置文档",
+      "configDocsDesc": "在步骤 1 的 CloudFormation 输出中的 AgentConfigDocument。",
+      "inputConfigDocs": "请输入配置文件",
+      "configDocsFormatError": "配置文件格式错误",
+      "s3Bucket": "跨账户 S3 存储桶",
+      "s3BucketDesc": "输入步骤 1 的 CloudFormation 输出中的 CrossAccountS3Bucket。",
+      "inputS3Bucket": "请输入跨账户 S3 存储桶",
+      "s3BucketFormatError": "S3 存储桶格式错误",
+      "stackId": "跨账户堆栈 ID",
+      "stackIdDesc": "输入步骤 1 的 CloudFormation 输出中的 CrossAccountStackId。",
+      "inputStackId": "请输入跨账户堆栈 ID",
+      "stackIdSameRegion": "请确保堆栈部署在与日志通相同的区域",
+      "stackIdFormatError": "堆栈 ID 格式错误",
+      "kmsKey": "跨账户 KMS 密钥",
+      "kmsKeyDesc": "在步骤 1 的 CloudFormation 输出中的 CrossAccountKMSKeyARN。",
+      "inputKmsKey": "请输入跨账户 KMS 密钥",
+      "kmsKeyFormatError": " KMS 密钥格式错误"
     }
   }
 }

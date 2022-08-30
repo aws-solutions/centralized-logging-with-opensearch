@@ -21,21 +21,23 @@ import {
   AppPipeline,
   EKSClusterLogSource,
   LogSourceType,
+  PipelineStatus,
 } from "API";
 import { SelectType, TablePanel } from "components/TablePanel";
 import Button from "components/Button";
 import LoadingText from "components/LoadingText";
 import { Link, useHistory } from "react-router-dom";
-import { Pagination } from "@material-ui/lab";
 import { formatLocalTime } from "assets/js/utils";
 import Status, { StatusType } from "components/Status/Status";
 import Modal from "components/Modal";
 import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
-import { deleteAppLogIngestion } from "graphql/mutations";
+import { deleteAppLogIngestion, upgradeAppPipeline } from "graphql/mutations";
 import { getAppPipeline, listAppLogIngestions } from "graphql/queries";
+import { AUTO_REFRESH_INT } from "assets/js/const";
+import Alert from "components/Alert";
+import { AlertType } from "components/Alert/alert";
 
-const PAGE_SIZE = 10;
-
+const PAGE_SIZE = 1000;
 interface IngestionsProps {
   eksLogSourceInfo: EKSClusterLogSource | undefined;
 }
@@ -58,28 +60,40 @@ const EksIngestions: React.FC<IngestionsProps> = (props: IngestionsProps) => {
   const [loadingDelete, setLoadingDelete] = useState(false);
   const [disableDelete, setDisableDelete] = useState(true);
   const [openDeleteModel, setOpenDeleteModel] = useState(false);
-  const [totoalCount, setTotoalCount] = useState(0);
-  const [curPage, setCurPage] = useState(1);
+  const [noKDSRolePipelines, setNoKDSRolePipelines] = useState<string[]>([]);
+  const [openNotice, setOpenNotice] = useState(false);
+  const [loadingUpgrade, setLoadingUpgrade] = useState(false);
 
   const history = useHistory();
 
-  const getIngestions = async () => {
-    setIngestions([]);
+  const getIngestions = async (hideLoading = false) => {
     try {
-      setLoadingData(true);
+      if (!hideLoading) {
+        setIngestions([]);
+        setLoadingData(true);
+      }
       const resData: any = await appSyncRequestQuery(listAppLogIngestions, {
-        page: curPage,
+        page: 1,
         count: PAGE_SIZE,
         sourceId: eksLogSourceInfo?.id,
         sourceType: LogSourceType.EKSCluster,
       });
       const appLogIngestions: AppLogIngestion[] =
         resData.data?.listAppLogIngestions?.appLogIngestions || [];
+      const tmpNoKDSRoleArnArr: string[] = [];
       const tmpEksIngestions: EksIngestion[] = await Promise.all(
         appLogIngestions.map(async (appLogIngestion: AppLogIngestion) => {
           const pipelineData = await appSyncRequestQuery(getAppPipeline, {
             id: appLogIngestion.appPipelineId,
           });
+          if (
+            !appLogIngestion.ec2RoleArn &&
+            !appLogIngestion.kdsRoleArn &&
+            appLogIngestion.appPipelineId &&
+            appLogIngestion.status === PipelineStatus.ACTIVE
+          ) {
+            tmpNoKDSRoleArnArr.push(appLogIngestion.appPipelineId);
+          }
           return {
             id: appLogIngestion.id,
             ingestion: appLogIngestion,
@@ -87,8 +101,8 @@ const EksIngestions: React.FC<IngestionsProps> = (props: IngestionsProps) => {
           };
         })
       );
+      setNoKDSRolePipelines(tmpNoKDSRoleArnArr);
       setIngestions(tmpEksIngestions);
-      setTotoalCount(resData.data?.listAppLogIngestions?.total || 0);
       setLoadingData(false);
     } catch (error) {
       setLoadingData(false);
@@ -120,11 +134,27 @@ const EksIngestions: React.FC<IngestionsProps> = (props: IngestionsProps) => {
     }
   };
 
+  const upgradePipelines = async () => {
+    try {
+      setLoadingUpgrade(true);
+      const upgradeRes = await appSyncRequestMutation(upgradeAppPipeline, {
+        ids: noKDSRolePipelines,
+      });
+      console.info("upgradeRes:", upgradeRes);
+      setLoadingUpgrade(false);
+      setOpenNotice(false);
+      getIngestions();
+    } catch (error) {
+      setLoadingUpgrade(false);
+      console.error(error);
+    }
+  };
+
   useEffect(() => {
     if (eksLogSourceInfo && eksLogSourceInfo.id) {
       getIngestions();
     }
-  }, [eksLogSourceInfo, curPage]);
+  }, [eksLogSourceInfo]);
 
   useEffect(() => {
     if (selectedIngestion && selectedIngestion.length > 0) {
@@ -143,6 +173,14 @@ const EksIngestions: React.FC<IngestionsProps> = (props: IngestionsProps) => {
       setDisableDelete(true);
     }
   }, [selectedIngestion]);
+
+  // Auto Refresh List
+  useEffect(() => {
+    const refreshInterval = setInterval(() => {
+      getIngestions(true);
+    }, AUTO_REFRESH_INT);
+    return () => clearInterval(refreshInterval);
+  }, []);
 
   return (
     <div>
@@ -170,11 +208,15 @@ const EksIngestions: React.FC<IngestionsProps> = (props: IngestionsProps) => {
             </Button>
             <Button
               btnType="primary"
-              disabled={false}
+              disabled={loadingData}
               onClick={() => {
-                history.push({
-                  pathname: `/containers/eks-log/${eksLogSourceInfo?.id}/ingestion`,
-                });
+                if (noKDSRolePipelines.length > 0) {
+                  setOpenNotice(true);
+                } else {
+                  history.push({
+                    pathname: `/containers/eks-log/${eksLogSourceInfo?.id}/ingestion`,
+                  });
+                }
               }}
             >
               {t("button.createAnIngestion")}
@@ -256,14 +298,7 @@ const EksIngestions: React.FC<IngestionsProps> = (props: IngestionsProps) => {
           },
         ]}
         items={ingestions}
-        pagination={
-          <Pagination
-            count={Math.ceil(totoalCount / PAGE_SIZE)}
-            page={curPage}
-            onChange={(event: any, value: number) => setCurPage(value)}
-            size="small"
-          />
-        }
+        pagination={<div></div>}
         changeSelected={(items) => {
           setSelectedIngestion(items);
         }}
@@ -309,6 +344,46 @@ const EksIngestions: React.FC<IngestionsProps> = (props: IngestionsProps) => {
               );
             }
           )}
+        </div>
+      </Modal>
+
+      <Modal
+        title={t("applog:detail.ingestion.upgradeNotice")}
+        fullWidth={false}
+        isOpen={openNotice}
+        closeModal={() => {
+          setOpenNotice(false);
+        }}
+        actions={
+          <div className="button-action no-pb text-right">
+            <Button
+              btnType="text"
+              onClick={() => {
+                setOpenNotice(false);
+              }}
+            >
+              {t("button.cancel")}
+            </Button>
+            <Button
+              loading={loadingUpgrade}
+              btnType="primary"
+              onClick={() => {
+                upgradePipelines();
+              }}
+            >
+              {t("button.upgrade")}
+            </Button>
+          </div>
+        }
+      >
+        <div className="modal-content alert-content">
+          <Alert
+            noMargin
+            type={AlertType.Error}
+            content={
+              <div>{t("applog:detail.ingestion.upgradeNoticeDescEKS")}</div>
+            }
+          />
         </div>
       </Modal>
     </div>

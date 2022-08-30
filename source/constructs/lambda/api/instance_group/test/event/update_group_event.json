@@ -1,6 +1,7 @@
 {
     "arguments": {
         "id": "fa2eacd9-fafe-4341-b6ee-e2e2682d7dd4",
+        "accountId": "acct002",
         "groupName": "test-2",
         "instanceSet": [
             "i-04ae114f5330ba500",
@@ -12,6 +13,7 @@
         "parentTypeName": "Mutation",
         "variables": {
             "id": "fa2eacd9-fafe-4341-b6ee-e2e2682d7dd4",
+            "accountId": "acct002",
             "groupName": "test-2",
             "instanceSet": [
                 "i-04ae114f5330ba500",

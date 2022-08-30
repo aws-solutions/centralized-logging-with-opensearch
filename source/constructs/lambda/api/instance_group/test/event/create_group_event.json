@@ -1,6 +1,7 @@
 {
     "arguments": {
         "groupName": "test-2",
+        "accountId": "acct001",
         "instanceSet": [
             "i-04ae114f5330ba500"
         ]

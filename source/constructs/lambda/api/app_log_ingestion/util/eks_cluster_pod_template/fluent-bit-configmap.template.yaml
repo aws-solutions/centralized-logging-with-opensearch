@@ -34,14 +34,15 @@ data:
         storage.backlog.mem_limit   5M
     
 $LOGHUB_FLUENT_BIT_INPUT_OUTPUT_FILTER
+$LOGHUB_FLUENT_BIT_K8S_FILTER
     [FILTER]
         Name                modify
-        Match               *
+        Match               loghub.*
         Set                 cluster ${CLUSTER_NAME}
 
     [FILTER]
         Name                lua
-        Match               *
+        Match               loghub.*
         time_as_table       on
         script              uniform-time-format.lua
         call                cb_print

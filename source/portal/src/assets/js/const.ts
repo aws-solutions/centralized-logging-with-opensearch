@@ -20,12 +20,14 @@ import IMAGE_SL_Amazon_CloudFront from "assets/images/type/amazon_cloudfront.svg
 import IMAGE_SL_Amazon_Lambda from "assets/images/type/amazon_lambda.svg";
 import IMAGE_SL_Amazon_ELB from "assets/images/type/amazon_elb.svg";
 import IMAGE_SL_Amazon_WAF from "assets/images/type/amazon_waf.svg";
-// import IMAGE_SL_Amazon_VPCLogs from "assets/images/type/amazon_vpclogs.svg";
+import IMAGE_SL_Amazon_VPCLogs from "assets/images/type/amazon_vpclogs.svg";
+import IMAGE_SL_Amazon_Config from "assets/images/type/amazon_config.svg";
 
 import { AlarmType, LogType, MultiLineLogParser } from "API";
 export const INVALID = "invalid";
+export const AUTO_REFRESH_INT = 8000;
 
-export const DEFAULT_AGENT_VERSION = "FluentBit 1.8";
+export const DEFAULT_AGENT_VERSION = "FluentBit 1.9.3";
 export const DEFAULT_PLATFORM = "Linux";
 export const DEFAULT_INSTANCE_SELECTION = "Manual";
 
@@ -40,6 +42,8 @@ export const LAMBDA_TASK_SUFFIX = "-lambda";
 export const RDS_TASK_SUFFIX = "-rds";
 export const ELB_TASK_SUFFIX = "-elb";
 export const WAF_TASK_SUFFIX = "-waf";
+export const VPC_TASK_SUFFIX = "-vpc";
+export const AWSCONFIG_TASK_SUFFIX = "-config";
 
 export const LAMBDA_TASK_GROUP_PREFIX = "/aws/lambda/";
 export const RDS_TASK_GROUP_PREFIX = "/aws/rds";
@@ -56,11 +60,18 @@ export const GITHUB_LINK = "https://github.com/awslabs/log-hub";
 export const URL_FEEDBACK = GITHUB_LINK + "/issues";
 
 const LOGHUB_DOCS_DOMAIN = "https://awslabs.github.io";
+const LOGHUB_DEV_DOCS_DOMAIN = "https://log-hub.docs.solutions.gcr.aws.dev";
 export const LOGHUB_DOCS_LINK = `${LOGHUB_DOCS_DOMAIN}/log-hub/`;
-export const buildLogHubDocsLink = (lang: string, link: string) => {
-  return `${LOGHUB_DOCS_DOMAIN}/log-hub${
-    ZH_LANGUAGE_LIST.indexOf(lang) >= 0 ? "/zh" : "/en"
-  }/${link}`;
+export const buildLogHubDocsLink = (
+  lang: string,
+  link: string,
+  version?: string
+) => {
+  return `${
+    version === "develop"
+      ? LOGHUB_DEV_DOCS_DOMAIN
+      : LOGHUB_DOCS_DOMAIN + "/log-hub"
+  }${ZH_LANGUAGE_LIST.indexOf(lang) >= 0 ? "/zh" : "/en"}/${link}`;
 };
 
 export const HELP_ALB_LINK =
@@ -113,6 +124,12 @@ export const ELB_ACCESS_LOG_LINK =
 export const WAF_ACCESS_LOG_LINK =
   "https://docs.aws.amazon.com/waf/latest/developerguide/logging.html";
 
+export const AWS_CONFIG_LOG_LINK =
+  "https://docs.aws.amazon.com/config/latest/developerguide/manage-delivery-channel.html";
+
+export const VPC_FLOW_LOG_LINK =
+  "https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs.html";
+
 export const ENABLE_RDS_LOGS_LINK =
   "https://aws.amazon.com/premiumsupport/knowledge-center/rds-mysql-logs/";
 
@@ -139,6 +156,21 @@ export const DAEMONSET_LINK =
 export const STRFTIME_LINK =
   "https://www.cplusplus.com/reference/ctime/strftime/";
 
+export const CREATE_OS_ALARM_LINK =
+  "https://docs.aws.amazon.com/opensearch-service/latest/developerguide/cloudwatch-alarms.html";
+
+export const CREATE_OS_PROXY_LINK =
+  "https://aws.amazon.com/premiumsupport/knowledge-center/opensearch-outside-vpc-nginx/";
+
+export const DOC_VPC_ACCEPT_LINK =
+  "https://docs.aws.amazon.com/vpc/latest/peering/create-vpc-peering-connection.html";
+
+export const DOC_VPC_ROUTE_TABLE_LINK =
+  "https://docs.aws.amazon.com/vpc/latest/peering/vpc-peering-routing.html";
+
+export const DOC_VPC_SECURITY_GROUP_LINK =
+  "https://docs.aws.amazon.com/vpc/latest/peering/vpc-peering-security-groups.html";
+
 export enum ServiceLogType {
   Amazon_S3 = "Amazon_S3",
   Amazon_RDS = "Amazon_RDS",
@@ -148,6 +180,7 @@ export enum ServiceLogType {
   Amazon_VPCLogs = "Amazon_VPCLogs",
   Amazon_ELB = "Amazon_ELB",
   Amazon_WAF = "Amazon_WAF",
+  Amazon_Config = "Amazon_Config",
 }
 
 type ServiceTypeDesc = {
@@ -176,12 +209,20 @@ export const ServiceTypeDescMap: ServiceTypeDesc = {
     suffix: LAMBDA_TASK_SUFFIX + "-YYYY-MM-DD",
   },
   Amazon_ELB: {
-    desc: "<waf name>" + ELB_TASK_SUFFIX + "-YYYY-MM-DD",
+    desc: "<elb name>" + ELB_TASK_SUFFIX + "-YYYY-MM-DD",
     suffix: ELB_TASK_SUFFIX + "-YYYY-MM-DD",
   },
   Amazon_WAF: {
     desc: "<waf name>" + WAF_TASK_SUFFIX + "-YYYY-MM-DD",
     suffix: WAF_TASK_SUFFIX + "-YYYY-MM-DD",
+  },
+  Amazon_VPCLogs: {
+    desc: "<vpc name>" + VPC_TASK_SUFFIX + "-YYYY-MM-DD",
+    suffix: VPC_TASK_SUFFIX + "-YYYY-MM-DD",
+  },
+  Amazon_Config: {
+    desc: "<config name>" + AWSCONFIG_TASK_SUFFIX + "-YYYY-MM-DD",
+    suffix: AWSCONFIG_TASK_SUFFIX + "-YYYY-MM-DD",
   },
 };
 
@@ -201,6 +242,9 @@ export const ServiceTypeMap: LogMapType = {
   RDS: "RDS",
   ELB: "ELB",
   WAF: "WAF",
+  WAFSampled: "WAFSampled",
+  VPC: "VPC",
+  Config: "Config",
 };
 
 export const ServiceLogTypeMap: LogMapType = {
@@ -212,6 +256,7 @@ export const ServiceLogTypeMap: LogMapType = {
   Amazon_VPCLogs: "vpclogs",
   Amazon_ELB: "elb",
   Amazon_WAF: "waf",
+  Amazon_Config: "config",
 };
 
 export const ServiceLogList = [
@@ -257,12 +302,18 @@ export const ServiceLogList = [
     img: IMAGE_SL_Amazon_WAF,
     disabled: false,
   },
-  // {
-  //   value: ServiceLogType.Amazon_VPCLogs,
-  //   name: "VPC Flow Logs",
-  //   img: IMAGE_SL_Amazon_VPCLogs,
-  //   disabled: true,
-  // },
+  {
+    value: ServiceLogType.Amazon_VPCLogs,
+    name: "servicelog:create.service.vpc",
+    img: IMAGE_SL_Amazon_VPCLogs,
+    disabled: false,
+  },
+  {
+    value: ServiceLogType.Amazon_Config,
+    name: "servicelog:create.service.config",
+    img: IMAGE_SL_Amazon_Config,
+    disabled: false,
+  },
 ];
 
 export enum CreateLogMethod {
@@ -286,6 +337,7 @@ export type AlarmParamType = {
   value: boolean | string;
   isChecked: boolean;
   isNumber?: boolean;
+  isInvalid?: boolean;
 };
 
 export const FB_TYPE_LIST = [
@@ -342,8 +394,9 @@ export const domainAlramList: AlarmParamType[] = [
   {
     key: AlarmType.WRITE_BLOCKED,
     name: "cluster:detail.alarms.list.writeBlocked",
-    value: "false",
+    value: "1",
     isChecked: false,
+    isNumber: true,
   },
   {
     key: AlarmType.NODE_UNREACHABLE,
@@ -407,3 +460,49 @@ export const REPLICA_COUNT_LIST = [
   { name: "2", value: "2" },
   { name: "3", value: "3" },
 ];
+
+export const AMPLIFY_ZH_DICT = {
+  zh: {
+    "Sign In": "登录",
+    "Sign Up": "注册",
+    "Sign Out": "退出",
+    "Forgot your password?": "忘记密码？",
+    "Reset your password": "重置密码",
+    "Reset password": "重置密码",
+    Username: "用户名",
+    Password: "密码",
+    "Change Password": "修改密码",
+    Email: "邮箱",
+    email: "邮箱",
+    "Phone Number": "电话",
+    "Confirm a Code": "确认码",
+    "Confirm Sign In": "确认登录",
+    "Confirm Sign Up": "确认注册",
+    "Back to Sign In": "回到登录",
+    "Send Code": "发送确认码",
+    Confirm: "确认",
+    "Resend a Code": "重发确认码",
+    Submit: "提交",
+    Skip: "跳过",
+    Verify: "验证",
+    "Verify Contact": "验证联系方式",
+    Code: "确认码",
+    "Account recovery requires verified contact information":
+      "账户恢复需要验证过的联系方式",
+    "User does not exist": "用户不存在",
+    "User already exists": "用户已经存在",
+    "Incorrect username or password.": "用户名或密码错误",
+    "Invalid password format": "密码格式错误",
+    "Invalid phone number format": "电话格式错误，请使用格式 +12345678900",
+    "Enter your username": "请输入您的邮箱",
+    "Enter your password": "请输入您的密码",
+    "Enter your phone number": "请输入您的手机号",
+    "Enter your email": "请输入您的邮箱",
+    "Enter your code": "请输入您的验证码",
+    "Lost your code?": "没收到验证码？",
+    "Resend Code": "重新发送验证码",
+    "New password": "新密码",
+    "Enter your new password": "请输入新密码",
+    Change: "修改",
+  },
+};

@@ -14,7 +14,7 @@ What you need to do during this workshop:
 
 * Deploy the Log Hub solution and a dummy website in your AWS account (using CloudFormation) to simulate the environment of an e-commercial website.
 
-* Ingest both AWS Service logs and application logs to take a peek at possible ways of utilization.
+* Ingest both AWS Service logs and application logs (EKS pod logs as optional) to take a peek at possible ways of utilization.
 
 * Use OpenSearch Dashboards to monitor logs and extract business values from those out-of-box dashboards.
 

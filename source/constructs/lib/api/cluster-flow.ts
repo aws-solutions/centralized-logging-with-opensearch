@@ -13,14 +13,20 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
-import { Construct, Fn } from '@aws-cdk/core';
-import * as sfn from '@aws-cdk/aws-stepfunctions'
-import * as tasks from '@aws-cdk/aws-stepfunctions-tasks'
-import { Table, ITable } from '@aws-cdk/aws-dynamodb';
-import * as logs from '@aws-cdk/aws-logs';
-import * as iam from '@aws-cdk/aws-iam';
-
+import {
+    Construct,
+  } from 'constructs';
+import { 
+    Fn,
+    aws_stepfunctions_tasks as tasks,
+    aws_stepfunctions as sfn,
+    aws_logs as logs,
+    aws_iam as iam
+ } from 'aws-cdk-lib';  
+ import {
+    Table,
+    ITable
+  } from 'aws-cdk-lib/aws-dynamodb';
 export interface ClusterFlowProps {
 
     /**
