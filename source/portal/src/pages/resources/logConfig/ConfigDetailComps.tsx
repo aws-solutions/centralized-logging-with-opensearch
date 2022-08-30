@@ -150,10 +150,10 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
             curLogConfig?.logType === LogType.MultiLineText) &&
             curLogConfig.regularSpecs &&
             curLogConfig.regularSpecs.length > 0 &&
-            curLogConfig.regularSpecs.map((element) => {
+            curLogConfig.regularSpecs.map((element, index) => {
               if (element?.type === "date") {
                 return (
-                  <div className="mt-10">
+                  <div className="mt-10" key={index}>
                     <ValueWithLabel
                       label={`${t("resource:config.detail.timeFormat")}(${
                         element.key
