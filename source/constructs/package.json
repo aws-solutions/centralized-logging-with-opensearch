@@ -18,7 +18,7 @@
     "@types/prettier": "2.6.0",
     "aws-cdk": "2.38.0",
     "aws-cdk-lib": "2.38.0",
-    "aws-sdk": "2.809.0",
+    "aws-sdk": "2.814.0",
     "constructs": "10.1.85",
     "jest": "27.5.1",
     "ts-jest": "27.1.4",
