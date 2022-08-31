@@ -56,8 +56,7 @@ nav:
           - Upload Certificate: implementation-guide/resources/upload-ssl-certificate.md
           - AWS Services: implementation-guide/resources/aws-services.md
       - Release Notes: implementation-guide/release-notes.md
-  - Roadmap:
-      - Overview: updates/roadmap.md
+  - Roadmap: "https://github.com/orgs/awslabs/projects/58"
   - Workshop:
       - 1. Introduction: workshop/introduction.md
       - 2. Pre-requisites:

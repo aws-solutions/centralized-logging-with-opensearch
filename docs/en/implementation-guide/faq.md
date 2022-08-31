@@ -55,6 +55,11 @@ to the local regulations, any Internet information service must be bind to a dom
 **Q: What versions of OpenSearch does the solution work with?**</br>
 Log Hub supports Amazon OpenSearch Service, with engine version Elasticsearch 7.10 and above, Amazon OpenSearch 1.0 and above.
 
+**Q: Can I deploy the solution in an existing VPC?**</br>
+Yes. You can either launch the solution with a new VPC or launch the solution with an existing VPC. When using an existing
+VPC, you need to select the VPC and the corresponding subnets. Refer to [launch with Cognito User Pool](./deployment/with-cognito.md) or
+[launch with OpenID Connect](./deployment/with-oidc.md) for more details.
+
 ## Pricing
 
 **Q: How will I be charged and billed for the use of this solution?**</br>

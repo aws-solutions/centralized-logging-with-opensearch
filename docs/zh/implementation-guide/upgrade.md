@@ -70,11 +70,9 @@ CloudFront 已在其边缘节点缓存旧版本的 Log Hub 控制台。 我们�
 Log Hub 在 v1.1.0 之后更新了 IAM 策略。 如果您已创建 [应用程序日志管道](applications/create-applog-pipeline.md)
 在 Log Hub V1.0.X 中，如果您想在 v1.1.0 或更高版本中创建新的应用程序日志摄取，您将收到一个升级通知弹窗：
 
-[![app-pipeline-upgrade-v1.0]][app-pipeline-upgrade-v1.0]
+![app-pipeline-upgrade-v1.0](../images/app-log/app-pipline-upgrade-v1.0.png)
 
 单击 **升级** 按钮将您的应用程序日志管道升级到当前版本， 此升级不会影响您在 Log Hub V1.0.X 中创建的现有日志提取。 但是，请确保您在 [创建新的摄取](applications/nginx.md#step-2-create-an-application-log-ingestion) 之前已将 IAM 策略更新到 EC2 实例配置文件。
-
-[app-pipeline-upgrade-v1.0]: ../../images/app-log/app-pipline-upgrade-v1.0.png
 
 ### EKS 中的应用日志
 Log Hub 在 v1.1.0 之后更新了从 EKS 中摄取应用日志的[架构](./architecture.md#eks).
