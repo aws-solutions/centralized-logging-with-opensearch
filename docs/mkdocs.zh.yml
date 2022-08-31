@@ -56,6 +56,6 @@ nav:
           - 上传证书: implementation-guide/resources/upload-ssl-certificate.md
           - AWS 服务: implementation-guide/resources/aws-services.md
       - 更新记录: implementation-guide/release-notes.md
-  - 路线图: "https://awslabs.github.io/log-hub/en/updates/roadmap/"
+  - 路线图: "https://github.com/orgs/awslabs/projects/58"
   - 动手实验: "https://awslabs.github.io/log-hub/en/workshop/introduction/"
   - 技术设计: "https://awslabs.github.io/log-hub/en/designs"

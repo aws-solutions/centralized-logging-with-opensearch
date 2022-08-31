@@ -5,7 +5,7 @@
 
      You need to clean up EKS only if you have setup EKS Cluster during this workshop
 
-1. Undeploy the applications. Go to the Cloud9 workspace created in [Pre-request](../deployment/create-eks.md#create-a-workspace)
+1. Undeploy the applications. Go to the Cloud9 workspace created in [Pre-request](./deployment/create-eks.md#create-a-workspace)
 ```commandline
 kubectl delete -f fluent-bit-logging.yaml
 kubectl delete -f nginx.yaml

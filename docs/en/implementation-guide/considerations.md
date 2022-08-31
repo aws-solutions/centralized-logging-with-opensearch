@@ -18,7 +18,7 @@ if you meet of the following criteria:
 | US West (N. California)                   | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
 | US West (Oregon)                          | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
 | Africa (Cape Town)                        | :material-close-thick:{ .icon_cross } | :material-close-thick:{ .icon_cross } |
-| Asia Pacific (Hong Kong)                  | :material-close-thick:{ .icon_cross } | :material-check-bold:{ .icon_check }  |
+| Asia Pacific (Hong Kong)                  | :material-close-thick:{ .icon_cross } | :material-close-thick:{ .icon_cross } |
 | Asia Pacific (Jakarta)                    | :material-close-thick:{ .icon_cross } | :material-close-thick:{ .icon_cross } |
 | Asia Pacific (Mumbai)                     | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
 | Asia Pacific (Osaka)                      | :material-close-thick:{ .icon_cross } | :material-check-bold:{ .icon_check }  |
@@ -30,10 +30,10 @@ if you meet of the following criteria:
 | Europe (Frankfurt)                        | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
 | Europe (Ireland)                          | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
 | Europe (London)                           | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
-| Europe (Milan)                            |                                       |                                       |
+| Europe (Milan)                            | :material-close-thick:{ .icon_cross } | :material-close-thick:{ .icon_cross } |
 | Europe (Paris)                            | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
 | Europe (Stockholm)                        | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
-| Middle East (Bahrain)                     | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
+| Middle East (Bahrain)                     | :material-close-thick:{ .icon_cross } | :material-close-thick:{ .icon_cross } |
 | South America (Sao Paulo)                 | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
 | China (Beijing) Region Operated by Sinnet | :material-close-thick:{ .icon_cross } | :material-check-bold:{ .icon_check }  |
 | China (Ningxia) Regions operated by NWCD  | :material-close-thick:{ .icon_cross } | :material-check-bold:{ .icon_check }  |

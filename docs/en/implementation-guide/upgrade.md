@@ -72,13 +72,11 @@ Now you have completed all the upgrade steps. Please click the **refresh** butto
 Log Hub has an updated IAM policy after v1.1.0. If you have created an [Application Log Pipeline](applications/create-applog-pipeline.md) 
 in Log Hub V1.0.X, and want to create a new Application Log Ingestion in v1.1.0 or later versions, you will receive an upgrade notice popup:
 
-[![app-pipeline-upgrade-v1.0]][app-pipeline-upgrade-v1.0]
+![app-pipeline-upgrade-v1.0](../images/app-log/app-pipline-upgrade-v1.0.png)
 
 Click the **Upgrade** button to upgrade your Application Log Pipeline to the current version, 
 This upgrade will not affect your existing log ingestion which were created in Log Hub V1.0.X.
 However, please make sure you have updated IAM Policy to the EC2 instance profile before [creating a new ingestion](applications/nginx.md#step-2-create-an-application-log-ingestion).
-
-[app-pipeline-upgrade-v1.0]: ../../images/app-log/app-pipline-upgrade-v1.0.png
 
 ### Application Logs from EKS
 Log Hub has updated the default [architecture](./architecture.md#logs-from-eks) for ingesting application logs from EKS.
