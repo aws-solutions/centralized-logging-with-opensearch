@@ -4,7 +4,7 @@
   </strong>
 </p>
 <p align="center">
-Easily ingest, process and visualize application lgos and AWS service logs on top of <strong><a href="https://aws.amazon.com/opensearch-service/">Amazon OpenSearch Service</a></strong>
+Easily ingest, process and visualize application logs and AWS service logs on top of <strong><a href="https://aws.amazon.com/opensearch-service/">Amazon OpenSearch Service</a></strong>
 </p>
 
 <p align="center">
