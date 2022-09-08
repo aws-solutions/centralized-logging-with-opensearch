@@ -59,7 +59,7 @@ The EKS Cluster in Log Hub refers to the Amazon EKS from which you want to colle
 
 #### S3 Bucket
 
-Log Hub supports collecting historical or ongoing logs stored on an Amazon S3 bucket, if your system is currently sending application logs to a S3 bucket.
+Log Hub supports collecting ongoing logs stored on an Amazon S3 bucket, if your system is currently sending application logs to a S3 bucket.
 
 ### Log Config
 

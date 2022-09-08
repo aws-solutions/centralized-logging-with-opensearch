@@ -59,7 +59,7 @@ Log Hub 中的 EKS 集群是指您要从中收集 pod 日志的 Amazon EKS。 Lo
 
 #### S3 存储桶 (S3 Bucket)
 
-如果您的系统当前正在将应用程序日志发送到 S3 存储桶，Log Hub 支持收集存储在 Amazon S3 存储桶上的历史或持续日志。
+如果您的系统当前正在将应用程序日志发送到 S3 存储桶，Log Hub 支持收集存储在 Amazon S3 存储桶上的持续日志。
 
 ### 日志配置 (Log Config)
 
