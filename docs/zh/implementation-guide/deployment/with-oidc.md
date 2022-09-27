@@ -104,8 +104,8 @@
 
 ### (选项 4) 使用 ADFS OpenID Connect
 
-1. 确保您的 ADFS 已安装，您可以按照 [本指南](https://docs.microsoft.com/en-us/windows-server/identity/ad-fs/deployment/ad-fs) 了解如何安装 ADFS -部署指南）。
-2. 确保您可以登录到 ADFS 登录页面。 URL 应为“https://adfs.domain.com/adfs/ls/idpinitiatedSignOn.aspx”，将 **adfs.domain.com** 替换为您的真实 ADFS 域。
+1. 确保您的 ADFS 已安装，您可以按照[本指南](https://learn.microsoft.com/en-us/windows-server/identity/ad-fs/deployment/ad-fs-deployment-guide){target="_blank"}了解如何安装 ADFS。
+2. 确保您可以登录到 ADFS 登录页面。 URL 应为`https://adfs.domain.com/adfs/ls/idpinitiatedSignOn.aspx`，将 **adfs.domain.com** 替换为您的真实 ADFS 域。
 
     ![](../../images/OIDC/adfs-1.png)
 

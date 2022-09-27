@@ -112,7 +112,7 @@ The issuer value is `https://<KEYCLOAK_DOMAIN_NAME>/auth/realms/<REALM_NAME>`.
 
 ### (Option 4) ADFS OpenID Connect Client
 
-1. Make sure your ADFS is installed, you can find how to install ADFS by following [this guide](https://docs.microsoft.com/en-us/windows-server/identity/ad-fs/deployment/ad-fs-deployment-guide).
+1. Make sure your ADFS is installed, you can find how to install ADFS by following [this guide](https://docs.microsoft.com/en-us/windows-server/identity/ad-fs/deployment/ad-fs-deployment-guide){target="_blank"}.
 2. Make sure you can log in to the ADFS Sign On page. The URL should be `https://adfs.domain.com/adfs/ls/idpinitiatedSignOn.aspx`, replace **adfs.domain.com** with your real ADFS domain.
     
     ![](../../images/OIDC/adfs-1.png)
