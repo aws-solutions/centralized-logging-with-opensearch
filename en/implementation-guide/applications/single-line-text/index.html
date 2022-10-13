@@ -11,7 +11,7 @@
         <link rel="canonical" href="https://awslabs.github.io/log-hub/implementation-guide/applications/single-line-text/">
       
       <link rel="icon" href="../../../images/aws-solutions.png">
-      <meta name="generator" content="mkdocs-1.4.0, mkdocs-material-8.5.6">
+      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.5.3">
     
     
       
@@ -19,7 +19,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.20d9efc8.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.7a952b86.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.cbb835fc.min.css">
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#macro-syntax-error" class="md-skip">
+        <a href="#single-line-text" class="md-skip">
           Skip to content
         </a>
       
@@ -988,9 +988,88 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Single-line Text
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         Single-line Text
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    Prerequisites
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-1-create-a-single-line-text-config" class="md-nav__link">
+    Step 1: Create a Single-line text config
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-2-create-an-application-log-ingestion" class="md-nav__link">
+    Step 2: Create an application log ingestion
+  </a>
+  
+    <nav class="md-nav" aria-label="Step 2: Create an application log ingestion">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#instance-group-as-log-source" class="md-nav__link">
+    Instance Group as Log Source
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#eks-cluster-as-log-source" class="md-nav__link">
+    EKS Cluster as Log Source
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s3-bucket-as-log-source" class="md-nav__link">
+    S3 Bucket as Log Source
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-3-view-logs-in-opensearch" class="md-nav__link">
+    Step 3: View logs in OpenSearch
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -2049,6 +2128,69 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    Prerequisites
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-1-create-a-single-line-text-config" class="md-nav__link">
+    Step 1: Create a Single-line text config
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-2-create-an-application-log-ingestion" class="md-nav__link">
+    Step 2: Create an application log ingestion
+  </a>
+  
+    <nav class="md-nav" aria-label="Step 2: Create an application log ingestion">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#instance-group-as-log-source" class="md-nav__link">
+    Instance Group as Log Source
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#eks-cluster-as-log-source" class="md-nav__link">
+    EKS Cluster as Log Source
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s3-bucket-as-log-source" class="md-nav__link">
+    S3 Bucket as Log Source
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-3-view-logs-in-opensearch" class="md-nav__link">
+    Step 3: View logs in OpenSearch
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -2067,10 +2209,125 @@
   </a>
 
 
-<h1 id="macro-syntax-error"><em>Macro Syntax Error</em></h1>
-<p><em>Line 8 in Markdown file:</em> <strong>expected token 'end of statement block', got 'string'</strong> 
-<div class="highlight"><pre><span></span><code><span class="n">include</span><span class="o">-</span><span class="n">markdown</span> <span class="s2">&quot;include-prerequisites.md&quot;</span>
-</code></pre></div></p>
+<h1 id="single-line-text">Single-line Text</h1>
+<p>Log Hub uses custom Ruby Regular Expression to parse logs. It supports both single-line log format and multiple input format.</p>
+<p>You can configure Log Hub to ingest single-line text logs.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<!-- BEGIN INCLUDE include-prerequisites.md -->
+<p>Make sure you have done the following:</p>
+<ol>
+<li><a href="../../domains/import/">Import an AOS domain</a>.</li>
+<li><a href="../create-log-source/">Create a log source</a>.</li>
+<li><a href="../create-applog-pipeline/">Create an application log pipeline</a>.</li>
+</ol>
+<!-- END INCLUDE -->
+
+<h2 id="step-1-create-a-single-line-text-config">Step 1: Create a Single-line text config</h2>
+<ol>
+<li>Sign in to the Log Hub Console.</li>
+<li>In the left sidebar, under <strong>Resources</strong>, choose <strong>Log Config</strong>.</li>
+<li>Click the <strong>Create a log config</strong> button.</li>
+<li>Specify <strong>Config Name</strong>.</li>
+<li>Specify <strong>Log Path</strong>. You can use <code>,</code> to separate multiple paths.</li>
+<li>Choose <strong>Single-line Text</strong> in the log type dropdown menu.</li>
+<li>
+<p>Write the regular expression in <a href="https://rubular.com/">Rubular</a> to validate first and enter the value. For example:</p>
+<div class="highlight"><pre><span></span><code>(?&lt;remote_addr&gt;\S+)\s*-\s*(?&lt;remote_user&gt;\S+)\s*\[(?&lt;time_local&gt;\d+/\S+/\d+:\d+:\d+:\d+)\s+\S+\]\s*&quot;(?&lt;request_method&gt;\S+)\s+(?&lt;request_uri&gt;\S+)\s+\S+&quot;\s*(?&lt;status&gt;\S+)\s*(?&lt;body_bytes_sent&gt;\S+)\s*&quot;(?&lt;http_referer&gt;[^&quot;]*)&quot;\s*&quot;(?&lt;http_user_agent&gt;[^&quot;]*)&quot;\s*&quot;(?&lt;http_x_forwarded_for&gt;[^&quot;]*)&quot;.*
+</code></pre></div>
+</li>
+<li>
+<p>In the <strong>Sample log parsing</strong> section, paste a sample Single-line text log and click <strong>Parse log</strong> to verify if the log parsing is successful. For example:</p>
+<div class="highlight"><pre><span></span><code>127.0.0.1 - - [24/Dec/2021:01:27:11 +0000] &quot;GET / HTTP/1.1&quot; 200 3520 &quot;-&quot; &quot;curl/7.79.1&quot; &quot;-&quot;
+</code></pre></div>
+</li>
+<li>
+<p>Check if each fields type mapping is correct. Change the type by selecting the dropdown menu in the second column. For all supported types, see <a href="https://opensearch.org/docs/latest/search-plugins/sql/datatypes/">Data Types</a>. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You must specify the datetime of the log using key “time”. If not specified, system time will be added.</p>
+</div>
+</li>
+<li>
+<p>Specify the <strong>Time format</strong>. The format syntax follows <a href="https://linux.die.net/man/3/strptime">strptime</a>. Check <a href="https://docs.fluentbit.io/manual/pipeline/parsers/configuring-parser#time-resolution-and-fractional-seconds">this</a> for details.</p>
+</li>
+<li>Choose <strong>Create</strong>.</li>
+</ol>
+<h2 id="step-2-create-an-application-log-ingestion">Step 2: Create an application log ingestion</h2>
+<!-- BEGIN INCLUDE create-log-ingestion.md -->
+
+<!--ig-start-->
+<h3 id="instance-group-as-log-source">Instance Group as Log Source</h3>
+<ol>
+<li>Sign in to the Log Hub Console.</li>
+<li>In the left sidebar, under <strong>Log Analytics Pipelines</strong>, choose <strong>Application Log</strong>.</li>
+<li>Click on the application pipeline that has been created during the <strong>Prerequisites</strong>.</li>
+<li>Go to <strong>Permission</strong> tab and copy the provided JSON policy.</li>
+<li>
+<p>Go to <strong>AWS Console &gt; IAM &gt; Policies</strong> on the left column, and </p>
+<ul>
+<li>Click <strong>Create Policy</strong>, choose <strong>JSON</strong> and replace all the content inside the text block. Remember to substitute <code>&lt;YOUR ACCOUNT ID&gt;</code> with your account id.</li>
+<li>Choose <strong>Next</strong>, <strong>Next</strong>, then enter the name for this policy. For example: <strong><code>loghub-ec2-policy</code></strong>.</li>
+<li>Attach the policy to your EC2 instances role to allow the log agent have permissions to send logs to the application log pipeline.</li>
+</ul>
+</li>
+<li>
+<p>Click the <strong>Create an Ingestion</strong> dropdown menu, and select <strong>From Instance Group</strong>.</p>
+</li>
+<li>Select <strong>Choose exists</strong> and choose <strong>Next</strong>.</li>
+<li>Select the instance group you have created during the <strong>Prerequisites</strong> and choose <strong>Next</strong>.</li>
+<li>Select <strong>Choose exists</strong> and select the log config created in previous setup.</li>
+<li>Choose <strong>Next</strong>, then choose <strong>Create</strong>.</li>
+</ol>
+<!--ig-end-->
+
+<!--eks-start-->
+<h3 id="eks-cluster-as-log-source">EKS Cluster as Log Source</h3>
+<ol>
+<li>Sign in to the Log Hub Console.</li>
+<li>In the left sidebar, under <strong>Log Source</strong>, choose <strong>EKS Clusters</strong>.</li>
+<li>Click the EKS Cluster that has been imported as Log Source during the <strong>Prerequisites</strong>.</li>
+<li>Go to <strong>App Log Ingestion</strong> tab and click <strong>Create an Ingestion</strong>.<ul>
+<li>Select <strong>Choose exists</strong> and choose the application pipeline that has been created during the <strong>Prerequisites</strong>. Choose <strong>Next</strong>.</li>
+<li>Select the log config created in previous setup, and choose <strong>Next</strong>.</li>
+<li>Add tags as needed, then choose <strong>Create</strong> to finish creating an ingestion.</li>
+</ul>
+</li>
+<li>Deploy Fluent-bit logging agent following the guide generated by Log Hub. <ul>
+<li>Select the App Log Ingestion just created.</li>
+<li>Follow <strong>DaemonSet</strong> or <strong>Sidecar</strong> Guide to deploy the logging agent.</li>
+</ul>
+</li>
+</ol>
+<!--eks-end-->
+
+<!--s3-start-->
+<h3 id="s3-bucket-as-log-source">S3 Bucket as Log Source</h3>
+<ol>
+<li>Sign in to the Log Hub Console.</li>
+<li>In the left sidebar, under <strong>Log Analytics Pipelines</strong>, choose <strong>Application Log</strong>.</li>
+<li>Click on the application pipeline that has been created during the <strong>Prerequisites</strong>.</li>
+<li>Click the <strong>Create an Ingestion</strong> dropdown menu, and select <strong>From S3 Bucket</strong>.</li>
+<li>Fill in all the form fields to specify S3 Log Source. Choose <strong>Next</strong>.</li>
+<li>Select the log config created in previous setup, and choose <strong>Next</strong>.</li>
+<li>Add tags as needed, then choose <strong>Create</strong> to finish creating an ingestion.</li>
+</ol>
+<!--s3-end-->
+<!-- END INCLUDE -->
+
+<h2 id="step-3-view-logs-in-opensearch">Step 3: View logs in OpenSearch</h2>
+<ol>
+<li>Open OpenSearch console in your browser.</li>
+<li>Create an Index Pattern
+    <!-- BEGIN INCLUDE ../aws-services/include-index-pattern.md --><ul>
+<li>Click the <strong>Stack Management</strong> in the left sidebar, and select <strong>Index Patterns</strong>.</li>
+<li>Choose <strong>Create index pattern</strong>, and type in the index pattern name. Click <strong>Next step</strong>.</li>
+<li>Specify <strong>time</strong> field, and click <strong>Create index pattern</strong>.
+<!-- END INCLUDE --></li>
+</ul>
+</li>
+<li>Go to <strong>Discover</strong> section in the left sidebar.</li>
+<li>Change active index pattern to <code>&lt;the application pipeline&gt;-*</code>.</li>
+</ol>
 
 
 
@@ -2142,7 +2399,7 @@
     <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": "latest"}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.078830c0.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.37e9125f.min.js"></script>
       
     
   </body>

@@ -11,7 +11,7 @@
         <link rel="canonical" href="https://awslabs.github.io/log-hub/implementation-guide/applications/">
       
       <link rel="icon" href="../../images/aws-solutions.png">
-      <meta name="generator" content="mkdocs-1.4.0, mkdocs-material-8.5.6">
+      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.5.3">
     
     
       
@@ -19,7 +19,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.20d9efc8.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.7a952b86.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.cbb835fc.min.css">
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#macro-syntax-error" class="md-skip">
+        <a href="#_1" class="md-skip">
           跳转至
         </a>
       
@@ -877,9 +877,115 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          概览
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         概览
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    支持的日志格式和数据源
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    概念
+  </a>
+  
+    <nav class="md-nav" aria-label="概念">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    应用程序日志分析管道
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#log-ingestion" class="md-nav__link">
+    日志摄取 (Log Ingestion)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#logging-agent" class="md-nav__link">
+    日志代理 (Logging Agent)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#log-source" class="md-nav__link">
+    日志源 (Log Source)
+  </a>
+  
+    <nav class="md-nav" aria-label="日志源 (Log Source)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#instance-group" class="md-nav__link">
+    实例组 (Instance Group)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#eks-eks-cluster" class="md-nav__link">
+    EKS 集群 (EKS Cluster)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s3-s3-bucket" class="md-nav__link">
+    S3 存储桶 (S3 Bucket)
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#log-config" class="md-nav__link">
+    日志配置 (Log Config)
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -1254,6 +1360,96 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    支持的日志格式和数据源
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    概念
+  </a>
+  
+    <nav class="md-nav" aria-label="概念">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    应用程序日志分析管道
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#log-ingestion" class="md-nav__link">
+    日志摄取 (Log Ingestion)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#logging-agent" class="md-nav__link">
+    日志代理 (Logging Agent)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#log-source" class="md-nav__link">
+    日志源 (Log Source)
+  </a>
+  
+    <nav class="md-nav" aria-label="日志源 (Log Source)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#instance-group" class="md-nav__link">
+    实例组 (Instance Group)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#eks-eks-cluster" class="md-nav__link">
+    EKS 集群 (EKS Cluster)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s3-s3-bucket" class="md-nav__link">
+    S3 存储桶 (S3 Bucket)
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#log-config" class="md-nav__link">
+    日志配置 (Log Config)
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1272,10 +1468,106 @@
   </a>
 
 
-<h1 id="macro-syntax-error"><em>Macro Syntax Error</em></h1>
-<p><em>Line 11 in Markdown file:</em> <strong>expected token 'end of statement block', got 'string'</strong> 
-<div class="highlight"><pre><span></span><code><span class="n">include</span><span class="o">-</span><span class="n">markdown</span> <span class="s2">&quot;include-supported-app-logs.md&quot;</span>
-</code></pre></div></p>
+<h1 id="_1">应用程序日志分析管道</h1>
+<p>Log Hub 支持从 EC2 实例、EKS 集群和 S3 存储桶中摄取应用程序日志。</p>
+<ul>
+<li>对于 EC2 实例，Log Hub 会自动安装 <a href="#logging-agent">logging agent</a> (<a href="https://docs.fluentbit.io/manual/">Fluent Bit 1.9</a>)，收集 EC2 实例上的应用程序日志，然后将日志发送到 Amazon OpenSearch。</li>
+<li>对于 EKS 集群，Log Hub 将生成一体化配置文件供客户将 <a href="#logging-agent">logging agent</a> (<a href="https://docs.fluentbit.io/manual/">Fluent Bit 1.9</a>) 部署为 DaemonSet 或 Sidecar。 部署日志代理后，Log Hub 将开始收集 pod 日志并发送到 Amazon OpenSearch。</li>
+<li>对于 S3 存储桶，Log hub 将直接收集存储在 S3 存储桶中的应用程序日志。</li>
+</ul>
+<h2 id="_2">支持的日志格式和数据源</h2>
+<!-- BEGIN INCLUDE include-supported-app-logs.md -->
+
+<table>
+<thead>
+<tr>
+<th>Log 格式</th>
+<th>EC2 机器组</th>
+<th>EKS 集群</th>
+<th>S3 桶</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Nginx</td>
+<td>是</td>
+<td>是</td>
+<td>否</td>
+</tr>
+<tr>
+<td>Apache HTTP Server</td>
+<td>是</td>
+<td>是</td>
+<td>否</td>
+</tr>
+<tr>
+<td>JSON</td>
+<td>是</td>
+<td>是</td>
+<td>是</td>
+</tr>
+<tr>
+<td>单行文本</td>
+<td>是</td>
+<td>是</td>
+<td>是</td>
+</tr>
+<tr>
+<td>多行文本</td>
+<td>是</td>
+<td>是</td>
+<td>否</td>
+</tr>
+<tr>
+<td>多张文本 (Spring Boot)</td>
+<td>是</td>
+<td>是</td>
+<td>否</td>
+</tr>
+</tbody>
+</table>
+<!-- END INCLUDE -->
+
+<p>在本章中，您将学习如何为以下日志格式创建日志摄取：</p>
+<ul>
+<li><a href="apache/">Apache HTTP server 日志</a></li>
+<li><a href="nginx/">Nginx 日志</a></li>
+<li><a href="single-line-text/">单行文本日志</a></li>
+<li><a href="multi-line-text/">多行文本日志</a></li>
+<li><a href="json/">JSON 日志</a></li>
+</ul>
+<p>在创建日志摄取之前，您需要：</p>
+<ul>
+<li><a href="create-log-source/">创建日志源</a>（不适用于S3存储桶）</li>
+<li><a href="create-applog-pipeline/">创建应用程序日志管道</a></li>
+</ul>
+<h2 id="_3">概念</h2>
+<p>下面介绍的概念可帮助您了解应用程序日志摄取的工作原理。</p>
+<h3 id="_4">应用程序日志分析管道</h3>
+<p>要收集应用程序日志，需要数据管道。管道不仅缓冲传输中的数据，还清理或预处理数据。例如，将 IP 转换为地理位置。目前，Kinesis Data Stream 用作数据缓冲。</p>
+<h3 id="log-ingestion">日志摄取 (Log Ingestion)</h3>
+<p>日志摄取为 Log Hub 使用的日志记录代理配置日志源、日志类型和应用程序日志分析管道。
+之后，Log Hub 将开始从日志源收集特定类型的日志并将它们发送到 Amazon OpenSearch。</p>
+<h3 id="logging-agent">日志代理 (Logging Agent)</h3>
+<p>日志代理是一个程序，它从一个位置读取日志并将它们发送到另一个位置（例如，OpenSearch）。
+目前，Log Hub 仅支持自动安装的 <a href="https://docs.fluentbit.io/manual/">Fluent Bit 1.9</a> 日志代理。 Fluent Bit 代理具有 <a href="https://www.openssl.org/source/">OpenSSL 1.1</a> 的依赖项。要了解如何在 Linux 实例上
+安装 OpenSSL，请参阅 <a href="../resources/open-ssl/">OpenSSL 安装</a>。通过此<a href="https://docs.fluentbit.io/manual/installation/supported-platforms">链接</a>查看 Fluent Bit 支持的平台。</p>
+<h3 id="log-source">日志源 (Log Source)</h3>
+<p>日志源是指您希望 Log Hub 从中收集应用程序日志的 Amazon 服务。</p>
+<p>支持的日志源有：</p>
+<ul>
+<li><a href="#instances-group">实例组</a></li>
+<li><a href="#eks-cluster">EKS 集群</a></li>
+<li><a href="#s3-bucket">S3 存储桶</a></li>
+</ul>
+<h4 id="instance-group">实例组 (Instance Group)</h4>
+<p>实例组是您要从中收集应用程序日志的 EC2 实例的集合。 Log Hub 将帮助您在组内的每个实例中安装日志记录代理。</p>
+<h4 id="eks-eks-cluster">EKS 集群 (EKS Cluster)</h4>
+<p>Log Hub 中的 EKS 集群是指您要从中收集 pod 日志的 Amazon EKS。 Log Hub 将指导您将日志记录代理部署为 EKS 集群中的 DaemonSet 或 Sidecar。</p>
+<h4 id="s3-s3-bucket">S3 存储桶 (S3 Bucket)</h4>
+<p>如果您的系统当前正在将应用程序日志发送到 S3 存储桶，Log Hub 支持收集存储在 Amazon S3 存储桶上的持续日志。</p>
+<h3 id="log-config">日志配置 (Log Config)</h3>
+<p>日志配置是一种配置，它告诉 Log Hub 日志在日志源上的存储位置、您要收集的日志类型、日志行包含哪些字段以及每个字段的类型。</p>
 
 
 
@@ -1347,7 +1639,7 @@
     <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs"], "search": "../../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.config.lang": "ja", "search.config.pipeline": "trimmer, stemmer", "search.config.separator": "[\\s\\-\uff0c\u3002]+", "search.placeholder": "\u641c\u7d22", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version.title": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": "latest"}</script>
     
     
-      <script src="../../assets/javascripts/bundle.078830c0.min.js"></script>
+      <script src="../../assets/javascripts/bundle.37e9125f.min.js"></script>
       
     
   </body>

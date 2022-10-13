@@ -11,7 +11,7 @@
         <link rel="canonical" href="https://awslabs.github.io/log-hub/implementation-guide/aws-services/rds/">
       
       <link rel="icon" href="../../../images/aws-solutions.png">
-      <meta name="generator" content="mkdocs-1.4.0, mkdocs-material-8.5.6">
+      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.5.3">
     
     
       
@@ -19,7 +19,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.20d9efc8.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.7a952b86.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.cbb835fc.min.css">
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#macro-syntax-error" class="md-skip">
+        <a href="#amazon-rdsaurora-logs" class="md-skip">
           Skip to content
         </a>
       
@@ -754,9 +754,87 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Amazon RDS/Aurora
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         Amazon RDS/Aurora
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    Prerequisites
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-log-ingestion" class="md-nav__link">
+    Create log ingestion
+  </a>
+  
+    <nav class="md-nav" aria-label="Create log ingestion">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#using-the-log-hub-console" class="md-nav__link">
+    Using the Log Hub Console
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-the-cloudformation-stack" class="md-nav__link">
+    Using the CloudFormation Stack
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sample-dashboards" class="md-nav__link">
+    Sample Dashboards
+  </a>
+  
+    <nav class="md-nav" aria-label="Sample Dashboards">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rdsaurora-mysql" class="md-nav__link">
+    RDS/Aurora MySQL
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -2049,6 +2127,68 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    Prerequisites
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-log-ingestion" class="md-nav__link">
+    Create log ingestion
+  </a>
+  
+    <nav class="md-nav" aria-label="Create log ingestion">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#using-the-log-hub-console" class="md-nav__link">
+    Using the Log Hub Console
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-the-cloudformation-stack" class="md-nav__link">
+    Using the CloudFormation Stack
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sample-dashboards" class="md-nav__link">
+    Sample Dashboards
+  </a>
+  
+    <nav class="md-nav" aria-label="Sample Dashboards">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rdsaurora-mysql" class="md-nav__link">
+    RDS/Aurora MySQL
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -2067,10 +2207,255 @@
   </a>
 
 
-<h1 id="macro-syntax-error"><em>Macro Syntax Error</em></h1>
-<p><em>Line 55 in Markdown file:</em> <strong>expected token 'end of statement block', got 'string'</strong> 
-<div class="highlight"><pre><span></span><code><span class="n">include</span><span class="o">-</span><span class="n">markdown</span> <span class="s2">&quot;include-cw-cfn-common.md&quot;</span>
-</code></pre></div></p>
+<h1 id="amazon-rdsaurora-logs">Amazon RDS/Aurora Logs</h1>
+<p>You can <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_LogAccess.Procedural.UploadtoCloudWatch.html">publish database instance logs to Amazon CloudWatch Logs</a>. Then, you can perform real-time analysis of the log data, store the data in highly durable storage, and manage the data with the CloudWatch Logs Agent.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<p>Make sure your database logs are enabled. Some databases logs are not enabled by default, and you need to update your database parameters to enable the logs. </p>
+<p>Refer to <a href="https://aws.amazon.com/premiumsupport/knowledge-center/rds-mysql-logs/">How do I enable and monitor logs for an Amazon RDS MySQL DB instance?</a> to learn how to output logs to CloudWatch Logs.</p>
+<p>The table below lists the requirements for RDS/Aurora MySQL parameters.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Audit Log</td>
+<td>The database instance must use a custom option group with the <code>MARIADB_AUDIT_PLUGIN</code> option.</td>
+</tr>
+<tr>
+<td>General log</td>
+<td>The database instance must use a custom parameter group with the parameter setting <code>general_log = 1</code> to enable the general log.</td>
+</tr>
+<tr>
+<td>Slow query log</td>
+<td>The database instance must use a custom parameter group with the parameter setting <code>slow_query_log = 1</code> to enable the slow query log.</td>
+</tr>
+<tr>
+<td>Log output</td>
+<td>The database instance must use a custom parameter group with the parameter setting <code>log_output = FILE</code> to write logs to the file system and publish them to CloudWatch Logs.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="create-log-ingestion">Create log ingestion</h2>
+<p>You can create a log ingestion into AOS either by using the Log Hub console or by deploying a standalone CloudFormation stack.</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<ul>
+<li>The RDS and CloudWatch region must be the same as the Log Hub solution region.</li>
+<li>The AOS index is rotated on a daily basis, and cannot be adjusted.</li>
+</ul>
+</div>
+<h3 id="using-the-log-hub-console">Using the Log Hub Console</h3>
+<ol>
+<li>Sign in to the Log Hub Console.</li>
+<li>In the navigation pane, under <strong>Log Analytics Pipelines</strong>, choose <strong>Service Log</strong>.</li>
+<li>Choose the <strong>Create a log ingestion</strong> button.</li>
+<li>In the <strong>AWS Services</strong> section, choose <strong>Amazon RDS</strong>.</li>
+<li>Choose <strong>Next</strong>.</li>
+<li>Under <strong>Specify settings</strong>, choose <strong>Automatic</strong> or <strong>Manual</strong> for <strong>RDS log enabling</strong>. The automatic mode will detect your RDS log configurations and ingest logs from CloudWatch.<ul>
+<li>For <strong>Automatic mode</strong>, choose the RDS cluster from the dropdown list.</li>
+<li>For <strong>Manual mode</strong>, enter the <strong>DB identifier</strong>, select the <strong>Database type</strong> and input the CloudWatch log location in <strong>Log type and location</strong>.</li>
+<li>(Optional) If you are ingesting RDS/Aurora logs from another account, select a <a href="../../link-account/">linked account</a> from the <strong>Account</strong> dropdown first.</li>
+</ul>
+</li>
+<li>Choose <strong>Next</strong>.</li>
+<li>In the <strong>Specify OpenSearch domain</strong> section, select an imported domain for <strong>Amazon OpenSearch domain</strong>.</li>
+<li>Choose <strong>Yes</strong> for <strong>Sample dashboard</strong> if you want to ingest an associated templated AOS dashboard.</li>
+<li>You can change the <strong>Index Prefix</strong> of the target AOS index if needed. The default prefix is the <code>Database identifier</code>.</li>
+<li>In the <strong>Log Lifecycle</strong> section, input the number of days to manage the AOS index lifecycle. The Log Hub will create the associated <a href="https://opensearch.org/docs/latest/im-plugin/ism/index/">Index State Management (ISM)</a> policy automatically for this pipeline.</li>
+<li>Choose <strong>Next</strong>.</li>
+<li>Add tags if needed.</li>
+<li>Choose <strong>Create</strong>.</li>
+</ol>
+<h3 id="using-the-cloudformation-stack">Using the CloudFormation Stack</h3>
+<p>This automated AWS CloudFormation template deploys the <em>Log Hub - RDS Log Ingestion</em> solution in the AWS Cloud.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Launch in AWS Console</th>
+<th>Download Template</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AWS standard regions</td>
+<td><a href="https://console.aws.amazon.com/cloudformation/home#/stacks/create/template?stackName=LogHub-RDS&amp;templateURL=https://aws-gcr-solutions.s3.amazonaws.com/log-hub/latest/RDSLog.template" target="_blank"><img alt="Launch Stack" src="../../../images/launch-stack.png" /></a></td>
+<td><a href="https://aws-gcr-solutions.s3.amazonaws.com/log-hub/latest/RDSLog.template">Template</a></td>
+</tr>
+<tr>
+<td>AWS China regions</td>
+<td><a href="https://console.amazonaws.cn/cloudformation/home#/stacks/create/template?stackName=LogHub-RDS&amp;templateURL=https://aws-gcr-solutions.s3.cn-north-1.amazonaws.com.cn/log-hub/latest/RDSLog.template" target="_blank"><img alt="Launch Stack" src="../../../images/launch-stack.png" /></a></td>
+<td><a href="https://aws-gcr-solutions.s3.cn-north-1.amazonaws.com.cn/log-hub/latest/RDSLog.template">Template</a></td>
+</tr>
+</tbody>
+</table>
+<!-- BEGIN INCLUDE include-cw-cfn-common.md -->
+<ol>
+<li>
+<p>Log in to the AWS Management Console and select the button to launch the AWS CloudFormation template. You can also download the template as a starting point for your own implementation.</p>
+</li>
+<li>
+<p>To launch the Log Hub in a different AWS Region, use the Region selector in the console navigation bar.</p>
+</li>
+<li>
+<p>On the <strong>Create stack</strong> page, verify that the correct template URL shows in the <strong>Amazon S3 URL</strong> text box and choose <strong>Next</strong>.</p>
+</li>
+<li>
+<p>On the <strong>Specify stack details</strong> page, assign a name to your solution stack.</p>
+</li>
+<li>
+<p>Under <strong>Parameters</strong>, review the parameters for the template and modify them as necessary. This solution uses the following parameters.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LogGroupNames</td>
+<td><code>&lt;Requires input&gt;</code></td>
+<td>The names of the CloudWatch log group for the logs.</td>
+</tr>
+<tr>
+<td>Log Bucket Name</td>
+<td><code>&lt;Requires input&gt;</code></td>
+<td>A S3 bucket name to export the the logs.</td>
+</tr>
+<tr>
+<td>Log Bucket Prefix</td>
+<td><code>&lt;Requires input&gt;</code></td>
+<td>The S3 bucket path prefix which stores the the logs.</td>
+</tr>
+<tr>
+<td>Log Source Account ID</td>
+<td><code>&lt;Optional input&gt;</code></td>
+<td>The AWS Account ID of the CloudWatch log group. Required for cross-account log ingestion (Please <a href="../../link-account/">link an account</a> first). By default, the Account ID you logged in at <strong>Step 1</strong> will be used.</td>
+</tr>
+<tr>
+<td>Log Source Region</td>
+<td><code>&lt;Optional input&gt;</code></td>
+<td>The AWS Region of the CloudWatch log group. By default, the Region you selected at <strong>Step 2</strong> will be used.</td>
+</tr>
+<tr>
+<td>Log Source Account Assume Role</td>
+<td><code>&lt;Optional input&gt;</code></td>
+<td>The IAM Role ARN used for cross-account log ingestion. Required for cross-account log ingestion (Please <a href="../../link-account/">link an account</a> first).</td>
+</tr>
+<tr>
+<td>KDSShardNumber</td>
+<td><code>1</code></td>
+<td>The shard number of Kinesis Data Streams which will subscribe to the CloudWatch log groups.</td>
+</tr>
+<tr>
+<td>KDSRetentionHours</td>
+<td><code>48</code></td>
+<td>The retention hours of Kinesis Data Streams.</td>
+</tr>
+<tr>
+<td>Engine Type</td>
+<td>OpenSearch</td>
+<td>The engine type of the OpenSearch. Select OpenSearch or Elasticsearch.</td>
+</tr>
+<tr>
+<td>OpenSearch Domain Name</td>
+<td><code>&lt;Requires input&gt;</code></td>
+<td>The domain name of the Amazon OpenSearch cluster.</td>
+</tr>
+<tr>
+<td>OpenSearch Endpoint</td>
+<td><code>&lt;Requires input&gt;</code></td>
+<td>The OpenSearch endpoint URL. For example, <code>vpc-your_opensearch_domain_name-xcvgw6uu2o6zafsiefxubwuohe.us-east-1.es.amazonaws.com</code></td>
+</tr>
+<tr>
+<td>Index Prefix</td>
+<td><code>&lt;requires input&gt;</code></td>
+<td>The common prefix of OpenSearch index for the log. The index name will be <code>&lt;Index Prefix&gt;-&lt;log-type&gt;-&lt;YYYY-MM-DD&gt;</code>.</td>
+</tr>
+<tr>
+<td>Create Sample Dashboard</td>
+<td>Yes</td>
+<td>Whether to create a sample OpenSearch dashboard.</td>
+</tr>
+<tr>
+<td>VPC ID</td>
+<td><code>&lt;requires input&gt;</code></td>
+<td>Select a VPC which has access to the OpenSearch domain. The log processing Lambda will be resides in the selected VPC.</td>
+</tr>
+<tr>
+<td>Subnet IDs</td>
+<td><code>&lt;requires input&gt;</code></td>
+<td>Select at least two subnets which has access to the OpenSearch domain. The log processing Lambda will resides in the subnets. Please make sure the subnets has access to the Amazon S3 service.</td>
+</tr>
+<tr>
+<td>Security Group ID</td>
+<td><code>&lt;requires input&gt;</code></td>
+<td>Select a Security Group which will be associated to the log processing Lambda. Please make sure the Security Group has access to the OpenSearch domain.</td>
+</tr>
+<tr>
+<td>S3 Backup Bucket</td>
+<td><code>&lt;Requires input&gt;</code></td>
+<td>The S3 backup bucket name to store the failed ingestion logs.</td>
+</tr>
+<tr>
+<td>Number Of Shards</td>
+<td>5</td>
+<td>Number of shards to distribute the index evenly across all data nodes. Keep the size of each shard between 10-50 GiB.</td>
+</tr>
+<tr>
+<td>Number of Replicas</td>
+<td>1</td>
+<td>Number of replicas for OpenSearch Index. Each replica is a full copy of an index.</td>
+</tr>
+<tr>
+<td>Days to Warm Storage</td>
+<td>0</td>
+<td>The number of days required to move the index into warm storage. This takes effect only when the value is larger than 0 and warm storage is enabled in OpenSearch.</td>
+</tr>
+<tr>
+<td>Days to Cold Storage</td>
+<td>0</td>
+<td>The number of days required to move the index into cold storage. This takes effect only when the value is larger than 0 and cold storage is enabled in OpenSearch.</td>
+</tr>
+<tr>
+<td>Days to Retain</td>
+<td>0</td>
+<td>The total number of days to retain the index. If value is 0, the index will not be deleted.</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li>
+<p>Choose <strong>Next</strong>.</p>
+</li>
+<li>
+<p>On the <strong>Configure stack options</strong> page, choose <strong>Next</strong>.</p>
+</li>
+<li>
+<p>On the <strong>Review</strong> page, review and confirm the settings. Check the box acknowledging that the template creates AWS Identity and Access Management (IAM) resources.</p>
+</li>
+<li>
+<p>Choose <strong>Create</strong> stack to deploy the stack.</p>
+</li>
+</ol>
+<p>You can view the status of the stack in the AWS CloudFormation console in the <strong>Status</strong> column. You should receive
+a <strong>CREATE_COMPLETE</strong> status in approximately 15 minutes.</p>
+<!-- END INCLUDE -->
+
+<h2 id="sample-dashboards">Sample Dashboards</h2>
+<!-- BEGIN INCLUDE include-dashboard.md -->
+<p>You can access the built-in dashboard in Amazon OpenSearch to view log data. For more information, see <a href="../../getting-started/4.view-dashboard/">View Dashboard</a>.</p>
+<p>You can click the below image to view the high-resolution sample dashboard.</p>
+<!-- END INCLUDE -->
+
+<h3 id="rdsaurora-mysql">RDS/Aurora MySQL</h3>
+<p><a href="../../../images/dashboards/rds-db.png"><img alt="rds-dashboard" src="../../../images/dashboards/rds-db.png" /></a></p>
 
 
 
@@ -2142,7 +2527,7 @@
     <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": "latest"}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.078830c0.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.37e9125f.min.js"></script>
       
     
   </body>
