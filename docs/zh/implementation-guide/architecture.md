@@ -7,7 +7,7 @@
 
 1. [Amazon CloudFront](https://aws.amazon.com/cloudfront) 分发托管在 [Amazon S3](https://aws.amazon.com/s3/) 存储桶中的前端 Web UI 资源。
 
-2. 如果部署在海外区域，[Amazon Cognito 用户池](https://aws.amazon.com/cognito) 为后端提供身份验证；如果部署在中国区域，使用 OpenID 连接器 (OIDC)。
+2. [Amazon Cognito 用户池](https://aws.amazon.com/cognito) 或 OpenID 连接器 (OIDC) 可提供身份认证。
 
 3. [AWS AppSync](https://aws.amazon.com/appsync) 提供后端 GraphQL API。
 

@@ -28,7 +28,7 @@
 - （选项 1）使用其他区域的 Cognito User Pool 作为身份验证提供者。
 - （选项 2）[Authing][authing] 是第三方身份验证提供者。
 - （选项 3）[Keycloak](https://github.com/aws-samples/keycloak-on-aws) 是 AWS 维护的解决方案，可以作为身份验证提供者。
-- （选项 4）[ADFS](https://docs.microsoft.com/en-us/windows-server/identity/active-directory-federation-services) 是 Microsoft 提供的一项服务。
+- （选项 4）[ADFS](https://docs.microsoft.com/en-us/windows-server/identity/active-directory-federation-services){target="_blank"} 是 Microsoft 提供的一项服务。
 - （选项 5）其它第三方认证平台，如[Auth0][auth0]。
 
 按照以下步骤创建 OIDC 客户端，并获取 `client_id` 和 `issuer`。
@@ -52,7 +52,8 @@
     - 对于 **旧版本的 Cognito 控制台**：
         [![](../../images/OIDC/cognito-old-console-clientID.png)](../../images/OIDC/cognito-old-console-clientID.png)
         [![](../../images/OIDC/cognito-old-console-userpoolID.png)](../../images/OIDC/cognito-old-console-userpoolID.png)
-6. 在[步骤 2. 启动堆栈](#2)中，OidcClientID 就是 `App client ID`, OidcProvider 是 `https://cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}`
+
+在[步骤 2. 启动堆栈](#2)中，OidcClientID 就是 `App client ID`, OidcProvider 是 `https://cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}`。
 
 ### (选项 2) Authing.cn OIDC 客户端
 
@@ -104,8 +105,8 @@
 
 ### (选项 4) 使用 ADFS OpenID Connect
 
-1. 确保您的 ADFS 已安装，您可以按照[本指南](https://learn.microsoft.com/en-us/windows-server/identity/ad-fs/deployment/ad-fs-deployment-guide){target="_blank"}了解如何安装 ADFS。
-2. 确保您可以登录到 ADFS 登录页面。 URL 应为`https://adfs.domain.com/adfs/ls/idpinitiatedSignOn.aspx`，将 **adfs.domain.com** 替换为您的真实 ADFS 域。
+1. 确保您的 ADFS 已安装，您可以按照 [本指南](https://docs.microsoft.com/en-us/windows-server/identity/ad-fs/deployment/ad-fs) 了解如何安装 ADFS -部署指南）。
+2. 确保您可以登录到 ADFS 登录页面。 URL 应为“https://adfs.domain.com/adfs/ls/idpinitiatedSignOn.aspx”，将 **adfs.domain.com** 替换为您的真实 ADFS 域。
 
     ![](../../images/OIDC/adfs-1.png)
 

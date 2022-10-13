@@ -4,9 +4,9 @@
 此解决方案使用的服务目前可能并非在所有 AWS 区域都可用。请在提供所需服务的 AWS 区域中启动此解决方案。有关按区域划分的最新可用性，请参阅 [AWS 区域服务列表][services]。
 
 Log Hub 提供两种类型的身份验证，使用 [Cognito 用户池](https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-identity-pools.html) 或
-使用 [OpenID Connect (OIDC ) 提供者](https://openid.net/connect/)。 如果您满足以下条件，您需要选择使用 OpenID Connect 启动
+使用 [OpenID Connect (OIDC ) 提供者](https://openid.net/connect/)。 针对以下两种情况中的任何一种，您需要选择使用 OpenID Connect 启动解决方案：
 
-- 对于缺少 Cognito 用户池的 AWS 区域。
+- 您的 AWS 区域没有 Cognito 用户池。
 - 您已经有一个 OpenID Connect 认证中心。
 
 **支持部署的区域**

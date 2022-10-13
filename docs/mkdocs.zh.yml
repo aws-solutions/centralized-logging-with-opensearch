@@ -9,6 +9,7 @@ nav:
       - 概览: index.md
       - 成本预估: implementation-guide/cost.md
       - 架构概述: implementation-guide/architecture.md
+      - 安全: implementation-guide/security.md
       - 考虑因素: implementation-guide/considerations.md
       - 开始部署:
           - 概览: implementation-guide/deployment/index.md
@@ -49,8 +50,8 @@ nav:
       - 跨账户日志摄取: implementation-guide/link-account/index.md
       - 常见问题: implementation-guide/faq.md
       - 故障排查: implementation-guide/trouble-shooting.md
-      - 更新: implementation-guide/upgrade.md
-      - 卸载: implementation-guide/uninstall.md
+      - 更新解决方案: implementation-guide/upgrade.md
+      - 卸载解决方案: implementation-guide/uninstall.md
       - 资源:
           - OpenSSL 安装: implementation-guide/resources/open-ssl.md
           - 上传证书: implementation-guide/resources/upload-ssl-certificate.md

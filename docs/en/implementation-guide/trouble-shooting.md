@@ -39,11 +39,8 @@ sudo service fluent-bit restart
 
 ## Error: PutRecords API responded with error='AccessDeniedException'
 
-Fluent-bit agent deployed on EKS Cluster reports "AccessDeniedException" when sending records to Kinesis
-
-### Verify that the IAM role trust relations are correctly set.
-
-With the Log Hub console:
+Fluent-bit agent deployed on EKS Cluster reports "AccessDeniedException" when sending records to Kinesis. Verify that 
+the IAM role trust relations are correctly set. With the Log Hub console:
 
 1. Open the Log Hub console.
 2. In the left sidebar, under **Log Source**, choose **EKS Clusters**.
@@ -53,18 +50,18 @@ With the Log Hub console:
 
 You can get more information from Amazon EKS [IAM role configuration](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts-technical-overview.html#iam-role-configuration)
 
-## Q. My CloudFormation stack is stuck on deleting an `AWS::Lambda::Function` resource when I update the stack. How to resolve it?
+## My CloudFormation stack is stuck on deleting an `AWS::Lambda::Function` resource when I update the stack. How to resolve it?
 ![](../images/faq/cloudformation-stuck.png)
 The Lambda function resides in a VPC, and you need to wait for the associated ENI resource to be deleted.
 
 
-## Q. The agent status is offline after I restart the EC2 instance, how can I make it auto start on instance restart?
+## The agent status is offline after I restart the EC2 instance, how can I make it auto start on instance restart?
 
 This usually happens if you have installed the logging agent, but restart the instance before you create any Log Ingestion. The Logging
 Agent will auto restart if there is at least one Log Ingestion. If you have a log ingestion, but the problem still exists, you can use `systemctl status fluent-bit`
 to check its status inside the instance.
 
-## Q. I have switched to Global tenant. However, I still cannot find the dashboard in OpenSearch.
+## I have switched to Global tenant. However, I still cannot find the dashboard in OpenSearch.
 
 This is usually because Log Hub received 403 error from OpenSearch when creating the index template and dashboard. This 
 can be fixed by re-run the Lambda function manually by following the steps below:
