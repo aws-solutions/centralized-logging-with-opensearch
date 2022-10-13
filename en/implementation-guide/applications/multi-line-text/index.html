@@ -11,7 +11,7 @@
         <link rel="canonical" href="https://awslabs.github.io/log-hub/implementation-guide/applications/multi-line-text/">
       
       <link rel="icon" href="../../../images/aws-solutions.png">
-      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.5.3">
+      <meta name="generator" content="mkdocs-1.4.0, mkdocs-material-8.5.6">
     
     
       
@@ -19,7 +19,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.7a952b86.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.20d9efc8.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.cbb835fc.min.css">
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#multi-line-text" class="md-skip">
+        <a href="#macro-syntax-error" class="md-skip">
           Skip to content
         </a>
       
@@ -380,6 +380,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../security/" class="md-nav__link">
+        Security
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../considerations/" class="md-nav__link">
         Considerations
       </a>
@@ -397,18 +411,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_5" type="checkbox" id="__nav_1_5" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_6" type="checkbox" id="__nav_1_6" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_5">
+        <label class="md-nav__link" for="__nav_1_6">
           Deployment
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Deployment" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_5">
+        <label class="md-nav__title" for="__nav_1_6">
           <span class="md-nav__icon md-icon"></span>
           Deployment
         </label>
@@ -435,7 +449,7 @@
   
     <li class="md-nav__item">
       <a href="../../deployment/with-cognito/" class="md-nav__link">
-        With Cognito User Pool
+        Launch with Cognito User Pool
       </a>
     </li>
   
@@ -449,7 +463,7 @@
   
     <li class="md-nav__item">
       <a href="../../deployment/with-oidc/" class="md-nav__link">
-        With OpenID Connect
+        Launch with OpenID Connect
       </a>
     </li>
   
@@ -472,18 +486,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_6" type="checkbox" id="__nav_1_6" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_7" type="checkbox" id="__nav_1_7" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_6">
+        <label class="md-nav__link" for="__nav_1_7">
           Getting Started
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Getting Started" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_6">
+        <label class="md-nav__title" for="__nav_1_7">
           <span class="md-nav__icon md-icon"></span>
           Getting Started
         </label>
@@ -575,18 +589,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_7" type="checkbox" id="__nav_1_7" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_8" type="checkbox" id="__nav_1_8" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_7">
+        <label class="md-nav__link" for="__nav_1_8">
           Domain Management
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Domain Management" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_7">
+        <label class="md-nav__title" for="__nav_1_8">
           <span class="md-nav__icon md-icon"></span>
           Domain Management
         </label>
@@ -664,18 +678,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_8" type="checkbox" id="__nav_1_8" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9" type="checkbox" id="__nav_1_9" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_8">
+        <label class="md-nav__link" for="__nav_1_9">
           AWS Services Logs
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="AWS Services Logs" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_8">
+        <label class="md-nav__title" for="__nav_1_9">
           <span class="md-nav__icon md-icon"></span>
           AWS Services Logs
         </label>
@@ -839,18 +853,18 @@
     <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9" type="checkbox" id="__nav_1_9" checked>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_10" type="checkbox" id="__nav_1_10" checked>
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_9">
+        <label class="md-nav__link" for="__nav_1_10">
           Applications Logs
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Applications Logs" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_9">
+        <label class="md-nav__title" for="__nav_1_10">
           <span class="md-nav__icon md-icon"></span>
           Applications Logs
         </label>
@@ -879,18 +893,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9_2" type="checkbox" id="__nav_1_9_2" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_10_2" type="checkbox" id="__nav_1_10_2" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_9_2">
+        <label class="md-nav__link" for="__nav_1_10_2">
           Prerequisites
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Prerequisites" data-md-level="3">
-        <label class="md-nav__title" for="__nav_1_9_2">
+        <label class="md-nav__title" for="__nav_1_10_2">
           <span class="md-nav__icon md-icon"></span>
           Prerequisites
         </label>
@@ -988,81 +1002,9 @@
         
       
       
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          Multiline-line Text
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
       <a href="./" class="md-nav__link md-nav__link--active">
         Multiline-line Text
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#prerequisites" class="md-nav__link">
-    Prerequisites
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-1-create-a-multi-line-text-config" class="md-nav__link">
-    Step 1: Create a Multi-line text config
-  </a>
-  
-    <nav class="md-nav" aria-label="Step 1: Create a Multi-line text config">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#java-spring-boot" class="md-nav__link">
-    Java - Spring Boot
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#custom" class="md-nav__link">
-    Custom
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-2-create-an-application-log-ingestion" class="md-nav__link">
-    Step 2: Create an application log ingestion
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-3-view-logs-in-opensearch" class="md-nav__link">
-    Step 3: View logs in OpenSearch
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
       
     </li>
   
@@ -1139,7 +1081,7 @@
   
     <li class="md-nav__item">
       <a href="../../upgrade/" class="md-nav__link">
-        Upgrading
+        Upgrading the solution
       </a>
     </li>
   
@@ -1153,7 +1095,7 @@
   
     <li class="md-nav__item">
       <a href="../../uninstall/" class="md-nav__link">
-        Uninstalling
+        Uninstalling the solution
       </a>
     </li>
   
@@ -1169,18 +1111,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_15" type="checkbox" id="__nav_1_15" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_16" type="checkbox" id="__nav_1_16" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_15">
+        <label class="md-nav__link" for="__nav_1_16">
           Resources
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Resources" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_15">
+        <label class="md-nav__title" for="__nav_1_16">
           <span class="md-nav__icon md-icon"></span>
           Resources
         </label>
@@ -2107,62 +2049,6 @@
     
   
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#prerequisites" class="md-nav__link">
-    Prerequisites
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-1-create-a-multi-line-text-config" class="md-nav__link">
-    Step 1: Create a Multi-line text config
-  </a>
-  
-    <nav class="md-nav" aria-label="Step 1: Create a Multi-line text config">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#java-spring-boot" class="md-nav__link">
-    Java - Spring Boot
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#custom" class="md-nav__link">
-    Custom
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-2-create-an-application-log-ingestion" class="md-nav__link">
-    Step 2: Create an application log ingestion
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-3-view-logs-in-opensearch" class="md-nav__link">
-    Step 3: View logs in OpenSearch
-  </a>
-  
-</li>
-      
-    </ul>
-  
 </nav>
                   </div>
                 </div>
@@ -2181,111 +2067,10 @@
   </a>
 
 
-<h1 id="multi-line-text">Multi-line Text</h1>
-<p>You can configure Log Hub to ingest multi-line text logs. Currently, Log Hub supports <a href="https://spring.io/projects/spring-boot">Spring Boot</a> 
-style logs or customize the log format using <a href="https://rubular.com/">Regular Expression</a>.</p>
-<h2 id="prerequisites">Prerequisites</h2>
-<!-- BEGIN INCLUDE include-prerequisites.md -->
-<p>Make sure you have done the following:</p>
-<ol>
-<li><a href="../../domains/import/">Import an AOS domain</a>.</li>
-<li><a href="../create-log-source/">Create a log source</a>.</li>
-<li><a href="../create-applog-pipeline/">Create an application log pipeline</a>.</li>
-</ol>
-<!-- END INCLUDE -->
-
-<h2 id="step-1-create-a-multi-line-text-config">Step 1: Create a Multi-line text config</h2>
-<ol>
-<li>Sign in to the Log Hub Console.</li>
-<li>In the left sidebar, under <strong>Resources</strong>, choose <strong>Log Config</strong>.</li>
-<li>Click the <strong>Create a log config</strong> button.</li>
-<li>Specify <strong>Config Name</strong>.</li>
-<li>Specify <strong>Log Path</strong>. You can use <code>,</code> to separate multiple paths.</li>
-<li>Choose <strong>Multi-line Text</strong> in the log type dropdown menu.</li>
-</ol>
-<h3 id="java-spring-boot">Java - Spring Boot</h3>
-<ol>
-<li>
-<p>For Java Spring Boot logs, you could provide a simple log format. For example:</p>
-<div class="highlight"><pre><span></span><code>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger : %msg%n
-</code></pre></div>
-</li>
-<li>
-<p>Paste a sample multi-line log. For example:</p>
-<div class="highlight"><pre><span></span><code>2022-02-18 10:32:26.400 ERROR [http-nio-8080-exec-1] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/].[dispatcherServlet] : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed; nested exception is java.lang.ArithmeticException: / by zero] with root cause
-java.lang.ArithmeticException: / by zero
-   at com.springexamples.demo.web.LoggerController.logs(LoggerController.java:22)
-   at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
-   at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke
-</code></pre></div>
-</li>
-<li>
-<p>Choose <strong>Parse Log</strong>.</p>
-</li>
-<li>
-<p>Check if each fields type mapping is correct. You can change the type by selecting the dropdown menu in the second column. For all supported types, see <a href="https://opensearch.org/docs/latest/search-plugins/sql/datatypes/">Data Types</a>.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>You must specify the datetime of the log using key “time”. If not specified, system time will be added.</p>
-</div>
-</li>
-<li>
-<p>Specify the <strong>Time format</strong>. The format syntax follows <a href="https://linux.die.net/man/3/strptime">strptime</a>. Check <a href="https://docs.fluentbit.io/manual/pipeline/parsers/configuring-parser#time-resolution-and-fractional-seconds">this</a> for details.</p>
-</li>
-<li>
-<p>Choose <strong>Create</strong> to finish log config creation.</p>
-</li>
-</ol>
-<h3 id="custom">Custom</h3>
-<ol>
-<li>
-<p>For other kinds of logs, you could specify the first line regex pattern. For example:</p>
-<div class="highlight"><pre><span></span><code>(?&lt;time&gt;\d{4}-\d{2}-\d{2}\s*\d{2}:\d{2}:\d{2}.\d{3})\s*(?&lt;level&gt;[\S]+)\s*\[(?&lt;thread&gt;.+)\]\s*(?&lt;logger&gt;\S+)\s*:\s*(?&lt;message&gt;[\s\S]+)
-</code></pre></div>
-</li>
-<li>
-<p>Paste a sample multi-line log. For example:</p>
-<div class="highlight"><pre><span></span><code>2022-02-18 10:32:26.400 ERROR [http-nio-8080-exec-1] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/].[dispatcherServlet] : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed; nested exception is java.lang.ArithmeticException: / by zero] with root cause
-java.lang.ArithmeticException: / by zero
-   at com.springexamples.demo.web.LoggerController.logs(LoggerController.java:22)
-   at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
-   at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke
-</code></pre></div>
-</li>
-<li>
-<p>Choose <strong>Parse Log</strong>.</p>
-</li>
-<li>
-<p>Check if each fields type mapping are correct. You can change the type by selecting the dropdown menu in the second column. For all supported types, see <a href="https://opensearch.org/docs/latest/search-plugins/sql/datatypes/">Data Types</a>.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>You must specify the datetime of the log using key “time”. If not specified, system time will be added.</p>
-</div>
-</li>
-<li>
-<p>Choose <strong>Create</strong> to finish log config creation.</p>
-</li>
-</ol>
-<h2 id="step-2-create-an-application-log-ingestion">Step 2: Create an application log ingestion</h2>
-<p>The steps are similar to creating an application log ingestion for single-line text. Refer to <a href="../single-line-text/">Single-line Text</a> for details.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Currently, Log Hub does not support collect Multi-line text logs from S3 Bucket as Log Source.</p>
-</div>
-<h2 id="step-3-view-logs-in-opensearch">Step 3: View logs in OpenSearch</h2>
-<ol>
-<li>Open OpenSearch console in your browser.</li>
-<li>Create an Index Pattern
-    <!-- BEGIN INCLUDE ../aws-services/include-index-pattern.md --><ul>
-<li>Click the <strong>Stack Management</strong> in the left sidebar, and select <strong>Index Patterns</strong>.</li>
-<li>Choose <strong>Create index pattern</strong>, and type in the index pattern name. Click <strong>Next step</strong>.</li>
-<li>Specify <strong>time</strong> field, and click <strong>Create index pattern</strong>.
-<!-- END INCLUDE --></li>
-</ul>
-</li>
-<li>Go to <strong>Discover</strong> section in the left sidebar.</li>
-<li>Change active index pattern to <code>&lt;the application pipeline&gt;-*</code>.</li>
-</ol>
+<h1 id="macro-syntax-error"><em>Macro Syntax Error</em></h1>
+<p><em>Line 8 in Markdown file:</em> <strong>expected token 'end of statement block', got 'string'</strong> 
+<div class="highlight"><pre><span></span><code><span class="n">include</span><span class="o">-</span><span class="n">markdown</span> <span class="s2">&quot;include-prerequisites.md&quot;</span>
+</code></pre></div></p>
 
 
 
@@ -2357,7 +2142,7 @@ java.lang.ArithmeticException: / by zero
     <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": "latest"}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.37e9125f.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.078830c0.min.js"></script>
       
     
   </body>

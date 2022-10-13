@@ -11,7 +11,7 @@
         <link rel="canonical" href="https://awslabs.github.io/log-hub/implementation-guide/applications/apache/">
       
       <link rel="icon" href="../../../images/aws-solutions.png">
-      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.5.3">
+      <meta name="generator" content="mkdocs-1.4.0, mkdocs-material-8.5.6">
     
     
       
@@ -19,7 +19,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.7a952b86.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.20d9efc8.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.cbb835fc.min.css">
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#apache-http" class="md-skip">
+        <a href="#macro-syntax-error" class="md-skip">
           跳转至
         </a>
       
@@ -372,6 +372,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../security/" class="md-nav__link">
+        安全
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../considerations/" class="md-nav__link">
         考虑因素
       </a>
@@ -389,18 +403,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_5" type="checkbox" id="__nav_1_5" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_6" type="checkbox" id="__nav_1_6" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_5">
+        <label class="md-nav__link" for="__nav_1_6">
           开始部署
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="开始部署" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_5">
+        <label class="md-nav__title" for="__nav_1_6">
           <span class="md-nav__icon md-icon"></span>
           开始部署
         </label>
@@ -464,18 +478,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_6" type="checkbox" id="__nav_1_6" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_7" type="checkbox" id="__nav_1_7" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_6">
+        <label class="md-nav__link" for="__nav_1_7">
           快速入门
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="快速入门" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_6">
+        <label class="md-nav__title" for="__nav_1_7">
           <span class="md-nav__icon md-icon"></span>
           快速入门
         </label>
@@ -567,18 +581,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_7" type="checkbox" id="__nav_1_7" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_8" type="checkbox" id="__nav_1_8" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_7">
+        <label class="md-nav__link" for="__nav_1_8">
           AOS 集群管理
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="AOS 集群管理" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_7">
+        <label class="md-nav__title" for="__nav_1_8">
           <span class="md-nav__icon md-icon"></span>
           AOS 集群管理
         </label>
@@ -656,18 +670,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_8" type="checkbox" id="__nav_1_8" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9" type="checkbox" id="__nav_1_9" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_8">
+        <label class="md-nav__link" for="__nav_1_9">
           AWS 服务日志
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="AWS 服务日志" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_8">
+        <label class="md-nav__title" for="__nav_1_9">
           <span class="md-nav__icon md-icon"></span>
           AWS 服务日志
         </label>
@@ -831,18 +845,18 @@
     <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9" type="checkbox" id="__nav_1_9" checked>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_10" type="checkbox" id="__nav_1_10" checked>
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_9">
+        <label class="md-nav__link" for="__nav_1_10">
           应用日志
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="应用日志" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_9">
+        <label class="md-nav__title" for="__nav_1_10">
           <span class="md-nav__icon md-icon"></span>
           应用日志
         </label>
@@ -871,18 +885,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9_2" type="checkbox" id="__nav_1_9_2" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_10_2" type="checkbox" id="__nav_1_10_2" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_9_2">
+        <label class="md-nav__link" for="__nav_1_10_2">
           前提条件
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="前提条件" data-md-level="3">
-        <label class="md-nav__title" for="__nav_1_9_2">
+        <label class="md-nav__title" for="__nav_1_10_2">
           <span class="md-nav__icon md-icon"></span>
           前提条件
         </label>
@@ -938,88 +952,9 @@
         
       
       
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          Apache HTTP 服务器
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
       <a href="./" class="md-nav__link md-nav__link--active">
         Apache HTTP 服务器
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="目录">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      目录
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#_1" class="md-nav__link">
-    前提条件
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#1-apache-http" class="md-nav__link">
-    步骤 1: 创建一个 Apache HTTP 服务器日志配置
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#2" class="md-nav__link">
-    步骤 2: 创建一个日志摄入
-  </a>
-  
-    <nav class="md-nav" aria-label="步骤 2: 创建一个日志摄入">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
-    实例组作为日志源
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#eks" class="md-nav__link">
-    EKS 集群作为日志源
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#3-apache-http" class="md-nav__link">
-    步骤 3: 查看 Apache HTTP 服务器日志仪表板
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
-    示例仪表板
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
       
     </li>
   
@@ -1138,7 +1073,7 @@
   
     <li class="md-nav__item">
       <a href="../../upgrade/" class="md-nav__link">
-        更新
+        更新解决方案
       </a>
     </li>
   
@@ -1152,7 +1087,7 @@
   
     <li class="md-nav__item">
       <a href="../../uninstall/" class="md-nav__link">
-        卸载
+        卸载解决方案
       </a>
     </li>
   
@@ -1168,18 +1103,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_15" type="checkbox" id="__nav_1_15" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_16" type="checkbox" id="__nav_1_16" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_15">
+        <label class="md-nav__link" for="__nav_1_16">
           资源
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="资源" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_15">
+        <label class="md-nav__title" for="__nav_1_16">
           <span class="md-nav__icon md-icon"></span>
           资源
         </label>
@@ -1319,69 +1254,6 @@
     
   
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      目录
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#_1" class="md-nav__link">
-    前提条件
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#1-apache-http" class="md-nav__link">
-    步骤 1: 创建一个 Apache HTTP 服务器日志配置
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#2" class="md-nav__link">
-    步骤 2: 创建一个日志摄入
-  </a>
-  
-    <nav class="md-nav" aria-label="步骤 2: 创建一个日志摄入">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
-    实例组作为日志源
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#eks" class="md-nav__link">
-    EKS 集群作为日志源
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#3-apache-http" class="md-nav__link">
-    步骤 3: 查看 Apache HTTP 服务器日志仪表板
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
-    示例仪表板
-  </a>
-  
-</li>
-      
-    </ul>
-  
 </nav>
                   </div>
                 </div>
@@ -1400,99 +1272,10 @@
   </a>
 
 
-<h1 id="apache-http">Apache HTTP 服务器日志</h1>
-<p>Apache HTTP Server (httpd) 能够将 <a href="https://httpd.apache.org/docs/2.4/logs.html">错误和访问日志</a> 文件写入本地目录。 您可以配置 Log Hub 从而摄取 Apache HTTP 服务器日志。</p>
-<h2 id="_1">前提条件</h2>
-<!-- BEGIN INCLUDE include-prerequisites.md -->
-<p>请确认您已经完成:</p>
-<ol>
-<li><a href="../../domains/import/">导入 AOS 域</a>.</li>
-<li><a href="../create-log-source/">创建一个日志源</a>.</li>
-<li><a href="../create-applog-pipeline/">创建一个应用日志分析管道</a>.</li>
-</ol>
-<!-- END INCLUDE -->
-
-<h2 id="1-apache-http">步骤 1: 创建一个 Apache HTTP 服务器日志配置</h2>
-<ol>
-<li>登录 Log Hub 控制台。</li>
-<li>在左侧边栏中的 <strong>资源</strong> 下，选择 <strong>日志配置</strong>。</li>
-<li>单击<strong>创建日志配置</strong>按钮。</li>
-<li>指定<strong>配置名称</strong>。</li>
-<li>指定<strong>日志路径</strong>。 您可以使用 <code>,</code> 分隔多个路径。</li>
-<li>在日志类型下拉菜单中选择<strong>Apache HTTP 服务器</strong>。</li>
-<li>
-<p>在 <strong>Apache Log Format</strong> 部分，粘贴您的 Apache HTTP 服务器日志格式配置。 它的格式为<code>/etc/httpd/conf/httpd.conf</code>，以<code>LogFormat</code>开头。</p>
-<p>如:
-<div class="highlight"><pre><span></span><code>LogFormat &quot;%h %l %u %t \&quot;%r\&quot; %&gt;s %b \&quot;%{Referer}i\&quot; \&quot;%{User-Agent}i\&quot;&quot; combined
+<h1 id="macro-syntax-error"><em>Macro Syntax Error</em></h1>
+<p><em>Line 6 in Markdown file:</em> <strong>expected token 'end of statement block', got 'string'</strong> 
+<div class="highlight"><pre><span></span><code><span class="n">include</span><span class="o">-</span><span class="n">markdown</span> <span class="s2">&quot;include-prerequisites.md&quot;</span>
 </code></pre></div></p>
-</li>
-<li>
-<p>（可选）在 <strong>示例日志解析</strong> 部分，粘贴示例 Apache HTTP 服务器日志以验证日志解析是否成功。</p>
-<p>如:
-<div class="highlight"><pre><span></span><code>127.0.0.1 - - [22/Dec/2021:06:48:57 +0000] &quot;GET /xxx HTTP/1.1&quot; 404 196 &quot;-&quot; &quot;curl/7.79.1&quot;
-</code></pre></div></p>
-</li>
-<li>
-<p>选择<strong>创建</strong>。</p>
-</li>
-</ol>
-<h2 id="2">步骤 2: 创建一个日志摄入</h2>
-<!-- BEGIN INCLUDE create-log-ingestion.md '&lt;!--ig-start--&gt;' '&lt;!--eks-end--&gt;' -->
-
-<h3 id="_2">实例组作为日志源</h3>
-<ol>
-<li>登录 Log Hub 控制台。</li>
-<li>在左侧边栏中的 <strong>日志分析管道</strong> 下，选择<strong>应用日志</strong>。</li>
-<li>单击在<strong>前提条件</strong>期间创建的应用程序管道。</li>
-<li>转到 <strong>Permission</strong> 选项卡并复制提供的 JSON 策略。</li>
-<li>
-<p>在 <strong>AWS Console &gt; IAM &gt; Policies</strong> 进行如下操作。</p>
-<ul>
-<li>点击<strong>Create Policy</strong>，选择<strong>JSON</strong>并替换文本块内的所有内容。请记住用您的帐户 ID 替换 <code>&lt;YOUR ACCOUNT ID&gt;</code>。</li>
-<li>选择<strong>下一步</strong>，再选择 <strong>下一步</strong>，然后输入此策略的名称。例如：<strong><code>loghub-ec2-policy</code></strong>。</li>
-<li>将策略附加到您的 EC2 实例角色，以允许日志代理有权将日志发送到应用程序日志管道。</li>
-</ul>
-</li>
-<li>
-<p>单击<strong>创建日志摄取</strong>下拉菜单，然后选择 "从实例组"。</p>
-</li>
-<li>选择<strong>选择存在</strong>，然后选择<strong>下一步</strong>。</li>
-<li>选择您在<strong>前提条件</strong>中创建的实例组，然后选择<strong>下一步</strong>。</li>
-<li>选择<strong>选择已存在</strong>，并选择在先前设置中创建的日志配置。</li>
-<li>选择<strong>下一步</strong>，然后选择<strong>创建</strong>。</li>
-</ol>
-<!--ig-end-->
-
-<!--eks-start-->
-<h3 id="eks">EKS 集群作为日志源</h3>
-<ol>
-<li>登录 Log Hub 控制台。</li>
-<li>在左侧边栏中的 <strong>日志源</strong> 下，选择 <strong>EKS 集群</strong>。</li>
-<li>单击已导入为日志源的 EKS 集群。</li>
-<li>转到 <strong>应用日志摄取</strong> 选项卡，然后单击 <strong>创建日志摄取</strong>。<ul>
-<li>选择"选择已存在" 并选择在<strong>前提条件</strong>中创建的应用程序管道。选择<strong>下一步</strong>。</li>
-<li>选择之前设置中创建的日志配置，然后选择<strong>下一步</strong>。</li>
-<li>根据需要添加标签，然后选择<strong>创建</strong>完成创建摄取。</li>
-</ul>
-</li>
-<li>按照 Log Hub 生成的指南部署 Fluent-bit 日志代理。<ul>
-<li>选择刚刚创建的应用日志摄取。</li>
-<li>按照 <strong>DaemonSet</strong> 或 <strong>Sidecar</strong> 指南部署日志代理。</li>
-</ul>
-</li>
-</ol>
-<!-- END INCLUDE -->
-
-<h2 id="3-apache-http">步骤 3: 查看 Apache HTTP 服务器日志仪表板</h2>
-<p>对于 Apache HTTP 服务器日志，Log Hub 将创建一个内置的示例仪表板。</p>
-<ol>
-<li>在浏览器中打开 OpenSearch 仪表板。</li>
-<li>转到左侧边栏中的<strong>仪表板</strong>部分。</li>
-<li>找到名称以<code>&lt;the-application-pipeline&gt;</code>开头的仪表板。</li>
-</ol>
-<h2 id="_3">示例仪表板</h2>
-<p><a href="../../../images/dashboards/nginx-1.png"><img alt="nginx-1" src="../../../images/dashboards/nginx-1.png" /></a>
-<a href="../../../images/dashboards/nginx-2.png"><img alt="nginx-2" src="../../../images/dashboards/nginx-2.png" /></a></p>
 
 
 
@@ -1564,7 +1347,7 @@
     <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.config.lang": "ja", "search.config.pipeline": "trimmer, stemmer", "search.config.separator": "[\\s\\-\uff0c\u3002]+", "search.placeholder": "\u641c\u7d22", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version.title": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": "latest"}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.37e9125f.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.078830c0.min.js"></script>
       
     
   </body>

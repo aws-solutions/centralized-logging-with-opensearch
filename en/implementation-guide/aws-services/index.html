@@ -11,7 +11,7 @@
         <link rel="canonical" href="https://awslabs.github.io/log-hub/implementation-guide/aws-services/">
       
       <link rel="icon" href="../../images/aws-solutions.png">
-      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.5.3">
+      <meta name="generator" content="mkdocs-1.4.0, mkdocs-material-8.5.6">
     
     
       
@@ -19,7 +19,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.7a952b86.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.20d9efc8.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.cbb835fc.min.css">
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#build-aws-service-log-analytics-pipelines" class="md-skip">
+        <a href="#macro-syntax-error" class="md-skip">
           Skip to content
         </a>
       
@@ -380,6 +380,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        Security
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../considerations/" class="md-nav__link">
         Considerations
       </a>
@@ -397,18 +411,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_5" type="checkbox" id="__nav_1_5" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_6" type="checkbox" id="__nav_1_6" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_5">
+        <label class="md-nav__link" for="__nav_1_6">
           Deployment
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Deployment" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_5">
+        <label class="md-nav__title" for="__nav_1_6">
           <span class="md-nav__icon md-icon"></span>
           Deployment
         </label>
@@ -435,7 +449,7 @@
   
     <li class="md-nav__item">
       <a href="../deployment/with-cognito/" class="md-nav__link">
-        With Cognito User Pool
+        Launch with Cognito User Pool
       </a>
     </li>
   
@@ -449,7 +463,7 @@
   
     <li class="md-nav__item">
       <a href="../deployment/with-oidc/" class="md-nav__link">
-        With OpenID Connect
+        Launch with OpenID Connect
       </a>
     </li>
   
@@ -472,18 +486,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_6" type="checkbox" id="__nav_1_6" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_7" type="checkbox" id="__nav_1_7" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_6">
+        <label class="md-nav__link" for="__nav_1_7">
           Getting Started
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Getting Started" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_6">
+        <label class="md-nav__title" for="__nav_1_7">
           <span class="md-nav__icon md-icon"></span>
           Getting Started
         </label>
@@ -575,18 +589,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_7" type="checkbox" id="__nav_1_7" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_8" type="checkbox" id="__nav_1_8" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_7">
+        <label class="md-nav__link" for="__nav_1_8">
           Domain Management
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Domain Management" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_7">
+        <label class="md-nav__title" for="__nav_1_8">
           <span class="md-nav__icon md-icon"></span>
           Domain Management
         </label>
@@ -666,18 +680,18 @@
     <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_8" type="checkbox" id="__nav_1_8" checked>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9" type="checkbox" id="__nav_1_9" checked>
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_8">
+        <label class="md-nav__link" for="__nav_1_9">
           AWS Services Logs
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="AWS Services Logs" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_8">
+        <label class="md-nav__title" for="__nav_1_9">
           <span class="md-nav__icon md-icon"></span>
           AWS Services Logs
         </label>
@@ -698,40 +712,9 @@
         
       
       
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          Overview
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
       <a href="./" class="md-nav__link md-nav__link--active">
         Overview
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#supported-aws-services" class="md-nav__link">
-    Supported AWS Services
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
       
     </li>
   
@@ -880,18 +863,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9" type="checkbox" id="__nav_1_9" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_10" type="checkbox" id="__nav_1_10" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_9">
+        <label class="md-nav__link" for="__nav_1_10">
           Applications Logs
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Applications Logs" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_9">
+        <label class="md-nav__title" for="__nav_1_10">
           <span class="md-nav__icon md-icon"></span>
           Applications Logs
         </label>
@@ -920,18 +903,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9_2" type="checkbox" id="__nav_1_9_2" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_10_2" type="checkbox" id="__nav_1_10_2" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_9_2">
+        <label class="md-nav__link" for="__nav_1_10_2">
           Prerequisites
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Prerequisites" data-md-level="3">
-        <label class="md-nav__title" for="__nav_1_9_2">
+        <label class="md-nav__title" for="__nav_1_10_2">
           <span class="md-nav__icon md-icon"></span>
           Prerequisites
         </label>
@@ -1098,7 +1081,7 @@
   
     <li class="md-nav__item">
       <a href="../upgrade/" class="md-nav__link">
-        Upgrading
+        Upgrading the solution
       </a>
     </li>
   
@@ -1112,7 +1095,7 @@
   
     <li class="md-nav__item">
       <a href="../uninstall/" class="md-nav__link">
-        Uninstalling
+        Uninstalling the solution
       </a>
     </li>
   
@@ -1128,18 +1111,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_15" type="checkbox" id="__nav_1_15" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_16" type="checkbox" id="__nav_1_16" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_15">
+        <label class="md-nav__link" for="__nav_1_16">
           Resources
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Resources" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_15">
+        <label class="md-nav__title" for="__nav_1_16">
           <span class="md-nav__icon md-icon"></span>
           Resources
         </label>
@@ -2066,21 +2049,6 @@
     
   
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#supported-aws-services" class="md-nav__link">
-    Supported AWS Services
-  </a>
-  
-</li>
-      
-    </ul>
-  
 </nav>
                   </div>
                 </div>
@@ -2099,115 +2067,10 @@
   </a>
 
 
-<h1 id="build-aws-service-log-analytics-pipelines">Build AWS Service Log Analytics Pipelines</h1>
-<p>Log Hub supports ingesting AWS service logs into AOS through log analytics pipelines, which you can build using the <strong>Log Hub web console</strong> or via a <strong>standalone CloudFormation template</strong>. </p>
-<p>Log Hub reads the data source, parse, cleanup/enrich and ingest logs into AOS domains for analysis. Moreover, the solution provides templated dashboards to facilitate log visualization.</p>
-<div class="admonition important">
-<p class="admonition-title">Important</p>
-<ul>
-<li>AWS managed services must be in the same region as Log Hub. To ingest logs from different AWS regions, we recommend using <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/replication.html#crr-scenario">S3 cross-region replication</a>.</li>
-<li>The solution will rotate the index on a daily basis, and cannot be adjusted.</li>
-</ul>
-</div>
-<h2 id="supported-aws-services">Supported AWS Services</h2>
-<p>Most of AWS managed services output logs to Amazon CloudWatch Logs, Amazon S3, Amazon Kinesis Data Streams or Amazon Kinesis Firehose. </p>
-<!-- BEGIN INCLUDE include-supported-service-logs.md -->
-<p>The following table lists the supported AWS services and the corresponding features.</p>
-<table>
-<thead>
-<tr>
-<th>AWS Service</th>
-<th>Log Type</th>
-<th>Log Location</th>
-<th>Automatic Ingestion</th>
-<th>Built-in Dashboard</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Amazon CloudTrail</td>
-<td>N/A</td>
-<td>S3</td>
-<td>Yes</td>
-<td>Yes</td>
-</tr>
-<tr>
-<td>Amazon S3</td>
-<td><a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/ServerLogs.html">Access logs</a></td>
-<td>S3</td>
-<td>Yes</td>
-<td>Yes</td>
-</tr>
-<tr>
-<td>Amazon RDS/Aurora</td>
-<td><a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_LogAccess.MySQL.LogFileSize.html">MySQL Logs</a></td>
-<td>CloudWatch Logs</td>
-<td>Yes</td>
-<td>Yes</td>
-</tr>
-<tr>
-<td>Amazon CloudFront</td>
-<td><a href="https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/AccessLogs.html">Standard access logs</a></td>
-<td>S3</td>
-<td>Yes</td>
-<td>Yes</td>
-</tr>
-<tr>
-<td>Application Load Balancer</td>
-<td><a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-access-logs.html">Access logs</a></td>
-<td>S3</td>
-<td>Yes</td>
-<td>Yes</td>
-</tr>
-<tr>
-<td>AWS WAF</td>
-<td><a href="https://docs.aws.amazon.com/waf/latest/developerguide/logging.html">Web ACL logs</a></td>
-<td>S3</td>
-<td>Yes</td>
-<td>Yes</td>
-</tr>
-<tr>
-<td>AWS Lambda</td>
-<td>N/A</td>
-<td>CloudWatch Logs</td>
-<td>Yes</td>
-<td>Yes</td>
-</tr>
-<tr>
-<td>Amazon VPC</td>
-<td><a href="https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs.html">Flow logs</a></td>
-<td>S3</td>
-<td>Yes</td>
-<td>Yes</td>
-</tr>
-<tr>
-<td>AWS Config</td>
-<td>N/A</td>
-<td>S3</td>
-<td>Yes</td>
-<td>Yes</td>
-</tr>
-</tbody>
-</table>
-<ul>
-<li><strong>Automatic Ingestion</strong>: The solution detects the log location of the resource automatically and then reads the logs.</li>
-<li><strong>Built-in Dashboard</strong>: An out-of-box dashboard for the specified AWS service. The solution will automatically ingest a dashboard into the AOS.</li>
-</ul>
-<!-- END INCLUDE -->
-
-<p>Most of supported AWS services in Log Hub offers built-in dashboard when creating the log analytics pipelines. You go to the OpenSearch Dashboards to view the dashboards after the pipeline being provisioned.</p>
-<p>In this chapter, you will learn how to create log ingestion and dashboards for the following AWS services:</p>
-<ul>
-<li><a href="cloudtrail/">Amazon CloudTrail</a></li>
-<li><a href="s3/">Amazon S3</a></li>
-<li><a href="rds/">Amazon RDS/Aurora</a></li>
-<li><a href="cloudfront/">Amazon CloudFront</a></li>
-<li><a href="lambda/">AWS Lambda</a></li>
-<li><a href="elb/">Elastic Load Balancing</a></li>
-<li><a href="waf/">AWS WAF</a></li>
-<li><a href="vpc/">Amazon VPC</a></li>
-<li><a href="config/">AWS Config</a></li>
-</ul>
+<h1 id="macro-syntax-error"><em>Macro Syntax Error</em></h1>
+<p><em>Line 16 in Markdown file:</em> <strong>expected token 'end of statement block', got 'string'</strong> 
+<div class="highlight"><pre><span></span><code><span class="n">include</span><span class="o">-</span><span class="n">markdown</span> <span class="s2">&quot;include-supported-service-logs.md&quot;</span>
+</code></pre></div></p>
 
 
 
@@ -2279,7 +2142,7 @@
     <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs"], "search": "../../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": "latest"}</script>
     
     
-      <script src="../../assets/javascripts/bundle.37e9125f.min.js"></script>
+      <script src="../../assets/javascripts/bundle.078830c0.min.js"></script>
       
     
   </body>

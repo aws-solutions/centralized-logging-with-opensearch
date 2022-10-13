@@ -11,7 +11,7 @@
         <link rel="canonical" href="https://awslabs.github.io/log-hub/implementation-guide/cost/">
       
       <link rel="icon" href="../../images/aws-solutions.png">
-      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.5.3">
+      <meta name="generator" content="mkdocs-1.4.0, mkdocs-material-8.5.6">
     
     
       
@@ -19,7 +19,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.7a952b86.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.20d9efc8.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.cbb835fc.min.css">
@@ -378,12 +378,26 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#amazon-opensearch" class="md-nav__link">
+    Amazon OpenSearch 费用
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    处理费用
+  </a>
+  
+    <nav class="md-nav" aria-label="处理费用">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#aws" class="md-nav__link">
     AWS 服务日志
   </a>
   
-    <nav class="md-nav" aria-label="AWS 服务日志">
-      <ul class="md-nav__list">
+</li>
         
           <li class="md-nav__item">
   <a href="#amazon-s3" class="md-nav__link">
@@ -392,13 +406,8 @@
   
 </li>
         
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
     应用日志
   </a>
   
@@ -406,9 +415,21 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#amazon-ec2-amazon-eks" class="md-nav__link">
-    从 Amazon EC2 或 Amazon EKS 收集日志
+  <a href="#amazon-ec2" class="md-nav__link">
+    从 Amazon EC2 收集日志
   </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#amazon-eks" class="md-nav__link">
+    从 Amazon EKS 提取日志
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -418,16 +439,29 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
+  <a href="#_4" class="md-nav__link">
+    额外特性费用
+  </a>
+  
+    <nav class="md-nav" aria-label="额外特性费用">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
     访问代理
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#_4" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
     告警
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -460,6 +494,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        安全
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../considerations/" class="md-nav__link">
         考虑因素
       </a>
@@ -477,18 +525,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_5" type="checkbox" id="__nav_1_5" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_6" type="checkbox" id="__nav_1_6" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_5">
+        <label class="md-nav__link" for="__nav_1_6">
           开始部署
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="开始部署" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_5">
+        <label class="md-nav__title" for="__nav_1_6">
           <span class="md-nav__icon md-icon"></span>
           开始部署
         </label>
@@ -552,18 +600,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_6" type="checkbox" id="__nav_1_6" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_7" type="checkbox" id="__nav_1_7" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_6">
+        <label class="md-nav__link" for="__nav_1_7">
           快速入门
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="快速入门" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_6">
+        <label class="md-nav__title" for="__nav_1_7">
           <span class="md-nav__icon md-icon"></span>
           快速入门
         </label>
@@ -655,18 +703,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_7" type="checkbox" id="__nav_1_7" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_8" type="checkbox" id="__nav_1_8" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_7">
+        <label class="md-nav__link" for="__nav_1_8">
           AOS 集群管理
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="AOS 集群管理" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_7">
+        <label class="md-nav__title" for="__nav_1_8">
           <span class="md-nav__icon md-icon"></span>
           AOS 集群管理
         </label>
@@ -744,18 +792,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_8" type="checkbox" id="__nav_1_8" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9" type="checkbox" id="__nav_1_9" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_8">
+        <label class="md-nav__link" for="__nav_1_9">
           AWS 服务日志
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="AWS 服务日志" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_8">
+        <label class="md-nav__title" for="__nav_1_9">
           <span class="md-nav__icon md-icon"></span>
           AWS 服务日志
         </label>
@@ -917,18 +965,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9" type="checkbox" id="__nav_1_9" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_10" type="checkbox" id="__nav_1_10" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_9">
+        <label class="md-nav__link" for="__nav_1_10">
           应用日志
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="应用日志" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_9">
+        <label class="md-nav__title" for="__nav_1_10">
           <span class="md-nav__icon md-icon"></span>
           应用日志
         </label>
@@ -957,18 +1005,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9_2" type="checkbox" id="__nav_1_9_2" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_10_2" type="checkbox" id="__nav_1_10_2" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_9_2">
+        <label class="md-nav__link" for="__nav_1_10_2">
           前提条件
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="前提条件" data-md-level="3">
-        <label class="md-nav__title" for="__nav_1_9_2">
+        <label class="md-nav__title" for="__nav_1_10_2">
           <span class="md-nav__icon md-icon"></span>
           前提条件
         </label>
@@ -1135,7 +1183,7 @@
   
     <li class="md-nav__item">
       <a href="../upgrade/" class="md-nav__link">
-        更新
+        更新解决方案
       </a>
     </li>
   
@@ -1149,7 +1197,7 @@
   
     <li class="md-nav__item">
       <a href="../uninstall/" class="md-nav__link">
-        卸载
+        卸载解决方案
       </a>
     </li>
   
@@ -1165,18 +1213,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_15" type="checkbox" id="__nav_1_15" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_16" type="checkbox" id="__nav_1_16" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_15">
+        <label class="md-nav__link" for="__nav_1_16">
           资源
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="资源" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_15">
+        <label class="md-nav__title" for="__nav_1_16">
           <span class="md-nav__icon md-icon"></span>
           资源
         </label>
@@ -1323,12 +1371,26 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#amazon-opensearch" class="md-nav__link">
+    Amazon OpenSearch 费用
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    处理费用
+  </a>
+  
+    <nav class="md-nav" aria-label="处理费用">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#aws" class="md-nav__link">
     AWS 服务日志
   </a>
   
-    <nav class="md-nav" aria-label="AWS 服务日志">
-      <ul class="md-nav__list">
+</li>
         
           <li class="md-nav__item">
   <a href="#amazon-s3" class="md-nav__link">
@@ -1337,13 +1399,8 @@
   
 </li>
         
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
     应用日志
   </a>
   
@@ -1351,9 +1408,21 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#amazon-ec2-amazon-eks" class="md-nav__link">
-    从 Amazon EC2 或 Amazon EKS 收集日志
+  <a href="#amazon-ec2" class="md-nav__link">
+    从 Amazon EC2 收集日志
   </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#amazon-eks" class="md-nav__link">
+    从 Amazon EKS 提取日志
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -1363,16 +1432,29 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
+  <a href="#_4" class="md-nav__link">
+    额外特性费用
+  </a>
+  
+    <nav class="md-nav" aria-label="额外特性费用">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
     访问代理
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#_4" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
     告警
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1397,80 +1479,393 @@
 
 
 <h1 id="_1">费用预估</h1>
-<p>您需要承担运行解决方案时使用亚马逊云科技各个服务的成本费用。 截至2022年6月，影响解决方案成本的主要因素包括：</p>
+<div class="admonition important">
+<p class="admonition-title">重要</p>
+<p>本节中描述的成本估算只是示例，它们是根据假设计算的，可能会因您的环境而异。</p>
+</div>
+<p>您需要承担运行解决方案时使用亚马逊云科技各个服务的成本费用。 截至2022年10月，影响解决方案成本的主要因素包括：</p>
 <ul>
 <li>要摄取的日志类型</li>
 <li>要摄取/处理的日志量</li>
+<li>日志消息的大小</li>
 <li>日志的位置</li>
+<li>额外的特性</li>
 </ul>
-<div class="admonition important">
-<p class="admonition-title">重要信息</p>
-<p>Amazon OpenSearch 集群的成本不会计入成本估算。</p>
+<p>以下示例将演示 10/100/1000 GB 每日日志摄取的成本估算。 总成本由 <a href="#amazon-opensearch"><strong>Amazon OpenSearch 费用</strong></a>、<a href="#_1"><strong>处理费用</strong></a> 和 <a href="#_4"><strong>额外特性费用</strong></a>。</p>
+<div class="admonition note">
+<p class="admonition-title">信息</p>
+<p>所有成本估算均基于亚马逊云科技北佛吉尼亚区域 (us-east-1) 中的 AWS 服务价格。</p>
 </div>
-<h2 id="aws">AWS 服务日志</h2>
+<h2 id="amazon-opensearch">Amazon OpenSearch 费用</h2>
+<ul>
+<li><strong>OD</strong>: 按需实例价格模型</li>
+<li><strong>AURI_1</strong>: 全额预付1年预留实例</li>
+<li><strong>分层</strong>：存储在层中的天数。 例如，7H + 23W + 60C 表示日志在热层存储 7 天，温层存储 23 天，冷层存储 60 天。</li>
+<li><strong>副本</strong>: 分片副本的数量。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>每日日志量 (GB)</th>
+<th>存储 (天)</th>
+<th>分层</th>
+<th>副本</th>
+<th>OD 每月 ($)</th>
+<th>AURI_1 每月  ($)</th>
+<th>专用主节点</th>
+<th>数据节点</th>
+<th>EBS (GB)</th>
+<th>UltraWarm 节点</th>
+<th>UltraWarm/Cold S3 存储 (GB)</th>
+<th>OD 每GB费用 ($)</th>
+<th>AURI_1 每GB费用 ($)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>10</td>
+<td>30</td>
+<td>30H</td>
+<td>0</td>
+<td>216.28</td>
+<td>158.54</td>
+<td>N/A</td>
+<td>c6g.large[2]</td>
+<td>380</td>
+<td>N/A</td>
+<td>0</td>
+<td>0.72093</td>
+<td>0.52847</td>
+</tr>
+<tr>
+<td>10</td>
+<td>30</td>
+<td>30H</td>
+<td>1</td>
+<td>289.35</td>
+<td>223.94</td>
+<td>N/A</td>
+<td>m6g.large[2]</td>
+<td>760</td>
+<td>N/A</td>
+<td>0</td>
+<td>0.9645</td>
+<td>0.74647</td>
+</tr>
+<tr>
+<td>100</td>
+<td>30</td>
+<td>7H + 23W</td>
+<td>0</td>
+<td>989.49</td>
+<td>825.97</td>
+<td>m6g.large[3]</td>
+<td>m6g.large[2]</td>
+<td>886</td>
+<td>medium[2]</td>
+<td>0</td>
+<td>0.32983</td>
+<td>0.27532</td>
+</tr>
+<tr>
+<td>100</td>
+<td>30</td>
+<td>7H + 23W</td>
+<td>1</td>
+<td>1295.85</td>
+<td>1066.92</td>
+<td>m6g.large[3]</td>
+<td>m6g.large[4]</td>
+<td>1772</td>
+<td>medium[2]</td>
+<td>0</td>
+<td>0.43195</td>
+<td>0.35564</td>
+</tr>
+<tr>
+<td>100</td>
+<td>90</td>
+<td>7H + 23W + 60C</td>
+<td>0</td>
+<td>1133.49</td>
+<td>969.97</td>
+<td>m6g.large[3]</td>
+<td>m6g.large[2]</td>
+<td>886</td>
+<td>medium[2]</td>
+<td>8300</td>
+<td>0.12594</td>
+<td>0.10777</td>
+</tr>
+<tr>
+<td>100</td>
+<td>90</td>
+<td>7H + 23W + 60C</td>
+<td>1</td>
+<td>1439.85</td>
+<td>1210.92</td>
+<td>m6g.large[3]</td>
+<td>m6g.large[4]</td>
+<td>1772</td>
+<td>medium[2]</td>
+<td>8300</td>
+<td>0.15998</td>
+<td>0.13455</td>
+</tr>
+<tr>
+<td>100</td>
+<td>180</td>
+<td>7H + 23W + 150C</td>
+<td>0</td>
+<td>1349.49</td>
+<td>1185.97</td>
+<td>m6g.large[3]</td>
+<td>m6g.large[2]</td>
+<td>886</td>
+<td>medium[2]</td>
+<td>17300</td>
+<td>0.07497</td>
+<td>0.06589</td>
+</tr>
+<tr>
+<td>100</td>
+<td>180</td>
+<td>7H + 23W + 150C</td>
+<td>1</td>
+<td>1655.85</td>
+<td>1426.92</td>
+<td>m6g.large[3]</td>
+<td>m6g.large[4]</td>
+<td>1772</td>
+<td>medium[2]</td>
+<td>17300</td>
+<td>0.09199</td>
+<td>0.07927</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>30</td>
+<td>7H + 23W</td>
+<td>0</td>
+<td>6101.15</td>
+<td>5489.48</td>
+<td>m6g.large[3]</td>
+<td>r6g.xlarge[6]</td>
+<td>8856</td>
+<td>medium[15]</td>
+<td>23000</td>
+<td>0.20337</td>
+<td>0.18298</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>30</td>
+<td>7H + 23W</td>
+<td>1</td>
+<td>8759.49</td>
+<td>7635.8</td>
+<td>m6g.large[3]</td>
+<td>r6g.2xlarge[6]</td>
+<td>17712</td>
+<td>medium[15]</td>
+<td>23000</td>
+<td>0.29198</td>
+<td>0.25453</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>90</td>
+<td>7H + 23W + 60C</td>
+<td>0</td>
+<td>8027.33</td>
+<td>7245.45</td>
+<td>m6g.large[3]</td>
+<td>r6g.xlarge[6]</td>
+<td>8856</td>
+<td>medium[15]</td>
+<td>83000</td>
+<td>0.08919</td>
+<td>0.0805</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>90</td>
+<td>7H + 23W + 60C</td>
+<td>1</td>
+<td>10199.49</td>
+<td>9075.8</td>
+<td>m6g.large[3]</td>
+<td>r6g.2xlarge[6]</td>
+<td>17712</td>
+<td>medium[15]</td>
+<td>83000</td>
+<td>0.11333</td>
+<td>0.10084</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>180</td>
+<td>7H + 23W + 150C</td>
+<td>0</td>
+<td>9701.15</td>
+<td>9089.48</td>
+<td>m6g.large[3]</td>
+<td>r6g.xlarge[6]</td>
+<td>8856</td>
+<td>medium[15]</td>
+<td>173000</td>
+<td>0.0539</td>
+<td>0.0505</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>180</td>
+<td>7H + 23W + 150C</td>
+<td>1</td>
+<td>12644.19</td>
+<td>11420.86</td>
+<td>m6g.large[3]</td>
+<td>r6g.2xlarge[6]</td>
+<td>17712</td>
+<td>medium[15]</td>
+<td>173000</td>
+<td>0.07025</td>
+<td>0.06345</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_2">处理费用</h2>
+<h3 id="aws">AWS 服务日志</h3>
 <p>摄取和处理服务日志的成本可能会根据日志位置等情况而有所不同。</p>
 <h3 id="amazon-s3">Amazon S3 中的日志</h3>
-<p>假设 AWS 服务每 5 分钟将日志保存到 Amazon S3 的文件中，大部分AWS服务的日志都是采用gzip(.gz)压缩，1个4MB的压缩日志文件大概对应100MB的原始日志，Lambda（1GB内存）大概花费26秒处理该4MB文件，差不多就是每MB日志花费260ms。</p>
-<p>成本估算如下：</p>
-<p><strong>例如：1 GB/天</strong></p>
-<p>您每天有 1 GB 的服务日志保存到 S3。成本估算如下：</p>
+<div class="admonition note">
+<p class="admonition-title">信息</p>
+<p>从 S3 提取 AWS 服务日志会产生非常低的 SQS 和 S3 请求费用，通常在 AWS 免费套餐内。</p>
+</div>
+<p>以下是假设：</p>
 <ul>
-<li>Lambda 成本 = 260 毫秒每MB x 每毫秒 0.0000000167 美元 x 30 天 = 0.133 美元/月</li>
-<li>SQS 成本 = 每天 288 个请求 x 30 天 = 在免费套餐内</li>
-<li>S3 存储成本 = 每 GB 0.023 美元 x 30 GB/月 x 4% （压缩比） = 0.028 美元/月</li>
-<li>S3 请求成本 = 每天 288 个请求 x 30 天 x 每 1000 个请求 0.005 美元 = 0.043 美元/月</li>
+<li>AWS 服务每 5 分钟以 gzip 格式将日志保存到 Amazon S3（大多数 AWS 服务以 gzip 格式输出日志）。</li>
+<li>S3 中 4MB 的压缩日志文件的原始日志大小约为 100MB。</li>
+<li>一个 1GB 内存的 Lambda 处理一个 4MB 的日志文件大约需要 26 秒，即每 MB 原始日志需要 260 毫秒</li>
+<li>最大压缩日志文件大小为 5MB。</li>
 </ul>
-<p>摄取 AWS 服务日志的每月总成本为：</p>
-<p><strong>每月总费用</strong> = 0.133 美元 Lambda 成本 + 0.028 美元 S3 存储成本 + 0.043 美元 S3 请求成本 = <strong>0.20 美元</strong></p>
-<p><strong>示例 2：100 GB/天</strong></p>
-<p>您每天有 100 GB 的原始服务日志，存储在S3上大概是4GB（gzip压缩后），按每个日志文件大概5MB算，差不多每天864个日志文件（每5分钟产生3个）。</p>
-<p>成本估算如下：</p>
+<p>您每天有 <code>N</code> GB 原始日志，每日成本估算如下：</p>
 <ul>
-<li>Lambda 成本 = 260 毫秒每MB x 1024 MB x 100 x 每毫秒 0.0000000167 美元 x 30 天 = 13.34 美元/月</li>
-<li>SQS 成本 = 每天 864 个请求 x 30 天 = 在免费套餐内</li>
-<li>S3 存储成本 = 每 GB 0.023 美元 x 3,000 GB/月 x 4% （压缩比） = 2.76 美元/月</li>
-<li>S3 请求成本 = 每天 864 个请求 x 30 天 x 每 1000 个请求 0.005 美元 = 0.13 美元/月</li>
+<li>Lambda 成本 = 每 MB 260 毫秒 x 1024 MB x <code>N</code> GB/天 x 每毫秒 0.0000000167 美元</li>
+<li>S3 存储成本 = 每 GB 0.023 美元 x <code>N</code> GB/天 * 4%（压缩）</li>
 </ul>
-<p>摄取 AWS 服务日志的每月总成本如下：</p>
-<p><strong>每月总费用</strong> = 13.34 美元 Lambda 成本 + 2.76 美元 S3 存储成本 + 0.13 美元 S3 请求成本 = <strong>16.23 美元</strong></p>
-<h2 id="_2">应用日志</h2>
+<p>处理 AWS 服务日志的每月总成本为：</p>
+<p><strong>每月总成本</strong> =（Lambda 成本 + S3 存储成本）x 30 天</p>
+<table>
+<thead>
+<tr>
+<th>每次日志量</th>
+<th>每日 Lambda 费用 ($)</th>
+<th>每次 S3 存储费用 ($)</th>
+<th>每月费用 ($)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>10</td>
+<td>0.044</td>
+<td>0.009</td>
+<td>1.610</td>
+</tr>
+<tr>
+<td>100</td>
+<td>0.445</td>
+<td>0.092</td>
+<td>16.099</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>4.446</td>
+<td>0.920</td>
+<td>160.986</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_3">应用日志</h3>
 <p>摄取和处理应用程序日志的成本可能会根据日志位置等情况而有所不同。</p>
-<h3 id="amazon-ec2-amazon-eks">从 Amazon EC2 或 Amazon EKS 收集日志</h3>
+<h4 id="amazon-ec2">从 Amazon EC2 收集日志</h4>
+<div class="admonition important">
+<p class="admonition-title">重要</p>
+<p>如果您有多种日志格式（索引），则需要对每种格式进行成本估算。</p>
+</div>
 <p>成本估算基于以下假设和事实：</p>
 <ul>
-<li>提供 30% 以上的分片来处理流量抖动。</li>
 <li>平均日志消息大小为 1 KB。</li>
-<li>Lambda 处理器内存为 1024 MB。</li>
+<li>Lambda 内存为 1024 MB。</li>
 <li>每个 Lambda 调用处理 1 MB 日志。</li>
-<li>每次 Lambda 调用同时处理一个 Kinesis 分片。</li>
+<li>一次 Lambda 调用处理一个 Kinesis 分片，Lambda 可以扩展来并发以处理多个分片。</li>
 <li>处理小于 5 MB 的日志的 Lambda 运行时为 500 毫秒。</li>
+<li>一个 Kinesis 分片摄入日志大小为 = 1 MB/秒 x 3600 秒/小时 x 24 小时 x 0.7 = 60.48 GB/天。</li>
+<li>提供 30% 以上的额外分片来处理流量抖动。</li>
+<li>每日日志量为 <code>X</code> GB。</li>
+<li>所需的 Kinesis 分片数 <code>S</code> 为 = Round_up_to_next_integer（每日日志量 <code>X</code>/ 60.48）。</li>
 </ul>
-<p>根据假设，一个 Kinesis 分片摄取日志大小为 = 1 MB/秒 x 3600 秒/小时 x 24 小时 x 0.7 = 60.48 GB/天</p>
-<p><strong>例如：1 GB/天</strong></p>
-<p>您有 1 GB 的应用程序日志从 EC2 或 EKS 发送到 KDS，即每天 100 万条日志消息。</p>
+<p>基于以上假设，以下是每日成本估算公式：</p>
 <ul>
-<li>Kinesis 分片小时成本 = 0.015 美元/分片小时 x 每天 24 小时 x 每月 30 天 = 10.8 美元/月</li>
-<li>Kinesis PUT 有效负载单位成本 = 每百万单位 0.014 美元 * 每天 1 百万 * 每月 30 天 = 0.42 美元/月</li>
-<li>Lambda 成本 = 每 1 毫秒 0.0000000167 美元 x 每次调用 500 毫秒 x 每天 1,000 次调用（每次调用 1 GB / 1 MB）x 每月 30 天 = 0.25 美元/月</li>
+<li>Kinesis 分片小时成本 = 0.015 美元/分片小时 x 每天 24 小时 x <code>S</code> 分片</li>
+<li>Kinesis PUT 有效负载单位成本 = 每百万单位 0.014 美元 * 每 GB 1 百万 x <code>X</code> GB 每天</li>
+<li>Lambda 成本 = 每 1 毫秒 0.0000000167 美元 x 每次调用 500 毫秒 x 每 GB 1,000 次调用 x <code>X</code> GB 每天</li>
 </ul>
-<p><strong>每月总费用</strong> = 10.8 美元 Kinesis 分片小时成本 + 0.42 美元 Kinesis PUT 有效负载单位成本 + 0.25 美元 Lambda 成本 = <strong>11.47 美元</strong></p>
-<p><strong>例如：100 GB/天</strong></p>
-<p>您有 100 GB 的应用程序日志从 EC2 或 EKS 发送到 KDS，即每天 1 亿条日志消息。</p>
-<ul>
-<li>Kinesis 分片小时成本 = 0.015 美元/分片小时 x 2 个分片 x 每天 24 小时 x 每月 30 天 = 21.6 美元/月</li>
-<li>Kinesis PUT 有效负载单位成本 = 每百万单位 0.014 美元 * 每天 1 亿 * 每月 30 天 = 42 美元/月</li>
-<li>Lambda 成本 = 每 1 毫秒 0.0000000167 美元 x 每次调用 500 毫秒 x 每天 100,000 次调用（每次调用 100 GB / 1 MB）x 每月 30 天 = 25.05 美元/月</li>
-</ul>
-<p><strong>每月总费用</strong> = 21.6 美元 Kinesis Shard 小时成本 + 42 美元 Kinesis PUT 有效负载单位成本 + 25.05 美元 Lambda 成本 = <strong>88.65 美元</strong></p>
-<h2 id="_3">访问代理</h2>
+<p><strong>每月总成本</strong> =（Kinesis Shard 小时成本 + Kinesis PUT 有效负载单位成本 + Lambda 成本）x 30 天</p>
+<table>
+<thead>
+<tr>
+<th>每次日志量 (GB)</th>
+<th>分片数</th>
+<th>每日 Kinesis 分片小时费</th>
+<th>每日 Kinesis PUT 有效负载费用</th>
+<th>每次 Lambda 费用</th>
+<th>每月总费用 ($)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>10</td>
+<td>1</td>
+<td>0.36</td>
+<td>0.14</td>
+<td>0.0835</td>
+<td>17.505</td>
+</tr>
+<tr>
+<td>100</td>
+<td>2</td>
+<td>0.72</td>
+<td>1.4</td>
+<td>0.835</td>
+<td>88.65</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>17</td>
+<td>6.12</td>
+<td>14</td>
+<td>8.35</td>
+<td>854.1</td>
+</tr>
+</tbody>
+</table>
+<h4 id="amazon-eks">从 Amazon EKS 提取日志</h4>
+<p>目前，EKS 和 Amazon OpenSearch 之间没有缓冲层，也没有额外的费用。</p>
+<h2 id="_4">额外特性费用</h2>
+<div class="admonition note">
+<p class="admonition-title">信息</p>
+<p>如果您选择不使用 Log Hub 控制台中的附加功能，则不会向您收费。</p>
+</div>
+<h3 id="_5">访问代理</h3>
 <p>如果通过 Log Hub 部署并创建了<a href="../domains/proxy/">访问代理</a>，将收取以下费用。</p>
 <ul>
-<li>EC2 成本 = t3.large 1Y RI 全部预付 $426.612 x 2 / 12 个月 = $71.1/月</li>
+<li>EC2 成本 = t3.large 1Y 全部预付预留实例 $426.612 x 2 / 12 个月 = $71.1/月</li>
 <li>EBS 成本 = 0.1 GB/月 x 8 GB x 2 = $1.6/月</li>
 <li>弹性负载均衡器成本 = 每 ALB 小时 $0.0225 x 720 小时/月 = $16.2/月</li>
 </ul>
 <p><strong>每月总费用</strong> = 71.1 美元 EC2 成本 + 1.6 美元 EBS 成本 + 16.2 美元弹性负载均衡器成本 = <strong>88.9 美元</strong></p>
-<h2 id="_4">告警</h2>
+<h3 id="_6">告警</h3>
 <p>如果通过 Log Hub 部署并创建了<a href="../domains/alarms/">告警</a>，可参考<a href="https://aws.amazon.com/cloudwatch/pricing/">CloudWatch 价格</a>。</p>
 
 
@@ -1543,7 +1938,7 @@
     <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs"], "search": "../../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.config.lang": "ja", "search.config.pipeline": "trimmer, stemmer", "search.config.separator": "[\\s\\-\uff0c\u3002]+", "search.placeholder": "\u641c\u7d22", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version.title": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": "latest"}</script>
     
     
-      <script src="../../assets/javascripts/bundle.37e9125f.min.js"></script>
+      <script src="../../assets/javascripts/bundle.078830c0.min.js"></script>
       
     
   </body>
