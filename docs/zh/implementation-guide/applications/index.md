@@ -38,7 +38,8 @@ include-markdown "include-supported-app-logs.md"
 
 ### 日志代理 (Logging Agent)
 日志代理是一个程序，它从一个位置读取日志并将它们发送到另一个位置（例如，OpenSearch）。
-目前，Log Hub 仅支持自动安装的 [Fluent Bit 1.9][fluent-bit] 日志代理。 Fluent Bit 代理具有 [OpenSSL 1.1][open-ssl] 的依赖项。要了解如何在 Linux 实例上安装 OpenSSL，请参阅 [OpenSSL 安装](../resources/open-ssl.md)。
+目前，Log Hub 仅支持自动安装的 [Fluent Bit 1.9][fluent-bit] 日志代理。 Fluent Bit 代理具有 [OpenSSL 1.1][open-ssl] 的依赖项。要了解如何在 Linux 实例上
+安装 OpenSSL，请参阅 [OpenSSL 安装](../resources/open-ssl.md)。通过此[链接][supported-platforms]查看 Fluent Bit 支持的平台。
 
 ### 日志源 (Log Source)
 日志源是指您希望 Log Hub 从中收集应用程序日志的 Amazon 服务。
@@ -67,3 +68,5 @@ Log Hub 中的 EKS 集群是指您要从中收集 pod 日志的 Amazon EKS。 Lo
 
 [fluent-bit]: https://docs.fluentbit.io/manual/
 [open-ssl]: https://www.openssl.org/source/
+[supported-platforms]: https://docs.fluentbit.io/manual/installation/supported-platforms
+

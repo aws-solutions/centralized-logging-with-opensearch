@@ -27,7 +27,7 @@ This automated AWS CloudFormation template deploys the *Log Hub - Alarms* soluti
 
 4. On the **Specify stack details** page, assign a name to your stack.
 
-5. Under **Parameters**, review the parameters for the template and modify them as necessary. This solution uses the following default values.
+5. Under **Parameters**, review the parameters for the template and modify them as necessary. This solution uses the following parameters.
 
     | Parameter  | Default            | Description                                                                                                                                                                                                   |
     |--------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| ------------------------------------------------------------ |

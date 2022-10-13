@@ -1,13 +1,13 @@
 Deploying this solution with the default parameters builds the following environment in the AWS Cloud.
 
 [![arch]][arch]
-Figure 1: Solution architecture
+Figure 1: Log Hub on AWS architecture
 
 This solution deploys the AWS CloudFormation template in your AWS Cloud account and completes the following settings.
 
 1. [Amazon CloudFront](https://aws.amazon.com/cloudfront) distributes the frontend web UI assets hosted in [Amazon S3](https://aws.amazon.com/s3/) bucket.
 
-2. For AWS Standard Regions, [Amazon Cognito user pool](https://aws.amazon.com/cognito) provides authentication for backend. For AWS China Regions, OpenID Connector (OIDC) is used.
+2. [Amazon Cognito user pool](https://aws.amazon.com/cognito) or OpenID Connector (OIDC) can be used for authentication.
 
 3. [AWS AppSync](https://aws.amazon.com/appsync) provides the backend GraphQL APIs.
 
@@ -36,20 +36,20 @@ Log Hub supports log analysis for AWS services, such as Amazon S3 access logs, a
 AWS services output logs to different destinations, including Amazon S3 bucket, CloudWatch log groups, Kinesis Data Streams, and Kinesis Firehose. The solution ingests those logs using different workflows.
 
 !!! note "Note"
-    Log Hub supports [Cross-Account log ingestion](./link-account/index.md). If you want to ingest the logs from another AWS account, the resources in the **Sources** group in the architecture diagram will be in the other account.
+    Log Hub supports [cross-account log ingestion](./link-account/index.md). If you want to ingest the logs from another AWS account, the resources in the **Sources** group in the architecture diagram will be in another account.
 
 ### Logs in Amazon S3
 
 Some services use Amazon S3 as the destination, and the logs in Amazon S3 are generally not for real-time analysis. 
 
 [![arch-service-pipeline-s3]][arch-service-pipeline-s3]
-Figure 2: Amazon S3 service log pipeline architecture
+Figure 2: Amazon S3 based service log pipeline architecture
 
 The log pipeline runs the following workflow:
 
 1. AWS services store logs in Amazon S3 bucket (Log Bucket).
 
-2. An [S3 Event Notification](https://docs.aws.amazon.com/AmazonS3/latest/userguide/NotificationHowTo.html) is sent to Amazon SQS  when a new log file is created.
+2. An [S3 Event Notification](https://docs.aws.amazon.com/AmazonS3/latest/userguide/NotificationHowTo.html) is sent to Amazon SQS when a new log file is created.
 
 3. Amazon SQS triggers the Lambda (Log Processor) to run.
 
@@ -57,14 +57,14 @@ The log pipeline runs the following workflow:
 
 5. The logs failed to be processed are exported to Amazon S3 bucket (Backup Bucket).
 
-For cross-account ingestion, the AWS Services store logs in Amazon S3 bucket in the linked account, and other resources remain in Log Hub's Account:
+For cross-account ingestion, the AWS Services store logs in Amazon S3 bucket in the member account, and other resources remain in Log Hub.
 
 ### Logs in Amazon CloudWatch
 
 Some services use Amazon CloudWatch log group as the destination. 
 
 [![arch-service-pipeline-cw]][arch-service-pipeline-cw]
-Figure 3: Amazon CloudWatch service log pipeline architecture
+Figure 3: Amazon CloudWatch based service log pipeline architecture
 
 The log pipeline runs the following workflow:
 
@@ -78,7 +78,7 @@ The log pipeline runs the following workflow:
 
 5. The logs failed to be processed are exported to Amazon S3 bucket (Backup Bucket).
 
-For cross-account ingestion, the AWS Services store logs on Amazon CloudWatch log group in the linked account, and other resources remain in Log Hub's Account:
+For cross-account ingestion, the AWS Services store logs on Amazon CloudWatch log group in the member account, and other resources remain in Log Hub.
 
 
 ## Application Log Analytics Pipeline
@@ -86,13 +86,13 @@ For cross-account ingestion, the AWS Services store logs on Amazon CloudWatch lo
 Log Hub supports log analysis for application logs, such as Nginx/Apache HTTP Server logs or custom application logs. 
 
 !!! note "Note"
-    Log Hub supports [Cross-Account log ingestion](./link-account/index.md). If you want to ingest the logs from the same account, the resources in the **Sources** group will be in the same account as your Log Hub account.
-    Otherwise, they will be in the other AWS account.
+    Log Hub supports [cross-account log ingestion](./link-account/index.md). If you want to ingest logs from the same account, the resources in the **Sources** group will be in the same account as your Log Hub account.
+    Otherwise, they will be in another AWS account.
 
 ### Logs from EC2
 
 [![arch-app-log-pipeline]][arch-app-log-pipeline]
-Figure 4: Application log pipeline architecture
+Figure 4: Application log pipeline architecture for EC2
 
 The log pipeline runs the following workflow:
 
@@ -109,9 +109,10 @@ The log pipeline runs the following workflow:
 
 !!! important "Important"
 
-    If your EKS cluster and OpenSearch cluster is not in the same VPC, you need to use VPC [Peering Connection][peering-connection] or [Transit Gateway][tgw] to connect these VPCs, and adjust the OpenSearch Security group if needed.
+    If your EKS cluster and OpenSearch cluster are not in the same VPC, you need to use VPC [Peering Connection][peering-connection] or [Transit Gateway][tgw] to connect these VPCs, and adjust the OpenSearch Security group if needed.
 
 [![arch-eks-aos-pipeline]][arch-eks-aos-pipeline]
+Figure 5: Application log pipeline architecture for EKS
 
 1. [Fluent Bit](https://fluentbit.io/) works as the underlying log agent to collect logs and send them to the OpenSearch cluster.
 

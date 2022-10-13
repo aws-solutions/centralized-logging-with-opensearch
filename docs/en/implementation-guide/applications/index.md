@@ -38,12 +38,12 @@ After that, Log Hub will start collecting certain type of logs from the log sour
 
 ### Logging Agent
 A logging agent is a program that reads logs from one location and sends them to another location (for example, OpenSearch). 
-Currently, Log Hub only supports [Fluent Bit 1.9][fluent-bit] logging agent which is installed automatically. The Fluent Bit agent has a dependency of [OpenSSL 1.1][open-ssl]. To learn how to install OpenSSL on Linux instances, refer to [OpenSSL installation](../resources/open-ssl.md). Please find the supported platforms by Fluent Bit in this [link](supported-platforms)
+Currently, Log Hub only supports [Fluent Bit 1.9][fluent-bit] logging agent which is installed automatically. The Fluent Bit agent has a dependency of [OpenSSL 1.1][open-ssl]. To learn how to install OpenSSL on Linux instances, refer to [OpenSSL installation](../resources/open-ssl.md). Please find the supported platforms by Fluent Bit in this [link][supported-platforms].
 
 ### Log Source
 A Log Source refers to an Amazon Service where you want Log Hub to collect application logs from.
 
-Supported the Log sources are:
+Supported log sources are:
 
 * [Instance Group](#instances-group)
 * [EKS Cluster](#eks-cluster) 

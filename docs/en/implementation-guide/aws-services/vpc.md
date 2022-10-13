@@ -1,11 +1,11 @@
 # VPC Flow Logs
-[VPC Flow Logs](https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs.html) enables you to capture information about the IP traffic going to and from network interfaces in your VPC. 
+[VPC Flow Logs](https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs.html) enable you to capture information about the IP traffic going to and from network interfaces in your VPC. 
 
 ## Create log ingestion
 You can create a log ingestion into AOS either by using the Log Hub console or by deploying a standalone CloudFormation stack.
 
 !!! important "Important"
-    - LogHub only supports VPCs who publish the flow log data to an Amazon S3 bucket. The S3 Bucket region must be the same as the Log Hub solution region.
+    - Log Hub only supports VPCs who publish the flow log data to an Amazon S3 bucket. The S3 Bucket region must be the same as the Log Hub solution region.
     - The AOS index is rotated on a daily basis, and cannot be adjusted.
 
 ### Using the Log Hub Console

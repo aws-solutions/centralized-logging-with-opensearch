@@ -17,7 +17,7 @@ Use the following steps to upgrade the solution on AWS console.
 
 2. Select the Log Hub main stack, and click the **Update** button.
 
-3. Choose **Replace current template**, and enter the specific **Amazon S3 URL** according to your initial deployment type. Please refer to [Deployment Overview](./deployment/index.md) for more details.
+3. Choose **Replace current template**, and enter the specific **Amazon S3 URL** according to your initial deployment type. Refer to [Deployment Overview](./deployment/index.md) for more details.
 
     | Type                                         | Link                                                         |
     | -------------------------------------------- | ------------------------------------------------------------ |
@@ -44,15 +44,15 @@ After the stack is successfully updated, you need to generate the console config
 
 1. Go to the [AWS Lambda console](https://console.aws.amazon.com/lambda/){target='_blank'}.
 
-2. Search for a lambda with `WebConsoleWebConfig` in the name. The Lambda Function Name is like `<StackName>-WebConsoleWebConfigXXXXX-XXXX`.
+2. Search for a Lambda with `WebConsoleWebConfig` in the name. The Lambda Function Name is in the format of `<StackName>-WebConsoleWebConfigXXXXX-XXXX`.
 
 3. In the **Test** page, create a new event with any Event name.
 
-4. Click the **Test** button to trigger the Lambda, and ensure you see the `Put config file to S3` and `Put config file to S3 completed.` log message.
+4. Click the **Test** button to trigger the Lambda, and ensure that you can see the `Put config file to S3` and `Put config file to S3 completed.` log message.
 
 ## Step 3. Create an invalidation on CloudFront
 
-CloudFront has cached old version of Log Hub console at its pop locations. We need to create an invalidation on the CloudFront console to 
+CloudFront has cached an old version of Log Hub console at its pop locations. We need to create an invalidation on the CloudFront console to 
 force the deletion of cache. You must do this after thew console configuration file being generated.
 
 1. Go to the [AWS CloudFront console](https://console.aws.amazon.com/cloudfront/){target='_blank'}.

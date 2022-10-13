@@ -15,10 +15,10 @@ This AWS CloudFormation template automatically deploys the Log Hub solution on A
 
 1. Sign in to the AWS Management Console and select the button to launch the `log-hub` AWS CloudFormation template.
 
-    |                           | Launch in AWS Console                                        |
-    | ------------------------- | ------------------------------------------------------------ |
-    | Launch in a new VPC       | [![Launch Stack](../../images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/template?stackName=LogHub&templateURL=https://{{ bucket }}.s3.amazonaws.com/log-hub/{{ version }}/LogHub.template){target=_blank} |
-    | Launch in an existing VPC | [![Launch Stack](../../images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/template?stackName=LogHub&templateURL=https://{{ bucket }}.s3.amazonaws.com/log-hub/{{ version }}/LogHubFromExistingVPC.template){target=_blank} |
+    |                             | Launch in AWS Console                                        |
+    | --------------------------- | ------------------------------------------------------------ |
+    | Launch with a new VPC       | [![Launch Stack](../../images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/template?stackName=LogHub&templateURL=https://{{ bucket }}.s3.amazonaws.com/log-hub/{{ version }}/LogHub.template){target=_blank} |
+    | Launch with an existing VPC | [![Launch Stack](../../images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/template?stackName=LogHub&templateURL=https://{{ bucket }}.s3.amazonaws.com/log-hub/{{ version }}/LogHubFromExistingVPC.template){target=_blank} |
 
 
 2. The template is launched in the default region after you log in to the console. To launch the Log Hub solution in a different AWS Region, use the Region selector in the console navigation bar.
@@ -29,18 +29,18 @@ This AWS CloudFormation template automatically deploys the Log Hub solution on A
 
 5. Under **Parameters**, review the parameters for the template and modify them as necessary.
 
-     - If you are launching the solution in a new VPC, this solution uses the following default values:
-   
+     - If you are launching the solution in a new VPC, this solution uses the following parameters:
+     
     | Parameter  | Default          | Description                                                  |
     | ---------- | ---------------- | ------------------------------------------------------------ |
     | Admin User Email | `<Requires input>` | Specify the email of the Administrator. This email address will receive a temporary password to access the Log Hub web console. You can create more users directly in the provisioned Cognito User Pool after launching the solution. |
 
-     - If you are launching the solution in an existing VPC, this solution uses the following default values:
+     - If you are launching the solution in an existing VPC, this solution uses the following parameters:
 
     | Parameter  | Default          | Description                                                  |
     | ---------- | ---------------- | ------------------------------------------------------------ |
     | Admin User Email | `<Requires input>` | Specify the email of the Administrator. This email address will receive a temporary password to access the Log Hub web console. You can create more users directly in the provisioned Cognito User Pool after launching the solution. |
-    | VPC ID | `<Requires input>` | Specify the existing VPC ID which you are launching the Log Hub solution in. |
+    | VPC ID | `<Requires input>` | Specify the existing VPC ID in which you are launching the Log Hub solution. |
     | Public Subnet IDs | `<Requires input>` | Specify the two public subnets in the selected VPC. |
     | Private Subnet IDs | `<Requires input>` | Specify the two private subnets in the selected VPC. |
 
@@ -54,7 +54,7 @@ This AWS CloudFormation template automatically deploys the Log Hub solution on A
 
 You can view the status of the stack in the AWS CloudFormation console in the **Status** column. You should receive a **CREATE_COMPLETE** status in approximately 15 minutes.
 
-## Step 2. Launch the web console
+## Step 2. Launch the web Console
 
 After the stack is successfully created, this solution generates a CloudFront domain name that gives you access to the Log Hub web console. 
 Meanwhile, an auto-generated temporary password (excluding the last digit `.`) will be sent to your email address.

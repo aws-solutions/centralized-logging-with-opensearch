@@ -9,11 +9,12 @@ nav:
       - Overview: index.md
       - Cost: implementation-guide/cost.md
       - Architecture Overview: implementation-guide/architecture.md
+      - Security: implementation-guide/security.md
       - Considerations: implementation-guide/considerations.md
       - Deployment:
           - Overview: implementation-guide/deployment/index.md
-          - With Cognito User Pool: implementation-guide/deployment/with-cognito.md
-          - With OpenID Connect: implementation-guide/deployment/with-oidc.md
+          - Launch with Cognito User Pool: implementation-guide/deployment/with-cognito.md
+          - Launch with OpenID Connect: implementation-guide/deployment/with-oidc.md
       - Getting Started:
           - Overview: implementation-guide/getting-started/index.md
           - Step 1. Import Domain: implementation-guide/getting-started/1.import-domain.md
@@ -49,8 +50,8 @@ nav:
       - Cross-Account Ingestion: implementation-guide/link-account/index.md
       - FAQ: implementation-guide/faq.md
       - Troubleshooting: implementation-guide/trouble-shooting.md
-      - Upgrading: implementation-guide/upgrade.md
-      - Uninstalling: implementation-guide/uninstall.md
+      - Upgrading the solution: implementation-guide/upgrade.md
+      - Uninstalling the solution: implementation-guide/uninstall.md
       - Resources:
           - OpenSSL Installation: implementation-guide/resources/open-ssl.md
           - Upload Certificate: implementation-guide/resources/upload-ssl-certificate.md
