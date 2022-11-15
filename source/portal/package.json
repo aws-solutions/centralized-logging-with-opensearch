@@ -36,7 +36,7 @@
     "react-oidc-context": "^2.1.0",
     "react-redux": "^7.2.4",
     "react-router-dom": "^5.2.0",
-    "react-scripts": "5.0.0",
+    "react-scripts": "5.0.1",
     "redux": "^4.1.1",
     "sweetalert2": "^11.4.0",
     "typescript": "^4.3.5",
@@ -74,6 +74,7 @@
     "@types/react-router-dom": "^5.1.8",
     "@typescript-eslint/eslint-plugin": "^5.11.0",
     "@typescript-eslint/parser": "^5.11.0",
+    "ajv": "^8.11.2",
     "cross-env": "^7.0.3",
     "env-cmd": "^10.1.0",
     "eslint": "^7.32.0",
@@ -101,6 +102,8 @@
     "nth-check": "^2.0.1",
     "terser": "^5.14.2",
     "scss-tokenizer": "^0.4.3",
-    "mini-css-extract-plugin": "2.4.7"
+    "mini-css-extract-plugin": "^2.4.7",
+    "loader-utils": "^2.0.3",
+    "minimatch": "^3.0.5"
   }
 }
