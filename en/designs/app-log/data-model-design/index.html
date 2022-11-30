@@ -11,7 +11,7 @@
         <link rel="canonical" href="https://awslabs.github.io/log-hub/designs/app-log/data-model-design/">
       
       <link rel="icon" href="../../../images/aws-solutions.png">
-      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.5.3">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.10">
     
     
       
@@ -19,10 +19,10 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.7a952b86.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.975780f9.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.cbb835fc.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.2505c338.min.css">
         
       
       
@@ -56,7 +56,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="none" data-md-color-accent="none">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="None" data-md-color-accent="None">
   
     
     
@@ -124,13 +124,13 @@
                     English
                   </a>
                 </li>
-                
+              
                 <li class="md-select__item">
                   <a href="/log-hub/zh/" hreflang="zh" class="md-select__link">
                     简体中文
                   </a>
                 </li>
-                
+              
             </ul>
           </div>
         </div>
@@ -175,7 +175,7 @@
         <a href="https://github.com/awslabs/log-hub" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
     awslabs/log-hub
@@ -292,7 +292,7 @@
       <a href="https://github.com/awslabs/log-hub" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
     awslabs/log-hub
@@ -1005,6 +1005,20 @@
     <li class="md-nav__item">
       <a href="../../../implementation-guide/applications/json/" class="md-nav__link">
         JSON
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/applications/syslog/" class="md-nav__link">
+        Syslog
       </a>
     </li>
   
@@ -1947,15 +1961,21 @@
     Overview
   </a>
   
-    <nav class="md-nav" aria-label="Overview">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
+</li>
+      
+        <li class="md-nav__item">
   <a href="#entity-relationship-diagram" class="md-nav__link">
     Entity Relationship Diagram
   </a>
   
-    <nav class="md-nav" aria-label="Entity Relationship Diagram">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#table-design" class="md-nav__link">
+    Table Design
+  </a>
+  
+    <nav class="md-nav" aria-label="Table Design">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2004,25 +2024,6 @@
   <a href="#eksclusterlogsource-table" class="md-nav__link">
     EKSClusterLogSource Table
   </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#logagenteksdeploymentkind-table" class="md-nav__link">
-    LogAgentEKSDeploymentKind Table
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#s3logsource-table" class="md-nav__link">
-    S3LogSource Table
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
         
@@ -2173,15 +2174,21 @@
     Overview
   </a>
   
-    <nav class="md-nav" aria-label="Overview">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
+</li>
+      
+        <li class="md-nav__item">
   <a href="#entity-relationship-diagram" class="md-nav__link">
     Entity Relationship Diagram
   </a>
   
-    <nav class="md-nav" aria-label="Entity Relationship Diagram">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#table-design" class="md-nav__link">
+    Table Design
+  </a>
+  
+    <nav class="md-nav" aria-label="Table Design">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2233,25 +2240,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#logagenteksdeploymentkind-table" class="md-nav__link">
-    LogAgentEKSDeploymentKind Table
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#s3logsource-table" class="md-nav__link">
-    S3LogSource Table
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -2280,9 +2268,10 @@
 <h1 id="application-log-analytics-data-model-design">Application Log Analytics Data Model Design</h1>
 <h2 id="overview">Overview</h2>
 <p>This part uses Amazon DynamoDB as the backend NoSQL database. This document is about the Data Model Design for <strong>Application Log Analytics</strong> module. </p>
-<h3 id="entity-relationship-diagram">Entity Relationship Diagram</h3>
+<h2 id="entity-relationship-diagram">Entity Relationship Diagram</h2>
 <p><img alt="er-model" src="../../../images/design-diagram/app-log-er-diagram.png" /></p>
-<h4 id="logconf-table">LogConf Table</h4>
+<h2 id="table-design">Table Design</h2>
+<h3 id="logconf-table">LogConf Table</h3>
 <p>LogConf table stores information about the Application log configuration by this solution, such as log type, log path.</p>
 <p>The data attributes are listed as below:</p>
 <table>
@@ -2363,7 +2352,7 @@
 </tr>
 </tbody>
 </table>
-<h4 id="instancegroup-table">InstanceGroup Table</h4>
+<h3 id="instancegroup-table">InstanceGroup Table</h3>
 <p>InstanceGroup table stores information about the instance and grouping relationship information by this solution, such as log type.</p>
 <p>The data attributes are listed as below:</p>
 <table>
@@ -2414,7 +2403,7 @@
 </tr>
 </tbody>
 </table>
-<h4 id="instancemeta-table">InstanceMeta Table</h4>
+<h3 id="instancemeta-table">InstanceMeta Table</h3>
 <p>InstanceMeta table stores information about the instance ingestion by this solution.</p>
 <p>The data attributes are listed as below:</p>
 <table>
@@ -2489,7 +2478,7 @@
 </tr>
 </tbody>
 </table>
-<h4 id="logagentstatus-table">LogAgentStatus Table</h4>
+<h3 id="logagentstatus-table">LogAgentStatus Table</h3>
 <p>LogAgentStatus table stores information about the status of Fluent Bit installation by this solution.</p>
 <p>The data attributes are listed as below:</p>
 <table>
@@ -2534,7 +2523,7 @@
 </tr>
 </tbody>
 </table>
-<h4 id="apppipeline-table">AppPipeline Table</h4>
+<h3 id="apppipeline-table">AppPipeline Table</h3>
 <p>AppPipeline table stores information about Application Log Pipeline by this solution.</p>
 <p>The data attributes are listed as below:</p>
 <table>
@@ -2550,103 +2539,61 @@
 <tr>
 <td>id</td>
 <td>String</td>
-<td>Unique ID of a pipeline</td>
+<td>Unique ID of the pipeline</td>
 <td>Partition key</td>
 </tr>
 <tr>
-<td>createdDt</td>
+<td>aosParams</td>
+<td>Map</td>
+<td>OpenSearch details (e.g. OpenSearch domain Arn, endpoint etc.)</td>
+<td></td>
+</tr>
+<tr>
+<td>bufferParams</td>
+<td>List</td>
+<td>List of Map (paramKey, paramValue)</td>
+<td></td>
+</tr>
+<tr>
+<td>bufferType</td>
 <td>String</td>
-<td>creation time</td>
+<td>Type of buffer used in pipeline (such as KDS, S3)</td>
 <td></td>
 </tr>
 <tr>
-<td>aosParas</td>
-<td>Map</td>
-<td>the Command Id</td>
+<td>bufferResourceArn</td>
+<td>String</td>
+<td>Buffer Resource Arn (e.g. if buffer is S3, then it's S3 bucket ARN)</td>
 <td></td>
 </tr>
 <tr>
-<td></td>
-<td></td>
-<td>sub-field: opensearchArn, type: String</td>
-<td></td>
-</tr>
-<tr>
-<td></td>
-<td></td>
-<td>sub-field: domainName, type: String</td>
+<td>bufferResourceName</td>
+<td>String</td>
+<td>Buffer Resource Name (e.g. if buffer is S3, then it's S3 bucket Name)</td>
 <td></td>
 </tr>
 <tr>
-<td></td>
-<td></td>
-<td>sub-field: indexPrefix, type: String</td>
-<td></td>
-</tr>
-<tr>
-<td></td>
-<td></td>
-<td>sub-field: warmLogTransition, type: Number</td>
+<td>osHelperFnArn</td>
+<td>String</td>
+<td>A helper Function ARN</td>
 <td></td>
 </tr>
 <tr>
-<td></td>
-<td></td>
-<td>sub-field: coldLogTransition, type: Number</td>
-<td></td>
-</tr>
-<tr>
-<td></td>
-<td></td>
-<td>sub-field: logRetention, type: Number</td>
+<td>stackId</td>
+<td>String</td>
+<td>CloudFormation Stack ID</td>
 <td></td>
 </tr>
 <tr>
-<td>kdsParas</td>
-<td>Map</td>
-<td>sub-field: kdsArn, type: String</td>
-<td></td>
-</tr>
-<tr>
-<td></td>
-<td></td>
-<td>sub-field: streamName, type:String</td>
-<td></td>
-</tr>
-<tr>
-<td></td>
-<td></td>
-<td>sub-field: enableAutoScaling, type:Boolean, True, False; In UI, we use yes or no</td>
-<td></td>
-</tr>
-<tr>
-<td></td>
-<td></td>
-<td>sub-field: startShardNumber, type:Number</td>
-<td></td>
-</tr>
-<tr>
-<td></td>
-<td></td>
-<td>sub-field: maxShardNumber, type:Number</td>
-<td></td>
-</tr>
-<tr>
-<td></td>
-<td></td>
-<td>sub-field: regionName, type:String</td>
-<td></td>
-</tr>
-<tr>
-<td></td>
-<td></td>
-<td>sub-field:engine, type:String</td>
+<td>error</td>
+<td>String</td>
+<td>CloudFormation Stack Error if any</td>
 <td></td>
 </tr>
 <tr>
 <td>tags</td>
-<td>Map</td>
-<td>sub-field: key-value, type:String</td>
+<td>List</td>
+<td>List of Map (Key-Value)</td>
 <td></td>
 </tr>
 <tr>
@@ -2656,14 +2603,14 @@
 <td></td>
 </tr>
 <tr>
-<td>updatedDt</td>
+<td>createdDt</td>
 <td>String</td>
-<td>The last time the data was updated</td>
+<td>creation time</td>
 <td></td>
 </tr>
 </tbody>
 </table>
-<h4 id="applogingestion-table">AppLogIngestion Table</h4>
+<h3 id="applogingestion-table">AppLogIngestion Table</h3>
 <p>AppLogIngestion table is used to the information about Application Log Ingestion by this solution.</p>
 <p>The data attributes are listed as below:</p>
 <table>
@@ -2750,7 +2697,7 @@
 </tr>
 </tbody>
 </table>
-<h4 id="eksclusterlogsource-table">EKSClusterLogSource Table</h4>
+<h3 id="eksclusterlogsource-table">EKSClusterLogSource Table</h3>
 <p>EKSClusterLogSource table stores information about imported EKS Cluster by this solution.</p>
 <p>The data attributes are listed as below:</p>
 <table>
@@ -2842,6 +2789,12 @@
 <td></td>
 </tr>
 <tr>
+<td>deploymentKind</td>
+<td>String</td>
+<td>DaemonSet,Sidecar</td>
+<td></td>
+</tr>
+<tr>
 <td>tags</td>
 <td>Map</td>
 <td>Sub-field: key-value, type:String</td>
@@ -2857,120 +2810,6 @@
 <td>status</td>
 <td>String</td>
 <td>CREATING, DELETING, ERROR, INACTIVE, ACTIVE</td>
-<td></td>
-</tr>
-<tr>
-<td>updatedDt</td>
-<td>String</td>
-<td>The last time the data was updated</td>
-<td></td>
-</tr>
-</tbody>
-</table>
-<h4 id="logagenteksdeploymentkind-table">LogAgentEKSDeploymentKind Table</h4>
-<p>The LogAgentEKSDeploymentKind table stores information about the deployment type of the log agent by this solution.</p>
-<p>The data attributes are listed as below:</p>
-<table>
-<thead>
-<tr>
-<th>Attribute name</th>
-<th>Type</th>
-<th>Description</th>
-<th>Comments</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>id</td>
-<td>String</td>
-<td>Unique ID of a pipeline</td>
-<td>Partition key</td>
-</tr>
-<tr>
-<td>createdDt</td>
-<td>String</td>
-<td>creation time</td>
-<td></td>
-</tr>
-<tr>
-<td>eksClusterId</td>
-<td>String</td>
-<td>The Partition key of the EKSClusterLogSource table</td>
-<td></td>
-</tr>
-<tr>
-<td>deploymentKind</td>
-<td>String</td>
-<td>DaemonSet,Sidecar</td>
-<td></td>
-</tr>
-<tr>
-<td>updatedDt</td>
-<td>String</td>
-<td>The last time the data was updated</td>
-<td></td>
-</tr>
-</tbody>
-</table>
-<h4 id="s3logsource-table">S3LogSource Table</h4>
-<p>The S3LogSource table stores information about which log source is the S3 bucket by this solution.</p>
-<p>The data attributes are listed as below:</p>
-<table>
-<thead>
-<tr>
-<th>Attribute name</th>
-<th>Type</th>
-<th>Description</th>
-<th>Comments</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>id</td>
-<td>String</td>
-<td>Unique ID of a pipeline</td>
-<td>Partition key</td>
-</tr>
-<tr>
-<td>createdDt</td>
-<td>String</td>
-<td>creation time</td>
-<td></td>
-</tr>
-<tr>
-<td>region</td>
-<td>String</td>
-<td>The region to which the iS3 bucket belongs</td>
-<td></td>
-</tr>
-<tr>
-<td>accountId</td>
-<td>String</td>
-<td>The account to which the S3 bucket belongs</td>
-<td></td>
-</tr>
-<tr>
-<td>s3Name</td>
-<td>String</td>
-<td>The S3 bucket name for log storage</td>
-<td></td>
-</tr>
-<tr>
-<td>s3Prefix</td>
-<td>String</td>
-<td>The S3 prefix for log storage</td>
-<td></td>
-</tr>
-<tr>
-<td>archiveFormat</td>
-<td>String</td>
-<td>The log format</td>
-<td></td>
-</tr>
-<tr>
-<td>tags</td>
-<td>Map</td>
-<td>Sub-field: key-value, type:String</td>
 <td></td>
 </tr>
 <tr>
@@ -3049,11 +2888,12 @@
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": "latest"}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.16e2a7d4.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": "latest"}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.37e9125f.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.5a2dcb6a.min.js"></script>
       
+    
     
   </body>
 </html>

@@ -11,7 +11,7 @@
         <link rel="canonical" href="https://awslabs.github.io/log-hub/designs/app-log/api-design/">
       
       <link rel="icon" href="../../../images/aws-solutions.png">
-      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.5.3">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.10">
     
     
       
@@ -19,10 +19,10 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.7a952b86.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.975780f9.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.cbb835fc.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.2505c338.min.css">
         
       
       
@@ -56,7 +56,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="none" data-md-color-accent="none">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="None" data-md-color-accent="None">
   
     
     
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#overview" class="md-skip">
+        <a href="#application-log-api-design" class="md-skip">
           Skip to content
         </a>
       
@@ -124,13 +124,13 @@
                     English
                   </a>
                 </li>
-                
+              
                 <li class="md-select__item">
                   <a href="/log-hub/zh/" hreflang="zh" class="md-select__link">
                     简体中文
                   </a>
                 </li>
-                
+              
             </ul>
           </div>
         </div>
@@ -175,7 +175,7 @@
         <a href="https://github.com/awslabs/log-hub" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
     awslabs/log-hub
@@ -292,7 +292,7 @@
       <a href="https://github.com/awslabs/log-hub" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
     awslabs/log-hub
@@ -1005,6 +1005,20 @@
     <li class="md-nav__item">
       <a href="../../../implementation-guide/applications/json/" class="md-nav__link">
         JSON
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/applications/syslog/" class="md-nav__link">
+        Syslog
       </a>
     </li>
   
@@ -1929,27 +1943,12 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#apis" class="md-nav__link">
-    APIs
-  </a>
-  
-    <nav class="md-nav" aria-label="APIs">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
   <a href="#log-config-apis" class="md-nav__link">
     Log Config APIs
   </a>
   
     <nav class="md-nav" aria-label="Log Config APIs">
       <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#list-log-configs" class="md-nav__link">
-    List Log Configs
-  </a>
-  
-</li>
         
           <li class="md-nav__item">
   <a href="#create-log-config" class="md-nav__link">
@@ -1973,6 +1972,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#list-log-configs" class="md-nav__link">
+    List Log Configs
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#get-log-config-details" class="md-nav__link">
     Get Log Config Details
   </a>
@@ -1983,66 +1989,39 @@
     </nav>
   
 </li>
-        
-      </ul>
-    </nav>
-  
-</li>
       
         <li class="md-nav__item">
-  <a href="#log-group-api-design" class="md-nav__link">
-    Log Group API Design
+  <a href="#instance-group-apis" class="md-nav__link">
+    Instance Group APIs
   </a>
   
-    <nav class="md-nav" aria-label="Log Group API Design">
+    <nav class="md-nav" aria-label="Instance Group APIs">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#overview_1" class="md-nav__link">
-    Overview
+  <a href="#create-instance-group" class="md-nav__link">
+    Create Instance Group
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#log-group-apis" class="md-nav__link">
-    Log Group APIs
-  </a>
-  
-    <nav class="md-nav" aria-label="Log Group APIs">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#list-log-groups" class="md-nav__link">
-    List Log Groups
+  <a href="#delete-instance-group" class="md-nav__link">
+    Delete Instance Group
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#create-log-group" class="md-nav__link">
-    Create Log Group
+  <a href="#list-instance-groups" class="md-nav__link">
+    List Instance Groups
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#update-log-group" class="md-nav__link">
-    Update Log Group
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#delete-log-group" class="md-nav__link">
-    Delete Log Group
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#get-log-group-details" class="md-nav__link">
-    Get Log Group Details
+  <a href="#get-instance-group-details" class="md-nav__link">
+    Get Instance Group Details
   </a>
   
 </li>
@@ -2061,39 +2040,12 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#request-install-fluent-bit" class="md-nav__link">
-    Request Install Fluent Bit
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
       </ul>
     </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#application-log-pipelines-api-design" class="md-nav__link">
-    Application Log Pipelines API Design
-  </a>
-  
-    <nav class="md-nav" aria-label="Application Log Pipelines API Design">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#overview_2" class="md-nav__link">
-    Overview
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#application-log-pipelines-apis" class="md-nav__link">
     Application Log Pipelines APIs
   </a>
@@ -2102,35 +2054,30 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#list-app-pipelines" class="md-nav__link">
-    List App Pipelines
+  <a href="#create-app-log-pipeline" class="md-nav__link">
+    Create App Log Pipeline
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#create-pipelines" class="md-nav__link">
-    Create Pipelines
+  <a href="#delete-app-log-pipeline" class="md-nav__link">
+    Delete App Log Pipeline
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#delete-pipeline" class="md-nav__link">
-    Delete Pipeline
+  <a href="#list-app-log-pipelines" class="md-nav__link">
+    List App Log Pipelines
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#get-pipeline-details" class="md-nav__link">
-    Get Pipeline Details
+  <a href="#get-app-log-pipeline-details" class="md-nav__link">
+    Get App Log Pipeline Details
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
         
@@ -2140,21 +2087,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#application-log-ingestion-api-design" class="md-nav__link">
-    Application Log Ingestion API Design
-  </a>
-  
-    <nav class="md-nav" aria-label="Application Log Ingestion API Design">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#overview_3" class="md-nav__link">
-    Overview
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#application-log-ingestion-apis" class="md-nav__link">
     Application Log Ingestion APIs
   </a>
@@ -2163,35 +2095,30 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#list-log-ingestion" class="md-nav__link">
-    List Log Ingestion
+  <a href="#create-app-log-ingestion" class="md-nav__link">
+    Create App Log Ingestion
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#create-ingestion" class="md-nav__link">
-    Create Ingestion
+  <a href="#delete-app-log-ingestion" class="md-nav__link">
+    Delete App Log Ingestion
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#delete-application-log-ingestion" class="md-nav__link">
-    Delete Application Log Ingestion
+  <a href="#list-app-log-ingestions" class="md-nav__link">
+    List App Log Ingestions
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#get-log-ingestion-details" class="md-nav__link">
-    Get Log Ingestion Details
+  <a href="#get-app-log-ingestion-details" class="md-nav__link">
+    Get App Log Ingestion Details
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
         
@@ -2352,27 +2279,12 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#apis" class="md-nav__link">
-    APIs
-  </a>
-  
-    <nav class="md-nav" aria-label="APIs">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
   <a href="#log-config-apis" class="md-nav__link">
     Log Config APIs
   </a>
   
     <nav class="md-nav" aria-label="Log Config APIs">
       <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#list-log-configs" class="md-nav__link">
-    List Log Configs
-  </a>
-  
-</li>
         
           <li class="md-nav__item">
   <a href="#create-log-config" class="md-nav__link">
@@ -2396,6 +2308,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#list-log-configs" class="md-nav__link">
+    List Log Configs
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#get-log-config-details" class="md-nav__link">
     Get Log Config Details
   </a>
@@ -2406,66 +2325,39 @@
     </nav>
   
 </li>
-        
-      </ul>
-    </nav>
-  
-</li>
       
         <li class="md-nav__item">
-  <a href="#log-group-api-design" class="md-nav__link">
-    Log Group API Design
+  <a href="#instance-group-apis" class="md-nav__link">
+    Instance Group APIs
   </a>
   
-    <nav class="md-nav" aria-label="Log Group API Design">
+    <nav class="md-nav" aria-label="Instance Group APIs">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#overview_1" class="md-nav__link">
-    Overview
+  <a href="#create-instance-group" class="md-nav__link">
+    Create Instance Group
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#log-group-apis" class="md-nav__link">
-    Log Group APIs
-  </a>
-  
-    <nav class="md-nav" aria-label="Log Group APIs">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#list-log-groups" class="md-nav__link">
-    List Log Groups
+  <a href="#delete-instance-group" class="md-nav__link">
+    Delete Instance Group
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#create-log-group" class="md-nav__link">
-    Create Log Group
+  <a href="#list-instance-groups" class="md-nav__link">
+    List Instance Groups
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#update-log-group" class="md-nav__link">
-    Update Log Group
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#delete-log-group" class="md-nav__link">
-    Delete Log Group
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#get-log-group-details" class="md-nav__link">
-    Get Log Group Details
+  <a href="#get-instance-group-details" class="md-nav__link">
+    Get Instance Group Details
   </a>
   
 </li>
@@ -2484,39 +2376,12 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#request-install-fluent-bit" class="md-nav__link">
-    Request Install Fluent Bit
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
       </ul>
     </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#application-log-pipelines-api-design" class="md-nav__link">
-    Application Log Pipelines API Design
-  </a>
-  
-    <nav class="md-nav" aria-label="Application Log Pipelines API Design">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#overview_2" class="md-nav__link">
-    Overview
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#application-log-pipelines-apis" class="md-nav__link">
     Application Log Pipelines APIs
   </a>
@@ -2525,35 +2390,30 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#list-app-pipelines" class="md-nav__link">
-    List App Pipelines
+  <a href="#create-app-log-pipeline" class="md-nav__link">
+    Create App Log Pipeline
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#create-pipelines" class="md-nav__link">
-    Create Pipelines
+  <a href="#delete-app-log-pipeline" class="md-nav__link">
+    Delete App Log Pipeline
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#delete-pipeline" class="md-nav__link">
-    Delete Pipeline
+  <a href="#list-app-log-pipelines" class="md-nav__link">
+    List App Log Pipelines
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#get-pipeline-details" class="md-nav__link">
-    Get Pipeline Details
+  <a href="#get-app-log-pipeline-details" class="md-nav__link">
+    Get App Log Pipeline Details
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
         
@@ -2563,21 +2423,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#application-log-ingestion-api-design" class="md-nav__link">
-    Application Log Ingestion API Design
-  </a>
-  
-    <nav class="md-nav" aria-label="Application Log Ingestion API Design">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#overview_3" class="md-nav__link">
-    Overview
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#application-log-ingestion-apis" class="md-nav__link">
     Application Log Ingestion APIs
   </a>
@@ -2586,35 +2431,30 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#list-log-ingestion" class="md-nav__link">
-    List Log Ingestion
+  <a href="#create-app-log-ingestion" class="md-nav__link">
+    Create App Log Ingestion
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#create-ingestion" class="md-nav__link">
-    Create Ingestion
+  <a href="#delete-app-log-ingestion" class="md-nav__link">
+    Delete App Log Ingestion
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#delete-application-log-ingestion" class="md-nav__link">
-    Delete Application Log Ingestion
+  <a href="#list-app-log-ingestions" class="md-nav__link">
+    List App Log Ingestions
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#get-log-ingestion-details" class="md-nav__link">
-    Get Log Ingestion Details
+  <a href="#get-app-log-ingestion-details" class="md-nav__link">
+    Get App Log Ingestion Details
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
         
@@ -2643,72 +2483,10 @@
   </a>
 
 
-<h1 id="overview">Overview</h1>
-<h3 id="apis">APIs</h3>
-<h4 id="log-config-apis">Log Config APIs</h4>
+<h1 id="application-log-api-design">Application Log API Design</h1>
+<h2 id="log-config-apis">Log Config APIs</h2>
 <p>The following operations are available in the solution's Log Config APIs.</p>
-<h5 id="list-log-configs">List Log Configs</h5>
-<p><strong>Type:</strong> Query</p>
-<p><strong>Description:</strong> List all Log Configs</p>
-<p><strong>Resolver:</strong> Lambda</p>
-<p><strong>Parameters:</strong></p>
-<table>
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Required</th>
-<th>Default</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>count</td>
-<td>Int</td>
-<td>No</td>
-<td>10</td>
-<td>page number, start from 1</td>
-</tr>
-<tr>
-<td>page</td>
-<td>Int</td>
-<td>No</td>
-<td>1</td>
-<td>number of records per page</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Simple Request &amp; Response:</strong></p>
-<p>Request:</p>
-<div class="highlight"><pre><span></span><code>query example{
-  listLogConfs(count: 10, page: 1) {
-        logConfs {
-            confName
-            createdDt
-            id
-            logPath
-            logType
-        }
-    }
-}
-</code></pre></div>
-<p>Response:</p>
-<div class="highlight"><pre><span></span><code>{
-    &quot;data&quot;: {
-        &quot;listLogConfs&quot;: {
-            &quot;logConfs&quot;: [{
-                &quot;confName&quot;: &quot;sys-log&quot;,
-                &quot;createdDt&quot;: &quot;2021-11-07T14:30:16.024007&quot;,
-                &quot;id&quot;: &quot;41848bb3-f48a-4cdd-b0af-861d4be768ca&quot;,
-                &quot;logPath&quot;: &quot;/log/*/ab/*.log&quot;,
-                &quot;logType&quot;: &quot;JSON&quot;
-            }]
-        }
-    }
-}
-</code></pre></div>
-<h5 id="create-log-config">Create Log Config</h5>
+<h3 id="create-log-config">Create Log Config</h3>
 <p><strong>Type:</strong> Mutation</p>
 <p><strong>Description:</strong> Create a record in DynamoDB</p>
 <p><strong>Resolver:</strong> Lambda</p>
@@ -2732,18 +2510,25 @@
 <td>The name of the log configuration. The name must be unique, and can only contains lower case letters and -.</td>
 </tr>
 <tr>
-<td>logPath</td>
-<td>String</td>
-<td>Yes</td>
-<td></td>
-<td>The location of the log files. All files under the specified folder will be included. Use ' , ' to separate multiple paths.</td>
-</tr>
-<tr>
 <td>logType</td>
 <td>enum</td>
 <td>Yes</td>
 <td></td>
 <td>JSON, Apache, Nginx, SingleLineText, MultiLineText.</td>
+</tr>
+<tr>
+<td>timeKey</td>
+<td>String</td>
+<td>No</td>
+<td></td>
+<td>Time key in the log.</td>
+</tr>
+<tr>
+<td>timeOffset</td>
+<td>String</td>
+<td>No</td>
+<td></td>
+<td>Timezone offset for the log</td>
 </tr>
 <tr>
 <td>multilineLogParser</td>
@@ -2760,6 +2545,13 @@
 <td>The log format configuration. For instance, the log format configuration of Apache. e.g. LogFormat "%h %l %u %t \"%r\" %&gt;s %b" common.</td>
 </tr>
 <tr>
+<td>userSampleLog</td>
+<td>String</td>
+<td>No</td>
+<td></td>
+<td>Sampled log.</td>
+</tr>
+<tr>
 <td>regularExpression</td>
 <td>String</td>
 <td>No</td>
@@ -2773,22 +2565,42 @@
 <td></td>
 <td>To be used to parse the log field type, we will create an index template for the search engine based on this.</td>
 </tr>
+<tr>
+<td>timeRegularExpression</td>
+<td>String</td>
+<td>No</td>
+<td></td>
+<td>When the time key is specified, you need to define a regular expression to parse the time format.</td>
+</tr>
+<tr>
+<td>processorFilterRegex</td>
+<td>K-V</td>
+<td>No</td>
+<td></td>
+<td>Filter details, such as filter key and condition etc.</td>
+</tr>
 </tbody>
 </table>
 <p><strong>Simple Request &amp; Response:</strong></p>
 <div class="highlight"><pre><span></span><code>query example{
   createLogConf(
     confName: &quot;nginx-log&quot;,
-    logPath: &quot;/var/log/nginx/*.log&quot;,
-    logType: &quot;Nginx&quot;
+    logType: &quot;Nginx&quot;,
+    userSampleLog: &quot;127.0.0.1 - - [24/Dec/2021:01:27:11 +0000] \&quot;GET / HTTP/1.1\&quot; 200 3520 \&quot;-\&quot; \&quot;curl/7.79.1\&quot; \&quot;-\&quot;&quot;,
+    userLogFormat: &quot;log_format%20%20main%20%20...*&quot;,
+    regularSpecs: [],
+    timeRegularExpression: &quot;&quot;,
+    processorFilterRegex: {
+      enable: true,
+      filters: [
+        {
+          key: &quot;status&quot;,
+          condition: &quot;Include&quot;,
+          value: &quot;200&quot;
+        }
+      ]
+    }
   )
-}
-</code></pre></div>
-<p>Request without region</p>
-<div class="highlight"><pre><span></span><code>query example {
-  listDomainNames {
-    domainNames
-  }
 }
 </code></pre></div>
 <p>Response:</p>
@@ -2798,9 +2610,9 @@
     }
 }
 </code></pre></div>
-<h5 id="update-log-config">Update Log Config</h5>
+<h3 id="update-log-config">Update Log Config</h3>
 <p><strong>Type:</strong> Mutation</p>
-<p><strong>Description:</strong> Update the configuration of your choice.</p>
+<p><strong>Description:</strong> Update a log configuration.</p>
 <p><strong>Resolver:</strong> Lambda</p>
 <p><strong>Parameters:</strong></p>
 <table>
@@ -2829,18 +2641,25 @@
 <td>The name of the log configuration. The name must be unique, and can only contains lower case letters and -.</td>
 </tr>
 <tr>
-<td>logPath</td>
-<td>String</td>
-<td>Yes</td>
-<td></td>
-<td>The location of the log files. All files under the specified folder will be included. Use ' , ' to separate multiple paths.</td>
-</tr>
-<tr>
 <td>logType</td>
 <td>enum</td>
 <td>Yes</td>
 <td></td>
 <td>JSON, Apache, Nginx, SingleLineText, MultiLineText.</td>
+</tr>
+<tr>
+<td>timeKey</td>
+<td>String</td>
+<td>No</td>
+<td></td>
+<td>Time key in the log.</td>
+</tr>
+<tr>
+<td>timeOffset</td>
+<td>String</td>
+<td>No</td>
+<td></td>
+<td>Timezone offset for the log</td>
 </tr>
 <tr>
 <td>multilineLogParser</td>
@@ -2857,6 +2676,13 @@
 <td>The log format configuration. For instance, the log format configuration of Apache. e.g. LogFormat "%h %l %u %t \"%r\" %&gt;s %b" common.</td>
 </tr>
 <tr>
+<td>userSampleLog</td>
+<td>String</td>
+<td>No</td>
+<td></td>
+<td>Sampled log.</td>
+</tr>
+<tr>
 <td>regularExpression</td>
 <td>String</td>
 <td>No</td>
@@ -2870,6 +2696,20 @@
 <td></td>
 <td>To be used to parse the log field type, we will create an index template for the search engine based on this.</td>
 </tr>
+<tr>
+<td>timeRegularExpression</td>
+<td>String</td>
+<td>No</td>
+<td></td>
+<td>When the time key is specified, you need to define a regular expression to parse the time format.</td>
+</tr>
+<tr>
+<td>processorFilterRegex</td>
+<td>K-V</td>
+<td>No</td>
+<td></td>
+<td>Filter details, such as filter key and condition etc.</td>
+</tr>
 </tbody>
 </table>
 <p><strong>Simple Request &amp; Response:</strong></p>
@@ -2877,16 +2717,29 @@
 <div class="highlight"><pre><span></span><code>mutation example{
   updateLogConf(
     id: &quot;41848bb3-f48a-4cdd-b0af-861d4be768ca&quot;,
-    logPath: &quot;/app/gaming/app.log&quot;,
-    logType: JSON,
-    confName: &quot;applog&quot;
-    )
+    confName: &quot;my-nginx&quot;,
+    logType: &quot;Nginx&quot;,
+    userSampleLog: &quot;127.0.0.1 - - [24/Dec/2021:01:27:11 +0000] \&quot;GET / HTTP/1.1\&quot; 200 3520 \&quot;-\&quot; \&quot;curl/7.79.1\&quot; \&quot;-\&quot;&quot;,
+    userLogFormat: &quot;log_format%20%20main%20%20...*&quot;,
+    regularSpecs: [],
+    timeRegularExpression: &quot;&quot;,
+    processorFilterRegex: {
+      enable: true,
+      filters: [
+        {
+          key: &quot;status&quot;,
+          condition: &quot;Include&quot;,
+          value: &quot;200&quot;
+        }
+      ]
+    }
+  )
 }
 </code></pre></div>
 <p>Response:</p>
 <div class="highlight"><pre><span></span><code>{
   &quot;data&quot;: {
-    &quot;importDomain&quot;: &quot;OK&quot;
+    &quot;updateLogConf&quot;: &quot;OK&quot;
   }
 }
 </code></pre></div>
@@ -2914,7 +2767,7 @@
     }]
 }
 </code></pre></div>
-<h5 id="delete-log-config">Delete Log Config</h5>
+<h3 id="delete-log-config">Delete Log Config</h3>
 <p><strong>Type:</strong> Mutation</p>
 <p><strong>Description:</strong> We don't physically delete the record, we just set the state of the item to INACTIVE in DynamoDB Table.</p>
 <p><strong>Resolver:</strong> Lambda</p>
@@ -2980,67 +2833,9 @@
   ]
 }
 </code></pre></div>
-<h5 id="get-log-config-details">Get Log Config Details</h5>
+<h3 id="list-log-configs">List Log Configs</h3>
 <p><strong>Type:</strong> Query</p>
-<p><strong>Description:</strong> Get details of a Log Config.</p>
-<p><strong>Resolver:</strong> Lambda</p>
-<p><strong>Parameters:</strong></p>
-<table>
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Required</th>
-<th>Default</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>id</td>
-<td>String</td>
-<td>Yes</td>
-<td></td>
-<td>Log Config Unique ID (key in DynamoDB)</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Simple Request &amp; Response:</strong></p>
-<p>Request:</p>
-<div class="highlight"><pre><span></span><code>query example {
-  getLogConf(id: &quot;41848bb3-f48a-4cdd-b0af-861d4be768ca&quot;) {
-        confName
-    logPath
-    logType
-    multilineLogParser
-    createdDt
-    userLogFormat
-    regularExpression
-    regularSpecs
-    }
-}
-</code></pre></div>
-<p>Response:</p>
-<div class="highlight"><pre><span></span><code>{
-    &quot;data&quot;: {
-        &quot;getLogConf&quot;: {
-            &quot;confName&quot;: &quot;fff&quot;,
-            &quot;createdDt&quot;: &quot;2021-11-07T14:30:16.024007&quot;,
-            &quot;id&quot;: &quot;41848bb3-f48a-4cdd-b0af-861d4be768ca&quot;,
-            &quot;logPath&quot;: &quot;/log/*/ab/*.log&quot;,
-            &quot;logType&quot;: &quot;JSON&quot;
-        }
-    }
-}
-</code></pre></div>
-<h3 id="log-group-api-design">Log Group API Design</h3>
-<h4 id="overview_1">Overview</h4>
-<p>This document is about the API Design for <strong>Log Group</strong> component. To learn more information about the component, refer to <a href="../component-design">Component Design</a></p>
-<h4 id="log-group-apis">Log Group APIs</h4>
-<p>The following operations are available in the solution's Log Group APIs.</p>
-<h5 id="list-log-groups">List Log Groups</h5>
-<p><strong>Type:</strong> Query</p>
-<p><strong>Description:</strong> List all Log Groups</p>
+<p><strong>Description:</strong> List all Log Configs</p>
 <p><strong>Resolver:</strong> Lambda</p>
 <p><strong>Parameters:</strong></p>
 <table>
@@ -3072,37 +2867,146 @@
 </table>
 <p><strong>Simple Request &amp; Response:</strong></p>
 <p>Request:</p>
-<div class="highlight"><pre><span></span><code>query example{
-    listInstanceGroups(count: 10, page: 1) {
-        total
-        instanceGroups {
-            createdDt
-            groupName
+<div class="highlight"><pre><span></span><code>query example {
+    listLogConfs (page: 1, count: 10) {
+        logConfs {
             id
-            instanceSet
+            confName
+            logType
+            syslogParser
+            createdDt
+            status
         }
+        total
     }
 }
 </code></pre></div>
 <p>Response:</p>
 <div class="highlight"><pre><span></span><code>{
     &quot;data&quot;: {
-        &quot;listInstanceGroups&quot;: {
-            &quot;total&quot;: 1,
-            &quot;instanceGroups&quot;: [{
-                &quot;createdDt&quot;: &quot;2021-11-06T12:28:52.041408&quot;,
-                &quot;groupName&quot;: &quot;fsf1&quot;,
-                &quot;id&quot;: &quot;1089057b-888b-4794-b797-fef943adccf0&quot;,
-                &quot;instanceSet&quot;: [
-                    &quot;1&quot;,
-                    &quot;2&quot;
-                ]
-            }]
+        &quot;listLogConfs&quot;: {
+            &quot;logConfs&quot;: [
+                {
+                    &quot;id&quot;: &quot;b942da74-f755-499a-855e-12c43267a6c0&quot;,
+                    &quot;confName&quot;: &quot;my-nginx&quot;,
+                    &quot;logType&quot;: &quot;Nginx&quot;,
+                    &quot;syslogParser&quot;: null,
+                    &quot;createdDt&quot;: &quot;2022-10-30T03:54:38Z&quot;,
+                    &quot;status&quot;: &quot;ACTIVE&quot;
+                },
+                ...
+            ],
+            &quot;total&quot;: 4
         }
     }
 }
 </code></pre></div>
-<h5 id="create-log-group">Create Log Group</h5>
+<h3 id="get-log-config-details">Get Log Config Details</h3>
+<p><strong>Type:</strong> Query</p>
+<p><strong>Description:</strong> Get details of a Log Config.</p>
+<p><strong>Resolver:</strong> Lambda</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>String</td>
+<td>Yes</td>
+<td></td>
+<td>Log Config Unique ID (key in DynamoDB)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Simple Request &amp; Response:</strong></p>
+<p>Request:</p>
+<div class="highlight"><pre><span></span><code>query example {
+  getLogConf (id: &quot;62c9a8c5-eb43-4d25-b94f-941848525645&quot;) {
+        id
+        confName
+        logType
+        timeKey
+        timeOffset
+        createdDt
+        userLogFormat
+        userSampleLog
+        regularExpression
+        timeRegularExpression
+        regularSpecs {
+            key
+            type
+            format
+        }
+        processorFilterRegex {
+            enable
+            filters {
+                key
+                condition
+                value
+            }
+        }
+        status
+    }
+}
+</code></pre></div>
+<p>Response:</p>
+<div class="highlight"><pre><span></span><code>{
+    &quot;data&quot;: {
+        &quot;getLogConf&quot;: {
+            &quot;id&quot;: &quot;62c9a8c5-eb43-4d25-b94f-941848525645&quot;,
+            &quot;confName&quot;: &quot;myapp&quot;,
+            &quot;logType&quot;: &quot;SingleLineText&quot;,
+            &quot;timeKey&quot;: &quot;time_local&quot;,
+            &quot;timeOffset&quot;: &quot;+0000&quot;,
+            &quot;createdDt&quot;: &quot;2022-11-30T02:48:27Z&quot;,
+            &quot;userLogFormat&quot;: &quot;%28%3F%3Cremote_addr%3E%5CS%2B%29%5Cs*-%5Cs*%28%....*&quot;,
+            &quot;userSampleLog&quot;: &quot;...&quot;,
+            &quot;regularExpression&quot;: &quot;%28%3F%3Cremote_addr%3E%5CS%2B%29%5Cs*-%5Cs*%28%....*&quot;,
+            &quot;timeRegularExpression&quot;: &quot;&quot;,
+            &quot;regularSpecs&quot;: [
+                {
+                    &quot;key&quot;: &quot;remote_addr&quot;,
+                    &quot;type&quot;: &quot;text&quot;,
+                    &quot;format&quot;: null
+                },
+                {
+                    &quot;key&quot;: &quot;remote_user&quot;,
+                    &quot;type&quot;: &quot;text&quot;,
+                    &quot;format&quot;: null
+                },
+                {
+                    &quot;key&quot;: &quot;time_local&quot;,
+                    &quot;type&quot;: &quot;text&quot;,
+                    &quot;format&quot;: &quot;%d/%b/%Y:%H:%M:%S&quot;
+                },
+                ...
+            ],
+            &quot;processorFilterRegex&quot;: {
+                &quot;enable&quot;: true,
+                &quot;filters&quot;: [
+                    {
+                        &quot;key&quot;: &quot;status&quot;,
+                        &quot;condition&quot;: &quot;Include&quot;,
+                        &quot;value&quot;: &quot;200&quot;
+                    }
+                ]
+            },
+            &quot;status&quot;: &quot;ACTIVE&quot;
+        }
+    }
+}
+</code></pre></div>
+<h2 id="instance-group-apis">Instance Group APIs</h2>
+<p>The following operations are available in the solution's Instance Group APIs.</p>
+<h3 id="create-instance-group">Create Instance Group</h3>
 <p><strong>Type:</strong> Mutation</p>
 <p><strong>Description:</strong> Create a record in DynamoDB</p>
 <p><strong>Resolver:</strong> Lambda</p>
@@ -3147,87 +3051,7 @@
     }
 }
 </code></pre></div>
-<h5 id="update-log-group">Update Log Group</h5>
-<p><strong>Type:</strong> Mutation</p>
-<p><strong>Description:</strong> Update the group of your choice.</p>
-<p><strong>Resolver:</strong> Lambda</p>
-<p><strong>Parameters:</strong></p>
-<table>
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Required</th>
-<th>Default</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>id</td>
-<td>String</td>
-<td>Yes</td>
-<td></td>
-<td>Log Group Unique ID (key in DynamoDB)</td>
-</tr>
-<tr>
-<td>groupName</td>
-<td>String</td>
-<td>Yes</td>
-<td></td>
-<td>The name of the log group. The name must be unique, and can only contains lower case letters and -.</td>
-</tr>
-<tr>
-<td>instanceSet</td>
-<td>String[]</td>
-<td>Yes</td>
-<td></td>
-<td>EC2 Instance Id set</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Simple Request &amp; Response:</strong></p>
-<p>Request:</p>
-<div class="highlight"><pre><span></span><code>mutation example{
-    updateInstanceGroup(
-      id: &quot;1089057b-888b-4794-b797-fef943adccf0&quot;,
-      groupName: &quot;fsf1&quot;,
-      instanceSet: [&quot;1&quot;, &quot;2&quot;]
-      )
-}
-</code></pre></div>
-<p>Response:</p>
-<div class="highlight"><pre><span></span><code>{
-  &quot;data&quot;: {
-    &quot;importDomain&quot;: &quot;OK&quot;
-  }
-}
-</code></pre></div>
-<p>Exceptions:</p>
-<ul>
-<li>groupName already exists</li>
-</ul>
-<div class="highlight"><pre><span></span><code>{
-    &quot;data&quot;: {
-        &quot;updateInstanceGroup&quot;: null
-    },
-    &quot;errors&quot;: [{
-        &quot;path&quot;: [
-            &quot;updateInstanceGroup&quot;
-        ],
-        &quot;data&quot;: null,
-        &quot;errorType&quot;: &quot;Lambda:Unhandled&quot;,
-        &quot;errorInfo&quot;: null,
-        &quot;locations&quot;: [{
-            &quot;line&quot;: 3,
-            &quot;column&quot;: 3,
-            &quot;sourceName&quot;: null
-        }],
-        &quot;message&quot;: &quot;Group Name already exists&quot;
-    }]
-}
-</code></pre></div>
-<h5 id="delete-log-group">Delete Log Group</h5>
+<h3 id="delete-instance-group">Delete Instance Group</h3>
 <p><strong>Type:</strong> Mutation</p>
 <p><strong>Description:</strong> We don't physically delete the record, we just set the state of the item to INACTIVE in DynamoDB Table.</p>
 <p><strong>Resolver:</strong> Lambda</p>
@@ -3293,7 +3117,76 @@
   ]
 }
 </code></pre></div>
-<h5 id="get-log-group-details">Get Log Group Details</h5>
+<h3 id="list-instance-groups">List Instance Groups</h3>
+<p><strong>Type:</strong> Query</p>
+<p><strong>Description:</strong> List all Instance Groups</p>
+<p><strong>Resolver:</strong> Lambda</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>count</td>
+<td>Int</td>
+<td>No</td>
+<td>10</td>
+<td>page number, start from 1</td>
+</tr>
+<tr>
+<td>page</td>
+<td>Int</td>
+<td>No</td>
+<td>1</td>
+<td>number of records per page</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Simple Request &amp; Response:</strong></p>
+<p>Request:</p>
+<div class="highlight"><pre><span></span><code>query example{
+    listInstanceGroups(count: 10, page: 1) {
+        total
+        instanceGroups {
+            id
+            accountId
+            region
+            groupName
+            groupType
+            instanceSet
+            createdDt
+            status
+        }
+    }
+}
+</code></pre></div>
+<p>Response:</p>
+<div class="highlight"><pre><span></span><code>{
+    &quot;data&quot;: {
+        &quot;listInstanceGroups&quot;: {
+            &quot;total&quot;: 1,
+            &quot;instanceGroups&quot;: [{
+                &quot;createdDt&quot;: &quot;2021-11-06T12:28:52.041408&quot;,
+                &quot;groupName&quot;: &quot;fsf1&quot;,
+                &quot;groupType&quot;: &quot;ASG&quot;,
+                &quot;id&quot;: &quot;1089057b-888b-4794-b797-fef943adccf0&quot;,
+                &quot;instanceSet&quot;: [
+                    &quot;1&quot;,
+                    &quot;2&quot;
+                ]
+            }]
+        }
+    }
+}
+</code></pre></div>
+<h3 id="get-instance-group-details">Get Instance Group Details</h3>
 <p><strong>Type:</strong> Query</p>
 <p><strong>Description:</strong> Get details of a Log Group.</p>
 <p><strong>Resolver:</strong> Lambda</p>
@@ -3343,7 +3236,7 @@
     }
 }
 </code></pre></div>
-<h5 id="list-instances">List Instances</h5>
+<h3 id="list-instances">List Instances</h3>
 <p><strong>Type:</strong> Query</p>
 <p><strong>Description:</strong> If you specify one or more managed node IDs, it returns information for those managed nodes.</p>
 <p><strong>Resolver:</strong> Lambda</p>
@@ -3391,6 +3284,7 @@
             id
             ipAddress
             platformName
+            name
         }
     }
 }
@@ -3403,13 +3297,14 @@
                 &quot;computerName&quot;: &quot;ip-172-31-44-205.us-west-2.compute.internal&quot;,
                 &quot;id&quot;: &quot;i-0bbf9209068ced7ed&quot;,
                 &quot;ipAddress&quot;: &quot;172.31.44.205&quot;,
-                &quot;platformName&quot;: &quot;CentOS Linux&quot;
+                &quot;platformName&quot;: &quot;CentOS Linux&quot;,
+                &quot;name&quot;: &quot;Bastion&quot;
             }]
         }
     }
 }
 </code></pre></div>
-<h5 id="get-log-agent-status">Get Log Agent Status</h5>
+<h3 id="get-log-agent-status">Get Log Agent Status</h3>
 <p><strong>Type:</strong> Query</p>
 <p><strong>Description:</strong> Get Fluent Bit installation status.</p>
 <p><strong>Resolver:</strong> Lambda</p>
@@ -3428,9 +3323,23 @@
 <tr>
 <td>instanceId</td>
 <td>String</td>
-<td>No</td>
-<td>1</td>
+<td>Yes</td>
+<td></td>
 <td>The ID of the managed instance should be retrieved</td>
+</tr>
+<tr>
+<td>region</td>
+<td>String</td>
+<td>No</td>
+<td></td>
+<td>AWS region</td>
+</tr>
+<tr>
+<td>accountId</td>
+<td>String</td>
+<td>No</td>
+<td></td>
+<td>AWS account ID</td>
 </tr>
 </tbody>
 </table>
@@ -3448,9 +3357,11 @@
     }
 }
 </code></pre></div>
-<h5 id="request-install-fluent-bit">Request Install Fluent Bit</h5>
+<h2 id="application-log-pipelines-apis">Application Log Pipelines APIs</h2>
+<p>The following operations are available in the solution's Application (App) Log Pipelines APIs.</p>
+<h3 id="create-app-log-pipeline">Create App Log Pipeline</h3>
 <p><strong>Type:</strong> Mutation</p>
-<p><strong>Description:</strong> To install Fluent Bit by SSM Document.</p>
+<p><strong>Description:</strong> Create an application log pipeline</p>
 <p><strong>Resolver:</strong> Lambda</p>
 <p><strong>Parameters:</strong></p>
 <table>
@@ -3465,199 +3376,77 @@
 </thead>
 <tbody>
 <tr>
-<td>instanceIdSet</td>
-<td>String[]eiifcc</td>
+<td>aosParams</td>
+<td>K-V</td>
+<td>Yes</td>
+<td></td>
+<td>Amazon OpenSearch related parameters.</td>
+</tr>
+<tr>
+<td>bufferType</td>
+<td>string</td>
+<td>Yes</td>
+<td></td>
+<td>Type of buffer (e.g. S3, KDS etc).</td>
+</tr>
+<tr>
+<td>bufferParams</td>
+<td>List</td>
+<td>Yes</td>
+<td></td>
+<td>Buffer related parameters.</td>
+</tr>
+<tr>
+<td>force</td>
+<td>boolean</td>
+<td>Yes</td>
+<td></td>
+<td>Force to create pipeline when conflict detected.</td>
+</tr>
+<tr>
+<td>tags</td>
+<td>List</td>
 <td>No</td>
-<td>1</td>
-<td>Request to install the instance id of Fluent Bit</td>
+<td></td>
+<td>Custom tags.</td>
 </tr>
 </tbody>
 </table>
 <p><strong>Simple Request &amp; Response:</strong></p>
 <p>Request:</p>
 <div class="highlight"><pre><span></span><code>mutation example{
-        requestInstallLogAgent(instanceIdSet: [&quot;i-022c5110c4e3226b&quot;])
-    }
-}
-</code></pre></div>
-<p>Response:</p>
-<div class="highlight"><pre><span></span><code>{
-    &quot;data&quot;: {
-        &quot;requestInstallLogAgent&quot;: &quot;commandID&quot;
-    }
-}
-</code></pre></div>
-<h3 id="application-log-pipelines-api-design">Application Log Pipelines API Design</h3>
-<h4 id="overview_2">Overview</h4>
-<p>This document is about the API Design for <strong>Application log Pipeline</strong> component. To learn more information about the component, refer to <a href="../component-design">Component Design</a></p>
-<h4 id="application-log-pipelines-apis">Application Log Pipelines APIs</h4>
-<p>The following operations are available in the solution's Application Log Pipelines APIs.</p>
-<h5 id="list-app-pipelines">List App Pipelines</h5>
-<p><strong>Type:</strong> Query</p>
-<p><strong>Description:</strong> List all Pipelines</p>
-<p><strong>Resolver:</strong> Lambda</p>
-<p><strong>Parameters:</strong></p>
-<table>
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Required</th>
-<th>Default</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>count</td>
-<td>Int</td>
-<td>No</td>
-<td>10</td>
-<td>page number, start from 1</td>
-</tr>
-<tr>
-<td>page</td>
-<td>Int</td>
-<td>No</td>
-<td>1</td>
-<td>number of records per page</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Simple Request &amp; Response:</strong></p>
-<p>Request:</p>
-<div class="highlight"><pre><span></span><code>query example{
-    listAppPipelines(count: 10, page: 1) {
-        appPipelines {
-            createdDt
-            id
-            status
-            kdsParas {
-                enableAutoScaling
-                kdsArn
-                maxShardNumber
-                regionName
-                startShardNumber
-                streamName
-            }
-            aosParas {
-                coldLogTransition
-                domainName
-                engine
-                indexPrefix
-                logRetention
-                warmLogTransition
-                opensearchArn
-            }
-        }
-        total
-    }
-}
-</code></pre></div>
-<p>Response:</p>
-<div class="highlight"><pre><span></span><code>{
-    &quot;data&quot;: {
-        &quot;listAppPipelines&quot;: {
-            &quot;appPipelines&quot;: [{
-                    &quot;createdDt&quot;: &quot;2021-11-12T03:20:57.049336&quot;,
-                    &quot;id&quot;: &quot;de7137e2-f2f1-429f-b692-d8882b670200&quot;,
-                    &quot;status&quot;: &quot;DELETING&quot;,
-                    &quot;kdsParas&quot;: [{
-                        &quot;enableAutoScaling&quot;: false,
-                        &quot;kdsArn&quot;: &quot;kar&quot;,
-                        &quot;maxShardNumber&quot;: 10,
-                        &quot;regionName&quot;: &quot;us-&quot;,
-                        &quot;startShardNumber&quot;: 10,
-                        &quot;streamName&quot;: &quot;s&quot;
-                    }],
-                    &quot;aosParas&quot;: [{
-                        &quot;coldLogTransition&quot;: 10,
-                        &quot;domainName&quot;: null,
-                        &quot;engine&quot;: &quot;OpenSearch&quot;,
-                        &quot;indexPrefix&quot;: &quot;i1&quot;,
-                        &quot;logRetention&quot;: 32,
-                        &quot;warmLogTransition&quot;: 30,
-                        &quot;opensearchArn&quot;: &quot;t&quot;
-                    }]
-                },
-                {
-                    &quot;createdDt&quot;: &quot;2021-11-08T10:44:11.523895&quot;,
-                    &quot;id&quot;: &quot;45851795-6401-41f7-8ded-6c6db14f375c&quot;,
-                    &quot;status&quot;: &quot;CREATING&quot;,
-                    &quot;kdsParas&quot;: [{
-                        &quot;enableAutoScaling&quot;: true,
-                        &quot;kdsArn&quot;: &quot;karn&quot;,
-                        &quot;maxShardNumber&quot;: 20,
-                        &quot;regionName&quot;: &quot;us-west-1&quot;,
-                        &quot;startShardNumber&quot;: 10,
-                        &quot;streamName&quot;: &quot;aa&quot;
-                    }],
-                    &quot;aosParas&quot;: [{
-                        &quot;coldLogTransition&quot;: 10,
-                        &quot;domainName&quot;: null,
-                        &quot;engine&quot;: null,
-                        &quot;indexPrefix&quot;: &quot;fy&quot;,
-                        &quot;logRetention&quot;: 10,
-                        &quot;warmLogTransition&quot;: 10,
-                        &quot;opensearchArn&quot;: &quot;&quot;
-                    }]
-                }
-            ],
-            &quot;total&quot;: 2
-        }
-    }
-}
-</code></pre></div>
-<h5 id="create-pipelines">Create Pipelines</h5>
-<p><strong>Type:</strong> Mutation</p>
-<p><strong>Description:</strong> Create a record in DynamoDB</p>
-<p><strong>Resolver:</strong> Lambda</p>
-<p><strong>Parameters:</strong></p>
-<table>
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Required</th>
-<th>Default</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>aosParas</td>
-<td>K-V</td>
-<td>Yes</td>
-<td></td>
-<td>Selected Amazonn OpenSearch related parameters.</td>
-</tr>
-<tr>
-<td>kdsParas</td>
-<td>K-V</td>
-<td>Yes</td>
-<td></td>
-<td>Created Kinesis Data Stream related parameters.</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Simple Request &amp; Response:</strong></p>
-<p>Request:</p>
-<div class="highlight"><pre><span></span><code>mutation example{
-    createAppPipeline(aosParas: {
-        engine: &quot;OpenSearch_1.0&quot;,
-        indexPrefix: &quot;nginx-log&quot;,
-        opensearchArn: &quot;arn:aws:es:us-east-1:xxxxx:domain/testing-vpc-opensearch&quot;,
-        coldLogTransition: 10,
-        warmLogTransition: 5
-        logRetention: 10
-    }, kdsParas: {
-        enableAutoScaling: true,
-        kdsArn: &quot;arn:aws:kinesis:us-east-1:xxxxx:stream/LogHub-Pipe-b8c96-CWtoOpenSearchStackcwDataStream22A58C70-LOrG0yqq40py&quot;,
-        regionName: &quot;us-east-1&quot;,
-        startShardNumber: 10,
-        maxShardNumber: 20,
-        streamName: &quot;LogHub-Pipe-b8c96-CWtoOpenSearchStackcwDataStream22A58C70-LOrG0yqq40py&quot;
-    })
+    createAppPipeline(
+        aosParams: {
+            coldLogTransition: 0, 
+            failedLogBucket: &quot;backup-bucket&quot;, 
+            domainName: &quot;dev&quot;, 
+            engine: OpenSearch, 
+            indexPrefix: &quot;my-index&quot;, 
+            logRetention: 180, 
+            opensearchArn: &quot;arn:aws:es:us-west-2:123456789012:domain/dev&quot;, 
+            opensearchEndpoint: &quot;vpc-dev-xxx.us-west-2.es.amazonaws.com&quot;, 
+            replicaNumbers: 1, 
+            shardNumbers: 5, 
+            vpc: {
+                privateSubnetIds: &quot;subnet-1234,subnet-5678&quot;, 
+                publicSubnetIds: &quot;&quot;, 
+                securityGroupId: &quot;sg-1234&quot;, 
+                vpcId: &quot;vpc-0123&quot;
+                }, 
+            warmLogTransition: 0
+        }, 
+        bufferType: S3, 
+        bufferParams: [
+            {paramKey: &quot;logBucketName&quot;, paramValue: &quot;log-bucket&quot;}, 
+            {paramKey: &quot;logBucketPrefix&quot;, paramValue: &quot;AppLogs/my-index/year=%Y/month=%m/day=%d&quot;}, 
+            {paramKey: &quot;defaultCmkArn&quot;, paramValue: &quot;arn:aws:kms:us-west-2:123456789012:key/1dbbdae3-3448-4890-b956-2b9b36197784&quot;},
+            {paramKey: &quot;maxFileSize&quot;, paramValue: &quot;50&quot;},
+            {paramKey: &quot;uploadTimeout&quot;, paramValue: &quot;60&quot;},
+            {paramKey: &quot;compressionType&quot;, paramValue: &quot;gzip&quot;}
+        ],
+        force: false, 
+        tags: [{key: &quot;hello&quot;, value: &quot;world&quot;}]
+    )
 }
 </code></pre></div>
 <p>Response:</p>
@@ -3667,7 +3456,7 @@
     }
 }
 </code></pre></div>
-<h5 id="delete-pipeline">Delete Pipeline</h5>
+<h3 id="delete-app-log-pipeline">Delete App Log Pipeline</h3>
 <p><strong>Type:</strong> Mutation</p>
 <p><strong>Description:</strong> We don't physically delete the record, we just set the state of the item to INACTIVE in DynamoDB Table.</p>
 <p><strong>Resolver:</strong> Lambda</p>
@@ -3733,9 +3522,143 @@
   ]
 }
 </code></pre></div>
-<h5 id="get-pipeline-details">Get Pipeline Details</h5>
+<h3 id="list-app-log-pipelines">List App Log Pipelines</h3>
 <p><strong>Type:</strong> Query</p>
-<p><strong>Description:</strong> Get details of a Pipeline.</p>
+<p><strong>Description:</strong> List all application log pipelines</p>
+<p><strong>Resolver:</strong> Lambda</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>count</td>
+<td>Int</td>
+<td>No</td>
+<td>10</td>
+<td>page number, start from 1</td>
+</tr>
+<tr>
+<td>page</td>
+<td>Int</td>
+<td>No</td>
+<td>1</td>
+<td>number of records per page</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Simple Request &amp; Response:</strong></p>
+<p>Request:</p>
+<div class="highlight"><pre><span></span><code>query example{
+    listAppPipelines(count: 10, page: 1) {
+        appPipelines {
+            id
+            bufferType
+            bufferParams {
+                paramKey
+                paramValue
+            }
+            aosParams {
+                opensearchArn
+                domainName
+                indexPrefix
+                warmLogTransition
+                coldLogTransition
+                logRetention
+                shardNumbers
+                replicaNumbers
+                engine
+            }
+            createdDt
+            status
+            bufferAccessRoleArn
+            bufferAccessRoleName
+            bufferResourceName
+            bufferResourceArn
+            tags {
+                key
+                value
+            }
+        }
+        total
+    }
+}
+</code></pre></div>
+<p>Response:</p>
+<div class="highlight"><pre><span></span><code>{
+    &quot;data&quot;: {
+        &quot;listAppPipelines&quot;: {
+            &quot;appPipelines&quot;: [
+                {
+                    &quot;id&quot;: &quot;67409286-2672-413f-b477-dc1f4d7966d4&quot;,
+                    &quot;bufferType&quot;: &quot;S3&quot;,
+                    &quot;bufferParams&quot;: [
+                        {
+                            &quot;paramKey&quot;: &quot;logBucketName&quot;,
+                            &quot;paramValue&quot;: &quot;log-bucket&quot;
+                        },
+                        {
+                            &quot;paramKey&quot;: &quot;logBucketPrefix&quot;,
+                            &quot;paramValue&quot;: &quot;AppLogs/my-index/year=%Y/month=%m/day=%d&quot;
+                        },
+                        {
+                            &quot;paramKey&quot;: &quot;defaultCmkArn&quot;,
+                            &quot;paramValue&quot;: &quot;arn:aws:kms:eu-west-1:123456789012:key/9619ed02-b533-4d49-91de-3dd8efa11135&quot;
+                        },
+                        {
+                            &quot;paramKey&quot;: &quot;maxFileSize&quot;,
+                            &quot;paramValue&quot;: &quot;50&quot;
+                        },
+                        {
+                            &quot;paramKey&quot;: &quot;uploadTimeout&quot;,
+                            &quot;paramValue&quot;: &quot;60&quot;
+                        },
+                        {
+                            &quot;paramKey&quot;: &quot;compressionType&quot;,
+                            &quot;paramValue&quot;: &quot;gzip&quot;
+                        }
+                    ],
+                    &quot;aosParams&quot;: {
+                        &quot;opensearchArn&quot;: &quot;arn:aws:es:eu-west-1:123456789012:domain/dev&quot;,
+                        &quot;domainName&quot;: &quot;dev&quot;,
+                        &quot;indexPrefix&quot;: &quot;my-index&quot;,
+                        &quot;warmLogTransition&quot;: 0,
+                        &quot;coldLogTransition&quot;: 0,
+                        &quot;logRetention&quot;: 180,
+                        &quot;shardNumbers&quot;: 5,
+                        &quot;replicaNumbers&quot;: 1,
+                        &quot;engine&quot;: &quot;OpenSearch&quot;
+                    },
+                    &quot;createdDt&quot;: &quot;2022-10-30T03:03:56Z&quot;,
+                    &quot;status&quot;: &quot;ACTIVE&quot;,
+                    &quot;bufferAccessRoleArn&quot;: &quot;arn:aws:iam::123456789012:role/LogHub-AppPipe-824f1-BufferAccessRoleDF53FD85-1ME7KUUVZVFTD&quot;,
+                    &quot;bufferAccessRoleName&quot;: &quot;LogHub-AppPipe-824f1-BufferAccessRoleDF53FD85-1ME7KUUVZVFTD&quot;,
+                    &quot;bufferResourceName&quot;: &quot;log-bucket&quot;,
+                    &quot;bufferResourceArn&quot;: &quot;arn:aws:s3:::log-bucket&quot;,
+                    &quot;tags&quot;: [
+                        {
+                            &quot;key&quot;: &quot;hello&quot;,
+                            &quot;value&quot;: &quot;world&quot;
+                        }
+                    ]
+                },
+                ...
+            ],
+            &quot;total&quot;: 3
+        }
+    }
+}
+</code></pre></div>
+<h3 id="get-app-log-pipeline-details">Get App Log Pipeline Details</h3>
+<p><strong>Type:</strong> Query</p>
+<p><strong>Description:</strong> Get details of an application log pipeline.</p>
 <p><strong>Resolver:</strong> Lambda</p>
 <p><strong>Parameters:</strong></p>
 <table>
@@ -3761,29 +3684,34 @@
 <p><strong>Simple Request &amp; Response:</strong></p>
 <p>Request:</p>
 <div class="highlight"><pre><span></span><code>query example {
-  getAppPipeline(id: &quot;45851795-6401-41f7-8ded-6c6db14f375c&quot;) {
-        createdDt
+    getAppPipeline (id: &quot;67409286-2672-413f-b477-dc1f4d7966d4&quot;) {
         id
-        aosParas {
-            coldLogTransition
-            indexPrefix
-            logRetention
-            warmLogTransition
+        bufferType
+        bufferParams {
+            paramKey
+            paramValue
+        }
+        aosParams {
             opensearchArn
-        }
-        kdsParas {
-            enableAutoScaling
+            domainName
+            indexPrefix
+            warmLogTransition
+            coldLogTransition
+            logRetention
+            shardNumbers
+            replicaNumbers
             engine
-            kdsArn
-            maxShardNumber
-            regionName
-            startShardNumber
-            streamName
         }
-        tags[{
+        createdDt
+        status
+        bufferAccessRoleArn
+        bufferAccessRoleName
+        bufferResourceName
+        bufferResourceArn
+        tags {
             key
             value
-        }]
+        }
     }
 }
 </code></pre></div>
@@ -3791,35 +3719,199 @@
 <div class="highlight"><pre><span></span><code>{
     &quot;data&quot;: {
         &quot;getAppPipeline&quot;: {
-            &quot;createdDt&quot;: &quot;2021-11-08T10:44:11.523895&quot;,
-            &quot;id&quot;: &quot;45851795-6401-41f7-8ded-6c6db14f375c&quot;,
-            &quot;aosParas&quot;: [{
-                &quot;engine&quot;: &quot;OpenSearch_1.0&quot;,
-                &quot;indexPrefix&quot;: &quot;nginx-log&quot;,
-                &quot;opensearchArn&quot;: &quot;arn:aws:es:us-east-1:xxxxx:domain/testing-vpc-opensearch&quot;,
-                &quot;coldLogTransition&quot;: 10,
-                &quot;warmLogTransition&quot;: 5
-                &quot;logRetention&quot;: 10
-            }],
-            &quot;kdsParas&quot;: [{
-                &quot;enableAutoScaling&quot;: true,
-                &quot;kdsArn&quot;: &quot;arn:aws:kinesis:us-east-1:xxxxx:stream/&quot;LogHub-Pipe-b8c96-CWtoOpenSearchStackcwDataStream22A58C70-LOrG0yqq40py&quot;,
-                &quot;regionName&quot;: &quot;us-east-1&quot;,
-                &quot;startShardNumber&quot;: 10,
-                &quot;maxShardNumber&quot;: 20,
-                &quot;streamName&quot;: &quot;LogHub-Pipe-b8c96-CWtoOpenSearchStackcwDataStream22A58C70-LOrG0yqq40py&quot;
-            }],
-            &quot;tags&quot;: []
+            &quot;id&quot;: &quot;67409286-2672-413f-b477-dc1f4d7966d4&quot;,
+            &quot;bufferType&quot;: &quot;S3&quot;,
+            &quot;bufferParams&quot;: [
+                {
+                    &quot;paramKey&quot;: &quot;logBucketName&quot;,
+                    &quot;paramValue&quot;: &quot;log-bucket&quot;
+                },
+                {
+                    &quot;paramKey&quot;: &quot;logBucketPrefix&quot;,
+                    &quot;paramValue&quot;: &quot;AppLogs/my-index/year=%Y/month=%m/day=%d&quot;
+                },
+                {
+                    &quot;paramKey&quot;: &quot;defaultCmkArn&quot;,
+                    &quot;paramValue&quot;: &quot;arn:aws:kms:eu-west-1:123456789012:key/9619ed02-b533-4d49-91de-3dd8efa11135&quot;
+                },
+                {
+                    &quot;paramKey&quot;: &quot;maxFileSize&quot;,
+                    &quot;paramValue&quot;: &quot;50&quot;
+                },
+                {
+                    &quot;paramKey&quot;: &quot;uploadTimeout&quot;,
+                    &quot;paramValue&quot;: &quot;60&quot;
+                },
+                {
+                    &quot;paramKey&quot;: &quot;compressionType&quot;,
+                    &quot;paramValue&quot;: &quot;gzip&quot;
+                }
+            ],
+            &quot;aosParams&quot;: {
+                &quot;opensearchArn&quot;: &quot;arn:aws:es:eu-west-1:123456789012:domain/dev&quot;,
+                &quot;domainName&quot;: &quot;dev&quot;,
+                &quot;indexPrefix&quot;: &quot;my-index&quot;,
+                &quot;warmLogTransition&quot;: 0,
+                &quot;coldLogTransition&quot;: 0,
+                &quot;logRetention&quot;: 180,
+                &quot;shardNumbers&quot;: 5,
+                &quot;replicaNumbers&quot;: 1,
+                &quot;engine&quot;: &quot;OpenSearch&quot;
+            },
+            &quot;createdDt&quot;: &quot;2022-11-30T03:03:56Z&quot;,
+            &quot;status&quot;: &quot;ACTIVE&quot;,
+            &quot;bufferAccessRoleArn&quot;: &quot;arn:aws:iam::123456789012:role/LogHub-AppPipe-67409-BufferAccessRoleDF53FD85-BTLM263CB8JI&quot;,
+            &quot;bufferAccessRoleName&quot;: &quot;LogHub-AppPipe-67409-BufferAccessRoleDF53FD85-BTLM263CB8JI&quot;,
+            &quot;bufferResourceName&quot;: &quot;log-bucket&quot;,
+            &quot;bufferResourceArn&quot;: &quot;arn:aws:s3:::log-bucket&quot;,
+            &quot;tags&quot;: [
+                {
+                    &quot;key&quot;: &quot;hello&quot;,
+                    &quot;value&quot;: &quot;world&quot;
+                }
+            ]
         }
     }
 }
 </code></pre></div>
-<h3 id="application-log-ingestion-api-design">Application Log Ingestion API Design</h3>
-<h4 id="overview_3">Overview</h4>
-<p>This document is about the API Design for <strong>Application log Ingestion</strong> component. To learn more information about the component, refer to <a href="../component-design">Component Design</a></p>
-<h4 id="application-log-ingestion-apis">Application Log Ingestion APIs</h4>
-<p>The following operations are available in the solution's Application Log Pipelines APIs.</p>
-<h5 id="list-log-ingestion">List Log Ingestion</h5>
+<h2 id="application-log-ingestion-apis">Application Log Ingestion APIs</h2>
+<p>The following operations are available in the solution's Application (App) Log Ingestion APIs.</p>
+<h3 id="create-app-log-ingestion">Create App Log Ingestion</h3>
+<p><strong>Type:</strong> Mutation</p>
+<p><strong>Description:</strong> Create a record in DynamoDB</p>
+<p><strong>Resolver:</strong> Lambda</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>appPipelineId</td>
+<td>K-V</td>
+<td>Yes</td>
+<td></td>
+<td>Selected Amazonn OpenSearch related parameters.</td>
+</tr>
+<tr>
+<td>confId</td>
+<td>K-V</td>
+<td>Yes</td>
+<td></td>
+<td>Created Kinesis Data Stream related parameters.</td>
+</tr>
+<tr>
+<td>groupIds</td>
+<td>String[]</td>
+<td>Yes</td>
+<td></td>
+<td>Created Kinesis Data Stream related parameters.</td>
+</tr>
+<tr>
+<td>stackId</td>
+<td>String</td>
+<td>Yes</td>
+<td></td>
+<td>In the process of creating an application log pipeline, KDS and Lambda are created through the CloudFormation stack. This item can be obtained through the listAppLogIngestions API.</td>
+</tr>
+<tr>
+<td>stackName</td>
+<td>String</td>
+<td>Yes</td>
+<td></td>
+<td>In the process of creating an application log pipeline, KDS and Lambda are created through the CloudFormation stack. This item can be obtained through the listAppLogIngestions API.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Simple Request &amp; Response:</strong></p>
+<p>Request:</p>
+<div class="highlight"><pre><span></span><code>mutation example{
+    createAppLogIngestion(
+          appPipelineId: &quot;45851795-6401-41f7-8ded-6c6db14f375c&quot;,
+          confId: &quot;01523e70-b571-4583-8882-56c877ec098c&quot;,
+          groupIds: [&quot;afa6c23f-765c-4322-bb00-234525a5ff85&quot;],
+          stackId: &quot;&quot;,
+          stackName: &quot;&quot;)
+}
+</code></pre></div>
+<p>Response:</p>
+<div class="highlight"><pre><span></span><code>{
+    &quot;data&quot;: {
+        &quot;createAppLogIngestion&quot;: &quot;2de27afe-d568-49cc-b7b5-86b161ce0662&quot;
+    }
+}
+</code></pre></div>
+<p>Exceptions:</p>
+<ul>
+<li>Unknown exception, please check Lambda log for more details</li>
+</ul>
+<div class="highlight"><pre><span></span><code>{
+    &quot;data&quot;: {
+        &quot;createAppLogIngestion&quot;: null
+    },
+    &quot;errors&quot;: [{
+        &quot;path&quot;: [
+            &quot;createAppLogIngestion&quot;
+        ],
+        &quot;data&quot;: null,
+        &quot;errorType&quot;: &quot;Lambda:Unhandled&quot;,
+        &quot;errorInfo&quot;: null,
+        &quot;locations&quot;: [{
+            &quot;line&quot;: 23,
+            &quot;column&quot;: 3,
+            &quot;sourceName&quot;: null
+        }],
+        &quot;message&quot;: &quot;please check groupId afa6c23f-765c-4322-bb00-234525a5ff85 and conId 01523e70-b571-4583-8882-56c877ec098c, they already exist in applineId 45851795-6401-41f7-8ded-6c6db14f375c&quot;
+    }]
+}
+</code></pre></div>
+<h3 id="delete-app-log-ingestion">Delete App Log Ingestion</h3>
+<p><strong>Type:</strong> Mutation</p>
+<p><strong>Description:</strong> We don't physically delete the record, we just set the state of the item to INACTIVE in DynamoDB Table.</p>
+<p><strong>Resolver:</strong> Lambda</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ids</td>
+<td>String[]</td>
+<td>Yes</td>
+<td></td>
+<td>Log Ingestion ID Set (key in DynamoDB)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Simple Request &amp; Response:</strong></p>
+<p>Request:</p>
+<div class="highlight"><pre><span></span><code>mutation example {
+        deleteAppLogIngestion(
+              ids: [&quot;60779959-95e3-45b6-a433-225f5c57edcc&quot;, &quot;86b02ebc-d952-4b37-ac17-f001150d3a16&quot;]
+              )
+}
+</code></pre></div>
+<p>Response:</p>
+<div class="highlight"><pre><span></span><code>{
+  &quot;data&quot;: {
+    &quot;deleteAppLogIngestion&quot;: &quot;OK&quot;
+  }
+}
+</code></pre></div>
+<h3 id="list-app-log-ingestions">List App Log Ingestions</h3>
 <p><strong>Type:</strong> Query</p>
 <p><strong>Description:</strong> List all Ingestion</p>
 <p><strong>Resolver:</strong> Lambda</p>
@@ -3915,142 +4007,7 @@
     }
 }
 </code></pre></div>
-<h5 id="create-ingestion">Create Ingestion</h5>
-<p><strong>Type:</strong> Mutation</p>
-<p><strong>Description:</strong> Create a record in DynamoDB</p>
-<p><strong>Resolver:</strong> Lambda</p>
-<p><strong>Parameters:</strong></p>
-<table>
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Required</th>
-<th>Default</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>appPipelineId</td>
-<td>K-V</td>
-<td>Yes</td>
-<td></td>
-<td>Selected Amazonn OpenSearch related parameters.</td>
-</tr>
-<tr>
-<td>confId</td>
-<td>K-V</td>
-<td>Yes</td>
-<td></td>
-<td>Created Kinesis Data Stream related parameters.</td>
-</tr>
-<tr>
-<td>groupIds</td>
-<td>String[]</td>
-<td>Yes</td>
-<td></td>
-<td>Created Kinesis Data Stream related parameters.</td>
-</tr>
-<tr>
-<td>stackId</td>
-<td>String</td>
-<td>Yes</td>
-<td></td>
-<td>In the process of creating an application log pipeline, KDS and Lambda are created through the CloudFormation stack. This item can be obtained through the listAppLogIngestions API.</td>
-</tr>
-<tr>
-<td>stackName</td>
-<td>String</td>
-<td>Yes</td>
-<td></td>
-<td>In the process of creating an application log pipeline, KDS and Lambda are created through the CloudFormation stack. This item can be obtained through the listAppLogIngestions API.</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Simple Request &amp; Response:</strong></p>
-<p>Request:</p>
-<div class="highlight"><pre><span></span><code>mutation example{
-    createAppLogIngestion(
-          appPipelineId: &quot;45851795-6401-41f7-8ded-6c6db14f375c&quot;,
-          confId: &quot;01523e70-b571-4583-8882-56c877ec098c&quot;,
-          groupIds: [&quot;afa6c23f-765c-4322-bb00-234525a5ff85&quot;],
-          stackId: &quot;&quot;,
-          stackName: &quot;&quot;)
-}
-</code></pre></div>
-<p>Response:</p>
-<div class="highlight"><pre><span></span><code>{
-    &quot;data&quot;: {
-        &quot;createAppLogIngestion&quot;: &quot;2de27afe-d568-49cc-b7b5-86b161ce0662&quot;
-    }
-}
-</code></pre></div>
-<p>Exceptions:</p>
-<ul>
-<li>Unknown exception, please check Lambda log for more details</li>
-</ul>
-<div class="highlight"><pre><span></span><code>{
-    &quot;data&quot;: {
-        &quot;createAppLogIngestion&quot;: null
-    },
-    &quot;errors&quot;: [{
-        &quot;path&quot;: [
-            &quot;createAppLogIngestion&quot;
-        ],
-        &quot;data&quot;: null,
-        &quot;errorType&quot;: &quot;Lambda:Unhandled&quot;,
-        &quot;errorInfo&quot;: null,
-        &quot;locations&quot;: [{
-            &quot;line&quot;: 23,
-            &quot;column&quot;: 3,
-            &quot;sourceName&quot;: null
-        }],
-        &quot;message&quot;: &quot;please check groupId afa6c23f-765c-4322-bb00-234525a5ff85 and conId 01523e70-b571-4583-8882-56c877ec098c, they already exist in applineId 45851795-6401-41f7-8ded-6c6db14f375c&quot;
-    }]
-}
-</code></pre></div>
-<h5 id="delete-application-log-ingestion">Delete Application Log Ingestion</h5>
-<p><strong>Type:</strong> Mutation</p>
-<p><strong>Description:</strong> We don't physically delete the record, we just set the state of the item to INACTIVE in DynamoDB Table.</p>
-<p><strong>Resolver:</strong> Lambda</p>
-<p><strong>Parameters:</strong></p>
-<table>
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Required</th>
-<th>Default</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>ids</td>
-<td>String[]</td>
-<td>Yes</td>
-<td></td>
-<td>Log Ingestion ID Set (key in DynamoDB)</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Simple Request &amp; Response:</strong></p>
-<p>Request:</p>
-<div class="highlight"><pre><span></span><code>mutation example {
-        deleteAppLogIngestion(
-              ids: [&quot;60779959-95e3-45b6-a433-225f5c57edcc&quot;, &quot;86b02ebc-d952-4b37-ac17-f001150d3a16&quot;]
-              )
-}
-</code></pre></div>
-<p>Response:</p>
-<div class="highlight"><pre><span></span><code>{
-  &quot;data&quot;: {
-    &quot;deleteAppLogIngestion&quot;: &quot;OK&quot;
-  }
-}
-</code></pre></div>
-<h5 id="get-log-ingestion-details">Get Log Ingestion Details</h5>
+<h3 id="get-app-log-ingestion-details">Get App Log Ingestion Details</h3>
 <p><strong>Type:</strong> Query</p>
 <p><strong>Description:</strong> Get details of a Ingestion.</p>
 <p><strong>Resolver:</strong> Lambda</p>
@@ -4177,11 +4134,12 @@
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": "latest"}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.16e2a7d4.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": "latest"}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.37e9125f.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.5a2dcb6a.min.js"></script>
       
+    
     
   </body>
 </html>

@@ -11,7 +11,7 @@
         <link rel="canonical" href="https://awslabs.github.io/log-hub/designs/eks-log/api-design/">
       
       <link rel="icon" href="../../../images/aws-solutions.png">
-      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.5.3">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.10">
     
     
       
@@ -19,10 +19,10 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.7a952b86.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.975780f9.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.cbb835fc.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.2505c338.min.css">
         
       
       
@@ -56,7 +56,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="none" data-md-color-accent="none">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="None" data-md-color-accent="None">
   
     
     
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#overview" class="md-skip">
+        <a href="#eks-log-api-design" class="md-skip">
           Skip to content
         </a>
       
@@ -124,13 +124,13 @@
                     English
                   </a>
                 </li>
-                
+              
                 <li class="md-select__item">
                   <a href="/log-hub/zh/" hreflang="zh" class="md-select__link">
                     简体中文
                   </a>
                 </li>
-                
+              
             </ul>
           </div>
         </div>
@@ -175,7 +175,7 @@
         <a href="https://github.com/awslabs/log-hub" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
     awslabs/log-hub
@@ -292,7 +292,7 @@
       <a href="https://github.com/awslabs/log-hub" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
     awslabs/log-hub
@@ -1005,6 +1005,20 @@
     <li class="md-nav__item">
       <a href="../../../implementation-guide/applications/json/" class="md-nav__link">
         JSON
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation-guide/applications/syslog/" class="md-nav__link">
+        Syslog
       </a>
     </li>
   
@@ -2018,65 +2032,65 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#apis" class="md-nav__link">
-    APIs
+  <a href="#eks-log-source-apis" class="md-nav__link">
+    EKS Log Source APIs
   </a>
   
-    <nav class="md-nav" aria-label="APIs">
+    <nav class="md-nav" aria-label="EKS Log Source APIs">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#eks-cluster-as-log-source-apis" class="md-nav__link">
-    EKS Cluster as log source APIs
+  <a href="#list-eks-cluster-names" class="md-nav__link">
+    list EKS cluster names
   </a>
   
-    <nav class="md-nav" aria-label="EKS Cluster as log source APIs">
-      <ul class="md-nav__list">
+</li>
         
           <li class="md-nav__item">
-  <a href="#list-ekscluster-names" class="md-nav__link">
-    list EKSCluster Names
+  <a href="#import-an-eks-cluster" class="md-nav__link">
+    Import an EKS cluster
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#list-imported-eks-clusters" class="md-nav__link">
-    list imported EKS Clusters
+    list imported EKS clusters
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#_1" class="md-nav__link">
-    
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
-    
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#import-a-eks-cluster-as-application-log-source" class="md-nav__link">
-    Import a EKS Cluster as application log source
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#create-a-eks-cluster-pod-log-ingestion" class="md-nav__link">
-    Create a EKS cluster pod Log ingestion
+  <a href="#get-imported-eks-cluster-details" class="md-nav__link">
+    Get imported EKS cluster details
   </a>
   
 </li>
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#eks-log-deployment-apis" class="md-nav__link">
+    EKS Log Deployment APIs
+  </a>
+  
+    <nav class="md-nav" aria-label="EKS Log Deployment APIs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#deploy-as-daemonset" class="md-nav__link">
+    Deploy as DaemonSet
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deploy-as-side-car" class="md-nav__link">
+    Deploy as Side Car
+  </a>
   
 </li>
         
@@ -2148,65 +2162,65 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#apis" class="md-nav__link">
-    APIs
+  <a href="#eks-log-source-apis" class="md-nav__link">
+    EKS Log Source APIs
   </a>
   
-    <nav class="md-nav" aria-label="APIs">
+    <nav class="md-nav" aria-label="EKS Log Source APIs">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#eks-cluster-as-log-source-apis" class="md-nav__link">
-    EKS Cluster as log source APIs
+  <a href="#list-eks-cluster-names" class="md-nav__link">
+    list EKS cluster names
   </a>
   
-    <nav class="md-nav" aria-label="EKS Cluster as log source APIs">
-      <ul class="md-nav__list">
+</li>
         
           <li class="md-nav__item">
-  <a href="#list-ekscluster-names" class="md-nav__link">
-    list EKSCluster Names
+  <a href="#import-an-eks-cluster" class="md-nav__link">
+    Import an EKS cluster
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#list-imported-eks-clusters" class="md-nav__link">
-    list imported EKS Clusters
+    list imported EKS clusters
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#_1" class="md-nav__link">
-    
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
-    
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#import-a-eks-cluster-as-application-log-source" class="md-nav__link">
-    Import a EKS Cluster as application log source
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#create-a-eks-cluster-pod-log-ingestion" class="md-nav__link">
-    Create a EKS cluster pod Log ingestion
+  <a href="#get-imported-eks-cluster-details" class="md-nav__link">
+    Get imported EKS cluster details
   </a>
   
 </li>
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#eks-log-deployment-apis" class="md-nav__link">
+    EKS Log Deployment APIs
+  </a>
+  
+    <nav class="md-nav" aria-label="EKS Log Deployment APIs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#deploy-as-daemonset" class="md-nav__link">
+    Deploy as DaemonSet
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deploy-as-side-car" class="md-nav__link">
+    Deploy as Side Car
+  </a>
   
 </li>
         
@@ -2235,11 +2249,10 @@
   </a>
 
 
-<h1 id="overview">Overview</h1>
-<h3 id="apis">APIs</h3>
-<h4 id="eks-cluster-as-log-source-apis">EKS Cluster as log source APIs</h4>
+<h1 id="eks-log-api-design">EKS Log API Design</h1>
+<h2 id="eks-log-source-apis">EKS Log Source APIs</h2>
 <p>This document is about API design of EKS cluster as log source component.</p>
-<h5 id="list-ekscluster-names">list EKSCluster Names</h5>
+<h3 id="list-eks-cluster-names">list EKS cluster names</h3>
 <p><strong>Type:</strong> Query</p>
 <p><strong>Description:</strong> Display cluster names for all regions</p>
 <p><strong>Resolver:</strong> Lambda</p>
@@ -2293,202 +2306,9 @@
   }
 }
 </code></pre></div>
-<h5 id="list-imported-eks-clusters">list imported EKS Clusters</h5>
-<p><strong>Type:</strong> Query</p>
-<p><strong>Description:</strong> List imported EKS cluster</p>
-<p><strong>Resolver:</strong> Lambda</p>
-<p><strong>Parameters:</strong></p>
-<table>
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Required</th>
-<th>Default</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>count</td>
-<td>Int</td>
-<td>No</td>
-<td>10</td>
-<td>page number, start from 1</td>
-</tr>
-<tr>
-<td>page</td>
-<td>Int</td>
-<td>No</td>
-<td>1</td>
-<td>number of records per page</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Simple Request &amp; Response:</strong></p>
-<p>Request:</p>
-<div class="highlight"><pre><span></span><code>query example{
-  listImportedEKSClusters(count: 10, page: 1) {
-    eksClusterLogSourceList {
-      accountId
-      vpcId
-      subnetIds
-      region
-      oidcIssuer
-      logAgentRoleArn
-      id
-      endpoint
-      eksClusterSGId
-      eksClusterName
-      eksClusterArn
-      deploymentKind
-      cri
-      createdDt
-      tags {
-        key
-        value
-      }
-      aosDomain {
-        version
-        id
-        engine
-        endpoint
-        domainName
-      }
-    }
-  }
-}
-</code></pre></div>
-<p>Response:</p>
-<div class="highlight"><pre><span></span><code>{
-  &quot;data&quot;: {
-    &quot;listImportedEKSClusters&quot;: {
-      &quot;eksClusterLogSourceList&quot;: [
-        {
-          &quot;accountId&quot;: null,
-          &quot;vpcId&quot;: &quot;vpc-f4d05e8c&quot;,
-          &quot;subnetIds&quot;: [
-            &quot;subnet-96816bcb&quot;,
-            &quot;subnet-3dabc916&quot;,
-            &quot;subnet-9b948ce2&quot;,
-            &quot;subnet-a4cecbef&quot;
-          ],
-          &quot;region&quot;: null,
-          &quot;oidcIssuer&quot;: &quot;https://oidc.eks.us-west-2.amazonaws.com/id/20E13C86999BBFC25EC76C826CFFF4FB&quot;,
-          &quot;logAgentRoleArn&quot;: &quot;arn:aws:iam::783732175206:role/LogHub-EKS-LogAgent-Role-a2a5b0643c4c472abd3dacfdbf9e1463&quot;,
-          &quot;id&quot;: &quot;1d431ccd7caa4c90af0d86193bf78f9a&quot;,
-          &quot;endpoint&quot;: &quot;https://20E13C86999BBFC25EC76C826CFFF4FB.yl4.us-west-2.eks.amazonaws.com&quot;,
-          &quot;eksClusterSGId&quot;: &quot;sg-02b491dce426c1995&quot;,
-          &quot;eksClusterName&quot;: &quot;eks-demo&quot;,
-          &quot;eksClusterArn&quot;: &quot;arn:aws:eks:us-west-2:783732175206:cluster/eks-demo&quot;,
-          &quot;deploymentKind&quot;: &quot;DaemonSet&quot;,
-          &quot;cri&quot;: null,
-          &quot;createdDt&quot;: &quot;2022-04-03T16:34:02Z&quot;,
-          &quot;tags&quot;: [],
-          &quot;aosDomain&quot;: {
-            &quot;version&quot;: &quot;1.0&quot;,
-            &quot;id&quot;: &quot;a80137115e9ad59cf2a7137fe0e38197&quot;,
-            &quot;engine&quot;: &quot;OpenSearch&quot;,
-            &quot;endpoint&quot;: &quot;vpc-workshop-os-migdv4qrxbqdrp6mbfknyyagk4.us-west-2.es.amazonaws.com&quot;,
-            &quot;domainName&quot;: &quot;workshop-os&quot;
-          }
-        }
-      ]
-    }
-  }
-}
-</code></pre></div>
-<h5 id="_1"></h5>
-<p><strong>Type:</strong> Query</p>
-<p><strong>Description:</strong> Display DaemonSet configuration by the EKS Cluster log source Id</p>
-<p><strong>Resolver:</strong> Lambda</p>
-<p><strong>Parameters:</strong></p>
-<table>
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Required</th>
-<th>Default</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>eksClusterId</td>
-<td>String</td>
-<td>Yes</td>
-<td></td>
-<td>log source id for the imported EKS Cluster</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Simple Request &amp; Response:</strong></p>
-<p>Request:</p>
-<div class="highlight"><pre><span></span><code>query example{
-  getEKSDaemonSetConfig(
-      eksClusterId: &quot;1d431ccd7caa4c90af0d86193bf78f9a&quot;
-      )
-}
-</code></pre></div>
-<p>Response:</p>
-<div class="highlight"><pre><span></span><code>{
-  &quot;data&quot;: {
-    &quot;getEKSDaemonSetConfig&quot;: &quot;&quot;
-  }
-}
-</code></pre></div>
-<h5 id="_2"></h5>
-<p><strong>Type:</strong> Query</p>
-<p><strong>Description:</strong> Display deployment configuration by the EKS Cluster log source Id</p>
-<p><strong>Resolver:</strong> Lambda</p>
-<p><strong>Parameters:</strong></p>
-<table>
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Required</th>
-<th>Default</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>eksClusterId</td>
-<td>String</td>
-<td>Yes</td>
-<td></td>
-<td>log source id for the imported EKS Cluster</td>
-</tr>
-<tr>
-<td>ingestionId</td>
-<td>String</td>
-<td>Yes</td>
-<td></td>
-<td>the Id for application log ingestion</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Simple Request &amp; Response:</strong></p>
-<p>Request:</p>
-<div class="highlight"><pre><span></span><code>query example{
-  getEKSDeploymentConfig(
-      eksClusterId: &quot;1d431ccd7caa4c90af0d86193bf78f9a&quot;,
-      ingestionId: &quot;2d43abe07caa4c90af0d8619323064&quot;
-      )
-}
-</code></pre></div>
-<p>Response:</p>
-<div class="highlight"><pre><span></span><code>{
-  &quot;data&quot;: {
-    &quot;getEKSDeploymentConfig&quot;: &quot;&quot;
-  }
-}
-</code></pre></div>
-<h5 id="import-a-eks-cluster-as-application-log-source">Import a EKS Cluster as application log source</h5>
+<h3 id="import-an-eks-cluster">Import an EKS cluster</h3>
 <p><strong>Type:</strong> Mutation</p>
-<p><strong>Description:</strong> Create a record in DynamoDB</p>
+<p><strong>Description:</strong> Import an EKS cluster used as log source in solution</p>
 <p><strong>Resolver:</strong> Lambda</p>
 <p><strong>Parameters:</strong></p>
 <table>
@@ -2576,9 +2396,122 @@
   }
 }
 </code></pre></div>
-<h5 id="create-a-eks-cluster-pod-log-ingestion">Create a EKS cluster pod Log ingestion</h5>
-<p><strong>Type:</strong> Mutation</p>
-<p><strong>Description:</strong> Create a record in DynamoDB.</p>
+<h3 id="list-imported-eks-clusters">list imported EKS clusters</h3>
+<p><strong>Type:</strong> Query</p>
+<p><strong>Description:</strong> List imported EKS cluster</p>
+<p><strong>Resolver:</strong> Lambda</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>count</td>
+<td>Int</td>
+<td>No</td>
+<td>10</td>
+<td>page number, start from 1</td>
+</tr>
+<tr>
+<td>page</td>
+<td>Int</td>
+<td>No</td>
+<td>1</td>
+<td>number of records per page</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Simple Request &amp; Response:</strong></p>
+<p>Request:</p>
+<div class="highlight"><pre><span></span><code>query example {
+    listImportedEKSClusters (page: 1, count: 10) {
+        eksClusterLogSourceList {
+            id
+            aosDomain {
+                id
+                domainName
+                engine
+                version
+                endpoint
+                metrics {
+                    searchableDocs
+                    freeStorageSpace
+                    health
+                }
+            }
+            eksClusterName
+            eksClusterArn
+            cri
+            vpcId
+            eksClusterSGId
+            subnetIds
+            oidcIssuer
+            endpoint
+            createdDt
+            accountId
+            region
+            logAgentRoleArn
+            deploymentKind
+            tags {
+                key
+                value
+            }
+        }
+        total
+    }
+}
+</code></pre></div>
+<p>Response:</p>
+<div class="highlight"><pre><span></span><code>{
+    &quot;data&quot;: {
+        &quot;listImportedEKSClusters&quot;: {
+            &quot;eksClusterLogSourceList&quot;: [
+                {
+                    &quot;id&quot;: &quot;e83aa65ef40e4a8b883dff33af483e36&quot;,
+                    &quot;aosDomain&quot;: {
+                        &quot;id&quot;: &quot;439239da8014f9a419c92b1b0c72a5fc&quot;,
+                        &quot;domainName&quot;: &quot;dev&quot;,
+                        &quot;engine&quot;: &quot;OpenSearch&quot;,
+                        &quot;version&quot;: &quot;1.0&quot;,
+                        &quot;endpoint&quot;: &quot;vpc-dev-xxx.eu-west-1.es.amazonaws.com&quot;,
+                        &quot;metrics&quot;: null
+                    },
+                    &quot;eksClusterName&quot;: &quot;test&quot;,
+                    &quot;eksClusterArn&quot;: &quot;arn:aws:eks:eu-west-1:123456789012:cluster/test&quot;,
+                    &quot;cri&quot;: &quot;docker&quot;,
+                    &quot;vpcId&quot;: &quot;vpc-0123&quot;,
+                    &quot;eksClusterSGId&quot;: &quot;sg-1234&quot;,
+                    &quot;subnetIds&quot;: [
+                        &quot;subnet-1234&quot;,
+                        &quot;subnet-5678&quot;,
+                        ...
+                    ],
+                    &quot;oidcIssuer&quot;: &quot;https://oidc.eks.eu-west-1.amazonaws.com/id/ABC&quot;,
+                    &quot;endpoint&quot;: &quot;https://ABC.sk1.eu-west-1.eks.amazonaws.com&quot;,
+                    &quot;createdDt&quot;: &quot;2022-10-29T07:52:48Z&quot;,
+                    &quot;accountId&quot;: &quot;123456789012&quot;,
+                    &quot;region&quot;: &quot;eu-west-1&quot;,
+                    &quot;logAgentRoleArn&quot;: &quot;arn:aws:iam::123456789012:role/LogHub-EKS-LogAgent-Role-3623ec2044264a2189416bcaaa7ee948&quot;,
+                    &quot;deploymentKind&quot;: &quot;DaemonSet&quot;,
+                    &quot;tags&quot;: []
+                },
+                ...
+            ],
+            &quot;total&quot;: 2
+        }
+    }
+}
+</code></pre></div>
+<h3 id="get-imported-eks-cluster-details">Get imported EKS cluster details</h3>
+<p><strong>Type:</strong> Query</p>
+<p><strong>Description:</strong> Display details of an imported eks cluster</p>
 <p><strong>Resolver:</strong> Lambda</p>
 <p><strong>Parameters:</strong></p>
 <table>
@@ -2597,79 +2530,166 @@
 <td>String</td>
 <td>Yes</td>
 <td></td>
-<td>EKS cluster log source Unique ID</td>
-</tr>
-<tr>
-<td>confId</td>
-<td>String</td>
-<td>Yes</td>
-<td></td>
-<td>Log Config Unique ID</td>
-</tr>
-<tr>
-<td>aosParas</td>
-<td>K-V</td>
-<td>Yes</td>
-<td></td>
-<td>Selected Amazonn OpenSearch related parameters.</td>
-</tr>
-<tr>
-<td>kdsParas</td>
-<td>K-V</td>
-<td>Yes</td>
-<td></td>
-<td>Created Kinesis Data Stream related parameters.</td>
-</tr>
-<tr>
-<td>tags</td>
-<td>K-V</td>
-<td>No</td>
-<td></td>
-<td>Custom tags for the ingestion</td>
+<td>log source id for the imported EKS Cluster</td>
 </tr>
 </tbody>
 </table>
 <p><strong>Simple Request &amp; Response:</strong></p>
 <p>Request:</p>
-<div class="highlight"><pre><span></span><code>mutation example{
-  createEKSClusterPodLogIngestion(
-      aosParas: {
-          opensearchArn: &quot;arn:aws:es:us-west-2:783732175206:domain/workshop-os&quot;,
-          domainName: &quot;workshop-os&quot;,
-          opensearchEndpoint: &quot;vpc-workshop-os-migdv4qrxbqdrp6mbfknyyagk4.us-west-2.es.amazonaws.com&quot;,
-          indexPrefix: &quot;nginx-log&quot;,
-          warmLogTransition: 0,
-          coldLogTransition: 0,
-          logRetention: 0,
-          engine: &quot;OpenSearch&quot;,
-          vpc: {
-              vpcId: &quot;vpc-0c111322ef4a52f41&quot;,
-              securityGroupId: &quot;sg-0ae9e8d70d31b40d0&quot;,
-              privateSubnetIds: &quot;subnet-069c0ff066cca88cf,subnet-05839e25db2e70d8f&quot;,
-              publicSubnetIds: &quot;&quot;
-          },
-          engine: &quot;OpenSearch&quot;,
-          opensearchArn: &quot;arn:aws:es:us-west-2:783732175206:domain/workshop-os&quot;,
-          opensearchEndpoint: &quot;vpc-workshop-os-migdv4qrxbqdrp6mbfknyyagk4.us-west-2.es.amazonaws.com&quot;
-      },
-      kdsParas: {
-          enableAutoScaling: true,
-          maxShardNumber: 10
-          startShardNumber: 2
-        },
-      confId: &quot;deebad45-c4ad-4346-9b4e-b56f635b5c31&quot;,
+<div class="highlight"><pre><span></span><code>query example {
+    getEKSClusterDetails (eksClusterId: &quot;e83aa65ef40e4a8b883dff33af483e36&quot;) {
+        id
+        aosDomain {
+            id
+            domainName
+            engine
+            version
+            endpoint
+            metrics {
+                searchableDocs
+                freeStorageSpace
+                health
+            }
+        }
+        eksClusterName
+        eksClusterArn
+        cri
+        vpcId
+        eksClusterSGId
+        subnetIds
+        oidcIssuer
+        endpoint
+        createdDt
+        accountId
+        region
+        logAgentRoleArn
+        deploymentKind
+        tags {
+            key
+            value
+        }
+    }
+}
+</code></pre></div>
+<p>Response:</p>
+<div class="highlight"><pre><span></span><code>{
+    &quot;data&quot;: {
+        &quot;getEKSClusterDetails&quot;: {
+            &quot;id&quot;: &quot;e83aa65ef40e4a8b883dff33af483e36&quot;,
+            &quot;aosDomain&quot;: {
+                &quot;id&quot;: &quot;439239da8014f9a419c92b1b0c72a5fc&quot;,
+                &quot;domainName&quot;: &quot;dev&quot;,
+                &quot;engine&quot;: &quot;OpenSearch&quot;,
+                &quot;version&quot;: &quot;1.0&quot;,
+                &quot;endpoint&quot;: &quot;vpc-dev-xxx.eu-west-1.es.amazonaws.com&quot;,
+                &quot;metrics&quot;: null
+            },
+            &quot;eksClusterName&quot;: &quot;test&quot;,
+            &quot;eksClusterArn&quot;: &quot;arn:aws:eks:eu-west-1:123456789012:cluster/test&quot;,
+            &quot;cri&quot;: &quot;docker&quot;,
+            &quot;vpcId&quot;: &quot;vpc-0123&quot;,
+            &quot;eksClusterSGId&quot;: &quot;sg-1234&quot;,
+            &quot;subnetIds&quot;: [
+                &quot;subnet-1234&quot;,
+                &quot;subnet-5678&quot;,
+                ...
+            ],
+            &quot;oidcIssuer&quot;: &quot;https://oidc.eks.eu-west-1.amazonaws.com/id/ABC&quot;,
+            &quot;endpoint&quot;: &quot;https://ABC.sk1.eu-west-1.eks.amazonaws.com&quot;,
+            &quot;createdDt&quot;: &quot;2022-10-29T07:52:48Z&quot;,
+            &quot;accountId&quot;: &quot;123456789012&quot;,
+            &quot;region&quot;: &quot;eu-west-1&quot;,
+            &quot;logAgentRoleArn&quot;: &quot;arn:aws:iam::123456789012:role/LogHub-EKS-LogAgent-Role-3623ec2044264a2189416bcaaa7ee948&quot;,
+            &quot;deploymentKind&quot;: &quot;DaemonSet&quot;,
+            &quot;tags&quot;: []
+        }
+    }
+}
+</code></pre></div>
+<h2 id="eks-log-deployment-apis">EKS Log Deployment APIs</h2>
+<h3 id="deploy-as-daemonset">Deploy as DaemonSet</h3>
+<p><strong>Type:</strong> Query</p>
+<p><strong>Description:</strong> Display kubernetes deployment details in yaml for DaemonSet</p>
+<p><strong>Resolver:</strong> Lambda</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>eksClusterId</td>
+<td>String</td>
+<td>Yes</td>
+<td></td>
+<td>log source id for the imported EKS Cluster</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Simple Request &amp; Response:</strong></p>
+<p>Request:</p>
+<div class="highlight"><pre><span></span><code>query example  {
+    getEKSDaemonSetConf (eksClusterId: &quot;a&quot;)
+}
+</code></pre></div>
+<p>Response:</p>
+<div class="highlight"><pre><span></span><code>{
+    &quot;data&quot;: {
+        &quot;getEKSDaemonSetConf&quot;: &quot;...&quot;
+    }
+}
+</code></pre></div>
+<h3 id="deploy-as-side-car">Deploy as Side Car</h3>
+<p><strong>Type:</strong> Query</p>
+<p><strong>Description:</strong> Display kubernetes deployment details in yaml for Side Car</p>
+<p><strong>Resolver:</strong> Lambda</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>eksClusterId</td>
+<td>String</td>
+<td>Yes</td>
+<td></td>
+<td>log source id for the imported EKS Cluster</td>
+</tr>
+<tr>
+<td>ingestionId</td>
+<td>String</td>
+<td>Yes</td>
+<td></td>
+<td>the Id for application log ingestion</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Simple Request &amp; Response:</strong></p>
+<p>Request:</p>
+<div class="highlight"><pre><span></span><code>query example{
+  getEKSDeploymentConfig(
       eksClusterId: &quot;1d431ccd7caa4c90af0d86193bf78f9a&quot;,
-      tags: {
-          key: &quot;env&quot;,
-          value: &quot;testing&quot;
-      }
-    )
+      ingestionId: &quot;2d43abe07caa4c90af0d8619323064&quot;
+      )
 }
 </code></pre></div>
 <p>Response:</p>
 <div class="highlight"><pre><span></span><code>{
   &quot;data&quot;: {
-    &quot;createEKSClusterPodLogIngestion&quot;:&quot;1bcaedaa-1f94-4d3d-9b50-9592a0fc6d32&quot;
+    &quot;getEKSDeploymentConfig&quot;: &quot;...&quot;
   }
 }
 </code></pre></div>
@@ -2741,11 +2761,12 @@
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": "latest"}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.16e2a7d4.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": "latest"}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.37e9125f.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.5a2dcb6a.min.js"></script>
       
+    
     
   </body>
 </html>

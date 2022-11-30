@@ -11,7 +11,7 @@
         <link rel="canonical" href="https://awslabs.github.io/log-hub/implementation-guide/trouble-shooting/">
       
       <link rel="icon" href="../../images/aws-solutions.png">
-      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.5.3">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.10">
     
     
       
@@ -19,10 +19,10 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.7a952b86.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.975780f9.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.cbb835fc.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.2505c338.min.css">
         
       
       
@@ -56,7 +56,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="none" data-md-color-accent="none">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="None" data-md-color-accent="None">
   
     
     
@@ -124,13 +124,13 @@
                     English
                   </a>
                 </li>
-                
+              
                 <li class="md-select__item">
                   <a href="/log-hub/zh/" hreflang="zh" class="md-select__link">
                     简体中文
                   </a>
                 </li>
-                
+              
             </ul>
           </div>
         </div>
@@ -175,7 +175,7 @@
         <a href="https://github.com/awslabs/log-hub" title="前往仓库" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
     awslabs/log-hub
@@ -284,7 +284,7 @@
       <a href="https://github.com/awslabs/log-hub" title="前往仓库" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
     awslabs/log-hub
@@ -1005,6 +1005,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../applications/syslog/" class="md-nav__link">
+        Syslog
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -1112,18 +1126,33 @@
     Error: PutRecords API responded with error='AccessDeniedException'
   </a>
   
-    <nav class="md-nav" aria-label="Error: PutRecords API responded with error='AccessDeniedException'">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#iam" class="md-nav__link">
-    验证是否正确设置 IAM 角色信任关系
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cloudformation-awslambdafunction" class="md-nav__link">
+    我的 CloudFormation 堆栈在更新堆栈时被卡在删除 AWS::Lambda::Function 资源上。如何解决这个问题？
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#ec2" class="md-nav__link">
+    重启 EC2 实例后，代理状态为离线，如何让它在实例重启时自动启动？
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#global-tenant-opensearch" class="md-nav__link">
+    我已经切换 global tenant。但是，我仍然无法在 OpenSearch 中找到仪表盘。
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#centos-7" class="md-nav__link">
+    CentOS 7 安装日志代理方法
+  </a>
   
 </li>
       
@@ -1363,18 +1392,33 @@
     Error: PutRecords API responded with error='AccessDeniedException'
   </a>
   
-    <nav class="md-nav" aria-label="Error: PutRecords API responded with error='AccessDeniedException'">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#iam" class="md-nav__link">
-    验证是否正确设置 IAM 角色信任关系
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cloudformation-awslambdafunction" class="md-nav__link">
+    我的 CloudFormation 堆栈在更新堆栈时被卡在删除 AWS::Lambda::Function 资源上。如何解决这个问题？
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#ec2" class="md-nav__link">
+    重启 EC2 实例后，代理状态为离线，如何让它在实例重启时自动启动？
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#global-tenant-opensearch" class="md-nav__link">
+    我已经切换 global tenant。但是，我仍然无法在 OpenSearch 中找到仪表盘。
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#centos-7" class="md-nav__link">
+    CentOS 7 安装日志代理方法
+  </a>
   
 </li>
       
@@ -1410,17 +1454,16 @@
 <p>您需要转到 AOS 控制台，并编辑 AOS 域的<strong>访问策略</strong>。</p>
 <h2 id="erroruser-xxx-is-not-authorized-to-perform-stsassumerole-on-resource">Error：User xxx is not authorized to perform sts:AssumeRole on resource</h2>
 <p><img alt="" src="../../images/faq/assume-role-latency.png" /></p>
-<p>如果出现了次错误，请先确保您在<a href="../link-account/">夸账户日志摄取设置</a>中正确填写了所有信息。然后请等待大约1分钟左右后再重试。</p>
+<p>如果出现了次错误，请先确保您在<a href="../link-account/">跨账户日志摄取设置</a>中正确填写了所有信息。然后请等待大约1分钟左右后再重试。</p>
 <p>Log Hub 使用了 <a href="https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html">AssumeRole</a> 来列出或创建您成员账户中的 AWS 资源。 
-这些 IAM 角色是在您<a href="../link-account/">设置夸账户日志摄取</a>时被创建的，他们需要几秒钟或者几分钟的时间才能生效。</p>
+这些 IAM 角色是在您<a href="../link-account/">设置跨账户日志摄取</a>时被创建的，他们需要几秒钟或者几分钟的时间才能生效。</p>
 <h2 id="error-putrecords-api-responded-with-errorinvalidsignatureexception">Error: PutRecords API responded with error='InvalidSignatureException'</h2>
 <p>Fluent-bit agent 报错 PutRecords API responded with error='InvalidSignatureException', message='The request signature we calculated does not match the signature you provided. Check your AWS Secret Access Key and signing method. Consult the service documentation for details.'</p>
 <p>请重启 fluent-bit agent. 比如在 Amazon Linux2 的 EC2 中, 运行一下命令:
 <div class="highlight"><pre><span></span><code>sudo service fluent-bit restart
 </code></pre></div></p>
 <h2 id="error-putrecords-api-responded-with-erroraccessdeniedexception">Error: PutRecords API responded with error='AccessDeniedException'</h2>
-<p>Fluent-bit agent在EKS集群中向Kinesis发送日志时汇报了"AccessDeniedException"错误</p>
-<h3 id="iam">验证是否正确设置 IAM 角色信任关系</h3>
+<p>Fluent-bit agent 在 EKS 集群中向 Kinesis 发送日志时汇报了 "AccessDeniedException" 错误。验证是否正确设置 IAM 角色信任关系。</p>
 <p>使用 Log Hub 控制台:</p>
 <ol>
 <li>打开 Log Hub 控制台。</li>
@@ -1430,6 +1473,58 @@
 <li>选择<strong>信任关系</strong>选项卡以验证 OIDC 提供方, 服务账户命名空间以及条件是否设置正确。</li>
 </ol>
 <p>您可以前往 Amazon EKS <a href="https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts-technical-overview.html#iam-role-configuration">IAM role configuration</a> 获得更多信息</p>
+<h2 id="cloudformation-awslambdafunction">我的 CloudFormation 堆栈在更新堆栈时被卡在删除 <code>AWS::Lambda::Function</code> 资源上。如何解决这个问题？</h2>
+<p><img alt="" src="../../images/faq/cloudformation-stuck.png" />
+Lambda函数驻留在一个VPC中，你需要等待相关的ENI资源被删除。</p>
+<h2 id="ec2">重启 EC2 实例后，代理状态为离线，如何让它在实例重启时自动启动？</h2>
+<p>这种情况通常发生在你已经安装了日志代理，但是在你创建任何日志摄取之前实例发生重启。如果至少有一个日志摄取，日志代理将自动重新启动。如果你有一个日志摄取，但问题仍然存在，你可以使用 <code>systemctl status fluent-bit</code> 来检查实例内部的状态来检查它在实例中的状态。</p>
+<h2 id="global-tenant-opensearch">我已经切换 global tenant。但是，我仍然无法在 OpenSearch 中找到仪表盘。</h2>
+<p>这通常是因为 Log Hub 在创建索引模板和仪表盘时收到了来自 OpenSearch 的 403 错误。可以通过按照下面的步骤手动重新运行 Lambda 函数来解决。</p>
+<p>来到 Log Hub 控制台。</p>
+<ol>
+<li>打开 Log Hub 控制台，并找到有此问题的 AWS 服务日志管道。</li>
+<li>复制 ID 部分的前 5 个字符。例如，你应该从 ID <code>c169cb23-88f3-4a7e-90d7-4ab4bc18982c</code> 复制 <code>c169c</code>。</li>
+<li>转到 AWS控制台 &gt; Lambda。粘贴在函数过滤器中。这将过滤所有为这个 AWS 服务日志摄取创建的 lambda 函数。</li>
+<li>点击名称包含 "OpenSearchHelperFn" 的 Lambda 函数。</li>
+<li>在<strong>测试</strong>标签中，用任何事件名称创建一个新事件。</li>
+<li>点击<strong>测试</strong>按钮来触发 Lambda，并等待 Lambda 函数的完成。</li>
+<li>仪表板应该可以在 OpenSearch 中使用。</li>
+</ol>
+<h2 id="centos-7">CentOS 7 安装日志代理方法</h2>
+<ol>
+<li>
+<p>登陆到 CentOS 7 机器中，手动安装 SSM Agent。</p>
+<p><div class="highlight"><pre><span></span><code>sudo yum install -y http://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+sudo systemctl <span class="nb">enable</span> amazon-ssm-agent
+sudo systemctl start amazon-ssm-agent
+</code></pre></div>
+2. 来到 Log Hub 控制台的<strong>实例组</strong>面板，创建<strong>实例组</strong>，选择 centos 7 机器，点击<strong>安装日志代理</strong>，等待其状态为<strong>离线</strong>。
+3. 登陆 centos7 手动安装 fluent-bit 1.9.3。</p>
+<p><div class="highlight"><pre><span></span><code><span class="nb">export</span> <span class="nv">RELEASE_URL</span><span class="o">=</span><span class="si">${</span><span class="nv">FLUENT_BIT_PACKAGES_URL</span><span class="k">:-</span><span class="nv">https</span><span class="p">://packages.fluentbit.io</span><span class="si">}</span>
+<span class="nb">export</span> <span class="nv">RELEASE_KEY</span><span class="o">=</span><span class="si">${</span><span class="nv">FLUENT_BIT_PACKAGES_KEY</span><span class="k">:-</span><span class="nv">https</span><span class="p">://packages.fluentbit.io/fluentbit.key</span><span class="si">}</span>
+
+sudo rpm --import <span class="nv">$RELEASE_KEY</span>
+cat <span class="s">&lt;&lt; EOF | sudo tee /etc/yum.repos.d/fluent-bit.repo</span>
+<span class="s">[fluent-bit]</span>
+<span class="s">name = Fluent Bit</span>
+<span class="s">baseurl = $RELEASE_URL/centos/VERSION_ARCH_SUBSTR</span>
+<span class="s">gpgcheck=1</span>
+<span class="s">repo_gpgcheck=1</span>
+<span class="s">gpgkey=$RELEASE_KEY</span>
+<span class="s">enabled=1</span>
+<span class="s">EOF</span>
+sudo sed -i <span class="s1">&#39;s|VERSION_ARCH_SUBSTR|\$releasever/\$basearch/|g&#39;</span> /etc/yum.repos.d/fluent-bit.repo
+sudo yum install -y fluent-bit-1.9.3-1
+
+<span class="c1"># 修改配置文件</span>
+sudo sed -i <span class="s1">&#39;s/ExecStart.*/ExecStart=\/opt\/fluent-bit\/bin\/fluent-bit -c \/opt\/fluent-bit\/etc\/fluent-bit.conf/g&#39;</span> /usr/lib/systemd/system/fluent-bit.service
+sudo systemctl daemon-reload
+sudo systemctl <span class="nb">enable</span> fluent-bit
+sudo systemctl start fluent-bit
+</code></pre></div>
+4. 回到 Log Hub 控制台的<strong>实例组</strong>面板，等待 CentOS 7 机器状态为<strong>在线</strong>并继续创建实例组。</p>
+</li>
+</ol>
 
 
 
@@ -1498,11 +1593,12 @@
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs"], "search": "../../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.config.lang": "ja", "search.config.pipeline": "trimmer, stemmer", "search.config.separator": "[\\s\\-\uff0c\u3002]+", "search.placeholder": "\u641c\u7d22", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version.title": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": "latest"}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs"], "search": "../../assets/javascripts/workers/search.16e2a7d4.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.config.lang": "ja", "search.config.pipeline": "trimmer, stemmer", "search.config.separator": "[\\s\\-\uff0c\u3002]+", "search.placeholder": "\u641c\u7d22", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version.title": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": "latest"}</script>
     
     
-      <script src="../../assets/javascripts/bundle.37e9125f.min.js"></script>
+      <script src="../../assets/javascripts/bundle.5a2dcb6a.min.js"></script>
       
+    
     
   </body>
 </html>

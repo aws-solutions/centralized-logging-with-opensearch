@@ -11,7 +11,7 @@
         <link rel="canonical" href="https://awslabs.github.io/log-hub/implementation-guide/cost/">
       
       <link rel="icon" href="../../images/aws-solutions.png">
-      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.5.3">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.10">
     
     
       
@@ -19,10 +19,10 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.7a952b86.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.975780f9.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.cbb835fc.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.2505c338.min.css">
         
       
       
@@ -56,7 +56,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="none" data-md-color-accent="none">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="None" data-md-color-accent="None">
   
     
     
@@ -124,13 +124,13 @@
                     English
                   </a>
                 </li>
-                
+              
                 <li class="md-select__item">
                   <a href="/log-hub/zh/" hreflang="zh" class="md-select__link">
                     简体中文
                   </a>
                 </li>
-                
+              
             </ul>
           </div>
         </div>
@@ -175,7 +175,7 @@
         <a href="https://github.com/awslabs/log-hub" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
     awslabs/log-hub
@@ -292,7 +292,7 @@
       <a href="https://github.com/awslabs/log-hub" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
     awslabs/log-hub
@@ -429,15 +429,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#ingest-logs-from-amazon-ec2" class="md-nav__link">
-    Ingest logs from Amazon EC2
+  <a href="#log-ingestion-through-amazon-s3" class="md-nav__link">
+    Log ingestion through Amazon S3
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#ingest-logs-from-amazon-eks" class="md-nav__link">
-    Ingest logs from Amazon EKS
+  <a href="#log-ingestion-through-amazon-kinesis-data-streams" class="md-nav__link">
+    Log ingestion through Amazon Kinesis Data Streams
   </a>
   
 </li>
@@ -1135,6 +1135,20 @@
     <li class="md-nav__item">
       <a href="../applications/json/" class="md-nav__link">
         JSON
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../applications/syslog/" class="md-nav__link">
+        Syslog
       </a>
     </li>
   
@@ -2215,15 +2229,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#ingest-logs-from-amazon-ec2" class="md-nav__link">
-    Ingest logs from Amazon EC2
+  <a href="#log-ingestion-through-amazon-s3" class="md-nav__link">
+    Log ingestion through Amazon S3
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#ingest-logs-from-amazon-eks" class="md-nav__link">
-    Ingest logs from Amazon EKS
+  <a href="#log-ingestion-through-amazon-kinesis-data-streams" class="md-nav__link">
+    Log ingestion through Amazon Kinesis Data Streams
   </a>
   
 </li>
@@ -2552,14 +2566,14 @@
 <p>Here are the assumptions:</p>
 <ul>
 <li>AWS Services save logs to Amazon S3 every 5 minutes in gzip format (most of AWS services output logs in gzip). </li>
-<li>A 4MB compressed log file in S3 is roughly 100MB in raw log size.</li>
-<li>A Lambda with 1GB memory takes about 26 seconds to process a 4MB log file, namely 260 ms per MB raw logs. </li>
-<li>The maximum compressed log file size is 5MB.</li>
+<li>A 4MiB compressed log file in S3 is roughly 100MiB in raw log size.</li>
+<li>A Lambda with 1GB memory takes about 26 seconds to process a 4MiB log file, namely 260 ms per MiB raw logs. </li>
+<li>The maximum compressed log file size is 5MiB.</li>
 </ul>
 <p>You have <code>N</code> GB raw log per day, and the daily cost estimation is as follows: </p>
 <ul>
-<li>Lambda Cost = 260 ms per MB x 1024 MB x <code>N</code> GB/day x $0.0000000167 per ms</li>
-<li>S3 Storage Cost = $0.023 per GB x <code>N</code>GB/day * 4% (compression)</li>
+<li>Lambda Cost = 260 ms per MiB x 1024 MiB x <code>N</code> GB/day x $0.0000000167 per ms</li>
+<li>S3 Storage Cost = $0.023 per GB x <code>N</code>GB/day x 4% (compression)</li>
 </ul>
 <p>The total monthly cost for ingesting AWS service logs is:</p>
 <p><strong>Total Monthly Cost</strong> = (Lambda Cost + S3 Storage Cost) x 30 days</p>
@@ -2594,29 +2608,89 @@
 </tbody>
 </table>
 <h3 id="application-logs">Application Logs</h3>
-<p>Depending on the log location, the cost of ingesting and processing application logs may vary.</p>
-<h4 id="ingest-logs-from-amazon-ec2">Ingest logs from Amazon EC2</h4>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
 <p>If you have multiple log formats (index), you need to make cost estimation for each of them.</p>
 </div>
+<p>Depending on the log location, and the <a href="../applications/#log-buffer">Log Buffer</a>, the cost of ingesting and 
+processing application logs may vary. </p>
+<p>There is no additional cost when you ingest data from log agents to the OpenSearch domain directly. However,  it is recommended to use Log Buffer because it can help to aggregate logs and protect OpenSearch clusters from overwhelming during peak hours. If you have small volume of logs and you are very confident that the size of the OpenSearch clusters have the capacity to ingest logs during peak hours, you can go without the Log Buffer.</p>
+<h4 id="log-ingestion-through-amazon-s3">Log ingestion through Amazon S3</h4>
 <p>The cost estimation is based on the following assumptions and facts:</p>
 <ul>
-<li>The average log message size is 1 KB. </li>
-<li>The Lambda processor memory is 1024 MB.</li>
-<li>Every Lambda invocation processes 1 MB logs.</li>
+<li>The average log message size is 1 KB.</li>
+<li>The daily log volume is <code>L</code> GB.</li>
+<li>The Lambda processor memory is 1024 MiB.</li>
+<li>The log agent deliveries logs to Amazon S3 when it hits the Buffer size (50 MiB) or Buffer interval (60 seconds) thresholds. The condition satisfied first triggers data delivery to Amazon S3.</li>
+<li>The compression rate of Gzip format is 20%. </li>
+<li>The Lambda runtime to process log less than 10 MiB is 1000ms.</li>
+<li>Each log file will encounter one S3 PUT request to upload the log file, and one S3 GET request to read the log file.</li>
+<li>The daily number of files <code>N</code> saved on Amazon S3 = Max(<code>L</code> GB per day x 1024 / 50 MiB, 24 hours x 60 seconds/hour)</li>
+<li>The daily volume of files <code>V</code> saved on Amazon S3 = <code>L</code> GB per day x 20% compression rate</li>
+</ul>
+<p>Base on the above assumptions, here is the daily cost estimation formula:</p>
+<ul>
+<li>Amazon S3 storage Cost = $0.023 per GB x daily volume of files <code>V</code></li>
+<li>Amazon S3 request Cost = ($0.005 per 1000 requests + $0.0004 per 1000 requests) x daily number of files <code>N</code> / 1000</li>
+<li>Lambda Cost = $0.0000000167 per 1ms x 1000 ms per invocation x daily number of files <code>N</code></li>
+</ul>
+<p><strong>Total Monthly Cost</strong> = (Lambda Cost + S3 Storage Cost + S3 request Cost) x 30 days</p>
+<table>
+<thead>
+<tr>
+<th>Daily Log Volume (GB)</th>
+<th>Daily Number of files</th>
+<th>Daily S3 Storage Cost ($)</th>
+<th>Daily S3 Request Cost ($)</th>
+<th>Daily Lambda Cost ($)</th>
+<th>Monthly Cost ($)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>10</td>
+<td>1,440</td>
+<td>0.046</td>
+<td>0.008</td>
+<td>0.024</td>
+<td>2.335</td>
+</tr>
+<tr>
+<td>100</td>
+<td>2,048</td>
+<td>0.460</td>
+<td>0.011</td>
+<td>0.034</td>
+<td>15.158</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>20,480</td>
+<td>4.600</td>
+<td>0.111</td>
+<td>0.342</td>
+<td>151.578</td>
+</tr>
+</tbody>
+</table>
+<h4 id="log-ingestion-through-amazon-kinesis-data-streams">Log ingestion through Amazon Kinesis Data Streams</h4>
+<p>The cost estimation is based on the following assumptions and facts:</p>
+<ul>
+<li>The average log message size is 1 KB.</li>
+<li>The daily log volume is <code>L</code> GB.</li>
+<li>The Lambda processor memory is 1024 MiB.</li>
+<li>Every Lambda invocation processes 1 MiB logs.</li>
 <li>One Lambda invocation processes one shard of Kinesis, and Lambda can scale up to more concurrent innovations to process multiple shards. </li>
-<li>The Lambda runtime to process log less than 5 MB is 500ms.</li>
-<li>One Kinesis shard intake log size is =  1 MB /second x 3600 seconds per hour x 24 hours x 0.7 = 60.48 GB/day.</li>
+<li>The Lambda runtime to process log less than 5 MiB is 500ms.</li>
 <li>30% additional shards are provided to handle traffic jitter.</li>
-<li>The daily log volume is <code>X</code> GB.</li>
-<li>The desired Kinesis Shard number <code>S</code> is = Round_up_to_next_integer(Daily log volume <code>X</code> / 60.48).</li>
+<li>One Kinesis shard intake log size is =  1 MiB /second x 3600 seconds per hour x 24 hours x 0.7 = 60.48 GB/day.</li>
+<li>The desired Kinesis Shard number <code>S</code> is = Round_up_to_next_integer(Daily log volume <code>L</code> / 60.48).</li>
 </ul>
 <p>Based on the above assumptions, here is the daily cost estimation formula:</p>
 <ul>
 <li>Kinesis Shard Hour Cost = $0.015 / shard hour x 24 hours per day x <code>S</code> shards</li>
-<li>Kinesis PUT Payload Unit Cost =  $0.014 per million units * 1 millions per GB x <code>X</code> GB per day</li>
-<li>Lambda Cost = $0.0000000167 per 1ms x 500 ms per invocation x 1,000 invocations per GB x <code>X</code> GB per day</li>
+<li>Kinesis PUT Payload Unit Cost =  $0.014 per million units x 1 millions per GB x <code>L</code> GB per day</li>
+<li>Lambda Cost = $0.0000000167 per 1ms x 500 ms per invocation x 1,000 invocations per GB x <code>L</code> GB per day</li>
 </ul>
 <p><strong>Total Monthly Cost</strong> = (Kinesis Shard Hour Cost + Kinesis PUT Payload Unit Cost + Lambda Cost) x 30 days</p>
 <table>
@@ -2657,8 +2731,6 @@
 </tr>
 </tbody>
 </table>
-<h4 id="ingest-logs-from-amazon-eks">Ingest logs from Amazon EKS</h4>
-<p>Currently, there is no buffer layer between EKS and Amazon OpenSearch, and there is no additional cost.</p>
 <h2 id="additional-features-cost">Additional Features Cost</h2>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -2666,9 +2738,17 @@
 </div>
 <h3 id="access-proxy">Access Proxy</h3>
 <p>If you deploy the <a href="../domains/proxy/">Access Proxy</a> through Log Hub, the following charges will apply.  </p>
+<p>The cost estimation is based on the following assumptions and facts:</p>
 <ul>
-<li>EC2 Cost = t3.large 1Y RI All Upfront $426.612 x 2  / 12 months  = $71.1/month</li>
-<li>EBS Cost = $0.1 GB/month x 8 GB x 2 = $1.6/month</li>
+<li>Proxy module provisioned 2 x t3.large instances.</li>
+<li>1 year all upfront reserved instances pricing model applies.</li>
+<li>The 1 year all upfront reserved instances for t3.large instance is $426.612/year.</li>
+<li>The EBS attached to the EC2 instance is 8 GB.</li>
+</ul>
+<p>Based on the above assumptions, here is the monthly cost estimation formula:</p>
+<ul>
+<li>EC2 Cost = EC2 $426.612 x 2 / 12 months  = $71.1/month</li>
+<li>EBS Cost = EBS $0.1 GB/month x 8 GB x 2 = $1.6/month</li>
 <li>Elastic Load Balancer Cost = $0.0225 per ALB-hour x 720 hours/month = $16.2/month</li>
 </ul>
 <p><strong>Total Monthly Cost</strong> = $71.1 EC2 Cost + $1.6 EBS Cost + $16.2 Elastic Load Balancer Cost = <strong>$88.9</strong></p>
@@ -2742,11 +2822,12 @@
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs"], "search": "../../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": "latest"}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs"], "search": "../../assets/javascripts/workers/search.16e2a7d4.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": "latest"}</script>
     
     
-      <script src="../../assets/javascripts/bundle.37e9125f.min.js"></script>
+      <script src="../../assets/javascripts/bundle.5a2dcb6a.min.js"></script>
       
+    
     
   </body>
 </html>
