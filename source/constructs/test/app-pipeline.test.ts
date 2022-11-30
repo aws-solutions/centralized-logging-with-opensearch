@@ -16,15 +16,17 @@ limitations under the License.
 
 
 import { App } from "aws-cdk-lib";
-import {Template } from "aws-cdk-lib/assertions";
-import * as kds from '../lib/kinesis/kds-stack';
+import { Template } from "aws-cdk-lib/assertions";
+// import * as kds from '../lib/kinesis/kds-stack';
+import * as ap from "../lib/pipeline/application/app-log-pipeline-stack";
 
 
 describe("Application Log Stack", () => {
     test('Test kds stack with auto-scaling', () => {
         const app = new App();
         // WHEN
-        const stack = new kds.KDSStack(app, 'MyTestStack', {
+        const stack = new ap.AppPipelineStack(app, 'MyTestStack', {
+            buffer: "KDS",
             enableAutoScaling: true
         });
         // Prepare the stack for assertions.
@@ -56,8 +58,9 @@ describe("Application Log Stack", () => {
     test('Test kds stack without auto-scaling', () => {
         const app = new App();
         // WHEN
-        const stack = new kds.KDSStack(app, 'MyTestStack', {
-            enableAutoScaling: false
+        const stack = new ap.AppPipelineStack(app, 'MyTestStack', {
+            buffer: "KDS",
+            enableAutoScaling: true
         });
         // Prepare the stack for assertions.
         const template = Template.fromStack(stack);
@@ -71,5 +74,68 @@ describe("Application Log Stack", () => {
         });
 
     });
+
+    test('Test kds stack without auto-scaling', () => {
+        const app = new App();
+        // WHEN
+        const stack = new ap.AppPipelineStack(app, 'MyTestStack', {
+            buffer: "KDS",
+            enableAutoScaling: true
+        });
+        // Prepare the stack for assertions.
+        const template = Template.fromStack(stack);
+
+        // THEN
+        template.hasResourceProperties("AWS::Kinesis::Stream", {
+            StreamModeDetails: {
+                StreamMode: "PROVISIONED"
+            }
+
+        });
+
+    });
+
+    test('Test S3 as buffer pipeline', () => {
+        const app = new App();
+        // WHEN
+        const stack = new ap.AppPipelineStack(app, 'MyTestStack', {
+            buffer: "S3",
+        });
+        // Prepare the stack for assertions.
+        const template = Template.fromStack(stack);
+
+        // THEN
+        template.hasResourceProperties("AWS::Lambda::Function", {
+            Environment: {
+                "Variables": {
+                    "LOG_TYPE": "Json",
+                }
+            }
+
+        });
+
+    });
+
+    test('Test MSK as buffer pipeline', () => {
+        const app = new App();
+        // WHEN
+        const stack = new ap.AppPipelineStack(app, 'MyTestStack', {
+            buffer: "MSK",
+        });
+        // Prepare the stack for assertions.
+        const template = Template.fromStack(stack);
+
+        // THEN
+        template.hasResourceProperties("AWS::Lambda::Function", {
+            Environment: {
+                "Variables": {
+                    "SOURCE": "MSK",
+                }
+            }
+
+        });
+
+    });
+
 
 });

@@ -16,11 +16,6 @@
         Skip_Empty_Lines    On
         storage.type        filesystem
         Read_from_Head      True
+$LOGHUB_FLUENT_BIT_FILTER
 
-    [OUTPUT]
-        Name                kinesis_streams
-        Match               $LOGHUB_CONFIG_TAG
-        Region              $LOGHUB_CONFIG_REGION
-        Stream              $LOGHUB_CONFIG_KDS_NAME
-        Retry_Limit         False
-        $LOGHUB_KDS_ROLE_ARN
+$LOGHUB_FLUENT_BIT_OUTPUT

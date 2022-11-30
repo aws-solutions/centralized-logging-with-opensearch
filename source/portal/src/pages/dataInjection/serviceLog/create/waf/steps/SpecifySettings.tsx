@@ -18,7 +18,7 @@ import React, { useState, useEffect } from "react";
 import HeaderPanel from "components/HeaderPanel";
 import PagePanel from "components/PagePanel";
 import Tiles from "components/Tiles";
-import { buildLogHubDocsLink, CreateLogMethod } from "assets/js/const";
+import { CreateLogMethod } from "assets/js/const";
 // import WAFSelect from "components/WAFSelect";
 import FormItem from "components/FormItem";
 import { SelectItem } from "components/Select/select";
@@ -92,7 +92,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     changeScheduleInterval,
     changeLogSource,
   } = props;
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   // const [waf, setWAF] = useState(wafTask.params.wafObj);
   // const [wafManualBucketName, setWAFManualBucketName] = useState("");
 
@@ -266,23 +266,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                     warningText={
                       showSuccessText &&
                       wafTask.params.logSource === LoggingBucketSource.WAF ? (
-                        <div>
-                          {`${t(
-                            "servicelog:waf.sourceWAFTips1"
-                          )} ${previewS3Path},
-                          ${t("servicelog:waf.sourceWAFTips2")}`}
-                          <a
-                            href={buildLogHubDocsLink(
-                              i18n.language,
-                              "implementation-guide/faq/"
-                            )}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            {t("servicelog:waf.sourceWAFTips3")}
-                          </a>
-                          {t("servicelog:waf.sourceWAFTips4")}
-                        </div>
+                        <div>{t("servicelog:waf.sourceWAFTip")}</div>
                       ) : (
                         ""
                       )

@@ -37,7 +37,7 @@ Based on different [log destinations](#service-log-output-destination), Differen
 
     For cross-account log ingestion, the AWS Services store logs on Amazon S3 bucket in one account, and other resources remain in Log Hub's Account:
 
-    ![Cross Account Service Pipeline (S3) Stack Architecture](../../images/architecture/service-pipeline-s3-ca.png)
+    ![Cross Account Service Pipeline (S3) Stack Architecture](../../images/architecture/service-pipeline-s3.png)
 
 - **Destination on CloudWatch Logs**
 
@@ -57,7 +57,7 @@ Based on different [log destinations](#service-log-output-destination), Differen
 
     For cross-account log ingestion, the AWS Services store logs on Amazon CloudWatch log group in one account, and other resources remain in Log Hub's Account:
    
-    ![Service Pipeline (CW) Stack Architecture](../../images/architecture/service-pipeline-cw-ca.png)
+    ![Service Pipeline (CW) Stack Architecture](../../images/architecture/service-pipeline-cw.png)
 
 ### Process Design
 

@@ -323,8 +323,8 @@ const NginxForOpenSearch: React.FC<RouteComponentProps<MatchParams>> = (
                       <CopyText text={domainInfo?.vpc?.vpcId || ""}>
                         <ExtLink
                           to={buildVPCLink(
-                            domainInfo?.vpc?.vpcId || "",
-                            amplifyConfig.aws_project_region
+                            amplifyConfig.aws_project_region,
+                            domainInfo?.vpc?.vpcId || ""
                           )}
                         >
                           {domainInfo?.vpc?.vpcId || ""}
@@ -343,8 +343,8 @@ const NginxForOpenSearch: React.FC<RouteComponentProps<MatchParams>> = (
                               <div key={index}>
                                 <ExtLink
                                   to={buildSubnetLink(
-                                    element,
-                                    amplifyConfig.aws_project_region
+                                    amplifyConfig.aws_project_region,
+                                    element
                                   )}
                                 >
                                   {element}
@@ -359,8 +359,8 @@ const NginxForOpenSearch: React.FC<RouteComponentProps<MatchParams>> = (
                               <div key={index}>
                                 <ExtLink
                                   to={buildSubnetLink(
-                                    element,
-                                    amplifyConfig.aws_project_region
+                                    amplifyConfig.aws_project_region,
+                                    element
                                   )}
                                 >
                                   {element}
@@ -378,8 +378,8 @@ const NginxForOpenSearch: React.FC<RouteComponentProps<MatchParams>> = (
                       <div>
                         <ExtLink
                           to={buildSGLink(
-                            domainInfo?.vpc?.securityGroupId || "",
-                            amplifyConfig.aws_project_region
+                            amplifyConfig.aws_project_region,
+                            domainInfo?.vpc?.securityGroupId || ""
                           )}
                         >
                           {domainInfo?.vpc?.securityGroupId || ""}

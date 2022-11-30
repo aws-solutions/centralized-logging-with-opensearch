@@ -185,7 +185,7 @@ export class PipelineFlowStack extends Construct {
             role: LogHubAPIPipelineFlowSMRole,
             logs: {
                 destination: logGroup,
-                level: sfn.LogLevel.ERROR,
+                level: sfn.LogLevel.ALL,
             },
         });
 

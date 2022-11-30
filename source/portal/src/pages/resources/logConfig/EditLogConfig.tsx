@@ -25,13 +25,13 @@ import LoadingText from "components/LoadingText";
 import { updateLogConf } from "graphql/mutations";
 import HelpPanel from "components/HelpPanel";
 import LogConfigComp, { ExLogConf, PageType } from "../common/LogConfigComp";
-import { LogType, MultiLineLogParser } from "API";
-import { INVALID } from "assets/js/const";
+import { LogType, MultiLineLogParser, SyslogParser } from "API";
 import {
-  buildRegexFromApacheLog,
-  buildRegexFromNginxLog,
-  buildSpringBootRegExFromConfig,
-} from "assets/js/utils";
+  INVALID,
+  RFC3164_DEFAULT_REGEX,
+  RFC5424_DEFAULT_REGEX,
+} from "assets/js/const";
+import { getRegexAndTimeByConfigAndFormat } from "assets/js/utils";
 import { useTranslation } from "react-i18next";
 
 interface MatchParams {
@@ -45,19 +45,6 @@ const EditLogConfig: React.FC<RouteComponentProps<MatchParams>> = (
   const id: string = props.match.params.id;
   const { t } = useTranslation();
   const history = useHistory();
-  const breadCrumbList = [
-    { name: t("name"), link: "/" },
-    {
-      name: t("resource:config.name"),
-      link: "/resources/log-config",
-    },
-    {
-      name: id,
-      link: "/resources/log-config/detail/" + id,
-    },
-    { name: t("resource:config.edit") },
-  ];
-
   const [loadingData, setLoadingData] = useState(false);
   const [loadingUpdate, setLoadingUpdate] = useState(false);
   const [curConfig, setCurConfig] = useState<ExLogConf>({
@@ -66,12 +53,30 @@ const EditLogConfig: React.FC<RouteComponentProps<MatchParams>> = (
     confName: "",
     logPath: "",
     logType: null,
-    multilineLogParser: null,
+    multilineLogParser: undefined,
+    syslogParser: undefined,
     createdDt: null,
     userLogFormat: "",
     regularExpression: "",
     regularSpecs: [],
+    processorFilterRegex: {
+      enable: false,
+      filters: [],
+    },
   });
+  const breadCrumbList = [
+    { name: t("name"), link: "/" },
+    {
+      name: t("resource:config.name"),
+      link: "/resources/log-config",
+    },
+    {
+      name: curConfig?.confName || "",
+      link: "/resources/log-config/detail/" + id,
+    },
+    { name: t("resource:config.edit") },
+  ];
+
   const [showNameRequiredError, setShowNameRequiredError] = useState(false);
   const [showTypeRequiedError, setShowTypeRequiedError] = useState(false);
   const [showUserLogFormatError, setShowUserLogFormatError] = useState(false);
@@ -97,16 +102,16 @@ const EditLogConfig: React.FC<RouteComponentProps<MatchParams>> = (
   };
 
   const updateLogConfig = async () => {
-    const createLogConfigParam = curConfig;
+    const updateLogConfigParam = curConfig;
 
     if (
       curConfig.logType === LogType.MultiLineText ||
       curConfig.logType === LogType.SingleLineText
     ) {
-      createLogConfigParam.regularExpression = curConfig.regularExpression
+      updateLogConfigParam.regularExpression = curConfig.regularExpression
         ?.trim()
         .replace(/[\n\t\r]/g, "");
-      createLogConfigParam.userLogFormat = curConfig.userLogFormat
+      updateLogConfigParam.userLogFormat = curConfig.userLogFormat
         ?.trim()
         .replace(/[\n\t\r]/g, "");
     }
@@ -119,6 +124,14 @@ const EditLogConfig: React.FC<RouteComponentProps<MatchParams>> = (
     if (!curConfig.logType) {
       setShowTypeRequiedError(true);
       return;
+    }
+
+    // set spec to empty when create nginx / apache
+    if (
+      curConfig.logType === LogType.Apache ||
+      curConfig.logType === LogType.Nginx
+    ) {
+      updateLogConfigParam.regularSpecs = [];
     }
 
     if (
@@ -150,7 +163,7 @@ const EditLogConfig: React.FC<RouteComponentProps<MatchParams>> = (
       setLoadingUpdate(true);
       const updateRes = await appSyncRequestMutation(
         updateLogConf,
-        createLogConfigParam
+        updateLogConfigParam
       );
       console.info("createRes:", updateRes);
       setLoadingUpdate(false);
@@ -180,6 +193,7 @@ const EditLogConfig: React.FC<RouteComponentProps<MatchParams>> = (
             ) : (
               <div className="m-w-1024">
                 <LogConfigComp
+                  isLoading={false}
                   pageType={PageType.Edit}
                   headerTitle={t("resource:config.name")}
                   curConfig={curConfig}
@@ -201,7 +215,8 @@ const EditLogConfig: React.FC<RouteComponentProps<MatchParams>> = (
                       return {
                         ...prev,
                         userLogFormat: "",
-                        regularExpression: "",
+                        regularExpression:
+                          type === LogType.SingleLineText ? "(?<log>.+)" : "",
                         multilineLogParser: undefined,
                         userSampleLog: "",
                         regularSpecs: [],
@@ -215,7 +230,29 @@ const EditLogConfig: React.FC<RouteComponentProps<MatchParams>> = (
                         ...prev,
                         multilineLogParser: parser,
                         userLogFormat: "",
-                        regularExpression: "",
+                        regularExpression:
+                          parser === MultiLineLogParser.CUSTOM
+                            ? "(?<log>.+)"
+                            : "",
+                        userSampleLog: "",
+                        regularSpecs: [],
+                      };
+                    });
+                  }}
+                  changeSyslogParser={(parser) => {
+                    let tmpSyslogRegex = "";
+                    if (parser === SyslogParser.RFC3164) {
+                      tmpSyslogRegex = RFC3164_DEFAULT_REGEX;
+                    } else if (parser === SyslogParser.RFC5424) {
+                      tmpSyslogRegex = RFC5424_DEFAULT_REGEX;
+                    }
+
+                    setCurConfig((prev: ExLogConf) => {
+                      return {
+                        ...prev,
+                        syslogParser: parser,
+                        userLogFormat: "",
+                        regularExpression: tmpSyslogRegex,
                         userSampleLog: "",
                         regularSpecs: [],
                       };
@@ -226,33 +263,42 @@ const EditLogConfig: React.FC<RouteComponentProps<MatchParams>> = (
                       return { ...prev, regularSpecs: spec };
                     });
                   }}
+                  changeSelectKeyList={(keyList) => {
+                    setCurConfig((prev: ExLogConf) => {
+                      return { ...prev, selectKeyList: keyList };
+                    });
+                  }}
+                  changeRegexKeyList={(list) => {
+                    setCurConfig((prev: ExLogConf) => {
+                      return {
+                        ...prev,
+                        regexKeyList: list,
+                      };
+                    });
+                  }}
+                  changeFilterRegex={(filter) => {
+                    setCurConfig((prev: ExLogConf) => {
+                      return { ...prev, processorFilterRegex: filter };
+                    });
+                  }}
                   changeUserSmapleLog={(log) => {
                     setCurConfig((prev: ExLogConf) => {
                       return { ...prev, userSampleLog: log };
                     });
                   }}
+                  changeTimeKey={(key) => {
+                    setCurConfig((prev: ExLogConf) => {
+                      return { ...prev, timeKey: key };
+                    });
+                  }}
+                  changeTimeOffset={(offset) => {
+                    setCurConfig((prev: ExLogConf) => {
+                      return { ...prev, timeOffset: offset };
+                    });
+                  }}
                   changeUserLogFormat={(format) => {
-                    let tmpExp = "";
-                    if (curConfig.logType === LogType.Nginx) {
-                      tmpExp = buildRegexFromNginxLog(format, true);
-                    }
-                    if (curConfig.logType === LogType.Apache) {
-                      tmpExp = buildRegexFromApacheLog(format);
-                    }
-                    if (
-                      curConfig.logType === LogType.SingleLineText ||
-                      (curConfig.logType === LogType.MultiLineText &&
-                        curConfig.multilineLogParser ===
-                          MultiLineLogParser.CUSTOM)
-                    ) {
-                      tmpExp = format;
-                    }
-                    if (
-                      curConfig.multilineLogParser ===
-                      MultiLineLogParser.JAVA_SPRING_BOOT
-                    ) {
-                      tmpExp = buildSpringBootRegExFromConfig(format);
-                    }
+                    const { tmpExp, tmpTimeExp } =
+                      getRegexAndTimeByConfigAndFormat(curConfig, format);
                     if (curConfig.logType === LogType.Nginx) {
                       if (tmpExp === INVALID) {
                         setShowUserLogFormatError(true);
@@ -272,6 +318,7 @@ const EditLogConfig: React.FC<RouteComponentProps<MatchParams>> = (
                         ...prev,
                         userLogFormat: format,
                         regularExpression: tmpExp !== INVALID ? tmpExp : "",
+                        timeRegularExpression: tmpTimeExp,
                       };
                     });
                   }}

@@ -30,7 +30,7 @@ Please double-check if you have selected all the following items:
 
 1. Log in the AWS Management Console and select the button to launch the ``LogHub-ELBLog`` AWS CloudFormation template.
     
-    <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/create/template?stackName=LogHub-ELBLog&templateURL=https://aws-gcr-solutions.s3.amazonaws.com/log-hub/v0.2.0-dev/ELBLog.template" target="_blank">![Launch Stack](../../images/launch-stack.png)</a>
+    <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/create/template?stackName=LogHub-ELBLog&templateURL=https://aws-gcr-solutions.s3.amazonaws.com/log-hub/{{ version }}/ELBLog.template" target="_blank">![Launch Stack](../../images/launch-stack.png)</a>
 
 2. Click **Next** and fill in the parameters required:
 

@@ -28,6 +28,6 @@ Secondly, security groups and detailed routing mechanisms are automatically inse
 
       Let's take a look at the architecture for VPC peering:
 
-      ![](../../images/domain-vpc-peering.png)
+      ![](../../images/domain/domain-vpc-peering.svg)
 
       As we can see, we need to peer the VPC which contains the log processors (10.255.0.0/16) with the OpenSearch VPC (10.0.0.0/16), and enable processors to go through the workshop demo VPC so as to process logs for us.

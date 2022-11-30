@@ -54,8 +54,6 @@ export class AppPipelineStack extends Construct {
 
     const solution_id = "SO8025";
 
-
-
     // Create a table to store logging appLogIngestion info
     this.appLogIngestionTable = new ddb.Table(this, "AppLogIngestionTable", {
       partitionKey: {
@@ -86,6 +84,7 @@ export class AppPipelineStack extends Construct {
     // Create a Step Functions to orchestrate pipeline flow
     const pipeFlow = new AppPipelineFlowStack(this, "PipelineFlowSM", {
       tableArn: props.appPipelineTable.tableArn,
+      tableName: props.appPipelineTable.tableName,
       cfnFlowSMArn: props.cfnFlowSMArn,
     });
 
@@ -93,7 +92,7 @@ export class AppPipelineStack extends Construct {
     const appPipelineHandler = new lambda.Function(this, "AppPipelineHandler", {
       code: lambda.AssetCode.fromAsset(
         path.join(__dirname, "../../lambda/api/app_pipeline"),
-        { followSymlinks: SymlinkFollowMode.ALWAYS },
+        { followSymlinks: SymlinkFollowMode.ALWAYS }
       ),
       runtime: lambda.Runtime.PYTHON_3_9,
       handler: "lambda_function.lambda_handler",
@@ -108,7 +107,7 @@ export class AppPipelineStack extends Construct {
       },
       description: "Log Hub - AppPipeline APIs Resolver",
     });
-    props.centralAssumeRolePolicy.attachToRole(appPipelineHandler.role!)
+    props.centralAssumeRolePolicy.attachToRole(appPipelineHandler.role!);
 
     // Grant permissions to the appPipeline lambda
     props.appPipelineTable.grantReadWriteData(appPipelineHandler);
@@ -128,6 +127,14 @@ export class AppPipelineStack extends Construct {
         actions: ["kinesis:DescribeStreamSummary"],
       })
     );
+    // Grant es permissions to the appPipeline lambda
+    appPipelineHandler.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        resources: ["*"],
+        actions: ["es:DescribeElasticsearchDomain", "es:DescribeDomain"],
+      })
+    );
 
     // Add appPipeline lambda as a Datasource
     const appPipeLambdaDS = props.graphqlApi.addLambdaDataSource(
@@ -143,13 +150,23 @@ export class AppPipelineStack extends Construct {
       typeName: "Query",
       fieldName: "listAppPipelines",
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: appsync.MappingTemplate.fromFile(
+        path.join(
+          __dirname,
+          "../../graphql/vtl/app_log_pipeline/ListAppPipelinesResp.vtl"
+        )
+      ),
     });
 
     appPipeLambdaDS.createResolver({
       typeName: "Mutation",
       fieldName: "createAppPipeline",
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      requestMappingTemplate: appsync.MappingTemplate.fromFile(
+        path.join(
+          __dirname,
+          "../../graphql/vtl/app_log_pipeline/CreateAppPipeline.vtl"
+        )
+      ),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
@@ -164,32 +181,44 @@ export class AppPipelineStack extends Construct {
       typeName: "Query",
       fieldName: "getAppPipeline",
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: appsync.MappingTemplate.fromFile(
+        path.join(
+          __dirname,
+          "../../graphql/vtl/app_log_pipeline/GetAppPipelineResp.vtl"
+        )
+      ),
     });
 
     // Create a lambda to handle upgrade appPipeline API.
-    const upgradeAppPipelineHandler = new lambda.Function(this, "upgradeAppPipelineHandler", {
-      code: lambda.AssetCode.fromAsset(
-        path.join(__dirname, "../../lambda/api/app_pipeline"),
-        { followSymlinks: SymlinkFollowMode.ALWAYS },
-      ),
-      runtime: lambda.Runtime.PYTHON_3_9,
-      handler: "upgrade_lambda_function.lambda_handler",
-      timeout: Duration.seconds(60),
-      memorySize: 512,
-      environment: {
-        STATE_MACHINE_ARN: pipeFlow.stateMachineArn,
-        APPPIPELINE_TABLE: props.appPipelineTable.tableName,
-        APPLOGINGESTION_TABLE: this.appLogIngestionTable.tableName,
-        SOLUTION_ID: solution_id,
-        SOLUTION_VERSION: process.env.VERSION ? process.env.VERSION : "v1.0.0",
-      },
-      description: "Log Hub - Use this API to upgrade application log pipeline to v1.1",
-    });
-    
+    const upgradeAppPipelineHandler = new lambda.Function(
+      this,
+      "upgradeAppPipelineHandler",
+      {
+        code: lambda.AssetCode.fromAsset(
+          path.join(__dirname, "../../lambda/api/app_pipeline"),
+          { followSymlinks: SymlinkFollowMode.ALWAYS }
+        ),
+        runtime: lambda.Runtime.PYTHON_3_9,
+        handler: "upgrade_lambda_function.lambda_handler",
+        timeout: Duration.seconds(60),
+        memorySize: 512,
+        environment: {
+          STATE_MACHINE_ARN: pipeFlow.stateMachineArn,
+          APPPIPELINE_TABLE: props.appPipelineTable.tableName,
+          APPLOGINGESTION_TABLE: this.appLogIngestionTable.tableName,
+          SOLUTION_ID: solution_id,
+          SOLUTION_VERSION: process.env.VERSION
+            ? process.env.VERSION
+            : "v1.0.0",
+        },
+        description:
+          "Log Hub - Use this API to upgrade application log pipeline to v1.1",
+      }
+    );
+
     // Grant permissions to the upgradeAppPipeline lambda
     props.appPipelineTable.grantReadWriteData(upgradeAppPipelineHandler);
-    
+
     // Add upgradeAppPipeline lambda as a Datasource
     const upgradeAppPipelineLambdaDS = props.graphqlApi.addLambdaDataSource(
       "UpgradeAppPipelineLambdaDS",
@@ -209,16 +238,10 @@ export class AppPipelineStack extends Construct {
     // Set Permission for Lambda
     upgradeAppPipelineHandler.addToRolePolicy(
       new iam.PolicyStatement({
-              effect: iam.Effect.ALLOW,
-              resources: [
-                  "*"
-              ],
-              actions: [
-                "iam:CreateRole",
-                "iam:PutRolePolicy",
-              ]
-          })
-    )
-
+        effect: iam.Effect.ALLOW,
+        resources: ["*"],
+        actions: ["iam:CreateRole", "iam:PutRolePolicy"],
+      })
+    );
   }
 }

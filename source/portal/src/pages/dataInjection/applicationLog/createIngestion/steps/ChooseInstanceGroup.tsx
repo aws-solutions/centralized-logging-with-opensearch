@@ -20,7 +20,7 @@ import RefreshIcon from "@material-ui/icons/Refresh";
 import { Link } from "react-router-dom";
 import { Pagination } from "@material-ui/lab";
 import PagePanel from "components/PagePanel";
-import { InstanceGroup } from "API";
+import { InstanceGroup, LogSourceType } from "API";
 import { appSyncRequestQuery } from "assets/js/request";
 import { listInstanceGroups } from "graphql/queries";
 import { DEFAULT_PLATFORM } from "assets/js/const";
@@ -135,6 +135,15 @@ const ChooseInstanceGroup: React.FC<ChooseInstanceGroupProps> = (
                 header: t("applog:ingestion.chooseInstanceGroup.list.name"),
                 cell: (e: InstanceGroup) => {
                   return e.groupName;
+                },
+              },
+              {
+                id: "Type",
+                header: t("resource:group.list.type"),
+                cell: (e: InstanceGroup) => {
+                  return e.groupType === LogSourceType.ASG
+                    ? "EC2/ASG"
+                    : e.groupType;
                 },
               },
               {

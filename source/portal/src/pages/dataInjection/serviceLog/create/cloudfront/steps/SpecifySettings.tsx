@@ -220,8 +220,8 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                         {t("servicelog:cloudfront.distributionDesc")}
                         <ExtLink
                           to={buildCloudFrontLink(
-                            "",
-                            amplifyConfig.aws_project_region
+                            amplifyConfig.aws_project_region,
+                            ""
                           )}
                         >
                           {t("servicelog:cloudfront.curAccount")}

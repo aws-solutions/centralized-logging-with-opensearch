@@ -34,7 +34,7 @@
       "vpcEndpoint": "VPC Endpoint",
       "kibana": "Kibana",
       "clickOpen": "Click to Open Link",
-      "osDashboard": "OpenSearch Dashboards",
+      "osDashboard": "Amazon OpenSearch Dashboards",
       "az": "Availability Zones",
       "instanceType": "Instance Type (data) ",
       "numberNodes": "Number of nodes (data)",
@@ -79,7 +79,7 @@
       "removeTips": "Are you sure you want to delete the Alarm "
     },
     "network": {
-      "name": "OpenSearch domain network",
+      "name": "Amazon OpenSearch domain network",
       "vpc": "VPC",
       "securityGroups": "Security Groups",
       "iamRole": "IAM Role",
@@ -145,23 +145,23 @@
       "createTags": "Create tags"
     },
     "selectDomain": {
-      "osDomain": "OpenSearch Domain",
+      "osDomain": "Amazon OpenSearch Domain",
       "domain": "Domain",
       "domainDesc1": "The cluster MUST be in the same region as Log Hub and must be enabled with VPC access. Or follow ",
       "domainDesc2": "this guide",
-      "domainDesc3": " to create a cluster. (* Make sure your OpenSearch status is Active, only domains with Active status will be displayed in the list)",
+      "domainDesc3": " to create a cluster. (* Make sure your Amazon OpenSearch status is Active, only domains with Active status will be displayed in the list)",
       "domainError": "Please select a domain",
-      "selectDomain": "Select an OpenSearch Domain"
+      "selectDomain": "Select an Amazon OpenSearch Domain"
     },
     "configNetwork": {
-      "osNetwork": "OpenSearch network",
+      "osNetwork": "Amazon OpenSearch network",
       "clusterVPC": "Cluster VPC",
       "clusterSG": "Cluster Security Groups",
       "clusterAZ": "Cluster AZs and Subnets",
       "creation": "Network creation",
       "method": "Creation Method",
       "auto": "Automatic",
-      "autoDesc": "Create a dedicated VPC for log processing layer and public access layer to connect to OpenSearch domain via VPC peering.",
+      "autoDesc": "Create a dedicated VPC for log processing layer and public access layer to connect to Amazon OpenSearch domain via VPC peering.",
       "manual": "Manual",
       "manualDesc": "Manually specify the log processing layer and public access layer network settings. ",
       "layerNetwork": "Log processing layer network",
@@ -175,7 +175,7 @@
       "logProcessSubnetGroupDesc": "Select at least two subnets of the log processing layer. It is recommended to select private subnets.",
       "chooseSubnet": "Choose Subnet",
       "logProcessSG": "Log Processing Security Group",
-      "logProcessSGDesc": "Select a Security Group for the log processing layer. The Security Group must have access the OpenSearch domain.",
+      "logProcessSGDesc": "Select a Security Group for the log processing layer. The Security Group must have access the Amazon OpenSearch domain.",
       "chooseSG": "Choose a Security Group"
     }
   }

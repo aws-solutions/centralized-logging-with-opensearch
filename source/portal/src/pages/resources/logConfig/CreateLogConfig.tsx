@@ -22,13 +22,13 @@ import Button from "components/Button";
 import { appSyncRequestMutation } from "assets/js/request";
 import { createLogConf } from "graphql/mutations";
 import LogConfigComp, { ExLogConf, PageType } from "../common/LogConfigComp";
-import { LogType, MultiLineLogParser } from "API";
-import { INVALID } from "assets/js/const";
+import { LogType, MultiLineLogParser, SyslogParser } from "API";
 import {
-  buildRegexFromApacheLog,
-  buildRegexFromNginxLog,
-  buildSpringBootRegExFromConfig,
-} from "assets/js/utils";
+  INVALID,
+  RFC3164_DEFAULT_REGEX,
+  RFC5424_DEFAULT_REGEX,
+} from "assets/js/const";
+import { getRegexAndTimeByConfigAndFormat } from "assets/js/utils";
 import HelpPanel from "components/HelpPanel";
 import { useTranslation } from "react-i18next";
 
@@ -52,9 +52,14 @@ const CreateLogConfig: React.FC = () => {
     logType: null,
     multilineLogParser: null,
     createdDt: null,
+    userSampleLog: "",
     userLogFormat: "",
     regularExpression: "",
     regularSpecs: [],
+    processorFilterRegex: {
+      enable: false,
+      filters: [],
+    },
   });
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [showNameRequiredError, setShowNameRequiredError] = useState(false);
@@ -100,6 +105,14 @@ const CreateLogConfig: React.FC = () => {
     }
 
     const createLogConfigParam = curConfig;
+    // set spec to empty when create nginx / apache
+    if (
+      curConfig.logType === LogType.Apache ||
+      curConfig.logType === LogType.Nginx
+    ) {
+      createLogConfigParam.regularSpecs = [];
+    }
+
     if (
       curConfig.logType === LogType.MultiLineText ||
       curConfig.logType === LogType.SingleLineText
@@ -138,6 +151,7 @@ const CreateLogConfig: React.FC = () => {
             <Breadcrumb list={breadCrumbList} />
             <div className="m-w-1024">
               <LogConfigComp
+                isLoading={false}
                 pageType={PageType.New}
                 headerTitle={t("resource:config.name")}
                 curConfig={curConfig}
@@ -163,8 +177,10 @@ const CreateLogConfig: React.FC = () => {
                     return {
                       ...prev,
                       userLogFormat: "",
-                      regularExpression: "",
+                      regularExpression:
+                        type === LogType.SingleLineText ? "(?<log>.+)" : "",
                       multilineLogParser: undefined,
+                      syslogParser: undefined,
                       userSampleLog: "",
                       regularSpecs: [],
                       logType: type,
@@ -177,7 +193,29 @@ const CreateLogConfig: React.FC = () => {
                       ...prev,
                       multilineLogParser: parser,
                       userLogFormat: "",
-                      regularExpression: "",
+                      regularExpression:
+                        parser === MultiLineLogParser.CUSTOM
+                          ? "(?<log>.+)"
+                          : "",
+                      userSampleLog: "",
+                      regularSpecs: [],
+                    };
+                  });
+                }}
+                changeSyslogParser={(parser) => {
+                  let tmpSyslogRegex = "";
+                  if (parser === SyslogParser.RFC3164) {
+                    tmpSyslogRegex = RFC3164_DEFAULT_REGEX;
+                  } else if (parser === SyslogParser.RFC5424) {
+                    tmpSyslogRegex = RFC5424_DEFAULT_REGEX;
+                  }
+
+                  setCurConfig((prev: ExLogConf) => {
+                    return {
+                      ...prev,
+                      syslogParser: parser,
+                      userLogFormat: "",
+                      regularExpression: tmpSyslogRegex,
                       userSampleLog: "",
                       regularSpecs: [],
                     };
@@ -188,6 +226,24 @@ const CreateLogConfig: React.FC = () => {
                     return { ...prev, regularSpecs: spec };
                   });
                 }}
+                changeSelectKeyList={(keyList) => {
+                  setCurConfig((prev: ExLogConf) => {
+                    return { ...prev, selectKeyList: keyList };
+                  });
+                }}
+                changeRegexKeyList={(list) => {
+                  setCurConfig((prev: ExLogConf) => {
+                    return {
+                      ...prev,
+                      regexKeyList: list,
+                    };
+                  });
+                }}
+                changeFilterRegex={(filter) => {
+                  setCurConfig((prev: ExLogConf) => {
+                    return { ...prev, processorFilterRegex: filter };
+                  });
+                }}
                 changeUserSmapleLog={(log) => {
                   if (log) {
                     setShowSampleLogRequiredError(false);
@@ -196,29 +252,19 @@ const CreateLogConfig: React.FC = () => {
                     return { ...prev, regularSpecs: [], userSampleLog: log };
                   });
                 }}
+                changeTimeKey={(key) => {
+                  setCurConfig((prev: ExLogConf) => {
+                    return { ...prev, timeKey: key };
+                  });
+                }}
+                changeTimeOffset={(offset) => {
+                  setCurConfig((prev: ExLogConf) => {
+                    return { ...prev, timeOffset: offset };
+                  });
+                }}
                 changeUserLogFormat={(format) => {
-                  let tmpExp = "";
-                  if (curConfig.logType === LogType.Nginx) {
-                    tmpExp = buildRegexFromNginxLog(format, true);
-                  }
-                  if (curConfig.logType === LogType.Apache) {
-                    tmpExp = buildRegexFromApacheLog(format);
-                  }
-                  if (
-                    curConfig.logType === LogType.SingleLineText ||
-                    (curConfig.logType === LogType.MultiLineText &&
-                      curConfig.multilineLogParser ===
-                        MultiLineLogParser.CUSTOM)
-                  ) {
-                    tmpExp = format;
-                  }
-                  if (
-                    curConfig.logType === LogType.MultiLineText &&
-                    curConfig.multilineLogParser ===
-                      MultiLineLogParser.JAVA_SPRING_BOOT
-                  ) {
-                    tmpExp = buildSpringBootRegExFromConfig(format);
-                  }
+                  const { tmpExp, tmpTimeExp } =
+                    getRegexAndTimeByConfigAndFormat(curConfig, format);
                   if (curConfig.logType === LogType.Nginx) {
                     if (tmpExp === INVALID) {
                       setShowUserLogFormatError(true);
@@ -238,6 +284,7 @@ const CreateLogConfig: React.FC = () => {
                       ...prev,
                       userLogFormat: format,
                       regularExpression: tmpExp !== INVALID ? tmpExp : "",
+                      timeRegularExpression: tmpTimeExp,
                     };
                   });
                 }}

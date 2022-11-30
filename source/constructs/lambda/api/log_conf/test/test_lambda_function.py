@@ -63,28 +63,47 @@ json_config_1 = {
     "ACTIVE",
     "userLogFormat":
     "",
+    "processorFilterRegex": {
+        'enable':
+        True,
+        'filters': [{
+            'key': 'status',
+            'condition': 'Include',
+            'value': '400|401|404|405'
+        }, {
+            'key': 'request',
+            'condition': 'Include',
+            'value': '/user/log*'
+        }]
+    },
 }
 
 regex_config_1 = {
-    "id":
-    "339039e1-9812-43f8-9962-165e3adbc805",
-    "confName":
-    "regex-nginx-config",
-    "createdDt":
-    "2022-03-17T07:51:18Z",
-    "logType":
-    "Nginx",
-    "multilineLogParser":
-    None,
+    "id": "339039e1-9812-43f8-9962-165e3adbc805",
+    "confName": "regex-nginx-config",
+    "createdDt": "2022-03-17T07:51:18Z",
+    "logType": "Nginx",
+    "multilineLogParser": None,
     "regularExpression":
     '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
     "regularSpecs": [],
-    "source":
-    "ec2",
-    "status":
-    "ACTIVE",
+    "source": "ec2",
+    "status": "ACTIVE",
     "userLogFormat":
     'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
+    "processorFilterRegex": {
+        'enable':
+        True,
+        'filters': [{
+            'key': 'status',
+            'condition': 'Include',
+            'value': '400|401|404|405'
+        }, {
+            'key': 'request',
+            'condition': 'Include',
+            'value': '/user/log*'
+        }]
+    },
 }
 
 
@@ -127,11 +146,27 @@ def test_lambda_handler(ddb_client):
                 "confName": "nginx-dev-01",
                 "logType": "Nginx",
                 "multilineLogParser": None,
+                "userSampleLog": "test",
                 "userLogFormat":
                 'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
                 "regularExpression":
                 '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
+                "timeRegularExpression":
+                '\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s',
                 "regularSpecs": [],
+                "processorFilterRegex": {
+                    'enable':
+                    True,
+                    'filters': [{
+                        'key': 'status',
+                        'condition': 'Include',
+                        'value': '400|401|404|405'
+                    }, {
+                        'key': 'request',
+                        'condition': 'Include',
+                        'value': '/user/log*'
+                    }]
+                },
             },
             "info": {
                 "fieldName": "createLogConf",
@@ -206,11 +241,27 @@ def test_lambda_handler(ddb_client):
                     "confName": "nginx-dev-01",
                     "logType": "Nginx",
                     "multilineLogParser": None,
+                    "userSampleLog": "test",
                     "userLogFormat":
                     'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
                     "regularExpression":
                     '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
+                    "timeRegularExpression":
+                    '\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s',
                     "regularSpecs": [],
+                    "processorFilterRegex": {
+                        'enable':
+                        True,
+                        'filters': [{
+                            'key': 'status',
+                            'condition': 'Include',
+                            'value': '400|401|404|405'
+                        }, {
+                            'key': 'request',
+                            'condition': 'Include',
+                            'value': '/user/log*'
+                        }]
+                    },
                 },
                 "info": {
                     "fieldName": "createLogConf",
@@ -229,6 +280,23 @@ def test_lambda_handler(ddb_client):
             None,
         )
 
+    get_resp = lambda_function.list_log_confs(confName="nginx-dev-01")
+    log_conf_info = lambda_function.log_conf_table.get_item(
+        Key={'id': get_resp['logConfs'][0]['id']})
+    assert log_conf_info['Item']['processorFilterRegex'] == {
+        'enable':
+        True,
+        'filters': [{
+            'condition': 'Include',
+            'key': 'status',
+            'value': '400|401|404|405'
+        }, {
+            'condition': 'Include',
+            'key': 'request',
+            'value': '/user/log*'
+        }]
+    }
+
     # Test to update a log config with duplicate name
     with pytest.raises(lambda_function.APIException):
         lambda_function.lambda_handler(
@@ -238,11 +306,30 @@ def test_lambda_handler(ddb_client):
                     "confName": "regex-nginx-config",
                     "logType": "Nginx",
                     "multilineLogParser": None,
+                    "userSampleLog": "test",
+                    "syslogParser": None,
                     "userLogFormat":
                     'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
                     "regularExpression":
                     '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
+                    "timeRegularExpression":
+                    '\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s',
                     "regularSpecs": [],
+                    "processorFilterRegex": {
+                        'enable':
+                        True,
+                        'filters': [{
+                            'key': 'status',
+                            'condition': 'Include',
+                            'value': '400|401|404|405'
+                        }, {
+                            'key': 'request',
+                            'condition': 'Exclude',
+                            'value': '/user/log*'
+                        }]
+                    },
+                    "timeKey": "MyTimeKey",
+                    "timeOffset": "UTC+0800",
                 },
                 "info": {
                     "fieldName": "updateLogConf",
@@ -257,13 +344,31 @@ def test_lambda_handler(ddb_client):
                         "regularExpression":
                         '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
                         "regularSpecs": [],
+                        "timeKey": "MyTimeKey",
+                        "timeOffset": "UTC+0800",
                     },
                 },
             },
             None,
         )
 
-    # Test upadet the log config
+        log_conf_info = lambda_function.log_conf_table.get_item(
+            Key={'id': 'e4c579eb-fcf2-4ddb-8226-796f4bc8a690'})
+        assert log_conf_info['Item']['processorFilterRegex'] == {
+            'enable':
+            True,
+            'filters': [{
+                'condition': 'Include',
+                'key': 'status',
+                'value': '400|401|404|405'
+            }, {
+                'condition': 'Exclude',
+                'key': 'request',
+                'value': '/user/log*'
+            }]
+        }
+
+    # Test update the log config
     lambda_function.lambda_handler(
         {
             "arguments": {
@@ -271,11 +376,30 @@ def test_lambda_handler(ddb_client):
                 "confName": "nginx-dev-02",
                 "logType": "Nginx",
                 "multilineLogParser": None,
+                "userSampleLog": "test",
+                "syslogParser": None,
                 "userLogFormat":
                 'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
                 "regularExpression":
                 '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
+                "timeRegularExpression":
+                '\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s',
                 "regularSpecs": [],
+                "processorFilterRegex": {
+                    'enable':
+                    True,
+                    'filters': [{
+                        'key': 'status',
+                        'condition': 'Include',
+                        'value': '400|401|404|405'
+                    }, {
+                        'key': 'request',
+                        'condition': 'Exclude',
+                        'value': '^/user/log*'
+                    }]
+                },
+                "timeKey": "MyTimeKey",
+                "timeOffset": "UTC+0800",
             },
             "info": {
                 "fieldName": "updateLogConf",
@@ -295,6 +419,162 @@ def test_lambda_handler(ddb_client):
         },
         None,
     )
+
+    log_conf_info = lambda_function.log_conf_table.get_item(
+        Key={'id': 'e4c579eb-fcf2-4ddb-8226-796f4bc8a690'})
+    assert log_conf_info['Item']['processorFilterRegex'] == {
+        'enable':
+        True,
+        'filters': [{
+            'condition': 'Include',
+            'key': 'status',
+            'value': '400|401|404|405'
+        }, {
+            'condition': 'Exclude',
+            'key': 'request',
+            'value': '^/user/log*'
+        }]
+    }
+
+    # Test create a log config when processorFilterRegex is None
+    lambda_function.lambda_handler(
+        {
+            "arguments": {
+                "confName": "json-01",
+                "logType": "JSON",
+                "multilineLogParser": None,
+                "syslogParser": None,
+                "userLogFormat": "",
+                "regularExpression": "",
+                "regularSpecs": [],
+                "processorFilterRegex": None,
+            },
+            "info": {
+                "fieldName": "createLogConf",
+                "parentTypeName": "Mutation",
+            },
+        },
+        None,
+    )
+
+    get_resp = lambda_function.list_log_confs(confName="json-01")
+    log_conf_info = lambda_function.log_conf_table.get_item(
+        Key={'id': get_resp['logConfs'][0]['id']})
+    assert log_conf_info['Item']['processorFilterRegex'] == None
+    lambda_function.log_conf_table.delete_item(
+        Key={'id': get_resp['logConfs'][0]['id']})
+
+    # Test update a log config when processorFilterRegex is None
+    lambda_function.lambda_handler(
+        {
+            "arguments": {
+                "id": "e4c579eb-fcf2-4ddb-8226-796f4bc8a690",
+                "confName": "nginx-dev-02",
+                "logType": "Nginx",
+                "multilineLogParser": None,
+                "syslogParser": None,
+                "userSampleLog": "test",
+                "userLogFormat":
+                'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
+                "regularExpression":
+                '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
+                "timeRegularExpression":
+                '\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s',
+                "regularSpecs": [],
+                "processorFilterRegex": None,
+                "timeKey": "MyTimeKey",
+                "timeOffset": "UTC+0800",
+            },
+            "info": {
+                "fieldName": "updateLogConf",
+                "parentTypeName": "Mutation",
+                "variables": {
+                    "id": "e4c579eb-fcf2-4ddb-8226-796f4bc8a690",
+                    "confName": "nginx-dev-02",
+                    "logType": "Nginx",
+                    "multilineLogParser": None,
+                    "userLogFormat":
+                    'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
+                    "regularExpression":
+                    '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
+                    "regularSpecs": [],
+                },
+            },
+        },
+        None,
+    )
+
+    log_conf_info = lambda_function.log_conf_table.get_item(
+        Key={'id': 'e4c579eb-fcf2-4ddb-8226-796f4bc8a690'})
+    assert log_conf_info['Item']['processorFilterRegex'] == None
+
+    # Test update the log config when processorFilterRegex.enable is False
+    lambda_function.lambda_handler(
+        {
+            "arguments": {
+                "id": "e4c579eb-fcf2-4ddb-8226-796f4bc8a690",
+                "confName": "nginx-dev-02",
+                "logType": "Nginx",
+                "multilineLogParser": None,
+                "syslogParser": None,
+                "userSampleLog": "test",
+                "userLogFormat":
+                'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
+                "regularExpression":
+                '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
+                "timeRegularExpression":
+                '\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s',
+                "regularSpecs": [],
+                "processorFilterRegex": {
+                    'enable':
+                    False,
+                    'filters': [{
+                        'key': 'status',
+                        'condition': 'Include',
+                        'value': '400|401|404|405'
+                    }, {
+                        'key': 'request',
+                        'condition': 'Exclude',
+                        'value': '^/user/log*'
+                    }]
+                },
+                "timeKey": "MyTimeKey",
+                "timeOffset": "UTC+0800",
+            },
+            "info": {
+                "fieldName": "updateLogConf",
+                "parentTypeName": "Mutation",
+                "variables": {
+                    "id": "e4c579eb-fcf2-4ddb-8226-796f4bc8a690",
+                    "confName": "nginx-dev-02",
+                    "logType": "Nginx",
+                    "multilineLogParser": None,
+                    "userLogFormat":
+                    'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
+                    "regularExpression":
+                    '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
+                    "regularSpecs": [],
+                },
+            },
+        },
+        None,
+    )
+
+    log_conf_info = lambda_function.log_conf_table.get_item(
+        Key={'id': 'e4c579eb-fcf2-4ddb-8226-796f4bc8a690'})
+    assert log_conf_info['Item']['processorFilterRegex'] == {
+        'enable':
+        False,
+        'filters': [{
+            'condition': 'Include',
+            'key': 'status',
+            'value': '400|401|404|405'
+        }, {
+            'condition': 'Exclude',
+            'key': 'request',
+            'value': '^/user/log*'
+        }]
+    }
 
 
 def test_delete_log_config(ddb_client):
@@ -421,7 +701,7 @@ def test_regular_specs_error(ddb_client):
                 "info": {
                     "fieldName": "createLogConf",
                     "parentTypeName": "Mutation",
-                }
+                },
             },
             None,
         )
@@ -483,7 +763,7 @@ def test_regular_specs_error(ddb_client):
                 "info": {
                     "fieldName": "createLogConf",
                     "parentTypeName": "Mutation",
-                }
+                },
             },
             None,
         )
@@ -542,7 +822,7 @@ def test_regular_specs_error(ddb_client):
                 "info": {
                     "fieldName": "createLogConf",
                     "parentTypeName": "Mutation",
-                }
+                },
             },
             None,
         )
@@ -599,7 +879,162 @@ def test_regular_specs_error(ddb_client):
                 "info": {
                     "fieldName": "createLogConf",
                     "parentTypeName": "Mutation",
-                }
+                },
+            },
+            None,
+        )
+
+
+def test_filter_regex_error(ddb_client):
+    import lambda_function
+
+    # Test missing enable
+    with pytest.raises(lambda_function.APIException):
+        lambda_function.lambda_handler(
+            {
+                "arguments": {
+                    "confName": "json-01",
+                    "logType": "JSON",
+                    "multilineLogParser": None,
+                    "userLogFormat": "",
+                    "regularExpression": "",
+                    "regularSpecs": [],
+                    "processorFilterRegex": {
+                        'filters': [{
+                            'key': 'status',
+                            'condition': 'Include',
+                            'value': '400|401|404|405'
+                        }, {
+                            'key': 'request',
+                            'condition': 'Exclude',
+                            'value': '^/user/log*'
+                        }]
+                    },
+                },
+                "info": {
+                    "fieldName": "createLogConf",
+                    "parentTypeName": "Mutation",
+                },
+            },
+            None,
+        )
+
+    # Test processorFilterRegex is not a dict
+    with pytest.raises(lambda_function.APIException):
+        lambda_function.lambda_handler(
+            {
+                "arguments": {
+                    "confName": "json-01",
+                    "logType": "JSON",
+                    "multilineLogParser": None,
+                    "userLogFormat": "",
+                    "regularExpression": "",
+                    "regularSpecs": [],
+                    "processorFilterRegex": [],
+                },
+                "info": {
+                    "fieldName": "createLogConf",
+                    "parentTypeName": "Mutation",
+                },
+            },
+            None,
+        )
+
+    # Test missing key
+    with pytest.raises(lambda_function.APIException):
+        lambda_function.lambda_handler(
+            {
+                "arguments": {
+                    "confName": "json-01",
+                    "logType": "JSON",
+                    "multilineLogParser": None,
+                    "userLogFormat": "",
+                    "regularExpression": "",
+                    "regularSpecs": [],
+                    "processorFilterRegex": {
+                        'enable':
+                        True,
+                        'filters': [{
+                            'key-new': 'status',
+                            'condition': 'Include',
+                            'value': '400|401|404|405'
+                        }, {
+                            'key': 'request',
+                            'condition': 'Exclude',
+                            'value': '^/user/log*'
+                        }]
+                    },
+                },
+                "info": {
+                    "fieldName": "createLogConf",
+                    "parentTypeName": "Mutation",
+                },
+            },
+            None,
+        )
+
+    # Test missing condition
+    with pytest.raises(lambda_function.APIException):
+        lambda_function.lambda_handler(
+            {
+                "arguments": {
+                    "confName": "json-01",
+                    "logType": "JSON",
+                    "multilineLogParser": None,
+                    "userLogFormat": "",
+                    "regularExpression": "",
+                    "regularSpecs": [],
+                    "processorFilterRegex": {
+                        'enable':
+                        True,
+                        'filters': [{
+                            'key': 'status',
+                            'condition-new': 'Include',
+                            'value': '400|401|404|405'
+                        }, {
+                            'key': 'request',
+                            'condition': 'Exclude',
+                            'value': '^/user/log*'
+                        }]
+                    },
+                },
+                "info": {
+                    "fieldName": "createLogConf",
+                    "parentTypeName": "Mutation",
+                },
+            },
+            None,
+        )
+
+    # Test missing value
+    with pytest.raises(lambda_function.APIException):
+        lambda_function.lambda_handler(
+            {
+                "arguments": {
+                    "confName": "json-01",
+                    "logType": "JSON",
+                    "multilineLogParser": None,
+                    "userLogFormat": "",
+                    "regularExpression": "",
+                    "regularSpecs": [],
+                    "processorFilterRegex": {
+                        'enable':
+                        True,
+                        'filters': [{
+                            'key': 'status',
+                            'condition': 'Include',
+                            'value-new': '400|401|404|405'
+                        }, {
+                            'key': 'request',
+                            'condition': 'Exclude',
+                            'value': '^/user/log*'
+                        }]
+                    },
+                },
+                "info": {
+                    "fieldName": "createLogConf",
+                    "parentTypeName": "Mutation",
+                },
             },
             None,
         )

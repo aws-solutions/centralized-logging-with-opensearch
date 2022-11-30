@@ -29,20 +29,20 @@
 
 5. 在 **参数** 部分，查看模板的参数并根据需要进行修改
 
-      - 如果从新的 VPC 中部署, 此解决方案使用以下默认值:
+      - 如果部署到新的 VPC 中, 此解决方案使用以下参数:
 
     |参数 |默认值 |说明 |
     | ---------- | ---------------- | ------------------------------------------------- ---------- |
     |Admin User Email | `<需要输入>` |指定管理员的电子邮件。此电子邮件地址用于接收访问 Log Hub 控制台的临时密码。启动解决方案后，您可以直接在配置的 Cognito User Pool 中创建更多用户。 |
 
-      - 如果从新的 VPC 中部署, 此解决方案使用以下默认值:
+      - 如果部署到已有的 VPC 中, 此解决方案使用以下参数:
 
     |参数 |默认值 |说明 |
     | ---------- | ---------------- | ------------------------------------------------- ---------- |
     |Admin User Email | `<需要输入>` |指定管理员的电子邮件。此电子邮件地址用于接收访问 Log Hub 控制台的临时密码。启动解决方案后，您可以直接在配置的 Cognito User Pool 中创建更多用户。 |
     | VPC ID | `<需要输入>` | 选择现有的VPC。 |
-    | Public Subnet IDs | `<需要输入>` | 从现有的 VPC 中选择2个公有子网。 |
-    | Private Subnet IDs | `<需要输入>` | 从现有的 VPC 中选择2个私有子网。 |
+    | Public Subnet IDs | `<需要输入>` | 从现有的 VPC 中选择2个公有子网。子网必须有指向 [Internet Gateway][IGW] 的路由。 |
+    | Private Subnet IDs | `<需要输入>` | 从现有的 VPC 中选择2个私有子网。子网必须有指向 [NAT Gateway][NAT] 的路由。|
 
 6. 选择**下一步**。
 
@@ -79,3 +79,5 @@
 
 
 
+[NAT]: https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html
+[IGW]: https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Internet_Gateway.html

@@ -18,8 +18,8 @@
   "menu": {
     "home": "Home",
     "cluster": "Clusters",
-    "osDomain": "OpenSearch Domains",
-    "importOS": "Import OpenSearch Domain",
+    "osDomain": "Amazon OpenSearch Domains",
+    "importOS": "Import Amazon OpenSearch Domain",
     "logPipeline": "Log Analytics Pipelines",
     "serviceLog": "AWS Service Log",
     "appLog": "Application Log",
@@ -29,7 +29,7 @@
     "resource": "Resources",
     "instanceGroup": "Instance Groups",
     "logConfig": "Log Configs",
-    "crossAccount": "Cross Account",
+    "crossAccount": "Member Account",
     "doc": "Documentation"
   },
   "bottom": {
@@ -82,14 +82,20 @@
     "loadMoreInstance": "Load More Instances",
     "importEksCluster": "Import a Cluster",
     "fromInstance": "From Instance Group",
-    "fromS3": "From S3 Bucket",
+    "fromS3": "From Amazon S3 Bucket",
+    "fromSysLog": "From Syslog",
+    "fromEKS": "From EKS Cluster",
     "validate": "Validate",
     "changeIndex": "Change Index Name",
-    "linkAnAccount": "Link an Account",
+    "linkAnAccount": "Import a Member Account",
     "link": "Link",
     "forceCreate": "Force Create",
     "createSameAccountIngestion": "Create same account ingestion",
-    "upgrade": "Upgrade"
+    "upgrade": "Upgrade",
+    "addCondition": "Add Condition",
+    "addInstances": "Add Instances",
+    "removeInstances": "Remove Instances",
+    "gotoInstanceGroup": "Go To Instance Group"
   },
   "status": {
     "unknown": "Unknown",
@@ -106,8 +112,10 @@
     "offline": "Offline",
     "installing": "Installing"
   },
+  "seconds": "Seconds",
   "yes": "Yes",
   "no": "No",
+  "none": "None",
   "oops": "Oops...",
   "copied": "Copied!",
   "loading": "loading...",
@@ -116,5 +124,8 @@
   "optional": "optional",
   "noMoreInstance": "No more instances",
   "unknown": "Unknown",
-  "maxmindCopyRight": "Log Hub leverages GeoLite2 data created by MaxMind, available from "
+  "maxmindCopyRight": "This product includes GeoLite2 data created by MaxMind, available from ",
+  "signInAgain": "Please sign in again",
+  "reloginTips": "You were signed out of your account. Please press Reload to sign in again.",
+  "pendingCreation": "Pending Creation"
 }

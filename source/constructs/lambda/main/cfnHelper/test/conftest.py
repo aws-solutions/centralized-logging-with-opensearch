@@ -14,5 +14,6 @@ def default_environment_variables():
     os.environ["SOLUTION_ID"] = "SO8025"
 
     os.environ["DIST_OUTPUT_BUCKET"] = "log-hub-bucket"
-    os.environ["SUB_ACCOUNT_LINK_TABLE_NAME"] = "mocked-sub-account-link-table-name"
+    os.environ[
+        "SUB_ACCOUNT_LINK_TABLE_NAME"] = "mocked-sub-account-link-table-name"
     os.environ["SUB_ACCOUNT_LINK_TABLE"] = "mocked-sub-account-link-table-name"

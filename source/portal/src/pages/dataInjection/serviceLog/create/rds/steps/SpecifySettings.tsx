@@ -243,10 +243,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                       <div>
                         {t("servicelog:rds.selectDB")}
                         <ExtLink
-                          to={buildRDSLink(
-                            "",
-                            amplifyConfig.aws_project_region
-                          )}
+                          to={buildRDSLink(amplifyConfig.aws_project_region)}
                         >
                           {t("servicelog:rds.curAccount")}
                         </ExtLink>

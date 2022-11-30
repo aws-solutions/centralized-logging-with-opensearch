@@ -56,7 +56,7 @@ const Permission: React.FC<PermissionProps> = (props: PermissionProps) => {
     let kdsPermissionObj: any = {
       Effect: "Allow",
       Action: ["kinesis:PutRecord", "kinesis:PutRecords"],
-      Resource: `arn:${ARN_AWS}:kinesis:${amplifyConfig.aws_project_region}:<YOUR ACCOUNT ID>:stream/${pipelineInfo?.kdsParas?.streamName}`,
+      Resource: `arn:${ARN_AWS}:kinesis:${amplifyConfig.aws_project_region}:<YOUR ACCOUNT ID>:stream/${pipelineInfo?.bufferResourceName}`,
     };
     if (accountList && accountList.length > 0) {
       accountList.forEach((element) => {
@@ -68,11 +68,15 @@ const Permission: React.FC<PermissionProps> = (props: PermissionProps) => {
         );
       });
     }
-    if (pipelineInfo?.kdsRoleArn) {
-      let roleARN = "";
-      const roleSplitArr = pipelineInfo?.kdsRoleArn.split(":role/");
+    if (pipelineInfo?.bufferAccessRoleArn) {
+      let roleARN = [];
+      const roleSplitArr = pipelineInfo.bufferAccessRoleArn.split(":role/");
       if (roleSplitArr.length > 1) {
-        roleARN = `${roleSplitArr[0]}:role/*DataBufferKDSRole*`;
+        roleARN = [
+          `${roleSplitArr[0]}:role/*DataBufferKDSRole*`,
+          `${roleSplitArr[0]}:role/*BufferAccessRole*`,
+          `${roleSplitArr[0]}:role/AOS-Agent*`,
+        ];
         kdsPermissionObj = {
           Sid: "VisualEditor1",
           Effect: "Allow",
@@ -162,7 +166,7 @@ const Permission: React.FC<PermissionProps> = (props: PermissionProps) => {
     return permissionJSON;
   };
 
-  // Get cross account List
+  // Get Member Account List
   const getCrossAccountList = async () => {
     try {
       setLoadingData(true);

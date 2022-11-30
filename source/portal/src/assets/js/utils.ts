@@ -15,7 +15,8 @@ limitations under the License.
 */
 import { INVALID } from "./const";
 import { format, parseISO } from "date-fns";
-import { EngineType } from "API";
+import { EngineType, LogType, MultiLineLogParser, SyslogParser } from "API";
+import { ExLogConf } from "pages/resources/common/LogConfigComp";
 
 const SPRINGBOOT_DEFAULT_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss,SSS";
 
@@ -101,7 +102,7 @@ export const bucketNameIsValid = (bucketName: string): boolean => {
   return false;
 };
 
-// check Cross Account Input Invalid
+// check Member Account Input Invalid
 export enum CrossAccountFiled {
   ACCOUNT_ID = "ACCOUNT_ID",
   CROSS_ACCOUNT_ROLE = "CROSS_ACCOUNT_ROLE",
@@ -521,7 +522,67 @@ export const getLogFormatByUserLogConfig = (config: string): string => {
   return tmpFormat;
 };
 
-// Spring Boot RegEx Generation
+// Syslog RegEx Generator
+
+const SYSLOG_KEY_REGEX_MAP: any = {
+  PRI: "[0-9]{1,5}",
+  HOSTNAME: "([^\\s]+)|-",
+  "APP-NAME": "([^\\s]+)|-",
+  PROCID: "([-0-9]+)|-",
+  MSGID: "([^\\s]+)|-",
+  TIMESTAMP: "[^\\s]+",
+  "STRUCTURED-DATA": "[^\\s]+",
+  "%BOM": "([^\\s+])|(\\s)|-",
+  MSG: ".+",
+};
+
+export const buidSyslogRegexFromConfig = (userFormatStr: string) => {
+  // remove \n if at the last
+  if (userFormatStr.endsWith("\\n")) {
+    userFormatStr = userFormatStr.replace(/\\n$/, "");
+  }
+
+  // if has the [ xxxx ]
+  let finalRegexStr = userFormatStr.replace(/\[.+?\]/, () => {
+    return `(?<extradata>(\\[(.*)\\]|-))`;
+  });
+
+  finalRegexStr = finalRegexStr.replace(/%([\w:-]+?)%/gi, (match, key) => {
+    // if the timestamp without specify format
+    if (key.toLowerCase() === "timestamp") {
+      return `(?<timestamp>\\w+\\s+\\d+ \\d+:\\d+:\\d+)`;
+    }
+
+    // if the key has :::
+    if (key.indexOf(":::") > 0) {
+      const splitArr = key.split(":::");
+      if (splitArr.length > 1) {
+        key = splitArr[0];
+        const format = splitArr[1];
+        // split timestamp when time has format
+        if (key.toLowerCase() === "timestamp" && format === "date-rfc3339") {
+          return `(?<time>[^\\s]+)`;
+        }
+      }
+    }
+
+    // transform group key to lower case
+    let groupKey = key.toLowerCase();
+    if (groupKey.indexOf("-") > 0) {
+      groupKey = groupKey.replace("-", "");
+    }
+
+    if (SYSLOG_KEY_REGEX_MAP[key.toUpperCase()]) {
+      return `(?<${groupKey}>${SYSLOG_KEY_REGEX_MAP[key.toUpperCase()]})`;
+    }
+
+    return `(?<${groupKey}>[^\\s]+)`;
+  });
+
+  return finalRegexStr;
+};
+
+// Spring Boot RegEx Generator
 const timeWordsNameArr = ["d", "date"];
 const loggerWordsArr = ["c", "lo", "logger"];
 const messageGroupNameArr = ["m", "msg", "message"];
@@ -571,8 +632,9 @@ const replaceTimeFormatToRegEx = (timeFormatStr: string): any => {
 
 export const buildSpringBootRegExFromConfig = (
   logConfigString: string
-): string => {
+): { regexStr: string; timeRegexStr: string } => {
   console.info("================SPRINGBOOT LOG REG START====================");
+  let springbootTimeRegEx = "";
   // Replace With  %xx{xxxx} format
   let finalaRegRegStr = logConfigString.replace(
     /%(\w+)\{(.+?)\}/gi,
@@ -583,10 +645,11 @@ export const buildSpringBootRegExFromConfig = (
       // console.info("str:", str);
       if (key === "X") {
         // Customize Key, may be empty (space)
-        return `(?<${str}>\\S+|\\s)`;
+        return `(?<${str}>\\S+|\\s?)`;
       }
       if (timeWordsNameArr.includes(key)) {
-        return `(?<time>${replaceTimeFormatToRegEx(str)})`;
+        springbootTimeRegEx = replaceTimeFormatToRegEx(str);
+        return `(?<time>${springbootTimeRegEx})`;
       }
       return `(?<${key}>\\S+)`;
     }
@@ -594,7 +657,7 @@ export const buildSpringBootRegExFromConfig = (
 
   // Find and Replace double [ ] 转义
   finalaRegRegStr = finalaRegRegStr.replaceAll("[", "\\[");
-  finalaRegRegStr = finalaRegRegStr.replaceAll("]", "\\]");
+  finalaRegRegStr = finalaRegRegStr.replaceAll("]", "?\\]");
 
   // Replace % 开头，并且不含特殊字符
   finalaRegRegStr = finalaRegRegStr.replace(/%([\w-]+)/gi, (match, key) => {
@@ -604,7 +667,7 @@ export const buildSpringBootRegExFromConfig = (
     key = key.replace(/[\W\d]+/, "");
     // 找到特殊的需要处理的正则表达式，如message(%m)，换行(%n)
     if (levelGroupNameArr.includes(key)) {
-      return "(?<level>[\\S]+)";
+      return "(?<level>\\s*[\\S]+\\s*)";
     }
     if (threadGroupNameArr.includes(key)) {
       return "(?<thread>\\S+)";
@@ -624,7 +687,7 @@ export const buildSpringBootRegExFromConfig = (
     return `(?<${key}>\\S+)`;
   });
 
-  return finalaRegRegStr;
+  return { regexStr: finalaRegRegStr, timeRegexStr: springbootTimeRegEx };
 };
 
 export const domainIsValid = (domain: string): boolean => {
@@ -675,21 +738,21 @@ export const buildESCloudWatchLink = (
   return `https://${region}.console.aws.amazon.com/cloudwatch/home?region=${region}#dashboards:name=${domainName}`;
 };
 
-export const buildVPCLink = (vpcId: string, region: string): string => {
+export const buildVPCLink = (region: string, vpcId: string): string => {
   if (region.startsWith("cn")) {
     return `https://${region}.console.amazonaws.cn/vpc/home?region=${region}#vpcs:VpcId=${vpcId}`;
   }
   return `https://${region}.console.aws.amazon.com/vpc/home?region=${region}#vpcs:VpcId=${vpcId}`;
 };
 
-export const buildSubnetLink = (subnetId: string, region: string): string => {
+export const buildSubnetLink = (region: string, subnetId: string): string => {
   if (region.startsWith("cn")) {
     return `https://console.amazonaws.cn/vpc/home?region=${region}#subnets:subnetId=${subnetId}`;
   }
   return `https://console.aws.amazon.com/vpc/home?region=${region}#subnets:subnetId=${subnetId}`;
 };
 
-export const buildSGLink = (sgId: string, region: string): string => {
+export const buildSGLink = (region: string, sgId: string): string => {
   if (region.startsWith("cn")) {
     return `https://${region}.console.amazonaws.cn/ec2/v2/home?region=${region}#SecurityGroup:securityGroupId=${sgId}`;
   }
@@ -705,8 +768,8 @@ const getDirPrefixByPrefixStr = (prefix: string) => {
 };
 
 export const buildS3Link = (
-  bucketName: string,
   region: string,
+  bucketName: string,
   prefix?: string
 ): string => {
   if (region.startsWith("cn")) {
@@ -727,7 +790,7 @@ export const buildS3Link = (
   return `https://s3.console.aws.amazon.com/s3/buckets/${bucketName}`;
 };
 
-export const buildTrailLink = (trailName: string, region: string): string => {
+export const buildTrailLink = (region: string): string => {
   if (region.startsWith("cn")) {
     return `https://${region}.console.amazonaws.cn/cloudtrail/home?region=${region}#/trails`;
   }
@@ -742,8 +805,8 @@ export const buildConfigLink = (region: string): string => {
 };
 
 export const buildCloudFrontLink = (
-  cloudFrontId: string,
-  region: string
+  region: string,
+  cloudFrontId: string
 ): string => {
   if (region.startsWith("cn")) {
     return `https://console.amazonaws.cn/cloudfront/v3/home?region=${region}#/distributions/${cloudFrontId}`;
@@ -752,8 +815,8 @@ export const buildCloudFrontLink = (
 };
 
 export const buildLambdaLink = (
-  functionName: string,
-  region: string
+  region: string,
+  functionName: string
 ): string => {
   if (region.startsWith("cn")) {
     return `https://${region}.console.amazonaws.cn/lambda/home?region=${region}#/functions/${functionName}?tab=code`;
@@ -761,7 +824,7 @@ export const buildLambdaLink = (
   return `https://${region}.console.aws.amazon.com/lambda/home?region=${region}#/functions/${functionName}?tab=code`;
 };
 
-export const buildRDSLink = (dbId: string, region: string): string => {
+export const buildRDSLink = (region: string): string => {
   if (region.startsWith("cn")) {
     return `https://console.amazonaws.cn/rds/home?region=${region}#databases:`;
   }
@@ -817,6 +880,13 @@ export const buildEKSLink = (
   }`;
 };
 
+export const buildASGLink = (region: string, groupName: string): string => {
+  if (region.startsWith("cn")) {
+    return `https://${region}.console.amazonaws.cn/ec2/home?region=${region}#AutoScalingGroupDetails:id=${groupName}`;
+  }
+  return `https://${region}.console.aws.amazon.com/ec2/home?region=${region}#AutoScalingGroupDetails:id=${groupName}`;
+};
+
 export const buildCrossAccountTemplateLink = (
   region: string,
   version: string
@@ -825,4 +895,41 @@ export const buildCrossAccountTemplateLink = (
     return `https://aws-gcr-solutions.s3.cn-north-1.amazonaws.com.cn/log-hub/${version}/CrossAccount.template`;
   }
   return `https://aws-gcr-solutions.s3.amazonaws.com/log-hub/${version}/CrossAccount.template`;
+};
+
+export const getRegexAndTimeByConfigAndFormat = (
+  curConfig: ExLogConf,
+  format: string
+) => {
+  let tmpExp = "";
+  let tmpTimeExp = "";
+
+  if (curConfig.logType === LogType.Nginx) {
+    tmpExp = buildRegexFromNginxLog(format, true);
+  }
+  if (curConfig.logType === LogType.Apache) {
+    tmpExp = buildRegexFromApacheLog(format);
+  }
+  if (
+    curConfig.logType === LogType.Syslog &&
+    curConfig.syslogParser === SyslogParser.CUSTOM
+  ) {
+    tmpExp = buidSyslogRegexFromConfig(format);
+  }
+  if (
+    curConfig.logType === LogType.SingleLineText ||
+    (curConfig.logType === LogType.MultiLineText &&
+      curConfig.multilineLogParser === MultiLineLogParser.CUSTOM)
+  ) {
+    tmpExp = format;
+  }
+  if (
+    curConfig.logType === LogType.MultiLineText &&
+    curConfig.multilineLogParser === MultiLineLogParser.JAVA_SPRING_BOOT
+  ) {
+    const { regexStr, timeRegexStr } = buildSpringBootRegExFromConfig(format);
+    tmpExp = regexStr;
+    tmpTimeExp = timeRegexStr;
+  }
+  return { tmpExp, tmpTimeExp };
 };

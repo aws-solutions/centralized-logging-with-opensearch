@@ -39,6 +39,7 @@ import {
 } from "aws-cdk-lib";
 import { ISecurityGroup, IVpc } from "aws-cdk-lib/aws-ec2";
 import * as path from "path";
+import { NagSuppressions } from "cdk-nag";
 
 /**
  * cfn-nag suppression rule interface
@@ -145,14 +146,28 @@ export class S3toOpenSearchStack extends Construct {
       statements: [
         new iam.PolicyStatement({
           actions: [
-            "kms:Create*",
-            "kms:Describe*",
-            "kms:Enable*",
-            "kms:List*",
-            "kms:Put*",
-            "kms:Update*",
-            "kms:Revoke*",
-            "kms:Get*",
+            "kms:CreateKey",
+            "kms:CreateAlias",
+            "kms:CreateCustomKeyStore",
+            "kms:DescribeKey",
+            "kms:DescribeCustomKeyStores",
+            "kms:EnableKey",
+            "kms:EnableKeyRotation",
+            "kms:ListAliases",
+            "kms:ListKeys",
+            "kms:ListGrants",
+            "kms:ListKeyPolicies",
+            "kms:ListResourceTags",
+            "kms:PutKeyPolicy",
+            "kms:UpdateAlias",
+            "kms:UpdateCustomKeyStore",
+            "kms:UpdateKeyDescription",
+            "kms:UpdatePrimaryRegion",
+            "kms:RevokeGrant",
+            "kms:GetKeyPolicy",
+            "kms:GetParametersForImport",
+            "kms:GetKeyRotationStatus",
+            "kms:GetPublicKey",
             "kms:ScheduleKeyDeletion",
             "kms:GenerateDataKey",
             "kms:TagResource",
@@ -198,7 +213,14 @@ export class S3toOpenSearchStack extends Construct {
     const logProcessorPolicy = new iam.Policy(this, "logProcessorPolicy", {
       statements: [
         new iam.PolicyStatement({
-          actions: ["es:ESHttp*"],
+          actions: [
+            "es:ESHttpGet",
+            "es:ESHttpDelete",
+            "es:ESHttpPatch",
+            "es:ESHttpPost",
+            "es:ESHttpPut",
+            "es:ESHttpHead",
+          ],
           resources: ["*"],
         }),
         new iam.PolicyStatement({
@@ -220,6 +242,12 @@ export class S3toOpenSearchStack extends Construct {
         }),
       ],
     });
+    NagSuppressions.addResourceSuppressions(logProcessorPolicy, [
+      {
+        id: "AwsSolutions-IAM5",
+        reason: "The managed policy needs to use any resources.",
+      },
+    ]);
 
     // Create a lambda layer with required python packages.
     // This layer also includes standard log hub plugins.
@@ -327,6 +355,16 @@ export class S3toOpenSearchStack extends Construct {
         ],
       })
     );
+    NagSuppressions.addResourceSuppressions(
+      logProcessorFn,
+      [
+        {
+          id: "AwsSolutions-IAM5",
+          reason: "The managed policy needs to use any resources.",
+        },
+      ],
+      true
+    );
 
     this.logProcessorRoleArn = logProcessorFn.role!.roleArn;
 
@@ -336,6 +374,22 @@ export class S3toOpenSearchStack extends Construct {
       retentionPeriod: Duration.days(7),
       encryption: sqs.QueueEncryption.KMS_MANAGED,
     });
+    logEventDLQ.addToResourcePolicy(
+      new iam.PolicyStatement({
+        actions: ["sqs:*"],
+        effect: iam.Effect.DENY,
+        resources: [logEventDLQ.queueArn],
+        conditions: {
+          ["Bool"]: {
+            "aws:SecureTransport": "false",
+          },
+        },
+        principals: [new iam.AnyPrincipal()],
+      })
+    );
+    NagSuppressions.addResourceSuppressions(logEventDLQ, [
+      { id: "AwsSolutions-SQS3", reason: "it is a DLQ" },
+    ]);
 
     const cfnLogEventDLQ = logEventDLQ.node.defaultChild as sqs.CfnQueue;
     cfnLogEventDLQ.overrideLogicalId("LogEventDLQ");
@@ -424,7 +478,7 @@ export class S3toOpenSearchStack extends Construct {
       new iam.PolicyStatement({
         actions: ["sqs:*"],
         effect: iam.Effect.DENY,
-        resources: [],
+        resources: [logEventQueue.queueArn],
         conditions: {
           ["Bool"]: {
             "aws:SecureTransport": "false",
@@ -482,6 +536,16 @@ export class S3toOpenSearchStack extends Construct {
         ],
       })
     );
+    NagSuppressions.addResourceSuppressions(
+      logSourceS3NotificationFn,
+      [
+        {
+          id: "AwsSolutions-IAM5",
+          reason: "The managed policy needs to use any resources.",
+        },
+      ],
+      true
+    );
 
     const logSourceS3NotificationProvider = new cr.Provider(
       this,
@@ -489,6 +553,16 @@ export class S3toOpenSearchStack extends Construct {
       {
         onEventHandler: logSourceS3NotificationFn,
       }
+    );
+    NagSuppressions.addResourceSuppressions(
+      logSourceS3NotificationProvider,
+      [
+        {
+          id: "AwsSolutions-IAM5",
+          reason: "The managed policy needs to use any resources.",
+        },
+      ],
+      true
     );
 
     logSourceS3NotificationProvider.node.addDependency(
@@ -506,7 +580,6 @@ export class S3toOpenSearchStack extends Construct {
     logSourceS3NotificationlambdaTrigger.node.addDependency(
       logSourceS3NotificationProvider
     );
-
     // Only enable these resource when deploy in cross account
     this.enable({ construct: logSourceS3NotificationFn, if: isCrossAccount });
     this.enable({
@@ -517,7 +590,6 @@ export class S3toOpenSearchStack extends Construct {
       construct: logSourceS3NotificationlambdaTrigger,
       if: isCrossAccount,
     });
-
     new CfnOutput(this, "LogEventQueueARN", {
       description: "logEvent Queue ARN",
       value: logEventQueue.queueArn,

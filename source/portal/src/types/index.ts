@@ -49,3 +49,18 @@ export interface AmplifyConfigType {
   loghub_version: string;
   default_cmk_arn: string;
 }
+
+export enum ArchiveFormat {
+  gzip = "Gzip",
+}
+
+export const YESNO_LIST = [
+  {
+    name: "yes",
+    value: YesNo.Yes,
+  },
+  {
+    name: "no",
+    value: YesNo.No,
+  },
+];

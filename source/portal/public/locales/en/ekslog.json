@@ -3,8 +3,9 @@
   "clusters": "Clusters",
   "list": {
     "clusterName": "Cluster Name",
-    "pattern": "Pattern",
-    "os": "OpenSearch",
+    "account": "Account",
+    "pattern": "Collection Mode",
+    "os": "Amazon OpenSearch",
     "created": "Created"
   },
   "delete": "Delete imported EKS Cluster",
@@ -13,7 +14,7 @@
     "name": "Create",
     "step": {
       "specifyEksSource": "Specify EKS Log Source",
-      "specifyOS": "Specify OpenSearch domain",
+      "specifyOS": "Specify Amazon OpenSearch domain",
       "createTags": "Create tags"
     },
     "eksSource": {
@@ -23,23 +24,23 @@
       "eksClusterError": "Please select an EKS Cluster",
       "curAccount": "current AWS account",
       "agent": "Agent",
-      "eksAgentPattern": "Pattern",
-      "eksAgentPatternDesc": "Please choose the pattern which will be used to deploy logging agent.",
+      "eksAgentPattern": "Collection Mode",
+      "eksAgentPatternDesc": "Please choose the collection mode which will be used to deploy logging agent.",
       "networkConfig": "Network Configuration",
-      "networkConfigDesc": "To ingest EKS logs to Opensearch, the VPC of the EKS cluster and the VPC of OpenSearch need to be connected. If they are not connected, you could follow the steps to create VPC peering.",
+      "networkConfigDesc": "If you plan to ingest EKS logs to Amazon OpenSearch directly (i.e., without using Amazon S3 or Kinesis Data Streams as buffer layer), please make sure the VPC of your EKS cluster and the VPC of Amazon OpenSearch are connected. If they are not connected, you can follow the below steps to create VPC peering. (Note, VPC peering will incur additional cost).",
       "vpc1": "1. Create and accept VPC peering follow ",
       "vpc2": "2. Update route table follow ",
       "vpc3": "3. Update security group follow ",
       "guide": "this guide",
       "acknowledge": "Please acknowledge the checkbox before proceeding.",
-      "confirmed": "I confirmed that the VPCs of the EKS cluster and OpenSearch are connected."
+      "confirmed": "I acknowledge the VPC connectivity requirement to ingest log from EKS to Amazon OpenSearch directly."
     }
   },
   "detail": {
     "config": "General Configurations",
     "clusterName": "EKS Cluster",
-    "deploymentPattern": "Pattern",
-    "aos": "Amazon Opensearch",
+    "deploymentPattern": "Collection Mode",
+    "aos": "Amazon OpenSearch",
     "iamRole": "IAM Role ARN",
     "created": "Created",
     "tab": {
@@ -48,7 +49,7 @@
       "tags": "Tags"
     },
     "ingestions": {
-      "osIndex": "Opensearch Index",
+      "osIndex": "Amazon OpenSearch Index",
       "pipeline": "App Log Pipeline",
       "logConfig": "Log Config",
       "created": "Created",
@@ -73,7 +74,7 @@
       "createTags": "Create Tags"
     },
     "specifyPipeline": {
-      "alert": "The pipeline you are creating or chosing form are conneted with OpenSearch Cluster:",
+      "alert": "The pipeline you are creating or chosing form are conneted with Amazon OpenSearch Cluster:",
       "creationMethod": "Creation Method",
       "createNew": "Create new",
       "createNewDesc": "Create a new Application Log Pipeline",
@@ -87,7 +88,7 @@
       "filterPipeline": "Filter the existing pipeline",
       "selectPipeline": "Select a pipeline",
       "pipelineConfig": "Pipeline Configuration",
-      "osIndexPrefix": "OpenSearch Index Prefix",
+      "osIndexPrefix": "Amazon OpenSearch Index Prefix",
       "aos": "Amazon OpenSearch",
       "kds": "Kinesis Data Streams",
       "created": "Created",
@@ -98,8 +99,9 @@
     },
     "detail": {
       "ingestionDetail": "Ingestion Detail",
-      "osIndexPrefix": "OpenSearch Index Prefix",
-      "kds": "Kinesis Data Stream",
+      "osIndexPrefix": "Amazon OpenSearch Index Prefix",
+      "bufferLayer": "Buffer Layer",
+      "kds": "Kinesis Data Streams",
       "pipeline": "Pipeline",
       "created": "Created",
       "sidecar": "Sidecar",

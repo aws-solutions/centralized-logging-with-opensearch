@@ -100,6 +100,10 @@
 // //progress
 // @import "../components/Progress/style";
 
+#root {
+  white-space: pre-line;
+}
+
 .loading {
   text-align: center;
   padding: 20px;
@@ -151,6 +155,22 @@
 
 .text-right {
   text-align: right;
+}
+
+.pl-10 {
+  padding-left: 10px;
+}
+
+.pt-8 {
+  padding-top: 8px;
+}
+
+.pt-10 {
+  padding-top: 10px;
+}
+
+.pt-15 {
+  padding-top: 15px;
 }
 
 .pl-20 {
@@ -237,10 +257,10 @@
   padding: 10px 0;
 }
 
-// .plr-10 {
-//   padding-left: 10px;
-//   padding-right: 10px;
-// }
+.plr-10 {
+  padding-left: 10px;
+  padding-right: 10px;
+}
 
 // .w-100 {
 //   width: 100px;
@@ -298,6 +318,10 @@
 
 .m-w-75p {
   max-width: 75%;
+}
+
+.m-w-35p {
+  max-width: 35%;
 }
 
 .m-w-45p {
@@ -459,8 +483,22 @@
   border-bottom: 1px solid #ddd;
   font-size: 14px;
   align-items: center;
+  &.top-header {
+    background: #fafafa;
+  }
+  .min-height {
+    min-height: 30px;
+  }
+  &.flex-start {
+    align-items: flex-start;
+  }
   &:nth-of-type(odd) {
     background: #fafafa;
+  }
+  &.has-border-bottom {
+    &:last-child {
+      border-bottom: 1px solid #ddd;
+    }
   }
   &:last-child {
     border-bottom: 0;
@@ -639,13 +677,23 @@
   margin-top: -26px;
 }
 
-.cross-account {
+.cross-account,
+.syslog-guide {
   .deploy-desc {
     padding: 3px 0;
   }
   .deploy-steps {
     padding-left: 15px;
     line-height: 1.8em;
+    .step-desc {
+      padding: 2px 0 0 15px;
+    }
+  }
+  .guide-code {
+    background-color: #eee;
+    color: #666;
+    padding: 4px 4px;
+    border-radius: 3px;
   }
 }
 
@@ -662,7 +710,34 @@
   }
 }
 
+.applog-buffer {
+  padding: 3px 0;
+  label {
+    font-size: 16px;
+    input {
+      margin-right: 5px;
+    }
+    .desc {
+      font-size: 14px;
+      color: #666;
+    }
+  }
+}
+
+.instance-group-select {
+  background-color: #fff;
+  font-size: 16px;
+  padding: 20px 20px 0;
+  .group-select-item {
+    padding: 5px 0;
+  }
+}
+
 /**material ui*/
+.MuiDialog-paperWidthMd {
+  max-width: 1200px !important;
+}
+
 .PrivateSwitchBase-root-1 {
   padding: 0 !important;
 }

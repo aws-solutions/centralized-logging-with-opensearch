@@ -13,41 +13,42 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+import { Construct } from "constructs";
 import {
-    Construct,
-} from 'constructs';
-import {
-    Fn,
-    aws_stepfunctions_tasks as tasks,
-    aws_stepfunctions as sfn,
-    aws_logs as logs,
-    aws_iam as iam
-} from 'aws-cdk-lib';
-import {
-    Table,
-    ITable
-} from 'aws-cdk-lib/aws-dynamodb';
+  Fn,
+  Duration,
+  aws_stepfunctions_tasks as tasks,
+  aws_stepfunctions as sfn,
+  aws_logs as logs,
+  aws_lambda as lambda,
+  aws_iam as iam,
+  SymlinkFollowMode,
+} from "aws-cdk-lib";
+import { Table, ITable } from "aws-cdk-lib/aws-dynamodb";
+
+import * as path from "path";
+
 export interface PipelineFlowProps {
+  /**
+   * Step Functions State Machine ARN for CloudFormation deployment Flow
+   *
+   * @default - None.
+   */
+  readonly cfnFlowSMArn: string;
 
-    /**
-     * Step Functions State Machine ARN for CloudFormation deployment Flow
-     *
-     * @default - None.
-     */
-    readonly cfnFlowSMArn: string
+  /**
+   * Pipeline Table Name
+   *
+   * @default - None.
+   */
+  readonly tableName: string;
 
-    /**
-     * Pipeline Table ARN
-     *
-     * @default - None.
-     */
-    readonly tableArn: string
-
-}
-
-
-interface KeyVal<T> {
-    [key: string]: T
+  /**
+   * Pipeline Table ARN
+   *
+   * @default - None.
+   */
+  readonly tableArn: string;
 }
 
 /**
@@ -55,145 +56,108 @@ interface KeyVal<T> {
  * This flow will call CloudFormation Deployment Flow (Child Flow)
  */
 export class AppPipelineFlowStack extends Construct {
+  readonly stateMachineArn: string;
 
-    readonly stateMachineArn: string
+  constructor(scope: Construct, id: string, props: PipelineFlowProps) {
+    super(scope, id);
 
-    private updateStatus(table: ITable, status: string, extra?: KeyVal<tasks.DynamoAttributeValue>) {
-        const base = {
-            status: tasks.DynamoAttributeValue.fromString(status),
-            stackId: tasks.DynamoAttributeValue.fromString(sfn.JsonPath.stringAt('$.result.stackId')),
-            error: tasks.DynamoAttributeValue.fromString(sfn.JsonPath.stringAt('$.result.error'))
-        };
+    const solution_id = "SO8025";
 
-        interface TmpType {
-            eans: KeyVal<string>
-            eavs: KeyVal<tasks.DynamoAttributeValue>
-        }
+    // Step Functions Tasks
+    const table = Table.fromTableArn(this, "Table", props.tableArn);
 
-        const merged = Object.assign(base, extra);
-        const eanvs = Object.entries(merged).reduce((acc, [k, v]) => {
-            const words = k.split('.');
-            const o = words.map<TmpType>((word, index) => {
-                const o: TmpType = {
-                    eans: {},
-                    eavs: {},
-                };
-                if (index === (words.length - 1)) {
-                    o.eans['#' + word] = word;
-                    o.eavs[':' + words.join('_')] = v;
-                } else {
-                    o.eans['#' + word] = word;
-                };
-                return o;
-            });
-            return acc.concat(o);
-        }, [] as TmpType[]);
+    // Create a Lambda to handle the status update to backend table.
+    const appPipeFlowFn = new lambda.Function(this, "AppPipeFlowFn", {
+      code: lambda.AssetCode.fromAsset(
+        path.join(__dirname, "../../lambda/api/app_pipeline_flow"),
+        { followSymlinks: SymlinkFollowMode.ALWAYS }
+      ),
+      runtime: lambda.Runtime.PYTHON_3_9,
+      handler: "lambda_function.lambda_handler",
+      timeout: Duration.seconds(60),
+      memorySize: 128,
+      environment: {
+        SOLUTION_ID: solution_id,
+        PIPELINE_TABLE: props.tableName,
+        SOLUTION_VERSION: process.env.VERSION ? process.env.VERSION : "v1.0.0",
+      },
+      description: "Log Hub - Helper function to update pipeline status",
+    });
 
-        const expressionAttributeNames = eanvs.reduce((acc, cur) => {
-            return Object.assign(acc, cur.eans);
-        }, {} as KeyVal<string>);
+    table.grantReadWriteData(appPipeFlowFn);
+    const child = sfn.StateMachine.fromStateMachineArn(
+      this,
+      "ChildSM",
+      props.cfnFlowSMArn
+    );
 
-        const expressionAttributeValues = eanvs.reduce((acc, cur) => {
-            return Object.assign(acc, cur.eavs);
-        }, {} as KeyVal<tasks.DynamoAttributeValue>);
+    // Include the state machine in a Task state with callback pattern
+    const cfnTask = new tasks.StepFunctionsStartExecution(
+      this,
+      "CloudFormation Flow",
+      {
+        stateMachine: child,
+        integrationPattern: sfn.IntegrationPattern.WAIT_FOR_TASK_TOKEN,
+        input: sfn.TaskInput.fromObject({
+          token: sfn.JsonPath.taskToken,
+          input: sfn.JsonPath.entirePayload,
+        }),
+        resultPath: "$.result",
+      }
+    );
 
-        const fields = Object.entries(merged).map(([k, _]) => {
-            const words = k.split('.');
-            return `#${words.join('.#')} = :${words.join('_')}`
-        });
+    // State machine log group for error logs
+    const logGroup = new logs.LogGroup(this, "ErrorLogGroup", {
+      logGroupName: `/aws/vendedlogs/states/${Fn.select(
+        6,
+        Fn.split(":", props.cfnFlowSMArn)
+      )}-SM-app-pipe-error`,
+    });
 
-        const updateExpression = `SET ${fields.join(', ')}`;
+    // Role for state machine
+    const LogHubAppPipelineAPIPipelineFlowSMRole = new iam.Role(
+      this,
+      "SMRole",
+      {
+        assumedBy: new iam.ServicePrincipal("states.amazonaws.com"),
+      }
+    );
+    // Least Privilage to enable logging for state machine
+    LogHubAppPipelineAPIPipelineFlowSMRole.addToPolicy(
+      new iam.PolicyStatement({
+        actions: [
+          "logs:PutResourcePolicy",
+          "logs:DescribeLogGroups",
+          "logs:UpdateLogDelivery",
+          "logs:AssociateKmsKey",
+          "logs:GetLogGroupFields",
+          "logs:PutRetentionPolicy",
+          "logs:CreateLogGroup",
+          "logs:PutDestination",
+          "logs:DescribeResourcePolicies",
+          "logs:GetLogDelivery",
+          "logs:ListLogDeliveries",
+        ],
+        effect: iam.Effect.ALLOW,
+        resources: [logGroup.logGroupArn],
+      })
+    );
 
-        return new tasks.DynamoUpdateItem(this, `Set ${status} Status`, {
-            key: {
-                id: tasks.DynamoAttributeValue.fromString(sfn.JsonPath.stringAt('$.id'))
-            },
-            table: table,
-            expressionAttributeNames,
-            expressionAttributeValues,
-            updateExpression,
-            resultPath: sfn.JsonPath.DISCARD,
-        })
-    };
+    const appPipeFlowFnTask = new tasks.LambdaInvoke(this, "Update Status", {
+      lambdaFunction: appPipeFlowFn,
+      outputPath: "$.Payload",
+      inputPath: "$",
+    });
 
-    constructor(scope: Construct, id: string, props: PipelineFlowProps) {
-        super(scope, id);
+    const pipeSM = new sfn.StateMachine(this, "PipelineFlowSM", {
+      definition: cfnTask.next(appPipeFlowFnTask),
+      role: LogHubAppPipelineAPIPipelineFlowSMRole,
+      logs: {
+        destination: logGroup,
+        level: sfn.LogLevel.ALL,
+      },
+    });
 
-        // Step Functions Tasks
-        const table = Table.fromTableArn(this, 'Table', props.tableArn);
-
-        const activeStatus = this.updateStatus(table, 'ACTIVE', {
-            'kdsParas.osHelperFnArn': tasks.DynamoAttributeValue.fromString(sfn.JsonPath.stringAt('$.result.outputs[0].OutputValue')), // OSInitHelperFn
-            'kdsParas.kdsArn': tasks.DynamoAttributeValue.fromString(sfn.JsonPath.stringAt('$.result.outputs[2].OutputValue')), // KinesisStreamArn
-            'kdsRoleArn': tasks.DynamoAttributeValue.fromString(sfn.JsonPath.stringAt('$.result.outputs[1].OutputValue')), // KDSRoleArn
-            'kdsRoleName': tasks.DynamoAttributeValue.fromString(sfn.JsonPath.stringAt('$.result.outputs[4].OutputValue')), // KDSRoleName
-            'kdsParas.streamName': tasks.DynamoAttributeValue.fromString(sfn.JsonPath.stringAt('$.result.outputs[5].OutputValue')), // KinesisStreamName
-            'kdsParas.regionName': tasks.DynamoAttributeValue.fromString(sfn.JsonPath.stringAt('$.result.outputs[6].OutputValue')), // KinesisStreamRegion
-        })
-        const errorStatus = this.updateStatus(table, 'ERROR')
-        const inactiveStatus = this.updateStatus(table, 'INACTIVE')
-
-        const checkStatus = new sfn.Choice(this, 'Check Stack Status')
-            .when(sfn.Condition.stringEquals('$.result.stackStatus', 'DELETE_COMPLETE'), inactiveStatus)
-            .when(sfn.Condition.stringEquals('$.result.stackStatus', 'CREATE_COMPLETE'), activeStatus)
-            .otherwise(errorStatus)
-
-
-        const child = sfn.StateMachine.fromStateMachineArn(this, 'ChildSM', props.cfnFlowSMArn)
-
-        // Include the state machine in a Task state with callback pattern
-        const cfnTask = new tasks.StepFunctionsStartExecution(this, 'CloudFormation Flow', {
-            stateMachine: child,
-            integrationPattern: sfn.IntegrationPattern.WAIT_FOR_TASK_TOKEN,
-            input: sfn.TaskInput.fromObject({
-                token: sfn.JsonPath.taskToken,
-                input: sfn.JsonPath.entirePayload,
-            }),
-            resultPath: '$.result',
-        });
-
-        // State machine log group for error logs
-        const logGroup = new logs.LogGroup(this, 'ErrorLogGroup', {
-            logGroupName: `/aws/vendedlogs/states/${Fn.select(6, Fn.split(":", props.cfnFlowSMArn))}-SM-app-pipe-error`
-        });
-
-        // Role for state machine
-        const LogHubAppPipelineAPIPipelineFlowSMRole = new iam.Role(this, 'SMRole', {
-            assumedBy: new iam.ServicePrincipal('states.amazonaws.com'),
-        })
-        // Least Privilage to enable logging for state machine
-        LogHubAppPipelineAPIPipelineFlowSMRole.addToPolicy(
-            new iam.PolicyStatement({
-                actions: [
-                    "logs:PutResourcePolicy",
-                    "logs:DescribeLogGroups",
-                    "logs:UpdateLogDelivery",
-                    "logs:AssociateKmsKey",
-                    "logs:GetLogGroupFields",
-                    "logs:PutRetentionPolicy",
-                    "logs:CreateLogGroup",
-                    "logs:PutDestination",
-                    "logs:DescribeResourcePolicies",
-                    "logs:GetLogDelivery",
-                    "logs:ListLogDeliveries"
-                ],
-                effect: iam.Effect.ALLOW,
-                resources: [logGroup.logGroupArn],
-            }),
-        )
-
-        const pipeSM = new sfn.StateMachine(this, 'PipelineFlowSM', {
-            definition: cfnTask.next(checkStatus),
-            role: LogHubAppPipelineAPIPipelineFlowSMRole,
-            logs: {
-                destination: logGroup,
-                level: sfn.LogLevel.ERROR,
-            },
-        });
-
-        this.stateMachineArn = pipeSM.stateMachineArn
-
-
-    }
-
+    this.stateMachineArn = pipeSM.stateMachineArn;
+  }
 }

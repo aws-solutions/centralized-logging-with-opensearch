@@ -4,4 +4,5 @@
         $LOGHUB_REGEX
         $LOGHUB_TIME_KEY
         $LOGHUB_TIME_FORMAT
+        $LOGHUB_TIME_OFFSET
 

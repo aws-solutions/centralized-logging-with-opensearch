@@ -139,7 +139,7 @@ export class appIngestionFlowStack extends Construct {
             role: LogHubAPIAPPLogIngestionFlowSMRole,
             logs: {
                 destination: logGroup,
-                level: sfn.LogLevel.ERROR,
+                level: sfn.LogLevel.ALL,
             },
         });
 

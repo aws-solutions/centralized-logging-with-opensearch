@@ -31,7 +31,7 @@ const Tags: React.FC<TagProps> = ({ pipelineInfo }: TagProps) => {
         count={pipelineInfo?.tags?.length}
         contentNoPadding
       >
-        {pipelineInfo?.tags?.length || 0 > 0 ? (
+        {(pipelineInfo?.tags?.length || 0) > 0 ? (
           <div>
             <div className="flex show-tag-list">
               <div className="tag-key">

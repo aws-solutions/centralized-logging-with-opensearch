@@ -44,7 +44,7 @@ class OpenSearch:
         # Assumption: Log type can be reset, but the alias remains the same
         self._index_alias = (
             f"{self._index_prefix}-{self._log_type}"
-            if self._log_type
+            if self._log_type and not (self._log_type.lower() == 'json')
             else self._index_prefix
         )
 

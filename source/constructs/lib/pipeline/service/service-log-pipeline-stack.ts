@@ -248,18 +248,18 @@ export class ServiceLogPipelineStack extends Stack {
       const defaultCmkArnParam = new CfnParameter(this, "defaultCmkArnParam", {
         type: "String",
         description:
-          "The KMS-CMK Arn for encryption. Leave empty to create a new KMS CMK.",
+          "The KMS-CMK Arn for SQS encryption. Leave empty to create a new KMS CMK.",
       });
-      this.addToParamLabels("DefaultCmkArnParam", defaultCmkArnParam.logicalId);
+      this.addToParamLabels("KMS-CMK ARN", defaultCmkArnParam.logicalId);
 
-      this.addToParamGroups("Advanced Options", defaultCmkArnParam.logicalId);
       this.addToParamGroups(
         "Source Information",
         logBucketName.logicalId,
         logBucketPrefix.logicalId,
         logSourceAccountId.logicalId,
         logSourceRegion.logicalId,
-        logSourceAccountAssumeRole.logicalId
+        logSourceAccountAssumeRole.logicalId,
+        defaultCmkArnParam.logicalId
       );
 
       const baseProps = {
@@ -351,7 +351,13 @@ export class ServiceLogPipelineStack extends Stack {
       })
       this.addToParamLabels('Interval', interval.logicalId)
 
-      this.addToParamGroups('Source Information', webACLNames.logicalId, interval.logicalId)
+      this.addToParamGroups('Source Information',
+        webACLNames.logicalId,
+        interval.logicalId,
+        logSourceAccountId.logicalId,
+        logSourceRegion.logicalId,
+        logSourceAccountAssumeRole.logicalId
+      )
 
       const baseProps = {
         vpc: processVpc,

@@ -16,308 +16,123 @@ limitations under the License.
 import { Construct, IConstruct } from "constructs";
 import {
   Aws,
-  Fn,
   Duration,
   CfnCondition,
   IAspect,
   CfnResource,
-  Stack,
-  StackProps,
-  CfnParameter,
-  CfnParameterProps,
-  CfnOutput,
   Aspects,
   aws_iam as iam,
-  aws_s3 as s3,
   aws_lambda as lambda,
-  aws_ec2 as ec2,
   aws_ssm as ssm,
   aws_kinesis as kinesis,
   aws_apigateway as apigateway,
   aws_cloudwatch as cloudwatch,
   aws_cloudwatch_actions as cwa,
   aws_applicationautoscaling as appscaling,
+  aws_logs as logs,
 } from "aws-cdk-lib";
 import * as path from "path";
 import { KinesisEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 import { ISecurityGroup, IVpc, SecurityGroup, Vpc } from "aws-cdk-lib/aws-ec2";
-import { OpenSearchInitStack } from "../pipeline/common/opensearch-init-stack";
+import { NagSuppressions } from 'cdk-nag';
 
-const { VERSION } = process.env;
-export class SolutionStack extends Stack {
-  private _paramGroup: { [grpname: string]: CfnParameter[] } = {};
+import { AppLogProcessor } from "../pipeline/application/app-log-processor";
 
-  protected setDescription(description: string) {
-    this.templateOptions.description = description;
-  }
-  protected newParam(id: string, props?: CfnParameterProps): CfnParameter {
-    return new CfnParameter(this, id, props);
-  }
-  /* istanbul ignore next */
-  protected addGroupParam(props: { [key: string]: CfnParameter[] }): void {
-    for (const key of Object.keys(props)) {
-      const params = props[key];
-      this._paramGroup[key] = params.concat(this._paramGroup[key] ?? []);
-    }
-    this._setParamGroups();
-  }
-  /* istanbul ignore next */
-  private _setParamGroups(): void {
-    if (!this.templateOptions.metadata) {
-      this.templateOptions.metadata = {};
-    }
-    const mkgrp = (label: string, params: CfnParameter[]) => {
-      return {
-        Label: { default: label },
-        Parameters: params
-          .map((p) => {
-            return p ? p.logicalId : "";
-          })
-          .filter((id) => id),
-      };
-    };
-    this.templateOptions.metadata["AWS::CloudFormation::Interface"] = {
-      ParameterGroups: Object.keys(this._paramGroup).map((key) =>
-        mkgrp(key, this._paramGroup[key])
-      ),
-    };
-  }
 
-  protected cfnOutput(
-    id: string,
-    value: string,
-    description?: string
-  ): CfnOutput {
-    const o = new CfnOutput(this, id, { value, description });
-    o.overrideLogicalId(id);
-    return o;
-  }
+
+export interface KDSStackProps {
+
+  /**
+   * Default VPC for OpenSearch REST API Handler
+   *
+   * @default - None.
+   */
+  readonly vpc: IVpc;
+
+  /**
+   * Default Security Group for OpenSearch REST API Handler
+   *
+   * @default - None.
+   */
+  readonly securityGroup: ISecurityGroup;
+
+  /**
+   * OpenSearch Endpoint Url
+   *
+   * @default - None.
+   */
+  readonly endpoint: string;
+
+  /**
+   * OpenSearch or Elasticsearch
+   *
+   * @default - OpenSearch.
+   */
+  readonly engineType: string;
+
+  /**
+     * Index Prefix
+     */
+  readonly indexPrefix: string;
+
+
+  /**
+     * S3 bucket name for failed logs
+     */
+  readonly backupBucketName: string;
+
+
+  readonly shardCount: number;
+  readonly minCapacity: number;
+  readonly maxCapacity: number;
+
+  readonly enableAutoScaling: boolean
 }
 
-export interface KDSStackProps extends StackProps {
-  enableAutoScaling: boolean;
-}
+export class KDSStack extends Construct {
 
-export class KDSStack extends SolutionStack {
-  constructor(scope: Construct, id: string, props?: KDSStackProps) {
-    super(scope, id, props);
+  readonly kinesisStreamArn: string;
+  readonly kinesisStreamName: string;
+  // readonly kdsRoleName: string;
+  // readonly kdsRoleArn: string;
 
-    this.setDescription(
-      `(SO8025-app-pipeline) - Log Hub - Kinesis Data Stream Template - Version ${VERSION}`
-    );
+  readonly logProcessorRoleArn: string;
 
-    const shardCountParam = this.newParam("ShardCountParam", {
-      type: "Number",
-      description: "Number of initial kinesis shards",
-      default: "2",
-    });
-
-    const maxCapacityParam = this.newParam("MaxCapacityParam", {
-      type: "Number",
-      description: "Max capacity",
-      default: "50",
-    });
-
-    const minCapacityParam = this.newParam("MinCapacityParam", {
-      type: "Number",
-      description: "Min capacity",
-      default: "1",
-    });
-
-    const opensearchDomainParam = this.newParam("OpenSearchDomainParam", {
-      type: "String",
-      description: "OpenSearch domain",
-      default: "1",
-    });
-
-    const createDashboardParam = this.newParam("CreateDashboardParam", {
-      type: "String",
-      description: "Yes, if you want to create a sample OpenSearch dashboard.",
-      default: "No",
-      allowedValues: ["Yes", "No"],
-    });
-
-    const opensearchShardNumbersParam = this.newParam(
-      "OpenSearchShardNumbersParam",
-      {
-        type: "Number",
-        description:
-          "Number of shards to distribute the index evenly across all data nodes, keep the size of each shard between 10–50 GiB",
-        default: 5,
-      }
-    );
-
-    const opensearchReplicaNumbersParam = this.newParam(
-      "OpenSearchReplicaNumbersParam",
-      {
-        type: "Number",
-        description:
-          "Number of replicas for OpenSearch Index. Each replica is a full copy of an index",
-        default: 1,
-      }
-    );
-
-    const opensearchDaysToWarmParam = this.newParam(
-      "OpenSearchDaysToWarmParam",
-      {
-        type: "Number",
-        description:
-          "The number of days required to move the index into warm storage, this is only effecitve when the value is >0 and warm storage is enabled in OpenSearch",
-        default: 0,
-      }
-    );
-
-    const opensearchDaysToColdParam = this.newParam(
-      "OpenSearchDaysToColdParam",
-      {
-        type: "Number",
-        description:
-          "The number of days required to move the index into cold storage, this is only effecitve when the value is >0 and cold storage is enabled in OpenSearch",
-        default: 0,
-      }
-    );
-
-    const opensearchDaysToRetain = this.newParam("OpenSearchDaysToRetain", {
-      type: "Number",
-      description:
-        "The total number of days to retain the index, if value is 0, the index will not be deleted",
-      default: 0,
-    });
-
-    const engineTypeParam = this.newParam("EngineTypeParam", {
-      type: "String",
-      description:
-        "The engine type of the OpenSearch. Select OpenSearch or Elasticsearch.",
-      default: "OpenSearch",
-      allowedValues: ["OpenSearch", "Elasticsearch"],
-    });
-
-    const failedLogBucketParam = this.newParam("FailedLogBucketParam", {
-      type: "String",
-      description: "The s3 bucket to store failed logs.",
-      default: "failed-log-bucket",
-      allowedPattern: ".+",
-    });
-
-    const opensearchEndpointParam = this.newParam("OpenSearchEndpointParam", {
-      type: "String",
-      description:
-        "The OpenSearch endpoint URL. e.g. vpc-your_opensearch_domain_name-xcvgw6uu2o6zafsiefxubwuohe.us-east-1.es.amazonaws.com",
-      allowedPattern: "^(?!https:\\/\\/).*",
-      constraintDescription: "Please do not inclued https://",
-      default: "",
-    });
-
-    const opensearchIndexPrefix = this.newParam("OpenSearchIndexPrefix", {
-      type: "String",
-      description: `The common prefix of OpenSearch index for the log.`,
-      default: "",
-    });
-
-    const vpcIdParam = this.newParam("VpcIdParam", {
-      type: "AWS::EC2::VPC::Id",
-      description:
-        "Select a VPC which has access to the OpenSearch domain. The log processing Lambda will be resides in the selected VPC.",
-      default: "",
-    });
-
-    const subnetIdsParam = new CfnParameter(this, "SubnetIdsParam", {
-      type: "List<AWS::EC2::Subnet::Id>",
-      description:
-        "Select at least two subnets which has access to the OpenSearch domain. The log processing Lambda will resides in the subnets. Please make sure the subnets has access to the Amazon S3 service.",
-      default: "",
-    });
-
-    const securityGroupIdParam = new CfnParameter(
-      this,
-      "SecurityGroupIdParam",
-      {
-        type: "AWS::EC2::SecurityGroup::Id",
-        description:
-          "Select a Security Group which will be associated to the log processing Lambda. Please make sure the Security Group has access to the OpenSearch domain.",
-        default: "",
-      }
-    );
-
-    const processVpc = Vpc.fromVpcAttributes(this, "ProcessVpc", {
-      vpcId: vpcIdParam.valueAsString,
-      availabilityZones: Fn.getAzs(),
-      privateSubnetIds: subnetIdsParam.valueAsList,
-    });
-
-    const processSg = SecurityGroup.fromSecurityGroupId(
-      this,
-      "ProcessSG",
-      securityGroupIdParam.valueAsString
-    );
+  constructor(scope: Construct, id: string, props: KDSStackProps) {
+    super(scope, id);
 
     const kinesisStream = new kinesis.Stream(this, "Stream", {
-      shardCount: shardCountParam.valueAsNumber,
+      shardCount: props.shardCount,
     });
 
-    this.cfnOutput("KinesisStreamArn", kinesisStream.streamArn);
-    this.cfnOutput("KinesisStreamName", kinesisStream.streamName);
-    this.cfnOutput("KinesisStreamRegion", Aws.REGION);
+    this.kinesisStreamArn = kinesisStream.streamArn
+    this.kinesisStreamName = kinesisStream.streamName
 
-    const dataBufferKDSRole = new iam.Role(this, 'DataBufferKDSRole', {
-      assumedBy: new iam.CompositePrincipal(
-        new iam.AccountPrincipal(Aws.ACCOUNT_ID)
-      ),
-      description: 'Using this role to send log data to KDS'
+    const logProcessor = new AppLogProcessor(this, "LogProcessor", {
+      source: "KDS",
+      indexPrefix: props.indexPrefix,
+      vpc: props.vpc,
+      securityGroup: props.securityGroup,
+      endpoint: props.endpoint,
+      engineType: props.engineType,
+      backupBucketName: props.backupBucketName,
     });
-    dataBufferKDSRole.assumeRolePolicy?.addStatements(new iam.PolicyStatement({
-      actions: [
-        "sts:AssumeRole",
-      ],
-      effect: iam.Effect.ALLOW,
-      principals: [new iam.AccountPrincipal(Aws.ACCOUNT_ID)]
-    }))
-    const crossAccountPolicy = new iam.Policy(this, 'CrossAccountPolicy', {
-      statements: [
-        new iam.PolicyStatement({
-          actions: [
-            "kinesis:PutRecord",
-            "kinesis:PutRecords",
-          ],
-          effect: iam.Effect.ALLOW,
-          resources: [
-            `${kinesisStream.streamArn}`,
-          ]
-        }),]
-    })
-    dataBufferKDSRole.attachInlinePolicy(crossAccountPolicy)
-    this.cfnOutput("KDSRoleArn", dataBufferKDSRole.roleArn)
-    this.cfnOutput("KDSRoleName", dataBufferKDSRole.roleName)
+    NagSuppressions.addResourceSuppressions(logProcessor, [
+      {
+        id: "AwsSolutions-IAM4",
+        reason: "Code of CDK custom resource, can not be modified"
+      },
+    ]);
 
-    const logProcessor = new LogProcessor(this, "LogProcessor", {
-      stream: kinesisStream,
-      indexPrefix: opensearchIndexPrefix.valueAsString,
-      vpc: processVpc,
-      securityGroup: processSg,
-      endpoint: opensearchEndpointParam.valueAsString,
-      engineType: engineTypeParam.valueAsString,
-      logType: "",
-      failedLogBucket: failedLogBucketParam.valueAsString,
-    });
+    logProcessor.logProcessorFn.addEventSource(
+      new KinesisEventSource(kinesisStream, {
+        batchSize: 10000, // default
+        maxBatchingWindow: Duration.seconds(3),
+        startingPosition: lambda.StartingPosition.TRIM_HORIZON,
+      })
+    );
 
-    const osInitStack = new OpenSearchInitStack(this, "OpenSearchInit", {
-      vpc: processVpc,
-      securityGroup: processSg,
-      endpoint: opensearchEndpointParam.valueAsString,
-      logType: "",
-      indexPrefix: opensearchIndexPrefix.valueAsString,
-      engineType: engineTypeParam.valueAsString,
-      domainName: opensearchDomainParam.valueAsString,
-      createDashboard: createDashboardParam.valueAsString,
-      logProcessorRoleArn: logProcessor.logProcessorRoleArn,
-      shardNumbers: opensearchShardNumbersParam.valueAsString,
-      replicaNumbers: opensearchReplicaNumbersParam.valueAsString,
-      daysToWarm: opensearchDaysToWarmParam.valueAsString,
-      daysToCold: opensearchDaysToColdParam.valueAsString,
-      daysToRetain: opensearchDaysToRetain.valueAsString,
-    });
-
-    this.cfnOutput("OSInitHelperFn", osInitStack.helperFn.functionArn);
+    this.logProcessorRoleArn = logProcessor.logProcessorFn.role!.roleArn
 
     if (props?.enableAutoScaling) {
       const cwAlarmOutName = `${Aws.STACK_NAME}-cwAlarmOut`;
@@ -362,7 +177,7 @@ export class KDSStack extends SolutionStack {
         {
           allowedPattern: "[0-9]+",
           description: "Store DesiredCapacity in Parameter Store",
-          stringValue: shardCountParam.valueAsString,
+          stringValue: props.shardCount.toString(),
         }
       );
 
@@ -379,12 +194,28 @@ export class KDSStack extends SolutionStack {
           ParameterStore: kdcp.parameterName,
         },
       });
+      NagSuppressions.addResourceSuppressions(scaler, [
+        {
+          id: "AwsSolutions-IAM5",
+          reason: "The managed policy needs to use any resources.",
+        },
+      ]);
+
+      // CWL LogGroup for APIGateway
+      const apiAccessLogGroup = new logs.LogGroup(this, "APIGatewayAccessLogGroup");
 
       // Rest API GW
       const api = new apigateway.SpecRestApi(this, "MyApi", {
         endpointTypes: [apigateway.EndpointType.REGIONAL],
         parameters: {
           endpointConfigurationTypes: "REGIONAL",
+        },
+        cloudWatchRole: true,
+        deployOptions: {
+          loggingLevel: apigateway.MethodLoggingLevel.INFO,
+          dataTraceEnabled: true,
+          accessLogDestination: new apigateway.LogGroupLogDestination(apiAccessLogGroup),
+          accessLogFormat: apigateway.AccessLogFormat.jsonWithStandardFields()
         },
         apiDefinition: apigateway.ApiDefinition.fromInline({
           info: {
@@ -447,16 +278,28 @@ export class KDSStack extends SolutionStack {
         }),
         // endpointTypes: [apigateway.EndpointType.PRIVATE]
       });
+      const requestValidator = new apigateway.RequestValidator(this, 'MyRequestValidator', {
+        restApi: api,
+        requestValidatorName: 'requestValidatorName',
+        validateRequestBody: true,
+        validateRequestParameters: true,
+      });
 
       const target = new appscaling.ScalableTarget(this, "ScalableTarget", {
         serviceNamespace: appscaling.ServiceNamespace.CUSTOM_RESOURCE,
-        maxCapacity: maxCapacityParam.valueAsNumber,
-        minCapacity: minCapacityParam.valueAsNumber,
+        maxCapacity: props.maxCapacity,
+        minCapacity: props.minCapacity,
         resourceId: api.deploymentStage.urlForPath(
           `/scalableTargetDimensions/${kinesisStream.streamName}`
         ),
         scalableDimension: "custom-resource:ResourceType:Property",
       });
+      NagSuppressions.addResourceSuppressions(target, [
+        {
+          id: "AwsSolutions-IAM5",
+          reason: "The managed policy needs to use any resources.",
+        },
+      ]);
       target.addToRolePolicy(
         new iam.PolicyStatement({
           actions: ["cloudwatch:DescribeAlarms"],
@@ -476,7 +319,7 @@ export class KDSStack extends SolutionStack {
       );
       target.addToRolePolicy(
         new iam.PolicyStatement({
-          actions: ["execute-api:Invoke*"],
+          actions: ["execute-api:Invoke"],
           resources: [
             api.arnForExecuteApi(undefined, "/scalableTargetDimensions/*"),
           ],
@@ -484,7 +327,7 @@ export class KDSStack extends SolutionStack {
         })
       );
 
-      target.node.addDependency(logProcessor, osInitStack);
+      target.node.addDependency(logProcessor);
 
       // Scale out
       const kinesisScaleOut = new appscaling.StepScalingAction(
@@ -524,7 +367,13 @@ export class KDSStack extends SolutionStack {
 
       scaler.addToRolePolicy(
         new iam.PolicyStatement({
-          actions: ["kinesis:Describe*", "kinesis:UpdateShardCount"],
+          actions: [
+            "kinesis:DescribeStreamSummary",
+            "kinesis:DescribeStreamConsumer",
+            "kinesis:DescribeStream",
+            "kinesis:DescribeLimits",
+            "kinesis:UpdateShardCount"
+          ],
           resources: [kinesisStream.streamArn],
           effect: iam.Effect.ALLOW,
         })
@@ -538,7 +387,13 @@ export class KDSStack extends SolutionStack {
       );
       scaler.addToRolePolicy(
         new iam.PolicyStatement({
-          actions: ["ssm:GetParameter*", "ssm:PutParameter"],
+          actions: [
+            "ssm:GetParameterHistory",
+            "ssm:GetParametersByPath",
+            "ssm:GetParameters",
+            "ssm:GetParameter",
+            "ssm:PutParameter"
+          ],
           resources: [kdcp.parameterArn],
           effect: iam.Effect.ALLOW,
         })
@@ -571,9 +426,10 @@ export class KDSStack extends SolutionStack {
         principal: new iam.ServicePrincipal("apigateway.amazonaws.com"),
         sourceArn: api.arnForExecuteApi("PATCH", "/scalableTargetDimensions/*"),
       });
-    } else {
-      this.cfnOutput("MyApiEndpoint869ABE96", "https://DummyEndpoint");
     }
+    // else {
+    //   this.cfnOutput("MyApiEndpoint869ABE96", "https://DummyEndpoint");
+    // }
   }
 
   /* istanbul ignore next */
@@ -582,147 +438,7 @@ export class KDSStack extends SolutionStack {
   }
 }
 
-interface LogProcessorProps {
-  readonly indexPrefix: string;
-
-  readonly stream: kinesis.Stream;
-  // readonly logBucketName: string;
-  // readonly failedLogBucket: string;
-  /**
-   * Default VPC for OpenSearch REST API Handler
-   *
-   * @default - None.
-   */
-  readonly vpc: IVpc;
-
-  /**
-   * Default Security Group for OpenSearch REST API Handler
-   *
-   * @default - None.
-   */
-  readonly securityGroup: ISecurityGroup;
-
-  /**
-   * OpenSearch Endpoint Url
-   *
-   * @default - None.
-   */
-  readonly endpoint: string;
-
-  /**
-   * OpenSearch or Elasticsearch
-   *
-   * @default - OpenSearch.
-   */
-  readonly engineType?: string;
-
-  /**
-   * Log Type
-   *
-   * @default - None.
-   */
-  readonly logType?: string;
-
-  readonly failedLogBucket: string;
-}
-
-class LogProcessor extends Construct {
-  public logProcessorRoleArn: string;
-
-  constructor(scope: Construct, id: string, props: LogProcessorProps) {
-    super(scope, id);
-
-    // Create a lambda layer with required python packages.
-    const osLayer = new lambda.LayerVersion(this, "OpenSearchLayer", {
-      code: lambda.Code.fromAsset(
-        path.join(__dirname, "../../lambda/pipeline/common/layer"),
-        {
-          bundling: {
-            image: lambda.Runtime.PYTHON_3_9.bundlingImage,
-            command: [
-              "bash",
-              "-c",
-              "pip install -r requirements.txt -t /asset-output/python",
-            ],
-          },
-        }
-      ),
-      compatibleRuntimes: [lambda.Runtime.PYTHON_3_9],
-      description: `${Aws.STACK_NAME} - Lambda layer for OpenSearch`,
-    });
-
-    // Create the Log Sender Lambda
-    const logProcessorFn = new lambda.Function(this, "LogProcessorFn", {
-      description: `${Aws.STACK_NAME} - Function to process and load kinesis logs into OpenSearch`,
-      runtime: lambda.Runtime.PYTHON_3_9,
-      handler: "lambda_function.lambda_handler",
-      code: lambda.Code.fromAsset(
-        path.join(__dirname, "../../lambda/pipeline/app/log-processor")
-      ),
-      memorySize: 1024,
-      timeout: Duration.seconds(300),
-      vpc: props.vpc,
-      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_NAT },
-      securityGroups: [props.securityGroup],
-      environment: {
-        ENDPOINT: props.endpoint,
-        ENGINE: props.engineType ?? "OpenSearch",
-        LOG_TYPE: props.logType!,
-        INDEX_PREFIX: props.indexPrefix,
-        // LOG_BUCKET_NAME: props.logBucketName,
-        FAILED_LOG_BUCKET_NAME: props.failedLogBucket,
-        VERSION: VERSION ?? "v1.0.0",
-      },
-      layers: [osLayer],
-    });
-    logProcessorFn.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: [
-          "ec2:CreateNetworkInterface",
-          "ec2:DeleteNetworkInterface",
-          "ec2:DescribeNetworkInterfaces",
-        ],
-        resources: [`*`],
-      })
-    );
-    logProcessorFn.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: [
-          "es:ESHttpGet",
-          "es:ESHttpDelete",
-          "es:ESHttpPut",
-          "es:ESHttpPost",
-          "es:ESHttpHead",
-          "es:ESHttpPatch",
-        ],
-        resources: [
-          `arn:${Aws.PARTITION}:es:${Aws.REGION}:${Aws.ACCOUNT_ID}:*`,
-        ],
-      })
-    );
-
-    if (logProcessorFn.role) {
-      this.logProcessorRoleArn = logProcessorFn.role.roleArn;
-    }
-
-    logProcessorFn.addEventSource(
-      new KinesisEventSource(props.stream, {
-        batchSize: 10000, // default
-        maxBatchingWindow: Duration.seconds(3),
-        startingPosition: lambda.StartingPosition.TRIM_HORIZON,
-      })
-    );
-
-    const failedLogBucket = s3.Bucket.fromBucketName(
-      this,
-      "failedLogBucket",
-      props.failedLogBucket
-    );
-    failedLogBucket.grantWrite(logProcessorFn);
-  }
-}
-
-/* istanbul ignore next */
+// /* istanbul ignore next */
 class InjectCondition implements IAspect {
   public constructor(private condition: CfnCondition) { }
 

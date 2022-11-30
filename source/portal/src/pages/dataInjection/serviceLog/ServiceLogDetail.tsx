@@ -223,8 +223,8 @@ const ServiceLogDetail: React.FC<RouteComponentProps<MatchParams>> = (
                         >
                           <ExtLink
                             to={buildLambdaLink(
-                              curPipeline?.source || "",
-                              amplifyConfig.aws_project_region
+                              amplifyConfig.aws_project_region,
+                              curPipeline?.source || ""
                             )}
                           >
                             {curPipeline?.source}
@@ -237,8 +237,8 @@ const ServiceLogDetail: React.FC<RouteComponentProps<MatchParams>> = (
                         >
                           <ExtLink
                             to={buildS3Link(
-                              curPipeline?.source || "",
-                              amplifyConfig.aws_project_region
+                              amplifyConfig.aws_project_region,
+                              curPipeline?.source || ""
                             )}
                           >
                             {curPipeline?.source}
@@ -251,8 +251,8 @@ const ServiceLogDetail: React.FC<RouteComponentProps<MatchParams>> = (
                         >
                           <ExtLink
                             to={buildCloudFrontLink(
-                              curPipeline?.source || "",
-                              amplifyConfig.aws_project_region
+                              amplifyConfig.aws_project_region,
+                              curPipeline?.source || ""
                             )}
                           >
                             {curPipeline?.source}
@@ -282,8 +282,8 @@ const ServiceLogDetail: React.FC<RouteComponentProps<MatchParams>> = (
                         <ValueWithLabel label={t("servicelog:detail.vpcId")}>
                           <ExtLink
                             to={buildVPCLink(
-                              curPipeline?.source,
-                              amplifyConfig.aws_project_region
+                              amplifyConfig.aws_project_region,
+                              curPipeline?.source
                             )}
                           >
                             {curPipeline?.source}
@@ -296,7 +296,6 @@ const ServiceLogDetail: React.FC<RouteComponentProps<MatchParams>> = (
                         >
                           <ExtLink
                             to={buildTrailLink(
-                              curPipeline?.source || "",
                               amplifyConfig.aws_project_region
                             )}
                           >
@@ -318,10 +317,7 @@ const ServiceLogDetail: React.FC<RouteComponentProps<MatchParams>> = (
                       {curPipeline?.type === ServiceType.RDS && (
                         <ValueWithLabel label={t("servicelog:detail.dbID")}>
                           <ExtLink
-                            to={buildRDSLink(
-                              curPipeline?.source || "",
-                              amplifyConfig.aws_project_region
-                            )}
+                            to={buildRDSLink(amplifyConfig.aws_project_region)}
                           >
                             {curPipeline?.source}
                           </ExtLink>

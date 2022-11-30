@@ -14,29 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-
-import { 
-  App,
-  Stack,
-} from "aws-cdk-lib";
-import {Match,Template } from "aws-cdk-lib/assertions";
-import * as main from '../lib/main-stack';
-import * as vs from '../lib/main/vpc-stack';
+import { App, Stack } from "aws-cdk-lib";
+import { Match, Template } from "aws-cdk-lib/assertions";
+import * as main from "../lib/main-stack";
+import * as vs from "../lib/main/vpc-stack";
 
 beforeEach(() => {
-  jest.resetModules()
-  process.env = {}
+  jest.resetModules();
+  process.env = {};
 });
 
-
 describe("MainStack", () => {
-
-
   test("Test main stack with default setting", () => {
     const app = new App();
 
     // WHEN
-    const stack = new main.MainStack(app, 'MyTestStack');
+    const stack = new main.MainStack(app, "MyTestStack");
     const template = Template.fromStack(stack);
 
     // THEN
@@ -50,45 +43,44 @@ describe("MainStack", () => {
     template.hasResourceProperties("AWS::Lambda::Function", {
       Environment: {
         Variables: {
-          "SOLUTION_VERSION": "v1.0.0"
-        }
+          SOLUTION_VERSION: "v1.0.0",
+        },
       },
-      Description: 'Log Hub - Cluster APIs Resolver',
+      Description: "Log Hub - Cluster APIs Resolver",
       MemorySize: 1024,
       Runtime: "python3.9",
-      Timeout: 60
+      Timeout: 60,
     });
 
     // Resource API
     template.hasResourceProperties("AWS::Lambda::Function", {
       Environment: {
         Variables: {
-          "DEFAULT_LOGGING_BUCKET": Match.anyValue(),
-          "SOLUTION_ID": "SO8025",
-          "SOLUTION_VERSION": "v1.0.0"
-        }
+          DEFAULT_LOGGING_BUCKET: Match.anyValue(),
+          SOLUTION_ID: "SO8025",
+          SOLUTION_VERSION: "v1.0.0",
+        },
       },
-      Description: 'Log Hub - Resource APIs Resolver',
+      Description: "Log Hub - Resource APIs Resolver",
       MemorySize: 1024,
       Runtime: "python3.9",
-      Timeout: 60
-
+      Timeout: 60,
     });
 
     // CfnHelper Lambda
     template.hasResourceProperties("AWS::Lambda::Function", {
       Environment: {
         Variables: {
-          "DIST_OUTPUT_BUCKET": "aws-gcr-solutions",
-          "SOLUTION_ID": "SO8025",
-          "SOLUTION_VERSION": "v1.0.0",
-
-        }
+          DIST_OUTPUT_BUCKET: "aws-gcr-solutions",
+          SOLUTION_ID: "SO8025",
+          SOLUTION_VERSION: "v1.0.0",
+        },
       },
-      Description: 'Log Hub - Helper function to handle CloudFormation deployment',
+      Description:
+        "Log Hub - Helper function to handle CloudFormation deployment",
       MemorySize: 128,
       Runtime: "python3.9",
-      Timeout: 60
+      Timeout: 60,
     });
 
     // GraphQL API Lambda Data Source
@@ -104,39 +96,34 @@ describe("MainStack", () => {
     // Cognito User Pool
     template.hasResourceProperties("AWS::Cognito::UserPool", {
       AdminCreateUserConfig: {
-        AllowAdminCreateUserOnly: true
+        AllowAdminCreateUserOnly: true,
       },
-      UsernameAttributes: [
-        "email"
-      ],
+      UsernameAttributes: ["email"],
     });
 
     template.resourceCountIs("AWS::Cognito::UserPoolClient", 1);
-
   });
-
 
   test("Test main stack with oidc", () => {
     const app = new App();
 
     // WHEN
-    const stack = new main.MainStack(app, 'MyTestStack', { authType: "OPENID_CONNECT" });
+    const stack = new main.MainStack(app, "MyTestStack", {
+      authType: "OPENID_CONNECT",
+    });
     const template = Template.fromStack(stack);
 
     // THEN
     template.hasResourceProperties("AWS::AppSync::GraphQLApi", {
       AuthenticationType: "OPENID_CONNECT",
     });
-
   });
-
-
 
   test("Test main stack with existing vpc", () => {
     const app = new App();
 
     // WHEN
-    const stack = new main.MainStack(app, 'MyTestStack', { existingVpc: true });
+    const stack = new main.MainStack(app, "MyTestStack", { existingVpc: true });
     const template = Template.fromStack(stack);
 
     // THEN
@@ -145,12 +132,11 @@ describe("MainStack", () => {
 
   test("Test main stack with env", () => {
     const app = new App();
-    process.env["VERSION"] = "vX.Y.Z"
-    process.env["DIST_OUTPUT_BUCKET"] = "test-bucket"
-
+    process.env["VERSION"] = "vX.Y.Z";
+    process.env["DIST_OUTPUT_BUCKET"] = "test-bucket";
 
     // WHEN
-    const stack = new main.MainStack(app, 'MyTestStack');
+    const stack = new main.MainStack(app, "MyTestStack");
     const template = Template.fromStack(stack);
 
     // THEN
@@ -158,32 +144,30 @@ describe("MainStack", () => {
     template.hasResourceProperties("AWS::Lambda::Function", {
       Environment: {
         Variables: {
-          "DIST_OUTPUT_BUCKET": "test-bucket",
-          "SOLUTION_ID": "SO8025",
-          "SOLUTION_VERSION": "vX.Y.Z",
-
-        }
+          DIST_OUTPUT_BUCKET: "test-bucket",
+          SOLUTION_ID: "SO8025",
+          SOLUTION_VERSION: "vX.Y.Z",
+        },
       },
-      Description: 'Log Hub - Helper function to handle CloudFormation deployment',
+      Description:
+        "Log Hub - Helper function to handle CloudFormation deployment",
       MemorySize: 128,
       Runtime: "python3.9",
-      Timeout: 60
+      Timeout: 60,
     });
   });
 
-
-  test('Test vpc stack', () => {
+  test("Test vpc stack", () => {
     const app = new App();
 
     // WHEN
     const stack = new Stack(app, "TestStack");
 
     // Prepare the stack for assertions.
-    new vs.VpcStack(stack, "VpcStack")
+    new vs.VpcStack(stack, "VpcStack");
     const template = Template.fromStack(stack);
 
     // THEN
     template.resourceCountIs("AWS::EC2::SecurityGroup", 3);
-
   });
-})
+});

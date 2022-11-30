@@ -36,7 +36,7 @@ This automated AWS CloudFormation template deploys the *Log Hub - CloudFront Sta
 | AWS China regions    | [![Launch Stack](../../images/launch-stack.png)](https://console.amazonaws.cn/cloudformation/home#/stacks/create/template?stackName=LogHub-CloudFront&templateURL=https://{{ bucket }}.s3.cn-north-1.amazonaws.com.cn/log-hub/{{ version }}/CloudFrontLog.template){target=_blank} | [Template](https://{{ bucket }}.s3.cn-north-1.amazonaws.com.cn/log-hub/{{ version }}/CloudFrontLog.template) |
 
 {%
-include-markdown "include-cfn-common.md"
+include-markdown "include-cfn-plugins-common.md"
 %}
 
 ## Sample Dashboard

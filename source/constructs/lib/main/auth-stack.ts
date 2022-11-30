@@ -43,6 +43,12 @@ export class AuthStack extends Construct {
         email: true,
       },
       removalPolicy: RemovalPolicy.DESTROY,
+      passwordPolicy: {
+        minLength: 8,
+        requireUppercase: true,
+        requireDigits: true,
+        requireSymbols: true,
+      },
     });
 
     const cfnUserPool = userPool.node.defaultChild as cognito.CfnUserPool;

@@ -161,10 +161,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                     <div>
                       {t("servicelog:trail.select")}
                       <ExtLink
-                        to={buildTrailLink(
-                          "",
-                          amplifyConfig.aws_project_region
-                        )}
+                        to={buildTrailLink(amplifyConfig.aws_project_region)}
                       >
                         {t("servicelog:trail.curAccount")}
                       </ExtLink>

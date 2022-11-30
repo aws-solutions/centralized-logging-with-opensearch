@@ -161,6 +161,13 @@ const EksLogList: React.FC = () => {
                     },
                   },
                   {
+                    id: "Account",
+                    header: t("ekslog:list.account"),
+                    cell: (e: EKSClusterLogSource) => {
+                      return e.accountId || "-";
+                    },
+                  },
+                  {
                     id: "Pattern",
                     header: t("ekslog:list.pattern"),
                     cell: (e: EKSClusterLogSource) => {

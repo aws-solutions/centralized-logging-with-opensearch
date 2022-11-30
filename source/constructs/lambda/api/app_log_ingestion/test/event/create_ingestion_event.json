@@ -1,0 +1,81 @@
+{
+    "arguments": {
+        "confId": "e4c579eb-fcf2-4ddb-8226-796f4bc8a690",
+        "sourceIds": [
+            "9681daea-1095-44b5-8e11-40fa935f3aea"
+        ],
+        "sourceType": "S3",
+        "appPipelineId": "ab740668-fba3-4d86-879d-e9a5a446d69f",
+        "createDashboard": "Yes"
+    },
+    "identity": {
+        "claims": {
+            "origin_jti": "59f71545-b190-47e9-b138-d944f7a5f693",
+            "sub": "649dabbb-034c-467b-9796-f6bec835cf00",
+            "aud": "7ksklklt8e3ira151890djn49o",
+            "event_id": "0ea188da-7b41-468d-982c-659a612fb79b",
+            "token_use": "id",
+            "auth_time": 1650765289,
+            "iss": "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_LAWcJykAw",
+            "cognito:username": "649dabbb-034c-467b-9796-f6bec835cf00",
+            "exp": 1650768889,
+            "iat": 1650765289,
+            "jti": "a310eb38-c0d9-4d13-ba4a-cf0b880b3fd6",
+            "email": "abc@abc.com"
+        },
+        "defaultAuthStrategy": "ALLOW",
+        "groups": null,
+        "issuer": "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_LAWcJykAw",
+        "sourceIp": [
+            "13.248.48.7"
+        ],
+        "sub": "649dabbb-034c-467b-9796-f6bec835cf00",
+        "username": "649dabbb-034c-467b-9796-f6bec835cf00"
+    },
+    "source": null,
+    "result": null,
+    "request": {
+        "headers": {
+            "x-forwarded-for": "13.248.48.7, 64.252.139.154",
+            "sec-ch-ua-mobile": "?0",
+            "cloudfront-viewer-country": "HK",
+            "cloudfront-is-tablet-viewer": "false",
+            "x-amzn-requestid": "15ccc780-cdc7-4f3b-bb8d-cf66c7a1037a",
+            "via": "2.0 fa763bd4d7fde260f358b4b4d919622c.cloudfront.net (CloudFront)",
+            "cloudfront-forwarded-proto": "https",
+            "origin": "https://us-east-1.console.aws.amazon.com",
+            "content-length": "262",
+            "x-forwarded-proto": "https",
+            "accept-language": "en-GB,en;q=0.9,en-US;q=0.8,zh-CN;q=0.7,zh;q=0.6,ja;q=0.5",
+            "host": "poy7wtu4x5honesjwxijxdfelm.appsync-api.us-east-1.amazonaws.com",
+            "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36",
+            "cloudfront-is-mobile-viewer": "false",
+            "accept": "application/json, text/plain, */*",
+            "cloudfront-is-smarttv-viewer": "false",
+            "accept-encoding": "gzip, deflate, br",
+            "referer": "https://us-east-1.console.aws.amazon.com/",
+            "content-type": "application/json",
+            "sec-fetch-mode": "cors",
+            "x-amzn-trace-id": "Root=1-6264b4ef-5f4829d86a306d0867b8c14d",
+            "x-amz-cf-id": "wyixS-wz2UT3Ppnyz776je1IRuvtp4Bx74Pr1fXJ11hgfIOukjNjzA==",
+            "authorization": "eyJraWQiOiJCMW9cL216WUJyN1QzQUM5UXRtNDhKY3c4aElrNzRBV1A4R1FRUXlOWjY4az0iLCJhbGciOiJSUzI1NiJ9.eyJvcmlnaW5fanRpIjoiNTlmNzE1NDUtYjE5MC00N2U5LWIxMzgtZDk0NGY3YTVmNjkzIiwic3ViIjoiNjQ5ZGFiYmItMDM0Yy00NjdiLTk3OTYtZjZiZWM4MzVjZjAwIiwiYXVkIjoiN2tza2xrbHQ4ZTNpcmExNTE4OTBkam40OW8iLCJldmVudF9pZCI6IjBlYTE4OGRhLTdiNDEtNDY4ZC05ODJjLTY1OWE2MTJmYjc5YiIsInRva2VuX3VzZSI6ImlkIiwiYXV0aF90aW1lIjoxNjUwNzY1Mjg5LCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAudXMtZWFzdC0xLmFtYXpvbmF3cy5jb21cL3VzLWVhc3QtMV9MQVdjSnlrQXciLCJjb2duaXRvOnVzZXJuYW1lIjoiNjQ5ZGFiYmItMDM0Yy00NjdiLTk3OTYtZjZiZWM4MzVjZjAwIiwiZXhwIjoxNjUwNzY4ODg5LCJpYXQiOjE2NTA3NjUyODksImp0aSI6ImEzMTBlYjM4LWMwZDktNGQxMy1iYTRhLWNmMGI4ODBiM2ZkNiIsImVtYWlsIjoiaHV5aWthaUBhbWF6b24uY29tIn0.pTAiGUrri3yAXJqYP1uqcPd9AoAbq7kmHwy563aq47oXNWbjwm9eBG10ttzJI_CQUimzQVg_YczxIwn6f1s2GWoc2GS2Jig5-KUdC8Eqx3I9ujlDsp65ZHSpBDfARZQqZWrulo3OpcWdqOmnn4qWCKwDUNWawIXk8K_vBelRUM6AN9LQ_vOmjqzMLpUkB-0M4juPQEhxfJSWV38zzvY_CPh-6-3v9W5FgcEs2W9XUDdYXwPXksjjxfU1Rfbfe0zsAH6eZYCL8dC97gKSPMVkTJM9dVlKxy9rc8zT1F0IkapcsGbwcDE9orjzzp21D-CxjfMmwJtZPKPlpwQyYHvC1w",
+            "sec-fetch-dest": "empty",
+            "x-amz-user-agent": "AWS-Console-AppSync/",
+            "sec-ch-ua-platform": "\"macOS\"",
+            "cloudfront-is-desktop-viewer": "true",
+            "sec-fetch-site": "cross-site",
+            "sec-ch-ua": "\" Not A;Brand\";v=\"99\", \"Chromium\";v=\"100\", \"Google Chrome\";v=\"100\"",
+            "x-forwarded-port": "443"
+        },
+        "domainName": null
+    },
+    "info": {
+        "fieldName": "createAppLogIngestion",
+        "parentTypeName": "Mutation",
+        "variables": {}
+    },
+    "error": null,
+    "prev": null,
+    "stash": {},
+    "outErrors": []
+}

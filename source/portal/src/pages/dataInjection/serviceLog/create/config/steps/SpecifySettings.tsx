@@ -110,6 +110,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     const logginBucket: LoggingBucket = resData?.data?.getResourceLoggingBucket;
     if (logginBucket.enabled) {
       setShowSuccessText(true);
+      setShowInfoText(false);
       setPreviewConfigPath(
         `s3://${logginBucket.bucket}/${logginBucket.prefix}`
       );

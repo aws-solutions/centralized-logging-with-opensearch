@@ -22,6 +22,7 @@ export interface OptionType {
   value: string;
   description?: string;
   ec2RoleArn?: string;
+  bufferType?: string;
 }
 
 type AutoCompleteMenuProp = {

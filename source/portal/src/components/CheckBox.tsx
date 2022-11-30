@@ -21,10 +21,11 @@ interface CheckBoxProps {
   name: string;
   handleClick: (event: any) => void;
   isChecked: boolean;
+  disabled?: boolean;
 }
 
 const Checkbox: React.FC<CheckBoxProps> = (props: CheckBoxProps) => {
-  const { id, type, name, handleClick, isChecked } = props;
+  const { id, type, name, handleClick, isChecked, disabled } = props;
   return (
     <input
       id={id}
@@ -32,6 +33,7 @@ const Checkbox: React.FC<CheckBoxProps> = (props: CheckBoxProps) => {
       type={type}
       onChange={handleClick}
       checked={isChecked}
+      disabled={disabled}
     />
   );
 };

@@ -13,65 +13,67 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React, { useState } from "react";
+import React from "react";
 import HeaderPanel from "components/HeaderPanel";
 import FormItem from "components/FormItem";
-import Select from "components/Select";
 import { ApplicationLogType } from "../CreatePipeline";
 import TextInput from "components/TextInput";
-import { AmplifyConfigType, YesNo } from "types";
 import { useTranslation } from "react-i18next";
-import { AppStateProps } from "reducer/appReducer";
-import { useSelector } from "react-redux";
+import SelectBuffer, { BufferType } from "./SelectBuffer";
+import BufferKDS from "pages/comps/buffer/BufferKDS";
+import BufferS3 from "pages/comps/buffer/BufferS3";
+import { OptionType } from "components/AutoComplete/autoComplete";
 
 interface IngestSettingProps {
   applicationLog: ApplicationLogType;
   changeIndexPrefix: (index: string) => void;
   changeShardNumber: (shardNum: string) => void;
   changeMaxShardNum: (shardNum: string) => void;
-  changeEnableAS: (enable: boolean) => void;
+  changeEnableAS: (enable: string) => void;
+  changeBufferType: (bufferType: string) => void;
+  changeS3BufferBucket: (bucket: OptionType | null) => void;
+  changeS3BufferPrefix: (prefix: string) => void;
+  changeS3BufferBufferSize: (size: string) => void;
+  changeS3BufferTimeout: (timeout: string) => void;
+  changeS3CompressionType: (type: string) => void;
   disableSelect?: boolean;
   indexEmptyError: boolean;
   indexFormatError: boolean;
   indexDuplicatedError: boolean;
   shardNumInvalidError?: boolean;
   maxShardNumInvalidError?: boolean;
+  s3BucketEmptyError: boolean;
+  s3PrefixError: boolean;
+  bufferSizeError: boolean;
+  bufferIntervalError: boolean;
 }
-
-const YESNO_LIST = [
-  {
-    name: "yes",
-    value: YesNo.Yes,
-  },
-  {
-    name: "no",
-    value: YesNo.No,
-  },
-];
 
 const IngestSetting: React.FC<IngestSettingProps> = (
   props: IngestSettingProps
 ) => {
-  console.info(props);
   const {
     applicationLog,
     changeIndexPrefix,
     changeShardNumber,
     changeEnableAS,
     changeMaxShardNum,
+    changeBufferType,
+    changeS3BufferBucket,
+    changeS3BufferPrefix,
+    changeS3BufferBufferSize,
+    changeS3BufferTimeout,
+    changeS3CompressionType,
     indexEmptyError,
     indexFormatError,
     indexDuplicatedError,
     shardNumInvalidError,
     maxShardNumInvalidError,
+    s3BucketEmptyError,
+    s3PrefixError,
+    bufferSizeError,
+    bufferIntervalError,
   } = props;
   const { t } = useTranslation();
-  const [enableAS, setEnableAS] = useState(
-    applicationLog.kdsParas.enableAutoScaling ? YesNo.Yes : YesNo.No
-  );
-  const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: AppStateProps) => state.amplifyConfig
-  );
 
   return (
     <div>
@@ -92,7 +94,7 @@ const IngestSetting: React.FC<IngestSettingProps> = (
           >
             <TextInput
               className="m-w-75p"
-              value={applicationLog.aosParas.indexPrefix}
+              value={applicationLog.aosParams.indexPrefix}
               onChange={(event) => {
                 changeIndexPrefix(event.target.value);
               }}
@@ -103,73 +105,54 @@ const IngestSetting: React.FC<IngestSettingProps> = (
       </HeaderPanel>
 
       <HeaderPanel title={t("applog:create.ingestSetting.buffer")}>
-        <div>
-          <FormItem
-            optionTitle={t("applog:create.ingestSetting.shardNum")}
-            optionDesc={t("applog:create.ingestSetting.shardNumDesc")}
-            errorText={
-              shardNumInvalidError
-                ? t("applog:create.ingestSetting.shardNumError")
-                : ""
-            }
-          >
-            <TextInput
-              className="m-w-45p"
-              value={applicationLog.kdsParas.startShardNumber}
-              type="number"
-              onChange={(event) => {
-                changeShardNumber(event.target.value);
+        <>
+          <SelectBuffer
+            currentBufferLayer={applicationLog.bufferType}
+            changeActiveLayer={(layer) => {
+              changeBufferType(layer);
+            }}
+          />
+          {applicationLog.bufferType === BufferType.KDS && (
+            <BufferKDS
+              shardNumInvalidError={shardNumInvalidError}
+              maxShardNumInvalidError={maxShardNumInvalidError}
+              applicationLog={applicationLog}
+              changeShardNumber={(number) => {
+                changeShardNumber(number);
               }}
-              placeholder={t("applog:create.ingestSetting.shardNum")}
+              changeEnableAS={(enable) => {
+                changeEnableAS(enable);
+              }}
+              changeMaxShardNum={(number) => {
+                changeMaxShardNum(number);
+              }}
             />
-          </FormItem>
-
-          {!amplifyConfig.aws_project_region.startsWith("cn") ? (
-            <>
-              <FormItem
-                optionTitle={t("applog:create.ingestSetting.enableAutoS")}
-                optionDesc={t("applog:create.ingestSetting.enableAutoSDesc")}
-              >
-                <Select
-                  isI18N
-                  className="m-w-45p"
-                  optionList={YESNO_LIST}
-                  value={enableAS}
-                  onChange={(event) => {
-                    setEnableAS(event.target.value);
-                    changeEnableAS(
-                      event.target.value === YesNo.Yes ? true : false
-                    );
-                  }}
-                  placeholder=""
-                />
-              </FormItem>
-
-              <FormItem
-                optionTitle={t("applog:create.ingestSetting.maxShardNum")}
-                optionDesc={t("applog:create.ingestSetting.maxShardNumDesc")}
-                errorText={
-                  maxShardNumInvalidError
-                    ? t("applog:create.ingestSetting.maxShardNumError")
-                    : ""
-                }
-              >
-                <TextInput
-                  disabled={!applicationLog.kdsParas.enableAutoScaling}
-                  className="m-w-45p"
-                  type="number"
-                  value={applicationLog.kdsParas.maxShardNumber}
-                  onChange={(event) => {
-                    changeMaxShardNum(event.target.value);
-                  }}
-                  placeholder={t("applog:create.ingestSetting.maxShardNum")}
-                />
-              </FormItem>
-            </>
-          ) : (
-            ""
           )}
-        </div>
+          {applicationLog.bufferType === BufferType.S3 && (
+            <BufferS3
+              applicationLog={applicationLog}
+              s3BucketEmptyError={s3BucketEmptyError}
+              s3PrefixError={s3PrefixError}
+              bufferSizeError={bufferSizeError}
+              bufferIntervalError={bufferIntervalError}
+              changeS3BufferBucket={(bucket) => {
+                changeS3BufferBucket(bucket);
+              }}
+              changeS3BufferPrefix={(prefix) => {
+                changeS3BufferPrefix(prefix);
+              }}
+              changeS3BufferBufferSize={(size) => {
+                changeS3BufferBufferSize(size);
+              }}
+              changeS3BufferTimeout={(timeout) => {
+                changeS3BufferTimeout(timeout);
+              }}
+              changeS3CompressionType={(type) => {
+                changeS3CompressionType(type);
+              }}
+            />
+          )}
+        </>
       </HeaderPanel>
     </div>
   );

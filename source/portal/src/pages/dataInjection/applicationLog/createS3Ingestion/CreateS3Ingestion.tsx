@@ -19,7 +19,7 @@ import CreateTags from "./steps/CreateTags";
 import Button from "components/Button";
 import Breadcrumb from "components/Breadcrumb";
 import { RouteComponentProps, useHistory } from "react-router-dom";
-import { ArchiveFormat, LogSourceType, Tag } from "API";
+import { LogSourceType, Tag } from "API";
 import { ActionType, AppStateProps } from "reducer/appReducer";
 import { useDispatch, useSelector } from "react-redux";
 import HelpPanel from "components/HelpPanel";
@@ -29,7 +29,7 @@ import StepChooseSource from "./steps/StepChooseSource";
 import { SelectItem } from "components/Select/select";
 import SpecifyLogConfig from "./steps/SpecifyLogConfig";
 import { createAppLogIngestion, createLogSource } from "graphql/mutations";
-import { AmplifyConfigType, YesNo } from "types";
+import { AmplifyConfigType, ArchiveFormat, YesNo } from "types";
 import { appSyncRequestMutation } from "assets/js/request";
 
 export interface IngestionFromS3PropsType {

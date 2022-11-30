@@ -55,5 +55,6 @@ def default_environment_variables():
     os.environ["SOLUTION_ID"] = "SO8025"
     os.environ["INSTANCEMETA_TABLE"] = "mocked-log-hub-instance-table"
     os.environ["AGENTSTATUS_TABLE"] = "mocked-log-hub-agent-status-table"
-    os.environ["SUB_ACCOUNT_LINK_TABLE_NAME"] = "mocked-sub-account-link-table-name"
+    os.environ[
+        "SUB_ACCOUNT_LINK_TABLE_NAME"] = "mocked-sub-account-link-table-name"
     os.environ["SUB_ACCOUNT_LINK_TABLE"] = "mocked-sub-account-link-table-name"

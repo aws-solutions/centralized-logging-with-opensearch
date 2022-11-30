@@ -1,0 +1,22 @@
+$util.validate($util.matches("^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$", $ctx.args.confId), "Invalid confId")
+#if($util.isNullOrEmpty($ctx.args.stackId)==false)
+    #set($param.key = $util.urlDecode($ctx.args.stackId))
+#end
+#if($util.isNullOrEmpty($ctx.args.stackName)==false)
+    #set($param.key = $util.urlDecode($ctx.args.stackName))
+#end 
+$util.validate($util.matches("^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$", $ctx.args.appPipelineId), "Invalid appPipelineId")
+#foreach( $param in $ctx.args.tags )
+    #set($param.key = $util.urlDecode($param.key))
+    #if( $param.key.length() > 250)
+        $util.error("Value for Tag Key field cannot exceed 250 characters.")
+    #end
+    #set($param.value = $util.urlDecode($param.value))
+    #if( $param.value.length() > 250)
+        $util.error("Value for Tag Value field cannot exceed 250 characters.")
+    #end
+#end
+
+$util.validate($util.matches("^.{0,1024}$", $ctx.args.logPath), "Invalid LogPath")
+
+{"version": "2017-02-28", "operation": "Invoke", "payload": $util.toJson($ctx)}

@@ -154,10 +154,6 @@ const SpecifyEksSource: React.FC<SpecifyEksSourceProps> = (
               }}
             ></AutoComplete>
           </FormItem>
-        </div>
-      </HeaderPanel>
-      <HeaderPanel title={t("ekslog:create.eksSource.agent")}>
-        <div>
           <FormItem
             infoType={InfoBarTypes.EKS_PATTERN}
             optionTitle={t("ekslog:create.eksSource.eksAgentPattern")}

@@ -1,0 +1,35 @@
+$util.validate($util.matches("^vpc-[a-z0-9]{8,1020}$", $ctx.args.aosParas.vpc.vpcId), "Invalid VPC ID")
+
+#if($util.isNullOrEmpty($ctx.args.aosParas.vpc.publicSubnetIds)==false)
+ $util.validate($util.matches("^subnet-[a-z0-9]{8,1017}(,subnet-[a-z0-9]{8,1017})*$", $ctx.args.aosParas.vpc.publicSubnetIds), "Invalid publicSubnetIds")
+#end
+
+$util.validate($util.matches("^subnet-[a-z0-9]{8,1017}(,subnet-[a-z0-9]{8,1017})*$", $ctx.args.aosParas.vpc.privateSubnetIds), "Invalid privateSubnetIds")
+$util.validate($util.matches("^sg-[a-z0-9]{8,1021}$", $ctx.args.aosParas.vpc.securityGroupId), "Invalid Security Group ID")
+#set($ctx.args.aosParas.opensearchEndpoint = $util.urlDecode($ctx.args.aosParas.opensearchEndpoint))
+$util.validate($util.matches("^arn:([^:\n]*):([^:\n]*):([^:\n]*):([^:\n]*):(([^:\/\n]*)[:\/])?(.*)$", $ctx.args.aosParas.opensearchArn), "Invalid opensearchArn")
+$util.validate($util.matches("[a-zA-Z0-9-]{1,1024}", $ctx.args.aosParas.domainName), "Invalid domainName")
+$util.validate($util.matches("^[\w/+=.@-]{0,1024}$", $ctx.args.aosParas.indexPrefix), "Invalid indexPrefix")
+$util.validate($util.matches("^(?!(^((\d{1,3}[.]){3}\d{1,3}$)|.*\.\.|.*\.-|.*-\.|.*\._|.*_\.))[a-z\d][\w.-]{1,253}[a-z\d]$", $ctx.args.aosParas.failedLogBucket), "Invalid failedLogBucket")
+
+
+$util.validate($util.matches("^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$", $ctx.args.confId), "Invalid confId")
+
+$util.validate($util.matches("^[0-9a-f]{8}(?:[0-9a-f]{4}){3}[0-9a-f]{12}$", $ctx.args.eksClusterId), "Invalid eksClusterId")
+
+$util.validate($util.matches("^.{0,1024}$", $ctx.args.logPath), "Invalid LogPath")
+
+$util.validate($util.matches("Yes|No", $util.defaultIfNullOrEmpty($ctx.args.createDashboard,'Yes')), "Invalid CreateDashboard Parameter")
+
+#foreach( $param in $ctx.args.tags )
+    #set($param.key = $util.urlDecode($param.key))
+    #if( $param.key.length() > 250)
+        $util.error("Value for Tag Key field cannot exceed 250 characters.")
+    #end
+    #set($param.value = $util.urlDecode($param.value))
+    #if( $param.value.length() > 250)
+        $util.error("Value for Tag Value field cannot exceed 250 characters.")
+    #end
+#end
+
+{"version": "2017-02-28", "operation": "Invoke", "payload": $util.toJson($ctx)}

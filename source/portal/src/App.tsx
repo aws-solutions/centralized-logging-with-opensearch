@@ -48,6 +48,7 @@ import CreateInstanceGroup from "pages/resources/instanceGroup/create/CreateInst
 import ApplicationLogDetail from "pages/dataInjection/applicationLog/ApplicationLogDetail";
 import CreatePipeline from "pages/dataInjection/applicationLog/create/CreatePipeline";
 import CreateIngestion from "pages/dataInjection/applicationLog/createIngestion/CreateIngestion";
+import CreateSysLogIngestion from "pages/dataInjection/applicationLog/createSyslogIngestion/CreateSysLogIngestion";
 import CrossAccountList from "pages/resources/crossAccount/CrossAccountList";
 import LinkAnAccount from "pages/resources/crossAccount/LinkAnAccount";
 
@@ -64,7 +65,6 @@ import EksLogList from "pages/containers/eksLog/EksLogList";
 import ImportEksCluster from "pages/containers/eksLog/create/ImportEksCluster";
 import EksLogDetail from "pages/containers/eksLog/EksLogDetail";
 import EksLogIngest from "pages/containers/eksLog/createIngestion/EksLogIngest";
-import CreateS3Ingestion from "pages/dataInjection/applicationLog/createS3Ingestion/CreateS3Ingestion";
 import EksIngestionDetail from "pages/dataInjection/ingestiondetail/EksIngestionDetail";
 import { WebStorageStateStore } from "oidc-client-ts";
 import CreateConfig from "pages/dataInjection/serviceLog/create/config/CreateConfig";
@@ -72,6 +72,7 @@ import CrossAccountDetail from "pages/resources/crossAccount/CrossAccountDetail"
 import AppIngestionDetail from "pages/dataInjection/ingestiondetail/AppIngestionDetail";
 import { useTranslation } from "react-i18next";
 import { I18n } from "aws-amplify";
+import CreateEKSIngestion from "pages/dataInjection/applicationLog/createEKSIngestion/CreateEKSIngestion";
 
 export interface SignedInAppProps {
   oidcSignOut?: () => void;
@@ -227,8 +228,13 @@ const SignedInApp: React.FC<SignedInAppProps> = (props: SignedInAppProps) => {
             />
             <Route
               exact
-              path="/log-pipeline/application-log/detail/:id/create-ingestion-s3"
-              component={CreateS3Ingestion}
+              path="/log-pipeline/application-log/detail/:id/create-ingestion-eks"
+              component={CreateEKSIngestion}
+            />
+            <Route
+              exact
+              path="/log-pipeline/application-log/detail/:id/create-ingestion-syslog"
+              component={CreateSysLogIngestion}
             />
             <Route
               exact
@@ -304,7 +310,7 @@ const SignedInApp: React.FC<SignedInAppProps> = (props: SignedInAppProps) => {
 
             {/* Log Config Router End */}
 
-            {/* Cross Account Router Start */}
+            {/* Member Account Router Start */}
             <Route
               exact
               path="/resources/cross-account"
@@ -320,7 +326,7 @@ const SignedInApp: React.FC<SignedInAppProps> = (props: SignedInAppProps) => {
               path="/resources/cross-account/detail/:id"
               component={CrossAccountDetail}
             />
-            {/* Cross Account Router End */}
+            {/* Member Account Router End */}
 
             <Route
               render={() => (
@@ -471,7 +477,7 @@ const App: React.FC = () => {
       const settings = {
         userStore: new WebStorageStateStore({ store: window.localStorage }),
         authority: configData.aws_oidc_provider,
-        scope: "openid email profile offline_access",
+        scope: "openid email profile",
         automaticSilentRenew: true,
         client_id: configData.aws_oidc_client_id,
         redirect_uri: configData.aws_oidc_customer_domain

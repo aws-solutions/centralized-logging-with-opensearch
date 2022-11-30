@@ -8,6 +8,8 @@ class SOURCETYPE(Enum):
     EC2 = 'EC2'
     S3 = 'S3'
     EKS_CLUSTER = 'EKSCluster'
+    SYSLOG = 'Syslog'
+    ASG = 'ASG'
 
 
 class DEPLOYMENTKIND(Enum):
@@ -47,5 +49,5 @@ class MULTILINELOGPARSER(Enum):
 
 
 class CRI(Enum):
-    CONTAINERD = 'containerd'
     DOCKER = 'docker'
+    CONTAINERD = 'containerd'

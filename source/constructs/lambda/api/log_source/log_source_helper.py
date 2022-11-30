@@ -7,6 +7,8 @@ import sys
 import os
 import json
 import boto3
+
+from boto3.dynamodb.conditions import Attr
 from botocore import config
 
 from datetime import datetime
@@ -32,6 +34,7 @@ async_lambda_arn = os.environ.get("ASYNC_CROSS_ACCOUNT_LAMBDA_ARN")
 
 
 class APIException(Exception):
+
     def __init__(self, message):
         self.message = message
 
@@ -69,34 +72,6 @@ class AppLogSourceType(ABC):
         pass
 
 
-class EC2(AppLogSourceType):
-    """An implementation of AppLogSourceType for EC2"""
-
-    def __init__(self, args, log_source_table):
-        self.args = args
-        self.log_source_table = log_source_table
-
-    def create_log_source(self):
-        # TODO: Add this implementation
-        pass
-
-    def delete_log_source(self):
-        # TODO: Add this implementation
-        pass
-
-    def list_log_sources(self):
-        # TODO: Add this implementation
-        pass
-
-    def update_log_source(self):
-        # TODO: Add this implementation
-        pass
-
-    def get_log_source(self):
-        # TODO: Add this implementation
-        pass
-
-
 class S3(AppLogSourceType):
     """An implementation of AppLogSourceType for S3"""
 
@@ -110,22 +85,35 @@ class S3(AppLogSourceType):
         id = str(uuid.uuid4())
         self.log_source_table.put_item(
             Item={
-                "id": id,
-                "s3Name": self.args["s3Name"],
-                "s3Prefix": self.args["s3Prefix"],
-                "defaultVpcId": self.args.get("subAccountVpcId", log_agent_vpc_id),
-                "defaultSubnetIds": self.args.get("subAccountPublicSubnetIds", log_agent_subnet_ids),
-                "createdDt": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "accountId": self.args.get("accountId", account_id),
-                "sourceType": "S3",
-                "region": self.args.get("region", default_region),
-                "archiveFormat": self.args["archiveFormat"],
-                "tags": self.args.get("tags", []),
-                "status": "ACTIVE",
-            }
-        )
+                "id":
+                id,
+                "s3Name":
+                self.args["s3Name"],
+                "s3Prefix":
+                self.args["s3Prefix"],
+                "defaultVpcId":
+                self.args.get("subAccountVpcId", log_agent_vpc_id),
+                "defaultSubnetIds":
+                self.args.get("subAccountPublicSubnetIds",
+                              log_agent_subnet_ids),
+                "createdDt":
+                datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "accountId":
+                self.args.get("accountId", account_id),
+                "sourceType":
+                "S3",
+                "region":
+                self.args.get("region", default_region),
+                "archiveFormat":
+                self.args["archiveFormat"],
+                "tags":
+                self.args.get("tags", []),
+                "status":
+                "ACTIVE",
+            })
         # Handle cross account scenario
-        if self.args.get("accountId", "") != "" and self.args.get("accountId", "") != account_id:
+        if self.args.get("accountId", "") != "" and self.args.get(
+                "accountId", "") != account_id:
             # Update the default VpcId and subnetIds in cross account table.
             self._update_default_vpcid_and_subnetids()
 
@@ -140,7 +128,10 @@ class S3(AppLogSourceType):
         self.log_source_table.update_item(
             Key={"id": self.args["id"]},
             UpdateExpression="SET #status = :s, #updatedDt= :uDt",
-            ExpressionAttributeNames={"#status": "status", "#updatedDt": "updatedDt"},
+            ExpressionAttributeNames={
+                "#status": "status",
+                "#updatedDt": "updatedDt"
+            },
             ExpressionAttributeValues={
                 ":s": "INACTIVE",
                 ":uDt": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -161,11 +152,16 @@ class S3(AppLogSourceType):
             raise APIException("App Source record Not Found")
         result = response["Item"]
         result["s3Source"] = {
-            "s3Name": response["Item"]["s3Name"],
-            "s3Prefix": response["Item"]["s3Prefix"],
-            "archiveFormat": response["Item"]["archiveFormat"],
-            "defaultVpcId": response["Item"].get("defaultVpcId", log_agent_vpc_id),
-            "defaultSubnetIds": response["Item"].get("defaultSubnetIds", log_agent_subnet_ids),
+            "s3Name":
+            response["Item"]["s3Name"],
+            "s3Prefix":
+            response["Item"]["s3Prefix"],
+            "archiveFormat":
+            response["Item"]["archiveFormat"],
+            "defaultVpcId":
+            response["Item"].get("defaultVpcId", log_agent_vpc_id),
+            "defaultSubnetIds":
+            response["Item"].get("defaultSubnetIds", log_agent_subnet_ids),
         }
         return result
 
@@ -173,9 +169,12 @@ class S3(AppLogSourceType):
         logger.info("Update the cross account link table by async lambda job")
         payload = {
             "arguments": {
-                "id": self.args["subAccountLinkId"],
-                "subAccountVpcId": self.args.get("subAccountVpcId", ""),
-                "subAccountPublicSubnetIds": self.args.get("subAccountPublicSubnetIds", ""),
+                "id":
+                self.args["subAccountLinkId"],
+                "subAccountVpcId":
+                self.args.get("subAccountVpcId", ""),
+                "subAccountPublicSubnetIds":
+                self.args.get("subAccountPublicSubnetIds", ""),
             },
             "info": {
                 "fieldName": "updateSubAccountDeafultVpcSubnets",
@@ -192,16 +191,35 @@ class S3(AppLogSourceType):
             raise APIException("Error call async Lambda")
 
 
-class EKSCluster(AppLogSourceType):
-    """An implementation of AppLogSourceType for EKSCluster"""
+class Syslog(AppLogSourceType):
+    """An implementation of AppLogSourceType for Syslog"""
 
     def __init__(self, args, log_source_table):
         self.args = args
         self.log_source_table = log_source_table
+        self._log_type = "Syslog"
+        self._min_port_num = 500
+        self._max_port_num = 20000
+        self._in_used_port_set = set()
 
     def create_log_source(self):
-        # TODO: Add this implementation
-        pass
+        logger.info("Create a logSource")
+
+        id = str(uuid.uuid4())
+        # Status will be change to ACTIVE in create ingestion action.
+        self.log_source_table.put_item(
+            Item={
+                "id": id,
+                "sourceType": "Syslog",
+                "accountId": self.args.get("accountId", account_id),
+                "region": self.args.get("region", default_region),
+                "sourceInfo": self.args.get("sourceInfo", []),
+                "createdDt": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "tags": self.args.get("tags", []),
+                "status": "REGISTERED",
+            })
+
+        return id
 
     def delete_log_source(self):
         # TODO: Add this implementation
@@ -216,8 +234,94 @@ class EKSCluster(AppLogSourceType):
         pass
 
     def get_log_source(self):
-        # TODO: Add this implementation
-        pass
+        response = self.log_source_table.get_item(Key={"id": self.args["id"]})
+        if "Item" not in response:
+            raise APIException("App Source record Not Found")
+        response["Item"]["sourceId"] = self.args["id"]
+        result = response["Item"]
+        return result
+
+    def check_custom_port(self):
+        """
+        This function is used to validate the input custom port and generate recommended port.
+        If the syslogPort param is none, this function will return a recommended port.
+
+        :return: {
+            "isAllowedPort": "True"/"OutofRange"/"Conflict"/"NoMoreUsable",
+            "recommendedPort": Int
+        }
+        """
+        conditions = Attr("status").eq("ACTIVE")
+        conditions = conditions.__and__(Attr("sourceType").eq(self._log_type))
+
+        response = self.log_source_table.scan(
+            FilterExpression=conditions,
+            ProjectionExpression="id, sourceInfo, #status, #sourceType ",
+            ExpressionAttributeNames={
+                "#status": "status",
+                "#sourceType": "sourceType",
+            },
+        )
+
+        # Get all the in used ports
+        # If there are historical syslog port, add to the in_used_port_set
+        if len(response["Items"]) != 0:
+            for items in response["Items"]:
+                for info in items['sourceInfo']:
+                    if info['key'] == 'syslogPort':
+                        self._in_used_port_set.add(int(info['value']))
+
+        recommend_port = self._generate_recommend_port()
+        user_defined_port = int(self.args.get("syslogPort"))
+        if user_defined_port == -1:
+            # Customer does not enter custom port.Front-end will pass user_defined_port as -1.
+            if recommend_port != -1:
+                return {
+                    "isAllowedPort": True,
+                    "msg": "",
+                    "recommendedPort": recommend_port
+                }
+            else:
+                return {
+                    "isAllowedPort": False,
+                    "msg": "NoMoreUsable",
+                    "recommendedPort": recommend_port
+                }
+        else:
+            # Customer provide a custom port
+            if user_defined_port in self._in_used_port_set:
+                return {
+                    "isAllowedPort": False,
+                    "msg": "Conflict",
+                    "recommendedPort": recommend_port
+                }
+            elif user_defined_port > self._max_port_num or user_defined_port < self._min_port_num:
+                return {
+                    "isAllowedPort": False,
+                    "msg": "OutofRange",
+                    "recommendedPort": recommend_port
+                }
+            else:
+                return {
+                    "isAllowedPort": True,
+                    "msg": "",
+                    "recommendedPort": user_defined_port
+                }
+
+    def _generate_recommend_port(self):
+        """
+        This function will generate a recommend port number according to current in used ports
+        Input: current_syslog_source_data
+        Output: recommend port number, if no more port can use, return -1.
+        """
+        port_pool = set(range(self._min_port_num, self._max_port_num))
+
+        usable_port_pool = port_pool.difference(self._in_used_port_set)
+        if len(usable_port_pool) == 0:
+            # If there is no more usable port, return -1
+            return -1
+        else:
+            return next(iter(usable_port_pool))
 
 
 class LogSourceHelper:
@@ -244,3 +348,6 @@ class LogSourceHelper:
 
     def get_log_source(self):
         return self._source.get_log_source()
+
+    def check_custom_port(self):
+        return self._source.check_custom_port()

@@ -14,23 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React, { useState, useEffect } from "react";
-import ArrowDropDownIcon from "@material-ui/icons/ArrowDropDown";
 import Alert from "components/Alert";
 import PagePanel from "components/PagePanel";
 import HeaderPanel from "components/HeaderPanel";
 import FormItem from "components/FormItem";
-import Tiles from "components/Tiles";
 import { AmplifyConfigType, CreationMethod } from "types";
 import { useTranslation } from "react-i18next";
-import TextInput from "components/TextInput";
 import { useSelector } from "react-redux";
-import { AppStateProps, InfoBarTypes } from "reducer/appReducer";
-import Select from "components/Select";
-import {
-  ENABLE_CLODSTATE,
-  ENABLE_ULTRAWARM,
-  REPLICA_COUNT_LIST,
-} from "assets/js/const";
+import { AppStateProps } from "reducer/appReducer";
 import ExtLink from "components/ExtLink";
 import AutoComplete from "components/AutoComplete";
 import { OptionType } from "components/AutoComplete/autoComplete";
@@ -38,39 +29,26 @@ import ValueWithLabel from "components/ValueWithLabel";
 import { EksIngestionPropsType } from "../EksLogIngest";
 import { appSyncRequestQuery } from "assets/js/request";
 import { listAppPipelines } from "graphql/queries";
-import { AppPipeline, PipelineStatus } from "API";
-import { buildESLink, formatLocalTime } from "assets/js/utils";
+import { AppPipeline, BufferType, PipelineStatus } from "API";
+import {
+  buildESLink,
+  buildKDSLink,
+  buildS3Link,
+  formatLocalTime,
+} from "assets/js/utils";
 import LoadingText from "components/LoadingText";
+import { getParamValueByKey } from "assets/js/applog";
 
 interface SpecifySettingProps {
   eksIngestionInfo: EksIngestionPropsType;
-  indexDuplicatedError: boolean;
-  changeCreationMethod: (method: string) => void;
-  changeIndexPrefix: (prefix: string) => void;
-  changeWarmTransition: (warmTrans: string) => void;
-  changeColdTransition: (coldTrans: string) => void;
-  changeLogRetention: (retention: string) => void;
   changeExistsPipeline: (pipeline: OptionType) => void;
-  changeShards: (shards: string) => void;
-  changeReplicas: (replica: string) => void;
 }
 
 const SpecifySettings: React.FC<SpecifySettingProps> = (
   props: SpecifySettingProps
 ) => {
   const { t } = useTranslation();
-  const {
-    eksIngestionInfo,
-    indexDuplicatedError,
-    changeCreationMethod,
-    changeIndexPrefix,
-    changeWarmTransition,
-    changeColdTransition,
-    changeLogRetention,
-    changeExistsPipeline,
-    changeShards,
-    changeReplicas,
-  } = props;
+  const { eksIngestionInfo, changeExistsPipeline } = props;
   const amplifyConfig: AmplifyConfigType = useSelector(
     (state: AppStateProps) => state.amplifyConfig
   );
@@ -80,36 +58,34 @@ const SpecifySettings: React.FC<SpecifySettingProps> = (
     []
   );
   const [pipelineIdMap, setPipelineIdMap] = useState<any>();
-  const [showAdvanceSetting, setShowAdvanceSetting] = useState(false);
 
   // Get Application Log List
   const getApplicationLogList = async () => {
-    // setSelectedApplicationLog([]);
     try {
       setLoadingPipeline(true);
-      // setApplicationLogs([]);
       const resData: any = await appSyncRequestQuery(listAppPipelines, {
         page: 1,
         count: 999,
       });
       console.info("resData:", resData);
-      // const dataAppLogs: AppPipeline[] =
       const tmpOptionList: OptionType[] = [];
       const appPipelineArr: AppPipeline[] =
         resData.data.listAppPipelines.appPipelines;
       const tmpPipelineIdMap: any = {};
+
       appPipelineArr.forEach((element) => {
         if (
-          element.aosParas?.domainName ===
-            eksIngestionInfo.aosParas.domainName &&
-          element.status === PipelineStatus.ACTIVE &&
-          element.ec2RoleArn
+          element.aosParams?.domainName ===
+            eksIngestionInfo.aosParams.domainName &&
+          element.status === PipelineStatus.ACTIVE
         ) {
           tmpOptionList.push({
-            name: `${element.id}(${element.aosParas.indexPrefix})`,
+            name: `[${element.bufferType}] ${element.id}(${element.aosParams.indexPrefix})`,
             value: element.id,
-            description: element.kdsRoleArn || "",
-            ec2RoleArn: element.ec2RoleArn || "",
+            description: element.bufferAccessRoleArn || "",
+            bufferType: element.bufferType || "",
+            // TODO
+            // ec2RoleArn: element.ec2RoleArn || "",
           });
           tmpPipelineIdMap[element.id] = element;
         }
@@ -135,211 +111,11 @@ const SpecifySettings: React.FC<SpecifySettingProps> = (
           content={
             <div>
               {t("ekslog:ingest.specifyPipeline.alert")}{" "}
-              <b>{eksIngestionInfo.aosParas.domainName}</b>
+              <b>{eksIngestionInfo.aosParams.domainName}</b>
             </div>
           }
         />
       </PagePanel>
-      <HeaderPanel title={t("ekslog:ingest.specifyPipeline.creationMethod")}>
-        <FormItem
-          optionTitle={t("ekslog:ingest.specifyPipeline.creationMethod")}
-          optionDesc=""
-        >
-          <Tiles
-            value={eksIngestionInfo.createMethod}
-            onChange={(event) => {
-              changeCreationMethod(event.target.value);
-            }}
-            items={[
-              {
-                label: t("ekslog:ingest.specifyPipeline.createNew"),
-                description: t("ekslog:ingest.specifyPipeline.createNewDesc"),
-                value: CreationMethod.New,
-              },
-              {
-                label: t("ekslog:ingest.specifyPipeline.chooseExists"),
-                description: t(
-                  "ekslog:ingest.specifyPipeline.chooseExistsDesc"
-                ),
-                value: CreationMethod.Exists,
-              },
-            ]}
-          />
-        </FormItem>
-      </HeaderPanel>
-
-      {eksIngestionInfo.createMethod === CreationMethod.New && (
-        <>
-          <HeaderPanel title={t("ekslog:ingest.specifyPipeline.index")}>
-            <FormItem
-              optionTitle={t("ekslog:ingest.specifyPipeline.indexPrefix")}
-              optionDesc={t("ekslog:ingest.specifyPipeline.indexPrefixDesc")}
-              errorText={
-                eksIngestionInfo.indexPrefixRequiredError
-                  ? t("applog:create.ingestSetting.indexNameError")
-                  : eksIngestionInfo.indexPrefixFormatError
-                  ? t("applog:create.ingestSetting.indexNameFormatError")
-                  : indexDuplicatedError
-                  ? t("applog:create.ingestSetting.indexNameDuplicated")
-                  : ""
-              }
-            >
-              <TextInput
-                className="m-w-75p"
-                value={eksIngestionInfo.aosParas.indexPrefix}
-                placeholder="log-example"
-                onChange={(event) => {
-                  changeIndexPrefix(event.target.value);
-                }}
-              />
-            </FormItem>
-            <div>
-              <div
-                className="addtional-settings"
-                onClick={() => {
-                  setShowAdvanceSetting(!showAdvanceSetting);
-                }}
-              >
-                <i className="icon">
-                  {showAdvanceSetting && <ArrowDropDownIcon fontSize="large" />}
-                  {!showAdvanceSetting && (
-                    <ArrowDropDownIcon
-                      className="reverse-90"
-                      fontSize="large"
-                    />
-                  )}
-                </i>
-                {t("servicelog:cluster.additionalSetting")}
-              </div>
-
-              <div className={showAdvanceSetting ? "" : "hide"}>
-                <>
-                  <FormItem
-                    optionTitle={t("servicelog:cluster.shardNum")}
-                    optionDesc={t("servicelog:cluster.shardNumDesc")}
-                    errorText={
-                      eksIngestionInfo.shardsError
-                        ? t("servicelog:cluster.shardNumError")
-                        : ""
-                    }
-                  >
-                    <div className="m-w-75p">
-                      <TextInput
-                        type="number"
-                        value={eksIngestionInfo.aosParas.shardNumbers}
-                        placeholder={t("servicelog:cluster.inputShardNum")}
-                        onChange={(event) => {
-                          changeShards(event.target.value);
-                        }}
-                      />
-                    </div>
-                  </FormItem>
-
-                  <FormItem
-                    optionTitle={t("servicelog:cluster.replicaNum")}
-                    optionDesc={t("servicelog:cluster.replicaNumDesc")}
-                  >
-                    <div className="m-w-75p">
-                      <Select
-                        optionList={REPLICA_COUNT_LIST}
-                        value={eksIngestionInfo.aosParas.replicaNumbers}
-                        onChange={(event) => {
-                          changeReplicas(event.target.value);
-                        }}
-                        placeholder={t("servicelog:cluster.inputReplica")}
-                      />
-                    </div>
-                  </FormItem>
-                </>
-              </div>
-            </div>
-          </HeaderPanel>
-
-          <HeaderPanel
-            title={t("applog:create.specifyOS.logLifecycle")}
-            infoType={InfoBarTypes.LOG_LIFECYCLE}
-          >
-            <div>
-              <FormItem
-                optionTitle={t("applog:create.specifyOS.warmLog")}
-                optionDesc={
-                  <div>
-                    {t("applog:create.specifyOS.warmLogDesc1")}
-                    <ExtLink to={ENABLE_ULTRAWARM}>
-                      {t("applog:create.specifyOS.warmLogDesc2")}
-                    </ExtLink>
-                    {t("applog:create.specifyOS.warmLogDesc3")}
-                  </div>
-                }
-                errorText={
-                  eksIngestionInfo.warmTransError
-                    ? t("applog:create.specifyOS.warmLogInvalid")
-                    : ""
-                }
-              >
-                <TextInput
-                  readonly={!eksIngestionInfo.warmEnable}
-                  className="m-w-45p"
-                  type="number"
-                  value={eksIngestionInfo.aosParas.warmLogTransition}
-                  onChange={(event) => {
-                    console.info(event.target.value);
-                    changeWarmTransition(event.target.value);
-                  }}
-                />
-              </FormItem>
-              <FormItem
-                optionTitle={t("applog:create.specifyOS.coldLog")}
-                optionDesc={
-                  <div>
-                    {t("applog:create.specifyOS.coldLogDesc1")}
-                    <ExtLink to={ENABLE_CLODSTATE}>
-                      {t("applog:create.specifyOS.coldLogDesc2")}
-                    </ExtLink>
-                    {t("applog:create.specifyOS.coldLogDesc3")}
-                  </div>
-                }
-                errorText={
-                  eksIngestionInfo.coldTransError
-                    ? t("applog:create.specifyOS.coldLogInvalid")
-                    : ""
-                }
-              >
-                <TextInput
-                  readonly={!eksIngestionInfo.coldEnable}
-                  className="m-w-45p"
-                  type="number"
-                  value={eksIngestionInfo.aosParas.coldLogTransition}
-                  onChange={(event) => {
-                    console.info(event.target.value);
-                    changeColdTransition(event.target.value);
-                  }}
-                />
-              </FormItem>
-              <FormItem
-                optionTitle={t("applog:create.specifyOS.logRetention")}
-                optionDesc={t("applog:create.specifyOS.logRetentionDesc")}
-                errorText={
-                  eksIngestionInfo.retentionError
-                    ? t("applog:create.specifyOS.logRetentionError")
-                    : ""
-                }
-              >
-                <TextInput
-                  className="m-w-45p"
-                  type="number"
-                  value={eksIngestionInfo.aosParas.logRetention}
-                  placeholder="180"
-                  onChange={(event) => {
-                    console.info(event.target.value);
-                    changeLogRetention(event.target.value);
-                  }}
-                />
-              </FormItem>
-            </div>
-          </HeaderPanel>
-        </>
-      )}
 
       {eksIngestionInfo.createMethod === CreationMethod.Exists && (
         <>
@@ -356,7 +132,6 @@ const SpecifySettings: React.FC<SpecifySettingProps> = (
               }
             >
               <AutoComplete
-                // disabled={loadingPipeline}
                 outerLoading
                 className="m-w-75p"
                 placeholder={t("ekslog:ingest.specifyPipeline.selectPipeline")}
@@ -388,8 +163,74 @@ const SpecifySettings: React.FC<SpecifySettingProps> = (
                       >
                         {
                           pipelineIdMap?.[eksIngestionInfo.existsPipeline.value]
-                            ?.aosParas.domainName
+                            ?.aosParams.indexPrefix
                         }
+                      </ValueWithLabel>
+                    </div>
+                    <div className="flex-1 border-left-c">
+                      <ValueWithLabel
+                        label={`${t("ekslog:ingest.detail.bufferLayer")}(${
+                          pipelineIdMap?.[eksIngestionInfo.existsPipeline.value]
+                            ?.bufferType
+                        })`}
+                      >
+                        <>
+                          {pipelineIdMap?.[
+                            eksIngestionInfo.existsPipeline.value
+                          ]?.bufferType === BufferType.KDS && (
+                            <div>
+                              <ExtLink
+                                to={buildKDSLink(
+                                  amplifyConfig.aws_project_region,
+                                  pipelineIdMap?.[
+                                    eksIngestionInfo.existsPipeline.value
+                                  ].bufferResourceName || "-"
+                                )}
+                              >
+                                {pipelineIdMap?.[
+                                  eksIngestionInfo.existsPipeline.value
+                                ].bufferResourceName || "-"}
+                              </ExtLink>
+                              {getParamValueByKey(
+                                "enableAutoScaling",
+                                pipelineIdMap?.[
+                                  eksIngestionInfo.existsPipeline.value
+                                ]?.bufferParams
+                              ) === "true"
+                                ? t("applog:detail.autoScaling")
+                                : ""}
+                            </div>
+                          )}
+                          {pipelineIdMap?.[
+                            eksIngestionInfo.existsPipeline.value
+                          ]?.bufferType === BufferType.S3 && (
+                            <>
+                              <ExtLink
+                                to={buildS3Link(
+                                  amplifyConfig.aws_project_region,
+                                  getParamValueByKey(
+                                    "logBucketName",
+                                    pipelineIdMap?.[
+                                      eksIngestionInfo.existsPipeline.value
+                                    ]?.bufferParams
+                                  ) || ""
+                                )}
+                              >
+                                {getParamValueByKey(
+                                  "logBucketName",
+                                  pipelineIdMap?.[
+                                    eksIngestionInfo.existsPipeline.value
+                                  ]?.bufferParams
+                                ) || "-"}
+                              </ExtLink>
+                            </>
+                          )}
+                          {pipelineIdMap?.[
+                            eksIngestionInfo.existsPipeline.value
+                          ]?.bufferType === BufferType.None && (
+                            <div>{t("none")}</div>
+                          )}
+                        </>
                       </ValueWithLabel>
                     </div>
                     <div className="flex-1 border-left-c">
@@ -401,13 +242,13 @@ const SpecifySettings: React.FC<SpecifySettingProps> = (
                             amplifyConfig.aws_project_region,
                             pipelineIdMap?.[
                               eksIngestionInfo.existsPipeline.value
-                            ]?.aosParas?.domainName || ""
+                            ]?.aosParams?.domainName || ""
                           )}
                         >
                           {
                             pipelineIdMap?.[
                               eksIngestionInfo.existsPipeline.value
-                            ]?.aosParas?.domainName
+                            ]?.aosParams?.domainName
                           }
                         </ExtLink>
                       </ValueWithLabel>

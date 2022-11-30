@@ -23,12 +23,21 @@ import IMAGE_SL_Amazon_WAF from "assets/images/type/amazon_waf.svg";
 import IMAGE_SL_Amazon_VPCLogs from "assets/images/type/amazon_vpclogs.svg";
 import IMAGE_SL_Amazon_Config from "assets/images/type/amazon_config.svg";
 
-import { AlarmType, LogType, MultiLineLogParser } from "API";
+import {
+  AlarmType,
+  LogConfFilterCondition,
+  LogType,
+  MultiLineLogParser,
+  ProtocolType,
+  SyslogParser,
+} from "API";
+import { OptionType } from "components/AutoComplete/autoComplete";
 export const INVALID = "invalid";
 export const AUTO_REFRESH_INT = 8000;
 
-export const DEFAULT_AGENT_VERSION = "FluentBit 1.9.3";
+export const DEFAULT_AGENT_VERSION = "FluentBit 1.9.9";
 export const DEFAULT_PLATFORM = "Linux";
+export const ASG_SELECTION = "Auto Scaling group";
 export const DEFAULT_INSTANCE_SELECTION = "Manual";
 
 export const SIDE_BAR_OPEN_STORAGE_ID = "__log_hub_side_bar_open_storage_id__";
@@ -170,6 +179,15 @@ export const DOC_VPC_ROUTE_TABLE_LINK =
 
 export const DOC_VPC_SECURITY_GROUP_LINK =
   "https://docs.aws.amazon.com/vpc/latest/peering/vpc-peering-security-groups.html";
+
+export const CONFIG_FILTER_GREP_LINK =
+  "https://docs.fluentbit.io/manual/pipeline/filters/grep";
+
+export const ASG_LAUNCH_TEMPLATE_LINK =
+  "https://docs.aws.amazon.com/autoscaling/ec2/userguide/create-launch-template.html#advanced-settings-for-your-launch-template";
+
+export const ASG_LAUNCH_CONFIG_LINK =
+  "https://docs.aws.amazon.com/autoscaling/ec2/userguide/change-launch-config.html";
 
 export enum ServiceLogType {
   Amazon_S3 = "Amazon_S3",
@@ -362,13 +380,26 @@ export const LOG_CONFIG_TYPE_LIST = [
   { name: "resource:config.type.json", value: LogType.JSON },
   { name: "resource:config.type.apache", value: LogType.Apache },
   { name: "resource:config.type.nginx", value: LogType.Nginx },
+  { name: "resource:config.type.syslog", value: LogType.Syslog },
   { name: "resource:config.type.singleLine", value: LogType.SingleLineText },
   { name: "resource:config.type.multiLine", value: LogType.MultiLineText },
+];
+
+export const SYSLOG_CONFIG_TYPE_LIST = [
+  { name: "resource:config.type.syslog", value: LogType.Syslog },
+  { name: "resource:config.type.json", value: LogType.JSON },
+  { name: "resource:config.type.singleLine", value: LogType.SingleLineText },
 ];
 
 export const MULTI_LINE_LOG_PARSER_LIST = [
   { name: "Java-Spring Boot", value: MultiLineLogParser.JAVA_SPRING_BOOT },
   { name: "Custom", value: MultiLineLogParser.CUSTOM },
+];
+
+export const SYS_LOG_PARSER_LIST = [
+  { name: "RFC5424", value: SyslogParser.RFC5424 },
+  { name: "RFC3164", value: SyslogParser.RFC3164 },
+  { name: "Custom", value: SyslogParser.CUSTOM },
 ];
 
 export const domainAlramList: AlarmParamType[] = [
@@ -506,3 +537,66 @@ export const AMPLIFY_ZH_DICT = {
     Change: "修改",
   },
 };
+
+export enum CompressionType {
+  None = "",
+  Gzip = "gzip",
+}
+
+export const COMPRESS_TYPE = [
+  {
+    name: "None",
+    value: CompressionType.None,
+  },
+  {
+    name: "Gzip",
+    value: CompressionType.Gzip,
+  },
+];
+
+export const FILTER_CONDITION_LIST = [
+  {
+    name: "resource:config.filter.include",
+    value: LogConfFilterCondition.Include,
+  },
+  {
+    name: "resource:config.filter.exclude",
+    value: LogConfFilterCondition.Exclude,
+  },
+];
+
+export const generateTimeZoneList = () => {
+  const timezoneOptionList: OptionType[] = [];
+  for (let i = -12; i <= 12; i++) {
+    timezoneOptionList.push({
+      name:
+        i < 0
+          ? "UTC-" + Math.abs(i).toString().padStart(2, "0") + ":00"
+          : "UTC+" + Math.abs(i).toString().padStart(2, "0") + ":00",
+      value:
+        i < 0
+          ? "-" + Math.abs(i).toString().padStart(2, "0") + "00"
+          : "+" + Math.abs(i).toString().padStart(2, "0") + "00",
+    });
+  }
+  return timezoneOptionList;
+};
+
+export const PROTOCOL_LIST = [
+  {
+    name: "UDP",
+    value: ProtocolType.UDP,
+  },
+  {
+    name: "TCP",
+    value: ProtocolType.TCP,
+  },
+];
+
+export const S3_BUFFER_PREFIX =
+  "AppLogs/<index-prefix>/year=%Y/month=%m/day=%d";
+
+export const RFC3164_DEFAULT_REGEX = `^\\<(?<pri>[0-9]+)\\>(?<time>[^ ]* {1,2}[^ ]* [^ ]*) (?<host>[^ ]*) (?<ident>[a-zA-Z0-9_\\/\\.\\-]*)(?:\\[(?<pid>[0-9]+)\\])?(?:[^\\:]*\\:)? *(?<message>.*)$`;
+export const RFC5424_DEFAULT_REGEX = `^\\<(?<pri>[0-9]{1,5})\\>1 (?<time>[^ ]+) (?<host>[^ ]+) (?<ident>[^ ]+) (?<pid>[-0-9]+) (?<msgid>[^ ]+) (?<extradata>(\\[(.*)\\]|-)) (?<message>.+)$`;
+
+export const NOT_SUPPORT_KDS_AUTO_SCALING_REGION = ["cn-northwest-1"];

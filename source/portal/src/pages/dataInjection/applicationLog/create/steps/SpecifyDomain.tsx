@@ -82,11 +82,9 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
     try {
       setLoadingDomain(true);
       changeLoadingDomain(true);
-      // setDomainList([]);
       const resData: any = await appSyncRequestQuery(listImportedDomains);
       const dataDomains: ImportedDomain[] = resData.data.listImportedDomains;
       const tmpDomainList: SelectItem[] = [];
-      // const tmpDomainMap: any = {};
       const userDefaultES: string =
         localStorage.getItem(PIPELINE_TASK_ES_USER_DEFAULT) || "";
       const tmpESIdList: string[] = [];
@@ -207,7 +205,7 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
                     <div className="m-w-75p">
                       <TextInput
                         type="number"
-                        value={applicationLog.aosParas.shardNumbers}
+                        value={applicationLog.aosParams.shardNumbers}
                         placeholder={t("servicelog:cluster.inputShardNum")}
                         onChange={(event) => {
                           changeShards(event.target.value);
@@ -223,7 +221,7 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
                     <div className="m-w-75p">
                       <Select
                         optionList={REPLICA_COUNT_LIST}
-                        value={applicationLog.aosParas.replicaNumbers}
+                        value={applicationLog.aosParams.replicaNumbers}
                         onChange={(event) => {
                           changeReplicas(event.target.value);
                         }}
@@ -262,7 +260,7 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
                   readonly={!applicationLog.warmEnable}
                   className="m-w-75p"
                   type="number"
-                  value={applicationLog.aosParas.warmLogTransition}
+                  value={applicationLog.aosParams.warmLogTransition}
                   onChange={(event) => {
                     console.info(event.target.value);
                     changeWarnLogTransition(event.target.value);
@@ -290,7 +288,7 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
                   readonly={!applicationLog.coldEnable}
                   className="m-w-75p"
                   type="number"
-                  value={applicationLog.aosParas.coldLogTransition}
+                  value={applicationLog.aosParams.coldLogTransition}
                   onChange={(event) => {
                     console.info(event.target.value);
                     changeColdLogTransition(event.target.value);
@@ -309,7 +307,7 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
                 <TextInput
                   className="m-w-75p"
                   type="number"
-                  value={applicationLog.aosParas.logRetention}
+                  value={applicationLog.aosParams.logRetention}
                   placeholder="180"
                   onChange={(event) => {
                     console.info(event.target.value);

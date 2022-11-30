@@ -16,43 +16,34 @@ limitations under the License.
 /* eslint-disable react/display-name */
 import React, { useState, useEffect } from "react";
 import { RouteComponentProps } from "react-router-dom";
-import RefreshIcon from "@material-ui/icons/Refresh";
 import SideMenu from "components/SideMenu";
 import Breadcrumb from "components/Breadcrumb";
 import PagePanel from "components/PagePanel";
-import Button from "components/Button";
 import HeaderPanel from "components/HeaderPanel";
 import ValueWithLabel from "components/ValueWithLabel";
-import { SelectType, TablePanel } from "components/TablePanel";
 import LoadingText from "components/LoadingText";
-// import { Pagination } from "@material-ui/lab";
-import Status from "components/Status/Status";
 import { appSyncRequestQuery } from "assets/js/request";
+import { getInstanceGroup } from "graphql/queries";
+import { InstanceGroup, LogSourceType } from "API";
 import {
-  getInstanceGroup,
-  getLogAgentStatus,
-  listInstances,
-} from "graphql/queries";
-import { Instance, InstanceGroup } from "API";
-import {
-  DEFAULT_AGENT_VERSION,
+  ASG_SELECTION,
   DEFAULT_INSTANCE_SELECTION,
   DEFAULT_PLATFORM,
   ResourceStatus,
 } from "assets/js/const";
-import { buildEC2LInk, formatLocalTime } from "assets/js/utils";
+import { buildASGLink, formatLocalTime } from "assets/js/utils";
 import { AmplifyConfigType } from "types";
 import { AppStateProps } from "reducer/appReducer";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Alert } from "assets/js/alert";
 import AccountName from "pages/comps/account/AccountName";
+import DetailEC2 from "./comps/DetailEC2";
+import DetailASG from "./comps/DetailASG";
+import ExtLink from "components/ExtLink";
 
 interface MatchParams {
   id: string;
-}
-interface InstanceWithStatus extends Instance {
-  instanceStatus: string;
 }
 
 const InstanceGroupDetail: React.FC<RouteComponentProps<MatchParams>> = (
@@ -64,13 +55,16 @@ const InstanceGroupDetail: React.FC<RouteComponentProps<MatchParams>> = (
   );
   const { t } = useTranslation();
   const [curInstanceGroup, setCurInstanceGroup] = useState<InstanceGroup>();
-  const [instanceIdList, setInstanceIdList] = useState<(string | null)[]>([]);
-  const [instanceInfoList, setInstanceInfoList] = useState<
-    InstanceWithStatus[]
-  >([]);
   const [loadingData, setLoadingData] = useState(true);
-  const [loadingInstance, setLoadingInstance] = useState(false);
-  const [loadingRefresh, setLoadingRefresh] = useState(false);
+
+  const breadCrumbList = [
+    { name: t("name"), link: "/" },
+    {
+      name: t("resource:group.name"),
+      link: "/resources/instance-group",
+    },
+    { name: curInstanceGroup?.groupName || "" },
+  ];
 
   const getInstanceGroupById = async () => {
     try {
@@ -85,7 +79,6 @@ const InstanceGroupDetail: React.FC<RouteComponentProps<MatchParams>> = (
         return;
       }
       setCurInstanceGroup(dataInstanceGroup);
-      setInstanceIdList(dataInstanceGroup.instanceSet || []);
       setLoadingData(false);
     } catch (error) {
       setLoadingData(false);
@@ -93,64 +86,9 @@ const InstanceGroupDetail: React.FC<RouteComponentProps<MatchParams>> = (
     }
   };
 
-  const getAllInstanceDetailAndStatus = async () => {
-    const tmpInstanceInfoList: InstanceWithStatus[] = [];
-    setLoadingRefresh(true);
-    // setInstanceInfoList([]);
-    for (let i = 0; i < instanceIdList.length; i++) {
-      const dataInstanceInfo = await appSyncRequestQuery(listInstances, {
-        maxResults: 50,
-        nextToken: "",
-        accountId: curInstanceGroup?.accountId || "",
-        region: amplifyConfig.aws_project_region,
-        instanceSet: instanceIdList[i],
-      });
-      const dataInstanceStatusInfo = await appSyncRequestQuery(
-        getLogAgentStatus,
-        {
-          instanceId: instanceIdList[i],
-          region: amplifyConfig.aws_project_region,
-          accountId: curInstanceGroup?.accountId || "",
-        }
-      );
-      tmpInstanceInfoList.push({
-        ...(dataInstanceInfo.data.listInstances?.instances?.[0] || {
-          id: instanceIdList[i],
-        }),
-        instanceStatus: dataInstanceStatusInfo.data.getLogAgentStatus,
-      });
-    }
-    // console.info("tmpInstanceInfoList:", tmpInstanceInfoList);
-    setLoadingRefresh(false);
-    setInstanceInfoList(tmpInstanceInfoList);
-  };
-
   useEffect(() => {
     getInstanceGroupById();
   }, []);
-
-  useEffect(() => {
-    if (instanceIdList && instanceIdList.length > 0) {
-      setLoadingInstance(true);
-      getAllInstanceDetailAndStatus().then(() => {
-        setLoadingInstance(false);
-      });
-    }
-  }, [instanceIdList]);
-
-  const breadCrumbList = [
-    { name: t("name"), link: "/" },
-    {
-      name: t("resource:group.name"),
-      link: "/resources/instance-group",
-    },
-    { name: curInstanceGroup?.groupName || "" },
-  ];
-
-  // const handlePageChange = () => {
-  //   setLoadingData(false);
-  //   console.info("page change");
-  // };
 
   return (
     <div className="lh-main-content">
@@ -163,136 +101,93 @@ const InstanceGroupDetail: React.FC<RouteComponentProps<MatchParams>> = (
               <LoadingText text="" />
             ) : (
               <div className="pb-50">
-                <PagePanel title={curInstanceGroup?.groupName || ""}>
-                  <HeaderPanel title={t("resource:group.detail.general")}>
-                    <div className="flex value-label-span">
-                      <div className="flex-1">
-                        <ValueWithLabel label={t("resource:group.detail.name")}>
-                          <div>{curInstanceGroup?.groupName}</div>
-                        </ValueWithLabel>
-                        {curInstanceGroup?.accountId && (
-                          <ValueWithLabel
-                            label={t("resource:crossAccount.account")}
-                          >
-                            <AccountName
-                              accountId={curInstanceGroup?.accountId}
-                              region={amplifyConfig.aws_project_region}
-                            />
-                          </ValueWithLabel>
-                        )}
-                      </div>
-                      <div className="flex-1 border-left-c">
-                        <ValueWithLabel
-                          label={t("resource:group.detail.instanceSelection")}
-                        >
-                          <div>{DEFAULT_INSTANCE_SELECTION}</div>
-                        </ValueWithLabel>
-                      </div>
-                      <div className="flex-1 border-left-c">
-                        <ValueWithLabel
-                          label={t("resource:group.detail.platform")}
-                        >
-                          <div>{DEFAULT_PLATFORM}</div>
-                        </ValueWithLabel>
-                      </div>
-                      <div className="flex-1 border-left-c">
-                        <ValueWithLabel
-                          label={t("resource:group.detail.created")}
-                        >
-                          <div>
-                            {formatLocalTime(curInstanceGroup?.createdDt || "")}
-                          </div>
-                        </ValueWithLabel>
-                      </div>
-                    </div>
-                  </HeaderPanel>
-
-                  <TablePanel
-                    title={t("resource:group.detail.list.groups")}
-                    changeSelected={(item) => {
-                      console.info("item:", item);
-                    }}
-                    loading={loadingInstance}
-                    selectType={SelectType.NONE}
-                    columnDefinitions={[
-                      {
-                        id: "Name",
-                        header: t("resource:group.detail.list.name"),
-                        cell: (e: InstanceWithStatus) => {
-                          return e.name || t("unknown");
-                        },
-                      },
-                      {
-                        id: "instanceId",
-                        header: t("resource:group.detail.list.instanceId"),
-                        cell: (e: InstanceWithStatus) => {
-                          return (
-                            <a
-                              target="_blank"
-                              href={buildEC2LInk(
-                                amplifyConfig.aws_project_region,
-                                e.id
-                              )}
-                              rel="noreferrer"
+                <>
+                  <PagePanel title={curInstanceGroup?.groupName || ""}>
+                    <>
+                      <HeaderPanel title={t("resource:group.detail.general")}>
+                        <div className="flex value-label-span">
+                          <div className="flex-1">
+                            <ValueWithLabel
+                              label={t("resource:group.detail.name")}
                             >
-                              {e.id}
-                            </a>
-                          );
-                        },
-                      },
-                      {
-                        id: "ip",
-                        header: t("resource:group.detail.list.primaryIP"),
-                        cell: (e: InstanceWithStatus) => {
-                          return e.ipAddress || t("unknown");
-                        },
-                      },
-                      {
-                        id: "agent",
-                        header: t("resource:group.detail.list.agent"),
-                        cell: () => {
-                          return DEFAULT_AGENT_VERSION;
-                        },
-                      },
-                      {
-                        id: "agentStatus",
-                        header: t("resource:group.detail.list.agentStatus"),
-                        cell: (e: InstanceWithStatus) => {
-                          return <Status status={e.instanceStatus || ""} />;
-                        },
-                      },
-                    ]}
-                    items={instanceInfoList}
-                    actions={
-                      <div>
-                        <Button
-                          btnType="icon"
-                          disabled={loadingData || loadingRefresh}
-                          // loading={loadingRefresh}
-                          onClick={() => {
-                            console.info("refresh click");
-                            getAllInstanceDetailAndStatus();
-                          }}
-                        >
-                          {loadingRefresh ? (
-                            <LoadingText />
-                          ) : (
-                            <RefreshIcon fontSize="small" />
-                          )}
-                        </Button>
-                      </div>
-                    }
-                    pagination={
-                      <div></div>
-                      // <Pagination
-                      //   count={4}
-                      //   page={1}
-                      //   onChange={handlePageChange}
-                      //   size="small"
-                      // />
-                    }
-                  />
-                </PagePanel>
+                              <div>{curInstanceGroup?.groupName}</div>
+                            </ValueWithLabel>
+                            {curInstanceGroup?.accountId && (
+                              <ValueWithLabel
+                                label={t("resource:crossAccount.account")}
+                              >
+                                <AccountName
+                                  accountId={curInstanceGroup?.accountId}
+                                  region={amplifyConfig.aws_project_region}
+                                />
+                              </ValueWithLabel>
+                            )}
+                          </div>
+                          <div className="flex-1 border-left-c">
+                            <ValueWithLabel
+                              label={t(
+                                "resource:group.detail.instanceSelection"
+                              )}
+                            >
+                              <div>
+                                {curInstanceGroup?.groupType ===
+                                LogSourceType.ASG
+                                  ? ASG_SELECTION
+                                  : DEFAULT_INSTANCE_SELECTION}
+                              </div>
+                            </ValueWithLabel>
+                            {curInstanceGroup?.groupType ===
+                              LogSourceType.ASG && (
+                              <ValueWithLabel
+                                label={t("resource:group.detail.asgName")}
+                              >
+                                <ExtLink
+                                  to={buildASGLink(
+                                    amplifyConfig.aws_project_region,
+                                    curInstanceGroup.instanceSet?.[0] || ""
+                                  )}
+                                >
+                                  {curInstanceGroup.instanceSet?.[0] || ""}
+                                </ExtLink>
+                              </ValueWithLabel>
+                            )}
+                          </div>
+                          <div className="flex-1 border-left-c">
+                            <ValueWithLabel
+                              label={t("resource:group.detail.platform")}
+                            >
+                              <div>{DEFAULT_PLATFORM}</div>
+                            </ValueWithLabel>
+                          </div>
+                          <div className="flex-1 border-left-c">
+                            <ValueWithLabel
+                              label={t("resource:group.detail.created")}
+                            >
+                              <div>
+                                {formatLocalTime(
+                                  curInstanceGroup?.createdDt || ""
+                                )}
+                              </div>
+                            </ValueWithLabel>
+                          </div>
+                        </div>
+                      </HeaderPanel>
+
+                      {curInstanceGroup &&
+                        (curInstanceGroup?.groupType === LogSourceType.ASG ? (
+                          <DetailASG instanceGroup={curInstanceGroup} />
+                        ) : (
+                          <DetailEC2
+                            loadingData={loadingData}
+                            instanceGroup={curInstanceGroup}
+                            refreshInstanceGroup={() => {
+                              getInstanceGroupById();
+                            }}
+                          />
+                        ))}
+                    </>
+                  </PagePanel>
+                </>
               </div>
             )}
           </div>

@@ -31,7 +31,6 @@ account_id = sts.get_caller_identity()["Account"]
 
 
 class Context:
-
     def __init__(self, action, args):
         if action == "START":
             self._state = StartState(self, args)
@@ -47,7 +46,8 @@ class Context:
             sub_account_id=args.get("deployAccountId") or account_id,
             service_name="cloudformation",
             type=Boto3API.CLIENT,
-            region=args.get("deployRegion") or default_region)
+            region=args.get("deployRegion") or default_region,
+        )
 
     def get_client(self):
         return self._cfn
@@ -106,15 +106,13 @@ class StartState(State):
             pattern = self._args["pattern"]
             params = self._args["parameters"]
             # start cfn deployment
-            stack_id = start_cfn(self._context.get_client(), stack_name,
-                                 pattern, params)
+            stack_id = start_cfn(
+                self._context.get_client(), stack_name, pattern, params
+            )
             args = {
-                "stackId":
-                stack_id,
-                "deployAccountId":
-                self._context.get_deploy_info()["deployAccountId"],
-                "deployRegion":
-                self._context.get_deploy_info()["deployRegion"],
+                "stackId": stack_id,
+                "deployAccountId": self._context.get_deploy_info()["deployAccountId"],
+                "deployRegion": self._context.get_deploy_info()["deployRegion"],
             }
 
             # Move to query after start
@@ -156,8 +154,9 @@ class QueryState(State):
         error = ""
         outputs = []
         try:
-            status, outputs = get_cfn_status(self._context.get_client(),
-                                             self._args["stackId"])
+            status, outputs = get_cfn_status(
+                self._context.get_client(), self._args["stackId"]
+            )
         except Exception as e:
             status = "QUERY_FAILED"
             error = str(e)
@@ -192,8 +191,7 @@ def lambda_handler(event, context):
 
     except Exception as e:
         logger.error(e)
-        logger.error("Invalid Request received: " +
-                     json.dumps(event, indent=2))
+        logger.error("Invalid Request received: " + json.dumps(event, indent=2))
 
     return output
 
@@ -222,14 +220,17 @@ def start_cfn(cfn_client: boto3.client, stack_name, pattern, params):
 
 def stop_cfn(cfn_client: boto3.client, stack_id):
     logger.info("Delete CloudFormation deployment")
-    cfn_client.delete_stack(StackName=stack_id,
-                            # RoleARN=exec_role_arn,
-                            )
+    cfn_client.delete_stack(
+        StackName=stack_id,
+        # RoleARN=exec_role_arn,
+    )
 
 
 def get_cfn_status(cfn_client: boto3.client, stack_id):
     logger.info("Get CloudFormation deployment status")
-    response = cfn_client.describe_stacks(StackName=stack_id, )
+    response = cfn_client.describe_stacks(
+        StackName=stack_id,
+    )
     # print(response)
 
     stack = response["Stacks"][0]
@@ -253,12 +254,17 @@ def get_template_url(pattern):
         "Config": f"{template_prefix}/ConfigLog.template",
         "ProxyForOpenSearch": f"{template_prefix}/NginxForOpenSearch.template",
         "AlarmForOpenSearch": f"{template_prefix}/AlarmForOpenSearch.template",
-        "KDSStack": f"{template_prefix}/KDSStack.template",
-        "KDSStackNoAutoScaling":
-        f"{template_prefix}/KDSStackNoAutoScaling.template",
+        # "KDSStack": f"{template_prefix}/KDSStack.template",
+        # "KDSStackNoAutoScaling": f"{template_prefix}/KDSStackNoAutoScaling.template",
         "S3toKDSStack": f"{template_prefix}/S3toKDSStack.template",
-        "OpenSearchAdminStack":
-        f"{template_prefix}/OpenSearchAdminStack.template",
+        # "OpenSearchAdminStack":
+        # f"{template_prefix}/OpenSearchAdminStack.template",
+        "AppLogKDSBuffer": f"{template_prefix}/AppLogKDSBuffer.template",
+        "AppLogKDSBufferNoAutoScaling": f"{template_prefix}/AppLogKDSBufferNoAutoScaling.template",
+        "AppLogMSKBuffer": f"{template_prefix}/AppLogMSKBuffer.template",
+        "AppLogS3Buffer": f"{template_prefix}/AppLogS3Buffer.template",
+        "AppLog": f"{template_prefix}/AppLog.template",
+        "SyslogtoECSStack": f"{template_prefix}/SyslogtoECSStack.template",
     }
 
     if pattern not in tpl_list:

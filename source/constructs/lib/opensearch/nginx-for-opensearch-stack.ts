@@ -24,12 +24,17 @@ import {
   Fn,
   Duration,
   aws_ec2 as ec2,
+  aws_s3 as s3,
   aws_elasticloadbalancingv2 as elbv2,
   aws_autoscaling as au,
   aws_certificatemanager as acm,
-  aws_iam as iam
+  aws_iam as iam,
+  Token,
+  Annotations,
+  Aws
 } from "aws-cdk-lib";
 import * as path from "path";
+import { NagSuppressions } from 'cdk-nag';
 
 const { VERSION } = process.env;
 
@@ -158,6 +163,14 @@ export class NginxForOpenSearchStack extends Stack {
     });
     this.addToParamLabels("ELBDomain", elbDomain.logicalId);
 
+    const elbAccessLogBucketName = new CfnParameter(this, "elbAccessLogBucketName", {
+      description:
+        "The Access Log Bucket Name for Proxy ELB",
+      type: "String",
+      default: "",
+    });
+    this.addToParamLabels("ELBAccessLogBucketName", elbAccessLogBucketName.logicalId);
+
     const engineType = new CfnParameter(this, "engineType", {
       description:
         "The engine type of the OpenSearch. Select OpenSearch or Elasticsearch",
@@ -166,14 +179,6 @@ export class NginxForOpenSearchStack extends Stack {
       type: "String",
     });
     this.addToParamLabels("EngineType", engineType.logicalId);
-
-    // TODO: Add bucket for ELB access log
-    // const elbAccessLogBucketName = new CfnParameter(this, "elbAccessLogBucketName", {
-    //     description: "S3 Bucket to store ELB access log",
-    //     type: "String",
-    //     default: ""
-    // });
-    // this.addToParamLabels('ELBAccessLogBucketName', elbDomain.logicalId)
 
     this.addToParamGroups(
       "EC2 Information",
@@ -193,7 +198,8 @@ export class NginxForOpenSearchStack extends Stack {
       "ELB Information",
       elbSecurityGroupId.logicalId,
       elbDomain.logicalId,
-      elbDomainCertificateArn.logicalId
+      elbDomainCertificateArn.logicalId,
+      elbAccessLogBucketName.logicalId
     );
 
     // Get the VPC where Nginx EC2 needs to be deployed
@@ -210,11 +216,28 @@ export class NginxForOpenSearchStack extends Stack {
       "NginxEC2SecurityGroup",
       nginxSecurityGroupId.valueAsString
     );
+    NagSuppressions.addResourceSuppressions(ec2SecurityGroup, [
+      { 
+        id: 'AwsSolutions-EC23', 
+        reason: 'This security group is open to allow public https access, e.g. for ELB' 
+      }
+    ]);
+
     const lbSecurityGroup = ec2.SecurityGroup.fromSecurityGroupId(
       this,
       "LoadBalancerSecurityGroup",
       elbSecurityGroupId.valueAsString
     );
+    NagSuppressions.addResourceSuppressions(lbSecurityGroup, [
+      { 
+        id: "AwsSolutions-IAM4", 
+        reason: "For PVRE compliance" 
+      },
+      { 
+        id: 'AwsSolutions-EC23', 
+        reason: 'This security group is open to allow public https access, e.g. for ELB' 
+      }
+    ]);
 
     //user data for Nginx proxy
     const ud_ec2 = ec2.UserData.forLinux();
@@ -224,6 +247,12 @@ export class NginxForOpenSearchStack extends Stack {
       assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
     });
     ec2Role.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore'));
+    NagSuppressions.addResourceSuppressions(ec2Role, [
+      { 
+        id: "AwsSolutions-IAM4", 
+        reason: "For PVRE compliance" 
+      }
+    ]);
 
     const customEndpointNotProvided = new CfnCondition(
       this,
@@ -257,6 +286,13 @@ export class NginxForOpenSearchStack extends Stack {
       }),
     });
 
+    NagSuppressions.addResourceSuppressions(nginx_asg, [
+      { 
+        id: 'AwsSolutions-AS3', 
+        reason: 'will enable ASG notifications configured for all scaling events.' 
+      },
+    ]);
+
     //ACM certifacates
     const cert = acm.Certificate.fromCertificateArn(
       this,
@@ -273,6 +309,27 @@ export class NginxForOpenSearchStack extends Stack {
         subnetType: ec2.SubnetType.PUBLIC,
       },
     });
+    NagSuppressions.addResourceSuppressions(lb, [
+      { 
+        id: 'AwsSolutions-ELB2', 
+        reason: 'config log enabled for ELB' 
+      },
+    ]);
+
+    // enable proxy stack ELB access log
+    const region = Stack.of(this).region;
+    if (Token.isUnresolved(region)) {
+      Annotations.of(this).addWarning(
+        "Region is not specified can not enable ELBv2 access logging"
+      );
+    } else {
+      const albAccessLogBucket = s3.Bucket.fromBucketName(
+        this,
+        "elbAccessLogBucketName",
+        elbAccessLogBucketName.valueAsString
+      );
+      lb.logAccessLogs(albAccessLogBucket!, `${Aws.STACK_ID}-ELBAccessLog`);
+    }
 
     //lb listener, 443
     const listener = lb.addListener("Listener", {

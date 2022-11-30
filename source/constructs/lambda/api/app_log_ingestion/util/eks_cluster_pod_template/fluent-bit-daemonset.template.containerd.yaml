@@ -1,0 +1,138 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fluent-bit
+  namespace: $LOGHUB_NAMESPACE
+  labels:
+    app.kubernetes.io/name: fluent-bit-$LOGHUB_NAMESPACE  
+spec:
+  selector:
+    matchLabels:
+      app: fluent-bit-$LOGHUB_NAMESPACE
+  updateStrategy:
+        type: RollingUpdate    
+  template:
+    metadata:
+      labels:
+        app: fluent-bit-$LOGHUB_NAMESPACE
+        version: v1
+        kubernetes.io/cluster-service: "true"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "2022"
+        prometheus.io/path: /api/v1/metrics/prometheus    
+    spec:
+      initContainers:
+      - name: amazonlinux2
+        image: amazonlinux:latest
+        args:
+          - /bin/bash
+          - -xec
+          - |
+            cd /tmp
+            
+            OS_ARCH=$(uname -m | grep 'aarch64' | wc -l)
+            if [ $OS_ARCH -eq 1 ];then
+              curl -LO https://dl.k8s.io/release/$CLUSTER_VERSION/bin/linux/arm64/kubectl
+            else
+              curl -LO https://dl.k8s.io/release/$CLUSTER_VERSION/bin/linux/amd64/kubectl
+            fi  
+            
+            chmod 755 kubectl
+            yum -y install jq
+            echo $NODE_NAME > /tmp/node_name.txt
+            CONTAINER_RUNTIME=$(./kubectl get node $NODE_NAME -o json | jq -r '.status.nodeInfo.containerRuntimeVersion')
+            result=$(echo $CONTAINER_RUNTIME | grep 'docker' | wc -l)
+
+            if [ $result -eq 1 ];then
+              echo "we use docker runtime!" > /tmp/result.txt
+              #./kubectl apply -f /tmp/fluent-bit-cofigmap-docker.yaml
+              cp /fluent-bit-config-docker/* /configmap/
+            fi
+
+            if [ $result -eq 0 ];then
+              echo "we use containerd runtime!" > /tmp/result.txt
+              #./kubectl apply -f /tmp/fluent-bit-cofigmap-containerd.yaml
+              cp /fluent-bit-config-containerd/* /configmap/
+            fi
+            
+            #echo $CONTAINER_RUNTIME > /tmp/container_runtime.txt
+            
+        env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name: CLUSTER_VERSION
+            value: "$LOGHUB_EKS_CLUSTER_VERSION"      
+        volumeMounts:
+          - name: fluent-bit-config-docker
+            mountPath: /fluent-bit-config-docker
+            readOnly: true
+          - name: fluent-bit-config-containerd
+            mountPath: /fluent-bit-config-containerd
+            readOnly: true
+          - name: configmap-dir
+            mountPath: "/configmap"
+            
+      containers:
+      - name: fluent-bit
+        image: $LOGHUB_FLUENT_BIT_IMAGE
+        imagePullPolicy: Always
+        env:
+          - name: CLUSTER_NAME
+            value: "$LOGHUB_EKS_CLUSTER_NAME"
+        ports:
+          - containerPort: 2022
+        # command: ["/fluent-bit/bin/fluent-bit", "-c"]
+        # args:
+        # - /fluent-bit/etc/fluent-bit.conf
+        resources:
+            limits:
+              memory: 500Mi
+            requests:
+              cpu: 200m
+              memory: 100Mi
+        volumeMounts:
+        #reference volume name
+        - name: configmap-dir
+          mountPath: /fluent-bit/etc
+        - name: fluentbitstate
+          mountPath: /var/fluent-bit/state  
+        - name: var-log
+          mountPath: /var/log
+        - name: var-lib-docker-containers
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+      terminationGracePeriodSeconds: 10
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      volumes:
+      #define volume name  
+      - name: configmap-dir
+        emptyDir: {}    
+      - name: fluent-bit-config-docker
+        configMap:
+          name: fluent-bit-config-docker     
+      - name: fluent-bit-config-containerd
+        configMap:
+          name: fluent-bit-config-containerd         
+      - name: fluentbitstate
+        hostPath:
+          path: /var/fluent-bit/state    
+      - name: var-log
+        hostPath:
+          path: /var/log
+      - name: var-lib-docker-containers
+        hostPath:
+          path: /var/lib/docker/containers 
+      serviceAccountName: fluent-bit
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
+      - operator: "Exists"
+        effect: "NoExecute"
+      - operator: "Exists"
+        effect: "NoSchedule"

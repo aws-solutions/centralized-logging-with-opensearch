@@ -102,7 +102,7 @@ export class LogConfStack extends Construct {
             typeName: 'Query',
             fieldName: 'getLogConf',
             requestMappingTemplate: appsync.MappingTemplate.dynamoDbGetItem('id', 'id'),
-            responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultItem()
+            responseMappingTemplate: appsync.MappingTemplate.fromFile(path.join(__dirname, '../../graphql/vtl/log_conf/GetLogConfResp.vtl')),
         })
 
         // Add logConf lambda as a Datasource
@@ -115,7 +115,7 @@ export class LogConfStack extends Construct {
             typeName: 'Query',
             fieldName: 'listLogConfs',
             requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-            responseMappingTemplate: appsync.MappingTemplate.lambdaResult()
+            responseMappingTemplate: appsync.MappingTemplate.fromFile(path.join(__dirname, '../../graphql/vtl/log_conf/ListLogConfsResp.vtl')),
         })
 
         LogConfLambdaDS.createResolver({
@@ -128,7 +128,7 @@ export class LogConfStack extends Construct {
         LogConfLambdaDS.createResolver({
             typeName: 'Mutation',
             fieldName: 'createLogConf',
-            requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+            requestMappingTemplate: appsync.MappingTemplate.fromFile(path.join(__dirname, '../../graphql/vtl/log_conf/CreateLogConf.vtl')),
             responseMappingTemplate: appsync.MappingTemplate.lambdaResult()
         })
 
@@ -142,7 +142,7 @@ export class LogConfStack extends Construct {
         LogConfLambdaDS.createResolver({
             typeName: 'Mutation',
             fieldName: 'updateLogConf',
-            requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+            requestMappingTemplate: appsync.MappingTemplate.fromFile(path.join(__dirname, '../../graphql/vtl/log_conf/UpdateLogConf.vtl')),
             responseMappingTemplate: appsync.MappingTemplate.lambdaResult()
         })
 

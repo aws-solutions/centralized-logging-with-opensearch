@@ -1,74 +1,125 @@
 # 常见问题
 
-## 如何在与 Log Hub 部署区域不同的区域中提取 AWS 托管服务的日志？
+## 一般问题
 
-您可以利用 [S3 跨区域复制](https://docs.aws.amazon.com/AmazonS3/latest/userguide/replication.html) 将日志复制到 Log Hub 部署区域，并设置适当的 [对象生命周期管理](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lifecycle-mgmt.html) 删除原始数据。
+**问：什么是Log Hub解决方案？**<br>
+Log Hub是一个 AWS 解决方案，简化了日志分析管道的构建。它为客户提供，作为 Amazon OpenSearch 服务的补充，它为客户提供了摄取和处理应用程序日志的功能和 AWS 服务日志，并从开箱即用的模板中创建可视化的仪表盘。Log Hub 自动组装底层的AWS服务，并为你提供一个 Web 控制台来管理日志分析管道。
 
 
-## 当更新堆栈时，CloudFormation 堆栈在删除 `AWS::Lambda::Function` 资源时卡住了。如何解决？
+**问：该解决方案中支持哪些日志？**<br>
+Log Hub 同时支持 AWS 服务日志和 EC2/EKS 应用日志。请参考[支持的 AWS 服务](./aws-services/index.md#supported-aws-services)。
+和[支持的应用程序日志格式和来源](./applications/index.md#supported-log-formats-and-sources)了解更多细节。
 
-Lambda 函数位于 VPC 中，您需要等待关联的 ENI 资源被删除。
 
-![](../images/faq/cloudformation-stuck.png)
+**问：Log Hub是否支持从多个AWS账户摄取日志？**<br>
+是的。从 v1.1.0 版开始，Log Hub 支持从同一地区的不同 AWS 账户摄取 AWS 服务日志和应用程序日志。
+在同一地区的不同 AWS 账户中摄取 AWS 服务日志和应用程序日志。欲了解更多信息，请参阅[跨账号日志摄取](./link-account/index.md)。
 
-## 此解决方案有哪些限制？
+**问：Log Hub是否支持从多个AWS区域摄取日志？**<br>
+目前，Log Hub 并不自动从不同的 AWS 区域摄取日志。你需要从其他地区摄取日志 
+摄取到由 Log Hub 提供的管线中。对于在 S3 桶中存储日志的AWS服务，你可以利用 
+[S3跨区域复制](https://docs.aws.amazon.com/AmazonS3/latest/userguide/replication.html)
+将日志复制到 Log Hub 部署的区域，并使用[手动模式](./aws-services/cloudfront.md#using-the-log-hub-console)导入增量日志，指定 
+S3 桶中的日志位置。对于 EC2 和 EKS 上的应用日志，你需要设置网络（例如，Kinesis VPC 端点，VPC 对等）。
+安装代理，并配置代理，将日志摄入到 Log Hub 管道。
 
-- Log Hub 仅支持启用了细粒度访问控制的 AOS 域。按照[最佳实践](https://docs.aws.amazon.com/elasticsearch-service/latest/developerguide/aes-bp.html)，您可以在 VPC 中创建域。不支持使用公共访问的 AOS。
-- Log Hub 必须与要使用的 AOS 域部署在同一 AWS 账户和同一区域中。
+**问：这个解决方案的许可证是什么？**<br>
 
-## 版本升级
-### 如何升级 Log Hub?
+本解决方案是根据[Apache-2.0许可证](https://www.apache.org/licenses/LICENSE-2.0)提供的。它是一个由 Apache 软件基金会编写的允许性自由
+它是一个由 Apache 软件基金会编写的自由软件许可证。它允许用户为任何目的使用该软件，分发
+它允许用户为任何目的使用该软件，分发、修改该软件，并根据许可证的条款分发该软件的修改版本，而不必担心版权费。
 
-您可以使用最新的 CloudFormation 模板链接来升级 Log Hub。
-请参考 [升级手册](./upgrade.md) 以升级您的 Log Hub.
+**问：我怎样才能找到这个解决方案的路线图？**<br>
 
-## 日志代理
+这个解决方案使用GitHub项目来管理路线图。你可以找到路线图[这里](https://github.com/orgs/awslabs/projects/58){target='_blank'}。
 
-### 重启EC2实例后代理状态为离线，如何让它在实例重启时自动启动？
+**问：我如何提交功能请求或错误报告？**</br>
+你可以通过GitHub问题提交功能请求和错误报告。以下是[功能请求][github-fr]{target='_blank'}、[错误报告][github-br]{target='_blank'}的模板。
 
-如果您已安装日志代理，但在创建任何日志摄取之前重新启动实例，通常会发生这种情况。 如果您已经配置日志摄取，代理将自动重启。 如果您有日志摄取，
-但依然发生此类问题，请使用 `systemctl status fluent-bit` 检查其在实例中的状态。
+## 设置和配置
 
+**问：我可以在任何AWS区域的AWS上部署Log Hub吗？**</br>
+Log Hub 提供两种部署方案：方案一使用 Cognito 用户池，方案二使用OpenID连接。对于 
+方案一，客户可以在有Amazon Cognito User Pool、AWS AppSync、Amazon Kinesis Data Firehose（可选）的AWS地区部署该解决方案。
+对于方案二，客户可以在有AWS AppSync、Amazon Kinesis Data Firehose（可选）的AWS地区部署该解决方案。
+更多信息请参考[支持的部署区域](./considerations.md#regional-deployments)。
+
+**问：部署该解决方案的前提条件是什么？**</br>
+Log Hub 不提供 Amazon OpenSearch 集群，你需要通过 Web 控制台导入现有的 OpenSearch 集群。该集群
+必须满足 [prerequisites](./domains/import.md#prerequisite)中指定的要求。
+
+**问：为什么在AWS中国区部署解决方案时，我需要一个有ICP备案的域名？**<br>
+Log Hub 控制台是通过 CloudFront 分发的，它被认为是一种互联网信息服务。根据
+根据当地的规定，任何互联网信息服务都必须绑定一个带有[ICP备案](https://www.amazonaws.cn/en/support/icp/?nc2=h_l2_su)的域名。
+
+**问：该解决方案适用于哪些版本的 OpenSearch？**</br>
+Log Hub 支持 Amazon OpenSearch Service，引擎版本为 Elasticsearch 7.10 及以上，Amazon OpenSearch 1.0及以上。
+
+**问：我可以在现有 VPC 中部署该解决方案吗？**</br>
+是的。 您可以使用新 VPC 启动解决方案，也可以使用现有 VPC 启动解决方案。 当使用现有的
+VPC，需要选择VPC和对应的子网。 参考[使用 Cognito 用户池启动](./deployment/with-cognito.md) 或
+[使用 OpenID Connect 启动](./deployment/with-oidc.md) 了解更多详情。
+
+**问：使用 Cognito 用户池启动时，我没有收到包含临时密码的电子邮件。 如何重新发送密码？**</br>
+您的帐户由 Cognito 用户池管理。 第一次重发临时密码，可以找到用户池
+解决方案创建的用户，删除并使用相同的电子邮件地址重新创建用户。 如果您仍然遇到同样的问题，
+尝试使用另一个电子邮件地址。
+
+**问：如何为该解决方案创建更多用户？**</br>
+如果您使用 Cognito 用户池启动解决方案，请转到 AWS 控制台，找到该解决方案创建的用户池，
+您可以创建更多用户。 如果您使用 OpenID Connect (OIDC) 启动解决方案，则应在
+由 OIDC 提供商管理的用户池。 请注意，所有用户都具有相同的权限。
+
+## 成本
+
+**问：使用此解决方案如何收费和计费？**</br>
+该解决方案可免费使用，您需要承担运行该解决方案时使用的 AWS 服务的费用。
+您只需为使用的内容付费，没有最低费用或设置费用。 有关详细的成本估算，请参阅 Log Hub [成本](./cost.md) 部分。
+
+**问：跨账户摄取会产生额外费用吗？**</br>
+不会。费用与 AWS 账户中提取日志的费用相同。
 
 ## 日志摄取
 
-### 我创建了一个应用程序日志摄取，但是在 OpenSearch 中有重复的记录。
+**问：Log Hub方案中使用的日志代理是什么？**</br>
+Log Hub 使用 [AWS for Fluent Bit](https://github.com/aws/aws-for-fluent-bit)，这是由 AWS 维护的 [Fluent Bit](https://fluentbit.io/) 的一个发行版。
+该解决方案使用此分配从 Amazon EC2 和 Amazon EKS 提取日志。
 
-这通常是因为没有足够的 Kinesis Shards 来处理传入的请求。 发生阈值错误时，在 Kinesis 中，Fluent Bit 代理将 [重试](https://docs.fluentbit.io/manual/administration/scheduling-and-retries) [chunk](https://docs.fluentbit.io/manual/administration /缓冲和存储）。
+**问：我已经将会员账户的AWS服务日志存储在一个集中的日志账户中。我应该如何为会员帐户创建服务日志摄取？**</br>
+这种情况下，需要在集中日志账户中部署Log Hub方案，并摄取AWS服务日志
+使用登录帐户的*手动*模式。请参阅此 [指南](./aws-services/elb.md) 以获取应用程序
+负载均衡器以*手动*模式记录。您可以对将日志输出到 S3 的其他受支持的 AWS 服务执行相同的操作。
 
-### 我已经将在子账户中的 AWS 服务日志发送到了一个中心账户，我需要怎么通过 Log Hub 来摄取这些日志？
+**问：为什么在通过 Kinesis Data Streams 摄取日志时，OpenSearch 中有一些重复的记录？**</br>
+这通常是因为没有足够的 Kinesis 碎片来处理传入的请求。发生阈值错误时
+在 Kinesis 中，Fluent Bit 代理将 [重试](https://docs.fluentbit.io/manual/administration/scheduling-and-retries)
+那个 [块](https://docs.fluentbit.io/manual/administration/buffering-and-storage)。为避免此问题，您需要估计日志吞吐量并设置适当的 Kinesis 分片数。请参阅
+[Kinesis Data Streams 配额和限制](https://docs.aws.amazon.com/streams/latest/dev/service-sizes-and-limits.html)。
+Log Hub 提供了一个内置功能来扩展和缩减 Kinesis 分片，这将需要几分钟的时间
+扩展到所需的数量。
 
-1. 请在您的中心账户中部署 Log Hub
-2. 在创建 AWS 服务日志的摄取时，请选择 **手动** 模式，在 **账户** 的下拉菜单选择 "当前账户"，并且输入中心账户中日志所在的位置。
+## 日志可视化
 
-比如, 您已经将各个子账户中的应用程序负载平衡 (ALB) 日志发送到了您中心化的审计账户的 S3 桶中，您需要做以下步骤:
+**问。如何在 OpenSearch 中找到内置仪表板？**</br>
+请参考[AWS服务日志](./aws-services/index.md#supported-aws-services)和[应用程序日志](./applications/index.md#supported-log-formats-and-sources)至
+查看是否支持内置仪表板。您还需要在创建时打开 *Sample Dashboard* 选项
+日志分析管道。仪表板将插入到 **Global Tenant** 下的 AOS 中。您可以切换到
+来自 OpenSearch 仪表板右上角编码器的全局租户。
 
-1. 在您的审计账户中部署 Log Hub 解决方案.
-2. 使用 Log Hub 控制台创建日志摄取 [参考步骤](./aws-services/elb.md)
-3. 请选择 **手动模式**, 在账户的下拉菜单中选择 **当前账户** （代表了您的审计账户），在 **日志位置** 中输入审计账户中的 S3 桶位置。
+## 升级
 
-这样您就能将您存放在审计账户 S3 桶中，各个子账户的 ALB 日志摄取到审计账户中的 OpenSearch。
+**问：如何升级解决方案？**</br>
+您可以使用最新的 CloudFormation 模板链接来升级 Log Hub。按照[此处](./upgrade.md)的升级步骤进行操作。
 
-## 查看日志
+**问：升级过程中我会丢失任何数据吗？**</br>
+不会。升级只会更新 Log Hub 控制台，不会影响任何现有的日志摄取管道。
 
-### 我成功创建了一个 AWS 服务日志摄取，但是在 OpenSearch 中找不到内置仪表板
+**问：升级需要多长时间？**</br>
+这取决于 Log Hub 版本。在大多数情况下，升级只需不到 30 分钟即可完成。
 
-首先请参考 [aws 服务日志概览](./aws-services/index.md)，查看您创建的服务日志是否支持内置仪表板。
-其次请确认您在AOS中选择的是 **Global Tenant**。
+**问：我可以从任何版本升级到最新版本吗？**</br>
+您可以从最后两个版本升级到最新版本而无需更改。例如，您可以从“v1.0.X”或“v1.1.X”升级到“v1.2.X”。
+如果您无法升级到最新版本，您可能需要先升级到一些中间版本。
 
-1. 点击右上角AOS仪表板的用户名图标。
-2. 选择 **Switch Tenants**。
-3. 在 **Select your tenant** 页面上，选择 **Global**，然后单击 **Confirm**。
-
-
-### 我已经选择了 Global tenant. 但是仍然在 OpenSearch 中找不到内置仪表板.
-
-这个通常是由于 Log Hub 在创建 Index Template 或者 Dashboard 时产生了403错误。这个需要按照以下步骤，手动重新运行该 Lambda
-
-1. 登陆 Log Hub 控制台, 找到出现该问题的 AWS 服务日志摄取.
-2. 从 ID 中复制前5个字节. 比如 ID 是`c169cb23-88f3-4a7e-90d7-4ab4bc18982c`， 需要复制 `c169c`
-3. 登陆 AWS 控制台，进入 Lambda 服务页面。 在过滤栏中粘贴上一步复制的内容。 Lambda 页面会只显示 Log Hub 为这个日志摄取所创建的 Lambda 函数。
-4. 找到名称中含有"OpenSearchHelperFn"的 Lambda 函数，并点击。
-5. 在 **测试** 页面中，使用任意的事件名称创建一个新事件.
-6. 单击 **测试** 按钮以触发 Lambda, 等待 Lambda 执行结束.
-7. 您应该就能在 OpenSearch 中看到生成的仪表板
+[github-fr]: https://github.com/awslabs/log-hub/issues/new?assignees=&labels=feature-request%2Cneeds-triage&template=feature-request.yml&title=%28module+name%29%3A+%28short+issue+description%29
+[github-br]: https://github.com/awslabs/log-hub/issues/new?assignees=&labels=bug%2Cneeds-triage&template=bug-report.yml&title=%28module+name%29%3A+%28short+issue+description%29

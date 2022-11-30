@@ -14,148 +14,233 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { Construct } from "constructs";
 import {
-    Construct,
-  } from 'constructs';
-import { 
-    Duration,  
-    RemovalPolicy,
-    aws_dynamodb as ddb,
-    aws_iam as iam,
-    aws_lambda as lambda,
-    
- } from 'aws-cdk-lib';  
-import * as appsync from "@aws-cdk/aws-appsync-alpha"; 
-import * as path from 'path';
-import * as events from 'aws-cdk-lib/aws-events';
+  Duration,
+  RemovalPolicy,
+  aws_dynamodb as ddb,
+  aws_iam as iam,
+  aws_lambda as lambda,
+} from "aws-cdk-lib";
+import * as appsync from "@aws-cdk/aws-appsync-alpha";
+import * as path from "path";
+import * as events from "aws-cdk-lib/aws-events";
 import { addCfnNagSuppressRules } from "../main-stack";
+import { IQueue } from "aws-cdk-lib/aws-sqs";
 
 export interface InstanceGroupStackProps {
-
-    /**
-     * Default Appsync GraphQL API for OpenSearch REST API Handler
-     *
-     * @default - None.
-     */
-    readonly graphqlApi: appsync.GraphqlApi,
-    readonly eventBridgeRule: events.Rule
-    readonly centralAssumeRolePolicy: iam.ManagedPolicy;
+  /**
+   * Default Appsync GraphQL API for OpenSearch REST API Handler
+   *
+   * @default - None.
+   */
+  readonly graphqlApi: appsync.GraphqlApi;
+  readonly eventBridgeRule: events.Rule;
+  readonly centralAssumeRolePolicy: iam.ManagedPolicy;
+  readonly groupModificationEventQueue: IQueue;
+  readonly appLogIngestionTable: ddb.Table;
+  readonly subAccountLinkTable: ddb.Table;
 }
 export class InstanceGroupStack extends Construct {
-    instanceGroupTable: ddb.Table;
+  instanceGroupTable: ddb.Table;
 
-    constructor(scope: Construct, id: string, props: InstanceGroupStackProps) {
-        super(scope, id);
+  constructor(scope: Construct, id: string, props: InstanceGroupStackProps) {
+    super(scope, id);
 
-        const solution_id = 'SO8025'
+    const solution_id = "SO8025";
 
-        // Create a table to store logging instanceGroup info
-        this.instanceGroupTable = new ddb.Table(this, 'InstanceGroupTable', {
-            partitionKey: {
-                name: 'id',
-                type: ddb.AttributeType.STRING
-            },
-            billingMode: ddb.BillingMode.PROVISIONED,
-            removalPolicy: RemovalPolicy.DESTROY,
-            encryption: ddb.TableEncryption.DEFAULT,
-            pointInTimeRecovery: true,
-        })
+    // Create a table to store logging instanceGroup info
+    this.instanceGroupTable = new ddb.Table(this, "InstanceGroupTable", {
+      partitionKey: {
+        name: "id",
+        type: ddb.AttributeType.STRING,
+      },
+      billingMode: ddb.BillingMode.PROVISIONED,
+      removalPolicy: RemovalPolicy.DESTROY,
+      encryption: ddb.TableEncryption.DEFAULT,
+      pointInTimeRecovery: true,
+    });
 
-        const cfnInstanceGroupTable = this.instanceGroupTable.node.defaultChild as ddb.CfnTable;
-        cfnInstanceGroupTable.overrideLogicalId('InstanceGroupTable')
-        addCfnNagSuppressRules(cfnInstanceGroupTable, [
-            {
-                id: 'W73',
-                reason: 'This table has billing mode as PROVISIONED'
-            },
-            {
-                id: 'W74',
-                reason: 'This table is set to use DEFAULT encryption, the key is owned by DDB.'
-            },
-        ])
+    const cfnInstanceGroupTable = this.instanceGroupTable.node
+      .defaultChild as ddb.CfnTable;
+    cfnInstanceGroupTable.overrideLogicalId("InstanceGroupTable");
+    addCfnNagSuppressRules(cfnInstanceGroupTable, [
+      {
+        id: "W73",
+        reason: "This table has billing mode as PROVISIONED",
+      },
+      {
+        id: "W74",
+        reason:
+          "This table is set to use DEFAULT encryption, the key is owned by DDB.",
+      },
+    ]);
 
+    // Create a lambda to handle all instanceGroup related APIs.
+    const instanceGroupHandler = new lambda.Function(
+      this,
+      "InstanceGroupHandler",
+      {
+        code: lambda.AssetCode.fromAsset(
+          path.join(__dirname, "../../lambda/api/instance_group")
+        ),
+        runtime: lambda.Runtime.PYTHON_3_9,
+        handler: "lambda_function.lambda_handler",
+        timeout: Duration.seconds(60),
+        memorySize: 1024,
+        environment: {
+          INSTRANCEGROUP_TABLE: this.instanceGroupTable.tableName,
+          EVENTBRIDGE_RULE: props.eventBridgeRule.ruleName,
+          INSTANCE_GROUP_MODIFICATION_EVENT_QUEUE_NAME: props.groupModificationEventQueue.queueName,
+          APPLOGINGESTION_TABLE: props.appLogIngestionTable.tableName,
+          SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
+          SOLUTION_ID: solution_id,
+          SOLUTION_VERSION: process.env.VERSION
+            ? process.env.VERSION
+            : "v1.0.0",
+        },
+        description: "Log Hub - InstanceGroup APIs Resolver",
+      }
+    );
 
+    instanceGroupHandler.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ["autoscaling:DescribeAutoScalingGroups"],
+        effect: iam.Effect.ALLOW,
+        resources: ["*"],
+      })
+    );
 
-        // Create a lambda to handle all instanceGroup related APIs.
-        const instanceGroupHandler = new lambda.Function(this, 'InstanceGroupHandler', {
-            code: lambda.AssetCode.fromAsset(path.join(__dirname, '../../lambda/api/instance_group')),
-            runtime: lambda.Runtime.PYTHON_3_9,
-            handler: 'lambda_function.lambda_handler',
-            timeout: Duration.seconds(60),
-            memorySize: 1024,
-            environment: {
+    // Grant permissions to the instanceGroup lambda
+    this.instanceGroupTable.grantReadWriteData(instanceGroupHandler);
+    props.appLogIngestionTable.grantReadWriteData(instanceGroupHandler)
+    props.groupModificationEventQueue.grantSendMessages(instanceGroupHandler)
+    props.subAccountLinkTable.grantReadData(instanceGroupHandler);
 
-                INSTRANCEGROUP_TABLE: this.instanceGroupTable.tableName,
-                EVENTBRIDGE_RULE: props.eventBridgeRule.ruleName,
-                SOLUTION_ID: solution_id,
-                SOLUTION_VERSION: process.env.VERSION ? process.env.VERSION : 'v1.0.0',
-            },
-            description: 'Log Hub - InstanceGroup APIs Resolver',
-        })
+    // Grant Event Bridge Policy to the instanceGroup lambda
+    const eventBridgePolicy = new iam.PolicyStatement({
+      actions: [
+        "events:DescribeRule",
+        "events:EnableRule",
+        "events:DisableRule",
+      ],
+      effect: iam.Effect.ALLOW,
+      resources: [props.eventBridgeRule.ruleArn],
+    });
+    instanceGroupHandler.addToRolePolicy(eventBridgePolicy);
+    props.centralAssumeRolePolicy.attachToRole(instanceGroupHandler.role!);
 
-        // Grant permissions to the instanceGroup lambda
-        this.instanceGroupTable.grantReadWriteData(instanceGroupHandler)
+    // Add instanceGroup table as a Datasource
+    const instanceGroupDynamoDS = props.graphqlApi.addDynamoDbDataSource(
+      "InstanceGroupDynamoDS",
+      this.instanceGroupTable,
+      {
+        description: "DynamoDB Resolver Datasource",
+      }
+    );
 
-        // Grant Event Bridge Policy to the instanceGroup lambda
-        const eventBridgePolicy = new iam.PolicyStatement({
-            actions: [
-                "events:DescribeRule",
-                "events:EnableRule",
-                "events:DisableRule"
-            ],
-            effect: iam.Effect.ALLOW,
-            resources: [props.eventBridgeRule.ruleArn]
-        })
-        instanceGroupHandler.addToRolePolicy(eventBridgePolicy)
-        props.centralAssumeRolePolicy.attachToRole(instanceGroupHandler.role!)
+    instanceGroupDynamoDS.createResolver({
+      typeName: "Query",
+      fieldName: "getInstanceGroup",
+      requestMappingTemplate: appsync.MappingTemplate.dynamoDbGetItem(
+        "id",
+        "id"
+      ),
+      responseMappingTemplate: appsync.MappingTemplate.fromFile(
+        path.join(
+          __dirname,
+          "../../graphql/vtl/instance_group/GetInstanceGroupResp.vtl"
+        )
+      ),
+    });
 
-        // Add instanceGroup table as a Datasource
-        const instanceGroupDynamoDS = props.graphqlApi.addDynamoDbDataSource('InstanceGroupDynamoDS', this.instanceGroupTable, {
-            description: 'DynamoDB Resolver Datasource'
-        })
+    // Add instanceGroup lambda as a Datasource
+    const instanceGroupLambdaDS = props.graphqlApi.addLambdaDataSource(
+      "InstanceGroupLambdaDS",
+      instanceGroupHandler,
+      {
+        description: "Lambda Resolver Datasource",
+      }
+    );
 
-        instanceGroupDynamoDS.createResolver({
-            typeName: 'Query',
-            fieldName: 'getInstanceGroup',
-            requestMappingTemplate: appsync.MappingTemplate.dynamoDbGetItem('id', 'id'),
-            responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultItem()
-        })
+    // Set resolver for releted instanceGroup API methods
+    instanceGroupLambdaDS.createResolver({
+      typeName: "Query",
+      fieldName: "listInstanceGroups",
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.fromFile(
+        path.join(
+          __dirname,
+          "../../graphql/vtl/instance_group/ListInstanceGroupsResp.vtl"
+        )
+      ),
+    });
 
-        // Add instanceGroup lambda as a Datasource
-        const instanceGroupLambdaDS = props.graphqlApi.addLambdaDataSource('InstanceGroupLambdaDS', instanceGroupHandler, {
-            description: 'Lambda Resolver Datasource'
-        });
+    instanceGroupLambdaDS.createResolver({
+      typeName: "Query",
+      fieldName: "listAutoScalingGroups",
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.fromFile(
+        path.join(
+          __dirname,
+          "../../graphql/vtl/instance_group/ListAutoScalingGroupsResp.vtl"
+        )
+      ),
+    });
 
-        // Set resolver for releted instanceGroup API methods
-        instanceGroupLambdaDS.createResolver({
-            typeName: 'Query',
-            fieldName: 'listInstanceGroups',
-            requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-            responseMappingTemplate: appsync.MappingTemplate.lambdaResult()
-        })
+    instanceGroupLambdaDS.createResolver({
+      typeName: "Mutation",
+      fieldName: "createInstanceGroup",
+      requestMappingTemplate: appsync.MappingTemplate.fromFile(
+        path.join(
+          __dirname,
+          "../../graphql/vtl/instance_group/CreateInstanceGroup.vtl"
+        )
+      ),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
 
-        
-        instanceGroupLambdaDS.createResolver({
-            typeName: 'Mutation',
-            fieldName: 'createInstanceGroup',
-            requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-            responseMappingTemplate: appsync.MappingTemplate.lambdaResult()
-        })
+    instanceGroupLambdaDS.createResolver({
+      typeName: "Mutation",
+      fieldName: "createInstanceGroupBaseOnASG",
+      requestMappingTemplate: appsync.MappingTemplate.fromFile(
+        path.join(
+          __dirname,
+          "../../graphql/vtl/instance_group/CreateInstanceGroupBaseOnASG.vtl"
+        )
+      ),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
 
-        instanceGroupLambdaDS.createResolver({
-            typeName: 'Mutation',
-            fieldName: 'deleteInstanceGroup',
-            requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-            responseMappingTemplate: appsync.MappingTemplate.lambdaResult()
-        })
+    instanceGroupLambdaDS.createResolver({
+      typeName: "Mutation",
+      fieldName: "deleteInstanceGroup",
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
 
-        instanceGroupLambdaDS.createResolver({
-            typeName: 'Mutation',
-            fieldName: 'updateInstanceGroup',
-            requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-            responseMappingTemplate: appsync.MappingTemplate.lambdaResult()
-        })
+    instanceGroupLambdaDS.createResolver({
+      typeName: "Mutation",
+      fieldName: "addInstancesToInstanceGroup",
+      requestMappingTemplate: appsync.MappingTemplate.fromFile(
+        path.join(
+          __dirname,
+          "../../graphql/vtl/instance_group/AddInstancesToInstanceGroup.vtl"
+        )
+      ),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
 
-    }
+    instanceGroupLambdaDS.createResolver({
+      typeName: "Mutation",
+      fieldName: "deleteInstancesFromInstanceGroup",
+      requestMappingTemplate: appsync.MappingTemplate.fromFile(
+        path.join(
+          __dirname,
+          "../../graphql/vtl/instance_group/DeleteInstancesFromInstanceGroup.vtl"
+        )
+      ),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+  }
 }
-

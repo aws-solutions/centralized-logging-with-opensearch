@@ -29,6 +29,7 @@ import {
 } from "aws-cdk-lib";
 import * as path from "path";
 import { addCfnNagSuppressRules } from "../main-stack";
+import { NagSuppressions } from "cdk-nag";
 
 export interface CfnFlowProps {
   /**
@@ -65,7 +66,7 @@ export class CfnFlowStack extends Construct {
     const cfnHandler = new lambda.Function(this, "CfnHelper", {
       code: lambda.AssetCode.fromAsset(
         path.join(__dirname, "../../lambda/main/cfnHelper"),
-        { followSymlinks: SymlinkFollowMode.ALWAYS },
+        { followSymlinks: SymlinkFollowMode.ALWAYS }
       ),
       runtime: lambda.Runtime.PYTHON_3_9,
       handler: "lambda_function.lambda_handler",
@@ -88,14 +89,21 @@ export class CfnFlowStack extends Construct {
       statements: [
         new iam.PolicyStatement({
           actions: [
-            "cloudformation:Create*",
-            "cloudformation:Update*",
-            "cloudformation:Delete*",
+            "cloudformation:CreateUploadBucket",
+            "cloudformation:DeleteStackInstances",
+            "cloudformation:UpdateStackInstances",
+            "cloudformation:UpdateTerminationProtection",
+            "cloudformation:UpdateStackSet",
+            "cloudformation:CreateChangeSet",
+            "cloudformation:CreateStackInstances",
+            "cloudformation:DeleteChangeSet",
+            "cloudformation:UpdateStack",
+            "cloudformation:CreateStackSet",
+            "cloudformation:DeleteStackSet",
+            "cloudformation:CreateStack",
+            "cloudformation:DeleteStack",
           ],
-          resources: [
-            // ${logHubArnPrefix},
-            "*",
-          ],
+          resources: ["*"],
         }),
         new iam.PolicyStatement({
           effect: iam.Effect.ALLOW,
@@ -103,35 +111,355 @@ export class CfnFlowStack extends Construct {
           actions: ["cloudformation:DescribeStacks"],
         }),
 
-        // TODO: Restrict permissions
         // This list of actions is to ensure the sub-stack cloudformation template can be launched successfully.
         new iam.PolicyStatement({
           actions: [
-            "sns:*",
-            "lambda:*",
-            "cloudwatch:*",
-            "logs:*",
-            "kinesis:*",
-            "firehose:*",
-            "s3:*",
-            "sqs:*",
-            "es:*",
-            "elasticloadbalancing:*",
-            "ec2:*",
-            "autoscaling:*",
-            "events:*",
-            "ssm:*",
-            "apigateway:*",
-            "application-autoscaling:*",
+            "apigateway:DELETE",
+            "apigateway:PUT",
+            "apigateway:PATCH",
+            "apigateway:POST",
+            "apigateway:GET",
+          ],
+          resources: ["*"],
+        }),
+        new iam.PolicyStatement({
+          actions: [
+            "application-autoscaling:RegisterScalableTarget",
+            "application-autoscaling:DeleteScheduledAction",
+            "application-autoscaling:DescribeScalableTargets",
+            "application-autoscaling:DescribeScalingActivities",
+            "application-autoscaling:DescribeScalingPolicies",
+            "application-autoscaling:PutScalingPolicy",
+            "application-autoscaling:DescribeScheduledActions",
+            "application-autoscaling:DeleteScalingPolicy",
+            "application-autoscaling:PutScheduledAction",
+            "application-autoscaling:DeregisterScalableTarget",
+          ],
+          resources: ["*"],
+        }),
+        new iam.PolicyStatement({
+          actions: [
+            "elasticloadbalancing:DescribeLoadBalancers",
+            "elasticloadbalancing:DescribeLoadBalancerAttributes",
+            "elasticloadbalancing:ModifyLoadBalancerAttributes",
+            "elasticloadbalancing:ModifyListener",
+            "elasticloadbalancing:RegisterTargets",
+            "elasticloadbalancing:SetIpAddressType",
+            "elasticloadbalancing:SetRulePriorities",
+            "elasticloadbalancing:RemoveListenerCertificates",
+            "elasticloadbalancing:DeleteLoadBalancer",
+            "elasticloadbalancing:SetWebAcl",
+            "elasticloadbalancing:RemoveTags",
+            "elasticloadbalancing:CreateListener",
+            "elasticloadbalancing:DescribeListeners",
+            "elasticloadbalancing:CreateRule",
+            "elasticloadbalancing:DescribeListenerCertificates",
+            "elasticloadbalancing:AddListenerCertificates",
+            "elasticloadbalancing:ModifyTargetGroupAttributes",
+            "elasticloadbalancing:DeleteRule",
+            "elasticloadbalancing:DescribeSSLPolicies",
+            "elasticloadbalancing:CreateLoadBalancer",
+            "elasticloadbalancing:DescribeTags",
+            "elasticloadbalancing:CreateTargetGroup",
+            "elasticloadbalancing:DeregisterTargets",
+            "elasticloadbalancing:SetSubnets",
+            "elasticloadbalancing:DeleteTargetGroup",
+            "elasticloadbalancing:DescribeTargetGroupAttributes",
+            "elasticloadbalancing:ModifyRule",
+            "elasticloadbalancing:DescribeAccountLimits",
+            "elasticloadbalancing:AddTags",
+            "elasticloadbalancing:DescribeTargetHealth",
+            "elasticloadbalancing:SetSecurityGroups",
+            "elasticloadbalancing:DescribeTargetGroups",
+            "elasticloadbalancing:DescribeRules",
+            "elasticloadbalancing:ModifyTargetGroup",
+            "elasticloadbalancing:DeleteListener",
+          ],
+          resources: [`*`],
+        }),
+        new iam.PolicyStatement({
+          actions: [
+            "firehose:CreateDeliveryStream",
+            "firehose:DescribeDeliveryStream",
+            "firehose:PutRecord",
+            "firehose:PutRecordBatch",
+            "firehose:DeleteDeliveryStream",
+          ],
+          resources: [`*`],
+        }),
+        new iam.PolicyStatement({
+          actions: [
+            "es:ListDomainNames",
+            "es:DescribeElasticsearchDomain",
+            "es:UpdateElasticsearchDomainConfig",
+            "es:ESHttpGet",
+            "es:ESHttpDelete",
+            "es:ESHttpPut",
+            "es:ESHttpPost",
+            "es:ESHttpHead",
+            "es:ESHttpPatch",
+          ],
+          resources: [`*`],
+        }),
+        new iam.PolicyStatement({
+          actions: [
             "execute-api:Invoke",
             "kms:EnableKeyRotation",
             "kms:PutKeyPolicy",
             "kms:DescribeKey",
             "kms:CreateKey",
-            "dynamodb:*",
             "sts:AssumeRole",
           ],
-          resources: ["*"],
+          resources: [`*`],
+        }),
+        new iam.PolicyStatement({
+          actions: [
+            "kinesis:DescribeStreamSummary",
+            "kinesis:PutRecord",
+            "kinesis:PutRecords",
+            "kinesis:SubscribeToShard",
+            "kinesis:DescribeStreamConsumer",
+            "kinesis:GetShardIterator",
+            "kinesis:GetRecords",
+            "kinesis:DescribeStream",
+            "kinesis:DescribeLimits",
+            "kinesis:ListTagsForStream",
+            "kinesis:StopStreamEncryption",
+            "kinesis:DeregisterStreamConsumer",
+            "kinesis:EnableEnhancedMonitoring",
+            "kinesis:DecreaseStreamRetentionPeriod",
+            "kinesis:CreateStream",
+            "kinesis:RegisterStreamConsumer",
+            "kinesis:UpdateStreamMode",
+            "kinesis:RemoveTagsFromStream",
+            "kinesis:DeleteStream",
+            "kinesis:SplitShard",
+            "kinesis:MergeShards",
+            "kinesis:AddTagsToStream",
+            "kinesis:IncreaseStreamRetentionPeriod",
+            "kinesis:UpdateShardCount",
+            "kinesis:StartStreamEncryption",
+            "kinesis:DisableEnhancedMonitoring",
+          ],
+          resources: [`*`],
+        }),
+        new iam.PolicyStatement({
+          actions: [
+            "lambda:InvokeFunction",
+            "lambda:AddPermission",
+            "lambda:CreateFunction",
+            "lambda:CreateEventSourceMapping",
+            "lambda:DeleteEventSourceMapping",
+            "lambda:PublishLayerVersion",
+            "lambda:DeleteLayerVersion",
+            "lambda:DeleteFunction",
+            "lambda:RemovePermission",
+            "lambda:UpdateFunctionConfiguration",
+            "lambda:UpdateFunctionCode",
+            "lambda:PublishVersion",
+            "lambda:TagResource",
+            "lambda:ListVersionsByFunction",
+            "lambda:GetLayerVersion",
+            "lambda:GetAccountSettings",
+            "lambda:GetFunctionConfiguration",
+            "lambda:GetLayerVersionPolicy",
+            "lambda:ListProvisionedConcurrencyConfigs",
+            "lambda:GetProvisionedConcurrencyConfig",
+            "lambda:ListTags",
+            "lambda:ListLayerVersions",
+            "lambda:ListLayers",
+            "lambda:ListCodeSigningConfigs",
+            "lambda:GetAlias",
+            "lambda:ListFunctions",
+            "lambda:GetEventSourceMapping",
+            "lambda:GetFunction",
+            "lambda:ListAliases",
+            "lambda:GetFunctionUrlConfig",
+            "lambda:ListFunctionUrlConfigs",
+            "lambda:GetFunctionCodeSigningConfig",
+            "lambda:ListFunctionEventInvokeConfigs",
+            "lambda:ListFunctionsByCodeSigningConfig",
+            "lambda:GetFunctionConcurrency",
+            "lambda:GetFunctionEventInvokeConfig",
+            "lambda:ListEventSourceMappings",
+            "lambda:GetCodeSigningConfig",
+            "lambda:GetPolicy",
+          ],
+          resources: [`*`],
+        }),
+        new iam.PolicyStatement({
+          actions: [
+            "sqs:SendMessage",
+            "sqs:CreateQueue",
+            "sqs:GetQueueAttributes",
+            "sqs:SetQueueAttributes",
+            "sqs:DeleteQueue",
+          ],
+          resources: [
+            `arn:${Aws.PARTITION}:sqs:${Aws.REGION}:${Aws.ACCOUNT_ID}:*`,
+          ],
+        }),
+        new iam.PolicyStatement({
+          actions: [
+            "ssm:GetParameters",
+            "ssm:PutParameter",
+            "ssm:AddTagsToResource",
+            "ssm:DeleteParameter",
+          ],
+          resources: [`*`],
+        }),
+        new iam.PolicyStatement({
+          actions: [
+            "s3:PutBucketNotification",
+            "s3:GetBucketNotification",
+            "s3:GetObject",
+          ],
+          resources: [`*`],
+        }),
+        new iam.PolicyStatement({
+          actions: [
+            "dynamodb:CreateTable",
+            "dynamodb:DescribeTable",
+            "dynamodb:DeleteTable",
+            "dynamodb:UpdateItem",
+            "dynamodb:DescribeContinuousBackups",
+            "dynamodb:UpdateContinuousBackups",
+          ],
+          resources: [
+            `arn:${Aws.PARTITION}:dynamodb:${Aws.REGION}:${Aws.ACCOUNT_ID}:*`,
+          ],
+        }),
+        new iam.PolicyStatement({
+          actions: [
+            "cloudwatch:ListMetrics",
+            "cloudwatch:GetMetricStatistics",
+            "cloudwatch:DescribeInsightRules",
+            "cloudwatch:DescribeAlarmHistory",
+            "cloudwatch:GetInsightRuleReport",
+            "cloudwatch:GetMetricData",
+            "cloudwatch:DescribeAlarmsForMetric",
+            "cloudwatch:DescribeAlarms",
+            "cloudwatch:GetMetricStream",
+            "cloudwatch:GetMetricStatistics",
+            "cloudwatch:GetMetricWidgetImage",
+            "cloudwatch:ListManagedInsightRules",
+            "cloudwatch:DescribeAnomalyDetectors",
+            "cloudwatch:PutMetricData",
+            "cloudwatch:PutMetricAlarm",
+            "cloudwatch:DeleteAlarms",
+          ],
+          resources: [`*`],
+        }),
+        new iam.PolicyStatement({
+          actions: [
+            "logs:CreateLogGroup",
+            "logs:DeleteLogGroup",
+            "logs:DeleteLogStream",
+            "logs:CreateLogStream",
+            "logs:PutRetentionPolicy",
+            "logs:DescribeLogGroups",
+            "logs:DescribeLogStreams",
+            "logs:GetLogEvents",
+            "logs:PutMetricFilter",
+            "logs:DeleteMetricFilter",
+            "logs:DescribeMetricFilters",
+          ],
+          resources: [`*`],
+        }),
+        new iam.PolicyStatement({
+          actions: [
+            "autoscaling:CreateLaunchConfiguration",
+            "autoscaling:CreateAutoScalingGroup",
+            "autoscaling:DeleteAutoScalingGroup",
+            "autoscaling:DeleteLaunchConfiguration",
+            "autoscaling:UpdateAutoScalingGroup",
+            "autoscaling:DescribeAutoScalingGroups",
+            "autoscaling:DescribeAutoScalingInstances",
+            "autoscaling:DescribeLaunchConfigurations",
+            "autoscaling:EnableMetricsCollection",
+            "autoscaling:DescribeScalingActivities",
+            "autoscaling:PutScalingPolicy",
+            "autoscaling:DeletePolicy",
+          ],
+          resources: [`*`],
+        }),
+        new iam.PolicyStatement({
+          actions: [
+            "ec2:createTags",
+            "ec2:DescribeImages",
+            "ec2:DescribeVpcs",
+            "ec2:DescribeInstances",
+            "ec2:DescribeSubnets",
+            "ec2:DescribeVolumes",
+            "ec2:DescribeTags",
+            "ec2:CreateSecurityGroup",
+            "ec2:DeleteSecurityGroup",
+            "ec2:DescribeSecurityGroups",
+            "ec2:RevokeSecurityGroupEgress",
+            "ec2:AuthorizeSecurityGroupEgress",
+            "ec2:DescribeKeyPairs",
+            "ec2:AuthorizeSecurityGroupIngress",
+            "ec2:RevokeSecurityGroupIngress",
+            "ec2:DescribeInternetGateways",
+            "ec2:DescribeAccountAttributes",
+          ],
+          resources: [`*`],
+        }),
+        new iam.PolicyStatement({
+          actions: [
+            "sns:CreateTopic",
+            "sns:GetTopicAttributes",
+            "sns:DeleteTopic",
+            "sns:Subscribe",
+            "sns:Unsubscribe",
+            "sns:TagResource",
+            "sns:SetTopicAttributes",
+          ],
+          resources: [
+            `arn:${Aws.PARTITION}:sns:${Aws.REGION}:${Aws.ACCOUNT_ID}:*`,
+          ],
+        }),
+        new iam.PolicyStatement({
+          actions: [
+            "events:PutRule",
+            "events:RemoveTargets",
+            "events:DescribeRule",
+            "events:PutTargets",
+            "events:DeleteRule",
+          ],
+          resources: [
+            `arn:${Aws.PARTITION}:events:${Aws.REGION}:${Aws.ACCOUNT_ID}:*`,
+          ],
+        }),
+        new iam.PolicyStatement({
+          actions: [
+            "ecs:Update*",
+            "ecs:List*",
+            "ecs:Describe*",
+            "ecs:Create*",
+            "ecs:Delete*",
+            "ecs:List*",
+            "ecs:PutAttributes",
+            "ecs:StartTask",
+            "ecs:RegisterTaskDefinition",
+            "ecs:StopTask",
+            "ecs:DeregisterContainerInstance",
+            "ecs:TagResource",
+            "ecs:SubmitTaskStateChange",
+            "ecs:PutAccountSetting",
+            "ecs:StartTelemetrySession",
+            "ecs:ExecuteCommand",
+            "ecs:RegisterContainerInstance",
+            "ecs:SubmitAttachmentStateChanges",
+            "ecs:DeregisterTaskDefinition",
+            "ecs:RunTask",
+            "ecs:SubmitContainerStateChange",
+            "ecs:UntagResource",
+            "ecs:PutClusterCapacityProviders",
+            "ecs:DiscoverPollEndpoint",
+            "ecs:PutAccountSettingDefault",
+          ],
+          resources: [`*`],
         }),
         new iam.PolicyStatement({
           actions: [
@@ -161,10 +489,19 @@ export class CfnFlowStack extends Construct {
             `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:instance-profile/${props.stackPrefix}*`,
             `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling`,
             `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/aws-service-role/elasticloadbalancing.amazonaws.com/AWSServiceRoleForElasticLoadBalancing`,
+            `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService`,
           ],
         }),
       ],
     });
+
+    NagSuppressions.addResourceSuppressions(cfnHandlerPolicy, [
+      {
+        id: "AwsSolutions-IAM5",
+        reason:
+          "This policy needs to be able to start/delete other cloudformation stacks of the plugin with unknown resources names",
+      },
+    ]);
 
     cfnHandler.role!.attachInlinePolicy(cfnHandlerPolicy);
     addCfnNagSuppressRules(
@@ -213,6 +550,13 @@ export class CfnFlowStack extends Construct {
       ],
     });
     sfnHandler.role!.attachInlinePolicy(sfnHandlerPolicy);
+    NagSuppressions.addResourceSuppressions(sfnHandlerPolicy, [
+      {
+        id: "AwsSolutions-IAM5",
+        reason:
+          "This policy needs to be able to start/delete other complex cloudformation stacks",
+      },
+    ]);
     addCfnNagSuppressRules(
       sfnHandlerPolicy.node.defaultChild as iam.CfnPolicy,
       [
@@ -298,6 +642,12 @@ export class CfnFlowStack extends Construct {
         resources: [logGroup.logGroupArn],
       })
     );
+    NagSuppressions.addResourceSuppressions(LogHubCfnFlowSMRole, [
+      {
+        id: "AwsSolutions-IAM5",
+        reason: "This role doesnot have wildcard permission",
+      },
+    ]);
 
     // Create the state machine
     const cfnFlowSM = new sfn.StateMachine(this, "SM", {
@@ -305,10 +655,13 @@ export class CfnFlowStack extends Construct {
       role: LogHubCfnFlowSMRole,
       logs: {
         destination: logGroup,
-        level: sfn.LogLevel.ERROR,
+        level: sfn.LogLevel.ALL,
       },
       timeout: Duration.minutes(120),
     });
+    NagSuppressions.addResourceSuppressions(LogHubCfnFlowSMRole, [
+      { id: "AwsSolutions-SF2", reason: "This sm does not need xray" },
+    ]);
 
     this.stateMachineArn = cfnFlowSM.stateMachineArn;
   }

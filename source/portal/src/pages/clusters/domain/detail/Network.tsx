@@ -48,8 +48,8 @@ const Network: React.FC<OverviewProps> = ({ domainInfo }: OverviewProps) => {
               <CopyText text={domainInfo?.esVpc?.vpcId || ""}>
                 <ExtLink
                   to={buildVPCLink(
-                    domainInfo?.esVpc?.vpcId || "",
-                    amplifyConfig.aws_project_region
+                    amplifyConfig.aws_project_region,
+                    domainInfo?.esVpc?.vpcId || ""
                   )}
                 >
                   {domainInfo?.esVpc?.vpcId || ""}
@@ -65,8 +65,8 @@ const Network: React.FC<OverviewProps> = ({ domainInfo }: OverviewProps) => {
                     <div key={index}>
                       <ExtLink
                         to={buildSGLink(
-                          element || "",
-                          amplifyConfig.aws_project_region
+                          amplifyConfig.aws_project_region,
+                          element || ""
                         )}
                       >
                         {element}
@@ -97,8 +97,8 @@ const Network: React.FC<OverviewProps> = ({ domainInfo }: OverviewProps) => {
                     <div key={index}>
                       <ExtLink
                         to={buildSubnetLink(
-                          element,
-                          amplifyConfig.aws_project_region
+                          amplifyConfig.aws_project_region,
+                          element
                         )}
                       >{`${
                         domainInfo.esVpc?.availabilityZones?.[index]
@@ -122,8 +122,8 @@ const Network: React.FC<OverviewProps> = ({ domainInfo }: OverviewProps) => {
               <CopyText text={domainInfo?.vpc?.vpcId || ""}>
                 <ExtLink
                   to={buildVPCLink(
-                    domainInfo?.vpc?.vpcId || "",
-                    amplifyConfig.aws_project_region
+                    amplifyConfig.aws_project_region,
+                    domainInfo?.vpc?.vpcId || ""
                   )}
                 >
                   {domainInfo?.vpc?.vpcId || ""}
@@ -136,8 +136,8 @@ const Network: React.FC<OverviewProps> = ({ domainInfo }: OverviewProps) => {
               <div>
                 <ExtLink
                   to={buildSGLink(
-                    domainInfo?.vpc?.securityGroupId || "",
-                    amplifyConfig.aws_project_region
+                    amplifyConfig.aws_project_region,
+                    domainInfo?.vpc?.securityGroupId || ""
                   )}
                 >
                   {domainInfo?.vpc?.securityGroupId || ""}
@@ -155,8 +155,8 @@ const Network: React.FC<OverviewProps> = ({ domainInfo }: OverviewProps) => {
                       <div key={index}>
                         <ExtLink
                           to={buildSubnetLink(
-                            element,
-                            amplifyConfig.aws_project_region
+                            amplifyConfig.aws_project_region,
+                            element
                           )}
                         >
                           {element}
@@ -171,8 +171,8 @@ const Network: React.FC<OverviewProps> = ({ domainInfo }: OverviewProps) => {
                       <div key={index}>
                         <ExtLink
                           to={buildSubnetLink(
-                            element,
-                            amplifyConfig.aws_project_region
+                            amplifyConfig.aws_project_region,
+                            element
                           )}
                         >
                           {element}

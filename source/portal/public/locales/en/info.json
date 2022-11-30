@@ -4,7 +4,7 @@
     "name": "Access Proxy",
     "tip1": "Access Proxy creates a Nginx based proxy (behind ",
     "alb": "Application Load Balancer",
-    "tip2": ") which allows you to access the OpenSearch Dashboards through Internet.",
+    "tip2": ") which allows you to access the Amazon OpenSearch Dashboards through Internet.",
     "prerequisites": "Prerequisites",
     "pre1": "1. Domain name",
     "pre2": "2. The domain associated SSL certificate in ",
@@ -17,7 +17,7 @@
     "tip1": "Amazon OpenSearch provides a set of ",
     "tip2": "recommended CloudWatch alarms",
     "tip3": ", Log Hub can help customers to create the alarms automatically, and sent notification to your email (or SMS) via SNS.",
-    "createAlarm": "Create OpenSearch Alarms"
+    "createAlarm": "Create Amazon OpenSearch Alarms"
   },
   "apacheLogFormat": {
     "name": "Apache Log Format",
@@ -34,14 +34,14 @@
   },
   "creationMethod": {
     "name": "Creation method",
-    "tip1": "When import OpenSearch domains, you need to specify the networking configuration associated with the Log Processing Layer. Log Hub will automatically place Lambda (or other compute resource) in this layer. The Log Processing Layer must have access to the OpenSearch domain.",
+    "tip1": "When import Amazon OpenSearch domains, you need to specify the networking configuration associated with the Log Processing Layer. Log Hub will automatically place Lambda (or other compute resource) in this layer. The Log Processing Layer must have access to the Amazon OpenSearch domain.",
     "auto": "Automatic",
     "tip21": "Log Hub will detect if there is a need to create a ",
     "tip22": "VPC Peering Connection",
-    "tip23": ". If needed, Log Hub will automatically create a VPC Peering Connection, update route table, and update the security group of OpenSearch domain.",
+    "tip23": ". If needed, Log Hub will automatically create a VPC Peering Connection, update route table, and update the security group of Amazon OpenSearch domain.",
     "manual": "Manual",
-    "tip3": " Manually specify the Log Processing Layer networking information. You may need to create VPC Peering Connection, update route table and security group of OpenSearch domain.",
-    "importDomain": "Import OpenSearch domain"
+    "tip3": " Manually specify the Log Processing Layer networking information. You may need to create VPC Peering Connection, update route table and security group of Amazon OpenSearch domain.",
+    "importDomain": "Import Amazon OpenSearch domain"
   },
   "ingestionCreationMethod": {
     "name": "Log enabling",
@@ -71,21 +71,21 @@
     "name": "Log lifecycle",
     "tip1": "Log Hub will insert an ",
     "ism": "Index State Management (ISM)",
-    "tip2": " into the OpenSearch domain. The life cycle will periodically move your indices in OpenSearch to save cost.",
+    "tip2": " into the Amazon OpenSearch domain. The life cycle will periodically move your indices in Amazon OpenSearch to save cost.",
     "ismLink": "Index State Management"
   },
   "logProcessing": {
     "name": "Log Processing",
-    "tip1": "Log Hub will provision Lambda (or other compute resource) to process logs using these networking configurations. You can specify the log processing networking layer when import OpenSearch domains.",
+    "tip1": "Log Hub will provision Lambda (or other compute resource) to process logs using these networking configurations. You can specify the log processing networking layer when import Amazon OpenSearch domains.",
     "note": "Note",
-    "tip2": "The log processing layer has access to the OpenSearch domain.",
-    "importDomain": "Import OpenSearch domain"
+    "tip2": "The log processing layer has access to the Amazon OpenSearch domain.",
+    "importDomain": "Import Amazon OpenSearch domain"
   },
   "logProcessingNetwork": {
     "name": "Log processing network",
-    "tip1": "When import OpenSearch domains, you need to specify the networking configuration associated with the Log Processing Layer. Log Hub will automatically place Lambda (or other compute resource) in this layer. The Log Processing Layer must have access to the OpenSearch domain.",
-    "s3Access": "S3 Service access",
-    "tip21": "By default, Log Hub will output error logs to Amazon S3. Please guarantee the log processing layer has network access to S3. You can do it by place the log processing layer in public subnets, use ",
+    "tip1": "When import Amazon OpenSearch domains, you need to specify the networking configuration associated with the Log Processing Layer. Log Hub will automatically place Lambda (or other compute resource) in this layer. The Log Processing Layer must have access to the Amazon OpenSearch domain.",
+    "s3Access": "Amazon S3 Service access",
+    "tip21": "By default, Log Hub will output error logs to Amazon S3. Please guarantee the log processing layer has network access to Amazon S3. You can do it by place the log processing layer in public subnets, use ",
     "tip22": "AWS PrivateLink for Amazon S3",
     "tip23": " or via ",
     "tip24": " NAT Gateways",
@@ -121,15 +121,15 @@
   },
   "sampleDashboard": {
     "name": "Sample dashboard",
-    "tip1": "Log Hub will insert a pre-configured dashboard into the OpenSearch domain if ",
+    "tip1": "Log Hub will insert a pre-configured dashboard into the Amazon OpenSearch domain if ",
     "tip2": " being selected. The dashboard name will be consistent with your index name."
   },
   "s3FileType": {
     "name": "File Type",
-    "tips": "You can choose a specific file type for logs stored in S3. Gzip only supports the compression of a single file."
+    "tips": "You can choose a specific file type for logs stored in Amazon S3. Gzip only supports the compression of a single file."
   },
   "eksPattern": {
-    "name": "Pattern",
+    "name": "Collection Mode",
     "tip1": " ensures that all (or some) Nodes run a copy of a Pod. As nodes are added to the cluster, Pods are added to them.",
     "tip2": " is a separate container that runs alongside an application container in a Kubernetes pod."
   },
@@ -143,5 +143,17 @@
     "generateFormat": "Generate time format",
     "tip1": "Log Hub supports all time formats provided by the ",
     "tip2": ". That is, log time strings that can be formatted by the strftime function can be parsed and used by Log Hub."
+  },
+  "configFilter": {
+    "name": "Filter",
+    "sample": "Filter example: ",
+    "tips1": "Take the Apache Json format log as an example, the log content is as follows:",
+    "tips2": "Log filter conditions:",
+    "tips2_1": "Only retain requests whose method is POST, GET, POST, DELETE",
+    "tips2_2": "Filter out requests starting with /user/ and requests with paths /login and /logout",
+    "tips2_3": "Only retain logs whose level is error and warn",
+    "tips3": "The filters used are as follows:",
+    "tips4": "The filtered logs are as follows:",
+    "filterLink": "Select or exclude records per patterns"
   }
 }

@@ -28,6 +28,7 @@ import { AMPLIFY_CONFIG_JSON } from "./const";
 import { Auth } from "aws-amplify";
 import { AmplifyConfigType, AppSyncAuthType } from "types";
 import { ErrorCode } from "API";
+import { decodeResData, encodeParams } from "./xss";
 
 const IGNORE_ERROR_CODE: string[] = [ErrorCode.AccountNotFound];
 
@@ -90,7 +91,9 @@ export const appSyncRequestQuery = (query: any, params?: any): any => {
   const requestLink: any = buildAppsyncLink();
   const client = new ApolloClient({
     link: requestLink,
-    cache: new InMemoryCache(),
+    cache: new InMemoryCache({
+      addTypename: false,
+    }),
   });
 
   return new Promise(async (resolve, reject) => {
@@ -101,9 +104,23 @@ export const appSyncRequestQuery = (query: any, params?: any): any => {
         variables: params,
         fetchPolicy: "no-cache",
       });
-      resolve(result);
+      const decodedResData = decodeResData(query, result);
+      resolve(decodedResData);
     } catch (error) {
       const showError: any = error;
+      if (showError?.networkError?.statusCode === 401) {
+        Swal.fire({
+          title: "Please sign in again",
+          text: "You were signed out of your account. Please press Reload to sign in again.",
+          icon: "warning",
+          confirmButtonText: "Reload",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            window.location.reload();
+          }
+        });
+        return;
+      }
       const { errorCode, message } = refineErrorMessage(
         showError.message || showError.errors?.[0].message
       );
@@ -119,15 +136,19 @@ export const appSyncRequestMutation = (mutation: any, params?: any): any => {
   const requestLink: any = buildAppsyncLink();
   const client = new ApolloClient({
     link: requestLink,
-    cache: new InMemoryCache(),
+    cache: new InMemoryCache({
+      addTypename: false,
+    }),
   });
 
   return new Promise(async (resolve, reject) => {
     try {
       // const result: any = await API.graphql(graphqlOperation(query, params));
+      // encode params string value
+      const encodedParams = encodeParams(mutation, structuredClone(params));
       const result: any = await client.mutate({
         mutation: gql(mutation),
-        variables: params,
+        variables: encodedParams,
         fetchPolicy: "no-cache",
       });
       resolve(result);

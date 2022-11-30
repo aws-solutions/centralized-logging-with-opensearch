@@ -16,7 +16,6 @@ from botocore import config
 from datetime import datetime
 from aws_svc_mgr import SvcManager, Boto3API
 
-
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -78,7 +77,12 @@ def lambda_handler(event, context):
         return {}
 
 
-def retry(func=None, exception=Exception, n_tries=4, delay=5, backoff=2, logger=False):
+def retry(func=None,
+          exception=Exception,
+          n_tries=4,
+          delay=5,
+          backoff=2,
+          logger=False):
     """Retry decorator with exponential backoff.
 
     Parameters
@@ -136,7 +140,7 @@ def retry(func=None, exception=Exception, n_tries=4, delay=5, backoff=2, logger=
                 if logger:
                     logging.warning(msg)
                 else:
-                    print(msg)
+                    logger.info(msg)
                 time.sleep(ndelay)
                 ntries -= 1
                 ndelay *= backoff
@@ -404,8 +408,8 @@ class VPC(Resource):
 
             bucket_full_path = buckets[0].split("/", 1)
             bucket_name = bucket_full_path[0]
-            bucket_prefix = bucket_full_path[1] if len(
-                bucket_full_path) > 1 else ""
+            bucket_prefix = (bucket_full_path[1] if bucket_full_path[1].endswith("/") else bucket_full_path[1] + "/") \
+                if len(bucket_full_path) > 1 else ""
             return {
                 "enabled":
                 True,
@@ -431,7 +435,8 @@ class VPC(Resource):
                 ResourceType="VPC",
                 TrafficType="ALL",
                 LogDestinationType="s3",
-                LogDestination=f"arn:{partition}:s3:::{self._default_logging_bucket}/VPCLogs/{vpc_id}/"
+                LogDestination=
+                f"arn:{partition}:s3:::{self._default_logging_bucket}/VPCLogs/{vpc_id}/"
             )
             return {
                 "enabled": True,
@@ -1132,10 +1137,11 @@ class WAF(Resource):
                                                   service_name='firehose',
                                                   type=Boto3API.CLIENT)
 
-        self._firehose_us_east_1_client = svcMgr.get_client(sub_account_id=accountId,
-                                                            region='us-east-1',
-                                                            service_name='firehose',
-                                                            type=Boto3API.CLIENT)
+        self._firehose_us_east_1_client = svcMgr.get_client(
+            sub_account_id=accountId,
+            region='us-east-1',
+            service_name='firehose',
+            type=Boto3API.CLIENT)
 
     def _wafv2(self, is_global=True):
         if is_global:
@@ -1153,7 +1159,11 @@ class WAF(Resource):
             logging.info(f'using regional({self._region}) firehose client')
             return self._firehose_client
 
-    def create_s3_delivery_stream(self, bucket_arn, s3_prefix, delivery_stream_name, firehose_client=None):
+    def create_s3_delivery_stream(self,
+                                  bucket_arn,
+                                  s3_prefix,
+                                  delivery_stream_name,
+                                  firehose_client=None):
         ownner_account_id = self._account_id
         region = self._region
         partition = self._get_partition()
@@ -1164,30 +1174,31 @@ class WAF(Resource):
         if not firehose_client:
             firehose_client = self._firehose_client
 
-        logging.info('create_s3_delivery_stream bucket_arn=%s s3_prefix=%s delivery_stream=%s firehose_client=%s',
-                     bucket_arn, s3_prefix, delivery_stream_name, firehose_client)
+        logging.info(
+            'create_s3_delivery_stream bucket_arn=%s s3_prefix=%s delivery_stream=%s firehose_client=%s',
+            bucket_arn, s3_prefix, delivery_stream_name, firehose_client)
 
         try:
             role = self._iam_client.get_role(RoleName=role_name)
 
             logging.info('role: %s already exists', role_name)
         except self._iam_client.exceptions.NoSuchEntityException:
-            logging.info('role: %s not found, try creating a new one', role_name)
+            logging.info('role: %s not found, try creating a new one',
+                         role_name)
 
             role = self._iam_client.create_role(
                 RoleName=role_name,
                 Path='/service-role/',
                 AssumeRolePolicyDocument=json.dumps({
-                    'Version': '2012-10-17',
-                    'Statement': [
-                        {
-                            'Effect': 'Allow',
-                            'Principal': {
-                                'Service': 'firehose.amazonaws.com'
-                            },
-                            'Action': 'sts:AssumeRole'
-                        }
-                    ]
+                    'Version':
+                    '2012-10-17',
+                    'Statement': [{
+                        'Effect': 'Allow',
+                        'Principal': {
+                            'Service': 'firehose.amazonaws.com'
+                        },
+                        'Action': 'sts:AssumeRole'
+                    }]
                 }),
             )
 
@@ -1195,108 +1206,100 @@ class WAF(Resource):
             RoleName=role_name,
             PolicyName=policy_name,
             PolicyDocument=json.dumps({
-                'Version': '2012-10-17',
-                'Statement': [
-                    {
-                        'Sid': '',
-                        'Effect': 'Allow',
-                        'Action': [
-                            'glue:GetTable',
-                            'glue:GetTableVersion',
-                            'glue:GetTableVersions'
-                        ],
-                        'Resource': [
-                            f'arn:{partition}:glue:{region}:{ownner_account_id}:catalog',
-                            f'arn:{partition}:glue:{region}:{ownner_account_id}:database/%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%',
-                            f'arn:{partition}:glue:{region}:{ownner_account_id}:table/%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%/%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%'
-                        ]
-                    },
-                    {
-                        'Sid': '',
-                        'Effect': 'Allow',
-                        'Action': [
-                            's3:AbortMultipartUpload',
-                            's3:GetBucketLocation',
-                            's3:GetObject',
-                            's3:ListBucket',
-                            's3:ListBucketMultipartUploads',
-                            's3:PutObject'
-                        ],
-                        'Resource': [
-                            f'{bucket_arn}',
-                            f'{bucket_arn}/*'
-                        ]
-                    },
-                    {
-                        'Sid': '',
-                        'Effect': 'Allow',
-                        'Action': [
-                            'lambda:InvokeFunction',
-                            'lambda:GetFunctionConfiguration'
-                        ],
-                        'Resource': f'arn:{partition}:lambda:{region}:{ownner_account_id}:function:%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%'
-                    },
-                    {
-                        'Effect': 'Allow',
-                        'Action': [
-                            'kms:GenerateDataKey',
-                            'kms:Decrypt'
-                        ],
-                        'Resource': [
-                            f'arn:{partition}:kms:{region}:{ownner_account_id}:key/%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%'
-                        ],
-                        'Condition': {
-                            'StringEquals': {
-                                'kms:ViaService': f's3.{region}.amazonaws.com'
-                            },
-                            'StringLike': {
-                                f'kms:EncryptionContext:{partition}:s3:arn': [
-                                    f'arn:{partition}:s3:::%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%/*',
-                                    f'arn:{partition}:s3:::%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%'
-                                ]
-                            }
-                        }
-                    },
-                    {
-                        'Sid': '',
-                        'Effect': 'Allow',
-                        'Action': [
-                            'logs:PutLogEvents'
-                        ],
-                        'Resource': [
-                            f'arn:{partition}:logs:{region}:{ownner_account_id}:log-group:/aws/kinesisfirehose/*:log-stream:*',
-                            f'arn:{partition}:logs:{region}:{ownner_account_id}:log-group:%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%:log-stream:*'
-                        ]
-                    },
-                    {
-                        'Sid': '',
-                        'Effect': 'Allow',
-                        'Action': [
-                            'kinesis:DescribeStream',
-                            'kinesis:GetShardIterator',
-                            'kinesis:GetRecords',
-                            'kinesis:ListShards'
-                        ],
-                        'Resource': f'arn:{partition}:kinesis:{region}:{ownner_account_id}:stream/%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%'
-                    },
-                    {
-                        'Effect': 'Allow',
-                        'Action': [
-                            'kms:Decrypt'
-                        ],
-                        'Resource': [
-                            f'arn:{partition}:kms:{region}:{ownner_account_id}:key/%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%'
-                        ],
-                        'Condition': {
-                            'StringEquals': {
-                                'kms:ViaService': f'kinesis.{region}.amazonaws.com'
-                            },
-                            'StringLike': {
-                                f'kms:EncryptionContext:{partition}:kinesis:arn': f'arn:{partition}:kinesis:{region}:{ownner_account_id}:stream/%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%'
-                            }
+                'Version':
+                '2012-10-17',
+                'Statement': [{
+                    'Sid':
+                    '',
+                    'Effect':
+                    'Allow',
+                    'Action': [
+                        'glue:GetTable', 'glue:GetTableVersion',
+                        'glue:GetTableVersions'
+                    ],
+                    'Resource': [
+                        f'arn:{partition}:glue:{region}:{ownner_account_id}:catalog',
+                        f'arn:{partition}:glue:{region}:{ownner_account_id}:database/%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%',
+                        f'arn:{partition}:glue:{region}:{ownner_account_id}:table/%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%/%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%'
+                    ]
+                }, {
+                    'Sid':
+                    '',
+                    'Effect':
+                    'Allow',
+                    'Action': [
+                        's3:AbortMultipartUpload', 's3:GetBucketLocation',
+                        's3:GetObject', 's3:ListBucket',
+                        's3:ListBucketMultipartUploads', 's3:PutObject'
+                    ],
+                    'Resource': [f'{bucket_arn}', f'{bucket_arn}/*']
+                }, {
+                    'Sid':
+                    '',
+                    'Effect':
+                    'Allow',
+                    'Action': [
+                        'lambda:InvokeFunction',
+                        'lambda:GetFunctionConfiguration'
+                    ],
+                    'Resource':
+                    f'arn:{partition}:lambda:{region}:{ownner_account_id}:function:%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%'
+                }, {
+                    'Effect':
+                    'Allow',
+                    'Action': ['kms:GenerateDataKey', 'kms:Decrypt'],
+                    'Resource': [
+                        f'arn:{partition}:kms:{region}:{ownner_account_id}:key/%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%'
+                    ],
+                    'Condition': {
+                        'StringEquals': {
+                            'kms:ViaService': f's3.{region}.amazonaws.com'
+                        },
+                        'StringLike': {
+                            f'kms:EncryptionContext:{partition}:s3:arn': [
+                                f'arn:{partition}:s3:::%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%/*',
+                                f'arn:{partition}:s3:::%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%'
+                            ]
                         }
                     }
-                ]
+                }, {
+                    'Sid':
+                    '',
+                    'Effect':
+                    'Allow',
+                    'Action': ['logs:PutLogEvents'],
+                    'Resource': [
+                        f'arn:{partition}:logs:{region}:{ownner_account_id}:log-group:/aws/kinesisfirehose/*:log-stream:*',
+                        f'arn:{partition}:logs:{region}:{ownner_account_id}:log-group:%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%:log-stream:*'
+                    ]
+                }, {
+                    'Sid':
+                    '',
+                    'Effect':
+                    'Allow',
+                    'Action': [
+                        'kinesis:DescribeStream', 'kinesis:GetShardIterator',
+                        'kinesis:GetRecords', 'kinesis:ListShards'
+                    ],
+                    'Resource':
+                    f'arn:{partition}:kinesis:{region}:{ownner_account_id}:stream/%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%'
+                }, {
+                    'Effect':
+                    'Allow',
+                    'Action': ['kms:Decrypt'],
+                    'Resource': [
+                        f'arn:{partition}:kms:{region}:{ownner_account_id}:key/%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%'
+                    ],
+                    'Condition': {
+                        'StringEquals': {
+                            'kms:ViaService': f'kinesis.{region}.amazonaws.com'
+                        },
+                        'StringLike': {
+                            f'kms:EncryptionContext:{partition}:kinesis:arn':
+                            f'arn:{partition}:kinesis:{region}:{ownner_account_id}:stream/%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%'
+                        }
+                    }
+                }]
             }),
         )
 
@@ -1311,11 +1314,8 @@ class WAF(Resource):
                 Prefix=s3_prefix,
                 CompressionFormat='GZIP',
                 ErrorOutputPrefix=f'{s3_prefix}error',
-                CloudWatchLoggingOptions=dict(
-                    Enabled=False
-                ),
-            )
-        )
+                CloudWatchLoggingOptions=dict(Enabled=False),
+            ))
 
         return ds['DeliveryStreamARN']
 
@@ -1393,7 +1393,8 @@ class WAF(Resource):
         try:
             wafv2 = self._wafv2(is_global=is_global)
             resp = wafv2.get_logging_configuration(ResourceArn=acl_arn)
-            log_dest_arn = resp["LoggingConfiguration"]["LogDestinationConfigs"][0]
+            log_dest_arn = resp["LoggingConfiguration"][
+                "LogDestinationConfigs"][0]
 
             if is_arn(s=log_dest_arn, svc='s3'):
                 # Determine if the target is S3
@@ -1413,7 +1414,8 @@ class WAF(Resource):
                     DeliveryStreamName=delivery_stream_name,
                     Limit=1,
                 )
-                s3_dest_desc = ds['DeliveryStreamDescription']['Destinations'][0]['ExtendedS3DestinationDescription']
+                s3_dest_desc = ds['DeliveryStreamDescription']['Destinations'][
+                    0]['ExtendedS3DestinationDescription']
                 bucket_arn = s3_dest_desc['BucketARN']
                 bucker_name = bucket_arn[bucket_arn.rindex(":") + 1:]
 
@@ -1478,14 +1480,16 @@ class WAF(Resource):
         bucket_arn = f"arn:{partition}:s3:::{bucket_name}"
         try:
             uniq = sha1(default_prefix)[:5]
-            is_global = (':global/' in acl_arn and self._get_partition() == 'aws')
+            is_global = (':global/' in acl_arn
+                         and self._get_partition() == 'aws')
             delivery_stream_name = f'{bucket_name}-{uniq}'
             firehose = self._firehose(is_global=is_global)
             wafv2 = self._wafv2(is_global=is_global)
-            delivery_stream_arn = self.create_s3_delivery_stream(bucket_arn=bucket_arn,
-                                                                 s3_prefix=default_prefix,
-                                                                 delivery_stream_name=delivery_stream_name,
-                                                                 firehose_client=firehose)
+            delivery_stream_arn = self.create_s3_delivery_stream(
+                bucket_arn=bucket_arn,
+                s3_prefix=default_prefix,
+                delivery_stream_name=delivery_stream_name,
+                firehose_client=firehose)
 
             wafv2.put_logging_configuration(
                 LoggingConfiguration={
@@ -1500,7 +1504,8 @@ class WAF(Resource):
             }
         except Exception as e:
             logger.error(e, exc_info=True)
-            raise RuntimeError("Unable to put logging bucket, please try it manually")
+            raise RuntimeError(
+                "Unable to put logging bucket, please try it manually")
 
     def list(self, parent_id=""):
         acls = self._get_waf_acl("CLOUDFRONT") + self._get_waf_acl("REGIONAL")

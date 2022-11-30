@@ -1,0 +1,20 @@
+{
+    "Records": [
+        {
+            "messageId": "8cd986cb-5819-40a8-9276-3c45cd99df66",
+            "receiptHandle": "AQEByl8oCNfzNfOxnhxdPlQ18J7smbkt+pi9AqyD9G0rTbfv3KfBZ2d32bpXDW6oa2XyMPOIZ6ItCSSbWsXcjAIolHxhrBK7F67OUhbceE9Y4Sf1SaWx5iaJg16SOZvZ16C4vXCTPkF7lRskVGWZ0/l60lsYEPkZ1rGTQq4DyMvTcyEJR1Skhrysu/vNJ2DC+Wn+Z+TJChLaM0siz9c8ka2Mc0eyki1DMg/h1eqx2JZcnjXIHY6JwBtLyPkOS+oM9wDPOB0ks8YjBECFD8sO/KeHk2dnVV0oVPPQ+869EhU2SoPgpks3Sg1SKI/10RlrbdBVw+n9ClEZh7YJD+I/RufFQOU+PK6bI4OV1Kf+9Lxj4zFIYRJSUSNKNwOgGJy7ore3L7ucRGMATWsGpLMfi11jSf2c5vtD0hZT574FGKCWSe5rfURPaPwTvliao01cKqT2Tcw/IdEUj+GMGD49gAZhMg==",
+            "body": "{\"info\": {\"fieldName\": \"asyncAddInstancesToInstanceGroup\"}, \"arguments\": {\"groupId\": \"8a76e4b1-5164-491d-9991-05a579b42299\", \"instanceSet\": [\"i-0fd07f9eeb8a45e83\"]}}",
+            "attributes": {
+                "ApproximateReceiveCount": "4",
+                "SentTimestamp": "1668092435315",
+                "SenderId": "AROAZO67AT2OLYUUX3HRJ:LogHub-LogHubInstanceGroupAPIInstanceGroupHandlerE-if09OTL61M5j",
+                "ApproximateFirstReceiveTimestamp": "1668092435315"
+            },
+            "messageAttributes": {},
+            "md5OfBody": "a784e31a0245a9c4eb46da85b602b937",
+            "eventSource": "aws:sqs",
+            "eventSourceARN": "arn:aws:sqs:us-west-1:650618379932:LogHub-LogHubAPIInstanceGroupModificationQueue33525CFB-OwGtUeAPadSy",
+            "awsRegion": "us-west-1"
+        }
+    ]
+}

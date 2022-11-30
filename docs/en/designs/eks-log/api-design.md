@@ -1,12 +1,11 @@
-# Overview
+# EKS Log API Design
 
-### APIs
 
-#### EKS Cluster as log source APIs
+## EKS Log Source APIs
 
 This document is about API design of EKS cluster as log source component.
 
-##### list EKSCluster Names
+### list EKS cluster names
 
 **Type:** Query
 
@@ -50,181 +49,11 @@ Response:
 }
 ```
 
-##### list imported EKS Clusters
-
-**Type:** Query
-
-**Description:** List imported EKS cluster
-
-**Resolver:** Lambda
-
-**Parameters:**
-
-| Name  | Type | Required | Default | Description                |
-| ----- | ---- | -------- | ------- | -------------------------- |
-| count | Int  | No       | 10      | page number, start from 1  |
-| page  | Int  | No       | 1       | number of records per page |
-
-**Simple Request & Response:**
-
-Request:
-
-```
-query example{
-  listImportedEKSClusters(count: 10, page: 1) {
-    eksClusterLogSourceList {
-      accountId
-      vpcId
-      subnetIds
-      region
-      oidcIssuer
-      logAgentRoleArn
-      id
-      endpoint
-      eksClusterSGId
-      eksClusterName
-      eksClusterArn
-      deploymentKind
-      cri
-      createdDt
-      tags {
-        key
-        value
-      }
-      aosDomain {
-        version
-        id
-        engine
-        endpoint
-        domainName
-      }
-    }
-  }
-}
-
-```
-
-Response:
-
-```
-{
-  "data": {
-    "listImportedEKSClusters": {
-      "eksClusterLogSourceList": [
-        {
-          "accountId": null,
-          "vpcId": "vpc-f4d05e8c",
-          "subnetIds": [
-            "subnet-96816bcb",
-            "subnet-3dabc916",
-            "subnet-9b948ce2",
-            "subnet-a4cecbef"
-          ],
-          "region": null,
-          "oidcIssuer": "https://oidc.eks.us-west-2.amazonaws.com/id/20E13C86999BBFC25EC76C826CFFF4FB",
-          "logAgentRoleArn": "arn:aws:iam::783732175206:role/LogHub-EKS-LogAgent-Role-a2a5b0643c4c472abd3dacfdbf9e1463",
-          "id": "1d431ccd7caa4c90af0d86193bf78f9a",
-          "endpoint": "https://20E13C86999BBFC25EC76C826CFFF4FB.yl4.us-west-2.eks.amazonaws.com",
-          "eksClusterSGId": "sg-02b491dce426c1995",
-          "eksClusterName": "eks-demo",
-          "eksClusterArn": "arn:aws:eks:us-west-2:783732175206:cluster/eks-demo",
-          "deploymentKind": "DaemonSet",
-          "cri": null,
-          "createdDt": "2022-04-03T16:34:02Z",
-          "tags": [],
-          "aosDomain": {
-            "version": "1.0",
-            "id": "a80137115e9ad59cf2a7137fe0e38197",
-            "engine": "OpenSearch",
-            "endpoint": "vpc-workshop-os-migdv4qrxbqdrp6mbfknyyagk4.us-west-2.es.amazonaws.com",
-            "domainName": "workshop-os"
-          }
-        }
-      ]
-    }
-  }
-}
-```
-
-#####
-
-**Type:** Query
-
-**Description:** Display DaemonSet configuration by the EKS Cluster log source Id
-
-**Resolver:** Lambda
-
-**Parameters:**
-
-| Name         | Type   | Required | Default | Description                                |
-| ------------ | ------ | -------- | ------- | ------------------------------------------ |
-| eksClusterId | String | Yes      |         | log source id for the imported EKS Cluster |
-
-**Simple Request & Response:**
-
-Request:
-
-```
-query example{
-  getEKSDaemonSetConfig(
-	  eksClusterId: "1d431ccd7caa4c90af0d86193bf78f9a"
-	  )
-}
-```
-
-Response:
-
-```
-{
-  "data": {
-    "getEKSDaemonSetConfig": ""
-  }
-}
-```
-
-#####
-
-**Type:** Query
-
-**Description:** Display deployment configuration by the EKS Cluster log source Id
-
-**Resolver:** Lambda
-
-**Parameters:**
-
-| Name         | Type   | Required | Default | Description                                |
-| ------------ | ------ | -------- | ------- | ------------------------------------------ |
-| eksClusterId | String | Yes      |         | log source id for the imported EKS Cluster |
-| ingestionId  | String | Yes      |         | the Id for application log ingestion       |
-
-**Simple Request & Response:**
-
-Request:
-
-```
-query example{
-  getEKSDeploymentConfig(
-	  eksClusterId: "1d431ccd7caa4c90af0d86193bf78f9a",
-	  ingestionId: "2d43abe07caa4c90af0d8619323064"
-	  )
-}
-```
-
-Response:
-
-```
-{
-  "data": {
-    "getEKSDeploymentConfig": ""
-  }
-}
-```
-
-##### Import a EKS Cluster as application log source
+### Import an EKS cluster
 
 **Type:** Mutation
 
-**Description:** Create a record in DynamoDB
+**Description:** Import an EKS cluster used as log source in solution
 
 **Resolver:** Lambda
 
@@ -269,62 +98,268 @@ Response:
 }
 ```
 
-##### Create a EKS cluster pod Log ingestion
 
-**Type:** Mutation
+### list imported EKS clusters
 
-**Description:** Create a record in DynamoDB.
+**Type:** Query
+
+**Description:** List imported EKS cluster
 
 **Resolver:** Lambda
 
 **Parameters:**
 
-| Name         | Type   | Required | Default | Description                                     |
-| ------------ | ------ | -------- | ------- | ----------------------------------------------- |
-| eksClusterId | String | Yes      |         | EKS cluster log source Unique ID                |
-| confId       | String | Yes      |         | Log Config Unique ID                            |
-| aosParas     | K-V    | Yes      |         | Selected Amazonn OpenSearch related parameters. |
-| kdsParas     | K-V    | Yes      |         | Created Kinesis Data Stream related parameters. |
-| tags         | K-V    | No       |         | Custom tags for the ingestion                   |
+| Name  | Type | Required | Default | Description                |
+| ----- | ---- | -------- | ------- | -------------------------- |
+| count | Int  | No       | 10      | page number, start from 1  |
+| page  | Int  | No       | 1       | number of records per page |
 
 **Simple Request & Response:**
 
 Request:
 
 ```
-mutation example{
-  createEKSClusterPodLogIngestion(
-	  aosParas: {
-		  opensearchArn: "arn:aws:es:us-west-2:783732175206:domain/workshop-os",
-		  domainName: "workshop-os",
-		  opensearchEndpoint: "vpc-workshop-os-migdv4qrxbqdrp6mbfknyyagk4.us-west-2.es.amazonaws.com",
-		  indexPrefix: "nginx-log",
-		  warmLogTransition: 0,
-		  coldLogTransition: 0,
-		  logRetention: 0,
-		  engine: "OpenSearch",
-		  vpc: {
-			  vpcId: "vpc-0c111322ef4a52f41",
-			  securityGroupId: "sg-0ae9e8d70d31b40d0",
-			  privateSubnetIds: "subnet-069c0ff066cca88cf,subnet-05839e25db2e70d8f",
-			  publicSubnetIds: ""
-		  },
-		  engine: "OpenSearch",
-		  opensearchArn: "arn:aws:es:us-west-2:783732175206:domain/workshop-os",
-		  opensearchEndpoint: "vpc-workshop-os-migdv4qrxbqdrp6mbfknyyagk4.us-west-2.es.amazonaws.com"
-	  },
-	  kdsParas: {
-		  enableAutoScaling: true,
-		  maxShardNumber: 10
-		  startShardNumber: 2
-		},
-	  confId: "deebad45-c4ad-4346-9b4e-b56f635b5c31",
+query example {
+    listImportedEKSClusters (page: 1, count: 10) {
+        eksClusterLogSourceList {
+            id
+            aosDomain {
+                id
+                domainName
+                engine
+                version
+                endpoint
+                metrics {
+                    searchableDocs
+                    freeStorageSpace
+                    health
+                }
+            }
+            eksClusterName
+            eksClusterArn
+            cri
+            vpcId
+            eksClusterSGId
+            subnetIds
+            oidcIssuer
+            endpoint
+            createdDt
+            accountId
+            region
+            logAgentRoleArn
+            deploymentKind
+            tags {
+                key
+                value
+            }
+        }
+        total
+    }
+}
+
+```
+
+Response:
+
+```
+{
+    "data": {
+        "listImportedEKSClusters": {
+            "eksClusterLogSourceList": [
+                {
+                    "id": "e83aa65ef40e4a8b883dff33af483e36",
+                    "aosDomain": {
+                        "id": "439239da8014f9a419c92b1b0c72a5fc",
+                        "domainName": "dev",
+                        "engine": "OpenSearch",
+                        "version": "1.0",
+                        "endpoint": "vpc-dev-xxx.eu-west-1.es.amazonaws.com",
+                        "metrics": null
+                    },
+                    "eksClusterName": "test",
+                    "eksClusterArn": "arn:aws:eks:eu-west-1:123456789012:cluster/test",
+                    "cri": "docker",
+                    "vpcId": "vpc-0123",
+                    "eksClusterSGId": "sg-1234",
+                    "subnetIds": [
+                        "subnet-1234",
+                        "subnet-5678",
+                        ...
+                    ],
+                    "oidcIssuer": "https://oidc.eks.eu-west-1.amazonaws.com/id/ABC",
+                    "endpoint": "https://ABC.sk1.eu-west-1.eks.amazonaws.com",
+                    "createdDt": "2022-10-29T07:52:48Z",
+                    "accountId": "123456789012",
+                    "region": "eu-west-1",
+                    "logAgentRoleArn": "arn:aws:iam::123456789012:role/LogHub-EKS-LogAgent-Role-3623ec2044264a2189416bcaaa7ee948",
+                    "deploymentKind": "DaemonSet",
+                    "tags": []
+                },
+                ...
+            ],
+            "total": 2
+        }
+    }
+}
+```
+
+
+### Get imported EKS cluster details
+
+**Type:** Query
+
+**Description:** Display details of an imported eks cluster
+
+**Resolver:** Lambda
+
+**Parameters:**
+
+| Name         | Type   | Required | Default | Description                                |
+| ------------ | ------ | -------- | ------- | ------------------------------------------ |
+| eksClusterId | String | Yes      |         | log source id for the imported EKS Cluster |
+
+**Simple Request & Response:**
+
+Request:
+
+```
+query example {
+    getEKSClusterDetails (eksClusterId: "e83aa65ef40e4a8b883dff33af483e36") {
+        id
+        aosDomain {
+            id
+            domainName
+            engine
+            version
+            endpoint
+            metrics {
+                searchableDocs
+                freeStorageSpace
+                health
+            }
+        }
+        eksClusterName
+        eksClusterArn
+        cri
+        vpcId
+        eksClusterSGId
+        subnetIds
+        oidcIssuer
+        endpoint
+        createdDt
+        accountId
+        region
+        logAgentRoleArn
+        deploymentKind
+        tags {
+            key
+            value
+        }
+    }
+}
+```
+
+Response:
+
+```
+{
+    "data": {
+        "getEKSClusterDetails": {
+            "id": "e83aa65ef40e4a8b883dff33af483e36",
+            "aosDomain": {
+                "id": "439239da8014f9a419c92b1b0c72a5fc",
+                "domainName": "dev",
+                "engine": "OpenSearch",
+                "version": "1.0",
+                "endpoint": "vpc-dev-xxx.eu-west-1.es.amazonaws.com",
+                "metrics": null
+            },
+            "eksClusterName": "test",
+            "eksClusterArn": "arn:aws:eks:eu-west-1:123456789012:cluster/test",
+            "cri": "docker",
+            "vpcId": "vpc-0123",
+            "eksClusterSGId": "sg-1234",
+            "subnetIds": [
+                "subnet-1234",
+                "subnet-5678",
+                ...
+            ],
+            "oidcIssuer": "https://oidc.eks.eu-west-1.amazonaws.com/id/ABC",
+            "endpoint": "https://ABC.sk1.eu-west-1.eks.amazonaws.com",
+            "createdDt": "2022-10-29T07:52:48Z",
+            "accountId": "123456789012",
+            "region": "eu-west-1",
+            "logAgentRoleArn": "arn:aws:iam::123456789012:role/LogHub-EKS-LogAgent-Role-3623ec2044264a2189416bcaaa7ee948",
+            "deploymentKind": "DaemonSet",
+            "tags": []
+        }
+    }
+}
+```
+
+## EKS Log Deployment APIs
+
+### Deploy as DaemonSet
+
+**Type:** Query
+
+**Description:** Display kubernetes deployment details in yaml for DaemonSet
+
+**Resolver:** Lambda
+
+**Parameters:**
+
+| Name         | Type   | Required | Default | Description                                |
+| ------------ | ------ | -------- | ------- | ------------------------------------------ |
+| eksClusterId | String | Yes      |         | log source id for the imported EKS Cluster |
+
+**Simple Request & Response:**
+
+Request:
+
+```
+query example  {
+    getEKSDaemonSetConf (eksClusterId: "a")
+}
+```
+
+Response:
+
+```
+{
+    "data": {
+        "getEKSDaemonSetConf": "..."
+    }
+}
+```
+
+
+
+### Deploy as Side Car
+
+**Type:** Query
+
+**Description:** Display kubernetes deployment details in yaml for Side Car
+
+**Resolver:** Lambda
+
+**Parameters:**
+
+| Name         | Type   | Required | Default | Description                                |
+| ------------ | ------ | -------- | ------- | ------------------------------------------ |
+| eksClusterId | String | Yes      |         | log source id for the imported EKS Cluster |
+| ingestionId  | String | Yes      |         | the Id for application log ingestion       |
+
+**Simple Request & Response:**
+
+Request:
+
+```
+query example{
+  getEKSDeploymentConfig(
 	  eksClusterId: "1d431ccd7caa4c90af0d86193bf78f9a",
-	  tags: {
-		  key: "env",
-		  value: "testing"
-  	  }
-	)
+	  ingestionId: "2d43abe07caa4c90af0d8619323064"
+	  )
 }
 ```
 
@@ -333,7 +368,7 @@ Response:
 ```
 {
   "data": {
-    "createEKSClusterPodLogIngestion":"1bcaedaa-1f94-4d3d-9b50-9592a0fc6d32"
+    "getEKSDeploymentConfig": "..."
   }
 }
 ```

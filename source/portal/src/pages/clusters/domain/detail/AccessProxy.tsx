@@ -66,17 +66,16 @@ const AccessProxy: React.FC<OverviewProps> = ({
         title={t("cluster:detail.proxy.name")}
         action={
           <div>
-            {domainInfo?.proxyInput?.vpc &&
-              (domainInfo.proxyStatus === StackStatus.ENABLED ||
-                domainInfo.proxyStatus === StackStatus.ERROR) && (
-                <Button
-                  onClick={() => {
-                    setOpenDeleteModal(true);
-                  }}
-                >
-                  {t("button.delete")}
-                </Button>
-              )}
+            {(domainInfo?.proxyStatus === StackStatus.ENABLED ||
+              domainInfo?.proxyStatus === StackStatus.ERROR) && (
+              <Button
+                onClick={() => {
+                  setOpenDeleteModal(true);
+                }}
+              >
+                {t("button.delete")}
+              </Button>
+            )}
           </div>
         }
       >
@@ -97,8 +96,8 @@ const AccessProxy: React.FC<OverviewProps> = ({
                         <div key={index}>
                           <ExtLink
                             to={buildSubnetLink(
-                              element,
-                              amplifyConfig.aws_project_region
+                              amplifyConfig.aws_project_region,
+                              element
                             )}
                           >
                             {element}
@@ -128,8 +127,8 @@ const AccessProxy: React.FC<OverviewProps> = ({
                 <CopyText text={domainInfo?.proxyInput?.vpc?.vpcId || ""}>
                   <ExtLink
                     to={buildVPCLink(
-                      domainInfo?.proxyInput?.vpc?.vpcId || "",
-                      amplifyConfig.aws_project_region
+                      amplifyConfig.aws_project_region,
+                      domainInfo?.proxyInput?.vpc?.vpcId || ""
                     )}
                   >
                     {domainInfo?.proxyInput?.vpc?.vpcId || ""}
@@ -145,8 +144,8 @@ const AccessProxy: React.FC<OverviewProps> = ({
                   >
                     <ExtLink
                       to={buildSGLink(
-                        domainInfo?.proxyInput?.vpc?.securityGroupId || "",
-                        amplifyConfig.aws_project_region
+                        amplifyConfig.aws_project_region,
+                        domainInfo?.proxyInput?.vpc?.securityGroupId || ""
                       )}
                     >
                       {domainInfo?.proxyInput?.vpc?.securityGroupId || ""}

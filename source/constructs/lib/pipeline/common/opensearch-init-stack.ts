@@ -29,6 +29,7 @@ import {
 } from "aws-cdk-lib";
 import { ISecurityGroup, IVpc, SubnetType } from "aws-cdk-lib/aws-ec2";
 import * as path from "path";
+import { NagSuppressions } from "cdk-nag";
 export interface OpenSearchInitProps {
   /**
    * Default VPC for lambda to call OpenSearch REST API
@@ -113,9 +114,15 @@ export class OpenSearchInitStack extends Construct {
     const isCN = new CfnCondition(this, "isCN", {
       expression: Fn.conditionEquals(Aws.PARTITION, "aws-cn"),
     });
-    const isInstallLatestAwsSdk = Fn.conditionIf(isCN.logicalId, "false", "true").toString();
+    const isInstallLatestAwsSdk = Fn.conditionIf(
+      isCN.logicalId,
+      "false",
+      "true"
+    ).toString();
 
-    Aspects.of(this).add(new InjectCustomerResourceConfig(isInstallLatestAwsSdk));
+    Aspects.of(this).add(
+      new InjectCustomerResourceConfig(isInstallLatestAwsSdk)
+    );
 
     // Create the policy and role for helper Lambda
     const osHelperPolicy = new iam.Policy(this, "OpenSearchHelperPolicy", {
@@ -141,7 +148,12 @@ export class OpenSearchInitStack extends Construct {
         }),
         new iam.PolicyStatement({
           actions: [
-            "es:ESHttp*",
+            "es:ESHttpGet",
+            "es:ESHttpDelete",
+            "es:ESHttpPatch",
+            "es:ESHttpPost",
+            "es:ESHttpPut",
+            "es:ESHttpHead",
             "es:DescribeElasticsearchDomainConfig",
             "es:UpdateElasticsearchDomainConfig",
           ],
@@ -151,6 +163,12 @@ export class OpenSearchInitStack extends Construct {
         }),
       ],
     });
+    NagSuppressions.addResourceSuppressions(osHelperPolicy, [
+      {
+        id: "AwsSolutions-IAM5",
+        reason: "The managed policy needs to use any resources.",
+      },
+    ]);
     // Create a role for lambda
     const osHelperRole = new iam.Role(this, "OpenSearchHelperRole", {
       assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
@@ -242,14 +260,14 @@ export class OpenSearchInitStack extends Construct {
 }
 
 class InjectCustomerResourceConfig implements IAspect {
-  public constructor(private isInstallLatestAwsSdk: string) { }
+  public constructor(private isInstallLatestAwsSdk: string) {}
 
   public visit(node: IConstruct): void {
-    if (
-      node instanceof CfnResource &&
-      node.cfnResourceType === "Custom::AWS"
-    ) {
-      node.addPropertyOverride("InstallLatestAwsSdk", this.isInstallLatestAwsSdk);
+    if (node instanceof CfnResource && node.cfnResourceType === "Custom::AWS") {
+      node.addPropertyOverride(
+        "InstallLatestAwsSdk",
+        this.isInstallLatestAwsSdk
+      );
     }
   }
 }

@@ -17,22 +17,16 @@ limitations under the License.
 import { Construct, IConstruct } from "constructs";
 import {
   Aws,
-  CfnOutput,
   Duration,
   RemovalPolicy,
   CfnCondition,
   Fn,
-  Aspects,
-  IAspect,
-  CfnResource,
-  aws_iam as iam,
   aws_s3 as s3,
-  aws_lambda as lambda,
   aws_cloudfront as cloudfront,
-  custom_resources as cr,
   aws_s3_deployment as s3d,
 } from "aws-cdk-lib";
 import { CloudFrontToS3 } from "@aws-solutions-constructs/aws-cloudfront-s3";
+import { NagSuppressions } from 'cdk-nag';
 import * as path from "path";
 
 export interface PortalProps {
@@ -44,60 +38,20 @@ export interface PortalProps {
   readonly apiEndpoint: string;
 
   /**
-   * Cognito User Pool ID
-   *
-   * @default - None.
-   */
-  readonly userPoolId: string;
-
-  /**
-   * Cognito User Pool Client ID
-   *
-   * @default - None.
-   */
-  readonly userPoolClientId: string;
-
-  /**
-   * Default Logging Bucket Name
-   *
-   * @default - None.
-   */
-  readonly defaultLoggingBucket: string;
-
-  /**
-   * Default KMS-CMK Arn
-   *
-   * @default - None.
-   */
-  readonly cmkKeyArn: string;
-
-  /**
-   * Default Logging Bucket Name
+   * Authentication Type (Cognito or OIDC)
    *
    * @default - None.
    */
   readonly authenticationType: string;
 
   /**
-   * OIDC Customer Domain
+   * Custom Domain Name (CNAME) for CloudFront
    *
    */
-  readonly oidcCustomerDomain: string;
+  readonly customDomainName: string;
 
   /**
-   * OIDC Provider
-   *
-   */
-  readonly oidcProvider: string;
-
-  /**
-   * OIDC Client Id
-   *
-   */
-  readonly oidcClientId: string;
-
-  /**
-   * IAM Certificate ID
+   * IAM Certificate ID for CloudFront
    *
    */
   readonly iamCertificateId: string;
@@ -112,21 +66,20 @@ export const enum AuthType {
  * Stack to provision Portal assets and CloudFront Distribution
  */
 export class PortalStack extends Construct {
-  private full_domain = "";
+  readonly portalBucket: s3.Bucket;
+  readonly portalUrl: string;
 
   constructor(scope: Construct, id: string, props: PortalProps) {
     super(scope, id);
 
-    // If in China Region, disable install latest aws-sdk
-    const isCN = new CfnCondition(this, "isCN", {
-      expression: Fn.conditionEquals(Aws.PARTITION, "aws-cn"),
+    const isOpsInRegion = new CfnCondition(this, "isOpsInRegion", {
+      expression: Fn.conditionOr(
+        Fn.conditionEquals(Aws.REGION, "ap-east-1"),
+        Fn.conditionEquals(Aws.REGION, "af-south-1"),
+        Fn.conditionEquals(Aws.REGION, "eu-south-1"),
+        Fn.conditionEquals(Aws.REGION, "me-south-1"),
+      )
     });
-    const isInstallLatestAwsSdk = Fn.conditionIf(isCN.logicalId, "false", "true").toString();
-
-    Aspects.of(this).add(new InjectCustomerResourceConfig(isInstallLatestAwsSdk));
-
-
-    const https_header = "https://";
 
     const getDefaultBehavior = () => {
       if (props.authenticationType === AuthType.COGNITO) {
@@ -196,11 +149,32 @@ export class PortalStack extends Construct {
       },
       insertHttpSecurityHeaders: false,
     });
-    const portalBucket = portal.s3Bucket as s3.Bucket;
+    NagSuppressions.addResourceSuppressions(
+      portal.cloudFrontWebDistribution,
+      [
+        {
+          id: 'AwsSolutions-CFR1',
+          reason: 'Use case does not warrant CloudFront Geo restriction'
+        }, {
+          id: 'AwsSolutions-CFR2',
+          reason: 'Use case does not warrant CloudFront integration with AWS WAF'
+        }, {
+          id: 'AwsSolutions-CFR4',
+          reason: 'CloudFront automatically sets the security policy to TLSv1 when the distribution uses the CloudFront domain name'
+        }
+      ],
+    );
+    this.portalBucket = portal.s3Bucket as s3.Bucket;
     const portalDist = portal.cloudFrontWebDistribution.node
       .defaultChild as cloudfront.CfnDistribution;
 
-    this.full_domain = props.oidcCustomerDomain;
+
+    const cfnCloudFrontWebDistribution = portal.cloudFrontWebDistribution.node.defaultChild as cloudfront.CfnDistribution;
+
+    (cfnCloudFrontWebDistribution.distributionConfig as any).logging = Fn.conditionIf(isOpsInRegion.logicalId, Aws.NO_VALUE,
+      {
+        Bucket: portal.cloudFrontLoggingBucket!.bucketRegionalDomainName,
+      })
 
     if (props.authenticationType === AuthType.OIDC) {
       // Currently, CachePolicy and Cloudfront Function is not available in Cloudfront in China Regions.
@@ -219,7 +193,7 @@ export class PortalStack extends Construct {
           QueryString: false,
         }
       );
-      if (props.oidcCustomerDomain != "") {
+      if (props.customDomainName != "") {
         portalDist.addPropertyOverride("DistributionConfig.Aliases", [
           {
             Ref: "Domain",
@@ -237,94 +211,18 @@ export class PortalStack extends Construct {
           "DistributionConfig.ViewerCertificate.IamCertificateId",
           props.iamCertificateId
         );
-        this.full_domain = https_header.concat(props.oidcCustomerDomain);
       }
     }
-    const portalUrl = portal.cloudFrontWebDistribution.distributionDomainName;
+    this.portalUrl = portal.cloudFrontWebDistribution.distributionDomainName;
 
     // upload static web assets
     new s3d.BucketDeployment(this, "DeployWebAssets", {
       sources: [
         s3d.Source.asset(path.join(__dirname, "../../../portal/build")),
       ],
-      destinationBucket: portalBucket,
+      destinationBucket: this.portalBucket,
       prune: false,
     });
 
-    // This Lambda is to export a aws-exports.json to web portal bucket
-    const webConfigFn = new lambda.Function(this, "WebConfig", {
-      runtime: lambda.Runtime.PYTHON_3_9,
-      code: lambda.Code.fromAsset(
-        path.join(__dirname, "../../lambda/custom-resource")
-      ),
-      handler: "lambda_function.lambda_handler",
-      timeout: Duration.seconds(60),
-      memorySize: 128,
-      environment: {
-        WEB_BUCKET_NAME: portalBucket.bucketName,
-        API_ENDPOINT: props.apiEndpoint,
-        OIDC_PROVIDER: props.oidcProvider,
-        OIDC_CLIENT_ID: props.oidcClientId,
-        OIDC_CUSTOMER_DOMAIN: this.full_domain,
-        CLOUDFRONT_URL: portalUrl,
-        AUTHENTICATION_TYPE: props.authenticationType,
-        USER_POOL_ID: props.userPoolId,
-        USER_POOL_CLIENT_ID: props.userPoolClientId,
-        DEFAULT_LOGGING_BUCKET: props.defaultLoggingBucket,
-        DEFAULT_CMK_ARN: props.cmkKeyArn,
-        VERSION: process.env.VERSION || "v1.0.0",
-      },
-      description: "Log Hub - Web Config Handler",
-    });
-    portalBucket.grantPut(webConfigFn);
-
-    const crLambda = new cr.AwsCustomResource(this, "CRLambda", {
-      policy: cr.AwsCustomResourcePolicy.fromStatements([
-        new iam.PolicyStatement({
-          actions: ["lambda:InvokeFunction"],
-          effect: iam.Effect.ALLOW,
-          resources: [webConfigFn.functionArn],
-        }),
-      ]),
-      timeout: Duration.minutes(15),
-      onCreate: {
-        service: "Lambda",
-        action: "invoke",
-        parameters: {
-          FunctionName: webConfigFn.functionName,
-          InvocationType: "Event",
-        },
-        physicalResourceId: cr.PhysicalResourceId.of("webconfig"),
-      },
-      onUpdate: {
-        service: "Lambda",
-        action: "invoke",
-        parameters: {
-          FunctionName: webConfigFn.functionName,
-          InvocationType: "Event",
-        },
-        physicalResourceId: cr.PhysicalResourceId.of("webconfig"),
-      },
-    });
-    crLambda.node.addDependency(webConfigFn, portalBucket);
-
-    // Output portal Url
-    new CfnOutput(this, "WebConsoleUrl", {
-      description: "Web Console URL (front-end)",
-      value: portalUrl,
-    }).overrideLogicalId("WebConsoleUrl");
-  }
-}
-
-class InjectCustomerResourceConfig implements IAspect {
-  public constructor(private isInstallLatestAwsSdk: string) { }
-
-  public visit(node: IConstruct): void {
-    if (
-      node instanceof CfnResource &&
-      node.cfnResourceType === "Custom::AWS"
-    ) {
-      node.addPropertyOverride("InstallLatestAwsSdk", this.isInstallLatestAwsSdk);
-    }
   }
 }

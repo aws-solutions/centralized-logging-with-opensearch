@@ -1,6 +1,6 @@
 # Fluent-bit installation guide
 
-Currently, Log hub uses fluent-bit as the logging agent. The prerequisites for different operating system are different.
+Currently, Log hub uses fluent-bit as the log agent. The prerequisites for different operating system are different.
 
 
 ## Amazon Linux 2

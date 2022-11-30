@@ -21,14 +21,6 @@
         storage.type        filesystem
         Read_from_Head      True
 
-    [OUTPUT]
-        Name                kinesis_streams
-        Match               $LOGHUB_CONFIG_TAG
-        Region              $LOGHUB_CONFIG_REGION
-        Stream              $LOGHUB_CONFIG_KDS_NAME        
-        Retry_Limit         False
-        $LOGHUB_KDS_ROLE_ARN
-
 $LOGHUB_FLUENT_BIT_MULTILINE_FILTER
 
     [FILTER]
@@ -37,5 +29,6 @@ $LOGHUB_FLUENT_BIT_MULTILINE_FILTER
         Key_Name            $LOGHUB_FILTER_PARSER_KEY_NAME
         Parser              $LOGHUB_PARSER_NAME
 
+$LOGHUB_FLUENT_BIT_FILTER
 
-
+$LOGHUB_FLUENT_BIT_OUTPUT

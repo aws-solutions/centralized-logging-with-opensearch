@@ -32,6 +32,7 @@ import {
   aws_s3_notifications as s3n,
   aws_autoscaling as asg,
 } from "aws-cdk-lib";
+import { NagSuppressions } from 'cdk-nag';
 
 const { VERSION } = process.env;
 
@@ -207,6 +208,25 @@ export class S3toKDSStack extends Stack {
       retentionPeriod: Duration.days(7),
       encryption: sqs.QueueEncryption.KMS_MANAGED,
     });
+    logEventDLQ.addToResourcePolicy(
+      new iam.PolicyStatement({
+        actions: ["sqs:*"],
+        effect: iam.Effect.DENY,
+        resources: [logEventDLQ.queueArn],
+        conditions: {
+          ["Bool"]: {
+            "aws:SecureTransport": "false",
+          },
+        },
+        principals: [new iam.AnyPrincipal()],
+      })
+    );
+    NagSuppressions.addResourceSuppressions(logEventDLQ, [
+      { 
+        id: "AwsSolutions-SQS3", 
+        reason: "it is a DLQ",
+      },
+    ]);
 
     const cfnLogEventDLQ = logEventDLQ.node.defaultChild as sqs.CfnQueue;
     cfnLogEventDLQ.overrideLogicalId("LogEventDLQ");
@@ -222,6 +242,20 @@ export class S3toKDSStack extends Stack {
       dataKeyReuse: Duration.minutes(5),
       encryptionMasterKey: defaultKMSCmk,
     });
+
+    logEventQueue.addToResourcePolicy(
+      new iam.PolicyStatement({
+        actions: ["sqs:*"],
+        effect: iam.Effect.DENY,
+        resources: [logEventQueue.queueArn],
+        conditions: {
+          ["Bool"]: {
+            "aws:SecureTransport": "false",
+          },
+        },
+        principals: [new iam.AnyPrincipal()],
+      })
+    );
 
     new CfnOutput(this, "AppLogPipelineSQSName", {
       description: "App Log Pipeline S3 as Source SQS Name",
@@ -243,10 +277,38 @@ export class S3toKDSStack extends Stack {
         prefix: sourceLogBucketPrefixParam.valueAsString,
       }
     );
+    NagSuppressions.addResourceSuppressions(sourceLogBucket, [
+      { 
+        id: "AwsSolutions-IAM4", 
+        reason: "Code of CDK custom resource, can not be modified" 
+      },
+      {
+        id: "AwsSolutions-IAM5",
+        reason: "Code of CDK custom resource, can not be modified",
+      },
+    ]);
 
     logEventQueue.addToResourcePolicy(
       new iam.PolicyStatement({
-        actions: ["sqs:*"],
+        actions: [
+          "sqs:DeleteMessage",
+          "sqs:GetQueueUrl",
+          "sqs:ListQueues",
+          "sqs:ChangeMessageVisibility",
+          "sqs:UntagQueue",
+          "sqs:ReceiveMessage",
+          "sqs:SendMessage",
+          "sqs:GetQueueAttributes",
+          "sqs:ListQueueTags",
+          "sqs:TagQueue",
+          "sqs:RemovePermission",
+          "sqs:ListDeadLetterSourceQueues",
+          "sqs:AddPermission",
+          "sqs:PurgeQueue",
+          "sqs:DeleteQueue",
+          "sqs:CreateQueue",
+          "sqs:SetQueueAttributes"
+        ],
         effect: iam.Effect.DENY,
         resources: [],
         conditions: {
@@ -270,6 +332,13 @@ export class S3toKDSStack extends Stack {
       vpc: logAgentVpc,
       allowAllOutbound: true,
     });
+    NagSuppressions.addResourceSuppressions(logAgentSG, [
+      { 
+        id: "AwsSolutions-EC23", 
+        reason: "This security group is open to allow public https access, e.g. for ELB" 
+      },
+    ]);
+
     // For dev only
     // logAgentSG.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(22), 'Allow ssh access');
     const cfnSG = logAgentSG.node.defaultChild as ec2.CfnSecurityGroup;
@@ -287,6 +356,12 @@ export class S3toKDSStack extends Stack {
     const logAgentRole = new iam.Role(this, "LogAgentRole", {
       assumedBy: new iam.ServicePrincipal("ec2.amazonaws.com"),
     });
+    NagSuppressions.addResourceSuppressions(logAgentRole, [
+      { 
+        id: "AwsSolutions-IAM4", 
+        reason: "For PVRE compliance" 
+      },
+    ]);
 
     const logAgentPolicy = new iam.Policy(this, "LogAgentPolicy", {
       statements: [
@@ -309,7 +384,10 @@ export class S3toKDSStack extends Stack {
           resources: [
             `arn:${Aws.PARTITION}:kinesis:${Aws.REGION}:${Aws.ACCOUNT_ID}:stream/${kinesisStreamNameParam.valueAsString}`,
           ],
-          actions: ["kinesis:PutRecord", "kinesis:PutRecords"],
+          actions: [
+            "kinesis:PutRecord",
+            "kinesis:PutRecords"
+          ],
         }),
         new iam.PolicyStatement({
           effect: iam.Effect.ALLOW,
@@ -320,10 +398,78 @@ export class S3toKDSStack extends Stack {
             `arn:${Aws.PARTITION}:s3:::${failedLogBucketParam.valueAsString}/*`,
           ],
           actions: [
-            "s3:Get*",
-            "s3:List*",
-            "s3-object-lambda:Get*",
-            "s3-object-lambda:List*",
+            "s3:GetObjectVersionTagging",
+            "s3:GetStorageLensConfigurationTagging",
+            "s3:GetObjectAcl",
+            "s3:GetBucketObjectLockConfiguration",
+            "s3:GetIntelligentTieringConfiguration",
+            "s3:GetObjectVersionAcl",
+            "s3:GetBucketPolicyStatus",
+            "s3:GetObjectRetention",
+            "s3:GetBucketWebsite",
+            "s3:GetJobTagging",
+            "s3:GetMultiRegionAccessPoint",
+            "s3:GetObjectAttributes",
+            "s3:GetObjectLegalHold",
+            "s3:GetBucketNotification",
+            "s3:GetReplicationConfiguration",
+            "s3:GetObject",
+            "s3:GetAnalyticsConfiguration",
+            "s3:GetObjectVersionForReplication",
+            "s3:GetAccessPointForObjectLambda",
+            "s3:GetStorageLensDashboard",
+            "s3:GetLifecycleConfiguration",
+            "s3:GetAccessPoint",
+            "s3:GetInventoryConfiguration",
+            "s3:GetBucketTagging",
+            "s3:GetAccessPointPolicyForObjectLambda",
+            "s3:GetBucketLogging",
+            "s3:GetAccelerateConfiguration",
+            "s3:GetObjectVersionAttributes",
+            "s3:GetBucketPolicy",
+            "s3:GetEncryptionConfiguration",
+            "s3:GetObjectVersionTorrent",
+            "s3:GetBucketRequestPayment",
+            "s3:GetAccessPointPolicyStatus",
+            "s3:GetObjectTagging",
+            "s3:GetMetricsConfiguration",
+            "s3:GetBucketOwnershipControls",
+            "s3:GetBucketPublicAccessBlock",
+            "s3:GetMultiRegionAccessPointPolicyStatus",
+            "s3:GetMultiRegionAccessPointPolicy",
+            "s3:GetAccessPointPolicyStatusForObjectLambda",
+            "s3:GetBucketVersioning",
+            "s3:GetBucketAcl",
+            "s3:GetAccessPointConfigurationForObjectLambda",
+            "s3:GetObjectTorrent",
+            "s3:GetStorageLensConfiguration",
+            "s3:GetAccountPublicAccessBlock",
+            "s3:GetBucketCORS",
+            "s3:GetBucketLocation",
+            "s3:GetAccessPointPolicy",
+            "s3:GetObjectVersion",
+            "s3:ListStorageLensConfigurations",
+            "s3:ListAccessPointsForObjectLambda",
+            "s3:ListBucketMultipartUploads",
+            "s3:ListAllMyBuckets",
+            "s3:ListAccessPoints",
+            "s3:ListJobs",
+            "s3:ListBucketVersions",
+            "s3:ListBucket",
+            "s3:ListMultiRegionAccessPoints",
+            "s3:ListMultipartUploadParts",
+            "s3-object-lambda:GetObjectLegalHold",
+            "s3-object-lambda:GetObject",
+            "s3-object-lambda:GetObjectVersionTagging",
+            "s3-object-lambda:GetObjectAcl",
+            "s3-object-lambda:GetObjectVersion",
+            "s3-object-lambda:GetObjectRetention",
+            "s3-object-lambda:GetObjectVersionAcl",
+            "s3-object-lambda:GetObjectTagging",
+            "s3-object-lambda:ListBucket",
+            "s3-object-lambda:ListBucketMultipartUploads",
+            "s3-object-lambda:ListBucketVersions",
+            "s3-object-lambda:ListMultipartUploadParts",
           ],
         }),
         new iam.PolicyStatement({
@@ -332,21 +478,58 @@ export class S3toKDSStack extends Stack {
           actions: [
             "kms:Decrypt",
             "kms:Encrypt",
-            "kms:ReEncrypt*",
-            "kms:GenerateDataKey*",
+            "kms:ReEncryptTo",
+            "kms:ReEncryptFrom",
+            "kms:GenerateDataKey",
+            "kms:GenerateDataKeyWithoutPlaintext",
+            "kms:GenerateDataKeyPairWithoutPlaintext",
+            "kms:GenerateDataKeyPair",
             "kms:DescribeKey",
           ],
         }),
         new iam.PolicyStatement({
           effect: iam.Effect.ALLOW,
           resources: [logEventQueue.queueArn],
-          actions: ["*"],
+          actions: [
+            "sqs:DeleteMessage",
+            "sqs:GetQueueUrl",
+            "sqs:ListQueues",
+            "sqs:ChangeMessageVisibility",
+            "sqs:UntagQueue",
+            "sqs:ReceiveMessage",
+            "sqs:SendMessage",
+            "sqs:GetQueueAttributes",
+            "sqs:ListQueueTags",
+            "sqs:TagQueue",
+            "sqs:RemovePermission",
+            "sqs:ListDeadLetterSourceQueues",
+            "sqs:AddPermission",
+            "sqs:PurgeQueue",
+            "sqs:DeleteQueue",
+            "sqs:CreateQueue",
+            "sqs:SetQueueAttributes"
+          ],
         })
       ],
     });
     logAgentRole.addManagedPolicy(
       iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonSSMManagedInstanceCore")
     );
+    NagSuppressions.addResourceSuppressions(
+      logAgentPolicy,
+      [
+        {
+          id: "AwsSolutions-IAM5",
+          reason: "The managed policy needs to use any resources.",
+        },
+        {
+          id: "AwsSolutions-IAM4",
+          reason: "Need aws managed policy for PVRE.",
+        },
+      ],
+      true
+    );
+
 
     // Handle cross-account
     const isCrossAccount = new CfnCondition(this, "IsCrossAccount", {
@@ -364,6 +547,20 @@ export class S3toKDSStack extends Stack {
         ],
       })
     )
+    NagSuppressions.addResourceSuppressions(
+      logAgentRole,
+      [
+        {
+          id: "AwsSolutions-IAM5",
+          reason: "The managed policy needs to use any resources.",
+        },
+        {
+          id: "AwsSolutions-IAM4",
+          reason: "Need aws managed policy for PVRE.",
+        },
+      ],
+      true
+    );
 
     const cfnLogAgentPolicy = logAgentPolicy.node.defaultChild as iam.CfnPolicy;
     addCfnNagSuppressRules(cfnLogAgentPolicy, [
@@ -494,6 +691,12 @@ export class S3toKDSStack extends Stack {
       ],
     });
     workerAsg.applyCloudFormationInit(ec2.CloudFormationInit.fromElements());
+    NagSuppressions.addResourceSuppressions(workerAsg, [
+      { 
+        id: 'AwsSolutions-AS3', 
+        reason: 'will enable ASG notifications configured for all scaling events.', 
+      },
+    ]);
 
     new CfnOutput(this, "LogAgentASGARN", {
       description: "logAgent ASG ARN",

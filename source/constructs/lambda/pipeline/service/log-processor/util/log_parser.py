@@ -98,6 +98,38 @@ class ELB(LogType):
         return json_record
 
 
+class Json(LogType):
+    """An implementation of LogType for JSON Logs"""
+
+    _format = "json"
+
+    def parse(self, line: str):
+        try:
+            json_record = json.loads(line)
+            return json_record
+        except Exception as e:
+            return {}
+
+
+class Regex(LogType):
+    """An implementation of LogType for Regex Logs"""
+
+    _fields = ["log"]
+
+    def parse(self, line) -> dict:
+
+        json_record = {}
+
+        # Replace this to custom regex expression
+        pattern = ".+"
+        result = re.match(pattern, line)
+        if result:
+            for i, attr in enumerate(self._fields):
+                json_record[attr] = result.group(i + 1).strip('"')
+
+        return json_record
+
+
 class CloudTrail(LogType):
     """An implementation of LogType for CloudTrail Logs"""
 
@@ -451,8 +483,6 @@ class RDS(LogType):
         "general-query",
     ]
 
-    _audit_pattern = r"(\d+ \d+:\d+:\d+),ip-(\d+-\d+-\d+-\d+),(\w+),(\w+),(\w+),(\w+),(\w+),(\w*),\'(.*)\',(\w+)"
-
     _audit_fields = [
         "time",
         "audit-ip",
@@ -490,10 +520,6 @@ class RDS(LogType):
                     for key in ["err-label", "err-code", "err-sub-system"]:
                         if key in json_record:
                             json_record[key] = json_record[key].strip("[").strip("]")
-                if log_sub_type == "audit":
-                    for key in ["audit-ip"]:
-                        if key in json_record:
-                            json_record[key] = json_record[key].replace("-", ".")
         else:
             json_record["db-identifier"] = db_identifier
             json_record["time"] = timestamp
@@ -556,6 +582,24 @@ class RDS(LogType):
             json_record["db-identifier"] = db_identifier
             json_record["time"] = timestamp
             json_record["log-detail"] = log_message
+        return json_record
+
+    def _parse_rds_audit_log(
+        self,
+        log_message,
+        log_fields,
+        timestamp,
+        db_identifier,
+    )-> dict:
+        json_record = {}
+        result = log_message.split(",")
+        json_record["db-identifier"] = db_identifier
+        json_record["time"] = timestamp
+        for i, attr in enumerate(log_fields[1:]):
+            json_record[attr] = result[i + 1]
+            for key in ["audit-ip"]:
+                if key in json_record:
+                    json_record[key] = json_record[key].strip('ip-').replace("-", ".")
         return json_record
 
     def parse(self, line) -> list:
@@ -629,10 +673,8 @@ class RDS(LogType):
                     )
                 elif "/audit" in log_group:
                     json_records.append(
-                        self._parse_rds_log_singel_line(
-                            "audit",
+                        self._parse_rds_audit_log(
                             log_message,
-                            self._audit_pattern,
                             self._audit_fields,
                             timestamp,
                             db_identifier,

@@ -24,6 +24,7 @@ type TilesItemProps = {
 };
 
 interface TilesProps {
+  displayInRow?: boolean;
   className?: string;
   value: string;
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
@@ -31,10 +32,10 @@ interface TilesProps {
 }
 
 const Tiles: React.FC<TilesProps> = (props: TilesProps) => {
-  const { items, onChange, value } = props;
+  const { displayInRow, items, onChange, value } = props;
 
   return (
-    <div className="gsui-tiles-wrap">
+    <div className={`gsui-tiles-wrap ${displayInRow ? "row" : ""}`}>
       {items.map((item, index) => {
         return (
           <label
@@ -51,7 +52,6 @@ const Tiles: React.FC<TilesProps> = (props: TilesProps) => {
                 onChange={onChange}
                 value={item.value}
                 type="radio"
-                name="select"
               />
               <span>{item.label}</span>
             </div>

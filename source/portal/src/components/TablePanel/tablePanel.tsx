@@ -39,6 +39,7 @@ enum SelectType {
 interface TablePanelProps {
   isReload?: boolean;
   defaultSelectItem?: any[];
+  defaultDisabledIds?: (string | null)[];
   title: string;
   desc?: string;
   className?: string;
@@ -58,6 +59,7 @@ const TablePanel: React.FC<TablePanelProps> = (props: TablePanelProps) => {
   const {
     isReload,
     defaultSelectItem,
+    defaultDisabledIds,
     title,
     desc,
     selectType,
@@ -97,7 +99,13 @@ const TablePanel: React.FC<TablePanelProps> = (props: TablePanelProps) => {
     console.info("e.target.checked:", e.target.checked);
     if (e.target.checked === true) {
       setCheckAllStatus(CHECKED);
-      setSelectItemsIds(items.map((item) => item.id));
+      setSelectItemsIds(
+        items.map((item) => {
+          if (!defaultDisabledIds?.includes(item.id)) {
+            return item.id;
+          }
+        })
+      );
     } else {
       setCheckAllStatus(UNCHECKED);
       setSelectItemsIds([]);
@@ -226,7 +234,14 @@ const TablePanel: React.FC<TablePanelProps> = (props: TablePanelProps) => {
                               handleClick={(e) => {
                                 handleClick(e);
                               }}
-                              isChecked={selectItemsIds.includes(element.id)}
+                              disabled={defaultDisabledIds?.includes(
+                                element.id
+                              )}
+                              isChecked={
+                                selectItemsIds.includes(element.id) ||
+                                defaultDisabledIds?.includes(element.id) ||
+                                false
+                              }
                             />
                           )}
                           {selectType === SelectType.RADIO && (

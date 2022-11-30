@@ -5,24 +5,23 @@ guide. Follow the step-by-step instructions in this section to configure and dep
 
 ## Prerequisites
 
-Make sure you have the following in the target region you want to deploy the solution:
+Review all the [considerations](../considerations.md) and make sure you have the following in the target region you want to deploy the solution:
 
 - At least one vacancy to create new VPCs, if you choose to launch with new VPC.
 - At least two Elastic IP (EIP) addresses, if you choose to launch with new VPC.
 - At least eight S3 buckets.
-- Review all the [considerations](../considerations.md).
 
-## Deploy in AWS Standard Regions
+## Deployment in AWS Standard Regions
 
-Log Hub provides two ways to authenticate and log into the Log Hub console. There are some AWS regions where Cognito User Pool
-is missing (e.g., Hong Kong). In those regions, you need to follow the instruction to launch the solution with OpenID Connect provider. 
-For more information about supported regions, see [Regional deployments](../considerations.md).
+Log Hub provides two ways to authenticate and log into the Log Hub console. For some AWS regions where Cognito User Pool is not available (for example, Hong Kong), you need to launch the solution with OpenID Connect provider. 
 
 * [Launch with Cognito User Pool](./with-cognito.md)
 * [Launch with OpenID Connect](./with-oidc.md)
 
-## Deploy in AWS China Regions
+For more information about supported regions, see [Regional deployments](../considerations.md).
 
-AWS China regions do not have Cognito User Pool, please follow the instruction below to deploy the solution in China regions.
+## Deployment in AWS China Regions
+
+AWS China Regions do not have Cognito User Pool. You need to launch the solution with OpenID Connect.
 
 * [Launch with OpenID Connect](./with-oidc.md)

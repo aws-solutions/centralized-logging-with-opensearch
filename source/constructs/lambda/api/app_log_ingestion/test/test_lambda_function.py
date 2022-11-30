@@ -8,28 +8,44 @@ import zipfile
 
 import boto3
 import pytest
-from moto import mock_lambda, mock_iam, mock_dynamodb, mock_stepfunctions, mock_sts
+from moto import (
+    mock_lambda,
+    mock_iam,
+    mock_dynamodb,
+    mock_stepfunctions,
+    mock_sts,
+    mock_es,
+)
 from .datafile import ddb_mock_data
 from botocore.exceptions import ClientError
 
 
 @pytest.fixture
-def appsync_create_s3_ingestion_event():
-    with open("./test/event/appsync_create_s3_ingestion_event.json", "r") as f:
+def create_ingestion_event():
+    with open("./test/event/create_ingestion_event.json", "r") as f:
         return json.load(f)
 
 
 @pytest.fixture
-def appsync_delete_s3_ingestion_event():
-    with open("./test/event/appsync_delete_s3_ingestion_event.json", "r") as f:
+def delete_ingestion_event():
+    with open("./test/event/delete_ingestion_event.json", "r") as f:
         return json.load(f)
 
 
 @pytest.fixture
-def appsync_list_s3_ingestion_event():
-    with open("./test/event/appsync_list_s3_ingestion_event.json", "r") as f:
+def query_ingestion_event():
+    with open("./test/event/query_ingestion_event.json", "r") as f:
         return json.load(f)
 
+@pytest.fixture
+def create_asg_ingestion_event():
+    with open("./test/event/create_asg_ingestion_event.json", "r") as f:
+        return json.load(f)
+
+@pytest.fixture
+def delete_asg_ingestion_event():
+    with open("./test/event/delete_asg_ingestion_event.json", "r") as f:
+        return json.load(f)
 
 @pytest.fixture
 def lambda_client():
@@ -39,7 +55,7 @@ def lambda_client():
         # Create mock_async_s3_child_lambda
         response = client.create_function(
             FunctionName="mock_async_s3_child_lambda",
-            Runtime="python3.8",
+            Runtime="python3.9",
             Role=get_role_name(),
             Handler="lambda_function.lambda_handler",
             Code={
@@ -55,7 +71,7 @@ def lambda_client():
         # Create mock_async_ec2_child_lambda
         response = client.create_function(
             FunctionName="mock_async_ec2_child_lambda",
-            Runtime="python3.8",
+            Runtime="python3.9",
             Role=get_role_name(),
             Handler="lambda_function.lambda_handler",
             Code={
@@ -71,7 +87,7 @@ def lambda_client():
         # Create mock_async_ec2_child_lambda
         response = client.create_function(
             FunctionName="os_helper_fn",
-            Runtime="python3.8",
+            Runtime="python3.9",
             Role=get_role_name(),
             Handler="lambda_function.lambda_handler",
             Code={
@@ -220,11 +236,12 @@ def ddb_client():
             # ddb_mock_data.log_ingestion_data_2,
             ddb_mock_data.log_ingestion_data_3,
             ddb_mock_data.log_ingestion_data_4,
+            ddb_mock_data.log_ingestion_data_5
         ]
         with app_log_ingestion_table.batch_writer() as batch:
             for data in data_list:
                 batch.put_item(Item=data)
-        
+
         ddb.create_table(
             TableName=os.environ.get("SUB_ACCOUNT_LINK_TABLE_NAME"),
             KeySchema=[{"AttributeName": "id", "KeyType": "HASH"}],
@@ -273,37 +290,53 @@ def sfn_client():
         yield
 
 
+@pytest.fixture
+def aos_client():
+    with mock_es():
+        es = boto3.client("es", region_name=os.environ.get("AWS_REGION"))
+        es.create_elasticsearch_domain(DomainName="loghub-aos-comp")
+        yield
+
+
 def test_lambda_handler(
-    appsync_create_s3_ingestion_event,
-    appsync_delete_s3_ingestion_event,
-    appsync_list_s3_ingestion_event,
+    create_ingestion_event,
+    create_asg_ingestion_event,
+    delete_ingestion_event,
+    delete_asg_ingestion_event,
+    query_ingestion_event,
     lambda_client,
     ddb_client,
     sfn_client,
     sts_client,
+    aos_client,
 ):
     # Can only import here, as the environment variables need to be set first.
     import lambda_function
 
-    lambda_function.lambda_handler(appsync_create_s3_ingestion_event, None)
-    response = lambda_function.lambda_handler(appsync_list_s3_ingestion_event, None)
+    lambda_function.lambda_handler(create_ingestion_event, None)
+    response = lambda_function.lambda_handler(query_ingestion_event, None)
     assert "total" in response
     assert response["total"] == 2
-    assert {
-        "id": "d8e6c7a6-4061-4a4a-864e-0000004",
-        "appPipelineId": "ab740668-fba3-4d86-879d-e9a5a446d69f",
-        "confId": "e4c579eb-fcf2-4ddb-8226-796f4bc8a690",
-        "createdDt": "2022-04-26T09:59:04Z",
-        "sourceId": "000000001-1095-44b5-8e11-40fa935f3aea",
-        "sourceType": "S3",
-        "stackId": "arn:aws:cloudformation:us-east-1:123456789012:stack/LogHub-AppIngestion-S3-d8e6c/xxx",
-        "stackName": "",
-        "status": "ERROR",
-        "tags": [],
-        "confName": "s3-source-config-01",
-        "kdsRoleArn": "arn:aws:iam::111111111:role/LogHub-EKS-Cluster-PodLog-DataBufferKDSRole7BCBC83-1II64RIV25JN3",
-        "kdsRoleName": "LogHub-EKS-Cluster-PodLog-DataBufferKDSRole7BCBC83-1II64RIV25JN3",
-        "sourceInfo": {},
-    } in response["appLogIngestions"]
+    # assert {
+    #     "id": "d8e6c7a6-4061-4a4a-864e-0000004",
+    #     "appPipelineId": "ab740668-fba3-4d86-879d-e9a5a446d69f",
+    #     "confId": "e4c579eb-fcf2-4ddb-8226-796f4bc8a690",
+    #     "createdDt": "2022-04-26T09:59:04Z",
+    #     "sourceId": "000000001-1095-44b5-8e11-40fa935f3aea",
+    #     "sourceType": "S3",
+    #     "stackId": "arn:aws:cloudformation:us-east-1:123456789012:stack/LogHub-AppIngestion-S3-d8e6c/xxx",
+    #     "stackName": "",
+    #     "status": "ERROR",
+    #     "tags": [],
+    #     "confName": "s3-source-config-01",
+    #     "kdsRoleArn": "arn:aws:iam::111111111:role/LogHub-EKS-Cluster-PodLog-DataBufferKDSRole7BCBC83-1II64RIV25JN3",
+    #     "kdsRoleName": "LogHub-EKS-Cluster-PodLog-DataBufferKDSRole7BCBC83-1II64RIV25JN3",
+    #     "sourceInfo": {},
+    # } in response["appLogIngestions"]
+    lambda_function.lambda_handler(create_asg_ingestion_event, None)
+    response = lambda_function.lambda_handler(query_ingestion_event, None)
+    assert "total" in response
+    assert response["total"] == 3
 
-    lambda_function.lambda_handler(appsync_delete_s3_ingestion_event, None)
+    lambda_function.lambda_handler(delete_ingestion_event, None)
+    lambda_function.lambda_handler(delete_asg_ingestion_event, None)

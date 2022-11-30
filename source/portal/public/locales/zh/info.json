@@ -4,7 +4,7 @@
     "name": "访问代理",
     "tip1": "Access Proxy创建一个基于Nginx的代理（在",
     "alb": "Application Load Balancer",
-    "tip2": "上)它允许您通过互联网访问 OpenSearch 仪表板。",
+    "tip2": "上)它允许您通过互联网访问 Amazon OpenSearch 仪表板。",
     "prerequisites": "先决条件",
     "pre1": "1.域名",
     "pre2": "2.域名关联的 SSL 证书在",
@@ -17,7 +17,7 @@
     "tip1": "Amazon OpenSearch提供了一组",
     "tip2": "推荐的CloudWatch告警",
     "tip3": ",日志通可以帮助客户自动创建告警，并通过SNS（或 SMS）将通知发送到您的电子邮件。",
-    "createAlarm": "创建 OpenSearch 告警"
+    "createAlarm": "创建 Amazon OpenSearch 告警"
   },
   "apacheLogFormat": {
     "name": "Apache 日志格式",
@@ -34,14 +34,14 @@
   },
   "creationMethod": {
     "name": "创建方式",
-    "tip1": "导入OpenSearch域时，您需要指定与日志处理层关联的网络配置。日志通会自动将 Lambda（或其他计算资源）放置在该层中。日志处理层必须有权访问 OpenSearch 域。",
+    "tip1": "导入 Amazon OpenSearch 域时，您需要指定与日志处理层关联的网络配置。日志通会自动将 Lambda（或其他计算资源）放置在该层中。日志处理层必须有权访问 Amazon OpenSearch 域。",
     "auto": "自动",
     "tip21": "日志通将检测是否需要创建一个",
     "tip22": "VPC 对等连接",
-    "tip23": ".如果需要，日志通会自动创建 VPC 对等连接，更新路由表，更新 OpenSearch 域的安全组。",
+    "tip23": ".如果需要，日志通会自动创建 VPC 对等连接，更新路由表，更新 Amazon OpenSearch 域的安全组。",
     "manual": "手动",
-    "tip3": "手动指定日志处理层网络信息。您可能需要创建 VPC 对等连接，更新 OpenSearch 域的路由表和安全组。",
-    "importDomain": "导入 OpenSearch 域"
+    "tip3": "手动指定日志处理层网络信息。您可能需要创建 VPC 对等连接，更新 Amazon OpenSearch 域的路由表和安全组。",
+    "importDomain": "导入 Amazon OpenSearch 域"
   },
   "ingestionCreationMethod": {
     "name": "日志启用",
@@ -71,7 +71,7 @@
     "name": "日志生命周期",
     "tip1": "日志通将插入一个",
     "ism": "索引状态管理(ISM)",
-    "tip2": "到 OpenSearch 域。 生命周期会定期在 OpenSearch 中移动您的索引以节省成本。",
+    "tip2": "到 Amazon OpenSearch 域。 生命周期会定期在 OpenSearch 中移动您的索引以节省成本。",
     "ismLink": "索引状态管理"
   },
   "logProcessing": {
@@ -83,8 +83,8 @@
   },
   "logProcessingNetwork": {
     "name": "日志处理网络",
-    "tip1": "导入 OpenSearch 域时，您需要指定与日志处理层关联的网络配置。日志通会自动将 Lambda（或其他计算资源）放置在该层中。日志处理层必须有权访问 OpenSearch 域。",
-    "s3Access": "S3 服务访问",
+    "tip1": "导入 OpenSearch 域时，您需要指定与日志处理层关联的网络配置。日志通会自动将 Lambda（或其他计算资源）放置在该层中。日志处理层必须有权访问 Amazon OpenSearch 域。",
+    "s3Access": "Amazon S3 服务访问",
     "tip21": "默认情况下，日志通会将错误日志输出到 Amazon S3。请保证日志处理层对 S3 有网络访问权限。您可以通过将日志处理层放在公共子网中来做到这一点，使用",
     "tip22": "适用于 Amazon S3 的 AWS PrivateLink",
     "tip23": "或通过",
@@ -122,14 +122,14 @@
   "sampleDashboard": {
     "name": "示例数据仪表板",
     "tip1": "如果",
-    "tip2": "被选中。日志通将在 OpenSearch 域中插入一个预配置的仪表板，仪表板名称将与您的索引名称一致。"
+    "tip2": "被选中。日志通将在 Amazon OpenSearch 域中插入一个预配置的仪表板，仪表板名称将与您的索引名称一致。"
   },
   "s3FileType": {
     "name": "文件格式",
-    "tips": "您可以为存储在 S3 中的日志选择特定的文件类型。其中 Gzip 仅支持单个文件的压缩。"
+    "tips": "您可以为存储在 Amazon S3 中的日志选择特定的文件类型。其中 Gzip 仅支持单个文件的压缩。"
   },
   "eksPattern": {
-    "name": "模式",
+    "name": "采集方式",
     "tip1": " 确保所有（或部分）节点运行 Pod 的副本。 随着节点被添加到集群中，Pod 也被添加到它们中。",
     "tip2": " 是一个单独的容器，与 Kubernetes pod 中的应用程序容器一起运行。"
   },
@@ -143,5 +143,17 @@
     "generateFormat": "生成时间格式",
     "tip1": "日志通支持 ",
     "tip2": " 提供的所有时间格式。即能被 strftime 函数 格式化的日志时间字符串都能被日志通解析并使用。"
+  },
+  "configFilter": {
+    "name": "过滤器",
+    "sample": "过滤器样例: ",
+    "tips1": "以 Apache Json 格式日志为例，日志内容如下：",
+    "tips2": "日志过滤条件：",
+    "tips2_1": "仅保留 method 为 POST、GET、POST、DELETE 的请求 ",
+    "tips2_2": "过滤掉 request 以 /user/ 开始，以及 path为 /login 和 /logout 的请求",
+    "tips2_3": "仅保留 level 为 error 和 warn 的日志",
+    "tips3": "使用的过滤条件如下：",
+    "tips4": "过滤后的日志如下：",
+    "filterLink": "按模式选择或排除记录"
   }
 }

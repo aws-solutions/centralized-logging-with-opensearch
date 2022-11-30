@@ -20,7 +20,7 @@ import { EKSClusterLogSource } from "API";
 import Alert from "components/Alert";
 import FormItem from "components/FormItem";
 import { appSyncRequestQuery } from "assets/js/request";
-import { getEKSDaemonSetConfig } from "graphql/queries";
+import { getEKSDaemonSetConf } from "graphql/queries";
 import CodeCopy from "components/CodeCopy";
 import LoadingText from "components/LoadingText";
 
@@ -38,17 +38,13 @@ const DaemonsetGuide: React.FC<DaemonsetGuideProps> = (
   const [guide, setGuide] = useState("");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    getDaemonsetGuide();
-  }, []);
-
   const getDaemonsetGuide = async () => {
     setLoading(true);
     try {
-      const res = await appSyncRequestQuery(getEKSDaemonSetConfig, {
+      const res = await appSyncRequestQuery(getEKSDaemonSetConf, {
         eksClusterId: eksLogSourceInfo?.id,
       });
-      setGuide(res.data.getEKSDaemonSetConfig);
+      setGuide(res.data.getEKSDaemonSetConf);
       setLoading(false);
     } catch (error) {
       setLoading(false);

@@ -1,8 +1,19 @@
 .gsui-tiles-wrap {
   display: flex;
   padding: 0px;
+  &.row {
+    flex-direction: column;
+    label {
+      min-height: 80px;
+      &:first-child {
+        margin-right: 0px;
+      }
+      &:last-child {
+        margin-left: 0px;
+      }
+    }
+  }
   label {
-    // margin: 0 10px;
     flex: 1;
     padding: 8px 16px;
     border: 1px solid #aab7b8;

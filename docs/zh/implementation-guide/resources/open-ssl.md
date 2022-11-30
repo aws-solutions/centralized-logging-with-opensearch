@@ -15,7 +15,10 @@ sudo yum install openssl11
 ## Ubuntu
 
 ### 20.04
-OpenSSL 已经默认安装。
+
+```bash
+ln -s /usr/lib/x86_64-linux-gnu/libsasl2.so.2 /usr/lib/libsasl2.so.3
+```
 
 ### 18.04
 
@@ -45,19 +48,25 @@ OpenSSL 1.1 已经默认安装。
 ### 7.X
 
 ```bash
-sudo yum -y install wget
-sudo yum -y install ca-certificates
-echo "ca_directory=/etc/ssl/certs" | sudo tee -a /etc/wgetrc > /dev/null
+sudo su -
 
-wget https://github.com/openssl/openssl/archive/OpenSSL_1_1_1-stable.zip
-sudo yum -y install gcc unzip perl
-unzip OpenSSL_1_1_1-stable.zip
-cd openssl-OpenSSL_1_1_1-stable
-./config
-sudo make
-sudo make install
-echo "/usr/local/lib64/" | sudo tee -a /etc/ld.so.conf > /dev/null
-sudo ldconfig
+yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+
+systemctl enable amazon-ssm-agent
+systemctl start amazon-ssm-agent
+
+yum install -y wget perl unzip gcc zlib-devel
+mkdir /tmp/openssl
+cd /tmp/openssl
+wget https://www.openssl.org/source/openssl-1.1.1s.tar.gz
+tar xzvf openssl-1.1.1s.tar.gz
+cd openssl-1.1.1s
+./config --prefix=/usr/local/openssl11 --openssldir=/usr/local/openssl11 shared zlib
+make
+make install
+
+echo /usr/local/openssl11/lib/ >> /etc/ld.so.conf
+ldconfig
 ```
 
 ## SUSE Linux Enterprise Server 

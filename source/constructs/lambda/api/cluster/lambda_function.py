@@ -55,6 +55,7 @@ eks_cluster_log_source_table = dynamodb.Table(
 app_pipeline_table = dynamodb.Table(app_pipeline_table_name)
 svc_pipeline_table = dynamodb.Table(svc_pipeline_table_name)
 account_id = sts.get_caller_identity()["Account"]
+default_logging_bucket = os.environ.get("DEFAULT_LOGGING_BUCKET")
 
 alarm_list = {
     "CLUSTER_RED": {
@@ -366,6 +367,13 @@ def remove_domain(id) -> str:
             "The domian is associated with an EKS cluster. Please delete the associated EKS cluster from the EKS cluster list first."
         )
     aos_domain = get_domain_by_id(id)
+    if (aos_domain.get('proxyStatus') == 'CREATING'
+            or aos_domain.get('proxyStatus') == 'DELETING'
+            or aos_domain.get('alarmStatus') == 'CREATING'
+            or aos_domain.get('alarmStatus') == 'DELETING'):
+        raise APIException(
+            "The stack associated with this Cluster is being processed, please wait for it to complete before deleting it."
+        )
     domain_name = aos_domain['domainName']
 
     # check service pipeline
@@ -414,7 +422,7 @@ def get_domain_by_id(id):
     response = cluster_table.get_item(Key={
         "id": id,
     })
-    # logger.info(response)
+    #logger.info(response)
     if "Item" not in response:
         raise APIException("Cannot find domain in the imported list")
     return response["Item"]
@@ -479,9 +487,9 @@ def list_imported_domains(metrics: bool = False):
     result = resp["Items"]
     # logger.info(result)
 
-    domain_list = [item["domainName"] for item in result]
+    domain_list = [item.get("domainName") for item in result]
 
-    if metrics and len(domain_list) > 0:
+    if metrics and domain_list:
         logger.info("Query domain metric data from CloudWatch")
         cw = boto3.client("cloudwatch", config=default_config)
         metric_data = get_metric_data(cw, domain_list, account_id)
@@ -695,6 +703,7 @@ def start_sub_stack(id, input, stack_type="Proxy"):
     stack_name = create_stack_name(stack_type)
     pattern = get_stack_pattern(stack_type)
     if stack_type == "Proxy":
+        input.update({"elbAccessLogBucketName": default_logging_bucket})
         params = _get_proxy_params(id, input)
     else:
         params = _get_alarm_params(id, input)
@@ -765,6 +774,7 @@ def _get_proxy_params(id, input):
         "endpoint": endpoint,
         "engineType": engine,
         "keyName": input["keyName"],
+        "elbAccessLogBucketName": input["elbAccessLogBucketName"],
     }
     param_map |= input["vpc"]
     public_sg = param_map.pop("securityGroupId")

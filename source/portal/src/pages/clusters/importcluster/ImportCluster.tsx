@@ -67,7 +67,7 @@ const ImportOpenSearchCluster: React.FC = () => {
   const [curStep, setCurStep] = useState(0);
   const [importedCluster, setImportedCluster] = useState<ImportedDomainType>({
     showVPCAlert: false,
-    creationMethod: CreateLogMethod.Manual,
+    creationMethod: CreateLogMethod.Automatic,
     logProcessVpcOptionList: [],
     logProcessSubnetOptionList: [],
     logProcessSecGroupList: [],
@@ -186,14 +186,6 @@ const ImportOpenSearchCluster: React.FC = () => {
                     },
                   ]}
                   activeIndex={curStep}
-                  selectStep={(step: number) => {
-                    console.info("step:", step);
-                    if (!importedCluster.domainName) {
-                      setDomainEmptyError(true);
-                    } else {
-                      // setCurStep(step);
-                    }
-                  }}
                 />
               </div>
               <div className="create-content m-w-1024">
@@ -335,13 +327,14 @@ const ImportOpenSearchCluster: React.FC = () => {
                           setCurStep(0);
                         } else {
                           if (
+                            curStep === 1 &&
                             importedCluster.creationMethod ===
-                            CreateLogMethod.Automatic
+                              CreateLogMethod.Automatic
                           ) {
                             checkCIDRConflict();
                           } else {
                             setCurStep((curStep) => {
-                              return curStep + 1 > 2 ? 2 : curStep + 1;
+                              return curStep > 2 ? 2 : curStep + 1;
                             });
                           }
                         }

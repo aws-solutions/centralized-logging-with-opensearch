@@ -126,7 +126,7 @@ export class InstanceMetaStack extends Construct {
                         ARCHITECTURE: {
                             type: "String",
                             default: "",
-                            description: "(Required) Machine Architucture"
+                            description: "(Required) Machine Architecture"
                         },
                         SYSTEMDPATH: {
                             type: "String",
@@ -140,7 +140,7 @@ export class InstanceMetaStack extends Construct {
                             name: "downloadFluentBit",
                             inputs: {
                                 sourceType: "S3",
-                                sourceInfo: `{\"path\":\"https://${s3Address}/aws-for-fluent-bit%3A2.25.1/fluent-bit{{ARCHITECTURE}}.tar.gz\"}`,
+                                sourceInfo: `{\"path\":\"https://${s3Address}/aws-for-fluent-bit%3A2.28.4/fluent-bit{{ARCHITECTURE}}.tar.gz\"}`,
                                 destinationPath: "/opt"
                             }
                         },
@@ -281,7 +281,7 @@ export class InstanceMetaStack extends Construct {
             typeName: 'Query',
             fieldName: 'getInstanceMeta',
             requestMappingTemplate: appsync.MappingTemplate.dynamoDbGetItem('id', 'id'),
-            responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultItem()
+            responseMappingTemplate: appsync.MappingTemplate.fromFile(path.join(__dirname, '../../graphql/vtl/instance_meta/GetInstanceMetaResp.vtl')),
         })
 
         // // Add logAgentStatus table as a Datasource
@@ -312,14 +312,14 @@ export class InstanceMetaStack extends Construct {
         instanceMetaLambdaDS.createResolver({
             typeName: 'Mutation',
             fieldName: 'requestInstallLogAgent',
-            requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+            requestMappingTemplate: appsync.MappingTemplate.fromFile(path.join(__dirname, '../../graphql/vtl/instance_meta/RequestInstallLogAgent.vtl')),
             responseMappingTemplate: appsync.MappingTemplate.lambdaResult()
         })
 
         instanceMetaLambdaDS.createResolver({
             typeName: 'Query',
             fieldName: 'getLogAgentStatus',
-            requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+            requestMappingTemplate: appsync.MappingTemplate.fromFile(path.join(__dirname, '../../graphql/vtl/instance_meta/GetLogAgentStatus.vtl')),
             responseMappingTemplate: appsync.MappingTemplate.lambdaResult()
         })
 

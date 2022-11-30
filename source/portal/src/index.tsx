@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
 /*
 Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 
@@ -23,6 +24,13 @@ import { Provider } from "react-redux";
 import appReducer from "reducer/appReducer";
 // import i18n (needs to be bundled ;))
 import "./i18n";
+
+if (process.env.NODE_ENV === "production") {
+  console.log = () => {};
+  console.info = () => {};
+  console.debug = () => {};
+}
+
 const store = createStore(appReducer);
 ReactDOM.render(
   // <React.StrictMode>

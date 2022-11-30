@@ -10,8 +10,8 @@ def default_environment_variables():
     os.environ["AWS_SECRET_ACCESS_KEY"] = "mocked-aws-secret-access-key"
     os.environ["AWS_SESSION_TOKEN"] = "mocked-aws-session-token"
     os.environ["AWS_REGION"] = "us-east-1"
-    # os.environ["SOLUTION_VERSION"] = "v1.0.0"
-    # os.environ["SOLUTION_ID"] = "SO8025"
+    os.environ["SOLUTION_VERSION"] = "v1.0.0"
+    os.environ["SOLUTION_ID"] = "SO8025"
 
     os.environ["WEB_BUCKET_NAME"] = "log-hub-web-bucket"
     os.environ["API_ENDPOINT"] = "https:/loghub.xxx.amazonaws.com/graphql"
@@ -23,3 +23,7 @@ def default_environment_variables():
     os.environ["AUTHENTICATION_TYPE"] = "AMAZON_COGNITO_USER_POOLS"
     os.environ["CLOUDFRONT_URL"] = "loghub.cloudfront.net"
     os.environ["DEFAULT_LOGGING_BUCKET"] = "log-hub-bucket"
+
+    os.environ["EKS_DEPLOY_KIND_TABLE"] = "LogAgentEKSDeploymentKindTable"
+    os.environ["EKS_LOG_SOURCE_TABLE"] = "EKSClusterLogSourceTable"
+    os.environ["APP_PIPELINE_TABLE"] = "AppPipelineTable"

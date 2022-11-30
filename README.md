@@ -4,7 +4,7 @@
   </strong>
 </p>
 <p align="center">
-Easily ingest, process and visualize application lgos and AWS service logs on top of <strong><a href="https://aws.amazon.com/opensearch-service/">Amazon OpenSearch Service</a></strong>
+Easily ingest, process and visualize application logs and AWS service logs on top of <strong><a href="https://aws.amazon.com/opensearch-service/">Amazon OpenSearch Service</a></strong>
 </p>
 
 <p align="center">
@@ -42,8 +42,7 @@ domains on the web console, and the reference dashboards can further facilitate 
 
 ## Quick start
 
-* [Launch Log Hub in AWS global regions](https://awslabs.github.io/log-hub/implementation-guide/deployment/global-region/)
-* [Launch Log Hub in AWS China regions](https://awslabs.github.io/log-hub/implementation-guide/deployment/china-region/)
+[Deployment Guide](https://awslabs.github.io/log-hub/en/implementation-guide/deployment/)
 
 ## License
 

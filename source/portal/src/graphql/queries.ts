@@ -222,6 +222,7 @@ export const listInstanceGroups = /* GraphQL */ `
         accountId
         region
         groupName
+        groupType
         instanceSet
         createdDt
         status
@@ -237,6 +238,7 @@ export const getInstanceGroup = /* GraphQL */ `
       accountId
       region
       groupName
+      groupType
       instanceSet
       createdDt
       status
@@ -251,14 +253,27 @@ export const listLogConfs = /* GraphQL */ `
         confName
         logType
         logPath
+        timeKey
+        timeOffset
         multilineLogParser
+        syslogParser
         createdDt
         userLogFormat
+        userSampleLog
         regularExpression
+        timeRegularExpression
         regularSpecs {
           key
           type
           format
+        }
+        processorFilterRegex {
+          enable
+          filters {
+            key
+            condition
+            value
+          }
         }
         status
       }
@@ -273,14 +288,27 @@ export const getLogConf = /* GraphQL */ `
       confName
       logType
       logPath
+      timeKey
+      timeOffset
       multilineLogParser
+      syslogParser
       createdDt
       userLogFormat
+      userSampleLog
       regularExpression
+      timeRegularExpression
       regularSpecs {
         key
         type
         format
+      }
+      processorFilterRegex {
+        enable
+        filters {
+          key
+          condition
+          value
+        }
       }
       status
     }
@@ -291,18 +319,12 @@ export const listAppPipelines = /* GraphQL */ `
     listAppPipelines(page: $page, count: $count) {
       appPipelines {
         id
-        kdsParas {
-          kdsArn
-          streamName
-          enableAutoScaling
-          startShardNumber
-          openShardCount
-          consumerCount
-          maxShardNumber
-          regionName
-          osHelperFnArn
+        bufferType
+        bufferParams {
+          paramKey
+          paramValue
         }
-        aosParas {
+        aosParams {
           opensearchArn
           domainName
           indexPrefix
@@ -315,8 +337,10 @@ export const listAppPipelines = /* GraphQL */ `
         }
         createdDt
         status
-        kdsRoleArn
-        ec2RoleArn
+        bufferAccessRoleArn
+        bufferAccessRoleName
+        bufferResourceName
+        bufferResourceArn
         tags {
           key
           value
@@ -330,18 +354,12 @@ export const getAppPipeline = /* GraphQL */ `
   query GetAppPipeline($id: ID!) {
     getAppPipeline(id: $id) {
       id
-      kdsParas {
-        kdsArn
-        streamName
-        enableAutoScaling
-        startShardNumber
-        openShardCount
-        consumerCount
-        maxShardNumber
-        regionName
-        osHelperFnArn
+      bufferType
+      bufferParams {
+        paramKey
+        paramValue
       }
-      aosParas {
+      aosParams {
         opensearchArn
         domainName
         indexPrefix
@@ -354,8 +372,10 @@ export const getAppPipeline = /* GraphQL */ `
       }
       createdDt
       status
-      kdsRoleArn
-      ec2RoleArn
+      bufferAccessRoleArn
+      bufferAccessRoleName
+      bufferResourceName
+      bufferResourceArn
       tags {
         key
         value
@@ -384,12 +404,15 @@ export const listAppLogIngestions = /* GraphQL */ `
         confName
         sourceInfo {
           sourceId
+          accountId
+          region
           sourceName
           logPath
           sourceType
-          createdDt
-          accountId
-          region
+          sourceInfo {
+            key
+            value
+          }
           s3Source {
             s3Name
             s3Prefix
@@ -424,14 +447,11 @@ export const listAppLogIngestions = /* GraphQL */ `
               value
             }
           }
+          createdDt
         }
         stackId
         stackName
         appPipelineId
-        kdsRoleArn
-        kdsRoleName
-        ec2RoleArn
-        ec2RoleName
         logPath
         sourceId
         sourceType
@@ -456,12 +476,15 @@ export const getAppLogIngestion = /* GraphQL */ `
       confName
       sourceInfo {
         sourceId
+        accountId
+        region
         sourceName
         logPath
         sourceType
-        createdDt
-        accountId
-        region
+        sourceInfo {
+          key
+          value
+        }
         s3Source {
           s3Name
           s3Prefix
@@ -501,14 +524,11 @@ export const getAppLogIngestion = /* GraphQL */ `
             value
           }
         }
+        createdDt
       }
       stackId
       stackName
       appPipelineId
-      kdsRoleArn
-      kdsRoleName
-      ec2RoleArn
-      ec2RoleName
       logPath
       sourceId
       sourceType
@@ -551,6 +571,30 @@ export const listInstances = /* GraphQL */ `
     }
   }
 `;
+export const listAutoScalingGroups = /* GraphQL */ `
+  query ListAutoScalingGroups(
+    $maxResults: Int
+    $nextToken: String
+    $region: String
+    $accountId: String
+  ) {
+    listAutoScalingGroups(
+      maxResults: $maxResults
+      nextToken: $nextToken
+      region: $region
+      accountId: $accountId
+    ) {
+      autoScalingGroups {
+        autoScalingGroupName
+        minSize
+        maxSize
+        desiredCapacity
+        instances
+      }
+      nextToken
+    }
+  }
+`;
 export const getInstanceMeta = /* GraphQL */ `
   query GetInstanceMeta($id: ID!) {
     getInstanceMeta(id: $id) {
@@ -585,12 +629,15 @@ export const getLogSource = /* GraphQL */ `
   query GetLogSource($sourceType: LogSourceType!, $id: ID!) {
     getLogSource(sourceType: $sourceType, id: $id) {
       sourceId
+      accountId
+      region
       sourceName
       logPath
       sourceType
-      createdDt
-      accountId
-      region
+      sourceInfo {
+        key
+        value
+      }
       s3Source {
         s3Name
         s3Prefix
@@ -630,6 +677,7 @@ export const getLogSource = /* GraphQL */ `
           value
         }
       }
+      createdDt
     }
   }
 `;
@@ -638,12 +686,15 @@ export const listLogSources = /* GraphQL */ `
     listLogSources(page: $page, count: $count) {
       LogSources {
         sourceId
+        accountId
+        region
         sourceName
         logPath
         sourceType
-        createdDt
-        accountId
-        region
+        sourceInfo {
+          key
+          value
+        }
         s3Source {
           s3Name
           s3Prefix
@@ -683,6 +734,7 @@ export const listLogSources = /* GraphQL */ `
             value
           }
         }
+        createdDt
       }
       total
     }
@@ -724,22 +776,27 @@ export const getEKSClusterDetails = /* GraphQL */ `
     }
   }
 `;
-export const getEKSDaemonSetConfig = /* GraphQL */ `
-  query GetEKSDaemonSetConfig($eksClusterId: String!) {
-    getEKSDaemonSetConfig(eksClusterId: $eksClusterId)
+export const getEKSDaemonSetConf = /* GraphQL */ `
+  query GetEKSDaemonSetConf($eksClusterId: String!) {
+    getEKSDaemonSetConf(eksClusterId: $eksClusterId)
   }
 `;
-export const getEKSDeploymentConfig = /* GraphQL */ `
-  query GetEKSDeploymentConfig(
+export const getEKSDeploymentConf = /* GraphQL */ `
+  query GetEKSDeploymentConf(
     $eksClusterId: String!
     $ingestionId: String!
     $openExtraMetadataFlag: Boolean
   ) {
-    getEKSDeploymentConfig(
+    getEKSDeploymentConf(
       eksClusterId: $eksClusterId
       ingestionId: $ingestionId
       openExtraMetadataFlag: $openExtraMetadataFlag
     )
+  }
+`;
+export const getAutoScalingGroupConf = /* GraphQL */ `
+  query GetAutoScalingGroupConf($groupId: String!) {
+    getAutoScalingGroupConf(groupId: $groupId)
   }
 `;
 export const listEKSClusterNames = /* GraphQL */ `
@@ -881,6 +938,23 @@ export const getSubAccountLinkByAccountIdRegion = /* GraphQL */ `
         key
         value
       }
+    }
+  }
+`;
+export const checkCustomPort = /* GraphQL */ `
+  query CheckCustomPort(
+    $sourceType: LogSourceType
+    $syslogProtocol: ProtocolType!
+    $syslogPort: Int!
+  ) {
+    checkCustomPort(
+      sourceType: $sourceType
+      syslogProtocol: $syslogProtocol
+      syslogPort: $syslogPort
+    ) {
+      isAllowedPort
+      msg
+      recommendedPort
     }
   }
 `;

@@ -37,6 +37,8 @@ import { AUTO_REFRESH_INT } from "assets/js/const";
 import Alert from "components/Alert";
 import { AlertType } from "components/Alert/alert";
 
+// TODO
+
 const PAGE_SIZE = 1000;
 interface IngestionsProps {
   eksLogSourceInfo: EKSClusterLogSource | undefined;
@@ -60,7 +62,8 @@ const EksIngestions: React.FC<IngestionsProps> = (props: IngestionsProps) => {
   const [loadingDelete, setLoadingDelete] = useState(false);
   const [disableDelete, setDisableDelete] = useState(true);
   const [openDeleteModel, setOpenDeleteModel] = useState(false);
-  const [noKDSRolePipelines, setNoKDSRolePipelines] = useState<string[]>([]);
+  // TODO
+  // const [noKDSRolePipelines, setNoKDSRolePipelines] = useState<string[]>([]);
   const [openNotice, setOpenNotice] = useState(false);
   const [loadingUpgrade, setLoadingUpgrade] = useState(false);
 
@@ -87,8 +90,9 @@ const EksIngestions: React.FC<IngestionsProps> = (props: IngestionsProps) => {
             id: appLogIngestion.appPipelineId,
           });
           if (
-            !appLogIngestion.ec2RoleArn &&
-            !appLogIngestion.kdsRoleArn &&
+            // TODO
+            // !appLogIngestion.ec2RoleArn &&
+            // !appLogIngestion.kdsRoleArn &&
             appLogIngestion.appPipelineId &&
             appLogIngestion.status === PipelineStatus.ACTIVE
           ) {
@@ -101,7 +105,8 @@ const EksIngestions: React.FC<IngestionsProps> = (props: IngestionsProps) => {
           };
         })
       );
-      setNoKDSRolePipelines(tmpNoKDSRoleArnArr);
+      // TODO
+      // setNoKDSRolePipelines(tmpNoKDSRoleArnArr);
       setIngestions(tmpEksIngestions);
       setLoadingData(false);
     } catch (error) {
@@ -134,21 +139,22 @@ const EksIngestions: React.FC<IngestionsProps> = (props: IngestionsProps) => {
     }
   };
 
-  const upgradePipelines = async () => {
-    try {
-      setLoadingUpgrade(true);
-      const upgradeRes = await appSyncRequestMutation(upgradeAppPipeline, {
-        ids: noKDSRolePipelines,
-      });
-      console.info("upgradeRes:", upgradeRes);
-      setLoadingUpgrade(false);
-      setOpenNotice(false);
-      getIngestions();
-    } catch (error) {
-      setLoadingUpgrade(false);
-      console.error(error);
-    }
-  };
+  // TODO
+  // const upgradePipelines = async () => {
+  //   try {
+  //     setLoadingUpgrade(true);
+  //     const upgradeRes = await appSyncRequestMutation(upgradeAppPipeline, {
+  //       ids: noKDSRolePipelines,
+  //     });
+  //     console.info("upgradeRes:", upgradeRes);
+  //     setLoadingUpgrade(false);
+  //     setOpenNotice(false);
+  //     getIngestions();
+  //   } catch (error) {
+  //     setLoadingUpgrade(false);
+  //     console.error(error);
+  //   }
+  // };
 
   useEffect(() => {
     if (eksLogSourceInfo && eksLogSourceInfo.id) {
@@ -210,13 +216,14 @@ const EksIngestions: React.FC<IngestionsProps> = (props: IngestionsProps) => {
               btnType="primary"
               disabled={loadingData}
               onClick={() => {
-                if (noKDSRolePipelines.length > 0) {
-                  setOpenNotice(true);
-                } else {
-                  history.push({
-                    pathname: `/containers/eks-log/${eksLogSourceInfo?.id}/ingestion`,
-                  });
-                }
+                // TODO
+                // if (noKDSRolePipelines.length > 0) {
+                //   setOpenNotice(true);
+                // } else {
+                history.push({
+                  pathname: `/containers/eks-log/${eksLogSourceInfo?.id}/ingestion`,
+                });
+                // }
               }}
             >
               {t("button.createAnIngestion")}
@@ -242,7 +249,7 @@ const EksIngestions: React.FC<IngestionsProps> = (props: IngestionsProps) => {
             id: "indexPrefix",
             header: t("ekslog:detail.ingestions.osIndex"),
             cell: (e: EksIngestion) => {
-              return e?.pipeline?.aosParas?.indexPrefix;
+              return e?.pipeline?.aosParams?.indexPrefix;
             },
           },
           {
@@ -368,7 +375,8 @@ const EksIngestions: React.FC<IngestionsProps> = (props: IngestionsProps) => {
               loading={loadingUpgrade}
               btnType="primary"
               onClick={() => {
-                upgradePipelines();
+                // TODO
+                // upgradePipelines();
               }}
             >
               {t("button.upgrade")}

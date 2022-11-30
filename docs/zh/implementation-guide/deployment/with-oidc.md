@@ -28,7 +28,7 @@
 - （选项 1）使用其他区域的 Cognito User Pool 作为身份验证提供者。
 - （选项 2）[Authing][authing] 是第三方身份验证提供者。
 - （选项 3）[Keycloak](https://github.com/aws-samples/keycloak-on-aws) 是 AWS 维护的解决方案，可以作为身份验证提供者。
-- （选项 4）[ADFS](https://docs.microsoft.com/en-us/windows-server/identity/active-directory-federation-services) 是 Microsoft 提供的一项服务。
+- （选项 4）[ADFS](https://docs.microsoft.com/en-us/windows-server/identity/active-directory-federation-services){target="_blank"} 是 Microsoft 提供的一项服务。
 - （选项 5）其它第三方认证平台，如[Auth0][auth0]。
 
 按照以下步骤创建 OIDC 客户端，并获取 `client_id` 和 `issuer`。
@@ -52,7 +52,8 @@
     - 对于 **旧版本的 Cognito 控制台**：
         [![](../../images/OIDC/cognito-old-console-clientID.png)](../../images/OIDC/cognito-old-console-clientID.png)
         [![](../../images/OIDC/cognito-old-console-userpoolID.png)](../../images/OIDC/cognito-old-console-userpoolID.png)
-6. 在[步骤 2. 启动堆栈](#2)中，OidcClientID 就是 `App client ID`, OidcProvider 是 `https://cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}`
+
+在[步骤 2. 启动堆栈](#2)中，OidcClientID 就是 `App client ID`, OidcProvider 是 `https://cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}`。
 
 ### (选项 2) Authing.cn OIDC 客户端
 
@@ -168,9 +169,9 @@
 2. 登录控制台后，模板在默认区域启动。要在不同的 AWS 区域中启动 Log Hub 解决方案，请使用控制台导航栏中的区域选择器。
 3. 在 **创建堆栈** 页面上，验证正确的模板 URL 显示在 **Amazon S3 URL** 文本框中，然后选择 **下一步**。
 4. 在 **指定堆栈详细信息** 页面上，为您的解决方案堆栈分配一个名称。有关命名字符限制的信息，请参阅 [IAM 和 STS 限制](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_iam-limits.html){target='_blank'} 中的 *AWS Identity and Access Management 用户指南*。
-5. 在 **参数** 部分，查看模板的参数并根据需要进行修改。此解决方案使用以下默认值。
+5. 在 **参数** 部分，查看模板的参数并根据需要进行修改。
 
-      - 如果从新的 VPC 中部署, 此解决方案使用以下默认值:
+      - 如果从新的 VPC 中部署, 此解决方案使用以下参数:
 
     |参数 |默认 |说明 |
     | ---------- | ---------------- | -------------------------------------------------- ---------- |
@@ -179,7 +180,7 @@
     | Domain | `<需要输入>` | Log Hub 控制台的自定义域。切记不要添加 `http(s)` 前缀。 |
     | IamCertificateID | `<需要输入>` | IAM 中 SSL 证书的 ID。 ID 由 21 个大写字母和数字字符组成。您可以使用 [`list-server-certificates`](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_server-certs.html#list-server-certificates){target='_blank'} 命令检索 ID。 |
 
-      - 如果从现有的 VPC 中部署, 此解决方案使用以下默认值:
+      - 如果部署已有的 VPC 中, 此解决方案使用以下参数:
 
     |参数 |默认 |说明 |
     | ---------- | ---------------- | -------------------------------------------------- ---------- |
@@ -188,13 +189,13 @@
     | Domain | `<需要输入>` | Log Hub 控制台的自定义域。切记不要添加 `http(s)` 前缀。 |
     | IamCertificateID | `<需要输入>` | IAM 中 SSL 证书的 ID。 ID 由 21 个大写字母和数字字符组成。您可以使用 [`list-server-certificates`](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_server-certs.html#list-server-certificates){target='_blank'} 命令检索 ID。 |
     | VPC ID | `<需要输入>` | 选择现有的VPC。 |
-    | Public Subnet IDs | `<需要输入>` | 从现有的 VPC 中选择2个公有子网。 |
-    | Private Subnet IDs | `<需要输入>` | 从现有的 VPC 中选择2个私有子网。 |
+    | Public Subnet IDs | `<需要输入>` | 从现有的 VPC 中选择2个公有子网。子网必须有指向 [Internet Gateway][IGW] 的路由。|
+    | Private Subnet IDs | `<需要输入>` | 从现有的 VPC 中选择2个私有子网。子网必须有指向 [NAT Gateway][NAT] 的路由。|
 
-7. 选择**下一步**。
-8. 在 **配置堆栈选项** 页面上，选择 **下一步**。
-9. 在 **审核** 页面上，查看并确认设置。选中确认模板创建 AWS Identity and Access Management (IAM) 资源的复选框。
-10. 选择 **创建堆栈** 部署堆栈。
+6. 选择**下一步**。
+7. 在 **配置堆栈选项** 页面上，选择 **下一步**。
+8. 在 **审核** 页面上，查看并确认设置。选中确认模板创建 AWS Identity and Access Management (IAM) 资源的复选框。
+9. 选择 **创建堆栈** 部署堆栈。
 
 您可以在 AWS CloudFormation 控制台的 **状态** 列中查看堆栈的状态。您应该会在大约 15 分钟内收到 **CREATE_COMPLETE** 状态。
 
@@ -229,4 +230,6 @@
 [dg]: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/createupdatedomains.html
 [vpc]:https://docs.aws.amazon.com/opensearch-service/latest/developerguide/vpc.html
 [icp]: https://www.amazonaws.cn/en/support/icp/?nc2=h_l2_su
-[keycloak-solution]: https://github.com/aws-samples/keycloak-on-aws
+[adfs-1]: ../../images/OIDC/adfs-1.png
+[NAT]: https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html
+[IGW]: https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Internet_Gateway.html

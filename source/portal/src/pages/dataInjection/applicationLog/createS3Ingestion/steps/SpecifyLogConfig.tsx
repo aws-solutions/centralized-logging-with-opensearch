@@ -17,18 +17,17 @@ import React, { useState, useEffect } from "react";
 import FormItem from "components/FormItem";
 import HeaderPanel from "components/HeaderPanel";
 import PagePanel from "components/PagePanel";
-import LogConfigComp, {
-  ExLogConf,
-  PageType,
-} from "pages/resources/common/LogConfigComp";
+import { ExLogConf } from "pages/resources/common/LogConfigComp";
 import { useTranslation } from "react-i18next";
-import { LogConf, LogType } from "API";
+import { LogType } from "API";
 import { appSyncRequestQuery } from "assets/js/request";
 import { getLogConf, listLogConfs } from "graphql/queries";
 import Select, { SelectItem } from "components/Select/select";
 import { IngestionFromS3PropsType } from "../CreateS3Ingestion";
 import ExtLink from "components/ExtLink";
 import { S3_FILE_TYPE_LIST } from "assets/js/const";
+import LoadingText from "components/LoadingText";
+import ConfigDetailComps from "pages/resources/logConfig/ConfigDetailComps";
 
 interface SpecifyLogConfigProp {
   s3IngestionInfo: IngestionFromS3PropsType;
@@ -41,7 +40,7 @@ const SpecifyLogConfig: React.FC<SpecifyLogConfigProp> = (
 ) => {
   const { t } = useTranslation();
   const { s3IngestionInfo, changeLogConfig, showLogConfigError } = props;
-  const [curConfig, setCurConfig] = useState<LogConf>();
+  const [curConfig, setCurConfig] = useState<ExLogConf>();
   const [loadingData, setLoadingData] = useState(false);
   const [loadingConfig, setLoadingConfig] = useState(false);
   const [logConfigOptionList, setLogConfigOptionList] = useState<SelectItem[]>(
@@ -163,14 +162,19 @@ const SpecifyLogConfig: React.FC<SpecifyLogConfigProp> = (
             </div>
           </FormItem>
         </HeaderPanel>
-        <LogConfigComp
-          sampleLogInvalid={false}
-          isLoading={loadingConfig}
-          pageType={PageType.Edit}
-          headerTitle={t("applog:ingestion.applyConfig.config")}
-          inputDisable={true}
-          curConfig={curConfig}
-        />
+        <>
+          {curConfig && (
+            <HeaderPanel title={t("applog:ingestion.applyConfig.config")}>
+              {loadingConfig ? (
+                <LoadingText />
+              ) : (
+                <div>
+                  <ConfigDetailComps hideLogPath curLogConfig={curConfig} />
+                </div>
+              )}
+            </HeaderPanel>
+          )}
+        </>
       </PagePanel>
     </div>
   );

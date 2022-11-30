@@ -24,7 +24,6 @@ import ValueWithLabel from "components/ValueWithLabel";
 import LoadingText from "components/LoadingText";
 import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
 import { getLogConf } from "graphql/queries";
-import { LogConf } from "API";
 import { deleteLogConf } from "graphql/mutations";
 import Modal from "components/Modal";
 import { DEFAULT_AGENT_VERSION, ResourceStatus } from "assets/js/const";
@@ -32,6 +31,7 @@ import { formatLocalTime } from "assets/js/utils";
 import { useTranslation } from "react-i18next";
 import ConfigDetailComps from "./ConfigDetailComps";
 import { Alert } from "assets/js/alert";
+import { ExLogConf } from "../common/LogConfigComp";
 
 interface MatchParams {
   id: string;
@@ -45,7 +45,7 @@ const ConfigDetail: React.FC<RouteComponentProps<MatchParams>> = (
   const history = useHistory();
   const { t } = useTranslation();
   const [loadingData, setLoadingData] = useState(true);
-  const [curLogConfig, setCurLogConfig] = useState<LogConf>();
+  const [curLogConfig, setCurLogConfig] = useState<ExLogConf>();
   const [openDeleteModel, setOpenDeleteModel] = useState(false);
   const [loadingDelete, setLoadingDelete] = useState(false);
 
@@ -89,7 +89,7 @@ const ConfigDetail: React.FC<RouteComponentProps<MatchParams>> = (
         id: id,
       });
       console.info("resData:", resData);
-      const dataLogConfig: LogConf = resData.data.getLogConf;
+      const dataLogConfig: ExLogConf = resData.data.getLogConf;
       if (dataLogConfig.status === ResourceStatus.INACTIVE) {
         Alert(t("resource:config.detail.notExist"));
         return;
@@ -179,7 +179,11 @@ const ConfigDetail: React.FC<RouteComponentProps<MatchParams>> = (
                   </HeaderPanel>
 
                   <HeaderPanel title={t("resource:config.detail.logConfig")}>
-                    <ConfigDetailComps curLogConfig={curLogConfig} />
+                    <ConfigDetailComps
+                      hideBasicInfo
+                      hideLogPath
+                      curLogConfig={curLogConfig}
+                    />
                   </HeaderPanel>
                 </PagePanel>
               </div>

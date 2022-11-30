@@ -1,0 +1,15 @@
+    [OUTPUT]
+        Name                s3
+        Match               $LOGHUB_CONFIG_TAG
+        bucket              $LOGHUB_S3_BUCKET_NAME
+        region              $LOGHUB_CONFIG_REGION
+        total_file_size     $LOGHUB_S3_MAX_FILE_SIZE
+        upload_timeout      $LOGHUB_S3_UPLOAD_TIMEOUT
+        use_put_object      true
+        s3_key_format       /$LOGHUB_S3_PREFIX/%H-%M-%S-$$UUID$LOGHUB_S3_SUFFIX
+        $LOGHUB_S3_COMPRESSION
+        json_date_key       $LOGHUB_TIMEKEY
+        json_date_format    iso8601
+        Retry_Limit         False
+        tls.verify          false
+        Role_arn            $LOGHUB_BUFFER_ACCESS_ROLE_ARN

@@ -1,0 +1,6 @@
+$util.validate($util.matches("^\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$", $ctx.args.input.email), "Invalid email")
+#foreach( $param in $ctx.args.input.alarms )
+    #set($param.value = $util.urlDecode($param.value))
+#end
+
+{"version": "2017-02-28", "operation": "Invoke", "payload": $util.toJson($ctx)}

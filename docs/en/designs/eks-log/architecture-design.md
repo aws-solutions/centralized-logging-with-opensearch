@@ -20,7 +20,7 @@ Considering that there are many types of logs in EKS, and different types of log
 
 Considering whether the application is deployed in EC2 or EKS Cluster, there is usually no difference in the application log format, but the analysis methods for logs from different sources are still different. When we designed EKS Cluster log analysis, we abstracted the concept of ==log source== in the application log ingestion component. Therefore, EKS Cluster's log pipeline still uses the application log pipeline. When an EKS Cluster log pipeline is created, a log ingestion is created together
 
-**Q. Which deployment mode does the logging agent support?**
+**Q. Which deployment mode does the log agent support?**
 
 Whether you choose the DaemonSet type or SideCar, the Log Hub supports。
 

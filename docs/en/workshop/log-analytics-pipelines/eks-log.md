@@ -31,7 +31,7 @@ We have successfully created a multi-line Spring Boot log config.
 2. In the left sidebar, under **Log Source**, choose **EKS Cluster**.
 3. Click the **Import a Cluster** button.
 4. Choose the **loghub-workshop-eks**.
-5. Select **DaemonSet** as logging agent's deployment pattern. 
+5. Select **DaemonSet** as log agent's deployment pattern. 
 6. Choose **Next**.
 7. Choose the AOS domain as **workshop-os**.
 8. Configure the Network the EKS cluster and OpenSearch

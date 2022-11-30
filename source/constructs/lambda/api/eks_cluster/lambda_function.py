@@ -33,7 +33,8 @@ def handle_error(func):
         except Exception as e:
             logger.error(e)
             raise RuntimeError(
-                "Unknown exception, please check Lambda log for more details")
+                "Unknown exception, please check Lambda log for more details"
+            )
 
     return wrapper
 

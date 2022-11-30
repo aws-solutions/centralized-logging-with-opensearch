@@ -33,7 +33,9 @@ include-markdown "include-prerequisites.md"
         您必须使用键 `time` 指定日志的日期时间。 如果未指定，将添加系统时间。
 
 10. 指定**时间格式**。 格式语法遵循 [strptime](https://linux.die.net/man/3/strptime)。 请参见[详情](https://docs.fluentbit.io/manual/pipeline/parsers/configuring-parser#time-resolution-and-fractional-seconds)。 
-11. 选择**创建**。
+11. （可选）在 **Filter** 部分，添加一些条件以在日志代理端过滤日志。该解决方案将仅摄入与所有指定条件匹配的日志。
+
+12. 选择**创建**。
 
 ## 步骤 2: 创建一个日志摄入
 

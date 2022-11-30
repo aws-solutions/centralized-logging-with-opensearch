@@ -16,8 +16,6 @@ limitations under the License.
 import React, { useState, useEffect } from "react";
 import { ExLogConf } from "pages/resources/common/LogConfigComp";
 import HeaderPanel from "components/HeaderPanel";
-import ValueWithLabel from "components/ValueWithLabel";
-import { formatLocalTime } from "assets/js/utils";
 import { appSyncRequestQuery } from "assets/js/request";
 import { getLogConf } from "graphql/queries";
 import LoadingText from "components/LoadingText";
@@ -25,12 +23,13 @@ import ConfigDetailComps from "pages/resources/logConfig/ConfigDetailComps";
 import { useTranslation } from "react-i18next";
 
 interface LogConfigProps {
+  hideLogPath?: boolean;
   logPath?: string;
   configId?: string;
 }
 
 const LogConfig: React.FC<LogConfigProps> = (props: LogConfigProps) => {
-  const { configId, logPath } = props;
+  const { configId, hideLogPath, logPath } = props;
   const { t } = useTranslation();
   const [loadingData, setLoadingData] = useState(false);
   const [curConfig, setCurConfig] = useState<ExLogConf>();
@@ -64,32 +63,12 @@ const LogConfig: React.FC<LogConfigProps> = (props: LogConfigProps) => {
           <LoadingText />
         ) : (
           <div>
-            <div className="flex value-label-span">
-              <div className="flex-1">
-                <ValueWithLabel
-                  label={t("ekslog:ingest.detail.configTab.name")}
-                >
-                  <div>{curConfig?.confName}</div>
-                </ValueWithLabel>
-              </div>
-              <div className="flex-1 border-left-c">
-                <ValueWithLabel
-                  label={t("ekslog:ingest.detail.configTab.type")}
-                >
-                  {curConfig?.logType || "-"}
-                </ValueWithLabel>
-              </div>
-              <div className="flex-1 border-left-c">
-                <ValueWithLabel
-                  label={t("ekslog:ingest.detail.configTab.created")}
-                >
-                  {formatLocalTime(curConfig?.createdDt || "")}
-                </ValueWithLabel>
-              </div>
-            </div>
-            <div>
-              <ConfigDetailComps logPath={logPath} curLogConfig={curConfig} />
-            </div>
+            <ConfigDetailComps
+              hideLogPath={hideLogPath}
+              hideBasicInfo={false}
+              logPath={logPath}
+              curLogConfig={curConfig}
+            />
           </div>
         )}
       </HeaderPanel>

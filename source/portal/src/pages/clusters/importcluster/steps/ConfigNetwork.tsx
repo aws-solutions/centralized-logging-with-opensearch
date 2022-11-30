@@ -140,8 +140,8 @@ const ConfigNetwork: React.FC<ConfigNetworkProps> = (
             >
               <ExtLink
                 to={`${buildVPCLink(
-                  esVPCInfo.vpcId,
-                  amplifyConfig.aws_project_region
+                  amplifyConfig.aws_project_region,
+                  esVPCInfo.vpcId
                 )}`}
               >
                 {esVPCInfo.vpcId}
@@ -156,8 +156,8 @@ const ConfigNetwork: React.FC<ConfigNetworkProps> = (
                     <div key={index}>
                       <ExtLink
                         to={buildSGLink(
-                          element || "",
-                          amplifyConfig.aws_project_region
+                          amplifyConfig.aws_project_region,
+                          element || ""
                         )}
                       >
                         {element}
@@ -176,8 +176,8 @@ const ConfigNetwork: React.FC<ConfigNetworkProps> = (
                     <div key={index}>
                       <ExtLink
                         to={buildSubnetLink(
-                          element,
-                          amplifyConfig.aws_project_region
+                          amplifyConfig.aws_project_region,
+                          element
                         )}
                       >{`${
                         esVPCInfo.availabilityZones?.[index]

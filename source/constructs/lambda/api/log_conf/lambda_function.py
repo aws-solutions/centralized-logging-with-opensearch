@@ -101,16 +101,37 @@ def create_log_conf(**args):
     id = str(uuid.uuid4())
     log_conf_table.put_item(
         Item={
-            'id': id,
-            'confName': args['confName'],
-            'logType': args['logType'],
-            'createdDt': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
-            'userLogFormat': args.get('userLogFormat', ''),
-            'regularExpression': args.get('regularExpression', ''),
-            'regularSpecs': _validate_regular_specs(
-                args.get('regularSpecs', [])),
-            'multilineLogParser': args.get('multilineLogParser'),
-            'status': 'ACTIVE',
+            'id':
+            id,
+            'confName':
+            args['confName'],
+            'logType':
+            args['logType'],
+            'createdDt':
+            datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
+            'userSampleLog':
+            args.get('userSampleLog', ''),
+            'userLogFormat':
+            args.get('userLogFormat', ''),
+            'regularExpression':
+            args.get('regularExpression', ''),
+            'regularSpecs':
+            _validate_regular_specs(args.get('regularSpecs', [])),
+            'multilineLogParser':
+            args.get('multilineLogParser'),
+            'syslogParser':
+            args.get('syslogParser'),
+            'timeRegularExpression':
+            args.get('timeRegularExpression', ''),
+            'processorFilterRegex':
+            _validate_filter_regex(
+                args.get('processorFilterRegex', {'enable': False})),
+            'timeKey':
+            args.get('timeKey'),
+            'timeOffset':
+            args.get('timeOffset'),
+            'status':
+            'ACTIVE',
         })
     return id
 
@@ -173,8 +194,10 @@ def delete_log_conf(id: str) -> str:
         })
 
 
-def update_log_conf(id, confName, logType, multilineLogParser, userLogFormat,
-                    regularExpression, regularSpecs):
+def update_log_conf(id, confName, logType, multilineLogParser, syslogParser,
+                    userLogFormat, userSampleLog, regularExpression,
+                    timeRegularExpression, regularSpecs, processorFilterRegex,
+                    timeKey, timeOffset):
     """ update confName in LogConf table """
     logger.info('Update LogConf  in DynamoDB')
     resp = log_conf_table.get_item(Key={'id': id})
@@ -190,24 +213,37 @@ def update_log_conf(id, confName, logType, multilineLogParser, userLogFormat,
     log_conf_table.update_item(
         Key={'id': id},
         UpdateExpression=
-        'SET #confName = :cfn,  #logType=:lt, #multilineLogParser=:multilineLogParser, #updatedDt= :uDt, #userLogFormat=:userLogFormat, #regularExpression=:regularExpression, #regularSpecs=:regularSpecs',
+        'SET #confName = :cfn, #logType=:lt, #multilineLogParser=:multilineLogParser, #syslogParser=:syslogParser, #updatedDt= :uDt, #userLogFormat=:userLogFormat, #userSampleLog=:userSampleLog, #regularExpression=:regularExpression,#timeRegularExpression=:timeRegularExpression, #regularSpecs=:regularSpecs, #processorFilterRegex=:processorFilterRegex, #timeKey=:timeKey, #timeOffset=:timeOffset ',
         ExpressionAttributeNames={
             '#confName': 'confName',
             '#logType': 'logType',
             '#multilineLogParser': 'multilineLogParser',
+            '#syslogParser': 'syslogParser',
             '#updatedDt': 'updatedDt',
             '#userLogFormat': 'userLogFormat',
+            '#userSampleLog': 'userSampleLog',
             '#regularExpression': 'regularExpression',
+            '#timeRegularExpression': 'timeRegularExpression',
             '#regularSpecs': 'regularSpecs',
+            '#processorFilterRegex': 'processorFilterRegex',
+            '#timeKey': 'timeKey',
+            '#timeOffset': 'timeOffset',
         },
         ExpressionAttributeValues={
             ':cfn': confName,
             ':lt': logType,
             ':multilineLogParser': multilineLogParser,
+            ':syslogParser': syslogParser,
             ':uDt': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
             ':userLogFormat': userLogFormat,
+            ':userSampleLog': userSampleLog,
             ':regularExpression': regularExpression,
+            ':timeRegularExpression': timeRegularExpression,
             ':regularSpecs': _validate_regular_specs(regularSpecs),
+            ':processorFilterRegex':
+            _validate_filter_regex(processorFilterRegex),
+            ':timeKey': timeKey,
+            ':timeOffset': timeOffset,
         })
 
 
@@ -226,3 +262,33 @@ def _validate_regular_specs(lst: list) -> list:
                 'Invalid regularSpecs: "date" type must have "format"')
 
     return lst
+
+
+def _validate_filter_regex(map: map) -> map:
+    if map is None:
+        return None
+    if not isinstance(map, dict):
+        raise APIException(
+            'Invalid processorFilterRegex: item is not a dict or None.')
+    if map.get('enable') is None:
+        raise APIException(
+            'Invalid processorFilterRegex: can not found "enable" field.')
+    if map.get('enable') is True:
+        if not isinstance(map.get('filters'), list):
+            raise APIException(
+                'Invalid processorFilterRegex: filters item is not a list.')
+        for each in map.get('filters'):
+            if not each.get('key'):
+                raise APIException(
+                    'Invalid processorFilterRegex.filters: can not found "key" field.'
+                )
+            if not each.get('condition'):
+                raise APIException(
+                    'Invalid processorFilterRegex.filters: can not found "condition" field.'
+                )
+            if not each.get('value'):
+                raise APIException(
+                    'Invalid processorFilterRegex.filters: can not found "value" field.'
+                )
+
+    return map

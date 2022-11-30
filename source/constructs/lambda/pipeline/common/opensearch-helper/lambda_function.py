@@ -47,9 +47,9 @@ solution_version = os.environ.get("SOLUTION_VERSION", "v1.0.0")
 solution_id = os.environ.get("SOLUTION_ID", "SO8025")
 user_agent_extra = f"AwsSolution/{solution_id}/{solution_version}"
 
-default_config = Config(
-    connect_timeout=30, retries={"max_attempts": 3}, user_agent_extra=user_agent_extra
-)
+default_config = Config(connect_timeout=30,
+                        retries={"max_attempts": 3},
+                        user_agent_extra=user_agent_extra)
 es = boto3.client("es", region_name=default_region, config=default_config)
 
 
@@ -82,10 +82,9 @@ def lambda_handler(event, context):
             time.sleep(15)
 
         # Check and create index state management policy
-        if log_type:
+        if log_type and log_type != "Json":
             index_template = aos.default_index_template(
-                number_of_shards, number_of_replicas
-            )
+                number_of_shards, number_of_replicas)
 
             # Check and Create index template
             put_index_template(index_template)
@@ -114,24 +113,33 @@ def action_create_index_template(props: dict):
         #     }
         # }
 
-        logger.info(f"{aos.create_predefined_index_template.__name__} of {the_log_type} : {createDashboard}")
+        logger.info(
+            f"{aos.create_predefined_index_template.__name__} of {the_log_type} : {createDashboard}"
+        )
 
         # TODO: How to de-duplicate the index template or dashboards?
 
-        run_func_with_retry(aos.create_predefined_index_template,
-                            aos.create_predefined_index_template.__name__,
-                            name=the_log_type,
-                            number_of_shards=number_of_shards,
-                            number_of_replicas=number_of_replicas)
+        run_func_with_retry(
+            aos.create_predefined_index_template,
+            aos.create_predefined_index_template.__name__,
+            name=the_log_type,
+            number_of_shards=number_of_shards,
+            number_of_replicas=number_of_replicas,
+        )
 
         if createDashboard.lower() == "yes":
-            logger.info(f"{aos.import_saved_object.__name__} of {the_log_type}")
+            logger.info(
+                f"{aos.import_saved_object.__name__} of {the_log_type}")
 
-            run_func_with_retry(aos.import_saved_object,
-                                aos.import_saved_object.__name__,
-                                log_type=the_log_type)
+            run_func_with_retry(
+                aos.import_saved_object,
+                aos.import_saved_object.__name__,
+                log_type=the_log_type,
+            )
 
-    elif the_log_type in ["regex", "multilinetext", "singlelinetext", "json"]:
+    elif the_log_type in [
+            "regex", "multilinetext", "singlelinetext", "json", "syslog"
+    ]:
         # {
         #     "action": "CreateIndexTemplate",
         #     "props": {
@@ -145,16 +153,17 @@ def action_create_index_template(props: dict):
         # }
 
         mappings = props.get("mappings", {})
-        index_template = aos.default_index_template(number_of_shards, number_of_replicas)
-        index_template["template"]["mappings"] = {
-            "properties": mappings
-        }
+        index_template = aos.default_index_template(number_of_shards,
+                                                    number_of_replicas)
+        index_template["template"]["mappings"] = {"properties": mappings}
 
         logger.info(f"Put index template: {index_template}")
 
-        run_func_with_retry(aos.put_index_template,
-                            aos.put_index_template.__name__,
-                            index_template=index_template)
+        run_func_with_retry(
+            aos.put_index_template,
+            aos.put_index_template.__name__,
+            index_template=index_template,
+        )
 
     else:
         logger.info(f"Unknown log type: {the_log_type}")
@@ -167,15 +176,15 @@ def advanced_security_enabled() -> bool:
         bool: True if enabled.
     """
     logger.info(
-        "Check if OpenSearch has Advanced Security enabled for domain %s", domain_name
-    )
+        "Check if OpenSearch has Advanced Security enabled for domain %s",
+        domain_name)
     result = False
     try:
         resp = es.describe_elasticsearch_domain_config(
-            DomainName=domain_name,
-        )
+            DomainName=domain_name, )
         # print(resp)
-        result = resp["DomainConfig"]["AdvancedSecurityOptions"]["Options"]["Enabled"]
+        result = resp["DomainConfig"]["AdvancedSecurityOptions"]["Options"][
+            "Enabled"]
 
     except Exception as e:
         logger.error("Unable to access and get OpenSearch config")
@@ -183,7 +192,8 @@ def advanced_security_enabled() -> bool:
         logger.error(
             "Please ensure the subnet for this lambda is private with NAT enabled"
         )
-        logger.info("You may need to manually add access to OpenSearch for Lambda")
+        logger.info(
+            "You may need to manually add access to OpenSearch for Lambda")
     return result
 
 
@@ -199,7 +209,8 @@ def add_master_role(role_arn: str):
                 },
             },
         )
-        logger.info("Response status: %d", resp["ResponseMetadata"]["HTTPStatusCode"])
+        logger.info("Response status: %d",
+                    resp["ResponseMetadata"]["HTTPStatusCode"])
     except Exception as e:
         logger.error("Unable to automatically add backend role")
         logger.error(e)
@@ -208,19 +219,20 @@ def add_master_role(role_arn: str):
 
 def put_index_template(index_template):
     # no need to check whether log type is qualified
-    logger.info(
-        "Create index template for type %s with prefix %s", log_type, index_prefix
-    )
+    logger.info("Create index template for type %s with prefix %s", log_type,
+                index_prefix)
 
     kwargs = {"index_template": index_template}
-    run_func_with_retry(aos.put_index_template, "Create index template", **kwargs)
+    run_func_with_retry(aos.put_index_template, "Create index template",
+                        **kwargs)
 
 
 def import_saved_objects():
-    if create_dashboard.lower() == "yes" or (log_type in ["cloudfront", "cloudtrail", "s3", "elb"]):
-        logger.info(
-            "Import saved objects for type %s with prefix %s", log_type, index_prefix
-        )
+    if create_dashboard.lower() == "yes" or (log_type in [
+            "cloudfront", "cloudtrail", "s3", "elb"
+    ]):
+        logger.info("Import saved objects for type %s with prefix %s",
+                    log_type, index_prefix)
         run_func_with_retry(aos.import_saved_objects, "Import saved objects")
     else:
         # Do nothing,

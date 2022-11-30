@@ -44,6 +44,7 @@ import S3FileType from "help/S3FileType";
 import EKSPattern from "help/EKSPattern";
 import EKSIAMRole from "help/EKSIAMRole";
 import ConfigTimeFormat from "help/ConfigTimeFormat";
+import ConfigFilter from "help/ConfigFilter";
 
 interface HelpPanelProps {
   className?: string;
@@ -129,6 +130,7 @@ export const HelpPanel: React.FC<HelpPanelProps> = (props: HelpPanelProps) => {
           {infoBarType === InfoBarTypes.CONFIG_TIME_FORMAT && (
             <ConfigTimeFormat />
           )}
+          {infoBarType === InfoBarTypes.CONFIG_FILTER && <ConfigFilter />}
         </div>
       )}
     </div>

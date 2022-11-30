@@ -29,7 +29,9 @@ include-markdown "include-prerequisites.md"
        127.0.0.1 - - [24/Dec/2021:01:27:11 +0000] "GET / HTTP/1.1" 200 3520 "-" "curl/7.79.1" "-"
        ```
 
-9. Choose **Create**.
+9. (Optional) In the **Filter** section, you add some conditions to filter logs at the log agent side. The solution will ingest logs that match ALL the specified conditions only. 
+
+10. Select **Create**.
 
 ## Step 2: Create an application log ingestion
 

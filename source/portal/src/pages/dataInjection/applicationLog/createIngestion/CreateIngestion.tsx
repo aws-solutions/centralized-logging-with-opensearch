@@ -22,40 +22,45 @@ import CreateTags from "./steps/CreateTags";
 import Button from "components/Button";
 import Breadcrumb from "components/Breadcrumb";
 import { RouteComponentProps, useHistory } from "react-router-dom";
-import { LogAgentStatus, LogSourceType, LogType, Tag } from "API";
+import { LogAgentStatus, LogSourceType, Tag } from "API";
 import { ActionType } from "reducer/appReducer";
 import { useDispatch } from "react-redux";
 import HelpPanel from "components/HelpPanel";
 import SideMenu from "components/SideMenu";
-import ApplyLogConfig from "./steps/ApplyLogConfig";
 import { InstanceGroup } from "API";
 import { CreationMethod, YesNo } from "types";
 import { appSyncRequestMutation } from "assets/js/request";
 import {
   createAppLogIngestion,
   createInstanceGroup,
+  createInstanceGroupBaseOnASG,
   createLogConf,
 } from "graphql/mutations";
 import { InstanceGroupType } from "pages/resources/instanceGroup/create/CreateInstanceGroup";
 import { useTranslation } from "react-i18next";
 import { InstanceWithStatus } from "pages/resources/common/InstanceGroupComp";
 import { ExLogConf } from "pages/resources/common/LogConfigComp";
+import ApplyLogConfig from "../common/ApplyLogConfig";
+import {
+  checkConfigInput,
+  ConfigValidateType,
+  removeNewLineBreack,
+} from "assets/js/applog";
 
 export interface IngestionPropsType {
   instanceGroupMethod: CreationMethod | string;
-  logConfigMethod: CreationMethod | string;
   chooseInstanceGroup: InstanceGroup[];
-  curLogConfig: ExLogConf | undefined;
-  curInstanceGroup: InstanceGroupType | undefined;
+  curInstanceGroup: InstanceGroupType;
   instanceGroupCheckedInstances: InstanceWithStatus[];
   createNewInstanceGroupId: string;
-  logConfigNameError: boolean;
-  logConfigTypeError: boolean;
   instanceGroupNameEmpty: boolean;
-  showSampleLogRequiredError: boolean;
-  showUserLogFormatError: boolean;
-  showSampleLogInvalidError: boolean;
+
+  logConfigMethod: CreationMethod | string;
+  curLogConfig: ExLogConf;
+  logConfigError: ConfigValidateType;
   logPathEmptyError: boolean;
+  showChooseExistsError: boolean;
+
   createDashboard: string;
   accountId: string;
   logPath: string;
@@ -93,17 +98,41 @@ const CreateIngestion: React.FC<RouteComponentProps<MatchParams>> = (
     instanceGroupMethod: CreationMethod.New,
     logConfigMethod: CreationMethod.New,
     chooseInstanceGroup: [],
-    curLogConfig: undefined,
-    curInstanceGroup: undefined,
+    curLogConfig: {
+      __typename: "LogConf",
+      id: "",
+      confName: "",
+      logType: null,
+      multilineLogParser: null,
+      createdDt: null,
+      userSampleLog: "",
+      userLogFormat: "",
+      regularExpression: "",
+      regularSpecs: [],
+      processorFilterRegex: {
+        enable: false,
+        filters: [],
+      },
+    },
+    curInstanceGroup: {
+      groupName: "",
+      asgObj: null,
+      groupType: LogSourceType.EC2,
+      instanceSet: [],
+    },
     instanceGroupCheckedInstances: [],
     createNewInstanceGroupId: "",
-    logConfigNameError: false,
-    logConfigTypeError: false,
     instanceGroupNameEmpty: false,
-    showSampleLogRequiredError: false,
-    showUserLogFormatError: false,
-    showSampleLogInvalidError: false,
+    logConfigError: {
+      logConfigNameError: false,
+      logConfigTypeError: false,
+      showSampleLogRequiredError: false,
+      showUserLogFormatError: false,
+      showSampleLogInvalidError: false,
+      showRegexLogParseError: false,
+    },
     logPathEmptyError: false,
+    showChooseExistsError: false,
     createDashboard: YesNo.Yes,
     accountId: "",
     logPath: "",
@@ -115,126 +144,74 @@ const CreateIngestion: React.FC<RouteComponentProps<MatchParams>> = (
   const [loadingCreateInstanceGroup, setLoadingCreateInstanceGroup] =
     useState(false);
   const [loadingCreate, setLoadingCreate] = useState(false);
-  // const [domainEmptyError, setDomainEmptyError] = useState(false);
+
+  // Create Log Config
   const createLogConfig = async () => {
-    if (!ingestionInfo?.curLogConfig?.confName?.trim()) {
+    console.info("ingestionInfo?.curLogConfig:", ingestionInfo?.curLogConfig);
+    if (ingestionInfo?.curLogConfig) {
+      const validateRes: any = checkConfigInput(ingestionInfo?.curLogConfig);
       setIngestionInfo((prev) => {
         return {
           ...prev,
-          logConfigNameError: true,
+          logConfigError: validateRes,
         };
       });
-      return;
-    }
 
-    if (!ingestionInfo?.curLogConfig?.logType) {
-      setIngestionInfo((prev) => {
-        return {
-          ...prev,
-          logConfigTypeError: true,
-        };
-      });
-      return;
-    }
-
-    if (
-      ingestionInfo?.curLogConfig.logType === LogType.MultiLineText ||
-      ingestionInfo?.curLogConfig.logType === LogType.SingleLineText
-    ) {
-      if (!ingestionInfo?.curLogConfig.userSampleLog?.trim()) {
-        setIngestionInfo((prev) => {
-          return {
-            ...prev,
-            showSampleLogRequiredError: true,
-          };
-        });
-        return;
-      }
-
+      // if validate result has true value, return because some filed invalidate
+      console.info(
+        "Object.keys(validateRes).map((key: string) => validateRes[key]):",
+        Object.keys(validateRes).map((key: string) => validateRes[key])
+      );
       if (
-        !ingestionInfo?.curLogConfig?.regularSpecs ||
-        ingestionInfo?.curLogConfig?.regularSpecs.length <= 0
+        Object.keys(validateRes)
+          .map((key: string) => validateRes[key])
+          .includes(true)
       ) {
-        Swal.fire(
-          t("oops"),
-          t("resource:config.parsing.regexLogParseError"),
-          "warning"
-        );
         return;
       }
-    }
 
-    console.info("ingestionInfoingestionInfoingestionInfo:", ingestionInfo);
-
-    // Check user log format
-    if (ingestionInfo?.showUserLogFormatError) {
-      return;
-    }
-
-    // Check sample log required
-    if (ingestionInfo?.showSampleLogRequiredError) {
-      return;
-    }
-
-    // Check sample log is valid
-    if (ingestionInfo?.showSampleLogInvalidError) {
-      return;
-    }
-
-    const createLogConfigParam = ingestionInfo?.curLogConfig;
-
-    if (
-      ingestionInfo?.curLogConfig.logType === LogType.MultiLineText ||
-      ingestionInfo?.curLogConfig.logType === LogType.SingleLineText
-    ) {
-      createLogConfigParam.regularExpression =
-        ingestionInfo?.curLogConfig.regularExpression
-          ?.trim()
-          .replace(/[\n\t\r]/g, "");
-      createLogConfigParam.userLogFormat =
-        ingestionInfo?.curLogConfig.userLogFormat
-          ?.trim()
-          .replace(/[\n\t\r]/g, "");
-    }
-
-    try {
-      setLoadingCreateLogConfig(true);
-      const createRes = await appSyncRequestMutation(
-        createLogConf,
+      // Remove \n\t\r from regularExpression and userLogFormat
+      const createLogConfigParam: ExLogConf = removeNewLineBreack(
         ingestionInfo.curLogConfig
       );
-      console.info("createRes:", createRes);
-      // createRes.data.createLogConf = "f174ab6b-9e63-4ef8-8311-46b6bffdcd98";
-      setIngestionInfo((prev: any) => {
+
+      try {
+        setLoadingCreateLogConfig(true);
+        const createRes = await appSyncRequestMutation(
+          createLogConf,
+          createLogConfigParam
+        );
+        setIngestionInfo((prev: any) => {
+          return {
+            ...prev,
+            curLogConfig: {
+              ...prev.curLogConfig,
+              id: createRes.data.createLogConf,
+            },
+          };
+        });
+        setLoadingCreateLogConfig(false);
+        setCurStep(3);
+      } catch (error) {
+        setLoadingCreateLogConfig(false);
+        console.error(error);
+      }
+    } else {
+      // Set config name error when log config is null
+      setIngestionInfo((prev) => {
         return {
           ...prev,
-          curLogConfig: {
-            ...prev.curLogConfig,
-            id: createRes.data.createLogConf,
+          logConfigError: {
+            ...prev.logConfigError,
+            logConfigNameError: true,
           },
         };
       });
-      setLoadingCreateLogConfig(false);
-      setCurStep(3);
-    } catch (error) {
-      setLoadingCreateLogConfig(false);
-      console.error(error);
     }
   };
 
   // Create Instance Group createInstanceGroup
-  const confirmCreateInstanceGroup = async () => {
-    // Check Name Empty
-    if (!ingestionInfo.curInstanceGroup?.groupName) {
-      setIngestionInfo((prev) => {
-        return {
-          ...prev,
-          instanceGroupNameEmpty: true,
-        };
-      });
-      return;
-    }
-
+  const confirmCreateInstanceGroupByEC2 = async () => {
     // Check Instance Selected
     if (
       !ingestionInfo.instanceGroupCheckedInstances ||
@@ -292,6 +269,64 @@ const CreateIngestion: React.FC<RouteComponentProps<MatchParams>> = (
     } catch (error) {
       setLoadingCreateInstanceGroup(false);
       console.error(error);
+    }
+  };
+
+  const confirmCreateLogInstanceGroupByASG = async () => {
+    // Check Instance Selected
+    if (!ingestionInfo.curInstanceGroup.asgObj) {
+      Swal.fire(t("oops"), t("resource:group.create.asg.selectASG"), "warning");
+      return;
+    }
+
+    const createInstanceGroupParam = {
+      // region: "",
+      groupName: ingestionInfo.curInstanceGroup.groupName,
+      accountId: ingestionInfo.accountId,
+      autoScalingGroupName: ingestionInfo.curInstanceGroup.asgObj.value,
+    };
+    try {
+      setLoadingCreateInstanceGroup(true);
+      const createRes = await appSyncRequestMutation(
+        createInstanceGroupBaseOnASG,
+        createInstanceGroupParam
+      );
+      console.info("createRes:", createRes);
+      const tmpCreateGroup = {
+        id: createRes.data.createInstanceGroupBaseOnASG,
+      };
+      setLoadingCreateInstanceGroup(false);
+      setIngestionInfo((prev: any) => {
+        return {
+          ...prev,
+          createNewInstanceGroupId: tmpCreateGroup.id,
+          chooseInstanceGroup: [tmpCreateGroup],
+        };
+      });
+      setCurStep(1);
+    } catch (error) {
+      setLoadingCreate(false);
+      console.error(error);
+    }
+  };
+
+  const confirmCreateInstanceGroup = () => {
+    // Check Name Empty
+    if (!ingestionInfo.curInstanceGroup?.groupName) {
+      setIngestionInfo((prev) => {
+        return {
+          ...prev,
+          instanceGroupNameEmpty: true,
+        };
+      });
+      return;
+    }
+
+    if (ingestionInfo.curInstanceGroup.groupType === LogSourceType.EC2) {
+      confirmCreateInstanceGroupByEC2();
+    }
+    if (ingestionInfo.curInstanceGroup.groupType === LogSourceType.ASG) {
+      confirmCreateLogInstanceGroupByASG();
     }
   };
 
@@ -386,12 +421,14 @@ const CreateIngestion: React.FC<RouteComponentProps<MatchParams>> = (
                       });
                     }}
                     changeCreationMethod={(method) => {
-                      setIngestionInfo((prev) => {
-                        return {
-                          ...prev,
-                          instanceGroupMethod: method,
-                        };
-                      });
+                      if (method) {
+                        setIngestionInfo((prev) => {
+                          return {
+                            ...prev,
+                            instanceGroupMethod: method,
+                          };
+                        });
+                      }
                     }}
                     changeSelectInstanceSet={(sets) => {
                       setIngestionInfo((prev) => {
@@ -403,6 +440,28 @@ const CreateIngestion: React.FC<RouteComponentProps<MatchParams>> = (
                     }}
                     changeLoadingRefresh={(refresh) => {
                       setLoadingRefresh(refresh);
+                    }}
+                    changeASG={(asg) => {
+                      setIngestionInfo((prev) => {
+                        return {
+                          ...prev,
+                          curInstanceGroup: {
+                            ...prev.curInstanceGroup,
+                            asgObj: asg,
+                          },
+                        };
+                      });
+                    }}
+                    changeGroupType={(type) => {
+                      setIngestionInfo((prev) => {
+                        return {
+                          ...prev,
+                          curInstanceGroup: {
+                            ...prev.curInstanceGroup,
+                            groupType: type,
+                          },
+                        };
+                      });
                     }}
                   />
                 )}
@@ -422,6 +481,7 @@ const CreateIngestion: React.FC<RouteComponentProps<MatchParams>> = (
                 )}
                 {curStep === 2 && (
                   <ApplyLogConfig
+                    hideLogPath={false}
                     ingestionInfo={ingestionInfo}
                     changeLogPath={(path) => {
                       setIngestionInfo((prev) => {
@@ -432,11 +492,39 @@ const CreateIngestion: React.FC<RouteComponentProps<MatchParams>> = (
                         };
                       });
                     }}
+                    changeExistsConfig={(configId) => {
+                      const tmpConf: ExLogConf = {
+                        __typename: "LogConf",
+                        id: configId,
+                        confName: "",
+                        logType: null,
+                        multilineLogParser: null,
+                        createdDt: null,
+                        userSampleLog: "",
+                        userLogFormat: "",
+                        regularExpression: "",
+                        regularSpecs: [],
+                        processorFilterRegex: {
+                          enable: false,
+                          filters: [],
+                        },
+                      };
+                      setIngestionInfo((prev) => {
+                        return {
+                          ...prev,
+                          curLogConfig: tmpConf,
+                          showChooseExistsError: false,
+                        };
+                      });
+                    }}
                     changeUserLogFormatError={(error) => {
                       setIngestionInfo((prev) => {
                         return {
                           ...prev,
-                          showUserLogFormatError: error,
+                          logConfigError: {
+                            ...prev.logConfigError,
+                            showUserLogFormatError: error,
+                          },
                         };
                       });
                     }}
@@ -444,7 +532,10 @@ const CreateIngestion: React.FC<RouteComponentProps<MatchParams>> = (
                       setIngestionInfo((prev) => {
                         return {
                           ...prev,
-                          showSampleLogInvalidError: invalid,
+                          logConfigError: {
+                            ...prev.logConfigError,
+                            showSampleLogInvalidError: invalid,
+                          },
                         };
                       });
                     }}
@@ -452,7 +543,10 @@ const CreateIngestion: React.FC<RouteComponentProps<MatchParams>> = (
                       setIngestionInfo((prev) => {
                         return {
                           ...prev,
-                          logConfigNameError: false,
+                          logConfigError: {
+                            ...prev.logConfigError,
+                            logConfigNameError: false,
+                          },
                         };
                       });
                     }}
@@ -460,19 +554,24 @@ const CreateIngestion: React.FC<RouteComponentProps<MatchParams>> = (
                       setIngestionInfo((prev) => {
                         return {
                           ...prev,
-                          logConfigTypeError: false,
+                          logConfigError: {
+                            ...prev.logConfigError,
+                            logConfigTypeError: false,
+                          },
                         };
                       });
                     }}
                     changeCurLogConfig={(config) => {
-                      console.info("config:", config);
                       setIngestionInfo((prev) => {
                         return {
                           ...prev,
                           curLogConfig: config,
-                          showSampleLogRequiredError: config?.userSampleLog
-                            ? false
-                            : true,
+                          logConfigError: {
+                            ...prev.logConfigError,
+                            showSampleLogRequiredError: config?.userSampleLog
+                              ? false
+                              : true,
+                          },
                         };
                       });
                     }}
@@ -578,6 +677,19 @@ const CreateIngestion: React.FC<RouteComponentProps<MatchParams>> = (
                             !ingestionInfo.curLogConfig?.id
                           ) {
                             createLogConfig();
+                            return;
+                          }
+                          if (
+                            !ingestionInfo?.curLogConfig?.id &&
+                            ingestionInfo.logConfigMethod ===
+                              CreationMethod.Exists
+                          ) {
+                            setIngestionInfo((prev) => {
+                              return {
+                                ...prev,
+                                showChooseExistsError: true,
+                              };
+                            });
                             return;
                           }
                         }

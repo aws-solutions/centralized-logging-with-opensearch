@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 /* eslint-disable react/display-name */
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Swal from "sweetalert2";
 import SideMenu from "components/SideMenu";
 import Breadcrumb from "components/Breadcrumb";
@@ -24,12 +24,18 @@ import InstanceGroupComp, {
 import Button from "components/Button";
 import { useHistory } from "react-router-dom";
 import { appSyncRequestMutation } from "assets/js/request";
-import { createInstanceGroup } from "graphql/mutations";
-import { LogAgentStatus } from "API";
+import {
+  createInstanceGroup,
+  createInstanceGroupBaseOnASG,
+} from "graphql/mutations";
+import { LogAgentStatus, LogSourceType } from "API";
 import { useTranslation } from "react-i18next";
+import { OptionType } from "components/AutoComplete/autoComplete";
 
 export interface InstanceGroupType {
   groupName: string;
+  groupType: string | LogSourceType;
+  asgObj: OptionType | null;
   instanceSet: string[];
 }
 
@@ -52,6 +58,8 @@ const CreateInstanceGroup: React.FC = () => {
   const [curCreateInstanceGroup, setCurCreateInstanceGroup] =
     useState<InstanceGroupType>({
       groupName: "",
+      asgObj: null,
+      groupType: LogSourceType.EC2,
       instanceSet: [],
     });
   const [createShowNameEmptyError, setCreateShowNameEmptyError] =
@@ -59,13 +67,7 @@ const CreateInstanceGroup: React.FC = () => {
   const [createButtonDisabled, setCreateButtonDisabled] = useState(false);
   const [curAccountId, setCurAccountId] = useState("");
 
-  const createLogInstanceGroup = async () => {
-    // Check Name Empty
-    if (!curCreateInstanceGroup.groupName) {
-      setCreateShowNameEmptyError(true);
-      return;
-    }
-
+  const createLogInstanceGroupByEC2 = async () => {
     // Check Instance Selected
     if (checkedInstanceList.length <= 0) {
       Swal.fire(
@@ -113,9 +115,49 @@ const CreateInstanceGroup: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    console.info("curCreateInstanceGroup CHANGED:", curCreateInstanceGroup);
-  }, [curCreateInstanceGroup]);
+  const createLogInstanceGroupByASG = async () => {
+    // Check Instance Selected
+    if (!curCreateInstanceGroup.asgObj) {
+      Swal.fire(t("oops"), t("resource:group.create.asg.selectASG"), "warning");
+      return;
+    }
+
+    const createInstanceGroupParam = {
+      // region: "",
+      groupName: curCreateInstanceGroup.groupName,
+      accountId: curAccountId,
+      autoScalingGroupName: curCreateInstanceGroup.asgObj.value,
+    };
+    try {
+      setLoadingCreate(true);
+      const createRes = await appSyncRequestMutation(
+        createInstanceGroupBaseOnASG,
+        createInstanceGroupParam
+      );
+      console.info("createRes:", createRes);
+      setLoadingCreate(false);
+      history.push({
+        pathname: "/resources/instance-group",
+      });
+    } catch (error) {
+      setLoadingCreate(false);
+      console.error(error);
+    }
+  };
+
+  const createLogInstanceGroup = () => {
+    // Check Name Empty
+    if (!curCreateInstanceGroup.groupName) {
+      setCreateShowNameEmptyError(true);
+      return;
+    }
+    if (curCreateInstanceGroup.groupType === LogSourceType.EC2) {
+      createLogInstanceGroupByEC2();
+    }
+    if (curCreateInstanceGroup.groupType === LogSourceType.ASG) {
+      createLogInstanceGroupByASG();
+    }
+  };
 
   return (
     <div className="lh-main-content">
@@ -145,6 +187,16 @@ const CreateInstanceGroup: React.FC = () => {
                 changeInstanceSet={(sets) => {
                   console.info("changeInstanceSet sets:", sets);
                   setCheckedInstanceList(sets);
+                }}
+                changeASG={(asg) => {
+                  setCurCreateInstanceGroup((prev) => {
+                    return { ...prev, asgObj: asg };
+                  });
+                }}
+                changeGroupType={(type) => {
+                  setCurCreateInstanceGroup((prev) => {
+                    return { ...prev, groupType: type };
+                  });
                 }}
               />
             </div>

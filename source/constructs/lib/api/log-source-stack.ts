@@ -56,6 +56,7 @@ export interface LogSourceStackProps {
 
 }
 export class LogSourceStack extends Construct {
+    logSourceTable: ddb.Table;
     ec2LogSourceTable: ddb.Table;
     s3LogSourceTable: ddb.Table;
 
@@ -63,6 +64,30 @@ export class LogSourceStack extends Construct {
         super(scope, id);
 
         const solution_id = 'SO8025'
+
+        // Create a table to store all logging logSource info: like Syslog, S3 bucket
+        this.logSourceTable = new ddb.Table(this, 'LogSourceTable', {
+            partitionKey: {
+                name: 'id',
+                type: ddb.AttributeType.STRING
+            },
+            billingMode: ddb.BillingMode.PROVISIONED,
+            removalPolicy: RemovalPolicy.DESTROY,
+            encryption: ddb.TableEncryption.DEFAULT,
+            pointInTimeRecovery: true,
+        })
+        const cfnLogSourceTable = this.logSourceTable.node.defaultChild as ddb.CfnTable;
+        cfnLogSourceTable.overrideLogicalId('LogSourceTable')
+        addCfnNagSuppressRules(cfnLogSourceTable, [
+            {
+                id: 'W73',
+                reason: 'This table has billing mode as PROVISIONED'
+            },
+            {
+                id: 'W74',
+                reason: 'This table is set to use DEFAULT encryption, the key is owned by DDB.'
+            },
+        ])
 
         // Create a table to store ec2 logging logSource info
         this.ec2LogSourceTable = new ddb.Table(this, 'EC2LogSourceTable', {
@@ -122,7 +147,7 @@ export class LogSourceStack extends Construct {
             timeout: Duration.seconds(60),
             memorySize: 1024,
             environment: {
-                //  TODO: using EC2_LOG_SOURCE_TABLE to store ec2 log path
+                LOG_SOURCE_TABLE_NAME: this.logSourceTable.tableName,
                 EC2_LOG_SOURCE_TABLE_NAME: this.ec2LogSourceTable.tableName,
                 S3_LOG_SOURCE_TABLE_NAME: this.s3LogSourceTable.tableName,
                 EKS_CLUSTER_SOURCE_TABLE_NAME: props.eksClusterLogSourceTable.tableName,
@@ -136,6 +161,7 @@ export class LogSourceStack extends Construct {
         })
 
         // Grant permissions to the logSource lambda
+        this.logSourceTable.grantReadWriteData(logSourceHandler)
         this.ec2LogSourceTable.grantReadWriteData(logSourceHandler)
         this.s3LogSourceTable.grantReadWriteData(logSourceHandler)
         props.eksClusterLogSourceTable.grantReadWriteData(logSourceHandler)
@@ -158,7 +184,7 @@ export class LogSourceStack extends Construct {
             typeName: 'Query',
             fieldName: 'getLogSource',
             requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-            responseMappingTemplate: appsync.MappingTemplate.lambdaResult()
+            responseMappingTemplate: appsync.MappingTemplate.fromFile(path.join(__dirname, '../../graphql/vtl/log_source/GetLogSourceResp.vtl')),
         })
 
 
@@ -166,13 +192,13 @@ export class LogSourceStack extends Construct {
             typeName: 'Query',
             fieldName: 'listLogSources',
             requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-            responseMappingTemplate: appsync.MappingTemplate.lambdaResult()
+            responseMappingTemplate: appsync.MappingTemplate.fromFile(path.join(__dirname, '../../graphql/vtl/log_source/ListLogSourcesResp.vtl')),
         })
 
         LogSourceLambdaDS.createResolver({
             typeName: 'Mutation',
             fieldName: 'createLogSource',
-            requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+            requestMappingTemplate: appsync.MappingTemplate.fromFile(path.join(__dirname, '../../graphql/vtl/log_source/CreateLogSource.vtl')),
             responseMappingTemplate: appsync.MappingTemplate.lambdaResult()
         })
 
@@ -186,6 +212,13 @@ export class LogSourceStack extends Construct {
         LogSourceLambdaDS.createResolver({
             typeName: 'Mutation',
             fieldName: 'updateLogSource',
+            requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+            responseMappingTemplate: appsync.MappingTemplate.lambdaResult()
+        })
+
+        LogSourceLambdaDS.createResolver({
+            typeName: 'Query',
+            fieldName: 'checkCustomPort',
             requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
             responseMappingTemplate: appsync.MappingTemplate.lambdaResult()
         })

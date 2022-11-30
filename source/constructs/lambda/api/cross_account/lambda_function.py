@@ -39,6 +39,7 @@ class ErrorCode:
 
 
 class APIException(Exception):
+
     def __init__(self, message, code: str = None):
         if code:
             super().__init__('[{}] {}'.format(code, message))
@@ -222,10 +223,8 @@ def get_sub_account_link_by_accountid_region(**args):
     )
 
     conditions = Attr("status").eq("ACTIVE")
-    conditions = conditions.__and__(
-        Attr("subAccountId").eq(sub_accoount_id))
-    conditions = conditions.__and__(
-        Attr("region").eq(sub_region))
+    conditions = conditions.__and__(Attr("subAccountId").eq(sub_accoount_id))
+    conditions = conditions.__and__(Attr("region").eq(sub_region))
 
     response = sub_account_link_table.scan(
         FilterExpression=conditions,
@@ -242,7 +241,8 @@ def get_sub_account_link_by_accountid_region(**args):
     items = response["Items"]
 
     if len(items) == 0:
-        raise APIException('Sub Account Link Not Found', ErrorCode.AccountNotFound)
+        raise APIException('Sub Account Link Not Found',
+                           ErrorCode.AccountNotFound)
 
     item = items[0]
     result = {}
@@ -256,8 +256,8 @@ def get_sub_account_link_by_accountid_region(**args):
     result["subAccountBucketName"] = item["subAccountBucketName"]
     result["subAccountStackId"] = item["subAccountStackId"]
     result["subAccountVpcId"] = item.get("subAccountVpcId", "")
-    result["subAccountPublicSubnetIds"] = item.get(
-        "subAccountPublicSubnetIds", "")
+    result["subAccountPublicSubnetIds"] = item.get("subAccountPublicSubnetIds",
+                                                   "")
     result["subAccountKMSKeyArn"] = item.get("subAccountKMSKeyArn", "")
     result["status"] = item["status"]
     result["createdDt"] = item["createdDt"]

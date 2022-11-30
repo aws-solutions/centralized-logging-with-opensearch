@@ -19,11 +19,11 @@ user_agent_config = {
     "user_agent_extra": f"AwsSolution/{solution_id}/{solution_version}"
 }
 default_config = config.Config(**user_agent_config)
-default_region = os.environ.get('AWS_REGION')
+default_region = os.environ.get("AWS_REGION")
 
 
 def handle_error(func):
-    """ Decorator for exception handling """
+    """Decorator for exception handling"""
 
     def wrapper(*args, **kwargs):
         try:
@@ -34,7 +34,8 @@ def handle_error(func):
         except Exception as e:
             logger.exception(e)
             raise RuntimeError(
-                'Unknown exception, please check Lambda log for more details')
+                "Unknown exception, please check Lambda log for more details"
+            )
 
     return wrapper
 
@@ -43,21 +44,22 @@ def handle_error(func):
 def lambda_handler(event, context):
     # logger.info("Received event: " + json.dumps(event, indent=2))
 
-    action = event['info']['fieldName']
-    args = event['arguments']
+    action = event["info"]["fieldName"]
+    args = event["arguments"]
     open_extra_metadata_flag = False
     if args.get("openExtraMetadataFlag"):
         open_extra_metadata_flag = args.get("openExtraMetadataFlag")
 
     deploy_config_mng = EKSClusterPodDeploymentConfigurationMng(
-        eks_cluster_id=args['eksClusterId'],
-        open_extra_metadata_flag=open_extra_metadata_flag)
-    if action == 'getEKSDaemonSetConfig':
+        eks_cluster_id=args["eksClusterId"],
+        open_extra_metadata_flag=open_extra_metadata_flag,
+    )
+    if action == "getEKSDaemonSetConf":
         return deploy_config_mng.get_configuration()
-    elif action == 'getEKSSidecarConfig' or action == 'getEKSDeploymentConfig':
-        if args['ingestionId']:
-            deploy_config_mng.set_app_ingestion_id(args['ingestionId'])
+    elif action == "getEKSSidecarConf" or action == "getEKSDeploymentConf":
+        if args["ingestionId"]:
+            deploy_config_mng.set_app_ingestion_id(args["ingestionId"])
         return deploy_config_mng.get_configuration()
     else:
-        logger.info('Event received: ' + json.dumps(event, indent=2))
-        raise APIException(f'Unknown action {action}')
+        logger.info("Event received: " + json.dumps(event, indent=2))
+        raise APIException(f"Unknown action {action}")

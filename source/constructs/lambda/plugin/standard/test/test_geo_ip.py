@@ -21,7 +21,6 @@ class TestPlugin:
         assert len(result) == 1
         assert result[0]["geo_iso_code"] == "US"
         assert result[0]["geo_country"] == "United States"
-        assert result[0]["geo_city"] == "Bangor"
 
     def test_process_elb(self):
         records = [{"client_ip": "70.44.82.114"}]

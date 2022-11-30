@@ -3,8 +3,9 @@
   "clusters": "集群",
   "list": {
     "clusterName": "集群名称",
-    "pattern": "模式",
-    "os": "OpenSearch",
+    "account": "账户",
+    "pattern": "采集方式",
+    "os": "Amazon OpenSearch",
     "created": "创建时间"
   },
   "delete": "删除导入的 EKS 集群",
@@ -13,7 +14,7 @@
     "name": "创建",
     "step": {
       "specifyEksSource": "指定 EKS 日志源",
-      "specifyOS": "指定 OpenSearch 域",
+      "specifyOS": "指定 Amazon OpenSearch 域",
       "createTags": "创建标签"
     },
     "eksSource": {
@@ -23,23 +24,23 @@
       "eksClusterError": "请选择一个 EKS 集群",
       "curAccount": "当前 AWS 账户",
       "agent": "代理",
-      "eksAgentPattern": "模式",
-      "eksAgentPatternDesc": "请选择将用于部署日志代理的模式。",
+      "eksAgentPattern": "采集方式",
+      "eksAgentPatternDesc": "请选择将用于部署日志代理的采集方式。",
       "networkConfig": "网络配置",
-      "networkConfigDesc": "要将 EKS 日志摄入 OpenSearch，需要连接 EKS 集群的 VPC 和 OpenSearch的 VPC。如果未连接，您可以按照以下步骤创建 VPC 对等连接。",
+      "networkConfigDesc": "如果您计划直接将 EKS 日志提取到 Amazon OpenSearch（即不使用 Amazon S3 或 Kinesis Data Streams 作为缓冲层），请确保您的 EKS 集群的 VPC 和 Amazon OpenSearch 的 VPC 已连接。 如果它们没有连接，您可以按照以下步骤创建 VPC 对等连接。 （请注意，VPC 对等连接会产生额外费用）。",
       "vpc1": "1. 创建并接受 VPC 对等连接参考 ",
       "vpc2": "2. 更新路由表参考",
       "vpc3": "3. 更新安全组参考",
       "guide": "操作指南",
       "acknowledge": "请在继续之前确认复选框。",
-      "confirmed": "我确认了 EKS 集群和 OpenSearch 的 VPC 已连接。"
+      "confirmed": "我确认已完成日志从 EKS 直接提取到 Amazon OpenSearch VPC 的连接要求。"
     }
   },
   "detail": {
     "config": "基础配置",
     "clusterName": "EKS 集群",
-    "deploymentPattern": "模式",
-    "aos": "Amazon Opensearch",
+    "deploymentPattern": "采集方式",
+    "aos": "Amazon OpenSearch",
     "iamRole": "IAM 角色 ARN",
     "created": "创建时间",
     "tab": {
@@ -48,7 +49,7 @@
       "tags": "标签"
     },
     "ingestions": {
-      "osIndex": "Opensearch 索引",
+      "osIndex": "Amazon OpenSearch 索引",
       "pipeline": "应用日志管道",
       "logConfig": "日志配置",
       "created": "创建时间",
@@ -73,7 +74,7 @@
       "createTags": "创建标签"
     },
     "specifyPipeline": {
-      "alert": "您正在创建或选择表单的管道与此 OpenSearch 集群相连：",
+      "alert": "您正在创建或选择表单的管道与此 Amazon OpenSearch 集群相连：",
       "creationMethod": "创建方式",
       "createNew": "创建新的",
       "createNewDesc": "创建新的应用程序日志管道",
@@ -87,7 +88,7 @@
       "filterPipeline": "过滤现有管道",
       "selectPipeline": "选择管道",
       "pipelineConfig": "管道配置",
-      "osIndexPrefix": "OpenSearch 索引前缀",
+      "osIndexPrefix": "Amazon OpenSearch 索引前缀",
       "aos": "Amazon OpenSearch",
       "kds": "Kinesis Data Streams",
       "created": "创建时间",
@@ -98,8 +99,9 @@
     },
     "detail": {
       "ingestionDetail": "摄取详情",
-      "osIndexPrefix": "OpenSearch 索引前缀",
-      "kds": "Kinesis Data Stream",
+      "osIndexPrefix": "Amazon OpenSearch 索引前缀",
+      "bufferLayer": "缓冲层",
+      "kds": "Kinesis Data Streams",
       "pipeline": "管道",
       "created": "创建时间",
       "sidecar": "Sidecar",
@@ -108,11 +110,11 @@
       "tag": "标签",
       "sidecarTab": {
         "guide": "Sidecar 指南",
-        "alert": "您需要将 Fluent-bit 代理部署作为您的 pod 中的 sidecar，并且请确保您创建的所有摄取都处于以创建状态，然后再继续。"
+        "alert": "您需要将 Fluent-bit 代理部署作为您的 pod 中的 sidecar，并且请确保您创建的所有摄取都处于已创建状态，然后再继续。"
       },
       "daemonsetTab": {
         "guide": "DaemonSet 指南",
-        "alert": "对于 DaemonSet 模式。 所有摄取共享相同的部署指南。 请在"
+        "alert": "对于 DaemonSet 采集方式。 所有摄取共享相同的部署指南。 请在"
       },
       "configTab": {
         "config": "日志配置",

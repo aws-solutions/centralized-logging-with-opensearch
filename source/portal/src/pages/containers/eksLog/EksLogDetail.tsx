@@ -115,14 +115,18 @@ const EksLogDetail: React.FC<RouteComponentProps<MatchParams>> = (
                     <div className="flex-1">
                       <ValueWithLabel label={t("ekslog:detail.clusterName")}>
                         <div>
-                          <ExtLink
-                            to={buildEKSLink(
-                              amplifyConfig.aws_project_region,
-                              curEksLogSource?.eksClusterName
-                            )}
-                          >
-                            {curEksLogSource?.eksClusterName}
-                          </ExtLink>
+                          {curEksLogSource?.accountId ? (
+                            <ExtLink
+                              to={buildEKSLink(
+                                amplifyConfig.aws_project_region,
+                                curEksLogSource?.eksClusterName
+                              )}
+                            >
+                              {curEksLogSource?.eksClusterName}
+                            </ExtLink>
+                          ) : (
+                            curEksLogSource?.eksClusterName
+                          )}
                         </div>
                       </ValueWithLabel>
                       <ValueWithLabel

@@ -34,7 +34,7 @@
       "vpcEndpoint": "VPC 端点",
       "kibana": "Kibana",
       "clickOpen": "点击打开链接",
-      "osDashboard": "OpenSearch 仪表板",
+      "osDashboard": "Amazon OpenSearch 仪表板",
       "az": "可用区",
       "instanceType": "实例类型（数据）",
       "numberNodes": "节点数（数据）",
@@ -79,7 +79,7 @@
       "removeTips": "您确定要删除告警吗"
     },
     "network": {
-      "name": "OpenSearch 域网络",
+      "name": "Amazon OpenSearch 域网络",
       "vpc": "VPC",
       "securityGroups": "安全组",
       "iamRole": "IAM 角色",
@@ -90,7 +90,7 @@
   "alarm": {
     "name": "创建告警",
     "domainAlarm": "域告警",
-    "domainAlarmDesc": "通过启用 CloudWatch 告警，您将收到有关 OpenSearch 集群状态的通知。这是 Amazon OpenSearch 推荐的告警。创建的告警将被发送到相同的SNS主题。",
+    "domainAlarmDesc": "通过启用 CloudWatch 告警，您将收到有关 Amazon OpenSearch 集群状态的通知。这是 Amazon OpenSearch 推荐的告警。创建的告警将被发送到相同的SNS主题。",
     "email": "电子邮件",
     "emailDesc": "通知将发送到此电子邮件。请单击电子邮件中的链接以验证电子邮件地址。",
     "emailError": "请输入告警邮箱",
@@ -145,23 +145,23 @@
       "createTags": "创建标签"
     },
     "selectDomain": {
-      "osDomain": "OpenSearch域",
+      "osDomain": "Amazon OpenSearch 域",
       "domain": "域",
       "domainDesc1": "集群必须与此解决方案位于同一区域，并且必须是 VPC 类型。或查看",
       "domainDesc2": "指南",
-      "domainDesc3": "创建一个集群。(* 确保您的 OpenSearch 的状态为有效，列表中只会显示状态为有效的 OpenSearch 域)",
+      "domainDesc3": "创建一个集群。(* 确保您的 Amazon OpenSearch 的状态为有效，列表中只会显示状态为有效的 OpenSearch 域)",
       "domainError": "请选择一个域",
-      "selectDomain": "选择一个 OpenSearch 域"
+      "selectDomain": "选择一个 Amazon OpenSearch 域"
     },
     "configNetwork": {
-      "osNetwork": "OpenSearch 网络",
+      "osNetwork": "Amazon OpenSearch 网络",
       "clusterVPC": "集群 VPC",
       "clusterSG": "集群安全组",
       "clusterAZ": "集群可用区和子网",
       "creation": "网络创建",
       "method": "创建方式",
       "auto": "自动",
-      "autoDesc": "为日志处理层和公共访问层创建一个专用 VPC，以通过 VPC 对等连接到 OpenSearch 域。",
+      "autoDesc": "为日志处理层和公共访问层创建一个专用 VPC，以通过 VPC 对等连接到 Amazon OpenSearch 域。",
       "manual": "手动",
       "manualDesc": "手动指定日志处理层和公共访问层网络设置。",
       "layerNetwork": "日志处理层网络",
@@ -175,7 +175,7 @@
       "logProcessSubnetGroupDesc": "至少选择两个日志处理层的子网。建议选择私有子网。",
       "chooseSubnet": "选择子网",
       "logProcessSG": "日志处理安全组",
-      "logProcessSGDesc": "为日志处理层选择一个安全组。 安全组必须有权访问 OpenSearch 域。",
+      "logProcessSGDesc": "为日志处理层选择一个安全组。 安全组必须有权访问 Amazon OpenSearch 域。",
       "chooseSG": "选择安全组"
     }
   }

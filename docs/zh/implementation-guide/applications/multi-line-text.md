@@ -44,7 +44,9 @@ include-markdown "include-prerequisites.md"
 
 5. 指定**时间格式**。 格式语法遵循 [strptime](https://linux.die.net/man/3/strptime)。 请参见[详情](https://docs.fluentbit.io/manual/pipeline/parsers/configuring-parser#time-resolution-and-fractional-seconds)。 
 
-6. 选择**创建**。
+6. （可选）在**过滤器**部分，您可以在日志代理端启用并添加一些条件来过滤日志。日志通解决方案将仅收集符合所有指定条件的日志。
+
+7. 选择**创建**。
 
 
 ### 自定义格式

@@ -23,38 +23,89 @@ BULK_BATCH_SIZE = 20000
 DEFAULT_BULK_BATCH_SIZE = 20000
 BULK_ACTION = "index"
 
-s3 = boto3.resource("s3")
-batch_size = int(os.environ.get('BULK_BATCH_SIZE', DEFAULT_BULK_BATCH_SIZE))
-bucket_name = os.environ.get("LOG_BUCKET_NAME")
-failed_log_bucket_name = os.environ.get("FAILED_LOG_BUCKET_NAME")
+batch_size = int(os.environ.get("BULK_BATCH_SIZE", DEFAULT_BULK_BATCH_SIZE))
+backup_bucket_name = os.environ.get("BACKUP_BUCKET_NAME")
 
 index_prefix = os.environ.get("INDEX_PREFIX")
 endpoint = os.environ.get("ENDPOINT")
 default_region = os.environ.get("AWS_REGION")
-log_type = os.environ.get("LOG_TYPE")
+log_type = os.environ.get("LOG_TYPE", "")
 engine = os.environ.get("ENGINE")
+source = os.environ.get("SOURCE", "KDS")
+
+s3 = boto3.resource("s3", region_name=default_region)
 
 aos = OpenSearch(
     region=default_region,
-    endpoint=endpoint,
+    endpoint=endpoint.strip("https://"),
     index_prefix=index_prefix,
     engine=engine,
     log_type=log_type,
 )
 
 
-def record2log(record):
-    return json.loads(base64.b64decode(record["kinesis"]["data"]).decode("utf-8"))
+def process_msk_event(event):
+
+    if "eventSource" not in event or event["eventSource"] != "aws:kafka":
+        logger.error("Unknown event source, expected event source is Kafka")
+        return
+
+    records = []
+
+    for k, v in event["records"].items():
+        # logger.info("Key is %s", k)
+        if not isinstance(v, list):
+            logger.error("The messages must be a list")
+            return []
+
+        # logger.info("Message size is %d", len(v))
+        for msg in v:
+            try:
+                value = json.loads(
+                    base64.b64decode(msg.get("value", "")).decode("utf-8"))
+                # logger.info(value)
+                records.append(value)
+            except Exception as e:
+                logger.error("Unable to parse log records: %s",
+                             msg.get("value", ""))
+
+    return records
+
+
+def process_kds_event(event):
+
+    records = []
+    for record in event["Records"]:
+        try:
+            value = json.loads(
+                base64.b64decode(record["kinesis"]["data"]).decode("utf-8"))
+            # logger.info(value)
+            records.append(value)
+        except Exception as e:
+            logger.error("Unable to parse log records: %s", record)
+
+    return records
 
 
 def lambda_handler(event, context):
-    now = datetime.now()
-    logs = list(map(record2log, event["Records"]))
-    total = len(logs)
 
+    logs = []
+    logger.info(f'source is {source}')
+    if source == "KDS":
+        logs = process_kds_event(event)
+    elif source == "MSK":
+        logs = process_msk_event(event)
+    else:
+        logger.error(
+            "Unknown Source, expected either KDS or MSK, please check environment variables"
+        )
+        return ""
+    now = datetime.now()
+
+    total = len(logs)
     logger.info("%d lines of logs received", total)
 
-    index_name = f'{index_prefix}-{now.strftime("%Y%m%d")}'
+    index_name = f'{index_prefix}-{now.strftime("%Y-%m-%d")}'
     failed_logs = batch_bulk_load(logs, index_name)
 
     logger.info(
@@ -64,12 +115,11 @@ def lambda_handler(event, context):
         len(failed_logs),
     )
 
-    nowstr = now.strftime("%Y%m%d-%H%M%S")
+    key = get_export_key()
 
     if failed_logs:
-        status_code = export_failed_records(
-            failed_logs, failed_log_bucket_name, f"${index_prefix}/${nowstr}.json"
-        )
+        status_code = export_failed_records(failed_logs, backup_bucket_name,
+                                            key)
         logger.error(f"Export status: {status_code}")
 
 
@@ -91,6 +141,14 @@ def write_to_csv(json_records) -> str:
 
     f.seek(0)
     return f.read()
+
+
+def get_export_key() -> str:
+    """Generate export key prefix."""
+    now = datetime.now()
+    date = now.strftime("%Y-%m-%d")
+    filename = now.strftime("%H-%M-%S") + ".json"
+    return f"error/AWSLogs/APPLogs/index-prefix={index_prefix}/date={date}/{filename}"
 
 
 def export_failed_records(failed_records: list, bucket: str, key: str) -> str:
@@ -131,8 +189,7 @@ def batch_bulk_load(records: list, index_name: str) -> list:
     start = 0
     while start < total:
         batch_failed_records = bulk_load_records(
-            records[start: start + batch_size], index_name
-        )
+            records[start:start + batch_size], index_name)
         if batch_failed_records:
             failed_records.extend(batch_failed_records)
         start += batch_size
@@ -176,14 +233,17 @@ def bulk_load_records(records: list, index_name: str) -> list:
                 # print(item[BULK_ACTION]['status'])
                 if item[BULK_ACTION]["status"] >= 300:
                     records[idx]["index_name"] = index_name
-                    records[idx]["error_type"] = item[BULK_ACTION]["error"]["type"]
-                    records[idx]["error_reason"] = item[BULK_ACTION]["error"]["reason"]
+                    records[idx]["error_type"] = item[BULK_ACTION]["error"][
+                        "type"]
+                    records[idx]["error_reason"] = item[BULK_ACTION]["error"][
+                        "reason"]
                     failed_records.append(records[idx])
 
             break
 
         if retry >= TOTAL_RETRIES:
-            raise RuntimeError(f"Unable to bulk load the records after {retry} retries")
+            raise RuntimeError(
+                f"Unable to bulk load the records after {retry} retries")
         else:
             logger.error(f"Bulk load failed: {response.text}")
             logger.info("Sleep 10 seconds and retry...")

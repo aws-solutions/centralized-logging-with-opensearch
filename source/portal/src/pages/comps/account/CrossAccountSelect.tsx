@@ -41,7 +41,7 @@ const CrossAccountSelect: React.FC<CrossAccountSelectProps> = (
   const [loadingData, setLoadingData] = useState(false);
   const [accountOptionList, setAccountOptionList] = useState<OptionType[]>([]);
 
-  // Get cross account List
+  // Get Member Account List
   const getCrossAccountList = async () => {
     try {
       setLoadingData(true);

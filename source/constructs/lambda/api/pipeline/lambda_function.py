@@ -10,6 +10,7 @@ from datetime import datetime
 import boto3
 from boto3.dynamodb.conditions import Attr
 from botocore import config
+from botocore.exceptions import ClientError
 from aws_svc_mgr import SvcManager
 
 logger = logging.getLogger()
@@ -127,6 +128,14 @@ def create_service_pipeline(**args):
         "pattern": pattern,
         "parameters": params,
     }
+
+    # Check the OpenSearch status
+    domain_name = ""
+    for p in args["parameters"]:
+        if p["parameterKey"] == "domainName":
+            domain_name = p["parameterValue"]
+            break
+    check_aos_status(domain_name)
 
     # Start the pipeline flow
     exec_sfn_flow(id, "START", sfn_args)
@@ -292,6 +301,35 @@ def check_service_existing(type: str,
 def create_stack_name(id):
     # TODO: prefix might need to come from env
     return "LogHub-Pipe-" + id[:5]
+
+
+def check_aos_status(aos_domain_name):
+    """
+        Helper function to check the aos status before create pipeline or ingestion.
+        During the Upgrade and Pre-upgrade process, users can not create index template
+        and create backend role.
+    """
+    region = default_region
+
+    es = boto3.client("es", region_name=region)
+
+    # Get the domain status.
+    try:
+        describe_resp = es.describe_elasticsearch_domain(
+            DomainName=aos_domain_name)
+        logger.info(
+            json.dumps(describe_resp["DomainStatus"], indent=4, default=str))
+    except ClientError as err:
+        if err.response["Error"]["Code"] == "ResourceNotFoundException":
+            raise APIException("OpenSearch Domain Not Found")
+        raise err
+
+    # Check domain status.
+    if (not (describe_resp["DomainStatus"]["Created"])
+            or describe_resp["DomainStatus"]["Processing"]):
+        raise APIException(
+            "OpenSearch is in the process of creating, upgrading or pre-upgrading,"
+            " please wait for it to be ready")
 
 
 class APIException(Exception):

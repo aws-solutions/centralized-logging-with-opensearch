@@ -37,19 +37,7 @@
 
 您可以在 AWS CloudFormation 控制台的 **状态** 列中查看堆栈的状态。您应该会在大约 15 分钟内收到 **UPDATE_COMPLETE** 状态。
 
-## 步骤 2. 生成新的 Web 控制台配置文件
-
-堆栈更新成功后，需要生成控制台配置。 Log Hub 使用预设的 Lambda 生成配置文件。
-
-1. 登录 [AWS Lambda 控制台](https://console.aws.amazon.com/lambda/){target='_blank'}.
-
-2. 搜索 `WebConsoleWebConfig`。Lambda 函数名称将类似于 `SolutionName-WebConsoleWebConfigXXXXX-XXXX`
-
-3. 在 **测试** 页面中，使用任意的事件名称创建一个新事件。
-
-4. 单击 **测试** 按钮以触发 Lambda，并确保您看到 `Put config file to S3` 和 `Put config file to S3 completed.` 日志消息。
-
-## 步骤 3. 在 CloudFront 创建 CDN 刷新
+## 步骤 2. 在 CloudFront 创建 CDN 刷新
 
 CloudFront 已在其边缘节点缓存旧版本的 Log Hub 控制台。 我们需要在 CloudFront 控制台上创建一个失效以
 强制删除缓存。 您必须在生成控制台配置文件后执行此操作。
@@ -60,7 +48,7 @@ CloudFront 已在其边缘节点缓存旧版本的 Log Hub 控制台。 我们�
 
 3. 在**失效**界面，点击**创建失效**，并以 `/*` 路径创建一个实效。
 
-## 步骤 4. 刷新网页控制台
+## 步骤 3. 刷新网页控制台
 
 现在您已完成所有升级步骤。 请点击浏览器中的**刷新**按钮。 您可以在 Log Hub 控制台右下角查看新版本号。
 
@@ -70,11 +58,9 @@ CloudFront 已在其边缘节点缓存旧版本的 Log Hub 控制台。 我们�
 Log Hub 在 v1.1.0 之后更新了 IAM 策略。 如果您已创建 [应用程序日志管道](applications/create-applog-pipeline.md)
 在 Log Hub V1.0.X 中，如果您想在 v1.1.0 或更高版本中创建新的应用程序日志摄取，您将收到一个升级通知弹窗：
 
-[![app-pipeline-upgrade-v1.0]][app-pipeline-upgrade-v1.0]
+![app-pipeline-upgrade-v1.0](../images/app-log/app-pipline-upgrade-v1.0.png)
 
 单击 **升级** 按钮将您的应用程序日志管道升级到当前版本， 此升级不会影响您在 Log Hub V1.0.X 中创建的现有日志提取。 但是，请确保您在 [创建新的摄取](applications/nginx.md#step-2-create-an-application-log-ingestion) 之前已将 IAM 策略更新到 EC2 实例配置文件。
-
-[app-pipeline-upgrade-v1.0]: ../../images/app-log/app-pipline-upgrade-v1.0.png
 
 ### EKS 中的应用日志
 Log Hub 在 v1.1.0 之后更新了从 EKS 中摄取应用日志的[架构](./architecture.md#eks).

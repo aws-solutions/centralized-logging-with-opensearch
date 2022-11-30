@@ -29,6 +29,7 @@ import LoadingText from "components/LoadingText";
 import { AppPipeline } from "API";
 import { appSyncRequestQuery } from "assets/js/request";
 import { getAppPipeline } from "graphql/queries";
+import { OptionType } from "components/AutoComplete/autoComplete";
 
 interface IngestSettingProps {
   pipelineId: string;
@@ -41,12 +42,13 @@ interface IngestSettingProps {
   changeSelectInstanceSet: (sets: InstanceWithStatus[]) => void;
   changeLoadingRefresh: (refresh: boolean) => void;
   changeCurAccountId: (id: string) => void;
+  changeASG: (asg: OptionType | null) => void;
+  changeGroupType: (type: string) => void;
 }
 
 const StepCreateInstanceGroup: React.FC<IngestSettingProps> = (
   props: IngestSettingProps
 ) => {
-  // console.info(props);
   const {
     pipelineId,
     ingestionInfo,
@@ -57,6 +59,8 @@ const StepCreateInstanceGroup: React.FC<IngestSettingProps> = (
     changeSelectInstanceSet,
     changeLoadingRefresh,
     changeCurAccountId,
+    changeASG,
+    changeGroupType,
   } = props;
   const { t } = useTranslation();
   const [loadingPipeline, setLoadingPipeline] = useState(false);
@@ -70,7 +74,7 @@ const StepCreateInstanceGroup: React.FC<IngestSettingProps> = (
       });
       console.info("resData:", resData);
       const dataPipelne: AppPipeline = resData.data.getAppPipeline;
-      setHideAccountSetting(dataPipelne.kdsRoleArn ? false : true);
+      setHideAccountSetting(dataPipelne.bufferAccessRoleArn ? false : true);
       setLoadingPipeline(false);
     } catch (error) {
       setLoadingPipeline(false);
@@ -132,7 +136,6 @@ const StepCreateInstanceGroup: React.FC<IngestSettingProps> = (
               showNameEmptyError={emptyError}
               instanceGroup={ingestionInfo.curInstanceGroup}
               setCreateDisabled={(disable) => {
-                // console.info("disable");
                 changeLoadingRefresh(disable);
               }}
               accountId={ingestionInfo.accountId}
@@ -151,6 +154,12 @@ const StepCreateInstanceGroup: React.FC<IngestSettingProps> = (
               changeInstanceSet={(sets) => {
                 console.info("sets:", sets);
                 changeSelectInstanceSet(sets);
+              }}
+              changeASG={(asg) => {
+                changeASG(asg);
+              }}
+              changeGroupType={(type) => {
+                changeGroupType(type);
               }}
             />
           </div>

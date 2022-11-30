@@ -4,11 +4,13 @@
 
 This part uses Amazon DynamoDB as the backend NoSQL database. This document is about the Data Model Design for **Application Log Analytics** module. 
 
-### Entity Relationship Diagram
+## Entity Relationship Diagram
 
 ![er-model](../../images/design-diagram/app-log-er-diagram.png)
 
-#### LogConf Table
+## Table Design
+
+### LogConf Table
 
 LogConf table stores information about the Application log configuration by this solution, such as log type, log path.
 
@@ -28,7 +30,7 @@ The data attributes are listed as below:
 | userLogFormat      | String | Log format                                  |                             |
 | updatedDt          | String | The last time the data was updated          |                             |
 
-#### InstanceGroup Table
+### InstanceGroup Table
 
 InstanceGroup table stores information about the instance and grouping relationship information by this solution, such as log type.
 
@@ -43,7 +45,7 @@ The data attributes are listed as below:
 | status         | String | ACTIVE, INACTIVE                                                                                    | INACTIVE means delete state |
 | updatedDt      | String | The last time the data was updated                                                                  |                             |
 
-#### InstanceMeta Table
+### InstanceMeta Table
 
 InstanceMeta table stores information about the instance ingestion by this solution.
 
@@ -62,7 +64,7 @@ The data attributes are listed as below:
 | status               | String | ACTIVE, INACTIVE                             |               |
 | updatedDt            | String | The last time the data was updated           |               |
 
-#### LogAgentStatus Table
+### LogAgentStatus Table
 
 LogAgentStatus table stores information about the status of Fluent Bit installation by this solution.
 
@@ -76,7 +78,7 @@ The data attributes are listed as below:
 | status         | String | Not_Installed, Online, Offline     |               |
 | updatedDt      | String | The last time the data was updated |               |
 
-#### AppPipeline Table
+### AppPipeline Table
 
 AppPipeline table stores information about Application Log Pipeline by this solution.
 
@@ -84,27 +86,21 @@ The data attributes are listed as below:
 
 | Attribute name | Type   | Description                                                                      | Comments      |
 | -------------- | ------ | -------------------------------------------------------------------------------- | ------------- |
-| id             | String | Unique ID of a pipeline                                                          | Partition key |
-| createdDt      | String | creation time                                                                    |               |
-| aosParas       | Map    | the Command Id                                                                   |               |
-|                |        | sub-field: opensearchArn, type: String                                           |               |
-|                |        | sub-field: domainName, type: String                                              |               |
-|                |        | sub-field: indexPrefix, type: String                                             |               |
-|                |        | sub-field: warmLogTransition, type: Number                                       |               |
-|                |        | sub-field: coldLogTransition, type: Number                                       |               |
-|                |        | sub-field: logRetention, type: Number                                            |               |
-| kdsParas       | Map    | sub-field: kdsArn, type: String                                                  |               |
-|                |        | sub-field: streamName, type:String                                               |               |
-|                |        | sub-field: enableAutoScaling, type:Boolean, True, False; In UI, we use yes or no |               |
-|                |        | sub-field: startShardNumber, type:Number                                         |               |
-|                |        | sub-field: maxShardNumber, type:Number                                           |               |
-|                |        | sub-field: regionName, type:String                                               |               |
-|                |        | sub-field:engine, type:String                                                    |               |
-| tags           | Map    | sub-field: key-value, type:String                                                |               |
+| id             | String | Unique ID of the pipeline                                                        | Partition key |
+| aosParams      | Map    | OpenSearch details (e.g. OpenSearch domain Arn, endpoint etc.)                   |               |
+| bufferParams   | List   | List of Map (paramKey, paramValue)                                               |               |
+| bufferType             | String   | Type of buffer used in pipeline (such as KDS, S3)                      |               |
+| bufferResourceArn      | String   | Buffer Resource Arn (e.g. if buffer is S3, then it's S3 bucket ARN)    |               |
+| bufferResourceName     | String   | Buffer Resource Name (e.g. if buffer is S3, then it's S3 bucket Name)  |               |
+| osHelperFnArn          | String   | A helper Function ARN                                                  |               |
+| stackId                | String   | CloudFormation Stack ID                                                |               |
+| error                  | String   | CloudFormation Stack Error if any                                      |               |
+| tags           | List   | List of Map (Key-Value)                                                          |               |
 | status         | String | CREATING, DELETING, ERROR, INACTIVE, ACTIVE                                      |               |
-| updatedDt      | String | The last time the data was updated                                               |               |
+| createdDt      | String | creation time                                                                    |               |
 
-#### AppLogIngestion Table
+
+### AppLogIngestion Table
 
 AppLogIngestion table is used to the information about Application Log Ingestion by this solution.
 
@@ -125,7 +121,7 @@ The data attributes are listed as below:
 | status         | String | CREATING, DELETING, ERROR, INACTIVE, ACTIVE                                                                    |               |
 | updatedDt      | String | The last time the data was updated                                                                             |               |
 
-#### EKSClusterLogSource Table
+### EKSClusterLogSource Table
 
 EKSClusterLogSource table stores information about imported EKS Cluster by this solution.
 
@@ -146,39 +142,8 @@ The data attributes are listed as below:
 | eksClusterSGId  | String | The EKS Cluster security group                                                                                        |               |
 | oidcIssuer      | String | OpenID Connect provider URL                                                                                           |               |
 | endpoint        | String | The EKS Cluster API server endpoint                                                                                   |               |
+| deploymentKind  | String | DaemonSet,Sidecar                                                                                                     |               |
 | tags            | Map    | Sub-field: key-value, type:String                                                                                     |               |
 | logAgentRoleArn | String | The ARN of the role corresponding to the service account of K8s, this role attaches write-related permissions to KDS. |               |
 | status          | String | CREATING, DELETING, ERROR, INACTIVE, ACTIVE                                                                           |               |
 | updatedDt       | String | The last time the data was updated                                                                                    |               |
-
-#### LogAgentEKSDeploymentKind Table
-
-The LogAgentEKSDeploymentKind table stores information about the deployment type of the log agent by this solution.
-
-The data attributes are listed as below:
-
-| Attribute name | Type   | Description                                        | Comments      |
-| -------------- | ------ | -------------------------------------------------- | ------------- |
-| id             | String | Unique ID of a pipeline                            | Partition key |
-| createdDt      | String | creation time                                      |               |
-| eksClusterId   | String | The Partition key of the EKSClusterLogSource table |               |
-| deploymentKind | String | DaemonSet,Sidecar                                  |               |
-| updatedDt      | String | The last time the data was updated                 |               |
-
-#### S3LogSource Table
-
-The S3LogSource table stores information about which log source is the S3 bucket by this solution.
-
-The data attributes are listed as below:
-
-| Attribute name | Type   | Description                                | Comments      |
-| -------------- | ------ | ------------------------------------------ | ------------- |
-| id             | String | Unique ID of a pipeline                    | Partition key |
-| createdDt      | String | creation time                              |               |
-| region         | String | The region to which the iS3 bucket belongs |               |
-| accountId      | String | The account to which the S3 bucket belongs |               |
-| s3Name         | String | The S3 bucket name for log storage         |               |
-| s3Prefix       | String | The S3 prefix for log storage              |               |
-| archiveFormat  | String | The log format                             |               |
-| tags           | Map    | Sub-field: key-value, type:String          |               |
-| updatedDt      | String | The last time the data was updated         |               |

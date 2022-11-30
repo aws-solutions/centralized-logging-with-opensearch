@@ -1,0 +1,12 @@
+#foreach( $logSource in $ctx.result.LogSources )
+    #set($logSource.s3Prefix = $util.urlEncode($logSource.confName))
+    #set($logSource.logPath = $util.urlEncode($logSource.logPath))
+
+    #foreach( $param in $logSource.tags )
+        #set($param.key = $util.urlEncode($param.key))    
+        #set($param.value = $util.urlEncode($param.value))
+    #end    
+
+#end
+
+$util.toJson($ctx.result)

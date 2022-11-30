@@ -38,7 +38,7 @@ This automated AWS CloudFormation template deploys the *Log Hub - ELB Log Ingest
 | AWS China regions    | [![Launch Stack](../../images/launch-stack.png)](https://console.amazonaws.cn/cloudformation/home#/stacks/create/template?stackName=LogHub-CloudFront&templateURL=https://{{ bucket }}.s3.cn-north-1.amazonaws.com.cn/log-hub/{{ version }}/ELBLog.template){target=_blank} | [Template](https://{{ bucket }}.s3.cn-north-1.amazonaws.com.cn/log-hub/{{ version }}/ELBLog.template) |
 
 {%
-include-markdown "include-cfn-common.md"
+include-markdown "include-cfn-plugins-common.md"
 %}
 
 ## Sample Dashboard

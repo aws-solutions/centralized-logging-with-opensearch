@@ -135,8 +135,8 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                       {t("servicelog:lambda.nameDesc")}
                       <ExtLink
                         to={buildLambdaLink(
-                          "",
-                          amplifyConfig.aws_project_region
+                          amplifyConfig.aws_project_region,
+                          ""
                         )}
                       >
                         {t("servicelog:lambda.curAccount")}

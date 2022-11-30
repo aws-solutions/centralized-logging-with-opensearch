@@ -15,10 +15,10 @@ limitations under the License.
 */
 
 
-import { 
+import {
     App,
-  } from "aws-cdk-lib";
-import {Template } from "aws-cdk-lib/assertions";
+} from "aws-cdk-lib";
+import { Template } from "aws-cdk-lib/assertions";
 import * as svc from '../lib/pipeline/service/service-log-pipeline-stack';
 
 beforeEach(() => {
@@ -236,5 +236,26 @@ describe("Service Log Stack", () => {
 
     });
 
+
+    test('Test waf sampled logs stack', () => {
+        const app = new App();
+
+        // WHEN
+        const stack = new svc.ServiceLogPipelineStack(app, 'MyTestStack', {
+            logType: "WAFSampled"
+        });
+        // Prepare the stack for assertions.
+        const template = Template.fromStack(stack);
+
+        // THEN
+        template.hasResourceProperties("AWS::Lambda::Function", {
+            Environment: {
+                "Variables": {
+                    "LOG_TYPE": "WAFSampled",
+                }
+            }
+        });
+
+    });
 
 });

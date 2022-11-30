@@ -53,7 +53,7 @@ const CrossAccountList: React.FC = () => {
   const [openDeleteModel, setOpenDeleteModel] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<SubAccountLink[]>();
 
-  // Get cross account List
+  // Get Member Account List
   const getCrossAccountList = async () => {
     try {
       setCrossAccountList([]);
@@ -131,20 +131,20 @@ const CrossAccountList: React.FC = () => {
                   {
                     // width: 110,
                     id: "ID",
-                    header: t("resource:crossAccount.list.accountId"),
+                    header: t("resource:crossAccount.list.accountName"),
                     cell: (e: SubAccountLink) => {
                       return (
                         <Link to={`/resources/cross-account/detail/${e.id}`}>
-                          {e.subAccountId}
+                          {e.subAccountName}
                         </Link>
                       );
                     },
                   },
                   {
                     id: "Name",
-                    header: t("resource:crossAccount.list.accountName"),
+                    header: t("resource:crossAccount.list.accountId"),
                     cell: (e: SubAccountLink) => {
-                      return e.subAccountName;
+                      return e.subAccountId;
                     },
                   },
                   {

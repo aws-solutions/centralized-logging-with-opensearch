@@ -549,8 +549,33 @@ class ClusterAutoImportManager:
                         route_table_ids.append(association['RouteTableId'])
 
         if not route_table_ids:
+            return self.get_main_route_table_id(vpc_id)
+        return route_table_ids
+
+    def get_main_route_table_id(self, vpc_id: str):
+        """
+        Obtain the route table id from calling 'describe_route_tables' API by vpc_id, subnet_ids
+        """ ""
+        response = self.ec2.describe_route_tables(Filters=[{
+            'Name': 'vpc-id',
+            'Values': [vpc_id]
+        }, {
+            'Name': 'association.main',
+            'Values': ['true'],
+        }],
+                                                  DryRun=False)
+        route_table_ids = []
+        if 'RouteTables' in response:
+            route_tables = response['RouteTables']
+            for route_table in route_tables:
+                if 'Associations' in route_table:
+                    associations = route_table['Associations']
+                    for association in associations:
+                        route_table_ids.append(association['RouteTableId'])
+
+        if not route_table_ids:
             raise APIException(
-                f"Failed to import the AOS, please check the route table of VPC, no routing table association, we can't do peering. VPC id is {vpc_id}"
+                f"Failed to import the AOS, please check the main route table of VPC, we can't do peering. VPC id is {vpc_id}"
             )
         return route_table_ids
 

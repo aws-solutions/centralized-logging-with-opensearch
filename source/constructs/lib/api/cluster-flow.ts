@@ -186,7 +186,7 @@ export class ClusterFlowStack extends Construct {
             role: LogHubAPIClusterFlowSMRole,
             logs: {
                 destination: logGroup,
-                level: sfn.LogLevel.ERROR,
+                level: sfn.LogLevel.ALL,
             },
         });
 

@@ -264,6 +264,19 @@ log_ingestion_data_4 = {
     "tags": [],
     "updatedDt": "2022-04-26T10:19:46Z",
 }
+
+log_ingestion_data_5 = {
+    "id": "d8e6c7a6-4061-4a4a-864e-0000004",
+    "appPipelineId": "ab740668-fba3-4d86-879d-e9a5a446d69f",
+    "confId": "e4c579eb-fcf2-4ddb-8226-796f4bc8a690",
+    "createdDt": "2022-04-26T09:59:04Z",
+    "sourceId": "000000001-1095-44b5-8e11-40fa935f3aea",
+    "sourceType": "ASG",
+    "stackName": "",
+    "status": "ACTIVE",
+    "tags": [],
+    "updatedDt": "2022-04-26T10:19:46Z",
+}
 """
 App Log Instance Group Table
 """
@@ -304,4 +317,33 @@ instance_group_2 = {
     "status": {
         "S": "ACTIVE"
     },
+}
+
+sqs_event_table_data = {
+  "id": {
+    "S": "8ee7adc9-addf-477c-9723-4bba519bf02a"
+  },
+  "action": {
+    "S": "asyncAddInstancesToInstanceGroup"
+  },
+  "createdDt": {
+    "S": "2022-11-11T07:49:44Z"
+  },
+  "groupId": {
+    "S": "967489e4-c090-47b6-856b-192f9d96c14e"
+  },
+  "instanceSet": {
+    "SS": [
+      "i-0e0464d25bf022b05"
+    ]
+  },
+  "region": {
+    "S": "us-west-1"
+  },
+  "status": {
+    "S": "DONE"
+  },
+  "updatedDt": {
+    "S": "2022-11-11T07:49:44Z"
+  }
 }

@@ -22,7 +22,13 @@ import Button from "components/Button";
 import Breadcrumb from "components/Breadcrumb";
 import { appSyncRequestMutation, refineErrorMessage } from "assets/js/request";
 import { useHistory } from "react-router-dom";
-import { ErrorCode, Tag } from "API";
+import {
+  BufferInput,
+  BufferType,
+  CreateAppPipelineMutationVariables,
+  ErrorCode,
+  Tag,
+} from "API";
 import { ActionType, AppStateProps } from "reducer/appReducer";
 import { useDispatch, useSelector } from "react-redux";
 import HelpPanel from "components/HelpPanel";
@@ -32,71 +38,56 @@ import { AmplifyConfigType } from "types";
 import { useTranslation } from "react-i18next";
 import { checkIndexNameValidate } from "assets/js/utils";
 import Swal from "sweetalert2";
+import { CovertObjToParameterKeyValue } from "assets/js/applog";
+import { OptionType } from "components/AutoComplete/autoComplete";
+import { CompressionType, S3_BUFFER_PREFIX } from "assets/js/const";
 export interface ApplicationLogType {
+  openSearchId: string;
   warmEnable: boolean;
   coldEnable: boolean;
-  openSearchId: string;
-  aosParas: {
-    opensearchArn: string;
-    domainName: string;
-    opensearchEndpoint: string;
-    indexPrefix: string;
-    warmLogTransition: string;
+  aosParams: {
     coldLogTransition: string;
-    logRetention: string;
-    shardNumbers: string;
-    replicaNumbers: string;
+    domainName: string;
     engine: string;
+    failedLogBucket: string;
+    indexPrefix: string;
+    logRetention: string;
+    opensearchArn: string;
+    opensearchEndpoint: string;
+    replicaNumbers: string;
+    shardNumbers: string;
     vpc: {
       privateSubnetIds: string;
-      publicSubnetIds: string;
       securityGroupId: string;
       vpcId: string;
     };
+    warmLogTransition: string;
   };
-  kdsParas: {
-    kdsArn: string;
-    streamName: string;
-    enableAutoScaling: boolean;
-    startShardNumber: string;
-    maxShardNumber: string;
-    regionName: string;
+  bufferType: string;
+  kdsBufferParams: {
+    enableAutoScaling: string;
+    shardCount: string;
+    minCapacity: string;
+    maxCapacity: string;
+  };
+  s3BufferBucketObj: OptionType | null;
+  s3BufferParams: {
+    logBucketName: string;
+    logBucketPrefix: string;
+    defaultCmkArn: string;
+    maxFileSize: string;
+    uploadTimeout: string;
+    compressionType: CompressionType | string;
+  };
+  mskBufferParams: {
+    mskClusterName: string;
+    mskClusterArn: string;
+    mskBrokerServers: string;
+    topic: string;
   };
   tags: Tag[];
+  force: boolean;
 }
-
-export const DEFAULT_EMPTY_APP_LOG = {
-  openSearchId: "",
-  warmEnable: false,
-  coldEnable: false,
-  aosParas: {
-    opensearchArn: "",
-    domainName: "",
-    opensearchEndpoint: "",
-    indexPrefix: "",
-    warmLogTransition: "",
-    coldLogTransition: "",
-    logRetention: "",
-    shardNumbers: "5",
-    replicaNumbers: "1",
-    engine: "",
-    vpc: {
-      privateSubnetIds: "",
-      publicSubnetIds: "",
-      securityGroupId: "",
-      vpcId: "",
-    },
-  },
-  kdsParas: {
-    kdsArn: "",
-    streamName: "",
-    enableAutoScaling: false,
-    startShardNumber: "",
-    maxShardNumber: "",
-    regionName: "",
-  },
-  tags: [],
-};
 
 const ImportOpenSearchCluster: React.FC = () => {
   const { t } = useTranslation();
@@ -117,6 +108,57 @@ const ImportOpenSearchCluster: React.FC = () => {
     (state: AppStateProps) => state.amplifyConfig
   );
 
+  const DEFAULT_EMPTY_APP_LOG = {
+    openSearchId: "",
+    warmEnable: false,
+    coldEnable: false,
+    aosParams: {
+      coldLogTransition: "",
+      domainName: "",
+      engine: "",
+      failedLogBucket: amplifyConfig.default_logging_bucket,
+      indexPrefix: "",
+      logRetention: "",
+      opensearchArn: "",
+      opensearchEndpoint: "",
+      replicaNumbers: "1",
+      shardNumbers: "5",
+      vpc: {
+        privateSubnetIds: "",
+        securityGroupId: "",
+        vpcId: "",
+      },
+      warmLogTransition: "",
+    },
+    bufferType: BufferType.S3,
+    kdsBufferParams: {
+      enableAutoScaling: "false",
+      shardCount: "1",
+      minCapacity: "1",
+      maxCapacity: "",
+    },
+    s3BufferBucketObj: {
+      name: amplifyConfig.default_logging_bucket,
+      value: amplifyConfig.default_logging_bucket,
+    },
+    s3BufferParams: {
+      logBucketName: amplifyConfig.default_logging_bucket,
+      logBucketPrefix: S3_BUFFER_PREFIX,
+      defaultCmkArn: amplifyConfig.default_cmk_arn,
+      maxFileSize: "50",
+      uploadTimeout: "60",
+      compressionType: CompressionType.Gzip,
+    },
+    mskBufferParams: {
+      mskClusterName: "",
+      mskClusterArn: "",
+      mskBrokerServers: "",
+      topic: "",
+    },
+    tags: [],
+    force: false,
+  };
+
   const [curStep, setCurStep] = useState(0);
   const [curApplicationLog, setCurApplicationLog] =
     useState<ApplicationLogType>(DEFAULT_EMPTY_APP_LOG);
@@ -133,64 +175,106 @@ const ImportOpenSearchCluster: React.FC = () => {
     useState(false);
   const [domainListIsLoading, setDomainListIsLoading] = useState(false);
   const [shardsError, setShardsError] = useState(false);
+  const [s3BucketEmptyError, setS3BucketEmptyError] = useState(false);
+  const [s3PrefixError, setS3PrefixError] = useState(false);
+  const [bufferSizeError, setBufferSizeError] = useState(false);
+  const [bufferIntervalError, setBufferIntervalError] = useState(false);
 
   const checkIngestionInput = () => {
     // check index name empty
-    if (!curApplicationLog.aosParas.indexPrefix) {
+    if (!curApplicationLog.aosParams.indexPrefix) {
       setIndexEmptyError(true);
       setCurStep(0);
       return false;
     }
     // check index name format
-    if (!checkIndexNameValidate(curApplicationLog.aosParas.indexPrefix)) {
+    if (!checkIndexNameValidate(curApplicationLog.aosParams.indexPrefix)) {
       setIndexNameFormatError(true);
       setCurStep(0);
-      return;
-    }
-    if (
-      curApplicationLog.kdsParas.startShardNumber === "" ||
-      parseInt(curApplicationLog.kdsParas.startShardNumber) <= 0
-    ) {
-      setShardInvalidError(true);
-      setCurStep(0);
       return false;
     }
-    const intStartShardNum = parseInt(
-      curApplicationLog.kdsParas.startShardNumber
-    );
-    const intMaxShardNum = parseInt(curApplicationLog.kdsParas.maxShardNumber);
-    if (
-      curApplicationLog.kdsParas.enableAutoScaling &&
-      (intMaxShardNum <= 0 ||
-        Number.isNaN(intMaxShardNum) ||
-        intMaxShardNum <= intStartShardNum)
-    ) {
-      setMaxShardInvalidError(true);
-      setCurStep(0);
-      return false;
+
+    // Check KDS Input when buffer type is KDS
+    if (curApplicationLog.bufferType === BufferType.KDS) {
+      if (
+        curApplicationLog.kdsBufferParams.minCapacity === "" ||
+        parseInt(curApplicationLog.kdsBufferParams.minCapacity) <= 0
+      ) {
+        setShardInvalidError(true);
+        setCurStep(0);
+        return false;
+      }
+      const intStartShardNum = parseInt(
+        curApplicationLog.kdsBufferParams.minCapacity
+      );
+      const intMaxShardNum = parseInt(
+        curApplicationLog.kdsBufferParams.maxCapacity
+      );
+      if (
+        curApplicationLog.kdsBufferParams.enableAutoScaling === "true" &&
+        (intMaxShardNum <= 0 ||
+          Number.isNaN(intMaxShardNum) ||
+          intMaxShardNum <= intStartShardNum)
+      ) {
+        setMaxShardInvalidError(true);
+        setCurStep(0);
+        return false;
+      }
     }
+
+    // Check S3 Input when buffer type is S3
+    if (curApplicationLog.bufferType === BufferType.S3) {
+      if (!curApplicationLog.s3BufferBucketObj) {
+        setS3BucketEmptyError(true);
+        return false;
+      }
+
+      if (
+        curApplicationLog.s3BufferParams.logBucketPrefix &&
+        curApplicationLog.s3BufferParams.logBucketPrefix.endsWith("/")
+      ) {
+        setS3PrefixError(true);
+        return false;
+      }
+
+      if (
+        parseInt(curApplicationLog.s3BufferParams.maxFileSize) < 1 ||
+        parseInt(curApplicationLog.s3BufferParams.maxFileSize) > 50
+      ) {
+        setBufferSizeError(true);
+        return false;
+      }
+      if (
+        parseInt(curApplicationLog.s3BufferParams.uploadTimeout) < 1 ||
+        parseInt(curApplicationLog.s3BufferParams.uploadTimeout) > 86400
+      ) {
+        setBufferIntervalError(true);
+        return false;
+      }
+    }
+
     return true;
   };
 
   const checkOpenSearchInput = () => {
     // check number of shards
-    if (parseInt(curApplicationLog.aosParas.shardNumbers) <= 0) {
+    if (parseInt(curApplicationLog.kdsBufferParams.shardCount) <= 0) {
       setShardsError(true);
       setCurStep(1);
       return false;
     }
 
-    if (parseInt(curApplicationLog.aosParas.warmLogTransition) < 0) {
+    if (parseInt(curApplicationLog.aosParams.warmLogTransition) < 0) {
       setWarmLogInvalidError(true);
       setCurStep(1);
       return false;
     }
-    if (parseInt(curApplicationLog.aosParas.coldLogTransition) < 0) {
+    if (parseInt(curApplicationLog.aosParams.coldLogTransition) < 0) {
       setColdLogInvalidError(true);
       setCurStep(1);
       return false;
     }
-    if (parseInt(curApplicationLog.aosParas.logRetention) < 0) {
+    if (parseInt(curApplicationLog.aosParams.logRetention) < 0) {
       setLogRetentionInvalidError(true);
       setCurStep(1);
       return false;
@@ -199,31 +283,52 @@ const ImportOpenSearchCluster: React.FC = () => {
   };
 
   const confirmCreateApplicationLog = async (isForce = false) => {
-    // set warm age and code age as number
-    const createAppLogParam = JSON.parse(JSON.stringify(curApplicationLog));
-    createAppLogParam.aosParas.warmLogTransition =
-      parseInt(createAppLogParam.aosParas.warmLogTransition) || 0;
-    createAppLogParam.aosParas.coldLogTransition =
-      parseInt(createAppLogParam.aosParas.coldLogTransition) || 0;
-    createAppLogParam.aosParas.logRetention =
-      parseInt(createAppLogParam.aosParas.logRetention) || 0;
+    const tmpAOSParams = JSON.parse(
+      JSON.stringify(curApplicationLog.aosParams)
+    );
+
+    // set aos lifecycle as number
+    tmpAOSParams.warmLogTransition =
+      parseInt(curApplicationLog.aosParams.warmLogTransition) || 0;
+    tmpAOSParams.coldLogTransition =
+      parseInt(curApplicationLog.aosParams.coldLogTransition) || 0;
+    tmpAOSParams.logRetention =
+      parseInt(curApplicationLog.aosParams.logRetention) || 0;
 
     // set shard number and replicas as number
-    createAppLogParam.aosParas.shardNumbers =
-      parseInt(createAppLogParam.aosParas.shardNumbers) || 0;
-    createAppLogParam.aosParas.replicaNumbers =
-      parseInt(createAppLogParam.aosParas.replicaNumbers) || 0;
+    tmpAOSParams.shardNumbers =
+      parseInt(curApplicationLog.aosParams.shardNumbers) || 0;
+    tmpAOSParams.replicaNumbers =
+      parseInt(curApplicationLog.aosParams.replicaNumbers) || 0;
 
-    // Add Default Failed Log Bucket
-    createAppLogParam.aosParas.failedLogBucket =
-      amplifyConfig.default_logging_bucket;
+    let bufferParams: BufferInput[] = [];
 
-    // format shardNumber as number
-    createAppLogParam.kdsParas.startShardNumber =
-      parseInt(createAppLogParam.kdsParas.startShardNumber) || 0;
-    createAppLogParam.kdsParas.maxShardNumber =
-      parseInt(createAppLogParam.kdsParas.maxShardNumber) || 0;
-    createAppLogParam.force = isForce;
+    if (curApplicationLog.bufferType === BufferType.KDS) {
+      // Set Max Shard Number to a Number when not enable auto scaling
+      if (curApplicationLog.kdsBufferParams.enableAutoScaling !== "true") {
+        curApplicationLog.kdsBufferParams.maxCapacity =
+          curApplicationLog.kdsBufferParams.minCapacity;
+      }
+
+      bufferParams = CovertObjToParameterKeyValue(
+        curApplicationLog.kdsBufferParams
+      );
+    }
+
+    if (curApplicationLog.bufferType === BufferType.S3) {
+      bufferParams = CovertObjToParameterKeyValue(
+        curApplicationLog.s3BufferParams
+      );
+    }
+
+    const createAppLogParam: CreateAppPipelineMutationVariables = {
+      bufferType: curApplicationLog.bufferType as BufferType,
+      aosParams: tmpAOSParams,
+      bufferParams: bufferParams,
+      tags: curApplicationLog.tags,
+      force: isForce,
+    };
+    console.info("createAppLogParam:", createAppLogParam);
     try {
       setLoadingCreate(true);
       const createRes = await appSyncRequestMutation(
@@ -333,7 +438,6 @@ const ImportOpenSearchCluster: React.FC = () => {
                         return;
                       }
                     }
-                    console.info("step:", step);
                     setCurStep(step);
                   }}
                 />
@@ -342,6 +446,80 @@ const ImportOpenSearchCluster: React.FC = () => {
                 {curStep === 0 && (
                   <IngestSetting
                     applicationLog={curApplicationLog}
+                    s3BucketEmptyError={s3BucketEmptyError}
+                    s3PrefixError={s3PrefixError}
+                    bufferSizeError={bufferSizeError}
+                    bufferIntervalError={bufferIntervalError}
+                    changeS3BufferBucket={(bucket) => {
+                      setS3BucketEmptyError(false);
+                      setCurApplicationLog((prev) => {
+                        return {
+                          ...prev,
+                          s3BufferBucketObj: bucket,
+                          s3BufferParams: {
+                            ...prev.s3BufferParams,
+                            logBucketName: bucket?.value || "",
+                          },
+                        };
+                      });
+                    }}
+                    changeS3BufferPrefix={(prefix) => {
+                      setS3PrefixError(false);
+                      setCurApplicationLog((prev) => {
+                        return {
+                          ...prev,
+                          s3BufferParams: {
+                            ...prev.s3BufferParams,
+                            logBucketPrefix: prefix,
+                          },
+                        };
+                      });
+                    }}
+                    changeS3BufferBufferSize={(size) => {
+                      setBufferSizeError(false);
+                      setCurApplicationLog((prev) => {
+                        return {
+                          ...prev,
+                          s3BufferParams: {
+                            ...prev.s3BufferParams,
+                            maxFileSize: size,
+                          },
+                        };
+                      });
+                    }}
+                    changeS3BufferTimeout={(timeout) => {
+                      setBufferIntervalError(false);
+                      setCurApplicationLog((prev) => {
+                        return {
+                          ...prev,
+                          s3BufferParams: {
+                            ...prev.s3BufferParams,
+                            uploadTimeout: timeout,
+                          },
+                        };
+                      });
+                    }}
+                    changeS3CompressionType={(type) => {
+                      setCurApplicationLog((prev) => {
+                        return {
+                          ...prev,
+                          s3BufferParams: {
+                            ...prev.s3BufferParams,
+                            compressionType: type,
+                          },
+                        };
+                      });
+                    }}
+                    changeBufferType={(type) => {
+                      setShardInvalidError(false);
+                      setMaxShardInvalidError(false);
+                      setCurApplicationLog((prev) => {
+                        return {
+                          ...prev,
+                          bufferType: type,
+                        };
+                      });
+                    }}
                     changeIndexPrefix={(index) => {
                       setIndexEmptyError(false);
                       setIndexNameFormatError(false);
@@ -349,9 +527,13 @@ const ImportOpenSearchCluster: React.FC = () => {
                       setCurApplicationLog((prev) => {
                         return {
                           ...prev,
-                          aosParas: {
-                            ...prev.aosParas,
+                          aosParams: {
+                            ...prev.aosParams,
                             indexPrefix: index,
+                          },
+                          s3BufferParams: {
+                            ...prev.s3BufferParams,
+                            logBucketPrefix: `AppLogs/${index}/year=%Y/month=%m/day=%d`,
                           },
                         };
                       });
@@ -361,9 +543,10 @@ const ImportOpenSearchCluster: React.FC = () => {
                       setCurApplicationLog((prev) => {
                         return {
                           ...prev,
-                          kdsParas: {
-                            ...prev.kdsParas,
-                            startShardNumber: shardNum,
+                          kdsBufferParams: {
+                            ...prev.kdsBufferParams,
+                            shardCount: shardNum,
+                            minCapacity: shardNum,
                           },
                         };
                       });
@@ -373,9 +556,9 @@ const ImportOpenSearchCluster: React.FC = () => {
                       setCurApplicationLog((prev) => {
                         return {
                           ...prev,
-                          kdsParas: {
-                            ...prev.kdsParas,
-                            maxShardNumber: maxShardNum,
+                          kdsBufferParams: {
+                            ...prev.kdsBufferParams,
+                            maxCapacity: maxShardNum,
                           },
                         };
                       });
@@ -385,8 +568,8 @@ const ImportOpenSearchCluster: React.FC = () => {
                       setCurApplicationLog((prev) => {
                         return {
                           ...prev,
-                          kdsParas: {
-                            ...prev.kdsParas,
+                          kdsBufferParams: {
+                            ...prev.kdsBufferParams,
                             enableAutoScaling: enableAS,
                           },
                         };
@@ -410,8 +593,8 @@ const ImportOpenSearchCluster: React.FC = () => {
                       setCurApplicationLog((prev) => {
                         return {
                           ...prev,
-                          aosParas: {
-                            ...prev.aosParas,
+                          aosParams: {
+                            ...prev.aosParams,
                             shardNumbers: shards,
                           },
                         };
@@ -421,8 +604,8 @@ const ImportOpenSearchCluster: React.FC = () => {
                       setCurApplicationLog((prev) => {
                         return {
                           ...prev,
-                          aosParas: {
-                            ...prev.aosParas,
+                          aosParams: {
+                            ...prev.aosParams,
                             replicaNumbers: replicas,
                           },
                         };
@@ -435,8 +618,8 @@ const ImportOpenSearchCluster: React.FC = () => {
                           openSearchId: cluster?.id || "",
                           warmEnable: cluster?.nodes?.warmEnabled || false,
                           coldEnable: cluster?.nodes?.coldEnabled || false,
-                          aosParas: {
-                            ...prev.aosParas,
+                          aosParams: {
+                            ...prev.aosParams,
                             domainName: cluster?.domainName || "",
                             opensearchArn: cluster?.domainArn || "",
                             opensearchEndpoint: cluster?.endpoint || "",
@@ -459,8 +642,8 @@ const ImportOpenSearchCluster: React.FC = () => {
                       setCurApplicationLog((prev) => {
                         return {
                           ...prev,
-                          aosParas: {
-                            ...prev.aosParas,
+                          aosParams: {
+                            ...prev.aosParams,
                             warmLogTransition: warnTrans,
                           },
                         };
@@ -471,8 +654,8 @@ const ImportOpenSearchCluster: React.FC = () => {
                       setCurApplicationLog((prev) => {
                         return {
                           ...prev,
-                          aosParas: {
-                            ...prev.aosParas,
+                          aosParams: {
+                            ...prev.aosParams,
                             coldLogTransition: coldTrans,
                           },
                         };
@@ -483,8 +666,8 @@ const ImportOpenSearchCluster: React.FC = () => {
                       setCurApplicationLog((prev) => {
                         return {
                           ...prev,
-                          aosParas: {
-                            ...prev.aosParas,
+                          aosParams: {
+                            ...prev.aosParams,
                             logRetention: retention,
                           },
                         };

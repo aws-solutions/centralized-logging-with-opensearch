@@ -30,6 +30,7 @@ import {
 } from "aws-cdk-lib/aws-ec2";
 import { LogGroup, RetentionDays, CfnLogGroup } from "aws-cdk-lib/aws-logs";
 import { addCfnNagSuppressRules } from "../main-stack";
+import { NagSuppressions } from 'cdk-nag';
 
 export interface VpcProps {
   /**
@@ -182,6 +183,10 @@ export class VpcStack extends Construct {
         id: "W5",
         reason: "This security group is restricted to https egress only",
       },
+    ]);
+
+    NagSuppressions.addResourceSuppressions(this.proxySg, [
+      { id: "AwsSolutions-EC23", reason: "This security group is open to allow public https access, e.g. for ELB" },
     ]);
 
     // Create a default Security Group to allow outbound https traffic only

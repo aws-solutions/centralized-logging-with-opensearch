@@ -23,7 +23,7 @@ import { TablePanel } from "components/TablePanel";
 // import Status from "components/Status/Status";
 import Breadcrumb from "components/Breadcrumb";
 import { SelectType } from "components/TablePanel/tablePanel";
-import { InstanceGroup } from "API";
+import { InstanceGroup, LogSourceType } from "API";
 import Modal from "components/Modal";
 import LoadingText from "components/LoadingText";
 import HelpPanel from "components/HelpPanel";
@@ -161,6 +161,15 @@ const InstanceGroupList: React.FC = () => {
                           {e.groupName}
                         </Link>
                       );
+                    },
+                  },
+                  {
+                    id: "Type",
+                    header: t("resource:group.list.type"),
+                    cell: (e: InstanceGroup) => {
+                      return e.groupType === LogSourceType.ASG
+                        ? "EC2/Auto Scaling Group"
+                        : e.groupType;
                     },
                   },
                   {

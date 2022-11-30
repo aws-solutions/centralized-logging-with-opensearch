@@ -51,6 +51,7 @@ export enum InfoBarTypes {
   EKS_PATTERN = "EKS_PATTERN",
   EKS_IAM_ROLE = "EKS_IAM_ROLE",
   CONFIG_TIME_FORMAT = "CONFIG_TIME_FORMAT",
+  CONFIG_FILTER = "CONFIG_FILTER",
 }
 
 export const InfoBarTitleMap: any = {
@@ -74,6 +75,7 @@ export const InfoBarTitleMap: any = {
   EKS_PATTERN: "info:eksPattern.name",
   EKS_IAM_ROLE: "info:eksIamRole.name",
   CONFIG_TIME_FORMAT: "info:configTimeFormat.name",
+  CONFIG_FILTER: "info:configFilter.name",
 };
 
 export interface AppStateProps {

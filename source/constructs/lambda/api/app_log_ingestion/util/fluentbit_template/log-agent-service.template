@@ -26,7 +26,7 @@
     http_server  On
     http_listen  0.0.0.0
     http_port    2022
-    # storage.path
+    storage.path /opt/fluent-bit/flb-storage/
     # ------------
     # absolute file system path to store filesystem data buffers (chunks).
     #

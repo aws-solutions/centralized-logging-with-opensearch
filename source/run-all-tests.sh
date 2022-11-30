@@ -206,6 +206,7 @@ run_python_test $construct_dir/lambda/api/app_pipeline app_pipeline
 run_python_test $construct_dir/lambda/api/cross_account cross_account
 run_python_test $construct_dir/lambda/api/common common
 run_python_test $construct_dir/lambda/api/cluster aos_cluster
+run_python_test $construct_dir/lambda/pipeline/common/custom-resource custom-resource2
 
 # Return to the source/ level
 cd $source_dir

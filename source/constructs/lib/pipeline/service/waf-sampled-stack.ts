@@ -33,22 +33,7 @@ import { ISecurityGroup, IVpc } from "aws-cdk-lib/aws-ec2";
 import { Rule, Schedule } from "aws-cdk-lib/aws-events";
 import * as path from "path";
 
-/**
- * cfn-nag suppression rule interface
- */
-interface CfnNagSuppressRule {
-  readonly id: string;
-  readonly reason: string;
-}
 
-export function addCfnNagSuppressRules(
-  resource: CfnResource,
-  rules: CfnNagSuppressRule[]
-) {
-  resource.addMetadata("cfn_nag", {
-    rules_to_suppress: rules,
-  });
-}
 
 export interface WAFSampledStackProps {
   /**
@@ -77,14 +62,12 @@ export interface WAFSampledStackProps {
    *
    * @default - OpenSearch.
    */
-  readonly engineType?: string;
+  readonly engineType: string;
 
   /**
    * Log Type
-   *
-   * @default - None.
    */
-  readonly logType?: string;
+  readonly logType: string;
 
   /**
    * Index Prefix
@@ -144,7 +127,14 @@ export class WAFSampledStack extends Construct {
       {
         statements: [
           new iam.PolicyStatement({
-            actions: ["es:ESHttp*"],
+            actions: [
+              "es:ESHttpGet",
+              "es:ESHttpDelete",
+              "es:ESHttpPatch",
+              "es:ESHttpPost",
+              "es:ESHttpPut",
+              "es:ESHttpHead",
+            ],
             resources: ["*"],
           }),
           new iam.PolicyStatement({
@@ -201,8 +191,8 @@ export class WAFSampledStack extends Construct {
         securityGroups: [props.securityGroup],
         environment: {
           ENDPOINT: props.endpoint,
-          ENGINE: props.engineType || "OpenSearch",
-          LOG_TYPE: props.logType || "",
+          ENGINE: props.engineType,
+          LOG_TYPE: props.logType,
           INDEX_PREFIX: props.indexPrefix,
           VERSION: props.version || "v1.0.0",
           INTERVAL: props.interval.valueAsString,
@@ -214,7 +204,7 @@ export class WAFSampledStack extends Construct {
         layers: [pipeLayer],
       }
     );
-    wafSampledLogProcessorFn.role?.attachInlinePolicy(
+    wafSampledLogProcessorFn.role!.attachInlinePolicy(
       wafSampledlogProcessorPolicy
     );
 
@@ -242,7 +232,7 @@ export class WAFSampledStack extends Construct {
       })
     );
 
-    this.logProcessorRoleArn = wafSampledLogProcessorFn.role?.roleArn || "";
+    this.logProcessorRoleArn = wafSampledLogProcessorFn.role!.roleArn;
 
     // Setup Event Bridge
     const rule = new Rule(this, "ScheduleRule", {

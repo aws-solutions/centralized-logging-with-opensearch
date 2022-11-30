@@ -27,3 +27,4 @@ def default_environment_variables():
     os.environ["EVENTBRIDGE_RULE"] = "mocked-eventbridge-rule-name"
     os.environ["SUB_ACCOUNT_LINK_TABLE_NAME"] = "mocked-sub-account-link-table-name"
     os.environ["SUB_ACCOUNT_LINK_TABLE"] = "mocked-sub-account-link-table-name"
+    os.environ["INSTANCE_GROUP_MODIFICATION_EVENT_QUEUE_NAME"] = "mocked-instance-modification-event-queue-name"

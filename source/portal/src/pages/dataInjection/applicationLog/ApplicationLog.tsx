@@ -22,7 +22,7 @@ import Button from "components/Button";
 import { TablePanel } from "components/TablePanel";
 import Breadcrumb from "components/Breadcrumb";
 import { SelectType } from "components/TablePanel/tablePanel";
-import { AppPipeline, PipelineStatus } from "API";
+import { AppPipeline, BufferType, PipelineStatus } from "API";
 import Modal from "components/Modal";
 import LoadingText from "components/LoadingText";
 import HelpPanel from "components/HelpPanel";
@@ -34,6 +34,7 @@ import { deleteAppPipeline } from "graphql/mutations";
 import { formatLocalTime } from "assets/js/utils";
 import { useTranslation } from "react-i18next";
 import { AUTO_REFRESH_INT } from "assets/js/const";
+import { getListBufferLayer } from "assets/js/applog";
 
 const PAGE_SIZE = 10;
 
@@ -190,21 +191,33 @@ const ApplicationLog: React.FC = () => {
                     id: "OpenSearch",
                     header: t("applog:list.os"),
                     cell: (e: AppPipeline) => {
-                      return e.aosParas?.domainName || "";
+                      return e.aosParams?.domainName || "-";
                     },
                   },
                   {
                     id: "Indexname",
                     header: t("applog:list.indexName"),
                     cell: (e: AppPipeline) => {
-                      return e.aosParas?.indexPrefix || "";
+                      return e.aosParams?.indexPrefix || "-";
                     },
                   },
                   {
-                    id: "streamName",
-                    header: t("applog:list.streamName"),
+                    id: "bufferLayer",
+                    header: t("applog:list.bufferLayer"),
                     cell: (e: AppPipeline) => {
-                      return e?.kdsParas?.streamName || "-";
+                      if (
+                        e.bufferType !== BufferType.None &&
+                        e.status === PipelineStatus.CREATING
+                      ) {
+                        return <i className="gray">({t("pendingCreation")})</i>;
+                      } else if (e.bufferType === BufferType.None) {
+                        return t("none");
+                      } else {
+                        return getListBufferLayer(
+                          e.bufferType,
+                          e.bufferResourceName || ""
+                        );
+                      }
                     },
                   },
                   {

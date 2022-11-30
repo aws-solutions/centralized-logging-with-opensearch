@@ -44,7 +44,9 @@ include-markdown "include-prerequisites.md"
 
 5. Specify the **Time format**. The format syntax follows [strptime](https://linux.die.net/man/3/strptime). Check [this](https://docs.fluentbit.io/manual/pipeline/parsers/configuring-parser#time-resolution-and-fractional-seconds) for details.
 
-6. Choose **Create** to finish log config creation.
+6. (Optional) In the **Filter** section, you add some conditions to filter logs at the log agent side. The solution will ingest logs that match ALL the specified conditions only.
+
+7. Select **Create**.
 
 ### Custom
 
@@ -70,7 +72,9 @@ include-markdown "include-prerequisites.md"
     !!! Note "Note"
         You must specify the datetime of the log using key “time”. If not specified, system time will be added.
 
-5. Choose **Create** to finish log config creation.
+5. (Optional) In the **Filter** section, you add some conditions to filter logs at the log agent side. The solution will ingest logs that match ALL the specified conditions only.
+
+6. Select **Create**.
 
 ## Step 2: Create an application log ingestion
 

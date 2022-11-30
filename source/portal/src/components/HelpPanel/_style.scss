@@ -69,8 +69,35 @@
         }
       }
       .gsui-help-link-item {
-        line-height: 20px;
+        margin-top: 5px;
+        margin-bottom: 10px;
+        line-height: 16px;
       }
+    }
+  }
+  .info-table {
+    width: 100%;
+    border: 1px solid #ccc;
+    th {
+      text-align: center;
+    }
+    td {
+      text-align: left;
+    }
+    th,
+    td {
+      background-color: #fff;
+      padding: 1px 3px;
+      border: 1px solid #ccc;
+    }
+    th {
+      font-size: 12px;
+    }
+    .line {
+      white-space: nowrap;
+    }
+    .break {
+      word-break: break-all;
     }
   }
 }

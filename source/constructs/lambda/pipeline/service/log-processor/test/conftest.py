@@ -22,6 +22,7 @@ def default_environment_variables():
     os.environ["ENGINE"] = "OpenSearch"
     os.environ["BULK_BATCH_SIZE"] = "10"
     os.environ[
-        "LOG_SOURCE_ACCOUNT_ASSUME_ROLE"] = "arn:aws:iam::111111111:role/CrossAccount-CrossAccountRoleFACE29D1-1KM3QA0O84K34"
+        "LOG_SOURCE_ACCOUNT_ASSUME_ROLE"
+    ] = "arn:aws:iam::111111111:role/CrossAccount-CrossAccountRoleFACE29D1-1KM3QA0O84K34"
     os.environ["WEB_ACL_NAMES"] = "mock-wafv2-webacl"
     os.environ["INTERVAL"] = "1"

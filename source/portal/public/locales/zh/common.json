@@ -18,8 +18,8 @@
   "menu": {
     "home": "首页",
     "cluster": "集群",
-    "osDomain": "OpenSearch 域",
-    "importOS": "导入 OpenSearch 域",
+    "osDomain": "Amazon OpenSearch 域",
+    "importOS": "导入 Amazon OpenSearch 域",
     "logPipeline": "日志分析管道",
     "serviceLog": "AWS 服务日志",
     "appLog": "应用日志",
@@ -29,7 +29,7 @@
     "resource": "资源管理",
     "instanceGroup": "实例组",
     "logConfig": "日志配置",
-    "crossAccount": "多账户",
+    "crossAccount": "成员账户",
     "doc": "文档"
   },
   "bottom": {
@@ -57,7 +57,7 @@
   },
   "button": {
     "add": "添加",
-    "importDomain": "导入 OpenSearch 域",
+    "importDomain": "导入 Amazon OpenSearch 域",
     "createIngestion": "创建日志摄取",
     "viewDetail": "查看详情",
     "remove": "移除",
@@ -82,14 +82,20 @@
     "loadMoreInstance": "加载更多实例",
     "importEksCluster": "导入一个集群",
     "fromInstance": "从实例组",
-    "fromS3": "从S3存储桶",
+    "fromS3": "从 AmazonS3 存储桶",
+    "fromSysLog": "从Syslog",
+    "fromEKS": "从EKS集群",
     "validate": "验证",
     "changeIndex": "修改索引名称",
-    "linkAnAccount": "链接一个账户",
+    "linkAnAccount": "导入成员账户",
     "link": "链接",
     "forceCreate": "继续创建",
     "createSameAccountIngestion": "创建同帐户摄取",
-    "upgrade": "升级"
+    "upgrade": "升级",
+    "addCondition": "添加条件",
+    "addInstances": "添加实例",
+    "removeInstances": "移除实例",
+    "gotoInstanceGroup": "转到实例组"
   },
   "status": {
     "unknown": "未知",
@@ -106,8 +112,10 @@
     "offline": "离线",
     "installing": "安装中"
   },
+  "seconds": "秒",
   "yes": "是",
   "no": "否",
+  "none": "无",
   "oops": "提示...",
   "copied": "已复制!",
   "loading": "加载中...",
@@ -116,5 +124,8 @@
   "optional": "可选",
   "noMoreInstance": "已加载所有实例",
   "unknown": "未知",
-  "maxmindCopyRight": "日志通利用 MaxMind 创建的 GeoLite2 数据，详情请访问 "
+  "maxmindCopyRight": "本产品包括 MaxMind 创建的 GeoLite2 数据，详情请访问 ",
+  "signInAgain": "请重新登录",
+  "reloginTips": "您已退出您的帐户。 请点击“重新加载”重新登录。",
+  "pendingCreation": "创建中"
 }

@@ -32,7 +32,7 @@ const Tags: React.FC<TagProps> = ({ ingestionInfo }: TagProps) => {
         count={ingestionInfo?.tags?.length}
         contentNoPadding
       >
-        {ingestionInfo?.tags?.length || 0 > 0 ? (
+        {(ingestionInfo?.tags?.length || 0) > 0 ? (
           <div>
             <div className="flex show-tag-list">
               <div className="tag-key">

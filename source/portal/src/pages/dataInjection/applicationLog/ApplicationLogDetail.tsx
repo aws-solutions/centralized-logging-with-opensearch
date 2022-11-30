@@ -26,8 +26,13 @@ import Lifecycle from "./detail/Lifecycle";
 import Tags from "./detail/Tags";
 import { appSyncRequestQuery } from "assets/js/request";
 import { getAppPipeline } from "graphql/queries";
-import { AppPipeline } from "API";
-import { buildESLink, buildKDSLink, formatLocalTime } from "assets/js/utils";
+import { AppPipeline, BufferType, PipelineStatus } from "API";
+import {
+  buildESLink,
+  buildKDSLink,
+  buildS3Link,
+  formatLocalTime,
+} from "assets/js/utils";
 import { AmplifyConfigType } from "types";
 import { useSelector } from "react-redux";
 import { AppStateProps } from "reducer/appReducer";
@@ -36,6 +41,7 @@ import SideMenu from "components/SideMenu";
 import Permission from "./detail/Permission";
 import { useTranslation } from "react-i18next";
 import Status from "components/Status/Status";
+import { getParamValueByKey } from "assets/js/applog";
 
 interface MatchParams {
   id: string;
@@ -105,17 +111,20 @@ const ApplicationLogDetail: React.FC<RouteComponentProps<MatchParams>> = (
                   <div className="flex value-label-span">
                     <div className="flex-1">
                       <ValueWithLabel label={t("applog:detail.osIndex")}>
-                        <div>{curPipeline?.aosParas?.indexPrefix}</div>
+                        <div>{curPipeline?.aosParams?.indexPrefix || "-"}</div>
                       </ValueWithLabel>
-                      <ValueWithLabel label={t("applog:detail.openShards")}>
-                        <div>
-                          {curPipeline?.kdsParas?.openShardCount === null
-                            ? "-"
-                            : curPipeline?.kdsParas?.openShardCount}
-                        </div>
-                      </ValueWithLabel>
+                      {curPipeline?.bufferType === BufferType.KDS && (
+                        <ValueWithLabel label={t("applog:detail.openShards")}>
+                          <div>
+                            {getParamValueByKey(
+                              "OpenShardCount",
+                              curPipeline?.bufferParams
+                            ) || "-"}
+                          </div>
+                        </ValueWithLabel>
+                      )}
                       <ValueWithLabel label={t("servicelog:cluster.shardNum")}>
-                        <div>{curPipeline?.aosParas?.shardNumbers}</div>
+                        <div>{curPipeline?.aosParams?.shardNumbers || "-"}</div>
                       </ValueWithLabel>
                     </div>
                     <div className="flex-1 border-left-c">
@@ -123,54 +132,108 @@ const ApplicationLogDetail: React.FC<RouteComponentProps<MatchParams>> = (
                         <ExtLink
                           to={buildESLink(
                             amplifyConfig.aws_project_region,
-                            curPipeline?.aosParas?.domainName || ""
+                            curPipeline?.aosParams?.domainName || ""
                           )}
                         >
-                          {curPipeline?.aosParas?.domainName}
+                          {curPipeline?.aosParams?.domainName || "-"}
                         </ExtLink>
                       </ValueWithLabel>
-                      <ValueWithLabel label={t("applog:detail.fanout")}>
-                        <div>
-                          {curPipeline?.kdsParas?.consumerCount === null
-                            ? "-"
-                            : curPipeline?.kdsParas?.consumerCount}
-                        </div>
-                      </ValueWithLabel>
+                      {curPipeline?.bufferType === BufferType.KDS && (
+                        <ValueWithLabel label={t("applog:detail.fanout")}>
+                          <div>
+                            {getParamValueByKey(
+                              "ConsumerCount",
+                              curPipeline?.bufferParams
+                            ) || "-"}
+                          </div>
+                        </ValueWithLabel>
+                      )}
+
                       <ValueWithLabel
                         label={t("servicelog:cluster.replicaNum")}
                       >
-                        <div>{curPipeline?.aosParas?.replicaNumbers}</div>
+                        <div>{curPipeline?.aosParams?.replicaNumbers}</div>
                       </ValueWithLabel>
                     </div>
-                    {!curPipeline?.ec2RoleArn && (
-                      <div className="flex-1 border-left-c">
-                        <ValueWithLabel label={t("applog:detail.shards")}>
+
+                    <div className="flex-1 border-left-c">
+                      <ValueWithLabel
+                        label={`${t("ekslog:ingest.detail.bufferLayer")}(${
+                          curPipeline?.bufferType
+                        })`}
+                      >
+                        {curPipeline?.bufferType !== BufferType.None &&
+                        curPipeline?.status === PipelineStatus.CREATING ? (
+                          <i>({t("pendingCreation")})</i>
+                        ) : (
+                          <>
+                            {curPipeline?.bufferType === BufferType.KDS && (
+                              <div>
+                                <ExtLink
+                                  to={buildKDSLink(
+                                    amplifyConfig.aws_project_region,
+                                    curPipeline.bufferResourceName || "-"
+                                  )}
+                                >
+                                  {curPipeline.bufferResourceName || "-"}
+                                </ExtLink>
+                                {getParamValueByKey(
+                                  "enableAutoScaling",
+                                  curPipeline?.bufferParams
+                                ) === "true"
+                                  ? t("applog:detail.autoScaling")
+                                  : ""}
+                              </div>
+                            )}
+                            {curPipeline?.bufferType === BufferType.S3 && (
+                              <>
+                                <ExtLink
+                                  to={buildS3Link(
+                                    amplifyConfig.aws_project_region,
+                                    getParamValueByKey(
+                                      "logBucketName",
+                                      curPipeline?.bufferParams
+                                    ) || ""
+                                  )}
+                                >
+                                  {getParamValueByKey(
+                                    "logBucketName",
+                                    curPipeline?.bufferParams
+                                  ) || "-"}
+                                </ExtLink>
+                              </>
+                            )}
+                            {curPipeline?.bufferType === BufferType.None && (
+                              <div>{t("none")}</div>
+                            )}
+                          </>
+                        )}
+                      </ValueWithLabel>
+                      {curPipeline?.bufferType === BufferType.S3 && (
+                        <ValueWithLabel
+                          label={t(
+                            "applog:create.ingestSetting.s3BucketPrefix"
+                          )}
+                        >
                           <div>
-                            <ExtLink
-                              to={buildKDSLink(
-                                amplifyConfig.aws_project_region,
-                                curPipeline?.kdsParas?.streamName || ""
-                              )}
-                            >
-                              {curPipeline?.kdsParas?.streamName || "-"}
-                            </ExtLink>
-                            {curPipeline?.kdsParas?.enableAutoScaling
-                              ? t("applog:detail.autoScaling")
-                              : ""}
+                            {getParamValueByKey(
+                              "logBucketPrefix",
+                              curPipeline?.bufferParams
+                            ) || "-"}
                           </div>
                         </ValueWithLabel>
-                      </div>
-                    )}
+                      )}
+                    </div>
 
                     <div className="flex-1 border-left-c">
                       <ValueWithLabel label={t("applog:detail.created")}>
                         <div>
-                          {formatLocalTime(curPipeline?.createdDt || "")}
+                          {formatLocalTime(curPipeline?.createdDt || "-")}
                         </div>
                       </ValueWithLabel>
                       <ValueWithLabel label={t("applog:list.status")}>
                         <div>
-                          <Status status={curPipeline?.status || ""} />
+                          <Status status={curPipeline?.status || "-"} />
                         </div>
                       </ValueWithLabel>
                     </div>

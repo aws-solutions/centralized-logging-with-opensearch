@@ -6,7 +6,7 @@ import pytest
 
 import os
 import boto3
-from moto import mock_dynamodb, mock_stepfunctions, mock_sts
+from moto import mock_dynamodb, mock_stepfunctions, mock_sts, mock_es
 
 
 @pytest.fixture
@@ -21,6 +21,10 @@ def create_event():
                 {
                     "parameterKey": "hello",
                     "parameterValue": "world"
+                },
+                {
+                    "parameterKey": "domainName",
+                    "parameterValue": "loghub-os"
                 },
             ],
             "tags": [],
@@ -143,7 +147,15 @@ def sts_client():
         yield
 
 
-def test_lambda_function(sfn_client, ddb_client, sts_client, create_event,
+@pytest.fixture
+def aos_client():
+    with mock_es():
+        es = boto3.client("es", region_name=os.environ.get("AWS_REGION"))
+        es.create_elasticsearch_domain(DomainName="loghub-os")
+        yield
+
+
+def test_lambda_function(sfn_client, ddb_client, sts_client, aos_client, create_event,
                          list_event, check_service_existing_event,
                          delete_event):
     import lambda_function

@@ -87,6 +87,14 @@ type Query {
     accountId: String
   ): ListInstanceResponse
 
+  # List Auto-Scaling Groups
+  listAutoScalingGroups(
+    maxResults: Int
+    nextToken: String
+    region: String
+    accountId: String
+  ): listAutoScalingGroupResponse
+
   # Get Instance Meta by ID
   getInstanceMeta(id: ID!): InstanceMeta
 
@@ -110,13 +118,17 @@ type Query {
   getEKSClusterDetails(eksClusterId: String!): EKSClusterLogSource
 
   # Get eks daemon set config by eks source id
-  getEKSDaemonSetConfig(eksClusterId: String!): String
+  getEKSDaemonSetConf(eksClusterId: String!): String
 
   # Get eks deployment configuration by eksClusterId and ingestion id
-  getEKSDeploymentConfig(
+  getEKSDeploymentConf(
     eksClusterId: String!
     ingestionId: String!
     openExtraMetadataFlag: Boolean
+  ): String
+
+  getAutoScalingGroupConf(
+    groupId: String!
   ): String
 
   # List EKS Cluster info
@@ -149,6 +161,12 @@ type Query {
     accountId: String!
     region: String
   ): SubAccountLink
+
+  checkCustomPort(
+    sourceType: LogSourceType
+    syslogProtocol: ProtocolType!
+    syslogPort: Int!
+  ): checkCustomPortResponse
 }
 
 type Mutation {
@@ -204,29 +222,48 @@ type Mutation {
     accountId: String
     region: String
     groupName: String!
+    groupType: String
     instanceSet: [String!]!
+  ): String
+
+  # Create a new instance group base on auto-scaling group
+  createInstanceGroupBaseOnASG(
+    accountId: String
+    region: String
+    groupName: String!
+    groupType: String
+    autoScalingGroupName: String!
   ): String
 
   # Remove a instance group
   deleteInstanceGroup(id: ID!): String
 
   # Update a instance group
-  updateInstanceGroup(
-    id: ID!
-    groupName: String!
-    instanceSet: [String!]!
-    accountId: String
-    region: String
+  addInstancesToInstanceGroup(
+    sourceId: String!
+    instanceIdSet: [String!]!
   ): String
+
+  deleteInstancesFromInstanceGroup(
+    sourceId: String!
+    instanceIdSet: [String!]!
+  ): String
+
 
   # Create a logging conf
   createLogConf(
     confName: String!
     logType: LogType!
+    timeKey: String
+    timeOffset: String
     multilineLogParser: MultiLineLogParser
+    syslogParser: SyslogParser
+    userSampleLog: String
     userLogFormat: String
     regularExpression: String
+    timeRegularExpression: String
     regularSpecs: [RegularSpecInput]
+    processorFilterRegex: ProcessorFilterRegexInput
   ): String
 
   # Remove a logging conf
@@ -237,16 +274,26 @@ type Mutation {
     id: ID!
     confName: String!
     logType: LogType!
+    timeKey: String
+    timeOffset: String
     multilineLogParser: MultiLineLogParser
+    syslogParser: SyslogParser
+    userSampleLog: String
     userLogFormat: String
     regularExpression: String
+    timeRegularExpression: String
     regularSpecs: [RegularSpecInput]
+    processorFilterRegex: ProcessorFilterRegexInput
   ): String
 
   # Create a new app pipeline
   createAppPipeline(
-    kdsParas: KDSParameterInput!
-    aosParas: AOSParameterInput!
+    # kdsParas: KDSParameterInput!
+    bufferType: BufferType!
+    bufferParams: [BufferInput]
+
+    aosParams: AOSParameterInput!
+
     force: Boolean
     tags: [TagInput]
   ): String
@@ -262,13 +309,13 @@ type Mutation {
     confId: String!
     sourceIds: [String!]
     sourceType: LogSourceType!
-    stackId: String
-    stackName: String
+    # stackId: String
+    # stackName: String
     appPipelineId: String!
-    createDashboard: String!
-    force: Boolean
+    createDashboard: String
+    # force: Boolean
     tags: [TagInput]
-    logPath: String!
+    logPath: String
   ): String
 
   # Remove a app logging ingestion
@@ -281,18 +328,11 @@ type Mutation {
     region: String
   ): String
 
-  # Create a logging source conf
   createLogSource(
     sourceType: LogSourceType!
-    logPath: String
-    s3Name: String
-    s3Prefix: String
     accountId: String
     region: String
-    archiveFormat: ArchiveFormat
-    subAccountVpcId: String
-    subAccountPublicSubnetIds: String
-    subAccountLinkId: String
+    sourceInfo: [SourceInfoInput]
     tags: [TagInput]
   ): String
 
@@ -316,27 +356,27 @@ type Mutation {
   removeEKSCluster(id: ID!): String
 
   #create EKS Cluster Pod log pipeline & ingestion
-  createEKSClusterPodLogIngestion(
-    kdsParas: KDSParameterInput!
-    aosParas: AOSParameterInput!
-    confId: String!
-    eksClusterId: String!
-    logPath: String!
-    createDashboard: String!
-    force: Boolean
-    tags: [TagInput]
-  ): String
+  # createEKSClusterPodLogIngestion(
+  #   # kdsParas: KDSParameterInput!
+  #   aosParas: AOSParameterInput!
+  #   confId: String!
+  #   eksClusterId: String!
+  #   logPath: String!
+  #   createDashboard: String!
+  #   force: Boolean
+  #   tags: [TagInput]
+  # ): String
 
   #create EKS Cluster Pod log pipeline & ingestion without data buffer
-  createEKSClusterPodLogWithoutDataBufferIngestion(
-    aosParas: AOSParameterInput!
-    confId: String!
-    eksClusterId: String!
-    logPath: String!
-    createDashboard: String!
-    force: Boolean
-    tags: [TagInput]
-  ): String
+  # createEKSClusterPodLogWithoutDataBufferIngestion(
+  #   aosParas: AOSParameterInput!
+  #   confId: String!
+  #   eksClusterId: String!
+  #   logPath: String!
+  #   createDashboard: String!
+  #   force: Boolean
+  #   tags: [TagInput]
+  # ): String
 
   #generate error code
   generateErrorCode(code: ErrorCode): String
@@ -528,6 +568,11 @@ enum ServiceType {
   Config
 }
 
+enum ProtocolType {
+  TCP
+  UDP
+}
+
 type Tag {
   key: String
   value: String
@@ -568,6 +613,16 @@ type Parameter {
 input ParameterInput {
   parameterKey: String
   parameterValue: String
+}
+
+type SourceInfo {
+  key: String
+  value: String
+}
+
+input SourceInfoInput {
+  key: String
+  value: String
 }
 
 type Resource {
@@ -660,6 +715,7 @@ type InstanceGroup {
   accountId: String
   region: String
   groupName: String
+  groupType: String
   instanceSet: [String]
   createdDt: String
   status: String
@@ -675,12 +731,19 @@ enum LogType {
   Regex
   Nginx
   Apache
+  Syslog
   SingleLineText
   MultiLineText
 }
 
 enum MultiLineLogParser {
   JAVA_SPRING_BOOT
+  CUSTOM
+}
+
+enum SyslogParser {
+  RFC5424
+  RFC3164
   CUSTOM
 }
 
@@ -694,6 +757,8 @@ enum LogSourceType {
   EC2
   S3
   EKSCluster
+  Syslog
+  ASG
 }
 
 enum LoggingBucketSource {
@@ -714,12 +779,45 @@ type LogConf {
   confName: String
   logType: LogType
   logPath: String
+  timeKey: String
+  timeOffset: String
   multilineLogParser: MultiLineLogParser
+  syslogParser: SyslogParser
   createdDt: String
   userLogFormat: String
+  userSampleLog: String
   regularExpression: String
+  timeRegularExpression: String
   regularSpecs: [RegularSpec]
+  processorFilterRegex: ProcessorFilterRegex
   status: String
+}
+
+input ProcessorFilterRegexInput {
+  enable: Boolean!
+  filters: [LogConfFilterInput]
+}
+
+type ProcessorFilterRegex {
+  enable: Boolean!
+  filters: [LogConfFilter]
+}
+
+input LogConfFilterInput {
+  key: String!
+  condition: LogConfFilterCondition!
+  value: String!
+}
+
+type LogConfFilter {
+  key: String!
+  condition: LogConfFilterCondition!
+  value: String!
+}
+
+enum LogConfFilterCondition {
+  Include
+  Exclude
 }
 
 type ListLogConfResponse {
@@ -735,17 +833,30 @@ type S3Source {
   defaultSubnetIds: String
 }
 
+# type LogSource {
+#   sourceId: ID!
+#   sourceName: String
+#   logPath: String
+#   sourceType: LogSourceType
+#   createdDt: String
+#   accountId: String
+#   region: String
+#   s3Source: S3Source
+#   eksSource: EKSClusterLogSource
+#   # ec2Source: EC2Source
+# }
+
 type LogSource {
   sourceId: ID!
+  accountId: String
+  region: String
   sourceName: String
   logPath: String
   sourceType: LogSourceType
-  createdDt: String
-  accountId: String
-  region: String
+  sourceInfo: [SourceInfo]
   s3Source: S3Source
   eksSource: EKSClusterLogSource
-  # ec2Source: EC2Source
+  createdDt: String
 }
 
 type ListLogSourceResponse {
@@ -753,14 +864,14 @@ type ListLogSourceResponse {
   total: Int
 }
 
-input KDSParameterInput {
-  kdsArn: String
-  streamName: String
-  enableAutoScaling: Boolean!
-  startShardNumber: Int!
-  maxShardNumber: Int
-  regionName: String
-}
+# input KDSParameterInput {
+#   kdsArn: String
+#   streamName: String
+#   enableAutoScaling: Boolean!
+#   startShardNumber: Int!
+#   maxShardNumber: Int
+#   regionName: String
+# }
 
 input AOSParameterInput {
   vpc: VPCInput!
@@ -777,17 +888,17 @@ input AOSParameterInput {
   failedLogBucket: String!
 }
 
-type KDSParameter {
-  kdsArn: String
-  streamName: String
-  enableAutoScaling: Boolean
-  startShardNumber: Int
-  openShardCount: Int
-  consumerCount: Int
-  maxShardNumber: Int
-  regionName: String
-  osHelperFnArn: String
-}
+# type KDSParameter {
+#   kdsArn: String
+#   streamName: String
+#   enableAutoScaling: Boolean
+#   startShardNumber: Int
+#   openShardCount: Int
+#   consumerCount: Int
+#   maxShardNumber: Int
+#   regionName: String
+#   osHelperFnArn: String
+# }
 
 type AOSParameter {
   opensearchArn: String
@@ -803,12 +914,20 @@ type AOSParameter {
 
 type AppPipeline {
   id: ID!
-  kdsParas: KDSParameter
-  aosParas: AOSParameter
+  # kdsParas: KDSParameter
+  bufferType: BufferType
+  bufferParams: [BufferParameter]
+  aosParams: AOSParameter
   createdDt: String
   status: PipelineStatus
-  kdsRoleArn: String
-  ec2RoleArn: String
+  # kdsRoleArn: String
+  bufferAccessRoleArn: String
+  bufferAccessRoleName: String
+  bufferResourceName: String
+  bufferResourceArn: String
+
+  # TODO: Check ec2RoleArn
+  # ec2RoleArn: String
   tags: [Tag]
 }
 
@@ -825,10 +944,10 @@ type AppLogIngestion {
   stackId: String
   stackName: String
   appPipelineId: String
-  kdsRoleArn: String
-  kdsRoleName: String
-  ec2RoleArn: String
-  ec2RoleName: String
+  # kdsRoleArn: String
+  # kdsRoleName: String
+  # ec2RoleArn: String
+  # ec2RoleName: String
   logPath: String
   sourceId: String
   sourceType: String
@@ -879,8 +998,22 @@ type Instance {
   name: String
 }
 
+# Auto-Scaling Group info
+type AutoScalingGroup {
+  autoScalingGroupName: String
+  minSize: Int
+  maxSize: Int
+  desiredCapacity: Int
+  instances: [String!]
+}
+
 type ListInstanceResponse {
   instances: [Instance]
+  nextToken: String
+}
+
+type listAutoScalingGroupResponse {
+  autoScalingGroups: [AutoScalingGroup]
   nextToken: String
 }
 
@@ -959,4 +1092,26 @@ type SubAccountLink {
 type ListSubAccountLinkResponse {
   subAccountLinks: [SubAccountLink]
   total: Int
+}
+
+type checkCustomPortResponse {
+  isAllowedPort: Boolean
+  msg: String
+  recommendedPort: Int
+}
+
+enum BufferType {
+  None
+  KDS
+  S3
+  MSK
+}
+type BufferParameter {
+  paramKey: String
+  paramValue: String
+}
+
+input BufferInput {
+  paramKey: String
+  paramValue: String
 }

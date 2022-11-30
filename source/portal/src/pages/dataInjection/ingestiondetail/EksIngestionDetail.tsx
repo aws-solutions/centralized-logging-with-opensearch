@@ -32,11 +32,12 @@ import Sidecar from "./comps/Sidecar";
 import {
   AppLogIngestion,
   AppPipeline,
+  BufferType,
   EKSClusterLogSource,
   EKSDeployKind,
   Tag,
 } from "API";
-import { buildKDSLink, formatLocalTime } from "assets/js/utils";
+import { buildKDSLink, buildS3Link, formatLocalTime } from "assets/js/utils";
 import ExtLink from "components/ExtLink";
 import { AmplifyConfigType } from "types";
 import { AppStateProps } from "reducer/appReducer";
@@ -44,6 +45,8 @@ import { useSelector } from "react-redux";
 import Tags from "./comps/Tags";
 import LogConfig from "./comps/LogConfig";
 import DaemonSet from "./comps/DaemonSet";
+import { getParamValueByKey } from "assets/js/applog";
+import AccountName from "pages/comps/account/AccountName";
 
 interface MatchParams {
   eksId: string;
@@ -52,9 +55,10 @@ interface MatchParams {
 
 export interface EksDetailProps {
   deploymentKind: EKSDeployKind | null | undefined;
+  bufferType: BufferType | null | undefined;
   enableAutoScaling: boolean;
   indexPrefix: string;
-  streamName: string;
+  bufferNname: string;
   appPipelineId: string;
   created: string;
   configId: string;
@@ -71,7 +75,8 @@ const EksIngestionDetail: React.FC = () => {
   const [loadingData, setLoadingData] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const [eksIngestionData, setEksIngestionData] = useState<EksDetailProps>();
-  const [eksClusterName, setEksClusterName] = useState("");
+  // const [eksClusterName, setEksClusterName] = useState("");
+  const [eksClusterInfo, setEksClusterInfo] = useState<EKSClusterLogSource>();
   const breadCrumbList = [
     { name: t("name"), link: "/" },
     {
@@ -79,7 +84,7 @@ const EksIngestionDetail: React.FC = () => {
       link: "/containers/eks-log",
     },
     {
-      name: eksClusterName,
+      name: eksClusterInfo?.eksClusterName || "",
       link: "/containers/eks-log/detail/" + eksId,
     },
     { name: id },
@@ -100,7 +105,8 @@ const EksIngestionDetail: React.FC = () => {
       });
       const tmpEksData: EKSClusterLogSource =
         resEksData?.data?.getEKSClusterDetails;
-      setEksClusterName(tmpEksData.eksClusterName || "");
+      setEksClusterInfo(tmpEksData);
+      // setEksClusterName(tmpEksData.eksClusterName || "");
 
       // Get Ingestion Info By ingestionId
       const resIngestionData: any = await appSyncRequestQuery(
@@ -121,9 +127,16 @@ const EksIngestionDetail: React.FC = () => {
 
       setEksIngestionData({
         deploymentKind: tmpEksData.deploymentKind,
-        indexPrefix: tmpPipelineData.aosParas?.indexPrefix || "",
-        streamName: tmpPipelineData.kdsParas?.streamName || "",
-        enableAutoScaling: tmpPipelineData.kdsParas?.enableAutoScaling || false,
+        indexPrefix: tmpPipelineData.aosParams?.indexPrefix || "",
+        bufferType: tmpPipelineData.bufferType,
+        bufferNname: tmpPipelineData.bufferResourceName || "",
+        enableAutoScaling:
+          getParamValueByKey(
+            "enableAutoScaling",
+            tmpPipelineData.bufferParams
+          ) === "true"
+            ? true
+            : false,
         appPipelineId: tmpPipelineData.id,
         configId: tmpIngestionData.confId || "",
         created: tmpIngestionData.createdDt || "",
@@ -162,22 +175,53 @@ const EksIngestionDetail: React.FC = () => {
                       >
                         <div>{eksIngestionData?.indexPrefix}</div>
                       </ValueWithLabel>
+                      <ValueWithLabel
+                        label={t("resource:crossAccount.account")}
+                      >
+                        <AccountName
+                          accountId={eksClusterInfo?.accountId || ""}
+                          region={amplifyConfig.aws_project_region}
+                        />
+                      </ValueWithLabel>
                     </div>
                     <div className="flex-1 border-left-c">
-                      <ValueWithLabel label={t("ekslog:ingest.detail.kds")}>
-                        <div>
-                          <ExtLink
-                            to={buildKDSLink(
-                              amplifyConfig.aws_project_region,
-                              eksIngestionData?.streamName || ""
-                            )}
-                          >
-                            {eksIngestionData?.streamName || "-"}
-                          </ExtLink>
-                          {eksIngestionData?.enableAutoScaling
-                            ? t("applog:detail.autoScaling")
-                            : ""}
-                        </div>
+                      <ValueWithLabel
+                        label={`${t("ekslog:ingest.detail.bufferLayer")}(${
+                          eksIngestionData?.bufferType
+                        })`}
+                      >
+                        <>
+                          {eksIngestionData?.bufferType === BufferType.KDS && (
+                            <div>
+                              <ExtLink
+                                to={buildKDSLink(
+                                  amplifyConfig.aws_project_region,
+                                  eksIngestionData?.bufferNname || ""
+                                )}
+                              >
+                                {eksIngestionData?.bufferNname || "-"}
+                              </ExtLink>
+                              {eksIngestionData?.enableAutoScaling
+                                ? t("applog:detail.autoScaling")
+                                : ""}
+                            </div>
+                          )}
+                          {eksIngestionData?.bufferType === BufferType.S3 && (
+                            <div>
+                              <ExtLink
+                                to={buildS3Link(
+                                  amplifyConfig.aws_project_region,
+                                  eksIngestionData?.bufferNname || ""
+                                )}
+                              >
+                                {eksIngestionData?.bufferNname || "-"}
+                              </ExtLink>
+                            </div>
+                          )}
+                          {eksIngestionData?.bufferType === BufferType.None && (
+                            <div>{t("none")}</div>
+                          )}
+                        </>
                       </ValueWithLabel>
                     </div>
                     <div className="flex-1 border-left-c">

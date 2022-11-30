@@ -13,9 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import {
-  Construct,
-} from 'constructs';
+import { Construct } from "constructs";
 import {
   Fn,
   Aws,
@@ -23,7 +21,7 @@ import {
   aws_dynamodb as ddb,
   aws_iam as iam,
   aws_lambda as lambda,
-} from 'aws-cdk-lib';
+} from "aws-cdk-lib";
 
 import * as appsync from "@aws-cdk/aws-appsync-alpha";
 import * as path from "path";
@@ -39,29 +37,32 @@ export interface CrossAccountStackProps {
   subAccountLinkTable: ddb.Table;
 }
 export class CrossAccountStack extends Construct {
-
-  readonly apiEndpoint: string
-  readonly centralAssumeRolePolicy: iam.ManagedPolicy
-  readonly asyncCrossAccountHandler: lambda.Function
+  readonly apiEndpoint: string;
+  readonly centralAssumeRolePolicy: iam.ManagedPolicy;
+  readonly asyncCrossAccountHandler: lambda.Function;
 
   constructor(scope: Construct, id: string, props: CrossAccountStackProps) {
     super(scope, id);
 
     const solution_id = "SO8025";
-    this.centralAssumeRolePolicy = new iam.ManagedPolicy(this, "CentralAssumeRolePolicy", {
-      statements: [
-        new iam.PolicyStatement({
-          actions: [
-            "logs:CreateLogGroup",
-            "logs:CreateLogStream",
-            "logs:PutLogEvents"
-          ],
-          resources: [
-            `arn:${Aws.PARTITION}:logs:${Aws.REGION}:${Aws.ACCOUNT_ID}:*`
-          ]
-        })
-      ]
-    });
+    this.centralAssumeRolePolicy = new iam.ManagedPolicy(
+      this,
+      "CentralAssumeRolePolicy",
+      {
+        statements: [
+          new iam.PolicyStatement({
+            actions: [
+              "logs:CreateLogGroup",
+              "logs:CreateLogStream",
+              "logs:PutLogEvents",
+            ],
+            resources: [
+              `arn:${Aws.PARTITION}:logs:${Aws.REGION}:${Aws.ACCOUNT_ID}:*`,
+            ],
+          }),
+        ],
+      }
+    );
 
     // Create a lambda to handle all linkSubAccount related APIs.
     this.asyncCrossAccountHandler = new lambda.Function(
@@ -76,7 +77,8 @@ export class CrossAccountStack extends Construct {
         timeout: Duration.minutes(15),
         memorySize: 2048,
         environment: {
-          CENTRAL_ASSUME_ROLE_POLICY_ARN: this.centralAssumeRolePolicy.managedPolicyArn,
+          CENTRAL_ASSUME_ROLE_POLICY_ARN:
+            this.centralAssumeRolePolicy.managedPolicyArn,
           SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName!,
           BASE_RESOURCE_ARN: `arn:${Aws.PARTITION}:logs:${Aws.REGION}:${Aws.ACCOUNT_ID}:*`,
           SOLUTION_ID: solution_id,
@@ -92,7 +94,6 @@ export class CrossAccountStack extends Construct {
     props.subAccountLinkTable.grantReadWriteData(this.asyncCrossAccountHandler);
 
     // Grant iam Policy to the linkSubAccount lambda
-    // TODO: and the iam add and remove policy
     this.asyncCrossAccountHandler.addToRolePolicy(
       new iam.PolicyStatement({
         actions: [
@@ -121,7 +122,12 @@ export class CrossAccountStack extends Construct {
         "id",
         "id"
       ),
-      responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultItem(),
+      responseMappingTemplate: appsync.MappingTemplate.fromFile(
+        path.join(
+          __dirname,
+          "../../graphql/vtl/cross_account/GetSubAccountLinkResp.vtl"
+        )
+      ),
     });
 
     // Add appLogIngestion lambda as a Datasource
@@ -137,36 +143,61 @@ export class CrossAccountStack extends Construct {
       typeName: "Query",
       fieldName: "listSubAccountLinks",
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: appsync.MappingTemplate.fromFile(
+        path.join(
+          __dirname,
+          "../../graphql/vtl/cross_account/ListSubAccountLinksResp.vtl"
+        )
+      ),
     });
 
     crossAccountLambdaDS.createResolver({
       typeName: "Query",
       fieldName: "getSubAccountLinkByAccountIdRegion",
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      //responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: appsync.MappingTemplate.fromFile(
+        path.join(
+          __dirname,
+          "../../graphql/vtl/cross_account/GetSubAccountLinkResp.vtl"
+        )
+      ),
     });
 
     crossAccountLambdaDS.createResolver({
       typeName: "Mutation",
       fieldName: "createSubAccountLink",
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      requestMappingTemplate: appsync.MappingTemplate.fromFile(
+        path.join(
+          __dirname,
+          "../../graphql/vtl/cross_account/CreateSubAccountLink.vtl"
+        )
+      ),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
     crossAccountLambdaDS.createResolver({
       typeName: "Mutation",
       fieldName: "updateSubAccountLink",
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      requestMappingTemplate: appsync.MappingTemplate.fromFile(
+        path.join(
+          __dirname,
+          "../../graphql/vtl/cross_account/UpdateSubAccountLink.vtl"
+        )
+      ),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
     crossAccountLambdaDS.createResolver({
       typeName: "Mutation",
       fieldName: "deleteSubAccountLink",
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      requestMappingTemplate: appsync.MappingTemplate.fromFile(
+        path.join(
+          __dirname,
+          "../../graphql/vtl/cross_account/DeleteSubAccountLink.vtl"
+        )
+      ),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
-
   }
 }

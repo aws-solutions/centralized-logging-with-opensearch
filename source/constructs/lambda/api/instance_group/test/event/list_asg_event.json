@@ -1,0 +1,77 @@
+{
+    "arguments": {
+        "maxResults": 10,
+        "nextToken": ""
+    },
+    "identity": {
+        "claims": {
+            "origin_jti": "5089f946-3990-4514-98ca-6748524074fd",
+            "sub": "2a7ef9c9-e698-4efd-b695-167f3117bf9b",
+            "aud": "4od1ntt74k78q7vn86gipkus4n",
+            "event_id": "5a3b1ba9-1cc8-4751-8093-e5b9a7b84be8",
+            "token_use": "id",
+            "auth_time": 1668492973,
+            "iss": "https://iaosbxoaboxbaousxboabsxoibasxnlaksnxlkanlsanla",
+            "cognito:username": "2a7ef9c9-e698-4efd-b695-167f3117bf9b",
+            "exp": 1668496572,
+            "iat": 1668492973,
+            "jti": "e565334c-bf44-4099-b85f-e12016d0d5cd",
+            "email": "amazon@amazon.com"
+        },
+        "defaultAuthStrategy": "ALLOW",
+        "groups": null,
+        "issuer": "https://ausoboausbxoabxblajbxoavxouvaoxvbakjsbxak",
+        "sourceIp": [
+            "11.11.11.11"
+        ],
+        "sub": "2a7ef9c9-e698-4efd-b695-167f3117bf9b",
+        "username": "2a7ef9c9-e698-4efd-b695-167f3117bf9b"
+    },
+    "source": null,
+    "result": null,
+    "request": {
+        "headers": {
+            "x-forwarded-for": "203.19.38.28, 130.176.25.69",
+            "sec-ch-ua-mobile": "?0",
+            "cloudfront-viewer-country": "CN",
+            "cloudfront-is-tablet-viewer": "false",
+            "x-amzn-requestid": "e2045a9e-e839-496f-975e-779d978a88a9",
+            "via": "2.0 c3da0971c4e40021ef7b7d156b3881d6.cloudfront.net (CloudFront)",
+            "cloudfront-forwarded-proto": "https",
+            "origin": "https://us-west-1.console.aws.amazon.com",
+            "content-length": "327",
+            "x-forwarded-proto": "https",
+            "accept-language": "en-US,en;q=0.9,zh-TW;q=0.8,zh;q=0.7",
+            "host": "bobsaxnaslxnsaljbxoasvouxaobxlaks.com",
+            "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36",
+            "cloudfront-is-mobile-viewer": "false",
+            "accept": "application/json, text/plain, */*",
+            "cloudfront-viewer-asn": "23764",
+            "cloudfront-is-smarttv-viewer": "false",
+            "accept-encoding": "gzip, deflate, br",
+            "referer": "https://us-west-1.console.aws.amazon.com/",
+            "content-type": "application/json",
+            "sec-fetch-mode": "cors",
+            "x-amzn-trace-id": "Root=1-63732f27-28c9cc9969b0edbe1733c995",
+            "x-amz-cf-id": "qlh2nUPSYN3O_oiUQqvMaRWNXHiagGS1BdbopwB6lJlctr69EeHvLQ==",
+            "authorization": "xaiubxouaboxbasoxnaosixoiabxiapsbxnpnapxanwxwc",
+            "sec-fetch-dest": "empty",
+            "x-amz-user-agent": "AWS-Console-AppSync/",
+            "sec-ch-ua-platform": "\"macOS\"",
+            "cloudfront-is-desktop-viewer": "true",
+            "sec-fetch-site": "cross-site",
+            "sec-ch-ua": "\"Google Chrome\";v=\"107\", \"Chromium\";v=\"107\", \"Not=A?Brand\";v=\"24\"",
+            "x-forwarded-port": "443"
+        },
+        "domainName": null
+    },
+    "info": {
+        "fieldName": "listAutoScalingGroups",
+        "parentTypeName": "Query",
+        "variables": {}
+    },
+    "error": null,
+    "prev": null,
+    "stash": {},
+    "outErrors": []
+}

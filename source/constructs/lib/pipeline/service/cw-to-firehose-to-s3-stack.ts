@@ -28,13 +28,13 @@ import {
   aws_iam as iam,
   aws_s3 as s3,
   aws_lambda as lambda,
-  CfnOutput
+  CfnOutput,
 } from "aws-cdk-lib";
 
 import { S3Bucket } from "@aws-cdk/aws-kinesisfirehose-destinations-alpha";
 import * as firehose from "@aws-cdk/aws-kinesisfirehose-alpha";
 import * as path from "path";
-
+import { NagSuppressions } from "cdk-nag";
 /**
  * cfn-nag suppression rule interface
  */
@@ -90,6 +90,16 @@ export class CWtoFirehosetoS3Stack extends Construct {
       encryption: firehose.StreamEncryption.AWS_OWNED,
       destinations: [destination],
     });
+    NagSuppressions.addResourceSuppressions(
+      logFirehose,
+      [
+        {
+          id: "AwsSolutions-IAM5",
+          reason: "The managed policy needs to use any resources.",
+        },
+      ],
+      true
+    );
 
     // Create the IAM role for CloudWatch Logs destination
     const cwDestinationRole = new iam.Role(this, "CWDestinationRole", {
@@ -97,7 +107,12 @@ export class CWtoFirehosetoS3Stack extends Construct {
     });
 
     const isCrossAccount = new CfnCondition(this, "IsCrossAccount", {
-      expression: Fn.conditionAnd(Fn.conditionNot(Fn.conditionEquals(props.logSourceAccountId, "")), Fn.conditionNot(Fn.conditionEquals(props.logSourceAccountId, Aws.ACCOUNT_ID))) 
+      expression: Fn.conditionAnd(
+        Fn.conditionNot(Fn.conditionEquals(props.logSourceAccountId, "")),
+        Fn.conditionNot(
+          Fn.conditionEquals(props.logSourceAccountId, Aws.ACCOUNT_ID)
+        )
+      ),
     });
 
     const assumeBy = {
@@ -106,12 +121,16 @@ export class CWtoFirehosetoS3Stack extends Construct {
         {
           Effect: "Allow",
           Condition: {
-            "StringLike": {
+            StringLike: {
               "aws:SourceArn": [
                 `arn:${Aws.PARTITION}:logs:${Aws.REGION}:${Aws.ACCOUNT_ID}:*`,
-                Fn.conditionIf(isCrossAccount.logicalId, `arn:${Aws.PARTITION}:logs:${props.logSourceRegion}:${props.logSourceAccountId}:*`, Aws.NO_VALUE).toString(),
-              ]
-            }
+                Fn.conditionIf(
+                  isCrossAccount.logicalId,
+                  `arn:${Aws.PARTITION}:logs:${props.logSourceRegion}:${props.logSourceAccountId}:*`,
+                  Aws.NO_VALUE
+                ).toString(),
+              ],
+            },
           },
           Principal: {
             Service: "logs.amazonaws.com",
@@ -169,6 +188,15 @@ export class CWtoFirehosetoS3Stack extends Construct {
       assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
     });
     cwSubFilterLambdaPolicy.attachToRole(cwSubFilterLambdaRole);
+    NagSuppressions.addResourceSuppressions(cwSubFilterLambdaPolicy, [
+      {
+        id: "AwsSolutions-IAM5",
+        reason: "The managed policy needs to use any resources.",
+        appliesTo: [
+          "Resource::arn:<AWS::Partition>:logs:<AWS::Region>:<AWS::AccountId>:*",
+        ],
+      },
+    ]);
 
     // Lambda to create CloudWatch Log Group Subscription Filter
     const cwSubFilterFn = new lambda.Function(this, "cwSubFilterFn", {
@@ -198,13 +226,15 @@ export class CWtoFirehosetoS3Stack extends Construct {
     // Create the policy and role for the Lambda to create and delete CloudWatch Log Group Subscription Filter with cross-account scenario
     cwSubFilterFn.addToRolePolicy(
       new iam.PolicyStatement({
-        actions: [
-          "sts:AssumeRole",
-        ],
+        actions: ["sts:AssumeRole"],
         effect: iam.Effect.ALLOW,
         resources: [
           `arn:${Aws.PARTITION}:logs:${Aws.REGION}:${Aws.ACCOUNT_ID}:*`,
-          Fn.conditionIf(isCrossAccount.logicalId, `${props.logSourceAccountAssumeRole}`, Aws.NO_VALUE).toString(),
+          Fn.conditionIf(
+            isCrossAccount.logicalId,
+            `${props.logSourceAccountAssumeRole}`,
+            Aws.NO_VALUE
+          ).toString(),
         ],
       })
     );
@@ -220,6 +250,36 @@ export class CWtoFirehosetoS3Stack extends Construct {
     const cwSubFilterProvider = new cr.Provider(this, "cwSubFilterProvider", {
       onEventHandler: cwSubFilterFn,
     });
+
+    NagSuppressions.addResourceSuppressions(cwSubFilterProvider, [
+      {
+        id: "AwsSolutions-L1",
+        reason: "the lambda 3.9 runtime we use is the latest version",
+      },
+    ]);
+    NagSuppressions.addResourceSuppressions(
+      cwSubFilterProvider,
+      [
+        {
+          id: "AwsSolutions-IAM5",
+          reason: "The managed policy needs to use any resources.",
+        },
+      ],
+      true
+    );
+    NagSuppressions.addResourceSuppressions(
+      cwSubFilterLambdaRole,
+      [
+        {
+          id: "AwsSolutions-IAM5",
+          reason: "The managed policy needs to use any resources.",
+          appliesTo: [
+            "Resource::arn:<AWS::Partition>:logs:<AWS::Region>:<AWS::AccountId>:*",
+          ],
+        },
+      ],
+      true
+    );
 
     cwSubFilterProvider.node.addDependency(cwSubFilterFn);
 

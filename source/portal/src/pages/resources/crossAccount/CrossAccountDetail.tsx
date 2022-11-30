@@ -41,7 +41,7 @@ const CrossAccountDetail: React.FC<RouteComponentProps<MatchParams>> = (
     { name: t("name"), link: "/" },
     { name: t("resource:crossAccount.name"), link: "/resources/cross-account" },
     {
-      name: curAccount?.subAccountId || "",
+      name: curAccount?.subAccountName || "",
     },
   ];
 
@@ -77,7 +77,7 @@ const CrossAccountDetail: React.FC<RouteComponentProps<MatchParams>> = (
               <LoadingText />
             ) : (
               <div className="m-w-800">
-                <PagePanel title={curAccount?.subAccountId || ""}>
+                <PagePanel title={curAccount?.subAccountName || ""}>
                   <HeaderPanel title={t("resource:crossAccount.detail")}>
                     <FormItem
                       optionTitle={t("resource:crossAccount.link.accountName")}
