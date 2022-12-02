@@ -299,21 +299,21 @@ class FluentBit(AgentType):
     """
     _fluent_bit_output = {
         "eks_fluent_bit_output_s3_template_path":
-        "./util/eks_cluster_pod_template/fluent-bit-output-s3.template.yaml",
+            "./util/eks_cluster_pod_template/fluent-bit-output-s3.template.yaml",
         "eks_fluent_bit_output_kds_template_path":
-        "./util/eks_cluster_pod_template/fluent-bit-output-kds.template.yaml",
+            "./util/eks_cluster_pod_template/fluent-bit-output-kds.template.yaml",
         "eks_fluent_bit_output_aos_template_path":
-        "./util/eks_cluster_pod_template/fluent-bit-output-aos.template.yaml",
+            "./util/eks_cluster_pod_template/fluent-bit-output-aos.template.yaml",
         "eks_fluent_bit_output_msk_template_path":
-        "./util/eks_cluster_pod_template/fluent-bit-output-msk.template.yaml",
+            "./util/eks_cluster_pod_template/fluent-bit-output-msk.template.yaml",
         "ec2_fluent_bit_output_s3_template_path":
-        "./util/fluentbit_template/fluent-bit-output-s3.template.yaml",
+            "./util/fluentbit_template/fluent-bit-output-s3.template.yaml",
         "ec2_fluent_bit_output_kds_template_path":
-        "./util/fluentbit_template/fluent-bit-output-kds.template.yaml",
+            "./util/fluentbit_template/fluent-bit-output-kds.template.yaml",
         "ec2_fluent_bit_output_aos_template_path":
-        "./util/fluentbit_template/fluent-bit-output-aos.template.yaml",
+            "./util/fluentbit_template/fluent-bit-output-aos.template.yaml",
         "ec2_fluent_bit_output_msk_template_path":
-        "./util/fluentbit_template/fluent-bit-output-msk.template.yaml"
+            "./util/fluentbit_template/fluent-bit-output-msk.template.yaml"
     }
 
     _k8s_fluent_bit_grep_filter_template_path = (
@@ -784,9 +784,9 @@ class FluentBit(AgentType):
             for line in openFile:
                 line = (line.replace("LOGHUB_CONFIG_PATH", log_path).replace(
                     "LOGHUB_CONFIG_TAG", config_tag).replace(
-                        "LOGHUB_CHECKPOINT",
-                        config_checkpoint).replace("LOGHUB_PARSER",
-                                                   parser_name))
+                    "LOGHUB_CHECKPOINT",
+                    config_checkpoint).replace("LOGHUB_PARSER",
+                                               parser_name))
                 input_data += line
         input_data += "\n"
         return input_data
@@ -822,9 +822,8 @@ class FluentBit(AgentType):
             _filter_template_path = self._filter_template_path
 
         filter_data = ""
-        if (config_info.get("processorFilterRegex", {
-                "enable": False
-        }).get("enable") is True):
+        if config_info.get("processorFilterRegex") is not None and (config_info.get("processorFilterRegex", {
+            "enable": False}).get("enable") is True):
             for filter in config_info.get("processorFilterRegex").get(
                     "filters"):
                 filter_data += "\n"
@@ -856,13 +855,13 @@ class FluentBit(AgentType):
         )
 
     def _generate_output(
-        self,
-        app_pipeline_info,
-        config_tag,
-        config_region,
-        role_arn="",
-        time_key='time',
-        type="EKS",
+            self,
+            app_pipeline_info,
+            config_tag,
+            config_region,
+            role_arn="",
+            time_key='time',
+            type="EKS",
     ):
         """Generate the output part"""
         # TODO: Double check which one needs role_arn
@@ -990,7 +989,7 @@ class FluentBit(AgentType):
         time_key = ""
         time_format = ""
         if ("regularSpecs" in config_info and config_info["regularSpecs"]):
-            time_key = f"Time_Key    {config_info.get('timeKey','time')}"
+            time_key = f"Time_Key    {config_info.get('timeKey', 'time')}"
             time_format = "Time_Format " + self.__log_ingestion_svc._get_time_format(
                 config_info.get("regularSpecs"))
         user_define_parser = self.__log_ingestion_svc._render_template(
@@ -1042,11 +1041,11 @@ class FluentBit(AgentType):
         )
 
     def generate_k8s_fluent_bit_inout_and_filter(
-        self,
-        cri=CRI.DOCKER.value,
-        deployment_kind=DEPLOYMENTKIND.DAEMONSET.value,
-        role_arn="",
-        extra_metadata_suffix="",
+            self,
+            cri=CRI.DOCKER.value,
+            deployment_kind=DEPLOYMENTKIND.DAEMONSET.value,
+            role_arn="",
+            extra_metadata_suffix="",
     ) -> str:
         """
         parse fluent-bit-input-output-filter.template
@@ -1167,8 +1166,8 @@ class FluentBit(AgentType):
                     and self.__config_info["multilineLogParser"]
                     in MULTILINELOGPARSER._value2member_map_):
                 parser_name = (
-                    self.__config_info["multilineLogParser"].lower() + "_" +
-                    self.__config_id)
+                        self.__config_info["multilineLogParser"].lower() + "_" +
+                        self.__config_id)
             else:
                 parser_name = (self.__config_info["logType"].lower() + "_" +
                                self.__config_id)
@@ -1258,7 +1257,7 @@ class FluentBit(AgentType):
             return self.__log_ingestion_svc._render_template(
                 self._k8s_user_defined_multiline_parser_template_path,
                 LOGHUB_MULTILINE_PARSER_NAME="multiline-" +
-                self.__get_parser_name(),
+                                             self.__get_parser_name(),
                 LOGHUB_REGEX=self.__config_info["timeRegularExpression"],
             )
         else:
@@ -1345,7 +1344,7 @@ class FluentBit(AgentType):
                 DocumentName="AWS-RunShellScript",
                 Parameters={
                     "commands":
-                    ["curl -s http://127.0.0.1:2022/api/v1/health"]
+                        ["curl -s http://127.0.0.1:2022/api/v1/health"]
                 },
             )
             command_id = response["Command"]["CommandId"]

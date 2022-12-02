@@ -41,7 +41,8 @@ class FLBConfigMgr:
 
     def set_filter(self, tag: str, config_info: dict):
         # Set the grep filter
-        if (config_info.get("processorFilterRegex", {"enable": False}).get("enable") is True):
+        if config_info.get("processorFilterRegex") is not None and (config_info.get("processorFilterRegex", {
+            "enable": False}).get("enable") is True):
             for filter in config_info.get("processorFilterRegex").get("filters"):
                 filter_condition = ("Regex" if filter["condition"] == "Include" else "Exclude")
                 filter_key_value = filter["key"] + ' ' + filter["value"]

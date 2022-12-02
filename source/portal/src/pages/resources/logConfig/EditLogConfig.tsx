@@ -93,6 +93,12 @@ const EditLogConfig: React.FC<RouteComponentProps<MatchParams>> = (
       });
       console.info("resData:", resData);
       const dataLogConfig: ExLogConf = resData.data.getLogConf;
+      if (!dataLogConfig.processorFilterRegex) {
+        dataLogConfig.processorFilterRegex = {
+          enable: false,
+          filters: [],
+        };
+      }
       setCurConfig(dataLogConfig);
       setLoadingData(false);
     } catch (error) {
