@@ -10,8 +10,14 @@
       
         <link rel="canonical" href="https://awslabs.github.io/log-hub/implementation-guide/resources/open-ssl/">
       
+      
+        <link rel="prev" href="../../uninstall/">
+      
+      
+        <link rel="next" href="../upload-ssl-certificate/">
+      
       <link rel="icon" href="../../../images/aws-solutions.png">
-      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.10">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.0.2">
     
     
       
@@ -19,11 +25,10 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.975780f9.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.f56500e0.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.2505c338.min.css">
-        
       
       
 
@@ -56,7 +61,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="None" data-md-color-accent="None">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="" data-md-color-accent="">
   
     
     
@@ -1528,10 +1533,9 @@
                 
                   
 
-  <a href="https://github.com/awslabs/log-hub/edit/master/docs/implementation-guide/resources/open-ssl.md" title="编辑此页" class="md-content__button md-icon">
-    
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
-  </a>
+  
+  
+
 
 
 <h1 id="openssl-11">OpenSSL 1.1 安装</h1>
@@ -1541,44 +1545,44 @@
 <p>如果您使用的操作系统不在以下列表中，这并不代表您不可以使用 Log Hub。您需要自己安装 OpenSSL 1.1。</p>
 </div>
 <h2 id="amazon-linux-2">Amazon Linux 2</h2>
-<div class="highlight"><pre><span></span><code>sudo yum install openssl11
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>yum<span class="w"> </span>install<span class="w"> </span>openssl11
 </code></pre></div>
 <h2 id="ubuntu">Ubuntu</h2>
 <h3 id="2004">20.04</h3>
-<div class="highlight"><pre><span></span><code>ln -s /usr/lib/x86_64-linux-gnu/libsasl2.so.2 /usr/lib/libsasl2.so.3
+<div class="highlight"><pre><span></span><code>ln<span class="w"> </span>-s<span class="w"> </span>/usr/lib/x86_64-linux-gnu/libsasl2.so.2<span class="w"> </span>/usr/lib/libsasl2.so.3
 </code></pre></div>
 <h3 id="1804">18.04</h3>
-<div class="highlight"><pre><span></span><code>ln -s /usr/lib/x86_64-linux-gnu/libsasl2.so.2 /usr/lib/libsasl2.so.3
+<div class="highlight"><pre><span></span><code>ln<span class="w"> </span>-s<span class="w"> </span>/usr/lib/x86_64-linux-gnu/libsasl2.so.2<span class="w"> </span>/usr/lib/libsasl2.so.3
 </code></pre></div>
 <h2 id="debian">Debian</h2>
 <h3 id="gnu10">GNU/10</h3>
-<div class="highlight"><pre><span></span><code>ln -s  /usr/lib/x86_64-linux-gnu/libsasl2.so.2 /usr/lib/libsasl2.so.3
+<div class="highlight"><pre><span></span><code>ln<span class="w"> </span>-s<span class="w">  </span>/usr/lib/x86_64-linux-gnu/libsasl2.so.2<span class="w"> </span>/usr/lib/libsasl2.so.3
 </code></pre></div>
 <h3 id="gnu11">GNU/11</h3>
-<div class="highlight"><pre><span></span><code>ln -s /usr/lib/x86_64-linux-gnu/libsasl2.so.2 /usr/lib/libsasl2.so.3
+<div class="highlight"><pre><span></span><code>ln<span class="w"> </span>-s<span class="w"> </span>/usr/lib/x86_64-linux-gnu/libsasl2.so.2<span class="w"> </span>/usr/lib/libsasl2.so.3
 </code></pre></div>
 <h2 id="red-hat-enterprise-linux">Red Hat Enterprise Linux</h2>
 <h3 id="8x">8.X</h3>
 <p>OpenSSL 1.1 已经默认安装。</p>
 <h3 id="7x">7.X</h3>
-<div class="highlight"><pre><span></span><code>sudo su -
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>su<span class="w"> </span>-
 
-yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+yum<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
 
-systemctl <span class="nb">enable</span> amazon-ssm-agent
-systemctl start amazon-ssm-agent
+systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>amazon-ssm-agent
+systemctl<span class="w"> </span>start<span class="w"> </span>amazon-ssm-agent
 
-yum install -y wget perl unzip gcc zlib-devel
-mkdir /tmp/openssl
-<span class="nb">cd</span> /tmp/openssl
-wget https://www.openssl.org/source/openssl-1.1.1s.tar.gz
-tar xzvf openssl-1.1.1s.tar.gz
-<span class="nb">cd</span> openssl-1.1.1s
-./config --prefix<span class="o">=</span>/usr/local/openssl11 --openssldir<span class="o">=</span>/usr/local/openssl11 shared zlib
+yum<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>wget<span class="w"> </span>perl<span class="w"> </span>unzip<span class="w"> </span>gcc<span class="w"> </span>zlib-devel
+mkdir<span class="w"> </span>/tmp/openssl
+<span class="nb">cd</span><span class="w"> </span>/tmp/openssl
+wget<span class="w"> </span>https://www.openssl.org/source/openssl-1.1.1s.tar.gz
+tar<span class="w"> </span>xzvf<span class="w"> </span>openssl-1.1.1s.tar.gz
+<span class="nb">cd</span><span class="w"> </span>openssl-1.1.1s
+./config<span class="w"> </span>--prefix<span class="o">=</span>/usr/local/openssl11<span class="w"> </span>--openssldir<span class="o">=</span>/usr/local/openssl11<span class="w"> </span>shared<span class="w"> </span>zlib
 make
-make install
+make<span class="w"> </span>install
 
-<span class="nb">echo</span> /usr/local/openssl11/lib/ &gt;&gt; /etc/ld.so.conf
+<span class="nb">echo</span><span class="w"> </span>/usr/local/openssl11/lib/<span class="w"> </span>&gt;&gt;<span class="w"> </span>/etc/ld.so.conf
 ldconfig
 </code></pre></div>
 <h2 id="suse-linux-enterprise-server">SUSE Linux Enterprise Server</h2>
@@ -1600,42 +1604,6 @@ ldconfig
       
         <footer class="md-footer">
   
-    
-    <nav class="md-footer__inner md-grid" aria-label="页脚" >
-      
-        
-        <a href="../../uninstall/" class="md-footer__link md-footer__link--prev" aria-label="上一页: 卸载解决方案" rel="prev">
-          <div class="md-footer__button md-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
-          </div>
-          <div class="md-footer__title">
-            <div class="md-ellipsis">
-              <span class="md-footer__direction">
-                上一页
-              </span>
-              卸载解决方案
-            </div>
-          </div>
-        </a>
-      
-      
-        
-        <a href="../upload-ssl-certificate/" class="md-footer__link md-footer__link--next" aria-label="下一页: 上传证书" rel="next">
-          <div class="md-footer__title">
-            <div class="md-ellipsis">
-              <span class="md-footer__direction">
-                下一页
-              </span>
-              上传证书
-            </div>
-          </div>
-          <div class="md-footer__button md-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
-          </div>
-        </a>
-      
-    </nav>
-  
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
       <div class="md-copyright">
@@ -1652,12 +1620,11 @@ ldconfig
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.16e2a7d4.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.config.lang": "ja", "search.config.pipeline": "trimmer, stemmer", "search.config.separator": "[\\s\\-\uff0c\u3002]+", "search.placeholder": "\u641c\u7d22", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version.title": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": "latest"}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.12658920.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": "latest"}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.5a2dcb6a.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.5cf534bf.min.js"></script>
       
-    
     
   </body>
 </html>

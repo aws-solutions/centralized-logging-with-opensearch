@@ -10,8 +10,14 @@
       
         <link rel="canonical" href="https://awslabs.github.io/log-hub/designs/service-log/tutorial-extend-service-log/">
       
+      
+        <link rel="prev" href="../data-model-design/">
+      
+      
+        <link rel="next" href="../../app-log/log-analytics-pipeline-app/">
+      
       <link rel="icon" href="../../../images/aws-solutions.png">
-      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.10">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.0.2">
     
     
       
@@ -19,11 +25,10 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.975780f9.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.f56500e0.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.2505c338.min.css">
-        
       
       
 
@@ -56,7 +61,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="None" data-md-color-accent="None">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="" data-md-color-accent="">
   
     
     
@@ -2299,10 +2304,9 @@
                 
                   
 
-  <a href="https://github.com/awslabs/log-hub/edit/master/docs/designs/service-log/tutorial-extend-service-log.md" title="Edit this page" class="md-content__button md-icon">
-    
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
-  </a>
+  
+  
+
 
 
 <h1 id="tutorial-extend-service-logs">Tutorial: Extend Service Logs</h1>
@@ -2329,7 +2333,7 @@
 <code>source/constructs/lambda/pipeline/service/log-processor/util/log_parser.py</code></p>
 <p>Add an implemetation of LogType for WAF logs, which basically is just to implement the method <code>parse(line)</code> and return a processed record(s) in Json format.</p>
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">WAF</span><span class="p">(</span><span class="n">LogType</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;An implementation of LogType for WAF Logs&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An implementation of LogType for WAF Logs&quot;&quot;&quot;</span>
 
     <span class="n">_format</span> <span class="o">=</span> <span class="s2">&quot;json&quot;</span>
 
@@ -2356,13 +2360,13 @@
 </div>
 <h3 id="step-2-add-cdk-stack">Step 2: Add CDK Stack</h3>
 <p>To generate a new CloudFormation Template for Waf Logs,  Open <code>source/constructs/bin/main.ts</code> , add a new line as below:</p>
-<div class="highlight"><pre><span></span><code><span class="ow">new</span><span class="w"> </span><span class="nx">ServiceLogPipelineStack</span><span class="p">(</span><span class="nx">app</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;WAFLog&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">logType</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;WAF&#39;</span><span class="w"> </span><span class="p">});</span><span class="w"></span>
+<div class="highlight"><pre><span></span><code><span class="ow">new</span><span class="w"> </span><span class="nx">ServiceLogPipelineStack</span><span class="p">(</span><span class="nx">app</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;WAFLog&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">logType</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;WAF&#39;</span><span class="w"> </span><span class="p">});</span>
 </code></pre></div>
 <p>For WAF, simply reuse the common CloudFormation parameters. Open
 <code>Log-hub/source/constructs/lib/pipeline/service/service-log-pipeline-stack.ts</code>, and add ‘WAF’ to below line (This is required for all logs that is with log destination as S3):</p>
-<div class="highlight"><pre><span></span><code><span class="k">if</span><span class="w"> </span><span class="p">([</span><span class="s1">&#39;S3&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;CloudTrail&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;ELB&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;CloudFront&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;WAF&#39;</span><span class="p">].</span><span class="nx">includes</span><span class="p">(</span><span class="nx">props</span><span class="p">.</span><span class="nx">logType</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">logBucketName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">CfnParameter</span><span class="p">(</span><span class="k">this</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;logBucketName&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="p">...</span><span class="w"></span>
+<div class="highlight"><pre><span></span><code><span class="k">if</span><span class="w"> </span><span class="p">([</span><span class="s1">&#39;S3&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;CloudTrail&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;ELB&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;CloudFront&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;WAF&#39;</span><span class="p">].</span><span class="nx">includes</span><span class="p">(</span><span class="nx">props</span><span class="p">.</span><span class="nx">logType</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">logBucketName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">CfnParameter</span><span class="p">(</span><span class="k">this</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;logBucketName&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">...</span>
 </code></pre></div>
 <p>For some other log types, you can add more CloudFormation parameters if needed. For example, add an extra parameter of <code>Log Format</code> for VPC Flow Logs since the log format can be customized.</p>
 <h3 id="step-3-add-index-template">Step 3: Add Index Template</h3>
@@ -2370,24 +2374,24 @@
 <p>Log Type is used to identify which template json file to use, <em>Make sure the file name is same as the log type in lower case.</em> </p>
 <p>For example, if the log Type is ‘WAF’,  create a waf.json in folder <code>source/constructs/lambda/pipeline/common/opensearch-helper/assets/index_template</code></p>
 <p>The template must be in a format of :
-<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;aliases&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;mappings&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">            </span><span class="nt">&quot;...&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">                </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">                </span><span class="err">...</span><span class="w"></span>
-<span class="w">            </span><span class="p">},</span><span class="w"></span>
-<span class="w">            </span><span class="err">...</span><span class="w"></span>
-<span class="w">        </span><span class="p">}</span><span class="w"></span>
-<span class="w">    </span><span class="p">},</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;settings&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="nt">&quot;index&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">            </span><span class="nt">&quot;number_of_shards&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;5&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">            </span><span class="nt">&quot;number_of_replicas&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1&quot;</span><span class="w"></span>
-<span class="w">        </span><span class="p">}</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;aliases&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span>
+<span class="w">    </span><span class="nt">&quot;mappings&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;...&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="err">...</span>
+<span class="w">            </span><span class="p">},</span>
+<span class="w">            </span><span class="err">...</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;settings&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;index&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;number_of_shards&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;5&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;number_of_replicas&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1&quot;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
 </code></pre></div></p>
 <p>Keep aliases as blank. Make sure at least number_of_shards and number_of_replicas are in the setting section (keep 5 and 1 as the default value). The alias and setting will be overrided during deployment.</p>
 <div class="admonition info">
@@ -2439,7 +2443,7 @@ END RequestId: 947eb9f3-a2c6-4d59-bf63-870be02dd20a
 <h3 id="log-type-implementation">Log Type Implementation</h3>
 <p>The Log Type definition</p>
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">LogType</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;An abstract class represents one type of Logs.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An abstract class represents one type of Logs.</span>
 
 <span class="sd">    Each AWS service has its own log format.</span>
 <span class="sd">    Create a class for each service with an implementation of `parse(line)` to parse its service logs</span>
@@ -2450,7 +2454,7 @@ END RequestId: 947eb9f3-a2c6-4d59-bf63-870be02dd20a
 
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Parse the original raw log record, and return processed json record(s).</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parse the original raw log record, and return processed json record(s).</span>
 
 <span class="sd">        This should be implemented in each service class.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -2460,7 +2464,7 @@ END RequestId: 947eb9f3-a2c6-4d59-bf63-870be02dd20a
 </code></pre></div>
 <p>Below is an example of implementation for ELB (ALB) Logs</p>
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">ELB</span><span class="p">(</span><span class="n">LogType</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;An implementation of LogType for ELB Logs&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An implementation of LogType for ELB Logs&quot;&quot;&quot;</span>
 
     <span class="n">_fields</span> <span class="o">=</span> <span class="p">[</span>
         <span class="s2">&quot;type&quot;</span><span class="p">,</span>
@@ -2506,42 +2510,6 @@ END RequestId: 947eb9f3-a2c6-4d59-bf63-870be02dd20a
       
         <footer class="md-footer">
   
-    
-    <nav class="md-footer__inner md-grid" aria-label="Footer" >
-      
-        
-        <a href="../data-model-design/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Data Model Design" rel="prev">
-          <div class="md-footer__button md-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
-          </div>
-          <div class="md-footer__title">
-            <div class="md-ellipsis">
-              <span class="md-footer__direction">
-                Previous
-              </span>
-              Data Model Design
-            </div>
-          </div>
-        </a>
-      
-      
-        
-        <a href="../../app-log/log-analytics-pipeline-app/" class="md-footer__link md-footer__link--next" aria-label="Next: Overview" rel="next">
-          <div class="md-footer__title">
-            <div class="md-ellipsis">
-              <span class="md-footer__direction">
-                Next
-              </span>
-              Overview
-            </div>
-          </div>
-          <div class="md-footer__button md-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
-          </div>
-        </a>
-      
-    </nav>
-  
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
       <div class="md-copyright">
@@ -2558,12 +2526,11 @@ END RequestId: 947eb9f3-a2c6-4d59-bf63-870be02dd20a
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.16e2a7d4.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": "latest"}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.12658920.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "latest"}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.5a2dcb6a.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.5cf534bf.min.js"></script>
       
-    
     
   </body>
 </html>

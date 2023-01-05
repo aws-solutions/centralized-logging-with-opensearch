@@ -10,8 +10,14 @@
       
         <link rel="canonical" href="https://awslabs.github.io/log-hub/implementation-guide/trouble-shooting/">
       
+      
+        <link rel="prev" href="../faq/">
+      
+      
+        <link rel="next" href="../upgrade/">
+      
       <link rel="icon" href="../../images/aws-solutions.png">
-      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.10">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.0.2">
     
     
       
@@ -19,11 +25,10 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.975780f9.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.f56500e0.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.2505c338.min.css">
-        
       
       
 
@@ -56,7 +61,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="None" data-md-color-accent="None">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="" data-md-color-accent="">
   
     
     
@@ -1436,10 +1441,9 @@
                 
                   
 
-  <a href="https://github.com/awslabs/log-hub/edit/master/docs/implementation-guide/trouble-shooting.md" title="编辑此页" class="md-content__button md-icon">
-    
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
-  </a>
+  
+  
+
 
 
 <h1 id="_1">故障排查</h1>
@@ -1494,17 +1498,17 @@ Lambda函数驻留在一个VPC中，你需要等待相关的ENI资源被删除�
 <ol>
 <li>
 <p>登陆到 CentOS 7 机器中，手动安装 SSM Agent。</p>
-<p><div class="highlight"><pre><span></span><code>sudo yum install -y http://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
-sudo systemctl <span class="nb">enable</span> amazon-ssm-agent
-sudo systemctl start amazon-ssm-agent
+<p><div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>yum<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>http://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>amazon-ssm-agent
+sudo<span class="w"> </span>systemctl<span class="w"> </span>start<span class="w"> </span>amazon-ssm-agent
 </code></pre></div>
 2. 来到 Log Hub 控制台的<strong>实例组</strong>面板，创建<strong>实例组</strong>，选择 centos 7 机器，点击<strong>安装日志代理</strong>，等待其状态为<strong>离线</strong>。
 3. 登陆 centos7 手动安装 fluent-bit 1.9.3。</p>
-<p><div class="highlight"><pre><span></span><code><span class="nb">export</span> <span class="nv">RELEASE_URL</span><span class="o">=</span><span class="si">${</span><span class="nv">FLUENT_BIT_PACKAGES_URL</span><span class="k">:-</span><span class="nv">https</span><span class="p">://packages.fluentbit.io</span><span class="si">}</span>
-<span class="nb">export</span> <span class="nv">RELEASE_KEY</span><span class="o">=</span><span class="si">${</span><span class="nv">FLUENT_BIT_PACKAGES_KEY</span><span class="k">:-</span><span class="nv">https</span><span class="p">://packages.fluentbit.io/fluentbit.key</span><span class="si">}</span>
+<p><div class="highlight"><pre><span></span><code><span class="nb">export</span><span class="w"> </span><span class="nv">RELEASE_URL</span><span class="o">=</span><span class="si">${</span><span class="nv">FLUENT_BIT_PACKAGES_URL</span><span class="k">:-</span><span class="nv">https</span><span class="p">://packages.fluentbit.io</span><span class="si">}</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">RELEASE_KEY</span><span class="o">=</span><span class="si">${</span><span class="nv">FLUENT_BIT_PACKAGES_KEY</span><span class="k">:-</span><span class="nv">https</span><span class="p">://packages.fluentbit.io/fluentbit.key</span><span class="si">}</span>
 
-sudo rpm --import <span class="nv">$RELEASE_KEY</span>
-cat <span class="s">&lt;&lt; EOF | sudo tee /etc/yum.repos.d/fluent-bit.repo</span>
+sudo<span class="w"> </span>rpm<span class="w"> </span>--import<span class="w"> </span><span class="nv">$RELEASE_KEY</span>
+cat<span class="w"> </span><span class="s">&lt;&lt; EOF | sudo tee /etc/yum.repos.d/fluent-bit.repo</span>
 <span class="s">[fluent-bit]</span>
 <span class="s">name = Fluent Bit</span>
 <span class="s">baseurl = $RELEASE_URL/centos/VERSION_ARCH_SUBSTR</span>
@@ -1513,14 +1517,14 @@ cat <span class="s">&lt;&lt; EOF | sudo tee /etc/yum.repos.d/fluent-bit.repo</sp
 <span class="s">gpgkey=$RELEASE_KEY</span>
 <span class="s">enabled=1</span>
 <span class="s">EOF</span>
-sudo sed -i <span class="s1">&#39;s|VERSION_ARCH_SUBSTR|\$releasever/\$basearch/|g&#39;</span> /etc/yum.repos.d/fluent-bit.repo
-sudo yum install -y fluent-bit-1.9.3-1
+sudo<span class="w"> </span>sed<span class="w"> </span>-i<span class="w"> </span><span class="s1">&#39;s|VERSION_ARCH_SUBSTR|\$releasever/\$basearch/|g&#39;</span><span class="w"> </span>/etc/yum.repos.d/fluent-bit.repo
+sudo<span class="w"> </span>yum<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>fluent-bit-1.9.3-1
 
 <span class="c1"># 修改配置文件</span>
-sudo sed -i <span class="s1">&#39;s/ExecStart.*/ExecStart=\/opt\/fluent-bit\/bin\/fluent-bit -c \/opt\/fluent-bit\/etc\/fluent-bit.conf/g&#39;</span> /usr/lib/systemd/system/fluent-bit.service
-sudo systemctl daemon-reload
-sudo systemctl <span class="nb">enable</span> fluent-bit
-sudo systemctl start fluent-bit
+sudo<span class="w"> </span>sed<span class="w"> </span>-i<span class="w"> </span><span class="s1">&#39;s/ExecStart.*/ExecStart=\/opt\/fluent-bit\/bin\/fluent-bit -c \/opt\/fluent-bit\/etc\/fluent-bit.conf/g&#39;</span><span class="w"> </span>/usr/lib/systemd/system/fluent-bit.service
+sudo<span class="w"> </span>systemctl<span class="w"> </span>daemon-reload
+sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>fluent-bit
+sudo<span class="w"> </span>systemctl<span class="w"> </span>start<span class="w"> </span>fluent-bit
 </code></pre></div>
 4. 回到 Log Hub 控制台的<strong>实例组</strong>面板，等待 CentOS 7 机器状态为<strong>在线</strong>并继续创建实例组。</p>
 </li>
@@ -1541,42 +1545,6 @@ sudo systemctl start fluent-bit
       
         <footer class="md-footer">
   
-    
-    <nav class="md-footer__inner md-grid" aria-label="页脚" >
-      
-        
-        <a href="../faq/" class="md-footer__link md-footer__link--prev" aria-label="上一页: 常见问题" rel="prev">
-          <div class="md-footer__button md-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
-          </div>
-          <div class="md-footer__title">
-            <div class="md-ellipsis">
-              <span class="md-footer__direction">
-                上一页
-              </span>
-              常见问题
-            </div>
-          </div>
-        </a>
-      
-      
-        
-        <a href="../upgrade/" class="md-footer__link md-footer__link--next" aria-label="下一页: 更新解决方案" rel="next">
-          <div class="md-footer__title">
-            <div class="md-ellipsis">
-              <span class="md-footer__direction">
-                下一页
-              </span>
-              更新解决方案
-            </div>
-          </div>
-          <div class="md-footer__button md-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
-          </div>
-        </a>
-      
-    </nav>
-  
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
       <div class="md-copyright">
@@ -1593,12 +1561,11 @@ sudo systemctl start fluent-bit
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs"], "search": "../../assets/javascripts/workers/search.16e2a7d4.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.config.lang": "ja", "search.config.pipeline": "trimmer, stemmer", "search.config.separator": "[\\s\\-\uff0c\u3002]+", "search.placeholder": "\u641c\u7d22", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version.title": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": "latest"}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs"], "search": "../../assets/javascripts/workers/search.12658920.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": "latest"}</script>
     
     
-      <script src="../../assets/javascripts/bundle.5a2dcb6a.min.js"></script>
+      <script src="../../assets/javascripts/bundle.5cf534bf.min.js"></script>
       
-    
     
   </body>
 </html>
