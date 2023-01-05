@@ -5,6 +5,7 @@
     "log-hub": "bin/main.js"
   },
   "scripts": {
+    "preinstall": "npx npm-force-resolutions",
     "cleanup": "tsc --build ./ --clean && rm -rf node_modules && rm -f package-lock.json",
     "cleanup:tsc": "tsc --build ./ --clean",
     "build": "tsc",
@@ -35,5 +36,8 @@
     "cdk-nag": "2.16.0",
     "constructs": "10.0.0",
     "source-map-support": "0.5.16"
+  },
+  "resolutions": {
+    "json5": "^2.2.2"
   }
 }
