@@ -59,5 +59,5 @@ nav:
           - AWS 服务: implementation-guide/resources/aws-services.md
       - 更新记录: implementation-guide/release-notes.md
   - 路线图: "https://github.com/orgs/awslabs/projects/58"
-  - 动手实验: "https://awslabs.github.io/log-hub/en/workshop/introduction/"
+  - 动手实验: "https://aws-samples.github.io/log-hub-workshop"
   - 技术设计: "https://awslabs.github.io/log-hub/en/designs"
