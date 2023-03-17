@@ -1,6 +1,0 @@
-    [FILTER]
-        Name grep
-        # Match Tag
-        Match $LOGHUB_CONFIG_TAG
-        # Configuration Parameters, Consists of Condition, Key, Regular expression
-        $LOGHUB_FILTER_CONDITION $LOGHUB_FILTER_KEY $LOGHUB_FILTER_VALUE

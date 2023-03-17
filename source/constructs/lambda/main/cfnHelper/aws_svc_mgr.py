@@ -1,1 +1,0 @@
-../../api/common/aws_svc_mgr.py

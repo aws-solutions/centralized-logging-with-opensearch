@@ -1,9 +1,0 @@
-#foreach( $pipeline in $ctx.result.pipelines )
-    #foreach( $param in $pipeline.tags )
-        #set($param.key = $util.urlEncode($param.key))    
-        #set($param.value = $util.urlEncode($param.value))
-    #end    
-
-#end
-
-$util.toJson($ctx.result)

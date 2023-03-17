@@ -1,4 +1,0 @@
-  <assume_role_credentials>
-    role_arn          $ROLE_ARN
-    role_session_name $ROLE_SESSION_NAME
-  </assume_role_credentials>

@@ -1,6 +1,0 @@
-#foreach( $instance in $ctx.result.instanceGroup.instanceSet )
-    #set($instance = $util.urlEncode($instance))    
-#end
-
-$util.toJson($ctx.result)
-
