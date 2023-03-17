@@ -1,7 +1,0 @@
-#foreach( $param in $ctx.result.logAgent )
-    #set($param.agentName = $util.urlEncode($param.agentName))
-#end
-
-$util.validate($util.matches("^([1-9]\d|[1-9])(.([1-9]\d|\d)){2}$", $ctx.result.logAgent.version), "Invalid version")
-
-$util.toJson($ctx.result)

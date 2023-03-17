@@ -1,4 +1,0 @@
-user-agents
-maxminddb
-requests
-requests-aws4auth

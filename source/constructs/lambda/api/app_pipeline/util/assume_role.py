@@ -1,1 +1,0 @@
-../../app_log_ingestion/util/assume_role.py

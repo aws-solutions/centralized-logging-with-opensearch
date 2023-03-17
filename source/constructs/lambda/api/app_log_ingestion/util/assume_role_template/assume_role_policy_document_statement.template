@@ -1,9 +1,0 @@
-        {
-            "Effect": "Allow",
-            "Principal": {
-                "AWS": "$ACCOUNT_ID"
-            },
-            "Action": "sts:AssumeRole",
-            "Condition": {
-            }
-        }
