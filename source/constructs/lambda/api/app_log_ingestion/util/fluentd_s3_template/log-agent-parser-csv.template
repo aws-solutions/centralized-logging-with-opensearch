@@ -1,0 +1,5 @@
+<parse>
+  @type csv
+  keys time,host,req_id,user
+  time_key time
+</parse>

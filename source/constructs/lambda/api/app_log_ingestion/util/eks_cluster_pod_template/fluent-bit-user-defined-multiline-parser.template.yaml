@@ -1,0 +1,20 @@
+    [MULTILINE_PARSER]
+        Name            $LOGHUB_MULTILINE_PARSER_NAME
+        Type            regex
+        Flush_timeout   5000
+        Key_content     log
+        # Regex rules for spring boot multiline parsing
+        # ---------------------------------
+        #
+        # configuration hints:
+        #
+        #  - first state always has the name: start_state
+        #  - every field in the rule must be inside double quotes
+        #
+        # rules |   state name  | regex pattern                  | next state
+        # ------|---------------|--------------------------------------------
+        #Rule      "start_state"   "/^(\d+-\d+-\d+ \d+:\d+:\d+).*$/"  "cont"
+        #Rule      "cont"          "/^(?!\d+-\d+-\d+ \d+:\d+:\d+).+$/" "cont"
+        Rule       "start_state"   "/^($LOGHUB_REGEX).*$/"   "cont"
+        Rule       "cont"          "/^(?!$LOGHUB_REGEX).+$/"   "cont"
+

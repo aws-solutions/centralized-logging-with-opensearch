@@ -1,0 +1,20 @@
+{
+    "Records": [
+        {
+            "messageId": "e66b8507-b594-49b8-84f2-cf4fa96a188a",
+            "receiptHandle": "AQEBT2HUg=",
+            "body": "{\"Records\":[{\"eventVersion\":\"2.1\",\"eventSource\":\"aws:s3\",\"awsRegion\":\"us-east-1\",\"eventTime\":\"2022-03-31T12:53:37.625Z\",\"eventName\":\"ObjectCreated:Put\",\"userIdentity\":{\"principalId\":\"AWS:AROASLZSKMR5WNLFCYRXL:prod.iad.dbs.datafeeds.aws.internal\"},\"requestParameters\":{\"sourceIPAddress\":\"1.2.217.31\"},\"responseElements\":{\"x-amz-request-id\":\"EKWQ7S5GTA5FAYY6\",\"x-amz-id-2\":\"Gle8nD1P0+eqK7NYpwpOM4PMosaa4yOEOxZscGu+7gfk4H57fGgTTeRa1HxSQVUZnc03LJp0rAs43rZoucN8mFX78yJnYNHI\"},\"s3\":{\"s3SchemaVersion\":\"1.0\",\"configurationId\":\"arn:aws:cloudformation:4731576780\",\"bucket\":{\"name\":\"test-bucket\",\"ownerIdentity\":{\"principalId\":\"AT9Z5MYC\"},\"arn\":\"arn:aws:s3:::test-bucket\"},\"object\":{\"key\":\"AWSLogs/123456789012/elasticloadbalancing/us-east-1/2022/03/31/elb.log.gz\",\"size\":578,\"eTag\":\"cf06db8c4390d9e8e9e92f4f57d79de2\",\"versionId\":\"weA9iHWCQhHCi9TVm_fwAJul7IPbnwIx\",\"sequencer\":\"006194FB517E4604A1\"}}}]}",
+            "attributes": {
+                "ApproximateReceiveCount": "1",
+                "SentTimestamp": "1637153618714",
+                "SenderId": "AIDAJQOC3SADRY5PEMBNW",
+                "ApproximateFirstReceiveTimestamp": "1637153618754"
+            },
+            "messageAttributes": {},
+            "md5OfBody": "40f7074e195ff3bd2103e4fb2fcfb030",
+            "eventSource": "aws:sqs",
+            "eventSourceARN": "arn:aws:sqs:us-east-1:123456789012:test-queue",
+            "awsRegion": "us-east-1"
+        }
+    ]
+}

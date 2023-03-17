@@ -1,0 +1,5 @@
+  <parse>
+    @type regexp
+    expression /LOGHUB_REGEX/
+    time_format $LOGHUB_TIME_FORMAT
+  </parse>

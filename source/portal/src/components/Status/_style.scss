@@ -1,0 +1,45 @@
+.gsui-status {
+  .status-text {
+    position: relative;
+    padding-left: 22px;
+    text-transform: capitalize;
+    i {
+      position: absolute;
+      margin-left: -22px;
+      margin-top: -1px;
+    }
+    &.green {
+      color: green;
+    }
+    &.active {
+      color: green;
+    }
+    &.created {
+      color: green;
+    }
+    &.online {
+      color: green;
+    }
+    &.installing {
+      color: #666;
+    }
+    &.creating {
+      color: #666;
+    }
+    &.inactive {
+      color: #666;
+    }
+    &.error {
+      color: red;
+    }
+    &.red {
+      color: red;
+    }
+    &.offline {
+      color: red;
+    }
+    &.yellow {
+      color: #ff9900;
+    }
+  }
+}

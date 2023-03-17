@@ -1,0 +1,20 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "Federated": "$OIDC_PROVIDER_ARN"
+            },
+            "Action": "sts:AssumeRoleWithWebIdentity",
+            "Condition": {
+                "StringEquals": {
+                    "$PROVIDER:aud": "$OIDC_CLIENT_ID"
+                },
+                "StringLike": {
+                    "$PROVIDER:sub": "$SVC_ACCOUNT"
+                }
+            }
+        }
+    ]
+}

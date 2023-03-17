@@ -1,0 +1,6 @@
+    [FILTER]
+        Name                    multiline
+        Match                   $LOGHUB_CONFIG_TAG
+        Multiline.key_content   log
+        Multiline.parser        $LOGHUB_MULTILINE_PARSER
+

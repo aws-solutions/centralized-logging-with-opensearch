@@ -1,0 +1,53 @@
+{
+    "arguments": {
+        "id": "fa2eacd9-fafe-4341-b6ee-e2e2682d7dd4"
+    },
+    "source": null,
+    "result": null,
+    "request": {
+        "headers": {
+            "x-forwarded-for": "54.240.199.106, 70.132.3.99",
+            "sec-ch-ua-mobile": "?0",
+            "cloudfront-viewer-country": "SG",
+            "cloudfront-is-tablet-viewer": "false",
+            "x-amzn-requestid": "87135264-7071-403d-bc20-3e296dae91c4",
+            "via": "2.0 f2f73edfafc086543441bca742024226.cloudfront.net (CloudFront)",
+            "cloudfront-forwarded-proto": "https",
+            "origin": "https://d3nnlo1goc4bi6.cloudfront.net",
+            "content-length": "185",
+            "x-forwarded-proto": "https",
+            "accept-language": "en-GB,en;q=0.9,en-US;q=0.8,zh-CN;q=0.7,zh;q=0.6,ja;q=0.5",
+            "host": "poy7wtu4x5honesjwxijxdfelm.appsync-api.us-east-1.amazonaws.com",
+            "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.64 Safari/537.36",
+            "cloudfront-is-mobile-viewer": "false",
+            "accept": "*/*",
+            "cloudfront-is-smarttv-viewer": "false",
+            "accept-encoding": "gzip, deflate, br",
+            "referer": "https://d3nnlo1goc4bi6.cloudfront.net/",
+            "content-type": "application/json",
+            "sec-fetch-mode": "cors",
+            "x-amzn-trace-id": "Root=1-62833624-027ee6e365fd49c635b98d98",
+            "x-amz-cf-id": "cq2R7FhLohOaU3pDmVRVnin5l304vds9yhmg0Nx53eRdQTsJ2KmMPQ==",
+            "authorization": "eyJraWQiOiJCMW9cL216WUJyN1QzQUM5UXRtNDhKY3c4aElrNzRBV1A4R1FRUXlOWjY4az0iLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiI2NDlkYWJiYi0wMzRjLTQ2N2ItOTc5Ni1mNmJlYzgzNWNmMDAiLCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAudXMtZWFzdC0xLmFtYXpvbmF3cy5jb21cL3VzLWVhc3QtMV9MQVdjSnlrQXciLCJjb2duaXRvOnVzZXJuYW1lIjoiNjQ5ZGFiYmItMDM0Yy00NjdiLTk3OTYtZjZiZWM4MzVjZjAwIiwib3JpZ2luX2p0aSI6IjBmYTZiOGYxLTU1MGMtNGU3YS05OThhLThkZWE1ZTU1YjVhZiIsImF1ZCI6Ijdrc2tsa2x0OGUzaXJhMTUxODkwZGpuNDlvIiwiZXZlbnRfaWQiOiJmM2VjZTdkYS0zMDYzLTQ1YTgtOGI3Ny1lZjFmMjQ0MTg1NDIiLCJ0b2tlbl91c2UiOiJpZCIsImF1dGhfdGltZSI6MTY1MjU5OTk4OCwiZXhwIjoxNjUyNzY4NzgxLCJpYXQiOjE2NTI3NjUxODEsImp0aSI6IjJhMGYxZWY5LTY0NDEtNDQxZC1hZjBjLWRiZTY4NDk2OTY1MSIsImVtYWlsIjoiaHV5aWthaUBhbWF6b24uY29tIn0.JeXJ5-Y22Skeh3mMSPIBKx5JvFrMxqwnxUOxCVo6TB8R8WFshb3j4Iw62gqj8D8J44Rtr9M1cQBeUbm7sT7TSTHaw6IulXQvP6BKiMYY53aSxrn8GOKDWKGieQyg2namlBnePclKYaWV4WFVF4GNLeNZl6UylsSQwyMp4TcffKUECWZxFt73e37iBKzvkOuvS5yVT89gZtUWob87_BMDiVQEEm4bDapB3KYJk7ICquQpfCxDgvUNX-qajpuHXZGAV_hh2Zufvo5HMiK8rps5K25ziY5IV7ipyTmCOk1jjSVfHo_YLoeLEIKPoaGq_G4HwotalWveIMepWnC1mFsbLw",
+            "sec-fetch-dest": "empty",
+            "x-amz-user-agent": "aws-amplify/3.0.7",
+            "sec-ch-ua-platform": "\"macOS\"",
+            "cloudfront-is-desktop-viewer": "true",
+            "sec-fetch-site": "cross-site",
+            "sec-ch-ua": "\" Not A;Brand\";v=\"99\", \"Chromium\";v=\"101\", \"Google Chrome\";v=\"101\"",
+            "x-forwarded-port": "443"
+        },
+        "domainName": null
+    },
+    "info": {
+        "fieldName": "deleteInstanceGroup",
+        "parentTypeName": "Mutation",
+        "variables": {
+            "id": "fa2eacd9-fafe-4341-b6ee-e2e2682d7dd4"
+        }
+    },
+    "error": null,
+    "prev": null,
+    "stash": {},
+    "outErrors": []
+}

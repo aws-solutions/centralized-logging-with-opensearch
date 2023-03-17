@@ -1,0 +1,3 @@
+$util.validate($util.matches("[a-zA-Z0-9-]{1,1024}", $ctx.args.domainName), "Invalid Domain Name")
+$util.validate($util.matches("^(?!(.*--))(?!(.*-$))[a-z0-9]([a-z0-9-]){0,62}$", $util.defaultIfNullOrEmpty($ctx.args.region,'us-west-2')), "Invalid Region Name")
+{"version": "2017-02-28", "operation": "Invoke", "payload": $util.toJson($ctx)}

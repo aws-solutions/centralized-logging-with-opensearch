@@ -1,0 +1,17 @@
+
+$util.validate($util.matches("^[0-9a-f]{8}(?:[0-9a-f]{4}){3}[0-9a-f]{12}$", $ctx.args.aosDomainId), "Invalid aosDomainId")
+
+
+$util.validate($util.matches("[a-zA-Z0-9-]{1,1024}", $ctx.args.eksClusterName), "Invalid EKS Cluster Name")
+
+$util.validate($util.matches("^\d{12}$", $util.defaultIfNullOrEmpty($ctx.args.accountId, '123456789012')), "Invalid Account ID")
+$util.validate($util.matches("^(?!(.*--))(?!(.*-$))[a-z0-9]([a-z0-9-]){0,62}$", $util.defaultIfNullOrEmpty($ctx.args.region,'us-west-2')), "Invalid Region Name")
+
+#foreach( $tag in $ctx.args.tags )
+    #set($tag.key = $util.urlDecode($tag.key))
+    $util.validate($util.matches("^[\w\s_.:\/=+\-@]{1,128}$", $tag.key), "Invalid key. Keys can contain alphanumeric characters, spaces, or any of the following: _.:/=+-@")
+    #set($tag.value = $util.urlDecode($tag.value))
+    $util.validate($util.matches("^[\w\s_.:\/=+\-@]{0,256}$", $tag.value), "Invalid value. Values can contain alphanumeric characters, spaces, or any of the following: _.:/=+-@")
+#end
+
+{"version": "2017-02-28", "operation": "Invoke", "payload": $util.toJson($ctx)}

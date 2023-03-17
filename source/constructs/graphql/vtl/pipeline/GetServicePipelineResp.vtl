@@ -1,0 +1,6 @@
+#foreach( $param in $ctx.result.tags )
+    #set($param.key = $util.urlEncode($param.key))    
+    #set($param.value = $util.urlEncode($param.value))
+#end    
+
+$util.toJson($ctx.result)

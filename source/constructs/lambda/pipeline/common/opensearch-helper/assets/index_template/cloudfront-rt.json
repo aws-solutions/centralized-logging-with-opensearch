@@ -1,0 +1,260 @@
+{
+  "aliases": {},
+  "mappings": {
+    "properties": {
+      "@timestamp": {
+        "type": "alias",
+        "path": "timestamp"
+      },
+      "timestamp": {
+        "type": "date",
+        "format": "epoch_second"
+      },
+      "asn": {
+        "type": "keyword"
+      },
+      "c-country": {
+        "type": "keyword"
+      },
+      "c-ip-version": {
+        "type": "keyword"
+      },
+      "c-ip": {
+        "type": "ip"
+      },
+      "c-port": {
+        "type": "keyword"
+      },
+      "cache-behavior-path-pattern": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      },
+      "cs-accept-encoding": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      },
+      "cs-accept": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      },
+      "cs-bytes": {
+        "type": "long"
+      },
+      "cs-cookie": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "null_value": "NULL",
+            "ignore_above": 256
+          }
+        }
+      },
+      "cs-header-names": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      },
+      "cs-headers-count": {
+        "type": "integer"
+      },
+      "cs-headers": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      },
+      "cs-host": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      },
+      "cs-method": {
+        "type": "keyword"
+      },
+      "cs-protocol-version": {
+        "type": "keyword"
+      },
+      "cs-protocol": {
+        "type": "keyword"
+      },
+      "cs-referer": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "null_value": "NULL",
+            "ignore_above": 256
+          }
+        }
+      },
+      "cs-uri-query": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "null_value": "NULL",
+            "ignore_above": 256
+          }
+        }
+      },
+      "cs-uri-stem": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      },
+      "cs-user-agent": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      },
+      "fle-encrypted-fields": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "null_value": "NULL",
+            "ignore_above": 256
+          }
+        }
+      },
+      "fle-status": {
+        "type": "keyword",
+        "null_value": "NULL"
+      },
+      "origin-fbl": {
+        "type": "float",
+        "null_value": 0
+      },
+      "origin-lbl": {
+        "type": "float",
+        "null_value": 0
+      },
+      "primary-distribution-dns-name": {
+        "type": "text"
+      },
+      "primary-distribution-id": {
+        "type": "keyword"
+      },
+      "sc-bytes": {
+        "type": "long"
+      },
+      "sc-content-len": {
+        "type": "long",
+        "null_value": 0
+      },
+      "sc-content-type": {
+        "type": "keyword"
+      },
+      "sc-range-end": {
+        "type": "long",
+        "null_value": 0
+      },
+      "sc-range-start": {
+        "type": "long",
+        "null_value": 0
+      },
+      "sc-status": {
+        "type": "keyword"
+      },
+      "ssl-cipher": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      },
+      "ssl-protocol": {
+        "type": "keyword"
+      },
+      "time-taken": {
+        "type": "float"
+      },
+      "time-to-first-byte": {
+        "type": "float"
+      },
+      "x-edge-detailed-result-type": {
+        "type": "keyword"
+      },
+      "x-edge-location": {
+        "type": "keyword"
+      },
+      "x-edge-request-id": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      },
+      "x-edge-response-result-type": {
+        "type": "keyword"
+      },
+      "x-edge-result-type": {
+        "type": "keyword"
+      },
+      "x-forwarded-for": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "null_value": "NULL",
+            "ignore_above": 256
+          }
+        }
+      },
+      "x-host-header": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      }
+    }
+  },
+  "settings": {
+    "index": {
+      "number_of_shards": "5",
+      "number_of_replicas": "1"
+    }
+  }
+}

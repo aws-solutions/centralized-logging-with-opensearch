@@ -1,0 +1,17 @@
+<source>
+  @type s3
+  tag LOGHUB_CONFIG_TAG
+
+  s3_bucket LOGHUB_CONFIG_S3_NAME
+  s3_region LOGHUB_CONFIG_S3_REGION
+  store_as LOGHUB_CONFIG_ARCHIVE_FORMAT
+  add_object_metadata true
+
+  <instance_profile_credentials>
+    ip_address 169.254.169.254
+    port       80
+  </instance_profile_credentials>
+
+  <sqs>
+    queue_name LOGHUB_CONFIG_SQS_NAME
+  </sqs>

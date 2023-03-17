@@ -1,0 +1,17 @@
+#foreach( $logConfs in $ctx.result.logConfs )
+    #set($logConfs.confName = $util.urlEncode($logConfs.confName))
+    #set($logConfs.userLogFormat = $util.urlEncode($logConfs.userLogFormat))
+    #set($logConfs.regularExpression = $util.urlEncode($logConfs.regularExpression))
+    #set($logConfs.timeRegularExpression = $util.urlEncode($logConfs.timeRegularExpression))
+    
+    #foreach($param in $ctx.args.regularSpecs)
+        #set($param.key = $util.urlEncode($param.key))    
+        #set($param.type = $util.urlEncode($param.type))
+    #end
+    #foreach($param in $ctx.args.processorFilterRegex.filters)
+        #set($param.key = $util.urlEncode($param.key))
+        #set($param.value = $util.urlEncode($param.value))
+    #end
+#end
+ 
+$util.toJson($ctx.result)

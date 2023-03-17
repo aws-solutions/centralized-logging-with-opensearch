@@ -1,0 +1,7 @@
+#foreach( $param in $ctx.result.tags )
+    #set($param.key = $util.urlEncode($param.key))    
+    #set($param.value = $util.urlEncode($param.value))
+#end    
+#set($aosParams=$ctx.result.aosParams)
+#set($aosParams.indexSuffix = $aosParams.indexSuffix.replace("-","_"))
+$util.toJson($ctx.result)

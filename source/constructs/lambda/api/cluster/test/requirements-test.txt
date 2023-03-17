@@ -1,0 +1,10 @@
+boto3
+moto
+pytest
+pyyaml
+pytest-cov
+pytest-mock
+requests-mock
+moto[awslambda]
+requests_aws4auth
+ipaddr

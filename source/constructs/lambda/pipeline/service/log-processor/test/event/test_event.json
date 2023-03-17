@@ -1,0 +1,20 @@
+{
+    "Records": [
+        {
+            "messageId": "9994c751-c81e-460b-90cb-45ae0a96d50b",
+            "receiptHandle": "AQEBXhfOPwrcwmsSm6qOJQiUEgYVN/JRH209j7fIJBswwBYsoI/ZEWV5Nz5L/5pg4V+EXxlXEXhwecl2cmJoOhcpjRPRXf+Mga6KPOUWEMikveZvTR9WztabaPvcwXFnctVQXt85p98VPB4E5U7e2oybs5KbVwa26mOAuINY7E4/DwlG3B2BYFwvEUZmjjU7hn03PHnPRPMvdeuigQ3iNNuFN55eeZoe5mhRP8PgwCVxIDDTflJ1OSlfS8ngOq+HwVvVtgA0bpsoZx/Y+H9f3zNJJUXV7dGr0seWwwWxJFSVs3qzNEL4iMEWohLP5kx71iJasGdcdIbduVh9Ul+e4OFDnAfAqtjlk7gbYIey3cuiLq65ZY0AyDvv5WmLQjxUVGLF4dXm+420PIFFmBnVvcQWnqIVLZJHjdlsWa0tZTrVp64=",
+            "body": "{\"Service\":\"Amazon S3\",\"Event\":\"s3:TestEvent\",\"Time\":\"2021-11-17T13:07:24.077Z\",\"Bucket\":\"loghub-bucket\",\"RequestId\":\"YW4C3W438DF8H6X6\",\"HostId\":\"szipI/xaLt31O9wzPZJBePZprtPhPd4zsmwsaOGT0oPC2FyFNmjtPt9U5qmkg=\"}",
+            "attributes": {
+                "ApproximateReceiveCount": "1",
+                "SentTimestamp": "1637154444112",
+                "SenderId": "AIDAJQOC3SADRY5PEMBNW",
+                "ApproximateFirstReceiveTimestamp": "1637154469480"
+            },
+            "messageAttributes": {},
+            "md5OfBody": "90bcf9a19093c0663f59b8d89a40d43a",
+            "eventSource": "aws:sqs",
+            "eventSourceARN": "arn:aws:sqs:us-east-1:123456789012:test-queue",
+            "awsRegion": "us-east-1"
+        }
+    ]
+}

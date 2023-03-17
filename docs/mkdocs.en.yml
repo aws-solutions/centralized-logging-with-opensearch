@@ -1,0 +1,61 @@
+INHERIT: ./mkdocs.base.yml
+docs_dir: en
+site_dir: ./site/en
+theme:
+  language: en
+
+nav:
+  - Implementation Guide:
+      - Overview: index.md
+      - Cost: implementation-guide/cost.md
+      - Architecture Overview: implementation-guide/architecture.md
+      - Security: implementation-guide/security.md
+      - Considerations: implementation-guide/considerations.md
+      - Deployment:
+          - Overview: implementation-guide/deployment/index.md
+          - Launch with Cognito User Pool: implementation-guide/deployment/with-cognito.md
+          - Launch with OpenID Connect: implementation-guide/deployment/with-oidc.md
+      - Getting Started:
+          - Overview: implementation-guide/getting-started/index.md
+          - Step 1. Import Domain: implementation-guide/getting-started/1.import-domain.md
+          - Step 2. Create Proxy: implementation-guide/getting-started/2.create-proxy.md
+          - Step 3. Ingest CloudTrail Logs: implementation-guide/getting-started/3.build-cloudtrail-pipeline.md
+          - Step 4. View Dashboard: implementation-guide/getting-started/4.view-dashboard.md
+      - Domain Management:
+          - Overview: implementation-guide/domains/index.md
+          - Domain Operations: implementation-guide/domains/import.md
+          - Access Proxy: implementation-guide/domains/proxy.md
+          - Alarms: implementation-guide/domains/alarms.md
+      - AWS Services Logs:
+          - Overview: implementation-guide/aws-services/index.md
+          - Amazon CloudTrail: implementation-guide/aws-services/cloudtrail.md
+          - Amazon S3: implementation-guide/aws-services/s3.md
+          - Amazon RDS/Aurora: implementation-guide/aws-services/rds.md
+          - Amazon CloudFront: implementation-guide/aws-services/cloudfront.md
+          - AWS Lambda: implementation-guide/aws-services/lambda.md
+          - Elastic Load Balancing: implementation-guide/aws-services/elb.md
+          - AWS WAF: implementation-guide/aws-services/waf.md
+          - VPC Flow Log: implementation-guide/aws-services/vpc.md
+          - AWS Config: implementation-guide/aws-services/config.md
+      - Applications Logs:
+          - Overview: implementation-guide/applications/index.md
+          - Prerequisites:
+              - Create a log source: implementation-guide/applications/create-log-source.md
+              - Create an application pipeline: implementation-guide/applications/create-applog-pipeline.md
+          - Apache HTTP Server: implementation-guide/applications/apache.md
+          - Nginx: implementation-guide/applications/nginx.md
+          - Single-line Text: implementation-guide/applications/single-line-text.md
+          - Multiline-line Text: implementation-guide/applications/multi-line-text.md
+          - JSON: implementation-guide/applications/json.md
+          - Syslog: implementation-guide/applications/syslog.md
+      - Cross-Account Ingestion: implementation-guide/link-account/index.md
+      - FAQ: implementation-guide/faq.md
+      - Troubleshooting: implementation-guide/trouble-shooting.md
+      - Uninstalling the Solution: implementation-guide/uninstall.md
+      - Resources:
+          - OpenSSL Installation: implementation-guide/resources/open-ssl.md
+          - Upload Certificate: implementation-guide/resources/upload-ssl-certificate.md
+          - AWS Services: implementation-guide/resources/aws-services.md
+      - Release Notes: implementation-guide/release-notes.md
+  - Roadmap: "https://github.com/orgs/aws-solutions/projects/17/"
+  - Workshop: "https://catalog.workshops.aws/centralized-logging-with-opensearch/"
