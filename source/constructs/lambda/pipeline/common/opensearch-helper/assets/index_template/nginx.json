@@ -1,0 +1,103 @@
+{
+    "aliases": {},
+    "mappings": {
+        "properties": {
+            "@timestamp": {
+                "type": "alias",
+                "path": "time_local"
+            },
+            "file_name": {
+                "type": "text"
+            },
+            "remote_addr": {
+                "type": "ip"
+            },
+            "remote_user": {
+                "type": "text"
+            },
+            "request_time": {
+                "type": "float"
+            },
+            "time_local": {
+                "type": "date",
+                "format": "dd/MMM/yyyy:HH:mm:ss||dd/MMM/yyyy:HH:mm:ss XXXX||epoch_millis"
+            },
+            "host": {
+                "type": "text"
+            },
+            "request_method": {
+                "type": "keyword"
+            },
+            "request_uri": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
+            "status": {
+                "type": "keyword"
+            },
+            "body_bytes_sent": {
+                "type": "long"
+            },
+            "bytes_sent": {
+                "type": "long"
+            },
+            "connection": {
+                "type": "long"
+            },
+            "connection_requests": {
+                "type": "long"
+            },
+            "msec": {
+                "type": "double"
+            },
+            "pipe": {
+                "type": "keyword"
+            },
+            "request_length": {
+                "type": "long"
+            },
+            "time_iso8601": {
+                "type": "date",
+                "format": "yyyy-MM-dd'T'HH:mm:ssXXX||epoch_millis"
+            },
+            "http_referer": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
+            "http_user_agent": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
+            "http_x_forwarded_for": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            }
+        }
+    },
+    "settings": {
+        "index": {
+            "number_of_shards": "5",
+            "number_of_replicas": "1"
+        }
+    }
+}

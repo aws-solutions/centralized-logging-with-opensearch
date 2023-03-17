@@ -1,0 +1,6 @@
+moto
+pytest
+pytest-cov
+pyyaml
+docker
+openapi-spec-validator

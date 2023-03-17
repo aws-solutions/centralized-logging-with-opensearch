@@ -1,0 +1,7 @@
+#set($ctx.result.nextToken = $util.urlEncode($ctx.result.nextToken))
+
+#foreach( $eksCluster in $ctx.result.clusters )
+    #set($eksCluster = $util.urlEncode($eksCluster))    
+#end
+
+$util.toJson($ctx.result) 

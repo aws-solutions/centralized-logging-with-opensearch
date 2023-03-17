@@ -1,0 +1,8 @@
+#foreach( $autoScalingGroup in $ctx.result.autoScalingGroups )
+    #set($autoScalingGroupName = $util.urlEncode(autoScalingGroupName))
+    #foreach( $instance in $autoScalingGroup.instances )
+        #set($instance = $util.urlEncode($instance))    
+    #end
+#end
+
+$util.toJson($ctx.result)

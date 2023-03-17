@@ -1,0 +1,14 @@
+    [FILTER]
+        Name                lua
+        Match               $LOGHUB_CONFIG_TAG
+        time_as_table       on
+        call                cb_print
+        code                function cb_print(tag, timestamp, record) record['$TIME_KEY'] = os.date('!%Y-%m-%dT%H:%M:%S.', timestamp['sec']) .. string.sub(string.format('%06d', timestamp['nsec']), 1, 6) .. 'Z'; return 2, timestamp, record end
+        
+    [OUTPUT]
+        Name                kinesis_streams
+        Match               $LOGHUB_CONFIG_TAG
+        Region              $LOGHUB_CONFIG_REGION
+        Stream              $LOGHUB_KDS_STREAM_NAME
+        Retry_Limit         False
+        Role_arn            $LOGHUB_BUFFER_ACCESS_ROLE_ARN

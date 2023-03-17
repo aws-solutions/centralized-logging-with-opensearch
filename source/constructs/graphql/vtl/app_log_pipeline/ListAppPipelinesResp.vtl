@@ -1,0 +1,11 @@
+#foreach( $appPipeline in $ctx.result.appPipelines )
+    #foreach( $param in $appPipeline.tags )
+        #set($param.key = $util.urlEncode($param.key))    
+        #set($param.value = $util.urlEncode($param.value))
+    #end 
+    #set($aosParams=$appPipeline.aosParams)
+    #set($aosParams.indexSuffix = $aosParams.indexSuffix.replace("-","_"))   
+
+#end
+
+$util.toJson($ctx.result)

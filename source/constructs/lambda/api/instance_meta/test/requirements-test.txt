@@ -1,0 +1,6 @@
+boto3
+moto
+pytest
+pyyaml
+pytest-cov
+pytest-mock

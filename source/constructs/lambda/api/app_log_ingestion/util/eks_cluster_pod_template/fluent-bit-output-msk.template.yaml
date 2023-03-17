@@ -1,0 +1,11 @@
+    [OUTPUT]       
+        Name                        kafka
+        Match                       $LOGHUB_CONFIG_TAG
+        Brokers                     $LOGHUB_MSK_BROKER_SERVERS
+        Topics                      $LOGHUB_MSK_TOPICS
+        timestamp_key               $LOGHUB_TIMEKEY
+        timestamp_format            iso8601
+        rdkafka.acks                -1
+        rdkafka.compression.type    snappy
+        rdkafka.security.protocol   plaintext
+        Retry_Limit                 False

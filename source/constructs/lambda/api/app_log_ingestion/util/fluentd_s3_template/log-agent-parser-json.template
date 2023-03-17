@@ -1,0 +1,7 @@
+  <parse>
+    @type json
+    time_type string
+    time_format $LOGHUB_TIME_FORMAT
+    time_key time
+    keep_time_key false
+  </parse>

@@ -1,0 +1,102 @@
+{
+    "aliases": {},
+    "mappings": {
+        "properties": {
+            "@timestamp": {
+                "type": "alias",
+                "path": "eventTime"
+            },
+            "eventVersion": {
+                "type": "keyword"
+            },
+            "eventName": {
+                "type": "keyword"
+            },
+            "eventSource": {
+                "type": "keyword"
+            },
+            "eventTime": {
+                "type": "date"
+            },
+            "eventType": {
+                "type": "keyword"
+            },
+            "eventCategory": {
+                "type": "keyword"
+            },
+            "sourceIPAddress": {
+                "type": "keyword"
+            },
+            "apiVersion": {
+                "type": "keyword"
+            },
+            "awsRegion": {
+                "type": "keyword"
+            },
+            "requestParameters": {
+                "properties": {
+                    "endTime": {
+                        "type": "date",
+                        "format": "epoch_millis||MMM d, yyyy h:mm:ss a||MMM d, yyyy, h:mm:ss a"
+                    },
+                    "startTime": {
+                        "type": "date",
+                        "format": "epoch_millis||MMM d, yyyy h:mm:ss a||MMM d, yyyy, h:mm:ss a"
+                    },
+                    "parameters": {
+                        "type": "object"
+                    }
+                }
+            },
+            "responseElements": {
+                "properties": {
+                    "version": {
+                        "type": "keyword"
+                    },
+                    "lastModified": {
+                        "type": "date",
+                        "format": "strict_date_optional_time||MMM d, yyyy h:mm:ss a||MMM d, yyyy, h:mm:ss a"
+                    },
+                    "createTime": {
+                        "type": "date",
+                        "format": "epoch_millis||MMM d, yyyy h:mm:ss a||MMM d, yyyy, h:mm:ss a"
+                    },
+                    "createdDate": {
+                        "type": "date",
+                        "format": "strict_date_optional_time||MMM d, yyyy h:mm:ss a||MMM d, yyyy, h:mm:ss a"
+                    },
+                    "lastUpdatedDate": {
+                        "type": "date",
+                        "format": "strict_date_optional_time||MMM d, yyyy h:mm:ss a||MMM d, yyyy, h:mm:ss a"
+                    },
+                    "role": {
+                        "type": "object"
+                    }
+                }
+            },
+            "userIdentity": {
+                "properties": {
+                    "sessionContext": {
+                        "properties": {
+                            "attributes": {
+                                "properties": {
+                                    "creationDate": {
+                                        "type": "date"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "settings": {
+        "index": {
+            "mapping.total_fields.limit": 4000,
+            "mapping.ignore_malformed": "true",
+            "number_of_shards": "5",
+            "number_of_replicas": "1"
+        }
+    }
+}

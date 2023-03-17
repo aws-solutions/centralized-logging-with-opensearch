@@ -1,0 +1,10 @@
+
+#set($ctx.result.agentInstallDoc = $util.urlEncode($ctx.result.agentInstallDoc))
+#set($ctx.result.agentConfDoc = $util.urlEncode($ctx.result.agentConfDoc))
+
+#foreach( $param in $ctx.result.tags )
+    #set($param.key = $util.urlEncode($param.key))    
+    #set($param.value = $util.urlEncode($param.value))
+#end
+
+$util.toJson($ctx.result)

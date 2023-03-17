@@ -1,0 +1,13 @@
+{
+    "action": "START",
+    "args": {
+        "stackName": "LogHub-Alarm-6336b",
+        "pattern": "AlarmForOpenSearch",
+        "parameters": [
+            {
+                "ParameterKey": "hello",
+                "ParameterValue": "world"
+            }
+        ]
+    }
+}

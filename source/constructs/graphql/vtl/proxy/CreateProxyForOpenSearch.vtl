@@ -1,0 +1,11 @@
+$util.validate($util.matches("^arn:([^:\n]*):([^:\n]*):([^:\n]*):([^:\n]*):(([^:\/\n]*)[:\/])?(.*)$", $ctx.args.input.certificateArn), "Invalid Certificate ARN")
+$util.validate($util.matches('(^$)|([a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,3})(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\.amazoncognito.com)', $ctx.args.input.cognitoEndpoint), "Invalid Cognito Endpoint")
+$util.validate($util.matches('(^$)|[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\.?', $ctx.args.input.customEndpoint), "Invalid Custom Endpoint")
+$util.validate($util.matches("[^\u4e00-\u9fa5]{0,255}$", $ctx.args.input.keyName), "Invalid Key Name")
+$util.validate($util.matches("^t3.[a-z0-9]{4,5}", $ctx.args.input.proxyInstanceType), "Invalid instance type")
+$util.validate($util.matches("[1234]", $ctx.args.input.proxyInstanceNumber), "Invalid instance number")
+$util.validate($util.matches("^vpc-[a-z0-9]{8,1020}$", $ctx.args.input.vpc.vpcId), "Invalid VPC ID")
+$util.validate($util.matches("^subnet-[a-z0-9]{8,1017}(,subnet-[a-z0-9]{8,1017})+$", $ctx.args.input.vpc.privateSubnetIds), "Invalid Subnet IDs")
+$util.validate($util.matches("^subnet-[a-z0-9]{8,1017}(,subnet-[a-z0-9]{8,1017})+$", $ctx.args.input.vpc.publicSubnetIds), "Invalid Subnet IDs")
+$util.validate($util.matches("^sg-[a-z0-9]{8,1021}$", $ctx.args.input.vpc.securityGroupId), "Invalid Security Group ID")
+{"version": "2017-02-28", "operation": "Invoke", "payload": $util.toJson($ctx)}
