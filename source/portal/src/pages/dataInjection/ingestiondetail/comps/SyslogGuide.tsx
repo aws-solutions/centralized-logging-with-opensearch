@@ -90,10 +90,9 @@ const SyslogGuide: React.FC<SyslogGuideProps> = (props: SyslogGuideProps) => {
               </div>
               <div className="step-desc">
                 {t("applog:ingestion.syslog.guide.step3Desc1")}
-                <code className="guide-code">sudo service rsyslog restart</code>
-                、
+                <code className="guide-code">service rsyslog restart</code>,
                 <code className="guide-code">
-                  sudo /etc/init.d/syslog-ng restart
+                  /etc/init.d/syslog-ng restart
                 </code>{" "}
                 {t("applog:ingestion.syslog.guide.step3Desc2")}
                 <code className="guide-code">systemctl restart rsyslog</code>
@@ -112,7 +111,7 @@ const SyslogGuide: React.FC<SyslogGuideProps> = (props: SyslogGuideProps) => {
               </div>
               <div className="step-desc">
                 {t("applog:ingestion.syslog.guide.step5Desc1")}
-                <code className="guide-code">/var/log/message</code>
+                <code className="guide-code">/var/log/messages</code>
                 {t("applog:ingestion.syslog.guide.step5Desc2")}
                 <code className="guide-code">vim</code>{" "}
                 {t("applog:ingestion.syslog.guide.step5Desc3")}

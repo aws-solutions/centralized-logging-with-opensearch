@@ -126,6 +126,7 @@ export const listServicePipelines = /* GraphQL */ `
       pipelines {
         id
         type
+        destinationType
         source
         target
         parameters {
@@ -149,6 +150,7 @@ export const getServicePipeline = /* GraphQL */ `
     getServicePipeline(id: $id) {
       id
       type
+      destinationType
       source
       target
       parameters {
@@ -185,15 +187,6 @@ export const listResources = /* GraphQL */ `
     }
   }
 `;
-export const checkServiceExisting = /* GraphQL */ `
-  query CheckServiceExisting(
-    $type: ResourceType!
-    $accountId: String
-    $region: String
-  ) {
-    checkServiceExisting(type: $type, accountId: $accountId, region: $region)
-  }
-`;
 export const getResourceLoggingBucket = /* GraphQL */ `
   query GetResourceLoggingBucket(
     $type: ResourceType!
@@ -211,6 +204,27 @@ export const getResourceLoggingBucket = /* GraphQL */ `
       bucket
       prefix
       source
+    }
+  }
+`;
+export const getResourceLogConfigs = /* GraphQL */ `
+  query GetResourceLogConfigs(
+    $type: ResourceType!
+    $resourceName: String!
+    $accountId: String
+    $region: String
+  ) {
+    getResourceLogConfigs(
+      type: $type
+      resourceName: $resourceName
+      accountId: $accountId
+      region: $region
+    ) {
+      destinationType
+      destinationName
+      name
+      logFormat
+      region
     }
   }
 `;
@@ -331,6 +345,10 @@ export const listAppPipelines = /* GraphQL */ `
           warmLogTransition
           coldLogTransition
           logRetention
+          rolloverSize
+          codec
+          indexSuffix
+          refreshInterval
           shardNumbers
           replicaNumbers
           engine
@@ -366,6 +384,10 @@ export const getAppPipeline = /* GraphQL */ `
         warmLogTransition
         coldLogTransition
         logRetention
+        rolloverSize
+        codec
+        indexSuffix
+        refreshInterval
         shardNumbers
         replicaNumbers
         engine
@@ -595,18 +617,6 @@ export const listAutoScalingGroups = /* GraphQL */ `
     }
   }
 `;
-export const getInstanceMeta = /* GraphQL */ `
-  query GetInstanceMeta($id: ID!) {
-    getInstanceMeta(id: $id) {
-      id
-      logAgent {
-        agentName
-        version
-      }
-      status
-    }
-  }
-`;
 export const getLogAgentStatus = /* GraphQL */ `
   query GetLogAgentStatus(
     $instanceId: String!
@@ -678,65 +688,6 @@ export const getLogSource = /* GraphQL */ `
         }
       }
       createdDt
-    }
-  }
-`;
-export const listLogSources = /* GraphQL */ `
-  query ListLogSources($page: Int, $count: Int) {
-    listLogSources(page: $page, count: $count) {
-      LogSources {
-        sourceId
-        accountId
-        region
-        sourceName
-        logPath
-        sourceType
-        sourceInfo {
-          key
-          value
-        }
-        s3Source {
-          s3Name
-          s3Prefix
-          archiveFormat
-          defaultVpcId
-          defaultSubnetIds
-        }
-        eksSource {
-          id
-          aosDomain {
-            id
-            domainName
-            engine
-            version
-            endpoint
-            metrics {
-              searchableDocs
-              freeStorageSpace
-              health
-            }
-          }
-          eksClusterName
-          eksClusterArn
-          cri
-          vpcId
-          eksClusterSGId
-          subnetIds
-          oidcIssuer
-          endpoint
-          createdDt
-          accountId
-          region
-          logAgentRoleArn
-          deploymentKind
-          tags {
-            key
-            value
-          }
-        }
-        createdDt
-      }
-      total
     }
   }
 `;

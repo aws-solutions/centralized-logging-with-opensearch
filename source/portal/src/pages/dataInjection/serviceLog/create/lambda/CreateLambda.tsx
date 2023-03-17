@@ -20,13 +20,19 @@ import SpecifySettings from "./steps/SpecifySettings";
 import SpecifyOpenSearchCluster, {
   AOSInputValidRes,
   checkOpenSearchInput,
+  covertParametersByKeyAndConditions,
 } from "../common/SpecifyCluster";
 import CreateTags from "../common/CreateTags";
 import Button from "components/Button";
 
 import Breadcrumb from "components/Breadcrumb";
-import { ServiceType, Tag } from "API";
-import { YesNo } from "types";
+import { CODEC, DestinationType, EngineType, ServiceType, Tag } from "API";
+import {
+  WarmTransitionType,
+  YesNo,
+  AmplifyConfigType,
+  SERVICE_LOG_INDEX_SUFFIX,
+} from "types";
 import { appSyncRequestMutation } from "assets/js/request";
 import { createServicePipeline } from "graphql/mutations";
 import { OptionType } from "components/AutoComplete/autoComplete";
@@ -35,7 +41,6 @@ import { LAMBDA_TASK_GROUP_PREFIX, ServiceLogType } from "assets/js/const";
 import HelpPanel from "components/HelpPanel";
 import SideMenu from "components/SideMenu";
 
-import { AmplifyConfigType } from "types";
 import { AppStateProps } from "reducer/appReducer";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -47,6 +52,7 @@ const EXCLUDE_PARAMS = [
   "curLambdaObj",
   "kdsShardNumber",
   "kdsRetentionHours",
+  "rolloverSizeNotSupport",
 ];
 export interface LambdaTaskProps {
   type: ServiceType;
@@ -55,6 +61,7 @@ export interface LambdaTaskProps {
   target: string;
   logSourceAccountId: string;
   logSourceRegion: string;
+  destinationType: string;
   params: {
     // [index: string]: string | any;
     engineType: string;
@@ -72,13 +79,23 @@ export interface LambdaTaskProps {
     vpcId: string;
     subnetIds: string;
     securityGroupId: string;
-    daysToWarm: string;
-    daysToCold: string;
-    daysToRetain: string;
+
     logBucketName: string;
     logBucketPrefix: string;
     shardNumbers: string;
     replicaNumbers: string;
+
+    enableRolloverByCapacity: boolean;
+    warmTransitionType: string;
+    warmAge: string;
+    coldAge: string;
+    retainAge: string;
+    rolloverSize: string;
+    indexSuffix: string;
+    codec: string;
+    refreshInterval: string;
+
+    rolloverSizeNotSupport: boolean;
   };
 }
 
@@ -89,6 +106,7 @@ const DEFAULT_LAMBDA_TASK_VALUE: LambdaTaskProps = {
   target: "",
   logSourceAccountId: "",
   logSourceRegion: "",
+  destinationType: DestinationType.CloudWatch,
   params: {
     engineType: "",
     esDomainId: "",
@@ -105,13 +123,23 @@ const DEFAULT_LAMBDA_TASK_VALUE: LambdaTaskProps = {
     vpcId: "",
     subnetIds: "",
     securityGroupId: "",
-    daysToWarm: "0",
-    daysToCold: "0",
-    daysToRetain: "0",
+
     logBucketName: "",
     logBucketPrefix: "",
-    shardNumbers: "5",
+    shardNumbers: "1",
     replicaNumbers: "1",
+
+    enableRolloverByCapacity: true,
+    warmTransitionType: WarmTransitionType.IMMEDIATELY,
+    warmAge: "0",
+    coldAge: "60",
+    retainAge: "180",
+    rolloverSize: "30",
+    indexSuffix: SERVICE_LOG_INDEX_SUFFIX.yyyy_MM_dd,
+    codec: CODEC.best_compression,
+    refreshInterval: "1s",
+
+    rolloverSizeNotSupport: false,
   },
 };
 
@@ -151,6 +179,11 @@ const CreateLambda: React.FC = () => {
     warmLogInvalidError: false,
     coldLogInvalidError: false,
     logRetentionInvalidError: false,
+    coldMustLargeThanWarm: false,
+    logRetentionMustThanColdAndWarm: false,
+    capacityInvalidError: false,
+    indexEmptyError: false,
+    indexNameFormatError: false,
   });
 
   const confirmCreatePipeline = async () => {
@@ -163,17 +196,13 @@ const CreateLambda: React.FC = () => {
     createPipelineParams.logSourceAccountId =
       lambdaPipelineTask.logSourceAccountId;
     createPipelineParams.logSourceRegion = amplifyConfig.aws_project_region;
+    createPipelineParams.destinationType = lambdaPipelineTask.destinationType;
 
-    const tmpParamList: any = [];
-    Object.keys(lambdaPipelineTask.params).forEach((key) => {
-      console.info("key");
-      if (EXCLUDE_PARAMS.indexOf(key) < 0) {
-        tmpParamList.push({
-          parameterKey: key,
-          parameterValue: (lambdaPipelineTask.params as any)?.[key] || "",
-        });
-      }
-    });
+    const tmpParamList: any = covertParametersByKeyAndConditions(
+      lambdaPipelineTask,
+      EXCLUDE_PARAMS
+    );
+
     // Add Default Failed Log Bucket
     tmpParamList.push({
       parameterKey: "backupBucketName",
@@ -279,6 +308,13 @@ const CreateLambda: React.FC = () => {
                     changeLambdaObj={(lambda) => {
                       console.info("changeLambdaObj:", lambda);
                       setLambdaEmptyError(false);
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          indexEmptyError: false,
+                          indexNameFormatError: false,
+                        };
+                      });
                       setLambdaPipelineTask((prev: LambdaTaskProps) => {
                         return {
                           ...prev,
@@ -288,7 +324,7 @@ const CreateLambda: React.FC = () => {
                             logGroupNames:
                               LAMBDA_TASK_GROUP_PREFIX + (lambda?.value || ""),
                             curLambdaObj: lambda,
-                            indexPrefix: lambda?.value || "",
+                            indexPrefix: lambda?.value?.toLowerCase() || "",
                           },
                         };
                       });
@@ -334,7 +370,13 @@ const CreateLambda: React.FC = () => {
                       });
                     }}
                     changeBucketIndex={(indexPrefix) => {
-                      // setPiplineBucketPrefix(prefix);
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          indexEmptyError: false,
+                          indexNameFormatError: false,
+                        };
+                      });
                       setLambdaPipelineTask((prev: LambdaTaskProps) => {
                         return {
                           ...prev,
@@ -346,6 +388,9 @@ const CreateLambda: React.FC = () => {
                       });
                     }}
                     changeOpenSearchCluster={(cluster) => {
+                      const NOT_SUPPORT_VERSION =
+                        cluster?.engine === EngineType.Elasticsearch ||
+                        parseFloat(cluster?.version || "") < 1.3;
                       setEsDomainEmptyError(false);
                       setLambdaPipelineTask((prev: LambdaTaskProps) => {
                         return {
@@ -364,12 +409,14 @@ const CreateLambda: React.FC = () => {
                             vpcId: cluster?.vpc?.vpcId || "",
                             warmEnable: cluster?.nodes?.warmEnabled || false,
                             coldEnable: cluster?.nodes?.coldEnabled || false,
+                            rolloverSizeNotSupport: NOT_SUPPORT_VERSION,
+                            enableRolloverByCapacity: !NOT_SUPPORT_VERSION,
+                            rolloverSize: NOT_SUPPORT_VERSION ? "" : "30",
                           },
                         };
                       });
                     }}
                     changeSampleDashboard={(yesNo) => {
-                      // setPiplineBucketPrefix(prefix);
                       setLambdaPipelineTask((prev: LambdaTaskProps) => {
                         return {
                           ...prev,
@@ -392,7 +439,7 @@ const CreateLambda: React.FC = () => {
                           ...prev,
                           params: {
                             ...prev.params,
-                            daysToWarm: value,
+                            warmAge: value,
                           },
                         };
                       });
@@ -402,6 +449,7 @@ const CreateLambda: React.FC = () => {
                         return {
                           ...prev,
                           coldLogInvalidError: false,
+                          coldMustLargeThanWarm: false,
                         };
                       });
                       setLambdaPipelineTask((prev: LambdaTaskProps) => {
@@ -409,7 +457,7 @@ const CreateLambda: React.FC = () => {
                           ...prev,
                           params: {
                             ...prev.params,
-                            daysToCold: value,
+                            coldAge: value,
                           },
                         };
                       });
@@ -419,6 +467,7 @@ const CreateLambda: React.FC = () => {
                         return {
                           ...prev,
                           logRetentionInvalidError: false,
+                          logRetentionMustThanColdAndWarm: false,
                         };
                       });
                       setLambdaPipelineTask((prev: LambdaTaskProps) => {
@@ -426,7 +475,80 @@ const CreateLambda: React.FC = () => {
                           ...prev,
                           params: {
                             ...prev.params,
-                            daysToRetain: value,
+                            retainAge: value,
+                          },
+                        };
+                      });
+                    }}
+                    changeIndexSuffix={(suffix: string) => {
+                      setLambdaPipelineTask((prev: LambdaTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            indexSuffix: suffix,
+                          },
+                        };
+                      });
+                    }}
+                    changeEnableRollover={(enable: boolean) => {
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          capacityInvalidError: false,
+                        };
+                      });
+                      setLambdaPipelineTask((prev: LambdaTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            enableRolloverByCapacity: enable,
+                          },
+                        };
+                      });
+                    }}
+                    changeRolloverSize={(size: string) => {
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          capacityInvalidError: false,
+                        };
+                      });
+                      setLambdaPipelineTask((prev: LambdaTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            rolloverSize: size,
+                          },
+                        };
+                      });
+                    }}
+                    changeCompressionType={(codec: string) => {
+                      setLambdaPipelineTask((prev: LambdaTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            codec: codec,
+                          },
+                        };
+                      });
+                    }}
+                    changeWarmSettings={(type: string) => {
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          coldMustLargeThanWarm: false,
+                        };
+                      });
+                      setLambdaPipelineTask((prev: LambdaTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            warmTransitionType: type,
                           },
                         };
                       });

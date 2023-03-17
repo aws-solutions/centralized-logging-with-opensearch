@@ -112,7 +112,7 @@ const Bottom: React.FC = () => {
       {/* <span className="privacy">{t("bottom.use")}</span>
       <span className="privacy">{t("bottom.privacy")}</span> */}
       <span className="privacy no-pointer">
-        ({`${t("version")} : ${amplifyConfig.loghub_version || "-"}`})
+        ({`${t("version")} : ${amplifyConfig.solution_version || "-"}`})
       </span>
 
       <span className="notice">

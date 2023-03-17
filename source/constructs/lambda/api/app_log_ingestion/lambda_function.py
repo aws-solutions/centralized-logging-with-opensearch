@@ -10,9 +10,8 @@ from datetime import datetime
 
 import boto3
 from botocore import config
-from boto3.dynamodb.conditions import Attr
 
-from util.aws_svc_mgr import SvcManager
+
 from util.log_ingestion_svc import LogIngestionSvc
 from util.sys_enum_type import SOURCETYPE
 from common import APIException
@@ -20,6 +19,9 @@ from common import APIException
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+DEFAULT_TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+
+stack_prefix = os.environ.get("STACK_PREFIX", "CL")
 solution_version = os.environ.get("SOLUTION_VERSION", "v1.0.0")
 solution_id = os.environ.get("SOLUTION_ID", "SO8025")
 user_agent_config = {
@@ -40,8 +42,7 @@ async_s3_child_lambda_arn = os.environ.get("ASYNC_S3_CHILD_LAMBDA_ARN")
 async_syslog_child_lambda_arn = os.environ.get("ASYNC_SYSLOG_CHILD_LAMBDA_ARN")
 failed_log_bucket = os.environ.get("CONFIG_FILE_S3_BUCKET_NAME")
 log_agent_vpc_id = os.environ.get("LOG_AGENT_VPC_ID")
-log_agent_subnet_ids = os.environ.get(
-    "LOG_AGENT_SUBNETS_IDS")  # Private subnets
+log_agent_subnet_ids = os.environ.get("LOG_AGENT_SUBNETS_IDS")  # Private subnets
 state_machine_arn = os.environ.get("STATE_MACHINE_ARN")
 default_cmk_arn = os.environ.get("DEFAULT_CMK_ARN")
 ecs_cluster_name = os.environ.get("ECS_CLUSTER_NAME")
@@ -57,11 +58,11 @@ instance_group_table = dynamodb.Table(group_table_name)
 conf_table_name = os.environ.get("APP_LOG_CONFIG_TABLE_NAME")
 log_conf_table = dynamodb.Table(conf_table_name)
 app_pipeline_table = dynamodb.Table(os.environ.get("APP_PIPELINE_TABLE_NAME"))
-s3_log_source_table = dynamodb.Table(
-    os.environ.get("S3_LOG_SOURCE_TABLE_NAME"))
+s3_log_source_table = dynamodb.Table(os.environ.get("S3_LOG_SOURCE_TABLE_NAME"))
 log_source_table = dynamodb.Table(os.environ.get("LOG_SOURCE_TABLE_NAME"))
 eks_cluster_log_source_table = dynamodb.Table(
-    os.environ.get("EKS_CLUSTER_SOURCE_TABLE_NAME"))
+    os.environ.get("EKS_CLUSTER_SOURCE_TABLE_NAME")
+)
 
 default_region = os.environ.get("AWS_REGION")
 
@@ -80,7 +81,8 @@ def handle_error(func):
         except Exception as e:
             logger.exception(e)
             raise RuntimeError(
-                "Unknown exception, please check Lambda log for more details")
+                "Unknown exception, please check Lambda log for more details"
+            )
 
     return wrapper
 
@@ -126,7 +128,8 @@ def create_app_log_ingestion(**args):
     if not is_aos_ready:
         raise APIException(
             "OpenSearch is in the process of creating, upgrading or pre-upgrading,"
-            " please wait for it to be ready")
+            " please wait for it to be ready"
+        )
     # validate duplicate conf for aos template:
     # Find out whether there is a configuration type with the same configuration type in the ingestion table according
     #  to the pipeline ID.
@@ -141,8 +144,10 @@ def create_app_log_ingestion(**args):
 
     # Asynchronous
     # ec2 as source
-    if args["sourceType"] == SOURCETYPE.EC2.value or args[
-            "sourceType"] == SOURCETYPE.ASG.value:
+    if (
+        args["sourceType"] == SOURCETYPE.EC2.value
+        or args["sourceType"] == SOURCETYPE.ASG.value
+    ):
         log_ingestion_svc.remote_create_index_template(
             args["appPipelineId"],
             args["confId"],
@@ -150,51 +155,31 @@ def create_app_log_ingestion(**args):
             multiline_log_parser=current_conf.get("multilineLogParser"),
         )
 
-        logger.info(
-            "Send the async job to child lambda for creating ec2 ingestion.")
+        logger.info("Send the async job to child lambda for creating ec2 ingestion.")
         async_resp = awslambda.invoke(
             FunctionName=async_ec2_child_lambda_arn,
             InvocationType="Event",
             Payload=json.dumps(args),
         )
         process_async_lambda_resp(async_resp)
-    # s3 as source
-    elif args["sourceType"] == SOURCETYPE.S3.value:
-        logger.info(
-            "Send the async job to child lambda for creating s3 ingestion.")
+    # EKS
+    elif args["sourceType"] == SOURCETYPE.EKS_CLUSTER.value:
+        eks_src_ingestion(**args)
+    # Syslog
+    elif args["sourceType"] == SOURCETYPE.SYSLOG.value:
+        logger.info("Send the async job to child lambda for creating Syslog ingestion.")
         async_resp = awslambda.invoke(
-            FunctionName=async_s3_child_lambda_arn,
+            FunctionName=async_syslog_child_lambda_arn,
             InvocationType="Event",
             Payload=json.dumps(args),
         )
         process_async_lambda_resp(async_resp)
-
         log_ingestion_svc.remote_create_index_template(
             args["appPipelineId"],
             args["confId"],
             args["createDashboard"],
             multiline_log_parser=current_conf.get("multilineLogParser"),
         )
-
-        create_s3_source_app_pipeline(**args)
-    # EKS
-    elif args["sourceType"] == SOURCETYPE.EKS_CLUSTER.value:
-        eks_src_ingestion(**args)
-    # Syslog
-    elif args['sourceType'] == SOURCETYPE.SYSLOG.value:
-        logger.info(
-            "Send the async job to child lambda for creating Syslog ingestion."
-        )
-        async_resp = awslambda.invoke(
-            FunctionName=async_syslog_child_lambda_arn,
-            InvocationType="Event",
-            Payload=json.dumps(args))
-        process_async_lambda_resp(async_resp)
-        log_ingestion_svc.remote_create_index_template(
-            args['appPipelineId'],
-            args['confId'],
-            args['createDashboard'],
-            multiline_log_parser=current_conf.get('multilineLogParser'))
         create_syslog_sub_stack(**args)
     else:
         raise APIException(f"Unknown sourceType ({args['sourceType']})")
@@ -209,14 +194,11 @@ def update_app_log_ingestion(id, status):
 
     app_log_ingestion_table.update_item(
         Key={"id": id},
-        UpdateExpression="SET #status = :s, #updatedDt= :uDt",
-        ExpressionAttributeNames={
-            "#status": "status",
-            "#updatedDt": "updatedDt"
-        },
+        UpdateExpression="SET #s = :s, updatedDt= :uDt",
+        ExpressionAttributeNames={"#s": "status"},
         ExpressionAttributeValues={
             ":s": status,
-            ":uDt": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+            ":uDt": datetime.utcnow().strftime(DEFAULT_TIME_FORMAT),
         },
     )
 
@@ -226,16 +208,16 @@ def delete_app_log_ingestion(ids):
     logger.info("Delete AppLogIngestion Status in DynamoDB")
 
     # Update the app log ingestion table
-    for id in ids:
+    for ingestion_id in ids:
         args = {
-            "id": id,
+            "id": ingestion_id,
             "status": "DELETING",
         }
         update_app_log_ingestion(**args)
 
     # Asynchronous
     logger.info("Send the async job to child lambda.")
-    ec2_ids, s3_ids, eks_ids, syslog_ids = separate_ingestion_ids_by_type(ids)
+    ec2_ids, eks_ids, syslog_ids = separate_ingestion_ids_by_type(ids)
     if len(ec2_ids) > 0:
         args = {"action": "asyncDeleteAppLogIngestion", "ids": ec2_ids}
         async_resp = awslambda.invoke(
@@ -245,22 +227,10 @@ def delete_app_log_ingestion(ids):
         )
         process_async_lambda_resp(async_resp)
 
-    if len(s3_ids) > 0:
-        args = {"action": "asyncDeleteAppLogIngestion", "ids": s3_ids}
-        async_resp = awslambda.invoke(
-            FunctionName=async_s3_child_lambda_arn,
-            InvocationType="Event",
-            Payload=json.dumps(args),
-        )
-        process_async_lambda_resp(async_resp)
-
-        for ingestion_id in s3_ids:
-            delete_s3_source_app_pipeline(ingestion_id)
-
     if len(eks_ids) > 0:
-        for id in eks_ids:
+        for eks_id in eks_ids:
             args = {
-                "id": id,
+                "id": eks_id,
                 "status": "INACTIVE",
             }
             update_app_log_ingestion(**args)
@@ -268,130 +238,6 @@ def delete_app_log_ingestion(ids):
     if len(syslog_ids) > 0:
         for ingestion_id in syslog_ids:
             delete_syslog_source_sub_stack(ingestion_id)
-
-
-def create_s3_source_app_pipeline(**args):
-    """Create a appPipeline"""
-    logger.info("create s3 as source appPipeline")
-    for source_id in args["sourceIds"]:
-        id = args["source_ingestion_map"].get(source_id)
-        stack_name = create_stack_name(id, "S3")
-
-        app_pipe_table_resp = app_pipeline_table.get_item(
-            Key={"id": args["appPipelineId"]})
-        app_pipe_table_item = app_pipe_table_resp["Item"]
-
-        s3_log_source_table_resp = s3_log_source_table.get_item(
-            Key={"id": source_id})
-        s3_log_source_table_item = s3_log_source_table_resp["Item"]
-
-        kds_role_arn = app_pipe_table_item.get("kdsRoleArn", "")
-
-        deploy_account_id = s3_log_source_table_item.get(
-            "accountId") or account_id
-        deploy_region = s3_log_source_table_item.get("region") or region
-
-        # Handle cross account scenario
-        if deploy_account_id != account_id:
-            svcMgr = SvcManager()
-            link_account = svcMgr.get_link_account(
-                sub_account_id=deploy_account_id, region=deploy_region)
-
-            _failed_log_bucket = link_account.get("subAccountBucketName")
-            _log_agent_vpc_id = link_account.get("subAccountVpcId")
-            _log_agent_subnet_ids = link_account.get(
-                "subAccountPublicSubnetIds")
-            _default_cmk_arn = link_account.get("subAccountKMSKeyArn")
-        else:
-            _failed_log_bucket = failed_log_bucket
-            _log_agent_vpc_id = log_agent_vpc_id
-            _log_agent_subnet_ids = log_agent_subnet_ids
-            _default_cmk_arn = default_cmk_arn
-
-        sfn_args = {
-            "stackName":
-            stack_name,
-            "pattern":
-            "S3toKDSStack",
-            "deployAccountId":
-            deploy_account_id,
-            "deployRegion":
-            deploy_region,
-            "parameters": [
-                {
-                    "ParameterKey": "agentSourceIdParam",
-                    "ParameterValue": str(source_id),
-                },
-                {
-                    "ParameterKey": "defaultCmkArnParam",
-                    "ParameterValue": str(_default_cmk_arn),
-                },
-                # Kinesis
-                {
-                    "ParameterKey":
-                    "kinesisStreamNameParam",
-                    "ParameterValue":
-                    str(app_pipe_table_item["kdsParas"]["streamName"]),
-                },
-                {
-                    "ParameterKey": "kdsRoleARN",
-                    "ParameterValue": str(kds_role_arn)
-                },
-                # S3
-                {
-                    "ParameterKey": "failedLogBucketParam",
-                    "ParameterValue": str(_failed_log_bucket),
-                },
-                {
-                    "ParameterKey": "sourceLogBucketParam",
-                    "ParameterValue": str(s3_log_source_table_item["s3Name"]),
-                },
-                {
-                    "ParameterKey": "sourceLogBucketPrefixParam",
-                    "ParameterValue":
-                    str(s3_log_source_table_item["s3Prefix"]),
-                },
-                # VPC
-                {
-                    "ParameterKey": "logAgentVpcIdParam",
-                    "ParameterValue": str(_log_agent_vpc_id),
-                },
-                {
-                    "ParameterKey": "logAgentSubnetIdsParam",
-                    "ParameterValue": str(_log_agent_subnet_ids),
-                },
-            ],
-        }
-
-        # Start the pipeline flow
-        exec_sfn_flow(id, "START", sfn_args)
-
-
-def delete_s3_source_app_pipeline(ingestion_id):
-    """Delete a appPipeline"""
-    logger.info("delete s3 as source appPipeline")
-
-    resp = app_log_ingestion_table.get_item(Key={"id": ingestion_id})
-    if "Item" not in resp:
-        raise APIException("S3 Source AppPipeline Not Found")
-
-    stack_id = resp["Item"]["stackId"]
-    source_id = resp["Item"]["sourceId"]
-    s3_log_source_table_resp = s3_log_source_table.get_item(
-        Key={"id": source_id})
-    s3_log_source_table_item = s3_log_source_table_resp["Item"]
-
-    deploy_account_id = s3_log_source_table_item.get("accountId", account_id)
-    deploy_region = s3_log_source_table_item.get("region", region)
-
-    if stack_id:
-        args = {
-            "stackId": stack_id,
-            "deployAccountId": deploy_account_id,
-            "deployRegion": deploy_region,
-        }
-        # Start the pipeline flow
-        exec_sfn_flow(ingestion_id, "STOP", args)
 
 
 def create_syslog_sub_stack(**args):
@@ -403,36 +249,33 @@ def create_syslog_sub_stack(**args):
 
         # Get the app pipeline info
         app_pipeline_resp = app_pipeline_table.get_item(
-            Key={"id": args["appPipelineId"]})["Item"]
-        _buffer_access_role_arn = app_pipeline_resp.get('bufferAccessRoleArn')
+            Key={"id": args["appPipelineId"]}
+        )["Item"]
+        _buffer_access_role_arn = app_pipeline_resp.get("bufferAccessRoleArn")
 
         # Get the syslog source info
-        log_source_resp = log_source_table.get_item(
-            Key={"id": source_id})["Item"]
-        _deploy_account_id = log_source_resp.get('accountId', account_id)
-        _deploy_region = log_source_resp.get('region', region)
+        log_source_resp = log_source_table.get_item(Key={"id": source_id})["Item"]
+        _deploy_account_id = log_source_resp.get("accountId", account_id)
+        _deploy_region = log_source_resp.get("region", region)
         _port = 0
-        _protocol_type = ''
-        for info in log_source_resp['sourceInfo']:
-            if info['key'] == 'syslogPort':
-                _port = info['value']
-            elif info['key'] == 'syslogProtocol':
-                _protocol_type = info['value']
+        _protocol_type = ""
+        for info in log_source_resp["sourceInfo"]:
+            if info["key"] == "syslogPort":
+                _port = info["value"]
+            elif info["key"] == "syslogProtocol":
+                _protocol_type = info["value"]
 
         # Call the function to create nlb if needed
         syslog_nlb_arn, syslog_nlb_dns_name = log_ingestion_svc.create_syslog_nlb(
-            log_agent_subnet_ids)
+            log_agent_subnet_ids
+        )
 
         # Config the sub stack params
         sfn_args = {
-            "stackName":
-            stack_name,
-            "pattern":
-            "SyslogtoECSStack",
-            "deployAccountId":
-            _deploy_account_id,
-            "deployRegion":
-            _deploy_region,
+            "stackName": stack_name,
+            "pattern": "SyslogtoECSStack",
+            "deployAccountId": _deploy_account_id,
+            "deployRegion": _deploy_region,
             "parameters": [
                 # System level params
                 {
@@ -472,9 +315,8 @@ def create_syslog_sub_stack(**args):
                 },
                 {
                     "ParameterKey": "ServiceConfigS3KeyParam",
-                    "ParameterValue":
-                    'app_log_config/syslog/' + str(_port) + '/',
-                }
+                    "ParameterValue": "app_log_config/syslog/" + str(_port) + "/",
+                },
             ],
         }
 
@@ -483,26 +325,22 @@ def create_syslog_sub_stack(**args):
 
         # Set the syslog port from REGISTERED to ACTIVE in log source table
         # And write back the syslog_nlb_arn, syslog_nlb_dns_name to log source table
-        log_source_resp['sourceInfo'].extend([{
-            "key": "syslogNlbArn",
-            "value": syslog_nlb_arn
-        }, {
-            "key": "syslogNlbDNSName",
-            "value": syslog_nlb_dns_name
-        }])
+        log_source_resp["sourceInfo"].extend(
+            [
+                {"key": "syslogNlbArn", "value": syslog_nlb_arn},
+                {"key": "syslogNlbDNSName", "value": syslog_nlb_dns_name},
+            ]
+        )
         log_source_table.update_item(
             Key={"id": source_id},
-            UpdateExpression=
-            "SET #status = :s, #updatedDt= :uDt, #sourceInfo= :sourceInfo",
+            UpdateExpression="SET #s = :s, updatedDt = :uDt, sourceInfo= :sourceInfo",
             ExpressionAttributeNames={
-                "#status": "status",
-                "#updatedDt": "updatedDt",
-                "#sourceInfo": "sourceInfo"
+                "#s": "status",
             },
             ExpressionAttributeValues={
-                ":s": 'ACTIVE',
-                ":uDt": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
-                ":sourceInfo": log_source_resp['sourceInfo'],
+                ":s": "ACTIVE",
+                ":uDt": datetime.utcnow().strftime(DEFAULT_TIME_FORMAT),
+                ":sourceInfo": log_source_resp["sourceInfo"],
             },
         )
 
@@ -521,8 +359,7 @@ def delete_syslog_source_sub_stack(ingestion_id):
     if stack_id:
         args = {
             "stackId": stack_id,
-            "deployAccountId":
-            account_id,  # Syslog will be in the same account and region
+            "deployAccountId": account_id,  # Syslog will be in the same account and region
             "deployRegion": region,
         }
         # Start the pipeline flow
@@ -531,14 +368,11 @@ def delete_syslog_source_sub_stack(ingestion_id):
     # Update the log source table
     log_source_table.update_item(
         Key={"id": source_id},
-        UpdateExpression="SET #status = :s, #updatedDt= :uDt",
-        ExpressionAttributeNames={
-            "#status": "status",
-            "#updatedDt": "updatedDt"
-        },
+        UpdateExpression="SET #s = :s, updatedDt = :uDt",
+        ExpressionAttributeNames={"#s": "status"},
         ExpressionAttributeValues={
-            ":s": 'INACTIVE',
-            ":uDt": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+            ":s": "INACTIVE",
+            ":uDt": datetime.utcnow().strftime(DEFAULT_TIME_FORMAT),
         },
     )
 
@@ -552,49 +386,44 @@ def eks_src_ingestion(**args):
 
 
 def create_stack_name(id, log_type):
-    # TODO: prefix might need to come from env
-    return "LogHub-AppIngestion-" + str(log_type) + "-" + id[:5]
+    return stack_prefix + "-AppIngestion-" + str(log_type) + "-" + id[:8]
 
 
-def exec_sfn_flow(id: str, action="START", args=None):
+def exec_sfn_flow(flow_id: str, action="START", args=None):
     """Helper function to execute a step function flow"""
     logger.info(f"Execute Step Function Flow: {state_machine_arn}")
 
     if args is None:
         args = {}
 
-    input = {
-        "id": id,
+    input_args = {
+        "id": flow_id,
         "action": action,
         "args": args,
     }
-    random_code = str(uuid.uuid4())[:5]
+    random_code = str(uuid.uuid4())[:8]
     sfn.start_execution(
-        name=f"{id}-{random_code}-{action}",
+        name=f"{flow_id}-{random_code}-{action}",
         stateMachineArn=state_machine_arn,
-        input=json.dumps(input),
+        input=json.dumps(input_args),
     )
 
 
 def separate_ingestion_ids_by_type(ids):
     """Helper function to separate the ingestion ids by source type"""
     ec2_ids = []
-    s3_ids = []
     eks_ids = []
     syslog_ids = []
     for ingestion_id in ids:
-        log_ingestion_resp = app_log_ingestion_table.get_item(
-            Key={"id": ingestion_id})
+        log_ingestion_resp = app_log_ingestion_table.get_item(Key={"id": ingestion_id})
         source_type = log_ingestion_resp["Item"].get("sourceType", "EC2")
         if source_type == SOURCETYPE.EC2.value or source_type == SOURCETYPE.ASG.value:
             ec2_ids.append(ingestion_id)
-        if source_type == SOURCETYPE.S3.value:
-            s3_ids.append(ingestion_id)
         if source_type == SOURCETYPE.EKS_CLUSTER.value:
             eks_ids.append(ingestion_id)
         if source_type == SOURCETYPE.SYSLOG.value:
             syslog_ids.append(ingestion_id)
-    return ec2_ids, s3_ids, eks_ids, syslog_ids
+    return ec2_ids, eks_ids, syslog_ids
 
 
 def process_async_lambda_resp(async_resp):

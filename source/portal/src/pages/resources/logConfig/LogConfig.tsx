@@ -262,7 +262,6 @@ const LogConfig: React.FC = () => {
                   loading={loadingDelete}
                   btnType="primary"
                   onClick={() => {
-                    // setOpenDeleteModel(false);
                     confimRemoveLogConfig();
                   }}
                 >

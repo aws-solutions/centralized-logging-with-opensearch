@@ -66,6 +66,8 @@ export interface CWtoFirehosetoS3Props {
   readonly logSourceAccountId: string;
   readonly logSourceRegion: string;
   readonly logSourceAccountAssumeRole: string;
+
+  readonly solutionId: string;
 }
 
 export class CWtoFirehosetoS3Stack extends Construct {
@@ -216,7 +218,8 @@ export class CWtoFirehosetoS3Stack extends Construct {
         ROLE_NAME: cwDestinationRole.roleName,
         ROLE_ARN: cwDestinationRole.roleArn,
         STACK_NAME: Aws.STACK_NAME,
-        VERSION: process.env.VERSION || "v1.0.0",
+        SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+        SOLUTION_ID: props.solutionId,
         LOG_SOURCE_ACCOUNT_ID: props.logSourceAccountId,
         LOG_SOURCE_REGION: props.logSourceRegion,
         LOG_SOURCE_ACCOUNT_ASSUME_ROLE: props.logSourceAccountAssumeRole,

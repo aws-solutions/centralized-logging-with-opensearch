@@ -31,17 +31,28 @@ const Lifecycle: React.FC<OverviewProps> = (props: OverviewProps) => {
         <div className="flex value-label-span">
           <div className="flex-1">
             <ValueWithLabel label={t("applog:detail.lifecycle.warmLog")}>
-              <div>{pipelineInfo?.aosParams?.warmLogTransition || "-"}</div>
+              <div>
+                {pipelineInfo?.aosParams?.warmLogTransition === "1s"
+                  ? t("servicelog:cluster.warmImmediately")
+                  : pipelineInfo?.aosParams?.warmLogTransition
+                  ? pipelineInfo?.aosParams?.warmLogTransition?.replace("d", "")
+                  : ""}
+              </div>
             </ValueWithLabel>
           </div>
           <div className="flex-1 border-left-c">
             <ValueWithLabel label={t("applog:detail.lifecycle.coldLog")}>
-              <div>{pipelineInfo?.aosParams?.coldLogTransition || "-"}</div>
+              <div>
+                {pipelineInfo?.aosParams?.coldLogTransition?.replace("d", "") ||
+                  "-"}
+              </div>
             </ValueWithLabel>
           </div>
           <div className="flex-1 border-left-c">
             <ValueWithLabel label={t("applog:detail.lifecycle.logRetention")}>
-              <div>{pipelineInfo?.aosParams?.logRetention || "-"}</div>
+              <div>
+                {pipelineInfo?.aosParams?.logRetention?.replace("d", "") || "-"}
+              </div>
             </ValueWithLabel>
           </div>
         </div>

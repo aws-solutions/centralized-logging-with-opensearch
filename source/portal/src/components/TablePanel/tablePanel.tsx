@@ -78,7 +78,6 @@ const TablePanel: React.FC<TablePanelProps> = (props: TablePanelProps) => {
   const [selectItemsIds, setSelectItemsIds] = useState<string[]>(
     defaultSelectItem?.map((element) => element.id) || []
   );
-  // const [selectItems, setSelectItems] = useState<any>([]);
   const [checkAllStatus, setCheckAllStatus] = useState(UNCHECKED);
 
   useEffect(() => {
@@ -293,5 +292,4 @@ TablePanel.defaultProps = {
   className: "",
 };
 
-// export default TablePanel;
 export { SelectType, TablePanel };

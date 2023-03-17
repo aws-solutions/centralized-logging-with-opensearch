@@ -1,1 +1,3 @@
-../../../CHANGELOG.md
+| Date         | Change           |
+|---------------|-------------------|
+| March 2023 | Initial release. |

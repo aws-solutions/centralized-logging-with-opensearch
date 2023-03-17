@@ -1,16 +1,16 @@
 # 访问代理
 
-默认情况下，无法从 Internet 访问 VPC 内的 AOS 域。 Log Hub 创建了一个高可用的 [Nginx cluster][nginx]，它允许您从 Internet 访问 OpenSearch Dashboards。或者，您可以选择[使用 SSH 隧道][ssh]访问 AOS 域。
+默认情况下，无法从 Internet 访问 VPC 内的 Amazon OpenSearch Service 域。日志通创建了一个高可用的 [Nginx cluster][nginx]，它允许您从 Internet 访问 OpenSearch Dashboards。或者，您可以选择[使用 SSH 隧道][ssh]访问 Amazon OpenSearch Service 域。
 
 本节介绍代理堆栈的架构以及以下内容：
 
 1. [创建代理](#_3)
 2. [创建关联的DNS记录](#dns)
-3. [通过代理访问AOS](#aos)
+3. [通过代理访问Amazon OpenSearch Service](#aos)
 4. [删除代理](#_4)
 
 ## 架构
-Log Hub 创建一个 [Auto Scaling Group (ASG)][asg] 和一个 [Application Load Balancer (ALB)][alb]。
+日志通创建一个 [Auto Scaling Group (ASG)][asg] 和一个 [Application Load Balancer (ALB)][alb]。
 
 ![代理堆栈架构](../../images/architecture/proxy.svg)
 
@@ -27,16 +27,16 @@ Log Hub 创建一个 [Auto Scaling Group (ASG)][asg] 和一个 [Application Load
 5. （可选步骤）如果代理的 VPC 与 OpenSearch 服务不同，则需要 VPC 对等互连。
 
 ## 创建代理
-您可以使用 Log Hub 控制台或通过部署独立的 CloudFormation 堆栈来创建基于 Nginx 的代理。
+您可以使用日志通控制台或通过部署独立的 CloudFormation 堆栈来创建基于 Nginx 的代理。
 
 **前提条件**
 
-- 确保 VPC 中的 AOS **域** 可用。
+- 确保 VPC 中的 Amazon OpenSearch Service **域** 可用。
 - 在 [Amazon Certificate Manager (ACM)][acm] 中创建或上传域关联的**SSL 证书**。
 - 确保您拥有 EC2 私钥 (.pem) 文件。
 
-### 使用 Log Hub 控制台
-1. 登录 Log Hub 控制台。
+### 使用日志通控制台
+1. 登录日志通控制台。
 2. 在导航窗格中的 **集群**，选择 **OpenSearch 域**。
 3. 从表中选择域。
 4. 在 **基本配置** 部分，在 **访问代理** 标签处选择 **开启**。
@@ -44,21 +44,21 @@ Log Hub 创建一个 [Auto Scaling Group (ASG)][asg] 和一个 [Application Load
     !!! note "注意"
          启用访问代理后，访问代理的链接将可用。
 
-6. 在**创建访问代理**页面的**公共访问代理**部分，为**公共子网**选择至少 2 个子网。您可以选择 2 个名为`LogHubVPC/DefaultVPC/publicSubnet`的公有子网，它们是由 Log Hub 默认创建的。
-7. 在**公共安全组**中选择 ALB 的安全组。您可以选择一个名为 `ProxySecurityGroup` 的安全组，该安全组由 Log Hub 默认创建。
+6. 在**创建访问代理**页面的**公共访问代理**部分，为**公共子网**选择至少 2 个子网。您可以选择 2 个名为`LogHubVPC/DefaultVPC/publicSubnet`的公有子网，它们是由日志通 默认创建的。
+7. 在**公共安全组**中选择 ALB 的安全组。您可以选择一个名为 `ProxySecurityGroup` 的安全组，该安全组由日志通 默认创建。
 8. 输入**域名**。
 9. 选择与域名关联的**Load Balancer SSL Certificate**。
 10. 选择**Nginx 实例密钥名称**。
 11. 选择**创建**。
 
 ### 使用 CloudFormation 堆栈
-此自动化 AWS CloudFormation 模板在 AWS 云中部署 *Log Hub - Nginx 访问代理* 解决方案。
+此自动化 AWS CloudFormation 模板在 AWS 云中部署 *日志通- Nginx 访问代理* 解决方案。
 
-1. 登录 AWS 管理控制台并选择按钮以启动 `nginx-for-opensearch` AWS CloudFormation 模板。
+1. 登录 AWS 管理控制台并选择按钮以启动 AWS CloudFormation 模板。
 
-    [![启动堆栈](../../images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/template?stackName=LogHub-NginxProxy&templateURL=https://{{ bucket }}.s3.amazonaws.com/log-hub/{{ version }}/NginxForOpenSearch.template){target=_blank}
+    [![启动堆栈](../../images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https://{{ bucket }}.s3.amazonaws.com/{{ solution }}/{{ version }}/NginxForOpenSearch.template){target=_blank}
 
-    您也可以[下载模板](https://{{ bucket }}.s3.amazonaws.com/log-hub/{{ version }}/NginxForOpenSearch.template) 开始部署。
+    您也可以[下载模板](https://{{ bucket }}.s3.amazonaws.com/{{ solution }}/{{ version }}/NginxForOpenSearch.template) 开始部署。
 
 2. 要在不同的 AWS 区域中启动堆栈，请使用控制台导航栏中的区域选择器。
 
@@ -66,7 +66,7 @@ Log Hub 创建一个 [Auto Scaling Group (ASG)][asg] 和一个 [Application Load
 
 4. 在 **指定堆栈详细信息** 页面上，为您的堆栈分配一个名称。
 
-5. 在 **参数** 部分，查看模板的参数并根据需要进行修改。
+5. 在 **参数** 部分，查看模板的参数并根据需要进行修改。此解决方案使用以下默认值。
 
     |参数 |默认 |说明 |
     | ---------- | ---------------- | -------------------------------------------------- ---------- |
@@ -92,22 +92,37 @@ Log Hub 创建一个 [Auto Scaling Group (ASG)][asg] 和一个 [Application Load
 
 您可以在 AWS CloudFormation 控制台的 **状态** 列中查看堆栈的状态。您应该会在大约 15 分钟内收到 **CREATE_COMPLETE** 状态。
 
+### 代理实例推荐机型选择
+
+下表列出了基于并行访问的用户数推荐的代理实例配置。您可以结合实际的应用场景进行具体的实例数量和机型的调整。
+
+| 并行访问的用户数 | 代理实例机型 | 代理实例数量 |
+    | ------| ---------------------------- | ------------ |
+    | 4     | t3.nano                      | 1            |
+    | 6     | t3.micro                     | 1            |
+    | 8     | t3.nano                      | 2            |
+    | 10    | t3.small                     | 1            |
+    | 12    | t3.micro                     | 2            |
+    | 20    | t3.small                     | 2            |
+    | 25    | t3.large                     | 1            |
+    | 50+    | t3.large                     | 2            |
+
 ## 创建关联的 DNS 记录
 配置代理基础架构后，您需要在 DNS 解析器中创建关联的 DNS 记录。 下面介绍如何找到 ALB 域，然后创建指向该域的 CNAME 记录。
 
-1. 登录 Log Hub 控制台。
+1. 登录日志通控制台。
 2. 在导航窗格中的 **集群** 下，选择 **OpenSearch 域**。
 3. 从表中选择域。
 4. 选择**访问代理**选项卡。您可以看到 **负载均衡域名**，即 ALB 域。
 5. 转到 DNS 解析器，创建指向该域的 CNAME 记录。如果您的域由 [Amazon Route 53][route53] 管理，请参阅[使用 Amazon Route 53 控制台创建记录][createrecords]。
 
-## 通过代理访问 AOS
-DNS 记录生效后，您可以通过代理从任何地方访问 AOS 内置仪表板。 您可以在浏览器中输入代理的域，或单击**常规配置**部分中**访问代理**下的**链接**按钮。
+## 通过代理访问 Amazon OpenSearch Service
+DNS 记录生效后，您可以通过代理从任何地方访问 Amazon OpenSearch Service 内置仪表板。 您可以在浏览器中输入代理的域，或单击**常规配置**部分中**访问代理**下的**链接**按钮。
 
 ![访问代理链接](../../images/access-proxy-link.png)
 
 ## 删除代理
-1. 登录 Log Hub 控制台。
+1. 登录日志通 控制台。
 2. 在导航窗格中的 **集群** 下，选择 **OpenSearch 域**。
 3. 从表中选择域。
 4. 选择**访问代理**选项卡。

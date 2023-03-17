@@ -21,10 +21,7 @@ import Alert from "components/Alert";
 import FormItem from "components/FormItem";
 import { appSyncRequestQuery } from "assets/js/request";
 import { LoggingBucket, ResourceType } from "API";
-import {
-  checkServiceExisting,
-  getResourceLoggingBucket,
-} from "graphql/queries";
+import { getResourceLoggingBucket } from "graphql/queries";
 import { InfoBarTypes } from "reducer/appReducer";
 import { useTranslation } from "react-i18next";
 import { ConfigTaskProps } from "../CreateConfig";
@@ -40,6 +37,7 @@ interface SpecifySettingsProps {
   configTask: ConfigTaskProps;
   configEmptyError: boolean;
   manualConfigEmptyError: boolean;
+  manualS3PathInvalid: boolean;
   changeTaskType: (type: string) => void;
   changeConfigName: (name: string) => void;
   changeManualBucketS3Path: (path: string) => void;
@@ -56,6 +54,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     configTask,
     configEmptyError,
     manualConfigEmptyError,
+    manualS3PathInvalid,
     changeTaskType,
     changeConfigName,
     changeManualBucketS3Path,
@@ -72,41 +71,16 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
   const [createMethod, setCreateMethod] = useState(configTask.params.taskType);
   const [previewConfigPath, setPreviewConfigPath] = useState("");
   const [disableConfig, setDisableConfig] = useState(false);
-  const [isEnabledIngestion, setIsEnabledIngestion] = useState(false);
-  const [loadingIsEnabled, setLoadingIsEnabled] = useState(false);
-
-  const checkConfigLogCreated = async () => {
-    try {
-      setLoadingIsEnabled(true);
-      const resData: any = await appSyncRequestQuery(checkServiceExisting, {
-        type: ResourceType.Config,
-        accountId: configTask.logSourceAccountId,
-      });
-      console.info("resData:resData:", resData);
-      if (resData.data.checkServiceExisting) {
-        setIsEnabledIngestion(true);
-        setNextStepDisableStatus(true);
-      } else {
-        setIsEnabledIngestion(false);
-        if (createMethod === CreateLogMethod.Automatic) {
-          getConfigBucketAndPrefix(configTask.logSourceAccountId);
-        }
-      }
-      setLoadingIsEnabled(false);
-    } catch (error) {
-      console.error(error);
-      setLoadingIsEnabled(false);
-    }
-  };
 
   const getConfigBucketAndPrefix = async (accountId: string) => {
     setIsLoading(true);
+    setNextStepDisableStatus(true);
+
     const resData: any = await appSyncRequestQuery(getResourceLoggingBucket, {
       type: ResourceType.Config,
       resourceName: "",
       accountId: accountId,
     });
-    console.info("getTrailBucketAndPrefix:", resData.data);
     const logginBucket: LoggingBucket = resData?.data?.getResourceLoggingBucket;
     if (logginBucket.enabled) {
       setShowSuccessText(true);
@@ -129,11 +103,13 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     setNextStepDisableStatus(false);
     setShowInfoText(false);
     setShowSuccessText(false);
+    if (createMethod === CreateLogMethod.Automatic) {
+      getConfigBucketAndPrefix(configTask.logSourceAccountId);
+    }
   }, [createMethod]);
 
   useEffect(() => {
-    setNextStepDisableStatus(false);
-    checkConfigLogCreated();
+    getConfigBucketAndPrefix(configTask.logSourceAccountId);
   }, [configTask.logSourceAccountId]);
 
   return (
@@ -177,106 +153,95 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                 accountId={configTask.logSourceAccountId}
                 changeAccount={(id) => {
                   changeCrossAccount(id);
-                  // changeLogBucketObj(null);
                 }}
                 loadingAccount={(loading) => {
                   setDisableConfig(loading);
                 }}
               />
 
-              {loadingIsEnabled ? (
+              {isLoading ? (
                 <LoadingText />
-              ) : isEnabledIngestion ? (
-                <Alert content={t("servicelog:config.alreadyEnabled")} />
               ) : (
                 <div>
-                  {isLoading ? (
-                    <LoadingText />
-                  ) : (
-                    <div>
-                      {showInfoText && (
-                        <Alert
-                          content={t("servicelog:config.needEnableLogging")}
-                          type={AlertType.Warning}
+                  {showInfoText && (
+                    <Alert
+                      content={t("servicelog:config.needEnableLogging")}
+                      type={AlertType.Error}
+                    />
+                  )}
+                  {configTask.params.taskType === CreateLogMethod.Automatic && (
+                    <div className="pb-50">
+                      <FormItem
+                        optionTitle={t("servicelog:config.configName")}
+                        optionDesc={t("servicelog:config.configNameDesc")}
+                        errorText={
+                          configEmptyError
+                            ? t("servicelog:config.configNameEmptyError")
+                            : ""
+                        }
+                        successText={
+                          showSuccessText && previewConfigPath
+                            ? t("servicelog:config.savedTips") +
+                              previewConfigPath
+                            : ""
+                        }
+                      >
+                        <TextInput
+                          disabled={disableConfig}
+                          className="m-w-75p"
+                          placeholder={t("servicelog:config.configName")}
+                          value={configTask.source}
+                          onChange={(event) => {
+                            changeConfigName(event.target.value);
+                          }}
                         />
-                      )}
-                      {configTask.params.taskType ===
-                        CreateLogMethod.Automatic && (
-                        <div className="pb-50">
-                          <FormItem
-                            optionTitle={t("servicelog:config.configName")}
-                            optionDesc={t("servicelog:config.configNameDesc")}
-                            errorText={
-                              configEmptyError
-                                ? t("servicelog:config.configNameEmptyError")
-                                : ""
-                            }
-                            successText={
-                              showSuccessText && previewConfigPath
-                                ? t("servicelog:config.savedTips") +
-                                  previewConfigPath
-                                : ""
-                            }
-                          >
-                            <TextInput
-                              disabled={disableConfig}
-                              className="m-w-75p"
-                              placeholder={t("servicelog:config.configName")}
-                              value={configTask.source}
-                              onChange={(event) => {
-                                changeConfigName(event.target.value);
-                              }}
-                            />
-                          </FormItem>
-                        </div>
-                      )}
-                      {configTask.params.taskType ===
-                        CreateLogMethod.Manual && (
-                        <div className="pb-50">
-                          <FormItem
-                            optionTitle={t("servicelog:config.configName")}
-                            optionDesc={t("servicelog:config.configNameDesc")}
-                            errorText={
-                              configEmptyError
-                                ? t("servicelog:config.configNameEmptyError")
-                                : ""
-                            }
-                          >
-                            <TextInput
-                              className="m-w-75p"
-                              placeholder={t("servicelog:config.configName")}
-                              value={configTask.source}
-                              onChange={(event) => {
-                                changeConfigName(event.target.value);
-                              }}
-                            />
-                          </FormItem>
-                          <FormItem
-                            optionTitle={t("servicelog:config.logLocation")}
-                            optionDesc={t("servicelog:config.logLocationDesc")}
-                            errorText={
-                              manualConfigEmptyError
-                                ? t("servicelog:config.logLocationError")
-                                : ""
-                            }
-                          >
-                            <TextInput
-                              className="m-w-75p"
-                              value={configTask.params.manualBucketS3Path}
-                              placeholder="s3://bucket/prefix"
-                              onChange={(event) => {
-                                const { bucket, prefix } =
-                                  splitStringToBucketAndPrefix(
-                                    event.target.value
-                                  );
-                                changeLogPrefix(prefix);
-                                changeLogBucket(bucket);
-                                changeManualBucketS3Path(event.target.value);
-                              }}
-                            />
-                          </FormItem>
-                        </div>
-                      )}
+                      </FormItem>
+                    </div>
+                  )}
+                  {configTask.params.taskType === CreateLogMethod.Manual && (
+                    <div className="pb-50">
+                      <FormItem
+                        optionTitle={t("servicelog:config.configName")}
+                        optionDesc={t("servicelog:config.configNameDesc")}
+                        errorText={
+                          configEmptyError
+                            ? t("servicelog:config.configNameEmptyError")
+                            : ""
+                        }
+                      >
+                        <TextInput
+                          className="m-w-75p"
+                          placeholder={t("servicelog:config.configName")}
+                          value={configTask.source}
+                          onChange={(event) => {
+                            changeConfigName(event.target.value);
+                          }}
+                        />
+                      </FormItem>
+                      <FormItem
+                        optionTitle={t("servicelog:config.logLocation")}
+                        optionDesc={t("servicelog:config.logLocationDesc")}
+                        errorText={
+                          manualConfigEmptyError
+                            ? t("servicelog:config.logLocationError")
+                            : manualS3PathInvalid
+                            ? t("servicelog:s3InvalidError")
+                            : ""
+                        }
+                      >
+                        <TextInput
+                          className="m-w-75p"
+                          value={configTask.params.manualBucketS3Path}
+                          placeholder="s3://bucket/prefix"
+                          onChange={(event) => {
+                            const { bucket, prefix } =
+                              splitStringToBucketAndPrefix(event.target.value);
+                            changeLogPrefix(prefix);
+                            changeLogBucket(bucket);
+                            changeManualBucketS3Path(event.target.value);
+                          }}
+                        />
+                      </FormItem>
                     </div>
                   )}
                 </div>

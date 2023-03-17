@@ -45,6 +45,9 @@ export interface AppPipelineStackProps {
   readonly graphqlApi: appsync.GraphqlApi;
   readonly appPipelineTable: ddb.Table;
   readonly centralAssumeRolePolicy: iam.ManagedPolicy;
+
+  readonly solutionId: string;
+  readonly stackPrefix: string;
 }
 export class AppPipelineStack extends Construct {
   //readonly appPipelineTable: ddb.Table;
@@ -52,15 +55,13 @@ export class AppPipelineStack extends Construct {
   constructor(scope: Construct, id: string, props: AppPipelineStackProps) {
     super(scope, id);
 
-    const solution_id = "SO8025";
-
     // Create a table to store logging appLogIngestion info
     this.appLogIngestionTable = new ddb.Table(this, "AppLogIngestionTable", {
       partitionKey: {
         name: "id",
         type: ddb.AttributeType.STRING,
       },
-      billingMode: ddb.BillingMode.PROVISIONED,
+      billingMode: ddb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: RemovalPolicy.DESTROY,
       encryption: ddb.TableEncryption.DEFAULT,
       pointInTimeRecovery: true,
@@ -102,10 +103,11 @@ export class AppPipelineStack extends Construct {
         STATE_MACHINE_ARN: pipeFlow.stateMachineArn,
         APPPIPELINE_TABLE: props.appPipelineTable.tableName,
         APPLOGINGESTION_TABLE: this.appLogIngestionTable.tableName,
-        SOLUTION_ID: solution_id,
-        SOLUTION_VERSION: process.env.VERSION ? process.env.VERSION : "v1.0.0",
+        SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+        SOLUTION_ID: props.solutionId,
+        STACK_PREFIX: props.stackPrefix,
       },
-      description: "Log Hub - AppPipeline APIs Resolver",
+      description: `${Aws.STACK_NAME} - AppPipeline APIs Resolver`,
     });
     props.centralAssumeRolePolicy.attachToRole(appPipelineHandler.role!);
 
@@ -146,10 +148,15 @@ export class AppPipelineStack extends Construct {
     );
 
     // Set resolver for releted appPipeline API methods
-    appPipeLambdaDS.createResolver({
+    appPipeLambdaDS.createResolver('listAppPipelines', {
       typeName: "Query",
       fieldName: "listAppPipelines",
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      requestMappingTemplate: appsync.MappingTemplate.fromFile(
+        path.join(
+          __dirname,
+          "../../graphql/vtl/app_log_pipeline/ListAppPipelines.vtl"
+        )
+      ),
       responseMappingTemplate: appsync.MappingTemplate.fromFile(
         path.join(
           __dirname,
@@ -158,7 +165,7 @@ export class AppPipelineStack extends Construct {
       ),
     });
 
-    appPipeLambdaDS.createResolver({
+    appPipeLambdaDS.createResolver('createAppPipeline', {
       typeName: "Mutation",
       fieldName: "createAppPipeline",
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
@@ -170,14 +177,14 @@ export class AppPipelineStack extends Construct {
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
-    appPipeLambdaDS.createResolver({
+    appPipeLambdaDS.createResolver('deleteAppPipeline', {
       typeName: "Mutation",
       fieldName: "deleteAppPipeline",
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
-    appPipeLambdaDS.createResolver({
+    appPipeLambdaDS.createResolver('getAppPipeline', {
       typeName: "Query",
       fieldName: "getAppPipeline",
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
@@ -189,59 +196,5 @@ export class AppPipelineStack extends Construct {
       ),
     });
 
-    // Create a lambda to handle upgrade appPipeline API.
-    const upgradeAppPipelineHandler = new lambda.Function(
-      this,
-      "upgradeAppPipelineHandler",
-      {
-        code: lambda.AssetCode.fromAsset(
-          path.join(__dirname, "../../lambda/api/app_pipeline"),
-          { followSymlinks: SymlinkFollowMode.ALWAYS }
-        ),
-        runtime: lambda.Runtime.PYTHON_3_9,
-        handler: "upgrade_lambda_function.lambda_handler",
-        timeout: Duration.seconds(60),
-        memorySize: 512,
-        environment: {
-          STATE_MACHINE_ARN: pipeFlow.stateMachineArn,
-          APPPIPELINE_TABLE: props.appPipelineTable.tableName,
-          APPLOGINGESTION_TABLE: this.appLogIngestionTable.tableName,
-          SOLUTION_ID: solution_id,
-          SOLUTION_VERSION: process.env.VERSION
-            ? process.env.VERSION
-            : "v1.0.0",
-        },
-        description:
-          "Log Hub - Use this API to upgrade application log pipeline to v1.1",
-      }
-    );
-
-    // Grant permissions to the upgradeAppPipeline lambda
-    props.appPipelineTable.grantReadWriteData(upgradeAppPipelineHandler);
-
-    // Add upgradeAppPipeline lambda as a Datasource
-    const upgradeAppPipelineLambdaDS = props.graphqlApi.addLambdaDataSource(
-      "UpgradeAppPipelineLambdaDS",
-      upgradeAppPipelineHandler,
-      {
-        description: "Lambda Resolver Datasource",
-      }
-    );
-
-    // Set resolver for releted appPipeline API methods
-    upgradeAppPipelineLambdaDS.createResolver({
-      typeName: "Mutation",
-      fieldName: "upgradeAppPipeline",
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
-    });
-    // Set Permission for Lambda
-    upgradeAppPipelineHandler.addToRolePolicy(
-      new iam.PolicyStatement({
-        effect: iam.Effect.ALLOW,
-        resources: ["*"],
-        actions: ["iam:CreateRole", "iam:PutRolePolicy"],
-      })
-    );
   }
 }

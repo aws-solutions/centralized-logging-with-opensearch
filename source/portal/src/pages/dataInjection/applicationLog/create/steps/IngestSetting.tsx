@@ -36,6 +36,7 @@ interface IngestSettingProps {
   changeS3BufferBufferSize: (size: string) => void;
   changeS3BufferTimeout: (timeout: string) => void;
   changeS3CompressionType: (type: string) => void;
+  changeS3StorageClass: (storage: string) => void;
   disableSelect?: boolean;
   indexEmptyError: boolean;
   indexFormatError: boolean;
@@ -63,6 +64,7 @@ const IngestSetting: React.FC<IngestSettingProps> = (
     changeS3BufferBufferSize,
     changeS3BufferTimeout,
     changeS3CompressionType,
+    changeS3StorageClass,
     indexEmptyError,
     indexFormatError,
     indexDuplicatedError,
@@ -149,6 +151,9 @@ const IngestSetting: React.FC<IngestSettingProps> = (
               }}
               changeS3CompressionType={(type) => {
                 changeS3CompressionType(type);
+              }}
+              changeS3StorageClass={(storage) => {
+                changeS3StorageClass(storage);
               }}
             />
           )}

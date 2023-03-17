@@ -3,30 +3,6 @@
         "groupName": "test-instance-group-name",
         "autoScalingGroupName": "test-asg-group-name"
     },
-    "identity": {
-        "claims": {
-            "origin_jti": "d008e388-a404-472e-acc4-9169d5b5ca5d",
-            "sub": "2a7ef9c9-e698-4efd-b695-167f3117bf9b",
-            "aud": "4od1ntt74k78q7vn86gipkus4n",
-            "event_id": "7127e784-c1f5-45fd-b230-5e5fa984fe15",
-            "token_use": "id",
-            "auth_time": 1668414731,
-            "iss": "https://saibxoaubxaljxnaosnxoainxanxlkasnxoaiibxobasouxbao",
-            "cognito:username": "2a7ef9c9-e698-4efd-b695-167f3117bf9b",
-            "exp": 1668418331,
-            "iat": 1668414731,
-            "jti": "44b0b4cc-5902-495c-8da4-74abc025267c",
-            "email": "amazon@amazon.com"
-        },
-        "defaultAuthStrategy": "ALLOW",
-        "groups": null,
-        "issuer": "https://asbxuasoxbaosnxaksnxapinxanxlkasnxoanioxnaosbxasx",
-        "sourceIp": [
-            "11.11.11.11"
-        ],
-        "sub": "2a7ef9c9-e698-4efd-b695-167f3117bf9b",
-        "username": "2a7ef9c9-e698-4efd-b695-167f3117bf9b"
-    },
     "source": null,
     "result": null,
     "request": {

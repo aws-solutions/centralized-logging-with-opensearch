@@ -19,7 +19,6 @@ import HeaderPanel from "components/HeaderPanel";
 import PagePanel from "components/PagePanel";
 import Tiles from "components/Tiles";
 import { CreateLogMethod } from "assets/js/const";
-// import ELBSelect from "components/ELBSelect";
 import FormItem from "components/FormItem";
 import { SelectItem } from "components/Select/select";
 import { appSyncRequestQuery } from "assets/js/request";
@@ -33,7 +32,6 @@ import { InfoBarTypes } from "reducer/appReducer";
 import { useTranslation } from "react-i18next";
 import AutoEnableLogging from "../../common/AutoEnableLogging";
 import CrossAccountSelect from "pages/comps/account/CrossAccountSelect";
-// import Select from "components/Select";
 
 interface SpecifySettingsProps {
   elbTask: ELBTaskProps;
@@ -44,6 +42,7 @@ interface SpecifySettingsProps {
   manualChangeBucket: (bucket: string) => void;
   autoELBEmptyError: boolean;
   manualELBEmptyError: boolean;
+  manualS3PathInvalid: boolean;
   setNextStepDisableStatus: (status: boolean) => void;
   setISChanging: (changing: boolean) => void;
   changeNeedEnableLogging: (need: boolean) => void;
@@ -62,20 +61,18 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     changeLogPath,
     autoELBEmptyError,
     manualELBEmptyError,
+    manualS3PathInvalid,
     setNextStepDisableStatus,
     changeNeedEnableLogging,
     setISChanging,
     changeCrossAccount,
   } = props;
   const { t } = useTranslation();
-  // const [elb, setELB] = useState(elbTask.params.elbObj);
-  // const [elbManualBucketName, setELBManualBucketName] = useState("");
 
   const [loadingELBList, setLoadingELBList] = useState(false);
   const [loadingBucket, setLoadingBucket] = useState(false);
   const [elbOptionList, setELBOptionList] = useState<SelectItem[]>([]);
 
-  // const [infoText, setInfoText] = useState("");
   const [showInfoText, setShowInfoText] = useState(false);
   const [showSuccessText, setShowSuccessText] = useState(false);
   const [previewS3Path, setPreviewS3Path] = useState("");
@@ -120,12 +117,10 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     if (logginBucket.enabled) {
       changeELBBucket(logginBucket.bucket || "");
       changeLogPath(logginBucket.prefix || "");
-      // changeNeedAutoCreateLogging(false);
       setShowSuccessText(true);
     } else {
       setShowInfoText(true);
       setShowSuccessText(false);
-      // changeNeedAutoCreateLogging(true);
     }
   };
 
@@ -278,6 +273,8 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                     errorText={
                       manualELBEmptyError
                         ? t("servicelog:elb.logLocationError")
+                        : manualS3PathInvalid
+                        ? t("servicelog:s3InvalidError")
                         : ""
                     }
                   >

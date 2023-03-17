@@ -66,12 +66,6 @@ def lambda_handler(event, context):
 
     if action == "createLogSource":
         return log_source_helper.create_log_source()
-    elif action == "deleteLogSource":
-        return log_source_helper.delete_log_source()
-    elif action == "listLogSources":
-        return log_source_helper.list_log_sources()
-    elif action == "updateLogSource":
-        return log_source_helper.update_log_source()
     elif action == "getLogSource":
         return log_source_helper.get_log_source()
     elif action == "checkCustomPort":

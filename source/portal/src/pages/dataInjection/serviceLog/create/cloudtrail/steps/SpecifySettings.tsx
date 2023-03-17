@@ -17,13 +17,12 @@ import React, { useState, useEffect } from "react";
 
 import HeaderPanel from "components/HeaderPanel";
 import PagePanel from "components/PagePanel";
-import Alert from "components/Alert";
 import AutoComplete from "components/AutoComplete";
 import FormItem from "components/FormItem";
 import { appSyncRequestQuery } from "assets/js/request";
-import { LoggingBucket, Resource, ResourceType } from "API";
+import { Resource, ResourceType } from "API";
 import { SelectItem } from "components/Select/select";
-import { getResourceLoggingBucket, listResources } from "graphql/queries";
+import { listResources } from "graphql/queries";
 import { OptionType } from "components/AutoComplete/autoComplete";
 import { CloudTrailTaskProps } from "../CreateCloudTrail";
 import ExtLink from "components/ExtLink";
@@ -33,16 +32,27 @@ import { useSelector } from "react-redux";
 import { AppStateProps } from "reducer/appReducer";
 import { useTranslation } from "react-i18next";
 import CrossAccountSelect from "pages/comps/account/CrossAccountSelect";
+import SourceType from "./comp/SourceType";
 
 interface SpecifySettingsProps {
   cloudTrailTask: CloudTrailTaskProps;
   changeCloudTrailObj: (trail: OptionType | null) => void;
-  // changeTrail: (trailName: string) => void;
   changeBucket: (bucket: string) => void;
   changeLogPath: (logPath: string) => void;
   trailEmptyError: boolean;
   setISChanging: (changing: boolean) => void;
   changeCrossAccount: (id: string) => void;
+  changeSourceType: (type: string) => void;
+  changeTmpFlowList: (list: SelectItem[]) => void;
+  changeS3SourceType: (type: string) => void;
+  changeSuccessTextType: (type: string) => void;
+  changeLogSource: (source: string) => void;
+  sourceTypeEmptyError?: boolean;
+  shardNumError: boolean;
+  maxShardNumError: boolean;
+  changeMinCapacity: (num: string) => void;
+  changeEnableAS: (enable: string) => void;
+  changeMaxCapacity: (num: string) => void;
 }
 
 const SpecifySettings: React.FC<SpecifySettingsProps> = (
@@ -56,6 +66,17 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     trailEmptyError,
     setISChanging,
     changeCrossAccount,
+    changeSourceType,
+    changeTmpFlowList,
+    changeS3SourceType,
+    changeSuccessTextType,
+    changeLogSource,
+    sourceTypeEmptyError,
+    shardNumError,
+    maxShardNumError,
+    changeMinCapacity,
+    changeEnableAS,
+    changeMaxCapacity,
   } = props;
   const { t } = useTranslation();
   const amplifyConfig: AmplifyConfigType = useSelector(
@@ -66,12 +87,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     SelectItem[]
   >([]);
   const [loadingCloudTrail, setLoadingCloudTrail] = useState(false);
-  const [loadingBucket, setloadingBucket] = useState(false);
   const [disableTrail, setDisableTrail] = useState(false);
-
-  // const [successText, setSuccessText] = useState("");
-  const [showSuccessText, setShowSuccessText] = useState(false);
-  const [previewS3Path, setPreviewS3Path] = useState("");
 
   const getCloudTrailList = async (accountId: string) => {
     try {
@@ -96,43 +112,6 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     }
   };
 
-  const getTrailBucketAndPrefix = async (trailName: string) => {
-    setloadingBucket(true);
-    setISChanging(true);
-    const resData: any = await appSyncRequestQuery(getResourceLoggingBucket, {
-      type: ResourceType.Trail,
-      resourceName: trailName,
-      accountId: cloudTrailTask.logSourceAccountId,
-      region: amplifyConfig.aws_project_region,
-    });
-    console.info("getTrailBucketAndPrefix:", resData.data);
-    const logginBucket: LoggingBucket = resData?.data?.getResourceLoggingBucket;
-    setloadingBucket(false);
-    setISChanging(false);
-    changeBucket(logginBucket.bucket || "");
-    changeLogPath(logginBucket.prefix || "");
-
-    setPreviewS3Path(`s3://${logginBucket.bucket}/${logginBucket.prefix}`);
-    if (logginBucket.enabled) {
-      setShowSuccessText(true);
-    } else {
-      setShowSuccessText(false);
-    }
-  };
-
-  useEffect(() => {
-    changeBucket("");
-    changeLogPath("");
-    setShowSuccessText(false);
-    if (
-      cloudTrailTask.params.curTrailObj &&
-      cloudTrailTask.params.curTrailObj.value
-    ) {
-      // changeTrail(cloudTrail.name);
-      getTrailBucketAndPrefix(cloudTrailTask.params.curTrailObj.value);
-    }
-  }, [cloudTrailTask.params.curTrailObj]);
-
   useEffect(() => {
     getCloudTrailList(cloudTrailTask.logSourceAccountId);
   }, [cloudTrailTask.logSourceAccountId]);
@@ -143,7 +122,6 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
         <div>
           <HeaderPanel title={t("servicelog:create.service.trail")}>
             <div>
-              <Alert content={t("servicelog:trail.alert")} />
               <div className="pb-50">
                 <CrossAccountSelect
                   accountId={cloudTrailTask.logSourceAccountId}
@@ -171,18 +149,13 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                   errorText={
                     trailEmptyError ? t("servicelog:trail.trailError") : ""
                   }
-                  successText={
-                    showSuccessText && previewS3Path
-                      ? t("servicelog:trail.savedTips") + previewS3Path
-                      : ""
-                  }
                 >
                   <AutoComplete
                     outerLoading
-                    disabled={loadingBucket || disableTrail}
+                    disabled={disableTrail}
                     className="m-w-75p"
                     placeholder={t("servicelog:trail.selectTrail")}
-                    loading={loadingCloudTrail || loadingBucket}
+                    loading={loadingCloudTrail}
                     optionList={cloudTrailOptionList}
                     value={cloudTrailTask.params.curTrailObj}
                     onChange={(
@@ -193,6 +166,47 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                     }}
                   />
                 </FormItem>
+
+                <SourceType
+                  cloudTrailTask={cloudTrailTask}
+                  sourceTypeEmptyError={sourceTypeEmptyError}
+                  shardNumError={shardNumError}
+                  maxShardNumError={maxShardNumError}
+                  changeSourceType={(type) => {
+                    changeSourceType(type);
+                  }}
+                  changeBucket={(bucket) => {
+                    changeBucket(bucket);
+                  }}
+                  changeLogPath={(path) => {
+                    changeLogPath(path);
+                  }}
+                  setISChanging={(changing) => {
+                    setISChanging(changing);
+                    setDisableTrail(changing);
+                  }}
+                  changeTmpFlowList={(list) => {
+                    changeTmpFlowList(list);
+                  }}
+                  changeS3SourceType={(type) => {
+                    changeS3SourceType(type);
+                  }}
+                  changeSuccessTextType={(type) => {
+                    changeSuccessTextType(type);
+                  }}
+                  changeLogSource={(source) => {
+                    changeLogSource(source);
+                  }}
+                  changeMinCapacity={(num) => {
+                    changeMinCapacity(num);
+                  }}
+                  changeEnableAS={(enable) => {
+                    changeEnableAS(enable);
+                  }}
+                  changeMaxCapacity={(num) => {
+                    changeMaxCapacity(num);
+                  }}
+                />
               </div>
             </div>
           </HeaderPanel>

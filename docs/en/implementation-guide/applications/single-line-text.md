@@ -1,7 +1,7 @@
 # Single-line Text
-Log Hub uses custom Ruby Regular Expression to parse logs. It supports both single-line log format and multiple input format.
+Centralized Logging with OpenSearch uses custom Ruby Regular Expression to parse logs. It supports both single-line log format and multiple input format.
 
-You can configure Log Hub to ingest single-line text logs.
+You can configure Centralized Logging with OpenSearch to ingest single-line text logs.
 
 ## Prerequisites
 {%
@@ -10,7 +10,7 @@ include-markdown "include-prerequisites.md"
 
 ## Step 1: Create a Single-line text config
 
-1. Sign in to the Log Hub Console.
+1. Sign in to the Centralized Logging with OpenSearch Console.
 2. In the left sidebar, under **Resources**, choose **Log Config**.
 3. Click the **Create a log config** button.
 4. Specify **Config Name**.
@@ -34,7 +34,7 @@ include-markdown "include-prerequisites.md"
 
         You must specify the datetime of the log using key “time”. If not specified, system time will be added.
 
-10. Specify the **Time format**. The format syntax follows [strptime](https://linux.die.net/man/3/strptime). Check [this](https://docs.fluentbit.io/manual/pipeline/parsers/configuring-parser#time-resolution-and-fractional-seconds) for details.
+10. Specify the **Time format**. The format syntax follows [strptime](https://linux.die.net/man/3/strptime). Check [this manual](https://docs.fluentbit.io/manual/pipeline/parsers/configuring-parser#time-resolution-and-fractional-seconds) for details.
 
 11. (Optional) In the **Filter** section, you add some conditions to filter logs at the log agent side. The solution will ingest logs that match ALL the specified conditions only.
 

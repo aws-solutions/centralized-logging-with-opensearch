@@ -15,18 +15,18 @@ limitations under the License.
 */
 import {
     Construct,
-  } from 'constructs';
-import { 
+} from 'constructs';
+import {
     Fn,
     aws_stepfunctions_tasks as tasks,
     aws_stepfunctions as sfn,
     aws_logs as logs,
     aws_iam as iam
- } from 'aws-cdk-lib';  
- import {
+} from 'aws-cdk-lib';
+import {
     Table,
     ITable
-  } from 'aws-cdk-lib/aws-dynamodb';
+} from 'aws-cdk-lib/aws-dynamodb';
 export interface ClusterFlowProps {
 
     /**
@@ -72,7 +72,7 @@ export class ClusterFlowStack extends Construct {
             },
             updateExpression: 'SET #status = :status, #sid = :sid, #url = :url, #error = :error',
         })
-    };
+    }
 
     private updateAlarmStatus(table: ITable, status: string, url: string) {
         return new tasks.DynamoUpdateItem(this, `Alarm ${status} Status`, {
@@ -92,7 +92,7 @@ export class ClusterFlowStack extends Construct {
             },
             updateExpression: 'SET #status = :status, #sid = :sid, #error = :error',
         })
-    };
+    }
 
     private createCfnTask(type: string, child: sfn.IStateMachine) {
         return new tasks.StepFunctionsStartExecution(this, `${type} Stack Flow`, {
@@ -104,7 +104,7 @@ export class ClusterFlowStack extends Construct {
             }),
             resultPath: '$.result',
         });
-    };
+    }
 
 
     constructor(scope: Construct, id: string, props: ClusterFlowProps) {
@@ -157,11 +157,11 @@ export class ClusterFlowStack extends Construct {
         });
 
         // Role for state machine
-        const LogHubAPIClusterFlowSMRole = new iam.Role(this, 'SMRole', {
+        const clusterFlowSMRole = new iam.Role(this, 'SMRole', {
             assumedBy: new iam.ServicePrincipal('states.amazonaws.com'),
         })
         // Least Privilage to enable logging for state machine
-        LogHubAPIClusterFlowSMRole.addToPolicy(
+        clusterFlowSMRole.addToPolicy(
             new iam.PolicyStatement({
                 actions: [
                     "logs:PutResourcePolicy",
@@ -183,12 +183,15 @@ export class ClusterFlowStack extends Construct {
 
         const clusterSM = new sfn.StateMachine(this, 'ClusterFlowSM', {
             definition: checkType,
-            role: LogHubAPIClusterFlowSMRole,
+            role: clusterFlowSMRole,
             logs: {
                 destination: logGroup,
                 level: sfn.LogLevel.ALL,
             },
         });
+
+        const cfnClusterSM = clusterSM.node.defaultChild as sfn.CfnStateMachine;
+        cfnClusterSM.overrideLogicalId('ClusterFlowSM')
 
         this.stateMachineArn = clusterSM.stateMachineArn
 

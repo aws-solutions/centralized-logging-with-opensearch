@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 import os
 import pytest
 
@@ -24,4 +27,6 @@ def default_environment_variables():
     os.environ["S3_LOG_SOURCE_TABLE_NAME"] = "mocked-s3-log-source-table-name"
     os.environ["LOG_SOURCE_TABLE_NAME"] = "mocked-log-source-table-name"
     os.environ["EKS_CLUSTER_SOURCE_TABLE_NAME"] = "mocked-eks-log-source-table-name"
-    os.environ["LOG_AGENT_EKS_DEPLOYMENT_KIND_TABLE"] = "mocked-log-agent-eks-deployment-kind-table"
+    os.environ[
+        "LOG_AGENT_EKS_DEPLOYMENT_KIND_TABLE"
+    ] = "mocked-log-agent-eks-deployment-kind-table"

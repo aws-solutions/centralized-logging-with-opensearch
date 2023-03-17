@@ -20,6 +20,7 @@ import SpecifySettings from "./steps/SpecifySettings";
 import SpecifyOpenSearchCluster, {
   AOSInputValidRes,
   checkOpenSearchInput,
+  covertParametersByKeyAndConditions,
 } from "../common/SpecifyCluster";
 import CreateTags from "../common/CreateTags";
 import Button from "components/Button";
@@ -27,19 +28,27 @@ import Button from "components/Button";
 import Breadcrumb from "components/Breadcrumb";
 import { appSyncRequestMutation } from "assets/js/request";
 import { createServicePipeline } from "graphql/mutations";
-import { ServiceType, Tag } from "API";
-import { SupportPlugin, YesNo } from "types";
+import { CODEC, DestinationType, EngineType, ServiceType, Tag } from "API";
+import {
+  SupportPlugin,
+  WarmTransitionType,
+  YesNo,
+  AmplifyConfigType,
+  SERVICE_LOG_INDEX_SUFFIX,
+} from "types";
 import { OptionType } from "components/AutoComplete/autoComplete";
 import { CreateLogMethod, ServiceLogType } from "assets/js/const";
 import HelpPanel from "components/HelpPanel";
 import SideMenu from "components/SideMenu";
-import { AmplifyConfigType } from "types";
 import { AppStateProps } from "reducer/appReducer";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Alert } from "assets/js/alert";
 import LogProcessing from "../common/LogProcessing";
-import { splitStringToBucketAndPrefix } from "assets/js/utils";
+import {
+  bucketNameIsValid,
+  splitStringToBucketAndPrefix,
+} from "assets/js/utils";
 
 const EXCLUDE_PARAMS = [
   "esDomainId",
@@ -52,6 +61,7 @@ const EXCLUDE_PARAMS = [
   "needCreateLogging",
   "geoPlugin",
   "userAgentPlugin",
+  "rolloverSizeNotSupport",
 ];
 export interface ELBTaskProps {
   type: ServiceType;
@@ -61,6 +71,7 @@ export interface ELBTaskProps {
   target: string;
   logSourceAccountId: string;
   logSourceRegion: string;
+  destinationType: string;
   params: {
     // [index: string]: string | any;
     needCreateLogging: boolean;
@@ -81,13 +92,23 @@ export interface ELBTaskProps {
     vpcId: string;
     subnetIds: string;
     securityGroupId: string;
-    daysToWarm: string;
-    daysToCold: string;
-    daysToRetain: string;
+
     geoPlugin: boolean;
     userAgentPlugin: boolean;
     shardNumbers: string;
     replicaNumbers: string;
+
+    enableRolloverByCapacity: boolean;
+    warmTransitionType: string;
+    warmAge: string;
+    coldAge: string;
+    retainAge: string;
+    rolloverSize: string;
+    indexSuffix: string;
+    codec: string;
+    refreshInterval: string;
+
+    rolloverSizeNotSupport: boolean;
   };
 }
 
@@ -99,6 +120,7 @@ const DEFAULT_TASK_VALUE: ELBTaskProps = {
   tags: [],
   logSourceAccountId: "",
   logSourceRegion: "",
+  destinationType: DestinationType.S3,
   params: {
     needCreateLogging: false,
     engineType: "",
@@ -118,13 +140,23 @@ const DEFAULT_TASK_VALUE: ELBTaskProps = {
     vpcId: "",
     subnetIds: "",
     securityGroupId: "",
-    daysToWarm: "0",
-    daysToCold: "0",
-    daysToRetain: "0",
+
     geoPlugin: false,
     userAgentPlugin: false,
-    shardNumbers: "5",
+    shardNumbers: "1",
     replicaNumbers: "1",
+
+    enableRolloverByCapacity: true,
+    warmTransitionType: WarmTransitionType.IMMEDIATELY,
+    warmAge: "0",
+    coldAge: "60",
+    retainAge: "180",
+    rolloverSize: "30",
+    indexSuffix: SERVICE_LOG_INDEX_SUFFIX.yyyy_MM_dd,
+    codec: CODEC.best_compression,
+    refreshInterval: "1s",
+
+    rolloverSizeNotSupport: false,
   },
 };
 
@@ -155,19 +187,23 @@ const CreateELB: React.FC = () => {
 
   const [autoELBEmptyError, setAutoELBEmptyError] = useState(false);
   const [manualELBEmpryError, setManualELBEmpryError] = useState(false);
+  const [manualS3PathInvalid, setManualS3PathInvalid] = useState(false);
   const [esDomainEmptyError, setEsDomainEmptyError] = useState(false);
 
   const [nextStepDisable, setNextStepDisable] = useState(false);
   const [elbISChanging, setELBISChanging] = useState(false);
   const [needEnableAccessLog, setNeedEnableAccessLog] = useState(false);
-  // const [needAutoCreateLogging, setNeedAutoCreateLogging] = useState(false);
-  // const [autoCreating, setAutoCreating] = useState(false);
   const [domainListIsLoading, setDomainListIsLoading] = useState(false);
   const [aosInputValidRes, setAosInputValidRes] = useState<AOSInputValidRes>({
     shardsInvalidError: false,
     warmLogInvalidError: false,
     coldLogInvalidError: false,
     logRetentionInvalidError: false,
+    coldMustLargeThanWarm: false,
+    logRetentionMustThanColdAndWarm: false,
+    capacityInvalidError: false,
+    indexEmptyError: false,
+    indexNameFormatError: false,
   });
 
   const confirmCreatePipeline = async () => {
@@ -180,17 +216,13 @@ const CreateELB: React.FC = () => {
     createPipelineParams.logSourceAccountId =
       elbPipelineTask.logSourceAccountId;
     createPipelineParams.logSourceRegion = amplifyConfig.aws_project_region;
+    createPipelineParams.destinationType = elbPipelineTask.destinationType;
 
-    const tmpParamList: any = [];
-    Object.keys(elbPipelineTask.params).forEach((key) => {
-      console.info("key");
-      if (EXCLUDE_PARAMS.indexOf(key) < 0) {
-        tmpParamList.push({
-          parameterKey: key,
-          parameterValue: (elbPipelineTask.params as any)?.[key] || "",
-        });
-      }
-    });
+    const tmpParamList: any = covertParametersByKeyAndConditions(
+      elbPipelineTask,
+      EXCLUDE_PARAMS
+    );
+
     // Add Plugin in parameters
     const pluginList = [];
     if (elbPipelineTask.params.geoPlugin) {
@@ -265,44 +297,6 @@ const CreateELB: React.FC = () => {
                     },
                   ]}
                   activeIndex={curStep}
-                  selectStep={(step: number) => {
-                    if (curStep === 0) {
-                      if (nextStepDisable || elbISChanging) {
-                        return;
-                      }
-                      if (needEnableAccessLog) {
-                        Alert(t("servicelog:elb.needEnableLogging"));
-                        return;
-                      }
-                      if (
-                        elbPipelineTask.params.taskType ===
-                        CreateLogMethod.Automatic
-                      ) {
-                        if (!elbPipelineTask.params.elbObj) {
-                          setAutoELBEmptyError(true);
-                          return;
-                        }
-                      }
-                      if (
-                        elbPipelineTask.params.taskType ===
-                        CreateLogMethod.Manual
-                      ) {
-                        if (!elbPipelineTask.params.logBucketName) {
-                          setManualELBEmpryError(true);
-                          return;
-                        }
-                      }
-                    }
-                    if (curStep === 2) {
-                      if (!elbPipelineTask.params.domainName) {
-                        setEsDomainEmptyError(true);
-                        return;
-                      } else {
-                        setEsDomainEmptyError(false);
-                      }
-                    }
-                    setCurStep(step);
-                  }}
                 />
               </div>
               <div className="create-content m-w-800">
@@ -313,6 +307,7 @@ const CreateELB: React.FC = () => {
                       setELBISChanging(status);
                     }}
                     manualELBEmptyError={manualELBEmpryError}
+                    manualS3PathInvalid={manualS3PathInvalid}
                     autoELBEmptyError={autoELBEmptyError}
                     changeNeedEnableLogging={(need: boolean) => {
                       setNeedEnableAccessLog(need);
@@ -326,6 +321,13 @@ const CreateELB: React.FC = () => {
                       });
                     }}
                     manualChangeBucket={(srcBucketName) => {
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          indexEmptyError: false,
+                          indexNameFormatError: false,
+                        };
+                      });
                       setELBPipelineTask((prev: ELBTaskProps) => {
                         return {
                           ...prev,
@@ -333,7 +335,7 @@ const CreateELB: React.FC = () => {
                           params: {
                             ...prev.params,
                             manualBucketName: srcBucketName,
-                            indexPrefix: srcBucketName,
+                            indexPrefix: srcBucketName.toLowerCase(),
                           },
                         };
                       });
@@ -352,6 +354,13 @@ const CreateELB: React.FC = () => {
                     }}
                     changeELBObj={(elbObj) => {
                       setAutoELBEmptyError(false);
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          indexEmptyError: false,
+                          indexNameFormatError: false,
+                        };
+                      });
                       setELBPipelineTask((prev: ELBTaskProps) => {
                         return {
                           ...prev,
@@ -359,7 +368,7 @@ const CreateELB: React.FC = () => {
                           arnId: elbObj?.value || "",
                           params: {
                             ...prev.params,
-                            indexPrefix: elbObj?.name || "",
+                            indexPrefix: elbObj?.name?.toLowerCase() || "",
                             elbObj: elbObj,
                           },
                         };
@@ -382,6 +391,7 @@ const CreateELB: React.FC = () => {
                         CreateLogMethod.Manual
                       ) {
                         setManualELBEmpryError(false);
+                        setManualS3PathInvalid(false);
                         const { bucket, prefix } =
                           splitStringToBucketAndPrefix(logPath);
                         setELBPipelineTask((prev: ELBTaskProps) => {
@@ -479,6 +489,13 @@ const CreateELB: React.FC = () => {
                       });
                     }}
                     changeBucketIndex={(indexPrefix) => {
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          indexEmptyError: false,
+                          indexNameFormatError: false,
+                        };
+                      });
                       setELBPipelineTask((prev: ELBTaskProps) => {
                         return {
                           ...prev,
@@ -490,7 +507,9 @@ const CreateELB: React.FC = () => {
                       });
                     }}
                     changeOpenSearchCluster={(cluster) => {
-                      console.info("cluster:", cluster);
+                      const NOT_SUPPORT_VERSION =
+                        cluster?.engine === EngineType.Elasticsearch ||
+                        parseFloat(cluster?.version || "") < 1.3;
                       setEsDomainEmptyError(false);
                       setELBPipelineTask((prev: ELBTaskProps) => {
                         return {
@@ -509,12 +528,14 @@ const CreateELB: React.FC = () => {
                             vpcId: cluster?.vpc?.vpcId || "",
                             warmEnable: cluster?.nodes?.warmEnabled || false,
                             coldEnable: cluster?.nodes?.coldEnabled || false,
+                            rolloverSizeNotSupport: NOT_SUPPORT_VERSION,
+                            enableRolloverByCapacity: !NOT_SUPPORT_VERSION,
+                            rolloverSize: NOT_SUPPORT_VERSION ? "" : "30",
                           },
                         };
                       });
                     }}
                     changeSampleDashboard={(yesNo) => {
-                      // setPiplineBucketPrefix(prefix);
                       setELBPipelineTask((prev: ELBTaskProps) => {
                         return {
                           ...prev,
@@ -537,7 +558,7 @@ const CreateELB: React.FC = () => {
                           ...prev,
                           params: {
                             ...prev.params,
-                            daysToWarm: value,
+                            warmAge: value,
                           },
                         };
                       });
@@ -547,6 +568,7 @@ const CreateELB: React.FC = () => {
                         return {
                           ...prev,
                           coldLogInvalidError: false,
+                          coldMustLargeThanWarm: false,
                         };
                       });
                       setELBPipelineTask((prev: ELBTaskProps) => {
@@ -554,7 +576,7 @@ const CreateELB: React.FC = () => {
                           ...prev,
                           params: {
                             ...prev.params,
-                            daysToCold: value,
+                            coldAge: value,
                           },
                         };
                       });
@@ -564,6 +586,7 @@ const CreateELB: React.FC = () => {
                         return {
                           ...prev,
                           logRetentionInvalidError: false,
+                          logRetentionMustThanColdAndWarm: false,
                         };
                       });
                       setELBPipelineTask((prev: ELBTaskProps) => {
@@ -571,7 +594,80 @@ const CreateELB: React.FC = () => {
                           ...prev,
                           params: {
                             ...prev.params,
-                            daysToRetain: value,
+                            retainAge: value,
+                          },
+                        };
+                      });
+                    }}
+                    changeIndexSuffix={(suffix: string) => {
+                      setELBPipelineTask((prev: ELBTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            indexSuffix: suffix,
+                          },
+                        };
+                      });
+                    }}
+                    changeEnableRollover={(enable: boolean) => {
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          capacityInvalidError: false,
+                        };
+                      });
+                      setELBPipelineTask((prev: ELBTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            enableRolloverByCapacity: enable,
+                          },
+                        };
+                      });
+                    }}
+                    changeRolloverSize={(size: string) => {
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          capacityInvalidError: false,
+                        };
+                      });
+                      setELBPipelineTask((prev: ELBTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            rolloverSize: size,
+                          },
+                        };
+                      });
+                    }}
+                    changeCompressionType={(codec: string) => {
+                      setELBPipelineTask((prev: ELBTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            codec: codec,
+                          },
+                        };
+                      });
+                    }}
+                    changeWarmSettings={(type: string) => {
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          coldMustLargeThanWarm: false,
+                        };
+                      });
+                      setELBPipelineTask((prev: ELBTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            warmTransitionType: type,
                           },
                         };
                       });
@@ -640,6 +736,17 @@ const CreateELB: React.FC = () => {
                           ) {
                             if (!elbPipelineTask.params.logBucketName) {
                               setManualELBEmpryError(true);
+                              return;
+                            }
+                            if (
+                              !elbPipelineTask.params.manualBucketELBPath
+                                .toLowerCase()
+                                .startsWith("s3") ||
+                              !bucketNameIsValid(
+                                elbPipelineTask.params.logBucketName
+                              )
+                            ) {
+                              setManualS3PathInvalid(true);
                               return;
                             }
                           }

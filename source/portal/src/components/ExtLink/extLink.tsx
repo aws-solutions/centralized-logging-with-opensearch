@@ -29,7 +29,6 @@ const INTERNAL_LINK_LIST = [
 
 const extLink: React.FC<ExtLinkProps> = (props: ExtLinkProps) => {
   const { to, children } = props;
-  // console.info("to:", to);
   if (to.startsWith("http") || INTERNAL_LINK_LIST.indexOf(to) >= 0) {
     return (
       <a target="_blank" className="gsui-extlink" href={to} rel="noreferrer">

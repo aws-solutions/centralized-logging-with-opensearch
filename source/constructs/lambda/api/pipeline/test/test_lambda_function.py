@@ -17,15 +17,10 @@ def create_event():
             "type": "WAF",
             "source": "test-acl",
             "target": "dev",
+            "destinationType": "KDS",
             "parameters": [
-                {
-                    "parameterKey": "hello",
-                    "parameterValue": "world"
-                },
-                {
-                    "parameterKey": "domainName",
-                    "parameterValue": "loghub-os"
-                },
+                {"parameterKey": "hello", "parameterValue": "world"},
+                {"parameterKey": "domainName", "parameterValue": "loghub-os"},
             ],
             "tags": [],
         }
@@ -51,16 +46,6 @@ def delete_event():
         event = json.load(f)
         event["arguments"] = {"id": "30ab5726-68fc-4204-8d00-c34d2f2b906c"}
         event["info"]["fieldName"] = "deleteServicePipeline"
-        print(event)
-        return event
-
-
-@pytest.fixture
-def check_service_existing_event():
-    with open("./test/event/test_event.json", "r") as f:
-        event = json.load(f)
-        event["arguments"] = {"type": "WAF", "accountId": "1343424234"}
-        event["info"]["fieldName"] = "checkServiceExisting"
         print(event)
         return event
 
@@ -107,34 +92,16 @@ def ddb_client():
         ddb = boto3.resource("dynamodb", region_name=region)
         ddb.create_table(
             TableName=ddb_name,
-            KeySchema=[{
-                "AttributeName": "id",
-                "KeyType": "HASH"
-            }],
-            AttributeDefinitions=[{
-                "AttributeName": "id",
-                "AttributeType": "S"
-            }],
-            ProvisionedThroughput={
-                "ReadCapacityUnits": 5,
-                "WriteCapacityUnits": 5
-            },
+            KeySchema=[{"AttributeName": "id", "KeyType": "HASH"}],
+            AttributeDefinitions=[{"AttributeName": "id", "AttributeType": "S"}],
+            ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
         )
         # Mock the Sub account link table
         ddb.create_table(
             TableName=os.environ.get("SUB_ACCOUNT_LINK_TABLE_NAME"),
-            KeySchema=[{
-                "AttributeName": "id",
-                "KeyType": "HASH"
-            }],
-            AttributeDefinitions=[{
-                "AttributeName": "id",
-                "AttributeType": "S"
-            }],
-            ProvisionedThroughput={
-                "ReadCapacityUnits": 5,
-                "WriteCapacityUnits": 5
-            },
+            KeySchema=[{"AttributeName": "id", "KeyType": "HASH"}],
+            AttributeDefinitions=[{"AttributeName": "id", "AttributeType": "S"}],
+            ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
         )
 
         yield
@@ -155,9 +122,15 @@ def aos_client():
         yield
 
 
-def test_lambda_function(sfn_client, ddb_client, sts_client, aos_client, create_event,
-                         list_event, check_service_existing_event,
-                         delete_event):
+def test_lambda_function(
+    sfn_client,
+    ddb_client,
+    sts_client,
+    aos_client,
+    create_event,
+    list_event,
+    delete_event,
+):
     import lambda_function
 
     # start with empty list
@@ -176,10 +149,6 @@ def test_lambda_function(sfn_client, ddb_client, sts_client, aos_client, create_
     assert len(pipelines) == 1
     assert "source" in pipelines[0]
     assert "target" in pipelines[0]
-
-    # list again
-    result = lambda_function.lambda_handler(check_service_existing_event, None)
-    assert result == False
 
     # delete an non-existing one
     with pytest.raises(lambda_function.APIException):

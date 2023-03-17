@@ -61,7 +61,7 @@ const StepChooseSource: React.FC<IngestSettingProps> = (
       );
       console.info("resAccountData:", resAccountData);
       const dataLogAccountList: SubAccountLink[] =
-        resAccountData.data.listSubAccountLinks.subAccountLinks;
+        resAccountData.data.listSubAccountLinks?.subAccountLinks || [];
 
       dataLogAccountList.forEach((element) => {
         if (element.subAccountId) {

@@ -15,8 +15,6 @@ limitations under the License.
 */
 /* eslint-disable react/display-name */
 import React from "react";
-// import Swal from "sweetalert2";
-// import RefreshIcon from "@material-ui/icons/Refresh";
 import PagePanel from "components/PagePanel";
 import HeaderPanel from "components/HeaderPanel";
 import FormItem from "components/FormItem";
@@ -46,8 +44,6 @@ interface InstanceGroupCompProps {
   changeASG: (asg: OptionType | null) => void;
   hideAccountSetting?: boolean;
 }
-
-// const PAGE_SIZE = 50;
 
 const InstanceGroupComp: React.FC<InstanceGroupCompProps> = (
   props: InstanceGroupCompProps

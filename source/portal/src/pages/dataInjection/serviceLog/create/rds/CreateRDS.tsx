@@ -20,6 +20,7 @@ import SpecifySettings from "./steps/SpecifySettings";
 import SpecifyOpenSearchCluster, {
   AOSInputValidRes,
   checkOpenSearchInput,
+  covertParametersByKeyAndConditions,
 } from "../common/SpecifyCluster";
 import CreateTags from "../common/CreateTags";
 import Button from "components/Button";
@@ -27,8 +28,13 @@ import Button from "components/Button";
 import Breadcrumb from "components/Breadcrumb";
 import { appSyncRequestMutation } from "assets/js/request";
 import { createServicePipeline } from "graphql/mutations";
-import { ServiceType, Tag } from "API";
-import { YesNo } from "types";
+import { CODEC, DestinationType, EngineType, ServiceType, Tag } from "API";
+import {
+  WarmTransitionType,
+  YesNo,
+  AmplifyConfigType,
+  SERVICE_LOG_INDEX_SUFFIX,
+} from "types";
 import { OptionType } from "components/AutoComplete/autoComplete";
 import {
   CreateLogMethod,
@@ -40,7 +46,6 @@ import {
 } from "assets/js/const";
 import HelpPanel from "components/HelpPanel";
 import SideMenu from "components/SideMenu";
-import { AmplifyConfigType } from "types";
 import { AppStateProps } from "reducer/appReducer";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -64,6 +69,7 @@ const EXCLUDE_PARAMS = [
   "queryLogARN",
   "generalLogARN",
   "auditLogARN",
+  "rolloverSizeNotSupport",
 ];
 export interface RDSTaskProps {
   type: ServiceType;
@@ -72,6 +78,7 @@ export interface RDSTaskProps {
   target: string;
   logSourceAccountId: string;
   logSourceRegion: string;
+  destinationType: string;
   params: {
     // [index: string]: string | any;
     engineType: string;
@@ -100,13 +107,23 @@ export interface RDSTaskProps {
     vpcId: string;
     subnetIds: string;
     securityGroupId: string;
-    daysToWarm: string;
-    daysToCold: string;
-    daysToRetain: string;
+
     logBucketName: string;
     logBucketPrefix: string;
     shardNumbers: string;
     replicaNumbers: string;
+
+    enableRolloverByCapacity: boolean;
+    warmTransitionType: string;
+    warmAge: string;
+    coldAge: string;
+    retainAge: string;
+    rolloverSize: string;
+    indexSuffix: string;
+    codec: string;
+    refreshInterval: string;
+
+    rolloverSizeNotSupport: boolean;
   };
 }
 
@@ -117,6 +134,7 @@ const DEFAULT_TASK_VALUE: RDSTaskProps = {
   tags: [],
   logSourceAccountId: "",
   logSourceRegion: "",
+  destinationType: DestinationType.CloudWatch,
   params: {
     engineType: "",
     warmEnable: false,
@@ -144,13 +162,23 @@ const DEFAULT_TASK_VALUE: RDSTaskProps = {
     vpcId: "",
     subnetIds: "",
     securityGroupId: "",
-    daysToWarm: "0",
-    daysToCold: "0",
-    daysToRetain: "0",
+
     logBucketName: "",
     logBucketPrefix: "",
-    shardNumbers: "5",
+    shardNumbers: "1",
     replicaNumbers: "1",
+
+    enableRolloverByCapacity: true,
+    warmTransitionType: WarmTransitionType.IMMEDIATELY,
+    warmAge: "0",
+    coldAge: "60",
+    retainAge: "180",
+    rolloverSize: "30",
+    indexSuffix: SERVICE_LOG_INDEX_SUFFIX.yyyy_MM_dd,
+    codec: CODEC.best_compression,
+    refreshInterval: "1s",
+
+    rolloverSizeNotSupport: false,
   },
 };
 
@@ -192,6 +220,11 @@ const CreateRDS: React.FC = () => {
     warmLogInvalidError: false,
     coldLogInvalidError: false,
     logRetentionInvalidError: false,
+    coldMustLargeThanWarm: false,
+    logRetentionMustThanColdAndWarm: false,
+    capacityInvalidError: false,
+    indexEmptyError: false,
+    indexNameFormatError: false,
   });
 
   const confirmCreatePipeline = async () => {
@@ -204,17 +237,12 @@ const CreateRDS: React.FC = () => {
     createPipelineParams.logSourceAccountId =
       rdsPipelineTask.logSourceAccountId;
     createPipelineParams.logSourceRegion = amplifyConfig.aws_project_region;
+    createPipelineParams.destinationType = rdsPipelineTask.destinationType;
 
-    const tmpParamList: any = [];
-    Object.keys(rdsPipelineTask.params).forEach((key) => {
-      console.info("key");
-      if (EXCLUDE_PARAMS.indexOf(key) < 0) {
-        tmpParamList.push({
-          parameterKey: key,
-          parameterValue: (rdsPipelineTask.params as any)?.[key] || "",
-        });
-      }
-    });
+    const tmpParamList: any = covertParametersByKeyAndConditions(
+      rdsPipelineTask,
+      EXCLUDE_PARAMS
+    );
 
     // Automatic Task
     const tmpLogGroupNameArr: string[] = [];
@@ -379,6 +407,13 @@ const CreateRDS: React.FC = () => {
                     manualChangeDBIdentifier={(dbIdentifier) => {
                       setAutoRDSEmptyError(false);
                       setManualRDSEmpryError(false);
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          indexEmptyError: false,
+                          indexNameFormatError: false,
+                        };
+                      });
                       setRDSPipelineTask((prev: RDSTaskProps) => {
                         return {
                           ...prev,
@@ -386,7 +421,7 @@ const CreateRDS: React.FC = () => {
                           params: {
                             ...prev.params,
                             manualDBIdentifier: dbIdentifier,
-                            indexPrefix: dbIdentifier,
+                            indexPrefix: dbIdentifier.toLowerCase(),
                           },
                         };
                       });
@@ -463,13 +498,20 @@ const CreateRDS: React.FC = () => {
                     changeRDSObj={(rdsObj) => {
                       console.info("rdsObj:", rdsObj);
                       setAutoRDSEmptyError(false);
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          indexEmptyError: false,
+                          indexNameFormatError: false,
+                        };
+                      });
                       setRDSPipelineTask((prev: RDSTaskProps) => {
                         return {
                           ...prev,
                           source: rdsObj?.name || "",
                           params: {
                             ...prev.params,
-                            indexPrefix: rdsObj?.value || "",
+                            indexPrefix: rdsObj?.value?.toLowerCase() || "",
                             rdsObj: rdsObj,
                             autoLogGroupPrefix: rdsObj?.description || "",
                             // Reset Select
@@ -542,10 +584,16 @@ const CreateRDS: React.FC = () => {
                       });
                     }}
                     changeS3Bucket={(bucketName) => {
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          indexEmptyError: false,
+                          indexNameFormatError: false,
+                        };
+                      });
                       setRDSPipelineTask((prev: RDSTaskProps) => {
                         return {
                           ...prev,
-                          source: bucketName,
                           params: {
                             ...prev.params,
                             logBucket: bucketName,
@@ -597,7 +645,13 @@ const CreateRDS: React.FC = () => {
                       });
                     }}
                     changeBucketIndex={(indexPrefix) => {
-                      // setPiplineBucketPrefix(prefix);
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          indexEmptyError: false,
+                          indexNameFormatError: false,
+                        };
+                      });
                       setRDSPipelineTask((prev: RDSTaskProps) => {
                         return {
                           ...prev,
@@ -609,7 +663,9 @@ const CreateRDS: React.FC = () => {
                       });
                     }}
                     changeOpenSearchCluster={(cluster) => {
-                      console.info("cluster:", cluster);
+                      const NOT_SUPPORT_VERSION =
+                        cluster?.engine === EngineType.Elasticsearch ||
+                        parseFloat(cluster?.version || "") < 1.3;
                       setEsDomainEmptyError(false);
                       setRDSPipelineTask((prev: RDSTaskProps) => {
                         return {
@@ -628,12 +684,14 @@ const CreateRDS: React.FC = () => {
                             vpcId: cluster?.vpc?.vpcId || "",
                             warmEnable: cluster?.nodes?.warmEnabled || false,
                             coldEnable: cluster?.nodes?.coldEnabled || false,
+                            rolloverSizeNotSupport: NOT_SUPPORT_VERSION,
+                            enableRolloverByCapacity: !NOT_SUPPORT_VERSION,
+                            rolloverSize: NOT_SUPPORT_VERSION ? "" : "30",
                           },
                         };
                       });
                     }}
                     changeSampleDashboard={(yesNo) => {
-                      // setPiplineBucketPrefix(prefix);
                       setRDSPipelineTask((prev: RDSTaskProps) => {
                         return {
                           ...prev,
@@ -656,7 +714,7 @@ const CreateRDS: React.FC = () => {
                           ...prev,
                           params: {
                             ...prev.params,
-                            daysToWarm: value,
+                            warmAge: value,
                           },
                         };
                       });
@@ -666,6 +724,7 @@ const CreateRDS: React.FC = () => {
                         return {
                           ...prev,
                           coldLogInvalidError: false,
+                          coldMustLargeThanWarm: false,
                         };
                       });
                       setRDSPipelineTask((prev: RDSTaskProps) => {
@@ -673,7 +732,7 @@ const CreateRDS: React.FC = () => {
                           ...prev,
                           params: {
                             ...prev.params,
-                            daysToCold: value,
+                            coldAge: value,
                           },
                         };
                       });
@@ -683,6 +742,7 @@ const CreateRDS: React.FC = () => {
                         return {
                           ...prev,
                           logRetentionInvalidError: false,
+                          logRetentionMustThanColdAndWarm: false,
                         };
                       });
                       setRDSPipelineTask((prev: RDSTaskProps) => {
@@ -690,7 +750,80 @@ const CreateRDS: React.FC = () => {
                           ...prev,
                           params: {
                             ...prev.params,
-                            daysToRetain: value,
+                            retainAge: value,
+                          },
+                        };
+                      });
+                    }}
+                    changeIndexSuffix={(suffix: string) => {
+                      setRDSPipelineTask((prev: RDSTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            indexSuffix: suffix,
+                          },
+                        };
+                      });
+                    }}
+                    changeEnableRollover={(enable: boolean) => {
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          capacityInvalidError: false,
+                        };
+                      });
+                      setRDSPipelineTask((prev: RDSTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            enableRolloverByCapacity: enable,
+                          },
+                        };
+                      });
+                    }}
+                    changeRolloverSize={(size: string) => {
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          capacityInvalidError: false,
+                        };
+                      });
+                      setRDSPipelineTask((prev: RDSTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            rolloverSize: size,
+                          },
+                        };
+                      });
+                    }}
+                    changeCompressionType={(codec: string) => {
+                      setRDSPipelineTask((prev: RDSTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            codec: codec,
+                          },
+                        };
+                      });
+                    }}
+                    changeWarmSettings={(type: string) => {
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          coldMustLargeThanWarm: false,
+                        };
+                      });
+                      setRDSPipelineTask((prev: RDSTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            warmTransitionType: type,
                           },
                         };
                       });

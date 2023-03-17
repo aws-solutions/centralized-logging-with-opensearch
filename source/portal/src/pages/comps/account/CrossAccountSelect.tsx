@@ -52,7 +52,7 @@ const CrossAccountSelect: React.FC<CrossAccountSelectProps> = (
       });
       console.info("resData:", resData);
       const dataLogAccountList: SubAccountLink[] =
-        resData.data.listSubAccountLinks.subAccountLinks;
+        resData.data.listSubAccountLinks?.subAccountLinks || [];
       setSubAccountList(dataLogAccountList);
       const tmpList: OptionType[] = [
         {

@@ -16,7 +16,6 @@ limitations under the License.
 import React from "react";
 import CheckCircleOutlineIcon from "@material-ui/icons/CheckCircleOutline";
 import HighlightOffIcon from "@material-ui/icons/HighlightOff";
-// import NotInterestedIcon from "@material-ui/icons/NotInterested";
 import AccessTimeIcon from "@material-ui/icons/AccessTime";
 import ErrorOutlineIcon from "@material-ui/icons/ErrorOutline";
 import RemoveCircleOutlineIcon from "@material-ui/icons/RemoveCircleOutline";
@@ -43,7 +42,6 @@ interface StatusProps {
 }
 
 const Status: React.FC<StatusProps> = (props: StatusProps) => {
-  // console.info("props:", props);
   const { status } = props;
   const { t } = useTranslation();
   return (

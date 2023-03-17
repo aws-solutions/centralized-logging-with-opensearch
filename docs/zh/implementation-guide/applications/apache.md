@@ -1,5 +1,5 @@
 # Apache HTTP 服务器日志
-Apache HTTP Server (httpd) 能够将 [错误和访问日志] [apache-http-logs] 文件写入本地目录。 您可以配置 Log Hub 从而摄取 Apache HTTP 服务器日志。
+Apache HTTP Server (httpd) 能够将 [错误和访问日志] [apache-http-logs] 文件写入本地目录。 您可以配置日志通摄取 Apache HTTP 服务器日志。
 
 ## 前提条件
 {%
@@ -8,7 +8,7 @@ include-markdown "include-prerequisites.md"
 
 ## 步骤 1: 创建一个 Apache HTTP 服务器日志配置
 
-1. 登录 Log Hub 控制台。
+1. 登录日志通控制台。
 2. 在左侧边栏中的 **资源** 下，选择 **日志配置**。
 3. 单击**创建日志配置**按钮。
 4. 指定**配置名称**。
@@ -40,7 +40,7 @@ include-markdown "include-prerequisites.md"
 %}
 
 ## 步骤 3: 查看 Apache HTTP 服务器日志仪表板
-对于 Apache HTTP 服务器日志，Log Hub 将创建一个内置的示例仪表板。
+对于 Apache HTTP 服务器日志，日志通将创建一个内置的示例仪表板。
 
 1. 在浏览器中打开 OpenSearch 仪表板。
 2. 转到左侧边栏中的**仪表板**部分。

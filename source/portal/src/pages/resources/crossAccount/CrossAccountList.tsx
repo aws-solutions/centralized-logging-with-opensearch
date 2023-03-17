@@ -66,7 +66,7 @@ const CrossAccountList: React.FC = () => {
       console.info("resData:", resData);
       const dataLogAccountList: SubAccountLink[] =
         resData.data.listSubAccountLinks.subAccountLinks;
-      setTotoalCount(resData.data.listSubAccountLinks.total);
+      setTotoalCount(resData.data.listSubAccountLinks?.total || 0);
       setCrossAccountList(dataLogAccountList);
       setLoadingData(false);
     } catch (error) {

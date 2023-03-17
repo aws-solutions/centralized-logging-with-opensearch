@@ -148,7 +148,7 @@ def ddb_client():
             ProvisionedThroughput={"ReadCapacityUnits": 10, "WriteCapacityUnits": 10},
         )
         data_list = [
-            ddb_mock_data.s3_source_pipeline_data,
+            ddb_mock_data.base_source_pipeline_data,
             ddb_mock_data.ec2_source_pipeline_data,
         ]
         with app_pipeline_table.batch_writer() as batch:

@@ -3,7 +3,7 @@
 """
 App Pipeline Table
 """
-s3_source_pipeline_data = {
+base_source_pipeline_data = {
     "id": "ab740668-fba3-4d86-879d-e9a5a446d69f",
     "aosParas": {
         "coldLogTransition": 0,
@@ -47,7 +47,64 @@ s3_source_pipeline_data = {
     "status": "ACTIVE",
     "tags": [],
 }
-#"id": "039a1176-33c4-4ec7-8ea2-3245ae27b4b1",
+
+syslog_source_pipeline_data = {
+    "id": "04c263a5-67d0-449d-b094-b85674b524f2",
+    "aosParams": {
+        "codec": "best_compression",
+        "coldLogTransition": "",
+        "domainName": "loghub-aos-comp",
+        "engine": "OpenSearch",
+        "failedLogBucket": "loghub-latest-loghubloggingbucket0fa53b76-vy9h0jn9r6t4",
+        "indexPrefix": "syslog-ut-01",
+        "indexSuffix": "yyyy-MM-dd",
+        "logRetention": "3d",
+        "opensearchArn": "arn:aws:es:us-east-1:123456789012:domain/loghub-aos-comp",
+        "opensearchEndpoint": "vpc-loghub-aos-comp-hphbroajo2om57yxvywp3qfheq.us-east-1.es.amazonaws.com",
+        "refreshInterval": "1s",
+        "replicaNumbers": 1,
+        "rolloverSize": "30gb",
+        "shardNumbers": 1,
+        "vpc": {
+            "privateSubnetIds": "subnet-01ab488417a01415f,subnet-0ac95d70c21979205",
+            "publicSubnetIds": "",
+            "securityGroupId": "sg-02aaa033432e14fb6",
+            "vpcId": "vpc-052b56b457aceda8f"
+        },
+        "warmLogTransition": ""
+    },
+    "bufferAccessRoleArn": "arn:aws:iam::123456789012:role/CL-AppPipe-04c26-BufferAccessRoleDF53FD85-1E6S75E216KKV",
+    "bufferAccessRoleName": "CL-AppPipe-04c26-BufferAccessRoleDF53FD85-1E6S75E216KKV",
+    "bufferParams": [
+        {
+            "paramKey": "enableAutoScaling",
+            "paramValue": "false"
+        },
+        {
+            "paramKey": "shardCount",
+            "paramValue": "1"
+        },
+        {
+            "paramKey": "minCapacity",
+            "paramValue": "1"
+        },
+        {
+            "paramKey": "maxCapacity",
+            "paramValue": "1"
+        }
+    ],
+    "bufferResourceArn": "arn:aws:kinesis:us-east-1:123456789012:stream/CL-AppPipe-04c26-KDSBufferStream21B531A6-VgKRW8MpJ6YK",
+    "bufferResourceName": "CL-AppPipe-04c26-KDSBufferStream21B531A6-VgKRW8MpJ6YK",
+    "bufferType": "KDS",
+    "createdDt": "2023-01-30T02:56:52Z",
+    "error": "",
+    "osHelperFnArn": "arn:aws:lambda:us-east-1:123456789012:function:CL-AppPipe-04c26-OpenSearchHelperFn-VAG8cFZLm8cW",
+    "stackId": "arn:aws:cloudformation:us-east-1:123456789012:stack/CL-AppPipe-04c26/c07ba9a0-a049-11ed-ad64-0e63c5baaaf1",
+    "status": "ACTIVE",
+    "tags": [
+    ]
+}
+
 ec2_source_pipeline_data = {
     "id": "d27b96a9-7b78-4fe1-94e6-3e42f57f4339",
     "aosParas": {
@@ -95,6 +152,36 @@ ec2_source_pipeline_data = {
 """
 App Log Source Table
 """
+syslog_source_data_1 = {
+    "id": "2dba77ec-ec81-42f8-a57c-3501e3778fc9",
+    "accountId": "",
+    "createdDt": "2023-01-30T03:05:59Z",
+    "region": "",
+    "sourceInfo": [
+        {
+            "key": "syslogProtocol",
+            "value": "UDP"
+        },
+        {
+            "key": "syslogPort",
+            "value": "10009"
+        },
+        {
+            "key": "syslogNlbArn",
+            "value": "arn:aws:elasticloadbalancing:us-east-1:123456789012:loadbalancer/net/Logging-syslog-nlb/693a5b65a057ecc8"
+        },
+        {
+            "key": "syslogNlbDNSName",
+            "value": "Logging-syslog-nlb-693a5b65a057ecc8.elb.us-east-1.amazonaws.com"
+        }
+    ],
+    "sourceType": "Syslog",
+    "status": "ACTIVE",
+    "tags": [
+    ],
+    "updatedDt": "2023-01-30T03:06:11Z"
+}
+
 s3_source_data_1 = {
     "id": "9681daea-1095-44b5-8e11-40fa935f3aea",
     "archiveFormat": "json",
@@ -118,6 +205,7 @@ s3_source_data_2 = {
     "status": "ACTIVE",
     "tags": [],
 }
+
 """
 App Log Configuration Table
 """
@@ -203,6 +291,54 @@ regex_config_1 = {
     "ACTIVE",
     "userLogFormat":
     'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
+}
+
+syslog_custom_config_1 = {
+    "id": "839e4882-52db-498b-90be-315a384be571",
+    "confName": "syslog-config-01",
+    "createdDt": "2023-01-30T02:58:36Z",
+    "logType": "Syslog",
+    "multilineLogParser": None,
+    "processorFilterRegex": {
+        "enable": False,
+        "filters": [
+        ]
+    },
+    "regularExpression": "<(?<pri>[0-9]{1,5})>1 (?<time>[^\\s]+) (?<msgid>([^\\s]+)|-) (?<appname>([^\\s]+)|-) (?<procid>([-0-9]+)|-) (?<msg>.+)",
+    "regularSpecs": [
+        {
+            "key": "pri",
+            "type": "text"
+        },
+        {
+            "format": "%Y-%m-%dT%H:%M:%S.%6N%z",
+            "key": "time",
+            "type": "date"
+        },
+        {
+            "key": "msgid",
+            "type": "text"
+        },
+        {
+            "key": "appname",
+            "type": "text"
+        },
+        {
+            "key": "procid",
+            "type": "text"
+        },
+        {
+            "key": "msg",
+            "type": "text"
+        }
+    ],
+    "status": "ACTIVE",
+    "syslogParser": "CUSTOM",
+    "timeKey": "time",
+    "timeOffset": None,
+    "timeRegularExpression": "",
+    "userLogFormat": "<%pri%>1 %timestamp:::date-rfc3339% %msgid% %app-name% %procid% %msg%\\n",
+    "userSampleLog": "<13>1 2022-10-11T15:37:45.436708+00:00 - ec2-user - -t ScriptName Hello World from ec2-3"
 }
 """
 App Log Ingestion Table
@@ -320,30 +456,30 @@ instance_group_2 = {
 }
 
 sqs_event_table_data = {
-  "id": {
-    "S": "8ee7adc9-addf-477c-9723-4bba519bf02a"
-  },
-  "action": {
-    "S": "asyncAddInstancesToInstanceGroup"
-  },
-  "createdDt": {
-    "S": "2022-11-11T07:49:44Z"
-  },
-  "groupId": {
-    "S": "967489e4-c090-47b6-856b-192f9d96c14e"
-  },
-  "instanceSet": {
-    "SS": [
-      "i-0e0464d25bf022b05"
-    ]
-  },
-  "region": {
-    "S": "us-west-1"
-  },
-  "status": {
-    "S": "DONE"
-  },
-  "updatedDt": {
-    "S": "2022-11-11T07:49:44Z"
-  }
+    "id": {
+        "S": "8ee7adc9-addf-477c-9723-4bba519bf02a"
+    },
+    "action": {
+        "S": "asyncAddInstancesToInstanceGroup"
+    },
+    "createdDt": {
+        "S": "2022-11-11T07:49:44Z"
+    },
+    "groupId": {
+        "S": "967489e4-c090-47b6-856b-192f9d96c14e"
+    },
+    "instanceSet": {
+        "SS": [
+            "i-0e0464d25bf022b05"
+        ]
+    },
+    "region": {
+        "S": "us-west-1"
+    },
+    "status": {
+        "S": "DONE"
+    },
+    "updatedDt": {
+        "S": "2022-11-11T07:49:44Z"
+    }
 }

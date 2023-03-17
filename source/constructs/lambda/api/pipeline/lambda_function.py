@@ -16,6 +16,7 @@ from aws_svc_mgr import SvcManager
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+stack_prefix = os.environ.get("STACK_PREFIX", "CL")
 solution_version = os.environ.get("SOLUTION_VERSION", "v1.0.0")
 solution_id = os.environ.get("SOLUTION_ID", "SO8025")
 user_agent_config = {
@@ -30,12 +31,8 @@ table_name = os.environ.get("PIPELINE_TABLE")
 stateMachineArn = os.environ.get("STATE_MACHINE_ARN")
 default_region = os.environ.get("AWS_REGION")
 
-dynamodb = boto3.resource("dynamodb",
-                          region_name=default_region,
-                          config=default_config)
-sfn = boto3.client("stepfunctions",
-                   region_name=default_region,
-                   config=default_config)
+dynamodb = boto3.resource("dynamodb", region_name=default_region, config=default_config)
+sfn = boto3.client("stepfunctions", region_name=default_region, config=default_config)
 
 pipeline_table = dynamodb.Table(table_name)
 
@@ -52,13 +49,14 @@ def handle_error(func):
         except Exception as e:
             logger.error(e)
             raise RuntimeError(
-                "Unknown exception, please check Lambda log for more details")
+                "Unknown exception, please check Lambda log for more details"
+            )
 
     return wrapper
 
 
 @handle_error
-def lambda_handler(event, context):
+def lambda_handler(event, _):
     # logger.info("Received event: " + json.dumps(event, indent=2))
 
     action = event["info"]["fieldName"]
@@ -70,8 +68,6 @@ def lambda_handler(event, context):
         return delete_service_pipeline(**args)
     elif action == "listServicePipelines":
         return list_pipelines(**args)
-    elif action == "checkServiceExisting":
-        return check_service_existing(**args)
     else:
         logger.info("Event received: " + json.dumps(event, indent=2))
         raise RuntimeError(f"Unknown action {action}")
@@ -81,47 +77,65 @@ def create_service_pipeline(**args):
     """Create a service pipeline deployment"""
     logger.info("Create Service Pipeline")
 
-    id = str(uuid.uuid4())
+    pipeline_id = str(uuid.uuid4())
 
-    stack_name = create_stack_name(id)
+    stack_name = create_stack_name(pipeline_id)
     service_type = args["type"]
     source = args["source"]
     target = args["target"]
-
-    pattern = service_type
+    destination_type = args["destinationType"]
 
     params = []
-    args["parameters"].append({
-        "parameterKey":
-        "logSourceAccountId",
-        "parameterValue":
-        args.get("logSourceAccountId") or account_id,
-    })
-    args["parameters"].append({
-        "parameterKey":
-        "logSourceRegion",
-        "parameterValue":
-        args.get("logSourceRegion") or default_region,
-    })
+    args["parameters"].append(
+        {
+            "parameterKey": "logSourceAccountId",
+            "parameterValue": args.get("logSourceAccountId") or account_id,
+        }
+    )
 
-    svcMgr = SvcManager()
-    link_acct = svcMgr.get_link_account(sub_account_id=args.get(
-        "logSourceAccountId", account_id),
-                                        region=args.get("logSourceRegion")
-                                        or default_region)
+    if destination_type != "KDS":
+        args["parameters"].append(
+            {
+                "parameterKey": "logSourceRegion",
+                "parameterValue": args.get("logSourceRegion") or default_region,
+            }
+        )
+    else:
+        args["parameters"].append(
+            {
+                "parameterKey": "cloudFrontDistributionId",
+                "parameterValue": source,
+            }
+        )
+
+    svc_mgr = SvcManager()
+    link_acct = svc_mgr.get_link_account(
+        sub_account_id=args.get("logSourceAccountId", account_id),
+        region=args.get("logSourceRegion") or default_region,
+    )
     log_source_account_assume_role = ""
     if link_acct:
         log_source_account_assume_role = link_acct["subAccountRoleArn"]
-    args["parameters"].append({
-        "parameterKey": "logSourceAccountAssumeRole",
-        "parameterValue": log_source_account_assume_role,
-    })
+    args["parameters"].append(
+        {
+            "parameterKey": "logSourceAccountAssumeRole",
+            "parameterValue": log_source_account_assume_role,
+        }
+    )
 
+    enable_autoscaling = "no"
     for p in args["parameters"]:
-        params.append({
-            "ParameterKey": p["parameterKey"],
-            "ParameterValue": p["parameterValue"],
-        })
+        if p["parameterKey"] == "enableAutoScaling":
+            enable_autoscaling = p["parameterValue"]
+            continue
+        params.append(
+            {
+                "ParameterKey": p["parameterKey"],
+                "ParameterValue": p["parameterValue"],
+            }
+        )
+
+    pattern = _get_pattern_by_buffer(service_type, destination_type, enable_autoscaling)
 
     sfn_args = {
         "stackName": stack_name,
@@ -138,38 +152,42 @@ def create_service_pipeline(**args):
     check_aos_status(domain_name)
 
     # Start the pipeline flow
-    exec_sfn_flow(id, "START", sfn_args)
+    exec_sfn_flow(pipeline_id, "START", sfn_args)
 
-    # start_exec_arn = response['executionArn']
     pipeline_table.put_item(
         Item={
-            "id": id,
+            "id": pipeline_id,
             "type": service_type,
             "source": source,
             "target": target,
+            "destinationType": destination_type,
             "parameters": args["parameters"],
             "tags": args.get("tags", []),
             "createdDt": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
             "stackName": stack_name,
             # 'startExecutionArn': start_exec_arn,
             "status": "CREATING",
-        })
-    return id
+        }
+    )
+    return pipeline_id
 
 
 def delete_service_pipeline(id: str) -> str:
     """delete a service pipeline deployment"""
     logger.info("Delete Service Pipeline")
 
-    resp = pipeline_table.get_item(Key={
-        "id": id,
-    })
+    resp = pipeline_table.get_item(
+        Key={
+            "id": id,
+        }
+    )
     if "Item" not in resp:
         raise APIException("Pipeline Not Found")
 
-    status = "INACTIVE"
+    if resp["Item"].get("status") in ["INACTIVE", "DELETING"]:
+        raise APIException("No pipeline to delete")
 
-    # stack_id = resp["Item"]["stackId"]
+    status = "INACTIVE"
 
     if "stackId" in resp["Item"] and resp["Item"]["stackId"]:
         status = "DELETING"
@@ -201,7 +219,7 @@ def exec_sfn_flow(id: str, action="START", args=None):
     if args is None:
         args = {}
 
-    input = {
+    input_args = {
         "id": id,
         "action": action,
         "args": args,
@@ -210,17 +228,15 @@ def exec_sfn_flow(id: str, action="START", args=None):
     sfn.start_execution(
         name=f"{id}-{action}",
         stateMachineArn=stateMachineArn,
-        input=json.dumps(input),
+        input=json.dumps(input_args),
     )
 
 
 def list_pipelines(page=1, count=20):
-    logger.info(
-        f"List Pipelines from DynamoDB in page {page} with {count} of records")
+    logger.info(f"List Pipelines from DynamoDB in page {page} with {count} of records")
     response = pipeline_table.scan(
         FilterExpression=Attr("status").ne("INACTIVE"),
-        ProjectionExpression=
-        "id, createdDt, #type, #source,#parameters,target, #status",
+        ProjectionExpression="id, createdDt, #type, #source,#parameters,target, #status",
         ExpressionAttributeNames={
             "#status": "status",
             "#source": "source",
@@ -230,7 +246,6 @@ def list_pipelines(page=1, count=20):
     )
 
     # Assume all items are returned in the scan request
-    # TODO: might need use LastEvaluatedKey to continue scanning
     items = response["Items"]
     # logger.info(items)
 
@@ -248,66 +263,15 @@ def list_pipelines(page=1, count=20):
     }
 
 
-def check_service_existing(type: str,
-                           accountId=account_id,
-                           region=default_region) -> bool:
-    """Verify that Config already exists in the pipeline
-
-    Args:
-        type (string): the service type.
-        accountId (string, optional): the account id of log source. Defaults to account_id.
-        region (string, optional): the region of log source. Defaults to current region.
-
-    Returns:
-        bool: True means existing
-    """
-    if not accountId:
-        accountId = account_id
-    if not region:
-        region = default_region
-    conditions = Attr("status").ne("INACTIVE")
-    conditions = conditions.__and__(Attr('type').eq(type))
-
-    response = pipeline_table.scan(
-        FilterExpression=conditions,
-        ProjectionExpression="id, createdDt, #type, #parameters, #status",
-        ExpressionAttributeNames={
-            "#status": "status",
-            "#parameters": "parameters",
-            "#type": "type",
-        },
-    )
-    items = response["Items"]
-    total = len(items)
-
-    if total > 0:
-        acct_match = False
-        region_match = False
-        for item in items:
-            #Compatible with old data judgment identifier, parameterKey in 1.0.X does not have logSourceAccountId
-            for p in item["parameters"]:
-                if p["parameterKey"] == "logSourceAccountId" and p[
-                        "parameterValue"] == accountId:
-                    acct_match = True
-                if p["parameterKey"] == "logSourceRegion" and p[
-                        "parameterValue"] == region:
-                    region_match = True
-            if acct_match and region_match:
-                return True
-
-    return False
-
-
 def create_stack_name(id):
-    # TODO: prefix might need to come from env
-    return "LogHub-Pipe-" + id[:5]
+    return stack_prefix + "-Pipe-" + id[:8]
 
 
 def check_aos_status(aos_domain_name):
     """
-        Helper function to check the aos status before create pipeline or ingestion.
-        During the Upgrade and Pre-upgrade process, users can not create index template
-        and create backend role.
+    Helper function to check the aos status before create pipeline or ingestion.
+    During the Upgrade and Pre-upgrade process, users can not create index template
+    and create backend role.
     """
     region = default_region
 
@@ -315,24 +279,41 @@ def check_aos_status(aos_domain_name):
 
     # Get the domain status.
     try:
-        describe_resp = es.describe_elasticsearch_domain(
-            DomainName=aos_domain_name)
-        logger.info(
-            json.dumps(describe_resp["DomainStatus"], indent=4, default=str))
+        describe_resp = es.describe_elasticsearch_domain(DomainName=aos_domain_name)
+        logger.info(json.dumps(describe_resp["DomainStatus"], indent=4, default=str))
     except ClientError as err:
         if err.response["Error"]["Code"] == "ResourceNotFoundException":
             raise APIException("OpenSearch Domain Not Found")
         raise err
 
     # Check domain status.
-    if (not (describe_resp["DomainStatus"]["Created"])
-            or describe_resp["DomainStatus"]["Processing"]):
+    if (
+        not (describe_resp["DomainStatus"]["Created"])
+        or describe_resp["DomainStatus"]["Processing"]
+    ):
         raise APIException(
             "OpenSearch is in the process of creating, upgrading or pre-upgrading,"
-            " please wait for it to be ready")
+            " please wait for it to be ready"
+        )
+
+
+def _get_pattern_by_buffer(service_type, destination_type, enable_autoscaling="no"):
+    if service_type == "CloudFront" and destination_type == "KDS":
+        if enable_autoscaling.lower() != "no":
+            return "CloudFrontRealtimeLogKDSBuffer"
+        else:
+            return "CloudFrontRealtimeLogKDSBufferNoAutoScaling"
+    if (
+        service_type == "CloudTrail" or service_type == "VPC"
+    ) and destination_type == "CloudWatch":
+        if enable_autoscaling.lower() != "no":
+            return "CloudWatchLogKDSBuffer"
+        else:
+            return "CloudWatchLogKDSBufferNoAutoScaling"
+    else:
+        return service_type
 
 
 class APIException(Exception):
-
     def __init__(self, message):
         self.message = message

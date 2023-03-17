@@ -1,6 +1,6 @@
 # JSON format logs
 
-You can configure Log Hub to ingest JSON logs.
+You can configure Centralized Logging with OpenSearch to ingest JSON logs.
 
 ## Prerequisites
 {%
@@ -9,7 +9,7 @@ include-markdown "include-prerequisites.md"
 
 ## Step 1: Create a JSON config
 
-1. Sign in to the Log Hub Console.
+1. Sign in to the Centralized Logging with OpenSearch Console.
 2. In the left sidebar, under **Resources**, choose **Log Config**.
 3. Click the **Create a log config** button.
 4. Specify **Config Name**.

@@ -55,12 +55,9 @@ const BootstrapInput = withStyles((theme) => ({
     border: "1px solid #aab7b8",
     fontSize: 14,
     padding: "6px 10px 6px 10px",
-    // transition: theme.transitions.create(["border-color", "box-shadow"]),
-    // Use the system font instead of the default Roboto font.
     "&:focus": {
       borderRadius: 2,
       borderColor: "#aab7b8",
-      // boxShadow: "0 0 0 0.2rem rgba(0,123,255,.25)",
     },
   },
 }))(InputBase);
@@ -101,7 +98,6 @@ const GSSelect: React.FC<SelectProps> = (props: SelectProps) => {
     allowEmpty,
   } = props;
   const { t } = useTranslation();
-  // console.info("optionList:", optionList);
   return (
     <div className={`flex gsui-select-wrap ${className}`}>
       <div className="flex-1">

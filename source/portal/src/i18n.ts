@@ -52,7 +52,7 @@ i18n
     backend: {
       loadPath:
         "/locales/{{lng}}/{{ns}}.json?v=" +
-        process.env.REACT_APP_LOGHUB_VERSION,
+        process.env.REACT_APP_SOLUTION_VERSION,
     },
   });
 

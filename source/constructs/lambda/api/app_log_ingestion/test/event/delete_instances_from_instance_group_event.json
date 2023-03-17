@@ -13,7 +13,7 @@
             "messageAttributes": {},
             "md5OfBody": "a784e31a0245a9c4eb46da85b602b937",
             "eventSource": "aws:sqs",
-            "eventSourceARN": "arn:aws:sqs:us-west-1:650618379932:LogHub-LogHubAPIInstanceGroupModificationQueue33525CFB-OwGtUeAPadSy",
+            "eventSourceARN": "arn:aws:sqs:us-west-1:123456789012:LogHub-LogHubAPIInstanceGroupModificationQueue33525CFB-OwGtUeAPadSy",
             "awsRegion": "us-west-1"
         }
     ]

@@ -5,7 +5,7 @@
     #Lambda will use Path_key to get file name
     Path_Key file_name
     Tag  LOGHUB_CONFIG_TAG
-    Read_from_head true
+    Read_from_head false
     #use this as checkpoint
     DB   LOGHUB_CHECKPOINT
     DB.locking    True

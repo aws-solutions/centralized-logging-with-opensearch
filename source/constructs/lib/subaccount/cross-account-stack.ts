@@ -18,6 +18,7 @@ import {
   Aws,
   CfnResource,
   Stack,
+  StackProps,
   CfnMapping,
   CfnOutput,
   CfnCondition,
@@ -50,6 +51,12 @@ export function addCfnNagSuppressRules(
   });
 }
 
+export interface CrossAccountProps extends StackProps {
+  solutionName?: string;
+  solutionDesc?: string;
+  solutionId?: string;
+}
+
 export class CrossAccount extends Stack {
   private addToParamLabels(label: string, param: string) {
     this.paramLabels[param] = {
@@ -60,12 +67,18 @@ export class CrossAccount extends Stack {
   private paramGroups: any[] = [];
   private paramLabels: any = {};
 
-  constructor(scope: Construct, id: string) {
+  constructor(scope: Construct, id: string, props: CrossAccountProps) {
     super(scope, id);
 
-    const solutionName = "LogHub";
+    let solutionName = props.solutionName || "CentralizedLoggingWithOpenSearch";
+    let solutionDesc =
+      props.solutionDesc || "Centralized Logging with OpenSearch";
+    let solutionId = props.solutionId || "SO8025";
 
-    this.templateOptions.description = `(SO8025-sub) - Log Hub - Sub Account Template - Version ${VERSION}`;
+    const stackPrefix = "CL";
+    const oldSolutionName = "LogHub";
+
+    this.templateOptions.description = `(${solutionId}-sub) - ${solutionDesc} - Sub Account Template - Version ${VERSION}`;
 
     this.templateOptions.metadata = {
       "AWS::CloudFormation::Interface": {
@@ -75,23 +88,37 @@ export class CrossAccount extends Stack {
     };
 
     const parentAccountId = new CfnParameter(this, "parentAccountId", {
-      description: "The Account ID of account where Log Hub is deployed.",
+      description: `The Account ID of account where ${solutionDesc} is deployed.`,
       type: "String",
       allowedPattern: "^\\d{12}$",
-      constraintDescription: "Log Hub Parent Account Id must be 12 digits",
+      constraintDescription: "Parent Account Id must be 12 digits",
     });
     this.addToParamLabels(
-      "Log Hub Parent Account Id",
+      "Parent Account Id",
       parentAccountId.logicalId
     );
 
     // Create a default logging bucket
-    const loggingBucket = new s3.Bucket(this, `${solutionName}LoggingBucket`, {
-      encryption: s3.BucketEncryption.S3_MANAGED,
-      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-      accessControl: s3.BucketAccessControl.LOG_DELIVERY_WRITE,
-      objectOwnership: s3.ObjectOwnership.BUCKET_OWNER_PREFERRED,
-    });
+    const loggingBucket = new s3.Bucket(
+      this,
+      `${oldSolutionName}LoggingBucket`,
+      {
+        encryption: s3.BucketEncryption.S3_MANAGED,
+        blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+        accessControl: s3.BucketAccessControl.LOG_DELIVERY_WRITE,
+        objectOwnership: s3.ObjectOwnership.BUCKET_OWNER_PREFERRED,
+        lifecycleRules: [
+          {
+            transitions: [
+              {
+                storageClass: s3.StorageClass.INTELLIGENT_TIERING,
+                transitionAfter: Duration.days(0),
+              },
+            ],
+          },
+        ],
+      }
+    );
     const elbRootAccountArnTable = new CfnMapping(
       this,
       "ELBRootAccountArnTable",
@@ -255,7 +282,7 @@ export class CrossAccount extends Stack {
       },
     ]);
 
-    // Create an IAM role for Log Hub Main stack assuming
+    // Create an IAM role for Main stack assuming
     const crossAccountRole = new iam.Role(this, "CrossAccountRole", {
       assumedBy: new iam.CompositePrincipal(
         new iam.ServicePrincipal("lambda.amazonaws.com"),
@@ -265,449 +292,291 @@ export class CrossAccount extends Stack {
 
     const crossAccountPolicy = new iam.Policy(this, "CrossAccountPolicy", {
       statements: [
+        // AWS Service Log Policy for S3 Ingestion
         new iam.PolicyStatement({
+          sid: "AWSServiceLogPolicyforS3Ingestion0",
           effect: iam.Effect.ALLOW,
-          resources: ["*"],
           actions: [
-            "iam:GetRole",
-            "iam:CreateRole",
-            "iam:PutRolePolicy",
-            "iam:CreateServiceLinkedRole",
-            "firehose:CreateDeliveryStream",
-            "firehose:DescribeDeliveryStream",
-            "firehose:DeleteDeliveryStream",
+            "s3:GetObject",
+            "s3:PutBucketNotification",
+            "s3:ListAllMyBuckets",
+            "s3:PutBucketLogging",
+            "s3:GetBucketLogging",
+            "s3:ListBucket",
+            "s3:GetBucketNotification",
+            "s3:GetBucketLocation",
+          ],
+          resources: [`arn:${Aws.PARTITION}:s3:::*`],
+        }),
+        // AWS Service Log Policy for CloudTrail Ingestion
+        new iam.PolicyStatement({
+          sid: "AWSServiceLogPolicyforCloudTrailIngestion0",
+          effect: iam.Effect.ALLOW,
+          actions: ["cloudtrail:GetTrail", "cloudtrail:ListTrails"],
+          resources: ["*"],
+        }),
+        new iam.PolicyStatement({
+          sid: "AWSServiceLogPolicyforCloudTrailIngestion1",
+          effect: iam.Effect.ALLOW,
+          actions: ["cloudtrail:UpdateTrail"],
+          resources: [
+            `arn:${Aws.PARTITION}:cloudtrail:*:${Aws.ACCOUNT_ID}:trail/*`,
           ],
         }),
-        // Read Data from Sub Account bucket created by Log Hub
+        // AWS Service Log Policy for RDS Ingestion
         new iam.PolicyStatement({
-          actions: [
-            "s3:GetObjectVersionTagging",
-            "s3:GetObjectAcl",
-            "s3:GetBucketObjectLockConfiguration",
-            "s3:GetObjectVersionAcl",
-            "s3:GetBucketPolicyStatus",
-            "s3:GetObjectRetention",
-            "s3:GetBucketWebsite",
-            "s3:GetObjectAttributes",
-            "s3:GetObjectLegalHold",
-            "s3:GetBucketNotification",
-            "s3:GetReplicationConfiguration",
-            "s3:GetObject",
-            "s3:GetAnalyticsConfiguration",
-            "s3:GetObjectVersionForReplication",
-            "s3:GetStorageLensDashboard",
-            "s3:GetLifecycleConfiguration",
-            "s3:GetInventoryConfiguration",
-            "s3:GetBucketTagging",
-            "s3:GetBucketLogging",
-            "s3:GetAccelerateConfiguration",
-            "s3:GetObjectVersionAttributes",
-            "s3:GetBucketPolicy",
-            "s3:GetEncryptionConfiguration",
-            "s3:GetObjectVersionTorrent",
-            "s3:GetBucketRequestPayment",
-            "s3:GetObjectTagging",
-            "s3:GetMetricsConfiguration",
-            "s3:GetBucketOwnershipControls",
-            "s3:GetBucketPublicAccessBlock",
-            "s3:GetMultiRegionAccessPointPolicyStatus",
-            "s3:GetMultiRegionAccessPointPolicy",
-            "s3:GetBucketVersioning",
-            "s3:GetBucketAcl",
-            "s3:GetObjectTorrent",
-            "s3:GetStorageLensConfiguration",
-            "s3:GetAccountPublicAccessBlock",
-            "s3:GetBucketCORS",
-            "s3:GetBucketLocation",
-            "s3:GetObjectVersion",
-            "s3:ListBucketMultipartUploads",
-            "s3:ListAllMyBuckets",
-            "s3:ListJobs",
-            "s3:ListMultipartUploadParts",
-            "s3:ListBucketVersions",
-            "s3:ListBucket",
-            "s3-object-lambda:GetObject",
-            "s3-object-lambda:ListBucket",
-            "s3-object-lambda:GetObjectVersionTagging",
-            "s3-object-lambda:GetObjectAcl",
-            "s3-object-lambda:ListBucketMultipartUploads",
-            "s3-object-lambda:GetObjectVersion",
-            "s3-object-lambda:ListBucketVersions",
-            "s3-object-lambda:ListMultipartUploadParts",
-            "s3-object-lambda:GetObjectRetention",
-            "s3-object-lambda:GetObjectVersionAcl",
-            "s3-object-lambda:GetObjectTagging",
+          sid: "AWSServiceLogPolicyforRDSIngestion0",
+          effect: iam.Effect.ALLOW,
+          actions: ["rds:DescribeDBInstances", "rds:DescribeDBClusters"],
+          resources: [
+            `arn:${Aws.PARTITION}:rds:*:${Aws.ACCOUNT_ID}:db:*`,
+            `arn:${Aws.PARTITION}:rds:*:${Aws.ACCOUNT_ID}:cluster:*`,
           ],
+        }),
+        // AWS Service Log Policy for ELB Ingestion
+        new iam.PolicyStatement({
+          sid: "AWSServiceLogPolicyforELBIngestion0",
+          effect: iam.Effect.ALLOW,
+          actions: ["elasticloadbalancing:ModifyLoadBalancerAttributes"],
+          resources: [
+            `arn:${Aws.PARTITION}:elasticloadbalancing:*:${Aws.ACCOUNT_ID}:loadbalancer/*`,
+          ],
+        }),
+        new iam.PolicyStatement({
+          sid: "AWSServiceLogPolicyforELBIngestion1",
+          effect: iam.Effect.ALLOW,
+          actions: [
+            "elasticloadbalancing:DescribeLoadBalancerAttributes",
+            "elasticloadbalancing:DescribeLoadBalancers",
+          ],
+          resources: ["*"],
+        }),
+        // AWS Service Log Policy for VPCFlow Ingestion
+        new iam.PolicyStatement({
+          sid: "AWSServiceLogPolicyforVPCFlowIngestion0",
+          effect: iam.Effect.ALLOW,
+          actions: ["ec2:DescribeVpcs", "ec2:DescribeFlowLogs"],
+          resources: ["*"],
+        }),
+        new iam.PolicyStatement({
+          sid: "AWSServiceLogPolicyforVPCFlowIngestion1",
+          effect: iam.Effect.ALLOW,
+          actions: ["ec2:CreateFlowLogs"],
+          resources: [
+            `arn:${Aws.PARTITION}:ec2:*:${Aws.ACCOUNT_ID}:vpc-flow-log/*`,
+            `arn:${Aws.PARTITION}:ec2:*:${Aws.ACCOUNT_ID}:vpc/*`,
+          ],
+        }),
+        new iam.PolicyStatement({
+          sid: "AWSServiceLogPolicyforVPCFlowIngestion2",
+          effect: iam.Effect.ALLOW,
+          actions: ["ec2:CreateTags"],
+          resources: [
+            `arn:${Aws.PARTITION}:ec2:*:${Aws.ACCOUNT_ID}:vpc-flow-log/*`,
+          ],
+        }),
+        new iam.PolicyStatement({
+          sid: "AWSServiceLogPolicyforVPCFlowIngestion3",
+          effect: iam.Effect.ALLOW,
+          actions: ["logs:CreateLogDelivery"],
+          resources: ["*"],
+        }),
+        // AWS Service Log Policy for Lambda Ingestion
+        new iam.PolicyStatement({
+          sid: "AWSServiceLogPolicyforLambdaIngestion0",
+          effect: iam.Effect.ALLOW,
+          actions: ["lambda:ListFunctions"],
+          resources: ["*"],
+        }),
+        // AWS Service Log Policy for CloudFront Ingestion
+        new iam.PolicyStatement({
+          sid: "AWSServiceLogPolicyforCloudFrontIngestion0",
+          effect: iam.Effect.ALLOW,
+          actions: [
+            "cloudfront:ListDistributions",
+            "cloudfront:GetDistributionConfig",
+          ],
+          resources: ["*"],
+        }),
+        new iam.PolicyStatement({
+          sid: "AWSServiceLogPolicyforCloudFrontIngestion1",
+          effect: iam.Effect.ALLOW,
+          actions: ["cloudfront:UpdateDistribution"],
+          resources: [
+            `arn:${Aws.PARTITION}:cloudfront::${Aws.ACCOUNT_ID}:distribution/*`,
+          ],
+        }),
+        // AWS Service Log Policy for Config Ingestion
+        new iam.PolicyStatement({
+          sid: "AWSServiceLogPolicyforConfigIngestion0",
+          effect: iam.Effect.ALLOW,
+          actions: ["config:DescribeDeliveryChannels"],
+          resources: ["*"],
+        }),
+        // AWS Service Log Policy for WAF Ingestion
+        new iam.PolicyStatement({
+          sid: "AWSServiceLogPolicyforWAFIngestion0",
+          effect: iam.Effect.ALLOW,
+          actions: [
+            "wafv2:PutLoggingConfiguration",
+            "wafv2:GetSampledRequests",
+            "wafv2:GetLoggingConfiguration",
+            "wafv2:GetWebACL",
+          ],
+          resources: [
+            `arn:${Aws.PARTITION}:wafv2:*:${Aws.ACCOUNT_ID}:*/webacl/*/*`,
+          ],
+        }),
+        new iam.PolicyStatement({
+          sid: "AWSServiceLogPolicyforWAFIngestion1",
+          effect: iam.Effect.ALLOW,
+          actions: ["wafv2:ListWebACLs"],
+          resources: ["*"],
+        }),
+        new iam.PolicyStatement({
+          sid: "AWSServiceLogPolicyforWAFIngestion2",
+          effect: iam.Effect.ALLOW,
+          actions: ["firehose:CreateDeliveryStream"],
+          resources: [
+            `arn:${Aws.PARTITION}:firehose:*:${Aws.ACCOUNT_ID}:deliverystream/aws-waf-logs-${stackPrefix}-*`,
+          ],
+        }),
+        new iam.PolicyStatement({
+          sid: "AWSServiceLogPolicyforWAFIngestion3",
+          effect: iam.Effect.ALLOW,
+          actions: ["firehose:DescribeDeliveryStream"],
+          resources: [
+            `arn:${Aws.PARTITION}:firehose:*:${Aws.ACCOUNT_ID}:deliverystream/aws-waf-logs-*`,
+          ],
+        }),
+        // AWS Service Log Policy for API Resources Handler
+        new iam.PolicyStatement({
+          sid: "AWSServiceLogPolicyforAPIResources0",
+          effect: iam.Effect.ALLOW,
+          actions: [
+            "iam:GetRole",
+            "iam:PassRole",
+            "iam:CreateRole",
+            "iam:PutRolePolicy",
+          ],
+          resources: [
+            `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/service-role/${stackPrefix}-*`,
+            `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/policy/${stackPrefix}-*`,
+            `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/${stackPrefix}-*`,
+          ],
+        }),
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          resources: [
+            `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/aws-service-role/wafv2.amazonaws.com/AWSServiceRoleForWAFV2Logging`,
+          ],
+          actions: ["iam:CreateServiceLinkedRole"],
+        }),
+        new iam.PolicyStatement({
+          sid: "AWSServiceLogPolicyforAPIResources1",
+          effect: iam.Effect.ALLOW,
+          actions: ["logs:GetLogEvents", "logs:PutLogEvents"],
+          resources: [
+            `arn:${Aws.PARTITION}:logs:*:${Aws.ACCOUNT_ID}:log-group:*:log-stream:*`,
+          ],
+        }),
+        new iam.PolicyStatement({
+          sid: "AWSServiceLogPolicyforAPIResources2",
+          effect: iam.Effect.ALLOW,
+          actions: [
+            "logs:CreateLogStream",
+            "logs:DeleteSubscriptionFilter",
+            "logs:DescribeLogGroups",
+            "logs:PutSubscriptionFilter",
+            "logs:CreateLogGroup",
+          ],
+          resources: [
+            `arn:${Aws.PARTITION}:logs:*:${Aws.ACCOUNT_ID}:log-group:*`,
+          ],
+        }),
+        new iam.PolicyStatement({
+          sid: "AWSServiceLogPolicyforAPIResources3",
+          effect: iam.Effect.ALLOW,
+          actions: ["logs:PutResourcePolicy", "logs:DescribeResourcePolicies"],
+          resources: [`arn:${Aws.PARTITION}:logs:*:${Aws.ACCOUNT_ID}:*`],
+        }),
+        // EC2 Policy for S3 Buffer
+        new iam.PolicyStatement({
+          sid: "EC2PolicyforS3Buffer0",
+          effect: iam.Effect.ALLOW,
+          actions: ["ssm:SendCommand", "ssm:GetParameters"],
+          resources: [
+            `arn:${Aws.PARTITION}:ec2:*:${Aws.ACCOUNT_ID}:instance/*`,
+            `arn:${Aws.PARTITION}:ssm:*:${Aws.ACCOUNT_ID}:parameter/*`,
+            `arn:${Aws.PARTITION}:ssm:*:*:document/AWS-RunShellScript`,
+            `arn:${Aws.PARTITION}:ssm:*:*:document/*FluentBitDocumentInstallation*`,
+            `arn:${Aws.PARTITION}:ssm:*:*:document/*FluentBitConfigDownloading*`,
+          ],
+        }),
+        new iam.PolicyStatement({
+          sid: "EC2PolicyforS3Buffer1",
+          effect: iam.Effect.ALLOW,
+          actions: [
+            "ssm:DescribeInstanceInformation",
+            "ssm:GetCommandInvocation",
+            "ssm:DescribeInstanceProperties",
+          ],
+          resources: ["*"],
+        }),
+        new iam.PolicyStatement({
+          sid: "EC2PolicyforS3Buffer2",
+          effect: iam.Effect.ALLOW,
+          actions: ["ec2:DescribeInstances", "ec2:DescribeTags"],
+          resources: ["*"],
+        }),
+        // EC2 Policy for KDS
+        new iam.PolicyStatement({
+          sid: "EC2PolicyforKDS0",
+          effect: iam.Effect.ALLOW,
+          actions: ["sts:AssumeRole"],
+          resources: [
+            `arn:${Aws.PARTITION}:iam::${parentAccountId.valueAsString}:role/*BufferAccessRole*`,
+          ],
+        }),
+        // EC2 Policy for AutoScaling
+        new iam.PolicyStatement({
+          sid: "EC2PolicyforAutoScaling0",
+          effect: iam.Effect.ALLOW,
+          actions: ["autoscaling:DescribeAutoScalingGroups"],
+          resources: ["*"],
+        }),
+        // EKS Policy
+        new iam.PolicyStatement({
+          sid: "EKSPolicy0",
+          effect: iam.Effect.ALLOW,
+          actions: ["eks:DescribeCluster", "eks:ListClusters"],
+          resources: [`arn:${Aws.PARTITION}:eks:*:${Aws.ACCOUNT_ID}:cluster/*`],
+        }),
+        new iam.PolicyStatement({
+          sid: "EKSPolicy1",
+          effect: iam.Effect.ALLOW,
+          actions: ["iam:GetOpenIDConnectProvider"],
+          resources: [
+            `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:oidc-provider/oidc.eks.*`,
+          ],
+        }),
+        new iam.PolicyStatement({
+          sid: "EKSPolicy2",
+          effect: iam.Effect.ALLOW,
+          actions: ["iam:TagRole", "iam:CreateRole", "iam:PutRolePolicy"],
+          resources: [
+            `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/${stackPrefix}-EKS-LogAgent-Role-*`,
+          ],
+        }),
+        // Read and Write Data from Sub Account bucket created by this solution
+        new iam.PolicyStatement({
+          sid: "RWDataFromSubAccountBucket",
+          effect: iam.Effect.ALLOW,
+          actions: ["s3:*"],
           resources: [
             `arn:${Aws.PARTITION}:s3:::${loggingBucket.bucketName}/*`,
             `arn:${Aws.PARTITION}:s3:::${loggingBucket.bucketName}`,
           ],
-        }),
-        // Control other sub account's bucket
-        new iam.PolicyStatement({
-          actions: [
-            "s3:ListAllMyBuckets",
-            "s3:ListBucket",
-            "s3:PutBucketLogging",
-            "s3:GetObjectVersionTagging",
-            "s3:GetObjectAcl",
-            "s3:GetBucketObjectLockConfiguration",
-            "s3:GetObjectVersionAcl",
-            "s3:GetBucketPolicyStatus",
-            "s3:GetObjectRetention",
-            "s3:GetBucketWebsite",
-            "s3:GetObjectAttributes",
-            "s3:GetObjectLegalHold",
-            "s3:GetBucketNotification",
-            "s3:GetReplicationConfiguration",
-            "s3:GetObject",
-            "s3:GetAnalyticsConfiguration",
-            "s3:GetObjectVersionForReplication",
-            "s3:GetStorageLensDashboard",
-            "s3:GetLifecycleConfiguration",
-            "s3:GetInventoryConfiguration",
-            "s3:GetBucketTagging",
-            "s3:GetBucketLogging",
-            "s3:GetAccelerateConfiguration",
-            "s3:GetObjectVersionAttributes",
-            "s3:GetBucketPolicy",
-            "s3:GetEncryptionConfiguration",
-            "s3:GetObjectVersionTorrent",
-            "s3:GetBucketRequestPayment",
-            "s3:GetObjectTagging",
-            "s3:GetBucketOwnershipControls",
-            "s3:GetBucketPublicAccessBlock",
-            "s3:GetMultiRegionAccessPointPolicyStatus",
-            "s3:GetMultiRegionAccessPointPolicy",
-            "s3:GetBucketVersioning",
-            "s3:GetBucketAcl",
-            "s3:GetObjectTorrent",
-            "s3:GetStorageLensConfiguration",
-            "s3:GetAccountPublicAccessBlock",
-            "s3:GetBucketCORS",
-            "s3:GetBucketLocation",
-            "s3:GetObjectVersion",
-            "s3:CreateBucket",
-            "s3:PutObject",
-            "s3:DeleteAccessPointPolicy",
-            "s3:DeleteAccessPointPolicyForObjectLambda",
-            "s3:DeleteBucketPolicy",
-            "s3:PutAccessPointPolicy",
-            "s3:PutAccessPointPolicyForObjectLambda",
-            "s3:PutBucketNotification",
-            "s3:PutBucketPolicy",
-            "s3:PutMultiRegionAccessPointPolicy",
-            "s3:PutBucketOwnershipControls",
-            "s3:PutBucketAcl",
-            "s3:PutBucketOwnershipControls",
-          ],
-          resources: ["*"],
-        }),
-        new iam.PolicyStatement({
-          actions: ["kms:Decrypt"],
-          resources: ["*"],
-          effect: iam.Effect.ALLOW,
-        }),
-        // SSM control and Agent Status check
-        new iam.PolicyStatement({
-          actions: [
-            "ssm:DescribeInstanceInformation",
-            "ssm:SendCommand",
-            "ssm:GetCommandInvocation",
-            "ssm:GetParameters",
-            "ssm:DescribeInstanceProperties",
-            "ec2:DescribeInstances",
-            "ec2:DescribeTags",
-            "ec2:DescribeImages",
-          ],
-          resources: ["*"],
-        }),
-        // EC2 Status Check Event Rule
-        new iam.PolicyStatement({
-          actions: [
-            "events:DescribeRule",
-            "events:EnableRule",
-            "events:DisableRule",
-          ],
-          effect: iam.Effect.ALLOW,
-          resources: ["*"],
-        }),
-        // CloudWatch Source Pipeline Policy
-        new iam.PolicyStatement({
-          actions: [
-            "logs:CreateLogGroup",
-            "logs:CreateLogStream",
-            "logs:PutLogEvents",
-            "logs:PutSubscriptionFilter",
-            "logs:DeleteSubscriptionFilter",
-            "logs:DescribeLogGroups",
-            "logs:GetLogEvents",
-            "logs:PutResourcePolicy",
-            "logs:DescribeResourcePolicies",
-          ],
-          resources: [
-            `arn:${Aws.PARTITION}:logs:${Aws.REGION}:${Aws.ACCOUNT_ID}:*`,
-          ],
-        }),
-        new iam.PolicyStatement({
-          actions: ["logs:CreateLogDelivery"],
-          resources: ["*"],
-        }),
-        // Add eks policy documents
-        new iam.PolicyStatement({
-          actions: [
-            "eks:DescribeCluster",
-            "eks:ListIdentityProviderConfigs",
-            "eks:UpdateClusterConfig",
-            "eks:ListClusters",
-          ],
-          effect: iam.Effect.ALLOW,
-          resources: [`arn:${Aws.PARTITION}:eks:*:${Aws.ACCOUNT_ID}:cluster/*`],
-        }),
-        new iam.PolicyStatement({
-          actions: [
-            "iam:GetServerCertificate",
-            "iam:DetachRolePolicy",
-            "iam:GetPolicy",
-            "iam:TagRole",
-            "iam:CreateRole",
-            "iam:AttachRolePolicy",
-            "iam:TagPolicy",
-            "iam:GetOpenIDConnectProvider",
-            "iam:TagOpenIDConnectProvider",
-            "iam:CreateOpenIDConnectProvider",
-            "iam:DeleteRole",
-            // S3 as source
-            "iam:PutRolePolicy",
-            "iam:DeleteRolePolicy",
-            "iam:RemoveRoleFromInstanceProfile",
-            "iam:DeleteInstanceProfile",
-            "iam:CreateInstanceProfile",
-            "iam:AddRoleToInstanceProfile",
-            "iam:PassRole",
-            "iam:GetRole",
-            "iam:GetRolePolicy",
-          ],
-          effect: iam.Effect.ALLOW,
-          resources: [
-            `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:oidc-provider/*`,
-            `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/*`,
-            `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:server-certificate/*`,
-            `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:policy/*`,
-            `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:instance-profile/*`,
-          ],
-        }),
-        // sts policy
-        new iam.PolicyStatement({
-          effect: iam.Effect.ALLOW,
-          resources: [
-            `arn:${Aws.PARTITION}:iam::${parentAccountId.valueAsString}:role/*BufferAccessRole*`,
-            `arn:${Aws.PARTITION}:iam::${parentAccountId.valueAsString}:role/AOS-Agent*`,
-          ],
-          actions: ["sts:AssumeRole"],
-        }),
-        // Resource handler policy
-        new iam.PolicyStatement({
-          effect: iam.Effect.ALLOW,
-          resources: ["*"],
-          actions: ["cloudtrail:ListTrails", "cloudtrail:GetTrail"],
-        }),
-        new iam.PolicyStatement({
-          effect: iam.Effect.ALLOW,
-          resources: ["*"],
-          actions: [
-            "cloudfront:ListDistributions",
-            "cloudfront:GetDistributionConfig",
-            "cloudfront:UpdateDistribution",
-          ],
-        }),
-        new iam.PolicyStatement({
-          effect: iam.Effect.ALLOW,
-          resources: ["*"],
-          actions: ["lambda:ListFunctions"],
-        }),
-        new iam.PolicyStatement({
-          effect: iam.Effect.ALLOW,
-          resources: ["*"],
-          actions: ["rds:DescribeDBInstances", "rds:DescribeDBClusters"],
-        }),
-        new iam.PolicyStatement({
-          effect: iam.Effect.ALLOW,
-          resources: ["*"],
-          actions: [
-            "elasticloadbalancing:DescribeLoadBalancers",
-            "elasticloadbalancing:DescribeLoadBalancerAttributes",
-            "elasticloadbalancing:ModifyLoadBalancerAttributes",
-          ],
-        }),
-        new iam.PolicyStatement({
-          effect: iam.Effect.ALLOW,
-          resources: ["*"],
-          actions: [
-            "wafv2:GetLoggingConfiguration",
-            "wafv2:ListWebACLs",
-            "wafv2:PutLoggingConfiguration",
-            "wafv2:GetWebACL",
-            "wafv2:GetSampledRequests",
-          ],
-        }),
-        new iam.PolicyStatement({
-          effect: iam.Effect.ALLOW,
-          resources: ["*"],
-          actions: [
-            "ec2:CreateFlowLogs",
-            "ec2:DescribeFlowLogs",
-            "ec2:DescribeVpcs",
-            "ec2:DescribeSubnets",
-            "ec2:DescribeSecurityGroups",
-          ],
-        }),
-        new iam.PolicyStatement({
-          effect: iam.Effect.ALLOW,
-          resources: ["*"],
-          actions: ["config:DescribeDeliveryChannels"],
-        }),
-        // Give the main stack the policy to update the sub stack
-        new iam.PolicyStatement({
-          actions: [
-            "cloudformation:CreateChangeSet",
-            "cloudformation:CreateStack",
-            "cloudformation:CreateStackInstances",
-            "cloudformation:CreateStackSet",
-            "cloudformation:CreateUploadBucket",
-            "cloudformation:UpdateStack",
-            "cloudformation:UpdateStackInstances",
-            "cloudformation:UpdateStackSet",
-            "cloudformation:UpdateTerminationProtection",
-            "cloudformation:DeleteStack",
-            "cloudformation:DeleteStackInstances",
-            "cloudformation:DeleteStackSet",
-            "cloudformation:DeleteChangeSet",
-            "cloudformation:DescribeStacks",
-          ],
-          resources: ["*"],
-        }),
-        new iam.PolicyStatement({
-          actions: [
-            "sqs:DeleteMessage",
-            "sqs:GetQueueUrl",
-            "sqs:ListQueues",
-            "sqs:ChangeMessageVisibility",
-            "sqs:UntagQueue",
-            "sqs:ReceiveMessage",
-            "sqs:SendMessage",
-            "sqs:GetQueueAttributes",
-            "sqs:ListQueueTags",
-            "sqs:TagQueue",
-            "sqs:RemovePermission",
-            "sqs:ListDeadLetterSourceQueues",
-            "sqs:AddPermission",
-            "sqs:PurgeQueue",
-            "sqs:DeleteQueue",
-            "sqs:CreateQueue",
-            "sqs:SetQueueAttributes",
-          ],
-          resources: [
-            `arn:${Aws.PARTITION}:sqs:${Aws.REGION}:${Aws.ACCOUNT_ID}:*`,
-          ],
-        }),
-        new iam.PolicyStatement({
-          actions: [
-            "lambda:CreateFunction",
-            "lambda:TagResource",
-            "lambda:GetFunctionConfiguration",
-            "lambda:ListProvisionedConcurrencyConfigs",
-            "lambda:ListLayers",
-            "lambda:ListLayerVersions",
-            "lambda:DeleteFunction",
-            "lambda:GetAlias",
-            "lambda:ListCodeSigningConfigs",
-            "lambda:UpdateFunctionEventInvokeConfig",
-            "lambda:DeleteFunctionCodeSigningConfig",
-            "lambda:ListFunctions",
-            "lambda:GetEventSourceMapping",
-            "lambda:InvokeFunction",
-            "lambda:ListAliases",
-            "lambda:GetFunctionUrlConfig",
-            "lambda:AddLayerVersionPermission",
-            "lambda:GetFunctionCodeSigningConfig",
-            "lambda:UpdateAlias",
-            "lambda:UpdateFunctionCode",
-            "lambda:ListFunctionEventInvokeConfigs",
-            "lambda:ListFunctionsByCodeSigningConfig",
-            "lambda:ListEventSourceMappings",
-            "lambda:PublishVersion",
-            "lambda:DeleteEventSourceMapping",
-            "lambda:CreateAlias",
-            "lambda:ListVersionsByFunction",
-            "lambda:GetLayerVersion",
-            "lambda:PublishLayerVersion",
-            "lambda:InvokeAsync",
-            "lambda:GetAccountSettings",
-            "lambda:CreateEventSourceMapping",
-            "lambda:GetLayerVersionPolicy",
-            "lambda:UntagResource",
-            "lambda:RemoveLayerVersionPermission",
-            "lambda:DeleteCodeSigningConfig",
-            "lambda:ListTags",
-            "lambda:DeleteLayerVersion",
-            "lambda:PutFunctionEventInvokeConfig",
-            "lambda:DeleteFunctionEventInvokeConfig",
-            "lambda:CreateCodeSigningConfig",
-            "lambda:PutFunctionCodeSigningConfig",
-            "lambda:UpdateEventSourceMapping",
-            "lambda:UpdateFunctionCodeSigningConfig",
-            "lambda:GetFunction",
-            "lambda:UpdateFunctionConfiguration",
-            "lambda:ListFunctionUrlConfigs",
-            "lambda:UpdateCodeSigningConfig",
-            "lambda:AddPermission",
-            "lambda:GetFunctionEventInvokeConfig",
-            "lambda:DeleteAlias",
-            "lambda:GetCodeSigningConfig",
-            "lambda:DeleteFunctionUrlConfig",
-            "lambda:RemovePermission",
-            "lambda:GetPolicy",
-          ],
-          resources: [
-            `arn:${Aws.PARTITION}:lambda:${Aws.REGION}:${Aws.ACCOUNT_ID}:*`,
-          ],
-        }),
-        new iam.PolicyStatement({
-          actions: [
-            "ec2:createTags",
-            "ec2:DescribeImages",
-            "ec2:DescribeVpcs",
-            "ec2:DescribeInstances",
-            "ec2:DescribeSubnets",
-            "ec2:DescribeVolumes",
-            "ec2:DescribeTags",
-            "ec2:CreateSecurityGroup",
-            "ec2:DeleteSecurityGroup",
-            "ec2:DescribeSecurityGroups",
-            "ec2:RevokeSecurityGroupEgress",
-            "ec2:AuthorizeSecurityGroupEgress",
-          ],
-          resources: [
-            `arn:${Aws.PARTITION}:ec2:${Aws.REGION}:${Aws.ACCOUNT_ID}:*`,
-          ],
-        }),
-        new iam.PolicyStatement({
-          actions: [
-            "autoscaling:CreateLaunchConfiguration",
-            "autoscaling:CreateAutoScalingGroup",
-            "autoscaling:DeleteAutoScalingGroup",
-            "autoscaling:DeleteLaunchConfiguration",
-            "autoscaling:UpdateAutoScalingGroup",
-            "autoscaling:DescribeAutoScalingGroups",
-            "autoscaling:DescribeAutoScalingInstances",
-            "autoscaling:DescribeLaunchConfigurations",
-            "autoscaling:EnableMetricsCollection",
-            "autoscaling:DescribeScalingActivities",
-            "autoscaling:PutScalingPolicy",
-            "autoscaling:DeletePolicy",
-          ],
-          resources: ["*"],
         }),
       ],
     });
@@ -726,12 +595,16 @@ export class CrossAccount extends Stack {
         id: "W12",
         reason: "The managed policy needs to use any resources in ssm",
       },
+      {
+        id: "F4",
+        reason: "The list and describe actions need to use any resources",
+      },
     ]);
 
     const newKMSKey = new kms.Key(this, `SQS-CMK`, {
       removalPolicy: RemovalPolicy.DESTROY,
       pendingWindow: Duration.days(7),
-      description: "KMS-CMK for encrypting the objects in Log Hub SQS",
+      description: "KMS-CMK for encrypting the objects in SQS",
       enableKeyRotation: true,
       policy: new iam.PolicyDocument({
         statements: [
@@ -937,10 +810,10 @@ export class CrossAccount extends Stack {
       }
     );
 
-    new CfnOutput(this, "CrossAccountRoleARN", {
-      description: "Cross Account Role ARN",
+    new CfnOutput(this, "MemberAccountRoleARN", {
+      description: "Member Account Role ARN",
       value: crossAccountRole.roleArn,
-    }).overrideLogicalId("CrossAccountRoleARN");
+    }).overrideLogicalId("MemberAccountRoleARN");
 
     new CfnOutput(this, "AgentInstallDocument", {
       description: "FluentBit Agent Installation Document",
@@ -952,19 +825,19 @@ export class CrossAccount extends Stack {
       value: downloadLogConfigDocument.ref,
     }).overrideLogicalId("AgentConfigDocument");
 
-    new CfnOutput(this, "CrossAccountS3Bucket", {
-      description: "Cross Account S3 Bucket",
+    new CfnOutput(this, "MemberAccountS3Bucket", {
+      description: "Member Account S3 Bucket",
       value: loggingBucket.bucketName,
-    }).overrideLogicalId("CrossAccountS3Bucket");
+    }).overrideLogicalId("MemberAccountS3Bucket");
 
-    new CfnOutput(this, "CrossAccountStackId", {
-      description: "Cross Account CloudFormation Stack Id",
+    new CfnOutput(this, "MemberAccountStackId", {
+      description: "Member Account CloudFormation Stack Id",
       value: this.stackId,
-    }).overrideLogicalId("CrossAccountStackId");
+    }).overrideLogicalId("MemberAccountStackId");
 
-    new CfnOutput(this, "CrossAccountKMSKeyARN", {
-      description: "Cross Account KMS Key ARN",
+    new CfnOutput(this, "MemberAccountKMSKeyARN", {
+      description: "Member Account KMS Key ARN",
       value: newKMSKey.keyArn,
-    }).overrideLogicalId("CrossAccountKMSKeyARN");
+    }).overrideLogicalId("MemberAccountKMSKeyARN");
   }
 }

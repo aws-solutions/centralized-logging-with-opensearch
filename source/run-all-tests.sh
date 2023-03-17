@@ -159,28 +159,41 @@ construct_dir=$source_dir/constructs
 cd $construct_dir
 
 rm -vf ./lambda/pipeline/service/log-processor/boto3_client.py
-rm -vf ./lambda/api/pipeline/aws_svc_mgr.py
-rm -vf ./lambda/api/app_pipeline/util/assume_role.py
-rm -vrf ./lambda/api/app_pipeline/util/assume_role_template
+
 rm -vf ./lambda/api/app_pipeline/common.py
-rm -vf ./lambda/api/app_log_ingestion/util/aws_svc_mgr.py
 rm -vf ./lambda/api/app_log_ingestion/common.py
+rm -vf ./lambda/api/app_log_ingestion/util/aws_svc_mgr.py
+rm -vf ./lambda/api/app_log_ingestion/aws_svc_mgr.py
+rm -vf ./lambda/api/pipeline/aws_svc_mgr.py
 rm -vf ./lambda/api/log_agent_status/aws_svc_mgr.py
 rm -vf ./lambda/api/instance_meta/aws_svc_mgr.py
+rm -vf ./lambda/api/instance_group/aws_svc_mgr.py
 rm -vf ./lambda/api/resource/aws_svc_mgr.py
+rm -vf ./lambda/api/eks_cluster/aws_svc_mgr.py
 rm -vf ./lambda/main/cfnHelper/aws_svc_mgr.py
 
+
 cp -vf ./lambda/pipeline/service/log-processor/../../common/custom-resource/boto3_client.py ./lambda/pipeline/service/log-processor/boto3_client.py
-cp -vf ./lambda/api/pipeline/../common/aws_svc_mgr.py ./lambda/api/pipeline/aws_svc_mgr.py
-cp -vf ./lambda/api/app_pipeline/util/../../app_log_ingestion/util/assume_role.py ./lambda/api/app_pipeline/util/assume_role.py
-cp -vrf ./lambda/api/app_pipeline/util/../../app_log_ingestion/util/assume_role_template ./lambda/api/app_pipeline/util/assume_role_template
 cp -vf ./lambda/api/app_pipeline/../common/common.py ./lambda/api/app_pipeline/common.py
-cp -vf ./lambda/api/app_log_ingestion/util/../../common/aws_svc_mgr.py ./lambda/api/app_log_ingestion/util/aws_svc_mgr.py
 cp -vf ./lambda/api/app_log_ingestion/../common/common.py ./lambda/api/app_log_ingestion/common.py
+cp -vf ./lambda/api/pipeline/../common/aws_svc_mgr.py ./lambda/api/pipeline/aws_svc_mgr.py
+cp -vf ./lambda/api/instance_group/../common/aws_svc_mgr.py ./lambda/api/instance_group/aws_svc_mgr.py
+cp -vf ./lambda/api/app_log_ingestion/../common/aws_svc_mgr.py ./lambda/api/app_log_ingestion/aws_svc_mgr.py
 cp -vf ./lambda/api/log_agent_status/../common/aws_svc_mgr.py ./lambda/api/log_agent_status/aws_svc_mgr.py
 cp -vf ./lambda/api/instance_meta/../common/aws_svc_mgr.py ./lambda/api/instance_meta/aws_svc_mgr.py
 cp -vf ./lambda/api/resource/../common/aws_svc_mgr.py ./lambda/api/resource/aws_svc_mgr.py
+cp -vf ./lambda/api/eks_cluster/../common/aws_svc_mgr.py ./lambda/api/eks_cluster/aws_svc_mgr.py
 cp -vf ./lambda/main/cfnHelper/../../api/common/aws_svc_mgr.py ./lambda/main/cfnHelper/aws_svc_mgr.py
+
+# Add test_aws_svc_mgr.py for UT
+cp -vf ./lambda/api/eks_cluster/../common/test/test_aws_svc_mgr.py ./lambda/api/eks_cluster/test/test_aws_svc_mgr.py
+cp -vf ./lambda/api/resource/../common/test/test_aws_svc_mgr.py ./lambda/api/resource/test/test_aws_svc_mgr.py
+cp -vf ./lambda/api/pipeline/../common/test/test_aws_svc_mgr.py ./lambda/api/pipeline/test/test_aws_svc_mgr.py
+cp -vf ./lambda/api/instance_group/../common/test/test_aws_svc_mgr.py ./lambda/api/instance_group/test/test_aws_svc_mgr.py
+cp -vf ./lambda/api/app_log_ingestion/../common/test/test_aws_svc_mgr.py ./lambda/api/app_log_ingestion/test/test_aws_svc_mgr.py
+cp -vf ./lambda/api/log_agent_status/../common/test/test_aws_svc_mgr.py ./lambda/api/log_agent_status/test/test_aws_svc_mgr.py
+cp -vf ./lambda/api/instance_meta/../common/test/test_aws_svc_mgr.py ./lambda/api/instance_meta/test/test_aws_svc_mgr.py
+cp -vf ./lambda/main/cfnHelper/../../api/common/test/test_aws_svc_mgr.py ./lambda/main/cfnHelper/test/test_aws_svc_mgr.py
 
 # Test the CDK project
 run_cdk_project_test $construct_dir
@@ -207,6 +220,18 @@ run_python_test $construct_dir/lambda/api/cross_account cross_account
 run_python_test $construct_dir/lambda/api/common common
 run_python_test $construct_dir/lambda/api/cluster aos_cluster
 run_python_test $construct_dir/lambda/pipeline/common/custom-resource custom-resource2
+run_python_test $construct_dir/lambda/api/app_pipeline_flow app_pipeline_flow
+
+# Remove test_aws_svc_mgr.py
+echo "Remove UT file"
+rm -rf $construct_dir/lambda/api/eks_cluster/test/test_aws_svc_mgr.py
+rm -rf $construct_dir/lambda/api/resource/test/test_aws_svc_mgr.py
+rm -rf $construct_dir/lambda/api/pipeline/test/test_aws_svc_mgr.py
+rm -rf $construct_dir/lambda/api/instance_group/test/test_aws_svc_mgr.py
+rm -rf $construct_dir/lambda/api/app_log_ingestion/test/test_aws_svc_mgr.py
+rm -rf $construct_dir/lambda/api/log_agent_status/test/test_aws_svc_mgr.py
+rm -rf $construct_dir/lambda/api/instance_meta/test/test_aws_svc_mgr.py
+rm -rf $construct_dir/lambda/main/cfnHelper/test/test_aws_svc_mgr.py
 
 # Return to the source/ level
 cd $source_dir

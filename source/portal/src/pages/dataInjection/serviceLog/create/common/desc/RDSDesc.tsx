@@ -29,14 +29,12 @@ const RDSDesc: React.FC = () => {
       <div className="ingest-desc-desc">
         {t("servicelog:rds.desc.ingest")}
         <ExtLink to={RDS_LOG_LINK}>{t("servicelog:rds.desc.rdsLog")}</ExtLink>
-        {t("servicelog:rds.desc.intoDomain")}
+        {t("intoDomain")}
       </div>
       <div className="ingest-desc-title">
         {t("servicelog:rds.desc.archName")}
       </div>
-      <div className="ingest-desc-desc">
-        {t("servicelog:rds.desc.archDesc")}
-      </div>
+      <div className="ingest-desc-desc">{t("archDesc")}</div>
       <div className="mt-10">
         <img
           className="img-border"

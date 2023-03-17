@@ -49,7 +49,7 @@ def default_tail_input() -> InputConfigSection:
     return InputConfigSection(
         Name='tail',
         Path_Key='file_name',
-        Read_from_head='true',
+        Read_from_head='false',
         Mem_Buf_Limit='30M',
         Buffer_Chunk_Size='512k',
         Buffer_Max_Size='5M',
@@ -103,8 +103,7 @@ def default_aos_output() -> OutputConfigSection:
         Suppress_Type_Name='On',
         Buffer_Size='20M',
         Generate_ID='On',
-        Logstash_Format='On',
-        Logstash_DateFormat='%Y%m%d',
+        Logstash_Format='Off',
         Time_Key_Nanos='Off',
         Write_Operation='create',
         Workers='1',

@@ -318,7 +318,6 @@ const ApplicationLog: React.FC = () => {
                   loading={loadingDelete}
                   btnType="primary"
                   onClick={() => {
-                    // setOpenDeleteModel(false);
                     confimRemoveApplicationLog();
                   }}
                 >

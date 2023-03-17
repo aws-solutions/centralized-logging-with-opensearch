@@ -1,10 +1,10 @@
 # Recommended Alarms
-Amazon OpenSearch provides a set of [recommended CloudWatch alarms](https://docs.aws.amazon.com/opensearch-service/latest/developerguide/cloudwatch-alarms.html) to monitor the health of AOS domains. Log Hub helps you to create the alarms automatically, and send notification to your email (or SMS) via SNS.
+Amazon OpenSearch provides a set of [recommended CloudWatch alarms](https://docs.aws.amazon.com/opensearch-service/latest/developerguide/cloudwatch-alarms.html) to monitor the health of Amazon OpenSearch Service domains. Centralized Logging with OpenSearch helps you to create the alarms automatically, and send notification to your email (or SMS) via SNS.
 
 ## Create alarms
 
-### Using the Log Hub console
-1. Log in to the Log Hub console.
+### Using the Centralized Logging with OpenSearch console
+1. Log in to the Centralized Logging with OpenSearch console.
 2. In the navigation pane, under **Domains**, choose **OpenSearch domains**.
 3. Select the domain from the table.
 4. Under **General configuration**, choose **Enable** at the **Alarms** label.
@@ -13,13 +13,13 @@ Amazon OpenSearch provides a set of [recommended CloudWatch alarms](https://docs
 7. Choose **Create**.
 
 ### Using the CloudFormation stack
-This automated AWS CloudFormation template deploys the *Log Hub - Alarms* solution in the AWS Cloud.
+This automated AWS CloudFormation template deploys the *Centralized Logging with OpenSearch - Alarms* solution in the AWS Cloud.
 
-1. Log in to the AWS Management Console and select the button to launch the `log-hub-alarms` AWS CloudFormation template.
+1. Log in to the AWS Management Console and select the button to launch the AWS CloudFormation template.
 
-    [![Launch Stack](../../images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/template?stackName=LogHub-Alarms&templateURL=https://{{ bucket }}.s3.amazonaws.com/log-hub/{{ version }}/AlarmForOpenSearch.template){target=_blank}
+    [![Launch Stack](../../images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https://{{ bucket }}.s3.amazonaws.com/{{ solution }}/{{ version }}/AlarmForOpenSearch.template){target=_blank}
 
-    You can also [download the template](https://{{ bucket }}.s3.amazonaws.com/log-hub/{{ version }}/AlarmForOpenSearch.template) as a starting point for your own implementation.
+    You can also [download the template](https://{{ bucket }}.s3.amazonaws.com/{{ solution }}/{{ version }}/AlarmForOpenSearch.template) as a starting point for your own implementation.
 
 2. To launch the stack in a different AWS Region, use the Region selector in the console navigation bar.
 
@@ -60,20 +60,20 @@ a **CREATE_COMPLETE** status in approximately 5 minutes.
 
 Once you have created the alarms, a confirmation email will be sent to your email address. You need to click the **Confirm** link in the email.
 
-Go to the CloudWatch Alarms page by clicking the **General configuration > Alarms > CloudWatch Alarms** link on the Log Hub console , link location shown as follows:
+Go to the CloudWatch Alarms page by choosing the **General configuration > Alarms > CloudWatch Alarms** link on the Centralized Logging with OpenSearch console, and the link location is shown as follows:
 
 ![](../../images/domain/cloudwatch-alarm-link-en.png)
 
-Make sure that all the alarms are in **OK** status. Because you might have missed the notification if alarms have changed it's status before subscription. 
+Make sure that all the alarms are in **OK** status because you might have missed the notification if alarms have changed its status before subscription.
 
 !!! Warning "Note"
-  
-    Note that alarm will not send SNS notification to your email address if triggered before subscription! Which means that if your newly created alarm is triggered right after it's creation, you will not be able to get notifications. We recommend you check the alarms status after enabling the OpenSearch alarms, if you see any alarm which is in **In Alarm** status, please fix that issue first. 
+
+    The alarm will not send SNS notification to your email address if triggered before subscription. We recommend you check the alarms status after enabling the OpenSearch alarms. If you see any alarm which is in **In Alarm** status, you should fix that issue first.
 
 
 ## Delete alarms
 
-1. Log in to the Log Hub console.
+1. Log in to the Centralized Logging with OpenSearch console.
 2. In the navigation pane, under **Domains**, choose **OpenSearch domains**.
 3. Select the domain from the table.
 4. Choose the **Alarms** tab.

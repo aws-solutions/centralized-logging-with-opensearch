@@ -31,14 +31,13 @@ import {
 import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
 import { getLogSource, listAppLogIngestions } from "graphql/queries";
 import Modal from "components/Modal";
-import { deleteAppLogIngestion, upgradeAppPipeline } from "graphql/mutations";
+import { deleteAppLogIngestion } from "graphql/mutations";
 import { formatLocalTime } from "assets/js/utils";
 import { useTranslation } from "react-i18next";
 import Status, { StatusType } from "components/Status/Status";
 import ButtonDropdown from "components/ButtonDropdown";
 
-import { AUTO_REFRESH_INT, buildLogHubDocsLink } from "assets/js/const";
-import ExtLink from "components/ExtLink";
+import { AUTO_REFRESH_INT } from "assets/js/const";
 import Alert from "components/Alert";
 import { AlertType } from "components/Alert/alert";
 import { getSourceInfoValueByKey } from "assets/js/applog";
@@ -47,7 +46,6 @@ const PAGE_SIZE = 20;
 const TIMP_SPAN = 2 * 60 * 1000;
 interface OverviewProps {
   pipelineInfo: AppPipeline | undefined;
-  upgradeToNewPipeline: () => void;
   changeTab: (index: number) => void;
 }
 
@@ -65,8 +63,8 @@ interface AppIngestionItem {
 }
 
 const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
-  const { pipelineInfo, changeTab, upgradeToNewPipeline } = props;
-  const { t, i18n } = useTranslation();
+  const { pipelineInfo, changeTab } = props;
+  const { t } = useTranslation();
 
   const [loadingData, setLoadingData] = useState(false);
   const [ingestionList, setIngestionList] = useState<AppIngestionItem[]>([]);
@@ -75,12 +73,10 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
   );
   const [openDeleteModel, setOpenDeleteModel] = useState(false);
   const [loadingDelete, setLoadingDelete] = useState(false);
-  const [loadingUpgrade, setLoadingUpgrade] = useState(false);
   const [disableDelete, setDisableDelete] = useState(true);
   const [curPage, setCurPage] = useState(1);
   const [totoalCount, setTotoalCount] = useState(0);
   const [userSelectType, setUserSelectType] = useState<string>("");
-  const [openNotice, setOpenNotice] = useState(false);
   const history = useHistory();
 
   const [hasRecentASG, setHasRecentASG] = useState(false);
@@ -111,22 +107,6 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
     } catch (error) {
       setLoadingDelete(false);
       setOpenDeleteModel(false);
-      console.error(error);
-    }
-  };
-
-  const upgradePipeline = async () => {
-    try {
-      setLoadingUpgrade(true);
-      const upgradeRes = await appSyncRequestMutation(upgradeAppPipeline, {
-        ids: [pipelineInfo?.id],
-      });
-      console.info("upgradeRes:", upgradeRes);
-      setLoadingUpgrade(false);
-      setOpenNotice(false);
-      upgradeToNewPipeline();
-    } catch (error) {
-      setLoadingUpgrade(false);
       console.error(error);
     }
   };
@@ -237,16 +217,6 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
     }
   }, [selectedIngestion]);
 
-  // Check Assume Role
-  const checkAssumeRoleAndRedirect = (type: string) => {
-    setUserSelectType(type);
-    if (!pipelineInfo?.bufferAccessRoleArn) {
-      setOpenNotice(true);
-    } else {
-      redirectToCreateIngestionPage(type);
-    }
-  };
-
   // Redirect create ingestion page by ingestion type
   const redirectToCreateIngestionPage = (type?: string) => {
     const ingestionType = type || userSelectType;
@@ -307,21 +277,6 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
 
   return (
     <div>
-      {/** TODO  to check the pipeline is the EKS*/}
-      {/* {pipelineInfo?.ec2RoleArn ? ( */}
-      {/* {pipelineInfo ? (
-        <Alert
-          content={
-            <div>
-              {t("applog:detail.ingestion.eksTips1")}
-              <Link to="/containers/eks-log">
-                {t("applog:detail.ingestion.eksTips2")}
-              </Link>{" "}
-              {t("applog:detail.ingestion.eksTips3")}
-            </div>
-          }
-        />
-      ) : ( */}
       <Alert
         content={
           <div>
@@ -338,7 +293,6 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
           </div>
         }
       />
-      {/* )} */}
 
       <TablePanel
         title={t("applog:detail.tab.ingestion")}
@@ -497,7 +451,8 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
               btnType="primary"
               disabled={pipelineInfo?.status !== PipelineStatus.ACTIVE}
               onItemClick={(item) => {
-                checkAssumeRoleAndRedirect(item.id);
+                setUserSelectType(item.id);
+                redirectToCreateIngestionPage(item.id);
               }}
             >
               {t("button.createAnIngestion")}
@@ -559,63 +514,6 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
       </Modal>
 
       <Modal
-        title={t("applog:detail.ingestion.upgradeNotice")}
-        fullWidth={false}
-        isOpen={openNotice}
-        closeModal={() => {
-          setOpenNotice(false);
-        }}
-        actions={
-          <div className="button-action no-pb text-right">
-            <Button
-              btnType="text"
-              onClick={() => {
-                setOpenNotice(false);
-              }}
-            >
-              {t("button.cancel")}
-            </Button>
-            <Button
-              loading={loadingUpgrade}
-              btnType="primary"
-              onClick={() => {
-                upgradePipeline();
-              }}
-            >
-              {t("button.upgrade")}
-            </Button>
-            <Button
-              onClick={() => {
-                redirectToCreateIngestionPage();
-              }}
-            >
-              {t("button.createSameAccountIngestion")}
-            </Button>
-          </div>
-        }
-      >
-        <div className="modal-content alert-content">
-          <Alert
-            noMargin
-            type={AlertType.Error}
-            content={
-              <div>
-                {t("applog:detail.ingestion.upgradeNoticeDesc")}
-                <ExtLink
-                  to={buildLogHubDocsLink(
-                    i18n.language,
-                    "implementation-guide/revisions/"
-                  )}
-                >
-                  {t("applog:detail.ingestion.upgradeGuide")}
-                </ExtLink>
-              </div>
-            }
-          />
-        </div>
-      </Modal>
-
-      <Modal
         title={t("applog:detail.ingestion.oneMoreStep")}
         fullWidth={false}
         isOpen={showASGModal}
@@ -647,7 +545,7 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
         <div className="modal-content alert-content">
           <Alert
             noMargin
-            type={AlertType.Error}
+            type={AlertType.Warning}
             content={<div>{t("applog:detail.ingestion.groupTips")}</div>}
           />
         </div>

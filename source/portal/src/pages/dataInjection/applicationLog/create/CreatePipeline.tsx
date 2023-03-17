@@ -25,8 +25,11 @@ import { useHistory } from "react-router-dom";
 import {
   BufferInput,
   BufferType,
+  CODEC,
   CreateAppPipelineMutationVariables,
+  EngineType,
   ErrorCode,
+  INDEX_SUFFIX,
   Tag,
 } from "API";
 import { ActionType, AppStateProps } from "reducer/appReducer";
@@ -34,7 +37,11 @@ import { useDispatch, useSelector } from "react-redux";
 import HelpPanel from "components/HelpPanel";
 import SideMenu from "components/SideMenu";
 import { createAppPipeline } from "graphql/mutations";
-import { AmplifyConfigType } from "types";
+import {
+  AmplifyConfigType,
+  S3_STORAGE_CLASS_TYPE,
+  WarmTransitionType,
+} from "types";
 import { useTranslation } from "react-i18next";
 import { checkIndexNameValidate } from "assets/js/utils";
 import Swal from "sweetalert2";
@@ -45,6 +52,12 @@ export interface ApplicationLogType {
   openSearchId: string;
   warmEnable: boolean;
   coldEnable: boolean;
+
+  rolloverSizeNotSupport: boolean;
+
+  enableRolloverByCapacity: boolean;
+  warmTransitionType: string;
+
   aosParams: {
     coldLogTransition: string;
     domainName: string;
@@ -56,6 +69,12 @@ export interface ApplicationLogType {
     opensearchEndpoint: string;
     replicaNumbers: string;
     shardNumbers: string;
+
+    rolloverSize: string;
+    indexSuffix: string;
+    codec: string;
+    refreshInterval: string;
+
     vpc: {
       privateSubnetIds: string;
       securityGroupId: string;
@@ -78,6 +97,8 @@ export interface ApplicationLogType {
     maxFileSize: string;
     uploadTimeout: string;
     compressionType: CompressionType | string;
+
+    s3StorageClass: string;
   };
   mskBufferParams: {
     mskClusterName: string;
@@ -112,23 +133,34 @@ const ImportOpenSearchCluster: React.FC = () => {
     openSearchId: "",
     warmEnable: false,
     coldEnable: false,
+
+    rolloverSizeNotSupport: false,
+    enableRolloverByCapacity: true,
+    warmTransitionType: WarmTransitionType.IMMEDIATELY,
+
     aosParams: {
-      coldLogTransition: "",
       domainName: "",
       engine: "",
       failedLogBucket: amplifyConfig.default_logging_bucket,
       indexPrefix: "",
-      logRetention: "",
+
       opensearchArn: "",
       opensearchEndpoint: "",
       replicaNumbers: "1",
-      shardNumbers: "5",
+      shardNumbers: "1",
+
+      rolloverSize: "30",
+      indexSuffix: INDEX_SUFFIX.yyyy_MM_dd,
+      codec: CODEC.best_compression,
+      refreshInterval: "1s",
       vpc: {
         privateSubnetIds: "",
         securityGroupId: "",
         vpcId: "",
       },
-      warmLogTransition: "",
+      warmLogTransition: "30",
+      coldLogTransition: "60",
+      logRetention: "180",
     },
     bufferType: BufferType.S3,
     kdsBufferParams: {
@@ -148,6 +180,7 @@ const ImportOpenSearchCluster: React.FC = () => {
       maxFileSize: "50",
       uploadTimeout: "60",
       compressionType: CompressionType.Gzip,
+      s3StorageClass: S3_STORAGE_CLASS_TYPE.INTELLIGENT_TIERING,
     },
     mskBufferParams: {
       mskClusterName: "",
@@ -173,6 +206,10 @@ const ImportOpenSearchCluster: React.FC = () => {
   const [coldLogInvalidError, setColdLogInvalidError] = useState(false);
   const [logRetentionInvalidError, setLogRetentionInvalidError] =
     useState(false);
+  const [coldMustLargeThanWarm, setColdMustLargeThanWarm] = useState(false);
+  const [logRetentionMustThanColdAndWarm, setLogRetentionMustThanColdAndWarm] =
+    useState(false);
+  const [rolloverSizeError, setRolloverSizeError] = useState(false);
   const [domainListIsLoading, setDomainListIsLoading] = useState(false);
   const [shardsError, setShardsError] = useState(false);
   const [s3BucketEmptyError, setS3BucketEmptyError] = useState(false);
@@ -252,13 +289,12 @@ const ImportOpenSearchCluster: React.FC = () => {
         return false;
       }
     }
-
     return true;
   };
 
   const checkOpenSearchInput = () => {
     // check number of shards
-    if (parseInt(curApplicationLog.kdsBufferParams.shardCount) <= 0) {
+    if (parseInt(curApplicationLog.aosParams.shardNumbers) <= 0) {
       setShardsError(true);
       setCurStep(1);
       return false;
@@ -274,11 +310,63 @@ const ImportOpenSearchCluster: React.FC = () => {
       setCurStep(1);
       return false;
     }
+
+    if (curApplicationLog.warmTransitionType === WarmTransitionType.BY_DAYS) {
+      if (
+        parseInt(curApplicationLog.aosParams.coldLogTransition) <
+        parseInt(curApplicationLog.aosParams.warmLogTransition)
+      ) {
+        setColdMustLargeThanWarm(true);
+        setCurStep(1);
+        return false;
+      }
+    }
+
+    if (curApplicationLog.warmTransitionType === WarmTransitionType.BY_DAYS) {
+      if (
+        parseInt(curApplicationLog.aosParams.coldLogTransition) <
+        parseInt(curApplicationLog.aosParams.warmLogTransition)
+      ) {
+        if (
+          (curApplicationLog.warmEnable &&
+            parseInt(curApplicationLog.aosParams.logRetention) <
+              parseInt(curApplicationLog.aosParams.warmLogTransition)) ||
+          (curApplicationLog.coldEnable &&
+            parseInt(curApplicationLog.aosParams.logRetention) <
+              parseInt(curApplicationLog.aosParams.coldLogTransition))
+        ) {
+          setLogRetentionMustThanColdAndWarm(true);
+          setCurStep(1);
+          return false;
+        }
+      }
+    } else {
+      if (
+        curApplicationLog.coldEnable &&
+        parseInt(curApplicationLog.aosParams.logRetention) <
+          parseInt(curApplicationLog.aosParams.coldLogTransition)
+      ) {
+        setLogRetentionMustThanColdAndWarm(true);
+        setCurStep(1);
+        return false;
+      }
+    }
+
     if (parseInt(curApplicationLog.aosParams.logRetention) < 0) {
       setLogRetentionInvalidError(true);
       setCurStep(1);
       return false;
     }
+
+    // check rollover size
+    if (
+      curApplicationLog.enableRolloverByCapacity &&
+      parseFloat(curApplicationLog.aosParams.rolloverSize) <= 0
+    ) {
+      setRolloverSizeError(true);
+      return false;
+    }
+
     return true;
   };
 
@@ -287,20 +375,43 @@ const ImportOpenSearchCluster: React.FC = () => {
       JSON.stringify(curApplicationLog.aosParams)
     );
 
-    // set aos lifecycle as number
-    tmpAOSParams.warmLogTransition =
-      parseInt(curApplicationLog.aosParams.warmLogTransition) || 0;
-    tmpAOSParams.coldLogTransition =
-      parseInt(curApplicationLog.aosParams.coldLogTransition) || 0;
-    tmpAOSParams.logRetention =
-      parseInt(curApplicationLog.aosParams.logRetention) || 0;
+    // set AOS Params by condition start
+    tmpAOSParams.rolloverSize = curApplicationLog.enableRolloverByCapacity
+      ? curApplicationLog.aosParams.rolloverSize + "gb"
+      : "";
 
-    // set shard number and replicas as number
-    tmpAOSParams.shardNumbers =
-      parseInt(curApplicationLog.aosParams.shardNumbers) || 0;
-    tmpAOSParams.replicaNumbers =
-      parseInt(curApplicationLog.aosParams.replicaNumbers) || 0;
+    const userInputWarmAge = curApplicationLog.aosParams.warmLogTransition;
+    let tmpWarmAge = "";
+    if (curApplicationLog.warmEnable && userInputWarmAge) {
+      if (
+        curApplicationLog.warmTransitionType === WarmTransitionType.IMMEDIATELY
+      ) {
+        tmpWarmAge = "1s";
+      } else if (userInputWarmAge !== "0") {
+        tmpWarmAge = userInputWarmAge + "d";
+      }
+    }
+    tmpAOSParams.warmLogTransition = tmpWarmAge;
 
+    const userInputCodeAge = curApplicationLog.aosParams.coldLogTransition;
+    let tmpCodeAge = "";
+    if (
+      curApplicationLog.coldEnable &&
+      userInputCodeAge &&
+      userInputCodeAge !== "0"
+    ) {
+      tmpCodeAge = userInputCodeAge + "d";
+    }
+    tmpAOSParams.coldLogTransition = tmpCodeAge;
+
+    const userInputRetainAge = curApplicationLog.aosParams.logRetention;
+    let tmpRetainAge = "";
+    if (userInputRetainAge && userInputRetainAge !== "0") {
+      tmpRetainAge = userInputRetainAge + "d";
+    }
+    tmpAOSParams.logRetention = tmpRetainAge;
+
+    //  set AOS Params by condition end
     let bufferParams: BufferInput[] = [];
 
     if (curApplicationLog.bufferType === BufferType.KDS) {
@@ -442,7 +553,7 @@ const ImportOpenSearchCluster: React.FC = () => {
                   }}
                 />
               </div>
-              <div className="create-content m-w-1024">
+              <div className="create-content m-w-800">
                 {curStep === 0 && (
                   <IngestSetting
                     applicationLog={curApplicationLog}
@@ -575,6 +686,17 @@ const ImportOpenSearchCluster: React.FC = () => {
                         };
                       });
                     }}
+                    changeS3StorageClass={(storage) => {
+                      setCurApplicationLog((prev) => {
+                        return {
+                          ...prev,
+                          s3BufferParams: {
+                            ...prev.s3BufferParams,
+                            s3StorageClass: storage,
+                          },
+                        };
+                      });
+                    }}
                     indexFormatError={indexNameFormatError}
                     indexEmptyError={indexEmptyError}
                     indexDuplicatedError={indexDuplicatedError}
@@ -612,14 +734,20 @@ const ImportOpenSearchCluster: React.FC = () => {
                       });
                     }}
                     changeOpenSearchCluster={(cluster) => {
+                      const NOT_SUPPORT_VERSION =
+                        cluster?.engine === EngineType.Elasticsearch ||
+                        parseFloat(cluster?.version || "") < 1.3;
                       setCurApplicationLog((prev) => {
                         return {
                           ...prev,
                           openSearchId: cluster?.id || "",
                           warmEnable: cluster?.nodes?.warmEnabled || false,
                           coldEnable: cluster?.nodes?.coldEnabled || false,
+                          rolloverSizeNotSupport: NOT_SUPPORT_VERSION,
+                          enableRolloverByCapacity: !NOT_SUPPORT_VERSION,
                           aosParams: {
                             ...prev.aosParams,
+                            rolloverSize: NOT_SUPPORT_VERSION ? "" : "30",
                             domainName: cluster?.domainName || "",
                             opensearchArn: cluster?.domainArn || "",
                             opensearchEndpoint: cluster?.endpoint || "",
@@ -651,6 +779,7 @@ const ImportOpenSearchCluster: React.FC = () => {
                     }}
                     changeColdLogTransition={(coldTrans) => {
                       setColdLogInvalidError(false);
+                      setColdMustLargeThanWarm(false);
                       setCurApplicationLog((prev) => {
                         return {
                           ...prev,
@@ -663,6 +792,7 @@ const ImportOpenSearchCluster: React.FC = () => {
                     }}
                     changeLogRetention={(retention) => {
                       setLogRetentionInvalidError(false);
+                      setLogRetentionMustThanColdAndWarm(false);
                       setCurApplicationLog((prev) => {
                         return {
                           ...prev,
@@ -673,11 +803,68 @@ const ImportOpenSearchCluster: React.FC = () => {
                         };
                       });
                     }}
+                    changeIndexSuffix={(suffix: string) => {
+                      setCurApplicationLog((prev) => {
+                        return {
+                          ...prev,
+                          aosParams: {
+                            ...prev.aosParams,
+                            indexSuffix: suffix,
+                          },
+                        };
+                      });
+                    }}
+                    changeEnableRollover={(enable: boolean) => {
+                      setRolloverSizeError(false);
+                      setCurApplicationLog((prev) => {
+                        return {
+                          ...prev,
+                          enableRolloverByCapacity: enable,
+                        };
+                      });
+                    }}
+                    changeRolloverSize={(size: string) => {
+                      setRolloverSizeError(false);
+                      setCurApplicationLog((prev) => {
+                        return {
+                          ...prev,
+                          aosParams: {
+                            ...prev.aosParams,
+                            rolloverSize: size,
+                          },
+                        };
+                      });
+                    }}
+                    changeCompressionType={(codec: string) => {
+                      setCurApplicationLog((prev) => {
+                        return {
+                          ...prev,
+                          aosParams: {
+                            ...prev.aosParams,
+                            codec: codec,
+                          },
+                        };
+                      });
+                    }}
+                    changeWarmSettings={(type: string) => {
+                      setColdMustLargeThanWarm(false);
+                      setCurApplicationLog((prev) => {
+                        return {
+                          ...prev,
+                          warmTransitionType: type,
+                        };
+                      });
+                    }}
                     esDomainEmptyError={false}
                     warmLogInvalidError={warmLogInvalidError}
                     coldLogInvalidError={coldLogInvalidError}
                     logRetentionInvalidError={logRetentionInvalidError}
                     shardsInvalidError={shardsError}
+                    coldMustLargeThanWarm={coldMustLargeThanWarm}
+                    logRetentionMustThanColdAndWarm={
+                      logRetentionMustThanColdAndWarm
+                    }
+                    rolloverSizeError={rolloverSizeError}
                   />
                 )}
                 {curStep === 2 && (

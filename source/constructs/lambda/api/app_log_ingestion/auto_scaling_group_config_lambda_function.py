@@ -23,8 +23,7 @@ default_config = config.Config(**user_agent_config)
 default_region = os.environ.get("AWS_REGION")
 dynamodb = boto3.resource("dynamodb", config=default_config)
 log_source_table = dynamodb.Table(os.environ.get("LOG_SOURCE_TABLE_NAME"))
-instance_group_table = dynamodb.Table(
-    os.environ.get("INSTANCE_GROUP_TABLE_NAME"))
+instance_group_table = dynamodb.Table(os.environ.get("INSTANCE_GROUP_TABLE_NAME"))
 
 
 def handle_error(func):
@@ -39,7 +38,8 @@ def handle_error(func):
         except Exception as e:
             logger.exception(e)
             raise RuntimeError(
-                "Unknown exception, please check Lambda log for more details")
+                "Unknown exception, please check Lambda log for more details"
+            )
 
     return wrapper
 
@@ -51,10 +51,13 @@ def lambda_handler(event, context):
     action = event["info"]["fieldName"]
     args = event["arguments"]
 
-    auto_scaling_group_name = get_asg_group_name(args["groupId"])
+    group_id = args["groupId"]
+
+    auto_scaling_group_name = get_asg_group_name(group_id)
 
     deploy_config_mng = ASGDeploymentConfigurationMng(
-        instance_group_id=args["groupId"], asg_name=auto_scaling_group_name)
+        instance_group_id=args["groupId"], asg_name=auto_scaling_group_name
+    )
 
     if action == "getAutoScalingGroupConf":
         return deploy_config_mng.get_configuration()
@@ -63,8 +66,8 @@ def lambda_handler(event, context):
         raise APIException(f"Unknown action {action}")
 
 
-def get_asg_group_name(groupId):
-    instance_group_resp = instance_group_table.get_item(Key={"id": groupId})
+def get_asg_group_name(group_id):
+    instance_group_resp = instance_group_table.get_item(Key={"id": group_id})
     if "Item" not in instance_group_resp:
         raise APIException("Instance Group Not Found")
 

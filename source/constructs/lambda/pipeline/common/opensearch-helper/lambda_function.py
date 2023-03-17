@@ -31,11 +31,17 @@ aos = OpenSearch(
     log_type=log_type,
 )
 
-days_to_warm = int(os.environ.get("DAYS_TO_WARM", "0"))
-days_to_cold = int(os.environ.get("DAYS_TO_COLD", "0"))
-days_to_retain = int(os.environ.get("DAYS_TO_RETAIN", "0"))
+warm_age = os.environ.get("WARM_AGE", "")
+cold_age = os.environ.get("COLD_AGE", "")
+retain_age = os.environ.get("RETAIN_AGE", "")
+index_suffix = os.environ.get("INDEX_SUFFIX", "yyyy-MM-dd")
+rollover_age = aos.get_rollover_age_by_format(index_suffix)
+rollover_size = os.environ.get("ROLLOVER_SIZE", "")
+
 number_of_shards = int(os.environ.get("NUMBER_OF_SHARDS", "5"))
 number_of_replicas = int(os.environ.get("NUMBER_OF_REPLICAS", "1"))
+codec = os.environ.get("CODEC", "best_compression")
+refresh_interval = os.environ.get("REFRESH_INTERVAL", "1s")
 
 current_role_arn = os.environ.get("ROLE_ARN")
 log_processor_role_arn = os.environ.get("LOG_PROCESSOR_ROLE_ARN")
@@ -71,29 +77,35 @@ def lambda_handler(event, context):
     props = event.get("props", {})
     if action == "CreateIndexTemplate":
         action_create_index_template(props)
+        if aos.exist_index() is False:
+            create_index()
     else:
-        # First add lambda roles to OpenSearch all access
-        if advanced_security_enabled():
+        advanced_security_enabled_flag = advanced_security_enabled()
+        if advanced_security_enabled_flag:
             logger.info("OpenSearch domain has Advanced Security enabled")
+            # First add helper lambda role to OpenSearch all access
             add_master_role(current_role_arn)
-            if log_processor_role_arn:
-                add_master_role(log_processor_role_arn)
             # Wait for some seconds for the role to be effective.
-            time.sleep(15)
+            time.sleep(25)
 
         # Check and create index state management policy
+        create_ism()
         if log_type and log_type != "Json":
             index_template = aos.default_index_template(
-                number_of_shards, number_of_replicas)
+                number_of_shards, number_of_replicas, codec, refresh_interval)
 
             # Check and Create index template
             put_index_template(index_template)
 
             # Check and Import dashboards or index patterns.
             import_saved_objects()
+            create_index()
 
-        create_ism()
-
+        # Finally, add log processor lambda role to OpenSearch all access if needed.
+        # This role must be inserted after the previous steps such as put_index_template and create_index are completed.
+        if advanced_security_enabled_flag:
+            if log_processor_role_arn:
+                add_master_role(log_processor_role_arn)
     return "OK"
 
 
@@ -117,14 +129,14 @@ def action_create_index_template(props: dict):
             f"{aos.create_predefined_index_template.__name__} of {the_log_type} : {createDashboard}"
         )
 
-        # TODO: How to de-duplicate the index template or dashboards?
-
         run_func_with_retry(
             aos.create_predefined_index_template,
             aos.create_predefined_index_template.__name__,
             name=the_log_type,
             number_of_shards=number_of_shards,
             number_of_replicas=number_of_replicas,
+            codec=codec,
+            refresh_interval=refresh_interval,
         )
 
         if createDashboard.lower() == "yes":
@@ -153,8 +165,12 @@ def action_create_index_template(props: dict):
         # }
 
         mappings = props.get("mappings", {})
-        index_template = aos.default_index_template(number_of_shards,
-                                                    number_of_replicas)
+        index_template = aos.default_index_template(
+            number_of_shards,
+            number_of_replicas,
+            codec=codec,
+            refresh_interval=refresh_interval,
+        )
         index_template["template"]["mappings"] = {"properties": mappings}
 
         logger.info(f"Put index template: {index_template}")
@@ -182,7 +198,7 @@ def advanced_security_enabled() -> bool:
     try:
         resp = es.describe_elasticsearch_domain_config(
             DomainName=domain_name, )
-        # print(resp)
+        print(resp)
         result = resp["DomainConfig"]["AdvancedSecurityOptions"]["Options"][
             "Enabled"]
 
@@ -241,15 +257,25 @@ def import_saved_objects():
 
 
 def create_ism():
-    if days_to_warm == 0 and days_to_cold == 0 and days_to_retain == 0:
+    if (warm_age == "" and cold_age == "" and retain_age == ""
+            and rollover_age == "" and rollover_size == ""):
         logger.info("No need to create ISM policy")
     else:
         kwargs = {
-            "days_to_warm": days_to_warm,
-            "days_to_cold": days_to_cold,
-            "days_to_retain": days_to_retain,
+            "warm_age": warm_age,
+            "cold_age": cold_age,
+            "retain_age": retain_age,
+            "rollover_age": rollover_age,
+            "rollover_size": rollover_size,
         }
         run_func_with_retry(aos.create_ism_policy, "Create ISM", **kwargs)
+
+
+def create_index():
+    logger.info("Create index with prefix %s", index_prefix)
+
+    kwargs = {"format": index_suffix}
+    run_func_with_retry(aos.create_index, "Create index ", **kwargs)
 
 
 def run_func_with_retry(func, func_name, **kwargs):

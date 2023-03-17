@@ -5,27 +5,30 @@ import boto3
 import logging
 import time
 
-iam = boto3.client('iam')
+iam = boto3.client("iam")
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
 def lambda_handler(event, context):
-    request_type = event['RequestType']
-    if request_type == 'Create' or request_type == 'Update':
+    request_type = event["RequestType"]
+    if request_type == "Create" or request_type == "Update":
         try:
-            response = iam.get_role(
-                RoleName='AWSServiceRoleForAppSync',
+            iam.get_role(
+                RoleName="AWSServiceRoleForAppSync",
             )
-        except Exception as err:
-            logger.info("AWSServiceRoleForAppSync does not exist, create it.")
-            response = iam.create_service_linked_role(
-                AWSServiceName='appsync.amazonaws.com'
+            logger.info("AWSServiceRoleForAppSync already exists.")
+
+        except Exception as e:
+            logger.error(e)
+            logger.info("Create service linked role AWSServiceRoleForAppSync.")
+            resp = iam.create_service_linked_role(
+                AWSServiceName="appsync.amazonaws.com"
             )
+            if "Role" in resp and "Arn" in resp["Role"]:
+                logger.info("Create AWSServiceRoleForAppSync completed.")
+            # After created, it can't be used immediately.
             time.sleep(5)
-            logger.info("Create AWSServiceRoleForAppSync completed.")
-        else:
-            logger.info("AWSServiceRoleForAppSync is already exist.")
-        
-    return 'OK'
+
+    return "OK"

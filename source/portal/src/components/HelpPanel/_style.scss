@@ -78,20 +78,19 @@
   .info-table {
     width: 100%;
     border: 1px solid #ccc;
-    th {
-      text-align: center;
-    }
     td {
       text-align: left;
+      padding: 2px 4px;
     }
     th,
     td {
       background-color: #fff;
-      padding: 1px 3px;
       border: 1px solid #ccc;
     }
     th {
       font-size: 12px;
+      padding: 1px 1px;
+      text-align: center;
     }
     .line {
       white-space: nowrap;

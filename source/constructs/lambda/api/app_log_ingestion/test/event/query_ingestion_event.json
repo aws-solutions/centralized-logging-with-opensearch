@@ -4,30 +4,6 @@
         "page": 1,
         "count": 10
     },
-    "identity": {
-        "claims": {
-            "origin_jti": "59f71545-b190-47e9-b138-d944f7a5f693",
-            "sub": "649dabbb-034c-467b-9796-f6bec835cf00",
-            "aud": "7ksklklt8e3ira151890djn49o",
-            "event_id": "0ea188da-7b41-468d-982c-659a612fb79b",
-            "token_use": "id",
-            "auth_time": 1650765289,
-            "iss": "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_LAWcJykAw",
-            "cognito:username": "649dabbb-034c-467b-9796-f6bec835cf00",
-            "exp": 1650768889,
-            "iat": 1650765289,
-            "jti": "a310eb38-c0d9-4d13-ba4a-cf0b880b3fd6",
-            "email": "abc@abc.com"
-        },
-        "defaultAuthStrategy": "ALLOW",
-        "groups": null,
-        "issuer": "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_LAWcJykAw",
-        "sourceIp": [
-            "13.248.48.7"
-        ],
-        "sub": "649dabbb-034c-467b-9796-f6bec835cf00",
-        "username": "649dabbb-034c-467b-9796-f6bec835cf00"
-    },
     "source": null,
     "result": null,
     "request": {

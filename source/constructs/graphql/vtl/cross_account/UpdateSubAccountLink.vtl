@@ -14,6 +14,6 @@ $util.validate($util.matches("^arn:([^:\n]*):([^:\n]*):([^:\n]*):([^:\n]*):(([^:
 
 $util.validate($util.matches("vpc-[a-z0-9]+$", $ctx.args.subAccountVpcId), "Invalid VPC ID")
 
-$util.validate($util.matches"(subnet-[a-z0-9,]+){1,2}", $ctx.args.subAccountPublicSubnetIds), "Invalid Subnet IDs")
+$util.validate($util.matches("^subnet-[a-z0-9]{8,1017}(,subnet-[a-z0-9]{8,1017})+$", $ctx.args.subAccountPublicSubnetIds), "Invalid Subnet IDs")
 
 {"version": "2017-02-28", "operation": "Invoke", "payload": $util.toJson($ctx)}

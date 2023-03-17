@@ -1,7 +1,7 @@
 Deploying this solution with the default parameters builds the following environment in the AWS Cloud.
 
 [![arch]][arch]
-Figure 1: Log Hub on AWS architecture
+_Figure 1: Centralized Logging with OpenSearch architecture_
 
 This solution deploys the AWS CloudFormation template in your AWS Cloud account and completes the following settings.
 
@@ -17,89 +17,114 @@ This solution deploys the AWS CloudFormation template in your AWS Cloud account 
 
 6. [AWS Step Functions](https://aws.amazon.com/step-functions) orchestrates on-demand [AWS CloudFormation](https://aws.amazon.com/cloudformation) deployment of a set of predefined stacks for log pipeline management. The log pipeline stacks deploy separate AWS resources and are used to collect and process logs and ingest them into [Amazon OpenSearch Service](https://aws.amazon.com/opensearch-service) for further analysis and visualization.
 
-7. [Service Log Pipeline](#service-log-analytics-pipeline) or [Application Log Pipeline](#application-log-analytics-pipeline) are provisioned on demand via Log Hub console.
+7. [Service Log Pipeline](#service-log-analytics-pipeline) or [Application Log Pipeline](#application-log-analytics-pipeline) are provisioned on demand via Centralized Logging with OpenSearch console.
 
-8. [AWS Systems Manager](https://aws.amazon.com/systems-manager) and [Amazon EventBridge](https://aws.amazon.com/eventbridge) manage log agents for collecting logs from Application Servers, such as installing log agents (Fluent Bit) for Application servers and monitoring the health status of the agents.
+8. [AWS Systems Manager](https://aws.amazon.com/systems-manager) and [Amazon EventBridge](https://aws.amazon.com/eventbridge) manage log agents for collecting logs from application servers, such as installing log agents (Fluent Bit) for application servers and monitoring the health status of the agents.
 
-9. [Amazon EC2](https://aws.amazon.com/ec2/) or [Amazon EKS](https://aws.amazon.com/eks/) installs Fluent Bit agents, and uploads log data to Application Log Pipeline.
+9. [Amazon EC2](https://aws.amazon.com/ec2/) or [Amazon EKS](https://aws.amazon.com/eks/) installs Fluent Bit agents, and uploads log data to application log pipeline.
 
-10. Application Log Pipelines read, parse, process application logs and ingest them into Amazon OpenSearch.
+10. Application log pipelines read, parse, process application logs and ingest them into Amazon OpenSearch domains.
 
-11. Service Log Pipelines read, parse, process AWS service logs and ingest them into Amazon OpenSearch.
+11. Service log pipelines read, parse, process AWS service logs and ingest them into Amazon OpenSearch domains.
 
 This solution supports two types of log pipelines: **Service Log Analytics Pipeline** and **Application Log Analytics Pipeline**.
 
-## Service Log Analytics Pipeline
+## Service log analytics pipeline
 
-Log Hub supports log analysis for AWS services, such as Amazon S3 access logs, and Application Load Balancer access logs. For a complete list of supported AWS services, refer to [Supported AWS Services](./aws-services/index.md#supported-aws-services).
+Centralized Logging with OpenSearch supports log analysis for AWS services, such as Amazon S3 access logs, and Application Load Balancer access logs. For a complete list of supported AWS services, refer to [Supported AWS Services](./aws-services/index.md#supported-aws-services).
 
-AWS services output logs to different destinations, including Amazon S3 bucket, CloudWatch log groups, Kinesis Data Streams, and Kinesis Firehose. The solution ingests those logs using different workflows.
+This solution ingests different AWS service logs using different workflows.
 
 !!! note "Note"
-    Log Hub supports [cross-account log ingestion](./link-account/index.md). If you want to ingest the logs from another AWS account, the resources in the **Sources** group in the architecture diagram will be in another account.
+    Centralized Logging with OpenSearch supports [cross-account log ingestion](./link-account/index.md). If you want to ingest the logs from another AWS account, the resources in the **Sources** group in the architecture diagram will be in another account.
 
-### Logs in Amazon S3
+### Logs through Amazon S3
 
-Some AWS services use Amazon S3 as the destination, and the logs in Amazon S3 are generally not for real-time analysis. 
+This section is applicable to Amazon S3 access logs, CloudFront standard logs, CloudTrail logs (S3), Application Load Balancing access logs, WAF logs, VPC Flow logs (S3), AWS Config logs, Amazon RDS/Aurora logs, and AWS Lambda Logs.
 
-[![arch-service-pipeline-s3]][arch-service-pipeline-s3]
-Figure 2: Amazon S3 based service log pipeline architecture
+The workflow supports two scenarios:
+
+- **Logs to Amazon S3 directly**
+
+
+    In this scenario, the service directly sends logs to Amazon S3.
+
+    [![arch-service-pipeline-s3]][arch-service-pipeline-s3]
+    _Figure 2: Amazon S3 based service log pipeline architecture_
+
+- **Logs to Amazon S3 via Kinesis Data Firehose**
+
+    In this scenario, the service cannot directly put their logs to Amazon S3. The logs are sent to Amazon CloudWatch, and Kinesis Data Firehose ([KDF]) is used to subscribe the logs from CloudWatch Log Group and then put logs into Amazon S3.
+
+    [![arch-service-pipeline-kdf-to-s3]][arch-service-pipeline-kdf-to-s3]
+    _Figure 3: Amazon S3 (via KDF) based service log pipeline architecture_
 
 The log pipeline runs the following workflow:
 
-1. AWS services store logs in Amazon S3 bucket (Log Bucket).
+1. AWS services logs are stored in Amazon S3 bucket (Log Bucket).
 
-2. An [S3 Event Notification][s3-events] is sent to Amazon SQS when a new log file is created.
+2. An event notification is sent to Amazon SQS using [S3 Event Notifications][s3-events] when a new log file is created.
 
-3. Amazon SQS triggers the Lambda (Log Processor) to run.
+3. Amazon SQS initiates the Log Processor Lambda to run.
 
 4. The log processor reads and processes the log files.
 
-5. The log processor ingest the logs into the Amazon OpenSearch Service.
+5. The log processor ingests the logs into the Amazon OpenSearch Service.
 
-6. The logs failed to be processed are exported to Amazon S3 bucket (Backup Bucket).
+6. Logs that fail to be processed are exported to Amazon S3 bucket (Backup Bucket).
 
-For cross-account ingestion, the AWS Services store logs in Amazon S3 bucket in the member account, and other resources remain in Log Hub.
+For cross-account ingestion, the AWS Services store logs in Amazon S3 bucket in the member account, and other resources remain in central logging account.
 
-### Logs in Amazon CloudWatch
 
-Some services use Amazon CloudWatch log group as the destination. 
+### Logs through Amazon Kinesis Data Streams
 
-[![arch-service-pipeline-cw]][arch-service-pipeline-cw]
-Figure 3: Amazon CloudWatch based service log pipeline architecture
+This section is applicable to CloudFront real-time logs, CloudTrail logs (CloudWatch), and VPC Flow logs (CloudWatch).
+
+The workflow supports two scenarios:
+
+- **Logs to KDS directly**
+    
+    In this scenario, the service directly streams logs to Amazon Kinesis Data Streams ([KDS]).
+
+    [![arch-service-pipeline-kds]][arch-service-pipeline-kds]
+    _Figure 4: Amazon KDS based service log pipeline architecture_
+
+- **Logs to KDS via subscription**
+
+    In this scenario, the service delivers the logs to CloudWatch Log Group, and then CloudWatch Logs stream the logs in real-time to [KDS] as the subscription destination.
+
+    [![arch-service-pipeline-cwl-to-kds]][arch-service-pipeline-cwl-to-kds]
+    _Figure 5: Amazon KDS (via subscription) based service log pipeline architecture_
 
 The log pipeline runs the following workflow:
 
-1. AWS Services store logs in Amazon CloudWatch log group.
+1. AWS Services logs are streamed to Kinesis Data Stream.
 
-2. The CloudWatch logs is streaming to Amazon Kinesis Data Firehose via subscription.
+2. KDS initiates the Log Processor Lambda to run.
 
-3. Amazon Kinesis Data Firehose saves logs to the Amazon S3 bucket (Log Bucket).
+3. The log processor processes and ingests the logs into the Amazon OpenSearch Service.
 
-4. Notifications are sent to Amazon SQS via [S3 Event Notifications][s3-events].
+4. Logs that fail to be processed are exported to Amazon S3 bucket (Backup Bucket).
 
-5. SQS triggers the Lambda (Log Processor) to run.
+For cross-account ingestion, the AWS Services store logs on Amazon CloudWatch log group in the member account, and other resources remain in central logging account.
 
-6. The log processor reads and processes the log files.
+!!! important "Warning"
 
-7. The log processor ingest the logs into the Amazon OpenSearch Service.
+    This solution does not support cross-account ingestion for CloudFront real-time logs.
 
-8. The logs failed to be processed are exported to Amazon S3 bucket (Backup Bucket).
 
-For cross-account ingestion, the AWS Services store logs on Amazon CloudWatch log group in the member account, and other resources remain in Log Hub.
+## Application log analytics pipeline
 
-## Application Log Analytics Pipeline
-
-Log Hub supports log analysis for application logs, such as Nginx/Apache HTTP Server logs or custom application logs. 
+Centralized Logging with OpenSearch supports log analysis for application logs, such as Nginx/Apache HTTP Server logs or custom application logs. 
 
 !!! note "Note"
-    Log Hub supports [cross-account log ingestion](./link-account/index.md). If you want to ingest logs from the same account, the resources in the **Sources** group will be in the same account as your Log Hub account.
+    Centralized Logging with OpenSearch supports [cross-account log ingestion](./link-account/index.md). If you want to ingest logs from the same account, the resources in the **Sources** group will be in the same account as your Centralized Logging with OpenSearch account.
     Otherwise, they will be in another AWS account.
 
 ### Logs from Amazon EC2 / Amazon EKS
 
 [![arch-app-log-pipeline]][arch-app-log-pipeline]
-Figure 4: Application log pipeline architecture for EC2
+_Figure 6: Application log pipeline architecture for EC2/EKS_
 
 The log pipeline runs the following workflow:
 
@@ -109,19 +134,19 @@ The log pipeline runs the following workflow:
 
 3. The log processor reads and processes the log records and ingests the logs into the OpenSearch domain.
 
-4. The logs failed to be processed are exported to an Amazon S3 bucket (Backup Bucket).
+4. Logs that fail to be processed are exported to an Amazon S3 bucket (Backup Bucket).
 
 ### Logs from Syslog Client
 
 !!! important "Important"
 
-    1. Please make sure your Syslog generator/sender's subnet is connected to Log Hub' **two** private subnets so that log can be ingested, you need to use VPC [Peering Connection][peering-connection] or [Transit Gateway][tgw] to connect these VPCs.
-    2. The NLB together with the ECS containers in the architecture diagram will be only provisioned when you create a syslog ingestion and be automated deleted when there is no syslog ingestion.
+    1. Make sure your Syslog generator/sender's subnet is connected to Centralized Logging with OpenSearch' **two** private subnets. You need to use VPC [Peering Connection][peering-connection] or [Transit Gateway][tgw] to connect these VPCs.
+    2. The NLB together with the ECS containers in the architecture diagram will be provisioned only when you create a Syslog ingestion and be automated deleted when there is no Syslog ingestion.
 
 [![arch-syslog-pipeline]][arch-syslog-pipeline]     
-Figure 5: Application log pipeline architecture for Syslog
+_Figure 7: Application log pipeline architecture for Syslog_
 
-1. Syslog client (like [Rsyslog][rsyslog]) send logs to a Network Load Balancer (NLB) in Log Hub's private subnets, and NLB routes to the ECS containers running Syslog servers.
+1. Syslog client (like [Rsyslog][rsyslog]) send logs to a Network Load Balancer (NLB) in Centralized Logging with OpenSearch's private subnets, and NLB routes to the ECS containers running Syslog servers.
 
 2. [Fluent Bit](https://fluentbit.io/) works as the underlying log agent in the ECS Service to parse logs, and send them to an optional [Log Buffer](./applications/index.md#log-buffer), or ingest into OpenSearch domain directly.
 
@@ -129,7 +154,7 @@ Figure 5: Application log pipeline architecture for Syslog
 
 4. The log processor reads and processes the log records and ingests the logs into the OpenSearch domain.
 
-5. The logs failed to be processed are exported to an Amazon S3 bucket (Backup Bucket).
+5. Logs that fail to be processed are exported to an Amazon S3 bucket (Backup Bucket).
 
 [s3log]: https://docs.aws.amazon.com/AmazonS3/latest/userguide/ServerLogs.html
 [alblog]: https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-access-logs.html
@@ -142,11 +167,14 @@ Figure 5: Application log pipeline architecture for Syslog
 [dynamodb]: https://aws.amazon.com/dynamodb/
 [systemsmanager]: https://aws.amazon.com/systemmanager/
 [stepfunction]: https://aws.amazon.com/stepfunctions/
+[kds]: https://aws.amazon.com/kinesis/data-streams/
+[kdf]: https://aws.amazon.com/kinesis/data-firehose/
 [arch]: ../images/architecture/arch.svg
 [arch-service-pipeline-s3]: ../images/architecture/service-pipeline-s3.svg
+[arch-service-pipeline-kdf-to-s3]: ../images/architecture/service-pipeline-kdf-to-s3.svg
 [arch-service-pipeline-cw]: ../images/architecture/service-pipeline-cw.svg
-[arch-eks-pipeline]: ../images/architecture/eks-pipeline.svg
-[arch-syslog-pipeline]: ../images/architecture/syslog-pipeline.svg
+[arch-service-pipeline-kds]: ../images/architecture/service-pipeline-kds.svg
+[arch-service-pipeline-cwl-to-kds]: ../images/architecture/service-pipeline-cwl-to-kds.svg
 [arch-app-log-pipeline]: ../images/architecture/app-log-pipeline-ec2-eks.svg
 [arch-eks-aos-pipeline]: ../images/architecture/eks-aos-pipeline.svg
 [arch-syslog-pipeline]: ../images/architecture/app-log-pipeline-syslog.svg

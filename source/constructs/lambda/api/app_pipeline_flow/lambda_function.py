@@ -19,15 +19,13 @@ default_config = config.Config(**user_agent_config)
 
 default_region = os.environ.get("AWS_REGION")
 
-dynamodb = boto3.resource("dynamodb",
-                          config=default_config,
-                          region_name=default_region)
+dynamodb = boto3.resource("dynamodb", config=default_config, region_name=default_region)
 pipeline_table_name = os.environ.get("PIPELINE_TABLE")
 
 pipeline_table = dynamodb.Table(pipeline_table_name)
 
 
-def lambda_handler(event, context):
+def lambda_handler(event, _):
     # logger.info("Received event: " + json.dumps(event, indent=2))
     """
     It's expected that the event (input) must be in a format of
@@ -39,29 +37,32 @@ def lambda_handler(event, context):
 
     }
     """
-    #logger.info(pipeline_table_name)
+    # logger.info(pipeline_table_name)
     try:
-        args = event["args"] if "args" in event else {}
         result = event["result"]
-        id = event["id"]
+        pipeline_id = event["id"]
 
-        resp = pipeline_table.get_item(Key={
-            "id": id,
-        })
+        resp = pipeline_table.get_item(
+            Key={
+                "id": pipeline_id,
+            }
+        )
+        print(resp)
         if "Item" not in resp:
-            raise APIException("Pipeline Not Found")
 
-        update_status(id, result)
+            raise RuntimeError("Pipeline Not Found")
+
+        update_status(pipeline_id, result)
 
     except Exception as e:
         logger.error(e)
-        logger.error("Invalid Request received: " +
-                     json.dumps(event, indent=2))
+        logger.error("Invalid Request received: " + json.dumps(event, indent=2))
+        raise RuntimeError("Unable to update app pipeline")
 
     return "OK"
 
 
-def update_status(id: str, result):
+def update_status(pipeline_id: str, result):
 
     logger.info("Update Pipeline Status in DynamoDB")
     stack_status = result["stackStatus"]
@@ -95,10 +96,11 @@ def update_status(id: str, result):
     update_expr = (
         "SET #status = :s, stackId = :sid, #error = :err, osHelperFnArn = :helper"
         ", bufferResourceArn = :bufferArn, bufferResourceName = :bufferName"
-        ", bufferAccessRoleArn = :roleArn, bufferAccessRoleName = :roleName")
+        ", bufferAccessRoleArn = :roleArn, bufferAccessRoleName = :roleName"
+    )
 
     pipeline_table.update_item(
-        Key={"id": id},
+        Key={"id": pipeline_id},
         UpdateExpression=update_expr,
         ExpressionAttributeNames={
             "#status": "status",
@@ -115,9 +117,3 @@ def update_status(id: str, result):
             ":roleName": buffer_access_role_name,
         },
     )
-
-
-class APIException(Exception):
-
-    def __init__(self, message):
-        self.message = message

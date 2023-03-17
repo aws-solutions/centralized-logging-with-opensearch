@@ -33,7 +33,7 @@ import {
   buildS3Link,
   formatLocalTime,
 } from "assets/js/utils";
-import { AmplifyConfigType } from "types";
+import { AmplifyConfigType, S3_STORAGE_CLASS_OPTIONS } from "types";
 import { useSelector } from "react-redux";
 import { AppStateProps } from "reducer/appReducer";
 import HelpPanel from "components/HelpPanel";
@@ -113,6 +113,24 @@ const ApplicationLogDetail: React.FC<RouteComponentProps<MatchParams>> = (
                       <ValueWithLabel label={t("applog:detail.osIndex")}>
                         <div>{curPipeline?.aosParams?.indexPrefix || "-"}</div>
                       </ValueWithLabel>
+                      {curPipeline?.aosParams?.indexSuffix && (
+                        <ValueWithLabel label={t("applog:detail.indexSuffix")}>
+                          <div>
+                            {curPipeline?.aosParams?.indexSuffix?.replaceAll(
+                              "_",
+                              "-"
+                            ) || "-"}
+                          </div>
+                        </ValueWithLabel>
+                      )}
+                      {curPipeline?.aosParams?.codec && (
+                        <ValueWithLabel
+                          label={t("applog:detail.compressionType")}
+                        >
+                          <div>{curPipeline?.aosParams?.codec || "-"}</div>
+                        </ValueWithLabel>
+                      )}
+
                       {curPipeline?.bufferType === BufferType.KDS && (
                         <ValueWithLabel label={t("applog:detail.openShards")}>
                           <div>
@@ -138,6 +156,15 @@ const ApplicationLogDetail: React.FC<RouteComponentProps<MatchParams>> = (
                           {curPipeline?.aosParams?.domainName || "-"}
                         </ExtLink>
                       </ValueWithLabel>
+                      {curPipeline?.aosParams?.rolloverSize && (
+                        <ValueWithLabel label={t("applog:detail.rolloverSize")}>
+                          <div>
+                            {curPipeline?.aosParams?.rolloverSize?.toUpperCase() ||
+                              "-"}
+                          </div>
+                        </ValueWithLabel>
+                      )}
+
                       {curPipeline?.bufferType === BufferType.KDS && (
                         <ValueWithLabel label={t("applog:detail.fanout")}>
                           <div>
@@ -210,18 +237,39 @@ const ApplicationLogDetail: React.FC<RouteComponentProps<MatchParams>> = (
                         )}
                       </ValueWithLabel>
                       {curPipeline?.bufferType === BufferType.S3 && (
-                        <ValueWithLabel
-                          label={t(
-                            "applog:create.ingestSetting.s3BucketPrefix"
-                          )}
-                        >
-                          <div>
-                            {getParamValueByKey(
-                              "logBucketPrefix",
-                              curPipeline?.bufferParams
-                            ) || "-"}
-                          </div>
-                        </ValueWithLabel>
+                        <>
+                          <ValueWithLabel
+                            label={t(
+                              "applog:create.ingestSetting.s3BucketPrefix"
+                            )}
+                          >
+                            <div>
+                              {getParamValueByKey(
+                                "logBucketPrefix",
+                                curPipeline?.bufferParams
+                              ) || "-"}
+                            </div>
+                          </ValueWithLabel>
+
+                          <ValueWithLabel
+                            label={t(
+                              "applog:create.ingestSetting.s3StorageClass"
+                            )}
+                          >
+                            <div>
+                              {
+                                S3_STORAGE_CLASS_OPTIONS.find((element) => {
+                                  return (
+                                    getParamValueByKey(
+                                      "s3StorageClass",
+                                      curPipeline?.bufferParams
+                                    ) === element.value
+                                  );
+                                })?.name
+                              }
+                            </div>
+                          </ValueWithLabel>
+                        </>
                       )}
                     </div>
 
@@ -259,9 +307,6 @@ const ApplicationLogDetail: React.FC<RouteComponentProps<MatchParams>> = (
                         setActiveTab(id);
                       }}
                       pipelineInfo={curPipeline}
-                      upgradeToNewPipeline={() => {
-                        getPipelineById();
-                      }}
                     />
                   </TabPanel>
                   <TabPanel value={activeTab} index={1}>

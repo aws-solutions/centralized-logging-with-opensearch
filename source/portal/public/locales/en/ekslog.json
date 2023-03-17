@@ -5,7 +5,7 @@
     "clusterName": "Cluster Name",
     "account": "Account",
     "pattern": "Collection Mode",
-    "os": "Amazon OpenSearch",
+    "os": "OpenSearch",
     "created": "Created"
   },
   "delete": "Delete imported EKS Cluster",
@@ -14,7 +14,7 @@
     "name": "Create",
     "step": {
       "specifyEksSource": "Specify EKS Log Source",
-      "specifyOS": "Specify Amazon OpenSearch domain",
+      "specifyOS": "Specify OpenSearch domain",
       "createTags": "Create tags"
     },
     "eksSource": {
@@ -27,20 +27,20 @@
       "eksAgentPattern": "Collection Mode",
       "eksAgentPatternDesc": "Please choose the collection mode which will be used to deploy logging agent.",
       "networkConfig": "Network Configuration",
-      "networkConfigDesc": "If you plan to ingest EKS logs to Amazon OpenSearch directly (i.e., without using Amazon S3 or Kinesis Data Streams as buffer layer), please make sure the VPC of your EKS cluster and the VPC of Amazon OpenSearch are connected. If they are not connected, you can follow the below steps to create VPC peering. (Note, VPC peering will incur additional cost).",
+      "networkConfigDesc": "If you plan to ingest EKS logs to OpenSearch directly (i.e., without using Amazon S3 or Kinesis Data Streams as buffer layer), please make sure the VPC of your EKS cluster and the VPC of OpenSearch are connected. If they are not connected, you can follow the below steps to create VPC peering. (Note, VPC peering will incur additional cost).",
       "vpc1": "1. Create and accept VPC peering follow ",
       "vpc2": "2. Update route table follow ",
       "vpc3": "3. Update security group follow ",
       "guide": "this guide",
       "acknowledge": "Please acknowledge the checkbox before proceeding.",
-      "confirmed": "I acknowledge the VPC connectivity requirement to ingest log from EKS to Amazon OpenSearch directly."
+      "confirmed": "I acknowledge the VPC connectivity requirement to ingest log from EKS to OpenSearch directly."
     }
   },
   "detail": {
     "config": "General Configurations",
     "clusterName": "EKS Cluster",
     "deploymentPattern": "Collection Mode",
-    "aos": "Amazon OpenSearch",
+    "aos": "OpenSearch",
     "iamRole": "IAM Role ARN",
     "created": "Created",
     "tab": {
@@ -49,7 +49,7 @@
       "tags": "Tags"
     },
     "ingestions": {
-      "osIndex": "Amazon OpenSearch Index",
+      "osIndex": "OpenSearch Index",
       "pipeline": "App Log Pipeline",
       "logConfig": "Log Config",
       "created": "Created",
@@ -74,7 +74,7 @@
       "createTags": "Create Tags"
     },
     "specifyPipeline": {
-      "alert": "The pipeline you are creating or chosing form are conneted with Amazon OpenSearch Cluster:",
+      "alert": "The pipeline you are creating or chosing form are conneted with Amazon OpenSearch domain:",
       "creationMethod": "Creation Method",
       "createNew": "Create new",
       "createNewDesc": "Create a new Application Log Pipeline",
@@ -82,14 +82,14 @@
       "chooseExistsDesc": "Choose existing Application Log Pipeline",
       "index": "Index",
       "indexPrefix": "Index Prefix",
-      "indexPrefixDesc": "Enter the index of the log saved in Amazon OpenSearch",
+      "indexPrefixDesc": "Enter the index of the log saved in OpenSearch",
       "choosePipeline": "Choose Pipeline",
       "pipeline": "Pipeline",
       "filterPipeline": "Filter the existing pipeline",
       "selectPipeline": "Select a pipeline",
       "pipelineConfig": "Pipeline Configuration",
-      "osIndexPrefix": "Amazon OpenSearch Index Prefix",
-      "aos": "Amazon OpenSearch",
+      "osIndexPrefix": "OpenSearch Index Prefix",
+      "aos": "OpenSearch",
       "kds": "Kinesis Data Streams",
       "created": "Created",
       "pipelineRequiredError": "Please select a pipeline."
@@ -99,7 +99,7 @@
     },
     "detail": {
       "ingestionDetail": "Ingestion Detail",
-      "osIndexPrefix": "Amazon OpenSearch Index Prefix",
+      "osIndexPrefix": "OpenSearch Index Prefix",
       "bufferLayer": "Buffer Layer",
       "kds": "Kinesis Data Streams",
       "pipeline": "Pipeline",

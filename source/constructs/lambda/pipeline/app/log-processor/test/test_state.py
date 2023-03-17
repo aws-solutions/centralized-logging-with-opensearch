@@ -6,7 +6,18 @@ from util.state import ISM
 
 @pytest.fixture()
 def hot_only_policy():
-    return {"name": "hot", "actions": []}
+    return {
+        "name":
+        "hot",
+        "actions": [{
+            "rollover": {},
+            "timeout": "24h",
+            "retry": {
+                "count": 5,
+                "delay": "1h"
+            },
+        }]
+    }
 
 
 @pytest.fixture()
@@ -22,18 +33,67 @@ def cold_delete_policy():
 @pytest.fixture()
 def hot_to_warm_policy():
     return {
-        "name": "hot",
-        "actions": [],
-        "transitions": [{"state_name": "warm", "conditions": {"min_index_age": "1d"}}],
+        "name":
+        "hot",
+        "actions": [{
+            "rollover": {},
+            "timeout": "24h",
+            "retry": {
+                "count": 5,
+                "delay": "1h"
+            },
+        }],
+        "transitions": [{
+            "state_name": "warm",
+            "conditions": {
+                "min_index_age": "1d"
+            }
+        }],
+    }
+
+
+@pytest.fixture()
+def rollover_policy():
+    return {
+        "name":
+        "hot",
+        "actions": [{
+            "rollover": {
+                "min_primary_shard_size": "300gb",
+                "min_index_age": "12h",
+            },
+            "timeout": "24h",
+            "retry": {
+                "count": 5,
+                "delay": "1h"
+            },
+        }],
+        "transitions": [{
+            "state_name": "warm",
+            "conditions": {
+                "min_index_age": "1s"
+            }
+        }],
     }
 
 
 class TestISM:
+
+    def test_rollover(self, rollover_policy):
+        ism = ISM('12h', '300gb')
+        states = []
+        while ism.has_next():
+            ism.run('1s', '', '')
+            states.append(ism.get_status())
+
+        assert len(states) == 2
+        # assert states[0] == rollover_policy
+
     def test_hot_warm_delete(self, hot_to_warm_policy, cold_delete_policy):
         ism = ISM()
         states = []
         while ism.has_next():
-            ism.run(1, 2, 3)
+            ism.run('1d', '2d', '3d')
             states.append(ism.get_status())
 
         assert len(states) == 4
@@ -44,7 +104,7 @@ class TestISM:
         ism = ISM()
         states = []
         while ism.has_next():
-            ism.run(0, 0, 0)
+            ism.run()
             states.append(ism.get_status())
 
         assert len(states) == 1
@@ -54,7 +114,7 @@ class TestISM:
         ism = ISM()
         states = []
         while ism.has_next():
-            ism.run(0, 0, 3)
+            ism.run(retain_age='3d')
             states.append(ism.get_status())
 
         assert len(states) == 2
@@ -64,7 +124,7 @@ class TestISM:
         ism = ISM()
         states = []
         while ism.has_next():
-            ism.run(1, 0, 0)
+            ism.run(warm_age='1d')
             states.append(ism.get_status())
 
         assert len(states) == 2
@@ -74,7 +134,7 @@ class TestISM:
         ism = ISM()
         states = []
         while ism.has_next():
-            ism.run(1, 0, 3)
+            ism.run(warm_age='1d', retain_age='3h')
             states.append(ism.get_status())
 
         assert len(states) == 3
@@ -85,7 +145,7 @@ class TestISM:
         ism = ISM()
         states = []
         while ism.has_next():
-            ism.run(1, 2, 0)
+            ism.run(warm_age='1d', cold_age='36h')
             states.append(ism.get_status())
 
         assert len(states) == 3

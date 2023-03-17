@@ -15,7 +15,6 @@ limitations under the License.
 */
 import { Construct } from "constructs";
 import {
-  Fn,
   Aws,
   Duration,
   aws_dynamodb as ddb,
@@ -35,6 +34,8 @@ export interface CrossAccountStackProps {
   readonly graphqlApi: appsync.GraphqlApi;
 
   subAccountLinkTable: ddb.Table;
+
+  readonly solutionId: string;
 }
 export class CrossAccountStack extends Construct {
   readonly apiEndpoint: string;
@@ -44,7 +45,6 @@ export class CrossAccountStack extends Construct {
   constructor(scope: Construct, id: string, props: CrossAccountStackProps) {
     super(scope, id);
 
-    const solution_id = "SO8025";
     this.centralAssumeRolePolicy = new iam.ManagedPolicy(
       this,
       "CentralAssumeRolePolicy",
@@ -79,14 +79,12 @@ export class CrossAccountStack extends Construct {
         environment: {
           CENTRAL_ASSUME_ROLE_POLICY_ARN:
             this.centralAssumeRolePolicy.managedPolicyArn,
-          SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName!,
+          SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
           BASE_RESOURCE_ARN: `arn:${Aws.PARTITION}:logs:${Aws.REGION}:${Aws.ACCOUNT_ID}:*`,
-          SOLUTION_ID: solution_id,
-          SOLUTION_VERSION: process.env.VERSION
-            ? process.env.VERSION
-            : "v1.0.0",
+          SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+          SOLUTION_ID: props.solutionId,
         },
-        description: "Log Hub - CrossAccount APIs Resolver",
+        description: `${Aws.STACK_NAME} - CrossAccount APIs Resolver`,
       }
     );
 
@@ -115,7 +113,7 @@ export class CrossAccountStack extends Construct {
         description: "DynamoDB Resolver Datasource",
       }
     );
-    crossAccountDynamoDS.createResolver({
+    crossAccountDynamoDS.createResolver('getSubAccountLink', {
       typeName: "Query",
       fieldName: "getSubAccountLink",
       requestMappingTemplate: appsync.MappingTemplate.dynamoDbGetItem(
@@ -139,10 +137,15 @@ export class CrossAccountStack extends Construct {
       }
     );
 
-    crossAccountLambdaDS.createResolver({
+    crossAccountLambdaDS.createResolver('listSubAccountLinks', {
       typeName: "Query",
       fieldName: "listSubAccountLinks",
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      requestMappingTemplate: appsync.MappingTemplate.fromFile(
+        path.join(
+          __dirname,
+          "../../graphql/vtl/cross_account/ListSubAccountLinks.vtl"
+        )
+      ),
       responseMappingTemplate: appsync.MappingTemplate.fromFile(
         path.join(
           __dirname,
@@ -151,7 +154,7 @@ export class CrossAccountStack extends Construct {
       ),
     });
 
-    crossAccountLambdaDS.createResolver({
+    crossAccountLambdaDS.createResolver('getSubAccountLinkByAccountIdRegion', {
       typeName: "Query",
       fieldName: "getSubAccountLinkByAccountIdRegion",
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
@@ -164,7 +167,7 @@ export class CrossAccountStack extends Construct {
       ),
     });
 
-    crossAccountLambdaDS.createResolver({
+    crossAccountLambdaDS.createResolver('createSubAccountLink', {
       typeName: "Mutation",
       fieldName: "createSubAccountLink",
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
@@ -176,7 +179,7 @@ export class CrossAccountStack extends Construct {
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
-    crossAccountLambdaDS.createResolver({
+    crossAccountLambdaDS.createResolver('updateSubAccountLink', {
       typeName: "Mutation",
       fieldName: "updateSubAccountLink",
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
@@ -188,7 +191,7 @@ export class CrossAccountStack extends Construct {
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
-    crossAccountLambdaDS.createResolver({
+    crossAccountLambdaDS.createResolver('deleteSubAccountLink', {
       typeName: "Mutation",
       fieldName: "deleteSubAccountLink",
       requestMappingTemplate: appsync.MappingTemplate.fromFile(

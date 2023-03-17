@@ -22,7 +22,6 @@ import reportWebVitals from "./reportWebVitals";
 import { createStore } from "redux";
 import { Provider } from "react-redux";
 import appReducer from "reducer/appReducer";
-// import i18n (needs to be bundled ;))
 import "./i18n";
 
 if (process.env.NODE_ENV === "production") {

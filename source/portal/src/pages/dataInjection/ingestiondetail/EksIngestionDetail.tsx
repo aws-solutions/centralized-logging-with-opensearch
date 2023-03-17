@@ -75,7 +75,6 @@ const EksIngestionDetail: React.FC = () => {
   const [loadingData, setLoadingData] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const [eksIngestionData, setEksIngestionData] = useState<EksDetailProps>();
-  // const [eksClusterName, setEksClusterName] = useState("");
   const [eksClusterInfo, setEksClusterInfo] = useState<EKSClusterLogSource>();
   const breadCrumbList = [
     { name: t("name"), link: "/" },
@@ -106,7 +105,6 @@ const EksIngestionDetail: React.FC = () => {
       const tmpEksData: EKSClusterLogSource =
         resEksData?.data?.getEKSClusterDetails;
       setEksClusterInfo(tmpEksData);
-      // setEksClusterName(tmpEksData.eksClusterName || "");
 
       // Get Ingestion Info By ingestionId
       const resIngestionData: any = await appSyncRequestQuery(

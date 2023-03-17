@@ -32,11 +32,12 @@ def s3_client():
     with mock_s3():
         region = os.environ.get("AWS_REGION")
         version = os.environ.get("SOLUTION_VERSION")
-        key = f"log-hub/{version}/AlarmForOpenSearch.template"
+        solution_name = os.environ.get("SOLUTION_NAME", "log-hub")
+        key = f"{solution_name}/{version}/AlarmForOpenSearch.template"
 
         s3 = boto3.resource("s3", region_name=region)
         # Create the bucket
-        template_bucket = os.environ.get("DIST_OUTPUT_BUCKET")
+        template_bucket = os.environ.get("TEMPLATE_OUTPUT_BUCKET")
         s3.create_bucket(Bucket=template_bucket)
 
         # upload template file

@@ -73,7 +73,6 @@ const DetailEC2: React.FC<DetailEC2Props> = (props: DetailEC2Props) => {
     ) {
       const tmpInstanceInfoList: InstanceWithStatus[] = [];
       setLoadingRefresh(true);
-      // setInstanceInfoList([]);
       for (let i = 0; i < instanceGroup.instanceSet.length; i++) {
         const dataInstanceInfo = await appSyncRequestQuery(listInstances, {
           maxResults: 50,

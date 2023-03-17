@@ -3,7 +3,6 @@
 
 import json
 import os
-from unittest import TestCase as tc
 import io
 import zipfile
 
@@ -17,12 +16,6 @@ from .datafile import ddb_mock_data
 @pytest.fixture
 def appsync_create_s3_source_event():
     with open("./test/event/appsync_create_s3_source_event.json", "r") as f:
-        return json.load(f)
-
-
-@pytest.fixture
-def appsync_delete_s3_source_event():
-    with open("./test/event/appsync_delete_s3_source_event.json", "r") as f:
         return json.load(f)
 
 
@@ -108,86 +101,146 @@ def ddb_client():
         with s3_log_source_table.batch_writer() as batch:
             for data in data_list:
                 batch.put_item(Item=data)
-        
+
         log_source_table_name = os.environ.get("LOG_SOURCE_TABLE_NAME")
-        log_source_table = ddb.create_table(
+        ddb.create_table(
             TableName=log_source_table_name,
             KeySchema=[{"AttributeName": "id", "KeyType": "HASH"}],
             AttributeDefinitions=[{"AttributeName": "id", "AttributeType": "S"}],
             ProvisionedThroughput={"ReadCapacityUnits": 10, "WriteCapacityUnits": 10},
         )
 
+        log_source_table = ddb.Table(log_source_table_name)
+
+        log_source_table.put_item(
+            Item={
+                'id': '1111111111111111111',
+                'sourceType': 'Syslog',
+                'accountId': '123456789012',
+                'region': 'us-east-1',
+                'sourceInfo': [
+                    {
+                        'key': 'syslogPort',
+                        'value': 501
+                    }
+                ],
+                'createdDt': '2023-01-30T02:01:23Z',
+                'tags': [],
+                'status': 'ACTIVE',
+                'sourceId': '1111111111111111111'
+            }
+        )
+
         yield
 
 
-def test_lambda_handler_s3_source(
-    appsync_create_s3_source_event,
-    appsync_delete_s3_source_event,
-    appsync_get_s3_source_event,
+# def test_lambda_handler_s3_source(
+#     appsync_create_s3_source_event,
+#     appsync_get_s3_source_event,
+#     ddb_client,
+#     sts_client,
+#     lambda_client,
+# ):
+#     # Can only import here, as the environment variables need to be set first.
+#     import lambda_function
+
+#     # Test for App Log S3 source
+#     lambda_function.lambda_handler(appsync_create_s3_source_event, None)
+
+
+def test_lambda_handler_syslog_source(
     ddb_client,
     sts_client,
-    lambda_client
+    lambda_client,
 ):
-    # Can only import here, as the environment variables need to be set first.
     import lambda_function
 
-    # Test for App Log S3 source
-    lambda_function.lambda_handler(appsync_create_s3_source_event, None)
-
-    # get_response = lambda_function.lambda_handler(appsync_get_s3_source_event, None)
-    # print(get_response)
-    # log_source_groud_truth = {
-    #     "id": "9e2a1ebf-f738-4f67-bb5b-986b9360107c",
-    #     "archiveFormat": "json",
-    #     "createdDt": "2022-05-09T02:38:53Z",
-    #     "region": "us-east-1",
-    #     "s3Name": "loghub-logs-123456789012",
-    #     "s3Prefix": "test",
-    #     "sourceType": "S3",
-    #     "status": "ACTIVE",
-    #     "defaultVpcId": "vpc-1001",
-    #     "defaultSubnetIds": "sub-001,sub-002",
-    #     "tags": None,
-    #     "s3Source": {
-    #         "s3Name": "loghub-logs-123456789012",
-    #         "s3Prefix": "test",
-    #         "archiveFormat": "json",
-    #         "defaultVpcId": "vpc-1001",
-    #         "defaultSubnetIds": "sub-001,sub-002"
-    #     },
-    # }
-    
-    # dummy_obj = tc()
-    # tc.assertEqual(dummy_obj, get_response, log_source_groud_truth)
-
-    lambda_function.lambda_handler(
-        {
-            "arguments": {
-                "sourceType": "S3",
-            },
-            "info": {
-                "fieldName": "listLogSources",
-                "parentTypeName": "Query",
-                "variables": {},
-            },
+    # Test createLogSource method
+    source_id = lambda_function.lambda_handler({
+        "arguments": {
+            "sourceType": "Syslog"
         },
-        None,
-    )
-
-    lambda_function.lambda_handler(
-        {
-            "arguments": {
-                "sourceType": "S3",
-                "id": "9e2a1ebf-f738-4f67-bb5b-986b9360107a",
-            },
-            "info": {
-                "fieldName": "updateLogSource",
-                "parentTypeName": "Mutation",
-                "variables": {},
-            },
+        "info": {
+            "fieldName": "createLogSource",
+            "parentTypeName": "Mutation",
+            "variables": {},
         },
-        None,
-    )
+    }, None)
+
+    # Test getLogSource method
+    resp = lambda_function.lambda_handler({
+        "arguments": {
+            "sourceType": "Syslog",
+            "id": source_id
+        },
+        "info": {
+            "fieldName": "getLogSource",
+            "parentTypeName": "Query",
+            "variables": {},
+        },
+    }, None)
+
+    assert resp["status"] == "REGISTERED"
+
+    # Test checkCustomPort method
+    resp = lambda_function.lambda_handler({
+        "arguments": {
+            "sourceType": "Syslog",
+            "id": source_id,
+            "syslogPort": 500
+        },
+        "info": {
+            "fieldName": "checkCustomPort",
+            "parentTypeName": "Mutation",
+            "variables": {},
+        },
+    }, None)
+
+    assert resp == {'isAllowedPort': True, 'msg': '', 'recommendedPort': 500}
+
+    resp = lambda_function.lambda_handler({
+        "arguments": {
+            "sourceType": "Syslog",
+            "id": source_id,
+            "syslogPort": -1
+        },
+        "info": {
+            "fieldName": "checkCustomPort",
+            "parentTypeName": "Mutation",
+            "variables": {},
+        },
+    }, None)
+
+    assert resp == {'isAllowedPort': True, 'msg': '', 'recommendedPort': 500}
+
+    resp = lambda_function.lambda_handler({
+        "arguments": {
+            "sourceType": "Syslog",
+            "id": source_id,
+            "syslogPort": 1
+        },
+        "info": {
+            "fieldName": "checkCustomPort",
+            "parentTypeName": "Mutation",
+            "variables": {},
+        },
+    }, None)
+
+    assert resp == {'isAllowedPort': False, 'msg': 'OutofRange', 'recommendedPort': 500}
+
+    resp = lambda_function.lambda_handler({
+        "arguments": {
+            "sourceType": "Syslog",
+            "id": "1111111111111111111",
+            "syslogPort": 501
+        },
+        "info": {
+            "fieldName": "checkCustomPort",
+            "parentTypeName": "Mutation",
+            "variables": {},
+        },
+    }, None)
+    assert resp == {'isAllowedPort': False, 'msg': 'Conflict', 'recommendedPort': 500}
 
 
 def test_id_not_found(ddb_client, sts_client, lambda_client):

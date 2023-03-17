@@ -1,11 +1,37 @@
-#foreach( $param in $ctx.args.tags )
-    #set($param.key = $util.urlDecode($param.key))
-    #if( $param.key.length() > 250)
-        $util.error("Value for Tag Key field cannot exceed 250 characters.")
-    #end
-    #set($param.value = $util.urlDecode($param.value))
-    #if( $param.value.length() > 250)
-        $util.error("Value for Tag Value field cannot exceed 250 characters.")
+#foreach( $tag in $ctx.args.tags )
+    #set($tag.key = $util.urlDecode($tag.key))
+    $util.validate($util.matches("^[\w\s_.:\/=+\-@]{1,128}$", $tag.key), "Invalid key. Keys can contain alphanumeric characters, spaces, or any of the following: _.:/=+-@")
+    #set($tag.value = $util.urlDecode($tag.value))
+    $util.validate($util.matches("^[\w\s_.:\/=+\-@]{0,256}$", $tag.value), "Invalid value. Values can contain alphanumeric characters, spaces, or any of the following: _.:/=+-@")
+#end
+
+#foreach( $param in $ctx.args.parameters )
+    #set($param.parameterKey = $util.urlDecode($param.parameterKey))
+    $util.validate($util.matches("^[\w\s_.:\/=+\-@]{1,128}$", $param.parameterKey), "Invalid Parameter Key")
+    
+    #set($param.parameterValue = $util.urlDecode($param.parameterValue))
+    $util.validate($util.matches("^.{0,2048}$", $param.parameterValue), "Invalid Parameter Value")
+#end
+
+$util.validate($util.matches("^[\w\s_.:\/=+\-@]{1,1024}$", $ctx.args.source), "Invalid Source Name")
+$util.validate($util.matches("^[\w\s_.:\/=+\-@]{1,1024}$", $ctx.args.target), "Invalid Target Name")
+$util.validate($util.matches("^\d{12}$", $util.defaultIfNullOrEmpty($ctx.args.logSourceAccountId, '123456789012')), "Invalid Log Source Account ID")
+$util.validate($util.matches("^(?!(.*--))(?!(.*-$))[a-z0-9]([a-z0-9-]){0,62}$", $util.defaultIfNullOrEmpty($ctx.args.logSourceRegion,'us-west-2')), "Invalid Log Source Region Name")
+
+#foreach( $param in $ctx.args.parameters )
+    #if( $param.parameterKey == "logBucketName" || $param.parameterKey == "backupBucketName" )
+        $util.validate($util.matches("^(?!(^((\d{1,3}[.]){3}\d{1,3}$)|.*\.\.|.*\.-|.*-\.|.*\._|.*_\.))[a-z\d][\w.-]{1,253}[a-z\d]$", $param.parameterValue), "Invalid Bucket Name")
+    #elseif( $param.parameterKey == "logBucketPrefix")
+    	#set($param.parameterValue = $util.urlDecode($param.parameterValue))
+        $util.validate($util.matches("^.{0,1024}$", $param.parameterValue), "Invalid Prefix")
+    #elseif ($param.parameterKey == "domainName" )
+    	$util.validate($util.matches("[a-zA-Z0-9-]{1,1024}", $param.parameterValue), "Invalid OpenSearch Domain Name")
+    #elseif ($param.parameterKey == "vpcId" )
+    	$util.validate($util.matches("^vpc-[a-z0-9]{8,1020}$", $param.parameterValue), "Invalid VPC ID")
+    #elseif ($param.parameterKey == "subnetIds" )
+    	$util.validate($util.matches("^subnet-[a-z0-9]{8,1017}(,subnet-[a-z0-9]{8,1017})*$", $param.parameterValue), "Invalid Subnet IDs")
+    #elseif ($param.parameterKey == "securityGroupId" )
+    	$util.validate($util.matches("^sg-[a-z0-9]{8,1021}$", $param.parameterValue), "Invalid Security Group ID")
     #end
 #end
 

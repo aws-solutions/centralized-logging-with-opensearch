@@ -16,6 +16,8 @@ limitations under the License.
 import React from "react";
 
 interface SwithProps {
+  disabled?: boolean;
+  reverse?: boolean;
   label: string;
   desc: string;
   isOn: boolean;
@@ -23,13 +25,14 @@ interface SwithProps {
 }
 
 const Alert: React.FC<SwithProps> = (props: SwithProps) => {
-  const { label, desc, isOn, handleToggle } = props;
+  const { disabled, reverse, label, desc, isOn, handleToggle } = props;
   return (
     <div className="gsui-switch">
       <div className="flex">
-        <div className="title">{label}</div>
+        {!reverse && <div className="title">{label}</div>}
         <div className="switch-container">
           <input
+            disabled={disabled}
             checked={isOn}
             onChange={handleToggle}
             className="react-switch-checkbox"
@@ -44,6 +47,7 @@ const Alert: React.FC<SwithProps> = (props: SwithProps) => {
             <span className={`react-switch-button`} />
           </label>
         </div>
+        {reverse && <div className="title ml-10">{label}</div>}
       </div>
       <div className="desc">{desc}</div>
     </div>

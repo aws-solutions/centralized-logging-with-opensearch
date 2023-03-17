@@ -29,7 +29,6 @@ export const CreateStep: React.FC<CreateStepProps> = (
   props: CreateStepProps
 ) => {
   const { list, activeIndex, selectStep } = props;
-  // const [curActive, setcurActive] = useState(initialState)
 
   // btn, btn-lg, btn-primary
   return (

@@ -56,12 +56,9 @@ const BootstrapInput = withStyles((theme) => ({
     border: "1px solid #aab7b8",
     fontSize: 14,
     padding: "6px 10px 6px 10px",
-    // transition: theme.transitions.create(["border-color", "box-shadow"]),
-    // Use the system font instead of the default Roboto font.
     "&:focus": {
       borderRadius: 2,
       borderColor: "#aab7b8",
-      // boxShadow: "0 0 0 0.2rem rgba(0,123,255,.25)",
     },
   },
 }))(InputBase);
@@ -75,6 +72,7 @@ interface SelectProps {
   onChange: (event: any) => void;
   hasRefresh?: boolean;
   clickRefresh?: () => void;
+  defaultSelectItems?: string[];
 }
 
 const MultiSelect: React.FC<SelectProps> = (props: SelectProps) => {
@@ -87,10 +85,11 @@ const MultiSelect: React.FC<SelectProps> = (props: SelectProps) => {
     onChange,
     hasRefresh,
     clickRefresh,
+    defaultSelectItems,
   } = props;
-  // console.info("optionList:", optionList);
-  const [selected, setSelected] = useState<string[]>(value);
-  // teamMates: []
+  const [selected, setSelected] = useState<string[]>(
+    defaultSelectItems ? [...defaultSelectItems, ...value] : value
+  );
 
   const handleChange = (event: any) => {
     console.info("AAABBB:event:", event.target.value);
@@ -100,7 +99,11 @@ const MultiSelect: React.FC<SelectProps> = (props: SelectProps) => {
 
   useEffect(() => {
     if (value.length <= 0) {
-      setSelected([]);
+      if (defaultSelectItems && defaultSelectItems.length > 0) {
+        setSelected(defaultSelectItems);
+      } else {
+        setSelected([]);
+      }
     } else {
       setSelected(value);
     }
@@ -126,15 +129,18 @@ const MultiSelect: React.FC<SelectProps> = (props: SelectProps) => {
           ) : (
             optionList.map((element, index) => (
               <MenuItem
+                disabled={defaultSelectItems?.includes(element.value)}
                 key={index}
                 value={element.value}
                 style={{ margin: 0, padding: 0 }}
               >
                 <div
                   style={{
+                    width: "100%",
                     display: "block",
-                    padding: "8px 10px 8px 35px",
+                    padding: "5px 10px 5px 35px",
                     cursor: "pointer",
+                    borderBottom: "1px solid #eaeded",
                   }}
                 >
                   {/* <Checkbox /> */}
@@ -165,17 +171,21 @@ const MultiSelect: React.FC<SelectProps> = (props: SelectProps) => {
                     </div>
                     <div>{item}</div>
                   </div>
-                  <div
-                    className="icon-remove"
-                    onClick={() => {
-                      const tmpSelected = JSON.parse(JSON.stringify(selected));
-                      tmpSelected.splice(selected.indexOf(item), 1);
-                      setSelected(tmpSelected);
-                      onChange(tmpSelected);
-                    }}
-                  >
-                    <CloseIcon fontSize="small" />
-                  </div>
+                  {!defaultSelectItems?.includes(item) && (
+                    <div
+                      className="icon-remove"
+                      onClick={() => {
+                        const tmpSelected = JSON.parse(
+                          JSON.stringify(selected)
+                        );
+                        tmpSelected.splice(selected.indexOf(item), 1);
+                        setSelected(tmpSelected);
+                        onChange(tmpSelected);
+                      }}
+                    >
+                      <CloseIcon fontSize="small" />
+                    </div>
+                  )}
                 </div>
               );
             })}

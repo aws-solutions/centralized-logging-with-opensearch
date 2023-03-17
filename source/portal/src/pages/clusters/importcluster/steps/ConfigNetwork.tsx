@@ -109,15 +109,12 @@ const ConfigNetwork: React.FC<ConfigNetworkProps> = (
       const dataList = resData.data.listResources;
       const list = convertResourceToOptionList(dataList, type);
       if (type === ResourceType.VPC) {
-        // setLogProcessVpcOptionList(list);
         changeVPCList(list);
       }
       if (type === ResourceType.Subnet) {
-        // setLogProcessSubnetOptionList(list);
         changeSubnetList(list);
       }
       if (type === ResourceType.SecurityGroup) {
-        // setLogProcessSecGroupList(list);
         changeSGList(list);
       }
       setLoadingRes(false);
@@ -244,7 +241,6 @@ const ConfigNetwork: React.FC<ConfigNetworkProps> = (
                 optionList={importedCluster.logProcessVpcOptionList}
                 value={importedCluster.vpc.vpcId}
                 onChange={(event) => {
-                  // setLogProcessVpc(event.target.value);
                   changeVpc(event.target.value);
                   getResources(ResourceType.Subnet, event.target.value);
                   getResources(ResourceType.SecurityGroup, event.target.value);
@@ -278,7 +274,6 @@ const ConfigNetwork: React.FC<ConfigNetworkProps> = (
                 onChange={(subnetIds) => {
                   console.info(subnetIds);
                   if (subnetIds) {
-                    // setLogProcessSubnet(subnetIds);
                     changeSubnet(subnetIds.join(","));
                   }
                 }}
@@ -296,7 +291,6 @@ const ConfigNetwork: React.FC<ConfigNetworkProps> = (
                 optionList={importedCluster.logProcessSecGroupList}
                 value={importedCluster.vpc.securityGroupId}
                 onChange={(event) => {
-                  // setLogProcessSecGroup(event.target.value);
                   changeSecurityGroup(event.target.value);
                 }}
                 placeholder={t("cluster:import.configNetwork.chooseSG")}

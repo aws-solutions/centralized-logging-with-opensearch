@@ -33,7 +33,13 @@ import { RDSTaskProps } from "../rds/CreateRDS";
 import { ELBTaskProps } from "../elb/CreateELB";
 import { WAFTaskProps } from "../waf/CreateWAF";
 
-import { YesNo } from "types";
+import {
+  YesNo,
+  ClusterCompressionTypeList,
+  ServiceLogClusterIndexSuffixFormatList,
+  WarmLogSettingsList,
+  WarmTransitionType,
+} from "types";
 import {
   ENABLE_CLODSTATE,
   ENABLE_ULTRAWARM,
@@ -46,6 +52,8 @@ import { InfoBarTypes } from "reducer/appReducer";
 import { useTranslation } from "react-i18next";
 import { VpcLogTaskProps } from "../vpc/CreateVPC";
 import { ConfigTaskProps } from "../config/CreateConfig";
+import Switch from "components/Switch";
+import { checkIndexNameValidate } from "assets/js/utils";
 interface SpecifyOpenSearchClusterProps {
   taskType: ServiceLogType;
   pipelineTask:
@@ -69,6 +77,11 @@ interface SpecifyOpenSearchClusterProps {
   changeReplicas: (replicas: string) => void;
   esDomainEmptyError: boolean;
   aosInputValidRes: AOSInputValidRes;
+  changeIndexSuffix: (suffix: string) => void;
+  changeEnableRollover: (enable: boolean) => void;
+  changeRolloverSize: (size: string) => void;
+  changeCompressionType: (codec: string) => void;
+  changeWarmSettings: (type: string) => void;
 }
 
 export interface AOSInputValidRes {
@@ -76,6 +89,11 @@ export interface AOSInputValidRes {
   warmLogInvalidError: boolean;
   coldLogInvalidError: boolean;
   logRetentionInvalidError: boolean;
+  coldMustLargeThanWarm: boolean;
+  logRetentionMustThanColdAndWarm: boolean;
+  capacityInvalidError: boolean;
+  indexEmptyError: boolean;
+  indexNameFormatError: boolean;
 }
 
 export const checkOpenSearchInput = (
@@ -95,7 +113,27 @@ export const checkOpenSearchInput = (
     warmLogInvalidError: false,
     coldLogInvalidError: false,
     logRetentionInvalidError: false,
+    coldMustLargeThanWarm: false,
+    logRetentionMustThanColdAndWarm: false,
+    capacityInvalidError: false,
+    indexEmptyError: false,
+    indexNameFormatError: false,
   };
+
+  // check index name empty
+  if (pipelineTask.params.indexPrefix.trim() === "") {
+    validRes.indexEmptyError = true;
+  } else {
+    validRes.indexEmptyError = false;
+  }
+
+  // check index name format
+  if (!checkIndexNameValidate(pipelineTask.params.indexPrefix)) {
+    validRes.indexNameFormatError = true;
+  } else {
+    validRes.indexNameFormatError = false;
+  }
+
   // check number of shards
   if (parseInt(pipelineTask.params.shardNumbers) <= 0) {
     validRes.shardsInvalidError = true;
@@ -103,25 +141,151 @@ export const checkOpenSearchInput = (
     validRes.shardsInvalidError = false;
   }
 
-  if (parseInt(pipelineTask.params.daysToWarm) < 0) {
+  if (parseInt(pipelineTask.params.warmAge) < 0) {
     validRes.warmLogInvalidError = true;
   } else {
     validRes.warmLogInvalidError = false;
   }
 
-  if (parseInt(pipelineTask.params.daysToCold) < 0) {
+  if (parseInt(pipelineTask.params.coldAge) < 0) {
     validRes.coldLogInvalidError = true;
   } else {
     validRes.coldLogInvalidError = false;
   }
 
-  if (parseInt(pipelineTask.params.daysToRetain) < 0) {
+  if (pipelineTask.params.warmTransitionType === WarmTransitionType.BY_DAYS) {
+    if (
+      parseInt(pipelineTask.params.coldAge) <
+      parseInt(pipelineTask.params.warmAge)
+    ) {
+      validRes.coldMustLargeThanWarm = true;
+    } else {
+      validRes.coldMustLargeThanWarm = false;
+    }
+  }
+
+  if (pipelineTask.params.warmTransitionType === WarmTransitionType.BY_DAYS) {
+    if (
+      (pipelineTask.params.warmEnable &&
+        parseInt(pipelineTask.params.retainAge) <
+          parseInt(pipelineTask.params.warmAge)) ||
+      (pipelineTask.params.coldEnable &&
+        parseInt(pipelineTask.params.retainAge) <
+          parseInt(pipelineTask.params.coldAge))
+    ) {
+      validRes.logRetentionMustThanColdAndWarm = true;
+    } else {
+      validRes.logRetentionMustThanColdAndWarm = false;
+    }
+  } else {
+    if (
+      pipelineTask.params.coldEnable &&
+      parseInt(pipelineTask.params.retainAge) <
+        parseInt(pipelineTask.params.coldAge)
+    ) {
+      validRes.logRetentionMustThanColdAndWarm = true;
+    } else {
+      validRes.logRetentionMustThanColdAndWarm = false;
+    }
+  }
+
+  if (parseInt(pipelineTask.params.retainAge) < 0) {
     validRes.logRetentionInvalidError = true;
   } else {
     validRes.logRetentionInvalidError = false;
   }
 
+  if (
+    pipelineTask.params.enableRolloverByCapacity &&
+    parseFloat(pipelineTask.params.rolloverSize) <= 0
+  ) {
+    validRes.capacityInvalidError = true;
+  } else {
+    validRes.capacityInvalidError = false;
+  }
+
   return validRes;
+};
+
+const AOS_EXCLUDE_PARAMS = ["enableRolloverByCapacity", "warmTransitionType"];
+export const covertParametersByKeyAndConditions = (
+  pipelineTask:
+    | S3TaskProps
+    | CloudFrontTaskProps
+    | CloudTrailTaskProps
+    | LambdaTaskProps
+    | RDSTaskProps
+    | ELBTaskProps
+    | WAFTaskProps
+    | VpcLogTaskProps
+    | ConfigTaskProps,
+  taskExcludeParams: string[]
+) => {
+  const resParamList: any[] = [];
+  const EXCLUDE_PARAMS = [...taskExcludeParams, ...AOS_EXCLUDE_PARAMS];
+  Object.keys(pipelineTask.params).forEach((key) => {
+    if (EXCLUDE_PARAMS.indexOf(key) < 0) {
+      if (key === "rolloverSize") {
+        // handle enable rollover by size
+        resParamList.push({
+          parameterKey: "rolloverSize",
+          parameterValue: pipelineTask.params.enableRolloverByCapacity
+            ? pipelineTask.params.rolloverSize + "gb"
+            : "",
+        });
+      } else if (key === "warmAge") {
+        // handle wram log transition
+        const userInputWarmAge = pipelineTask.params.warmAge;
+        let tmpWarmAge = "";
+        if (pipelineTask.params.warmEnable && userInputWarmAge) {
+          if (
+            pipelineTask.params.warmTransitionType ===
+            WarmTransitionType.IMMEDIATELY
+          ) {
+            tmpWarmAge = "1s";
+          } else if (userInputWarmAge && userInputWarmAge !== "0") {
+            tmpWarmAge = userInputWarmAge + "d";
+          }
+        }
+        resParamList.push({
+          parameterKey: "warmAge",
+          parameterValue: tmpWarmAge,
+        });
+      } else if (key === "coldAge") {
+        // handle cold log transition
+        const userInputCodeAge = pipelineTask.params.coldAge;
+        let tmpCodeAge = "";
+        if (
+          pipelineTask.params.coldEnable &&
+          userInputCodeAge &&
+          userInputCodeAge !== "0"
+        ) {
+          tmpCodeAge = userInputCodeAge + "d";
+        }
+        resParamList.push({
+          parameterKey: "coldAge",
+          parameterValue: tmpCodeAge,
+        });
+      } else if (key === "retainAge") {
+        // handle log rentaintion
+        const userInputRetainAge = pipelineTask.params.retainAge;
+        let tmpRetainAge = "";
+        if (userInputRetainAge && userInputRetainAge !== "0") {
+          tmpRetainAge = userInputRetainAge + "d";
+        }
+        resParamList.push({
+          parameterKey: "retainAge",
+          parameterValue: tmpRetainAge,
+        });
+      } else {
+        resParamList.push({
+          parameterKey: key,
+          parameterValue: (pipelineTask.params as any)?.[key] || "",
+        });
+      }
+    }
+  });
+  return resParamList;
 };
 
 const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
@@ -141,6 +305,11 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
     changeReplicas,
     esDomainEmptyError,
     aosInputValidRes,
+    changeIndexSuffix,
+    changeEnableRollover,
+    changeRolloverSize,
+    changeCompressionType,
+    changeWarmSettings,
   } = props;
   const { t } = useTranslation();
   const [loadingDomain, setLoadingDomain] = useState(false);
@@ -154,11 +323,9 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
     try {
       setLoadingDomain(true);
       changeLoadingDomain(true);
-      // setDomainList([]);
       const resData: any = await appSyncRequestQuery(listImportedDomains);
       const dataDomains: ImportedDomain[] = resData.data.listImportedDomains;
       const tmpDomainList: SelectItem[] = [];
-      // const tmpDomainMap: any = {};
       const userDefaultES: string =
         localStorage.getItem(PIPELINE_TASK_ES_USER_DEFAULT) || "";
       const tmpESIdList: string[] = [];
@@ -168,7 +335,6 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
           name: element.domainName,
           value: element.id,
         });
-        // tmpDomainMap[element.domainName] = element;
       });
       setDomainOptionList(tmpDomainList);
       // select user default cluster when multiple es
@@ -197,9 +363,7 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
     const resData: any = await appSyncRequestQuery(getDomainDetails, {
       id: cluster,
     });
-    console.info("resData:", resData);
     const dataDomain: DomainDetails = resData.data.getDomainDetails;
-    console.info("dataDomain:", dataDomain);
     changeOpenSearchCluster(dataDomain);
   };
 
@@ -246,6 +410,7 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
                 }}
               />
             </FormItem>
+
             <FormItem
               infoType={InfoBarTypes.SAMPLE_DASHBAORD}
               optionTitle={t("servicelog:cluster.sampleDashboard")}
@@ -301,6 +466,13 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
                     optionDesc={`${t("servicelog:cluster.indexPrefixDesc1")} ${
                       ServiceTypeDescMap[taskType].desc
                     }${t("servicelog:cluster.indexPrefixDesc2")}`}
+                    errorText={
+                      aosInputValidRes.indexEmptyError
+                        ? t("applog:create.ingestSetting.indexNameError")
+                        : aosInputValidRes.indexNameFormatError
+                        ? t("applog:create.ingestSetting.indexNameFormatError")
+                        : ""
+                    }
                   >
                     <div className="flex align-center m-w-75p">
                       <div style={{ flex: 1 }}>
@@ -313,9 +485,15 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
                           }}
                         />
                       </div>
-                      {/* <div style={{ width: 70 }}>s3access-</div> */}
-                      <div style={{ width: 180 }}>
-                        {ServiceTypeDescMap[taskType].suffix}
+                      <div>{ServiceTypeDescMap[taskType].pureSuffix}-</div>
+                      <div style={{ width: 170 }}>
+                        <Select
+                          optionList={ServiceLogClusterIndexSuffixFormatList}
+                          value={pipelineTask.params.indexSuffix}
+                          onChange={(event) => {
+                            changeIndexSuffix(event.target.value);
+                          }}
+                        />
                       </div>
                     </div>
                   </FormItem>
@@ -356,6 +534,60 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
                       />
                     </div>
                   </FormItem>
+
+                  {!pipelineTask.params.rolloverSizeNotSupport && (
+                    <FormItem
+                      optionTitle=""
+                      optionDesc=""
+                      errorText={
+                        aosInputValidRes.capacityInvalidError
+                          ? t("servicelog:cluster.rolloverError")
+                          : ""
+                      }
+                    >
+                      <>
+                        <Switch
+                          disabled={pipelineTask.params.rolloverSizeNotSupport}
+                          reverse
+                          isOn={pipelineTask.params.enableRolloverByCapacity}
+                          handleToggle={() => {
+                            changeEnableRollover(
+                              !pipelineTask.params.enableRolloverByCapacity
+                            );
+                          }}
+                          label={t("servicelog:cluster.enableRolloverByCap")}
+                          desc={t("servicelog:cluster.enableRolloverByCapDesc")}
+                        />
+                        <div className="flex align-center">
+                          <TextInput
+                            type="number"
+                            readonly={
+                              !pipelineTask.params.enableRolloverByCapacity
+                            }
+                            value={pipelineTask.params.rolloverSize}
+                            onChange={(event) => {
+                              changeRolloverSize(event.target.value);
+                            }}
+                          />
+                          <div className="ml-10">GB</div>
+                        </div>
+                      </>
+                    </FormItem>
+                  )}
+
+                  <FormItem
+                    optionTitle={t("servicelog:cluster.compressType")}
+                    optionDesc={t("servicelog:cluster.compressTypeDesc")}
+                  >
+                    <Select
+                      className="m-w-75p"
+                      optionList={ClusterCompressionTypeList}
+                      value={pipelineTask.params.codec}
+                      onChange={(event) => {
+                        changeCompressionType(event.target.value);
+                      }}
+                    />
+                  </FormItem>
                 </>
               </div>
             </div>
@@ -383,20 +615,50 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
                     : ""
                 }
               >
-                <TextInput
-                  readonly={!pipelineTask.params.warmEnable}
-                  className="m-w-75p"
-                  type="number"
-                  value={
-                    pipelineTask.params.daysToWarm === "0"
-                      ? ""
-                      : pipelineTask.params.daysToWarm
-                  }
-                  onChange={(event) => {
-                    console.info(event.target.value);
-                    changeWarnLogTransition(event.target.value);
-                  }}
-                />
+                <>
+                  {WarmLogSettingsList.map((element, key) => {
+                    return (
+                      <div key={key}>
+                        <label>
+                          <input
+                            disabled={!pipelineTask.params.warmEnable}
+                            onClick={() => {
+                              changeWarmSettings(element.value);
+                            }}
+                            onChange={(event) => {
+                              console.info(event);
+                            }}
+                            checked={
+                              element.value ===
+                                pipelineTask.params.warmTransitionType &&
+                              pipelineTask.params.warmEnable
+                            }
+                            name="fieldType"
+                            type="radio"
+                          />{" "}
+                          {t(element.name)}
+                        </label>
+                      </div>
+                    );
+                  })}
+                  <TextInput
+                    readonly={
+                      !pipelineTask.params.warmEnable ||
+                      pipelineTask.params.warmTransitionType ===
+                        WarmTransitionType.IMMEDIATELY
+                    }
+                    className="m-w-75p"
+                    type="number"
+                    value={
+                      pipelineTask.params.warmAge === "0"
+                        ? ""
+                        : pipelineTask.params.warmAge
+                    }
+                    onChange={(event) => {
+                      changeWarnLogTransition(event.target.value);
+                    }}
+                  />
+                </>
               </FormItem>
               <FormItem
                 optionTitle={t("servicelog:cluster.coldLog")}
@@ -412,6 +674,8 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
                 errorText={
                   aosInputValidRes?.coldLogInvalidError
                     ? t("applog:create.specifyOS.coldLogInvalid")
+                    : aosInputValidRes.coldMustLargeThanWarm
+                    ? t("applog:create.specifyOS.coldLogMustThanWarm")
                     : ""
                 }
               >
@@ -420,12 +684,11 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
                   className="m-w-75p"
                   type="number"
                   value={
-                    pipelineTask.params.daysToCold === "0"
+                    pipelineTask.params.coldAge === "0"
                       ? ""
-                      : pipelineTask.params.daysToCold
+                      : pipelineTask.params.coldAge
                   }
                   onChange={(event) => {
-                    console.info(event.target.value);
                     changeColdLogTransition(event.target.value);
                   }}
                 />
@@ -436,6 +699,10 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
                 errorText={
                   aosInputValidRes?.logRetentionInvalidError
                     ? t("applog:create.specifyOS.logRetentionError")
+                    : aosInputValidRes.logRetentionMustThanColdAndWarm
+                    ? t(
+                        "applog:create.specifyOS.logRetentionMustLargeThanCodeAndWarm"
+                      )
                     : ""
                 }
               >
@@ -443,13 +710,12 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
                   className="m-w-75p"
                   type="number"
                   value={
-                    pipelineTask.params.daysToRetain === "0"
+                    pipelineTask.params.retainAge === "0"
                       ? ""
-                      : pipelineTask.params.daysToRetain
+                      : pipelineTask.params.retainAge
                   }
                   placeholder="180"
                   onChange={(event) => {
-                    console.info(event.target.value);
                     changeLogRetention(event.target.value);
                   }}
                 />

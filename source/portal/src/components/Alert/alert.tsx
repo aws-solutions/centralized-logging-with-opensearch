@@ -16,6 +16,7 @@ limitations under the License.
 import React, { ReactElement } from "react";
 import ErrorOutlineIcon from "@material-ui/icons/ErrorOutline";
 import ReportProblemOutlinedIcon from "@material-ui/icons/ReportProblemOutlined";
+import HighlightOffIcon from "@material-ui/icons/HighlightOff";
 
 export enum AlertType {
   Normal = "Normal",
@@ -39,8 +40,11 @@ const Alert: React.FC<AlertProps> = (props: AlertProps) => {
       } ${type?.toLowerCase()}`}
     >
       <div className="icon">
-        {(type === AlertType.Error || type === AlertType.Warning) && (
-          <ReportProblemOutlinedIcon className="error-text" fontSize="small" />
+        {type === AlertType.Warning && (
+          <ReportProblemOutlinedIcon className="error-text" fontSize="medium" />
+        )}
+        {type === AlertType.Error && (
+          <HighlightOffIcon fontSize="medium" className="error-text" />
         )}
         {(!type || type === AlertType.Normal) && (
           <ErrorOutlineIcon className="reverse" />

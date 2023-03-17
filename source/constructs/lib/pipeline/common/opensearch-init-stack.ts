@@ -94,11 +94,17 @@ export interface OpenSearchInitProps {
    */
   readonly logProcessorRoleArn?: string;
 
-  readonly daysToWarm?: string;
-  readonly daysToCold?: string;
-  readonly daysToRetain?: string;
+  readonly warmAge?: string;
+  readonly coldAge?: string;
+  readonly retainAge?: string;
+  readonly rolloverSize?: string;
+  readonly indexSuffix?: string;
+  readonly refreshInterval?: string;
+  readonly codec?: string;
   readonly shardNumbers?: string;
   readonly replicaNumbers?: string;
+
+  readonly solutionId: string;
 }
 
 /**
@@ -191,7 +197,7 @@ export class OpenSearchInitStack extends Construct {
         }
       ),
       compatibleRuntimes: [lambda.Runtime.PYTHON_3_9],
-      description: "Log Hub Default Lambda layer for Log Pipeline",
+      description: "Default Lambda layer for Log Pipeline",
     });
 
     // Create a lambda to handle all opensearch domain related APIs.
@@ -208,7 +214,7 @@ export class OpenSearchInitStack extends Construct {
       timeout: Duration.seconds(300),
       memorySize: 1024,
       vpc: props.vpc,
-      vpcSubnets: { subnetType: SubnetType.PRIVATE_WITH_NAT },
+      vpcSubnets: { subnetType: SubnetType.PRIVATE_WITH_EGRESS },
       securityGroups: [props.securityGroup],
       layers: [pipeLayer],
       description: `${Aws.STACK_NAME} - Function to create index template (${props.logType}), policy and import saved objects in OpenSearch`,
@@ -221,12 +227,17 @@ export class OpenSearchInitStack extends Construct {
         LOG_PROCESSOR_ROLE_ARN: props.logProcessorRoleArn || "",
         LOG_TYPE: props.logType || "",
         INDEX_PREFIX: props.indexPrefix,
-        DAYS_TO_WARM: props.daysToWarm || "0",
-        DAYS_TO_COLD: props.daysToCold || "0",
-        DAYS_TO_RETAIN: props.daysToRetain || "0",
+        WARM_AGE: props.warmAge || "",
+        COLD_AGE: props.coldAge || "",
+        RETAIN_AGE: props.retainAge || "",
+        ROLLOVER_SIZE: props.rolloverSize || "",
+        INDEX_SUFFIX: props.indexSuffix || "yyyy-MM-dd",
+        CODEC: props.codec || "best_compression",
+        REFRESH_INTERVAL: props.refreshInterval || "1s",
         NUMBER_OF_SHARDS: props.shardNumbers || "0",
         NUMBER_OF_REPLICAS: props.replicaNumbers || "0",
         SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+        SOLUTION_ID: props.solutionId,
       },
     });
     osHelperFn.node.addDependency(osHelperRole, osHelperPolicy);
@@ -260,7 +271,7 @@ export class OpenSearchInitStack extends Construct {
 }
 
 class InjectCustomerResourceConfig implements IAspect {
-  public constructor(private isInstallLatestAwsSdk: string) {}
+  public constructor(private isInstallLatestAwsSdk: string) { }
 
   public visit(node: IConstruct): void {
     if (node instanceof CfnResource && node.cfnResourceType === "Custom::AWS") {

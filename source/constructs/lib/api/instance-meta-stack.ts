@@ -42,6 +42,8 @@ export interface InstanceStackProps {
     readonly graphqlApi: appsync.GraphqlApi
     readonly subAccountLinkTable: ddb.Table
     readonly centralAssumeRolePolicy: iam.ManagedPolicy;
+
+    readonly solutionId: string;
 }
 export class InstanceMetaStack extends Construct {
     instanceMetaTable: ddb.Table;
@@ -52,15 +54,13 @@ export class InstanceMetaStack extends Construct {
     constructor(scope: Construct, id: string, props: InstanceStackProps) {
         super(scope, id);
 
-        const solution_id = 'SO8025'
-
         // Create a table to store logging instanceGroup info
         this.instanceMetaTable = new ddb.Table(this, 'InstanceMetaTable', {
             partitionKey: {
                 name: 'id',
                 type: ddb.AttributeType.STRING
             },
-            billingMode: ddb.BillingMode.PROVISIONED,
+            billingMode: ddb.BillingMode.PAY_PER_REQUEST,
             removalPolicy: RemovalPolicy.DESTROY,
             encryption: ddb.TableEncryption.DEFAULT,
             pointInTimeRecovery: true,
@@ -77,7 +77,7 @@ export class InstanceMetaStack extends Construct {
                 name: 'instanceId',
                 type: ddb.AttributeType.STRING
             },
-            billingMode: ddb.BillingMode.PROVISIONED,
+            billingMode: ddb.BillingMode.PAY_PER_REQUEST,
             removalPolicy: RemovalPolicy.DESTROY,
             encryption: ddb.TableEncryption.DEFAULT,
             pointInTimeRecovery: true,
@@ -200,10 +200,10 @@ export class InstanceMetaStack extends Construct {
                 INSTANCEMETA_TABLE: this.instanceMetaTable.tableName,
                 AGENTSTATUS_TABLE: this.logAgentStatusTable.tableName,
                 SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
-                SOLUTION_ID: solution_id,
-                SOLUTION_VERSION: process.env.VERSION ? process.env.VERSION : 'v1.0.0',
+                SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+                SOLUTION_ID: props.solutionId,
             },
-            description: 'Log Hub - Instance APIs Resolver',
+            description: `${Aws.STACK_NAME} - Instance APIs Resolver`,
         })
         instanceMetaHandler.node.addDependency(this.installLogAgentDocument)
 
@@ -239,10 +239,10 @@ export class InstanceMetaStack extends Construct {
             environment: {
                 AGENTSTATUS_TABLE: this.logAgentStatusTable.tableName,
                 SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
-                SOLUTION_ID: solution_id,
-                SOLUTION_VERSION: process.env.VERSION ? process.env.VERSION : 'v1.0.0',
+                SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+                SOLUTION_ID: props.solutionId,
             },
-            description: 'Log Hub - Instance Agent Status Query Resolver',
+            description: `${Aws.STACK_NAME} - Instance Agent Status Query Resolver`,
         })
         this.logAgentStatusTable.grantReadWriteData(instanceAgentStatusHandler)
         props.subAccountLinkTable.grantReadData(instanceAgentStatusHandler)
@@ -272,51 +272,32 @@ export class InstanceMetaStack extends Construct {
         trigger.addTarget(new targets.LambdaFunction(instanceAgentStatusHandler))
         this.eventBridgeRule = trigger
 
-        // Add instanceMeta table as a Datasource
-        const instanceMetaDynamoDS = props.graphqlApi.addDynamoDbDataSource('InstanceMetaDynamoDS', this.instanceMetaTable, {
-            description: 'DynamoDB Resolver Datasource for instance meta'
-        })
-
-        instanceMetaDynamoDS.createResolver({
-            typeName: 'Query',
-            fieldName: 'getInstanceMeta',
-            requestMappingTemplate: appsync.MappingTemplate.dynamoDbGetItem('id', 'id'),
-            responseMappingTemplate: appsync.MappingTemplate.fromFile(path.join(__dirname, '../../graphql/vtl/instance_meta/GetInstanceMetaResp.vtl')),
-        })
-
-        // // Add logAgentStatus table as a Datasource
-        // const logAgentStatusDynamoDS = props.graphqlApi.addDynamoDbDataSource('LogAgentStatusDynamoDS', this.logAgentStatusTable, {
-        //     description: 'DynamoDB Resolver Datasource for log agent status'
-        // })
-
-        // logAgentStatusDynamoDS.createResolver({
-        //     typeName: 'Query',
-        //     fieldName: 'getLogAgentStatus',
-        //     requestMappingTemplate: appsync.MappingTemplate.dynamoDbGetItem('id', 'id'),
-        //     responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultItem()
-        // })
-
         // Add InstanceMeta lambda as a Datasource
         const instanceMetaLambdaDS = props.graphqlApi.addLambdaDataSource('InstanceMetaLambdaDS', instanceMetaHandler, {
             description: 'Lambda Resolver Datasource'
         });
 
         // Set resolver for releted InstanceMeta API methods
-        instanceMetaLambdaDS.createResolver({
+        instanceMetaLambdaDS.createResolver('listInstances', {
             typeName: 'Query',
             fieldName: 'listInstances',
-            requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+            requestMappingTemplate: appsync.MappingTemplate.fromFile(
+                path.join(
+                    __dirname,
+                    "../../graphql/vtl/instance_meta/ListInstances.vtl"
+                )
+            ),
             responseMappingTemplate: appsync.MappingTemplate.lambdaResult()
         })
 
-        instanceMetaLambdaDS.createResolver({
+        instanceMetaLambdaDS.createResolver('requestInstallLogAgent', {
             typeName: 'Mutation',
             fieldName: 'requestInstallLogAgent',
             requestMappingTemplate: appsync.MappingTemplate.fromFile(path.join(__dirname, '../../graphql/vtl/instance_meta/RequestInstallLogAgent.vtl')),
             responseMappingTemplate: appsync.MappingTemplate.lambdaResult()
         })
 
-        instanceMetaLambdaDS.createResolver({
+        instanceMetaLambdaDS.createResolver('getLogAgentStatus', {
             typeName: 'Query',
             fieldName: 'getLogAgentStatus',
             requestMappingTemplate: appsync.MappingTemplate.fromFile(path.join(__dirname, '../../graphql/vtl/instance_meta/GetLogAgentStatus.vtl')),

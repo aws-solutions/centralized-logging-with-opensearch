@@ -128,7 +128,7 @@ const SpecifyLogConfig: React.FC<SpecifyLogConfigProp> = (
               <div style={{ flex: 1 }}>
                 <TextInput
                   value={eksIngestionInfo?.logPath || ""}
-                  placeholder="/var/log/containers/<app-name><name-space>*"
+                  placeholder="/var/log/containers/<app-name>_<name-space>*"
                   onChange={(event) => {
                     changeLogConfPath(event.target.value);
                   }}

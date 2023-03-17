@@ -13,7 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import { Construct } from "constructs";
 
 import {
   Aws,
@@ -32,21 +31,22 @@ import {
   aws_dynamodb as ddb,
 } from "aws-cdk-lib";
 import { Vpc } from "aws-cdk-lib/aws-ec2";
-import { VpcStack } from "./main/vpc-stack";
-import { AuthStack } from "./main/auth-stack";
-import { PortalStack } from "./main/portal-stack";
+import { NagSuppressions } from "cdk-nag";
+import { Construct } from "constructs";
 import { APIStack } from "./api/api-stack";
-import { CfnFlowStack } from "./main/cfn-flow-stack";
-import { LogConfStack } from "./api/log-conf-stack";
-import { LogSourceStack } from "./api/log-source-stack";
+import { AppLogIngestionStack } from "./api/app-log-ingestion-stack";
+import { AppPipelineStack } from "./api/app-pipeline-stack";
+import { EKSClusterStack } from "./api/eks-cluster-stack";
 import { InstanceGroupStack } from "./api/instance-group-stack";
 import { InstanceMetaStack } from "./api/instance-meta-stack";
-import { AppPipelineStack } from "./api/app-pipeline-stack";
-import { AppLogIngestionStack } from "./api/app-log-ingestion-stack";
-import { EKSClusterStack } from "./api/eks-cluster-stack";
-import { NagSuppressions } from 'cdk-nag';
-import { EcsClusterStack } from "./main/ecs-cluster-stack";
+import { LogConfStack } from "./api/log-conf-stack";
+import { LogSourceStack } from "./api/log-source-stack";
+import { AuthStack } from "./main/auth-stack";
+import { CfnFlowStack } from "./main/cfn-flow-stack";
 import { CustomResourceStack } from "./main/cr-stack";
+import { EcsClusterStack } from "./main/ecs-cluster-stack";
+import { PortalStack } from "./main/portal-stack";
+import { VpcStack } from "./main/vpc-stack";
 
 const { VERSION } = process.env;
 
@@ -68,6 +68,10 @@ export function addCfnNagSuppressRules(
 }
 
 export interface MainProps extends StackProps {
+  solutionName?: string;
+  solutionDesc?: string;
+  solutionId?: string;
+
   /**
    * Indicate whether to create a new VPC or use existing VPC for this Solution
    *
@@ -92,19 +96,6 @@ export class MainStack extends Stack {
   private paramGroups: any[] = [];
   private paramLabels: any = {};
 
-  private addToParamGroups(label: string, ...param: string[]) {
-    this.paramGroups.push({
-      Label: { default: label },
-      Parameters: param,
-    });
-  }
-
-  private addToParamLabels(label: string, param: string) {
-    this.paramLabels[param] = {
-      default: label,
-    };
-  }
-
   //Default value for authType - cognito
   private authType = "AMAZON_COGNITO_USER_POOLS";
   private userPoolId = "";
@@ -113,18 +104,23 @@ export class MainStack extends Stack {
   private oidcClientId = "";
   private oidcCustomerDomain = "";
   private iamCertificateId = "";
+  private acmCertificateArn = "";
 
-  constructor(scope: Construct, id: string, props?: MainProps) {
+  constructor(scope: Construct, id: string, props: MainProps) {
     super(scope, id, props);
-
-    const solutionName = "LogHub";
-    const solutionDesc = "Log Hub";
 
     if (props?.authType === AuthType.OIDC) {
       this.authType = props.authType;
     }
 
-    this.templateOptions.description = `(SO8025) - ${solutionDesc} Solution. Template version ${VERSION}`;
+    let solutionName = props.solutionName || "CentralizedLoggingWithOpenSearch";
+    let solutionDesc =
+      props.solutionDesc || "Centralized Logging with OpenSearch";
+    let solutionId = props.solutionId || "SO8025";
+    const stackPrefix = "CL";
+    const oldSolutionName = "LogHub";
+
+    this.templateOptions.description = `(${solutionId}) - ${solutionDesc} Solution. Template version ${VERSION}`;
 
     let oidcProvider: CfnParameter | null = null;
     let oidcClientId: CfnParameter | null = null;
@@ -151,29 +147,44 @@ export class MainStack extends Stack {
 
       oidcCustomerDomain = new CfnParameter(this, "Domain", {
         type: "String",
-        description: "The domain to access Log Hub console",
-        allowedPattern: "^(?=^.{3,255}$)[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+$",
+        description:
+          "The domain to access the console. Optional for AWS standard regions, and required for AWS China regions.",
+        allowedPattern:
+          "^(?=^.{3,255}$)[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(.[a-zA-Z0-9][-a-zA-Z0-9]{0,62}).*|$",
+        default: "",
       });
       this.addToParamLabels("Domain", oidcCustomerDomain.logicalId);
       this.oidcCustomerDomain = oidcCustomerDomain.valueAsString;
 
       iamCertificateId = new CfnParameter(this, "IamCertificateID", {
         type: "String",
-        description: "IAM Certificate ID Number",
-        allowedPattern: "^[A-Z0-9]+$",
+        description: "IAM Certificate ID Number. Required for AWS China regions.",
+        allowedPattern: "^[A-Z0-9]*$",
+        default: "",
       });
       this.addToParamLabels("IamCertificateID", iamCertificateId.logicalId);
       this.iamCertificateId = iamCertificateId.valueAsString;
 
+      const acmCertificateArn = new CfnParameter(this, "AcmCertificateArn", {
+        type: "String",
+        description:
+          "ACM Certificate Arn. The certificate must be in the US East (N. Virginia) Region (us-east-1). Required for AWS standard regions, if you specify a custom domain.",
+        allowedPattern: "^arn:aws.*:acm:us-east-1:.*|$",
+        default: "",
+      });
+      this.addToParamLabels("AcmCertificateArn", acmCertificateArn.logicalId);
+      this.acmCertificateArn = acmCertificateArn.valueAsString;
+
       this.addToParamGroups(
-        "OIDC Settings",
+        "OpenID Connect (OIDC) Settings",
         oidcClientId.logicalId,
         oidcProvider.logicalId
       );
       this.addToParamGroups(
-        "Log Hub Console Settings",
+        "Console Settings",
         oidcCustomerDomain.logicalId,
-        iamCertificateId.logicalId
+        iamCertificateId.logicalId,
+        acmCertificateArn.logicalId
       );
     } else {
       const username = new CfnParameter(this, "adminEmail", {
@@ -186,25 +197,29 @@ export class MainStack extends Stack {
       this.addToParamGroups("Authentication", username.logicalId);
 
       // Create an Auth Stack (Default Cognito)
-      const authStack = new AuthStack(this, `${solutionName}Auth`, {
+      const authStack = new AuthStack(this, `LogHubAuth`, {
         username: username.valueAsString,
+        solutionName: solutionName,
       });
       this.userPoolId = authStack.userPoolId;
       this.userPoolClientId = authStack.userPoolClientId;
-      NagSuppressions.addResourceSuppressions(authStack, [
-        {
-          id: 'AwsSolutions-IAM5',
-          reason: 'Cognito User Pool need this wildcard permission',
-        },
-        {
-          id: 'AwsSolutions-IAM4',
-          reason: 'these policy is used by CDK Customer Resource lambda'
-        },
-        {
-          id: 'AwsSolutions-COG2',
-          reason: 'customer can enable MFA by their own, we do not need to enable it'
-        },
-      ],
+      NagSuppressions.addResourceSuppressions(
+        authStack,
+        [
+          {
+            id: "AwsSolutions-IAM5",
+            reason: "Cognito User Pool need this wildcard permission",
+          },
+          {
+            id: "AwsSolutions-IAM4",
+            reason: "these policy is used by CDK Customer Resource lambda",
+          },
+          {
+            id: "AwsSolutions-COG2",
+            reason:
+              "customer can enable MFA by their own, we do not need to enable it",
+          },
+        ],
         true
       );
     }
@@ -223,7 +238,7 @@ export class MainStack extends Stack {
 
       const publicSubnetIds = new CfnParameter(this, "publicSubnets", {
         description:
-          "Public Subnet IDs in seleted VPC. Please provide two subnets at least delimited by comma, e.g. subnet-97bfc4cd,subnet-7ad7de32",
+          "Public Subnet IDs in the selected VPC. Please provide two subnets at least delimited by comma, e.g. subnet-97bfc4cd,subnet-7ad7de32. The subnets must have routes point to an Internet Gateway.",
         type: "List<AWS::EC2::Subnet::Id>",
       });
       publicSubnetIds.overrideLogicalId("publicSubnets");
@@ -231,7 +246,7 @@ export class MainStack extends Stack {
 
       const privateSubnetIds = new CfnParameter(this, "privateSubnets", {
         description:
-          "Private Subnet IDs in seleted VPC. Please provide two subnets at least delimited by comma, e.g. subnet-97bfc4cd,subnet-7ad7de32",
+          "Private Subnet IDs in the selected VPC. Please provide two subnets at least delimited by comma, e.g. subnet-97bfc4cd,subnet-7ad7de32. The subnets must have routes to an NAT gateway.",
         type: "List<AWS::EC2::Subnet::Id>",
       });
       privateSubnetIds.overrideLogicalId("privateSubnets");
@@ -254,7 +269,7 @@ export class MainStack extends Stack {
       subnetIds = privateSubnetIds.valueAsList;
     }
 
-    const vpcStack = new VpcStack(this, `${solutionName}Vpc`, {
+    const vpcStack = new VpcStack(this, `${oldSolutionName}Vpc`, {
       vpc: vpc,
     });
 
@@ -262,7 +277,7 @@ export class MainStack extends Stack {
     const sqsCMKKey = new kms.Key(this, "KMSCMK", {
       removalPolicy: RemovalPolicy.DESTROY,
       pendingWindow: Duration.days(7),
-      description: "KMS-CMK for encrypting the objects in Log Hub SQS",
+      description: "KMS-CMK for encrypting the objects in the SQS",
       enableKeyRotation: true,
       policy: new iam.PolicyDocument({
         statements: [
@@ -303,50 +318,71 @@ export class MainStack extends Stack {
     });
 
     // Create a table to store cross account info
-    const subAccountLinkTable = new ddb.Table(this, 'SubAccountLinkTable', {
+    const subAccountLinkTable = new ddb.Table(this, "SubAccountLinkTable", {
       partitionKey: {
-        name: 'id',
-        type: ddb.AttributeType.STRING
+        name: "id",
+        type: ddb.AttributeType.STRING,
       },
-      billingMode: ddb.BillingMode.PROVISIONED,
+      billingMode: ddb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: RemovalPolicy.DESTROY,
       encryption: ddb.TableEncryption.DEFAULT,
       pointInTimeRecovery: true,
-    })
+    });
 
-    const cfnSubAccountLinkTable = subAccountLinkTable.node.defaultChild as ddb.CfnTable;
-    cfnSubAccountLinkTable.overrideLogicalId('SubAccountLinkTable')
+    const cfnSubAccountLinkTable = subAccountLinkTable.node
+      .defaultChild as ddb.CfnTable;
+    cfnSubAccountLinkTable.overrideLogicalId("SubAccountLinkTable");
     addCfnNagSuppressRules(cfnSubAccountLinkTable, [
       {
-        id: 'W73',
-        reason: 'This table has billing mode as PROVISIONED'
+        id: "W73",
+        reason: "This table has billing mode as PROVISIONED",
       },
       {
-        id: 'W74',
-        reason: 'This table is set to use DEFAULT encryption, the key is owned by DDB.'
+        id: "W74",
+        reason:
+          "This table is set to use DEFAULT encryption, the key is owned by DDB.",
       },
-    ])
+    ]);
 
     // Create a common orchestration flow for CloudFormation deployment
-    const cfnFlow = new CfnFlowStack(this, `${solutionName}CfnFlow`, {
-      stackPrefix: solutionName,
+    const cfnFlow = new CfnFlowStack(this, 'CfnFlow', {
+      stackPrefix: stackPrefix,
       subAccountLinkTable: subAccountLinkTable,
+      solutionId: solutionId,
     });
-    NagSuppressions.addResourceSuppressions(cfnFlow, [
-      {
-        id: 'AwsSolutions-IAM5',
-        reason: 'Lambda need get dynamic resources',
-      },
-    ],
+    NagSuppressions.addResourceSuppressions(
+      cfnFlow,
+      [
+        {
+          id: "AwsSolutions-IAM5",
+          reason: "Lambda need get dynamic resources",
+        },
+      ],
       true
     );
 
     // Create a default logging bucket
-    const loggingBucket = new s3.Bucket(this, `${solutionName}LoggingBucket`, {
-      encryption: s3.BucketEncryption.S3_MANAGED,
-      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-      accessControl: s3.BucketAccessControl.LOG_DELIVERY_WRITE,
-    });
+    const loggingBucket = new s3.Bucket(
+      this,
+      `${oldSolutionName}LoggingBucket`,
+      {
+        encryption: s3.BucketEncryption.S3_MANAGED,
+        blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+        accessControl: s3.BucketAccessControl.LOG_DELIVERY_WRITE,
+        versioned: true,
+        enforceSSL: true,
+        lifecycleRules: [
+          {
+            transitions: [
+              {
+                storageClass: s3.StorageClass.INTELLIGENT_TIERING,
+                transitionAfter: Duration.days(0),
+              },
+            ],
+          },
+        ],
+      }
+    );
     const elbRootAccountArnTable = new CfnMapping(
       this,
       "ELBRootAccountArnTable",
@@ -453,7 +489,7 @@ export class MainStack extends Stack {
     ]);
 
     // Create the Appsync API stack
-    const apiStack = new APIStack(this, `${solutionName}API`, {
+    const apiStack = new APIStack(this, 'API', {
       cfnFlowSMArn: cfnFlow.stateMachineArn,
       oidcClientId: this.oidcClientId,
       oidcProvider: this.oidcProvider,
@@ -465,58 +501,69 @@ export class MainStack extends Stack {
       processSgId: vpcStack.processSg.securityGroupId,
       authType: this.authType,
       subAccountLinkTable: subAccountLinkTable,
+      solutionId: solutionId,
+      stackPrefix: stackPrefix,
     });
-    NagSuppressions.addResourceSuppressions(apiStack, [
-      {
-        id: 'AwsSolutions-IAM5',
-        reason: 'Lambda need get dynamic resources',
-      },
-    ],
+    NagSuppressions.addResourceSuppressions(
+      apiStack,
+      [
+        {
+          id: "AwsSolutions-IAM5",
+          reason: "Lambda need get dynamic resources",
+        },
+      ],
       true
     );
     // Create the Instance Meta Appsync API stack
     const instanceMetaStack = new InstanceMetaStack(
       this,
-      `${solutionName}InstanceMetaAPI`,
+      'InstanceMetaAPI',
       {
         graphqlApi: apiStack.graphqlApi,
         subAccountLinkTable: subAccountLinkTable,
         centralAssumeRolePolicy: apiStack.centralAssumeRolePolicy,
+        solutionId: solutionId,
       }
     );
-    NagSuppressions.addResourceSuppressions(instanceMetaStack, [
-      {
-        id: 'AwsSolutions-IAM5',
-        reason: 'Lambda need get dynamic resources',
-      },
-    ],
+    NagSuppressions.addResourceSuppressions(
+      instanceMetaStack,
+      [
+        {
+          id: "AwsSolutions-IAM5",
+          reason: "Lambda need get dynamic resources",
+        },
+      ],
       true
     );
 
     // Create the App Pipeline Appsync API stack
     const appPipelineStack = new AppPipelineStack(
       this,
-      `${solutionName}AppPipelineAPI`,
+      'AppPipelineAPI',
       {
         graphqlApi: apiStack.graphqlApi,
         cfnFlowSMArn: cfnFlow.stateMachineArn,
         appPipelineTable: apiStack.appPipelineTable,
         centralAssumeRolePolicy: apiStack.centralAssumeRolePolicy,
+        solutionId: solutionId,
+        stackPrefix: stackPrefix,
       }
     );
-    NagSuppressions.addResourceSuppressions(appPipelineStack, [
-      {
-        id: 'AwsSolutions-IAM5',
-        reason: 'Lambda need get dynamic resources',
-      },
-    ],
+    NagSuppressions.addResourceSuppressions(
+      appPipelineStack,
+      [
+        {
+          id: "AwsSolutions-IAM5",
+          reason: "Lambda need get dynamic resources",
+        },
+      ],
       true
     );
 
     // Create the Instance Group Appsync API stack
     const instanceGroupStack = new InstanceGroupStack(
       this,
-      `${solutionName}InstanceGroupAPI`,
+      'InstanceGroupAPI',
       {
         graphqlApi: apiStack.graphqlApi,
         eventBridgeRule: instanceMetaStack.eventBridgeRule,
@@ -524,49 +571,55 @@ export class MainStack extends Stack {
         appLogIngestionTable: appPipelineStack.appLogIngestionTable,
         groupModificationEventQueue: apiStack.groupModificationEventQueue,
         subAccountLinkTable: subAccountLinkTable,
+        solutionId: solutionId,
       }
     );
     instanceGroupStack.node.addDependency(instanceMetaStack);
-    NagSuppressions.addResourceSuppressions(instanceGroupStack, [
-      {
-        id: 'AwsSolutions-IAM5',
-        reason: 'Lambda need get dynamic resources',
-      },
-    ],
+    NagSuppressions.addResourceSuppressions(
+      instanceGroupStack,
+      [
+        {
+          id: "AwsSolutions-IAM5",
+          reason: "Lambda need get dynamic resources",
+        },
+      ],
       true
     );
 
     // Create the Logging Conf Appsync API stack
-    const logConfStack = new LogConfStack(this, `${solutionName}LogConfAPI`, {
+    const logConfStack = new LogConfStack(this, 'LogConfAPI', {
       graphqlApi: apiStack.graphqlApi,
+      solutionId: solutionId,
     });
 
     // Create the Logging Source Appsync API stack
     const logSourceStack = new LogSourceStack(
       this,
-      `${solutionName}LogSourceAPI`,
+      'LogSourceAPI',
       {
         graphqlApi: apiStack.graphqlApi,
         eksClusterLogSourceTable: apiStack.eksClusterLogSourceTable,
         centralAssumeRolePolicy: apiStack.centralAssumeRolePolicy,
         defaultVPC: vpcStack.vpc.vpcId,
         defaultPublicSubnets: subnetIds ? subnetIds : vpcStack.subnetIds,
-        asyncCrossAccountHandler: apiStack.asyncCrossAccountHandler
+        asyncCrossAccountHandler: apiStack.asyncCrossAccountHandler,
       }
     );
-    NagSuppressions.addResourceSuppressions(logSourceStack, [
-      {
-        id: 'AwsSolutions-IAM5',
-        reason: 'Lambda need get dynamic resources',
-      },
-    ],
+    NagSuppressions.addResourceSuppressions(
+      logSourceStack,
+      [
+        {
+          id: "AwsSolutions-IAM5",
+          reason: "Lambda need get dynamic resources",
+        },
+      ],
       true
     );
 
-    // Create the Logging Conf Appsync API stack
+    // Create the EKS related Appsync API stack
     const eksClusterStack = new EKSClusterStack(
       this,
-      `${solutionName}EKSClusterStack`,
+      'EKSClusterStack',
       {
         graphqlApi: apiStack.graphqlApi,
         appLogIngestionTable: appPipelineStack.appLogIngestionTable,
@@ -574,30 +627,34 @@ export class MainStack extends Stack {
         eksClusterLogSourceTable: apiStack.eksClusterLogSourceTable,
         centralAssumeRolePolicy: apiStack.centralAssumeRolePolicy,
         subAccountLinkTable: subAccountLinkTable,
+        solutionId: solutionId,
+        stackPrefix: stackPrefix,
       }
     );
-    NagSuppressions.addResourceSuppressions(eksClusterStack, [
-      {
-        id: 'AwsSolutions-IAM5',
-        reason: 'Lambda need get dynamic resources',
-      },
-    ],
+    NagSuppressions.addResourceSuppressions(
+      eksClusterStack,
+      [
+        {
+          id: "AwsSolutions-IAM5",
+          reason: "Lambda need get dynamic resources",
+        },
+      ],
       true
     );
 
     // Create the ECS Stack
     const ecsClusterStack = new EcsClusterStack(
       this,
-      `${solutionName}ECSClusterStack`,
+      'ECSClusterStack',
       {
-        vpc: vpcStack.vpc
+        vpc: vpcStack.vpc,
       }
-    )
+    );
 
     // Create the Logging Ingestion Appsync API stack
     const appLogIngestionStack = new AppLogIngestionStack(
       this,
-      `${solutionName}AppLogIngestionAPI`,
+      'AppLogIngestionAPI',
       {
         cfnFlowSMArn: cfnFlow.stateMachineArn,
         graphqlApi: apiStack.graphqlApi,
@@ -615,11 +672,12 @@ export class MainStack extends Stack {
         eksClusterLogSourceTable: apiStack.eksClusterLogSourceTable,
         sqsEventTable: apiStack.sqsEventTable,
         configFileBucket: loggingBucket,
-        // logAgentEKSDeploymentKindTable: eksClusterStack.logAgentEKSDeploymentKindTable,
         subAccountLinkTable: subAccountLinkTable,
         centralAssumeRolePolicy: apiStack.centralAssumeRolePolicy,
         ecsCluster: ecsClusterStack.ecsCluster,
         groupModificationEventQueue: apiStack.groupModificationEventQueue,
+        solutionId: solutionId,
+        stackPrefix: stackPrefix,
       }
     );
     appLogIngestionStack.node.addDependency(
@@ -630,19 +688,23 @@ export class MainStack extends Stack {
       appPipelineStack,
       ecsClusterStack
     );
-    NagSuppressions.addResourceSuppressions(appLogIngestionStack, [
-      {
-        id: 'AwsSolutions-IAM5',
-        reason: 'Lambda need get dynamic resources',
-      },
-    ],
+    NagSuppressions.addResourceSuppressions(
+      appLogIngestionStack,
+      [
+        {
+          id: "AwsSolutions-IAM5",
+          reason: "Lambda need get dynamic resources",
+        },
+      ],
       true
     );
+
     // Create a Portal Stack (Default Cognito)
     const portalStack = new PortalStack(this, "WebConsole", {
       apiEndpoint: apiStack.apiEndpoint,
       customDomainName: this.oidcCustomerDomain,
       iamCertificateId: this.iamCertificateId,
+      acmCertificateArn: this.acmCertificateArn,
       authenticationType: this.authType,
     });
     portalStack.node.addDependency(sqsCMKKey);
@@ -654,6 +716,7 @@ export class MainStack extends Stack {
       oidcClientId: this.oidcClientId,
       portalBucketName: portalStack.portalBucket.bucketName,
       portalUrl: portalStack.portalUrl,
+      cloudFrontDistributionId: portalStack.cloudFrontDistributionId,
       oidcCustomerDomain: this.oidcCustomerDomain,
       userPoolId: this.userPoolId,
       userPoolClientId: this.userPoolClientId,
@@ -663,13 +726,20 @@ export class MainStack extends Stack {
       eksDeployKindTableName: eksClusterStack.eksDeploymentKindTable.tableName,
       eksLogSourceTableName: apiStack.eksClusterLogSourceTable.tableName,
       appPipelineTableName: apiStack.appPipelineTable.tableName,
+      pipelineTableName: apiStack.pipelineTable.tableName,
+      centralAssumeRolePolicy: apiStack.centralAssumeRolePolicy,
+      subAccountLinkTableName: subAccountLinkTable.tableName
     });
 
-    // Allow init config function to put aws-exports.json to portal bucket 
-    portalStack.portalBucket.grantPut(crStack.initConfigFn)
-    apiStack.eksClusterLogSourceTable.grantReadWriteData(crStack.initConfigFn)
-    eksClusterStack.eksDeploymentKindTable.grantReadWriteData(crStack.initConfigFn)
-    apiStack.appPipelineTable.grantReadWriteData(crStack.initConfigFn)
+    // Allow init config function to put aws-exports.json to portal bucket
+    portalStack.portalBucket.grantPut(crStack.initConfigFn);
+    apiStack.eksClusterLogSourceTable.grantReadWriteData(crStack.initConfigFn);
+    eksClusterStack.eksDeploymentKindTable.grantReadWriteData(
+      crStack.initConfigFn
+    );
+    apiStack.appPipelineTable.grantReadWriteData(crStack.initConfigFn);
+    apiStack.pipelineTable.grantReadWriteData(crStack.initConfigFn);
+    subAccountLinkTable.grantReadWriteData(crStack.initConfigFn)
 
     this.templateOptions.metadata = {
       "AWS::CloudFormation::Interface": {
@@ -688,5 +758,18 @@ export class MainStack extends Stack {
       description: "Web Console URL (front-end)",
       value: portalStack.portalUrl,
     }).overrideLogicalId("WebConsoleUrl");
+  }
+
+  private addToParamGroups(label: string, ...param: string[]) {
+    this.paramGroups.push({
+      Label: { default: label },
+      Parameters: param,
+    });
+  }
+
+  private addToParamLabels(label: string, param: string) {
+    this.paramLabels[param] = {
+      default: label,
+    };
   }
 }

@@ -31,11 +31,8 @@ import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
 import { getDomainDetails, getEKSClusterDetails } from "graphql/queries";
 import { AmplifyConfigType, CreationMethod, YesNo } from "types";
 import LoadingText from "components/LoadingText";
-import { createAppLogIngestion, upgradeAppPipeline } from "graphql/mutations";
+import { createAppLogIngestion } from "graphql/mutations";
 import { OptionType } from "components/AutoComplete/autoComplete";
-import Modal from "components/Modal";
-import Alert from "components/Alert";
-import { AlertType } from "components/Alert/alert";
 
 interface MatchParams {
   id: string;
@@ -100,8 +97,6 @@ const EksLogIngest: React.FC = () => {
   const [curEksLogSource, setCurEksLogSource] = useState<
     EKSClusterLogSource | undefined
   >();
-  const [openNotice, setOpenNotice] = useState(false);
-  const [loadingUpgrade, setLoadingUpgrade] = useState(false);
 
   const breadCrumbList = [
     { name: t("name"), link: "/" },
@@ -141,7 +136,7 @@ const EksLogIngest: React.FC = () => {
         opensearchArn: "",
         opensearchEndpoint: "",
         replicaNumbers: "1",
-        shardNumbers: "5",
+        shardNumbers: "1",
         vpc: {
           privateSubnetIds: "",
           securityGroupId: "",
@@ -219,31 +214,6 @@ const EksLogIngest: React.FC = () => {
       });
     } catch (error: any) {
       setLoadingCreate(false);
-      console.error(error);
-    }
-  };
-
-  const upgradePipelines = async () => {
-    try {
-      setLoadingUpgrade(true);
-      const upgradeRes = await appSyncRequestMutation(upgradeAppPipeline, {
-        ids: [eksIngestionInfo.existsPipeline.value],
-      });
-      console.info("upgradeRes:", upgradeRes);
-      setLoadingUpgrade(false);
-      setOpenNotice(false);
-      setEksIngestionInfo((prev) => {
-        return {
-          ...prev,
-          existsPipeline: {
-            name: "",
-            value: "",
-          },
-        };
-      });
-      getEksLogById();
-    } catch (error) {
-      setLoadingUpgrade(false);
       console.error(error);
     }
   };
@@ -388,16 +358,6 @@ const EksLogIngest: React.FC = () => {
                               });
                               return;
                             }
-                            // TODO for check old loghub pipeline
-                            // if (
-                            //   eksIngestionInfo.createMethod ===
-                            //     CreationMethod.Exists &&
-                            //   !eksIngestionInfo.existsPipeline?.description &&
-                            //   !eksIngestionInfo.existsPipeline?.ec2RoleArn
-                            // ) {
-                            //   setOpenNotice(true);
-                            //   return;
-                            // }
                           }
                           if (curStep === 1) {
                             if (!eksIngestionInfo.logPath) {
@@ -447,50 +407,6 @@ const EksLogIngest: React.FC = () => {
         </div>
       </div>
       <HelpPanel />
-
-      <Modal
-        title={t("applog:detail.ingestion.upgradeNotice")}
-        fullWidth={false}
-        isOpen={openNotice}
-        closeModal={() => {
-          setOpenNotice(false);
-        }}
-        actions={
-          <div className="button-action no-pb text-right">
-            <Button
-              btnType="text"
-              onClick={() => {
-                setOpenNotice(false);
-              }}
-            >
-              {t("button.cancel")}
-            </Button>
-            <Button
-              loading={loadingUpgrade}
-              btnType="primary"
-              onClick={() => {
-                upgradePipelines();
-              }}
-            >
-              {t("button.upgrade")}
-            </Button>
-          </div>
-        }
-      >
-        <div className="modal-content alert-content">
-          <Alert
-            noMargin
-            type={AlertType.Error}
-            content={
-              <div>
-                {t(
-                  "applog:detail.ingestion.upgradeNoticeDescEKSExistsPipeline"
-                )}
-              </div>
-            }
-          />
-        </div>
-      </Modal>
     </div>
   );
 };

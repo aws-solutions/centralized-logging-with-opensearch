@@ -19,7 +19,6 @@ import PagePanel from "components/PagePanel";
 import Tiles from "components/Tiles";
 import Alert from "components/Alert";
 import { CreateLogMethod, S3_ACCESS_LOG_LINK } from "assets/js/const";
-// import S3Select from "components/S3Select";
 import FormItem from "components/FormItem";
 import ExtLink from "components/ExtLink";
 import { SelectItem } from "components/Select/select";
@@ -34,7 +33,6 @@ import { InfoBarTypes } from "reducer/appReducer";
 import { useTranslation } from "react-i18next";
 import AutoEnableLogging from "../../common/AutoEnableLogging";
 import CrossAccountSelect from "pages/comps/account/CrossAccountSelect";
-// import Select from "components/Select";
 
 interface SpecifySettingsProps {
   s3Task: S3TaskProps;
@@ -45,6 +43,7 @@ interface SpecifySettingsProps {
   manualChangeBucket: (bucket: string) => void;
   autoS3EmptyError: boolean;
   manualS3EmptyError: boolean;
+  manualS3PathInvalid: boolean;
   setNextStepDisableStatus: (status: boolean) => void;
   setISChanging: (changing: boolean) => void;
   changeNeedEnableLogging: (need: boolean) => void;
@@ -63,6 +62,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     changeLogPath,
     autoS3EmptyError,
     manualS3EmptyError,
+    manualS3PathInvalid,
     setNextStepDisableStatus,
     setISChanging,
     changeNeedEnableLogging,
@@ -121,7 +121,6 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
       setShowSuccessText(true);
     } else {
       setShowInfoText(true);
-      // setNextStepDisableStatus(true);
       setShowSuccessText(false);
     }
   };
@@ -286,6 +285,8 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                     errorText={
                       manualS3EmptyError
                         ? t("servicelog:s3.s3LogLocationError")
+                        : manualS3PathInvalid
+                        ? t("servicelog:s3InvalidError")
                         : ""
                     }
                   >

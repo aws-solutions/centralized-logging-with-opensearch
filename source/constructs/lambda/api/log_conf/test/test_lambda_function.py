@@ -8,73 +8,31 @@ import pytest
 from moto import mock_dynamodb
 
 json_config_1 = {
-    "id":
-    "e4c579eb-fcf2-4ddb-8226-796f4bc8a690",
-    "confName":
-    "s3-source-config-01",
-    "createdDt":
-    "2022-04-24T02:11:25Z",
-    "logType":
-    "JSON",
-    "multilineLogParser":
-    None,
-    "regularExpression":
-    "",
+    "id": "e4c579eb-fcf2-4ddb-8226-796f4bc8a690",
+    "confName": "s3-source-config-01",
+    "createdDt": "2022-04-24T02:11:25Z",
+    "logType": "JSON",
+    "multilineLogParser": None,
+    "regularExpression": "",
     "regularSpecs": [
-        {
-            "format": "%d/%b/%Y:%H:%M:%S %z",
-            "key": "time",
-            "type": "date"
-        },
-        {
-            "key": "host",
-            "type": "text"
-        },
-        {
-            "key": "user-identifier",
-            "type": "text"
-        },
-        {
-            "key": "method",
-            "type": "text"
-        },
-        {
-            "key": "request",
-            "type": "text"
-        },
-        {
-            "key": "protocol",
-            "type": "text"
-        },
-        {
-            "key": "status",
-            "type": "integer"
-        },
-        {
-            "key": "bytes",
-            "type": "integer"
-        },
-        {
-            "key": "referer",
-            "type": "text"
-        },
+        {"format": "%d/%b/%Y:%H:%M:%S %z", "key": "time", "type": "date"},
+        {"key": "host", "type": "text"},
+        {"key": "user-identifier", "type": "text"},
+        {"key": "method", "type": "text"},
+        {"key": "request", "type": "text"},
+        {"key": "protocol", "type": "text"},
+        {"key": "status", "type": "integer"},
+        {"key": "bytes", "type": "integer"},
+        {"key": "referer", "type": "text"},
     ],
-    "status":
-    "ACTIVE",
-    "userLogFormat":
-    "",
+    "status": "ACTIVE",
+    "userLogFormat": "",
     "processorFilterRegex": {
-        'enable':
-        True,
-        'filters': [{
-            'key': 'status',
-            'condition': 'Include',
-            'value': '400|401|404|405'
-        }, {
-            'key': 'request',
-            'condition': 'Include',
-            'value': '/user/log*'
-        }]
+        "enable": True,
+        "filters": [
+            {"key": "status", "condition": "Include", "value": "400|401|404|405"},
+            {"key": "request", "condition": "Include", "value": "/user/log*"},
+        ],
     },
 }
 
@@ -84,25 +42,17 @@ regex_config_1 = {
     "createdDt": "2022-03-17T07:51:18Z",
     "logType": "Nginx",
     "multilineLogParser": None,
-    "regularExpression":
-    '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
+    "regularExpression": '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
     "regularSpecs": [],
     "source": "ec2",
     "status": "ACTIVE",
-    "userLogFormat":
-    'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
+    "userLogFormat": 'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
     "processorFilterRegex": {
-        'enable':
-        True,
-        'filters': [{
-            'key': 'status',
-            'condition': 'Include',
-            'value': '400|401|404|405'
-        }, {
-            'key': 'request',
-            'condition': 'Include',
-            'value': '/user/log*'
-        }]
+        "enable": True,
+        "filters": [
+            {"key": "status", "condition": "Include", "value": "400|401|404|405"},
+            {"key": "request", "condition": "Include", "value": "/user/log*"},
+        ],
     },
 }
 
@@ -116,18 +66,9 @@ def ddb_client():
         app_log_config_table_name = os.environ.get("LOGCONF_TABLE")
         app_log_config_table = ddb.create_table(
             TableName=app_log_config_table_name,
-            KeySchema=[{
-                "AttributeName": "id",
-                "KeyType": "HASH"
-            }],
-            AttributeDefinitions=[{
-                "AttributeName": "id",
-                "AttributeType": "S"
-            }],
-            ProvisionedThroughput={
-                "ReadCapacityUnits": 10,
-                "WriteCapacityUnits": 10
-            },
+            KeySchema=[{"AttributeName": "id", "KeyType": "HASH"}],
+            AttributeDefinitions=[{"AttributeName": "id", "AttributeType": "S"}],
+            ProvisionedThroughput={"ReadCapacityUnits": 10, "WriteCapacityUnits": 10},
         )
         data_list = [json_config_1, regex_config_1]
         with app_log_config_table.batch_writer() as batch:
@@ -147,25 +88,24 @@ def test_lambda_handler(ddb_client):
                 "logType": "Nginx",
                 "multilineLogParser": None,
                 "userSampleLog": "test",
-                "userLogFormat":
-                'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
-                "regularExpression":
-                '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
-                "timeRegularExpression":
-                '\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s',
+                "userLogFormat": 'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
+                "regularExpression": '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
+                "timeRegularExpression": "\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s",
                 "regularSpecs": [],
                 "processorFilterRegex": {
-                    'enable':
-                    True,
-                    'filters': [{
-                        'key': 'status',
-                        'condition': 'Include',
-                        'value': '400|401|404|405'
-                    }, {
-                        'key': 'request',
-                        'condition': 'Include',
-                        'value': '/user/log*'
-                    }]
+                    "enable": True,
+                    "filters": [
+                        {
+                            "key": "status",
+                            "condition": "Include",
+                            "value": "400|401|404|405",
+                        },
+                        {
+                            "key": "request",
+                            "condition": "Include",
+                            "value": "/user/log*",
+                        },
+                    ],
                 },
             },
             "info": {
@@ -174,10 +114,8 @@ def test_lambda_handler(ddb_client):
                 "variables": {
                     "confName": "nginx-dev-01",
                     "logType": "Nginx",
-                    "userLogFormat":
-                    'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
-                    "regularExpression":
-                    '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
+                    "userLogFormat": 'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
+                    "regularExpression": '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
                     "regularSpecs": [],
                 },
             },
@@ -188,17 +126,11 @@ def test_lambda_handler(ddb_client):
     # Test Listing the log configs
     get_response = lambda_function.lambda_handler(
         {
-            "arguments": {
-                "page": 1,
-                "count": 10
-            },
+            "arguments": {"page": 1, "count": 10},
             "info": {
                 "fieldName": "listLogConfs",
                 "parentTypeName": "Query",
-                "variables": {
-                    "page": 1,
-                    "count": 10
-                },
+                "variables": {"page": 1, "count": 10},
             },
         },
         None,
@@ -215,18 +147,11 @@ def test_lambda_handler(ddb_client):
     # Test Listing the log configs by log type
     get_response = lambda_function.lambda_handler(
         {
-            "arguments": {
-                "page": 1,
-                "count": 10,
-                "logType": "JSON"
-            },
+            "arguments": {"page": 1, "count": 10, "logType": "JSON"},
             "info": {
                 "fieldName": "listLogConfs",
                 "parentTypeName": "Query",
-                "variables": {
-                    "page": 1,
-                    "count": 10
-                },
+                "variables": {"page": 1, "count": 10},
             },
         },
         None,
@@ -242,25 +167,24 @@ def test_lambda_handler(ddb_client):
                     "logType": "Nginx",
                     "multilineLogParser": None,
                     "userSampleLog": "test",
-                    "userLogFormat":
-                    'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
-                    "regularExpression":
-                    '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
-                    "timeRegularExpression":
-                    '\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s',
+                    "userLogFormat": 'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
+                    "regularExpression": '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
+                    "timeRegularExpression": "\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s",
                     "regularSpecs": [],
                     "processorFilterRegex": {
-                        'enable':
-                        True,
-                        'filters': [{
-                            'key': 'status',
-                            'condition': 'Include',
-                            'value': '400|401|404|405'
-                        }, {
-                            'key': 'request',
-                            'condition': 'Include',
-                            'value': '/user/log*'
-                        }]
+                        "enable": True,
+                        "filters": [
+                            {
+                                "key": "status",
+                                "condition": "Include",
+                                "value": "400|401|404|405",
+                            },
+                            {
+                                "key": "request",
+                                "condition": "Include",
+                                "value": "/user/log*",
+                            },
+                        ],
                     },
                 },
                 "info": {
@@ -269,10 +193,8 @@ def test_lambda_handler(ddb_client):
                     "variables": {
                         "confName": "nginx-dev-01",
                         "logType": "Nginx",
-                        "userLogFormat":
-                        'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
-                        "regularExpression":
-                        '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
+                        "userLogFormat": 'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
+                        "regularExpression": '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
                         "regularSpecs": [],
                     },
                 },
@@ -282,19 +204,14 @@ def test_lambda_handler(ddb_client):
 
     get_resp = lambda_function.list_log_confs(confName="nginx-dev-01")
     log_conf_info = lambda_function.log_conf_table.get_item(
-        Key={'id': get_resp['logConfs'][0]['id']})
-    assert log_conf_info['Item']['processorFilterRegex'] == {
-        'enable':
-        True,
-        'filters': [{
-            'condition': 'Include',
-            'key': 'status',
-            'value': '400|401|404|405'
-        }, {
-            'condition': 'Include',
-            'key': 'request',
-            'value': '/user/log*'
-        }]
+        Key={"id": get_resp["logConfs"][0]["id"]}
+    )
+    assert log_conf_info["Item"]["processorFilterRegex"] == {
+        "enable": True,
+        "filters": [
+            {"condition": "Include", "key": "status", "value": "400|401|404|405"},
+            {"condition": "Include", "key": "request", "value": "/user/log*"},
+        ],
     }
 
     # Test to update a log config with duplicate name
@@ -308,25 +225,24 @@ def test_lambda_handler(ddb_client):
                     "multilineLogParser": None,
                     "userSampleLog": "test",
                     "syslogParser": None,
-                    "userLogFormat":
-                    'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
-                    "regularExpression":
-                    '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
-                    "timeRegularExpression":
-                    '\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s',
+                    "userLogFormat": 'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
+                    "regularExpression": '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
+                    "timeRegularExpression": "\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s",
                     "regularSpecs": [],
                     "processorFilterRegex": {
-                        'enable':
-                        True,
-                        'filters': [{
-                            'key': 'status',
-                            'condition': 'Include',
-                            'value': '400|401|404|405'
-                        }, {
-                            'key': 'request',
-                            'condition': 'Exclude',
-                            'value': '/user/log*'
-                        }]
+                        "enable": True,
+                        "filters": [
+                            {
+                                "key": "status",
+                                "condition": "Include",
+                                "value": "400|401|404|405",
+                            },
+                            {
+                                "key": "request",
+                                "condition": "Exclude",
+                                "value": "/user/log*",
+                            },
+                        ],
                     },
                     "timeKey": "MyTimeKey",
                     "timeOffset": "UTC+0800",
@@ -339,10 +255,8 @@ def test_lambda_handler(ddb_client):
                         "confName": "regex-nginx-config",
                         "logType": "Nginx",
                         "multilineLogParser": None,
-                        "userLogFormat":
-                        'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
-                        "regularExpression":
-                        '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
+                        "userLogFormat": 'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
+                        "regularExpression": '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
                         "regularSpecs": [],
                         "timeKey": "MyTimeKey",
                         "timeOffset": "UTC+0800",
@@ -353,19 +267,14 @@ def test_lambda_handler(ddb_client):
         )
 
         log_conf_info = lambda_function.log_conf_table.get_item(
-            Key={'id': 'e4c579eb-fcf2-4ddb-8226-796f4bc8a690'})
-        assert log_conf_info['Item']['processorFilterRegex'] == {
-            'enable':
-            True,
-            'filters': [{
-                'condition': 'Include',
-                'key': 'status',
-                'value': '400|401|404|405'
-            }, {
-                'condition': 'Exclude',
-                'key': 'request',
-                'value': '/user/log*'
-            }]
+            Key={"id": "e4c579eb-fcf2-4ddb-8226-796f4bc8a690"}
+        )
+        assert log_conf_info["Item"]["processorFilterRegex"] == {
+            "enable": True,
+            "filters": [
+                {"condition": "Include", "key": "status", "value": "400|401|404|405"},
+                {"condition": "Exclude", "key": "request", "value": "/user/log*"},
+            ],
         }
 
     # Test update the log config
@@ -378,25 +287,24 @@ def test_lambda_handler(ddb_client):
                 "multilineLogParser": None,
                 "userSampleLog": "test",
                 "syslogParser": None,
-                "userLogFormat":
-                'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
-                "regularExpression":
-                '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
-                "timeRegularExpression":
-                '\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s',
+                "userLogFormat": 'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
+                "regularExpression": '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
+                "timeRegularExpression": "\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s",
                 "regularSpecs": [],
                 "processorFilterRegex": {
-                    'enable':
-                    True,
-                    'filters': [{
-                        'key': 'status',
-                        'condition': 'Include',
-                        'value': '400|401|404|405'
-                    }, {
-                        'key': 'request',
-                        'condition': 'Exclude',
-                        'value': '^/user/log*'
-                    }]
+                    "enable": True,
+                    "filters": [
+                        {
+                            "key": "status",
+                            "condition": "Include",
+                            "value": "400|401|404|405",
+                        },
+                        {
+                            "key": "request",
+                            "condition": "Exclude",
+                            "value": "^/user/log*",
+                        },
+                    ],
                 },
                 "timeKey": "MyTimeKey",
                 "timeOffset": "UTC+0800",
@@ -409,10 +317,8 @@ def test_lambda_handler(ddb_client):
                     "confName": "nginx-dev-02",
                     "logType": "Nginx",
                     "multilineLogParser": None,
-                    "userLogFormat":
-                    'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
-                    "regularExpression":
-                    '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
+                    "userLogFormat": 'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
+                    "regularExpression": '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
                     "regularSpecs": [],
                 },
             },
@@ -421,19 +327,14 @@ def test_lambda_handler(ddb_client):
     )
 
     log_conf_info = lambda_function.log_conf_table.get_item(
-        Key={'id': 'e4c579eb-fcf2-4ddb-8226-796f4bc8a690'})
-    assert log_conf_info['Item']['processorFilterRegex'] == {
-        'enable':
-        True,
-        'filters': [{
-            'condition': 'Include',
-            'key': 'status',
-            'value': '400|401|404|405'
-        }, {
-            'condition': 'Exclude',
-            'key': 'request',
-            'value': '^/user/log*'
-        }]
+        Key={"id": "e4c579eb-fcf2-4ddb-8226-796f4bc8a690"}
+    )
+    assert log_conf_info["Item"]["processorFilterRegex"] == {
+        "enable": True,
+        "filters": [
+            {"condition": "Include", "key": "status", "value": "400|401|404|405"},
+            {"condition": "Exclude", "key": "request", "value": "^/user/log*"},
+        ],
     }
 
     # Test create a log config when processorFilterRegex is None
@@ -459,10 +360,12 @@ def test_lambda_handler(ddb_client):
 
     get_resp = lambda_function.list_log_confs(confName="json-01")
     log_conf_info = lambda_function.log_conf_table.get_item(
-        Key={'id': get_resp['logConfs'][0]['id']})
-    assert log_conf_info['Item']['processorFilterRegex'] == None
+        Key={"id": get_resp["logConfs"][0]["id"]}
+    )
+    assert log_conf_info["Item"]["processorFilterRegex"] == None
     lambda_function.log_conf_table.delete_item(
-        Key={'id': get_resp['logConfs'][0]['id']})
+        Key={"id": get_resp["logConfs"][0]["id"]}
+    )
 
     # Test update a log config when processorFilterRegex is None
     lambda_function.lambda_handler(
@@ -474,12 +377,9 @@ def test_lambda_handler(ddb_client):
                 "multilineLogParser": None,
                 "syslogParser": None,
                 "userSampleLog": "test",
-                "userLogFormat":
-                'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
-                "regularExpression":
-                '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
-                "timeRegularExpression":
-                '\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s',
+                "userLogFormat": 'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
+                "regularExpression": '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
+                "timeRegularExpression": "\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s",
                 "regularSpecs": [],
                 "processorFilterRegex": None,
                 "timeKey": "MyTimeKey",
@@ -493,10 +393,8 @@ def test_lambda_handler(ddb_client):
                     "confName": "nginx-dev-02",
                     "logType": "Nginx",
                     "multilineLogParser": None,
-                    "userLogFormat":
-                    'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
-                    "regularExpression":
-                    '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
+                    "userLogFormat": 'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
+                    "regularExpression": '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
                     "regularSpecs": [],
                 },
             },
@@ -505,8 +403,9 @@ def test_lambda_handler(ddb_client):
     )
 
     log_conf_info = lambda_function.log_conf_table.get_item(
-        Key={'id': 'e4c579eb-fcf2-4ddb-8226-796f4bc8a690'})
-    assert log_conf_info['Item']['processorFilterRegex'] == None
+        Key={"id": "e4c579eb-fcf2-4ddb-8226-796f4bc8a690"}
+    )
+    assert log_conf_info["Item"]["processorFilterRegex"] == None
 
     # Test update the log config when processorFilterRegex.enable is False
     lambda_function.lambda_handler(
@@ -518,25 +417,24 @@ def test_lambda_handler(ddb_client):
                 "multilineLogParser": None,
                 "syslogParser": None,
                 "userSampleLog": "test",
-                "userLogFormat":
-                'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
-                "regularExpression":
-                '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
-                "timeRegularExpression":
-                '\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s',
+                "userLogFormat": 'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
+                "regularExpression": '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
+                "timeRegularExpression": "\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s",
                 "regularSpecs": [],
                 "processorFilterRegex": {
-                    'enable':
-                    False,
-                    'filters': [{
-                        'key': 'status',
-                        'condition': 'Include',
-                        'value': '400|401|404|405'
-                    }, {
-                        'key': 'request',
-                        'condition': 'Exclude',
-                        'value': '^/user/log*'
-                    }]
+                    "enable": False,
+                    "filters": [
+                        {
+                            "key": "status",
+                            "condition": "Include",
+                            "value": "400|401|404|405",
+                        },
+                        {
+                            "key": "request",
+                            "condition": "Exclude",
+                            "value": "^/user/log*",
+                        },
+                    ],
                 },
                 "timeKey": "MyTimeKey",
                 "timeOffset": "UTC+0800",
@@ -549,10 +447,8 @@ def test_lambda_handler(ddb_client):
                     "confName": "nginx-dev-02",
                     "logType": "Nginx",
                     "multilineLogParser": None,
-                    "userLogFormat":
-                    'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
-                    "regularExpression":
-                    '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
+                    "userLogFormat": 'log_format  main  \'$remote_addr - $remote_user [$time_local] "$request" \'\n\'$status $body_bytes_sent "$http_referer" \'\n\'"$http_user_agent" "$http_x_forwarded_for"\';',
+                    "regularExpression": '(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+\\]\\s+"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+"(?<http_referer>[^"]*)"\\s+"(?<http_user_agent>[^"]*)"\\s+"(?<http_x_forwarded_for>[^"]*)".*',
                     "regularSpecs": [],
                 },
             },
@@ -561,19 +457,14 @@ def test_lambda_handler(ddb_client):
     )
 
     log_conf_info = lambda_function.log_conf_table.get_item(
-        Key={'id': 'e4c579eb-fcf2-4ddb-8226-796f4bc8a690'})
-    assert log_conf_info['Item']['processorFilterRegex'] == {
-        'enable':
-        False,
-        'filters': [{
-            'condition': 'Include',
-            'key': 'status',
-            'value': '400|401|404|405'
-        }, {
-            'condition': 'Exclude',
-            'key': 'request',
-            'value': '^/user/log*'
-        }]
+        Key={"id": "e4c579eb-fcf2-4ddb-8226-796f4bc8a690"}
+    )
+    assert log_conf_info["Item"]["processorFilterRegex"] == {
+        "enable": False,
+        "filters": [
+            {"condition": "Include", "key": "status", "value": "400|401|404|405"},
+            {"condition": "Exclude", "key": "request", "value": "^/user/log*"},
+        ],
     }
 
 
@@ -583,15 +474,11 @@ def test_delete_log_config(ddb_client):
     # Test Delete the Log Config
     lambda_function.lambda_handler(
         {
-            "arguments": {
-                "id": "e4c579eb-fcf2-4ddb-8226-796f4bc8a690"
-            },
+            "arguments": {"id": "e4c579eb-fcf2-4ddb-8226-796f4bc8a690"},
             "info": {
                 "fieldName": "deleteLogConf",
                 "parentTypeName": "Mutation",
-                "variables": {
-                    "id": "e4c579eb-fcf2-4ddb-8226-796f4bc8a690"
-                },
+                "variables": {"id": "e4c579eb-fcf2-4ddb-8226-796f4bc8a690"},
             },
         },
         None,
@@ -604,15 +491,11 @@ def test_id_not_found(ddb_client):
     with pytest.raises(lambda_function.APIException):
         lambda_function.lambda_handler(
             {
-                "arguments": {
-                    "id": "not_exist"
-                },
+                "arguments": {"id": "not_exist"},
                 "info": {
                     "fieldName": "deleteLogConf",
                     "parentTypeName": "Mutation",
-                    "variables": {
-                        "id": "not_exist"
-                    },
+                    "variables": {"id": "not_exist"},
                 },
             },
             None,
@@ -625,15 +508,11 @@ def test_args_error(ddb_client):
     with pytest.raises(RuntimeError):
         lambda_function.lambda_handler(
             {
-                "arguments": {
-                    "id": "773cb34e-59de-4a6e-9e87-0e0e9e0ff2a0"
-                },
+                "arguments": {"id": "773cb34e-59de-4a6e-9e87-0e0e9e0ff2a0"},
                 "info": {
                     "fieldName": "no_exist",
                     "parentTypeName": "Mutation",
-                    "variables": {
-                        "id": "773cb34e-59de-4a6e-9e87-0e0e9e0ff2a0"
-                    },
+                    "variables": {"id": "773cb34e-59de-4a6e-9e87-0e0e9e0ff2a0"},
                 },
             },
             None,
@@ -648,54 +527,21 @@ def test_regular_specs_error(ddb_client):
         lambda_function.lambda_handler(
             {
                 "arguments": {
-                    "confName":
-                    "json-01",
-                    "logType":
-                    "JSON",
-                    "multilineLogParser":
-                    None,
-                    "userLogFormat":
-                    "",
-                    "regularExpression":
-                    "",
+                    "confName": "json-01",
+                    "logType": "JSON",
+                    "multilineLogParser": None,
+                    "userLogFormat": "",
+                    "regularExpression": "",
                     "regularSpecs": [
-                        {
-                            "key": "time",
-                            "type": "date",
-                            "format": ""
-                        },
-                        {
-                            "key": "host",
-                            "type": "text"
-                        },
-                        {
-                            "key": "user-identifier",
-                            "type": "text"
-                        },
-                        {
-                            "key": "method",
-                            "type": "text"
-                        },
-                        {
-                            "key": "request",
-                            "type": "text"
-                        },
-                        {
-                            "key": "protocol",
-                            "type": "text"
-                        },
-                        {
-                            "key": "status",
-                            "type": "integer"
-                        },
-                        {
-                            "key": "bytes",
-                            "type": "integer"
-                        },
-                        {
-                            "key": "referer",
-                            "type": "text"
-                        },
+                        {"key": "time", "type": "date", "format": ""},
+                        {"key": "host", "type": "text"},
+                        {"key": "user-identifier", "type": "text"},
+                        {"key": "method", "type": "text"},
+                        {"key": "request", "type": "text"},
+                        {"key": "protocol", "type": "text"},
+                        {"key": "status", "type": "integer"},
+                        {"key": "bytes", "type": "integer"},
+                        {"key": "referer", "type": "text"},
                     ],
                 },
                 "info": {
@@ -711,53 +557,21 @@ def test_regular_specs_error(ddb_client):
         lambda_function.lambda_handler(
             {
                 "arguments": {
-                    "confName":
-                    "json-01",
-                    "logType":
-                    "JSON",
-                    "multilineLogParser":
-                    None,
-                    "userLogFormat":
-                    "",
-                    "regularExpression":
-                    "",
+                    "confName": "json-01",
+                    "logType": "JSON",
+                    "multilineLogParser": None,
+                    "userLogFormat": "",
+                    "regularExpression": "",
                     "regularSpecs": [
-                        {
-                            "key": "time",
-                            "type": "date"
-                        },
-                        {
-                            "key": "host",
-                            "type": "text"
-                        },
-                        {
-                            "key": "user-identifier",
-                            "type": "text"
-                        },
-                        {
-                            "key": "method",
-                            "type": "text"
-                        },
-                        {
-                            "key": "request",
-                            "type": "text"
-                        },
-                        {
-                            "key": "protocol",
-                            "type": "text"
-                        },
-                        {
-                            "key": "status",
-                            "type": "integer"
-                        },
-                        {
-                            "key": "bytes",
-                            "type": "integer"
-                        },
-                        {
-                            "key": "referer",
-                            "type": "text"
-                        },
+                        {"key": "time", "type": "date"},
+                        {"key": "host", "type": "text"},
+                        {"key": "user-identifier", "type": "text"},
+                        {"key": "method", "type": "text"},
+                        {"key": "request", "type": "text"},
+                        {"key": "protocol", "type": "text"},
+                        {"key": "status", "type": "integer"},
+                        {"key": "bytes", "type": "integer"},
+                        {"key": "referer", "type": "text"},
                     ],
                 },
                 "info": {
@@ -773,50 +587,21 @@ def test_regular_specs_error(ddb_client):
         lambda_function.lambda_handler(
             {
                 "arguments": {
-                    "confName":
-                    "json-01",
-                    "logType":
-                    "JSON",
-                    "multilineLogParser":
-                    None,
-                    "userLogFormat":
-                    "",
-                    "regularExpression":
-                    "",
+                    "confName": "json-01",
+                    "logType": "JSON",
+                    "multilineLogParser": None,
+                    "userLogFormat": "",
+                    "regularExpression": "",
                     "regularSpecs": [
                         {"time", "date"},
-                        {
-                            "key": "host",
-                            "type": "text"
-                        },
-                        {
-                            "key": "user-identifier",
-                            "type": "text"
-                        },
-                        {
-                            "key": "method",
-                            "type": "text"
-                        },
-                        {
-                            "key": "request",
-                            "type": "text"
-                        },
-                        {
-                            "key": "protocol",
-                            "type": "text"
-                        },
-                        {
-                            "key": "status",
-                            "type": "integer"
-                        },
-                        {
-                            "key": "bytes",
-                            "type": "integer"
-                        },
-                        {
-                            "key": "referer",
-                            "type": "text"
-                        },
+                        {"key": "host", "type": "text"},
+                        {"key": "user-identifier", "type": "text"},
+                        {"key": "method", "type": "text"},
+                        {"key": "request", "type": "text"},
+                        {"key": "protocol", "type": "text"},
+                        {"key": "status", "type": "integer"},
+                        {"key": "bytes", "type": "integer"},
+                        {"key": "referer", "type": "text"},
                     ],
                 },
                 "info": {
@@ -832,48 +617,20 @@ def test_regular_specs_error(ddb_client):
         lambda_function.lambda_handler(
             {
                 "arguments": {
-                    "confName":
-                    "json-01",
-                    "logType":
-                    "JSON",
-                    "multilineLogParser":
-                    None,
-                    "userLogFormat":
-                    "",
-                    "regularExpression":
-                    "",
+                    "confName": "json-01",
+                    "logType": "JSON",
+                    "multilineLogParser": None,
+                    "userLogFormat": "",
+                    "regularExpression": "",
                     "regularSpecs": [
-                        {
-                            "type": "text"
-                        },
-                        {
-                            "key": "user-identifier",
-                            "type": "text"
-                        },
-                        {
-                            "key": "method",
-                            "type": "text"
-                        },
-                        {
-                            "key": "request",
-                            "type": "text"
-                        },
-                        {
-                            "key": "protocol",
-                            "type": "text"
-                        },
-                        {
-                            "key": "status",
-                            "type": "integer"
-                        },
-                        {
-                            "key": "bytes",
-                            "type": "integer"
-                        },
-                        {
-                            "key": "referer",
-                            "type": "text"
-                        },
+                        {"type": "text"},
+                        {"key": "user-identifier", "type": "text"},
+                        {"key": "method", "type": "text"},
+                        {"key": "request", "type": "text"},
+                        {"key": "protocol", "type": "text"},
+                        {"key": "status", "type": "integer"},
+                        {"key": "bytes", "type": "integer"},
+                        {"key": "referer", "type": "text"},
                     ],
                 },
                 "info": {
@@ -900,15 +657,18 @@ def test_filter_regex_error(ddb_client):
                     "regularExpression": "",
                     "regularSpecs": [],
                     "processorFilterRegex": {
-                        'filters': [{
-                            'key': 'status',
-                            'condition': 'Include',
-                            'value': '400|401|404|405'
-                        }, {
-                            'key': 'request',
-                            'condition': 'Exclude',
-                            'value': '^/user/log*'
-                        }]
+                        "filters": [
+                            {
+                                "key": "status",
+                                "condition": "Include",
+                                "value": "400|401|404|405",
+                            },
+                            {
+                                "key": "request",
+                                "condition": "Exclude",
+                                "value": "^/user/log*",
+                            },
+                        ]
                     },
                 },
                 "info": {
@@ -952,17 +712,19 @@ def test_filter_regex_error(ddb_client):
                     "regularExpression": "",
                     "regularSpecs": [],
                     "processorFilterRegex": {
-                        'enable':
-                        True,
-                        'filters': [{
-                            'key-new': 'status',
-                            'condition': 'Include',
-                            'value': '400|401|404|405'
-                        }, {
-                            'key': 'request',
-                            'condition': 'Exclude',
-                            'value': '^/user/log*'
-                        }]
+                        "enable": True,
+                        "filters": [
+                            {
+                                "key-new": "status",
+                                "condition": "Include",
+                                "value": "400|401|404|405",
+                            },
+                            {
+                                "key": "request",
+                                "condition": "Exclude",
+                                "value": "^/user/log*",
+                            },
+                        ],
                     },
                 },
                 "info": {
@@ -985,17 +747,19 @@ def test_filter_regex_error(ddb_client):
                     "regularExpression": "",
                     "regularSpecs": [],
                     "processorFilterRegex": {
-                        'enable':
-                        True,
-                        'filters': [{
-                            'key': 'status',
-                            'condition-new': 'Include',
-                            'value': '400|401|404|405'
-                        }, {
-                            'key': 'request',
-                            'condition': 'Exclude',
-                            'value': '^/user/log*'
-                        }]
+                        "enable": True,
+                        "filters": [
+                            {
+                                "key": "status",
+                                "condition-new": "Include",
+                                "value": "400|401|404|405",
+                            },
+                            {
+                                "key": "request",
+                                "condition": "Exclude",
+                                "value": "^/user/log*",
+                            },
+                        ],
                     },
                 },
                 "info": {
@@ -1018,17 +782,19 @@ def test_filter_regex_error(ddb_client):
                     "regularExpression": "",
                     "regularSpecs": [],
                     "processorFilterRegex": {
-                        'enable':
-                        True,
-                        'filters': [{
-                            'key': 'status',
-                            'condition': 'Include',
-                            'value-new': '400|401|404|405'
-                        }, {
-                            'key': 'request',
-                            'condition': 'Exclude',
-                            'value': '^/user/log*'
-                        }]
+                        "enable": True,
+                        "filters": [
+                            {
+                                "key": "status",
+                                "condition": "Include",
+                                "value-new": "400|401|404|405",
+                            },
+                            {
+                                "key": "request",
+                                "condition": "Exclude",
+                                "value": "^/user/log*",
+                            },
+                        ],
                     },
                 },
                 "info": {

@@ -30,13 +30,6 @@ type Query {
     region: String
   ): [Resource]
 
-  # Verify that service already exists in the pipeline
-  checkServiceExisting(
-    type: ResourceType!
-    accountId: String
-    region: String
-  ): Boolean
-
   # Get logging bucket for a type of resource by resource name or id
   getResourceLoggingBucket(
     type: ResourceType!
@@ -44,6 +37,14 @@ type Query {
     accountId: String
     region: String
   ): LoggingBucket
+
+  # Get a list of logging configurations for AWS Resource
+  getResourceLogConfigs(
+    type: ResourceType!
+    resourceName: String!
+    accountId: String
+    region: String
+  ): [ResourceLogConf]
 
   # *The following belongs to applog* #
 
@@ -95,8 +96,6 @@ type Query {
     accountId: String
   ): listAutoScalingGroupResponse
 
-  # Get Instance Meta by ID
-  getInstanceMeta(id: ID!): InstanceMeta
 
   # Get logging Agent Status by instanceId
   getLogAgentStatus(
@@ -111,9 +110,6 @@ type Query {
   # Get logging source info by ID
   getLogSource(sourceType: LogSourceType!, id: ID!): LogSource
 
-  # List logging source conf info
-  listLogSources(page: Int, count: Int): ListLogSourceResponse
-
   # Get imported EKS Cluster details by eksClusterId
   getEKSClusterDetails(eksClusterId: String!): EKSClusterLogSource
 
@@ -127,9 +123,7 @@ type Query {
     openExtraMetadataFlag: Boolean
   ): String
 
-  getAutoScalingGroupConf(
-    groupId: String!
-  ): String
+  getAutoScalingGroupConf(groupId: String!): String
 
   # List EKS Cluster info
   listEKSClusterNames(
@@ -190,6 +184,7 @@ type Mutation {
     tags: [TagInput]
     logSourceAccountId: String
     logSourceRegion: String
+    destinationType: DestinationType!
   ): String
 
   # Remove a service pipeline
@@ -214,6 +209,18 @@ type Mutation {
     accountId: String
     region: String
   ): LoggingBucket
+
+  # Add logging configuration to resources.
+  # Log Format is only requried if the format can be customized.
+  putResourceLogConfig(
+    type: ResourceType!
+    resourceName: String!
+    accountId: String
+    region: String
+    destinationType: DestinationType!
+    destinationName: String!
+    LogFormat: String
+  ): ResourceLogConf
 
   # *The following belongs to applog* #
 
@@ -248,7 +255,6 @@ type Mutation {
     sourceId: String!
     instanceIdSet: [String!]!
   ): String
-
 
   # Create a logging conf
   createLogConf(
@@ -288,12 +294,9 @@ type Mutation {
 
   # Create a new app pipeline
   createAppPipeline(
-    # kdsParas: KDSParameterInput!
     bufferType: BufferType!
     bufferParams: [BufferInput]
-
     aosParams: AOSParameterInput!
-
     force: Boolean
     tags: [TagInput]
   ): String
@@ -301,19 +304,13 @@ type Mutation {
   # Remove a app pipeline
   deleteAppPipeline(id: ID!): String
 
-  # Upgrade a app pipeline to v1.1
-  upgradeAppPipeline(ids: [ID!]!): String
-
   # Create a new app logging ingestion
   createAppLogIngestion(
     confId: String!
     sourceIds: [String!]
     sourceType: LogSourceType!
-    # stackId: String
-    # stackName: String
     appPipelineId: String!
     createDashboard: String
-    # force: Boolean
     tags: [TagInput]
     logPath: String
   ): String
@@ -336,11 +333,6 @@ type Mutation {
     tags: [TagInput]
   ): String
 
-  # Remove a logging source conf
-  deleteLogSource(id: ID!): String
-
-  # Update a logging source conf
-  updateLogSource(id: ID!): String
 
   #Import an EKS Cluster
   importEKSCluster(
@@ -354,29 +346,6 @@ type Mutation {
   ): String
   # Remove an EKS Cluster by ID
   removeEKSCluster(id: ID!): String
-
-  #create EKS Cluster Pod log pipeline & ingestion
-  # createEKSClusterPodLogIngestion(
-  #   # kdsParas: KDSParameterInput!
-  #   aosParas: AOSParameterInput!
-  #   confId: String!
-  #   eksClusterId: String!
-  #   logPath: String!
-  #   createDashboard: String!
-  #   force: Boolean
-  #   tags: [TagInput]
-  # ): String
-
-  #create EKS Cluster Pod log pipeline & ingestion without data buffer
-  # createEKSClusterPodLogWithoutDataBufferIngestion(
-  #   aosParas: AOSParameterInput!
-  #   confId: String!
-  #   eksClusterId: String!
-  #   logPath: String!
-  #   createDashboard: String!
-  #   force: Boolean
-  #   tags: [TagInput]
-  # ): String
 
   #generate error code
   generateErrorCode(code: ErrorCode): String
@@ -581,6 +550,7 @@ type Tag {
 type ServicePipeline {
   id: ID!
   type: ServiceType!
+  destinationType: DestinationType
   source: String
   target: String
   parameters: [Parameter]
@@ -648,12 +618,31 @@ enum ResourceType {
   Config
 }
 
+# Log Format is only requried if the format can be customized.
+# the processor need to know the customized fields
+type ResourceLogConf {
+  destinationType: DestinationType!
+  destinationName: String!
+  name: String
+  logFormat: String
+  region: String
+}
+
+enum DestinationType {
+  S3
+  CloudWatch
+  KDS
+  KDF
+}
+
 input ProxyInput {
   vpc: VPCInput!
   certificateArn: String!
   keyName: String!
   customEndpoint: String!
   cognitoEndpoint: String
+  proxyInstanceType: String
+  proxyInstanceNumber: String
 }
 
 type ProxyInfo {
@@ -833,18 +822,6 @@ type S3Source {
   defaultSubnetIds: String
 }
 
-# type LogSource {
-#   sourceId: ID!
-#   sourceName: String
-#   logPath: String
-#   sourceType: LogSourceType
-#   createdDt: String
-#   accountId: String
-#   region: String
-#   s3Source: S3Source
-#   eksSource: EKSClusterLogSource
-#   # ec2Source: EC2Source
-# }
 
 type LogSource {
   sourceId: ID!
@@ -864,49 +841,47 @@ type ListLogSourceResponse {
   total: Int
 }
 
-# input KDSParameterInput {
-#   kdsArn: String
-#   streamName: String
-#   enableAutoScaling: Boolean!
-#   startShardNumber: Int!
-#   maxShardNumber: Int
-#   regionName: String
-# }
-
 input AOSParameterInput {
   vpc: VPCInput!
   opensearchArn: String!
   opensearchEndpoint: String!
   domainName: String!
   indexPrefix: String!
-  warmLogTransition: Int!
-  coldLogTransition: Int!
-  logRetention: Int!
+  warmLogTransition: String
+  coldLogTransition: String
+  logRetention: String
+  rolloverSize: String
+  codec: Codec
+  indexSuffix: IndexSuffix
+  refreshInterval: String
   shardNumbers: Int!
   replicaNumbers: Int!
   engine: EngineType!
   failedLogBucket: String!
 }
+enum IndexSuffix {
+  yyyy_MM_dd
+  yyyy_MM_dd_HH
+  yyyy_MM
+  yyyy
+}
+enum Codec {
+  best_compression
+  default
+}
 
-# type KDSParameter {
-#   kdsArn: String
-#   streamName: String
-#   enableAutoScaling: Boolean
-#   startShardNumber: Int
-#   openShardCount: Int
-#   consumerCount: Int
-#   maxShardNumber: Int
-#   regionName: String
-#   osHelperFnArn: String
-# }
 
 type AOSParameter {
   opensearchArn: String
   domainName: String
   indexPrefix: String
-  warmLogTransition: Int
-  coldLogTransition: Int
-  logRetention: Int
+  warmLogTransition: String
+  coldLogTransition: String
+  logRetention: String
+  rolloverSize: String
+  codec: Codec
+  indexSuffix: IndexSuffix
+  refreshInterval: String
   shardNumbers: Int
   replicaNumbers: Int
   engine: EngineType
@@ -914,20 +889,15 @@ type AOSParameter {
 
 type AppPipeline {
   id: ID!
-  # kdsParas: KDSParameter
   bufferType: BufferType
   bufferParams: [BufferParameter]
   aosParams: AOSParameter
   createdDt: String
   status: PipelineStatus
-  # kdsRoleArn: String
   bufferAccessRoleArn: String
   bufferAccessRoleName: String
   bufferResourceName: String
   bufferResourceArn: String
-
-  # TODO: Check ec2RoleArn
-  # ec2RoleArn: String
   tags: [Tag]
 }
 
@@ -944,10 +914,6 @@ type AppLogIngestion {
   stackId: String
   stackName: String
   appPipelineId: String
-  # kdsRoleArn: String
-  # kdsRoleName: String
-  # ec2RoleArn: String
-  # ec2RoleName: String
   logPath: String
   sourceId: String
   sourceType: String

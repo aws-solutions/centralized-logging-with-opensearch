@@ -12,30 +12,6 @@
         "subAccountPublicSubnetIds": "sub-001,sub-002",
         "tags": null
     },
-    "identity": {
-        "claims": {
-            "origin_jti": "4512fd67-5bbf-4170-8aea-03107a500c72",
-            "sub": "649dabbb-034c-467b-9796-f6bec835cf00",
-            "aud": "7ksklklt8e3ira151890djn49o",
-            "event_id": "64a64372-d0fe-4c6b-b0be-b5492923dbce",
-            "token_use": "id",
-            "auth_time": 1650007693,
-            "iss": "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_LAWcJykAw",
-            "cognito:username": "649dabbb-034c-467b-9796-f6bec835cf00",
-            "exp": 1652067416,
-            "iat": 1652063816,
-            "jti": "700797c8-0479-46db-8961-3f1abc0b4e4a",
-            "email": "xxxxx@xxxx.com"
-        },
-        "defaultAuthStrategy": "ALLOW",
-        "groups": null,
-        "issuer": "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_LAWcJykAw",
-        "sourceIp": [
-            "13.248.48.14"
-        ],
-        "sub": "649dabbb-034c-467b-9796-f6bec835cf00",
-        "username": "649dabbb-034c-467b-9796-f6bec835cf00"
-    },
     "source": null,
     "result": null,
     "request": {

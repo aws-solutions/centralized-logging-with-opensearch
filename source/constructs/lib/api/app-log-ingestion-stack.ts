@@ -18,7 +18,6 @@ import {
   Aws,
   Fn,
   Duration,
-  CfnCondition,
   aws_dynamodb as ddb,
   aws_iam as iam,
   aws_s3 as s3,
@@ -32,11 +31,11 @@ import * as appsync from "@aws-cdk/aws-appsync-alpha";
 import * as eventsources from "aws-cdk-lib/aws-lambda-event-sources";
 import * as path from "path";
 
-import { appIngestionFlowStack } from "../api/app-log-ingestion-flow";
+import { AppIngestionFlowStack } from "../api/app-log-ingestion-flow";
 import { IQueue } from "aws-cdk-lib/aws-sqs";
-// import { EKSAgent2AOSPipelineFlowStack } from "../api/eks-agent-to-aos-flow";
 
-// import { EKSClusterPodLogPipelineFlowStack } from "./eks-cluster-pod-log-pipeline-flow";
+import { addCfnNagSuppressRules } from "../main-stack";
+
 export interface AppLogIngestionStackProps {
   /**
    * Default Appsync GraphQL API for OpenSearch REST API Handler
@@ -84,27 +83,17 @@ export interface AppLogIngestionStackProps {
   readonly configFileBucket: s3.Bucket;
   readonly appLogIngestionTable: ddb.Table;
   readonly sqsEventTable: ddb.Table;
-  // readonly logAgentEKSDeploymentKindTable: ddb.Table;
   readonly subAccountLinkTable: ddb.Table;
   readonly centralAssumeRolePolicy: iam.ManagedPolicy;
   readonly ecsCluster: ecs.Cluster;
   readonly groupModificationEventQueue: IQueue;
+
+  readonly solutionId: string;
+  readonly stackPrefix: string;
 }
 export class AppLogIngestionStack extends Construct {
   constructor(scope: Construct, id: string, props: AppLogIngestionStackProps) {
     super(scope, id);
-
-    const solution_id = "SO8025";
-
-    const isCN = new CfnCondition(this, "IsChinaRegionCondition", {
-      expression: Fn.conditionEquals(Aws.PARTITION, "aws-cn"),
-    });
-
-    const s3Domain = Fn.conditionIf(
-      isCN.logicalId,
-      "s3.cn-north-1.amazonaws.com.cn",
-      "s3.amazonaws.com"
-    ).toString();
 
     const downloadLogConfigDocument = new CfnDocument(
       this,
@@ -189,24 +178,22 @@ export class AppLogIngestionStack extends Construct {
         environment: {
           APPLOGINGESTION_TABLE: props.appLogIngestionTable.tableName,
           SSM_LOG_CONFIG_DOCUMENT_NAME: downloadLogConfigDocument.ref,
-          CONFIG_FILE_S3_BUCKET_NAME: props.configFileBucket.bucketName!,
-          INSTANCE_META_TABLE_NAME: props.instanceMetaTable.tableName!,
-          APP_PIPELINE_TABLE_NAME: props.appPipelineTable.tableName!,
-          APP_LOG_CONFIG_TABLE_NAME: props.logConfTable.tableName!,
-          INSTANCE_GROUP_TABLE_NAME: props.instanceGroupTable.tableName!,
-          EC2_LOG_SOURCE_TABLE_NAME: props.ec2LogSourceTable.tableName!,
-          S3_LOG_SOURCE_TABLE_NAME: props.s3LogSourceTable.tableName!,
-          LOG_SOURCE_TABLE_NAME: props.logSourceTable.tableName!,
+          CONFIG_FILE_S3_BUCKET_NAME: props.configFileBucket.bucketName,
+          INSTANCE_META_TABLE_NAME: props.instanceMetaTable.tableName,
+          APP_PIPELINE_TABLE_NAME: props.appPipelineTable.tableName,
+          APP_LOG_CONFIG_TABLE_NAME: props.logConfTable.tableName,
+          INSTANCE_GROUP_TABLE_NAME: props.instanceGroupTable.tableName,
+          EC2_LOG_SOURCE_TABLE_NAME: props.ec2LogSourceTable.tableName,
+          S3_LOG_SOURCE_TABLE_NAME: props.s3LogSourceTable.tableName,
+          LOG_SOURCE_TABLE_NAME: props.logSourceTable.tableName,
           EKS_CLUSTER_SOURCE_TABLE_NAME:
-            props.eksClusterLogSourceTable.tableName!,
+            props.eksClusterLogSourceTable.tableName,
           SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
-          SOLUTION_ID: solution_id,
-          SOLUTION_VERSION: process.env.VERSION
-            ? process.env.VERSION
-            : "v1.0.0",
+          SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+          SOLUTION_ID: props.solutionId,
         },
         description:
-          "Log Hub - Async Child AppLogIngestion Resolver for EC2 Source",
+          `${Aws.STACK_NAME} - Async Child AppLogIngestion Resolver for EC2 Source`,
       }
     );
     appLogIngestionEC2AsyncHandler.node.addDependency(
@@ -287,24 +274,22 @@ export class AppLogIngestionStack extends Construct {
           SQS_EVENT_TABLE: props.sqsEventTable.tableName,
           APPLOGINGESTION_TABLE: props.appLogIngestionTable.tableName,
           SSM_LOG_CONFIG_DOCUMENT_NAME: downloadLogConfigDocument.ref,
-          CONFIG_FILE_S3_BUCKET_NAME: props.configFileBucket.bucketName!,
-          INSTANCE_META_TABLE_NAME: props.instanceMetaTable.tableName!,
-          APP_PIPELINE_TABLE_NAME: props.appPipelineTable.tableName!,
-          APP_LOG_CONFIG_TABLE_NAME: props.logConfTable.tableName!,
-          INSTANCE_GROUP_TABLE_NAME: props.instanceGroupTable.tableName!,
-          EC2_LOG_SOURCE_TABLE_NAME: props.ec2LogSourceTable.tableName!,
-          S3_LOG_SOURCE_TABLE_NAME: props.s3LogSourceTable.tableName!,
-          LOG_SOURCE_TABLE_NAME: props.logSourceTable.tableName!,
+          CONFIG_FILE_S3_BUCKET_NAME: props.configFileBucket.bucketName,
+          INSTANCE_META_TABLE_NAME: props.instanceMetaTable.tableName,
+          APP_PIPELINE_TABLE_NAME: props.appPipelineTable.tableName,
+          APP_LOG_CONFIG_TABLE_NAME: props.logConfTable.tableName,
+          INSTANCE_GROUP_TABLE_NAME: props.instanceGroupTable.tableName,
+          EC2_LOG_SOURCE_TABLE_NAME: props.ec2LogSourceTable.tableName,
+          S3_LOG_SOURCE_TABLE_NAME: props.s3LogSourceTable.tableName,
+          LOG_SOURCE_TABLE_NAME: props.logSourceTable.tableName,
           EKS_CLUSTER_SOURCE_TABLE_NAME:
-            props.eksClusterLogSourceTable.tableName!,
+            props.eksClusterLogSourceTable.tableName,
           SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
-          SOLUTION_ID: solution_id,
-          SOLUTION_VERSION: process.env.VERSION
-            ? process.env.VERSION
-            : "v1.0.0",
+          SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+          SOLUTION_ID: props.solutionId,
         },
         description:
-          "Log Hub - Async AppLogIngestion Resolver for instance ingestion adding and deleting instances event",
+          `${Aws.STACK_NAME} - Async AppLogIngestion Resolver for instance ingestion adding and deleting instances event`,
       }
     );
     appLogIngestionModificationEventHandler.addEventSource(
@@ -353,25 +338,38 @@ export class AppLogIngestionStack extends Construct {
     appLogIngestionModificationEventHandler.node.addDependency(
       downloadLogConfigDocument
     );
-    appLogIngestionModificationEventHandler.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: ["sqs:*", "lambda:InvokeFunction", "lambda:InvokeAsync"],
-        effect: iam.Effect.ALLOW,
-        resources: ["*"],
-      })
+
+    const ingestionHandlerPolicy = new iam.Policy(this, "IngestionHandlerPolicy", {
+      statements: [
+        new iam.PolicyStatement({
+          actions: ["sqs:*", "lambda:InvokeFunction", "lambda:InvokeAsync"],
+          effect: iam.Effect.ALLOW,
+          resources: ["*"],
+        }),
+        new iam.PolicyStatement({
+          actions: [
+            "ssm:DescribeInstanceInformation",
+            "ssm:SendCommand",
+            "ssm:GetCommandInvocation",
+            "ec2:DescribeInstances",
+          ],
+          effect: iam.Effect.ALLOW,
+          resources: ["*"],
+        })
+      ],
+    });
+    appLogIngestionModificationEventHandler.role!.attachInlinePolicy(ingestionHandlerPolicy);
+
+    addCfnNagSuppressRules(
+      ingestionHandlerPolicy.node.defaultChild as iam.CfnPolicy,
+      [
+        {
+          id: "F4",
+          reason: "These actions can only support all resources",
+        },
+      ]
     );
-    appLogIngestionModificationEventHandler.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: [
-          "ssm:DescribeInstanceInformation",
-          "ssm:SendCommand",
-          "ssm:GetCommandInvocation",
-          "ec2:DescribeInstances",
-        ],
-        effect: iam.Effect.ALLOW,
-        resources: ["*"],
-      })
-    );
+
     props.centralAssumeRolePolicy.attachToRole(
       appLogIngestionModificationEventHandler.role!
     );
@@ -392,24 +390,22 @@ export class AppLogIngestionStack extends Construct {
         environment: {
           APPLOGINGESTION_TABLE: props.appLogIngestionTable.tableName,
           SSM_LOG_CONFIG_DOCUMENT_NAME: downloadLogConfigDocument.ref,
-          CONFIG_FILE_S3_BUCKET_NAME: props.configFileBucket.bucketName!,
-          INSTANCE_META_TABLE_NAME: props.instanceMetaTable.tableName!,
-          APP_PIPELINE_TABLE_NAME: props.appPipelineTable.tableName!,
-          APP_LOG_CONFIG_TABLE_NAME: props.logConfTable.tableName!,
-          INSTANCE_GROUP_TABLE_NAME: props.instanceGroupTable.tableName!,
-          EC2_LOG_SOURCE_TABLE_NAME: props.ec2LogSourceTable.tableName!,
-          S3_LOG_SOURCE_TABLE_NAME: props.s3LogSourceTable.tableName!,
-          LOG_SOURCE_TABLE_NAME: props.logSourceTable.tableName!,
+          CONFIG_FILE_S3_BUCKET_NAME: props.configFileBucket.bucketName,
+          INSTANCE_META_TABLE_NAME: props.instanceMetaTable.tableName,
+          APP_PIPELINE_TABLE_NAME: props.appPipelineTable.tableName,
+          APP_LOG_CONFIG_TABLE_NAME: props.logConfTable.tableName,
+          INSTANCE_GROUP_TABLE_NAME: props.instanceGroupTable.tableName,
+          EC2_LOG_SOURCE_TABLE_NAME: props.ec2LogSourceTable.tableName,
+          S3_LOG_SOURCE_TABLE_NAME: props.s3LogSourceTable.tableName,
+          LOG_SOURCE_TABLE_NAME: props.logSourceTable.tableName,
           EKS_CLUSTER_SOURCE_TABLE_NAME:
-            props.eksClusterLogSourceTable.tableName!,
+            props.eksClusterLogSourceTable.tableName,
           SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
-          SOLUTION_ID: solution_id,
-          SOLUTION_VERSION: process.env.VERSION
-            ? process.env.VERSION
-            : "v1.0.0",
+          SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+          SOLUTION_ID: props.solutionId,
         },
         description:
-          "Log Hub - Async Child AppLogIngestion Resolver for S3 Source",
+          `${Aws.STACK_NAME}  - Async Child AppLogIngestion Resolver for S3 Source`,
       }
     );
     appLogIngestionS3AsyncHandler.node.addDependency(downloadLogConfigDocument);
@@ -481,24 +477,22 @@ export class AppLogIngestionStack extends Construct {
         memorySize: 1024,
         environment: {
           APPLOGINGESTION_TABLE: props.appLogIngestionTable.tableName,
-          CONFIG_FILE_S3_BUCKET_NAME: props.configFileBucket.bucketName!,
-          INSTANCE_META_TABLE_NAME: props.instanceMetaTable.tableName!,
-          APP_PIPELINE_TABLE_NAME: props.appPipelineTable.tableName!,
-          APP_LOG_CONFIG_TABLE_NAME: props.logConfTable.tableName!,
-          INSTANCE_GROUP_TABLE_NAME: props.instanceGroupTable.tableName!,
-          EC2_LOG_SOURCE_TABLE_NAME: props.ec2LogSourceTable.tableName!,
-          S3_LOG_SOURCE_TABLE_NAME: props.s3LogSourceTable.tableName!,
-          LOG_SOURCE_TABLE_NAME: props.logSourceTable.tableName!,
+          CONFIG_FILE_S3_BUCKET_NAME: props.configFileBucket.bucketName,
+          INSTANCE_META_TABLE_NAME: props.instanceMetaTable.tableName,
+          APP_PIPELINE_TABLE_NAME: props.appPipelineTable.tableName,
+          APP_LOG_CONFIG_TABLE_NAME: props.logConfTable.tableName,
+          INSTANCE_GROUP_TABLE_NAME: props.instanceGroupTable.tableName,
+          EC2_LOG_SOURCE_TABLE_NAME: props.ec2LogSourceTable.tableName,
+          S3_LOG_SOURCE_TABLE_NAME: props.s3LogSourceTable.tableName,
+          LOG_SOURCE_TABLE_NAME: props.logSourceTable.tableName,
           EKS_CLUSTER_SOURCE_TABLE_NAME:
-            props.eksClusterLogSourceTable.tableName!,
+            props.eksClusterLogSourceTable.tableName,
           SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
-          SOLUTION_ID: solution_id,
-          SOLUTION_VERSION: process.env.VERSION
-            ? process.env.VERSION
-            : "v1.0.0",
+          SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+          SOLUTION_ID: props.solutionId,
         },
         description:
-          "Log Hub - Async Child AppLogIngestion Resolver for Syslog Source",
+          `${Aws.STACK_NAME} - Async Child AppLogIngestion Resolver for Syslog Source`,
       }
     );
 
@@ -550,7 +544,7 @@ export class AppLogIngestionStack extends Construct {
     );
 
     // Create a Step Functions to orchestrate pipeline flow
-    const appIngestionFlow = new appIngestionFlowStack(this, "PipelineFlowSM", {
+    const appIngestionFlow = new AppIngestionFlowStack(this, "PipelineFlowSM", {
       tableArn: props.appLogIngestionTable.tableArn,
       cfnFlowSMArn: props.cfnFlowSMArn,
     });
@@ -576,28 +570,27 @@ export class AppLogIngestionStack extends Construct {
             appLogIngestionSyslogAsyncHandler.functionArn,
           APPLOGINGESTION_TABLE: props.appLogIngestionTable.tableName,
           SSM_LOG_CONFIG_DOCUMENT_NAME: downloadLogConfigDocument.ref,
-          CONFIG_FILE_S3_BUCKET_NAME: props.configFileBucket.bucketName!,
-          INSTANCE_META_TABLE_NAME: props.instanceMetaTable.tableName!,
-          APP_PIPELINE_TABLE_NAME: props.appPipelineTable.tableName!,
-          APP_LOG_CONFIG_TABLE_NAME: props.logConfTable.tableName!,
-          EC2_LOG_SOURCE_TABLE_NAME: props.ec2LogSourceTable.tableName!,
-          S3_LOG_SOURCE_TABLE_NAME: props.s3LogSourceTable.tableName!,
-          LOG_SOURCE_TABLE_NAME: props.logSourceTable.tableName!,
+          CONFIG_FILE_S3_BUCKET_NAME: props.configFileBucket.bucketName,
+          INSTANCE_META_TABLE_NAME: props.instanceMetaTable.tableName,
+          APP_PIPELINE_TABLE_NAME: props.appPipelineTable.tableName,
+          APP_LOG_CONFIG_TABLE_NAME: props.logConfTable.tableName,
+          EC2_LOG_SOURCE_TABLE_NAME: props.ec2LogSourceTable.tableName,
+          S3_LOG_SOURCE_TABLE_NAME: props.s3LogSourceTable.tableName,
+          LOG_SOURCE_TABLE_NAME: props.logSourceTable.tableName,
           EKS_CLUSTER_SOURCE_TABLE_NAME:
-            props.eksClusterLogSourceTable.tableName!,
-          STATE_MACHINE_ARN: appIngestionFlow.stateMachineArn!,
-          INSTANCE_GROUP_TABLE_NAME: props.instanceGroupTable.tableName!,
+            props.eksClusterLogSourceTable.tableName,
+          STATE_MACHINE_ARN: appIngestionFlow.stateMachineArn,
+          INSTANCE_GROUP_TABLE_NAME: props.instanceGroupTable.tableName,
           SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
           LOG_AGENT_VPC_ID: props.defaultVPC,
           LOG_AGENT_SUBNETS_IDS: Fn.join(",", props.defaultPublicSubnets),
-          DEFAULT_CMK_ARN: props.cmkKeyArn!,
-          ECS_CLUSTER_NAME: props.ecsCluster.clusterName!,
-          SOLUTION_ID: solution_id,
-          SOLUTION_VERSION: process.env.VERSION
-            ? process.env.VERSION
-            : "v1.0.0",
+          DEFAULT_CMK_ARN: props.cmkKeyArn,
+          ECS_CLUSTER_NAME: props.ecsCluster.clusterName,
+          SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+          SOLUTION_ID: props.solutionId,
+          STACK_PREFIX: props.stackPrefix,
         },
-        description: "Log Hub - AppLogIngestion APIs Resolver",
+        description: `${Aws.STACK_NAME} - AppLogIngestion APIs Resolver`,
       }
     );
     appLogIngestionHandler.node.addDependency(
@@ -684,7 +677,7 @@ export class AppLogIngestionStack extends Construct {
         description: "DynamoDB Resolver Datasource",
       }
     );
-    appLogIngestionDynamoDS.createResolver({
+    appLogIngestionDynamoDS.createResolver('getAppLogIngestion', {
       typeName: "Query",
       fieldName: "getAppLogIngestion",
       requestMappingTemplate: appsync.MappingTemplate.dynamoDbGetItem(
@@ -709,7 +702,7 @@ export class AppLogIngestionStack extends Construct {
     );
 
     // Set resolver for releted appLogIngestion API methods
-    appLogIngestionLambdaDS.createResolver({
+    appLogIngestionLambdaDS.createResolver('listAppLogIngestions', {
       typeName: "Query",
       fieldName: "listAppLogIngestions",
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
@@ -721,7 +714,7 @@ export class AppLogIngestionStack extends Construct {
       ),
     });
 
-    appLogIngestionLambdaDS.createResolver({
+    appLogIngestionLambdaDS.createResolver('createAppLogIngestion', {
       typeName: "Mutation",
       fieldName: "createAppLogIngestion",
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
@@ -733,7 +726,7 @@ export class AppLogIngestionStack extends Construct {
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
-    appLogIngestionLambdaDS.createResolver({
+    appLogIngestionLambdaDS.createResolver('deleteAppLogIngestion', {
       typeName: "Mutation",
       fieldName: "deleteAppLogIngestion",
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
@@ -755,27 +748,25 @@ export class AppLogIngestionStack extends Construct {
         timeout: Duration.seconds(60),
         memorySize: 1024,
         environment: {
-          SOLUTION_ID: solution_id,
-          SOLUTION_VERSION: process.env.VERSION
-            ? process.env.VERSION
-            : "v1.0.0",
-          CONFIG_FILE_S3_BUCKET_NAME: props.configFileBucket.bucketName!,
+          CONFIG_FILE_S3_BUCKET_NAME: props.configFileBucket.bucketName,
 
-          INSTANCE_META_TABLE_NAME: props.instanceMetaTable.tableName!,
-          APP_PIPELINE_TABLE_NAME: props.appPipelineTable.tableName!,
-          APP_LOG_CONFIG_TABLE_NAME: props.logConfTable.tableName!,
-          INSTANCE_GROUP_TABLE_NAME: props.instanceGroupTable.tableName!,
-          APPLOGINGESTION_TABLE: props.appLogIngestionTable.tableName!,
+          INSTANCE_META_TABLE_NAME: props.instanceMetaTable.tableName,
+          APP_PIPELINE_TABLE_NAME: props.appPipelineTable.tableName,
+          APP_LOG_CONFIG_TABLE_NAME: props.logConfTable.tableName,
+          INSTANCE_GROUP_TABLE_NAME: props.instanceGroupTable.tableName,
+          APPLOGINGESTION_TABLE: props.appLogIngestionTable.tableName,
 
-          EC2_LOG_SOURCE_TABLE_NAME: props.ec2LogSourceTable.tableName!,
-          S3_LOG_SOURCE_TABLE_NAME: props.s3LogSourceTable.tableName!,
-          LOG_SOURCE_TABLE_NAME: props.logSourceTable.tableName!,
+          EC2_LOG_SOURCE_TABLE_NAME: props.ec2LogSourceTable.tableName,
+          S3_LOG_SOURCE_TABLE_NAME: props.s3LogSourceTable.tableName,
+          LOG_SOURCE_TABLE_NAME: props.logSourceTable.tableName,
 
           EKS_CLUSTER_SOURCE_TABLE_NAME:
-            props.eksClusterLogSourceTable.tableName!,
-          SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName!,
+            props.eksClusterLogSourceTable.tableName,
+          SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
+          SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+          SOLUTION_ID: props.solutionId,
         },
-        description: "Log Hub - Updating EKS Cluster Pod Log Ingestion APIs",
+        description: `${Aws.STACK_NAME} - Updating EKS Cluster Pod Log Ingestion APIs`,
       }
     );
     eksClusterPodLogPipelineStfnLambdaHandle.addToRolePolicy(
@@ -847,35 +838,28 @@ export class AppLogIngestionStack extends Construct {
         timeout: Duration.seconds(60),
         memorySize: 1024,
         environment: {
-          SOLUTION_ID: solution_id,
-          SOLUTION_VERSION: process.env.VERSION
-            ? process.env.VERSION
-            : "v1.0.0",
           SSM_LOG_CONFIG_DOCUMENT_NAME: downloadLogConfigDocument.ref,
-          CONFIG_FILE_S3_BUCKET_NAME: props.configFileBucket.bucketName!,
-
-          INSTANCE_META_TABLE_NAME: props.instanceMetaTable.tableName!,
-          APP_PIPELINE_TABLE_NAME: props.appPipelineTable.tableName!,
-          APP_LOG_CONFIG_TABLE_NAME: props.logConfTable.tableName!,
-          INSTANCE_GROUP_TABLE_NAME: props.instanceGroupTable.tableName!,
-          APPLOGINGESTION_TABLE: props.appLogIngestionTable.tableName!,
-
-          EC2_LOG_SOURCE_TABLE_NAME: props.ec2LogSourceTable.tableName!,
-          S3_LOG_SOURCE_TABLE_NAME: props.s3LogSourceTable.tableName!,
-          LOG_SOURCE_TABLE_NAME: props.logSourceTable.tableName!,
-
+          CONFIG_FILE_S3_BUCKET_NAME: props.configFileBucket.bucketName,
+          INSTANCE_META_TABLE_NAME: props.instanceMetaTable.tableName,
+          APP_PIPELINE_TABLE_NAME: props.appPipelineTable.tableName,
+          APP_LOG_CONFIG_TABLE_NAME: props.logConfTable.tableName,
+          INSTANCE_GROUP_TABLE_NAME: props.instanceGroupTable.tableName,
+          APPLOGINGESTION_TABLE: props.appLogIngestionTable.tableName,
+          EC2_LOG_SOURCE_TABLE_NAME: props.ec2LogSourceTable.tableName,
+          S3_LOG_SOURCE_TABLE_NAME: props.s3LogSourceTable.tableName,
+          LOG_SOURCE_TABLE_NAME: props.logSourceTable.tableName,
           EKS_CLUSTER_SOURCE_TABLE_NAME:
-            props.eksClusterLogSourceTable.tableName!,
-          // LOG_AGENT_EKS_DEPLOYMENT_KIND_TABLE:
-          //   props.logAgentEKSDeploymentKindTable.tableName!,
-          SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName!,
+            props.eksClusterLogSourceTable.tableName,
+          SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
           DEFAULT_OPEN_EXTRA_METADATA_FLAG: "true",
-          DEFAULT_OPEN_CONTAINERD_RUNTIME_FLAG: "false",
+          DEFAULT_OPEN_CONTAINERD_RUNTIME_FLAG: "true",
           FLUENT_BIT_IMAGE:
             "public.ecr.aws/aws-observability/aws-for-fluent-bit:2.28.4",
+          SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+          SOLUTION_ID: props.solutionId,
         },
         description:
-          "Log Hub - EKS Cluster DaemonSet And Sidecar Config APIs Resolver",
+          `${Aws.STACK_NAME} - EKS Cluster DaemonSet And Sidecar Config APIs Resolver`,
       }
     );
 
@@ -916,7 +900,7 @@ export class AppLogIngestionStack extends Construct {
       }
     );
 
-    eksAgentConfigGeneratorDS.createResolver({
+    eksAgentConfigGeneratorDS.createResolver('getEKSDaemonSetConf', {
       typeName: "Query",
       fieldName: "getEKSDaemonSetConf",
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
@@ -927,7 +911,7 @@ export class AppLogIngestionStack extends Construct {
       ),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
-    eksAgentConfigGeneratorDS.createResolver({
+    eksAgentConfigGeneratorDS.createResolver('getEKSDeploymentConf', {
       typeName: "Query",
       fieldName: "getEKSDeploymentConf",
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
@@ -953,25 +937,23 @@ export class AppLogIngestionStack extends Construct {
         timeout: Duration.seconds(60),
         memorySize: 1024,
         environment: {
-          SOLUTION_ID: solution_id,
-          SOLUTION_VERSION: process.env.VERSION
-            ? process.env.VERSION
-            : "v1.0.0",
           SSM_LOG_CONFIG_DOCUMENT_NAME: downloadLogConfigDocument.ref,
-          CONFIG_FILE_S3_BUCKET_NAME: props.configFileBucket.bucketName!,
-          INSTANCE_META_TABLE_NAME: props.instanceMetaTable.tableName!,
-          APP_PIPELINE_TABLE_NAME: props.appPipelineTable.tableName!,
-          APP_LOG_CONFIG_TABLE_NAME: props.logConfTable.tableName!,
-          INSTANCE_GROUP_TABLE_NAME: props.instanceGroupTable.tableName!,
-          APPLOGINGESTION_TABLE: props.appLogIngestionTable.tableName!,
-          LOG_SOURCE_TABLE_NAME: props.logSourceTable.tableName!,
-          SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName!,
-          S3_LOG_SOURCE_TABLE_NAME: props.s3LogSourceTable.tableName!,
+          CONFIG_FILE_S3_BUCKET_NAME: props.configFileBucket.bucketName,
+          INSTANCE_META_TABLE_NAME: props.instanceMetaTable.tableName,
+          APP_PIPELINE_TABLE_NAME: props.appPipelineTable.tableName,
+          APP_LOG_CONFIG_TABLE_NAME: props.logConfTable.tableName,
+          INSTANCE_GROUP_TABLE_NAME: props.instanceGroupTable.tableName,
+          APPLOGINGESTION_TABLE: props.appLogIngestionTable.tableName,
+          LOG_SOURCE_TABLE_NAME: props.logSourceTable.tableName,
+          SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
+          S3_LOG_SOURCE_TABLE_NAME: props.s3LogSourceTable.tableName,
           EKS_CLUSTER_SOURCE_TABLE_NAME:
-            props.eksClusterLogSourceTable.tableName!,
-          EC2_LOG_SOURCE_TABLE_NAME: props.ec2LogSourceTable.tableName!,
+            props.eksClusterLogSourceTable.tableName,
+          EC2_LOG_SOURCE_TABLE_NAME: props.ec2LogSourceTable.tableName,
+          SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+          SOLUTION_ID: props.solutionId,
         },
-        description: "Log Hub - EC2 Auto-Scaling Group Config APIs Resolver",
+        description: `${Aws.STACK_NAME} - EC2 Auto-Scaling Group Config APIs Resolver`,
       }
     );
 
@@ -994,7 +976,7 @@ export class AppLogIngestionStack extends Construct {
       }
     );
 
-    asgConfigGeneratorDS.createResolver({
+    asgConfigGeneratorDS.createResolver('getAutoScalingGroupConf', {
       typeName: "Query",
       fieldName: "getAutoScalingGroupConf",
       requestMappingTemplate: appsync.MappingTemplate.fromFile(

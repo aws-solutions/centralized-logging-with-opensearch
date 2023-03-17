@@ -1,5 +1,5 @@
 # Apache HTTP server logs
-Apache HTTP Server (httpd) is capable of writing [error and access log][apache-http-logs] files to a local directory. You can configure Log Hub to ingest Apache HTTP server logs.
+Apache HTTP Server (httpd) is capable of writing [error and access log][apache-http-logs] files to a local directory. You can configure Centralized Logging with OpenSearch to ingest Apache HTTP server logs.
 
 ## Prerequisites
 {%
@@ -7,7 +7,7 @@ include-markdown "include-prerequisites.md"
 %}
 ## Step 1: Create an Apache HTTP server log config
 
-1. Sign in to the Log Hub Console.
+1. Sign in to the Centralized Logging with OpenSearch Console.
 2. In the left sidebar, under **Resources**, choose **Log Config**.
 3. Click the **Create a log config** button.
 4. Specify **Config Name**.
@@ -39,7 +39,7 @@ include-markdown "include-prerequisites.md"
 %}
 
 ## Step 3: Check built-in Apache HTTP server dashboard in OpenSearch
-For Apache HTTP server logs, Log Hub will create a built-in sample dashboard.
+For Apache HTTP server logs, Centralized Logging with OpenSearch will create a built-in sample dashboard.
 
 1. Open OpenSearch dashboard in your browser.
 2. Go to **Dashboard** section in the left sidebar.

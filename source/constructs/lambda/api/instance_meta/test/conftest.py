@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 import os
 import boto3
 import pytest
@@ -5,7 +8,7 @@ import pytest
 from collections.abc import Iterable
 
 
-def init_ddb(config, primary_key='id'):
+def init_ddb(config, primary_key="id"):
     """
     config = {
         "ddb_table_name": { "id": 123123, "name": "the-name" }
@@ -16,18 +19,9 @@ def init_ddb(config, primary_key='id'):
     for table_name, value in config.items():
         table = ddb.create_table(
             TableName=table_name,
-            KeySchema=[{
-                "AttributeName": primary_key,
-                "KeyType": "HASH"
-            }],
-            AttributeDefinitions=[{
-                "AttributeName": primary_key,
-                "AttributeType": "S"
-            }],
-            ProvisionedThroughput={
-                "ReadCapacityUnits": 5,
-                "WriteCapacityUnits": 5
-            },
+            KeySchema=[{"AttributeName": primary_key, "KeyType": "HASH"}],
+            AttributeDefinitions=[{"AttributeName": primary_key, "AttributeType": "S"}],
+            ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
         )
 
         if isinstance(value, dict):
@@ -55,6 +49,5 @@ def default_environment_variables():
     os.environ["SOLUTION_ID"] = "SO8025"
     os.environ["INSTANCEMETA_TABLE"] = "mocked-log-hub-instance-table"
     os.environ["AGENTSTATUS_TABLE"] = "mocked-log-hub-agent-status-table"
-    os.environ[
-        "SUB_ACCOUNT_LINK_TABLE_NAME"] = "mocked-sub-account-link-table-name"
+    os.environ["SUB_ACCOUNT_LINK_TABLE_NAME"] = "mocked-sub-account-link-table-name"
     os.environ["SUB_ACCOUNT_LINK_TABLE"] = "mocked-sub-account-link-table-name"

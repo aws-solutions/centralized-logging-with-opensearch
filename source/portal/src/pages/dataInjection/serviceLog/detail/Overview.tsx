@@ -18,6 +18,7 @@ import HeaderPanel from "components/HeaderPanel";
 import ValueWithLabel from "components/ValueWithLabel";
 import { ServiceLogDetailProps } from "../ServiceLogDetail";
 import { useTranslation } from "react-i18next";
+import { DestinationType } from "API";
 
 interface OverviewProps {
   pipelineInfo: ServiceLogDetailProps | undefined;
@@ -33,8 +34,15 @@ const Overview: React.FC<OverviewProps> = (props: OverviewProps) => {
         <div className="flex value-label-span">
           <div className="flex-1">
             <ValueWithLabel label={t("servicelog:overview.logLocation")}>
-              <div>{pipelineInfo?.logLocation || "-"}</div>
+              <div>
+                {pipelineInfo?.destinationType === DestinationType.KDS
+                  ? "Kinesis Data Streams"
+                  : pipelineInfo?.logLocation
+                  ? pipelineInfo.logLocation
+                  : "-"}
+              </div>
             </ValueWithLabel>
+
             <ValueWithLabel label={t("servicelog:overview.created")}>
               <div>{pipelineInfo?.createTime}</div>
             </ValueWithLabel>

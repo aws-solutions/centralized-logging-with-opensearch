@@ -32,17 +32,30 @@ const Lifecycle: React.FC<OverviewProps> = (props: OverviewProps) => {
         <div className="flex value-label-span">
           <div className="flex-1">
             <ValueWithLabel label={t("servicelog:lifecycle.warmLog")}>
-              <div>{pipelineInfo?.warnRetention}</div>
+              <div>
+                {(pipelineInfo?.warmAge === "1s"
+                  ? t("servicelog:cluster.warmImmediately")
+                  : pipelineInfo?.warmAge?.toString().replace("d", "")) ||
+                  pipelineInfo?.warnRetention}
+              </div>
             </ValueWithLabel>
           </div>
           <div className="flex-1 border-left-c">
             <ValueWithLabel label={t("servicelog:lifecycle.coldLog")}>
-              <div>{pipelineInfo?.coldRetention}</div>
+              <div>
+                {pipelineInfo?.coldAge?.toString().replace("d", "") ||
+                  pipelineInfo?.coldRetention ||
+                  "-"}
+              </div>
             </ValueWithLabel>
           </div>
           <div className="flex-1 border-left-c">
             <ValueWithLabel label={t("servicelog:lifecycle.retention")}>
-              <div>{pipelineInfo?.logRetention}</div>
+              <div>
+                {pipelineInfo?.retainAge?.toString().replace("d", "") ||
+                  pipelineInfo?.logRetention ||
+                  "-"}
+              </div>
             </ValueWithLabel>
           </div>
         </div>

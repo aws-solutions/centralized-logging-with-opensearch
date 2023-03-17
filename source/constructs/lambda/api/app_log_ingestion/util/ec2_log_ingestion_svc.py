@@ -10,15 +10,17 @@ from datetime import datetime
 from botocore import config
 
 from boto3.dynamodb.conditions import Attr
-from util.aws_svc_mgr import SvcManager, Boto3API
+from aws_svc_mgr import SvcManager, Boto3API
 from util.log_agent_helper import IngestionTask
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-solution = os.environ.get("SOLUTION",
-                          "SO8025/" + os.environ["SOLUTION_VERSION"])
-user_agent_config = {"user_agent_extra": f"AwsSolution/{solution}"}
+solution_version = os.environ.get("SOLUTION_VERSION", "v1.0.0")
+solution_id = os.environ.get("SOLUTION_ID", "SO8025")
+user_agent_config = {
+    "user_agent_extra": f"AwsSolution/{solution_id}/{solution_version}"
+}
 default_config = config.Config(**user_agent_config)
 default_region = os.environ.get("AWS_REGION")
 
@@ -47,8 +49,7 @@ instance_group_table = dynamodb.Table(instance_group_table_name)
 app_log_ingestion_table = dynamodb.Table(app_log_ingestion_table_name)
 ec2_log_source_table = dynamodb.Table(ec2_log_source_table_name)
 s3_log_source_table = dynamodb.Table(s3_log_source_table_name)
-eks_cluster_log_source_table = dynamodb.Table(
-    eks_cluster_log_source_table_name)
+eks_cluster_log_source_table = dynamodb.Table(eks_cluster_log_source_table_name)
 sqs_event_table = dynamodb.Table(sqs_event_table_name)
 log_source_table = dynamodb.Table(os.environ.get("LOG_SOURCE_TABLE_NAME"))
 
@@ -56,124 +57,150 @@ sts = boto3.client("sts", config=default_config)
 elb = boto3.client("elbv2", config=default_config)
 account_id = sts.get_caller_identity()["Account"]
 
-class IngestionMapping():
-    def __init__(self, pipelineId, ingestionId, configId):
-        self.pipelineId = pipelineId
-        self.ingestionId = ingestionId
-        self.configId = configId
+
+class IngestionMapping:
+    def __init__(self, pipeline_id, ingestion_id, conf_id):
+        self._pipeline_id = pipeline_id
+        self._ingestion_id = ingestion_id
+        self._conf_id = conf_id
 
     def __hash__(self):
-        return hash(self.pipelineId+self.ingestionId+self.configId)
+        return hash(self._pipeline_id + self._ingestion_id + self._conf_id)
 
     def __eq__(self, other):
-        if self.pipelineId == other.pipelineId and self.ingestionId == other.ingestionId and self.configId == other.configId:
+        if (
+            self._pipeline_id == other.pipelineId
+            and self._ingestion_id == other.ingestionId
+            and self._conf_id == other.configId
+        ):
             return True
         else:
             return False
 
-class EC2LogIngestionSvc:
 
-    def __init__(self,
-                 sub_account_id=account_id,
-                 region=default_region) -> None:
-        self._svcMgr = SvcManager()
-        self._ssm = self._svcMgr.get_client(
+class EC2LogIngestionSvc:
+    def __init__(self, sub_account_id=account_id, region=default_region) -> None:
+        self._svc_mgr = SvcManager()
+        self._ssm = self._svc_mgr.get_client(
             sub_account_id=sub_account_id,
             region=region,
             service_name="ssm",
             type=Boto3API.CLIENT,
         )
-        link_account = self._svcMgr.get_link_account(sub_account_id, region)
+        link_account = self._svc_mgr.get_link_account(sub_account_id, region)
         if link_account:
             self._ssm_log_config_document_name = link_account["agentConfDoc"]
         else:
             self._ssm_log_config_document_name = ssm_log_config_document_name
 
-    def apply_app_log_ingestion_for_new_added_instances(dedupe_set, groupId, instanceSet):
+    @staticmethod
+    def apply_app_log_ingestion_for_new_added_instances(
+        dedupe_set, group_id, instance_set
+    ):
         relation_set = dedupe_set
-        for instance in instanceSet:
+        for instance in instance_set:
             for relation in relation_set:
-                current_conf = app_log_config_table.get_item(Key={"id": relation.configId})["Item"]
+                current_conf = app_log_config_table.get_item(
+                    Key={"id": relation._conf_id}
+                )["Item"]
                 is_multiline = True if current_conf.get("multilineLogParser") else False
-                ingestion_task = IngestionTask('FluentBit', 
-                                                groupId,
-                                                relation.configId, #configId
-                                                relation.pipelineId, #pipelineId
-                                                relation.ingestionId, #ingestionId
-                                                is_multiline, #is_multiline
-                                                current_conf['timeKey'], #timeKey
-                                                instance)
+                if current_conf.get("timeKey"):
+                    ingestion_task = IngestionTask(
+                        "FluentBit",
+                        group_id,
+                        relation._conf_id,  # configId
+                        relation._pipeline_id,  # pipelineId
+                        relation._ingestion_id,  # ingestionId
+                        is_multiline,  # is_multiline
+                        current_conf["timeKey"],  # timeKey
+                        instance,
+                    )
+                else:
+                    ingestion_task = IngestionTask(
+                        "FluentBit",
+                        group_id,
+                        relation._conf_id,  # configId
+                        relation._pipeline_id,  # pipelineId
+                        relation._ingestion_id,  # ingestionId
+                        is_multiline,  # is_multiline
+                        "",  # timeKey
+                        instance,
+                    )
                 ingestion_task.create_ingestion_to_added_instance()
 
-    def remove_app_log_ingestion_from_new_removed_instances(groupId, instanceSet):
-        for instance in instanceSet:
-            ingestion_task = IngestionTask('FluentBit', 
-                                            groupId,
-                                            '', #configId置空
-                                            '', #pipelineId置空 
-                                            '', #ingestionId置空
-                                            '', #is_multiline置空
-                                            '', #timeKey置空
-                                            instance)
+    @staticmethod
+    def remove_app_log_ingestion_from_new_removed_instances(group_id, instance_set):
+        for instance in instance_set:
+            ingestion_task = IngestionTask(
+                "FluentBit",
+                group_id,
+                "",  # configId
+                "",  # pipelineId
+                "",  # ingestionId
+                "",  # is_multiline
+                "",  # timeKey
+                instance,
+            )
             ingestion_task.delete_ingestion_for_deleted_instance()
 
-    def get_current_ingestion_relationship_from_instance_meta(groupId):
-        """
-        Get the mapping of pipeline config and ingestion
-        """
-        conditions = Attr('groupId').eq(groupId)
+    @staticmethod
+    def get_current_ingestion_relationship_from_instance_meta(group_id):
+        """Get the mapping of pipeline config and ingestion"""
+        conditions = Attr("groupId").eq(group_id)
         resp = instance_meta_table.scan(
             FilterExpression=conditions,
             ProjectionExpression="appPipelineId, confId, #groupId, logIngestionId, #status",
-            ExpressionAttributeNames={
-                '#groupId': 'groupId',
-                '#status': 'status'
-            },
+            ExpressionAttributeNames={"#groupId": "groupId", "#status": "status"},
         )
-        results = resp['Items']
+        results = resp["Items"]
         dedupe_set = set()
         logger.info(results)
         """ Create the relation set and auto deduplicate using set()"""
         for result in results:
             if result["status"] == "INACTIVE":
                 continue
-            ingestion_config_mapping_tri = IngestionMapping(result['appPipelineId'], result['logIngestionId'], result['confId'])
+            ingestion_config_mapping_tri = IngestionMapping(
+                result["appPipelineId"], result["logIngestionId"], result["confId"]
+            )
             dedupe_set.add(ingestion_config_mapping_tri)
         logger.info("Relation from meta table")
         logger.info(dedupe_set)
         return dedupe_set
-    
-    def does_event_already_exist(messageId):
-        response = sqs_event_table.get_item(Key={"id": messageId})
+
+    @staticmethod
+    def does_event_already_exist(message_id):
+        response = sqs_event_table.get_item(Key={"id": message_id})
         if "Item" not in response:
             return False
         else:
             return True
 
+    @staticmethod
     def create_sqs_event_record(message):
-        messageId = message['messageId']
-        messageBody = json.loads(message['body'])
-        groupId = messageBody['arguments']['groupId']
-        instanceSet = set(messageBody['arguments']['instanceSet'])
-        action = messageBody['info']['fieldName']
-        region = message['awsRegion']
-        status = 'CREATING'
-        response = sqs_event_table.put_item(
+        message_id = message["messageId"]
+        message_body = json.loads(message["body"])
+        group_id = message_body["arguments"]["groupId"]
+        instance_set = set(message_body["arguments"]["instanceSet"])
+        action = message_body["info"]["fieldName"]
+        region = message["awsRegion"]
+        status = "CREATING"
+        sqs_event_table.put_item(
             Item={
-                "id": messageId,
+                "id": message_id,
                 "action": action,
-                "groupId": groupId,
-                "instanceSet": instanceSet,
+                "groupId": group_id,
+                "instanceSet": instance_set,
                 "region": region,
                 "status": status,
                 "createdDt": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
-            })
+            }
+        )
 
-    def update_sqs_event_record(messageId, status):
+    @staticmethod
+    def update_sqs_event_record(message_id, status):
         sqs_event_table.update_item(
-            Key={"id": messageId},
-            UpdateExpression=
-            "SET #status = :status, #updatedDt= :uDt",
+            Key={"id": message_id},
+            UpdateExpression="SET #status = :status, #updatedDt= :uDt",
             ExpressionAttributeNames={
                 "#status": "status",
                 "#updatedDt": "updatedDt",

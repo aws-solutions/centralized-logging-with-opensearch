@@ -34,9 +34,9 @@ spec:
             
             OS_ARCH=$(uname -m | grep 'aarch64' | wc -l)
             if [ $OS_ARCH -eq 1 ];then
-              curl -LO https://dl.k8s.io/release/$CLUSTER_VERSION/bin/linux/arm64/kubectl
+              curl -LO $EKS_KUBECTL_DOWNLOAD_URL_ARM
             else
-              curl -LO https://dl.k8s.io/release/$CLUSTER_VERSION/bin/linux/amd64/kubectl
+              curl -LO $EKS_KUBECTL_DOWNLOAD_URL_X86_64
             fi  
             
             chmod 755 kubectl
@@ -64,8 +64,10 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: spec.nodeName
-          - name: CLUSTER_VERSION
-            value: "$LOGHUB_EKS_CLUSTER_VERSION"      
+          - name: EKS_KUBECTL_DOWNLOAD_URL_ARM
+            value: "$LOGHUB_EKS_KUBECTL_DOWNLOAD_URL_ARM"
+          - name: EKS_KUBECTL_DOWNLOAD_URL_X86_64
+            value: "$LOGHUB_EKS_KUBECTL_DOWNLOAD_URL_X86_64"
         volumeMounts:
           - name: fluent-bit-config-docker
             mountPath: /fluent-bit-config-docker

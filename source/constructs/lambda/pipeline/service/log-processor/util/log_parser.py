@@ -6,6 +6,7 @@ import logging
 import re
 import sys
 import urllib.parse
+
 from abc import ABC, abstractmethod
 from copy import deepcopy
 
@@ -108,6 +109,7 @@ class Json(LogType):
             json_record = json.loads(line)
             return json_record
         except Exception as e:
+            logger.error(e)
             return {}
 
 
@@ -135,11 +137,41 @@ class CloudTrail(LogType):
 
     _format = "json"
 
+    def _convert_event(self, cloudtrail_event: dict):
+        """Unify all cloudtrail event format for different resources.
+
+        There are different cloudtrail event format in different resources.
+        Below logic is trying to unify the format
+        In order to load as much as possible
+        Otherwise, different format may be rejected with mapper_parsing_exception
+        """
+
+        # convert requestParameters.parameters from text to dict
+        if "requestParameters" in cloudtrail_event and isinstance(
+            cloudtrail_event["requestParameters"], dict
+        ):
+            if isinstance(cloudtrail_event["requestParameters"].get("parameters"), str):
+                cloudtrail_event["requestParameters"]["parameters"] = {
+                    "value": cloudtrail_event["requestParameters"].get("parameters")
+                }
+
+        # convert requestParameters.parameters from text to dict
+        if "responseElements" in cloudtrail_event and isinstance(
+            cloudtrail_event["responseElements"], dict
+        ):
+            if isinstance(cloudtrail_event["responseElements"].get("role"), str):
+                cloudtrail_event["responseElements"]["role"] = {
+                    "value": cloudtrail_event["responseElements"].get("role")
+                }
+
     def parse(self, line: str):
         try:
             result = json.loads(line)["Records"]
+            for cloudtrail_event in result:
+                self._convert_event(cloudtrail_event)
             return result
         except Exception as e:
+            logger.error(e)
             return []
 
 
@@ -149,7 +181,7 @@ class Config(LogType):
     _format = "json"
 
     def _convert_cfg(self, cfg: dict):
-        """Unfiy all configuration format for different resources.
+        """Unify all configuration format for different resources.
 
         There are different configuration format in different resources.
         Below logic is trying to unify the format
@@ -168,6 +200,10 @@ class Config(LogType):
         if isinstance(cfg.get("endpoint", None), str):
             cfg["endpoint"]["address"] = cfg["endpoint"]
 
+        self._check_az(cfg)
+        self._check_sg(cfg)
+
+    def _check_az(self, cfg):
         # convert zone from text to dict
         if "availabilityZones" in cfg and isinstance(cfg["availabilityZones"], list):
             if isinstance(cfg["availabilityZones"][0], str):
@@ -176,6 +212,7 @@ class Config(LogType):
         else:
             cfg["availabilityZones"] = []
 
+    def _check_sg(self, cfg):
         # convert securitygroup from text to dict
         if "securityGroups" in cfg and isinstance(cfg["securityGroups"], list):
             if isinstance(cfg["securityGroups"][0], str):
@@ -189,6 +226,7 @@ class Config(LogType):
         try:
             data = json.loads(line)
         except json.JSONDecodeError as e:
+            logger.error(e)
             return json_records
         if "configSnapshotId" in data:
             # Ignore Snapshots
@@ -225,6 +263,7 @@ class WAF(LogType):
                     continue
             return json_record
         except Exception as e:
+            logger.error(e)
             return {}
 
 
@@ -325,7 +364,7 @@ class CloudFront(LogType):
         json_record = {}
         result = line.strip("\n").split("\t")
 
-        if not len(result) == 33:
+        if len(result) != 33:
             # cloudfront standard log must have 33 fields.
             # otherwise, this log line is considered as invalid elb log.
             return {}
@@ -352,30 +391,34 @@ class VPCFlow(LogType):
     """An implementation of LogType for VPC Flow Logs"""
 
     def parse(self, line) -> dict:
-        json_record = {}
+
         data = line.strip("\n").split()
         if "start" in data:
             # header row
             self._fields = data
         else:
             if "start" in self._fields:
-                # start is a must for timestamp
-                for key, value in zip(self._fields, data):
-                    json_record[key] = value
+                return self._parse_record(data)
+        return {}
 
-                src = json_record.get("srcaddr", "-")
-                dst = json_record.get("dstaddr", "-")
-                if src == "-" and dst == "-":
-                    # if both src and dst are missing, ignore the record.
-                    return {}
+    def _parse_record(self, data):
+        json_record = {}
 
-                for key in ["packets", "bytes"]:
-                    if key in json_record and json_record[key] == "-":
-                        json_record[key] = "0"
-                if "protocol" in json_record:
-                    json_record["protocol-code"] = get_protocal_code(
-                        json_record["protocol"]
-                    )
+        # start is a must for timestamp
+        for key, value in zip(self._fields, data):
+            json_record[key] = value
+
+        src = json_record.get("srcaddr", "-")
+        dst = json_record.get("dstaddr", "-")
+        if src == "-" and dst == "-":
+            # if both src and dst are missing, ignore the record.
+            return {}
+
+        for key in ["packets", "bytes"]:
+            if key in json_record and json_record[key] == "-":
+                json_record[key] = "0"
+        if "protocol" in json_record:
+            json_record["protocol-code"] = get_protocal_code(json_record["protocol"])
         return json_record
 
 
@@ -541,7 +584,7 @@ class RDS(LogType):
         _json_record = {}
         json_record = {}
         if results:
-            for match_num, result in enumerate(results, start=1):
+            for _, result in enumerate(results, start=1):
                 for i, attr in enumerate(log_fields):
                     # print(f'{attr} = {result.group(i + 1)}')
                     if result.group(i + 1) is None:
@@ -577,7 +620,7 @@ class RDS(LogType):
                 json_record["deadlock-action-2"] = _json_records[1]["deadlock-action"]
                 json_record["deadlock-query-2"] = _json_records[1]["deadlock-query"]
             except IndexError:
-                logger.error("Failed to resolve Deadlock Log")
+                logger.error(f"Failed to resolve {log_sub_type} Log")
 
             json_record["db-identifier"] = db_identifier
             json_record["time"] = timestamp
@@ -590,7 +633,7 @@ class RDS(LogType):
         log_fields,
         timestamp,
         db_identifier,
-    )-> dict:
+    ) -> dict:
         json_record = {}
         result = log_message.split(",")
         json_record["db-identifier"] = db_identifier
@@ -599,7 +642,7 @@ class RDS(LogType):
             json_record[attr] = result[i + 1]
             for key in ["audit-ip"]:
                 if key in json_record:
-                    json_record[key] = json_record[key].strip('ip-').replace("-", ".")
+                    json_record[key] = json_record[key].strip("ip-").replace("-", ".")
         return json_record
 
     def parse(self, line) -> list:
@@ -609,6 +652,7 @@ class RDS(LogType):
         try:
             data_json = json.loads(data_str)
         except json.JSONDecodeError as e:
+            logger.error(e)
             return json_records
 
         for i in range(len(data_json)):
@@ -680,10 +724,6 @@ class RDS(LogType):
                             db_identifier,
                         )
                     )
-                # else:
-                #     logger.info("Skipping unknown RDS log types.")
-
-        # print(json_records)
 
         return json_records
 
@@ -706,6 +746,7 @@ class Lambda(LogType):
         try:
             data_json = json.loads(data_str)
         except json.JSONDecodeError as e:
+            logger.error(e)
             return json_records
 
         for i in range(len(data_json)):

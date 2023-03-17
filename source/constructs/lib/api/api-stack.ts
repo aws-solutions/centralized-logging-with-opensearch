@@ -36,7 +36,7 @@ import { AuthType, addCfnNagSuppressRules } from "../main-stack";
 import { PipelineFlowStack } from "./pipeline-flow";
 import { ClusterFlowStack } from "./cluster-flow";
 import { CrossAccountStack } from "./cross-account-stack";
-import { NagSuppressions } from 'cdk-nag';
+import { NagSuppressions } from "cdk-nag";
 import { IQueue } from "aws-cdk-lib/aws-sqs";
 
 export interface APIProps {
@@ -109,7 +109,10 @@ export interface APIProps {
    *
    * @default - None.
    */
-  subAccountLinkTable: ddb.Table;
+  readonly subAccountLinkTable: ddb.Table;
+
+  readonly solutionId: string;
+  readonly stackPrefix: string;
 }
 
 /**
@@ -124,6 +127,7 @@ export class APIStack extends Construct {
   // readonly userPoolApiClient?: cognito.UserPoolClient
   readonly clusterTable: ddb.Table;
   readonly appPipelineTable: ddb.Table;
+  readonly pipelineTable: ddb.Table;
   readonly eksClusterLogSourceTable: ddb.Table;
   readonly sqsEventTable: ddb.Table;
   readonly centralAssumeRolePolicy: iam.ManagedPolicy;
@@ -131,8 +135,6 @@ export class APIStack extends Construct {
   readonly groupModificationEventQueue: IQueue;
   constructor(scope: Construct, id: string, props: APIProps) {
     super(scope, id);
-
-    const solution_id = "SO8025";
 
     if (props.authType === AuthType.OIDC) {
       // Open Id Auth Config
@@ -171,9 +173,9 @@ export class APIStack extends Construct {
             "The managed policy AWSAppSyncPushToCloudWatchLogs needs to use any resources",
         },
       ]);
-      this.graphqlApi = new appsync.GraphqlApi(this, "APIs", {
+      this.graphqlApi = new appsync.GraphqlApi(this, "API", {
         name: `${Aws.STACK_NAME} - GraphQL APIs`,
-        schema: appsync.Schema.fromAsset(
+        schema: appsync.SchemaFile.fromAsset(
           path.join(__dirname, "../../graphql/schema.graphql")
         ),
         authorizationConfig: {
@@ -201,15 +203,15 @@ export class APIStack extends Construct {
         authorizationType: appsync.AuthorizationType.USER_POOL,
         userPoolConfig: {
           userPool: userPool,
-          appIdClientRegex: this.userPoolClientId!,
+          appIdClientRegex: this.userPoolClientId,
           defaultAction: appsync.UserPoolDefaultAction.ALLOW,
         },
       };
 
       // Create an Appsync GraphQL API
-      this.graphqlApi = new appsync.GraphqlApi(this, "APIs", {
+      this.graphqlApi = new appsync.GraphqlApi(this, "API", {
         name: `${Aws.STACK_NAME} - GraphQL APIs`,
-        schema: appsync.Schema.fromAsset(
+        schema: appsync.SchemaFile.fromAsset(
           path.join(__dirname, "../../graphql/schema.graphql")
         ),
         authorizationConfig: {
@@ -238,7 +240,7 @@ export class APIStack extends Construct {
         handler: "create_service_linked_role.lambda_handler",
         timeout: Duration.seconds(60),
         memorySize: 128,
-        description: "Log Hub - Service Linked Role Create Handler",
+        description: `${Aws.STACK_NAME} - Service Linked Role Create Handler`,
       }
     );
 
@@ -276,18 +278,19 @@ export class APIStack extends Construct {
     this.graphqlApi.node.addDependency(appSyncServiceLinkRoleFnTrigger);
 
     // Create a table to store logging pipeline info
-    const pipelineTable = new ddb.Table(this, "PipelineTable", {
+    this.pipelineTable = new ddb.Table(this, "PipelineTable", {
       partitionKey: {
         name: "id",
         type: ddb.AttributeType.STRING,
       },
-      billingMode: ddb.BillingMode.PROVISIONED,
+      billingMode: ddb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: RemovalPolicy.DESTROY,
       encryption: ddb.TableEncryption.DEFAULT,
       pointInTimeRecovery: true,
     });
 
-    const cfnPipelineTable = pipelineTable.node.defaultChild as ddb.CfnTable;
+    const cfnPipelineTable = this.pipelineTable.node
+      .defaultChild as ddb.CfnTable;
     cfnPipelineTable.overrideLogicalId("PipelineTable");
     addCfnNagSuppressRules(cfnPipelineTable, [
       {
@@ -310,7 +313,7 @@ export class APIStack extends Construct {
           name: "id",
           type: ddb.AttributeType.STRING,
         },
-        billingMode: ddb.BillingMode.PROVISIONED,
+        billingMode: ddb.BillingMode.PAY_PER_REQUEST,
         removalPolicy: RemovalPolicy.DESTROY,
         encryption: ddb.TableEncryption.DEFAULT,
         pointInTimeRecovery: true,
@@ -336,6 +339,7 @@ export class APIStack extends Construct {
     const crossAccountStack = new CrossAccountStack(this, `CrossAccountStack`, {
       graphqlApi: this.graphqlApi,
       subAccountLinkTable: props.subAccountLinkTable,
+      solutionId: props.solutionId,
     });
     this.centralAssumeRolePolicy = crossAccountStack.centralAssumeRolePolicy;
     this.asyncCrossAccountHandler = crossAccountStack.asyncCrossAccountHandler;
@@ -346,7 +350,7 @@ export class APIStack extends Construct {
         name: "id",
         type: ddb.AttributeType.STRING,
       },
-      billingMode: ddb.BillingMode.PROVISIONED,
+      billingMode: ddb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: RemovalPolicy.DESTROY,
       encryption: ddb.TableEncryption.DEFAULT,
       pointInTimeRecovery: true,
@@ -373,7 +377,7 @@ export class APIStack extends Construct {
         name: "id",
         type: ddb.AttributeType.STRING,
       },
-      billingMode: ddb.BillingMode.PROVISIONED,
+      billingMode: ddb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: RemovalPolicy.DESTROY,
       encryption: ddb.TableEncryption.DEFAULT,
       pointInTimeRecovery: true,
@@ -399,13 +403,14 @@ export class APIStack extends Construct {
         name: "id",
         type: ddb.AttributeType.STRING,
       },
-      billingMode: ddb.BillingMode.PROVISIONED,
+      billingMode: ddb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: RemovalPolicy.DESTROY,
       encryption: ddb.TableEncryption.DEFAULT,
       pointInTimeRecovery: true,
     });
 
-    const cfnSQSEventTable = this.sqsEventTable.node.defaultChild as ddb.CfnTable;
+    const cfnSQSEventTable = this.sqsEventTable.node
+      .defaultChild as ddb.CfnTable;
     cfnSQSEventTable.overrideLogicalId("SQSEventTable");
     addCfnNagSuppressRules(cfnSQSEventTable, [
       {
@@ -458,23 +463,24 @@ export class APIStack extends Construct {
         PARTITION: Aws.PARTITION,
         CLUSTER_TABLE: this.clusterTable.tableName,
         APP_PIPELINE_TABLE_NAME: this.appPipelineTable.tableName,
-        SVC_PIPELINE_TABLE: pipelineTable.tableName,
+        SVC_PIPELINE_TABLE: this.pipelineTable.tableName,
         EKS_CLUSTER_SOURCE_TABLE_NAME: this.eksClusterLogSourceTable.tableName,
         STATE_MACHINE_ARN: clusterFlow.stateMachineArn,
-        SOLUTION_ID: solution_id,
-        SOLUTION_VERSION: process.env.VERSION ? process.env.VERSION : "v1.0.0",
+        SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+        SOLUTION_ID: props.solutionId,
+        STACK_PREFIX: props.stackPrefix,
         DEFAULT_VPC_ID: props.vpc.vpcId,
         DEFAULT_SG_ID: props.processSgId,
         DEFAULT_PRIVATE_SUBNET_IDS: Fn.join(",", props.subnetIds),
         DEFAULT_LOGGING_BUCKET: props.defaultLoggingBucket,
       },
-      description: "Log Hub - Cluster APIs Resolver",
+      description: `${Aws.STACK_NAME} - Cluster APIs Resolver`,
     });
 
     // Grant permissions to the cluster lambda
     this.clusterTable.grantReadWriteData(clusterHandler);
     this.appPipelineTable.grantReadData(clusterHandler);
-    pipelineTable.grantReadData(clusterHandler);
+    this.pipelineTable.grantReadData(clusterHandler);
     this.eksClusterLogSourceTable.grantReadData(clusterHandler);
 
     const clusterHandlerPolicy = new iam.Policy(this, "ClusterHandlerPolicy", {
@@ -560,7 +566,7 @@ export class APIStack extends Construct {
     );
 
     // Set resolver for related cluster API methods
-    clusterLambdaDS.createResolver({
+    clusterLambdaDS.createResolver('listDomainNames', {
       typeName: "Query",
       fieldName: "listDomainNames",
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
@@ -569,14 +575,14 @@ export class APIStack extends Construct {
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
-    clusterLambdaDS.createResolver({
+    clusterLambdaDS.createResolver('listImportedDomains', {
       typeName: "Query",
       fieldName: "listImportedDomains",
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
-    clusterLambdaDS.createResolver({
+    clusterLambdaDS.createResolver('getDomainDetails', {
       typeName: "Query",
       fieldName: "getDomainDetails",
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
@@ -590,7 +596,7 @@ export class APIStack extends Construct {
       ),
     });
 
-    clusterLambdaDS.createResolver({
+    clusterLambdaDS.createResolver('getDomainVpc', {
       typeName: "Query",
       fieldName: "getDomainVpc",
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
@@ -599,7 +605,7 @@ export class APIStack extends Construct {
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
-    clusterLambdaDS.createResolver({
+    clusterLambdaDS.createResolver('importDomain', {
       typeName: "Mutation",
       fieldName: "importDomain",
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
@@ -608,7 +614,7 @@ export class APIStack extends Construct {
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
-    clusterLambdaDS.createResolver({
+    clusterLambdaDS.createResolver('removeDomain', {
       typeName: "Mutation",
       fieldName: "removeDomain",
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
@@ -617,7 +623,7 @@ export class APIStack extends Construct {
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
-    clusterLambdaDS.createResolver({
+    clusterLambdaDS.createResolver('createProxyForOpenSearch', {
       typeName: "Mutation",
       fieldName: "createProxyForOpenSearch",
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
@@ -629,14 +635,14 @@ export class APIStack extends Construct {
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
-    clusterLambdaDS.createResolver({
+    clusterLambdaDS.createResolver('deleteProxyForOpenSearch', {
       typeName: "Mutation",
       fieldName: "deleteProxyForOpenSearch",
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
-    clusterLambdaDS.createResolver({
+    clusterLambdaDS.createResolver('createAlarmForOpenSearch', {
       typeName: "Mutation",
       fieldName: "createAlarmForOpenSearch",
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
@@ -648,7 +654,7 @@ export class APIStack extends Construct {
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
-    clusterLambdaDS.createResolver({
+    clusterLambdaDS.createResolver('deleteAlarmForOpenSearch', {
       typeName: "Mutation",
       fieldName: "deleteAlarmForOpenSearch",
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
@@ -656,7 +662,7 @@ export class APIStack extends Construct {
     });
 
     // Set resolver for CIDR validation API methods
-    clusterLambdaDS.createResolver({
+    clusterLambdaDS.createResolver('validateVpcCidr', {
       typeName: "Query",
       fieldName: "validateVpcCidr",
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
@@ -665,7 +671,7 @@ export class APIStack extends Construct {
 
     // Create a Step Functions to orchestrate pipeline flow
     const pipeFlow = new PipelineFlowStack(this, "PipelineFlowSM", {
-      tableArn: pipelineTable.tableArn,
+      tableArn: this.pipelineTable.tableArn,
       cfnFlowSMArn: props.cfnFlowSMArn,
     });
 
@@ -681,16 +687,17 @@ export class APIStack extends Construct {
       memorySize: 1024,
       environment: {
         STATE_MACHINE_ARN: pipeFlow.stateMachineArn,
-        PIPELINE_TABLE: pipelineTable.tableName,
-        SOLUTION_ID: solution_id,
-        SOLUTION_VERSION: process.env.VERSION ? process.env.VERSION : "v1.0.0",
+        PIPELINE_TABLE: this.pipelineTable.tableName,
+        STACK_PREFIX: props.stackPrefix,
+        SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+        SOLUTION_ID: props.solutionId,
         SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
       },
-      description: "Log Hub - Pipeline APIs Resolver",
+      description: `${Aws.STACK_NAME} - Pipeline APIs Resolver`,
     });
 
     // Grant permissions to the pipeline lambda
-    pipelineTable.grantReadWriteData(pipelineHandler);
+    this.pipelineTable.grantReadWriteData(pipelineHandler);
     props.subAccountLinkTable.grantReadData(pipelineHandler);
     pipelineHandler.addToRolePolicy(
       new iam.PolicyStatement({
@@ -711,7 +718,7 @@ export class APIStack extends Construct {
     // Add pipeline table as a Datasource
     const pipeDynamoDS = this.graphqlApi.addDynamoDbDataSource(
       "PipelineDynamoDS",
-      pipelineTable,
+      this.pipelineTable,
       {
         description: "DynamoDB Resolver Datasource",
       }
@@ -727,10 +734,15 @@ export class APIStack extends Construct {
     );
 
     // Set resolver for releted cluster API methods
-    pipeLambdaDS.createResolver({
+    pipeLambdaDS.createResolver('listServicePipelines', {
       typeName: "Query",
       fieldName: "listServicePipelines",
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      requestMappingTemplate: appsync.MappingTemplate.fromFile(
+        path.join(
+          __dirname,
+          "../../graphql/vtl/pipeline/ListServicePipelines.vtl"
+        )
+      ),
       responseMappingTemplate: appsync.MappingTemplate.fromFile(
         path.join(
           __dirname,
@@ -739,7 +751,7 @@ export class APIStack extends Construct {
       ),
     });
 
-    pipeDynamoDS.createResolver({
+    pipeDynamoDS.createResolver('getServicePipeline', {
       typeName: "Query",
       fieldName: "getServicePipeline",
       requestMappingTemplate: appsync.MappingTemplate.dynamoDbGetItem(
@@ -754,19 +766,7 @@ export class APIStack extends Construct {
       ),
     });
 
-    pipeLambdaDS.createResolver({
-      typeName: "Query",
-      fieldName: "checkServiceExisting",
-      requestMappingTemplate: appsync.MappingTemplate.fromFile(
-        path.join(
-          __dirname,
-          "../../graphql/vtl/pipeline/CheckServiceExisting.vtl"
-        )
-      ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
-    });
-
-    pipeLambdaDS.createResolver({
+    pipeLambdaDS.createResolver('createServicePipeline', {
       typeName: "Mutation",
       fieldName: "createServicePipeline",
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
@@ -778,7 +778,7 @@ export class APIStack extends Construct {
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
-    pipeLambdaDS.createResolver({
+    pipeLambdaDS.createResolver('deleteServicePipeline', {
       typeName: "Mutation",
       fieldName: "deleteServicePipeline",
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
@@ -797,11 +797,13 @@ export class APIStack extends Construct {
       memorySize: 1024,
       environment: {
         DEFAULT_LOGGING_BUCKET: props.defaultLoggingBucket,
-        SOLUTION_ID: solution_id,
-        SOLUTION_VERSION: process.env.VERSION ? process.env.VERSION : "v1.0.0",
+        SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+        SOLUTION_ID: props.solutionId,
+        STACK_PREFIX: props.stackPrefix,
         SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
+
       },
-      description: "Log Hub - Resource APIs Resolver",
+      description: `${Aws.STACK_NAME} - Resource APIs Resolver`,
     });
     props.subAccountLinkTable.grantReadData(resourceHandler);
 
@@ -813,14 +815,31 @@ export class APIStack extends Construct {
         statements: [
           new iam.PolicyStatement({
             effect: iam.Effect.ALLOW,
-            resources: ["*"],
+            resources: [
+              `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/service-role/${props.stackPrefix}-*`,
+              `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/${props.stackPrefix}-*`,
+              `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:policy/${props.stackPrefix}-*`,
+            ],
             actions: [
               "iam:GetRole",
-              "iam:PassRole",
               "iam:CreateRole",
+              "iam:PassRole",
               "iam:PutRolePolicy",
+            ],
+          }),
+          new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            resources: [
+              `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/aws-service-role/wafv2.amazonaws.com/AWSServiceRoleForWAFV2Logging`,
+            ],
+            actions: [
               "iam:CreateServiceLinkedRole",
-
+            ],
+          }),
+          new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            resources: ["*"],
+            actions: [
               "firehose:CreateDeliveryStream",
               "firehose:DescribeDeliveryStream",
             ],
@@ -860,6 +879,8 @@ export class APIStack extends Construct {
             effect: iam.Effect.ALLOW,
             resources: ["*"],
             actions: [
+              "ec2:CreateTags",
+              "ec2:DescribeTags",
               "ec2:CreateFlowLogs",
               "ec2:DescribeFlowLogs",
               "ec2:DescribeVpcs",
@@ -876,7 +897,11 @@ export class APIStack extends Construct {
           new iam.PolicyStatement({
             effect: iam.Effect.ALLOW,
             resources: ["*"],
-            actions: ["cloudtrail:ListTrails", "cloudtrail:GetTrail"],
+            actions: [
+              "cloudtrail:ListTrails",
+              "cloudtrail:GetTrail",
+              "cloudtrail:UpdateTrail",
+            ],
           }),
           new iam.PolicyStatement({
             effect: iam.Effect.ALLOW,
@@ -885,6 +910,8 @@ export class APIStack extends Construct {
               "cloudfront:ListDistributions",
               "cloudfront:GetDistributionConfig",
               "cloudfront:UpdateDistribution",
+              "cloudfront:GetDistributionConfig",
+              "cloudfront:GetRealtimeLogConfig",
             ],
           }),
           new iam.PolicyStatement({
@@ -948,7 +975,7 @@ export class APIStack extends Construct {
       ]
     );
 
-    // Add pipeline lambda as a Datasource
+    // Add resource lambda as a Datasource
     const resourceLambdaDS = this.graphqlApi.addLambdaDataSource(
       "ResourceLambdaDS",
       resourceHandler,
@@ -958,7 +985,7 @@ export class APIStack extends Construct {
     );
 
     // Set resolver for releted resource API methods
-    resourceLambdaDS.createResolver({
+    resourceLambdaDS.createResolver('listResources', {
       typeName: "Query",
       fieldName: "listResources",
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
@@ -967,7 +994,7 @@ export class APIStack extends Construct {
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
-    resourceLambdaDS.createResolver({
+    resourceLambdaDS.createResolver('getResourceLoggingBucket', {
       typeName: "Query",
       fieldName: "getResourceLoggingBucket",
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
@@ -979,13 +1006,37 @@ export class APIStack extends Construct {
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
-    resourceLambdaDS.createResolver({
+    resourceLambdaDS.createResolver('putResourceLoggingBucket', {
       typeName: "Mutation",
       fieldName: "putResourceLoggingBucket",
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
         path.join(
           __dirname,
           "../../graphql/vtl/resource/PutResourceLoggingBucket.vtl"
+        )
+      ),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    resourceLambdaDS.createResolver('getResourceLogConfigs', {
+      typeName: "Query",
+      fieldName: "getResourceLogConfigs",
+      requestMappingTemplate: appsync.MappingTemplate.fromFile(
+        path.join(
+          __dirname,
+          "../../graphql/vtl/resource/GetResourceLogConfig.vtl"
+        )
+      ),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    resourceLambdaDS.createResolver('putResourceLogConfig', {
+      typeName: "Mutation",
+      fieldName: "putResourceLogConfig",
+      requestMappingTemplate: appsync.MappingTemplate.fromFile(
+        path.join(
+          __dirname,
+          "../../graphql/vtl/resource/PutResourceLogConfig.vtl"
         )
       ),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
@@ -1017,19 +1068,24 @@ export class APIStack extends Construct {
       },
     ]);
 
-    const cfnGroupModificationEventDLQ = groupModificationEventDLQ.node.defaultChild as sqs.CfnQueue;
+    const cfnGroupModificationEventDLQ = groupModificationEventDLQ.node
+      .defaultChild as sqs.CfnQueue;
     cfnGroupModificationEventDLQ.overrideLogicalId("GroupModificationEventDLQ");
 
     // Setup instance group modification SQS
-    const groupModificationQ = new sqs.Queue(this, "InstanceGroupModificationQueue", {
-      visibilityTimeout: Duration.minutes(15),
-      retentionPeriod: Duration.days(7),
-      deadLetterQueue: {
-        queue: groupModificationEventDLQ,
-        maxReceiveCount: 30,
-      },
-      encryption: sqs.QueueEncryption.KMS_MANAGED,
-    });
+    const groupModificationQ = new sqs.Queue(
+      this,
+      "InstanceGroupModificationQueue",
+      {
+        visibilityTimeout: Duration.minutes(15),
+        retentionPeriod: Duration.days(7),
+        deadLetterQueue: {
+          queue: groupModificationEventDLQ,
+          maxReceiveCount: 30,
+        },
+        encryption: sqs.QueueEncryption.KMS_MANAGED,
+      }
+    );
     groupModificationQ.addToResourcePolicy(
       new iam.PolicyStatement({
         actions: ["sqs:*"],
@@ -1045,6 +1101,7 @@ export class APIStack extends Construct {
     );
 
     this.groupModificationEventQueue = groupModificationQ;
+
 
     new CfnOutput(this, "GraphQLAPIEndpoint", {
       description: "GraphQL API Endpoint (back-end)",

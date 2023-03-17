@@ -19,7 +19,11 @@ import FormItem from "components/FormItem";
 import TextInput from "components/TextInput";
 import { useTranslation } from "react-i18next";
 import Select from "components/Select";
-import { COMPRESS_TYPE, S3_BUFFER_PREFIX } from "assets/js/const";
+import {
+  COMPRESS_TYPE,
+  S3_BUFFER_PREFIX,
+  S3_STORAGE_CLASS_LINK,
+} from "assets/js/const";
 import { ApplicationLogType } from "../../dataInjection/applicationLog/create/CreatePipeline";
 import AutoComplete from "components/AutoComplete";
 import { appSyncRequestQuery } from "assets/js/request";
@@ -27,6 +31,8 @@ import { listResources } from "graphql/queries";
 import { Resource, ResourceType } from "API";
 import { SelectItem } from "components/Select/select";
 import { OptionType } from "components/AutoComplete/autoComplete";
+import ExtLink from "components/ExtLink";
+import { S3_STORAGE_CLASS_OPTIONS } from "types";
 
 interface BufferS3Props {
   applicationLog: ApplicationLogType;
@@ -39,6 +45,7 @@ interface BufferS3Props {
   changeS3BufferBufferSize: (size: string) => void;
   changeS3BufferTimeout: (timeout: string) => void;
   changeS3CompressionType: (type: string) => void;
+  changeS3StorageClass: (storage: string) => void;
 }
 
 const BufferS3: React.FC<BufferS3Props> = (props: BufferS3Props) => {
@@ -54,6 +61,7 @@ const BufferS3: React.FC<BufferS3Props> = (props: BufferS3Props) => {
     changeS3BufferBufferSize,
     changeS3BufferTimeout,
     changeS3CompressionType,
+    changeS3StorageClass,
   } = props;
   const [showAdvanceSetting, setShowAdvanceSetting] = useState(false);
   const [loadingS3List, setLoadingS3List] = useState(false);
@@ -197,6 +205,25 @@ const BufferS3: React.FC<BufferS3Props> = (props: BufferS3Props) => {
               </div>
               <div className="ml-10">{t("seconds")}</div>
             </div>
+          </FormItem>
+
+          <FormItem
+            optionTitle={t("applog:create.ingestSetting.s3StorageClass")}
+            optionDesc={
+              <div>
+                {t("applog:create.ingestSetting.s3StorageClassDesc")}
+                <ExtLink to={S3_STORAGE_CLASS_LINK}>{t("learnMore")}</ExtLink>
+              </div>
+            }
+          >
+            <Select
+              className="m-w-45p"
+              optionList={S3_STORAGE_CLASS_OPTIONS}
+              value={applicationLog.s3BufferParams.s3StorageClass}
+              onChange={(event) => {
+                changeS3StorageClass(event.target.value);
+              }}
+            />
           </FormItem>
 
           <FormItem

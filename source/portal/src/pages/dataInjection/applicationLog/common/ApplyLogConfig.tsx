@@ -207,7 +207,7 @@ const ApplyLogConfig: React.FC<ApplyConfigProps> = (
                       value={ingestionInfo.logPath}
                       placeholder={
                         logSourceType === LogSourceType.EKSCluster
-                          ? "/var/log/containers/<app-name><name-space>*"
+                          ? "/var/log/containers/<app-name>_<name-space>*"
                           : "/var/log/app1/*.log, /var/log/app2/*.log"
                       }
                       onChange={(event) => {

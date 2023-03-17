@@ -11,17 +11,17 @@ Use the following steps to deploy this solution on AWS.
 
 ## Step 1. Launch the stack
 
-This AWS CloudFormation template automatically deploys the Log Hub solution on AWS.
+This AWS CloudFormation template automatically deploys the Centralized Logging with OpenSearch solution on AWS.
 
-1. Sign in to the AWS Management Console and select the button to launch the `log-hub` AWS CloudFormation template.
+1. Sign in to the AWS Management Console and select the button to launch the AWS CloudFormation template.
 
-    |                             | Launch in AWS Console                                        |
-    | --------------------------- | ------------------------------------------------------------ |
-    | Launch with a new VPC       | [![Launch Stack](../../images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/template?stackName=LogHub&templateURL=https://{{ bucket }}.s3.amazonaws.com/log-hub/{{ version }}/LogHub.template){target=_blank} |
-    | Launch with an existing VPC | [![Launch Stack](../../images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/template?stackName=LogHub&templateURL=https://{{ bucket }}.s3.amazonaws.com/log-hub/{{ version }}/LogHubFromExistingVPC.template){target=_blank} |
+    |                             | Launch in AWS Console                                                                                                                                                                                                                                   |
+    |---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| ------------------------------------------------------------ |
+    | Launch with a new VPC       | [![Launch Stack](../../images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https://{{ bucket }}.s3.amazonaws.com/{{ solution }}/{{ version }}/CentralizedLogging.template){target=_blank}              |
+    | Launch with an existing VPC | [![Launch Stack](../../images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https://{{ bucket }}.s3.amazonaws.com/{{ solution }}/{{ version }}/CentralizedLoggingFromExistingVPC.template){target=_blank} |
 
 
-2. The template is launched in the default region after you log in to the console. To launch the Log Hub solution in a different AWS Region, use the Region selector in the console navigation bar.
+2. The template is launched in the default region after you log in to the console. To launch the Centralized Logging with OpenSearch solution in a different AWS Region, use the Region selector in the console navigation bar.
 
 3. On the **Create stack** page, verify that the correct template URL is shown in the **Amazon S3 URL** text box and choose **Next**.
 
@@ -30,17 +30,17 @@ This AWS CloudFormation template automatically deploys the Log Hub solution on A
 5. Under **Parameters**, review the parameters for the template and modify them as necessary.
 
      - If you are launching the solution in a new VPC, this solution uses the following parameters:
-     
+
     | Parameter  | Default          | Description                                                  |
     | ---------- | ---------------- | ------------------------------------------------------------ |
-    | Admin User Email | `<Requires input>` | Specify the email of the Administrator. This email address will receive a temporary password to access the Log Hub web console. You can create more users directly in the provisioned Cognito User Pool after launching the solution. |
+    | Admin User Email | `<Requires input>` | Specify the email of the Administrator. This email address will receive a temporary password to access the Centralized Logging with OpenSearch web console. You can create more users directly in the provisioned Cognito User Pool after launching the solution. |
 
      - If you are launching the solution in an existing VPC, this solution uses the following parameters:
 
     | Parameter  | Default          | Description                                                                                                                                                                                                                          |
     | ---------- |--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| ------------------------------------------------------------ |
-    | Admin User Email | `<Requires input>` | Specify the email of the Administrator. This email address will receive a temporary password to access the Log Hub web console. You can create more users directly in the provisioned Cognito User Pool after launching the solution. |
-    | VPC ID | `<Requires input>` | Specify the existing VPC ID in which you are launching the Log Hub solution.                                                                                                                                                         |
+    | Admin User Email | `<Requires input>` | Specify the email of the Administrator. This email address will receive a temporary password to access the Centralized Logging with OpenSearch web console. You can create more users directly in the provisioned Cognito User Pool after launching the solution. |
+    | VPC ID | `<Requires input>` | Specify the existing VPC ID in which you are launching the Centralized Logging with OpenSearch solution.                                                                                                                                                         |
     | Public Subnet IDs | `<Requires input>` | Specify the two public subnets in the selected VPC. The subnets must have routes point to an [Internet Gateway][IGW].                                                                                                               |
     | Private Subnet IDs | `<Requires input>` | Specify the two private subnets in the selected VPC. The subnets must have routes point to an [NAT Gateway][NAT].                                                                                                                    |
 
@@ -48,7 +48,7 @@ This AWS CloudFormation template automatically deploys the Log Hub solution on A
 
 7. On the **Configure stack options** page, choose **Next**.
 
-8. On the **Review** page, review and confirm the settings. Check the box acknowledging that the template creates AWS Identity and Access Management (IAM) resources.
+8. On the **Review** page, review and confirm the settings. Select the box acknowledging that the template creates AWS Identity and Access Management (IAM) resources.
 
 9. Choose **Create stack** to deploy the stack.
 
@@ -56,7 +56,7 @@ You can view the status of the stack in the AWS CloudFormation console in the **
 
 ## Step 2. Launch the web Console
 
-After the stack is successfully created, this solution generates a CloudFront domain name that gives you access to the Log Hub web console. 
+After the stack is successfully created, this solution generates a CloudFront domain name that gives you access to the Centralized Logging with OpenSearch web console.
 Meanwhile, an auto-generated temporary password (excluding the last digit `.`) will be sent to your email address.
 
 1. Sign in to the [AWS CloudFormation console](https://console.aws.amazon.com/cloudformation/){target='_blank'}.
@@ -73,9 +73,9 @@ Meanwhile, an auto-generated temporary password (excluding the last digit `.`) w
 
     b. (Optional) Verify your email address for account recovery.
 
-6. After the verification is complete, the system opens the Log Hub web console.
+6. After the verification is complete, the system opens the Centralized Logging with OpenSearch web console.
 
-Once you have logged into the Log Hub console, you can [import an AOS domain](../domains/import.md#import-an-aos-domain) and build log analytics pipelines.
+Once you have logged into the Centralized Logging with OpenSearch console, you can [import an Amazon OpenSearch Service domain](../domains/import.md#import-an-aos-domain) and build log analytics pipelines.
 
 
 [NAT]: https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html

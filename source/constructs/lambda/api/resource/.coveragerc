@@ -5,6 +5,5 @@ omit =
     test/*
     */__init__.py
     assets/*
-    aws_svc_mgr.py
 source =
     .

@@ -35,6 +35,13 @@ import {
 } from "assets/js/const";
 import { InfoBarTypes } from "reducer/appReducer";
 import { useTranslation } from "react-i18next";
+import Switch from "components/Switch";
+import {
+  ClusterCompressionTypeList,
+  AppLogClusterIndexSuffixFormatList,
+  WarmLogSettingsList,
+  WarmTransitionType,
+} from "types";
 
 interface SpecifyOpenSearchClusterProps {
   applicationLog: ApplicationLogType;
@@ -45,11 +52,19 @@ interface SpecifyOpenSearchClusterProps {
   changeLoadingDomain: (loading: boolean) => void;
   changeShards: (shards: string) => void;
   changeReplicas: (replica: string) => void;
+  changeIndexSuffix: (suffix: string) => void;
+  changeEnableRollover: (enable: boolean) => void;
+  changeRolloverSize: (size: string) => void;
+  changeCompressionType: (codec: string) => void;
+  changeWarmSettings: (type: string) => void;
   esDomainEmptyError: boolean;
   warmLogInvalidError?: boolean;
   coldLogInvalidError?: boolean;
   logRetentionInvalidError?: boolean;
+  coldMustLargeThanWarm?: boolean;
+  logRetentionMustThanColdAndWarm?: boolean;
   shardsInvalidError?: boolean;
+  rolloverSizeError?: boolean;
 }
 
 const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
@@ -64,11 +79,19 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
     changeLoadingDomain,
     changeShards,
     changeReplicas,
+    changeIndexSuffix,
+    changeEnableRollover,
+    changeRolloverSize,
+    changeCompressionType,
+    changeWarmSettings,
     esDomainEmptyError,
     warmLogInvalidError,
     coldLogInvalidError,
     logRetentionInvalidError,
+    coldMustLargeThanWarm,
+    logRetentionMustThanColdAndWarm,
     shardsInvalidError,
+    rolloverSizeError,
   } = props;
   const { t } = useTranslation();
   const [loadingDomain, setLoadingDomain] = useState(false);
@@ -194,6 +217,34 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
               <div className={showAdvanceSetting ? "" : "hide"}>
                 <>
                   <FormItem
+                    optionTitle={t("applog:create.specifyOS.indexSuffix")}
+                    optionDesc={t("applog:create.specifyOS.indexSuffixDesc")}
+                  >
+                    <div className="flex align-center m-w-75p">
+                      <div style={{ flex: 1 }}>
+                        <TextInput
+                          disabled
+                          className=""
+                          value={applicationLog.aosParams.indexPrefix}
+                          onChange={(event) => {
+                            console.info(event);
+                          }}
+                        />
+                      </div>
+                      <div> - </div>
+                      <div style={{ width: 170 }}>
+                        <Select
+                          optionList={AppLogClusterIndexSuffixFormatList}
+                          value={applicationLog.aosParams.indexSuffix}
+                          onChange={(event) => {
+                            changeIndexSuffix(event.target.value);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </FormItem>
+
+                  <FormItem
                     optionTitle={t("servicelog:cluster.shardNum")}
                     optionDesc={t("servicelog:cluster.shardNumDesc")}
                     errorText={
@@ -229,6 +280,57 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
                       />
                     </div>
                   </FormItem>
+
+                  {!loadingDomain && !applicationLog.rolloverSizeNotSupport && (
+                    <FormItem
+                      optionTitle=""
+                      optionDesc=""
+                      errorText={
+                        rolloverSizeError
+                          ? t("servicelog:cluster.rolloverError")
+                          : ""
+                      }
+                    >
+                      <>
+                        <Switch
+                          reverse
+                          isOn={applicationLog.enableRolloverByCapacity}
+                          handleToggle={() => {
+                            changeEnableRollover(
+                              !applicationLog.enableRolloverByCapacity
+                            );
+                          }}
+                          label={t("servicelog:cluster.enableRolloverByCap")}
+                          desc={t("servicelog:cluster.enableRolloverByCapDesc")}
+                        />
+                        <div className="flex align-center">
+                          <TextInput
+                            type="number"
+                            readonly={!applicationLog.enableRolloverByCapacity}
+                            value={applicationLog.aosParams.rolloverSize}
+                            onChange={(event) => {
+                              changeRolloverSize(event.target.value);
+                            }}
+                          />
+                          <div className="ml-10">GB</div>
+                        </div>
+                      </>
+                    </FormItem>
+                  )}
+
+                  <FormItem
+                    optionTitle={t("servicelog:cluster.compressType")}
+                    optionDesc={t("servicelog:cluster.compressTypeDesc")}
+                  >
+                    <Select
+                      className="m-w-75p"
+                      optionList={ClusterCompressionTypeList}
+                      value={applicationLog.aosParams.codec}
+                      onChange={(event) => {
+                        changeCompressionType(event.target.value);
+                      }}
+                    />
+                  </FormItem>
                 </>
               </div>
             </div>
@@ -240,14 +342,14 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
           >
             <div>
               <FormItem
-                optionTitle={t("applog:create.specifyOS.warmLog")}
+                optionTitle={t("servicelog:cluster.warmLog")}
                 optionDesc={
                   <div>
-                    {t("applog:create.specifyOS.warmLogDesc1")}
+                    {t("servicelog:cluster.warmLogDesc1")}
                     <ExtLink to={ENABLE_ULTRAWARM}>
-                      {t("applog:create.specifyOS.warmLogDesc2")}
+                      {t("servicelog:cluster.warmLogDesc2")}
                     </ExtLink>
-                    {t("applog:create.specifyOS.warmLogDesc3")}
+                    {t("servicelog:cluster.warmLogDesc3")}
                   </div>
                 }
                 errorText={
@@ -256,31 +358,64 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
                     : ""
                 }
               >
-                <TextInput
-                  readonly={!applicationLog.warmEnable}
-                  className="m-w-75p"
-                  type="number"
-                  value={applicationLog.aosParams.warmLogTransition}
-                  onChange={(event) => {
-                    console.info(event.target.value);
-                    changeWarnLogTransition(event.target.value);
-                  }}
-                />
+                <>
+                  {WarmLogSettingsList.map((element, key) => {
+                    return (
+                      <div key={key}>
+                        <label>
+                          <input
+                            disabled={!applicationLog.warmEnable}
+                            onClick={() => {
+                              changeWarmSettings(element.value);
+                            }}
+                            onChange={(event) => {
+                              console.info(event);
+                            }}
+                            checked={
+                              element.value ===
+                                applicationLog.warmTransitionType &&
+                              applicationLog.warmEnable
+                            }
+                            name="fieldType"
+                            type="radio"
+                          />{" "}
+                          {t(element.name)}
+                        </label>
+                      </div>
+                    );
+                  })}
+                  <TextInput
+                    readonly={
+                      !applicationLog.warmEnable ||
+                      applicationLog.warmTransitionType ===
+                        WarmTransitionType.IMMEDIATELY
+                    }
+                    className="m-w-75p"
+                    type="number"
+                    value={applicationLog.aosParams.warmLogTransition}
+                    onChange={(event) => {
+                      console.info(event.target.value);
+                      changeWarnLogTransition(event.target.value);
+                    }}
+                  />
+                </>
               </FormItem>
               <FormItem
-                optionTitle={t("applog:create.specifyOS.coldLog")}
+                optionTitle={t("servicelog:cluster.coldLog")}
                 optionDesc={
                   <div>
-                    {t("applog:create.specifyOS.coldLogDesc1")}
+                    {t("servicelog:cluster.coldLogDesc1")}
                     <ExtLink to={ENABLE_CLODSTATE}>
-                      {t("applog:create.specifyOS.coldLogDesc2")}
+                      {t("servicelog:cluster.coldLogDesc2")}
                     </ExtLink>
-                    {t("applog:create.specifyOS.coldLogDesc3")}
+                    {t("servicelog:cluster.coldLogDesc3")}
                   </div>
                 }
                 errorText={
                   coldLogInvalidError
                     ? t("applog:create.specifyOS.coldLogInvalid")
+                    : coldMustLargeThanWarm
+                    ? t("applog:create.specifyOS.coldLogMustThanWarm")
                     : ""
                 }
               >
@@ -301,6 +436,10 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
                 errorText={
                   logRetentionInvalidError
                     ? t("applog:create.specifyOS.logRetentionError")
+                    : logRetentionMustThanColdAndWarm
+                    ? t(
+                        "applog:create.specifyOS.logRetentionMustLargeThanCodeAndWarm"
+                      )
                     : ""
                 }
               >

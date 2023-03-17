@@ -13,14 +13,18 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React from "react";
+import React, { useState } from "react";
 import ExtLink from "components/ExtLink";
 import cloudFrontSArch from "assets/images/desc/cloudFrontArch.png";
+import cloudFrontSArchRealtime from "assets/images/desc/cloudFrontArch_Realtime.png";
+
 import { CLOUDFRONT_LOG_LINK } from "assets/js/const";
 import { useTranslation } from "react-i18next";
+import { AntTab, AntTabs, TabPanel } from "components/Tab";
 
 const CloudFrontDesc: React.FC = () => {
   const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState(0);
   return (
     <div>
       <div className="ingest-desc-title">
@@ -31,22 +35,41 @@ const CloudFrontDesc: React.FC = () => {
         <ExtLink to={CLOUDFRONT_LOG_LINK}>
           {t("servicelog:cloudfront.desc.cloudfrontLog")}
         </ExtLink>
-        {t("servicelog:cloudfront.desc.intoDomain")}
+        {t("intoDomain")}
       </div>
       <div className="ingest-desc-title">
         {t("servicelog:cloudfront.desc.archName")}
       </div>
-      <div className="ingest-desc-desc">
-        {t("servicelog:cloudfront.desc.archDesc")}
-      </div>
-      <div className="mt-10">
-        <img
-          className="img-border"
-          alt="architecture"
-          width="80%"
-          src={cloudFrontSArch}
-        />
-      </div>
+      <div className="ingest-desc-desc">{t("archDesc")}</div>
+      <AntTabs
+        value={activeTab}
+        onChange={(event, newTab) => {
+          setActiveTab(newTab);
+        }}
+      >
+        <AntTab label={t("servicelog:cloudfront.standardLogs")} />
+        <AntTab label={t("servicelog:cloudfront.realtimeLogs")} />
+      </AntTabs>
+      <TabPanel value={activeTab} index={0}>
+        <div className="mt-10">
+          <img
+            className="img-border"
+            alt="architecture"
+            width="80%"
+            src={cloudFrontSArch}
+          />
+        </div>
+      </TabPanel>
+      <TabPanel value={activeTab} index={1}>
+        <div className="mt-10">
+          <img
+            className="img-border"
+            alt="architecture"
+            width="80%"
+            src={cloudFrontSArchRealtime}
+          />
+        </div>
+      </TabPanel>
     </div>
   );
 };

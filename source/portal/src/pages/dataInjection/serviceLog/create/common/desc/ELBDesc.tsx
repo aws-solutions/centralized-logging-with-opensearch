@@ -30,14 +30,12 @@ const ELBDesc: React.FC = () => {
         <ExtLink to={ELB_ACCESS_LOG_LINK}>
           {t("servicelog:elb.desc.elbLog")}
         </ExtLink>{" "}
-        {t("servicelog:elb.desc.intoDomain")}
+        {t("intoDomain")}
       </div>
       <div className="ingest-desc-title">
         {t("servicelog:elb.desc.archName")}
       </div>
-      <div className="ingest-desc-desc">
-        {t("servicelog:elb.desc.archDesc")}
-      </div>
+      <div className="ingest-desc-desc">{t("archDesc")}</div>
       <div className="mt-10">
         <img
           className="img-border"

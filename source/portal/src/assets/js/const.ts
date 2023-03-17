@@ -35,6 +35,8 @@ import { OptionType } from "components/AutoComplete/autoComplete";
 export const INVALID = "invalid";
 export const AUTO_REFRESH_INT = 8000;
 
+export const SLUTION_REPO_NAME = "centralized-logging-with-opensearch";
+
 export const DEFAULT_AGENT_VERSION = "FluentBit 1.9.9";
 export const DEFAULT_PLATFORM = "Linux";
 export const ASG_SELECTION = "Auto Scaling group";
@@ -51,7 +53,7 @@ export const LAMBDA_TASK_SUFFIX = "-lambda";
 export const RDS_TASK_SUFFIX = "-rds";
 export const ELB_TASK_SUFFIX = "-elb";
 export const WAF_TASK_SUFFIX = "-waf";
-export const VPC_TASK_SUFFIX = "-vpc";
+export const VPC_TASK_SUFFIX = "-vpcflow";
 export const AWSCONFIG_TASK_SUFFIX = "-config";
 
 export const LAMBDA_TASK_GROUP_PREFIX = "/aws/lambda/";
@@ -65,22 +67,18 @@ export const RDS_LOG_GROUP_SUFFIX_AUDIT = "/audit";
 export const EN_LANGUAGE_LIST = ["en", "en_US", "en_GB"];
 export const ZH_LANGUAGE_LIST = ["zh", "zh_CN", "zh_TW"];
 
-export const GITHUB_LINK = "https://github.com/awslabs/log-hub";
+export const GITHUB_LINK =
+  "https://github.com/aws-solutions/" + SLUTION_REPO_NAME;
 export const URL_FEEDBACK = GITHUB_LINK + "/issues";
 
-const LOGHUB_DOCS_DOMAIN = "https://awslabs.github.io";
-const LOGHUB_DEV_DOCS_DOMAIN = "https://log-hub.docs.solutions.gcr.aws.dev";
-export const LOGHUB_DOCS_LINK = `${LOGHUB_DOCS_DOMAIN}/log-hub/`;
-export const buildLogHubDocsLink = (
-  lang: string,
-  link: string,
-  version?: string
-) => {
-  return `${
-    version === "develop"
-      ? LOGHUB_DEV_DOCS_DOMAIN
-      : LOGHUB_DOCS_DOMAIN + "/log-hub"
-  }${ZH_LANGUAGE_LIST.indexOf(lang) >= 0 ? "/zh" : "/en"}/${link}`;
+export const WORKSHOP_DOCS_LINK =
+  "https://catalog.workshops.aws/centralized-logging-with-opensearch";
+
+const SOLUTION_DOCS_DOMAIN =
+  "https://docs.aws.amazon.com/solutions/latest/centralized-logging-with-opensearch";
+
+export const buildSolutionDocsLink = (link: string) => {
+  return `${SOLUTION_DOCS_DOMAIN}/${link}`;
 };
 
 export const HELP_ALB_LINK =
@@ -189,6 +187,12 @@ export const ASG_LAUNCH_TEMPLATE_LINK =
 export const ASG_LAUNCH_CONFIG_LINK =
   "https://docs.aws.amazon.com/autoscaling/ec2/userguide/change-launch-config.html";
 
+export const S3_STORAGE_CLASS_LINK =
+  "https://aws.amazon.com/s3/storage-classes/";
+
+export const CLOUDWATCH_PRICING_LINK =
+  "https://aws.amazon.com/cloudwatch/pricing/";
+
 export enum ServiceLogType {
   Amazon_S3 = "Amazon_S3",
   Amazon_RDS = "Amazon_RDS",
@@ -209,38 +213,47 @@ export const ServiceTypeDescMap: ServiceTypeDesc = {
   Amazon_S3: {
     desc: "<bucket name>" + S3_TASK_SUFFIX + "-YYYY-MM-DD",
     suffix: S3_TASK_SUFFIX + "-YYYY-MM-DD",
+    pureSuffix: S3_TASK_SUFFIX,
   },
   Amazon_RDS: {
     desc: "<db identifier>" + RDS_TASK_SUFFIX + "-YYYY-MM-DD",
     suffix: RDS_TASK_SUFFIX + "-YYYY-MM-DD",
+    pureSuffix: RDS_TASK_SUFFIX,
   },
   Amazon_CloudTrail: {
     desc: "<cloudtrail name>" + CLOUDTRAIL_TASK_SUFFIX + "-YYYY-MM-DD",
     suffix: CLOUDTRAIL_TASK_SUFFIX + "-YYYY-MM-DD",
+    pureSuffix: CLOUDTRAIL_TASK_SUFFIX,
   },
   Amazon_CloudFront: {
     desc: "<distribution id>" + CLOUDFRONT_TASK_SUFFIX + "-YYYY-MM-DD",
     suffix: CLOUDFRONT_TASK_SUFFIX + "-YYYY-MM-DD",
+    pureSuffix: CLOUDFRONT_TASK_SUFFIX,
   },
   Amazon_Lambda: {
     desc: "<function name>" + LAMBDA_TASK_SUFFIX + "-YYYY-MM-DD",
     suffix: LAMBDA_TASK_SUFFIX + "-YYYY-MM-DD",
+    pureSuffix: LAMBDA_TASK_SUFFIX,
   },
   Amazon_ELB: {
     desc: "<elb name>" + ELB_TASK_SUFFIX + "-YYYY-MM-DD",
     suffix: ELB_TASK_SUFFIX + "-YYYY-MM-DD",
+    pureSuffix: ELB_TASK_SUFFIX,
   },
   Amazon_WAF: {
     desc: "<waf name>" + WAF_TASK_SUFFIX + "-YYYY-MM-DD",
     suffix: WAF_TASK_SUFFIX + "-YYYY-MM-DD",
+    pureSuffix: WAF_TASK_SUFFIX,
   },
   Amazon_VPCLogs: {
     desc: "<vpc name>" + VPC_TASK_SUFFIX + "-YYYY-MM-DD",
     suffix: VPC_TASK_SUFFIX + "-YYYY-MM-DD",
+    pureSuffix: VPC_TASK_SUFFIX,
   },
   Amazon_Config: {
     desc: "<config name>" + AWSCONFIG_TASK_SUFFIX + "-YYYY-MM-DD",
     suffix: AWSCONFIG_TASK_SUFFIX + "-YYYY-MM-DD",
+    pureSuffix: AWSCONFIG_TASK_SUFFIX,
   },
 };
 
@@ -263,6 +276,19 @@ export const ServiceTypeMap: LogMapType = {
   WAFSampled: "WAFSampled",
   VPC: "VPC",
   Config: "Config",
+};
+
+export const ServiceTypeMapMidSuffix: any = {
+  S3: S3_TASK_SUFFIX,
+  CloudTrail: CLOUDTRAIL_TASK_SUFFIX,
+  CloudFront: CLOUDFRONT_TASK_SUFFIX,
+  Lambda: LAMBDA_TASK_SUFFIX,
+  RDS: RDS_TASK_SUFFIX,
+  ELB: ELB_TASK_SUFFIX,
+  WAF: WAF_TASK_SUFFIX,
+  WAFSampled: WAF_TASK_SUFFIX,
+  VPC: VPC_TASK_SUFFIX,
+  Config: AWSCONFIG_TASK_SUFFIX,
 };
 
 export const ServiceLogTypeMap: LogMapType = {
@@ -600,3 +626,122 @@ export const RFC3164_DEFAULT_REGEX = `^\\<(?<pri>[0-9]+)\\>(?<time>[^ ]* {1,2}[^
 export const RFC5424_DEFAULT_REGEX = `^\\<(?<pri>[0-9]{1,5})\\>1 (?<time>[^ ]+) (?<host>[^ ]+) (?<ident>[^ ]+) (?<pid>[-0-9]+) (?<msgid>[^ ]+) (?<extradata>(\\[(.*)\\]|-)) (?<message>.+)$`;
 
 export const NOT_SUPPORT_KDS_AUTO_SCALING_REGION = ["cn-northwest-1"];
+
+export const CloudFrontFieldTypeList = [
+  { name: "asn", value: "asn" },
+  { name: "c-country", value: "c-country" },
+  { name: "c-ip", value: "c-ip" },
+  { name: "c-ip-version", value: "c-ip-version" },
+  { name: "c-port", value: "c-port" },
+  {
+    name: "cache-behavior-path-pattern",
+    value: "cache-behavior-path-pattern",
+  },
+  { name: "cs-accept", value: "cs-accept" },
+  { name: "cs-accept-encoding", value: "cs-accept-encoding" },
+  { name: "cs-bytes", value: "cs-bytes" },
+  { name: "cs-cookie", value: "cs-cookie" },
+  { name: "cs-header-names", value: "cs-header-names" },
+  { name: "cs-headers", value: "cs-headers" },
+  { name: "cs-headers-count", value: "cs-headers-count" },
+  { name: "cs-host", value: "cs-host" },
+  { name: "cs-method", value: "cs-method" },
+  { name: "cs-protocol", value: "cs-protocol" },
+  { name: "cs-protocol-version", value: "cs-protocol-version" },
+  { name: "cs-referer", value: "cs-referer" },
+  { name: "cs-uri-query", value: "cs-uri-query" },
+  { name: "cs-uri-stem", value: "cs-uri-stem" },
+  { name: "cs-user-agent", value: "cs-user-agent" },
+  { name: "fle-encrypted-fields", value: "fle-encrypted-fields" },
+  { name: "fle-status", value: "fle-status" },
+  { name: "origin-fbl", value: "origin-fbl" },
+  { name: "origin-lbl", value: "origin-lbl" },
+  {
+    name: "primary-distribution-dns-name",
+    value: "primary-distribution-dns-name",
+  },
+  { name: "primary-distribution-id", value: "primary-distribution-id" },
+  { name: "sc-bytes", value: "sc-bytes" },
+  { name: "sc-content-len", value: "sc-content-len" },
+  { name: "sc-content-type", value: "sc-content-type" },
+  { name: "sc-range-end", value: "sc-range-end" },
+  { name: "sc-range-start", value: "sc-range-start" },
+  { name: "sc-status", value: "sc-status" },
+  { name: "ssl-cipher", value: "ssl-cipher" },
+  { name: "ssl-protocol", value: "ssl-protocol" },
+  { name: "time-taken", value: "time-taken" },
+  { name: "time-to-first-byte", value: "time-to-first-byte" },
+  { name: "timestamp", value: "timestamp" },
+  {
+    name: "x-edge-detailed-result-type",
+    value: "x-edge-detailed-result-type",
+  },
+  { name: "x-edge-location", value: "x-edge-location" },
+  { name: "x-edge-request-id", value: "x-edge-request-id" },
+  {
+    name: "x-edge-response-result-type",
+    value: "x-edge-response-result-type",
+  },
+  { name: "x-edge-result-type", value: "x-edge-result-type" },
+  { name: "x-forwarded-for", value: "x-forwarded-for" },
+  { name: "x-host-header", value: "x-host-header" },
+];
+
+export const FieldSortingArr = [
+  "timestamp",
+  "c-ip",
+  "time-to-first-byte",
+  "sc-status",
+  "sc-bytes",
+  "cs-method",
+  "cs-protocol",
+  "cs-host",
+  "cs-uri-stem",
+  "cs-bytes",
+  "x-edge-location",
+  "x-edge-request-id",
+  "x-host-header",
+  "time-taken",
+  "cs-protocol-version",
+  "c-ip-version",
+  "cs-user-agent",
+  "cs-referer",
+  "cs-cookie",
+  "cs-uri-query",
+  "x-edge-response-result-type",
+  "x-forwarded-for",
+  "ssl-protocol",
+  "ssl-cipher",
+  "x-edge-result-type",
+  "fle-encrypted-fields",
+  "fle-status",
+  "sc-content-type",
+  "sc-content-len",
+  "sc-range-start",
+  "sc-range-end",
+  "c-port",
+  "x-edge-detailed-result-type",
+  "c-country",
+  "cs-accept-encoding",
+  "cs-accept",
+  "cache-behavior-path-pattern",
+  "cs-headers",
+  "cs-header-names",
+  "cs-headers-count",
+  "primary-distribution-id",
+  "primary-distribution-dns-name",
+  "origin-fbl",
+  "origin-lbl",
+  "asn",
+];
+
+export const PROXY_INSTANCE_TYPE_AND_NUMBER_LIST = [
+  { conUser: "4", instanceType: "t3.nano", instanceNumber: "1" },
+  { conUser: "6", instanceType: "t3.micro", instanceNumber: "1" },
+  { conUser: "8", instanceType: "t3.nano", instanceNumber: "2" },
+  { conUser: "10", instanceType: "t3.small", instanceNumber: "1" },
+  { conUser: "12", instanceType: "t3.micro", instanceNumber: "2" },
+  { conUser: "20", instanceType: "t3.small", instanceNumber: "2" },
+  { conUser: "25", instanceType: "t3.large", instanceNumber: "1" },
+  { conUser: "50+", instanceType: "t3.large", instanceNumber: "2" },
+];

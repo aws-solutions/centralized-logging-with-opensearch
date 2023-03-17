@@ -2,11 +2,11 @@ The solution consists of the following components:
 
 ## Domain Management
 
-This solution uses Amazon OpenSearch Service (AOS) as the underlying engine to store and analyze logs. You can import an existing AOS domain for log ingestion, and provide an access proxy to the AOS dashboards within VPC. Moreover, you can set up recommended CloudWatch alarms for AOS.
+This solution uses Amazon OpenSearch Service as the underlying engine to store and analyze logs. You can import an existing Amazon OpenSearch Service domain for log ingestion, and provide an access proxy to the Amazon OpenSearch Service dashboards within VPC. Moreover, you can set up recommended CloudWatch alarms for Amazon OpenSearch Service.
 
 ## Analytics Pipelines
 
-A log pipeline includes a series of log processing steps, including collecting logs from sources, processing and sending them to Amazon OpenSearch Service for further analysis. Log Hub supports AWS Service log ingestion and server-side application log ingestion.
+A log pipeline includes a series of log processing steps, including collecting logs from sources, processing and sending them to Amazon OpenSearch Service for further analysis. Centralized Logging with OpenSearch supports AWS Service log ingestion and server-side application log ingestion.
 
 ### Service Log Pipeline
 

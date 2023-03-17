@@ -52,7 +52,8 @@ def handle_error(func):
         except Exception as e:
             logger.error(e, exc_info=True)
             raise RuntimeError(
-                "Unknown exception, please check Lambda log for more details")
+                "Unknown exception, please check Lambda log for more details"
+            )
 
     return wrapper
 
@@ -83,30 +84,32 @@ def child_create_app_log_ingestion(**args):
     # create a list to keep all processes
     processes = []
     with app_log_ingestion_table.batch_writer() as batch:
-        for groupId in group_ids:
-            id = group_ingestion_map.get(groupId)
+        for group_id in group_ids:
+            ingestion_id = group_ingestion_map.get(group_id)
             # create the process, pass instance and connection
             ingestion_task = IngestionTask(
                 "FluentBit",
-                groupId,
+                group_id,
                 args["confId"],
                 args["appPipelineId"],
-                id,
+                ingestion_id,
                 args["is_multiline"],
                 args["current_conf"].get("timeKey", ""),
             )
-            instance_group_resp = instance_group_table.get_item(
-                Key={"id": groupId})
-            if "Item" in instance_group_resp and "groupType" in instance_group_resp[
-                    "Item"]:
-                sourceType = instance_group_resp["Item"]["groupType"]
+            instance_group_resp = instance_group_table.get_item(Key={"id": group_id})
+            if (
+                "Item" in instance_group_resp
+                and "groupType" in instance_group_resp["Item"]
+            ):
+                source_type = instance_group_resp["Item"]["groupType"]
             else:
-                sourceType = args["sourceType"]
-            if sourceType == SOURCETYPE.EC2.value:
+                source_type = args["sourceType"]
+            if source_type == SOURCETYPE.EC2.value:
                 process = Process(target=ingestion_task.create_ingestion())
-            elif sourceType == SOURCETYPE.ASG.value:
-                process = Process(target=ingestion_task.
-                                  create_ingestion_to_auto_scaling_group())
+            elif source_type == SOURCETYPE.ASG.value:
+                process = Process(
+                    target=ingestion_task.create_ingestion_to_auto_scaling_group()
+                )
             processes.append(process)
 
     # start all processes
@@ -116,29 +119,27 @@ def child_create_app_log_ingestion(**args):
     for process in processes:
         process.join()
 
-    with app_log_ingestion_table.batch_writer(
-            overwrite_by_pkeys=["id"]) as batch:
-        for groupId in group_ids:
-            id = group_ingestion_map.get(groupId)
-            source_info = instance_group_table.get_item(
-                Key={"id": groupId})["Item"]
+    with app_log_ingestion_table.batch_writer(overwrite_by_pkeys=["id"]) as batch:
+        for group_id in group_ids:
+            ingestion_id = group_ingestion_map.get(group_id)
+            source_info = instance_group_table.get_item(Key={"id": group_id})["Item"]
             batch.put_item(
                 Item={
-                    "id": id,
+                    "id": ingestion_id,
                     "confId": args["confId"],
                     "logPath": args.get("logPath", ""),
                     "accountId": source_info.get("accountId", account_id),
                     "region": source_info.get("region", default_region),
-                    "sourceId": groupId,
+                    "sourceId": group_id,
                     "stackId": args.get("stackId", ""),
                     "stackName": args.get("stackName", ""),
                     "appPipelineId": args["appPipelineId"],
-                    "createdDt": datetime.utcnow().strftime(
-                        "%Y-%m-%dT%H:%M:%SZ"),
+                    "createdDt": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
                     "status": "ACTIVE",
                     "sourceType": args["sourceType"],
                     "tags": args.get("tags", []),
-                })
+                }
+            )
 
 
 def child_delete_app_log_ingestion(**args):
@@ -146,22 +147,21 @@ def child_delete_app_log_ingestion(**args):
     logger.info("Delete AppLogIngestion Status in DynamoDB")
     # create a list to keep all processes
     processes = []
-    for id in args["ids"]:
+    for ingestion_id in args["ids"]:
         # create the process, pass instance and connection
-        ingestion = app_log_ingestion_table.get_item(Key={"id": id})["Item"]
-        confId = ingestion.get("confId")
+        ingestion = app_log_ingestion_table.get_item(Key={"id": ingestion_id})["Item"]
+        conf_id = ingestion.get("confId")
         group_id = ingestion.get("sourceId")
-        current_conf = log_conf_table.get_item(Key={"id": confId})["Item"]
-        is_multiline = True if current_conf.get(
-            "multilineLogParser") else False
-        ingestion_task = IngestionTask("FluentBit", group_id, "", "", id,
-                                       is_multiline)
+        current_conf = log_conf_table.get_item(Key={"id": conf_id})["Item"]
+        is_multiline = True if current_conf.get("multilineLogParser") else False
+        ingestion_task = IngestionTask("FluentBit", group_id, "", "", ingestion_id, is_multiline)
         group_type = get_asg_group_type(group_id)
         if group_type == SOURCETYPE.EC2.value:
             process = Process(target=ingestion_task.delete_ingestion())
         elif group_type == SOURCETYPE.ASG.value:
-            process = Process(target=ingestion_task.
-                              delete_ingestion_from_auto_scaling_group())
+            process = Process(
+                target=ingestion_task.delete_ingestion_from_auto_scaling_group()
+            )
         processes.append(process)
     # start all processes
     for process in processes:
@@ -171,22 +171,20 @@ def child_delete_app_log_ingestion(**args):
         process.join()
 
     # Update the app log ingestion table
-    for id in args["ids"]:
+    for ingestion_id in args["ids"]:
         app_log_ingestion_table.update_item(
-            Key={"id": id},
-            UpdateExpression="SET #status = :s, #updatedDt= :uDt",
-            ExpressionAttributeNames={
-                "#status": "status",
-                "#updatedDt": "updatedDt"
-            },
+            Key={"id": ingestion_id},
+            UpdateExpression="SET #s = :s, updatedDt= :uDt",
+            ExpressionAttributeNames={"#s": "status"},
             ExpressionAttributeValues={
-                ':s': 'INACTIVE',
-                ':uDt': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-            })
+                ":s": "INACTIVE",
+                ":uDt": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+            },
+        )
 
 
-def get_asg_group_type(groupId):
-    instance_group_resp = instance_group_table.get_item(Key={"id": groupId})
+def get_asg_group_type(group_id):
+    instance_group_resp = instance_group_table.get_item(Key={"id": group_id})
     if "Item" not in instance_group_resp:
         raise APIException("Instance Group Not Found")
 

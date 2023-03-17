@@ -30,14 +30,12 @@ const ConfigDesc: React.FC = () => {
         <ExtLink to={AWS_CONFIG_LOG_LINK}>
           {t("servicelog:config.desc.configLog")}
         </ExtLink>{" "}
-        {t("servicelog:config.desc.intoDomain")}
+        {t("intoDomain")}
       </div>
       <div className="ingest-desc-title">
         {t("servicelog:config.desc.archName")}
       </div>
-      <div className="ingest-desc-desc">
-        {t("servicelog:config.desc.archDesc")}
-      </div>
+      <div className="ingest-desc-desc">{t("archDesc")}</div>
       <div className="mt-10">
         <img
           className="img-border"

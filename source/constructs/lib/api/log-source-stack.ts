@@ -17,6 +17,7 @@ import {
     Construct,
 } from 'constructs';
 import {
+    Aws,
     Duration,
     RemovalPolicy,
     aws_dynamodb as ddb,
@@ -71,7 +72,7 @@ export class LogSourceStack extends Construct {
                 name: 'id',
                 type: ddb.AttributeType.STRING
             },
-            billingMode: ddb.BillingMode.PROVISIONED,
+            billingMode: ddb.BillingMode.PAY_PER_REQUEST,
             removalPolicy: RemovalPolicy.DESTROY,
             encryption: ddb.TableEncryption.DEFAULT,
             pointInTimeRecovery: true,
@@ -95,7 +96,7 @@ export class LogSourceStack extends Construct {
                 name: 'id',
                 type: ddb.AttributeType.STRING
             },
-            billingMode: ddb.BillingMode.PROVISIONED,
+            billingMode: ddb.BillingMode.PAY_PER_REQUEST,
             removalPolicy: RemovalPolicy.DESTROY,
             encryption: ddb.TableEncryption.DEFAULT,
             pointInTimeRecovery: true,
@@ -120,7 +121,7 @@ export class LogSourceStack extends Construct {
                 name: 'id',
                 type: ddb.AttributeType.STRING
             },
-            billingMode: ddb.BillingMode.PROVISIONED,
+            billingMode: ddb.BillingMode.PAY_PER_REQUEST,
             removalPolicy: RemovalPolicy.DESTROY,
             encryption: ddb.TableEncryption.DEFAULT,
             pointInTimeRecovery: true,
@@ -157,7 +158,7 @@ export class LogSourceStack extends Construct {
                 SOLUTION_ID: solution_id,
                 SOLUTION_VERSION: process.env.VERSION ? process.env.VERSION : 'v1.0.0',
             },
-            description: 'Log Hub - LogSource APIs Resolver',
+            description: `${Aws.STACK_NAME} - LogSource APIs Resolver`,
         })
 
         // Grant permissions to the logSource lambda
@@ -180,7 +181,7 @@ export class LogSourceStack extends Construct {
         });
 
         // Set resolver for releted logSource API methods
-        LogSourceLambdaDS.createResolver({
+        LogSourceLambdaDS.createResolver('getLogSource', {
             typeName: 'Query',
             fieldName: 'getLogSource',
             requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
@@ -188,35 +189,15 @@ export class LogSourceStack extends Construct {
         })
 
 
-        LogSourceLambdaDS.createResolver({
-            typeName: 'Query',
-            fieldName: 'listLogSources',
-            requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-            responseMappingTemplate: appsync.MappingTemplate.fromFile(path.join(__dirname, '../../graphql/vtl/log_source/ListLogSourcesResp.vtl')),
-        })
-
-        LogSourceLambdaDS.createResolver({
+        LogSourceLambdaDS.createResolver('createLogSource', {
             typeName: 'Mutation',
             fieldName: 'createLogSource',
             requestMappingTemplate: appsync.MappingTemplate.fromFile(path.join(__dirname, '../../graphql/vtl/log_source/CreateLogSource.vtl')),
             responseMappingTemplate: appsync.MappingTemplate.lambdaResult()
         })
 
-        LogSourceLambdaDS.createResolver({
-            typeName: 'Mutation',
-            fieldName: 'deleteLogSource',
-            requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-            responseMappingTemplate: appsync.MappingTemplate.lambdaResult()
-        })
 
-        LogSourceLambdaDS.createResolver({
-            typeName: 'Mutation',
-            fieldName: 'updateLogSource',
-            requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-            responseMappingTemplate: appsync.MappingTemplate.lambdaResult()
-        })
-
-        LogSourceLambdaDS.createResolver({
+        LogSourceLambdaDS.createResolver('checkCustomPort', {
             typeName: 'Query',
             fieldName: 'checkCustomPort',
             requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),

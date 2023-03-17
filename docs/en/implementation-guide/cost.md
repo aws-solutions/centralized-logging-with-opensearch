@@ -2,10 +2,10 @@
 
 !!! Important "Important"
 
-    The cost estimation described in this section are just examples, which are calculated based on assumptions, and may vary in your environment. 
+    The following cost estimations are examples and may vary depending on your environment. 
 
 
-You will be responsible for the cost of the AWS services used when running the solution. As of October 2022, the main factors affecting the solution cost include:
+You will be responsible for the cost of the AWS services used when running the solution. The main factors affecting the solution cost include:
 
 - Type of logs to be ingested
 - Volume of logs to be ingested/processed
@@ -13,11 +13,7 @@ You will be responsible for the cost of the AWS services used when running the s
 - Location of logs
 - Additional features
 
-The following examples will demonstrate the cost estimation of 10/100/1000 GB daily log ingestion. The total cost is composed of [**Amazon OpenSearch Cost**](#amazon-opensearch-cost), [**Processing Cost**](#processing-cost), and [**Additional Features Cost**](#additional-features-cost). 
-
-!!! Note "Note"
-    
-    All the cost estimation is based on the AWS service price in AWS N. Virginia Region (us-east-1). 
+As of March 2023, the following examples demonstrate the cost estimation of 10/100/1000 GB daily log ingestion for running this solution with default settings in the US East (N. Virginia) Region. The total cost is composed of [**Amazon OpenSearch Cost**](#amazon-opensearch-cost), [**Processing Cost**](#processing-cost), and [**Additional Features Cost**](#additional-features-cost).  
 
 ## Amazon OpenSearch Cost
 
@@ -26,7 +22,7 @@ The following examples will demonstrate the cost estimation of 10/100/1000 GB da
 - **Tiering**: The days stored in each tier. For example, 7H + 23W + 60C indicates that the log is stored in hot tier for 7 days, warm tier for 23 days, and cold tier for 60 days.
 - **Replica**: The number of shard replicas.
 
-| Daily log Volume (GB)	 | Retention (days)	 | Tiering	         | Replica	 | OD Monthly ($)	| AURI_1 Monthly  ($)	| Dedicated Master	 | Data Node	      | EBS (GB)	 | UltraWarm Nodes	   | UltraWarm/Cold S3 Storage (GB)	 | OD cost per GB ($)	 | AURI_1 cost per GB ($)	 |
+| Daily log Volume (GB)	 | Retention (days)	 | Tiering	         | Replica	 | OD Monthly (USD)	| AURI_1 Monthly  (USD)	| Dedicated Master	 | Data Node	      | EBS (GB)	 | UltraWarm Nodes	   | UltraWarm/Cold S3 Storage (GB)	 | OD cost per GB (USD)	 | AURI_1 cost per GB ($)	 |
 |------------------------|-------------------|------------------|----------|-------------------|-----------------|-----------|-------------|--------------------------|-----------------|---------------------|-------------------------|-------------------------|
 | 10	                    | 30	               | 30H	             | 0	       | 216.28	        | 158.54	        | N/A	              | c6g.large[2]	   | 380	      | N/A	        | 0	                       | 0.72093	            | 0.52847	                |
 | 10	                    | 30	               | 30H	             | 1	       | 289.35	        | 223.94	        | N/A	              | m6g.large[2]	   | 760	      | N/A	        | 0	                       | 0.9645	             | 0.74647	                |
@@ -45,91 +41,72 @@ The following examples will demonstrate the cost estimation of 10/100/1000 GB da
 
 ## Processing Cost
 
-### AWS Service Logs
+### Log ingestion through Amazon S3
 
-Depending on the log location, the cost of ingesting and processing service logs may vary. 
+This section is applicable to:
 
-#### Logs in Amazon S3
+- AWS service logs including Amazon S3 access logs, CloudFront standard logs, CloudTrail logs (S3), Application Load Balancing access logs, WAF logs, VPC Flow logs (S3), AWS Config logs, Amazon RDS/Aurora logs, and AWS Lambda Logs.
+- Application Logs that use Amazon S3 as data buffer.
 
-!!! note "Note"
+Assumptions:
 
-    Ingesting AWS service logs from S3 will incur SQS and S3 request fees which are very low, usually within the AWS Free Tier.
-
-Here are the assumptions:
-
-- AWS Services save logs to Amazon S3 every 5 minutes in gzip format (most of AWS services output logs in gzip). 
-- A 4MiB compressed log file in S3 is roughly 100MiB in raw log size.
-- A Lambda with 1GB memory takes about 26 seconds to process a 4MiB log file, namely 260 ms per MiB raw logs. 
-- The maximum compressed log file size is 5MiB.
+- The logs stored in Amazon S3 are in gzip format. 
+- A 4MB compressed log file in S3 is roughly 100 MB in raw log size.
+- A Lambda with 1 GB memory takes about 26 seconds to process a 4 MB compressed log file, namely 260 milliseconds (ms) per MB raw logs. 
+- The maximum compressed log file size is 5 MB.
+- Ingesting logs from S3 will incur SQS and S3 request fees which are very low, or usually within the free tier.
 
 You have `N` GB raw log per day, and the daily cost estimation is as follows: 
 
-- Lambda Cost = 260 ms per MiB x 1024 MiB x `N` GB/day x $0.0000000167 per ms
+- Lambda Cost = 260 ms per MB x 1024 MB x `N` GB/day x $0.0000000167 per ms
 - S3 Storage Cost = $0.023 per GB x `N `GB/day x 4% (compression)
 
 The total monthly cost for ingesting AWS service logs is:
 
 **Total Monthly Cost** = (Lambda Cost + S3 Storage Cost) x 30 days
 
-| Daily Log Volume | Daily Lambda Cost ($) | Daily S3 Storage Cost ($) | Monthly Cost ($) |
+| Daily Log Volume | Daily Lambda Cost (USD) | Daily S3 Storage Cost (USD) | Monthly Cost (USD) |
 | ---------------- | ------------------- | ----------------------- | --------- |
 | 10               | 0.044               | 0.009                   | 1.610     |
 | 100              | 0.445               | 0.092                   | 16.099    |
 | 1000             | 4.446               | 0.920                   | 160.986   |
 
 
-### Application Logs
+For Amazon RDS/Aurora logs and AWS Lambda Logs that deliver to CloudWatch Logs, apart from the S3 and Lambda costs listed above, there is additional cost of using Kinesis Data Firehose (KDF) to subscribe to the CloudWatch Logs Stream and put them into an Amazon S3 bucket, and KDF is charging for a 5KB increments (less than 5KB per record is billed as 5KB). 
+
+Assuming Log size is 0.2 KB per record, then the daily KDF cost is estimated as below:
+
+* Kinesis Data Firehose Cost = $0.029 per GB x `N` GB/day x (5KB/0.2 KB) 
+
+For example, for 1GB logs per day, the extra monthly cost of KDF is $21.75.
 
 !!! important "Important"
-
-    If you have multiple log formats (index), you need to make cost estimation for each of them.
-
-Depending on the log location, and the [Log Buffer](./applications/index.md#log-buffer), the cost of ingesting and 
-processing application logs may vary. 
-
-There is no additional cost when you ingest data from log agents to the OpenSearch domain directly. However,  it is recommended to use Log Buffer because it can help to aggregate logs and protect OpenSearch clusters from overwhelming during peak hours. If you have small volume of logs and you are very confident that the size of the OpenSearch clusters have the capacity to ingest logs during peak hours, you can go without the Log Buffer.
-
-#### Log ingestion through Amazon S3
-
-The cost estimation is based on the following assumptions and facts:
-
-- The average log message size is 1 KB.
-- The daily log volume is `L` GB.
-- The Lambda processor memory is 1024 MiB.
-- The log agent deliveries logs to Amazon S3 when it hits the Buffer size (50 MiB) or Buffer interval (60 seconds) thresholds. The condition satisfied first triggers data delivery to Amazon S3.
-- The compression rate of Gzip format is 20%. 
-- The Lambda runtime to process log less than 10 MiB is 1000ms.
-- Each log file will encounter one S3 PUT request to upload the log file, and one S3 GET request to read the log file.
-- The daily number of files `N` saved on Amazon S3 = Max(`L` GB per day x 1024 / 50 MiB, 24 hours x 60 seconds/hour)
-- The daily volume of files `V` saved on Amazon S3 = `L` GB per day x 20% compression rate
-
-Base on the above assumptions, here is the daily cost estimation formula:
-
-- Amazon S3 storage Cost = $0.023 per GB x daily volume of files `V`
-- Amazon S3 request Cost = ($0.005 per 1000 requests + $0.0004 per 1000 requests) x daily number of files `N` / 1000
-- Lambda Cost = $0.0000000167 per 1ms x 1000 ms per invocation x daily number of files `N`
-
-**Total Monthly Cost** = (Lambda Cost + S3 Storage Cost + S3 request Cost) x 30 days
-
-| Daily Log Volume (GB) | Daily Number of files | Daily S3 Storage Cost ($) | Daily S3 Request Cost ($) | Daily Lambda Cost ($) | Monthly Cost ($) |
-| --------------------- | --------------------- | ------------------------- | ------------------------- | --------------------- | ---------------- |
-| 10                    | 1,440                 | 0.046                     | 0.008                     | 0.024                 | 2.335            |
-| 100                   | 2,048                 | 0.460                     | 0.011                     | 0.034                 | 15.158           |
-| 1000                  | 20,480                | 4.600                     | 0.111                     | 0.342                 | 151.578          |
+    
+    If you want to save cost charged by Kinesis Data Firehose, make sure you activate logs only when needed. For example, don't activate RDS general logs unless required. 
 
 
-#### Log ingestion through Amazon Kinesis Data Streams
+### Logs ingestion through Amazon Kinesis Data Streams
+
+This section is applicable to:
+
+- AWS Services Logs including CloudFront real-time logs, CloudTrail logs (CloudWatch), and VPC Flow logs (CloudWatch).
+- Application Logs that use Amazon KDS as data buffer
+
+
+!!! Important "Important"
+
+    The cost estimation does not include the logging cost of service. For example, CloudFront real-time logs are charged based on the number of log lines generated ($0.01 for every 1,000,000 log lines). There are also logs delivery to CloudWatch charges for CloudTrail and VPC Flow logs that enabled CloudWatch Logging. Please check the service pricing for more details.
 
 The cost estimation is based on the following assumptions and facts:
 
 - The average log message size is 1 KB.
 - The daily log volume is `L` GB.
-- The Lambda processor memory is 1024 MiB.
-- Every Lambda invocation processes 1 MiB logs.
-- One Lambda invocation processes one shard of Kinesis, and Lambda can scale up to more concurrent innovations to process multiple shards. 
-- The Lambda runtime to process log less than 5 MiB is 500ms.
+- The Lambda processor memory is 1024 MB.
+- Every Lambda invocation processes 1 MB logs.
+- One Lambda invocation processes one shard of Kinesis, and Lambda can scale up to more concurrent invocations to process multiple shards. 
+- The Lambda runtime to process log less than 5 MB is 500ms.
 - 30% additional shards are provided to handle traffic jitter.
-- One Kinesis shard intake log size is =  1 MiB /second x 3600 seconds per hour x 24 hours x 0.7 = 60.48 GB/day.
+- One Kinesis shard intake log size is =  1 MB /second x 3600 seconds per hour x 24 hours x 0.7 = 60.48 GB/day.
 - The desired Kinesis Shard number `S` is = Round_up_to_next_integer(Daily log volume `L` / 60.48).
 
 Based on the above assumptions, here is the daily cost estimation formula:
@@ -137,6 +114,7 @@ Based on the above assumptions, here is the daily cost estimation formula:
 - Kinesis Shard Hour Cost = $0.015 / shard hour x 24 hours per day x `S` shards
 - Kinesis PUT Payload Unit Cost =  $0.014 per million units x 1 millions per GB x `L` GB per day
 - Lambda Cost = $0.0000000167 per 1ms x 500 ms per invocation x 1,000 invocations per GB x `L` GB per day
+
 
 **Total Monthly Cost** = (Kinesis Shard Hour Cost + Kinesis PUT Payload Unit Cost + Lambda Cost) x 30 days
 
@@ -146,32 +124,33 @@ Based on the above assumptions, here is the daily cost estimation formula:
 | 100                   | 2      | 0.72                          | 1.4                                 | 0.835             | 88.65     |
 | 1000                  | 17     | 6.12                          | 14                                  | 8.35              | 854.1     |
 
+
 ## Additional Features Cost
 
 !!! note "Note"
 
-    You will not be charged if you choose not to use the additional features in the Log Hub console.
+    You will not be charged if you do not use the additional features in the Centralized Logging with OpenSearch console.
 
 ### Access Proxy
 
-If you deploy the [Access Proxy](./domains/proxy.md) through Log Hub, the following charges will apply.  
+If you deploy the [Access Proxy](./domains/proxy.md) through Centralized Logging with OpenSearch, additional charges will apply. The total cost varies depending on the instance type and number of instances. As of March 2023, the following are two examples for the cost estimation in the US East (N. Virginia) Region.
 
-The cost estimation is based on the following assumptions and facts:
+#### Example 1: Instance Type - t3.nano, Instance Number - 2
+- EC2 cost = t3.nano 1Y RI All Upfront price $26.28 x 2 / 12 months = $4.38/month
+- EBS Cost = EBS $0.1 GB/month x 8 GB x 2 = $1.6/month (The EBS attached to the EC2 instance is 8 GB)
+- Elastic Load Balancer Cost = $0.0225 per ALB-hour x 720 hours/month = $16.2/month
 
-- Proxy module provisioned 2 x t3.large instances.
-- 1 year all upfront reserved instances pricing model applies.
-- The 1 year all upfront reserved instances for t3.large instance is $426.612/year.
-- The EBS attached to the EC2 instance is 8 GB.
+**Total Monthly Cost** = $4.38 EC2 Cost + $1.6 EBS Cost + $16.2 Elastic Load Balancer Cost = **$22.18**
 
-Based on the above assumptions, here is the monthly cost estimation formula:
 
-- EC2 Cost = EC2 $426.612 x 2 / 12 months  = $71.1/month
-- EBS Cost = EBS $0.1 GB/month x 8 GB x 2 = $1.6/month
+#### Example 2: Instance Type - t3.large, Instance Number - 2
+- EC2 Cost = t3.large 1Y RI All Upfront $426.612 x 2  / 12 months  = $71.1/month
+- EBS Cost = $0.1 GB/month x 8 GB x 2 = $1.6/month (The EBS attached to the EC2 instance is 8 GB)
 - Elastic Load Balancer Cost = $0.0225 per ALB-hour x 720 hours/month = $16.2/month
 
 **Total Monthly Cost** = $71.1 EC2 Cost + $1.6 EBS Cost + $16.2 Elastic Load Balancer Cost = **$88.9**
 
 ### Alarms
 
-If you deploy the [Alarms](./domains/alarms.md) through Log Hub, the [CloudWatch Price](https://aws.amazon.com/cloudwatch/pricing/) will apply.
+If you deploy the [Alarms](./domains/alarms.md) through Centralized Logging with OpenSearch, the [CloudWatch Price](https://aws.amazon.com/cloudwatch/pricing/) will apply.
 

@@ -84,7 +84,7 @@ const AmplifyLoginPage: React.FC = () => {
     <div>
       <AmplifyAuthenticator>
         <AmplifySignIn
-          headerText={t("signin.signInToLogHub")}
+          headerText={t("signin.signInToSolution")}
           slot="sign-in"
           usernameAlias="username"
           submitButtonText={t("signin.signIn")}
@@ -387,13 +387,6 @@ const OIDCAppRouter: React.FC = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
 
-  // console.info("auth.activeNavigator:", auth.activeNavigator);
-  // switch (auth.activeNavigator) {
-  //   case "signinSilent":
-  //     return <div>Signing you in...</div>;
-  //   case "signoutRedirect":
-  //     return <div>Signing you out...</div>;
-  // }
   useEffect(() => {
     // the `return` is important - addAccessTokenExpiring() returns a cleanup function
     return auth?.events?.addAccessTokenExpiring((event) => {
@@ -447,7 +440,7 @@ const OIDCAppRouter: React.FC = () => {
               auth.signinRedirect();
             }}
           >
-            {t("signin.signInToLogHub")}
+            {t("signin.signInToSolution")}
           </Button>
         </div>
       }
@@ -473,7 +466,6 @@ const App: React.FC = () => {
     });
     setAuthType(configData.aws_appsync_authenticationType);
     if (configData.aws_appsync_authenticationType === AppSyncAuthType.OPEN_ID) {
-      // Amplify.configure(configData);
       const settings = {
         userStore: new WebStorageStateStore({ store: window.localStorage }),
         authority: configData.aws_oidc_provider,
@@ -513,7 +505,6 @@ const App: React.FC = () => {
     document.title = t("title");
     if (window.performance) {
       if (performance.navigation.type === 1) {
-        // console.info("This page is reloaded");
         const timeStamp = new Date().getTime();
         setLoadingConfig(true);
         Axios.get(`/aws-exports.json?timestamp=${timeStamp}`).then((res) => {
@@ -523,7 +514,6 @@ const App: React.FC = () => {
           setLoadingConfig(false);
         });
       } else {
-        // console.info("This page is not reloaded");
         setLocalStorageAfterLoad();
       }
     } else {

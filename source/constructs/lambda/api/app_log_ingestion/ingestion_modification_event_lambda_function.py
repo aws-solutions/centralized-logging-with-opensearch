@@ -23,7 +23,8 @@ dynamodb = boto3.resource("dynamodb", config=default_config)
 sqs = boto3.resource("sqs", config=default_config)
 app_log_ingestion_lambda_arn = os.environ.get("APP_LOG_INGESTION_LAMBDA_ARN")
 instance_group_modification_event_queue_name = os.environ.get(
-    'INSTANCE_GROUP_MODIFICATION_EVENT_QUEUE_NAME')
+    "INSTANCE_GROUP_MODIFICATION_EVENT_QUEUE_NAME"
+)
 sqs_event_table_name = os.environ.get("SQS_EVENT_TABLE")
 sqs_event_table = dynamodb.Table(sqs_event_table_name)
 
@@ -46,7 +47,8 @@ def handle_error(func):
         except Exception as e:
             logger.error(e, exc_info=True)
             raise RuntimeError(
-                "Unknown exception, please check Lambda log for more details")
+                "Unknown exception, please check Lambda log for more details"
+            )
 
     return wrapper
 
@@ -54,9 +56,9 @@ def handle_error(func):
 @handle_error
 def lambda_handler(event, context):
     # logger.info("Received event: " + json.dumps(event, indent=2))
-    message = event['Records'][0]
-    messageBody = json.loads(message['body'])
-    action = messageBody['info']['fieldName']
+    message = event["Records"][0]
+    message_body = json.loads(message["body"])
+    action = message_body["info"]["fieldName"]
 
     if action == "asyncAddInstancesToInstanceGroup":
         return async_add_instances_to_instance_group(message)
@@ -68,32 +70,34 @@ def lambda_handler(event, context):
 
 
 def async_add_instances_to_instance_group(message):
-    messageId = message['messageId']
-    messageBody = json.loads(message['body'])
-    groupId = messageBody['arguments']['groupId']
-    instanceSet = set(messageBody['arguments']['instanceSet'])
-    if EC2LogIngestionSvc.does_event_already_exist(messageId):
-        raise RuntimeError(
-            f"Duplicate sqs event received in modification event lambda.")
+    message_id = message["messageId"]
+    message_body = json.loads(message["body"])
+    group_id = message_body["arguments"]["groupId"]
+    instance_set = set(message_body["arguments"]["instanceSet"])
+    if EC2LogIngestionSvc.does_event_already_exist(message_id):
+        raise RuntimeError("Duplicate sqs event received in modification event lambda.")
     else:
         EC2LogIngestionSvc.create_sqs_event_record(message)
         EC2LogIngestionSvc.apply_app_log_ingestion_for_new_added_instances(
-            EC2LogIngestionSvc.
-            get_current_ingestion_relationship_from_instance_meta(groupId),
-            groupId, instanceSet)
-        EC2LogIngestionSvc.update_sqs_event_record(messageId, "DONE")
+            EC2LogIngestionSvc.get_current_ingestion_relationship_from_instance_meta(
+                group_id
+            ),
+            group_id,
+            instance_set,
+        )
+        EC2LogIngestionSvc.update_sqs_event_record(message_id, "DONE")
 
 
 def async_delete_instances_from_instance_group(message):
-    messageId = message['messageId']
-    messageBody = json.loads(message['body'])
-    groupId = messageBody['arguments']['groupId']
-    instanceSet = set(messageBody['arguments']['instanceSet'])
-    if EC2LogIngestionSvc.does_event_already_exist(messageId):
-        raise RuntimeError(
-            f"Duplicate sqs event received in modification event lambda.")
+    message_id = message["messageId"]
+    message_body = json.loads(message["body"])
+    group_id = message_body["arguments"]["groupId"]
+    instance_set = set(message_body["arguments"]["instanceSet"])
+    if EC2LogIngestionSvc.does_event_already_exist(message_id):
+        raise RuntimeError("Duplicate sqs event received in modification event lambda.")
     else:
         EC2LogIngestionSvc.create_sqs_event_record(message)
         EC2LogIngestionSvc.remove_app_log_ingestion_from_new_removed_instances(
-            groupId, instanceSet)
-        EC2LogIngestionSvc.update_sqs_event_record(messageId, "DONE")
+            group_id, instance_set
+        )
+        EC2LogIngestionSvc.update_sqs_event_record(message_id, "DONE")

@@ -15,16 +15,16 @@ limitations under the License.
 */
 import {
     Construct,
-  } from 'constructs';
-import { 
+} from 'constructs';
+import {
     Fn,
     aws_stepfunctions_tasks as tasks,
     aws_stepfunctions as sfn,
     aws_iam as iam,
     aws_logs as logs
-    
- } from 'aws-cdk-lib';  
- 
+
+} from 'aws-cdk-lib';
+
 import { Table, ITable } from 'aws-cdk-lib/aws-dynamodb';
 export interface PipelineFlowProps {
 
@@ -81,7 +81,7 @@ export class PipelineFlowStack extends Construct {
                     o.eavs[':' + words.join('_')] = v;
                 } else {
                     o.eans['#' + word] = word;
-                };
+                }
                 return o;
             });
             return acc.concat(o);
@@ -112,7 +112,7 @@ export class PipelineFlowStack extends Construct {
             updateExpression,
             resultPath: sfn.JsonPath.DISCARD,
         })
-    };
+    }
 
     constructor(scope: Construct, id: string, props: PipelineFlowProps) {
         super(scope, id);
@@ -156,11 +156,11 @@ export class PipelineFlowStack extends Construct {
         });
 
         // Role for state machine
-        const LogHubAPIPipelineFlowSMRole = new iam.Role(this, 'SMRole', {
+        const pipelineFlowSMRole = new iam.Role(this, 'SMRole', {
             assumedBy: new iam.ServicePrincipal('states.amazonaws.com'),
         })
         // Least Privilage to enable logging for state machine
-        LogHubAPIPipelineFlowSMRole.addToPolicy(
+        pipelineFlowSMRole.addToPolicy(
             new iam.PolicyStatement({
                 actions: [
                     "logs:PutResourcePolicy",
@@ -182,15 +182,15 @@ export class PipelineFlowStack extends Construct {
 
         const pipeSM = new sfn.StateMachine(this, 'PipelineFlowSM', {
             definition: cfnTask.next(checkStatus),
-            role: LogHubAPIPipelineFlowSMRole,
+            role: pipelineFlowSMRole,
             logs: {
                 destination: logGroup,
                 level: sfn.LogLevel.ALL,
             },
         });
 
-        // const cfnPipeFlow = pipeSM.node.defaultChild as sfn.CfnStateMachine;
-        // cfnPipeFlow.overrideLogicalId('LogHubPipelineFlowSM')
+        const cfnPipeFlow = pipeSM.node.defaultChild as sfn.CfnStateMachine;
+        cfnPipeFlow.overrideLogicalId('ServicePipelineFlowSM')
 
         this.stateMachineArn = pipeSM.stateMachineArn
 

@@ -21,10 +21,9 @@ default_config = config.Config(**user_agent_config)
 
 default_region = os.environ.get("AWS_REGION")
 
-dist_output_bucket = os.environ.get("DIST_OUTPUT_BUCKET", "aws-gcr-solutions")
-template_prefix = (
-    f"https://{dist_output_bucket}.s3.amazonaws.com/log-hub/{solution_version}"
-)
+template_output_bucket = os.environ.get("TEMPLATE_OUTPUT_BUCKET", "aws-gcr-solutions")
+solution_name = os.environ.get("SOLUTION_NAME", "log-hub")
+template_prefix = f"https://{template_output_bucket}.s3.amazonaws.com/{solution_name}/{solution_version}"
 
 sts = boto3.client("sts", config=default_config)
 account_id = sts.get_caller_identity()["Account"]
@@ -39,10 +38,10 @@ class Context:
         else:
             self._state = QueryState(self, args)
 
-        svcMgr = SvcManager()
+        svc_mgr = SvcManager()
         self._deploy_account_id = args.get("deployAccountId") or account_id
         self._deploy_region = args.get("deployRegion") or default_region
-        self._cfn = svcMgr.get_client(
+        self._cfn = svc_mgr.get_client(
             sub_account_id=args.get("deployAccountId") or account_id,
             service_name="cloudformation",
             type=Boto3API.CLIENT,
@@ -167,8 +166,7 @@ class QueryState(State):
         }
 
 
-def lambda_handler(event, context):
-    # print("Received event: " + json.dumps(event, indent=2))
+def lambda_handler(event, _):
     """
     It's expected that the event (input) must be in a format of
     {
@@ -209,11 +207,9 @@ def start_cfn(cfn_client: boto3.client, stack_name, pattern, params):
         Capabilities=[
             "CAPABILITY_IAM",
         ],
-        # RoleARN=exec_role_arn,
         EnableTerminationProtection=False,
     )
 
-    # print(response)
     stack_id = response["StackId"]
     return stack_id
 
@@ -222,7 +218,6 @@ def stop_cfn(cfn_client: boto3.client, stack_id):
     logger.info("Delete CloudFormation deployment")
     cfn_client.delete_stack(
         StackName=stack_id,
-        # RoleARN=exec_role_arn,
     )
 
 
@@ -231,7 +226,6 @@ def get_cfn_status(cfn_client: boto3.client, stack_id):
     response = cfn_client.describe_stacks(
         StackName=stack_id,
     )
-    # print(response)
 
     stack = response["Stacks"][0]
     stack_status = stack["StackStatus"]
@@ -240,7 +234,6 @@ def get_cfn_status(cfn_client: boto3.client, stack_id):
 
 
 def get_template_url(pattern):
-    # TODO: Might consider to use SSM parameter store
     tpl_list = {
         "S3": f"{template_prefix}/S3AccessLog.template",
         "CloudTrail": f"{template_prefix}/CloudTrailLog.template",
@@ -254,17 +247,17 @@ def get_template_url(pattern):
         "Config": f"{template_prefix}/ConfigLog.template",
         "ProxyForOpenSearch": f"{template_prefix}/NginxForOpenSearch.template",
         "AlarmForOpenSearch": f"{template_prefix}/AlarmForOpenSearch.template",
-        # "KDSStack": f"{template_prefix}/KDSStack.template",
-        # "KDSStackNoAutoScaling": f"{template_prefix}/KDSStackNoAutoScaling.template",
         "S3toKDSStack": f"{template_prefix}/S3toKDSStack.template",
-        # "OpenSearchAdminStack":
-        # f"{template_prefix}/OpenSearchAdminStack.template",
         "AppLogKDSBuffer": f"{template_prefix}/AppLogKDSBuffer.template",
         "AppLogKDSBufferNoAutoScaling": f"{template_prefix}/AppLogKDSBufferNoAutoScaling.template",
         "AppLogMSKBuffer": f"{template_prefix}/AppLogMSKBuffer.template",
         "AppLogS3Buffer": f"{template_prefix}/AppLogS3Buffer.template",
         "AppLog": f"{template_prefix}/AppLog.template",
         "SyslogtoECSStack": f"{template_prefix}/SyslogtoECSStack.template",
+        "CloudFrontRealtimeLogKDSBufferNoAutoScaling": f"{template_prefix}/CloudFrontRealtimeLogKDSBufferNoAutoScaling.template",
+        "CloudFrontRealtimeLogKDSBuffer": f"{template_prefix}/CloudFrontRealtimeLogKDSBuffer.template",
+        "CloudWatchLogKDSBuffer": f"{template_prefix}/CloudWatchLogKDSBuffer.template",
+        "CloudWatchLogKDSBufferNoAutoScaling": f"{template_prefix}/CloudWatchLogKDSBufferNoAutoScaling.template",
     }
 
     if pattern not in tpl_list:

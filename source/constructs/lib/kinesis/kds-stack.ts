@@ -33,7 +33,7 @@ import {
 } from "aws-cdk-lib";
 import * as path from "path";
 import { KinesisEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
-import { ISecurityGroup, IVpc, SecurityGroup, Vpc } from "aws-cdk-lib/aws-ec2";
+import { ISecurityGroup, IVpc } from "aws-cdk-lib/aws-ec2";
 import { NagSuppressions } from 'cdk-nag';
 
 import { AppLogProcessor } from "../pipeline/application/app-log-processor";
@@ -86,7 +86,11 @@ export interface KDSStackProps {
   readonly minCapacity: number;
   readonly maxCapacity: number;
 
-  readonly enableAutoScaling: boolean
+  readonly enableAutoScaling: boolean;
+
+  readonly env?: { [key: string]: string };
+
+  readonly source?: 'MSK' | 'KDS';
 }
 
 export class KDSStack extends Construct {
@@ -109,13 +113,14 @@ export class KDSStack extends Construct {
     this.kinesisStreamName = kinesisStream.streamName
 
     const logProcessor = new AppLogProcessor(this, "LogProcessor", {
-      source: "KDS",
+      source: props.source || 'KDS',
       indexPrefix: props.indexPrefix,
       vpc: props.vpc,
       securityGroup: props.securityGroup,
       endpoint: props.endpoint,
       engineType: props.engineType,
       backupBucketName: props.backupBucketName,
+      env: props.env,
     });
     NagSuppressions.addResourceSuppressions(logProcessor, [
       {
@@ -278,7 +283,7 @@ export class KDSStack extends Construct {
         }),
         // endpointTypes: [apigateway.EndpointType.PRIVATE]
       });
-      const requestValidator = new apigateway.RequestValidator(this, 'MyRequestValidator', {
+      new apigateway.RequestValidator(this, 'MyRequestValidator', {
         restApi: api,
         requestValidatorName: 'requestValidatorName',
         validateRequestBody: true,

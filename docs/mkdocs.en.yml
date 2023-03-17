@@ -40,7 +40,7 @@ nav:
       - Applications Logs:
           - Overview: implementation-guide/applications/index.md
           - Prerequisites:
-              - Create a Log Source: implementation-guide/applications/create-log-source.md
+              - Create a log source: implementation-guide/applications/create-log-source.md
               - Create an application pipeline: implementation-guide/applications/create-applog-pipeline.md
           - Apache HTTP Server: implementation-guide/applications/apache.md
           - Nginx: implementation-guide/applications/nginx.md
@@ -51,38 +51,11 @@ nav:
       - Cross-Account Ingestion: implementation-guide/link-account/index.md
       - FAQ: implementation-guide/faq.md
       - Troubleshooting: implementation-guide/trouble-shooting.md
-      - Upgrading the solution: implementation-guide/upgrade.md
-      - Uninstalling the solution: implementation-guide/uninstall.md
+      - Uninstalling the Solution: implementation-guide/uninstall.md
       - Resources:
           - OpenSSL Installation: implementation-guide/resources/open-ssl.md
           - Upload Certificate: implementation-guide/resources/upload-ssl-certificate.md
           - AWS Services: implementation-guide/resources/aws-services.md
       - Release Notes: implementation-guide/release-notes.md
-  - Roadmap: "https://github.com/orgs/awslabs/projects/58"
-  - Workshop: "https://aws-samples.github.io/log-hub-workshop"
-  - Technical Designs:
-      - Overview: designs/index.md
-      - Concepts: designs/concepts.md
-      - High Level Design: designs/solution/high-level-design.md
-      - Domain Management:
-          - Component Design: designs/domain-management/component-design.md
-          - Process Design: designs/domain-management/process-design.md
-          - API Design: designs/domain-management/api-design.md
-          - Data Model Design: designs/domain-management/data-model-design.md
-      - Service Log Analytics:
-          - Component Design: designs/service-log/component-design.md
-          - Process Design: designs/service-log/process-design.md
-          - API Design: designs/service-log/api-design.md
-          - Data Model Design: designs/service-log/data-model-design.md
-          - "Tutorial: Extend Service Logs": designs/service-log/tutorial-extend-service-log.md
-      - Application Log:
-          - Overview: designs/app-log/log-analytics-pipeline-app.md
-          - Architecture Design: designs/app-log/architecture-design.md
-          - Process Design: designs/app-log/process-design.md
-          - API Design: designs/app-log/api-design.md
-          - Data Model Design: designs/app-log/data-model-design.md
-      - EKS Cluster Log:
-          - Architecture Design: designs/eks-log/architecture-design.md
-          - Process Design: designs/eks-log/process-design.md
-          - API Design: designs/eks-log/api-design.md
-      - Assets: designs/assets.md
+  - Roadmap: "https://github.com/orgs/aws-solutions/projects/17/"
+  - Workshop: "https://catalog.workshops.aws/centralized-logging-with-opensearch/"

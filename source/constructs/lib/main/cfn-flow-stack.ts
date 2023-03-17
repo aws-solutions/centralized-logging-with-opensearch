@@ -37,14 +37,16 @@ export interface CfnFlowProps {
    *
    * @default - None.
    */
-  stackPrefix: string;
+  readonly stackPrefix: string;
 
   /**
    * A table to store cross account info.
    *
    * @default - None.
    */
-  subAccountLinkTable: ddb.Table;
+  readonly subAccountLinkTable: ddb.Table;
+
+  readonly solutionId: string;
 }
 
 /**
@@ -58,9 +60,13 @@ export class CfnFlowStack extends Construct {
   constructor(scope: Construct, id: string, props: CfnFlowProps) {
     super(scope, id);
 
-    const solution_id = "SO8025";
+    const stackPrefixOld = "LogHub"; // This is the old stack name prefix for backward-compatible support
 
     const stackArn = `arn:${Aws.PARTITION}:cloudformation:${Aws.REGION}:${Aws.ACCOUNT_ID}:stack/${props.stackPrefix}*`;
+    const stackArnOld = `arn:${Aws.PARTITION}:cloudformation:${Aws.REGION}:${Aws.ACCOUNT_ID}:stack/${stackPrefixOld}*`;
+    const templateBucket =
+      process.env.TEMPLATE_OUTPUT_BUCKET || "aws-gcr-solutions";
+    const solutionName = process.env.SOLUTION_TRADEMARKEDNAME || "log-hub"; // Old name
 
     // Create a Lambda to handle all the cloudformation releted tasks.
     const cfnHandler = new lambda.Function(this, "CfnHelper", {
@@ -73,15 +79,14 @@ export class CfnFlowStack extends Construct {
       timeout: Duration.seconds(60),
       memorySize: 128,
       environment: {
-        DIST_OUTPUT_BUCKET: process.env.DIST_OUTPUT_BUCKET
-          ? process.env.DIST_OUTPUT_BUCKET
-          : "aws-gcr-solutions",
-        SOLUTION_ID: solution_id,
+        TEMPLATE_OUTPUT_BUCKET: templateBucket,
+        SOLUTION_NAME: solutionName,
+        SOLUTION_ID: props.solutionId,
         SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
-        SOLUTION_VERSION: process.env.VERSION ? process.env.VERSION : "v1.0.0",
+        SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
       },
       description:
-        "Log Hub - Helper function to handle CloudFormation deployment",
+        `${Aws.STACK_NAME} - Helper function to handle CloudFormation deployment`,
     });
 
     // Grant permissions to the lambda
@@ -107,7 +112,7 @@ export class CfnFlowStack extends Construct {
         }),
         new iam.PolicyStatement({
           effect: iam.Effect.ALLOW,
-          resources: [stackArn],
+          resources: [stackArn, stackArnOld],
           actions: ["cloudformation:DescribeStacks"],
         }),
 
@@ -258,30 +263,19 @@ export class CfnFlowStack extends Construct {
             "lambda:UpdateFunctionCode",
             "lambda:PublishVersion",
             "lambda:TagResource",
-            "lambda:ListVersionsByFunction",
             "lambda:GetLayerVersion",
             "lambda:GetAccountSettings",
             "lambda:GetFunctionConfiguration",
             "lambda:GetLayerVersionPolicy",
-            "lambda:ListProvisionedConcurrencyConfigs",
             "lambda:GetProvisionedConcurrencyConfig",
-            "lambda:ListTags",
-            "lambda:ListLayerVersions",
-            "lambda:ListLayers",
-            "lambda:ListCodeSigningConfigs",
+            "lambda:List*",
             "lambda:GetAlias",
-            "lambda:ListFunctions",
             "lambda:GetEventSourceMapping",
             "lambda:GetFunction",
-            "lambda:ListAliases",
             "lambda:GetFunctionUrlConfig",
-            "lambda:ListFunctionUrlConfigs",
             "lambda:GetFunctionCodeSigningConfig",
-            "lambda:ListFunctionEventInvokeConfigs",
-            "lambda:ListFunctionsByCodeSigningConfig",
             "lambda:GetFunctionConcurrency",
             "lambda:GetFunctionEventInvokeConfig",
-            "lambda:ListEventSourceMappings",
             "lambda:GetCodeSigningConfig",
             "lambda:GetPolicy",
           ],
@@ -386,22 +380,20 @@ export class CfnFlowStack extends Construct {
         new iam.PolicyStatement({
           actions: [
             "ec2:createTags",
-            "ec2:DescribeImages",
-            "ec2:DescribeVpcs",
-            "ec2:DescribeInstances",
-            "ec2:DescribeSubnets",
-            "ec2:DescribeVolumes",
-            "ec2:DescribeTags",
+            "ec2:Describe*",
             "ec2:CreateSecurityGroup",
             "ec2:DeleteSecurityGroup",
-            "ec2:DescribeSecurityGroups",
             "ec2:RevokeSecurityGroupEgress",
             "ec2:AuthorizeSecurityGroupEgress",
-            "ec2:DescribeKeyPairs",
             "ec2:AuthorizeSecurityGroupIngress",
             "ec2:RevokeSecurityGroupIngress",
-            "ec2:DescribeInternetGateways",
-            "ec2:DescribeAccountAttributes",
+            "ec2:CreateLaunchTemplate",
+            "ec2:CreateLaunchTemplateVersion",
+            "ec2:GetLaunchTemplateData",
+            "ec2:RunInstances",
+            "e2:TerminateInstances",
+            "ec2:DeleteLaunchTemplate",
+            "ec2:DeleteLaunchTemplateVersions",
           ],
           resources: [`*`],
         }),
@@ -463,6 +455,18 @@ export class CfnFlowStack extends Construct {
         }),
         new iam.PolicyStatement({
           actions: [
+            "cloudfront:GetDistri*",
+            "cloudfront:UpdateDistribution",
+            "cloudfront:DeleteRealtimeLogConfig",
+            "cloudfront:GetRealtimeLogConfig",
+            "cloudfront:CreateRealtimeLogConfig",
+            "cloudfront:ListRealtimeLogConfigs",
+            "cloudfront:UpdateRealtimeLogConfig",
+          ],
+          resources: [`*`],
+        }),
+        new iam.PolicyStatement({
+          actions: [
             "iam:CreateInstanceProfile",
             "iam:CreateRole",
             "iam:PutRolePolicy",
@@ -481,12 +485,16 @@ export class CfnFlowStack extends Construct {
             "iam:DeleteRolePolicy",
             "iam:DetachRolePolicy",
             "iam:CreateServiceLinkedRole",
+            "iam:GetInstanceProfile",
           ],
           resources: [
             `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/${props.stackPrefix}*`,
+            `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/${stackPrefixOld}*`,
             `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/aws-service-role/custom-resource.application-autoscaling.amazonaws.com/*`,
             `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:policy/${props.stackPrefix}*`,
+            `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:policy/${stackPrefixOld}*`,
             `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:instance-profile/${props.stackPrefix}*`,
+            `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:instance-profile/${stackPrefixOld}*`,
             `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling`,
             `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/aws-service-role/elasticloadbalancing.amazonaws.com/AWSServiceRoleForElasticLoadBalancing`,
             `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService`,
@@ -534,10 +542,10 @@ export class CfnFlowStack extends Construct {
       timeout: Duration.seconds(30),
       memorySize: 128,
       environment: {
-        SOLUTION_ID: solution_id,
-        SOLUTION_VERSION: process.env.VERSION ? process.env.VERSION : "v1.0.0",
+        SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+        SOLUTION_ID: props.solutionId,
       },
-      description: "Log Hub - Helper function to handle Step Functions",
+      description: `${Aws.STACK_NAME} - Helper function to handle Step Functions`,
     });
 
     const sfnHandlerPolicy = new iam.Policy(this, "SfnHandlerPolicy", {
@@ -607,7 +615,6 @@ export class CfnFlowStack extends Construct {
       )
       .otherwise(sfnNotifyTask);
 
-    // const chain = cfnTask.next(wait.next(cfnQueryTask.next(stackCompleted)))
     const chain = cfnTask.next(stackFailed);
 
     // State machine log group for error logs
@@ -619,11 +626,11 @@ export class CfnFlowStack extends Construct {
     });
 
     // Role for state machine
-    const LogHubCfnFlowSMRole = new iam.Role(this, "SMRole", {
+    const cfnFlowSMRole = new iam.Role(this, "SMRole", {
       assumedBy: new iam.ServicePrincipal("states.amazonaws.com"),
     });
     // Least Privilage to enable logging for state machine
-    LogHubCfnFlowSMRole.addToPolicy(
+    cfnFlowSMRole.addToPolicy(
       new iam.PolicyStatement({
         actions: [
           "logs:PutResourcePolicy",
@@ -642,7 +649,7 @@ export class CfnFlowStack extends Construct {
         resources: [logGroup.logGroupArn],
       })
     );
-    NagSuppressions.addResourceSuppressions(LogHubCfnFlowSMRole, [
+    NagSuppressions.addResourceSuppressions(cfnFlowSMRole, [
       {
         id: "AwsSolutions-IAM5",
         reason: "This role doesnot have wildcard permission",
@@ -652,14 +659,14 @@ export class CfnFlowStack extends Construct {
     // Create the state machine
     const cfnFlowSM = new sfn.StateMachine(this, "SM", {
       definition: chain,
-      role: LogHubCfnFlowSMRole,
+      role: cfnFlowSMRole,
       logs: {
         destination: logGroup,
         level: sfn.LogLevel.ALL,
       },
       timeout: Duration.minutes(120),
     });
-    NagSuppressions.addResourceSuppressions(LogHubCfnFlowSMRole, [
+    NagSuppressions.addResourceSuppressions(cfnFlowSMRole, [
       { id: "AwsSolutions-SF2", reason: "This sm does not need xray" },
     ]);
 

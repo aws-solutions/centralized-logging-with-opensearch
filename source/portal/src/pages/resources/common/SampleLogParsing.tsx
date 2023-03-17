@@ -85,8 +85,6 @@ const SampleLogParsing: React.FC<SampleLogParsingProps> = (
   const [timeKeyFormatInvalid, setTimeKeyFormatInvalid] = useState(false);
   const [timeKeyFormatValid, setTimeKeyFormatValid] = useState(false);
 
-  const NOT_SUPPORT_FORMAT_STRS = ["%L"];
-
   const isCustomType = () => {
     return (
       logType === LogType.JSON ||
@@ -388,7 +386,6 @@ const SampleLogParsing: React.FC<SampleLogParsingProps> = (
                 changeSampleLogInvalid(false);
                 setShowValidInfo(false);
                 changeSampleLog(event.target.value);
-                // changeRegExpList && changeRegExpList([]);
               }}
             />
           </div>
@@ -533,10 +530,6 @@ const SampleLogParsing: React.FC<SampleLogParsingProps> = (
                               <div className="pl-10">
                                 {
                                   <Button
-                                    disabled={NOT_SUPPORT_FORMAT_STRS.some(
-                                      (substring) =>
-                                        item?.format?.includes(substring)
-                                    )}
                                     loadingColor="#666"
                                     loading={item.loadingCheck}
                                     onClick={() => {
@@ -639,14 +632,7 @@ const SampleLogParsing: React.FC<SampleLogParsingProps> = (
                             !logConfig.timeKey ||
                             !logConfig.regexKeyList.find(
                               (element) => element.key === logConfig.timeKey
-                            )?.format ||
-                            NOT_SUPPORT_FORMAT_STRS.some((substring) =>
-                              logConfig?.regexKeyList
-                                ?.find(
-                                  (element) => element.key === logConfig.timeKey
-                                )
-                                ?.format?.includes(substring)
-                            )
+                            )?.format
                           }
                           loadingColor="#666"
                           loading={loadingCheckTimeKeyFormat}

@@ -5,30 +5,6 @@
             "i-0e0464d25bf022b05"
         ]
     },
-    "identity": {
-        "claims": {
-            "origin_jti": "fa2eacd9-fafe-4341-b6ee-e2e2682d7dd4",
-            "sub": "2a7ef9c9-e698-4efd-b695-167f3117bf9b",
-            "aud": "4od1ntt74k78q7vn86gipkus4n",
-            "event_id": "7cf8a656-d199-41be-a096-5d198175b3a4",
-            "token_use": "id",
-            "auth_time": 1668146677,
-            "iss": "https://cognito-idp.us-west-1.amazonaws.com/us-west-1_rDsiKDovC",
-            "cognito:username": "2a7ef9c9-e698-4efd-b695-167f3117bf9b",
-            "exp": 1668150277,
-            "iat": 1668146677,
-            "jti": "09d1cdce-d8d9-4e56-826e-daf33eae8c7d",
-            "email": "chenyuc@amazon.com"
-        },
-        "defaultAuthStrategy": "ALLOW",
-        "groups": null,
-        "issuer": "https://cognito-idp.us-west-1.amazonaws.com/us-west-1_rDsiKDovC",
-        "sourceIp": [
-            "13.248.48.12"
-        ],
-        "sub": "2a7ef9c9-e698-4efd-b695-167f3117bf9b",
-        "username": "2a7ef9c9-e698-4efd-b695-167f3117bf9b"
-    },
     "source": null,
     "result": null,
     "request": {

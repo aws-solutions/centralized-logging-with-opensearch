@@ -212,7 +212,6 @@ const ConfigDetail: React.FC<RouteComponentProps<MatchParams>> = (
                 loading={loadingDelete}
                 btnType="primary"
                 onClick={() => {
-                  // setOpenDeleteModel(false);
                   confimRemoveLogConfig();
                 }}
               >

@@ -33,13 +33,18 @@
             "awsRegion": {
                 "type": "keyword"
             },
-            "requestParameter": {
+            "requestParameters": {
                 "properties": {
                     "endTime": {
-                        "type": "date"
+                        "type": "date",
+                        "format": "epoch_millis||MMM d, yyyy h:mm:ss a||MMM d, yyyy, h:mm:ss a"
                     },
                     "startTime": {
-                        "type": "date"
+                        "type": "date",
+                        "format": "epoch_millis||MMM d, yyyy h:mm:ss a||MMM d, yyyy, h:mm:ss a"
+                    },
+                    "parameters": {
+                        "type": "object"
                     }
                 }
             },
@@ -49,7 +54,23 @@
                         "type": "keyword"
                     },
                     "lastModified": {
-                        "type": "date"
+                        "type": "date",
+                        "format": "strict_date_optional_time||MMM d, yyyy h:mm:ss a||MMM d, yyyy, h:mm:ss a"
+                    },
+                    "createTime": {
+                        "type": "date",
+                        "format": "epoch_millis||MMM d, yyyy h:mm:ss a||MMM d, yyyy, h:mm:ss a"
+                    },
+                    "createdDate": {
+                        "type": "date",
+                        "format": "strict_date_optional_time||MMM d, yyyy h:mm:ss a||MMM d, yyyy, h:mm:ss a"
+                    },
+                    "lastUpdatedDate": {
+                        "type": "date",
+                        "format": "strict_date_optional_time||MMM d, yyyy h:mm:ss a||MMM d, yyyy, h:mm:ss a"
+                    },
+                    "role": {
+                        "type": "object"
                     }
                 }
             },

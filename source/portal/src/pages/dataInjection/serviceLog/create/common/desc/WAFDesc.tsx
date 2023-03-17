@@ -30,14 +30,12 @@ const WAFDesc: React.FC = () => {
         <ExtLink to={WAF_ACCESS_LOG_LINK}>
           {t("servicelog:waf.desc.wafLog")}
         </ExtLink>{" "}
-        {t("servicelog:waf.desc.intoDomain")}
+        {t("intoDomain")}
       </div>
       <div className="ingest-desc-title">
         {t("servicelog:waf.desc.archName")}
       </div>
-      <div className="ingest-desc-desc">
-        {t("servicelog:waf.desc.archDesc")}
-      </div>
+      <div className="ingest-desc-desc">{t("archDesc")}</div>
       <div className="mt-10">
         <img
           className="img-border"

@@ -176,7 +176,7 @@ const Permission: React.FC<PermissionProps> = (props: PermissionProps) => {
       });
       console.info("resData:", resData);
       const dataLogAccountList: SubAccountLink[] =
-        resData.data.listSubAccountLinks.subAccountLinks;
+        resData.data.listSubAccountLinks?.subAccountLinks || [];
       setLoadingData(false);
       const tmpPermissionJSON = buildPermissionJSON(dataLogAccountList);
       setJsonData(JSON.stringify(tmpPermissionJSON, null, 2));

@@ -28,7 +28,6 @@ import { listServicePipelines } from "graphql/queries";
 import { Parameter, PipelineStatus, ServicePipeline } from "API";
 import Modal from "components/Modal";
 import { deleteServicePipeline } from "graphql/mutations";
-// import Tooltip from "@material-ui/core/Tooltip";
 import LoadingText from "components/LoadingText";
 import { AUTO_REFRESH_INT, ServiceTypeMap } from "assets/js/const";
 import HelpPanel from "components/HelpPanel";

@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 import os
 
 import pytest
@@ -27,3 +30,5 @@ def default_environment_variables():
     os.environ["EKS_DEPLOY_KIND_TABLE"] = "LogAgentEKSDeploymentKindTable"
     os.environ["EKS_LOG_SOURCE_TABLE"] = "EKSClusterLogSourceTable"
     os.environ["APP_PIPELINE_TABLE"] = "AppPipelineTable"
+    os.environ["PIPELINE_TABLE"] = "PipelineTable"
+    os.environ["SUB_ACCOUNT_LINK_TABLE"] = "SubAccountLinkTable"

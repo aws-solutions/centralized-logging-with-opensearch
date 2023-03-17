@@ -1,48 +1,44 @@
-<p align="center">
-  <strong>
-    Log Hub - Build log analytics platform in 20 minutes
-  </strong>
-</p>
-<p align="center">
-Easily ingest, process and visualize application logs and AWS service logs on top of <strong><a href="https://aws.amazon.com/opensearch-service/">Amazon OpenSearch Service</a></strong>
-</p>
+# Centralized Logging with OpenSearch
 
-<p align="center">
-  <a href="https://awslabs.github.io/log-hub/">
-    <img src="https://raw.githubusercontent.com/awslabs/log-hub/main/Home.png" width="700" />
-  </a>
-</p>
+The Centralized Logging with OpenSearch solution provides comprehensive log management and analysis functions to help you simplify the build of log analytics pipelines. Built on top of <strong><a href="https://aws.amazon.com/opensearch-service/">Amazon OpenSearch Service</a></strong>, the solution allows you to streamline log ingestion, log processing, and log visualization. You can leverage the solution in multiple use cases, such as to abide by security and compliance regulations, achieve refined business operations, and enhance IT troubleshooting and maintenance.
 
-<p align="center">
-  <em>
-    Getting Started – 
-    <a href="https://awslabs.github.io/log-hub/">awslabs.github.io/log-hub</a>.
-  </em>
-</p>
+## Table of content
 
-## Features
+- [Solution Overview](#solution-overview)
+- [Architecture](#architecture)
+- [Deployment](#deployment)
+- [Customization](#customization)
+- [License](#License)
 
-### All-in-one log ingestion
-Provides a single web console to ingest both application logs and AWS service logs. The solution comes with built-in 
-log ingestion support for AWS services, for example, Amazon S3, Amazon CloudFront, Amazon CloudTrail, Amazon RDS, 
-AWS WAF, and Elastic Load Balancer. It reads logs from the default log output locations, buffers, parses and ingests 
-them into the OpenSearch cluster. Besides, Log Hub supports log ingestion from commonly used software like Nginx, 
-Apache HTTP Server, or custom applications by automating the log agent installation, monitoring and configuration update.
 
-### Codeless log processors
-Provides both log processor plugins developed by AWS and those verified by AWS, which allow customers to filter, 
-enrich and transform the raw log data through a few clicks on the web console. In this way, data engineers do not 
-need to spend much time on log data preparation before ingesting it into the search engine.
+## Solution Overview
 
-### Out-of-box dashboard templates
-Offers a collection of reference designs of Kibana templates, for both commonly used software such as Nginx, Apache 
-HTTP Server, Spring Boot, and AWS services such as Amazon S3, Amazon CloudFront, AWS WAF, and Amazon CloudTrail. The 
-visualization templates help customers to insert built-in sample dashboards into the Amazon OpenSearch Service (AOS) 
-domains on the web console, and the reference dashboards can further facilitate the creation of customized dashboards.
+The solution has the following features:
 
-## Quick start
+- **All-in-one log ingestion**: provides a single web console to ingest both application logs and AWS service logs into the Amazon OpenSearch (AOS) domains.
 
-[Deployment Guide](https://awslabs.github.io/log-hub/en/implementation-guide/deployment/)
+- **Codeless log processor**: supports log processor plugins developed by AWS. You are allowed to enrich the raw log data through a few clicks on the web console. 
+
+- **Out-of-box dashboard template**: offers a collection of reference designs of visualization templates, for both commonly used software such as Nginx and Apache HTTP Server, and AWS services such as Amazon S3 and Amazon CloudTrail. 
+
+
+
+## Architecture
+
+Deploying this solution with the default parameters builds the following environment in the AWS Cloud.
+
+![Architecture](architecture.png)
+
+
+## Deployment
+
+Please follow the [Implementation Guide](https://docs.aws.amazon.com/solutions/latest/centralized-logging-on-aws/) to deploy the solution in your aws account.
+
+
+## Customization
+
+Please follow the [Customization Guide](CUSTOM_BUILD.md) for custom build.
+
 
 ## License
 

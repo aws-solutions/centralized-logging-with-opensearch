@@ -5,7 +5,7 @@
     "type": "类型",
     "source": "日志源",
     "account": "账户",
-    "domain": "Amazon OpenSearch 域",
+    "domain": "OpenSearch 域",
     "created": "创建时间",
     "status": "状态"
   },
@@ -23,8 +23,17 @@
     "wafName": "Web ACL 名称",
     "vpcId": "VPC ID",
     "config": "Config 名称",
-    "aos": "Amazon OpenSearch",
-    "index": "Amazon OpenSearch 索引"
+    "aos": "OpenSearch",
+    "index": "OpenSearch 索引",
+    "indexSuffix": "索引后缀",
+    "rolloverSize": "索引滚动容量",
+    "compressionType": "压缩类型",
+    "samplingRate": "采样率",
+    "logType": "日志类型",
+    "kdsShardNum": "Kinesis Data Streams 分片数量",
+    "enableAS": "启用 Auto Scaling?",
+    "kdsMaxShard": "最大分片数",
+    "fields": "字段"
   },
   "tab": {
     "overview": "总览",
@@ -61,27 +70,27 @@
     "step": {
       "specifySetting": "指定设置",
       "logProcessing": "日志处理",
-      "specifyDomain": "指定 Amazon OpenSearch 域",
+      "specifyDomain": "指定 OpenSearch 域",
       "createTags": "创建标签"
     }
   },
   "cluster": {
-    "specifyDomain": "指定 Amazon OpenSearch 域",
-    "aosDomain": "Amazon OpenSearch 域",
+    "specifyDomain": "指定 OpenSearch 域",
+    "aosDomain": "OpenSearch 域",
     "aosDomainDesc1": "选择一个导入的集群。 你必须先",
     "aosDomainDesc2": "导入集群",
     "aosDomainDesc3": "再从列表中选择。",
-    "aosDomainError": "请选择一个 Amazon OpenSearch 域",
-    "selectOS": "选择一个 Amazon OpenSearch 域",
+    "aosDomainError": "请选择一个 OpenSearch 域",
+    "selectOS": "选择一个 OpenSearch 域",
     "sampleDashboard": "示例仪表板",
-    "sampleDashboardDesc": "在 Kibana 中创建一个预定义的示例仪表板。",
+    "sampleDashboardDesc": "在 OpenSearch dashboards 中创建一个预定义的示例仪表板。",
     "additionalSetting": "其他设置",
     "indexPrefix": "索引前缀",
     "indexPrefixDesc1": "默认索引是",
-    "indexPrefixDesc2": ". 日志收集器将追加-YYYY-MM-DD后缀.",
+    "indexPrefixDesc2": ". 您可以选择不同的后缀来调整索引滚动时间窗口。 例如，如果您选择“YYYY-MM-DD-HH”后缀，OpenSearch 将按小时滚动索引。",
     "inputIndex": "输入索引前缀",
     "logLifecycle": "日志生命周期",
-    "warmLog": "暖日志转换（天）",
+    "warmLog": "暖日志过渡设置",
     "warmLogDesc1": "将过期的日志从热存储移动到暖存储以节省成本。 在使用前您必须启用",
     "warmLogDesc2": "UltraWarm",
     "warmLogDesc3": "。",
@@ -90,14 +99,21 @@
     "coldLogDesc2": "Cold Storage",
     "coldLogDesc3": "。",
     "logRetention": "日志保留（天）",
-    "logRetentionDesc": "从 Amazon OpenSearch 域中删除过期日志。",
+    "logRetentionDesc": "从 OpenSearch 域中删除过期日志。",
     "shardNum": "分片数量",
-    "shardNumDesc": "将索引均匀分布在所有数据节点上的分片数量，将每个分片的大小保持在 10-50 GiB 之间",
+    "shardNumDesc": "指定分片的数量，在所有数据节点上均匀分布索引，每个分片的大小保持在 10-50GB 之间。",
     "inputShardNum": "请输入分片数",
     "replicaNum": "副本个数",
-    "replicaNumDesc": "Amazon OpenSearch 索引的副本个数。 每个副本都是索引的完整副本。",
+    "replicaNumDesc": "OpenSearch 索引的副本个数。 每个副本都是索引的完整副本。",
     "inputReplica": "请输入副本个数",
-    "shardNumError": "分片数量必须大于或者等于 1."
+    "shardNumError": "分片数量必须大于或者等于 1.",
+    "rolloverError": "索引滚动容量必须大于 0.",
+    "enableRolloverByCap": "按容量启用索引滚动",
+    "enableRolloverByCapDesc": "如果您启用此选项，当索引大小达到设置的指定大小时，OpenSearch 将滚动您的索引，而不管滚动时间窗口如何。 注意 OpenSearch 会自动在索引名称后附加一个 6 位数字的后缀。",
+    "compressType": "压缩类型",
+    "compressTypeDesc": "指定要用于此索引的压缩类型。 默认情况下，该解决方案使用 best_compression，它使用 DEFLATE 以获得更高的压缩率，但代价是存储字段的性能稍慢。 如果您更喜欢更快的存储字段性能而不是索引存储大小，则可以更改为 default。",
+    "warmImmediately": "立即将滚动索引传输到暖存储",
+    "warmByDays": "按时间移动日志（天）"
   },
   "s3": {
     "s3logEnable": "Amazon S3 启用访问日志",
@@ -127,12 +143,10 @@
     "desc": {
       "ingest": "摄取",
       "s3Log": "Amazon S3 服务访问日志",
-      "intoDomain": "到 Amazon OpenSearch 域。",
       "good1": "自动启用 Amazon S3 访问日志",
       "good2": "近乎实时的日志数据摄取",
       "good3": "模板化仪表板",
-      "archName": "架构图",
-      "archDesc": "将日志数据摄取到 Amazon OpenSearch 域的架构图。"
+      "archName": "架构图"
     }
   },
   "trail": {
@@ -143,12 +157,22 @@
     "trailError": "请选择一个 CloudTrail",
     "selectTrail": "选择一个 CloudTrail",
     "savedTips": "Trail 保存在",
+    "logSource": "日志来源",
+    "logSourceDesc": "指定 CloudTrail 日志源位置。默认情况下，CloudTrail 将日志输出到 S3 存储桶中，如果您已配置 CloudTrail 将日志输出到 CloudWatch Logs，该解决方案还支持从 CloudWatch Logs 中摄取日志。",
+    "logSourceCWLDest": "Trail 保存在日志组",
+    "logSourceEmptyError": "请选择日志来源",
+    "chooseLogSource": "选择日志来源",
+    "alertCWL": "日志处理层必须有权访问 CloudWatch Logs 日志组。",
+    "noOutput": "没有日志输出到 CloudWatch Logs",
+    "noOutputDesc1": "该解决方案检测到所选 Trail 尚未启用日志输出到 CloudWatch Logs。\n您想启用日志记录和输出到",
+    "noOutputDesc2": " 日志组？ \n 请注意，需要收取标准 CloudWatch 和 CloudWatch Logs 费用。",
+    "needEnableLogging": "请启用 CloudTrail 流日志",
+    "needSameRegion": "仅支持来自同一区域的 Amazon S3 的 CloudTrail 日志，请手动更改 s3 存储桶并重试",
+    "diffRegion": "Trail 保存在 {{bucket}} 中，该区域 ({{logRegion}}) 与解决方案的主区域 ({{homeRegion}}) 不同。 要继续，请更新所选 CloudTrail 的日志记录配置以将 Trail 传送到 {{homeRegion}} 区域的 Amazon S3 存储桶。",
     "desc": {
       "ingest": "摄取",
       "trailLog": "Amazon CloudTrail 服务访问日志",
-      "intoDomain": "到 Amazon OpenSearch 域。",
-      "archName": "架构图",
-      "archDesc": "将日志数据摄取到 Amazon OpenSearch 域的架构图。"
+      "archName": "架构图"
     }
   },
   "rds": {
@@ -183,9 +207,7 @@
     "desc": {
       "ingest": "摄取",
       "rdsLog": "Amazon RDS 服务访问日志",
-      "intoDomain": "到 Amazon OpenSearch 域。",
-      "archName": "架构图",
-      "archDesc": "将日志数据摄取到 Amazon OpenSearch 域的架构图。"
+      "archName": "架构图"
     }
   },
   "cloudfront": {
@@ -196,6 +218,7 @@
     "manual": "手动",
     "manualDesc": "CloudFront 标准日志之前已启用。您需要从当前 AWS 账户中的 Amazon S3 位置选择日志。",
     "alert": "日志处理层必须有权访问 Amazon S3。",
+    "alertRealtime": "日志处理层必须有权访问 Amazon Kinesis Data Streams.",
     "distribution": "CloudFront Distribution",
     "distributionDesc": "选择现有 CloudFront Distribution 从",
     "curAccount": "当前 AWS 账户",
@@ -208,19 +231,48 @@
     "logLocation": "CloudFront 标准日志位置",
     "logLocationDesc": "指定标准访问日志的位置。",
     "logLocationError": "请输入 CloudFront 标准日志位置",
-    "savedTips": "CloudFront 分配的访问日志保存在",
+    "savedTips": "CloudFront Distribution 的访问日志保存在",
     "ingestedFields": "摄取的字段",
-    "ingestedFieldsDesc": "选择您要摄取到 Amazon OpenSerch 集群的 CloudFront 访问日志字段。",
+    "ingestedFieldsDesc": "选择您要摄取到 OpenSearchrch 集群的 CloudFront 访问日志字段。",
     "enrichedFields": "丰富的字段",
     "enrichedFieldsDesc": "使用附加信息丰富 CloudFront 标准日志。 例如，经度、纬度、城市、州、国家、操作系统等。系统使用开源库来丰富数据。",
     "location": "定位",
     "osAgent": "操作系统/代理",
+    "logType": "日志类型",
+    "logTypeDesc": "指定要收集的日志类型。",
+    "selectLogType": "请选择日志类型",
+    "pleaseConfirm": "请点击确认按钮",
+    "existTips": "检测到现有的实时日志配置",
+    "existTipsDesc": "所选 CloudFront 已启用实时日志并附加了现有日志配置。 要使用此功能，解决方案将创建一个新的实时日志配置来替换现有配置，请确认以继续。",
+    "noOutput": "没有实时日志输出",
+    "noOutputDesc": "所选 CloudFront 未启用实时日志。 此解决方案将创建实时日志配置并附加到选定的 CloudFront。 请确认以继续。",
+    "sampleRate": "采样率",
+    "sampleRateDesc": "输入已发送的日志记录的百分比，从 1% 到 100%。",
+    "sampleRateError": "采样率必须是 1 到 100 之间的整数.",
+    "enterSR": "输入采样率",
+    "fields": "字段",
+    "fieldsDesc": "选择要包含在实时日志配置中的字段。",
+    "fieldsTips": "根据您的字段选择，示例仪表板中的某些可视化可能不可用。",
+    "chooseFields": "选择字段",
+    "kdsShardNum": "Kinesis Data Streams 端点分片个数",
+    "kdsShardNumDesc": "指定 Kinesis Data Streams 的分片数量。 每个分片每秒最多可以有 1,000 条记录，总数据写入速率为每秒 1MB。",
+    "shardNumError": "分片个数必须大于或者等于 1",
+    "enableAS": "启用自动缩放？",
+    "enableASDesc": "为 Kinesis Data Streams 端点启用分片的自动缩放？",
+    "kdsMaxShard": "最大分片数",
+    "kdsMaxShardDesc": "指定 Kinesis Data Streams 终端节点的最大分片数。 ",
+    "maxShardNumError": "最大分片数必须大于分片个数",
+    "manualNotSupportRTL": "解决方案目前不支持手动创建实时日志的方式。",
+    "logProcessNotSupport": "CloudFront 实时日志不支持丰富字段。",
+    "standardLogs": "标准日志",
+    "realtimeLogs": "实时日志",
+    "selectAllFields": "选择所有可用字段（推荐）",
+    "customFields": "自定义字段选择",
+    "diffRegion": "标准日志保存在与解决方案的主区域 ({{homeRegion}}) 在不同的区域 ({{logRegion}}) 的 {{bucket}}。 要继续，请更新所选 CloudFront 的日志记录配置，将将标准日志保存到 {{homeRegion}} 区域的 Amazon S3 存储桶。",
     "desc": {
       "ingest": "摄取",
       "cloudfrontLog": "Amazon CloudFront 服务访问日志",
-      "intoDomain": "到 Amazon OpenSearch 域。",
-      "archName": "架构图",
-      "archDesc": "将日志数据摄取到 Amazon OpenSearch 域的架构图。"
+      "archName": "架构图"
     }
   },
   "lambda": {
@@ -233,9 +285,7 @@
     "desc": {
       "ingest": "摄取",
       "lambdaLog": "AWS Lambda 服务访问日志",
-      "intoDomain": "到 Amazon OpenSearch 域。",
-      "archName": "架构图",
-      "archDesc": "将日志数据摄取到 Amazon OpenSearch 域的架构图。"
+      "archName": "架构图"
     }
   },
   "elb": {
@@ -263,9 +313,7 @@
     "desc": {
       "ingest": "摄取",
       "elbLog": " ELB 访问日志",
-      "intoDomain": "到 Amazon OpenSearch 域。",
-      "archName": "架构图",
-      "archDesc": "将日志数据摄取到 Amazon OpenSearch 域的架构图。"
+      "archName": "架构图"
     }
   },
   "waf": {
@@ -283,7 +331,7 @@
     "aclNameDesc": "输入 Web ACL 名称。 这只是为了识别目的。",
     "inputWAF": "Web ACL 名称",
     "logLocation": "日志位置",
-    "logLocationDesc": "指定 Web ACL 的位置。",
+    "logLocationDesc": "指定 Web ACL 日志的位置。",
     "logLocationError": "请输入 Web ACL 访问日志位置",
     "aclEmptyError": "请选择 Web ACL",
     "manualAclEmptyError": "请输入 Web ACL 名称",
@@ -298,7 +346,7 @@
     "needEnableLogging": "请启用 Web ACL 访问日志",
     "noLogOutput": "无日志输出",
     "noLogOutputDesc": "所选 Web ACL 的日志配置尚未启用， 是否要启用访问日志并输出到 ",
-    "sourceWAFTip": "日志通检测选定的 WAF 直接将其日志发送到 Amazon S3，这种方法的成本比通过 Kinesis Data Firehose (KDF) 发送到 Amazon S3 的成本更高。 如果要切换到 KDF，可以先禁用所选 WAF 的日志记录，然后 Log Hub 会自动为您启用基于 KDF 的日志记录发送方式。",
+    "sourceWAFTip": "日志通检测选定的 WAF 直接将其日志发送到 Amazon S3，这种方法的成本比通过 Kinesis Data Firehose (KDF) 发送到 Amazon S3 的成本更高。 如果要切换到 KDF，可以先禁用所选 WAF 的日志记录，然后解决方案会自动为您启用基于 KDF 的日志记录发送方式。",
     "sourceWAFTips1": "日志通检测到该 Web ACL 的日志直接存入 ",
     "sourceWAFTips2": "此方式的成本比使用 Kinesis Data Firehose(KDF) stream 收集再存到 Amazon S3 更贵（",
     "sourceWAFTips3": "约2.4倍",
@@ -306,9 +354,7 @@
     "desc": {
       "ingest": "摄取",
       "wafLog": "Web ACL 访问日志",
-      "intoDomain": "到 Amazon OpenSearch 域。",
-      "archName": "架构图",
-      "archDesc": "将日志数据摄取到 Amazon OpenSearch 域的架构图。"
+      "archName": "架构图"
     }
   },
   "vpc": {
@@ -335,16 +381,31 @@
     "savedTips": "VPC 流日志保存在 Amazon S3 存储桶",
     "needEnableLogging": "请启用 VPC 流日志",
     "noLogOutput": "无日志输出",
-    "noLogOutputDesc": "所选 VPC 的日志配置尚未启用，或者没有 Amazon S3 作为日志目标。 您想启用日志记录和输出到  ",
+    "noLogOutputDesc": "所选 VPC 的日志配置尚未启用，或者没有 Amazon S3 作为日志目标。 您想启用日志记录和输出到 Amazon S3",
+    "logSource": "日志来源",
+    "logSourceDesc": "指定 VPC 日志源位置。",
+    "logSourceEmptyError": "请选择日志来源",
+    "logCWLEnabled1": "该解决方案创建了一个流日志，",
+    "logCWLEnabled2": "作为 CloudWatch Logs 的目标。",
+    "chooseLogSource": "选择日志源",
+    "vpcNoOutput": "没有日志输出到 CloudWatch Logs",
+    "vpcNoLogOutputDesc": "所选 VPC 尚未启用 CloudWatch Logs 作为日志目标。\n您是否希望该解决方案启用以 CloudWatch Logs 作为目标的日志记录？\n请注意，需要收取标准 CloudWatch 和 CloudWatch Logs 费用。",
+    "selectFlowLog": "选择流日志",
+    "selectFlowLogDesc": "选择要提取到 OpenSearch 中的流日志",
+    "flowLogLocation": "VPC 流日志位置",
+    "flowLogLocationDesc": "指定流日志存储的 CloudWatch Logs 日志组的 ARN。",
+    "alertCWL": "日志处理层必须有权访问 CloudWatch Logs 日志组。",
+    "needEnableLoggingCWL": "请启用 CloudWatch Logs 作为 vpc 流日志目标。",
+    "selectVPCFlowLog": "请选择 VPC flow Logs",
+    "diffRegionTip": "提示",
+    "diffRegion": "VPC 流日志保存在与解决方案的主区域 ({{homeRegion}}) 不同的区域 ({{logRegion}}) 中的 {{bucket}}。 要继续，请选择不同的流日志或允许解决方案为所选 VPC 创建新的流日志。",
     "desc": {
       "ingest": "摄取 ",
       "vpcLog": "VPC 流日志",
-      "intoDomain": "进入 Amazon OpenSearch 域。",
       "good1": "自动启用 VPC 流日志",
       "good2": "近乎实时的日志数据摄取",
       "good3": "模板化仪表板",
-      "archName": "架构图",
-      "archDesc": "将日志数据摄取到 Amazon OpenSearch 域的架构图。"
+      "archName": "架构图"
     }
   },
   "config": {
@@ -368,9 +429,8 @@
     "desc": {
       "ingest": "摄取 ",
       "configLog": "AWS Config 日志",
-      "intoDomain": "进入 Amazon OpenSearch 域",
-      "archName": "架构图",
-      "archDesc": "将日志数据摄取到 Amazon OpenSearch 域的架构图."
+      "archName": "架构图"
     }
-  }
+  },
+  "s3InvalidError": "Amazon S3 路径不合法."
 }

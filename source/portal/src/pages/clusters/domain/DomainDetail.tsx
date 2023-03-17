@@ -19,7 +19,6 @@ import RefreshIcon from "@material-ui/icons/Refresh";
 import ExtLink from "components/ExtLink";
 import HeaderPanel from "components/HeaderPanel";
 import ValueWithLabel from "components/ValueWithLabel";
-// import Status from "components/Status/Status";
 import { AntTabs, AntTab, TabPanel } from "components/Tab";
 import Overview from "./detail/Overview";
 import NetWork from "./detail/Network";
@@ -56,7 +55,6 @@ const ESDomainDetail: React.FC<RouteComponentProps<MatchParams>> = (
   props: RouteComponentProps<MatchParams>
 ) => {
   const id: string = props.match.params.id;
-  // const domainMap: any = useSelector((state: AppStateProps) => state.domainMap);
   const amplifyConfig: AmplifyConfigType = useSelector(
     (state: AppStateProps) => state.amplifyConfig
   );

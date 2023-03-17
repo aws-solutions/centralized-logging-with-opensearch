@@ -27,7 +27,7 @@ import { useDispatch } from "react-redux";
 import { useHistory } from "react-router-dom";
 import { ActionType } from "reducer/appReducer";
 import CreateTags from "./steps/CreateTags";
-import SpecifyDomain from "./steps/SpecifyDomain";
+import SpecifyDomain from "./steps/SpecifyEKSDomain";
 import SpecifyEksSource from "./steps/SpecifyEksSource";
 
 export interface EKSClusterLogSourceType {

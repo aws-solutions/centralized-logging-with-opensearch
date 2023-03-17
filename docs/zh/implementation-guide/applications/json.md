@@ -1,6 +1,6 @@
 # JSON 格式日志
 
-您可以将 Log Hub 配置为摄取 JSON 日志。
+您可以将日志通配置为摄取 JSON 日志。
 
 ## 前提条件
 {%
@@ -9,7 +9,7 @@ include-markdown "include-prerequisites.md"
 
 ## 步骤 1: 创建一个 JSON 日志配置
 
-1. 登录 Log Hub 控制台。
+1. 登录日志通控制台。
 2. 在左侧边栏中的 **资源** 下，选择 **日志配置**。
 3. 单击**创建日志配置**按钮。
 4. 指定**配置名称**。
@@ -24,7 +24,7 @@ include-markdown "include-prerequisites.md"
 
 8. 检查每个字段类型映射是否正确。 您可以通过选择第二列中的下拉菜单来更改类型。 对于所有支持的类型，请参阅 [数据类型](https://opensearch.org/docs/latest/search-plugins/sql/datatypes/)。
 
-    !!! Note "说明"
+    !!! Note "注意"
 
         您必须使用键 `time` 指定日志的日期时间。 如果未指定，将添加系统时间。
 

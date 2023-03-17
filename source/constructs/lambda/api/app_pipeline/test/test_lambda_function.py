@@ -6,6 +6,9 @@ import json
 import boto3
 import pytest
 
+from util.validator import AppPipelineValidator
+from common import APIException
+
 from moto import (
     mock_dynamodb,
     mock_stepfunctions,
@@ -105,7 +108,8 @@ def ddb_client(iam_roles, remote_lambda):
                                 "securityGroupId": "sg-0ec6c9b448792d1e6",
                                 "vpcId": "vpc-05a90814226d2c713",
                             },
-                            "warmLogTransition": 0,
+                            "warmLogTransition": "",
+                            "rolloverSize": "30gb",
                         },
                         "createdDt": "2022-05-05T07:43:55Z",
                         "error": "",
@@ -137,7 +141,8 @@ def ddb_client(iam_roles, remote_lambda):
                                 "securityGroupId": "sg-0ec6c9b448792d1e6",
                                 "vpcId": "vpc-05a90814226d2c713",
                             },
-                            "warmLogTransition": 0,
+                            "warmLogTransition": "",
+                            "rolloverSize": "30gb",
                         },
                         "createdDt": "2022-05-07T06:36:41Z",
                         "error": "",
@@ -230,7 +235,8 @@ def ddb_no_ingestion_client(iam_roles, remote_lambda):
                                 "securityGroupId": "sg-0ec6c9b448792d1e6",
                                 "vpcId": "vpc-05a90814226d2c713",
                             },
-                            "warmLogTransition": 0,
+                            "warmLogTransition": "",
+                            "rolloverSize": "30gb",
                         },
                         "createdDt": "2022-05-05T07:43:55Z",
                         "error": "",
@@ -264,7 +270,8 @@ def ddb_no_ingestion_client(iam_roles, remote_lambda):
                                 "securityGroupId": "sg-0ec6c9b448792d1e6",
                                 "vpcId": "vpc-05a90814226d2c713",
                             },
-                            "warmLogTransition": 0,
+                            "warmLogTransition": "",
+                            "rolloverSize": "30gb",
                         },
                         "createdDt": "2022-05-07T06:36:41Z",
                         "error": "",
@@ -319,8 +326,6 @@ def aos_client():
 def test_validate_index_prefix_overlap(
     ddb_client, sfn_client, iam_roles, remote_lambda
 ):
-    from common import AppPipelineValidator, APIException
-
     with pytest.raises(APIException):
         v = AppPipelineValidator(ddb_client.Table(os.environ["APPPIPELINE_TABLE"]))
         v.validate_index_prefix_overlap("hello", "helloworld")
@@ -445,9 +450,13 @@ def test_create_app_pipeline(
                     "opensearchEndpoint": "vpc-helloworld-hbgb2ktamqnb5cedzrty3blelu.us-west-2.es.amazonaws.com",
                     "domainName": "helloworld",
                     "indexPrefix": "spring",
-                    "warmLogTransition": 0,
-                    "coldLogTransition": 0,
-                    "logRetention": 1,
+                    "warmLogTransition": "1d",
+                    "coldLogTransition": "2d",
+                    "logRetention": "3d",
+                    "rolloverSize": "300gb",
+                    "codec": "default",
+                    "indexSuffix": "yyyy-MM-dd",
+                    "refreshInterval": "1s",
                     "shardNumbers": 5,
                     "replicaNumbers": 1,
                     "engine": "OpenSearch",
@@ -488,14 +497,22 @@ def test_create_app_pipeline(
 def test_s3_notification_prefix():
     from lambda_function import s3_notification_prefix
 
-    assert 'AppLogs/s3src/' == s3_notification_prefix('AppLogs/s3src/year=%Y/month=%m/day=%d')
-    assert 'AppLogs/s3src/' == s3_notification_prefix('AppLogs/s3src/hello')
-    assert 'AppLogs/s3src/' == s3_notification_prefix('/AppLogs/s3src/hello')
-    assert 'abcd/' == s3_notification_prefix('/abcd/$TAG[2]/$TAG[0]/%Y/%m/%d/%H/%M/%S/$UUID.gz')
-    assert '' == s3_notification_prefix('/abcd$TAG[2]/$TAG[0]/%Y/%m/%d/%H/%M/%S/$UUID.gz')
-    assert '' == s3_notification_prefix('abcd$TAG[2]/$TAG[0]/%Y/%m/%d/%H/%M/%S/$UUID.gz')
-    assert '' == s3_notification_prefix('$TAG[0]/%Y/%m/%d/%H/%M/%S/')
-    assert 'AppLogs/s3src/' == s3_notification_prefix('/AppLogs/s3src/')
-    assert '' == s3_notification_prefix('/')
-    assert '' == s3_notification_prefix('')
-    assert '' == s3_notification_prefix('asdasd')
+    assert "AppLogs/s3src/" == s3_notification_prefix(
+        "AppLogs/s3src/year=%Y/month=%m/day=%d"
+    )
+    assert "AppLogs/s3src/" == s3_notification_prefix("AppLogs/s3src/hello")
+    assert "AppLogs/s3src/" == s3_notification_prefix("/AppLogs/s3src/hello")
+    assert "abcd/" == s3_notification_prefix(
+        "/abcd/$TAG[2]/$TAG[0]/%Y/%m/%d/%H/%M/%S/$UUID.gz"
+    )
+    assert "" == s3_notification_prefix(
+        "/abcd$TAG[2]/$TAG[0]/%Y/%m/%d/%H/%M/%S/$UUID.gz"
+    )
+    assert "" == s3_notification_prefix(
+        "abcd$TAG[2]/$TAG[0]/%Y/%m/%d/%H/%M/%S/$UUID.gz"
+    )
+    assert "" == s3_notification_prefix("$TAG[0]/%Y/%m/%d/%H/%M/%S/")
+    assert "AppLogs/s3src/" == s3_notification_prefix("/AppLogs/s3src/")
+    assert "" == s3_notification_prefix("/")
+    assert "" == s3_notification_prefix("")
+    assert "" == s3_notification_prefix("asdasd")

@@ -28,9 +28,9 @@ const LogConfigPathEKS: React.FC = () => {
           {t("info:logConfigPath.eks.dtip1")}
           <pre className="code">
             <code>
-              /var/log/containers/app-nginx-demo*prod-ns*
+              /var/log/containers/app-nginx-demo_prod-ns*
               <br />
-              /var/log/containers/app-nginx-demo*staging-ns*
+              /var/log/containers/app-nginx-demo_staging-ns*
             </code>
           </pre>
           {t("info:logConfigPath.eks.dtip2")}

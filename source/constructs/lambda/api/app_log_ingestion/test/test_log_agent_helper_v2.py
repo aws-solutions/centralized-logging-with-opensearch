@@ -36,11 +36,44 @@ def ssm_client():
 
 @pytest.fixture
 def ddb_connect():
-    from ..util.fluentbit_config_helper.ddb_connect import SyslogDDBConnect, PipeObject, PipeInfo
-    with patch('util.fluentbit_config_helper.ddb_connect.SyslogDDBConnect') as MockClass:
+    from ..util.fluentbit_config_helper.ddb_connect import (
+        SyslogDDBConnect,
+        PipeObject,
+        PipeInfo,
+    )
+
+    with patch(
+        "util.fluentbit_config_helper.ddb_connect.SyslogDDBConnect"
+    ) as MockClass:
         instance = MockClass.return_value
-        instance.get_pipe_info_list.return_value = [PipeInfo(source_info={'source_id': '2a749676-bf9a-4610-be2e-8e59414ae331', 'account_id': '012345678912', 'region': 'us-west-2', 'protocol_type': 'UDP', 'port': '15000'}, config_info={'config_id': '482a7d61-db33-4cbb-998f-af52f4652d7d', 'time_offset': None, 'regular_expression': '^\\<(?<pri>[0-9]+)\\>(?<time>[^ ]* {1,2}[^ ]* [^ ]*) (?<host>[^ ]*) (?<ident>[a-zA-Z0-9_\\/\\.\\-]*)(?:\\[(?<pid>[0-9]+)\\])?(?:[^\\:]*\\:)? *(?<message>.*)$', 'time_key': 'time', 'time_format': '%b %y %H:%M:%S', 'parser_format': 'regex'}, output_info={
-                                                             'app_pipeline_id': '62a37b50-72af-4a7b-9d4b-d859d538a19c', 'buffer_type': 'KDS', 'buffer_region': 'us-west-2', 'buffer_access_role_arn': 'arn:aws:iam::012345678912:role/LogHub-AppPipe-62a37-BufferAccessRoleDF53FD85-4BU06LEOL8JH', 'buffer_access_role_name': 'LogHub-AppPipe-62a37-BufferAccessRoleDF53FD85-4BU06LEOL8JH', 'buffer_resource_arn': 'arn:aws:kinesis:us-west-2:012345678912:stream/LogHub-AppPipe-62a37-KDSBufferStream21B531A6-xhE79t2qh4um', 'buffer_resource_name': 'LogHub-AppPipe-62a37-KDSBufferStream21B531A6-xhE79t2qh4um'})]
+        instance.get_pipe_info_list.return_value = [
+            PipeInfo(
+                source_info={
+                    "source_id": "2a749676-bf9a-4610-be2e-8e59414ae331",
+                    "account_id": "123456789012",
+                    "region": "us-west-2",
+                    "protocol_type": "UDP",
+                    "port": "15000",
+                },
+                config_info={
+                    "config_id": "482a7d61-db33-4cbb-998f-af52f4652d7d",
+                    "time_offset": None,
+                    "regular_expression": "^\\<(?<pri>[0-9]+)\\>(?<time>[^ ]* {1,2}[^ ]* [^ ]*) (?<host>[^ ]*) (?<ident>[a-zA-Z0-9_\\/\\.\\-]*)(?:\\[(?<pid>[0-9]+)\\])?(?:[^\\:]*\\:)? *(?<message>.*)$",
+                    "time_key": "time",
+                    "time_format": "%b %y %H:%M:%S",
+                    "parser_format": "regex",
+                },
+                output_info={
+                    "app_pipeline_id": "62a37b50-72af-4a7b-9d4b-d859d538a19c",
+                    "buffer_type": "KDS",
+                    "buffer_region": "us-west-2",
+                    "buffer_access_role_arn": "arn:aws:iam::123456789012:role/LogHub-AppPipe-62a37-BufferAccessRoleDF53FD85-4BU06LEOL8JH",
+                    "buffer_access_role_name": "LogHub-AppPipe-62a37-BufferAccessRoleDF53FD85-4BU06LEOL8JH",
+                    "buffer_resource_arn": "arn:aws:kinesis:us-west-2:123456789012:stream/LogHub-AppPipe-62a37-KDSBufferStream21B531A6-xhE79t2qh4um",
+                    "buffer_resource_name": "LogHub-AppPipe-62a37-KDSBufferStream21B531A6-xhE79t2qh4um",
+                },
+            )
+        ]
 
         yield instance
 
@@ -48,33 +81,43 @@ def ddb_connect():
 class TestSyslogFLBConfigMgr:
     def test_create_ingestion_parser(self, sts_client, ssm_client, ddb_connect):
         from ..util.log_agent_helper_v2 import SyslogFLBConfigMgr
-        from ..util.fluentbit_config_helper.ddb_connect import SyslogDDBConnect, PipeObject, PipeInfo
+        from ..util.fluentbit_config_helper.ddb_connect import (
+            SyslogDDBConnect,
+            PipeObject,
+            PipeInfo,
+        )
 
         class MockSyslogDDBConnect(SyslogDDBConnect):
             def get_pipe_info_list(self):
                 return [
                     PipeInfo(
                         source_info={
-                            'source_id': '2a749676-bf9a-4610-be2e-8e59414ae331',
-                            'account_id': '012345678912',
-                            'region': 'us-west-2',
-                            'protocol_type': 'UDP',
-                            'port': '15000'},
-                        config_info={'config_id': '482a7d61-db33-4cbb-998f-af52f4652d7d',
-                                     'time_offset': None,
-                                     'regular_expression': '^\\<(?<pri>[0-9]+)\\>(?<time>[^ ]* {1,2}[^ ]* [^ ]*) (?<host>[^ ]*) (?<ident>[a-zA-Z0-9_\\/\\.\\-]*)(?:\\[(?<pid>[0-9]+)\\])?(?:[^\\:]*\\:)? *(?<message>.*)$',
-                                     'time_key': 'time',
-                                     'time_format': '%b %y %H:%M:%S',
-                                     'parser_format': 'regex'},
-                        output_info={'app_pipeline_id': '62a37b50-72af-4a7b-9d4b-d859d538a19c',
-                                     'buffer_type': 'KDS',
-                                     'buffer_region': 'us-west-2',
-                                     'buffer_access_role_arn': 'arn:aws:iam::012345678912:role/LogHub-AppPipe-62a37-BufferAccessRoleDF53FD85-4BU06LEOL8JH',
-                                     'buffer_access_role_name': 'LogHub-AppPipe-62a37-BufferAccessRoleDF53FD85-4BU06LEOL8JH',
-                                     'buffer_resource_arn': 'arn:aws:kinesis:us-west-2:012345678912:stream/LogHub-AppPipe-62a37-KDSBufferStream21B531A6-xhE79t2qh4um',
-                                     'buffer_resource_name': 'LogHub-AppPipe-62a37-KDSBufferStream21B531A6-xhE79t2qh4um'}
+                            "source_id": "2a749676-bf9a-4610-be2e-8e59414ae331",
+                            "account_id": "123456789012",
+                            "region": "us-west-2",
+                            "protocol_type": "UDP",
+                            "port": "15000",
+                        },
+                        config_info={
+                            "config_id": "482a7d61-db33-4cbb-998f-af52f4652d7d",
+                            "time_offset": None,
+                            "regular_expression": "^\\<(?<pri>[0-9]+)\\>(?<time>[^ ]* {1,2}[^ ]* [^ ]*) (?<host>[^ ]*) (?<ident>[a-zA-Z0-9_\\/\\.\\-]*)(?:\\[(?<pid>[0-9]+)\\])?(?:[^\\:]*\\:)? *(?<message>.*)$",
+                            "time_key": "time",
+                            "time_format": "%b %y %H:%M:%S",
+                            "parser_format": "regex",
+                        },
+                        output_info={
+                            "app_pipeline_id": "62a37b50-72af-4a7b-9d4b-d859d538a19c",
+                            "buffer_type": "KDS",
+                            "buffer_region": "us-west-2",
+                            "buffer_access_role_arn": "arn:aws:iam::123456789012:role/LogHub-AppPipe-62a37-BufferAccessRoleDF53FD85-4BU06LEOL8JH",
+                            "buffer_access_role_name": "LogHub-AppPipe-62a37-BufferAccessRoleDF53FD85-4BU06LEOL8JH",
+                            "buffer_resource_arn": "arn:aws:kinesis:us-west-2:123456789012:stream/LogHub-AppPipe-62a37-KDSBufferStream21B531A6-xhE79t2qh4um",
+                            "buffer_resource_name": "LogHub-AppPipe-62a37-KDSBufferStream21B531A6-xhE79t2qh4um",
+                        },
                     )
                 ]
+
         ddb_connect = MockSyslogDDBConnect([])
         syslog_flb_config_mgr = SyslogFLBConfigMgr(ddb_connect)
 
@@ -83,7 +126,11 @@ class TestSyslogFLBConfigMgr:
 
     def test_syslog_s3_buffer_layer(self, sts_client, ssm_client, ddb_connect):
         from ..util.log_agent_helper_v2 import SyslogFLBConfigMgr
-        from ..util.fluentbit_config_helper.ddb_connect import SyslogDDBConnect, PipeObject, PipeInfo
+        from ..util.fluentbit_config_helper.ddb_connect import (
+            SyslogDDBConnect,
+            PipeObject,
+            PipeInfo,
+        )
 
         class MockSyslogDDBConnect(SyslogDDBConnect):
             def __init__(self, log_bucket_prefix, compression_type, filter_config):
@@ -96,57 +143,52 @@ class TestSyslogFLBConfigMgr:
                 return [
                     PipeInfo(
                         source_info={
-                            'source_id': '2a749676-bf9a-4610-be2e-8e59414ae331',
-                            'account_id': '012345678912',
-                            'region': 'us-west-2',
-                            'protocol_type': 'UDP',
-                            'port': '15000'
+                            "source_id": "2a749676-bf9a-4610-be2e-8e59414ae331",
+                            "account_id": "123456789012",
+                            "region": "us-west-2",
+                            "protocol_type": "UDP",
+                            "port": "15000",
                         },
                         config_info={
-                            'config_id': '482a7d61-db33-4cbb-998f-af52f4652d7d',
+                            "config_id": "482a7d61-db33-4cbb-998f-af52f4652d7d",
                             "processorFilterRegex": self.filter_config,
-                            'time_offset': None,
-                            'regular_expression': '^\\<(?<pri>[0-9]+)\\>(?<time>[^ ]* {1,2}[^ ]* [^ ]*) (?<host>[^ ]*) (?<ident>[a-zA-Z0-9_\\/\\.\\-]*)(?:\\[(?<pid>[0-9]+)\\])?(?:[^\\:]*\\:)? *(?<message>.*)$',
-                            'time_key': 'time',
-                            'time_format': '%b %y %H:%M:%S',
-                            'parser_format': 'regex'
+                            "time_offset": None,
+                            "regular_expression": "^\\<(?<pri>[0-9]+)\\>(?<time>[^ ]* {1,2}[^ ]* [^ ]*) (?<host>[^ ]*) (?<ident>[a-zA-Z0-9_\\/\\.\\-]*)(?:\\[(?<pid>[0-9]+)\\])?(?:[^\\:]*\\:)? *(?<message>.*)$",
+                            "time_key": "time",
+                            "time_format": "%b %y %H:%M:%S",
+                            "parser_format": "regex",
                         },
                         output_info={
-                            'app_pipeline_id': '62a37b50-72af-4a7b-9d4b-d859d538a19c',
-                            'buffer_type': 'S3',
-                            'compression_type': self.compression_type,
-                            'log_bucket_prefix': self.log_bucket_prefix,
-                            'buffer_resource_arn': 'bucket-arn',
-                            'buffer_resource_name': 'bucket-name',
-                            'upload_timeout': '10',
+                            "app_pipeline_id": "62a37b50-72af-4a7b-9d4b-d859d538a19c",
+                            "buffer_type": "S3",
+                            "compression_type": self.compression_type,
+                            "log_bucket_prefix": self.log_bucket_prefix,
+                            "buffer_resource_arn": "bucket-arn",
+                            "buffer_resource_name": "bucket-name",
+                            "upload_timeout": "10",
                         },
                     )
                 ]
+
         ddb_connect = MockSyslogDDBConnect(
-            compression_type='gzip',
-            log_bucket_prefix='AppLogs/s3src/year=%Y/month=%m/day=%d',
+            compression_type="gzip",
+            log_bucket_prefix="AppLogs/s3src/year=%Y/month=%m/day=%d",
             filter_config={
                 "enable": True,
                 "filters": [
-                    {
-                        "condition": "Include",
-                        "key": "ident",
-                        "value": "su"
-                    },
-                    {
-                        "condition": "Exclude",
-                        "key": "host",
-                        "value": "client_*"
-                    }
-                ]
-            }
+                    {"condition": "Include", "key": "ident", "value": "su"},
+                    {"condition": "Exclude", "key": "host", "value": "client_*"},
+                ],
+            },
         )
         syslog_flb_config_mgr = SyslogFLBConfigMgr(ddb_connect)
 
         syslog_flb_config_mgr.generate_agent_config()
         agent_configs = syslog_flb_config_mgr.get_agent_configs()
 
-        assert agent_configs['fluent-bit.conf'] == '''\
+        assert (
+            agent_configs["fluent-bit.conf"]
+            == """\
 [SERVICE]
     flush           5
     daemon          off
@@ -176,6 +218,7 @@ class TestSyslogFLBConfigMgr:
     tls.verify          False
     Match               2a749-482a7-62a37
     bucket              bucket-name
+    storage_class       INTELLIGENT_TIERING
     total_file_size     100M
     upload_timeout      10s
     s3_key_format       /AppLogs/s3src/year=%Y/month=%m/day=%d/%H-%M-%S-$UUID.gz
@@ -191,33 +234,28 @@ class TestSyslogFLBConfigMgr:
     Match      2a749-482a7-62a37
     Exclude    host client_*
 
-'''
+"""
+        )
 
         ddb_connect = MockSyslogDDBConnect(
-            compression_type='None',
-            log_bucket_prefix='AppLogs/s3src/year=%Y/month=%m/day=%d',
+            compression_type="None",
+            log_bucket_prefix="AppLogs/s3src/year=%Y/month=%m/day=%d",
             filter_config={
                 "enable": True,
                 "filters": [
-                    {
-                        "condition": "Include",
-                        "key": "ident",
-                        "value": "su"
-                    },
-                    {
-                        "condition": "Exclude",
-                        "key": "host",
-                        "value": "client_*"
-                    }
-                ]
-            }
+                    {"condition": "Include", "key": "ident", "value": "su"},
+                    {"condition": "Exclude", "key": "host", "value": "client_*"},
+                ],
+            },
         )
         syslog_flb_config_mgr = SyslogFLBConfigMgr(ddb_connect)
 
         syslog_flb_config_mgr.generate_agent_config()
         agent_configs = syslog_flb_config_mgr.get_agent_configs()
 
-        assert agent_configs['fluent-bit.conf'] == '''\
+        assert (
+            agent_configs["fluent-bit.conf"]
+            == """\
 [SERVICE]
     flush           5
     daemon          off
@@ -247,6 +285,7 @@ class TestSyslogFLBConfigMgr:
     tls.verify          False
     Match               2a749-482a7-62a37
     bucket              bucket-name
+    storage_class       INTELLIGENT_TIERING
     total_file_size     100M
     upload_timeout      10s
     s3_key_format       /AppLogs/s3src/year=%Y/month=%m/day=%d/%H-%M-%S-$UUID
@@ -261,33 +300,28 @@ class TestSyslogFLBConfigMgr:
     Match      2a749-482a7-62a37
     Exclude    host client_*
 
-'''
+"""
+        )
 
         ddb_connect = MockSyslogDDBConnect(
-            compression_type='None',
-            log_bucket_prefix='AppLogs/s3src/year=%Y/month=%m/day=%d',
+            compression_type="None",
+            log_bucket_prefix="AppLogs/s3src/year=%Y/month=%m/day=%d",
             filter_config={
                 "enable": False,
                 "filters": [
-                    {
-                        "condition": "Include",
-                        "key": "ident",
-                        "value": "su"
-                    },
-                    {
-                        "condition": "Exclude",
-                        "key": "host",
-                        "value": "client_*"
-                    }
-                ]
-            }
+                    {"condition": "Include", "key": "ident", "value": "su"},
+                    {"condition": "Exclude", "key": "host", "value": "client_*"},
+                ],
+            },
         )
         syslog_flb_config_mgr = SyslogFLBConfigMgr(ddb_connect)
 
         syslog_flb_config_mgr.generate_agent_config()
         agent_configs = syslog_flb_config_mgr.get_agent_configs()
 
-        assert agent_configs['fluent-bit.conf'] == '''\
+        assert (
+            agent_configs["fluent-bit.conf"]
+            == """\
 [SERVICE]
     flush           5
     daemon          off
@@ -317,26 +351,27 @@ class TestSyslogFLBConfigMgr:
     tls.verify          False
     Match               2a749-482a7-62a37
     bucket              bucket-name
+    storage_class       INTELLIGENT_TIERING
     total_file_size     100M
     upload_timeout      10s
     s3_key_format       /AppLogs/s3src/year=%Y/month=%m/day=%d/%H-%M-%S-$UUID
 
-'''
+"""
+        )
 
         ddb_connect = MockSyslogDDBConnect(
-            compression_type='None',
-            log_bucket_prefix='AppLogs/s3src/year=%Y/month=%m/day=%d',
-            filter_config={
-                "enable": False,
-                "filters": []
-            }
+            compression_type="None",
+            log_bucket_prefix="AppLogs/s3src/year=%Y/month=%m/day=%d",
+            filter_config={"enable": False, "filters": []},
         )
         syslog_flb_config_mgr = SyslogFLBConfigMgr(ddb_connect)
 
         syslog_flb_config_mgr.generate_agent_config()
         agent_configs = syslog_flb_config_mgr.get_agent_configs()
 
-        assert agent_configs['fluent-bit.conf'] == '''\
+        assert (
+            agent_configs["fluent-bit.conf"]
+            == """\
 [SERVICE]
     flush           5
     daemon          off
@@ -366,8 +401,10 @@ class TestSyslogFLBConfigMgr:
     tls.verify          False
     Match               2a749-482a7-62a37
     bucket              bucket-name
+    storage_class       INTELLIGENT_TIERING
     total_file_size     100M
     upload_timeout      10s
     s3_key_format       /AppLogs/s3src/year=%Y/month=%m/day=%d/%H-%M-%S-$UUID
 
-'''
+"""
+        )

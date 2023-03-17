@@ -4,30 +4,6 @@
             "d8e6c7a6-4061-4a4a-864e-0000004"
         ]
     },
-    "identity": {
-        "claims": {
-            "origin_jti": "5089f946-3990-4514-98ca-6748524074fd",
-            "sub": "2a7ef9c9-e698-4efd-b695-167f3117bf9b",
-            "aud": "4od1ntt74k78q7vn86gipkus4n",
-            "event_id": "5a3b1ba9-1cc8-4751-8093-e5b9a7b84be8",
-            "token_use": "id",
-            "auth_time": 1668492973,
-            "iss": "https://cboaoucboauvcouvacv,nsbckvoqufvwwvljwcgouqcqbwc",
-            "cognito:username": "2a7ef9c9-e698-4efd-b695-167f3117bf9b",
-            "exp": 1668496572,
-            "iat": 1668492973,
-            "jti": "e565334c-bf44-4099-b85f-e12016d0d5cd",
-            "email": "amazon@amazon.com"
-        },
-        "defaultAuthStrategy": "ALLOW",
-        "groups": null,
-        "issuer": "https://ouxbaobxoausvcuivawucvakjcviuwvacajbakjcouvacuvaw",
-        "sourceIp": [
-            "11.11.11.11"
-        ],
-        "sub": "2a7ef9c9-e698-4efd-b695-167f3117bf9b",
-        "username": "2a7ef9c9-e698-4efd-b695-167f3117bf9b"
-    },
     "source": null,
     "result": null,
     "request": {

@@ -15,18 +15,30 @@ limitations under the License.
 */
 
 import { Construct } from "constructs";
-import { CfnParameter, Fn, Stack, StackProps, } from "aws-cdk-lib";
+import { CfnParameter, Fn, Stack, StackProps } from "aws-cdk-lib";
 import { SecurityGroup, Vpc } from "aws-cdk-lib/aws-ec2";
-import { S3toOpenSearchStack, S3toOpenSearchStackProps, } from "./s3-to-opensearch-stack";
-import { CWtoFirehosetoS3Props, CWtoFirehosetoS3Stack, } from "./cw-to-firehose-to-s3-stack";
-import { OpenSearchInitProps, OpenSearchInitStack, } from "../common/opensearch-init-stack";
+import {
+  S3toOpenSearchStack,
+  S3toOpenSearchStackProps,
+} from "./s3-to-opensearch-stack";
+import {
+  CWtoFirehosetoS3Props,
+  CWtoFirehosetoS3Stack,
+} from "./cw-to-firehose-to-s3-stack";
+import {
+  OpenSearchInitProps,
+  OpenSearchInitStack,
+} from "../common/opensearch-init-stack";
 import { WAFSampledStack, WAFSampledStackProps } from "./waf-sampled-stack";
 
 const { VERSION } = process.env;
 
 export interface PipelineStackProps extends StackProps {
-  logType: string;
-  tag?: String;
+  readonly logType: string;
+  readonly tag?: string;
+  readonly solutionName?: string;
+  readonly solutionDesc?: string;
+  readonly solutionId?: string;
 }
 
 export class ServiceLogPipelineStack extends Stack {
@@ -56,8 +68,12 @@ export class ServiceLogPipelineStack extends Stack {
   constructor(scope: Construct, id: string, props: PipelineStackProps) {
     super(scope, id, props);
 
-    const tag = props.tag ? props.tag : props.logType.toLowerCase()
-    this.templateOptions.description = `(SO8025-${tag}) - Log Hub - ${props.logType} Log Analysis Pipeline Template - Version ${VERSION}`;
+    let solutionDesc =
+      props.solutionDesc || "Centralized Logging with OpenSearch";
+    let solutionId = props.solutionId || "SO8025";
+
+    const tag = props.tag ? props.tag : props.logType.toLowerCase();
+    this.templateOptions.description = `(${solutionId}-${tag}) - ${solutionDesc} - ${props.logType} Log Analysis Pipeline Template - Version ${VERSION}`;
 
     this.templateOptions.metadata = {
       "AWS::CloudFormation::Interface": {
@@ -118,6 +134,14 @@ export class ServiceLogPipelineStack extends Stack {
     });
     this.addToParamLabels("Index Prefix", indexPrefix.logicalId);
 
+    const indexSuffix = new CfnParameter(this, "indexSuffix", {
+      description: `The common suffix format of OpenSearch index for the log(Example: yyyy-MM-dd, yyyy-MM-dd-HH). The index name will be <Index Prefix>-${props.logType.toLowerCase()}-<Index Suffix>-000001.`,
+      default: "yyyy-MM-dd",
+      type: "String",
+      allowedValues: ["yyyy-MM-dd", "yyyy-MM-dd-HH", "yyyy-MM", "yyyy"],
+    });
+    this.addToParamLabels("Index Suffix", indexSuffix.logicalId);
+
     const createDashboard = new CfnParameter(this, "createDashboard", {
       description: "Whether to create a sample OpenSearch dashboard.",
       type: "String",
@@ -126,29 +150,54 @@ export class ServiceLogPipelineStack extends Stack {
     });
     this.addToParamLabels("Create Sample Dashboard", createDashboard.logicalId);
 
-    const daysToWarm = new CfnParameter(this, "daysToWarm", {
+    const warmAge = new CfnParameter(this, "warmAge", {
       description:
-        "The number of days required to move the index into warm storage, this is only effecitve when the value is >0 and warm storage is enabled in OpenSearch",
-      default: 0,
-      type: "Number",
+        "The age required to move the index into warm storage (e.g. 7d). Index age is the time between its creation and the present. Supported units are d (days) and h (hours). This is only effecitve when warm storage is enabled in OpenSearch",
+      default: "",
+      type: "String",
     });
-    this.addToParamLabels("Days to Warm Storage", daysToWarm.logicalId);
+    this.addToParamLabels("Age to Warm Storage", warmAge.logicalId);
 
-    const daysToCold = new CfnParameter(this, "daysToCold", {
+    const coldAge = new CfnParameter(this, "coldAge", {
       description:
-        "The number of days required to move the index into cold storage, this is only effecitve when the value is >0 and cold storage is enabled in OpenSearch",
-      default: 0,
-      type: "Number",
+        "The age required to move the index into cold storage (e.g. 30d). Index age is the time between its creation and the present. Supported units are d (days) and h (hours). This is only effecitve when cold storage is enabled in OpenSearch.",
+      default: "",
+      type: "String",
     });
-    this.addToParamLabels("Days to Cold Storage", daysToCold.logicalId);
+    this.addToParamLabels("Age to Cold Storage", coldAge.logicalId);
 
-    const daysToRetain = new CfnParameter(this, "daysToRetain", {
+    const retainAge = new CfnParameter(this, "retainAge", {
       description:
-        "The total number of days to retain the index, if value is 0, the index will not be deleted",
-      default: 0,
-      type: "Number",
+        'The age to retain the index (e.g. 180d). Index age is the time between its creation and the present. Supported units are d (days) and h (hours). If value is "", the index will not be deleted.',
+      default: "",
+      type: "String",
     });
-    this.addToParamLabels("Days to Retain", daysToRetain.logicalId);
+    this.addToParamLabels("Age to Retain", retainAge.logicalId);
+
+    const rolloverSize = new CfnParameter(this, "rolloverSize", {
+      description:
+        "The minimum size of the shard storage required to roll over the index (e.g. 30GB)",
+      default: "",
+      type: "String",
+    });
+    this.addToParamLabels("Rollover Index Size", rolloverSize.logicalId);
+
+    const codec = new CfnParameter(this, "codec", {
+      description:
+        "The compression type to use to compress stored data. Available values are best_compression and default.",
+      default: "best_compression",
+      type: "String",
+      allowedValues: ["default", "best_compression"],
+    });
+    this.addToParamLabels("Compression Type", codec.logicalId);
+
+    const refreshInterval = new CfnParameter(this, "refreshInterval", {
+      description:
+        "How often the index should refresh, which publishes its most recent changes and makes them available for searching. Can be set to -1 to disable refreshing. Default is 1s.",
+      default: "1s",
+      type: "String",
+    });
+    this.addToParamLabels("Refresh Interval", refreshInterval.logicalId);
 
     const shardNumbers = new CfnParameter(this, "shardNumbers", {
       description:
@@ -170,26 +219,32 @@ export class ServiceLogPipelineStack extends Stack {
     let plugins: CfnParameter | undefined = undefined;
 
     const logSourceAccountId = new CfnParameter(this, "logSourceAccountId", {
-      description:
-        `Account ID of the S3 bucket which stores the ${props.logType} logs. If the source is in the current account, please leave it blank.`,
+      description: `Account ID of the S3 bucket which stores the ${props.logType} logs. If the source is in the current account, please leave it blank.`,
       type: "String",
     });
-    this.addToParamLabels("Log Source Account ID", logSourceAccountId.logicalId);
+    this.addToParamLabels(
+      "Log Source Account ID",
+      logSourceAccountId.logicalId
+    );
 
     const logSourceRegion = new CfnParameter(this, "logSourceRegion", {
-      description:
-        `Region code of the S3 bucket which stores the ${props.logType} logs, e.g. us-east-1`,
+      description: `Region code of the S3 bucket which stores the ${props.logType} logs, e.g. us-east-1`,
       type: "String",
     });
     this.addToParamLabels("Log Source Region", logSourceRegion.logicalId);
 
-    const logSourceAccountAssumeRole = new CfnParameter(this, "logSourceAccountAssumeRole", {
-      description:
-        `the Cross Account Role which is in the log agent cloudformation output. If the source is in the current account, please leave it blank.`,
-      type: "String",
-    });
-    this.addToParamLabels("Log Source Account Assume Role", logSourceAccountAssumeRole.logicalId);
-
+    const logSourceAccountAssumeRole = new CfnParameter(
+      this,
+      "logSourceAccountAssumeRole",
+      {
+        description: `the Cross Account Role which is in the log agent cloudformation output. If the source is in the current account, please leave it blank.`,
+        type: "String",
+      }
+    );
+    this.addToParamLabels(
+      "Log Source Account Assume Role",
+      logSourceAccountAssumeRole.logicalId
+    );
 
     if (["ELB", "CloudFront"].includes(props.logType)) {
       plugins = new CfnParameter(this, "plugins", {
@@ -215,18 +270,37 @@ export class ServiceLogPipelineStack extends Stack {
       securityGroupId.valueAsString
     );
 
-    if (
-      ['S3', 'CloudTrail', 'ELB', 'CloudFront', 'WAF', 'RDS', 'VPCFlow', 'Config', 'Lambda'].includes(
-        props.logType
-      )
-    ) {
+    const baseProps = {
+      vpc: processVpc,
+      securityGroup: processSg,
+      endpoint: endpoint.valueAsString,
+      logType: props.logType,
+      indexPrefix: indexPrefix.valueAsString,
+      engineType: engineType.valueAsString,
+      version: VERSION,
+      solutionId: solutionId,
+    };
 
+    if (
+      [
+        "S3",
+        "CloudTrail",
+        "ELB",
+        "CloudFront",
+        "WAF",
+        "RDS",
+        "VPCFlow",
+        "Config",
+        "Lambda",
+      ].includes(props.logType)
+    ) {
       const backupBucketName = new CfnParameter(this, "backupBucketName", {
         description:
           "The S3 backup bucket name to store the failed ingestion logs.",
         type: "String",
         allowedPattern: ".+",
-        constraintDescription: "Failed ingestion log S3 Bucket must not be empty",
+        constraintDescription:
+          "Failed ingestion log S3 Bucket must not be empty",
       });
       this.addToParamLabels("S3 Backup Bucket", backupBucketName.logicalId);
 
@@ -262,15 +336,6 @@ export class ServiceLogPipelineStack extends Stack {
         defaultCmkArnParam.logicalId
       );
 
-      const baseProps = {
-        vpc: processVpc,
-        securityGroup: processSg,
-        endpoint: endpoint.valueAsString,
-        logType: props.logType,
-        indexPrefix: indexPrefix.valueAsString,
-        engineType: engineType.valueAsString,
-      };
-
       // Create S3 to OpenSearch Stack for service log pipeline
       const pipelineProps: S3toOpenSearchStackProps = {
         ...baseProps,
@@ -298,13 +363,16 @@ export class ServiceLogPipelineStack extends Stack {
         logProcessorRoleArn: pipelineStack.logProcessorRoleArn,
         shardNumbers: shardNumbers.valueAsString,
         replicaNumbers: replicaNumbers.valueAsString,
-        daysToWarm: daysToWarm.valueAsString,
-        daysToCold: daysToCold.valueAsString,
-        daysToRetain: daysToRetain.valueAsString,
+        warmAge: warmAge.valueAsString,
+        coldAge: coldAge.valueAsString,
+        retainAge: retainAge.valueAsString,
+        rolloverSize: rolloverSize.valueAsString,
+        indexSuffix: indexSuffix.valueAsString,
+        codec: codec.valueAsString,
+        refreshInterval: refreshInterval.valueAsString,
       };
 
       new OpenSearchInitStack(this, "InitStack", osProps);
-
 
       if (["RDS", "Lambda"].includes(props.logType)) {
         const logGroupNames = new CfnParameter(this, "logGroupNames", {
@@ -327,48 +395,38 @@ export class ServiceLogPipelineStack extends Stack {
           logSourceRegion: logSourceRegion.valueAsString,
           logSourceAccountId: logSourceAccountId.valueAsString,
           logSourceAccountAssumeRole: logSourceAccountAssumeRole.valueAsString,
-
+          solutionId: solutionId,
         };
-        const cwtofirehosetos3stack = new CWtoFirehosetoS3Stack(
+        new CWtoFirehosetoS3Stack(
           this,
           `CWtoFirehosetoS3Stack`,
           cwtoFirehosetoS3StackProps
         );
       }
       this.addToParamGroups("Backup Settings", backupBucketName.logicalId);
-    } else if (['WAFSampled'].includes(props.logType)) {
-      const webACLNames = new CfnParameter(this, 'webACLNames', {
+    } else if (["WAFSampled"].includes(props.logType)) {
+      const webACLNames = new CfnParameter(this, "webACLNames", {
         description: `The list of WebACL names delimited by comma`,
-        type: 'String',
-        default: '',
-      })
-      this.addToParamLabels('WebACL Names', webACLNames.logicalId)
+        type: "String",
+        default: "",
+      });
+      this.addToParamLabels("WebACL Names", webACLNames.logicalId);
 
-      const interval = new CfnParameter(this, 'interval', {
+      const interval = new CfnParameter(this, "interval", {
         description: `The Default Interval (in minutes) to get sampled logs, default is 1 minutes`,
-        type: 'Number',
-        default: '1',
-      })
-      this.addToParamLabels('Interval', interval.logicalId)
+        type: "Number",
+        default: "1",
+      });
+      this.addToParamLabels("Interval", interval.logicalId);
 
-      this.addToParamGroups('Source Information',
+      this.addToParamGroups(
+        "Source Information",
         webACLNames.logicalId,
         interval.logicalId,
         logSourceAccountId.logicalId,
         logSourceRegion.logicalId,
         logSourceAccountAssumeRole.logicalId
-      )
-
-      const baseProps = {
-        vpc: processVpc,
-        securityGroup: processSg,
-        endpoint: endpoint.valueAsString,
-        logType: props.logType,
-        indexPrefix: indexPrefix.valueAsString,
-        engineType: engineType.valueAsString,
-        version: VERSION,
-      }
-
+      );
 
       // Create S3 to OpenSearch Stack for service log pipeline
       const pipelineProps: WAFSampledStackProps = {
@@ -379,9 +437,13 @@ export class ServiceLogPipelineStack extends Stack {
         logSourceAccountId: logSourceAccountId.valueAsString,
         logSourceAccountAssumeRole: logSourceAccountAssumeRole.valueAsString,
         webACLNames: webACLNames.valueAsString,
-      }
+      };
 
-      const pipelineStack = new WAFSampledStack(this, `LogPipeline`, pipelineProps)
+      const pipelineStack = new WAFSampledStack(
+        this,
+        `LogPipeline`,
+        pipelineProps
+      );
 
       // Create S3 to OpenSearch Stack
       const osProps: OpenSearchInitProps = {
@@ -391,12 +453,16 @@ export class ServiceLogPipelineStack extends Stack {
         logProcessorRoleArn: pipelineStack.logProcessorRoleArn,
         shardNumbers: shardNumbers.valueAsString,
         replicaNumbers: replicaNumbers.valueAsString,
-        daysToWarm: daysToWarm.valueAsString,
-        daysToCold: daysToCold.valueAsString,
-        daysToRetain: daysToRetain.valueAsString,
-      }
+        warmAge: warmAge.valueAsString,
+        coldAge: coldAge.valueAsString,
+        retainAge: retainAge.valueAsString,
+        rolloverSize: rolloverSize.valueAsString,
+        indexSuffix: indexSuffix.valueAsString,
+        codec: codec.valueAsString,
+        refreshInterval: refreshInterval.valueAsString,
+      };
 
-      new OpenSearchInitStack(this, 'InitStack', osProps)
+      new OpenSearchInitStack(this, "InitStack", osProps);
     }
 
     this.addToParamGroups(
@@ -414,19 +480,21 @@ export class ServiceLogPipelineStack extends Stack {
       securityGroupId.logicalId
     );
 
-
     // Before General Available, plugin is only applicable to limited types
     let advancedOptions = [
       shardNumbers.logicalId,
       replicaNumbers.logicalId,
-      daysToWarm.logicalId,
-      daysToCold.logicalId,
-      daysToRetain.logicalId,
+      warmAge.logicalId,
+      coldAge.logicalId,
+      retainAge.logicalId,
+      rolloverSize.logicalId,
+      indexSuffix.logicalId,
+      codec.logicalId,
+      refreshInterval.logicalId,
     ];
     if (plugins != undefined) {
       advancedOptions.push(plugins.logicalId);
     }
     this.addToParamGroups("Advanced Options", ...advancedOptions);
-
   }
 }

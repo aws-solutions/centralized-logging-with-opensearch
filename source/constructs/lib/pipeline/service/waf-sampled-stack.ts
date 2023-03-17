@@ -16,7 +16,6 @@ limitations under the License.
 
 import { Construct } from "constructs";
 import {
-  CfnResource,
   CfnCondition,
   Fn,
   Duration,
@@ -112,6 +111,8 @@ export interface WAFSampledStackProps {
    * @default - None.
    */
   readonly webACLNames: string;
+
+  readonly solutionId: string;
 }
 
 export class WAFSampledStack extends Construct {
@@ -150,7 +151,7 @@ export class WAFSampledStack extends Construct {
     );
 
     // Create a lambda layer with required python packages.
-    // This layer also includes standard log hub plugins.
+    // This layer also includes standard plugins.
     const pipeLayer = new lambda.LayerVersion(this, "LogHubPipeLayer", {
       code: lambda.Code.fromAsset(
         path.join(__dirname, "../../../lambda/plugin/standard"),
@@ -166,7 +167,7 @@ export class WAFSampledStack extends Construct {
         }
       ),
       compatibleRuntimes: [lambda.Runtime.PYTHON_3_9],
-      description: "Log Hub Default Lambda layer for Log Pipeline",
+      description: "Default Lambda layer for Log Pipeline",
     });
 
     // Create the Log Processor Lambda
@@ -187,14 +188,15 @@ export class WAFSampledStack extends Construct {
         memorySize: 1024,
         timeout: Duration.seconds(120),
         vpc: props.vpc,
-        vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_NAT },
+        vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
         securityGroups: [props.securityGroup],
         environment: {
           ENDPOINT: props.endpoint,
           ENGINE: props.engineType,
           LOG_TYPE: props.logType,
           INDEX_PREFIX: props.indexPrefix,
-          VERSION: props.version || "v1.0.0",
+          SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+          SOLUTION_ID: props.solutionId,
           INTERVAL: props.interval.valueAsString,
           LOG_SOURCE_ACCOUNT_ID: props.logSourceAccountId,
           LOG_SOURCE_REGION: props.logSourceRegion,

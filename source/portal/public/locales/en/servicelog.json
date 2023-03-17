@@ -5,7 +5,7 @@
     "type": "Type",
     "account": "Account",
     "source": "Source",
-    "domain": "Amazon OpenSearch domain",
+    "domain": "OpenSearch domain",
     "created": "Created time",
     "status": "Status"
   },
@@ -23,8 +23,17 @@
     "wafName": "Web ACL Name",
     "vpcId": "VPC ID",
     "config": "Config Name",
-    "aos": "Amazon OpenSearch",
-    "index": "Amazon OpenSearch Index"
+    "aos": "OpenSearch",
+    "index": "OpenSearch Index",
+    "indexSuffix": "Index Suffix",
+    "rolloverSize": "Rollover Size",
+    "compressionType": "Compression Type",
+    "samplingRate": "Sampling Rate",
+    "logType": "Log Type",
+    "kdsShardNum": "Kinesis Data Streams shard number",
+    "enableAS": "Enable auto scaling?",
+    "kdsMaxShard": "Maximum Shard number",
+    "fields": "Fields"
   },
   "tab": {
     "overview": "Overview",
@@ -61,27 +70,27 @@
     "step": {
       "specifySetting": "Specify settings",
       "logProcessing": "Log Processing",
-      "specifyDomain": "Specify Amazon OpenSearch domain",
+      "specifyDomain": "Specify OpenSearch domain",
       "createTags": "Create tags"
     }
   },
   "cluster": {
-    "specifyDomain": "Specify Amazon OpenSearch domain",
-    "aosDomain": "Amazon OpenSearch domain",
+    "specifyDomain": "Specify OpenSearch domain",
+    "aosDomain": "OpenSearch domain",
     "aosDomainDesc1": "Select an imported cluster. You must ",
     "aosDomainDesc2": "import cluster",
     "aosDomainDesc3": " before you select from the list.",
-    "aosDomainError": "Please select an Amazon OpenSearch Domain",
-    "selectOS": "Select an Amazon OpenSearch Domain",
+    "aosDomainError": "Please select an OpenSearch domain",
+    "selectOS": "Select an OpenSearch domain",
     "sampleDashboard": "Sample dashboard",
-    "sampleDashboardDesc": "Create a predefined sample dashboard in Kibana.",
+    "sampleDashboardDesc": "Create a predefined sample dashboard in OpenSearch Dashboards.",
     "additionalSetting": "Additional settings",
     "indexPrefix": "Index Prefix",
     "indexPrefixDesc1": "The default index is ",
-    "indexPrefixDesc2": ". The log processor will append -YYYY-MM-DD suffix.",
+    "indexPrefixDesc2": ". You can choose a different suffix to adjust the index rollover time window. For example, if you select “YYYY-MM-DD-HH” suffix, OpenSearch will rollover the index by hour.",
     "inputIndex": "Input the index prefix",
     "logLifecycle": "Log Lifecycle",
-    "warmLog": "Warm log transition (days)",
+    "warmLog": "Warm log transition setting",
     "warmLogDesc1": "Move aged logs from hot storage to warm storage to save cost. You must enable ",
     "warmLogDesc2": "UltraWarm",
     "warmLogDesc3": " before using this.",
@@ -90,14 +99,21 @@
     "coldLogDesc2": "Cold Storage",
     "coldLogDesc3": " before using this.",
     "logRetention": "Log retention (days)",
-    "logRetentionDesc": "Delete aged logs from Amazon OpenSearch domain.",
+    "logRetentionDesc": "Delete aged logs from OpenSearch domain.",
     "shardNum": "Number of Shards",
-    "shardNumDesc": "Number of shards to distribute the index evenly across all data nodes, keep the size of each shard between 10–50 GiB",
+    "shardNumDesc": "Specify the number of shards to distribute index evenly across all data nodes, keep the size of each shard between 10-50GB.",
     "inputShardNum": "Please input Number of Shards",
     "replicaNum": "Number of Replicas",
-    "replicaNumDesc": "Number of replicas for Amazon OpenSearch Index. Each replica is a full copy of an index.",
+    "replicaNumDesc": "Number of replicas for OpenSearch Index. Each replica is a full copy of an index.",
     "inputReplica": "Please input Number of Replicas",
-    "shardNumError": "Number of Shards must be greater than or equal to 1."
+    "shardNumError": "Number of Shards must be greater than or equal to 1.",
+    "rolloverError": "Index rollover by capacity must be greater than 0.",
+    "enableRolloverByCap": "Enable index rollover by capacity",
+    "enableRolloverByCapDesc": "If you enabled this option, OpenSearch will rollover your index when index size reaches below specified size, regarless of the rollover time window. Note OpenSearch will append a 6-digit suffix to the index name automatically.",
+    "compressType": "Compression type",
+    "compressTypeDesc": "Specify which compression type to use for this index. By default, the solution uses best_compression which uses DEFLATE for a higher compression ratio, at the expense of slighly slower stored fields performance. You can change to default if you prefer faster stored fields performance over index storage size.",
+    "warmImmediately": "Move rollover index to warm storage immediately",
+    "warmByDays": "Move log by age (days)"
   },
   "s3": {
     "s3logEnable": "Amazon S3 Access log enabling",
@@ -127,12 +143,10 @@
     "desc": {
       "ingest": "Ingest ",
       "s3Log": "Amazon S3 Server Access Logs",
-      "intoDomain": "into Amazon OpenSearch domain.",
       "good1": "Automatic enablement of Amazon S3 Access Logs",
       "good2": "Near real-time log data ingestion",
       "good3": "Templated dashboard",
-      "archName": "Architecture Diagram",
-      "archDesc": "The architecture of the log analytics pipeline that Log Hub will create to ingest log data into Amazon OpenSearch domain."
+      "archName": "Architecture Diagram"
     }
   },
   "trail": {
@@ -143,12 +157,22 @@
     "trailError": "Please select a CloudTrail",
     "selectTrail": "Select a CloudTrail",
     "savedTips": "The trail is saved at ",
+    "logSource": "Log source",
+    "logSourceDesc": "Specify the CloudTrail log source location. By default, CloudTrail outputs the logs into a S3 bucket, if you had configured CloudTrail outputs logs to CloudWatch Logs, the solution also supports pulling logs from CloudWatch Logs.",
+    "logSourceCWLDest": "The trail is saved at the log group of ",
+    "logSourceEmptyError": "Please select log source",
+    "chooseLogSource": "Choose a log source",
+    "alertCWL": "The Log Processing Layer must have access to the CloudWatch Logs log group.",
+    "noOutput": "No log output to CloudWatch Logs",
+    "noOutputDesc1": "The solution detects that the selected Trail has not enabled log output to CloudWatch Logs. Would you like to enable logging and output to the ",
+    "noOutputDesc2": " log group? \n Please note, standard CloudWatch and CloudWatch Logs charges apply.",
+    "needEnableLogging": "Please enable the CloudTrail Flow Log",
+    "needSameRegion": "Only supports CloudTrail Logs from Amazon S3 in same region, please manually change the s3 bucket and retry again.",
+    "diffRegion": "The trail is saved at {{bucket}} that is in a different region ({{logRegion}}) than the solution' home region ({{homeRegion}}). To proceed, please update the selected CloudTrail's logging configuration to deliver trails to a Amazon S3 bucket at {{homeRegion}} region.",
     "desc": {
       "ingest": "Ingest ",
       "trailLog": "Amazon CloudTrail Server Access Logs",
-      "intoDomain": "into Amazon OpenSearch domain.",
-      "archName": "Architecture Diagram",
-      "archDesc": "The architecture diagram to ingest log data into Amazon OpenSearch domain."
+      "archName": "Architecture Diagram"
     }
   },
   "rds": {
@@ -167,7 +191,7 @@
     "dbError": "Please select a DB identifier",
     "select": "Select a DB identifier",
     "logType": "Log Type",
-    "logTypeDesc": "Select the logs you want to ingest into Amazon OpenSearch domain.",
+    "logTypeDesc": "Select the logs you want to ingest into OpenSearch domain.",
     "errorLog": " Error log",
     "slowLog": " Slow query log",
     "generalLog": " General log",
@@ -183,9 +207,7 @@
     "desc": {
       "ingest": "Ingest ",
       "rdsLog": "Amazon RDS Server Access Logs",
-      "intoDomain": " into Amazon OpenSearch domain.",
-      "archName": "Architecture Diagram",
-      "archDesc": "The architecture diagram to ingest log data into Amazon OpenSearch domain."
+      "archName": "Architecture Diagram"
     }
   },
   "cloudfront": {
@@ -195,7 +217,8 @@
     "autoDesc": "The CloudFront logs is not enabled yet. The system will enable the standard logs and output to a system-managed Amazon S3 location.",
     "manual": "Manual",
     "manualDesc": "The CloudFront standard logs has been enabled before. You need to select the logs from a Amazon S3 location in the current AWS account.",
-    "alert": "The Log Processing Layer must have access to Amazon S3. ",
+    "alert": "The Log Processing Layer must have access to Amazon S3.",
+    "alertRealtime": "The Log Processing Layer must have access to Amazon Kinesis Data Streams.",
     "distribution": "CloudFront Distribution",
     "distributionDesc": "Select an existing CloudFront Distribution from ",
     "curAccount": "current AWS account",
@@ -210,17 +233,46 @@
     "logLocationError": "Please input CloudFront Standard Log location",
     "savedTips": "The CloudFront Distribution has Access Log saved at ",
     "ingestedFields": "Ingested fields",
-    "ingestedFieldsDesc": "Select the CloudFront access log fields you want to ingest into the Amazon Elasticsearch cluster. ",
+    "ingestedFieldsDesc": "Select the CloudFront access log fields you want to ingest into the Amazon Elasticsearch cluster.",
     "enrichedFields": "Enriched fields",
     "enrichedFieldsDesc": "Enrich the CloudFront standard logs with additional informaiton. For example, the longtitude, latitude, city, state, country, OS and etc. The system use an open source library to enrich the data.",
     "location": "Location",
     "osAgent": "OS/User Agent",
+    "logType": "Log type",
+    "logTypeDesc": "Specify what types of logs you want to collect.",
+    "selectLogType": "Please select log type",
+    "pleaseConfirm": "Please click the confirm button",
+    "existTips": "Existing real-time log configuration detected",
+    "existTipsDesc": "The selected distribution has enabled real-time logs with an existing log configuration attached. To use this feature, the solution will create a new real-time log configuration to replace the existing one, please confirm to proceed.",
+    "noOutput": "No real-time log output",
+    "noOutputDesc": "The selected distribution has not enabled real-time logs. This solution will create real-time log configuration and attach to the selected distribution. Please confirm to proceed.",
+    "sampleRate": "Sampling rate",
+    "sampleRateDesc": "Enter the percentage of log records delivered, from 1% to 100%.",
+    "sampleRateError": "Sampling rate must be a number between 1 and 100.",
+    "enterSR": "Enter sampling rate",
+    "fields": "Fields",
+    "fieldsDesc": "Choose the fields to include in the real-time log configuration.",
+    "fieldsTips": "Depends on your fields selection, some visualizations in the sample dashboard might not be available.",
+    "chooseFields": "Choose fields",
+    "kdsShardNum": "Kinesis Data Streams endpoint shard number",
+    "shardNumError": "Shard Number must be greater than or equal to 1",
+    "kdsShardNumDesc": "Specify the number of Shards of the Kinesis Data Streams. Each shard can have up to 1,000 records per second and total data write rate of 1MB per second.",
+    "enableAS": "Enable auto scaling for the Kinesis Data Streams endpoint?",
+    "enableASDesc": "Enable auto scaling of the Kinesis Data Streams shards?",
+    "kdsMaxShard": "Maximum Shard number for Kinesis Data Streams endpoint",
+    "kdsMaxShardDesc": "Specify maximum number of shards.",
+    "maxShardNumError": "Max Shard Number must be greater than Shard number",
+    "manualNotSupportRTL": "The solution does not support manual creation method for real-time logs now.",
+    "logProcessNotSupport": "Fields enrichment is not supported for CloudFront realtime logs.",
+    "standardLogs": "Standard logs",
+    "realtimeLogs": "Real-time logs",
+    "selectAllFields": "Select all available fields (recommended)",
+    "customFields": "Custom field selection",
+    "diffRegion": "The Standard logs is saved at {{bucket}} that is in a different region ({{logRegion}}) than the solution' home region ({{homeRegion}}). To proceed, please update the selected CloudFront's logging configuration to deliver standard logs to a Amazon S3 bucket at {{homeRegion}} region.",
     "desc": {
       "ingest": "Ingest ",
       "cloudfrontLog": "Amazon RDS Server Access Logs",
-      "intoDomain": " into Amazon OpenSearch domain.",
-      "archName": "Architecture Diagram",
-      "archDesc": "The architecture diagram to ingest log data into Amazon OpenSearch domain."
+      "archName": "Architecture Diagram"
     }
   },
   "lambda": {
@@ -233,9 +285,7 @@
     "desc": {
       "ingest": "Ingest ",
       "lambdaLog": "AWS Lambda Server Access Logs",
-      "intoDomain": " into Amazon OpenSearch domain.",
-      "archName": "Architecture Diagram",
-      "archDesc": "The architecture diagram to ingest log data into Amazon OpenSearch domain."
+      "archName": "Architecture Diagram"
     }
   },
   "elb": {
@@ -253,7 +303,7 @@
     "albNameDesc": "Input the ALB name. This just for identification purpose.",
     "inputALB": "ALB name",
     "logLocation": "Log location",
-    "logLocationDesc": "Specify the location of the ALB logs.",
+    "logLocationDesc": "Specify log the location of the ALB logs.",
     "logLocationError": "Please input ALB access log location",
     "elbEmptyError": "Please select an Application Load Balancer",
     "savedTips": "The ALB has Access Log saved at ",
@@ -263,9 +313,7 @@
     "desc": {
       "ingest": "Ingest ",
       "elbLog": "ELB Access Logs",
-      "intoDomain": "into Amazon OpenSearch domain.",
-      "archName": "Architecture Diagram",
-      "archDesc": "The architecture diagram to ingest log data into Amazon OpenSearch domain."
+      "archName": "Architecture Diagram"
     }
   },
   "waf": {
@@ -277,18 +325,18 @@
     "manualDesc": "Manually specify the source identifier and the location of log output.",
     "title": "AWS WAF",
     "acl": "Web ACL",
-    "aclDesc": "Select the web ACL in your current AWS region & current AWS account. ",
+    "aclDesc": "Select the web ACL in your current AWS region & current AWS account.",
     "selectWAF": "Select an Web ACL",
     "aclName": "Web ACL",
     "aclNameDesc": "Input the Web ACL name. This just for identification purpose.",
     "inputWAF": "Web ACL name",
     "logLocation": "Log location",
-    "logLocationDesc": "Specify the location of the Web ACL.",
+    "logLocationDesc": "Specify the log location of the Web ACL.",
     "logLocationError": "Please input Web ACL access log location",
     "aclEmptyError": "Please select an Web ACL",
     "manualAclEmptyError": "Please input Web ACL name",
     "ingestOption": "Ingest Options",
-    "ingestOptionDesc": "By default, Log Hub will ingest sampled requests.",
+    "ingestOptionDesc": "By default, the solution will ingest sampled requests.",
     "sampledRequest": "Sampled Request",
     "fullRequest": "Full Request",
     "sampleSchedule": "Sampling Interval",
@@ -298,17 +346,15 @@
     "needEnableLogging": "Please enable the Web ACL logging",
     "noLogOutput": "No log output",
     "noLogOutputDesc": "The log configuration of the selected Web ACL has not been enabled. Would you like to enable logging and output to the ",
-    "sourceWAFTip": "Log Hub detects the selected WAF deliver its logs to Amazon S3 directly, the cost of this method is more expensive than delivering through Kinesis Data Firehose (KDF) to Amazon S3. If you want to switch to KDF, you can disable the logging of the select  WAF first, then Log Hub can automatically enable the KDF-based logging delivery method for you.",
-    "sourceWAFTips1": "Log Hub detects the web ACL's logs directly to ",
+    "sourceWAFTip": "Solution detects the selected WAF deliver its logs to Amazon S3 directly, the cost of this method is more expensive than delivering through Kinesis Data Firehose (KDF) to Amazon S3. If you want to switch to KDF, you can disable the logging of the select  WAF first, then Solution can automatically enable the KDF-based logging delivery method for you.",
+    "sourceWAFTips1": "Solution detects the web ACL's logs directly to ",
     "sourceWAFTips2": "the cost of this method is more expensive (",
     "sourceWAFTips3": "about 2.4 times",
-    "sourceWAFTips4": ") than using the Kinesis Data Firehose (KDF) stream to collect and store to Amazon S3. If you want to switch to KDF, you can disable the log configuration of the WAF first, and then Log Hub can automatically enable the KDF-based log collection configuration for you and create a log analysis pipeline.",
+    "sourceWAFTips4": ") than using the Kinesis Data Firehose (KDF) stream to collect and store to Amazon S3. If you want to switch to KDF, you can disable the log configuration of the WAF first, and then Solution can automatically enable the KDF-based log collection configuration for you and create a log analysis pipeline.",
     "desc": {
       "ingest": "Ingest ",
       "wafLog": "Web ACL Access Logs",
-      "intoDomain": "into Amazon OpenSearch domain.",
-      "archName": "Architecture Diagram",
-      "archDesc": "The architecture diagram to ingest log data into Amazon OpenSearch domain."
+      "archName": "Architecture Diagram"
     }
   },
   "vpc": {
@@ -328,23 +374,38 @@
     "selectVpc": "Select a VPC",
     "vpcName": "VPC ID",
     "vpcNameDesc": "Input the VPC ID which the VPC Flow Logs belongs to.",
-    "inputVpc": "VPC ID",
+    "inputVpc": "Pleaset input VPC ID",
     "vpcLogLocation": "VPC Flow Logs location",
     "vpcLogLocationDesc": "Specify the location of the VPC Flow Logs.",
     "vpcLogLocationError": "Please input VPC Flow Logs location",
     "savedTips": "The VPC Flow Logs is saved at ",
     "needEnableLogging": "Please enable the VPC Flow Log",
     "noLogOutput": "No log output",
-    "noLogOutputDesc": "The log configuration of the selected VPC has not been enabled, or doesn't have Amazon S3 as log destination. Would you like to enable logging and output to the ",
+    "noLogOutputDesc": "The log configuration of the selected VPC has not been enabled, or doesn't have Amazon S3 as log destination. Would you like to enable logging and output to the Amazon S3 ",
+    "logSource": "Log source",
+    "logSourceDesc": "Specify the VPC log source location.",
+    "logSourceEmptyError": "Please select Log source",
+    "logCWLEnabled1": "The solution has create a flow log, ",
+    "logCWLEnabled2": " with CloudWatch Logs as destination.",
+    "chooseLogSource": "Choose a log source",
+    "vpcNoOutput": "No log output to CloudWatch Logs",
+    "vpcNoLogOutputDesc": "The selected VPC has not enabled CloudWatch Logs as log destination. Would you like the solution to enable logging with CloudWatch Logs as destination? Please note, standard CloudWatch and CloudWatch Logs charges apply.",
+    "selectFlowLog": "Select a flow log",
+    "selectFlowLogDesc": "Select a flow log to ingest into OpenSearch",
+    "flowLogLocation": "VPC flow log location",
+    "flowLogLocationDesc": "Specify the ARN of the CloudWatch Logs log group where the flow log stores.",
+    "alertCWL": "The Log Processing Layer must have access to CloudWatch Logs log group.",
+    "needEnableLoggingCWL": "Please enable the CloudWatch Logs as vpc flow log destination",
+    "selectVPCFlowLog": "Please select a vpc flow log",
+    "diffRegionTip": "Tips",
+    "diffRegion": "The VPC Flow Logs is saved at {{bucket}} that is in a different region ({{logRegion}}) than the solution' home region ({{homeRegion}}). To proceed, please select a different flow log or allow the solution to create a new flow log for the selected VPC.",
     "desc": {
       "ingest": "Ingest ",
       "vpcLog": "VPC Flow Logs",
-      "intoDomain": "into Amazon OpenSearch domain.",
       "good1": "Automatic enablement of VPC Flow Logs",
       "good2": "Near real-time log data ingestion",
       "good3": "Templated dashboard",
-      "archName": "Architecture Diagram",
-      "archDesc": "The architecture diagram to ingest log data into Amazon OpenSearch domain."
+      "archName": "Architecture Diagram"
     }
   },
   "config": {
@@ -360,17 +421,16 @@
     "configNameEmptyError": "The AWS Config name cannot be empty",
     "inputConfig": "AWS Config name",
     "logLocation": "Log location",
-    "logLocationDesc": "Specify the location of the AWS Config.",
+    "logLocationDesc": "Specify the log location of the AWS Config.",
     "logLocationError": "Please input AWS Config log location",
     "savedTips": "The AWS Config Log saved at ",
-    "needEnableLogging": "Please enable AWS Config in current region first, and make sure the Amazon S3 bucket which stores logs is same as the Log Hub region.",
+    "needEnableLogging": "Please enable AWS Config in current region first, and make sure the Amazon S3 bucket which stores logs is same as the Solution region.",
     "alreadyEnabled": "Current Account AWS Config Log Ingestion  has been enabled. If you want to recreate an ingestion, please delete the previously ingestion first",
     "desc": {
       "ingest": "Ingest ",
       "configLog": "AWS Config Logs",
-      "intoDomain": "into Amazon OpenSearch domain.",
-      "archName": "Architecture Diagram",
-      "archDesc": "The architecture diagram to ingest log data into Amazon OpenSearch domain."
+      "archName": "Architecture Diagram"
     }
-  }
+  },
+  "s3InvalidError": "Amazon S3 location invalid."
 }

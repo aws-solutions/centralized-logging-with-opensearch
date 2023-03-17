@@ -18,15 +18,13 @@ import React, { useState, useEffect } from "react";
 import HeaderPanel from "components/HeaderPanel";
 import PagePanel from "components/PagePanel";
 import Tiles from "components/Tiles";
-import Alert from "components/Alert";
 import { CreateLogMethod } from "assets/js/const";
-// import S3Select from "components/S3Select";
 import FormItem from "components/FormItem";
 import ExtLink from "components/ExtLink";
 import { SelectItem } from "components/Select/select";
 import { appSyncRequestQuery } from "assets/js/request";
-import { LoggingBucket, Resource, ResourceType } from "API";
-import { getResourceLoggingBucket, listResources } from "graphql/queries";
+import { Resource, ResourceType } from "API";
+import { listResources } from "graphql/queries";
 import AutoComplete from "components/AutoComplete";
 import { CloudFrontTaskProps } from "../CreateCloudFront";
 import { OptionType } from "components/AutoComplete/autoComplete";
@@ -37,7 +35,7 @@ import { AppStateProps, InfoBarTypes } from "reducer/appReducer";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import CrossAccountSelect from "pages/comps/account/CrossAccountSelect";
-// import Select from "components/Select";
+import SourceType from "../comps/SourceType";
 
 interface SpecifySettingsProps {
   cloudFrontTask: CloudFrontTaskProps;
@@ -48,9 +46,26 @@ interface SpecifySettingsProps {
   manualChangeBucket: (bucket: string) => void;
   autoS3EmptyError: boolean;
   manualS3EmptyError: boolean;
+  manualS3PathInvalid: boolean;
+  showConfirmError: boolean;
+  logTypeEmptyError: boolean;
+  samplingRateError: boolean;
+  shardNumError: boolean;
+  maxShardNumError: boolean;
   setNextStepDisableStatus: (status: boolean) => void;
   setISChanging: (changing: boolean) => void;
   changeCrossAccount: (id: string) => void;
+  changeLogType: (type: string) => void;
+  changeFieldType: (type: string) => void;
+  changeSamplingRate: (rate: string) => void;
+  changeCustomFields: (fields: string[]) => void;
+  changeMinCapacity: (num: string) => void;
+  changeEnableAS: (enable: string) => void;
+  changeMaxCapacity: (num: string) => void;
+  changeUserConfirm: (confirm: boolean) => void;
+  changeTmpFlowList: (list: SelectItem[]) => void;
+  changeS3SourceType: (type: string) => void;
+  changeSuccessTextType: (type: string) => void;
 }
 
 const SpecifySettings: React.FC<SpecifySettingsProps> = (
@@ -65,9 +80,26 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     changeLogPath,
     autoS3EmptyError,
     manualS3EmptyError,
+    manualS3PathInvalid,
     setNextStepDisableStatus,
     setISChanging,
     changeCrossAccount,
+    changeLogType,
+    changeFieldType,
+    changeSamplingRate,
+    changeCustomFields,
+    changeMinCapacity,
+    changeEnableAS,
+    changeMaxCapacity,
+    changeUserConfirm,
+    changeTmpFlowList,
+    changeS3SourceType,
+    changeSuccessTextType,
+    showConfirmError,
+    logTypeEmptyError,
+    samplingRateError,
+    shardNumError,
+    maxShardNumError,
   } = props;
 
   const amplifyConfig: AmplifyConfigType = useSelector(
@@ -75,21 +107,12 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
   );
   const { t } = useTranslation();
 
-  // const [cloudFront, setCloudFront] = useState(
-  //   cloudFrontTask.params.cloudFrontObj
-  // );
-
   const [loadingCloudFrontList, setLoadingCloudFrontList] = useState(false);
   const [loadingBucket, setLoadingBucket] = useState(false);
   const [cloudFrontOptionList, setCloudFrontOptionList] = useState<
     SelectItem[]
   >([]);
 
-  // const [infoText, setInfoText] = useState("");
-  const [showInfoText, setShowInfoText] = useState(false);
-  // const [successText, setSuccessText] = useState("");
-  const [showSuccessText, setShowSuccessText] = useState(false);
-  const [previewS3Path, setPreviewS3Path] = useState("");
   const [disabeCloudFront, setDisableCloudFront] = useState(false);
 
   const getCloudFrontList = async (accountId: string) => {
@@ -117,40 +140,11 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     }
   };
 
-  const getBucketPrefix = async (cloudFront: string) => {
-    setLoadingBucket(true);
-    setISChanging(true);
-    const resData: any = await appSyncRequestQuery(getResourceLoggingBucket, {
-      type: ResourceType.Distribution,
-      resourceName: cloudFront,
-      accountId: cloudFrontTask.logSourceAccountId,
-    });
-    console.info("getBucketPrefix:", resData.data);
-    const logginBucket: LoggingBucket = resData?.data?.getResourceLoggingBucket;
-    setLoadingBucket(false);
-    setISChanging(false);
-    changeS3Bucket(logginBucket?.bucket || "");
-    changeLogPath(logginBucket?.prefix || "");
-    setPreviewS3Path(`s3://${logginBucket.bucket}/${logginBucket.prefix}`);
-    if (logginBucket.enabled) {
-      setShowSuccessText(true);
-    } else {
-      setShowInfoText(true);
-      setNextStepDisableStatus(true);
-      setShowSuccessText(false);
-    }
-  };
-
   useEffect(() => {
-    setShowSuccessText(false);
-    setShowInfoText(false);
-    setNextStepDisableStatus(false);
-    if (
-      cloudFrontTask.params.cloudFrontObj &&
-      cloudFrontTask.params.cloudFrontObj.value
-    ) {
-      getBucketPrefix(cloudFrontTask.params.cloudFrontObj.value);
-    }
+    console.info(
+      "cloudFrontTask.params.cloudFrontObj",
+      cloudFrontTask.params.cloudFrontObj
+    );
   }, [cloudFrontTask.params.cloudFrontObj]);
 
   useEffect(() => {
@@ -175,10 +169,8 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                   onChange={(event) => {
                     changeTaskType(event.target.value);
                     changeCloudFrontObj(null);
-                    // setCreationMethod(event.target.value);
                     if (event.target.value === CreateLogMethod.Automatic) {
                       changeLogPath("");
-                      // getCloudFrontList();
                     }
                   }}
                   items={[
@@ -200,7 +192,6 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
 
           <HeaderPanel title={t("servicelog:create.service.cloudfront")}>
             <div>
-              <Alert content={t("servicelog:cloudfront.alert")} />
               <CrossAccountSelect
                 accountId={cloudFrontTask.logSourceAccountId}
                 changeAccount={(id) => {
@@ -234,16 +225,6 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                         ? t("servicelog:cloudfront.cloudfrontError")
                         : ""
                     }
-                    warningText={
-                      showInfoText
-                        ? t("servicelog:cloudfront.cloudfrontWarning")
-                        : ""
-                    }
-                    successText={
-                      showSuccessText && previewS3Path
-                        ? t("servicelog:cloudfront.savedTips") + previewS3Path
-                        : ""
-                    }
                   >
                     <AutoComplete
                       outerLoading
@@ -256,7 +237,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                       placeholder={t(
                         "servicelog:cloudfront.selectDistribution"
                       )}
-                      loading={loadingCloudFrontList || loadingBucket}
+                      loading={loadingCloudFrontList}
                       optionList={cloudFrontOptionList}
                       value={cloudFrontTask.params.cloudFrontObj}
                       onChange={(
@@ -267,6 +248,60 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                       }}
                     />
                   </FormItem>
+                  <SourceType
+                    cloudFrontTask={cloudFrontTask}
+                    showConfirmError={showConfirmError}
+                    logTypeEmptyError={logTypeEmptyError}
+                    samplingRateError={samplingRateError}
+                    shardNumError={shardNumError}
+                    maxShardNumError={maxShardNumError}
+                    region={amplifyConfig.aws_project_region}
+                    changeLogType={(type) => {
+                      changeLogType(type);
+                    }}
+                    setIsLoading={(loading) => {
+                      setLoadingBucket(loading);
+                    }}
+                    changeFieldType={(type) => {
+                      changeFieldType(type);
+                    }}
+                    changeS3Bucket={(bucket) => {
+                      changeS3Bucket(bucket);
+                    }}
+                    changeLogPath={(prefix) => {
+                      changeLogPath(prefix);
+                    }}
+                    setNextStepDisableStatus={(disable) => {
+                      setNextStepDisableStatus(disable);
+                    }}
+                    changeSamplingRate={(rate) => {
+                      changeSamplingRate(rate);
+                    }}
+                    changeCustomFields={(fileds) => {
+                      changeCustomFields(fileds);
+                    }}
+                    changeMinCapacity={(num) => {
+                      changeMinCapacity(num);
+                    }}
+                    changeEnableAS={(enable) => {
+                      changeEnableAS(enable);
+                    }}
+                    changeMaxCapacity={(num) => {
+                      changeMaxCapacity(num);
+                    }}
+                    changeUserConfirm={(confirm) => {
+                      changeUserConfirm(confirm);
+                    }}
+                    changeTmpFlowList={(list) => {
+                      changeTmpFlowList(list);
+                    }}
+                    changeS3SourceType={(type) => {
+                      changeS3SourceType(type);
+                    }}
+                    changeSuccessTextType={(type) => {
+                      changeSuccessTextType(type);
+                    }}
+                  />
                 </div>
               )}
               {cloudFrontTask.params.taskType === CreateLogMethod.Manual && (
@@ -292,6 +327,8 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                     errorText={
                       manualS3EmptyError
                         ? t("servicelog:cloudfront.logLocationError")
+                        : manualS3PathInvalid
+                        ? t("servicelog:s3InvalidError")
                         : ""
                     }
                   >
@@ -304,6 +341,31 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                       }}
                     />
                   </FormItem>
+                  <SourceType
+                    cloudFrontTask={cloudFrontTask}
+                    region={amplifyConfig.aws_project_region}
+                    changeS3Bucket={(bucket) => {
+                      changeS3Bucket(bucket);
+                    }}
+                    changeLogPath={(prefix) => {
+                      changeLogPath(prefix);
+                    }}
+                    changeLogType={(type) => {
+                      changeLogType(type);
+                    }}
+                    setIsLoading={(loading) => {
+                      setISChanging(loading);
+                    }}
+                    changeTmpFlowList={(list) => {
+                      changeTmpFlowList(list);
+                    }}
+                    changeS3SourceType={(type) => {
+                      changeS3SourceType(type);
+                    }}
+                    changeSuccessTextType={(type) => {
+                      changeSuccessTextType(type);
+                    }}
+                  />
                 </div>
               )}
             </div>

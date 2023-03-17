@@ -1,6 +1,6 @@
 # Multi-line Text
 
-You can configure Log Hub to ingest multi-line text logs. Currently, Log Hub supports [Spring Boot](https://spring.io/projects/spring-boot) 
+You can configure Centralized Logging with OpenSearch to ingest multi-line text logs. Currently, Centralized Logging with OpenSearch supports [Spring Boot](https://spring.io/projects/spring-boot) 
 style logs or customize the log format using [Regular Expression](https://rubular.com/).
 
 ## Prerequisites
@@ -10,7 +10,7 @@ include-markdown "include-prerequisites.md"
 
 ## Step 1: Create a Multi-line text config
 
-1. Sign in to the Log Hub Console.
+1. Sign in to the Centralized Logging with OpenSearch Console.
 2. In the left sidebar, under **Resources**, choose **Log Config**.
 3. Click the **Create a log config** button.
 4. Specify **Config Name**.
@@ -67,7 +67,7 @@ include-markdown "include-prerequisites.md"
     ```
 
 3. Choose **Parse Log**.
-4. Check if each fields type mapping are correct. You can change the type by selecting the dropdown menu in the second column. For all supported types, see [Data Types](https://opensearch.org/docs/latest/search-plugins/sql/datatypes/).
+4. Check if each field type mapping is correct. You can change the type by selecting the dropdown menu in the second column. For all supported types, see [Data Types](https://opensearch.org/docs/latest/search-plugins/sql/datatypes/).
 
     !!! Note "Note"
         You must specify the datetime of the log using key “time”. If not specified, system time will be added.
@@ -82,7 +82,7 @@ The steps are similar to creating an application log ingestion for single-line t
 
 !!! Note "Note"
 
-      Currently, Log Hub does not support collect Multi-line text logs from S3 Bucket as Log Source.
+      Currently, Centralized Logging with OpenSearch does not support collecting multi-line text logs from S3 Bucket as Log Source.
 
 
 ## Step 3: View logs in OpenSearch

@@ -20,13 +20,19 @@ import SpecifySettings from "./steps/SpecifySettings";
 import SpecifyOpenSearchCluster, {
   AOSInputValidRes,
   checkOpenSearchInput,
+  covertParametersByKeyAndConditions,
 } from "../common/SpecifyCluster";
 import CreateTags from "../common/CreateTags";
 import Button from "components/Button";
 
 import Breadcrumb from "components/Breadcrumb";
-import { ServiceType, Tag } from "API";
-import { YesNo } from "types";
+import { CODEC, DestinationType, EngineType, ServiceType, Tag } from "API";
+import {
+  WarmTransitionType,
+  YesNo,
+  SERVICE_LOG_INDEX_SUFFIX,
+  AmplifyConfigType,
+} from "types";
 import { appSyncRequestMutation } from "assets/js/request";
 import { createServicePipeline } from "graphql/mutations";
 import { OptionType } from "components/AutoComplete/autoComplete";
@@ -35,17 +41,40 @@ import { ServiceLogType } from "assets/js/const";
 import HelpPanel from "components/HelpPanel";
 import SideMenu from "components/SideMenu";
 
-import { AmplifyConfigType } from "types";
 import { AppStateProps } from "reducer/appReducer";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
+import { SelectItem } from "components/Select/select";
+import { Alert } from "assets/js/alert";
+import { S3SourceType } from "./steps/comp/SourceType";
 
-const EXCLUDE_PARAMS = [
+const BASE_EXCLUDE_PARAMS = [
   "esDomainId",
   "warmEnable",
   "coldEnable",
   "curTrailObj",
+  "enableRolloverByCapacity",
+  "warmTransitionType",
+  "tmpFlowList",
+  "s3SourceType",
+  "successTextType",
+  "rolloverSizeNotSupport",
 ];
+
+const S3_EXCLUDE_PARAMS = [
+  ...BASE_EXCLUDE_PARAMS,
+  "logType",
+  "logSource",
+  "minCapacity",
+  "maxCapacity",
+  "shardCount",
+];
+const CWL_EXCLUDE_PARAMS = [
+  ...BASE_EXCLUDE_PARAMS,
+  "logBucketName",
+  "logBucketPrefix",
+];
+
 export interface CloudTrailTaskProps {
   type: ServiceType;
   tags: Tag[];
@@ -53,8 +82,8 @@ export interface CloudTrailTaskProps {
   target: string;
   logSourceAccountId: string;
   logSourceRegion: string;
+  destinationType: string;
   params: {
-    // [index: string]: string | any;
     engineType: string;
     esDomainId: string;
     warmEnable: boolean;
@@ -69,11 +98,32 @@ export interface CloudTrailTaskProps {
     vpcId: string;
     subnetIds: string;
     securityGroupId: string;
-    daysToWarm: string;
-    daysToCold: string;
-    daysToRetain: string;
+
     shardNumbers: string;
     replicaNumbers: string;
+
+    enableRolloverByCapacity: boolean;
+    warmTransitionType: string;
+    warmAge: string;
+    coldAge: string;
+    retainAge: string;
+    rolloverSize: string;
+    indexSuffix: string;
+    codec: string;
+    refreshInterval: string;
+    logSource: string;
+
+    shardCount: string;
+    minCapacity: string;
+    enableAutoScaling: string;
+    maxCapacity: string;
+
+    logType: string;
+    s3SourceType: string;
+    successTextType: string;
+    tmpFlowList: SelectItem[];
+
+    rolloverSizeNotSupport: boolean;
   };
 }
 
@@ -84,6 +134,7 @@ const DEFAULT_TRAIL_TASK_VALUE: CloudTrailTaskProps = {
   target: "",
   logSourceAccountId: "",
   logSourceRegion: "",
+  destinationType: "",
   params: {
     engineType: "",
     esDomainId: "",
@@ -99,11 +150,32 @@ const DEFAULT_TRAIL_TASK_VALUE: CloudTrailTaskProps = {
     vpcId: "",
     subnetIds: "",
     securityGroupId: "",
-    daysToWarm: "0",
-    daysToCold: "0",
-    daysToRetain: "0",
-    shardNumbers: "5",
+
+    shardNumbers: "1",
     replicaNumbers: "1",
+
+    enableRolloverByCapacity: true,
+    warmTransitionType: WarmTransitionType.IMMEDIATELY,
+    warmAge: "0",
+    coldAge: "60",
+    retainAge: "180",
+    rolloverSize: "30",
+    indexSuffix: SERVICE_LOG_INDEX_SUFFIX.yyyy_MM_dd,
+    codec: CODEC.best_compression,
+    refreshInterval: "1s",
+    logSource: "",
+
+    shardCount: "1",
+    minCapacity: "1",
+    enableAutoScaling: YesNo.No,
+    maxCapacity: "",
+
+    logType: ServiceType.CloudTrail,
+    successTextType: "",
+    s3SourceType: S3SourceType.NONE,
+    tmpFlowList: [],
+
+    rolloverSizeNotSupport: false,
   },
 };
 
@@ -134,16 +206,95 @@ const CreateCloudTrail: React.FC = () => {
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [trailEmptyError, setTrailEmptyError] = useState(false);
   const [esDomainEmptyError, setEsDomainEmptyError] = useState(false);
+  const [sourceTypeEmptyError, setSourceTypeEmptyError] = useState(false);
 
   const [trailISChanging, setTrailISChanging] = useState(false);
   const [domainListIsLoading, setDomainListIsLoading] = useState(false);
+
+  const [shardNumError, setShardNumError] = useState(false);
+  const [maxShardNumError, setMaxShardNumError] = useState(false);
 
   const [aosInputValidRes, setAosInputValidRes] = useState<AOSInputValidRes>({
     shardsInvalidError: false,
     warmLogInvalidError: false,
     coldLogInvalidError: false,
     logRetentionInvalidError: false,
+    coldMustLargeThanWarm: false,
+    logRetentionMustThanColdAndWarm: false,
+    capacityInvalidError: false,
+    indexEmptyError: false,
+    indexNameFormatError: false,
   });
+
+  const cloudTrailSettingsValidate = () => {
+    if (trailISChanging) {
+      return false;
+    }
+    if (!cloudTrailPipelineTask.params.curTrailObj) {
+      setTrailEmptyError(true);
+      return false;
+    }
+    if (!cloudTrailPipelineTask.destinationType) {
+      setSourceTypeEmptyError(true);
+      return false;
+    }
+
+    if (cloudTrailPipelineTask.destinationType === DestinationType.S3) {
+      if (!cloudTrailPipelineTask.params.logBucketName) {
+        Alert(t("servicelog:trail.needSameRegion"));
+        return false;
+      }
+    }
+
+    if (cloudTrailPipelineTask.destinationType === DestinationType.CloudWatch) {
+      if (cloudTrailPipelineTask.params.tmpFlowList.length <= 0) {
+        Alert(t("servicelog:trail.needEnableLogging"));
+        return false;
+      }
+
+      // check min shard
+      if (
+        cloudTrailPipelineTask.params.minCapacity === "" ||
+        parseInt(cloudTrailPipelineTask.params.minCapacity) < 1
+      ) {
+        setShardNumError(true);
+        return false;
+      }
+      const intStartShardNum = parseInt(
+        cloudTrailPipelineTask.params.minCapacity
+      );
+      const intMaxShardNum = parseInt(
+        cloudTrailPipelineTask.params.maxCapacity
+      );
+
+      // check max shard
+      if (
+        cloudTrailPipelineTask.params.enableAutoScaling === YesNo.Yes &&
+        (intMaxShardNum <= 0 ||
+          Number.isNaN(intMaxShardNum) ||
+          intMaxShardNum <= intStartShardNum)
+      ) {
+        setMaxShardNumError(true);
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const aosSettingsValidate = () => {
+    if (!cloudTrailPipelineTask.params.domainName) {
+      setEsDomainEmptyError(true);
+      return false;
+    } else {
+      setEsDomainEmptyError(false);
+    }
+    const validRes = checkOpenSearchInput(cloudTrailPipelineTask);
+    setAosInputValidRes(validRes);
+    if (Object.values(validRes).indexOf(true) >= 0) {
+      return false;
+    }
+    return true;
+  };
 
   const confirmCreatePipeline = async () => {
     console.info("cloudTrailPipelineTask:", cloudTrailPipelineTask);
@@ -155,27 +306,34 @@ const CreateCloudTrail: React.FC = () => {
     createPipelineParams.logSourceAccountId =
       cloudTrailPipelineTask.logSourceAccountId;
     createPipelineParams.logSourceRegion = amplifyConfig.aws_project_region;
+    createPipelineParams.destinationType =
+      cloudTrailPipelineTask.destinationType;
 
-    const tmpParamList: any = [];
-    Object.keys(cloudTrailPipelineTask.params).forEach((key) => {
-      console.info("key");
-      if (EXCLUDE_PARAMS.indexOf(key) < 0) {
-        tmpParamList.push({
-          parameterKey: key,
-          parameterValue: (cloudTrailPipelineTask.params as any)?.[key] || "",
-        });
-      }
-    });
+    let tmpParamList: any = [];
+    if (cloudTrailPipelineTask.destinationType === DestinationType.S3) {
+      tmpParamList = covertParametersByKeyAndConditions(
+        cloudTrailPipelineTask,
+        S3_EXCLUDE_PARAMS
+      );
+
+      // Add defaultCmkArnParam
+      tmpParamList.push({
+        parameterKey: "defaultCmkArnParam",
+        parameterValue: amplifyConfig.default_cmk_arn,
+      });
+    }
+
+    if (cloudTrailPipelineTask.destinationType === DestinationType.CloudWatch) {
+      tmpParamList = covertParametersByKeyAndConditions(
+        cloudTrailPipelineTask,
+        CWL_EXCLUDE_PARAMS
+      );
+    }
+
     // Add Default Failed Log Bucket
     tmpParamList.push({
       parameterKey: "backupBucketName",
       parameterValue: amplifyConfig.default_logging_bucket,
-    });
-
-    // Add defaultCmkArnParam
-    tmpParamList.push({
-      parameterKey: "defaultCmkArnParam",
-      parameterValue: amplifyConfig.default_cmk_arn,
     });
 
     createPipelineParams.parameters = tmpParamList;
@@ -251,6 +409,9 @@ const CreateCloudTrail: React.FC = () => {
                       setTrailISChanging(status);
                     }}
                     trailEmptyError={trailEmptyError}
+                    sourceTypeEmptyError={sourceTypeEmptyError}
+                    shardNumError={shardNumError}
+                    maxShardNumError={maxShardNumError}
                     changeCrossAccount={(id) => {
                       setCloudTrailPipelineTask((prev: CloudTrailTaskProps) => {
                         return {
@@ -261,14 +422,26 @@ const CreateCloudTrail: React.FC = () => {
                     }}
                     changeCloudTrailObj={(trail) => {
                       setTrailEmptyError(false);
+                      setSourceTypeEmptyError(false);
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          indexEmptyError: false,
+                          indexNameFormatError: false,
+                        };
+                      });
                       setCloudTrailPipelineTask((prev: CloudTrailTaskProps) => {
                         return {
                           ...prev,
                           source: trail?.name || "",
+                          destinationType: "",
                           params: {
                             ...prev.params,
                             curTrailObj: trail,
-                            indexPrefix: trail?.name || "",
+                            logBucketName: "",
+                            logBucketPrefix: "",
+                            indexPrefix: trail?.name?.toLowerCase() || "",
+                            successTextType: "",
                           },
                         };
                       });
@@ -292,6 +465,96 @@ const CreateCloudTrail: React.FC = () => {
                           params: {
                             ...prev.params,
                             logBucketPrefix: logPath,
+                          },
+                        };
+                      });
+                    }}
+                    changeSourceType={(type) => {
+                      setSourceTypeEmptyError(false);
+                      setCloudTrailPipelineTask((prev: CloudTrailTaskProps) => {
+                        return {
+                          ...prev,
+                          destinationType: type,
+                        };
+                      });
+                    }}
+                    changeTmpFlowList={(list) => {
+                      setCloudTrailPipelineTask((prev: CloudTrailTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            tmpFlowList: list,
+                          },
+                        };
+                      });
+                    }}
+                    changeS3SourceType={(type) => {
+                      setCloudTrailPipelineTask((prev: CloudTrailTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            s3SourceType: type,
+                          },
+                        };
+                      });
+                    }}
+                    changeSuccessTextType={(type) => {
+                      setCloudTrailPipelineTask((prev: CloudTrailTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            successTextType: type,
+                          },
+                        };
+                      });
+                    }}
+                    changeLogSource={(source) => {
+                      setCloudTrailPipelineTask((prev: CloudTrailTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            logSource: source,
+                          },
+                        };
+                      });
+                    }}
+                    changeMinCapacity={(num) => {
+                      setShardNumError(false);
+                      setCloudTrailPipelineTask((prev: CloudTrailTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            shardCount: num,
+                            minCapacity: num,
+                          },
+                        };
+                      });
+                    }}
+                    changeEnableAS={(enable) => {
+                      setMaxShardNumError(false);
+                      setCloudTrailPipelineTask((prev: CloudTrailTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            enableAutoScaling: enable,
+                          },
+                        };
+                      });
+                    }}
+                    changeMaxCapacity={(num) => {
+                      setMaxShardNumError(false);
+                      setCloudTrailPipelineTask((prev: CloudTrailTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            maxCapacity: num,
                           },
                         };
                       });
@@ -336,7 +599,13 @@ const CreateCloudTrail: React.FC = () => {
                       });
                     }}
                     changeBucketIndex={(indexPrefix) => {
-                      // setPiplineBucketPrefix(prefix);
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          indexEmptyError: false,
+                          indexNameFormatError: false,
+                        };
+                      });
                       setCloudTrailPipelineTask((prev: CloudTrailTaskProps) => {
                         return {
                           ...prev,
@@ -348,6 +617,9 @@ const CreateCloudTrail: React.FC = () => {
                       });
                     }}
                     changeOpenSearchCluster={(cluster) => {
+                      const NOT_SUPPORT_VERSION =
+                        cluster?.engine === EngineType.Elasticsearch ||
+                        parseFloat(cluster?.version || "") < 1.3;
                       setEsDomainEmptyError(false);
                       setCloudTrailPipelineTask((prev: CloudTrailTaskProps) => {
                         return {
@@ -366,12 +638,14 @@ const CreateCloudTrail: React.FC = () => {
                             vpcId: cluster?.vpc?.vpcId || "",
                             warmEnable: cluster?.nodes?.warmEnabled || false,
                             coldEnable: cluster?.nodes?.coldEnabled || false,
+                            rolloverSizeNotSupport: NOT_SUPPORT_VERSION,
+                            enableRolloverByCapacity: !NOT_SUPPORT_VERSION,
+                            rolloverSize: NOT_SUPPORT_VERSION ? "" : "30",
                           },
                         };
                       });
                     }}
                     changeSampleDashboard={(yesNo) => {
-                      // setPiplineBucketPrefix(prefix);
                       setCloudTrailPipelineTask((prev: CloudTrailTaskProps) => {
                         return {
                           ...prev,
@@ -394,7 +668,7 @@ const CreateCloudTrail: React.FC = () => {
                           ...prev,
                           params: {
                             ...prev.params,
-                            daysToWarm: value,
+                            warmAge: value,
                           },
                         };
                       });
@@ -404,6 +678,7 @@ const CreateCloudTrail: React.FC = () => {
                         return {
                           ...prev,
                           coldLogInvalidError: false,
+                          coldMustLargeThanWarm: false,
                         };
                       });
                       setCloudTrailPipelineTask((prev: CloudTrailTaskProps) => {
@@ -411,7 +686,7 @@ const CreateCloudTrail: React.FC = () => {
                           ...prev,
                           params: {
                             ...prev.params,
-                            daysToCold: value,
+                            coldAge: value,
                           },
                         };
                       });
@@ -421,6 +696,7 @@ const CreateCloudTrail: React.FC = () => {
                         return {
                           ...prev,
                           logRetentionInvalidError: false,
+                          logRetentionMustThanColdAndWarm: false,
                         };
                       });
                       setCloudTrailPipelineTask((prev: CloudTrailTaskProps) => {
@@ -428,7 +704,80 @@ const CreateCloudTrail: React.FC = () => {
                           ...prev,
                           params: {
                             ...prev.params,
-                            daysToRetain: value,
+                            retainAge: value,
+                          },
+                        };
+                      });
+                    }}
+                    changeIndexSuffix={(suffix: string) => {
+                      setCloudTrailPipelineTask((prev: CloudTrailTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            indexSuffix: suffix,
+                          },
+                        };
+                      });
+                    }}
+                    changeEnableRollover={(enable: boolean) => {
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          capacityInvalidError: false,
+                        };
+                      });
+                      setCloudTrailPipelineTask((prev: CloudTrailTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            enableRolloverByCapacity: enable,
+                          },
+                        };
+                      });
+                    }}
+                    changeRolloverSize={(size: string) => {
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          capacityInvalidError: false,
+                        };
+                      });
+                      setCloudTrailPipelineTask((prev: CloudTrailTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            rolloverSize: size,
+                          },
+                        };
+                      });
+                    }}
+                    changeCompressionType={(codec: string) => {
+                      setCloudTrailPipelineTask((prev: CloudTrailTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            codec: codec,
+                          },
+                        };
+                      });
+                    }}
+                    changeWarmSettings={(type: string) => {
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          coldMustLargeThanWarm: false,
+                        };
+                      });
+                      setCloudTrailPipelineTask((prev: CloudTrailTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            warmTransitionType: type,
                           },
                         };
                       });
@@ -476,26 +825,12 @@ const CreateCloudTrail: React.FC = () => {
                       btnType="primary"
                       onClick={() => {
                         if (curStep === 0) {
-                          if (trailISChanging) {
-                            return;
-                          }
-                          if (!cloudTrailPipelineTask.params.curTrailObj) {
-                            setTrailEmptyError(true);
+                          if (!cloudTrailSettingsValidate()) {
                             return;
                           }
                         }
                         if (curStep === 1) {
-                          if (!cloudTrailPipelineTask.params.domainName) {
-                            setEsDomainEmptyError(true);
-                            return;
-                          } else {
-                            setEsDomainEmptyError(false);
-                          }
-                          const validRes = checkOpenSearchInput(
-                            cloudTrailPipelineTask
-                          );
-                          setAosInputValidRes(validRes);
-                          if (Object.values(validRes).indexOf(true) >= 0) {
+                          if (!aosSettingsValidate()) {
                             return;
                           }
                         }

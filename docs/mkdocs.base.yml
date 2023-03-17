@@ -1,7 +1,7 @@
-site_name: Log Hub
-site_url: https://awslabs.github.io/log-hub/
-repo_url: https://github.com/awslabs/log-hub
-repo_name: awslabs/log-hub
+site_name: Centralized Logging with OpenSearch
+site_url: https://aws-solutions.github.io/centralized-logging-with-opensearch/
+repo_url: https://github.com/aws-solutions/centralized-logging-with-opensearch
+repo_name: aws-solutions/centralized-logging-with-opensearch
 
 theme:
   name: material
@@ -18,16 +18,17 @@ extra_css:
 
 extra:
   generator: false
-  copyright: Copyright &copy; 2020 - 2022 Amazon Web Services
+  copyright: Copyright &copy; 2020 - 2023 Amazon Web Services
   alternate:
     - name: English
-      link: /log-hub/en/
+      link: /centralized-logging-with-opensearch/en/
       lang: en
     - name: 简体中文
-      link: /log-hub/zh/
+      link: /centralized-logging-with-opensearch/zh/
       lang: zh
-  bucket: aws-gcr-solutions
+  bucket: solutions-reference
   version: latest
+  solution: centralized-logging-with-opensearch
 
 plugins:
   - search

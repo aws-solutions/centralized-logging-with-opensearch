@@ -17,9 +17,21 @@ import React, { useState } from "react";
 import Alert from "components/Alert";
 import { useTranslation } from "react-i18next";
 import Button from "components/Button";
-import { LoggingBucket, ResourceType } from "API";
+import {
+  DestinationType,
+  LoggingBucket,
+  ResourceLogConf,
+  ResourceType,
+} from "API";
 import { appSyncRequestMutation } from "assets/js/request";
-import { putResourceLoggingBucket } from "graphql/mutations";
+import {
+  putResourceLogConfig,
+  putResourceLoggingBucket,
+} from "graphql/mutations";
+import ExtLink from "components/ExtLink";
+import { SelectItem } from "components/Select/select";
+import { splitStringToBucketAndPrefix } from "assets/js/utils";
+import { AlertType } from "components/Alert/alert";
 
 interface AutoEnableProps {
   title: string;
@@ -29,6 +41,10 @@ interface AutoEnableProps {
   accountId?: string;
   region?: string;
   link?: string;
+  destName?: string;
+  destType?: DestinationType;
+  learnMoreLink?: string;
+  alertType?: AlertType;
   changeLogBucketAndPrefix: (
     bucket: string,
     prefix: string,
@@ -36,6 +52,7 @@ interface AutoEnableProps {
   ) => void;
   changeEnableStatus: (status: boolean) => void;
   changeLogSource?: (source: string) => void;
+  changeEnableTmpFlowList?: (list: SelectItem[], logFormat: string) => void;
 }
 
 const AutoEnableLogging: React.FC<AutoEnableProps> = (
@@ -48,9 +65,14 @@ const AutoEnableLogging: React.FC<AutoEnableProps> = (
     resourceType,
     resourceName,
     accountId,
+    destName,
+    destType,
+    learnMoreLink,
     changeLogBucketAndPrefix,
     changeEnableStatus,
     changeLogSource,
+    changeEnableTmpFlowList,
+    alertType,
   } = props;
   const [autoCreating, setAutoCreating] = useState(false);
 
@@ -70,7 +92,6 @@ const AutoEnableLogging: React.FC<AutoEnableProps> = (
       console.info("createRes:", createRes);
       const loggingBucketResData: LoggingBucket =
         createRes.data.putResourceLoggingBucket;
-      console.info("loggingBucketResData:", loggingBucketResData);
       setAutoCreating(false);
       changeEnableStatus(false);
       changeLogBucketAndPrefix(
@@ -88,10 +109,59 @@ const AutoEnableLogging: React.FC<AutoEnableProps> = (
     }
   };
 
+  const autoCreateConfigLogging = async () => {
+    setAutoCreating(true);
+    changeEnableStatus(true);
+    const putResourceLoggingBucketParams = {
+      destinationName: destName,
+      destinationType: destType,
+      type: resourceType,
+      resourceName: resourceName,
+      accountId: accountId,
+      region: "",
+      LogFormat: "",
+    };
+    try {
+      const createRes = await appSyncRequestMutation(
+        putResourceLogConfig,
+        putResourceLoggingBucketParams
+      );
+      console.info("createRes:", createRes);
+      const createConfigRes: ResourceLogConf =
+        createRes.data.putResourceLogConfig;
+      if (createRes) {
+        if (createConfigRes.destinationType === DestinationType.S3) {
+          const { bucket, prefix } = splitStringToBucketAndPrefix(
+            createConfigRes.destinationName
+          );
+          changeLogBucketAndPrefix(bucket, prefix, true);
+        }
+        changeEnableTmpFlowList &&
+          changeEnableTmpFlowList(
+            [
+              {
+                name: createConfigRes.name || "",
+                value: createConfigRes.destinationName || "",
+                optTitle: createConfigRes.region || "",
+              },
+            ],
+            createConfigRes.logFormat || ""
+          );
+      }
+      setAutoCreating(false);
+      changeEnableStatus(false);
+    } catch (error) {
+      changeEnableStatus(false);
+      setAutoCreating(false);
+      console.error(error);
+    }
+  };
+
   return (
     <div>
       <Alert
         title={title}
+        type={alertType}
         actions={
           <div>
             <Button
@@ -99,14 +169,34 @@ const AutoEnableLogging: React.FC<AutoEnableProps> = (
               disabled={autoCreating}
               loadingColor="#666"
               onClick={() => {
-                autoCreateBucketLogging();
+                if (
+                  resourceType === ResourceType.VPC ||
+                  resourceType === ResourceType.Trail
+                ) {
+                  autoCreateConfigLogging();
+                } else {
+                  autoCreateBucketLogging();
+                }
               }}
             >
-              {t("button.enable")}
+              {resourceType === ResourceType.VPC ||
+              resourceType === ResourceType.Distribution ||
+              resourceType === ResourceType.Trail
+                ? t("button.create")
+                : t("button.enable")}
             </Button>
           </div>
         }
-        content={desc}
+        content={
+          <div>
+            {desc}
+            {learnMoreLink ? (
+              <ExtLink to={learnMoreLink}>{t("learnMore")}</ExtLink>
+            ) : (
+              ""
+            )}
+          </div>
+        }
       />
     </div>
   );

@@ -13,7 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-// import { AnyAction } from "redux";
 import { SIDE_BAR_OPEN_STORAGE_ID } from "assets/js/const";
 import { AmplifyConfigType } from "types";
 
@@ -52,6 +51,7 @@ export enum InfoBarTypes {
   EKS_IAM_ROLE = "EKS_IAM_ROLE",
   CONFIG_TIME_FORMAT = "CONFIG_TIME_FORMAT",
   CONFIG_FILTER = "CONFIG_FILTER",
+  PROXY_INSTANCE = "PROXY_INSTANCE",
 }
 
 export const InfoBarTitleMap: any = {
@@ -76,6 +76,7 @@ export const InfoBarTitleMap: any = {
   EKS_IAM_ROLE: "info:eksIamRole.name",
   CONFIG_TIME_FORMAT: "info:configTimeFormat.name",
   CONFIG_FILTER: "info:configFilter.name",
+  PROXY_INSTANCE: "info:proxyInstance.name",
 };
 
 export interface AppStateProps {

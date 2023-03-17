@@ -39,6 +39,10 @@ export interface EksStackProps {
   readonly aosDomainTable: ddb.Table;
   readonly subAccountLinkTable: ddb.Table;
   readonly centralAssumeRolePolicy: iam.ManagedPolicy;
+
+  readonly solutionId: string;
+
+  readonly stackPrefix: string;
 }
 
 export class EKSClusterStack extends Construct {
@@ -46,8 +50,6 @@ export class EKSClusterStack extends Construct {
 
   constructor(scope: Construct, id: string, props: EksStackProps) {
     super(scope, id);
-
-    const solution_id = "SO8025";
 
     // Create a table to store LogAgentEKSDeploymentKind info
     // This table is an old design and the data model has been changed
@@ -61,7 +63,7 @@ export class EKSClusterStack extends Construct {
           name: "id",
           type: ddb.AttributeType.STRING,
         },
-        billingMode: ddb.BillingMode.PROVISIONED,
+        billingMode: ddb.BillingMode.PAY_PER_REQUEST,
         removalPolicy: RemovalPolicy.DESTROY,
         encryption: ddb.TableEncryption.DEFAULT,
         pointInTimeRecovery: true,
@@ -103,7 +105,7 @@ export class EKSClusterStack extends Construct {
       ),
       compatibleRuntimes: [lambda.Runtime.PYTHON_3_9],
       //compatibleArchitectures: [lambda.Architecture.X86_64, lambda.Architecture.ARM_64],
-      description: "Log Hub Default Lambda layer for EKS Cluster",
+      description: "Default Lambda layer for EKS Cluster",
     });
 
     // Create a lambda to handle all eksClusterLogSource related APIs.
@@ -120,23 +122,18 @@ export class EKSClusterStack extends Construct {
         handler: "lambda_function.lambda_handler",
         memorySize: 1024,
         environment: {
-          EKS_CLUSTER_LOG_SOURCE_TABLE:
-            props.eksClusterLogSourceTable.tableName,
-          // LOG_AGENT_EKS_DEPLOYMENT_KIND_TABLE:
-          //   this.logAgentEKSDeploymentKindTable.tableName,
+          EKS_CLUSTER_LOG_SOURCE_TABLE: props.eksClusterLogSourceTable.tableName,
+          STACK_PREFIX: props.stackPrefix,
           AOS_DOMAIN_TABLE: props.aosDomainTable.tableName,
           APP_LOG_INGESTION_TABLE: props.appLogIngestionTable.tableName,
           SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
           EKS_OIDC_PROVIDER_ARN_PREFIX: `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:oidc-provider/`,
           EKS_OIDC_CLIENT_ID: "sts.amazonaws.com",
-          SOLUTION_ID: solution_id,
-          SOLUTION_VERSION: process.env.VERSION
-            ? process.env.VERSION
-            : "v1.0.0",
+          SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+          SOLUTION_ID: props.solutionId,
         },
         timeout: Duration.seconds(60),
-        description: "Log Hub - EKS Cluster APIs Resolver",
-        //architecture: lambda.Architecture.ARM_64,
+        description: `${Aws.STACK_NAME} - EKS Cluster APIs Resolver`,
       }
     );
 
@@ -200,7 +197,7 @@ export class EKSClusterStack extends Construct {
       }
     );
 
-    eksClusterLogSourceLambdaDS.createResolver({
+    eksClusterLogSourceLambdaDS.createResolver('getEKSClusterDetails', {
       typeName: "Query",
       fieldName: "getEKSClusterDetails",
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
@@ -218,7 +215,7 @@ export class EKSClusterStack extends Construct {
     });
 
     // Set resolver for releted eks cluster API methods
-    eksClusterLogSourceLambdaDS.createResolver({
+    eksClusterLogSourceLambdaDS.createResolver('listEKSClusterNames', {
       typeName: "Query",
       fieldName: "listEKSClusterNames",
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
@@ -230,10 +227,15 @@ export class EKSClusterStack extends Construct {
       ),
     });
 
-    eksClusterLogSourceLambdaDS.createResolver({
+    eksClusterLogSourceLambdaDS.createResolver('listImportedEKSClusters', {
       typeName: "Query",
       fieldName: "listImportedEKSClusters",
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      requestMappingTemplate: appsync.MappingTemplate.fromFile(
+        path.join(
+          __dirname,
+          "../../graphql/vtl/eks_cluster/ListImportedEKSClusters.vtl"
+        )
+      ),
       responseMappingTemplate: appsync.MappingTemplate.fromFile(
         path.join(
           __dirname,
@@ -242,7 +244,7 @@ export class EKSClusterStack extends Construct {
       ),
     });
 
-    eksClusterLogSourceLambdaDS.createResolver({
+    eksClusterLogSourceLambdaDS.createResolver('importEKSCluster', {
       typeName: "Mutation",
       fieldName: "importEKSCluster",
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
@@ -254,7 +256,7 @@ export class EKSClusterStack extends Construct {
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
-    eksClusterLogSourceLambdaDS.createResolver({
+    eksClusterLogSourceLambdaDS.createResolver('removeEKSCluster', {
       typeName: "Mutation",
       fieldName: "removeEKSCluster",
       requestMappingTemplate: appsync.MappingTemplate.fromFile(

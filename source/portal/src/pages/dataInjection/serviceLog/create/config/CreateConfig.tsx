@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import { ServiceType, Tag } from "API";
+import { CODEC, DestinationType, EngineType, ServiceType, Tag } from "API";
 import { Alert } from "assets/js/alert";
 import { CreateLogMethod, ServiceLogType } from "assets/js/const";
 import { appSyncRequestMutation } from "assets/js/request";
@@ -28,13 +28,23 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { useHistory } from "react-router-dom";
 import { AppStateProps } from "reducer/appReducer";
-import { AmplifyConfigType, YesNo } from "types";
+import {
+  AmplifyConfigType,
+  WarmTransitionType,
+  YesNo,
+  SERVICE_LOG_INDEX_SUFFIX,
+} from "types";
 import CreateTags from "../common/CreateTags";
 import SpecifyOpenSearchCluster, {
   AOSInputValidRes,
   checkOpenSearchInput,
+  covertParametersByKeyAndConditions,
 } from "../common/SpecifyCluster";
 import SpecifySettings from "./steps/SpecifySettings";
+import {
+  bucketNameIsValid,
+  splitStringToBucketAndPrefix,
+} from "assets/js/utils";
 
 const EXCLUDE_PARAMS = [
   "esDomainId",
@@ -42,6 +52,7 @@ const EXCLUDE_PARAMS = [
   "coldEnable",
   "manualBucketS3Path",
   "taskType",
+  "rolloverSizeNotSupport",
 ];
 
 export interface ConfigTaskProps {
@@ -51,6 +62,7 @@ export interface ConfigTaskProps {
   target: string;
   logSourceAccountId: string;
   logSourceRegion: string;
+  destinationType: string;
   params: {
     // [index: string]: string | any;
     engineType: string;
@@ -68,11 +80,21 @@ export interface ConfigTaskProps {
     vpcId: string;
     subnetIds: string;
     securityGroupId: string;
-    daysToWarm: string;
-    daysToCold: string;
-    daysToRetain: string;
+
     shardNumbers: string;
     replicaNumbers: string;
+
+    enableRolloverByCapacity: boolean;
+    warmTransitionType: string;
+    warmAge: string;
+    coldAge: string;
+    retainAge: string;
+    rolloverSize: string;
+    indexSuffix: string;
+    codec: string;
+    refreshInterval: string;
+
+    rolloverSizeNotSupport: boolean;
   };
 }
 
@@ -83,6 +105,7 @@ const DEFAULT_CONFIG_TASK_VALUE: ConfigTaskProps = {
   target: "",
   logSourceAccountId: "",
   logSourceRegion: "",
+  destinationType: DestinationType.S3,
   params: {
     engineType: "",
     esDomainId: "",
@@ -94,16 +117,26 @@ const DEFAULT_CONFIG_TASK_VALUE: ConfigTaskProps = {
     logBucketPrefix: "",
     endpoint: "",
     domainName: "",
-    indexPrefix: "Default",
+    indexPrefix: "default",
     createDashboard: YesNo.Yes,
     vpcId: "",
     subnetIds: "",
     securityGroupId: "",
-    daysToWarm: "0",
-    daysToCold: "0",
-    daysToRetain: "0",
-    shardNumbers: "5",
+
+    shardNumbers: "1",
     replicaNumbers: "1",
+
+    enableRolloverByCapacity: true,
+    warmTransitionType: WarmTransitionType.IMMEDIATELY,
+    warmAge: "0",
+    coldAge: "60",
+    retainAge: "180",
+    rolloverSize: "30",
+    indexSuffix: SERVICE_LOG_INDEX_SUFFIX.yyyy_MM_dd,
+    codec: CODEC.best_compression,
+    refreshInterval: "1s",
+
+    rolloverSizeNotSupport: false,
   },
 };
 
@@ -136,6 +169,7 @@ const CreateConfig: React.FC = () => {
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [configEmptyError, setConfigEmptyError] = useState(false);
   const [manualConfigEmptyError, setManualConfigEmptyError] = useState(false);
+  const [manualS3PathInvalid, setManualS3PathInvalid] = useState(false);
   const [esDomainEmptyError, setEsDomainEmptyError] = useState(false);
 
   const [domainListIsLoading, setDomainListIsLoading] = useState(false);
@@ -144,6 +178,11 @@ const CreateConfig: React.FC = () => {
     warmLogInvalidError: false,
     coldLogInvalidError: false,
     logRetentionInvalidError: false,
+    coldMustLargeThanWarm: false,
+    logRetentionMustThanColdAndWarm: false,
+    capacityInvalidError: false,
+    indexEmptyError: false,
+    indexNameFormatError: false,
   });
 
   const confirmCreatePipeline = async () => {
@@ -156,17 +195,13 @@ const CreateConfig: React.FC = () => {
     createPipelineParams.logSourceAccountId =
       configPipelineTask.logSourceAccountId;
     createPipelineParams.logSourceRegion = amplifyConfig.aws_project_region;
+    createPipelineParams.destinationType = configPipelineTask.destinationType;
 
-    const tmpParamList: any = [];
-    Object.keys(configPipelineTask.params).forEach((key) => {
-      console.info("key");
-      if (EXCLUDE_PARAMS.indexOf(key) < 0) {
-        tmpParamList.push({
-          parameterKey: key,
-          parameterValue: (configPipelineTask.params as any)?.[key] || "",
-        });
-      }
-    });
+    const tmpParamList: any = covertParametersByKeyAndConditions(
+      configPipelineTask,
+      EXCLUDE_PARAMS
+    );
+
     // Add Default Failed Log Bucket
     tmpParamList.push({
       parameterKey: "backupBucketName",
@@ -214,6 +249,16 @@ const CreateConfig: React.FC = () => {
       console.error("need enablle aws config");
       return false;
     }
+    if (
+      configPipelineTask.params.taskType === CreateLogMethod.Manual &&
+      (!configPipelineTask.params.manualBucketS3Path
+        .toLowerCase()
+        .startsWith("s3") ||
+        !bucketNameIsValid(configPipelineTask.params.logBucketName))
+    ) {
+      setManualS3PathInvalid(true);
+      return false;
+    }
     return true;
   };
 
@@ -254,15 +299,6 @@ const CreateConfig: React.FC = () => {
                     },
                   ]}
                   activeIndex={curStep}
-                  selectStep={(step: number) => {
-                    if (curStep === 0 && !isConfigSettingValid()) {
-                      return;
-                    }
-                    if (curStep === 2 && !isClusterValid()) {
-                      return;
-                    }
-                    setCurStep(step);
-                  }}
                 />
               </div>
               <div className="create-content m-w-800">
@@ -271,6 +307,7 @@ const CreateConfig: React.FC = () => {
                     configTask={configPipelineTask}
                     configEmptyError={configEmptyError}
                     manualConfigEmptyError={manualConfigEmptyError}
+                    manualS3PathInvalid={manualS3PathInvalid}
                     changeCrossAccount={(id) => {
                       setConfigPipelineTask((prev) => {
                         return {
@@ -293,25 +330,37 @@ const CreateConfig: React.FC = () => {
                     }}
                     changeConfigName={(name) => {
                       setConfigEmptyError(false);
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          indexEmptyError: false,
+                          indexNameFormatError: false,
+                        };
+                      });
                       setConfigPipelineTask((prev) => {
                         return {
                           ...prev,
                           source: name,
                           params: {
                             ...prev.params,
-                            indexPrefix: name,
+                            indexPrefix: name.toLowerCase(),
                           },
                         };
                       });
                     }}
                     changeManualBucketS3Path={(manualPath) => {
                       setManualConfigEmptyError(false);
+                      setManualS3PathInvalid(false);
+                      const { bucket, prefix } =
+                        splitStringToBucketAndPrefix(manualPath);
                       setConfigPipelineTask((prev) => {
                         return {
                           ...prev,
                           params: {
                             ...prev.params,
                             manualBucketS3Path: manualPath,
+                            logBucketName: bucket,
+                            logBucketPrefix: prefix,
                           },
                         };
                       });
@@ -381,6 +430,13 @@ const CreateConfig: React.FC = () => {
                       });
                     }}
                     changeBucketIndex={(indexPrefix) => {
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          indexEmptyError: false,
+                          indexNameFormatError: false,
+                        };
+                      });
                       setConfigPipelineTask((prev: ConfigTaskProps) => {
                         return {
                           ...prev,
@@ -392,7 +448,9 @@ const CreateConfig: React.FC = () => {
                       });
                     }}
                     changeOpenSearchCluster={(cluster) => {
-                      console.info("cluster:", cluster);
+                      const NOT_SUPPORT_VERSION =
+                        cluster?.engine === EngineType.Elasticsearch ||
+                        parseFloat(cluster?.version || "") < 1.3;
                       setEsDomainEmptyError(false);
                       setConfigPipelineTask((prev: ConfigTaskProps) => {
                         return {
@@ -411,12 +469,14 @@ const CreateConfig: React.FC = () => {
                             vpcId: cluster?.vpc?.vpcId || "",
                             warmEnable: cluster?.nodes?.warmEnabled || false,
                             coldEnable: cluster?.nodes?.coldEnabled || false,
+                            rolloverSizeNotSupport: NOT_SUPPORT_VERSION,
+                            enableRolloverByCapacity: !NOT_SUPPORT_VERSION,
+                            rolloverSize: NOT_SUPPORT_VERSION ? "" : "30",
                           },
                         };
                       });
                     }}
                     changeSampleDashboard={(yesNo) => {
-                      // setPiplineBucketPrefix(prefix);
                       setConfigPipelineTask((prev: ConfigTaskProps) => {
                         return {
                           ...prev,
@@ -439,7 +499,7 @@ const CreateConfig: React.FC = () => {
                           ...prev,
                           params: {
                             ...prev.params,
-                            daysToWarm: value,
+                            warmAge: value,
                           },
                         };
                       });
@@ -449,6 +509,7 @@ const CreateConfig: React.FC = () => {
                         return {
                           ...prev,
                           coldLogInvalidError: false,
+                          coldMustLargeThanWarm: false,
                         };
                       });
                       setConfigPipelineTask((prev: ConfigTaskProps) => {
@@ -456,7 +517,7 @@ const CreateConfig: React.FC = () => {
                           ...prev,
                           params: {
                             ...prev.params,
-                            daysToCold: value,
+                            coldAge: value,
                           },
                         };
                       });
@@ -466,6 +527,7 @@ const CreateConfig: React.FC = () => {
                         return {
                           ...prev,
                           logRetentionInvalidError: false,
+                          logRetentionMustThanColdAndWarm: false,
                         };
                       });
                       setConfigPipelineTask((prev: ConfigTaskProps) => {
@@ -473,7 +535,80 @@ const CreateConfig: React.FC = () => {
                           ...prev,
                           params: {
                             ...prev.params,
-                            daysToRetain: value,
+                            retainAge: value,
+                          },
+                        };
+                      });
+                    }}
+                    changeIndexSuffix={(suffix: string) => {
+                      setConfigPipelineTask((prev: ConfigTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            indexSuffix: suffix,
+                          },
+                        };
+                      });
+                    }}
+                    changeEnableRollover={(enable: boolean) => {
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          capacityInvalidError: false,
+                        };
+                      });
+                      setConfigPipelineTask((prev: ConfigTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            enableRolloverByCapacity: enable,
+                          },
+                        };
+                      });
+                    }}
+                    changeRolloverSize={(size: string) => {
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          capacityInvalidError: false,
+                        };
+                      });
+                      setConfigPipelineTask((prev: ConfigTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            rolloverSize: size,
+                          },
+                        };
+                      });
+                    }}
+                    changeCompressionType={(codec: string) => {
+                      setConfigPipelineTask((prev: ConfigTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            codec: codec,
+                          },
+                        };
+                      });
+                    }}
+                    changeWarmSettings={(type: string) => {
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          coldMustLargeThanWarm: false,
+                        };
+                      });
+                      setConfigPipelineTask((prev: ConfigTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            warmTransitionType: type,
                           },
                         };
                       });

@@ -30,14 +30,12 @@ const LambdaDesc: React.FC = () => {
         <ExtLink to={LAMBDA_LOG_LINK}>
           {t("servicelog:lambda.desc.lambdaLog")}
         </ExtLink>{" "}
-        {t("servicelog:lambda.desc.intoDomain")}
+        {t("intoDomain")}
       </div>
       <div className="ingest-desc-title">
         {t("servicelog:lambda.desc.archName")}
       </div>
-      <div className="ingest-desc-desc">
-        {t("servicelog:lambda.desc.archDesc")}
-      </div>
+      <div className="ingest-desc-desc">{t("archDesc")}</div>
       <div className="mt-10">
         <img
           className="img-border"

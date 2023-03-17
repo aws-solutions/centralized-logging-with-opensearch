@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 import io
 import os
 import zipfile
@@ -80,15 +83,13 @@ def default_environment_variables():
     os.environ["EC2_LOG_SOURCE_TABLE_NAME"] = "mocked-ec2-log-source-table-name"
     os.environ["S3_LOG_SOURCE_TABLE_NAME"] = "mocked-s3-log-source-table-name"
     os.environ["LOG_SOURCE_TABLE_NAME"] = "mocked-log-source-table-name"
+    os.environ["EKS_CLUSTER_SOURCE_TABLE_NAME"] = "mocked-eks-log-source-table-name"
     os.environ[
-        "EKS_CLUSTER_SOURCE_TABLE_NAME"] = "mocked-eks-log-source-table-name"
-    os.environ["INSTANCE_GROUP_MODIFICATION_EVENT_QUEUE_NAME"] = "mocked-instance-modification-event-queue-name"
+        "INSTANCE_GROUP_MODIFICATION_EVENT_QUEUE_NAME"
+    ] = "mocked-instance-modification-event-queue-name"
     os.environ["SQS_EVENT_TABLE"] = "mocked-sqs-event-table"
-    # os.environ[
-    #     "LOG_AGENT_EKS_DEPLOYMENT_KIND_TABLE"] = "mocked-log-agent-eks-deployment-kind-table"
-    os.environ[
-        "SUB_ACCOUNT_LINK_TABLE_NAME"] = "mocked-sub-account-link-table-name"
+    os.environ["SUB_ACCOUNT_LINK_TABLE_NAME"] = "mocked-sub-account-link-table-name"
     os.environ["SUB_ACCOUNT_LINK_TABLE"] = "mocked-sub-account-link-table-name"
     os.environ[
         "DEFAULT_CMK_ARN"
-    ] = "arn:aws:kms:us-east-1:849664593843:key/16ae67ab-0991-4ddb-a65b-1dd91cec52dd"
+    ] = "arn:aws:kms:us-east-1:123456789012:key/16ae67ab-0991-4ddb-a65b-1dd91cec52dd"

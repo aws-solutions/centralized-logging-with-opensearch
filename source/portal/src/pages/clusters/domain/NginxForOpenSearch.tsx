@@ -46,10 +46,11 @@ import {
 } from "assets/js/utils";
 import { AmplifyConfigType } from "types";
 import { useSelector } from "react-redux";
-import { AppStateProps } from "reducer/appReducer";
+import { AppStateProps, InfoBarTypes } from "reducer/appReducer";
 import HelpPanel from "components/HelpPanel";
 import SideMenu from "components/SideMenu";
 import { useTranslation } from "react-i18next";
+import { PROXY_INSTANCE_NUMBER_LIST, PROXY_INSTANCE_TYPE_LIST } from "types";
 
 interface MatchParams {
   id: string;
@@ -80,7 +81,6 @@ const NginxForOpenSearch: React.FC<RouteComponentProps<MatchParams>> = (
   >();
   const [loadingData, setLoadingData] = useState(false);
   const [loadingCreate, setLoadingCreate] = useState(false);
-  // const [curDomain, setCurDomain] = useState<DomainDetails>();
   const [loadingRes, setLoadingRes] = useState(false);
   const [loadingSG, setLoadingSG] = useState(false);
   const [loadingCert, setLoadingCert] = useState(false);
@@ -109,6 +109,8 @@ const NginxForOpenSearch: React.FC<RouteComponentProps<MatchParams>> = (
       input: {
         customEndpoint: "",
         cognitoEndpoint: "",
+        proxyInstanceType: "t3.micro",
+        proxyInstanceNumber: "1",
         vpc: {
           securityGroupId: "",
           publicSubnetIds: "",
@@ -276,6 +278,8 @@ const NginxForOpenSearch: React.FC<RouteComponentProps<MatchParams>> = (
       setSslError(true);
       return;
     }
+
+    // set proxy instance number to int
     try {
       setLoadingCreate(true);
       const createRes = await appSyncRequestMutation(
@@ -394,6 +398,59 @@ const NginxForOpenSearch: React.FC<RouteComponentProps<MatchParams>> = (
                 title={t("cluster:proxy.publicProxy")}
                 desc={t("cluster:proxy.publicProxyDesc")}
               >
+                <FormItem
+                  infoType={InfoBarTypes.PROXY_INSTANCE}
+                  optionTitle={t("cluster:proxy.instanceType")}
+                  optionDesc={t("cluster:proxy.instanceTypeDesc")}
+                >
+                  <Select
+                    className="m-w-75p"
+                    optionList={PROXY_INSTANCE_TYPE_LIST}
+                    value={nginxForOpenSearch.input.proxyInstanceType || ""}
+                    onChange={(event) => {
+                      setNginxForOpenSearch(
+                        (prev: CreateProxyForOpenSearchMutationVariables) => {
+                          return {
+                            ...prev,
+                            input: {
+                              ...prev.input,
+                              proxyInstanceType: event.target.value,
+                            },
+                          };
+                        }
+                      );
+                    }}
+                  />
+                </FormItem>
+
+                <FormItem
+                  infoType={InfoBarTypes.PROXY_INSTANCE}
+                  optionTitle={t("cluster:proxy.instanceNumber")}
+                  optionDesc={t("cluster:proxy.instanceNumberDesc")}
+                >
+                  <Select
+                    className="m-w-75p"
+                    optionList={PROXY_INSTANCE_NUMBER_LIST}
+                    value={
+                      nginxForOpenSearch.input.proxyInstanceNumber?.toString() ||
+                      ""
+                    }
+                    onChange={(event) => {
+                      setNginxForOpenSearch(
+                        (prev: CreateProxyForOpenSearchMutationVariables) => {
+                          return {
+                            ...prev,
+                            input: {
+                              ...prev.input,
+                              proxyInstanceNumber: event.target.value,
+                            },
+                          };
+                        }
+                      );
+                    }}
+                  />
+                </FormItem>
+
                 <FormItem
                   optionTitle={t("cluster:proxy.publicSubnets")}
                   optionDesc={t("cluster:proxy.publicSubnetsDesc")}

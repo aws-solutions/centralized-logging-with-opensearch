@@ -108,6 +108,7 @@ const InstanceTable: React.FC<InstanceTableProps> = (
         dataInstanceList.map(async (item) => {
           const statusData = await appSyncRequestQuery(getLogAgentStatus, {
             instanceId: item.id,
+            accountId: accountId,
           });
           tmpInstanceInfoList.push({
             ...item,
@@ -150,6 +151,7 @@ const InstanceTable: React.FC<InstanceTableProps> = (
       dataInstanceList.map(async (item) => {
         const statusData = await appSyncRequestQuery(getLogAgentStatus, {
           instanceId: item.id,
+          accountId: accountId,
         });
         tmpInstanceInfoList.push({
           ...item,
@@ -208,6 +210,7 @@ const InstanceTable: React.FC<InstanceTableProps> = (
       instanceList.map(async (item) => {
         const statusData = await appSyncRequestQuery(getLogAgentStatus, {
           instanceId: item.id,
+          accountId: accountId,
         });
         tmpInstanceInfoList.push({
           ...item,

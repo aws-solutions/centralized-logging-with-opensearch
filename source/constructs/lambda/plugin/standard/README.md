@@ -1,8 +1,8 @@
-# Log Hub Standard Plugins
+# Standard Plugins
 
 ## About
 
-Log Hub has below built-in plugins:
+Built-in plugins:
 
 | Code       | Plugin            | Description                                                            | Log Type                       |
 |------------|-------------------|------------------------------------------------------------------------|--------------------------------|
@@ -15,7 +15,7 @@ To be updated.
 
 ## Compatible Versions
 
-| Plugin Version | Log Hub Version |
+| Plugin Version | Solution Version |
 |----------------|-----------------|
 | 1.0.0          | v0.2.0, v1.0.0  |
 

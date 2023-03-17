@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import logging
-from datetime import datetime
 
 import boto3
 import requests
@@ -44,7 +43,7 @@ class OpenSearch:
         # Assumption: Log type can be reset, but the alias remains the same
         self._index_alias = (
             f"{self._index_prefix}-{self._log_type}"
-            if self._log_type and not (self._log_type.lower() == 'json')
+            if self._log_type and not (self._log_type.lower() == "json")
             else self._index_prefix
         )
 
@@ -57,14 +56,14 @@ class OpenSearch:
         self._log_type = log_type.lower()
 
     def create_ism_policy(
-        self, days_to_warm=0, days_to_cold=0, days_to_retain=0
+        self, warm_age, cold_age, retain_age, rollover_age, rollover_size
     ) -> requests.Response:
         """Create index state management policy
 
         Args:
-            days_to_warm (int, optional): Number of days to move to warm storage. Defaults to 0.
-            days_to_cold (int, optional): Number of days to move to cold storage. Defaults to 0.
-            days_to_retain (int, optional): Number of days to retain the index. Defaults to 0.
+            warm_age (int, optional): Number of days to move to warm storage. Defaults to 0.
+            cold_age (int, optional): Number of days to move to cold storage. Defaults to 0.
+            retain_age (int, optional): Number of days to retain the index. Defaults to 0.
 
         Returns:
             requests.Response: request response object
@@ -72,7 +71,10 @@ class OpenSearch:
         logger.info("Use OpenSearch API to create policy")
 
         policy_id = self._create_policy_id()
-        policy_doc = self._create_policy_doc(days_to_warm, days_to_cold, days_to_retain)
+        policy_doc = self._create_policy_doc(
+            warm_age, cold_age, retain_age, rollover_age, rollover_size
+        )
+        logger.info("policy_doc is %s", policy_doc)
         if self.engine == "OpenSearch":
             url_prefix = "_plugins"
         else:
@@ -87,22 +89,24 @@ class OpenSearch:
         logger.info("--> create_ism_policy response code %d", response.status_code)
         return response
 
-    def _create_policy_doc(self, days_to_warm=0, days_to_cold=0, days_to_retain=0):
+    def _create_policy_doc(
+        self, warm_age, cold_age, retain_age, rollover_age, rollover_size
+    ):
         """Create hot-warm-cold-delete index state management policy
 
         Args:
-            days_to_warm (int, optional): Number of days to move to warm storage. Defaults to 0.
-            days_to_cold (int, optional): Number of days to move to cold storage.. Defaults to 0.
-            days_to_retain (int, optional): Number of days to retain the index. Defaults to 0.
+            warm_age (str, optional): Number of days or hours or m to move to warm storage. Example: 5d, 7h, 1s(seconds), 2m(minutes).
+            cold_age (str, optional): Number of days to move to cold storage.
+            retain_age (str, optional): Number of days to retain the index.
 
         Returns:
             dict: ISM Policy Doc (Json)
         """
         states = []
 
-        ism = ISM()
+        ism = ISM(rollover_age, rollover_size)
         while ism.has_next():
-            ism.run(days_to_warm, days_to_cold, days_to_retain)
+            ism.run(warm_age, cold_age, retain_age)
             states.append(ism.get_status())
 
         policy_doc = {
@@ -163,4 +167,4 @@ class OpenSearch:
         return False
 
     def default_index_name(self) -> str:
-        return self._index_alias + datetime.strftime(datetime.now(), "-%Y-%m-%d")
+        return self._index_alias

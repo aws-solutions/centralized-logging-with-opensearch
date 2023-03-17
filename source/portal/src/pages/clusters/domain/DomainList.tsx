@@ -20,7 +20,6 @@ import Pagination from "@material-ui/lab/Pagination";
 import RefreshIcon from "@material-ui/icons/Refresh";
 import Button from "components/Button";
 import { TablePanel } from "components/TablePanel";
-// import { DomainList, DomainListProps } from "mock/data";
 import Status from "components/Status/Status";
 import Breadcrumb from "components/Breadcrumb";
 import { SelectType } from "components/TablePanel/tablePanel";
@@ -30,8 +29,6 @@ import { removeDomain } from "graphql/mutations";
 import { ImportedDomain } from "API";
 import Modal from "components/Modal";
 import { humanFileSize } from "assets/js/utils";
-// import { useDispatch } from "react-redux";
-// import { ActionType } from "reducer/appReducer";
 import LoadingText from "components/LoadingText";
 import HelpPanel from "components/HelpPanel";
 import SideMenu from "components/SideMenu";
@@ -45,7 +42,6 @@ const ESDomainList: React.FC = () => {
       name: t("cluster:domain.domains"),
     },
   ];
-  // const dispatch = useDispatch();
   const history = useHistory();
   const [domainList, setDomainList] = useState<ImportedDomain[]>([]);
   const [selectedDomains, setSelectedDomains] = useState<any[]>([]);

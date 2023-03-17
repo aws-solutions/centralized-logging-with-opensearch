@@ -29,8 +29,13 @@ import {
   aws_opensearchservice as opensearch,
   aws_events_targets as targets,
 } from "aws-cdk-lib";
-import { Rule, CfnRule, RuleTargetInput, EventField } from "aws-cdk-lib/aws-events";
-import { CfnAlarm } from "aws-cdk-lib/aws-cloudwatch"
+import {
+  Rule,
+  CfnRule,
+  RuleTargetInput,
+  EventField,
+} from "aws-cdk-lib/aws-events";
+import { CfnAlarm } from "aws-cdk-lib/aws-cloudwatch";
 
 const { VERSION } = process.env;
 
@@ -46,7 +51,7 @@ function createOpenSearchAlarm(
   periodInSeconds: number,
   comparisonOperator: cloudwatch.ComparisonOperator,
   topic: sns.Topic,
-  enabled: CfnCondition,
+  enabled: CfnCondition
 ) {
   const metric = domain.metric(`${nameOfMetric}`).with({
     statistic: statistics,
@@ -106,6 +111,12 @@ function createSubscription(
   });
 }
 
+export interface AlarmProps extends StackProps {
+  solutionName?: string;
+  solutionDesc?: string;
+  solutionId?: string;
+}
+
 export class AlarmForOpenSearchStack extends Stack {
   private paramGroups: any[] = [];
   private paramLabels: any = {};
@@ -125,9 +136,14 @@ export class AlarmForOpenSearchStack extends Stack {
     };
   }
 
-  constructor(scope: Construct, id: string, props?: StackProps) {
+  constructor(scope: Construct, id: string, props: AlarmProps) {
     super(scope, id, props);
-    this.templateOptions.description = `(SO8025-alarm) - Log hub alarm-for-opensearch-stack Template. Template version ${VERSION}`;
+
+    let solutionDesc =
+      props.solutionDesc || "Centralized Logging with OpenSearch";
+    let solutionId = props.solutionId || "SO8025";
+
+    this.templateOptions.description = `(${solutionId}-alarm) - ${solutionDesc} alarm-for-opensearch-stack Template. Template version ${VERSION}`;
 
     this.templateOptions.metadata = {
       "AWS::CloudFormation::Interface": {
@@ -400,7 +416,9 @@ export class AlarmForOpenSearchStack extends Stack {
       this,
       "clusterStatusRedNotEnabled",
       {
-        expression: Fn.conditionNot(Fn.conditionEquals("No", clusterStatusRed.valueAsString)),
+        expression: Fn.conditionNot(
+          Fn.conditionEquals("No", clusterStatusRed.valueAsString)
+        ),
       }
     );
     // Configuration value that is a different string based on flag
@@ -415,7 +433,7 @@ export class AlarmForOpenSearchStack extends Stack {
       60, //periodInSeconds
       cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
       topic,
-      ClusterStatusRedNotEnabled,
+      ClusterStatusRedNotEnabled
     );
 
     // Create alarm for ClusterStatus.yellow metrics
@@ -424,7 +442,9 @@ export class AlarmForOpenSearchStack extends Stack {
       this,
       "clusterStatusYellowNotEnabled",
       {
-        expression: Fn.conditionNot(Fn.conditionEquals("No", clusterStatusYellow.valueAsString)),
+        expression: Fn.conditionNot(
+          Fn.conditionEquals("No", clusterStatusYellow.valueAsString)
+        ),
       }
     );
     // Configuration value that is a different string based on flag
@@ -439,7 +459,7 @@ export class AlarmForOpenSearchStack extends Stack {
       60, //periodInSeconds
       cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
       topic,
-      ClusterStatusYellowNotEnabled,
+      ClusterStatusYellowNotEnabled
     );
 
     // Create alarm for FreeStorageSpace metrics
@@ -448,7 +468,9 @@ export class AlarmForOpenSearchStack extends Stack {
       this,
       "freeStorageSpaceNotEnabled",
       {
-        expression: Fn.conditionNot(Fn.conditionEquals(0, freeStorageSpace.valueAsNumber)),
+        expression: Fn.conditionNot(
+          Fn.conditionEquals(0, freeStorageSpace.valueAsNumber)
+        ),
       }
     );
     // Configuration value that is a different string based on flag
@@ -463,7 +485,7 @@ export class AlarmForOpenSearchStack extends Stack {
       60, //periodInSeconds
       cloudwatch.ComparisonOperator.LESS_THAN_OR_EQUAL_TO_THRESHOLD,
       topic,
-      FreeStorageSpaceNotEnabled,
+      FreeStorageSpaceNotEnabled
     );
 
     // Create alarm for ClusterIndexWritesBlocked metrics
@@ -472,10 +494,9 @@ export class AlarmForOpenSearchStack extends Stack {
       this,
       "clusterIndexWritesBlockedNotEnabled",
       {
-        expression: Fn.conditionNot(Fn.conditionEquals(
-          0,
-          clusterIndexWritesBlocked.valueAsString
-        )),
+        expression: Fn.conditionNot(
+          Fn.conditionEquals(0, clusterIndexWritesBlocked.valueAsString)
+        ),
       }
     );
     // Configuration value that is a different string based on flag
@@ -496,7 +517,9 @@ export class AlarmForOpenSearchStack extends Stack {
     // Create alarm for Nodes metrics
     // Flag to determine whether flag is enabled or not
     const NodesNotEnabled = new CfnCondition(this, "nodesNotEnabled", {
-      expression: Fn.conditionNot(Fn.conditionEquals(0, unreachableNodeNumber.valueAsNumber)),
+      expression: Fn.conditionNot(
+        Fn.conditionEquals(0, unreachableNodeNumber.valueAsNumber)
+      ),
     });
     // Configuration value that is a different string based on flag
     createOpenSearchAlarm(
@@ -519,10 +542,9 @@ export class AlarmForOpenSearchStack extends Stack {
       this,
       "automatedSnapshotFailureNotEnabled",
       {
-        expression: Fn.conditionNot(Fn.conditionEquals(
-          "No",
-          automatedSnapshotFailure.valueAsString
-        )),
+        expression: Fn.conditionNot(
+          Fn.conditionEquals("No", automatedSnapshotFailure.valueAsString)
+        ),
       }
     );
     // Configuration value that is a different string based on flag
@@ -546,7 +568,9 @@ export class AlarmForOpenSearchStack extends Stack {
       this,
       "cpuUtilizationNotEnabled",
       {
-        expression: Fn.conditionNot(Fn.conditionEquals("No", cpuUtilization.valueAsString)),
+        expression: Fn.conditionNot(
+          Fn.conditionEquals("No", cpuUtilization.valueAsString)
+        ),
       }
     );
     // Configuration value that is a different string based on flag
@@ -584,7 +608,9 @@ export class AlarmForOpenSearchStack extends Stack {
       this,
       "jvmMemoryPressureNotEnabled",
       {
-        expression: Fn.conditionNot(Fn.conditionEquals("No", jvmMemoryPressure.valueAsString)),
+        expression: Fn.conditionNot(
+          Fn.conditionEquals("No", jvmMemoryPressure.valueAsString)
+        ),
       }
     );
     // Configuration value that is a different string based on flag
@@ -621,10 +647,9 @@ export class AlarmForOpenSearchStack extends Stack {
       this,
       "masterCPUUtilizationNotEnabled",
       {
-        expression: Fn.conditionNot(Fn.conditionEquals(
-          "No",
-          masterCPUUtilization.valueAsString
-        )),
+        expression: Fn.conditionNot(
+          Fn.conditionEquals("No", masterCPUUtilization.valueAsString)
+        ),
       }
     );
     // Configuration value that is a different string based on flag
@@ -648,7 +673,9 @@ export class AlarmForOpenSearchStack extends Stack {
       this,
       "masterJVMMemoryPressureNotEnabled",
       {
-        expression: Fn.conditionNot(Fn.conditionEquals("No", kmsKeyError.valueAsString)),
+        expression: Fn.conditionNot(
+          Fn.conditionEquals("No", kmsKeyError.valueAsString)
+        ),
       }
     );
     // Configuration value that is a different string based on flag
@@ -672,7 +699,9 @@ export class AlarmForOpenSearchStack extends Stack {
       this,
       "kmsKeyErrorNotEnabled",
       {
-        expression: Fn.conditionNot(Fn.conditionEquals("No", kmsKeyError.valueAsString)),
+        expression: Fn.conditionNot(
+          Fn.conditionEquals("No", kmsKeyError.valueAsString)
+        ),
       }
     );
     // Configuration value that is a different string based on flag
@@ -696,7 +725,9 @@ export class AlarmForOpenSearchStack extends Stack {
       this,
       "kmsKeyInaccessibleNotEnabled",
       {
-        expression: Fn.conditionNot(Fn.conditionEquals("No", kmsKeyInaccessible.valueAsString)),
+        expression: Fn.conditionNot(
+          Fn.conditionEquals("No", kmsKeyInaccessible.valueAsString)
+        ),
       }
     );
     // Configuration value that is a different string based on flag

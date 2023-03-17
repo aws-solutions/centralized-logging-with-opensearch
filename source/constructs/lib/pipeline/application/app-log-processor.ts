@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import { Construct, IConstruct } from "constructs";
+import { Construct } from "constructs";
 import {
   Aws,
   Duration,
@@ -61,7 +61,8 @@ export interface LogProcessorProps {
 
   readonly backupBucketName: string;
 
-  readonly source: 'MSK' | 'KDS'
+  readonly source: 'MSK' | 'KDS';
+  readonly env?: { [key: string]: string };
 }
 
 export class AppLogProcessor extends Construct {
@@ -101,16 +102,16 @@ export class AppLogProcessor extends Construct {
       memorySize: 1024,
       timeout: Duration.seconds(300),
       vpc: props.vpc,
-      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_NAT },
+      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
       securityGroups: [props.securityGroup],
-      environment: {
+      environment: Object.assign({
         SOURCE: props.source,
         ENDPOINT: props.endpoint,
         ENGINE: props.engineType ?? "OpenSearch",
         INDEX_PREFIX: props.indexPrefix,
         BACKUP_BUCKET_NAME: props.backupBucketName,
         SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
-      },
+      }, props.env),
       layers: [osLayer],
     });
     this.logProcessorFn.addToRolePolicy(

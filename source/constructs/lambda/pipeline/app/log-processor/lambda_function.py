@@ -7,12 +7,17 @@ import json
 import logging
 import os
 import time
+import gzip
 from datetime import datetime
 from io import StringIO
 
 import boto3
 
+from typing import Dict
 from util.osutil import OpenSearch
+from util.helper import tsv2json, fillna
+from util import log_parser
+from config import FIELD_NAMES
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -30,6 +35,7 @@ index_prefix = os.environ.get("INDEX_PREFIX")
 endpoint = os.environ.get("ENDPOINT")
 default_region = os.environ.get("AWS_REGION")
 log_type = os.environ.get("LOG_TYPE", "")
+log_format = os.environ.get("LOG_FORMAT")
 engine = os.environ.get("ENGINE")
 source = os.environ.get("SOURCE", "KDS")
 
@@ -62,37 +68,96 @@ def process_msk_event(event):
         for msg in v:
             try:
                 value = json.loads(
-                    base64.b64decode(msg.get("value", "")).decode("utf-8"))
+                    base64.b64decode(msg.get("value", "")).decode(
+                        "utf-8", errors="replace"
+                    )
+                )
                 # logger.info(value)
                 records.append(value)
             except Exception as e:
-                logger.error("Unable to parse log records: %s",
-                             msg.get("value", ""))
+                logger.error(e)
+                logger.error("Unable to parse log records: %s", msg.get("value", ""))
 
     return records
 
 
-def process_kds_event(event):
-
+def process_kds_event(event, parse_func):
     records = []
     for record in event["Records"]:
         try:
-            value = json.loads(
-                base64.b64decode(record["kinesis"]["data"]).decode("utf-8"))
-            # logger.info(value)
+            value = parse_func(
+                base64.b64decode(record["kinesis"]["data"]).decode(
+                    "utf-8", errors="replace"
+                )
+            )
             records.append(value)
-        except Exception as e:
+        except Exception:
             logger.error("Unable to parse log records: %s", record)
 
     return records
 
 
-def lambda_handler(event, context):
+def process_gzip_kds_event(event, parse_func):
+    result = []
+    for record in event["Records"]:
+        try:
+            values = parse_func(
+                gzip.decompress(base64.b64decode(record["kinesis"]["data"])).decode(
+                    "utf-8", errors="replace"
+                )
+            )
+            for value in values:
+                result.append(value)
+        except Exception:
+            logger.error("Unable to parse log records: %s", record)
+    return result
 
+
+def parse_sinle_tsv_line(s: str) -> Dict:
+    rows = fillna(tsv2json(s, fieldnames=FIELD_NAMES))
+    if len(rows) != 1:
+        raise ValueError(f"The tsv data({s}) contains more than one line")
+    ret = rows[0]
+    if ret.get(None):
+        raise ValueError(
+            f"The field names({FIELD_NAMES}) doesn't match the tsv data({s})"
+        )
+    return ret
+
+
+def parse_vpc_logs_cwl(line: str):
+    try:
+        records = []
+        keys = log_format.split(",")
+        for event in json.loads(line)["logEvents"]:
+            record = {}
+            message = event["message"]
+            values = message.split(" ")
+            if len(values) != len(keys):
+                logger.info("unequal length")
+                continue
+            for i in range(len(keys)):
+                record[keys[i]] = values[i]
+            records.append(record)
+        return records
+    except Exception as e:
+        logger.error("unable to parse log line, error:", e)
+        return []
+
+
+def lambda_handler(event, context):
     logs = []
-    logger.info(f'source is {source}')
+    logger.info(f"source is {source}")
     if source == "KDS":
-        logs = process_kds_event(event)
+        if log_type == "cloudfront-rt":
+            logs = process_kds_event(event, parse_func=parse_sinle_tsv_line)
+        elif log_type == "CloudTrail":
+            cloud_trail = log_parser.CloudTrailCWL()
+            logs = process_gzip_kds_event(event, parse_func=cloud_trail.parse)
+        elif log_type == "VPCFlow":
+            logs = process_gzip_kds_event(event, parse_func=parse_vpc_logs_cwl)
+        else:
+            logs = process_kds_event(event, parse_func=json.loads)
     elif source == "MSK":
         logs = process_msk_event(event)
     else:
@@ -100,13 +165,11 @@ def lambda_handler(event, context):
             "Unknown Source, expected either KDS or MSK, please check environment variables"
         )
         return ""
-    now = datetime.now()
 
     total = len(logs)
     logger.info("%d lines of logs received", total)
 
-    index_name = f'{index_prefix}-{now.strftime("%Y-%m-%d")}'
-    failed_logs = batch_bulk_load(logs, index_name)
+    failed_logs = batch_bulk_load(logs, aos.default_index_name())
 
     logger.info(
         "--> Total: %d Loaded: %d Failed: %d",
@@ -118,8 +181,7 @@ def lambda_handler(event, context):
     key = get_export_key()
 
     if failed_logs:
-        status_code = export_failed_records(failed_logs, backup_bucket_name,
-                                            key)
+        status_code = export_failed_records(failed_logs, backup_bucket_name, key)
         logger.error(f"Export status: {status_code}")
 
 
@@ -148,7 +210,12 @@ def get_export_key() -> str:
     now = datetime.now()
     date = now.strftime("%Y-%m-%d")
     filename = now.strftime("%H-%M-%S") + ".json"
-    return f"error/AWSLogs/APPLogs/index-prefix={index_prefix}/date={date}/{filename}"
+    if log_type == "cloudfront-rt":
+        return f"error/AWSLogs/{log_type}/index-prefix={index_prefix}/date={date}/{filename}"
+    else:
+        return (
+            f"error/AWSLogs/APPLogs/index-prefix={index_prefix}/date={date}/{filename}"
+        )
 
 
 def export_failed_records(failed_records: list, bucket: str, key: str) -> str:
@@ -189,7 +256,8 @@ def batch_bulk_load(records: list, index_name: str) -> list:
     start = 0
     while start < total:
         batch_failed_records = bulk_load_records(
-            records[start:start + batch_size], index_name)
+            records[start : start + batch_size], index_name
+        )
         if batch_failed_records:
             failed_records.extend(batch_failed_records)
         start += batch_size
@@ -213,7 +281,6 @@ def bulk_load_records(records: list, index_name: str) -> list:
     bulk_body = []
     failed_records = []
 
-    # TODO: doc id
     for record in records:
         bulk_body.append(json.dumps({BULK_ACTION: {}}) + "\n")
         bulk_body.append(json.dumps(record) + "\n")
@@ -233,17 +300,14 @@ def bulk_load_records(records: list, index_name: str) -> list:
                 # print(item[BULK_ACTION]['status'])
                 if item[BULK_ACTION]["status"] >= 300:
                     records[idx]["index_name"] = index_name
-                    records[idx]["error_type"] = item[BULK_ACTION]["error"][
-                        "type"]
-                    records[idx]["error_reason"] = item[BULK_ACTION]["error"][
-                        "reason"]
+                    records[idx]["error_type"] = item[BULK_ACTION]["error"]["type"]
+                    records[idx]["error_reason"] = item[BULK_ACTION]["error"]["reason"]
                     failed_records.append(records[idx])
 
             break
 
         if retry >= TOTAL_RETRIES:
-            raise RuntimeError(
-                f"Unable to bulk load the records after {retry} retries")
+            raise RuntimeError(f"Unable to bulk load the records after {retry} retries")
         else:
             logger.error(f"Bulk load failed: {response.text}")
             logger.info("Sleep 10 seconds and retry...")

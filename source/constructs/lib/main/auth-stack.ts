@@ -14,7 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import { Construct } from "constructs";
-import { Stack, RemovalPolicy, aws_cognito as cognito } from "aws-cdk-lib";
+import {
+  Stack,
+  RemovalPolicy,
+  Duration,
+  aws_cognito as cognito,
+} from "aws-cdk-lib";
 export interface AuthProps {
   /**
    * Username to create an initial Admin user in Cognito User Pool
@@ -22,6 +27,7 @@ export interface AuthProps {
    * @default - None.
    */
   readonly username: string;
+  readonly solutionName?: string;
 }
 
 /**
@@ -45,6 +51,7 @@ export class AuthStack extends Construct {
       removalPolicy: RemovalPolicy.DESTROY,
       passwordPolicy: {
         minLength: 8,
+        requireLowercase: true,
         requireUppercase: true,
         requireDigits: true,
         requireSymbols: true,
@@ -59,6 +66,8 @@ export class AuthStack extends Construct {
     // Create User Pool Client
     const userPoolClient = new cognito.UserPoolClient(this, "APIClient", {
       userPool: userPool,
+      accessTokenValidity: Duration.minutes(15),
+      idTokenValidity: Duration.minutes(15),
       preventUserExistenceErrors: true,
     });
 

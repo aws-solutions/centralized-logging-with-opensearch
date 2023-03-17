@@ -31,6 +31,7 @@ export const createServicePipeline = /* GraphQL */ `
     $tags: [TagInput]
     $logSourceAccountId: String
     $logSourceRegion: String
+    $destinationType: DestinationType!
   ) {
     createServicePipeline(
       type: $type
@@ -40,6 +41,7 @@ export const createServicePipeline = /* GraphQL */ `
       tags: $tags
       logSourceAccountId: $logSourceAccountId
       logSourceRegion: $logSourceRegion
+      destinationType: $destinationType
     )
   }
 `;
@@ -85,6 +87,33 @@ export const putResourceLoggingBucket = /* GraphQL */ `
       bucket
       prefix
       source
+    }
+  }
+`;
+export const putResourceLogConfig = /* GraphQL */ `
+  mutation PutResourceLogConfig(
+    $type: ResourceType!
+    $resourceName: String!
+    $accountId: String
+    $region: String
+    $destinationType: DestinationType!
+    $destinationName: String!
+    $LogFormat: String
+  ) {
+    putResourceLogConfig(
+      type: $type
+      resourceName: $resourceName
+      accountId: $accountId
+      region: $region
+      destinationType: $destinationType
+      destinationName: $destinationName
+      LogFormat: $LogFormat
+    ) {
+      destinationType
+      destinationName
+      name
+      logFormat
+      region
     }
   }
 `;
@@ -240,11 +269,6 @@ export const deleteAppPipeline = /* GraphQL */ `
     deleteAppPipeline(id: $id)
   }
 `;
-export const upgradeAppPipeline = /* GraphQL */ `
-  mutation UpgradeAppPipeline($ids: [ID!]!) {
-    upgradeAppPipeline(ids: $ids)
-  }
-`;
 export const createAppLogIngestion = /* GraphQL */ `
   mutation CreateAppLogIngestion(
     $confId: String!
@@ -299,16 +323,6 @@ export const createLogSource = /* GraphQL */ `
       sourceInfo: $sourceInfo
       tags: $tags
     )
-  }
-`;
-export const deleteLogSource = /* GraphQL */ `
-  mutation DeleteLogSource($id: ID!) {
-    deleteLogSource(id: $id)
-  }
-`;
-export const updateLogSource = /* GraphQL */ `
-  mutation UpdateLogSource($id: ID!) {
-    updateLogSource(id: $id)
   }
 `;
 export const importEKSCluster = /* GraphQL */ `

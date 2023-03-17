@@ -22,6 +22,8 @@ import { CloudFrontTaskProps } from "../cloudfront/CreateCloudFront";
 import { SupportPlugin } from "types";
 import { ELBTaskProps } from "../elb/CreateELB";
 import ExtLink from "components/ExtLink";
+import Alert from "components/Alert";
+import { DestinationType, ServiceType } from "API";
 
 interface LogProcessingProps {
   pipelineTask: CloudFrontTaskProps | ELBTaskProps;
@@ -33,48 +35,33 @@ const LogProcessing: React.FC<LogProcessingProps> = (
 ) => {
   const { t } = useTranslation();
   const { pipelineTask, changePluginSelect } = props;
-  // const [ingestList, setIngestList] = useState(CFIngestList);
   const [locationList, setLocationList] = useState(CFLocationList);
   const [osList, setOsList] = useState(CFOSAgentList);
 
   return (
     <div>
       <PagePanel title={t("servicelog:create.step.logProcessing")}>
-        {/* <HeaderPanel
-          title={t("servicelog:cloudfront.ingestedFields")}
-          desc={t("servicelog:cloudfront.ingestedFieldsDesc")}
-        >
-          <div className="cf-check-list">
-            {ingestList.map((element, index) => {
-              return (
-                <label className="item" key={index}>
-                  <input
-                    disabled={element.disabled}
-                    checked={element.isChecked}
-                    type="checkbox"
-                    onChange={(event) => {
-                      setIngestList((prev) => {
-                        const tmpList = JSON.parse(JSON.stringify(prev));
-                        tmpList[index].isChecked = event.target.checked;
-                        return tmpList;
-                      });
-                    }}
-                  />
-                  {element.name}
-                </label>
-              );
-            })}
-          </div>
-        </HeaderPanel> */}
-
         <HeaderPanel
           title={t("servicelog:cloudfront.enrichedFields")}
           desc={t("servicelog:cloudfront.enrichedFieldsDesc")}
         >
           <div>
+            {pipelineTask.type === ServiceType.CloudFront &&
+              pipelineTask.destinationType === DestinationType.KDS && (
+                <Alert
+                  content={t("servicelog:cloudfront.logProcessNotSupport")}
+                />
+              )}
+          </div>
+
+          <div>
             <div className="cf-check-title">
               <label className="item">
                 <input
+                  checked={pipelineTask.params.geoPlugin}
+                  disabled={
+                    pipelineTask.destinationType === DestinationType.KDS
+                  }
                   type="checkbox"
                   onChange={(event) => {
                     changePluginSelect(SupportPlugin.Geo, event.target.checked);
@@ -108,6 +95,10 @@ const LogProcessing: React.FC<LogProcessingProps> = (
               <label className="item">
                 <input
                   type="checkbox"
+                  checked={pipelineTask.params.userAgentPlugin}
+                  disabled={
+                    pipelineTask.destinationType === DestinationType.KDS
+                  }
                   onChange={(event) => {
                     changePluginSelect(
                       SupportPlugin.UserAgent,

@@ -1,7 +1,7 @@
 # 安全
 
 当您在 AWS 基础设施上构建系统时，安全责任由您和 AWS 共同承担。因为 AWS 运营、管理和控制包括主机在内的组件
-操作系统、虚拟化层以及服务运行所在设施的物理安全性， 这个[共享模型](https://aws.amazon.com/compliance/shared-responsibility-model/)将
+操作系统、虚拟化层以及服务运行所在设施的物理安全性， 这个[责任共担模型](https://aws.amazon.com/compliance/shared-responsibility-model/)将
 减轻您的运营负担。 有关 AWS 安全性的更多信息，请参阅 [AWS 云安全性](http://aws.amazon.com/security/)。
 
 ## IAM 角色

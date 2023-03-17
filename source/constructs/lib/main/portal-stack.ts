@@ -14,7 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Construct, IConstruct } from "constructs";
+import * as path from 'path';
+import { CloudFrontToS3 } from '@aws-solutions-constructs/aws-cloudfront-s3';
 import {
   Aws,
   Duration,
@@ -24,10 +25,9 @@ import {
   aws_s3 as s3,
   aws_cloudfront as cloudfront,
   aws_s3_deployment as s3d,
-} from "aws-cdk-lib";
-import { CloudFrontToS3 } from "@aws-solutions-constructs/aws-cloudfront-s3";
+} from 'aws-cdk-lib';
 import { NagSuppressions } from 'cdk-nag';
-import * as path from "path";
+import { Construct } from 'constructs';
 
 export interface PortalProps {
   /**
@@ -55,11 +55,16 @@ export interface PortalProps {
    *
    */
   readonly iamCertificateId: string;
+
+  /**
+   * ACM Certificate Arn for CloudFront
+   */
+  readonly acmCertificateArn: string;
 }
 
 export const enum AuthType {
-  COGNITO = "AMAZON_COGNITO_USER_POOLS",
-  OIDC = "OPENID_CONNECT",
+  COGNITO = 'AMAZON_COGNITO_USER_POOLS',
+  OIDC = 'OPENID_CONNECT',
 }
 
 /**
@@ -68,17 +73,45 @@ export const enum AuthType {
 export class PortalStack extends Construct {
   readonly portalBucket: s3.Bucket;
   readonly portalUrl: string;
+  readonly cloudFrontDistributionId: string;
 
   constructor(scope: Construct, id: string, props: PortalProps) {
     super(scope, id);
 
-    const isOpsInRegion = new CfnCondition(this, "isOpsInRegion", {
+    const isOpsInRegion = new CfnCondition(this, 'isOpsInRegion', {
       expression: Fn.conditionOr(
-        Fn.conditionEquals(Aws.REGION, "ap-east-1"),
-        Fn.conditionEquals(Aws.REGION, "af-south-1"),
-        Fn.conditionEquals(Aws.REGION, "eu-south-1"),
-        Fn.conditionEquals(Aws.REGION, "me-south-1"),
-      )
+        Fn.conditionEquals(Aws.REGION, 'ap-east-1'),
+        Fn.conditionEquals(Aws.REGION, 'af-south-1'),
+        Fn.conditionEquals(Aws.REGION, 'eu-south-1'),
+        Fn.conditionEquals(Aws.REGION, 'me-south-1')
+      ),
+    });
+
+    const hasAcmCertificateArn = new CfnCondition(
+      this,
+      'HasAcmCertificateArn',
+      {
+        expression: Fn.conditionNot(
+          Fn.conditionEquals('', props.acmCertificateArn)
+        ),
+      }
+    );
+
+    const hasIamCertificateArn = new CfnCondition(
+      this,
+      'HasIamCertificateArn',
+      {
+        expression: Fn.conditionNot(
+          Fn.conditionEquals('', props.iamCertificateId)
+        ),
+      }
+    );
+
+    const isNoCert = new CfnCondition(this, "isNoCert", {
+      expression: Fn.conditionAnd(
+        Fn.conditionNot(hasAcmCertificateArn),
+        Fn.conditionNot(hasIamCertificateArn)
+      ),
     });
 
     const getDefaultBehavior = () => {
@@ -86,10 +119,10 @@ export class PortalStack extends Construct {
         return {
           responseHeadersPolicy: new cloudfront.ResponseHeadersPolicy(
             this,
-            "ResponseHeadersPolicy",
+            'ResponseHeadersPolicy',
             {
               responseHeadersPolicyName: `SecHdr${Aws.REGION}${Aws.STACK_NAME}`,
-              comment: "Log Hub Security Headers Policy",
+              comment: 'Security Headers Policy',
               securityHeadersBehavior: {
                 contentSecurityPolicy: {
                   contentSecurityPolicy: `default-src 'self'; upgrade-insecure-requests; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ${props.apiEndpoint} https://cognito-idp.${Aws.REGION}.amazonaws.com/`,
@@ -123,7 +156,7 @@ export class PortalStack extends Construct {
     };
 
     // Use cloudfrontToS3 solution contructs
-    const portal = new CloudFrontToS3(this, "UI", {
+    const portal = new CloudFrontToS3(this, 'UI', {
       bucketProps: {
         versioned: true,
         encryption: s3.BucketEncryption.S3_MANAGED,
@@ -142,87 +175,123 @@ export class PortalStack extends Construct {
           {
             httpStatus: 403,
             responseHttpStatus: 200,
-            responsePagePath: "/index.html",
+            responsePagePath: '/index.html',
           },
         ],
         defaultBehavior: getDefaultBehavior(),
       },
       insertHttpSecurityHeaders: false,
     });
-    NagSuppressions.addResourceSuppressions(
-      portal.cloudFrontWebDistribution,
-      [
-        {
-          id: 'AwsSolutions-CFR1',
-          reason: 'Use case does not warrant CloudFront Geo restriction'
-        }, {
-          id: 'AwsSolutions-CFR2',
-          reason: 'Use case does not warrant CloudFront integration with AWS WAF'
-        }, {
-          id: 'AwsSolutions-CFR4',
-          reason: 'CloudFront automatically sets the security policy to TLSv1 when the distribution uses the CloudFront domain name'
-        }
-      ],
-    );
+    NagSuppressions.addResourceSuppressions(portal.cloudFrontWebDistribution, [
+      {
+        id: 'AwsSolutions-CFR1',
+        reason: 'Use case does not warrant CloudFront Geo restriction',
+      },
+      {
+        id: 'AwsSolutions-CFR2',
+        reason: 'Use case does not warrant CloudFront integration with AWS WAF',
+      },
+      {
+        id: 'AwsSolutions-CFR4',
+        reason:
+          'CloudFront automatically sets the security policy to TLSv1 when the distribution uses the CloudFront domain name',
+      },
+    ]);
     this.portalBucket = portal.s3Bucket as s3.Bucket;
     const portalDist = portal.cloudFrontWebDistribution.node
       .defaultChild as cloudfront.CfnDistribution;
 
+    const cfnCloudFrontWebDistribution = portal.cloudFrontWebDistribution.node
+      .defaultChild as cloudfront.CfnDistribution;
 
-    const cfnCloudFrontWebDistribution = portal.cloudFrontWebDistribution.node.defaultChild as cloudfront.CfnDistribution;
-
-    (cfnCloudFrontWebDistribution.distributionConfig as any).logging = Fn.conditionIf(isOpsInRegion.logicalId, Aws.NO_VALUE,
-      {
+    (cfnCloudFrontWebDistribution.distributionConfig as any).logging =
+      Fn.conditionIf(isOpsInRegion.logicalId, Aws.NO_VALUE, {
         Bucket: portal.cloudFrontLoggingBucket!.bucketRegionalDomainName,
-      })
+      });
 
     if (props.authenticationType === AuthType.OIDC) {
       // Currently, CachePolicy and Cloudfront Function is not available in Cloudfront in China Regions.
       // Need to override the default CachePolicy to use ForwardedValues to support both China regions and Global regions.
       // This should be updated in the future once the feature is landed in China regions.
       portalDist.addPropertyOverride(
-        "DistributionConfig.DefaultCacheBehavior.CachePolicyId",
+        'DistributionConfig.DefaultCacheBehavior.CachePolicyId',
         undefined
       );
       portalDist.addPropertyOverride(
-        "DistributionConfig.DefaultCacheBehavior.ForwardedValues",
+        'DistributionConfig.DefaultCacheBehavior.ForwardedValues',
         {
           Cookies: {
-            Forward: "none",
+            Forward: 'none',
           },
           QueryString: false,
         }
       );
-      if (props.customDomainName != "") {
-        portalDist.addPropertyOverride("DistributionConfig.Aliases", [
-          {
-            Ref: "Domain",
-          },
-        ]);
-        portalDist.addPropertyOverride(
-          "DistributionConfig.ViewerCertificate.MinimumProtocolVersion",
-          "TLSv1"
+      if (props.customDomainName != '') {
+        portalDist.addPropertyOverride('DistributionConfig.Aliases',
+          Fn.conditionIf(
+            isNoCert.logicalId,
+            Aws.NO_VALUE,
+            [
+              {
+                Ref: 'Domain',
+              },
+            ]
+          )
         );
         portalDist.addPropertyOverride(
-          "DistributionConfig.ViewerCertificate.SslSupportMethod",
-          "sni-only"
+          'DistributionConfig.ViewerCertificate.MinimumProtocolVersion',
+          'TLSv1'
         );
         portalDist.addPropertyOverride(
-          "DistributionConfig.ViewerCertificate.IamCertificateId",
-          props.iamCertificateId
+          'DistributionConfig.ViewerCertificate.SslSupportMethod',
+          // 'sni-only'
+          Fn.conditionIf(
+            isNoCert.logicalId,
+            Aws.NO_VALUE,
+            'sni-only'
+          )
+        );
+        portalDist.addPropertyOverride(
+          'DistributionConfig.ViewerCertificate.CloudFrontDefaultCertificate',
+          Fn.conditionIf(
+            isNoCert.logicalId,
+            true,
+            Aws.NO_VALUE
+          )
+        );
+        portalDist.addPropertyOverride(
+          'DistributionConfig.ViewerCertificate.IamCertificateId',
+          Fn.conditionIf(
+            hasAcmCertificateArn.logicalId,
+            Aws.NO_VALUE,
+            Fn.conditionIf(
+              hasIamCertificateArn.logicalId,
+              props.iamCertificateId,
+              Aws.NO_VALUE
+            )
+          )
+        );
+        portalDist.addPropertyOverride(
+          'DistributionConfig.ViewerCertificate.AcmCertificateArn',
+          Fn.conditionIf(
+            hasAcmCertificateArn.logicalId,
+            props.acmCertificateArn,
+            Aws.NO_VALUE
+          )
         );
       }
     }
     this.portalUrl = portal.cloudFrontWebDistribution.distributionDomainName;
+    this.cloudFrontDistributionId =
+      portal.cloudFrontWebDistribution.distributionId;
 
     // upload static web assets
-    new s3d.BucketDeployment(this, "DeployWebAssets", {
+    new s3d.BucketDeployment(this, 'DeployWebAssets', {
       sources: [
-        s3d.Source.asset(path.join(__dirname, "../../../portal/build")),
+        s3d.Source.asset(path.join(__dirname, '../../../portal/build')),
       ],
       destinationBucket: this.portalBucket,
       prune: false,
     });
-
   }
 }

@@ -756,6 +756,11 @@
   border-radius: 0 !important;
 }
 
+.MuiListItem-root.Mui-selected,
+.MuiListItem-root.Mui-selected:hover {
+  background-color: #f1faff !important;
+}
+
 .invalid {
   .gsui-autocomplete-select input,
   .gsui-textinput input,

@@ -132,6 +132,8 @@ export interface S3toOpenSearchStackProps {
    * @default - None.
    */
   readonly defaultCmkArn?: string;
+
+  readonly solutionId: string;
 }
 
 export class S3toOpenSearchStack extends Construct {
@@ -140,7 +142,7 @@ export class S3toOpenSearchStack extends Construct {
   private newKMSKey = new kms.Key(this, `SQS-CMK`, {
     removalPolicy: RemovalPolicy.DESTROY,
     pendingWindow: Duration.days(7),
-    description: "KMS-CMK for encrypting the objects in Log Hub SQS",
+    description: "KMS-CMK for encrypting the objects in SQS",
     enableKeyRotation: true,
     policy: new iam.PolicyDocument({
       statements: [
@@ -250,7 +252,7 @@ export class S3toOpenSearchStack extends Construct {
     ]);
 
     // Create a lambda layer with required python packages.
-    // This layer also includes standard log hub plugins.
+    // This layer also includes standard plugins.
     const pipeLayer = new lambda.LayerVersion(this, "LogHubPipeLayer", {
       code: lambda.Code.fromAsset(
         path.join(__dirname, "../../../lambda/plugin/standard"),
@@ -266,7 +268,7 @@ export class S3toOpenSearchStack extends Construct {
         }
       ),
       compatibleRuntimes: [lambda.Runtime.PYTHON_3_9],
-      description: "Log Hub Default Lambda layer for Log Pipeline",
+      description: "Default Lambda layer for Log Pipeline",
     });
 
     // Create the Log Processor Lambda
@@ -281,7 +283,7 @@ export class S3toOpenSearchStack extends Construct {
       memorySize: 1024,
       timeout: Duration.seconds(900),
       vpc: props.vpc,
-      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_NAT },
+      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
       securityGroups: [props.securityGroup],
       environment: {
         ENDPOINT: props.endpoint,
@@ -291,7 +293,7 @@ export class S3toOpenSearchStack extends Construct {
         LOG_BUCKET_NAME: props.logBucketName,
         BACKUP_BUCKET_NAME: props.backupBucketName,
         SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
-        VERSION: process.env.VERSION || "v1.0.0",
+        SOLUTION_ID: props.solutionId,
         PLUGINS: props.plugins,
         LOG_SOURCE_ACCOUNT_ID: props.logSourceAccountId,
         LOG_SOURCE_REGION: props.logSourceRegion,
@@ -507,7 +509,8 @@ export class S3toOpenSearchStack extends Construct {
         environment: {
           STACK_ID: Aws.STACK_ID,
           STACK_NAME: Aws.STACK_NAME,
-          VERSION: process.env.VERSION || "v1.0.0",
+          SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+          SOLUTION_ID: props.solutionId,
           LOG_TYPE: props.logType,
           LOG_SOURCE_ACCOUNT_ID: props.logSourceAccountId,
           LOG_SOURCE_REGION: props.logSourceRegion,
@@ -602,7 +605,7 @@ export class S3toOpenSearchStack extends Construct {
 }
 
 class InjectCondition implements IAspect {
-  public constructor(private condition: CfnCondition) {}
+  public constructor(private condition: CfnCondition) { }
 
   public visit(node: IConstruct): void {
     if (node instanceof CfnResource) {
@@ -612,7 +615,7 @@ class InjectCondition implements IAspect {
 }
 
 class InjectS3NotificationCondition implements IAspect {
-  public constructor(private condition: CfnCondition) {}
+  public constructor(private condition: CfnCondition) { }
 
   public visit(node: IConstruct): void {
     if (

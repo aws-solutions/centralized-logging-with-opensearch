@@ -23,7 +23,13 @@
                 "format": "dd/MMM/yyyy:HH:mm:ss Z"
             },
             "remote_ip": {
-                "type": "ip"
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
             },
             "requester": {
                 "type": "text",

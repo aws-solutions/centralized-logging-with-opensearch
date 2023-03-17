@@ -13,11 +13,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import { LoggingBucket, Resource, ResourceType } from "API";
+import { Resource, ResourceType } from "API";
 import { CreateLogMethod, VPC_FLOW_LOG_LINK } from "assets/js/const";
 import { appSyncRequestQuery } from "assets/js/request";
-import { splitStringToBucketAndPrefix } from "assets/js/utils";
-import Alert from "components/Alert";
 import AutoComplete from "components/AutoComplete";
 import { OptionType } from "components/AutoComplete/autoComplete";
 import ExtLink from "components/ExtLink";
@@ -27,27 +25,43 @@ import PagePanel from "components/PagePanel";
 import { SelectItem } from "components/Select/select";
 import TextInput from "components/TextInput";
 import Tiles from "components/Tiles";
-import { getResourceLoggingBucket, listResources } from "graphql/queries";
+import { listResources } from "graphql/queries";
 import CrossAccountSelect from "pages/comps/account/CrossAccountSelect";
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { InfoBarTypes } from "reducer/appReducer";
-import AutoEnableLogging from "../../common/AutoEnableLogging";
 import { VpcLogTaskProps } from "../CreateVPC";
+import SourceType from "./comp/SourceType";
 
 interface SpecifySettingsProps {
   vpcLogTask: VpcLogTaskProps;
   autoVpcEmptyError: boolean;
   manualVpcEmptyError: boolean;
+  manualS3EmptyError: boolean;
+  manualS3PathInvalid: boolean;
   setISChanging: (changing: boolean) => void;
   changeTaskType: (type: string) => void;
   changeVpcLogObj: (vpc: OptionType | null) => void;
   changeLogBucket: (bucket: string) => void;
   changeLogPrefix: (path: string) => void;
-  changeManualBucketName: (name: string) => void;
-  changeManualBucketS3Path: (name: string) => void;
+  changeManualS3: (name: string) => void;
   setNextStepDisableStatus: (status: boolean) => void;
   changeCrossAccount: (id: string) => void;
+  changeSourceType: (type: string) => void;
+  changeVPCFLowLog: (flow: string) => void;
+  changeS3FlowList: (list: SelectItem[]) => void;
+  changeCWLFlowList: (list: SelectItem[]) => void;
+  changeTmpFlowList: (flowList: SelectItem[]) => void;
+  changeVPCId: (vpc: string) => void;
+  changeLogFormat: (format: string) => void;
+  changeVpcLogSourceType: (type: string) => void;
+  sourceTypeEmptyError?: boolean;
+  vpcFlowLogEmptyError?: boolean;
+  shardNumError: boolean;
+  maxShardNumError: boolean;
+  changeMinCapacity: (num: string) => void;
+  changeEnableAS: (enable: string) => void;
+  changeMaxCapacity: (num: string) => void;
 }
 
 const SpecifySettings: React.FC<SpecifySettingsProps> = (
@@ -57,25 +71,36 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     vpcLogTask,
     autoVpcEmptyError,
     manualVpcEmptyError,
+    manualS3EmptyError,
+    manualS3PathInvalid,
     setISChanging,
     changeTaskType,
     changeVpcLogObj,
     changeLogBucket,
     changeLogPrefix,
-    changeManualBucketName,
-    changeManualBucketS3Path,
+    changeManualS3,
     setNextStepDisableStatus,
     changeCrossAccount,
+    changeSourceType,
+    changeS3FlowList,
+    changeCWLFlowList,
+    changeVPCFLowLog,
+    changeTmpFlowList,
+    changeVPCId,
+    changeLogFormat,
+    changeVpcLogSourceType,
+    sourceTypeEmptyError,
+    vpcFlowLogEmptyError,
+    shardNumError,
+    maxShardNumError,
+    changeMinCapacity,
+    changeEnableAS,
+    changeMaxCapacity,
   } = props;
 
   const { t } = useTranslation();
 
   const [loadingVpcList, setLoadingVpcList] = useState(false);
-  const [loadingBucket, setLoadingBucket] = useState(false);
-  const [showSuccessText, setShowSuccessText] = useState(false);
-  const [showInfoText, setShowInfoText] = useState(false);
-
-  const [previewVpcLogPath, setPreviewVpcLogPath] = useState("");
 
   const [vpcOptionList, setVpcOptionList] = useState<SelectItem[]>([]);
   const [disableVPC, setDisableVPC] = useState(false);
@@ -87,7 +112,6 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
         type: ResourceType.VPC,
         accountId: accountId,
       });
-      console.info("domainNames:", resData.data);
       const dataList: Resource[] = resData.data.listResources;
       const tmpOptionList: SelectItem[] = [];
       dataList.forEach((element) => {
@@ -103,45 +127,11 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     }
   };
 
-  const getVpcLoggingBucket = async (bucket: string) => {
-    setLoadingBucket(true);
-    setISChanging(true);
-    const resData: any = await appSyncRequestQuery(getResourceLoggingBucket, {
-      type: ResourceType.VPC,
-      resourceName: bucket,
-      accountId: vpcLogTask.logSourceAccountId,
-    });
-    console.info("getBucketPrefix:", resData.data);
-    const logginBucket: LoggingBucket = resData?.data?.getResourceLoggingBucket;
-    setLoadingBucket(false);
-    setISChanging(false);
-    setPreviewVpcLogPath(` s3://${logginBucket.bucket}/${logginBucket.prefix}`);
-    if (logginBucket.enabled) {
-      changeLogBucket(logginBucket.bucket || "");
-      changeLogPrefix(logginBucket.prefix || "");
-      setNextStepDisableStatus(false);
-      setShowSuccessText(true);
-    } else {
-      setNextStepDisableStatus(true);
-      setShowInfoText(true);
-      setShowSuccessText(false);
-    }
-  };
-
-  useEffect(() => {
-    setShowSuccessText(false);
-    setNextStepDisableStatus(false);
-    setShowInfoText(false);
-    if (vpcLogTask.params.vpcLogObj && vpcLogTask.params.vpcLogObj.value) {
-      getVpcLoggingBucket(vpcLogTask.params.vpcLogObj.value);
-    }
-  }, [vpcLogTask.params.vpcLogObj]);
-
   useEffect(() => {
     if (vpcLogTask.params.taskType === CreateLogMethod.Automatic) {
       getVpcList(vpcLogTask.logSourceAccountId);
     }
-  }, [vpcLogTask.logSourceAccountId]);
+  }, [vpcLogTask.logSourceAccountId, vpcLogTask.params.taskType]);
 
   return (
     <div>
@@ -179,7 +169,6 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
 
           <HeaderPanel title={t("servicelog:vpc.title")}>
             <div>
-              <Alert content={t("servicelog:vpc.alert")} />
               <CrossAccountSelect
                 accountId={vpcLogTask.logSourceAccountId}
                 changeAccount={(id) => {
@@ -205,18 +194,13 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                     errorText={
                       autoVpcEmptyError ? t("servicelog:vpc.vpcEmptyError") : ""
                     }
-                    successText={
-                      showSuccessText && previewVpcLogPath
-                        ? t("servicelog:vpc.savedTips") + previewVpcLogPath
-                        : ""
-                    }
                   >
                     <AutoComplete
                       outerLoading
-                      disabled={loadingVpcList || loadingBucket || disableVPC}
+                      disabled={loadingVpcList || disableVPC}
                       className="m-w-75p"
                       placeholder={t("servicelog:vpc.selectVpc")}
-                      loading={loadingVpcList || loadingBucket}
+                      loading={loadingVpcList}
                       optionList={vpcOptionList}
                       value={vpcLogTask.params.vpcLogObj}
                       onChange={(
@@ -227,35 +211,60 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                       }}
                     />
                   </FormItem>
-                  {showInfoText && (
-                    <AutoEnableLogging
-                      title={t("servicelog:vpc.noLogOutput")}
-                      desc={
-                        t("servicelog:vpc.noLogOutputDesc") +
-                        previewVpcLogPath +
-                        " ?"
-                      }
-                      accountId={vpcLogTask.logSourceAccountId}
-                      resourceType={ResourceType.VPC}
-                      resourceName={vpcLogTask.source}
-                      changeEnableStatus={(status) => {
-                        setISChanging(status);
-                      }}
-                      changeLogBucketAndPrefix={(bucket, prefix, enabled) => {
-                        changeLogBucket(bucket || "");
-                        changeLogPrefix(prefix || "");
-                        if (enabled) {
-                          setPreviewVpcLogPath(` s3://${bucket}/${prefix}`);
-                          setShowSuccessText(true);
-                          setShowInfoText(false);
-                          setNextStepDisableStatus(false);
-                        } else {
-                          setShowInfoText(true);
-                          setShowSuccessText(false);
-                        }
-                      }}
-                    />
-                  )}
+                  <SourceType
+                    vpcLogTask={vpcLogTask}
+                    sourceTypeEmptyError={sourceTypeEmptyError}
+                    manualS3EmptyError={manualS3EmptyError}
+                    manualS3PathInvalid={manualS3PathInvalid}
+                    vpcFlowLogEmptyError={vpcFlowLogEmptyError}
+                    shardNumError={shardNumError}
+                    maxShardNumError={maxShardNumError}
+                    changeSourceType={(type) => {
+                      changeSourceType(type);
+                    }}
+                    changeVPCFLowLog={(flow) => {
+                      changeVPCFLowLog(flow);
+                    }}
+                    changeBucket={(bucket) => {
+                      changeLogBucket(bucket);
+                    }}
+                    changeLogPath={(prefix) => {
+                      changeLogPrefix(prefix);
+                    }}
+                    setISChanging={(changing) => {
+                      setISChanging(changing);
+                    }}
+                    setNextStepDisableStatus={(disable) => {
+                      setNextStepDisableStatus(disable);
+                    }}
+                    changeS3FlowList={(list) => {
+                      changeS3FlowList(list);
+                    }}
+                    changeCWLFlowList={(list) => {
+                      changeCWLFlowList(list);
+                    }}
+                    changeTmpFlowList={(list) => {
+                      changeTmpFlowList(list);
+                    }}
+                    changeManualS3={(s3) => {
+                      changeManualS3(s3);
+                    }}
+                    changeLogFormat={(format) => {
+                      changeLogFormat(format);
+                    }}
+                    changeVpcLogSourceType={(type) => {
+                      changeVpcLogSourceType(type);
+                    }}
+                    changeMinCapacity={(num) => {
+                      changeMinCapacity(num);
+                    }}
+                    changeEnableAS={(enable) => {
+                      changeEnableAS(enable);
+                    }}
+                    changeMaxCapacity={(num) => {
+                      changeMaxCapacity(num);
+                    }}
+                  />
                 </div>
               )}
               {vpcLogTask.params.taskType === CreateLogMethod.Manual && (
@@ -263,39 +272,74 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                   <FormItem
                     optionTitle={t("servicelog:vpc.vpcName")}
                     optionDesc={t("servicelog:vpc.vpcNameDesc")}
-                  >
-                    <TextInput
-                      className="m-w-75p"
-                      placeholder={t("servicelog:vpc.inputVpc")}
-                      value={vpcLogTask.params.manualBucketName}
-                      onChange={(event) => {
-                        changeManualBucketName(event.target.value);
-                      }}
-                    />
-                  </FormItem>
-                  <FormItem
-                    optionTitle={t("servicelog:vpc.vpcLogLocation")}
-                    optionDesc={t("servicelog:vpc.vpcLogLocationDesc")}
                     errorText={
-                      manualVpcEmptyError
-                        ? t("servicelog:vpc.vpcLogLocationError")
-                        : ""
+                      manualVpcEmptyError ? t("servicelog:vpc.inputVpc") : ""
                     }
                   >
                     <TextInput
                       className="m-w-75p"
-                      value={vpcLogTask.params.manualBucketS3Path}
-                      placeholder="s3://bucket/prefix"
+                      placeholder={t("servicelog:vpc.inputVpc")}
+                      value={vpcLogTask.source}
                       onChange={(event) => {
-                        const { bucket, prefix } = splitStringToBucketAndPrefix(
-                          event.target.value
-                        );
-                        changeLogPrefix(prefix);
-                        changeLogBucket(bucket);
-                        changeManualBucketS3Path(event.target.value);
+                        changeVPCId(event.target.value);
                       }}
                     />
                   </FormItem>
+
+                  <SourceType
+                    vpcLogTask={vpcLogTask}
+                    sourceTypeEmptyError={sourceTypeEmptyError}
+                    manualS3EmptyError={manualS3EmptyError}
+                    manualS3PathInvalid={manualS3PathInvalid}
+                    vpcFlowLogEmptyError={vpcFlowLogEmptyError}
+                    shardNumError={shardNumError}
+                    maxShardNumError={maxShardNumError}
+                    changeVPCFLowLog={(flow) => {
+                      changeVPCFLowLog(flow);
+                    }}
+                    changeSourceType={(type) => {
+                      changeSourceType(type);
+                    }}
+                    changeBucket={(bucket) => {
+                      changeLogBucket(bucket);
+                    }}
+                    changeLogPath={(prefix) => {
+                      changeLogPrefix(prefix);
+                    }}
+                    setISChanging={(changing) => {
+                      setISChanging(changing);
+                    }}
+                    setNextStepDisableStatus={(disable) => {
+                      setNextStepDisableStatus(disable);
+                    }}
+                    changeS3FlowList={(list) => {
+                      changeS3FlowList(list);
+                    }}
+                    changeCWLFlowList={(list) => {
+                      changeCWLFlowList(list);
+                    }}
+                    changeTmpFlowList={(list) => {
+                      changeTmpFlowList(list);
+                    }}
+                    changeManualS3={(s3) => {
+                      changeManualS3(s3);
+                    }}
+                    changeLogFormat={(format) => {
+                      changeLogFormat(format);
+                    }}
+                    changeVpcLogSourceType={(type) => {
+                      changeVpcLogSourceType(type);
+                    }}
+                    changeMinCapacity={(num) => {
+                      changeMinCapacity(num);
+                    }}
+                    changeEnableAS={(enable) => {
+                      changeEnableAS(enable);
+                    }}
+                    changeMaxCapacity={(num) => {
+                      changeMaxCapacity(num);
+                    }}
+                  />
                 </div>
               )}
             </div>

@@ -1,9 +1,9 @@
 # Syslog
-Syslog 用作生成、转发和收集在 Linux 实例、路由器或网络设备上生成的日志的标准。 您可以将 Log Hub 配置为摄取Syslog。
+Syslog 用作生成、转发和收集在 Linux 实例、路由器或网络设备上生成的日志的标准。 您可以将配置日志通摄取Syslog。
 
 !!! important "重要"
 
-    请确保您的 Syslog 生成器/发送器的子网连接到 Log Hub 的**两个**私有子网，以便提取日志，您需要使用 VPC [Peering Connection][peering-connection] 或 [Transit Gateway][tgw] 来连接这些 VPC。
+    请确保您的 Syslog 生成器/发送器的子网连接到日志通的**两个**私有子网，以便提取日志，您需要使用 VPC [Peering Connection][peering-connection] 或 [Transit Gateway][tgw] 来连接这些 VPC。
 
 ## 前提条件
 {%
@@ -12,17 +12,11 @@ include-markdown "include-prerequisites.md"
 
 ## 步骤 1: 创建一个 Syslog 日志配置
 
-1. 登录 Log Hub 控制台。
+1. 登录日志通控制台。
 2. 在左侧边栏中的 **资源** 下，选择 **日志配置**。
 3. 单击**创建日志配置**按钮。
 4. 指定**配置名称**。
-5. 在日志类型下拉菜单中选择**Syslog**。
-
-1. Sign in to the Log Hub Console.
-2. In the left sidebar, under **Resources**, choose **Log Config**.
-3. Click the **Create a log config** button.
-4. Specify **Config Name**.
-5. 这里我们以日志类型下拉菜单中的**Syslog** 为例。 但是Log Hub也支持[JSON](./json.md)格式和[Single-Line test](./single-line-text.md)格式的Syslog，可以参考相应教程创建日志配置 .
+5. 在日志类型下拉菜单中选择**Syslog**。这里我们以日志类型下拉菜单中的**Syslog** 为例，日志通也支持[JSON](./json.md)格式和[Single-Line text](./single-line-text.md)格式的Syslog，可以参考相应教程创建日志配置。
 
 ### RFC5424
 1. 粘贴示例 RFC5424 日志。 例如：
@@ -31,11 +25,11 @@ include-markdown "include-prerequisites.md"
     <35>1 2013-10-11T22:14:15Z client_machine su - - - 'su root' failed for joe on /dev/pts/2
     ```
 
-2. 点击**解析日志**.
+2. 点击**解析日志**。
 
 3. 检查每个字段类型映射是否正确。 通过选择第二列中的下拉菜单来更改类型。 对于所有支持的类型，请参阅 [数据类型](https://opensearch.org/docs/latest/search-plugins/sql/datatypes/)。
 
-    !!! Note "Note"
+    !!! Note "注意"
         您必须使用键 `time` 指定日志的日期时间。 如果未指定，将添加系统时间。
 
 4. 指定**时间格式**。 格式语法遵循 [strptime](https://linux.die.net/man/3/strptime)。 请参见[详情](https://docs.fluentbit.io/manual/pipeline/parsers/configuring-parser#time-resolution-and-fractional-seconds)。 
@@ -56,11 +50,11 @@ include-markdown "include-prerequisites.md"
     <35>Oct 12 22:14:15 client_machine su: 'su root' failed for joe on /dev/pts/2
     ```
 
-2. 点击**解析日志**.
+2. 点击**解析日志**。
 
 3. 检查每个字段类型映射是否正确。 通过选择第二列中的下拉菜单来更改类型。 对于所有支持的类型，请参阅 [数据类型](https://opensearch.org/docs/latest/search-plugins/sql/datatypes/)。
 
-    !!! Note "Note"
+    !!! Note "注意"
         您必须使用键 `time` 指定日志的日期时间。 如果未指定，将添加系统时间。
 
         由于 RFC3164 的时间戳中没有年份，因此无法在 Amazon OpenSearch 的发现界面中显示为时间直方图。
@@ -89,7 +83,7 @@ include-markdown "include-prerequisites.md"
 
 3. 检查每个字段类型映射是否正确。 通过选择第二列中的下拉菜单来更改类型。 对于所有支持的类型，请参阅 [数据类型](https://opensearch.org/docs/latest/search-plugins/sql/datatypes/)。
 
-    !!! Note "Note"
+    !!! Note "注意"
         您必须使用键 `time` 指定日志的日期时间。 如果未指定，将添加系统时间。
 
 4. 指定**时间格式**。 格式语法遵循 [strptime](https://linux.die.net/man/3/strptime)。 请参见[详情](https://docs.fluentbit.io/manual/pipeline/parsers/configuring-parser#time-resolution-and-fractional-seconds)。 
@@ -106,7 +100,7 @@ include-markdown "include-prerequisites.md"
    end="<!--syslog-end-->"
 %}
 
-## 步骤 3：配置 Syslog 生成器以将日志发送到 Log Hub
+## 步骤 3：配置 Syslog 生成器以将日志发送到日志通
 
 1. 单击在**步骤 2** 中创建的摄取 ID。
 2. 对于 [Rsyslog][rsyslog] 用户，请按照 Syslog 配置指南配置 Rsyslog 代理。 您还可以在此页面中获取 NLB DNS 名称。

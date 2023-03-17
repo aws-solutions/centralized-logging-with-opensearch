@@ -15,18 +15,18 @@ limitations under the License.
 */
 import {
     Construct,
-  } from 'constructs';
-import { 
+} from 'constructs';
+import {
     Fn,
     aws_stepfunctions_tasks as tasks,
     aws_stepfunctions as sfn,
     aws_logs as logs,
     aws_iam as iam
- } from 'aws-cdk-lib';  
- import {
+} from 'aws-cdk-lib';
+import {
     Table,
     ITable
-  } from 'aws-cdk-lib/aws-dynamodb';
+} from 'aws-cdk-lib/aws-dynamodb';
 export interface PipelineFlowProps {
 
     /**
@@ -49,7 +49,7 @@ export interface PipelineFlowProps {
  * Stack to provision a Step Functions State Machine to orchestrate pipeline flow
  * This flow will call CloudFormation Deployment Flow (Child Flow)
  */
-export class appIngestionFlowStack extends Construct {
+export class AppIngestionFlowStack extends Construct {
 
     readonly stateMachineArn: string
 
@@ -70,7 +70,7 @@ export class appIngestionFlowStack extends Construct {
             updateExpression: 'SET #status = :status, #sid = :sid',
             resultPath: sfn.JsonPath.DISCARD,
         })
-    };
+    }
 
     constructor(scope: Construct, id: string, props: PipelineFlowProps) {
         super(scope, id);
@@ -110,11 +110,11 @@ export class appIngestionFlowStack extends Construct {
         });
 
         // Role for state machine
-        const LogHubAPIAPPLogIngestionFlowSMRole = new iam.Role(this, 'SMRole', {
+        const appLogIngestionFlowSMRole = new iam.Role(this, 'SMRole', {
             assumedBy: new iam.ServicePrincipal('states.amazonaws.com'),
         })
         // Least Privilage to enable logging for state machine
-        LogHubAPIAPPLogIngestionFlowSMRole.addToPolicy(
+        appLogIngestionFlowSMRole.addToPolicy(
             new iam.PolicyStatement({
                 actions: [
                     "logs:PutResourcePolicy",
@@ -136,12 +136,15 @@ export class appIngestionFlowStack extends Construct {
 
         const pipeSM = new sfn.StateMachine(this, 'PipelineFlowSM', {
             definition: cfnTask.next(checkStatus),
-            role: LogHubAPIAPPLogIngestionFlowSMRole,
+            role: appLogIngestionFlowSMRole,
             logs: {
                 destination: logGroup,
                 level: sfn.LogLevel.ALL,
             },
         });
+
+        const cfnAppPipelineSM = pipeSM.node.defaultChild as sfn.CfnStateMachine;
+        cfnAppPipelineSM.overrideLogicalId('AppIngestionFlowSM')
 
         this.stateMachineArn = pipeSM.stateMachineArn
 

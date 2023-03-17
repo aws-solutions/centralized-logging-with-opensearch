@@ -1,9 +1,9 @@
 {
-  "name": "Log Hub",
-  "title": "Log Hub web console",
+  "name": "Centralized Logging with OpenSearch",
+  "title": "Centralized Logging with OpenSearch",
   "version": "Version",
   "signin": {
-    "signInToLogHub": "Sign in to Log Hub",
+    "signInToSolution": "Centralized Logging with OpenSearch",
     "email": "Email *",
     "inputEmail": "Enter your email",
     "password": "Password *",
@@ -18,8 +18,8 @@
   "menu": {
     "home": "Home",
     "cluster": "Clusters",
-    "osDomain": "Amazon OpenSearch Domains",
-    "importOS": "Import Amazon OpenSearch Domain",
+    "osDomain": "OpenSearch Domains",
+    "importOS": "Import OpenSearch Domain",
     "logPipeline": "Log Analytics Pipelines",
     "serviceLog": "AWS Service Log",
     "appLog": "Application Log",
@@ -29,7 +29,7 @@
     "resource": "Resources",
     "instanceGroup": "Instance Groups",
     "logConfig": "Log Configs",
-    "crossAccount": "Member Account",
+    "crossAccount": "Member Accounts",
     "doc": "Documentation"
   },
   "bottom": {
@@ -95,7 +95,8 @@
     "addCondition": "Add Condition",
     "addInstances": "Add Instances",
     "removeInstances": "Remove Instances",
-    "gotoInstanceGroup": "Go To Instance Group"
+    "gotoInstanceGroup": "Go To Instance Group",
+    "confirm": "Confirm"
   },
   "status": {
     "unknown": "Unknown",
@@ -127,5 +128,8 @@
   "maxmindCopyRight": "This product includes GeoLite2 data created by MaxMind, available from ",
   "signInAgain": "Please sign in again",
   "reloginTips": "You were signed out of your account. Please press Reload to sign in again.",
-  "pendingCreation": "Pending Creation"
+  "pendingCreation": "Pending Creation",
+  "learnMore": "Learn more",
+  "intoDomain": "into OpenSearch domain.",
+  "archDesc": "The architecture diagram to ingest log data into OpenSearch domain."
 }

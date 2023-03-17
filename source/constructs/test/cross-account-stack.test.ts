@@ -16,7 +16,7 @@ limitations under the License.
 
 
 import { App } from "aws-cdk-lib";
-import {Template } from "aws-cdk-lib/assertions";
+import { Template } from "aws-cdk-lib/assertions";
 import * as crossaccount from '../lib/subaccount/cross-account-stack';
 
 
@@ -24,7 +24,7 @@ describe("Application Log Stack", () => {
     test('Cross account sub stack', () => {
         const app = new App();
         // WHEN
-        const stack = new crossaccount.CrossAccount(app, 'MyTestStack');
+        const stack = new crossaccount.CrossAccount(app, 'MyTestStack', {});
         // Prepare the stack for assertions.
         const template = Template.fromStack(stack);
 

@@ -3,10 +3,10 @@
 ## Regional deployments
 This solution uses services which may not be currently available in all AWS Regions. Launch this solution in an AWS Region where required services are available. For the most current availability by Region, refer to the [AWS Regional Services List][services]. 
 
-Log Hub provides two types of authentication, [Cognito User Pool](https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-identity-pools.html) and [OpenID Connect (OIDC) Provider](https://openid.net/connect/). You need to choose to launch the solution with OpenID Connect if one of the following cases occurs:
+Centralized Logging with OpenSearch provides two types of authentication, [Cognito User Pool](https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-identity-pools.html) and [OpenID Connect (OIDC) Provider](https://openid.net/connect/). You must choose to launch the solution with OpenID Connect if one of the following cases occurs:
 
-- Cognito User Pool is not available in your AWS region.
-- You already have an OpenID Connect Provider.
+- Cognito User Pool is not available in your AWS Region.
+- You already have an OpenID Connect Provider and want to authenticate against it.
 
 **Supported regions for deployment**
 
@@ -37,8 +37,9 @@ Log Hub provides two types of authentication, [Cognito User Pool](https://docs.a
 | China (Ningxia) Regions operated by NWCD  | :material-close-thick:{ .icon_cross } | :material-check-bold:{ .icon_check }  |
 
 
-## Restrictions
+!!! Important "Important"
 
-- You can have only one active Log Hub solution stack in one region. If your deployment failed, make sure you have deleted the failed stack before retrying the deployment.
+    You can have only one active Centralized Logging with OpenSearch solution stack in one region. If your deployment failed, make sure you have deleted the failed stack before retrying the deployment. 
+
 
 [services]: https://aws.amazon.com/about-aws/global-infrastructure/regional-product-services/?nc1=h_ls

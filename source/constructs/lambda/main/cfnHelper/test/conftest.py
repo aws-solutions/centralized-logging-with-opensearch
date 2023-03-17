@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 import os
 
 import pytest
@@ -11,9 +14,8 @@ def default_environment_variables():
     os.environ["AWS_SESSION_TOKEN"] = "mocked-aws-session-token"
     os.environ["AWS_REGION"] = "us-east-1"
     os.environ["SOLUTION_VERSION"] = "v1.0.0"
-    os.environ["SOLUTION_ID"] = "SO8025"
+    os.environ["SOLUTION_ID"] = "SOXXXX"
 
-    os.environ["DIST_OUTPUT_BUCKET"] = "log-hub-bucket"
-    os.environ[
-        "SUB_ACCOUNT_LINK_TABLE_NAME"] = "mocked-sub-account-link-table-name"
+    os.environ["TEMPLATE_OUTPUT_BUCKET"] = "log-hub-bucket"
+    os.environ["SUB_ACCOUNT_LINK_TABLE_NAME"] = "mocked-sub-account-link-table-name"
     os.environ["SUB_ACCOUNT_LINK_TABLE"] = "mocked-sub-account-link-table-name"

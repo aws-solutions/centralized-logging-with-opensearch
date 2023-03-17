@@ -47,9 +47,7 @@ $LOGHUB_FLUENT_BIT_K8S_FILTER
     [PARSER]
         Name        cri_regex
         Format      regex
-        Regex       ^(?<time>[^ ]+) (?<stream>stdout|stderr) (?<logtag>[^ ]*) ?(?<log>.*)$
-        Time_Key    time
-        Time_Format %Y-%m-%dT%H:%M:%S.%L%z    
+        Regex       ^(?<container_log_time>[^ ]+) (?<stream>stdout|stderr) (?<logtag>[^ ]*) ?(?<log>.*)$
 
 $LOGHUB_USER_DEFINE_DOCKER_FIRSTLINE_PARSER
 $LOGHUB_USER_DEFINE_PARSER

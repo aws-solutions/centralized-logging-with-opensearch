@@ -8,6 +8,7 @@
     use_put_object      true
     s3_key_format       /$LOGHUB_S3_PREFIX/%H-%M-%S-$UUID.gz
     compression         gzip
+    storage_class       $S3_STORAGE_CLASS
     json_date_key       $LOGHUB_TIMEKEY
     json_date_format    iso8601
     Retry_Limit         False

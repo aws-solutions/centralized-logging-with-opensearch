@@ -8,9 +8,9 @@ from enum import Enum
 
 from boto3 import Session
 
-from moto.core import ACCOUNT_ID
 from moto.eks import REGION as DEFAULT_REGION
 
+ACCOUNT_ID = "123456789012"
 DEFAULT_ENCODING = "utf-8"
 DEFAULT_HTTP_HEADERS = {"Content-type": "application/json"}
 DEFAULT_NAMESPACE = "namespace_1"
@@ -31,12 +31,9 @@ DISK_SIZE_KEY = "diskSize"
 DISK_SIZE_VALUE = 30
 
 ENCRYPTION_CONFIG_KEY = "encryptionConfig"
-ENCRYPTION_CONFIG_VALUE = [{
-    "resources": ["secrets"],
-    "provider": {
-        "keyArn": "arn:of:the:key"
-    }
-}]
+ENCRYPTION_CONFIG_VALUE = [
+    {"resources": ["secrets"], "provider": {"keyArn": "arn:of:the:key"}}
+]
 
 INSTANCE_TYPES_KEY = "instanceTypes"
 INSTANCE_TYPES_VALUE = ["t3.medium"]
@@ -57,8 +54,7 @@ NODEROLE_ARN_KEY = "nodeRole"
 NODEROLE_ARN_VALUE = "arn:aws:iam::" + str(ACCOUNT_ID) + ":role/role_name"
 
 POD_EXECUTION_ROLE_ARN_KEY = "podExecutionRoleArn"
-POD_EXECUTION_ROLE_ARN_VALUE = "arn:aws:iam::" + str(
-    ACCOUNT_ID) + ":role/role_name"
+POD_EXECUTION_ROLE_ARN_VALUE = "arn:aws:iam::" + str(ACCOUNT_ID) + ":role/role_name"
 
 REMOTE_ACCESS_KEY = "remoteAccess"
 REMOTE_ACCESS_VALUE = {"ec2SshKey": "eksKeypair"}
@@ -89,7 +85,7 @@ TAGS_KEY = "tags"
 TAGS_VALUE = {"hello": "world"}
 
 VERSION_KEY = "version"
-VERSION_VALUE = "1.2.3"
+VERSION_VALUE = "1.23"
 
 AMI_TYPE = (AMI_TYPE_KEY, AMI_TYPE_VALUE)
 CLIENT_REQUEST_TOKEN = (CLIENT_REQUEST_TOKEN_KEY, CLIENT_REQUEST_TOKEN_VALUE)
@@ -104,8 +100,7 @@ LABELS = (LABELS_KEY, LABELS_VALUE)
 LAUNCH_TEMPLATE = (LAUNCH_TEMPLATE_KEY, LAUNCH_TEMPLATE_VALUE)
 LOGGING = (LOGGING_KEY, LOGGING_VALUE)
 NODEROLE_ARN = (NODEROLE_ARN_KEY, NODEROLE_ARN_VALUE)
-POD_EXECUTION_ROLE_ARN = (POD_EXECUTION_ROLE_ARN_KEY,
-                          POD_EXECUTION_ROLE_ARN_VALUE)
+POD_EXECUTION_ROLE_ARN = (POD_EXECUTION_ROLE_ARN_KEY, POD_EXECUTION_ROLE_ARN_VALUE)
 REMOTE_ACCESS = (REMOTE_ACCESS_KEY, REMOTE_ACCESS_VALUE)
 RESOURCES_VPC_CONFIG = (RESOURCES_VPC_CONFIG_KEY, RESOURCES_VPC_CONFIG_VALUE)
 ROLE_ARN = (ROLE_ARN_KEY, ROLE_ARN_VALUE)
@@ -222,29 +217,42 @@ NODEGROUP_UUID_PATTERN = "(?P<nodegroup_uuid>[-0-9a-z]{8}-[-0-9a-z]{4}-[-0-9a-z]
 
 
 class RegExTemplates:
-    CLUSTER_ARN = re.compile("arn:" + "(?P<partition>.+):" + "eks:" +
-                             "(?P<region>[-0-9a-zA-Z]+):" +
-                             "(?P<account_id>[0-9]{12}):" + "cluster/" +
-                             "(?P<cluster_name>.+)")
-    FARGATE_PROFILE_ARN = re.compile("arn:" + "(?P<partition>.+):" + "eks:" +
-                                     "(?P<region>[-0-9a-zA-Z]+):" +
-                                     "(?P<account_id>[0-9]{12}):" +
-                                     "fargateprofile/" +
-                                     "(?P<cluster_name>.+)/" +
-                                     "(?P<fargate_name>.+)/" +
-                                     FARGATE_PROFILE_UUID_PATTERN)
+    CLUSTER_ARN = re.compile(
+        "arn:"
+        + "(?P<partition>.+):"
+        + "eks:"
+        + "(?P<region>[-0-9a-zA-Z]+):"
+        + "(?P<account_id>[0-9]{12}):"
+        + "cluster/"
+        + "(?P<cluster_name>.+)"
+    )
+    FARGATE_PROFILE_ARN = re.compile(
+        "arn:"
+        + "(?P<partition>.+):"
+        + "eks:"
+        + "(?P<region>[-0-9a-zA-Z]+):"
+        + "(?P<account_id>[0-9]{12}):"
+        + "fargateprofile/"
+        + "(?P<cluster_name>.+)/"
+        + "(?P<fargate_name>.+)/"
+        + FARGATE_PROFILE_UUID_PATTERN
+    )
     ISO8601_FORMAT = re.compile(
         r"^(-?(?:[1-9][0-9]*)?[0-9]{4})-(1[0-2]|0[1-9])-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])(\.[0-9]+)?(Z|[+-](?:2[0-3]|[01][0-9]):[0-5][0-9])?$"
     )
-    NODEGROUP_ARN = re.compile("arn:" + "(?P<partition>.+):" + "eks:" +
-                               "(?P<region>[-0-9a-zA-Z]+):" +
-                               "(?P<account_id>[0-9]{12}):" + "nodegroup/" +
-                               "(?P<cluster_name>.+)/" +
-                               "(?P<nodegroup_name>.+)/" +
-                               NODEGROUP_UUID_PATTERN)
+    NODEGROUP_ARN = re.compile(
+        "arn:"
+        + "(?P<partition>.+):"
+        + "eks:"
+        + "(?P<region>[-0-9a-zA-Z]+):"
+        + "(?P<account_id>[0-9]{12}):"
+        + "nodegroup/"
+        + "(?P<cluster_name>.+)/"
+        + "(?P<nodegroup_name>.+)/"
+        + NODEGROUP_UUID_PATTERN
+    )
     NODEGROUP_ASG_NAME_PATTERN = re.compile("eks-" + NODEGROUP_UUID_PATTERN)
-    NODEGROUP_SECURITY_GROUP_NAME_PATTERN = re.compile("sg-" +
-                                                       "([-0-9a-z]{17})")
+    NODEGROUP_SECURITY_GROUP_NAME_PATTERN = re.compile("sg-" + "([-0-9a-z]{17})")
 
 
 class Endpoints:

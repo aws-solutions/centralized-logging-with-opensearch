@@ -59,7 +59,6 @@ const CreateTags: React.FC<CreateTagsProps> = (props: CreateTagsProps) => {
               const tmpList = JSON.parse(JSON.stringify(prev));
               tmpList[index].key = key;
               tmpList[index].value = value;
-              // changeTags(tmpList);
               return tmpList;
             });
           }}

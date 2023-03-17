@@ -13,4 +13,4 @@ The following table lists the supported AWS services and the corresponding featu
 | AWS Config | N/A | S3 | Yes | Yes |
 
 * **Automatic Ingestion**: The solution detects the log location of the resource automatically and then reads the logs.
-* **Built-in Dashboard**: An out-of-box dashboard for the specified AWS service. The solution will automatically ingest a dashboard into the AOS.
+* **Built-in Dashboard**: An out-of-box dashboard for the specified AWS service. The solution will automatically ingest a dashboard into the Amazon OpenSearch Service.

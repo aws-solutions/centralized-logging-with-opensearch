@@ -17,9 +17,9 @@ limitations under the License.
 
 import { App } from "aws-cdk-lib";
 import { Template } from "aws-cdk-lib/assertions";
-// import * as kds from '../lib/kinesis/kds-stack';
 import * as ap from "../lib/pipeline/application/app-log-pipeline-stack";
 
+import * as syslog from "../lib/pipeline/application/syslog-to-ecs-stack";
 
 describe("Application Log Stack", () => {
     test('Test kds stack with auto-scaling', () => {
@@ -137,5 +137,17 @@ describe("Application Log Stack", () => {
 
     });
 
+    test('Test syslogs stack', () => {
+        const app = new App();
+        // WHEN
+        const stack = new syslog.SyslogtoECSStack(app, 'MyTestStack', {});
+        // Prepare the stack for assertions.
+        const template = Template.fromStack(stack);
+
+        // THEN
+        template.resourceCountIs("AWS::ECS::TaskDefinition", 1);
+
+
+    });
 
 });

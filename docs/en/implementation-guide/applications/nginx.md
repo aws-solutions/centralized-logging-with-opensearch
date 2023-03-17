@@ -1,5 +1,5 @@
 # Nginx
-Nginx is capable of writing [error and access log][nginx-logs] files to a local directory. You can configure Log Hub to ingest Nginx logs.
+Nginx is capable of writing [error and access log][nginx-logs] files to a local directory. You can configure Centralized Logging with OpenSearch to ingest Nginx logs.
 
 ## Prerequisites
 {%
@@ -7,13 +7,13 @@ include-markdown "include-prerequisites.md"
 %}
 ## Step 1: Create a Nginx log config
 
-1. Sign in to the Log Hub Console.
+1. Sign in to the Centralized Logging with OpenSearch Console.
 2. In the left sidebar, under **Resources**, choose **Log Config**.
 3. Click the **Create a log config** button.
 4. Specify **Config Name**.
 5. Specify **Log Path**. You can use `, ` to separate multiple paths.
 6. Choose **Nginx** in the log type dropdown menu.
-7. In the **Nginx Log Format** section, paste your Nginx log format configuration It is in the format of `/etc/nginx/nginx.conf` and starts with `log_format`.
+7. In the **Nginx Log Format** section, paste your Nginx log format configuration. It is in the format of `/etc/nginx/nginx.conf` and starts with `log_format`.
 
     For example:
        ```
@@ -43,11 +43,11 @@ include-markdown "include-prerequisites.md"
 
 ## Step 3: Check built-in Nginx dashboard in OpenSearch
 
-For Nginx logs, Log Hub creates a built-in sample dashboard.
+For Nginx logs, Centralized Logging with OpenSearch creates a built-in sample dashboard.
 
 1. Open OpenSearch dashboard in your browser.
 2. Go to **Dashboard** section in the left sidebar.
-3. Find the dashboard which name starts with `<the application pipeline>`.
+3. Find the dashboard whose name starts with `<the application pipeline>`.
 
 ## Sample Dashboard
 

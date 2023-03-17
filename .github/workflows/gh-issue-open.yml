@@ -8,7 +8,7 @@ jobs:
   issue-opened:
     runs-on: ubuntu-latest
     steps:
-      - name: Send issue to Log Hub slack
+      - name: Send issue to solution slack
         uses: slackapi/slack-github-action@v1.19.0
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL_ISSUES }}

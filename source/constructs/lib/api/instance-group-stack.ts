@@ -16,6 +16,7 @@ limitations under the License.
 
 import { Construct } from "constructs";
 import {
+  Aws,
   Duration,
   RemovalPolicy,
   aws_dynamodb as ddb,
@@ -40,6 +41,8 @@ export interface InstanceGroupStackProps {
   readonly groupModificationEventQueue: IQueue;
   readonly appLogIngestionTable: ddb.Table;
   readonly subAccountLinkTable: ddb.Table;
+
+  readonly solutionId: string;
 }
 export class InstanceGroupStack extends Construct {
   instanceGroupTable: ddb.Table;
@@ -47,15 +50,13 @@ export class InstanceGroupStack extends Construct {
   constructor(scope: Construct, id: string, props: InstanceGroupStackProps) {
     super(scope, id);
 
-    const solution_id = "SO8025";
-
     // Create a table to store logging instanceGroup info
     this.instanceGroupTable = new ddb.Table(this, "InstanceGroupTable", {
       partitionKey: {
         name: "id",
         type: ddb.AttributeType.STRING,
       },
-      billingMode: ddb.BillingMode.PROVISIONED,
+      billingMode: ddb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: RemovalPolicy.DESTROY,
       encryption: ddb.TableEncryption.DEFAULT,
       pointInTimeRecovery: true,
@@ -94,12 +95,10 @@ export class InstanceGroupStack extends Construct {
           INSTANCE_GROUP_MODIFICATION_EVENT_QUEUE_NAME: props.groupModificationEventQueue.queueName,
           APPLOGINGESTION_TABLE: props.appLogIngestionTable.tableName,
           SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
-          SOLUTION_ID: solution_id,
-          SOLUTION_VERSION: process.env.VERSION
-            ? process.env.VERSION
-            : "v1.0.0",
+          SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+          SOLUTION_ID: props.solutionId,
         },
-        description: "Log Hub - InstanceGroup APIs Resolver",
+        description: `${Aws.STACK_NAME} - InstanceGroup APIs Resolver`,
       }
     );
 
@@ -139,7 +138,7 @@ export class InstanceGroupStack extends Construct {
       }
     );
 
-    instanceGroupDynamoDS.createResolver({
+    instanceGroupDynamoDS.createResolver('getInstanceGroup', {
       typeName: "Query",
       fieldName: "getInstanceGroup",
       requestMappingTemplate: appsync.MappingTemplate.dynamoDbGetItem(
@@ -164,10 +163,15 @@ export class InstanceGroupStack extends Construct {
     );
 
     // Set resolver for releted instanceGroup API methods
-    instanceGroupLambdaDS.createResolver({
+    instanceGroupLambdaDS.createResolver('listInstanceGroups', {
       typeName: "Query",
       fieldName: "listInstanceGroups",
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      requestMappingTemplate: appsync.MappingTemplate.fromFile(
+        path.join(
+          __dirname,
+          "../../graphql/vtl/instance_group/ListInstanceGroups.vtl"
+        )
+      ),
       responseMappingTemplate: appsync.MappingTemplate.fromFile(
         path.join(
           __dirname,
@@ -176,10 +180,15 @@ export class InstanceGroupStack extends Construct {
       ),
     });
 
-    instanceGroupLambdaDS.createResolver({
+    instanceGroupLambdaDS.createResolver('listAutoScalingGroups', {
       typeName: "Query",
       fieldName: "listAutoScalingGroups",
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      requestMappingTemplate: appsync.MappingTemplate.fromFile(
+        path.join(
+          __dirname,
+          "../../graphql/vtl/instance_group/ListAutoScalingGroups.vtl"
+        )
+      ),
       responseMappingTemplate: appsync.MappingTemplate.fromFile(
         path.join(
           __dirname,
@@ -188,7 +197,7 @@ export class InstanceGroupStack extends Construct {
       ),
     });
 
-    instanceGroupLambdaDS.createResolver({
+    instanceGroupLambdaDS.createResolver('createInstanceGroup', {
       typeName: "Mutation",
       fieldName: "createInstanceGroup",
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
@@ -200,7 +209,7 @@ export class InstanceGroupStack extends Construct {
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
-    instanceGroupLambdaDS.createResolver({
+    instanceGroupLambdaDS.createResolver('createInstanceGroupBaseOnASG', {
       typeName: "Mutation",
       fieldName: "createInstanceGroupBaseOnASG",
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
@@ -212,14 +221,14 @@ export class InstanceGroupStack extends Construct {
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
-    instanceGroupLambdaDS.createResolver({
+    instanceGroupLambdaDS.createResolver('deleteInstanceGroup', {
       typeName: "Mutation",
       fieldName: "deleteInstanceGroup",
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
-    instanceGroupLambdaDS.createResolver({
+    instanceGroupLambdaDS.createResolver('addInstancesToInstanceGroup', {
       typeName: "Mutation",
       fieldName: "addInstancesToInstanceGroup",
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
@@ -231,7 +240,7 @@ export class InstanceGroupStack extends Construct {
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
-    instanceGroupLambdaDS.createResolver({
+    instanceGroupLambdaDS.createResolver('deleteInstancesFromInstanceGroup', {
       typeName: "Mutation",
       fieldName: "deleteInstancesFromInstanceGroup",
       requestMappingTemplate: appsync.MappingTemplate.fromFile(

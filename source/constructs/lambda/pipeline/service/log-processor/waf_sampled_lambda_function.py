@@ -43,7 +43,6 @@ web_acl_list = web_acl_names.split(",")
 # batch size can be overwritten via Env. var.
 batch_size = int(os.environ.get("BULK_BATCH_SIZE", DEFAULT_BULK_BATCH_SIZE))
 
-#backup_bucket_name = os.environ.get("BACKUP_BUCKET_NAME")
 index_prefix = os.environ.get("INDEX_PREFIX").lower()
 endpoint = os.environ.get("ENDPOINT")
 
@@ -60,8 +59,8 @@ aos = OpenSearch(
 
 
 class WAFScope(Enum):
-    CLOUDFRONT = 'CLOUDFRONT'
-    REGIONAL = 'REGIONAL'
+    CLOUDFRONT = "CLOUDFRONT"
+    REGIONAL = "REGIONAL"
 
 
 def json_serial(obj):
@@ -72,29 +71,21 @@ def json_serial(obj):
     raise TypeError("Type %s not serializable" % type(obj))
 
 
-def lambda_handler(event, context):
+def lambda_handler(event, _):
 
-    # logger.info("Received event: " + json.dumps(event, indent=2))
-    if dt := event.get("time", ""):
-        now = datetime.strptime(dt, "%Y-%m-%dT%H:%M:%SZ")
-    else:
-        logger.info("Unknown event time, use current datetime")
-        now = datetime.now()
-    if log_source_region != 'us-east-1':
+    if log_source_region != "us-east-1":
         regional_web_acls_resp = waf.list_web_acls(
-            Scope=WAFScope.REGIONAL.value, Limit=100)
-        return process_log(event, WAFScope.REGIONAL.value,
-                           regional_web_acls_resp)
+            Scope=WAFScope.REGIONAL.value, Limit=100
+        )
+        return process_log(event, WAFScope.REGIONAL.value, regional_web_acls_resp)
     else:
-        cf_web_acls_resp = waf.list_web_acls(Scope=WAFScope.CLOUDFRONT.value,
-                                             Limit=100)
-        result = process_log(event, WAFScope.CLOUDFRONT.value,
-                             cf_web_acls_resp)
+        cf_web_acls_resp = waf.list_web_acls(Scope=WAFScope.CLOUDFRONT.value, Limit=100)
+        result = process_log(event, WAFScope.CLOUDFRONT.value, cf_web_acls_resp)
         if result[0] == 0 and result[1] == 0:
             regional_web_acls_resp = waf.list_web_acls(
-                Scope=WAFScope.REGIONAL.value, Limit=100)
-            result = process_log(event, WAFScope.REGIONAL.value,
-                                 regional_web_acls_resp)
+                Scope=WAFScope.REGIONAL.value, Limit=100
+            )
+            result = process_log(event, WAFScope.REGIONAL.value, regional_web_acls_resp)
         return result
 
 
@@ -113,7 +104,6 @@ def process_log(event, scope: str, web_acls_resp):
             if acl["Name"] not in web_acl_list:
                 continue
 
-            # TODO: Check rule metric name
             response = waf.get_web_acl(
                 Name=acl["Name"],
                 Scope=scope,
@@ -131,8 +121,7 @@ def process_log(event, scope: str, web_acls_resp):
                 if cfg["SampledRequestsEnabled"]:
                     metric_name = cfg["MetricName"]
 
-                    # TODO: Check max item returned
-                    # Delay for 1 minute
+                    # Delay for 5 minute + interval
                     response = waf.get_sampled_requests(
                         WebAclArn=acl["ARN"],
                         RuleMetricName=metric_name,
@@ -155,10 +144,10 @@ def process_log(event, scope: str, web_acls_resp):
             return 0, 0
 
         index_name = aos.default_index_name()
-        #logger.info("index name: %s", index_name)
         failed_number = bulk_load_records(records, index_name)
-        logger.info("---> Total: %d, Failed: %d, Scope: %s", len(records),
-                    failed_number, scope)
+        logger.info(
+            "---> Total: %d, Failed: %d, Scope: %s", len(records), failed_number, scope
+        )
         return len(records), failed_number
 
     except Exception as e:
@@ -170,7 +159,6 @@ def process_log(event, scope: str, web_acls_resp):
 def _create_bulk_records(records: list) -> list:
     """Helper function to create payload for bulk load"""
     bulk_body = []
-    # TODO: doc id
     for record in records:
         bulk_body.append(json.dumps({BULK_ACTION: {}}) + "\n")
         bulk_body.append(json.dumps(record, default=json_serial) + "\n")
@@ -202,20 +190,13 @@ def bulk_load_records(records: list, index_name: str) -> int:
         # Retry if status code is >= 300
         if response.status_code < 300:
             resp_json = response.json()
-            for idx, item in enumerate(resp_json["items"]):
-                # Check and store failed records with error message
-                # print(item[BULK_ACTION]['status'])
+            for _, item in enumerate(resp_json["items"]):
                 if item[BULK_ACTION]["status"] >= 300:
-                    # records[idx]['index_name'] = index_name
-                    # records[idx]["error_type"] = item[BULK_ACTION]["error"]["type"]
-                    # records[idx]["error_reason"] = item[BULK_ACTION]["error"]["reason"]
-                    # failed_records.append(records[idx])
                     failed_number += 1
             break
 
         if retry >= TOTAL_RETRIES:
-            raise RuntimeError(
-                f"Unable to bulk load the records after {retry} retries")
+            raise RuntimeError(f"Unable to bulk load the records after {retry} retries")
 
         logger.error("Bulk load failed: %s", response.text)
         logger.info("Sleep 10 seconds and retry...")
@@ -232,15 +213,13 @@ def check_index_template():
     and must exist before loading data
     otherwise, the mapping can't be updated once data is loaded
     """
-    # logger.info('Check if index template already exists or not...')
     retry = 1
     while True:
         result = aos.exist_index_template()
         if result:
             break
         if retry >= TOTAL_RETRIES:
-            raise RuntimeError(
-                f"Unable to check index template after {retry} retries")
+            raise RuntimeError(f"Unable to check index template after {retry} retries")
 
         logger.info("Sleep 10 seconds and retry...")
         retry += 1

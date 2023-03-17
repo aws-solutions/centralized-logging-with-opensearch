@@ -26,7 +26,13 @@ import Lifecycle from "./detail/Lifecycle";
 import Tags from "./detail/Tags";
 import { appSyncRequestQuery } from "assets/js/request";
 import { getServicePipeline } from "graphql/queries";
-import { Parameter, ServicePipeline, ServiceType, Tag } from "API";
+import {
+  DestinationType,
+  Parameter,
+  ServicePipeline,
+  ServiceType,
+  Tag,
+} from "API";
 import {
   buildCloudFrontLink,
   buildConfigLink,
@@ -40,10 +46,10 @@ import {
   buildWAFLink,
   formatLocalTime,
 } from "assets/js/utils";
-import { AmplifyConfigType } from "types";
+import { AmplifyConfigType, CWLSourceType } from "types";
 import { useSelector } from "react-redux";
 import { AppStateProps } from "reducer/appReducer";
-import { ServiceTypeMap } from "assets/js/const";
+import { ServiceTypeMap, ServiceTypeMapMidSuffix } from "assets/js/const";
 import HelpPanel from "components/HelpPanel";
 import SideMenu from "components/SideMenu";
 import { useTranslation } from "react-i18next";
@@ -62,12 +68,24 @@ export interface ServiceLogDetailProps {
   logLocation: string;
   createSampleData: string;
   createTime: string;
+  warmAge: number | string;
+  coldAge: number | string;
+  retainAge: number | string;
   warnRetention: number | string;
   coldRetention: number | string;
   logRetention: number | string;
   shardNumbers: number | string;
   replicaNumbers: number | string;
   logSourceAccountId: string;
+  destinationType: string;
+  samplingRate: string;
+  minCapacity: string;
+  maxCapacity: string;
+  enableAutoScaling: string;
+  rolloverSize: string;
+  indexSuffix: string;
+  codec: string;
+  fieldNames: string;
   tags: (Tag | null)[] | null | undefined;
 }
 
@@ -120,9 +138,7 @@ const ServiceLogDetail: React.FC<RouteComponentProps<MatchParams>> = (
       const resData: any = await appSyncRequestQuery(getServicePipeline, {
         id: id,
       });
-      console.info("resData:", resData);
       const dataPipelne: ServicePipeline = resData.data.getServicePipeline;
-
       let tmpLogLocation = "";
       if (
         dataPipelne.type === ServiceType.S3 ||
@@ -149,11 +165,16 @@ const ServiceLogDetail: React.FC<RouteComponentProps<MatchParams>> = (
         )}`;
       }
 
-      // setCurDomain(dataDomain);
+      if (dataPipelne.destinationType === DestinationType.CloudWatch) {
+        tmpLogLocation = `${getParamValueByKey(
+          dataPipelne.parameters,
+          "logSource"
+        )}`;
+      }
+
       setCurPipeline({
         type: dataPipelne.type,
         source: dataPipelne.source || "",
-        // bucketName: getParamValueByKey(dataPipelne.parameters, "logBucketName"),
         esName: getParamValueByKey(dataPipelne.parameters, "domainName"),
         esIndex: getParamValueByKey(dataPipelne.parameters, "indexPrefix"),
         logLocation: tmpLogLocation,
@@ -162,19 +183,45 @@ const ServiceLogDetail: React.FC<RouteComponentProps<MatchParams>> = (
           "createDashboard"
         ),
         createTime: formatLocalTime(dataPipelne?.createdDt || ""),
-        warnRetention:
-          getParamValueByKey(dataPipelne.parameters, "daysToWarm") || "-",
-        coldRetention:
-          getParamValueByKey(dataPipelne.parameters, "daysToCold") || "-",
-        logRetention:
-          getParamValueByKey(dataPipelne.parameters, "daysToRetain") || "-",
-        shardNumbers:
-          getParamValueByKey(dataPipelne.parameters, "shardNumbers") || "-",
-        replicaNumbers:
-          getParamValueByKey(dataPipelne.parameters, "replicaNumbers") || "-",
-        logSourceAccountId:
-          getParamValueByKey(dataPipelne.parameters, "logSourceAccountId") ||
-          "-",
+        warnRetention: getParamValueByKey(dataPipelne.parameters, "daysToWarm"),
+        coldRetention: getParamValueByKey(dataPipelne.parameters, "daysToCold"),
+        logRetention: getParamValueByKey(
+          dataPipelne.parameters,
+          "daysToRetain"
+        ),
+        warmAge: getParamValueByKey(dataPipelne.parameters, "warmAge"),
+        coldAge: getParamValueByKey(dataPipelne.parameters, "coldAge"),
+        retainAge: getParamValueByKey(dataPipelne.parameters, "retainAge"),
+        shardNumbers: getParamValueByKey(
+          dataPipelne.parameters,
+          "shardNumbers"
+        ),
+        replicaNumbers: getParamValueByKey(
+          dataPipelne.parameters,
+          "replicaNumbers"
+        ),
+        logSourceAccountId: getParamValueByKey(
+          dataPipelne.parameters,
+          "logSourceAccountId"
+        ),
+        destinationType: dataPipelne.destinationType || "",
+        samplingRate: getParamValueByKey(
+          dataPipelne.parameters,
+          "samplingRate"
+        ),
+        minCapacity: getParamValueByKey(dataPipelne.parameters, "minCapacity"),
+        maxCapacity: getParamValueByKey(dataPipelne.parameters, "maxCapacity"),
+        enableAutoScaling: getParamValueByKey(
+          dataPipelne.parameters,
+          "enableAutoScaling"
+        ),
+        rolloverSize: getParamValueByKey(
+          dataPipelne.parameters,
+          "rolloverSize"
+        ),
+        indexSuffix: getParamValueByKey(dataPipelne.parameters, "indexSuffix"),
+        codec: getParamValueByKey(dataPipelne.parameters, "codec"),
+        fieldNames: getParamValueByKey(dataPipelne.parameters, "fieldNames"),
         tags: dataPipelne.tags,
       });
       setLoadingData(false);
@@ -200,148 +247,261 @@ const ServiceLogDetail: React.FC<RouteComponentProps<MatchParams>> = (
             <div className="service-log">
               <div>
                 <HeaderPanel title={t("servicelog:detail.generalConfig")}>
-                  <div className="flex value-label-span">
-                    <div className="flex-1">
-                      <ValueWithLabel label={t("servicelog:detail.type")}>
-                        <div>{ServiceTypeMap[curPipeline?.type || ""]}</div>
-                      </ValueWithLabel>
-                      {curPipeline?.logSourceAccountId && (
-                        <ValueWithLabel
-                          label={t("resource:crossAccount.account")}
-                        >
-                          <AccountName
-                            accountId={curPipeline?.logSourceAccountId}
-                            region={amplifyConfig.aws_project_region}
-                          />
+                  <>
+                    <div className="flex value-label-span">
+                      <div className="flex-1">
+                        <ValueWithLabel label={t("servicelog:detail.type")}>
+                          <div>{ServiceTypeMap[curPipeline?.type || ""]}</div>
                         </ValueWithLabel>
-                      )}
-                    </div>
-                    <div className="flex-1 border-left-c">
-                      {curPipeline?.type === ServiceType.Lambda && (
-                        <ValueWithLabel
-                          label={t("servicelog:detail.functionName")}
-                        >
+                        {curPipeline?.logSourceAccountId && (
+                          <ValueWithLabel
+                            label={t("resource:crossAccount.account")}
+                          >
+                            <AccountName
+                              accountId={curPipeline?.logSourceAccountId}
+                              region={amplifyConfig.aws_project_region}
+                            />
+                          </ValueWithLabel>
+                        )}
+                        {curPipeline?.type === ServiceType.CloudFront && (
+                          <>
+                            <ValueWithLabel
+                              label={t("servicelog:detail.logType")}
+                            >
+                              {curPipeline?.destinationType ===
+                              DestinationType.KDS
+                                ? t("servicelog:cloudfront.realtimeLogs")
+                                : t("servicelog:cloudfront.standardLogs")}
+                            </ValueWithLabel>
+                            {curPipeline.destinationType ===
+                              DestinationType.KDS && (
+                              <ValueWithLabel
+                                label={t("servicelog:detail.samplingRate")}
+                              >
+                                {curPipeline?.samplingRate
+                                  ? curPipeline?.samplingRate + "%"
+                                  : "-"}
+                              </ValueWithLabel>
+                            )}
+                          </>
+                        )}
+                        {curPipeline?.type === ServiceType.CloudTrail && (
+                          <>
+                            <ValueWithLabel
+                              label={t("servicelog:detail.logType")}
+                            >
+                              {curPipeline?.destinationType ===
+                              DestinationType.CloudWatch
+                                ? CWLSourceType.CWL
+                                : CWLSourceType.S3}
+                            </ValueWithLabel>
+                          </>
+                        )}
+                      </div>
+                      <div className="flex-1 border-left-c">
+                        {curPipeline?.type === ServiceType.Lambda && (
+                          <ValueWithLabel
+                            label={t("servicelog:detail.functionName")}
+                          >
+                            <ExtLink
+                              to={buildLambdaLink(
+                                amplifyConfig.aws_project_region,
+                                curPipeline?.source || ""
+                              )}
+                            >
+                              {curPipeline?.source}
+                            </ExtLink>
+                          </ValueWithLabel>
+                        )}
+                        {curPipeline?.type === ServiceType.S3 && (
+                          <ValueWithLabel
+                            label={t("servicelog:detail.bucketName")}
+                          >
+                            <ExtLink
+                              to={buildS3Link(
+                                amplifyConfig.aws_project_region,
+                                curPipeline?.source || ""
+                              )}
+                            >
+                              {curPipeline?.source}
+                            </ExtLink>
+                          </ValueWithLabel>
+                        )}
+                        {curPipeline?.type === ServiceType.CloudFront && (
+                          <>
+                            <ValueWithLabel
+                              label={t("servicelog:detail.distributionId")}
+                            >
+                              <ExtLink
+                                to={buildCloudFrontLink(
+                                  amplifyConfig.aws_project_region,
+                                  curPipeline?.source || ""
+                                )}
+                              >
+                                {curPipeline?.source}
+                              </ExtLink>
+                            </ValueWithLabel>
+
+                            {curPipeline.destinationType ===
+                              DestinationType.KDS && (
+                              <>
+                                <ValueWithLabel
+                                  label={t("servicelog:detail.kdsShardNum")}
+                                >
+                                  {curPipeline?.minCapacity
+                                    ? curPipeline?.minCapacity
+                                    : "-"}
+                                </ValueWithLabel>
+
+                                <ValueWithLabel
+                                  label={t("servicelog:detail.enableAS")}
+                                >
+                                  {curPipeline?.enableAutoScaling
+                                    ? curPipeline?.enableAutoScaling
+                                    : "-"}
+                                </ValueWithLabel>
+
+                                <ValueWithLabel
+                                  label={t("servicelog:detail.kdsMaxShard")}
+                                >
+                                  {curPipeline?.maxCapacity
+                                    ? curPipeline?.maxCapacity
+                                    : "-"}
+                                </ValueWithLabel>
+                              </>
+                            )}
+                          </>
+                        )}
+                        {curPipeline?.type === ServiceType.ELB && (
+                          <ValueWithLabel
+                            label={t("servicelog:detail.albName")}
+                          >
+                            <ExtLink
+                              to={buildELBLink(
+                                amplifyConfig.aws_project_region
+                              )}
+                            >
+                              {curPipeline?.source}
+                            </ExtLink>
+                          </ValueWithLabel>
+                        )}
+                        {(curPipeline?.type === ServiceType.WAF ||
+                          curPipeline?.type === ServiceType.WAFSampled) && (
+                          <ValueWithLabel
+                            label={t("servicelog:detail.wafName")}
+                          >
+                            <ExtLink
+                              to={buildWAFLink(
+                                amplifyConfig.aws_project_region
+                              )}
+                            >
+                              {curPipeline?.source}
+                            </ExtLink>
+                          </ValueWithLabel>
+                        )}
+                        {curPipeline?.type === ServiceType.VPC && (
+                          <ValueWithLabel label={t("servicelog:detail.vpcId")}>
+                            <ExtLink
+                              to={buildVPCLink(
+                                amplifyConfig.aws_project_region,
+                                curPipeline?.source
+                              )}
+                            >
+                              {curPipeline?.source}
+                            </ExtLink>
+                          </ValueWithLabel>
+                        )}
+                        {curPipeline?.type === ServiceType.CloudTrail && (
+                          <ValueWithLabel
+                            label={t("servicelog:detail.trailName")}
+                          >
+                            <ExtLink
+                              to={buildTrailLink(
+                                amplifyConfig.aws_project_region
+                              )}
+                            >
+                              {curPipeline?.source}
+                            </ExtLink>
+                          </ValueWithLabel>
+                        )}
+                        {curPipeline?.type === ServiceType.Config && (
+                          <ValueWithLabel label={t("servicelog:detail.config")}>
+                            <ExtLink
+                              to={buildConfigLink(
+                                amplifyConfig.aws_project_region
+                              )}
+                            >
+                              {curPipeline?.source}
+                            </ExtLink>
+                          </ValueWithLabel>
+                        )}
+                        {curPipeline?.type === ServiceType.RDS && (
+                          <ValueWithLabel label={t("servicelog:detail.dbID")}>
+                            <ExtLink
+                              to={buildRDSLink(
+                                amplifyConfig.aws_project_region
+                              )}
+                            >
+                              {curPipeline?.source}
+                            </ExtLink>
+                          </ValueWithLabel>
+                        )}
+                      </div>
+                      <div className="flex-1 border-left-c">
+                        <ValueWithLabel label={t("servicelog:detail.aos")}>
                           <ExtLink
-                            to={buildLambdaLink(
+                            to={buildESLink(
                               amplifyConfig.aws_project_region,
-                              curPipeline?.source || ""
+                              curPipeline?.esName || ""
                             )}
                           >
-                            {curPipeline?.source}
+                            {curPipeline?.esName}
                           </ExtLink>
                         </ValueWithLabel>
-                      )}
-                      {curPipeline?.type === ServiceType.S3 && (
-                        <ValueWithLabel
-                          label={t("servicelog:detail.bucketName")}
-                        >
-                          <ExtLink
-                            to={buildS3Link(
-                              amplifyConfig.aws_project_region,
-                              curPipeline?.source || ""
-                            )}
+                        {curPipeline?.rolloverSize && (
+                          <ValueWithLabel
+                            label={t("servicelog:detail.rolloverSize")}
                           >
-                            {curPipeline?.source}
-                          </ExtLink>
-                        </ValueWithLabel>
-                      )}
-                      {curPipeline?.type === ServiceType.CloudFront && (
-                        <ValueWithLabel
-                          label={t("servicelog:detail.distributionId")}
-                        >
-                          <ExtLink
-                            to={buildCloudFrontLink(
-                              amplifyConfig.aws_project_region,
-                              curPipeline?.source || ""
-                            )}
+                            {curPipeline?.rolloverSize?.toUpperCase()}
+                          </ValueWithLabel>
+                        )}
+
+                        {curPipeline?.codec && (
+                          <ValueWithLabel
+                            label={t("servicelog:detail.compressionType")}
                           >
-                            {curPipeline?.source}
-                          </ExtLink>
+                            {curPipeline?.codec}
+                          </ValueWithLabel>
+                        )}
+                      </div>
+                      <div className="flex-1 border-left-c">
+                        <ValueWithLabel label={t("servicelog:detail.index")}>
+                          <div>{`${curPipeline?.esIndex}${
+                            ServiceTypeMapMidSuffix[curPipeline?.type || ""]
+                          }`}</div>
                         </ValueWithLabel>
-                      )}
-                      {curPipeline?.type === ServiceType.ELB && (
-                        <ValueWithLabel label={t("servicelog:detail.albName")}>
-                          <ExtLink
-                            to={buildELBLink(amplifyConfig.aws_project_region)}
+                        {curPipeline?.indexSuffix && (
+                          <ValueWithLabel
+                            label={t("servicelog:detail.indexSuffix")}
                           >
-                            {curPipeline?.source}
-                          </ExtLink>
-                        </ValueWithLabel>
-                      )}
-                      {(curPipeline?.type === ServiceType.WAF ||
-                        curPipeline?.type === ServiceType.WAFSampled) && (
-                        <ValueWithLabel label={t("servicelog:detail.wafName")}>
-                          <ExtLink
-                            to={buildWAFLink(amplifyConfig.aws_project_region)}
-                          >
-                            {curPipeline?.source}
-                          </ExtLink>
-                        </ValueWithLabel>
-                      )}
-                      {curPipeline?.type === ServiceType.VPC && (
-                        <ValueWithLabel label={t("servicelog:detail.vpcId")}>
-                          <ExtLink
-                            to={buildVPCLink(
-                              amplifyConfig.aws_project_region,
-                              curPipeline?.source
-                            )}
-                          >
-                            {curPipeline?.source}
-                          </ExtLink>
-                        </ValueWithLabel>
-                      )}
-                      {curPipeline?.type === ServiceType.CloudTrail && (
-                        <ValueWithLabel
-                          label={t("servicelog:detail.trailName")}
-                        >
-                          <ExtLink
-                            to={buildTrailLink(
-                              amplifyConfig.aws_project_region
-                            )}
-                          >
-                            {curPipeline?.source}
-                          </ExtLink>
-                        </ValueWithLabel>
-                      )}
-                      {curPipeline?.type === ServiceType.Config && (
-                        <ValueWithLabel label={t("servicelog:detail.config")}>
-                          <ExtLink
-                            to={buildConfigLink(
-                              amplifyConfig.aws_project_region
-                            )}
-                          >
-                            {curPipeline?.source}
-                          </ExtLink>
-                        </ValueWithLabel>
-                      )}
-                      {curPipeline?.type === ServiceType.RDS && (
-                        <ValueWithLabel label={t("servicelog:detail.dbID")}>
-                          <ExtLink
-                            to={buildRDSLink(amplifyConfig.aws_project_region)}
-                          >
-                            {curPipeline?.source}
-                          </ExtLink>
-                        </ValueWithLabel>
-                      )}
+                            {curPipeline?.indexSuffix}
+                          </ValueWithLabel>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex-1 border-left-c">
-                      <ValueWithLabel label={t("servicelog:detail.aos")}>
-                        <ExtLink
-                          to={buildESLink(
-                            amplifyConfig.aws_project_region,
-                            curPipeline?.esName || ""
-                          )}
-                        >
-                          {curPipeline?.esName}
-                        </ExtLink>
-                      </ValueWithLabel>
-                    </div>
-                    <div className="flex-1 border-left-c">
-                      <ValueWithLabel label={t("servicelog:detail.index")}>
-                        <div>{curPipeline?.esIndex}</div>
-                      </ValueWithLabel>
-                    </div>
-                  </div>
+                    {curPipeline?.type === ServiceType.CloudFront &&
+                      curPipeline.destinationType === DestinationType.KDS && (
+                        <div className="flex value-label-span">
+                          <div className="flex-1">
+                            <ValueWithLabel
+                              label={t("servicelog:detail.fields")}
+                            >
+                              {curPipeline?.fieldNames}
+                            </ValueWithLabel>
+                          </div>
+                        </div>
+                      )}
+                  </>
                 </HeaderPanel>
               </div>
               <div>

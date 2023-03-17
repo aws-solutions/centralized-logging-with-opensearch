@@ -146,7 +146,7 @@ def ddb_client():
             ProvisionedThroughput={"ReadCapacityUnits": 10, "WriteCapacityUnits": 10},
         )
         data_list = [
-            ddb_mock_data.s3_source_pipeline_data,
+            ddb_mock_data.base_source_pipeline_data,
             ddb_mock_data.ec2_source_pipeline_data,
         ]
         with app_pipeline_table.batch_writer() as batch:
@@ -313,30 +313,10 @@ def test_lambda_handler(
     # Can only import here, as the environment variables need to be set first.
     import lambda_function
 
-    lambda_function.lambda_handler(create_ingestion_event, None)
-    response = lambda_function.lambda_handler(query_ingestion_event, None)
-    assert "total" in response
-    assert response["total"] == 2
-    # assert {
-    #     "id": "d8e6c7a6-4061-4a4a-864e-0000004",
-    #     "appPipelineId": "ab740668-fba3-4d86-879d-e9a5a446d69f",
-    #     "confId": "e4c579eb-fcf2-4ddb-8226-796f4bc8a690",
-    #     "createdDt": "2022-04-26T09:59:04Z",
-    #     "sourceId": "000000001-1095-44b5-8e11-40fa935f3aea",
-    #     "sourceType": "S3",
-    #     "stackId": "arn:aws:cloudformation:us-east-1:123456789012:stack/LogHub-AppIngestion-S3-d8e6c/xxx",
-    #     "stackName": "",
-    #     "status": "ERROR",
-    #     "tags": [],
-    #     "confName": "s3-source-config-01",
-    #     "kdsRoleArn": "arn:aws:iam::111111111:role/LogHub-EKS-Cluster-PodLog-DataBufferKDSRole7BCBC83-1II64RIV25JN3",
-    #     "kdsRoleName": "LogHub-EKS-Cluster-PodLog-DataBufferKDSRole7BCBC83-1II64RIV25JN3",
-    #     "sourceInfo": {},
-    # } in response["appLogIngestions"]
     lambda_function.lambda_handler(create_asg_ingestion_event, None)
     response = lambda_function.lambda_handler(query_ingestion_event, None)
     assert "total" in response
-    assert response["total"] == 3
+    assert response["total"] == 2
 
     lambda_function.lambda_handler(delete_ingestion_event, None)
     lambda_function.lambda_handler(delete_asg_ingestion_event, None)

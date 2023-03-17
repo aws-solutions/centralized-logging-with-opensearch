@@ -8,7 +8,7 @@
     "health": "Cluster Health",
     "remove": "Remove Domain",
     "removeConfirm": "Are you sure you want to remove the domain ",
-    "removeTips": "Remove the domain from Log Hub will not delete the Amazon OpenSearch domain in the AWS account."
+    "removeTips": "Remove the domain from the solution will not delete the OpenSearch domain in the AWS account."
   },
   "detail": {
     "config": "General configuration",
@@ -32,9 +32,9 @@
       "name": "Overview",
       "domainARN": "Domain ARN",
       "vpcEndpoint": "VPC Endpoint",
-      "kibana": "Kibana",
+      "kibana": "OpenSearch Dashboards",
       "clickOpen": "Click to Open Link",
-      "osDashboard": "Amazon OpenSearch Dashboards",
+      "osDashboard": "OpenSearch Dashboards",
       "az": "Availability Zones",
       "instanceType": "Instance Type (data) ",
       "numberNodes": "Number of nodes (data)",
@@ -79,7 +79,7 @@
       "removeTips": "Are you sure you want to delete the Alarm "
     },
     "network": {
-      "name": "Amazon OpenSearch domain network",
+      "name": "OpenSearch domain network",
       "vpc": "VPC",
       "securityGroups": "Security Groups",
       "iamRole": "IAM Role",
@@ -90,9 +90,9 @@
   "alarm": {
     "name": "Create alarms",
     "domainAlarm": "DomainAlarm",
-    "domainAlarmDesc": "By enabling CloudWatch Alarms, you will receive notification of the status of the Open Search cluster.  This is the recommended alarms by Amazon OpenSearch. The created alarms will be sent to the same SNS Topic.",
+    "domainAlarmDesc": "By enabling CloudWatch Alarms, you will receive notification of the status of the Amazon OpenSearch domain.  This is the recommended alarms by Amazon OpenSearch Service. The created alarms will be sent to the same SNS Topic.",
     "email": "Email",
-    "emailDesc": "Notification will be sent to this email. Please click the link in your email to validate the email address. ",
+    "emailDesc": "Notification will be sent to this email. Please click the link in your email to validate the email address.",
     "emailError": "Please input alarm Email",
     "emailFormatError": "Email must be a validate format",
     "selectAlarmTips": "Please at least select one alarm option",
@@ -107,7 +107,7 @@
     "subnetGroup": "Subnet Group",
     "securityGroup": "Security Group",
     "publicProxy": "Public access proxy",
-    "publicProxyDesc": "Access Proxy is a Forward proxy to access the Kibana within the VPC. Enabling the proxy will create an ELB associated Nginx Auto Scaling Group and route web traffics from Internet to the Amazon OpenSearch built-in Kibana.",
+    "publicProxyDesc": "Access Proxy is a Forward proxy to access the OpenSearch dashboards within the VPC. Enabling the proxy will create an ELB associated Nginx Auto Scaling Group and route web traffics from Internet to the OpenSearch built-in dashboards.",
     "publicSubnets": "Public Subnets",
     "publicSubnetsDesc": "Select the Subnets of the log processing layer. The Subnet must be connected to the Cluster.",
     "chooseSubnet": "Choose subnet",
@@ -135,7 +135,11 @@
     "unsecureTips": "The access proxy created will be accessed using unsecured connection. You will need to delete and re-create the access proxy if you change your mind later.",
     "ackTips": "I acknowledge that I choose to use unsecured connection.",
     "ackError": "Please acknowledge all checkboxes before proceeding.",
-    "sslError": "Please select a SSL certificate"
+    "sslError": "Please select a SSL certificate",
+    "instanceType": "Proxy Instance Type",
+    "instanceTypeDesc": "Choose OpenSearch proxy instance type.",
+    "instanceNumber": "Proxy Instance Number",
+    "instanceNumberDesc": "Choose OpenSearch proxy instance number."
   },
   "import": {
     "name": "Import domain",
@@ -145,29 +149,29 @@
       "createTags": "Create tags"
     },
     "selectDomain": {
-      "osDomain": "Amazon OpenSearch Domain",
+      "osDomain": "OpenSearch domain",
       "domain": "Domain",
-      "domainDesc1": "The cluster MUST be in the same region as Log Hub and must be enabled with VPC access. Or follow ",
+      "domainDesc1": "The cluster MUST be in the same region as Solution and must be enabled with VPC access. Or follow ",
       "domainDesc2": "this guide",
-      "domainDesc3": " to create a cluster. (* Make sure your Amazon OpenSearch status is Active, only domains with Active status will be displayed in the list)",
+      "domainDesc3": " to create a cluster. (* Make sure your OpenSearch status is Active, only domains with Active status will be displayed in the list)",
       "domainError": "Please select a domain",
-      "selectDomain": "Select an Amazon OpenSearch Domain"
+      "selectDomain": "Select an OpenSearch domain"
     },
     "configNetwork": {
-      "osNetwork": "Amazon OpenSearch network",
+      "osNetwork": "OpenSearch network",
       "clusterVPC": "Cluster VPC",
       "clusterSG": "Cluster Security Groups",
       "clusterAZ": "Cluster AZs and Subnets",
       "creation": "Network creation",
       "method": "Creation Method",
       "auto": "Automatic",
-      "autoDesc": "Create a dedicated VPC for log processing layer and public access layer to connect to Amazon OpenSearch domain via VPC peering.",
+      "autoDesc": "Create a dedicated VPC for log processing layer and public access layer to connect to the OpenSearch domain via VPC peering.",
       "manual": "Manual",
-      "manualDesc": "Manually specify the log processing layer and public access layer network settings. ",
+      "manualDesc": "Manually specify the log processing layer and public access layer network settings.",
       "layerNetwork": "Log processing layer network",
-      "layerNetworkDesc": "Log Hub requires one Log Processing Subnet Group. The log processing functions will reside in the log processing subnet and use the associated Security Group. ",
+      "layerNetworkDesc": "Solution requires one Log Processing Subnet Group. The log processing functions will reside in the log processing subnet and use the associated Security Group.",
       "configTip": "Configure network",
-      "configTipDesc": "You have chosen a VPC other than the VPC of the selected Amazon OpenSearch domain. Please create VPC Peering, configure Route Table, and make sure the resources have access to the domain.",
+      "configTipDesc": "You have chosen a VPC other than the VPC of the selected OpenSearch domain. Please create VPC Peering, configure Route Table, and make sure the resources have access to the domain.",
       "vpc": "VPC",
       "vpcDesc": "Select the VPC of the log processing layer. The VPC must be the same VPC as the cluster or connected via VPC Peering.",
       "chooseVPC": "Choose a VPC",
@@ -175,7 +179,7 @@
       "logProcessSubnetGroupDesc": "Select at least two subnets of the log processing layer. It is recommended to select private subnets.",
       "chooseSubnet": "Choose Subnet",
       "logProcessSG": "Log Processing Security Group",
-      "logProcessSGDesc": "Select a Security Group for the log processing layer. The Security Group must have access the Amazon OpenSearch domain.",
+      "logProcessSGDesc": "Select a Security Group for the log processing layer. The Security Group must have access the OpenSearch domain.",
       "chooseSG": "Choose a Security Group"
     }
   }

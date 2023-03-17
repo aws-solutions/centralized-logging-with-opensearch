@@ -30,9 +30,7 @@ import {
   RDS_TASK_GROUP_PREFIX,
   RDS_TYPE_LIST,
 } from "assets/js/const";
-// import S3Select from "components/S3Select";
 import FormItem from "components/FormItem";
-// import ExtLink from "components/ExtLink";
 import { SelectItem } from "components/Select/select";
 import { appSyncRequestQuery } from "assets/js/request";
 import { LoggingBucket, Resource, ResourceType } from "API";
@@ -50,7 +48,6 @@ import { AppStateProps, InfoBarTypes } from "reducer/appReducer";
 import { buildRDSLink } from "assets/js/utils";
 import { useTranslation } from "react-i18next";
 import CrossAccountSelect from "pages/comps/account/CrossAccountSelect";
-// import Select from "components/Select";
 
 interface SpecifySettingsProps {
   rdsTask: RDSTaskProps;
@@ -106,7 +103,6 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     (state: AppStateProps) => state.amplifyConfig
   );
   const { t } = useTranslation();
-  // const [rds, setRDS] = useState(rdsTask.params.rdsObj);
 
   const [loadingRDSList, setLoadingRDSList] = useState(false);
   const [rdsOptionList, setRDSOptionList] = useState<SelectItem[]>([]);
@@ -182,10 +178,6 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                   onChange={(event) => {
                     changeTaskType(event.target.value);
                     changeRDSObj(null);
-                    // setCreationMethod(event.target.value);
-                    // if (event.target.value === CreateLogMethod.Automatic) {
-                    //   getRDSList();
-                    // }
                   }}
                   items={[
                     {
@@ -209,7 +201,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
               <Alert content={t("servicelog:rds.alert")} />
               {showLogTypes && (
                 <Alert
-                  type={AlertType.Error}
+                  type={AlertType.Warning}
                   content={
                     <div>
                       {t("servicelog:rds.enableAlert1")}
@@ -266,7 +258,6 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                         event: React.ChangeEvent<HTMLInputElement>,
                         data
                       ) => {
-                        // setRDS(data);
                         changeRDSObj(data);
                       }}
                     />

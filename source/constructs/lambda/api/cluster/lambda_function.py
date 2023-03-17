@@ -20,7 +20,9 @@ from util.exception import APIException
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-SOLUTION_PREFIX = "LogHub"
+DOMAIN_NOT_FOUND_ERROR = "OpenSearch Domain Not Found"
+
+stack_prefix = os.environ.get("STACK_PREFIX", "CL")
 
 solution_version = os.environ.get("SOLUTION_VERSION", "v1.0.0")
 solution_id = os.environ.get("SOLUTION_ID", "SO8025")
@@ -32,10 +34,9 @@ default_config = config.Config(**user_agent_config)
 partition = os.environ.get("PARTITION")
 stateMachineArn = os.environ.get("STATE_MACHINE_ARN")
 cluster_table_name = os.environ.get("CLUSTER_TABLE")
-app_pipeline_table_name = os.environ.get('APP_PIPELINE_TABLE_NAME')
-svc_pipeline_table_name = os.environ.get('SVC_PIPELINE_TABLE')
-eks_cluster_log_source_table_name = os.environ.get(
-    'EKS_CLUSTER_SOURCE_TABLE_NAME')
+app_pipeline_table_name = os.environ.get("APP_PIPELINE_TABLE_NAME")
+svc_pipeline_table_name = os.environ.get("SVC_PIPELINE_TABLE")
+eks_cluster_log_source_table_name = os.environ.get("EKS_CLUSTER_SOURCE_TABLE_NAME")
 
 default_region = os.environ.get("AWS_REGION")
 
@@ -47,65 +48,28 @@ loghub_private_subnet_ids_str = os.environ.get("DEFAULT_PRIVATE_SUBNET_IDS")
 dynamodb = boto3.resource("dynamodb", config=default_config)
 sfn = boto3.client("stepfunctions", config=default_config)
 sts = boto3.client("sts", config=default_config)
-ec2 = boto3.client('ec2', config=default_config)
+ec2 = boto3.client("ec2", config=default_config)
 
 cluster_table = dynamodb.Table(cluster_table_name)
-eks_cluster_log_source_table = dynamodb.Table(
-    eks_cluster_log_source_table_name)
+eks_cluster_log_source_table = dynamodb.Table(eks_cluster_log_source_table_name)
 app_pipeline_table = dynamodb.Table(app_pipeline_table_name)
 svc_pipeline_table = dynamodb.Table(svc_pipeline_table_name)
 account_id = sts.get_caller_identity()["Account"]
 default_logging_bucket = os.environ.get("DEFAULT_LOGGING_BUCKET")
 
 alarm_list = {
-    "CLUSTER_RED": {
-        "name": "clusterStatusRed",
-        "default": "No"
-    },
-    "CLUSTER_YELLOW": {
-        "name": "clusterStatusYellow",
-        "default": "No"
-    },
-    "FREE_STORAGE_SPACE": {
-        "name": "freeStorageSpace",
-        "default": "0"
-    },
-    "WRITE_BLOCKED": {
-        "name": "clusterIndexWritesBlocked",
-        "default": "0"
-    },
-    "NODE_UNREACHABLE": {
-        "name": "unreachableNodeNumber",
-        "default": "0"
-    },
-    "SNAPSHOT_FAILED": {
-        "name": "automatedSnapshotFailure",
-        "default": "No"
-    },
-    "CPU_UTILIZATION": {
-        "name": "cpuUtilization",
-        "default": "No"
-    },
-    "JVM_MEMORY_PRESSURE": {
-        "name": "jvmMemoryPressure",
-        "default": "No"
-    },
-    "KMS_KEY_DISABLED": {
-        "name": "kmsKeyError",
-        "default": "No"
-    },
-    "KMS_KEY_INACCESSIBLE": {
-        "name": "kmsKeyInaccessible",
-        "default": "No"
-    },
-    "MASTER_CPU_UTILIZATION": {
-        "name": "masterCPUUtilization",
-        "default": "No"
-    },
-    "MASTER_JVM_MEMORY_PRESSURE": {
-        "name": "masterJVMMemoryPressure",
-        "default": "No"
-    },
+    "CLUSTER_RED": {"name": "clusterStatusRed", "default": "No"},
+    "CLUSTER_YELLOW": {"name": "clusterStatusYellow", "default": "No"},
+    "FREE_STORAGE_SPACE": {"name": "freeStorageSpace", "default": "0"},
+    "WRITE_BLOCKED": {"name": "clusterIndexWritesBlocked", "default": "0"},
+    "NODE_UNREACHABLE": {"name": "unreachableNodeNumber", "default": "0"},
+    "SNAPSHOT_FAILED": {"name": "automatedSnapshotFailure", "default": "No"},
+    "CPU_UTILIZATION": {"name": "cpuUtilization", "default": "No"},
+    "JVM_MEMORY_PRESSURE": {"name": "jvmMemoryPressure", "default": "No"},
+    "KMS_KEY_DISABLED": {"name": "kmsKeyError", "default": "No"},
+    "KMS_KEY_INACCESSIBLE": {"name": "kmsKeyInaccessible", "default": "No"},
+    "MASTER_CPU_UTILIZATION": {"name": "masterCPUUtilization", "default": "No"},
+    "MASTER_JVM_MEMORY_PRESSURE": {"name": "masterJVMMemoryPressure", "default": "No"},
 }
 
 
@@ -121,7 +85,8 @@ def handle_error(func):
         except Exception as e:
             logger.error(e)
             raise RuntimeError(
-                "Unknown exception, please check Lambda log for more details")
+                "Unknown exception, please check Lambda log for more details"
+            )
 
     return wrapper
 
@@ -195,16 +160,20 @@ def list_domain_names(region=default_region):
     for name in resp["DomainNames"]:
         try:
             describe_resp = es.describe_elasticsearch_domain(
-                DomainName=name.get("DomainName"))
+                DomainName=name.get("DomainName")
+            )
         except ClientError as e:
             if e.response["Error"]["Code"] == "ResourceNotFoundException":
-                raise APIException("OpenSearch Domain Not Found")
+                raise APIException(DOMAIN_NOT_FOUND_ERROR)
             else:
                 raise e
         # Check domain status. domain creating in progress (if any) should be ignored.
-        if describe_resp["DomainStatus"]["Created"] and (not describe_resp["DomainStatus"]["Processing"])\
-                and (describe_resp["DomainStatus"].get("Endpoints") != "")\
-                and (name.get("DomainName") not in imported_domains):
+        if (
+            describe_resp["DomainStatus"]["Created"]
+            and (not describe_resp["DomainStatus"]["Processing"])
+            and (describe_resp["DomainStatus"].get("Endpoints") != "")
+            and (name.get("DomainName") not in imported_domains)
+        ):
             result.append(name.get("DomainName"))
 
     return {"domainNames": result}
@@ -248,12 +217,10 @@ def import_domain(**args) -> str:
 
     # Note this vpc is not same as OpenSearch vpc
     # they could be the same, but not a must
-    # TODO: Consider use default vpc if not provided.
     vpc = None
     if "vpc" in args:
         vpc = args["vpc"]
-    logger.info(
-        f"Trying to import domain {domain_name} in region {region_name}")
+    logger.info(f"Trying to import domain {domain_name} in region {region_name}")
 
     # Check if domain exists in dynamoDB table
     if exist_domain(domain_name, region_name):
@@ -265,7 +232,7 @@ def import_domain(**args) -> str:
         resp = es.describe_elasticsearch_domain(DomainName=domain_name)
     except ClientError as e:
         if e.response["Error"]["Code"] == "ResourceNotFoundException":
-            raise APIException("OpenSearch Domain Not Found")
+            raise APIException(DOMAIN_NOT_FOUND_ERROR)
         else:
             raise e
 
@@ -275,8 +242,7 @@ def import_domain(**args) -> str:
 
     # Check domain status. domain creating in progress (if any) should be ignored.
     if not resp["DomainStatus"]["Created"]:
-        raise APIException(
-            "Cannot import domain when creation is still in progress")
+        raise APIException("Cannot import domain when creation is still in progress")
 
     # Check network type
     try:
@@ -289,7 +255,6 @@ def import_domain(**args) -> str:
     logger.info("Store the basic domain info in DynamoDB")
 
     # DynamoDB partition key is ID which is Domain Arn
-    # TODO: Version might be mutable (by upgrade?)
     domain = resp["DomainStatus"]
     engine, version = "Elasticsearch", domain["ElasticsearchVersion"]
     if "OpenSearch" in domain["ElasticsearchVersion"]:
@@ -309,19 +274,21 @@ def import_domain(**args) -> str:
             loghub_private_subnet_ids_str=loghub_private_subnet_ids_str,
         )
         cluster_auto_import_mgr.check_all_aos_cidr_overlaps(
-            list_imported_domains(False))
+            list_imported_domains(False)
+        )
         cluster_auto_import_mgr.check_all()
         vpc = {
             "vpcId": loghub_vpc_id,
             "securityGroupId": loghub_sg_id,
             "privateSubnetIds": loghub_private_subnet_ids_str,
         }
-    # use md5 to create the id
-    id = hashlib.md5(arn.encode("UTF-8")).hexdigest()
+
+    # generate a unique id
+    cluster_id = unique_id(arn)
 
     cluster_table.put_item(
         Item={
-            "id": id,
+            "id": cluster_id,
             "domainArn": arn,
             "domainName": domain["DomainName"],
             "engine": engine,
@@ -334,7 +301,8 @@ def import_domain(**args) -> str:
             "alarmStatus": "DISABLED",
             "tags": args.get("tags", []),
             "importedDt": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
-        })
+        }
+    )
 
     return "OK"
 
@@ -349,80 +317,80 @@ def remove_domain(id) -> str:
         str: Result, default to 'OK'
     """
 
-    # TODO: Might consider use delete marker rather than deleting the record.
     logger.info(f"Trying to remove domain {id}")
     # check eks cluster
-    conditions = Attr('status').eq('ACTIVE')
-    conditions = conditions.__and__(Attr('aosDomainId').eq(id))
+    conditions = Attr("status").eq("ACTIVE")
+    conditions = conditions.__and__(Attr("aosDomainId").eq(id))
     eks_resp = eks_cluster_log_source_table.scan(
         FilterExpression=conditions,
-        ProjectionExpression="id, #aosDomainId,#status",
+        ProjectionExpression="id, aosDomainId,#s",
         ExpressionAttributeNames={
-            '#aosDomainId': 'aosDomainId',
-            '#status': 'status',
+            "#s": "status",
         },
     )
-    if "Items" in eks_resp and len(eks_resp['Items']) > 0:
+    if "Items" in eks_resp and len(eks_resp["Items"]) > 0:
         raise APIException(
-            "The domian is associated with an EKS cluster. Please delete the associated EKS cluster from the EKS cluster list first."
+            "The domain is associated with an imported EKS cluster. Please remove the associated EKS cluster first."
         )
     aos_domain = get_domain_by_id(id)
-    if (aos_domain.get('proxyStatus') == 'CREATING'
-            or aos_domain.get('proxyStatus') == 'DELETING'
-            or aos_domain.get('alarmStatus') == 'CREATING'
-            or aos_domain.get('alarmStatus') == 'DELETING'):
+    if aos_domain.get("proxyStatus") in ["CREATING", "DELETING"] or aos_domain.get(
+        "alarmStatus"
+    ) in ["CREATING", "DELETING"]:
         raise APIException(
-            "The stack associated with this Cluster is being processed, please wait for it to complete before deleting it."
+            "The stack associated with this Cluster is being processed, please wait for it to complete."
         )
-    domain_name = aos_domain['domainName']
+    domain_name = aos_domain["domainName"]
 
     # check service pipeline
-    conditions = Attr('status').eq('ACTIVE')
-    conditions = conditions.__and__(Attr('target').eq(domain_name))
+    conditions = Attr("status").eq("ACTIVE")
+    conditions = conditions.__and__(Attr("target").eq(domain_name))
     svc_pipeline_resp = svc_pipeline_table.scan(
         FilterExpression=conditions,
-        ProjectionExpression="id, #parameters, #status",
+        ProjectionExpression="id, #parameters, #s",
         ExpressionAttributeNames={
-            '#parameters': 'parameters',
-            '#status': 'status',
+            "#parameters": "parameters",
+            "#s": "status",
         },
     )
     logger.info(f"svc_pipeline_resp is {svc_pipeline_resp}")
-    if "Items" in svc_pipeline_resp and len(svc_pipeline_resp['Items']) > 0:
+    if "Items" in svc_pipeline_resp and len(svc_pipeline_resp["Items"]) > 0:
         raise APIException(
-            "The domian is associated with a Service log Pipeline. Please delete the associated Service log Pipeline from the Service log Pipeline list first."
+            "The domain is associated with a service log Pipeline. Please delete the associated pipeline first."
         )
 
     # check app pipeline
-    conditions = Attr('status').eq('ACTIVE')
-    conditions = conditions.__and__(
-        Attr('aosParas.domainName').eq(domain_name))
+    conditions = Attr("status").eq("ACTIVE")
+    conditions = conditions.__and__(Attr("aosParas.domainName").eq(domain_name))
     app_pipeline_resp = app_pipeline_table.scan(
         FilterExpression=conditions,
-        ProjectionExpression="id, #aosParas,#status",
+        ProjectionExpression="id, #aosParams,#s",
         ExpressionAttributeNames={
-            '#aosParas': 'aosParas',
-            '#status': 'status',
+            "#aosParams": "aosParams",
+            "#s": "status",
         },
     )
-    if "Items" in app_pipeline_resp and len(app_pipeline_resp['Items']) > 0:
+    if "Items" in app_pipeline_resp and len(app_pipeline_resp["Items"]) > 0:
         raise APIException(
-            "The domian is associated with an Application log Pipeline. Please delete the associated Application log Pipeline from the Application log Pipeline list first."
+            "The domain is associated with an application log pipeline. Please delete the associated pipeline first."
         )
 
-    cluster_table.delete_item(Key={
-        "id": id,
-    })
+    cluster_table.delete_item(
+        Key={
+            "id": id,
+        }
+    )
     return "OK"
 
 
 def get_domain_by_id(id):
     """Helper function to query domain by id in Cluster table"""
     logger.info("Query domain by id in cluster table in DynamoDB")
-    response = cluster_table.get_item(Key={
-        "id": id,
-    })
-    #logger.info(response)
+    response = cluster_table.get_item(
+        Key={
+            "id": id,
+        }
+    )
+    # logger.info(response)
     if "Item" not in response:
         raise APIException("Cannot find domain in the imported list")
     return response["Item"]
@@ -434,11 +402,13 @@ def exist_domain(domain_name, region_name):
 
     """
     arn = f"arn:{partition}:es:{region_name}:{account_id}:domain/{domain_name}"
-    # use md5 to get the id
-    id = hashlib.md5(arn.encode("UTF-8")).hexdigest()
-    response = cluster_table.get_item(Key={
-        "id": id,
-    })
+    # Get the id
+    cluster_id = unique_id(arn)
+    response = cluster_table.get_item(
+        Key={
+            "id": cluster_id,
+        }
+    )
     if "Item" in response:
         return True
     return False
@@ -477,8 +447,7 @@ def list_imported_domains(metrics: bool = False):
 
     # Currently Assume the number of domains can't be large
     resp = cluster_table.scan(
-        ProjectionExpression=
-        "id, domainName, engine, #region, version, endpoint",
+        ProjectionExpression="id, domainName, engine, #region, version, endpoint",
         ExpressionAttributeNames={
             "#region": "region",
         },
@@ -559,7 +528,7 @@ def get_domain_details(id: str, metrics: bool = False):
         resp = es.describe_elasticsearch_domain(DomainName=domain_name)
     except ClientError as e:
         if e.response["Error"]["Code"] == "ResourceNotFoundException":
-            raise APIException("OpenSearch Domain Not Found")
+            raise APIException(DOMAIN_NOT_FOUND_ERROR)
         else:
             raise e
 
@@ -576,33 +545,23 @@ def get_domain_details(id: str, metrics: bool = False):
         "securityGroupIds": es_vpc["SecurityGroupIds"],
     }
     detail["nodes"] = {
-        "instanceType":
-        node["InstanceType"],
-        "instanceCount":
-        node["InstanceCount"],
-        "dedicatedMasterEnabled":
-        node["DedicatedMasterEnabled"],
-        "zoneAwarenessEnabled":
-        node["ZoneAwarenessEnabled"],
-        "dedicatedMasterType":
-        node.get("DedicatedMasterType", "N/A"),
-        "dedicatedMasterCount":
-        node.get("DedicatedMasterCount", 0),
-        "warmEnabled":
-        node["WarmEnabled"],
-        "warmType":
-        node.get("WarmType", "N/A"),
-        "warmCount":
-        node.get("WarmCount", 0),
-        "coldEnabled":
-        node["ColdStorageOptions"]["Enabled"]
-        if "ColdStorageOptions" in node else False,
+        "instanceType": node["InstanceType"],
+        "instanceCount": node["InstanceCount"],
+        "dedicatedMasterEnabled": node["DedicatedMasterEnabled"],
+        "zoneAwarenessEnabled": node["ZoneAwarenessEnabled"],
+        "dedicatedMasterType": node.get("DedicatedMasterType", "N/A"),
+        "dedicatedMasterCount": node.get("DedicatedMasterCount", 0),
+        "warmEnabled": node["WarmEnabled"],
+        "warmType": node.get("WarmType", "N/A"),
+        "warmCount": node.get("WarmCount", 0),
+        "coldEnabled": node["ColdStorageOptions"]["Enabled"]
+        if "ColdStorageOptions" in node
+        else False,
     }
     detail["cognito"] = {
         "enabled": cognito["Enabled"],
         "userPoolId": cognito.get("UserPoolId", "N/A"),
-        "domain": get_cognito_domain(cognito.get("UserPoolId", None),
-                                     region_name),
+        "domain": get_cognito_domain(cognito.get("UserPoolId", None), region_name),
         "identityPoolId": cognito.get("IdentityPoolId", "N/A"),
         "roleArn": cognito.get("RoleArn", "N/A"),
     }
@@ -632,9 +591,9 @@ def get_cognito_domain(user_pool_id: str, region_name: str = default_region):
         return ""
     try:
         logger.info("Query Cognito domain url")
-        client = boto3.client("cognito-idp",
-                              region_name=region_name,
-                              config=default_config)
+        client = boto3.client(
+            "cognito-idp", region_name=region_name, config=default_config
+        )
         response = client.describe_user_pool(UserPoolId=user_pool_id)
         domain = response["UserPool"]["Domain"]
         domain_url = f"{domain}.auth.{region_name}.amazoncognito.com"
@@ -695,10 +654,7 @@ def start_sub_stack(id, input, stack_type="Proxy"):
         "Proxy",
         "Alarm",
     ], f"Unable to start a stack for unknown Type {stack_type}"
-    logger.info(
-        f"Start deploying {stack_type} stack for an imported OpenSearch domain"
-    )
-    _update_stack_info(id, "CREATING", input, stack_type)
+    logger.info(f"Start deploying {stack_type} stack for an imported OpenSearch domain")
 
     stack_name = create_stack_name(stack_type)
     pattern = get_stack_pattern(stack_type)
@@ -707,6 +663,8 @@ def start_sub_stack(id, input, stack_type="Proxy"):
         params = _get_proxy_params(id, input)
     else:
         params = _get_alarm_params(id, input)
+
+    _update_stack_info(id, "CREATING", input, stack_type)
 
     logger.info(params)
     args = {
@@ -728,7 +686,7 @@ def exec_sfn_flow(id, action="START", stack_type="Proxy", args=None):
     if args is None:
         args = {}
 
-    input = {
+    input_args = {
         "id": id,
         "action": action,
         "type": stack_type,
@@ -737,7 +695,7 @@ def exec_sfn_flow(id, action="START", stack_type="Proxy", args=None):
 
     sfn.start_execution(
         stateMachineArn=stateMachineArn,
-        input=json.dumps(input),
+        input=json.dumps(input_args),
     )
 
 
@@ -775,6 +733,8 @@ def _get_proxy_params(id, input):
         "engineType": engine,
         "keyName": input["keyName"],
         "elbAccessLogBucketName": input["elbAccessLogBucketName"],
+        "proxyInstanceType": input["proxyInstanceType"],
+        "proxyInstanceNumber": input["proxyInstanceNumber"],
     }
     param_map |= input["vpc"]
     public_sg = param_map.pop("securityGroupId")
@@ -790,7 +750,7 @@ def _get_alarm_params(id, input):
 
     input are in a format of
     {
-        'email': 'xxx@xxx.xxx',
+        'email': 'xxx',
         'phone': 'xxx',
         'alarms': [{
                 'type': 'CLUSTER_RED',
@@ -816,8 +776,11 @@ def _get_alarm_params(id, input):
     # overwrite alarm values from inputs
     for input_alarm in input["alarms"]:
         alarm = alarm_list.get(input_alarm["type"])
-        value = ("Yes" if input_alarm["value"].lower() in ["yes", "true"] else
-                 input_alarm["value"])
+        value = (
+            "Yes"
+            if input_alarm["value"].lower() in ["yes", "true"]
+            else input_alarm["value"]
+        )
         param_map[alarm["name"]] = value
     logger.info(param_map)
 
@@ -831,15 +794,12 @@ def _update_stack_info(id, status, input, stack_type="Proxy"):
         Key={
             "id": id,
         },
-        UpdateExpression="SET #status = :status, #input = :input",
+        UpdateExpression="SET #s = :s, #input = :input",
         ExpressionAttributeNames={
-            "#status": f"{stack_type.lower()}Status",
+            "#s": f"{stack_type.lower()}Status",
             "#input": f"{stack_type.lower()}Input",
         },
-        ExpressionAttributeValues={
-            ":status": status,
-            ":input": input
-        },
+        ExpressionAttributeValues={":s": status, ":input": input},
     )
 
 
@@ -848,32 +808,35 @@ def _create_stack_params(param_map):
 
     params = []
     for k, v in param_map.items():
-        params.append({
-            "ParameterKey": k,
-            "ParameterValue": v,
-        })
+        params.append(
+            {
+                "ParameterKey": k,
+                "ParameterValue": v,
+            }
+        )
 
     return params
 
 
 def create_stack_name(stack_type="Proxy"):
-    # TODO: prefix might need to come from env
     uid = str(uuid.uuid4())
-    return f"{SOLUTION_PREFIX}-{stack_type}-{uid[:5]}"
+    return f"{stack_prefix}-{stack_type}-{uid[:8]}"
 
 
 def get_stack_pattern(stack_type="Proxy"):
     return f"{stack_type}ForOpenSearch"
 
 
-def validate_vpc_cidr(domainName: str, region=default_region) -> str:
+def validate_vpc_cidr(**args) -> str:
     # Get AES domain details
-    es = boto3.client('es', region_name=region, config=default_config)
+    domain_name = args.get("domainName", "")
+    region = args.get("region", default_region)
+    es = boto3.client("es", region_name=region, config=default_config)
     try:
-        resp = es.describe_elasticsearch_domain(DomainName=domainName)
+        resp = es.describe_elasticsearch_domain(DomainName=domain_name)
     except ClientError as e:
-        if e.response['Error']['Code'] == 'ResourceNotFoundException':
-            raise APIException('OpenSearch Domain Not Found')
+        if e.response["Error"]["Code"] == "ResourceNotFoundException":
+            raise APIException(DOMAIN_NOT_FOUND_ERROR)
         else:
             raise e
     cluster_auto_import_mgr = ClusterAutoImportManager(
@@ -882,7 +845,14 @@ def validate_vpc_cidr(domainName: str, region=default_region) -> str:
         es_resp=resp,
         loghub_vpc_id=loghub_vpc_id,
         loghub_sg_id=loghub_sg_id,
-        loghub_private_subnet_ids_str=loghub_private_subnet_ids_str)
+        loghub_private_subnet_ids_str=loghub_private_subnet_ids_str,
+    )
     cluster_auto_import_mgr.check_all_aos_cidr_overlaps(
-        region, list_imported_domains(False))
-    return 'OK'
+        region, list_imported_domains(False)
+    )
+    return "OK"
+
+
+def unique_id(s):
+    # use sha256 to generate a 32 characters string
+    return hashlib.sha256(s.encode("UTF-8")).hexdigest()[:32]

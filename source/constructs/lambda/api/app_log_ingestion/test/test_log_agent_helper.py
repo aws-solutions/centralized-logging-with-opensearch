@@ -38,7 +38,7 @@ def ddb_client():
             ProvisionedThroughput={"ReadCapacityUnits": 10, "WriteCapacityUnits": 10},
         )
         data_list = [
-            ddb_mock_data.s3_source_pipeline_data,
+            ddb_mock_data.base_source_pipeline_data,
             ddb_mock_data.ec2_source_pipeline_data,
         ]
         with app_pipeline_table.batch_writer() as batch:
@@ -395,19 +395,3 @@ class TestLogIngestionSvc:
             agent_config_path="app_log_config/i-0fd07f9eeb8a45e83/fluent-bit.conf",
             ground_truth_path="./test/datafile/fluent-bit_config_TestLogIngestionSvc_task_3.conf",
         )
-
-        # TODO: what is the purpose of task 4?
-        # self.task_4 = log_agent_helper.IngestionTask(
-        #     agent_type="FluentBit",
-        #     group_id="cc090e29-312e-418e-8b56-796923f9b6ed",
-        #     config_id="",
-        #     app_pipeline_id="ab740668-fba3-4d86-879d-e9a5a446d69f",
-        #     log_ingestion_id="d8e6c7a6-4061-4a4a-864e-ef9a427d231d",
-        #     is_multiline=False,
-        # )
-
-        # self.task_4.delete_ingestion()
-        # _check_agent_config(
-        #     agent_config_path="app_log_config/i-0fd07f9eeb8a45e83/fluent-bit.conf",
-        #     ground_truth_path="./test/datafile/fluent-bit_config_TestLogIngestionSvc_task_4.conf",
-        # )

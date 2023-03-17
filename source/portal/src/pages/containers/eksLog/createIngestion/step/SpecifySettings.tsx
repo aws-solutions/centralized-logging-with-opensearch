@@ -84,8 +84,6 @@ const SpecifySettings: React.FC<SpecifySettingProps> = (
             value: element.id,
             description: element.bufferAccessRoleArn || "",
             bufferType: element.bufferType || "",
-            // TODO
-            // ec2RoleArn: element.ec2RoleArn || "",
           });
           tmpPipelineIdMap[element.id] = element;
         }

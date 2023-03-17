@@ -20,6 +20,7 @@ import SpecifySettings from "./steps/SpecifySettings";
 import SpecifyOpenSearchCluster, {
   AOSInputValidRes,
   checkOpenSearchInput,
+  covertParametersByKeyAndConditions,
 } from "../common/SpecifyCluster";
 import CreateTags from "../common/CreateTags";
 import Button from "components/Button";
@@ -27,18 +28,25 @@ import Button from "components/Button";
 import Breadcrumb from "components/Breadcrumb";
 import { appSyncRequestMutation } from "assets/js/request";
 import { createServicePipeline } from "graphql/mutations";
-import { ServiceType, Tag } from "API";
-import { YesNo } from "types";
+import { CODEC, DestinationType, EngineType, ServiceType, Tag } from "API";
+import {
+  WarmTransitionType,
+  YesNo,
+  AmplifyConfigType,
+  SERVICE_LOG_INDEX_SUFFIX,
+} from "types";
 import { OptionType } from "components/AutoComplete/autoComplete";
 import { CreateLogMethod, ServiceLogType } from "assets/js/const";
 import HelpPanel from "components/HelpPanel";
 import SideMenu from "components/SideMenu";
-import { AmplifyConfigType } from "types";
 import { AppStateProps } from "reducer/appReducer";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Alert } from "assets/js/alert";
-import { splitStringToBucketAndPrefix } from "assets/js/utils";
+import {
+  bucketNameIsValid,
+  splitStringToBucketAndPrefix,
+} from "assets/js/utils";
 
 const EXCLUDE_PARAMS = [
   "esDomainId",
@@ -49,6 +57,7 @@ const EXCLUDE_PARAMS = [
   "warmEnable",
   "coldEnable",
   "needCreateLogging",
+  "rolloverSizeNotSupport",
 ];
 export interface S3TaskProps {
   type: ServiceType;
@@ -57,6 +66,7 @@ export interface S3TaskProps {
   target: string;
   logSourceAccountId: string;
   logSourceRegion: string;
+  destinationType: string;
   params: {
     needCreateLogging: boolean;
     engineType: string;
@@ -76,11 +86,21 @@ export interface S3TaskProps {
     vpcId: string;
     subnetIds: string;
     securityGroupId: string;
-    daysToWarm: string;
-    daysToCold: string;
-    daysToRetain: string;
+
     shardNumbers: string;
     replicaNumbers: string;
+
+    enableRolloverByCapacity: boolean;
+    warmTransitionType: string;
+    warmAge: string;
+    coldAge: string;
+    retainAge: string;
+    rolloverSize: string;
+    indexSuffix: string;
+    codec: string;
+    refreshInterval: string;
+
+    rolloverSizeNotSupport: boolean;
   };
 }
 
@@ -91,6 +111,7 @@ const DEFAULT_TASK_VALUE: S3TaskProps = {
   tags: [],
   logSourceAccountId: "",
   logSourceRegion: "",
+  destinationType: DestinationType.S3,
   params: {
     needCreateLogging: false,
     engineType: "",
@@ -110,11 +131,21 @@ const DEFAULT_TASK_VALUE: S3TaskProps = {
     vpcId: "",
     subnetIds: "",
     securityGroupId: "",
-    daysToWarm: "0",
-    daysToCold: "0",
-    daysToRetain: "0",
-    shardNumbers: "5",
+
+    shardNumbers: "1",
     replicaNumbers: "1",
+
+    enableRolloverByCapacity: true,
+    warmTransitionType: WarmTransitionType.IMMEDIATELY,
+    warmAge: "0",
+    coldAge: "60",
+    retainAge: "180",
+    rolloverSize: "30",
+    indexSuffix: SERVICE_LOG_INDEX_SUFFIX.yyyy_MM_dd,
+    codec: CODEC.best_compression,
+    refreshInterval: "1s",
+
+    rolloverSizeNotSupport: false,
   },
 };
 
@@ -145,6 +176,7 @@ const CreateS3: React.FC = () => {
 
   const [autoS3EmptyError, setAutoS3EmptyError] = useState(false);
   const [manualS3EmpryError, setManualS3EmpryError] = useState(false);
+  const [manualS3PathInvalid, setManualS3PathInvalid] = useState(false);
   const [esDomainEmptyError, setEsDomainEmptyError] = useState(false);
 
   const [nextStepDisable, setNextStepDisable] = useState(false);
@@ -157,6 +189,11 @@ const CreateS3: React.FC = () => {
     warmLogInvalidError: false,
     coldLogInvalidError: false,
     logRetentionInvalidError: false,
+    coldMustLargeThanWarm: false,
+    logRetentionMustThanColdAndWarm: false,
+    capacityInvalidError: false,
+    indexEmptyError: false,
+    indexNameFormatError: false,
   });
 
   const confirmCreatePipeline = async () => {
@@ -168,17 +205,12 @@ const CreateS3: React.FC = () => {
     createPipelineParams.tags = s3PipelineTask.tags;
     createPipelineParams.logSourceAccountId = s3PipelineTask.logSourceAccountId;
     createPipelineParams.logSourceRegion = amplifyConfig.aws_project_region;
+    createPipelineParams.destinationType = s3PipelineTask.destinationType;
 
-    const tmpParamList: any = [];
-    Object.keys(s3PipelineTask.params).forEach((key) => {
-      console.info("key");
-      if (EXCLUDE_PARAMS.indexOf(key) < 0) {
-        tmpParamList.push({
-          parameterKey: key,
-          parameterValue: (s3PipelineTask.params as any)?.[key] || "",
-        });
-      }
-    });
+    const tmpParamList: any = covertParametersByKeyAndConditions(
+      s3PipelineTask,
+      EXCLUDE_PARAMS
+    );
 
     // Add Default Failed Log Bucket
     tmpParamList.push({
@@ -236,44 +268,6 @@ const CreateS3: React.FC = () => {
                     },
                   ]}
                   activeIndex={curStep}
-                  selectStep={(step: number) => {
-                    if (curStep === 0) {
-                      if (nextStepDisable || bucketISChanging) {
-                        return;
-                      }
-                      if (needEnableAccessLog) {
-                        Alert(t("servicelog:s3.needEnableLogging"));
-                        return;
-                      }
-                      if (
-                        s3PipelineTask.params.taskType ===
-                        CreateLogMethod.Automatic
-                      ) {
-                        if (!s3PipelineTask.params.logBucketObj) {
-                          setAutoS3EmptyError(true);
-                          return;
-                        }
-                      }
-                      if (
-                        s3PipelineTask.params.taskType ===
-                        CreateLogMethod.Manual
-                      ) {
-                        if (!s3PipelineTask.params.logBucketName) {
-                          setManualS3EmpryError(true);
-                          return;
-                        }
-                      }
-                    }
-                    if (curStep === 1) {
-                      if (!s3PipelineTask.params.domainName) {
-                        setEsDomainEmptyError(true);
-                        return;
-                      } else {
-                        setEsDomainEmptyError(false);
-                      }
-                    }
-                    setCurStep(step);
-                  }}
                 />
               </div>
               <div className="create-content m-w-800">
@@ -284,6 +278,7 @@ const CreateS3: React.FC = () => {
                       setBucketISChanging(status);
                     }}
                     manualS3EmptyError={manualS3EmpryError}
+                    manualS3PathInvalid={manualS3PathInvalid}
                     autoS3EmptyError={autoS3EmptyError}
                     changeNeedEnableLogging={(need: boolean) => {
                       setNeedEnableAccessLog(need);
@@ -297,6 +292,13 @@ const CreateS3: React.FC = () => {
                       });
                     }}
                     manualChangeBucket={(srcBucketName) => {
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          indexEmptyError: false,
+                          indexNameFormatError: false,
+                        };
+                      });
                       setS3PipelineTask((prev: S3TaskProps) => {
                         return {
                           ...prev,
@@ -304,7 +306,7 @@ const CreateS3: React.FC = () => {
                           params: {
                             ...prev.params,
                             manualBucketName: srcBucketName,
-                            indexPrefix: srcBucketName,
+                            indexPrefix: srcBucketName.toLowerCase(),
                           },
                         };
                       });
@@ -324,13 +326,21 @@ const CreateS3: React.FC = () => {
                     changeLogBucketObj={(s3BucketObj) => {
                       console.info("s3BucketObj:", s3BucketObj);
                       setAutoS3EmptyError(false);
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          indexEmptyError: false,
+                          indexNameFormatError: false,
+                        };
+                      });
                       setS3PipelineTask((prev: S3TaskProps) => {
                         return {
                           ...prev,
                           source: s3BucketObj?.value || "",
                           params: {
                             ...prev.params,
-                            indexPrefix: s3BucketObj?.value || "",
+                            indexPrefix:
+                              s3BucketObj?.value?.toLowerCase() || "",
                             logBucketObj: s3BucketObj,
                           },
                         };
@@ -354,6 +364,7 @@ const CreateS3: React.FC = () => {
                         CreateLogMethod.Manual
                       ) {
                         setManualS3EmpryError(false);
+                        setManualS3PathInvalid(false);
                         const { bucket, prefix } =
                           splitStringToBucketAndPrefix(logPath);
                         setS3PipelineTask((prev: S3TaskProps) => {
@@ -422,6 +433,13 @@ const CreateS3: React.FC = () => {
                       });
                     }}
                     changeBucketIndex={(indexPrefix) => {
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          indexEmptyError: false,
+                          indexNameFormatError: false,
+                        };
+                      });
                       setS3PipelineTask((prev: S3TaskProps) => {
                         return {
                           ...prev,
@@ -433,7 +451,10 @@ const CreateS3: React.FC = () => {
                       });
                     }}
                     changeOpenSearchCluster={(cluster) => {
-                      console.info("cluster:", cluster);
+                      const NOT_SUPPORT_VERSION =
+                        cluster?.engine === EngineType.Elasticsearch ||
+                        parseFloat(cluster?.version || "") < 1.3;
+
                       setEsDomainEmptyError(false);
                       setS3PipelineTask((prev: S3TaskProps) => {
                         return {
@@ -452,12 +473,14 @@ const CreateS3: React.FC = () => {
                             vpcId: cluster?.vpc?.vpcId || "",
                             warmEnable: cluster?.nodes?.warmEnabled || false,
                             coldEnable: cluster?.nodes?.coldEnabled || false,
+                            rolloverSizeNotSupport: NOT_SUPPORT_VERSION,
+                            enableRolloverByCapacity: !NOT_SUPPORT_VERSION,
+                            rolloverSize: NOT_SUPPORT_VERSION ? "" : "30",
                           },
                         };
                       });
                     }}
                     changeSampleDashboard={(yesNo) => {
-                      // setPiplineBucketPrefix(prefix);
                       setS3PipelineTask((prev: S3TaskProps) => {
                         return {
                           ...prev,
@@ -480,7 +503,7 @@ const CreateS3: React.FC = () => {
                           ...prev,
                           params: {
                             ...prev.params,
-                            daysToWarm: value,
+                            warmAge: value,
                           },
                         };
                       });
@@ -490,6 +513,7 @@ const CreateS3: React.FC = () => {
                         return {
                           ...prev,
                           coldLogInvalidError: false,
+                          coldMustLargeThanWarm: false,
                         };
                       });
                       setS3PipelineTask((prev: S3TaskProps) => {
@@ -497,7 +521,7 @@ const CreateS3: React.FC = () => {
                           ...prev,
                           params: {
                             ...prev.params,
-                            daysToCold: value,
+                            coldAge: value,
                           },
                         };
                       });
@@ -507,6 +531,7 @@ const CreateS3: React.FC = () => {
                         return {
                           ...prev,
                           logRetentionInvalidError: false,
+                          logRetentionMustThanColdAndWarm: false,
                         };
                       });
                       setS3PipelineTask((prev: S3TaskProps) => {
@@ -514,7 +539,80 @@ const CreateS3: React.FC = () => {
                           ...prev,
                           params: {
                             ...prev.params,
-                            daysToRetain: value,
+                            retainAge: value,
+                          },
+                        };
+                      });
+                    }}
+                    changeIndexSuffix={(suffix: string) => {
+                      setS3PipelineTask((prev: S3TaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            indexSuffix: suffix,
+                          },
+                        };
+                      });
+                    }}
+                    changeEnableRollover={(enable: boolean) => {
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          capacityInvalidError: false,
+                        };
+                      });
+                      setS3PipelineTask((prev: S3TaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            enableRolloverByCapacity: enable,
+                          },
+                        };
+                      });
+                    }}
+                    changeRolloverSize={(size: string) => {
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          capacityInvalidError: false,
+                        };
+                      });
+                      setS3PipelineTask((prev: S3TaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            rolloverSize: size,
+                          },
+                        };
+                      });
+                    }}
+                    changeCompressionType={(codec: string) => {
+                      setS3PipelineTask((prev: S3TaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            codec: codec,
+                          },
+                        };
+                      });
+                    }}
+                    changeWarmSettings={(type: string) => {
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          coldMustLargeThanWarm: false,
+                        };
+                      });
+                      setS3PipelineTask((prev: S3TaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            warmTransitionType: type,
                           },
                         };
                       });
@@ -582,6 +680,17 @@ const CreateS3: React.FC = () => {
                           ) {
                             if (!s3PipelineTask.params.logBucketName) {
                               setManualS3EmpryError(true);
+                              return;
+                            }
+                            if (
+                              !s3PipelineTask.params.manualBucketS3Path
+                                .toLowerCase()
+                                .startsWith("s3") ||
+                              !bucketNameIsValid(
+                                s3PipelineTask.params.logBucketName
+                              )
+                            ) {
+                              setManualS3PathInvalid(true);
                               return;
                             }
                           }

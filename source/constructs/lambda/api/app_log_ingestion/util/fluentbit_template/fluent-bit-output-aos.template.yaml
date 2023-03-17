@@ -11,9 +11,8 @@
     Buffer_Size         20M
     #When enabled, generate _id for outgoing records. This prevents duplicate records when retrying.
     Generate_ID         On
-    Logstash_Format     On
-    Logstash_Prefix     $LOGHUB_AOS_IDX_PREFIX
-    Logstash_DateFormat %Y%m%d
+    Logstash_Format     Off
+    Index               $LOGHUB_AOS_IDX_PREFIX
     Time_Key            $LOGHUB_TIMEKEY
     Time_Key_Nanos      Off
     Write_Operation     create

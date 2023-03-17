@@ -45,6 +45,7 @@ import EKSPattern from "help/EKSPattern";
 import EKSIAMRole from "help/EKSIAMRole";
 import ConfigTimeFormat from "help/ConfigTimeFormat";
 import ConfigFilter from "help/ConfigFilter";
+import ProxyInstance from "help/ProxyInstance";
 
 interface HelpPanelProps {
   className?: string;
@@ -65,12 +66,7 @@ export const HelpPanel: React.FC<HelpPanelProps> = (props: HelpPanelProps) => {
     >
       <div className="gsui-help-panel-title">
         {!showInfoBar && (
-          <div
-            className="collapse-menu"
-            onClick={() => {
-              // setIsOpen(true);
-            }}
-          >
+          <div className="collapse-menu">
             <ErrorOutlineIcon className="reverse menu-icon" />
           </div>
         )}
@@ -131,6 +127,7 @@ export const HelpPanel: React.FC<HelpPanelProps> = (props: HelpPanelProps) => {
             <ConfigTimeFormat />
           )}
           {infoBarType === InfoBarTypes.CONFIG_FILTER && <ConfigFilter />}
+          {infoBarType === InfoBarTypes.PROXY_INSTANCE && <ProxyInstance />}
         </div>
       )}
     </div>

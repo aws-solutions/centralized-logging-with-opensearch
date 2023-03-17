@@ -2,46 +2,51 @@
 [WAF 访问日志](https://docs.aws.amazon.com/waf/latest/developerguide/logging.html) 提供有关由您的 Web ACL 分析的流量的详细信息。 记录的信息包括 AWS WAF 从您的 AWS 资源收到 Web 请求的时间、有关请求的详细信息以及有关请求匹配的规则的详细信息。
 
 ## 创建日志摄取
-您可以使用 Log Hub 控制台或通过部署独立的 CloudFormation 堆栈来将日志摄取到 AOS 中。
+您可以使用日志通控制台或通过部署独立的 CloudFormation 堆栈来将日志摄取到 Amazon OpenSearch Service 中。
 
-!!! important "Important"
-    - WAF 日志存储桶必须和 Log Hub 位于同一区域。
-    - Log Hub 不支持 [WAF Classic](https://docs.aws.amazon.com/waf/latest/developerguide/classic-waf-chapter.html) 产生的日志. 您可以了解如何[从 WAF Classic 迁移到新 AWS WAF](https://aws.amazon.com/blogs/security/migrating-rules-from-aws-waf-classic-to-new-aws-waf/).
-    - AOS索引每天轮换，不可调整。
+!!! important "重要提示"
 
-### 使用 Log Hub 控制台
+    - 日志通解决方案必须与 Web ACL 部署在同一个可用区中，否则您将无法创建WAF日志摄取。
+    例如:
+        - 如果您的 Web ACL 与 Global Cloudfront 相关联，那么您的日志通 必须部署在 us-east-1。
+        - 如果您的 Web ACL 与在 Ohio 的 AWS 资源相关联，那么您的日志通 必须部署在 us-east-2。
+    - WAF 日志存储桶必须和日志通 位于同一区域。
+    - 日志通 不支持 [WAF Classic](https://docs.aws.amazon.com/waf/latest/developerguide/classic-waf-chapter.html) 产生的日志。您可以了解如何[从 WAF Classic 迁移到新 AWS WAF](https://aws.amazon.com/blogs/security/migrating-rules-from-aws-waf-classic-to-new-aws-waf/)。
+    - 默认情况下，该解决方案将每天轮换索引。您可以在**额外设置**中进行调整。
 
-1. 登录 Log Hub 控制台。
+### 使用日志通控制台
+
+1. 登录日志通控制台。
 2. 在导航窗格中的 **日志分析管道** 下，选择 **AWS 服务日志**。
 3. 选择**创建日志摄取**按钮。
 4. 在 **AWS 服务** 部分，选择 **AWS WAF**。
 5. 选择**下一步**。
 6. 在 **指定设置** 下，选择 **自动** 或 **手动**。
-    - 对于 **自动** 模式，在下拉列表中选择一个 Web ACL。 
+    - 对于 **自动** 模式，在下拉列表中选择一个 Web ACL。
     - 对于 **手动** 模式，输入 **Web ACL name**。
     - (可选步骤) 如果需要跨账户摄取日志，需要先在 **账户** 的下拉列表中选择一个[链接的 AWS 账户](../link-account/index.md)。
 7. 在 **摄取选项** 中. 选择 **采样** 或 **全量**.
     - 对于 **采样**， 请输入摄取采样日志的频率。
-    - 对于 **全量**， 如果未启用 Web ACL 日志，请单击 **开启** 启用访问日志。或在手动模式中输入日志位置
+    - 对于 **全量**， 如果未启用 Web ACL 日志，请单击 **开启** 启用访问日志。或在手动模式中输入日志位置。请注意，使用日志通将自动启用使用 Kinesis Data Firehose 流作为 WAF 日志的目标。
 8. 选择**下一步**。
 9. 在 **指定 OpenSearch 域** 部分，为 **Amazon OpenSearch 域** 选择一个导入的域。
-10. 如果您要摄取关联的模板化 AOS 仪表板，请为 **示例仪表板** 选择 **是**。
-11. 如果需要，您可以更改目标 AOS 索引的 **索引前缀**。默认前缀是`Web ACL 名称`。
-12. 在 **日志生命周期** 部分，输入管理 AOS 索引生命周期的天数。 Log Hub 将为此管道自动创建关联的 [索引状态管理 (ISM)](https://opensearch.org/docs/latest/im-plugin/ism/index/) 策略。
+10. 如果您要摄取关联的模板化 Amazon OpenSearch Service 仪表板，请为 **示例仪表板** 选择 **是**。
+11. 如果需要，您可以更改目标 Amazon OpenSearch Service 索引的 **索引前缀**。默认前缀是`Web ACL 名称`。
+12. 在 **日志生命周期** 部分，输入管理 Amazon OpenSearch Service 索引生命周期的天数。日志通 将为此管道自动创建关联的 [索引状态管理 (ISM)](https://opensearch.org/docs/latest/im-plugin/ism/index/) 策略。
 13. 选择**下一步**。
 14. 如果需要，添加标签。
 15. 选择**创建**。
 
 ### 使用 CloudFormation 堆栈
-此自动化 AWS CloudFormation 模板在 AWS 云中部署 *Log Hub - waf Log Ingestion* 解决方案。
+此自动化 AWS CloudFormation 模板在 AWS 云中部署 *日志通- waf Log Ingestion* 解决方案。
 
 
 |                                         | 从 AWS 控制台启动                                                                                                                                                                                                                                                       | 下载模板                                            |
 |-----------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| ------------------------------------------------------------ |
-| AWS 海外区域 (全量请求)    | [![启动堆栈](../../images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/template?stackName=LogHub-WAF&templateURL=https://{{ bucket }}.s3.amazonaws.com/log-hub/{{ version }}/WAFLog.template){target=_blank}                    | [模板](https://{{ bucket }}.s3.amazonaws.com/log-hub/{{ version }}/WAFLog.template) |
-| AWS 中国区域 (全量请求)       | [![启动堆栈](../../images/launch-stack.png)](https://console.amazonaws.cn/cloudformation/home#/stacks/create/template?stackName=LogHub-WAF&templateURL=https://{{ bucket }}.s3.cn-north-1.amazonaws.com.cn/log-hub/{{ version }}/WAFLog.template){target=_blank}        | [模板](https://{{ bucket }}.s3.cn-north-1.amazonaws.com.cn/log-hub/{{ version }}/WAFLog.template) |
-| AWS 海外区域 (采样请求) | [![启动堆栈](../../images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/template?stackName=LogHub-WAF&templateURL=https://{{ bucket }}.s3.amazonaws.com/log-hub/{{ version }}/WAFSampledLog.template){target=_blank}             | [模板](https://{{ bucket }}.s3.amazonaws.com/log-hub/{{ version }}/WAFSampledLog.template) |
-| AWS 中国区域 (采样请求)    | [![启动堆栈](../../images/launch-stack.png)](https://console.amazonaws.cn/cloudformation/home#/stacks/create/template?stackName=LogHub-WAF&templateURL=https://{{ bucket }}.s3.cn-north-1.amazonaws.com.cn/log-hub/{{ version }}/WAFSampledLog.template){target=_blank} | [模板](https://{{ bucket }}.s3.cn-north-1.amazonaws.com.cn/log-hub/{{ version }}/WAFSampledLog.template) |
+| AWS 海外区域 (全量请求)    | [![启动堆栈](../../images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https://{{ bucket }}.s3.amazonaws.com/{{ solution }}/{{ version }}/WAFLog.template){target=_blank}                    | [模板](https://{{ bucket }}.s3.amazonaws.com/{{ solution }}/{{ version }}/WAFLog.template) |
+| AWS 中国区域 (全量请求)       | [![启动堆栈](../../images/launch-stack.png)](https://console.amazonaws.cn/cloudformation/home#/stacks/new?templateURL=https://{{ bucket }}.s3.amazonaws.com/{{ solution }}/{{ version }}/WAFLog.template){target=_blank}        | [模板](https://{{ bucket }}.s3.amazonaws.com/{{ solution }}/{{ version }}/WAFLog.template) |
+| AWS 海外区域 (采样请求) | [![启动堆栈](../../images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https://{{ bucket }}.s3.amazonaws.com/{{ solution }}/{{ version }}/WAFSampledLog.template){target=_blank}             | [模板](https://{{ bucket }}.s3.amazonaws.com/{{ solution }}/{{ version }}/WAFSampledLog.template) |
+| AWS 中国区域 (采样请求)    | [![启动堆栈](../../images/launch-stack.png)](https://console.amazonaws.cn/cloudformation/home#/stacks/new?templateURL=https://{{ bucket }}.s3.amazonaws.com/{{ solution }}/{{ version }}/WAFSampledLog.template){target=_blank} | [模板](https://{{ bucket }}.s3.amazonaws.com/{{ solution }}/{{ version }}/WAFSampledLog.template) |
 
 1. 登录 AWS 管理控制台并选择以上按钮以启动 AWS CloudFormation 模板。您还可以下载模板开始部署。
 
@@ -61,21 +66,21 @@
     | Log Bucket Prefix              | `<需要输入>` | 存储日志的 S3 存储桶路径前缀。                                                                                        |
 
     - **采样请求** 专用参数
-    
+
     | 参数                             | 默认          | 描述                                                                                                       |
     | --------------------------------| ---------- |----------------------------------------------------------------------------------------------------------|
     | WebACL Names | `<需要输入>` | WebACL 名称列表，以逗号分隔。           |
     | Interval     | `1`                | 获取采样日志的默认时间间隔（以分钟为单位）。 |
-    
+
     - 通用参数
 
     | 参数                             | 默认          | 描述                                                                                                       |
     | --------------------------------| ---------- |----------------------------------------------------------------------------------------------------------|
     | Log Bucket Name                | `<需要输入>` | 存储日志的 S3 存储桶名称。                                                                                          |
     | Log Bucket Prefix              | `<需要输入>` | 存储日志的 S3 存储桶路径前缀。                                                                                        |
-    | Log Source Account ID          | `<可选输入>`  | 存储日志的 S3 存储桶所在账户 ID. 对于跨账户日志摄取是必填 (需要先 [添加一个成员账户](../link-account/index.md)). 默认情况下, 会使用您在 **步骤 1** 中登录的账户 ID. |
-    | Log Source Region              | `<可选输入>` | 存储日志的 S3 存储桶所在的区域. 默认情况下, 会使用您在 **步骤 2** 中指定的区域                                                          |
-    | Log Source Account Assume Role | `<可选输入>` | 跨账户日志摄取所需要使用的 IAM Role. 对于跨账户日志摄取是必填 (需要先 [添加一个成员账户](../link-account/index.md)).                                 |
+    | Log Source Account ID          | `<可选输入>`  | 存储日志的 S3 存储桶所在账户 ID. 对于跨账户日志摄取是必填 (需要先 [添加一个成员账户](../link-account/index.md))。 默认情况下, 会使用您在 **步骤 1** 中登录的账户 ID。 |
+    | Log Source Region              | `<可选输入>` | 存储日志的 S3 存储桶所在的区域. 默认情况下, 会使用您在 **步骤 2** 中指定的区域。                                                          |
+    | Log Source Account Assume Role | `<可选输入>` | 跨账户日志摄取所需要使用的 IAM Role. 对于跨账户日志摄取是必填 (需要先 [添加一个成员账户](../link-account/index.md))。                                 |
     | Engine Type                    | OpenSearch | OpenSearch 的引擎类型。选择 OpenSearch 或 Elasticsearch。                                                          |
     | OpenSearch Domain Name         | `<需要输入>` | Amazon OpenSearch 集群的域名。                                                                                 |
     | OpenSearch Endpoint            | `<需要输入>` | OpenSearch 端点 URL。例如，`vpc-your_opensearch_domain_name-xcvgw6uu2o6zafsiefxubwuohe.us-east-1.es.amazonaws.com`。 |
@@ -85,7 +90,7 @@
     | Subnet IDs                     | `<需要输入>` | 选择至少两个可以访问 OpenSearch 域的子网。日志处理 Lambda 将驻留在子网中。确保子网可以访问 Amazon S3 服务。                                    |
     | Security Group ID              | `<需要输入>` | 选择将与日志处理 Lambda 关联的安全组。确保安全组有权访问 OpenSearch 域。                                                           |
     | S3 Backup Bucket               | `<需要输入>` | 用于存储失败提取日志的 S3 备份存储桶名称。                                                                                  |
-    | KMS-CMK ARN                | `<可选输入>` | 用于加密的 KMS-CMK ARN. 留空以创建新的 KMS CMK.                                                                                 |
+    | KMS-CMK ARN                | `<可选输入>` | 用于加密的 KMS-CMK ARN。 留空以创建新的 KMS CMK。                                                                                 |
     | Number Of Shards               | 5 | 将索引均匀分布在所有数据节点上的分片数。将每个分片的大小保持在 10-50 GiB 之间。                                                            |
     | Number of Replicas             | 1 | OpenSearch 索引的副本数。每个副本都是索引的完整副本。                                                                         |
     | Days to Warm Storage           | 0 | 将索引移动到热存储所需的天数。仅当该值大于 0 且 OpenSearch 中启用了热存储时才生效。                                                        |

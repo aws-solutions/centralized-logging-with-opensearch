@@ -4,11 +4,11 @@
 
 ## 域管理
 
-该解决方案使用 Amazon OpenSearch Service (AOS) 作为底层引擎来存储和分析日志。您可以导入现有的 AOS 域以进行日志摄取，并为 VPC 内的 AOS 仪表板提供访问代理。此外，您可以为 AOS 设置推荐的 CloudWatch 告警。
+该解决方案使用 Amazon OpenSearch Service (Amazon OpenSearch Service) 作为底层引擎来存储和分析日志。您可以导入现有的 Amazon OpenSearch Service 域以进行日志摄取，并为 VPC 内的 Amazon OpenSearch Service 仪表板提供访问代理。此外，您可以为 Amazon OpenSearch Service 设置推荐的 CloudWatch 告警。
 
 ## 分析管道
 
-日志管道包括一系列日志处理步骤，包括从源收集日志、处理并将它们发送到 Amazon OpenSearch 服务以进行进一步分析。 Log Hub 支持 AWS 服务日志摄取和服务器端应用程序日志摄取。
+日志管道包括一系列日志处理步骤，包括从源收集日志、处理并将它们发送到 Amazon OpenSearch 服务以进行进一步分析。日志通 支持 AWS 服务日志摄取和服务器端应用程序日志摄取。
 
 ### 服务日志管道
 

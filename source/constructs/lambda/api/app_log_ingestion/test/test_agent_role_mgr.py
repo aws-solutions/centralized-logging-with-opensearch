@@ -10,8 +10,6 @@ from moto import mock_dynamodb, mock_sts, mock_iam
 
 from .conftest import init_ddb
 
-# os.environ["AWS_REGION"] = 'us-west-1'
-
 
 @pytest.fixture
 def sts_client():
@@ -68,25 +66,25 @@ def ddb_client():
                     "region": "us-west-2",
                     "status": "ACTIVE",
                     "subAccountBucketName": "crossaccount-loghubloggingbucket0fa53b76-16pw04457dx1j",
-                    "subAccountId": "056627083435",
-                    "subAccountKMSKeyArn": "arn:aws:kms:us-west-2:056627083435:key/20cccd33-776b-4bcb-88f2-3a9bd47c02b2",
+                    "subAccountId": "123456789012",
+                    "subAccountKMSKeyArn": "arn:aws:kms:us-west-2:123456789012:key/20cccd33-776b-4bcb-88f2-3a9bd47c02b2",
                     "subAccountName": "magic-en",
                     "subAccountPublicSubnetIds": "subnet-0b6b13021cf0840c0,subnet-01ae8fbe2a0e7ff77",
-                    "subAccountRoleArn": "arn:aws:iam::056627083435:role/CrossAccount-CrossAccountRoleFACE29D1-1KM3QA0O84K34",
-                    "subAccountStackId": "arn:aws:cloudformation:us-west-2:056627083435:stack/CrossAccount/cf324d00-ff8b-11ec-8943-021a55f488dd",
+                    "subAccountRoleArn": "arn:aws:iam::123456789012:role/CrossAccount-CrossAccountRoleFACE29D1-1KM3QA0O84K34",
+                    "subAccountStackId": "arn:aws:cloudformation:us-west-2:123456789012:stack/CrossAccount/cf324d00-ff8b-11ec-8943-021a55f488dd",
                     "subAccountVpcId": "vpc-0327820b5f509ad58",
                 },
                 os.environ["EKS_CLUSTER_SOURCE_TABLE_NAME"]: {
                     "id": "9ec8bfb2832a4ea3bdf2fcd7afa4887c",
-                    "accountId": "056627083435",
+                    "accountId": "123456789012",
                     "aosDomainId": "40485c141648f8d0acbbec6eda19a4a7",
                     "createdDt": "2022-07-14T12:55:04Z",
                     "cri": "docker",
-                    "eksClusterArn": "arn:aws:eks:us-west-2:056627083435:cluster/test-cross-acount-sidecar",
+                    "eksClusterArn": "arn:aws:eks:us-west-2:123456789012:cluster/test-cross-acount-sidecar",
                     "eksClusterName": "test-cross-acount-sidecar",
                     "eksClusterSGId": "sg-0309ace781f7bb196",
                     "endpoint": "https://495B50BAB232BED64A48C40F334C9B09.gr7.us-west-2.eks.amazonaws.com",
-                    "logAgentRoleArn": "arn:aws:iam::056627083435:role/LogHub-EKS-LogAgent-Role-2623e75d063340a4ac37c4f4874bbc48",
+                    "logAgentRoleArn": "arn:aws:iam::123456789012:role/LogHub-EKS-LogAgent-Role-2623e75d063340a4ac37c4f4874bbc48",
                     "oidcIssuer": "https://oidc.eks.us-west-2.amazonaws.com/id/495B50BAB232BED64A48C40F334C9B09",
                     "region": "us-west-2",
                     "status": "ACTIVE",
@@ -112,7 +110,7 @@ def ddb_client():
                             "failedLogBucket": "loghub-loghubloggingbucket0fa53b76-19bviwwrvqyz3",
                             "indexPrefix": "eks-nginx01",
                             "logRetention": 0,
-                            "opensearchArn": "arn:aws:es:us-west-2:783732175206:domain/loghub-aos",
+                            "opensearchArn": "arn:aws:es:us-west-2:123456789:domain/loghub-aos",
                             "opensearchEndpoint": "vpc-loghub-aos-rckjrxo5icri37ro3eq2tac4di.us-west-2.es.amazonaws.com",
                             "replicaNumbers": 0,
                             "shardNumbers": 1,
@@ -150,8 +148,8 @@ def ddb_client():
                             "failedLogBucket": "loghub-loghubloggingbucket0fa53b76-19bviwwrvqyz3",
                             "indexPrefix": "eks-nginx01",
                             "logRetention": 0,
-                            "opensearchArn": "arn:aws:es:us-west-2:783732175206:domain/loghub-aos",
-                            "opensearchEndpoint": "vpc-loghub-aos-rckjrxo5icri37ro3eq2tac4di.us-west-2.es.amazonaws.com",
+                            "opensearchArn": "arn:aws:es:us-west-2:123456789:domain/loghub-aos",
+                            "opensearchEndpoint": "vpc-loghub-aos-xxx.us-west-2.es.amazonaws.com",
                             "replicaNumbers": 0,
                             "shardNumbers": 1,
                             "vpc": {
@@ -166,15 +164,15 @@ def ddb_client():
                         "error": "",
                         "kdsParas": {
                             "enableAutoScaling": False,
-                            "kdsArn": "arn:aws:kinesis:us-west-2:783732175206:stream/LogHub-EKS-Cluster-PodLog-Pipeline-bb830-Stream790BDEE4-fpwLPjH5CsQ1",
+                            "kdsArn": "arn:aws:kinesis:us-west-2:123456789:stream/LogHub-EKS-Cluster-PodLog-Pipeline-bb830-Stream790BDEE4-fpwLPjH5CsQ1",
                             "maxShardNumber": 0,
-                            "osHelperFnArn": "arn:aws:lambda:us-west-2:783732175206:function:LogHub-EKS-Cluster-PodLog-Pipel-OpenSearchHelperFn-9teq81BBvyOp",
+                            "osHelperFnArn": "arn:aws:lambda:us-west-2:123456789:function:LogHub-EKS-Cluster-PodLog-Pipel-OpenSearchHelperFn-9teq81BBvyOp",
                             "regionName": "us-west-2",
                             "startShardNumber": 1,
                             "streamName": "LogHub-EKS-Cluster-PodLog-Pipeline-bb830-Stream790BDEE4-fpwLPjH5CsQ1",
                         },
                         "kdsRoleName": "LogHub-EKS-Cluster-PodLog-DataBufferKDSRole7BCBC83-1II64RIV25JN3",
-                        "stackId": "arn:aws:cloudformation:us-west-2:783732175206:stack/LogHub-EKS-Cluster-PodLog-Pipeline-bb830/88d714c0-0374-11ed-8741-06913de18dd5",
+                        "stackId": "arn:aws:cloudformation:us-west-2:123456789:stack/LogHub-EKS-Cluster-PodLog-Pipeline-bb830/88d714c0-0374-11ed-8741-06913de18dd5",
                         "status": "ACTIVE",
                         "tags": [{"key": "nb", "value": "test"}],
                     },

@@ -138,7 +138,7 @@ def ddb_client():
             ProvisionedThroughput={"ReadCapacityUnits": 10, "WriteCapacityUnits": 10},
         )
         data_list = [
-            ddb_mock_data.s3_source_pipeline_data,
+            ddb_mock_data.base_source_pipeline_data,
             ddb_mock_data.ec2_source_pipeline_data,
         ]
         with app_pipeline_table.batch_writer() as batch:
@@ -325,118 +325,118 @@ def iam_client():
         }
 
 
-# def test_lambda_handler(
-#     lambda_client,
-#     ddb_client,
-#     sfn_client,
-#     s3_client,
-#     ssm_client,
-#     sts_client,
-#     iam_client,
-# ):
-#     # Can only import here, as the environment variables need to be set first.
-#     import ec2_as_source_lambda_function
+def test_lambda_handler(
+    lambda_client,
+    ddb_client,
+    sfn_client,
+    s3_client,
+    ssm_client,
+    sts_client,
+    iam_client,
+):
+    # Can only import here, as the environment variables need to be set first.
+    import ec2_as_source_lambda_function
 
-#     # Test create the log ingestion
-#     ec2_as_source_lambda_function.lambda_handler(
-#         {
-#             "id": "039a1176-33c4-4ec7-8ea2-3245ae27b4b1",
-#             "confId": "339039e1-9812-43f8-9962-165e3adbc805",
-#             "sourceIds": ["cc090e29-312e-418e-8b56-796923f9b6ed"],
-#             "sourceType": "EC2",
-#             "stackId": "",
-#             "stackName": "",
-#             "appPipelineId": "d27b96a9-7b78-4fe1-94e6-3e42f57f4339",
-#             "kdsRoleArn":
-#             "arn:aws:iam::783732175206:role/LogHub-EKS-Cluster-PodLog-DataBufferKDSRole7BCBC83-1II64RIV25JN3",
-#             "tags": [],
-#             "current_conf": {
-#                 "regularExpression":
-#                 "",
-#                 "logType":
-#                 "JSON",
-#                 "confName":
-#                 "ee-json-0505-02",
-#                 "createdDt":
-#                 "2022-05-05T07:53:09Z",
-#                 "logPath":
-#                 "/home/ec2-user/*.json",
-#                 "status":
-#                 "ACTIVE",
-#                 "multilineLogParser":
-#                 None,
-#                 "userLogFormat":
-#                 "",
-#                 "regularSpecs": [
-#                     {
-#                         "type": "date",
-#                         "format": "%d/%b/%Y:%H:%M:%S %z",
-#                         "key": "time"
-#                     },
-#                     {
-#                         "type": "text",
-#                         "key": "host"
-#                     },
-#                     {
-#                         "type": "text",
-#                         "key": "user-identifier"
-#                     },
-#                     {
-#                         "type": "text",
-#                         "key": "method"
-#                     },
-#                     {
-#                         "type": "text",
-#                         "key": "request"
-#                     },
-#                     {
-#                         "type": "text",
-#                         "key": "protocol"
-#                     },
-#                     {
-#                         "type": "integer",
-#                         "key": "status"
-#                     },
-#                     {
-#                         "type": "integer",
-#                         "key": "bytes"
-#                     },
-#                     {
-#                         "type": "text",
-#                         "key": "referer"
-#                     },
-#                 ],
-#                 "id":
-#                 "339039e1-9812-43f8-9962-165e3adbc805",
-#             },
-#             "page": 1,
-#             "count": 10,
-#             "sourceId": "cc090e29-312e-418e-8b56-796923f9b6ed",
-#             "source_ingestion_map": {
-#                 "cc090e29-312e-418e-8b56-796923f9b6ed":
-#                 "039a1176-33c4-4ec7-8ea2-3245ae27b4b1"
-#             },
-#             "action": "asyncCreateAppLogIngestion",
-#             "is_multiline": False,
-#         },
-#         None,
-#     )
+    # Test create the log ingestion
+    ec2_as_source_lambda_function.lambda_handler(
+        {
+            "id": "039a1176-33c4-4ec7-8ea2-3245ae27b4b1",
+            "confId": "339039e1-9812-43f8-9962-165e3adbc805",
+            "sourceIds": ["cc090e29-312e-418e-8b56-796923f9b6ed"],
+            "sourceType": "EC2",
+            "stackId": "",
+            "stackName": "",
+            "appPipelineId": "d27b96a9-7b78-4fe1-94e6-3e42f57f4339",
+            "kdsRoleArn":
+            "arn:aws:iam::123456789012:role/LogHub-EKS-Cluster-PodLog-DataBufferKDSRole7BCBC83-1II64RIV25JN3",
+            "tags": [],
+            "current_conf": {
+                "regularExpression":
+                "",
+                "logType":
+                "JSON",
+                "confName":
+                "ee-json-0505-02",
+                "createdDt":
+                "2022-05-05T07:53:09Z",
+                "logPath":
+                "/home/ec2-user/*.json",
+                "status":
+                "ACTIVE",
+                "multilineLogParser":
+                None,
+                "userLogFormat":
+                "",
+                "regularSpecs": [
+                    {
+                        "type": "date",
+                        "format": "%d/%b/%Y:%H:%M:%S %z",
+                        "key": "time"
+                    },
+                    {
+                        "type": "text",
+                        "key": "host"
+                    },
+                    {
+                        "type": "text",
+                        "key": "user-identifier"
+                    },
+                    {
+                        "type": "text",
+                        "key": "method"
+                    },
+                    {
+                        "type": "text",
+                        "key": "request"
+                    },
+                    {
+                        "type": "text",
+                        "key": "protocol"
+                    },
+                    {
+                        "type": "integer",
+                        "key": "status"
+                    },
+                    {
+                        "type": "integer",
+                        "key": "bytes"
+                    },
+                    {
+                        "type": "text",
+                        "key": "referer"
+                    },
+                ],
+                "id":
+                "339039e1-9812-43f8-9962-165e3adbc805",
+            },
+            "page": 1,
+            "count": 10,
+            "sourceId": "cc090e29-312e-418e-8b56-796923f9b6ed",
+            "source_ingestion_map": {
+                "cc090e29-312e-418e-8b56-796923f9b6ed":
+                "039a1176-33c4-4ec7-8ea2-3245ae27b4b1"
+            },
+            "action": "asyncCreateAppLogIngestion",
+            "is_multiline": False,
+        },
+        None,
+    )
 
-#     # Test delete the log ingestion
-#     ec2_as_source_lambda_function.lambda_handler(
-#         {
-#             "action": "asyncDeleteAppLogIngestion",
-#             "ids": ["039a1176-33c4-4ec7-8ea2-3245ae27b4b1"],
-#         },
-#         None,
-#     )
+    # Test delete the log ingestion
+    ec2_as_source_lambda_function.lambda_handler(
+        {
+            "action": "asyncDeleteAppLogIngestion",
+            "ids": ["039a1176-33c4-4ec7-8ea2-3245ae27b4b1"],
+        },
+        None,
+    )
 
-#     # Test the unknow action
-#     with pytest.raises(RuntimeError):
-#         ec2_as_source_lambda_function.lambda_handler(
-#             {
-#                 "action": "unknowAction",
-#                 "ids": ["53da2dc5-aa5c-4e6a-bba0-761cbd446fb6"],
-#             },
-#             None,
-#         )
+    # Test the unknow action
+    with pytest.raises(RuntimeError):
+        ec2_as_source_lambda_function.lambda_handler(
+            {
+                "action": "unknowAction",
+                "ids": ["53da2dc5-aa5c-4e6a-bba0-761cbd446fb6"],
+            },
+            None,
+        )

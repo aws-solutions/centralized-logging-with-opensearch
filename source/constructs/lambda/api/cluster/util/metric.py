@@ -1,16 +1,18 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
-
+import logging
+import boto3
 from datetime import datetime, timedelta
 
-import boto3
+
+logger = logging.getLogger()
 
 cw_metric_map = {
-    'm1': {'metric_name': 'FreeStorageSpace', 'stat': 'Minimum'},
-    'm2': {'metric_name': 'SearchableDocuments', 'stat': 'Maximum'},
-    'm3': {'metric_name': 'ClusterStatus.green', 'stat': 'Maximum'},
-    'm4': {'metric_name': 'ClusterStatus.yellow', 'stat': 'Maximum'},
-    'm5': {'metric_name': 'ClusterStatus.red', 'stat': 'Maximum'},
+    "m1": {"metric_name": "FreeStorageSpace", "stat": "Minimum"},
+    "m2": {"metric_name": "SearchableDocuments", "stat": "Maximum"},
+    "m3": {"metric_name": "ClusterStatus.green", "stat": "Maximum"},
+    "m4": {"metric_name": "ClusterStatus.yellow", "stat": "Maximum"},
+    "m5": {"metric_name": "ClusterStatus.red", "stat": "Maximum"},
 }
 
 
@@ -27,12 +29,11 @@ def get_metric_data(client: boto3.Session.client, domain_list, account_id):
     Args:
         client (boto3.Session.client) : Default boto3 client for cloudwatch
         domain_list (list): A list of domain names. e.g. ['domain1', 'domain2'...]
-        region_name (str): AWS region name
         account_id (str): AWS Account ID
 
     Returns:
         dict: A dict of metric data with key as domain name
-        e.g. 
+        e.g.
 
         {
             'domain1': {'health': 'GREEN', ...},
@@ -52,13 +53,13 @@ def get_metric_data(client: boto3.Session.client, domain_list, account_id):
         EndTime=datetime.now(),
     )
     # print(resp)
-    metric_data = _parse_result(domain_list, resp['MetricDataResults'])
+    metric_data = _parse_result(domain_list, resp["MetricDataResults"])
 
     return metric_data
 
 
 def _build_metric_query(domain_list, account_id):
-    """ Helper func to set query metric """
+    """Helper func to set query metric"""
     queries = []
 
     # for each domain, there is a unique index
@@ -68,24 +69,18 @@ def _build_metric_query(domain_list, account_id):
         for id, m in cw_metric_map.items():
             queries.append(
                 {
-                    'Id': id + str(index),
-                    'MetricStat': {
-                        'Metric': {
-                            'Namespace': 'AWS/ES',
-                            'MetricName': m['metric_name'],
-                            'Dimensions': [
-                                {
-                                    "Name": "DomainName",
-                                    "Value": domain_name
-                                },
-                                {
-                                    "Name": "ClientId",
-                                    "Value": account_id
-                                }
-                            ]
+                    "Id": id + str(index),
+                    "MetricStat": {
+                        "Metric": {
+                            "Namespace": "AWS/ES",
+                            "MetricName": m["metric_name"],
+                            "Dimensions": [
+                                {"Name": "DomainName", "Value": domain_name},
+                                {"Name": "ClientId", "Value": account_id},
+                            ],
                         },
-                        'Period': 300,
-                        'Stat': m['stat'],
+                        "Period": 300,
+                        "Stat": m["stat"],
                     },
                 }
             )
@@ -93,7 +88,7 @@ def _build_metric_query(domain_list, account_id):
 
 
 def _parse_result(domain_list, metric_result):
-    """ Helper func to parse query result """
+    """Helper func to parse query result"""
 
     # metric_data is the result to be returned (a map, the key is the domain name)
     metric_data = {}
@@ -108,31 +103,26 @@ def _parse_result(domain_list, metric_result):
     for metric in metric_result:
 
         # if no values
-        if len(metric['Values']) == 0:
+        if len(metric["Values"]) == 0:
             continue
 
-        id = metric['Id'][:2]
-        index = metric['Id'][2:]
+        metric_id = metric["Id"][:2]
+        index = metric["Id"][2:]
         domain_name = domain_map.get(index)
 
         # Map each metric to a domain metric
-        if id == 'm1':
-            metric_data.get(domain_name)[
-                'freeStorageSpace'] = metric['Values'][0]
-        elif id == 'm2':
-            metric_data.get(domain_name)[
-                'searchableDocs'] = metric['Values'][0]
-        elif id == 'm3':
-            if metric['Values'][0] != 0.0:
-                metric_data.get(domain_name)['health'] = 'GREEN'
-        elif id == 'm4':
-            if metric['Values'][0] != 0.0:
-                metric_data.get(domain_name)['health'] = 'YELLOW'
-        elif id == 'm5':
-            if metric['Values'][0] != 0.0:
-                metric_data.get(domain_name)['health'] = 'RED'
+        if metric_id == "m1":
+            metric_data.get(domain_name)["freeStorageSpace"] = metric["Values"][0]
+        elif metric_id == "m2":
+            metric_data.get(domain_name)["searchableDocs"] = metric["Values"][0]
+        elif metric_id == "m3" and metric["Values"][0] != 0.0:
+            metric_data.get(domain_name)["health"] = "GREEN"
+        elif metric_id == "m4" and metric["Values"][0] != 0.0:
+            metric_data.get(domain_name)["health"] = "YELLOW"
+        elif metric_id == "m5" and metric["Values"][0] != 0.0:
+            metric_data.get(domain_name)["health"] = "RED"
         else:
-            print('Unknown metric')
-            print(metric)
+            logger.error("Unknown metric")
+            logger.info(metric)
 
     return metric_data

@@ -11,11 +11,13 @@ import boto3
 from boto3.dynamodb.conditions import Attr
 from botocore import config
 from botocore.exceptions import ClientError
-from common import AppPipelineValidator, APIException
+from common import APIException
+from util.validator import AppPipelineValidator
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+stack_prefix = os.environ.get("STACK_PREFIX", "CL")
 solution_version = os.environ.get("SOLUTION_VERSION", "v1.0.0")
 solution_id = os.environ.get("SOLUTION_ID", "SO8025")
 user_agent_config = {
@@ -50,7 +52,8 @@ def handle_error(func):
         except Exception as e:
             logger.exception(e)
             raise RuntimeError(
-                "Unknown exception, please check Lambda log for more details")
+                "Unknown exception, please check Lambda log for more details"
+            )
 
     return wrapper
 
@@ -79,8 +82,6 @@ def create_app_pipeline(**args):
     """Create a appPipeline"""
     logger.info("create appPipeline")
 
-    logger.info(args)
-
     aos_params = args["aosParams"]
 
     # Check if index prefix is duplicated in the same opensearch
@@ -92,16 +93,19 @@ def create_app_pipeline(**args):
     #  and create backend role.
     check_aos_status(domain_name)
 
+    buffer_type = args["bufferType"]
+    buffer_params = args.get("bufferParams", [])
+
     validator = AppPipelineValidator(app_pipeline_table)
     validator.validate_duplicate_index_prefix(args)
-    validator.validate_index_prefix_overlap(index_prefix, domain_name,
-                                            args.get("force"))
+    validator.validate_index_prefix_overlap(
+        index_prefix, domain_name, args.get("force")
+    )
+    # TODO: Support optional parameters
+    validator.validate_buffer_params(buffer_type, buffer_params)
 
-    id = str(uuid.uuid4())
-    stack_name = create_stack_name(id)
-
-    buffer_type = args["bufferType"]
-    buffer_params = args["bufferParams"]
+    pipeline_id = str(uuid.uuid4())
+    stack_name = create_stack_name(pipeline_id)
 
     base_params_map = {
         "domainName": aos_params["domainName"],
@@ -110,9 +114,13 @@ def create_app_pipeline(**args):
         "indexPrefix": aos_params["indexPrefix"],
         "shardNumbers": aos_params["shardNumbers"],
         "replicaNumbers": aos_params["replicaNumbers"],
-        "daysToWarm": aos_params["warmLogTransition"],
-        "daysToCold": aos_params["coldLogTransition"],
-        "daysToRetain": aos_params["logRetention"],
+        "warmAge": aos_params.get("warmLogTransition", ""),
+        "coldAge": aos_params.get("coldLogTransition", ""),
+        "retainAge": aos_params.get("logRetention", ""),
+        "rolloverSize": aos_params["rolloverSize"],
+        "codec": aos_params.get("codec", "best_compression"),
+        "indexSuffix": aos_params.get("indexSuffix", "yyyy-MM-dd"),
+        "refreshInterval": aos_params["refreshInterval"],
         "vpcId": aos_params["vpc"]["vpcId"],
         "subnetIds": aos_params["vpc"]["privateSubnetIds"],
         "securityGroupId": aos_params["vpc"]["securityGroupId"],
@@ -128,7 +136,6 @@ def create_app_pipeline(**args):
     parameters = _create_stack_params(base_params_map | buffer_params_map)
 
     # Check which CloudFormation template to use
-
     pattern = _get_pattern_by_buffer(buffer_type, enable_autoscaling)
 
     sfn_args = {
@@ -138,20 +145,20 @@ def create_app_pipeline(**args):
     }
 
     # Start the pipeline flow
-    exec_sfn_flow(id, "START", sfn_args)
+    exec_sfn_flow(pipeline_id, "START", sfn_args)
     app_pipeline_table.put_item(
         Item={
-            "id": id,
+            "id": pipeline_id,
             "aosParams": args["aosParams"],
             "bufferType": args["bufferType"],
             "bufferParams": args["bufferParams"],
-            # "kdsParas": args["kdsParas"],
             "tags": args.get("tags", []),
             "createdDt": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
             "status": "CREATING",
-        })
+        }
+    )
 
-    return id
+    return pipeline_id
 
 
 def list_app_pipelines(status: str = "", page=1, count=20):
@@ -166,9 +173,11 @@ def list_app_pipelines(status: str = "", page=1, count=20):
     else:
         conditions = Attr("status").eq(status)
 
-    response = app_pipeline_table.scan(FilterExpression=conditions, )
+    response = app_pipeline_table.scan(
+        FilterExpression=conditions,
+    )
 
-    # Assume all items are returned in the scan request
+    # Assume all items returned are in the scan request
     items = response["Items"]
     # logger.info(items)
     # build pagination
@@ -181,48 +190,40 @@ def list_app_pipelines(status: str = "", page=1, count=20):
     logger.info(f"Return result from {start} to {end} in total of {total}")
     items.sort(key=lambda x: x["createdDt"], reverse=True)
 
-    # Specical handling for old data.
-    # This will replaced by a upgrade script
-    for item in items:
-        handle_old_data(item)
-
     return {
         "total": len(items),
         "appPipelines": items[start:end],
     }
 
 
-# obtain the app pipline details and kds details
+# obtain the app pipeline details and kds details
 def get_app_pipeline(id: str) -> str:
     resp = app_pipeline_table.get_item(Key={"id": id})
     if "Item" not in resp:
         raise APIException("AppPipeline Not Found")
 
     item = resp["Item"]
-    # Specical handling for old data.
-    # This will replaced by a upgrade script
-    handle_old_data(item)
 
     # If buffer is KDS, then
-    # Get up to date shard count and consumer count.
+    # Get up-to-date shard count and consumer count.
     if item.get("bufferType") == "KDS" and item.get("bufferResourceName"):
         stream_name = item["bufferResourceName"]
         kds_resp = kds.describe_stream_summary(StreamName=stream_name)
-        logger.info(f'kds_resp is {kds_resp}')
+        logger.info(f"kds_resp is {kds_resp}")
         if "StreamDescriptionSummary" in kds_resp:
             summary = kds_resp["StreamDescriptionSummary"]
-            item["bufferParams"].append({
-                "paramKey":
-                "OpenShardCount",
-                "paramValue":
-                summary.get("OpenShardCount"),
-            })
-            item["bufferParams"].append({
-                "paramKey":
-                "ConsumerCount",
-                "paramValue":
-                summary.get("ConsumerCount"),
-            })
+            item["bufferParams"].append(
+                {
+                    "paramKey": "OpenShardCount",
+                    "paramValue": summary.get("OpenShardCount"),
+                }
+            )
+            item["bufferParams"].append(
+                {
+                    "paramKey": "ConsumerCount",
+                    "paramValue": summary.get("ConsumerCount"),
+                }
+            )
 
     return item
 
@@ -261,39 +262,12 @@ def delete_app_pipeline(id: str):
     app_pipeline_table.update_item(
         Key={"id": id},
         UpdateExpression="SET #status = :s, #updatedDt= :uDt",
-        ExpressionAttributeNames={
-            "#status": "status",
-            "#updatedDt": "updatedDt"
-        },
+        ExpressionAttributeNames={"#status": "status", "#updatedDt": "updatedDt"},
         ExpressionAttributeValues={
             ":s": "DELETING",
             ":uDt": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
         },
     )
-
-
-# TODO: Currently not used, need to double check.
-# def update_app_log_pipeline(**args):
-#     """update status, kds paras in AppLogIngestion table"""
-#     logger.info("Update AppPipeline Status in DynamoDB")
-#     resp = app_pipeline_table.get_item(Key={"id": args["id"]})
-#     if "Item" not in resp:
-#         raise APIException("AppPipeline Not Found")
-
-#     app_pipeline_table.update_item(
-#         Key={"id": args["id"]},
-#         UpdateExpression="SET #status = :s, #kdsParas= :kp, #updatedDt= :uDt,",
-#         ExpressionAttributeNames={
-#             "#status": "status",
-#             "#kdsParas": "kdsParas",
-#             "#updatedDt": "updatedDt",
-#         },
-#         ExpressionAttributeValues={
-#             ":s": args["status"],
-#             ":kp": args["kdsParas"],
-#             ":uDt": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
-#         },
-#     )
 
 
 def exec_sfn_flow(id: str, action="START", args=None):
@@ -303,7 +277,7 @@ def exec_sfn_flow(id: str, action="START", args=None):
     if args is None:
         args = {}
 
-    input = {
+    input_args = {
         "id": id,
         "action": action,
         "args": args,
@@ -312,13 +286,12 @@ def exec_sfn_flow(id: str, action="START", args=None):
     sfn.start_execution(
         name=f"{id}-{action}",
         stateMachineArn=stateMachineArn,
-        input=json.dumps(input),
+        input=json.dumps(input_args),
     )
 
 
 def create_stack_name(id):
-    # TODO: prefix might need to come from env
-    return "LogHub-AppPipe-" + id[:5]
+    return stack_prefix + "-AppPipe-" + id[:8]
 
 
 def check_aos_status(aos_domain_name):
@@ -333,21 +306,22 @@ def check_aos_status(aos_domain_name):
 
     # Get the domain status.
     try:
-        describe_resp = es.describe_elasticsearch_domain(
-            DomainName=aos_domain_name)
-        logger.info(
-            json.dumps(describe_resp["DomainStatus"], indent=4, default=str))
+        describe_resp = es.describe_elasticsearch_domain(DomainName=aos_domain_name)
+        logger.info(json.dumps(describe_resp["DomainStatus"], indent=4, default=str))
     except ClientError as err:
         if err.response["Error"]["Code"] == "ResourceNotFoundException":
             raise APIException("OpenSearch Domain Not Found")
         raise err
 
     # Check domain status.
-    if (not (describe_resp["DomainStatus"]["Created"])
-            or describe_resp["DomainStatus"]["Processing"]):
+    if (
+        not (describe_resp["DomainStatus"]["Created"])
+        or describe_resp["DomainStatus"]["Processing"]
+    ):
         raise APIException(
             "OpenSearch is in the process of creating, upgrading or pre-upgrading,"
-            " please wait for it to be ready")
+            " please wait for it to be ready"
+        )
 
 
 def _get_pattern_by_buffer(buffer_type, enable_autoscaling="True"):
@@ -367,9 +341,7 @@ def _get_pattern_by_buffer(buffer_type, enable_autoscaling="True"):
 def _get_buffer_params(buffer_type, buffer_params):
     """Helper function to get param key-value for buffer"""
     if buffer_type == "KDS":
-        keys = [
-            "shardCount", "minCapacity", "maxCapacity", "enableAutoScaling"
-        ]
+        keys = ["shardCount", "minCapacity", "maxCapacity", "enableAutoScaling"]
     elif buffer_type == "MSK":
         keys = [
             "mskClusterArn",
@@ -381,8 +353,6 @@ def _get_buffer_params(buffer_type, buffer_params):
             "logBucketName",
             "logBucketPrefix",
             "defaultCmkArn",
-            "logSourceAccountId",
-            "logSourceAccountAssumeRole",
         ]
     else:
         keys = ["logProcessorRoleArn"]
@@ -390,9 +360,10 @@ def _get_buffer_params(buffer_type, buffer_params):
     param_map = {}
     for param in buffer_params:
         if param["paramKey"] in keys:
-            if param["paramKey"] == 'logBucketPrefix':
+            if param["paramKey"] == "logBucketPrefix":
                 param_map[param["paramKey"]] = s3_notification_prefix(
-                    param["paramValue"])
+                    param["paramValue"]
+                )
             else:
                 param_map[param["paramKey"]] = param["paramValue"]
     return param_map
@@ -403,66 +374,21 @@ def _create_stack_params(param_map):
 
     params = []
     for k, v in param_map.items():
-        params.append({
-            "ParameterKey": k,
-            "ParameterValue": str(v),
-        })
+        params.append(
+            {
+                "ParameterKey": k,
+                "ParameterValue": str(v),
+            }
+        )
 
     return params
 
 
-def handle_old_data(item):
-    """This is a temporary helper to handle old data structure due to the upgrade"""
-
-    if "aosParas" in item and item["aosParas"]:
-        item["aosParams"] = item.pop("aosParas")
-
-    if "bufferType" not in item or not item["bufferType"]:
-        if "kdsParas" in item and item.get("kdsParas"):
-            item["bufferType"] = "KDS"
-            item["bufferParams"] = [
-                {
-                    "paramKey":
-                    "enableAutoScaling",
-                    "paramValue":
-                    str(item["kdsParas"].get("enableAutoScaling", "false")),
-                },
-                {
-                    "paramKey": "shardCount",
-                    "paramValue":
-                    str(item["kdsParas"].get("startShardNumber")),
-                },
-                {
-                    "paramKey": "minCapacity",
-                    "paramValue":
-                    str(item["kdsParas"].get("startShardNumber")),
-                },
-                {
-                    "paramKey": "maxCapacity",
-                    "paramValue": str(item["kdsParas"].get("maxShardNumber")),
-                },
-            ]
-            item["bufferAccessRoleArn"] = item.get("kdsRoleArn", "")
-            item["bufferAccessRoleName"] = item.get("kdsRoleName", "")
-            item["bufferResourceName"] = item["kdsParas"].get("streamName", "")
-            item["bufferResourceArn"] = item["kdsParas"].get("kdsArn", "")
-        else:
-            item["bufferType"] = "None"
-            item["bufferParams"] = []
-
-    if "stackOutputs" in item:
-        for output in item["stackOutputs"]:
-            item["bufferParams"].append({
-                "paramKey": output["OutputKey"],
-                "paramValue": output["OutputValue"]
-            })
-
-
 def s3_notification_prefix(s: str):
-    if s.startswith('/'):
-        s = s[1:]
+    s = s.lstrip("/")
 
     placeholder_sign_index = min(
-        filter(lambda x: x >= 0, (len(s), s.find('%'), s.find('$'))))
-    rear_slash_index = s.rfind('/', 0, placeholder_sign_index)
-    return s[0:rear_slash_index + 1]
+        filter(lambda x: x >= 0, (len(s), s.find("%"), s.find("$")))
+    )
+    rear_slash_index = s.rfind("/", 0, placeholder_sign_index)
+    return s[0 : rear_slash_index + 1]

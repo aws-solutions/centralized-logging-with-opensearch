@@ -74,7 +74,6 @@ const ChooseInstanceGroup: React.FC<ChooseInstanceGroupProps> = (
       const dataInstanceGroupList: InstanceGroup[] =
         resData.data.listInstanceGroups.instanceGroups;
       setTotoalCount(resData.data.listInstanceGroups.total);
-      // setInstanceGroupList(dataInstanceGroupList);
       const tmpGroupList: any[] = dataInstanceGroupList;
       const checkedId = ingestionInfo.createNewInstanceGroupId;
       // set checked when create new group

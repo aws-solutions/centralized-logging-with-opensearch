@@ -94,7 +94,7 @@ export class VpcStack extends Construct {
           },
           {
             name: "private",
-            subnetType: SubnetType.PRIVATE_WITH_NAT,
+            subnetType: SubnetType.PRIVATE_WITH_EGRESS,
             cidrMask: 24,
           },
           {

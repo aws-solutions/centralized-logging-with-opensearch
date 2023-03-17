@@ -1,4 +1,4 @@
-# Log Hub Web Console
+# Solution Web Console
 
 To run the console locally, you need to save the `aws-exports.json` in `public` folder.
 

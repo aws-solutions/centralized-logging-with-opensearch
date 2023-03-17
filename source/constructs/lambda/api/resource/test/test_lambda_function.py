@@ -24,6 +24,7 @@ from moto import (
     mock_config,
     mock_dynamodb,
     mock_wafv2,
+    mock_logs,
 )
 
 
@@ -33,8 +34,6 @@ test_data = [
     ("S3Bucket", "listResources", None),
     ("S3Bucket", "getResourceLoggingBucket", bucket_names[0]),
     ("S3Bucket", "putResourceLoggingBucket", bucket_names[0]),
-    ("S3Bucket", "unknown", None),
-    ("unknown", "listResources", None),
 ]
 
 
@@ -48,7 +47,14 @@ def test_event(request):
         if resource_name:
             event["arguments"]["resourceName"] = resource_name
         event["info"]["fieldName"] = action
-        print(event)
+        return event
+
+
+@pytest.fixture
+def test_invalid_event(request):
+    with open("./test/event/test_event.json", "r") as f:
+        event = json.load(f)
+        event["arguments"]["type"] = "Unknown"
         return event
 
 
@@ -92,13 +98,6 @@ def s3_client():
 
 
 @pytest.fixture
-def sts_client():
-    with mock_sts():
-        boto3.client("sts", region_name=os.environ.get("AWS_REGION"))
-        yield
-
-
-@pytest.fixture
 def ddb_client():
     with mock_dynamodb():
         ddb = boto3.resource("dynamodb", region_name=os.environ.get("AWS_REGION"))
@@ -112,33 +111,41 @@ def ddb_client():
 
 
 @mock_sts
-def test_lambda_handler(test_event, s3_client, sts_client):
+def test_lambda_handler(test_event, s3_client):
     import lambda_function
-
-    print(">>>>>>>>>")
-    print(test_event)
 
     # assert function excute with a result.
     result = lambda_function.lambda_handler(test_event, None)
     assert result is not None
 
 
+@mock_sts
+def test_lambda_handler_with_exception(test_invalid_event, s3_client):
+    import lambda_function
+
+    # assert function excute with a result.
+    with pytest.raises(RuntimeError):
+        lambda_function.lambda_handler(test_invalid_event, None)
+
+
 class TestS3Bucket:
-    def test_list(self, s3_client, sts_client, ddb_client):
+    @mock_sts
+    def test_list(self, s3_client, ddb_client):
         from lambda_function import S3Bucket
 
         sts = boto3.client("sts", region_name=os.environ.get("AWS_REGION"))
         account_id = sts.get_caller_identity()["Account"]
-        self._s3 = S3Bucket(accountId=account_id, region=os.environ.get("AWS_REGION"))
+        self._s3 = S3Bucket(account_id=account_id, region=os.environ.get("AWS_REGION"))
         result = self._s3.list()
         assert len(result) == 3
 
-    def test_logging_bucket(self, s3_client, sts_client, ddb_client):
+    @mock_sts
+    def test_logging_bucket(self, s3_client, ddb_client):
         from lambda_function import S3Bucket
 
         sts = boto3.client("sts", region_name=os.environ.get("AWS_REGION"))
         account_id = sts.get_caller_identity()["Account"]
-        self._s3 = S3Bucket(accountId=account_id, region=os.environ.get("AWS_REGION"))
+        self._s3 = S3Bucket(account_id=account_id, region=os.environ.get("AWS_REGION"))
 
         default_bucket = os.environ.get("DEFAULT_LOGGING_BUCKET")
         result = self._s3.get_logging_bucket(bucket_names[0])
@@ -153,54 +160,84 @@ class TestS3Bucket:
 
 class TestVPC:
     @mock_ec2
-    def test_list(self, sts_client, ddb_client):
+    @mock_sts
+    def test_list(self, ddb_client):
         from lambda_function import VPC
 
-        sts = boto3.client("sts", region_name=os.environ.get("AWS_REGION"))
-        account_id = sts.get_caller_identity()["Account"]
-        self._vpc = VPC(accountId=account_id, region=os.environ.get("AWS_REGION"))
+        resource = VPC()
 
-        vpc_id = self._create_vpc()
-        result = self._vpc.list()
-        print(result)
+        self._create_vpc()
+        result = resource.list()
         assert len(result) == 2
 
     @mock_ec2
-    def test_get_logging_bucket(self, s3_client, sts_client, ddb_client):
+    @mock_sts
+    def test_logging_config_s3(self, ddb_client, s3_client):
         from lambda_function import VPC
 
-        sts = boto3.client("sts", region_name=os.environ.get("AWS_REGION"))
-        account_id = sts.get_caller_identity()["Account"]
-        self._vpc = VPC(accountId=account_id, region=os.environ.get("AWS_REGION"))
-
-        default_logging_bucket = os.environ.get("DEFAULT_LOGGING_BUCKET")
+        default_region = os.environ.get("AWS_REGION")
         vpc_id = self._create_vpc()
-        log_not_enabled_vpc = self._vpc.get_logging_bucket(vpc_id)
-        assert not log_not_enabled_vpc["enabled"]
-        assert log_not_enabled_vpc["bucket"] == default_logging_bucket
+        resource = VPC()
+        resp = resource.get_resource_log_config(vpc_id)
+        assert len(resp) == 0
 
-        ec2 = boto3.client("ec2", region_name=os.environ.get("AWS_REGION"))
-        ec2.create_flow_logs(
-            ResourceIds=[vpc_id],
-            ResourceType="VPC",
-            TrafficType="ALL",
-            LogDestinationType="s3",
-            LogDestination=f"arn:aws:s3:::{default_logging_bucket}",
+        resp2 = resource.put_resource_log_config(
+            vpc_id, dest_type="S3", dest_name="", log_format=""
         )
-        log_enabled_vpc = self._vpc.get_logging_bucket(vpc_id)
-        assert log_enabled_vpc["enabled"]
+        print(resp2)
+        assert resp2["destinationType"] == "S3"
+        # destination name is not empty
+        assert resp2["destinationName"]
+        # log format is not empty
+        assert resp2["logFormat"]
+        assert resp2["region"] == default_region
 
+        resp3 = resource.get_resource_log_config(vpc_id)
+        print(resp3)
+        dest = resp3[0]
+        assert len(resp3) == 1
+        assert dest["destinationType"] == "S3"
+        # destination name is not empty
+        assert dest["destinationName"]
+        # log format is not empty
+        assert dest["logFormat"]
+        assert dest["region"] == default_region
+
+    @mock_logs
+    @mock_iam
     @mock_ec2
-    def test_put_logging_bucket(self, sts_client, ddb_client):
+    @mock_sts
+    def test_logging_config_cwl(self):
         from lambda_function import VPC
 
-        sts = boto3.client("sts", region_name=os.environ.get("AWS_REGION"))
-        account_id = sts.get_caller_identity()["Account"]
-        self._vpc = VPC(accountId=account_id, region=os.environ.get("AWS_REGION"))
+        default_region = os.environ.get("AWS_REGION")
 
         vpc_id = self._create_vpc()
-        res = self._vpc.put_logging_bucket(vpc_id)
-        assert res["enabled"]
+        resource = VPC()
+        resp = resource.get_resource_log_config(vpc_id)
+        assert len(resp) == 0
+
+        resp2 = resource.put_resource_log_config(
+            vpc_id, dest_type="CloudWatch", dest_name="a/b/c", log_format=""
+        )
+        print(resp2)
+        assert resp2["destinationType"] == "CloudWatch"
+        # destination name is not empty
+        assert resp2["destinationName"] == "a/b/c"
+        # log format is not empty
+        assert resp2["logFormat"]
+        assert resp2["region"] == default_region
+
+        resp3 = resource.get_resource_log_config(vpc_id)
+        print(resp3)
+        assert len(resp3) == 1
+        dest = resp3[0]
+        assert dest["destinationType"] == "CloudWatch"
+        # destination name is not empty
+        assert dest["destinationName"] == "a/b/c"
+        # log format is not empty
+        assert dest["logFormat"]
+        assert dest["region"] == default_region
 
     def _create_vpc(self):
         ec2 = boto3.client("ec2", region_name=os.environ.get("AWS_REGION"))
@@ -221,12 +258,15 @@ class TestVPC:
 
 class TestSubnet:
     @mock_ec2
-    def test_list(self, sts_client, ddb_client):
+    @mock_sts
+    def test_list(self, ddb_client):
         from lambda_function import Subnet
 
         sts = boto3.client("sts", region_name=os.environ.get("AWS_REGION"))
         account_id = sts.get_caller_identity()["Account"]
-        self._subnet = Subnet(accountId=account_id, region=os.environ.get("AWS_REGION"))
+        self._subnet = Subnet(
+            account_id=account_id, region=os.environ.get("AWS_REGION")
+        )
 
         result = self._subnet.list()
         print(result)
@@ -235,13 +275,14 @@ class TestSubnet:
 
 class TestSecurityGroup:
     @mock_ec2
-    def test_list(self, sts_client, ddb_client):
+    @mock_sts
+    def test_list(self, ddb_client):
         from lambda_function import SecurityGroup
 
         sts = boto3.client("sts", region_name=os.environ.get("AWS_REGION"))
         account_id = sts.get_caller_identity()["Account"]
         self._sg = SecurityGroup(
-            accountId=account_id, region=os.environ.get("AWS_REGION")
+            account_id=account_id, region=os.environ.get("AWS_REGION")
         )
 
         result = self._sg.list()
@@ -251,13 +292,14 @@ class TestSecurityGroup:
 
 class TestCertificate:
     @mock_acm
-    def test_list(self, sts_client, ddb_client):
+    @mock_sts
+    def test_list(self, ddb_client):
         from lambda_function import Certificate
 
         sts = boto3.client("sts", region_name=os.environ.get("AWS_REGION"))
         account_id = sts.get_caller_identity()["Account"]
         self._acm = Certificate(
-            accountId=account_id, region=os.environ.get("AWS_REGION")
+            account_id=account_id, region=os.environ.get("AWS_REGION")
         )
 
         result = self._acm.list()
@@ -267,6 +309,7 @@ class TestCertificate:
 
 class TestKeyPair:
     mock_ec2 = mock_ec2()
+    mock_sts = mock_sts()
 
     def _create_key(self):
         region = os.environ.get("AWS_REGION")
@@ -275,16 +318,18 @@ class TestKeyPair:
 
     def setup(self):
         self.mock_ec2.start()
+        self.mock_sts.start()
 
     def tearDown(self):
         self.mock_ec2.stop()
+        self.mock_sts.stop()
 
-    def test_list(self, sts_client, ddb_client):
+    def test_list(self, ddb_client):
         from lambda_function import KeyPair
 
         sts = boto3.client("sts", region_name=os.environ.get("AWS_REGION"))
         account_id = sts.get_caller_identity()["Account"]
-        self._kp = KeyPair(accountId=account_id, region=os.environ.get("AWS_REGION"))
+        self._kp = KeyPair(account_id=account_id, region=os.environ.get("AWS_REGION"))
 
         result = self._kp.list()
         print(result)
@@ -293,6 +338,7 @@ class TestKeyPair:
 
 class TestDistribution:
     mock_cloudfront = mock_cloudfront()
+    mock_sts = mock_sts()
 
     def _create_distribution(self):
         region = os.environ.get("AWS_REGION")
@@ -333,40 +379,32 @@ class TestDistribution:
     def setup(self):
 
         self.mock_cloudfront.start()
+        self.mock_sts.start()
         resp = self._create_distribution()
         self._distribution_id = resp["Distribution"]["Id"]
 
     def tearDown(self):
         self.mock_cloudfront.stop()
+        self.mock_sts.stop()
 
-    def test_list(self, sts_client, ddb_client):
+    def test_list(self, ddb_client):
         from lambda_function import Distribution
 
         sts = boto3.client("sts", region_name=os.environ.get("AWS_REGION"))
         account_id = sts.get_caller_identity()["Account"]
         self._cf = Distribution(
-            accountId=account_id, region=os.environ.get("AWS_REGION")
+            account_id=account_id, region=os.environ.get("AWS_REGION")
         )
 
         result = self._cf.list()
         print(result)
-        assert len(result) == 0
-    
-    def test_put_logging_bucket(self, sts_client, ddb_client):
-        from lambda_function import Distribution
-
-        sts = boto3.client("sts", region_name=os.environ.get("AWS_REGION"))
-        account_id = sts.get_caller_identity()["Account"]
-        self._cf = Distribution(
-            accountId=account_id, region=os.environ.get("AWS_REGION")
-        )
-        with pytest.raises(RuntimeError):
-            self._cf.put_logging_bucket(self._distribution_id)
+        assert len(result) == 1
 
 
 class TestTrail:
     mock_cloudtrail = mock_cloudtrail()
     mock_s3 = mock_s3()
+    mock_sts = mock_sts()
     trail_name = "mytrail"
     bucket_name = "trail-bucket"
 
@@ -391,40 +429,84 @@ class TestTrail:
         # start mock
         self.mock_cloudtrail.start()
         self.mock_s3.start()
+        self.mock_sts.start()
         # create test data
         self._create_trail()
 
     def tearDown(self):
         self.mock_cloudtrail.stop()
         self.mock_s3.stop()
+        self.mock_sts.stop()
 
-    def test_list(self, sts_client, ddb_client):
+    def test_list(self, ddb_client):
         from lambda_function import Trail
 
         sts = boto3.client("sts", region_name=os.environ.get("AWS_REGION"))
         account_id = sts.get_caller_identity()["Account"]
-        self._trail = Trail(accountId=account_id, region=os.environ.get("AWS_REGION"))
+        self._trail = Trail(account_id=account_id, region=os.environ.get("AWS_REGION"))
 
         result = self._trail.list()
         print(result)
-        assert len(result) == 1
+        assert len(result) == 2
 
-    def test_logging_bucket(self, sts_client, ddb_client):
+    def test_logging_config_s3(self, ddb_client):
         from lambda_function import Trail
 
-        sts = boto3.client("sts", region_name=os.environ.get("AWS_REGION"))
-        account_id = sts.get_caller_identity()["Account"]
-        self._trail = Trail(accountId=account_id, region=os.environ.get("AWS_REGION"))
+        default_region = os.environ.get("AWS_REGION")
+        resource = Trail()
+        resp = resource.get_resource_log_config(self.trail_name)
+        assert len(resp) == 1
 
-        result = self._trail.get_logging_bucket(self.trail_name)
+        dest = resp[0]
 
-        assert result["enabled"]
-        assert result["bucket"] == self.bucket_name
+        assert dest["destinationType"] == "S3"
+        # destination name is not empty
+        assert dest["destinationName"]
+        assert dest["region"] == default_region
+
+    def test_logging_config_s3_another_region(self, ddb_client):
+        from lambda_function import Trail
+
+        resource = Trail()
+        resp = resource.get_resource_log_config("trail-us-west-2")
+        assert len(resp) == 1
+
+        dest = resp[0]
+
+        assert dest["destinationType"] == "S3"
+        # destination name is not empty
+        assert dest["destinationName"]
+        assert dest["region"] == "us-west-2"
+
+    @mock_logs
+    @mock_iam
+    def test_logging_config_cwl(self, ddb_client):
+        from lambda_function import Trail
+
+        default_region = os.environ.get("AWS_REGION")
+
+        resource = Trail()
+        resp = resource.get_resource_log_config(self.trail_name)
+        assert len(resp) == 1
+
+        resp2 = resource.put_resource_log_config(
+            self.trail_name, dest_type="CloudWatch", dest_name="a/b/c", log_format=""
+        )
+        print(resp2)
+        assert resp2["destinationType"] == "CloudWatch"
+        # destination name is not empty
+        assert resp2["destinationName"] == "a/b/c"
+        assert resp2["region"] == default_region
+
+        resp3 = resource.get_resource_log_config(self.trail_name)
+        print(resp3)
+        assert len(resp3) == 2
 
 
 class TestRDS:
 
     mock_rds = mock_rds()
+    mock_sts = mock_sts()
 
     def _create_rds(self):
         region = os.environ.get("AWS_REGION")
@@ -444,17 +526,19 @@ class TestRDS:
 
     def setup(self):
         self.mock_rds.start()
+        self.mock_sts.start()
         self._create_rds()
 
     def tearDown(self):
         self.mock_rds.stop()
+        self.mock_sts.stop()
 
-    def test_list(self, sts_client, ddb_client):
+    def test_list(self, ddb_client):
         from lambda_function import RDS
 
         sts = boto3.client("sts", region_name=os.environ.get("AWS_REGION"))
         account_id = sts.get_caller_identity()["Account"]
-        self._rds = RDS(accountId=account_id, region=os.environ.get("AWS_REGION"))
+        self._rds = RDS(account_id=account_id, region=os.environ.get("AWS_REGION"))
 
         result = self._rds.list()
         print(result)
@@ -465,6 +549,7 @@ class TestLambda:
 
     mock_lambda = mock_lambda()
     mock_iam = mock_iam()
+    mock_sts = mock_sts()
 
     def _get_zip(self):
 
@@ -501,6 +586,7 @@ class TestLambda:
         # start mock
         self.mock_lambda.start()
         self.mock_iam.start()
+        self.mock_sts.start()
         # Create test data
         self._create_lambda()
         # Init resource
@@ -510,8 +596,10 @@ class TestLambda:
 
     def tearDown(self):
         self.mock_lambda.stop()
+        self.mock_sts.stop()
+        self.mock_iam.stop()
 
-    def test_list(self, sts_client):
+    def test_list(self):
         result = self._lambda.list()
         print(result)
         assert len(result) == 1
@@ -520,6 +608,7 @@ class TestLambda:
 class TestELB:
     mock_ec2 = mock_ec2()
     mock_elb = mock_elbv2()
+    mock_sts = mock_sts()
 
     def _create_elb(self):
         region = os.environ.get("AWS_REGION")
@@ -549,26 +638,32 @@ class TestELB:
         # start mock
         self.mock_ec2.start()
         self.mock_elb.start()
+        self.mock_sts.start()
         # create test data
         self.elb_arn = self._create_elb()
 
-    def test_list(self, sts_client, ddb_client):
+    def tearDown(self):
+        self.mock_ec2.stop()
+        self.mock_elb.stop()
+        self.mock_sts.stop()
+
+    def test_list(self, ddb_client):
         from lambda_function import ELB
 
         sts = boto3.client("sts", region_name=os.environ.get("AWS_REGION"))
         account_id = sts.get_caller_identity()["Account"]
-        self._elb = ELB(accountId=account_id, region=os.environ.get("AWS_REGION"))
+        self._elb = ELB(account_id=account_id, region=os.environ.get("AWS_REGION"))
 
         result = self._elb.list()
         print(result)
         assert len(result) == 1
 
-    def test_put_logging_bucket(self, sts_client, ddb_client):
+    def test_put_logging_bucket(self, ddb_client):
         from lambda_function import ELB
 
         sts = boto3.client("sts", region_name=os.environ.get("AWS_REGION"))
         account_id = sts.get_caller_identity()["Account"]
-        self._elb = ELB(accountId=account_id, region=os.environ.get("AWS_REGION"))
+        self._elb = ELB(account_id=account_id, region=os.environ.get("AWS_REGION"))
 
         result = self._elb.put_logging_bucket(self.elb_arn)
         print(result)
@@ -578,10 +673,12 @@ class TestWAF:
 
     mock_waf = mock_wafv2()
     mock_s3 = mock_s3()
+    mock_sts = mock_sts()
 
     def setup(self):
         self.mock_waf.start()
         self.mock_s3.start()
+        self.mock_sts.start()
         region = os.environ.get("AWS_REGION")
         conn = boto3.client("wafv2", region_name=region)
         resp = conn.create_web_acl(
@@ -600,38 +697,50 @@ class TestWAF:
         self._waf = WAF()
         self._arn = resp["Summary"]["ARN"]
 
-    def test_get_logging_bucket(self, sts_client):
+    def tearDown(self):
+        self.mock_waf.stop()
+        self.mock_s3.stop()
+        self.mock_sts.stop()
+
+    def test_get_logging_bucket(self):
         result = self._waf.get_logging_bucket(self._arn)
         print(result)
 
-    def test_put_logging_bucket(self, sts_client):
+    def test_put_logging_bucket(self):
         with pytest.raises(RuntimeError):
             self._waf.put_logging_bucket(self._arn)
-    
+
     def test_list(self):
         result = self._waf.list()
+        assert len(result) == 1
 
 
 class TestConfig:
+    @mock_sts
     @mock_config
-    def test_get_logging_bucket_not_enabled(self, sts_client, ddb_client):
+    def test_get_logging_bucket_not_enabled(self, ddb_client):
         from lambda_function import Config
 
         sts = boto3.client("sts", region_name=os.environ.get("AWS_REGION"))
         account_id = sts.get_caller_identity()["Account"]
-        self._config = Config(accountId=account_id, region=os.environ.get("AWS_REGION"))
+        self._config = Config(
+            account_id=account_id, region=os.environ.get("AWS_REGION")
+        )
 
         # Given no config enabled should not have logging a bucket
         not_enabled_config = self._config.get_logging_bucket("")
         assert not not_enabled_config["enabled"]
 
     @mock_config
-    def test_get_logging_bucket_enabled(self, s3_client, sts_client, ddb_client):
+    @mock_sts
+    def test_get_logging_bucket_enabled(self, s3_client, ddb_client):
         from lambda_function import Config
 
         sts = boto3.client("sts", region_name=os.environ.get("AWS_REGION"))
         account_id = sts.get_caller_identity()["Account"]
-        self._config = Config(accountId=account_id, region=os.environ.get("AWS_REGION"))
+        self._config = Config(
+            account_id=account_id, region=os.environ.get("AWS_REGION")
+        )
 
         # Given config enabled should return logging a bucket
         prefix = "test"
@@ -658,4 +767,7 @@ class TestConfig:
         enabled_config = self._config.get_logging_bucket("")
         assert enabled_config["enabled"]
         assert enabled_config["bucket"] == expected_bucket
-        assert enabled_config["prefix"] == f"{prefix}/AWSLogs/123456789012/Config/{os.environ.get('AWS_REGION')}"
+        assert (
+            enabled_config["prefix"]
+            == f"{prefix}/AWSLogs/123456789012/Config/{os.environ.get('AWS_REGION')}"
+        )

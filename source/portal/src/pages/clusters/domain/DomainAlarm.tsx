@@ -75,7 +75,6 @@ const DomainAlarm: React.FC<RouteComponentProps<MatchParams>> = (
   >();
   const [loadingData, setLoadingData] = useState(true);
   const [loadingCreate, setLoadingCreate] = useState(false);
-  // const [curDomain, setCurDomain] = useState<DomainDetails>();
   const [showRequireEmailError, setShowRequireEmailError] = useState(false);
   const [emailFormatError, setEmailFormatError] = useState(false);
   const [minFreeStorageError, setMinFreeStorageError] = useState(false);

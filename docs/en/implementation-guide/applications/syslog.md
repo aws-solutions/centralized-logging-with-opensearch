@@ -1,9 +1,9 @@
 # Syslog
-Syslog is used as a standard to produce, forward and collect logs produced on a Linux instance, routers or network equipments. You can configure Log Hub to ingest syslogs.
+Syslog is a standard for message logging, and is widely used to generate, forward and collect logs produced on a Linux instance, routers or network equipment. You can configure Centralized Logging with OpenSearch to ingest syslog logs.
 
 !!! important "Important"
 
-    Please make sure your Syslog generator/sender's subnet is connected to Log Hub' **two** private subnets so that log can be ingested, you need to use VPC [Peering Connection][peering-connection] or [Transit Gateway][tgw] to connect these VPCs.
+    Make sure your Syslog generator/sender's subnet is connected to Centralized Logging with OpenSearch' **two** private subnets so that logs can be ingested. You need to use VPC [Peering Connection][peering-connection] or [Transit Gateway][tgw] to connect these VPCs.
 
 ## Prerequisites
 {%
@@ -12,11 +12,11 @@ include-markdown "include-prerequisites.md"
 
 ## Step 1: Create a Syslog config
 
-1. Sign in to the Log Hub Console.
+1. Sign in to the Centralized Logging with OpenSearch Console.
 2. In the left sidebar, under **Resources**, choose **Log Config**.
 3. Click the **Create a log config** button.
 4. Specify **Config Name**.
-6. Here we choose **Syslog** in the log type dropdown menu for example. But Log Hub also support Syslog with [JSON](./json.md) format and [Single-Line test](./single-line-text.md) format, you can refer to the corresponding tutorial to create a log config.
+6. Choose **Syslog** in the log type dropdown menu. Note that Centralized Logging with OpenSearch also supports Syslog with [JSON](./json.md) format and [single-line text](./single-line-text.md) format.
 
 ### RFC5424
 1. Paste a sample RFC5424 log. For example:
@@ -32,7 +32,7 @@ include-markdown "include-prerequisites.md"
     !!! Note "Note"
         You must specify the datetime of the log using key “time”. If not specified, system time will be added.
 
-4. Specify the **Time format**. The format syntax follows [strptime](https://linux.die.net/man/3/strptime). Check [this](https://docs.fluentbit.io/manual/pipeline/parsers/configuring-parser#time-resolution-and-fractional-seconds) for details. For example:
+4. Specify the **Time format**. The format syntax follows [strptime](https://linux.die.net/man/3/strptime). Check [this manual](https://docs.fluentbit.io/manual/pipeline/parsers/configuring-parser#time-resolution-and-fractional-seconds) for details. For example:
 
     ```log
     %Y-%m-%dT%H:%M:%SZ
@@ -56,7 +56,7 @@ include-markdown "include-prerequisites.md"
     !!! Note "Note"
         You must specify the datetime of the log using key “time”. If not specified, system time will be added.
 
-        Since there is no year in the timestamp of RFC3164, it cannot be displayed as a time histogram in the discover interface of Amazon OpenSearch.
+        Since there is no year in the timestamp of RFC3164, it cannot be displayed as a time histogram in the Discover interface of Amazon OpenSearch.
 
 4. Specify the **Time format**. The format syntax follows [strptime](https://linux.die.net/man/3/strptime). Check [this](https://docs.fluentbit.io/manual/pipeline/parsers/configuring-parser#time-resolution-and-fractional-seconds) for details. For example:
 
@@ -86,7 +86,7 @@ include-markdown "include-prerequisites.md"
 
         You must specify the datetime of the log using key “time”. If not specified, system time will be added.
 
-4. Specify the **Time format**. The format syntax follows [strptime](https://linux.die.net/man/3/strptime). Check [this](https://docs.fluentbit.io/manual/pipeline/parsers/configuring-parser#time-resolution-and-fractional-seconds) for details.
+4. Specify the **Time format**. The format syntax follows [strptime](https://linux.die.net/man/3/strptime). Check [this manual](https://docs.fluentbit.io/manual/pipeline/parsers/configuring-parser#time-resolution-and-fractional-seconds) for details.
 
 5. (Optional) In the **Filter** section, you add some conditions to filter logs at the log agent side. The solution will ingest logs that match ALL the specified conditions only.
 
@@ -100,15 +100,15 @@ include-markdown "include-prerequisites.md"
    end="<!--syslog-end-->"
 %}
 
-## Step 3: Config the Syslog generator to send the log to Log Hub
+## Step 3: Configure the Syslog generator to send the logs to Centralized Logging with OpenSearch
 
-1. Click on the Ingestion ID that has been created during the **Step 2**.
-2. For [Rsyslog][rsyslog] user, follow the Syslog Configuration Guide to config the Rsyslog agent. You can also get the NLB DNS Name in this page.
+1. Choose the Ingestion ID that has been created during **Step 2**.
+2. For [Rsyslog][rsyslog] user, follow the Syslog Configuration Guide to configure the Rsyslog agent. You can also get the NLB DNS Name on this page.
 
 ## Step 4: View logs in OpenSearch
 
 1. Open OpenSearch console in your browser.
-2. Create an Index Pattern
+2. Create an Index Pattern.
     {%
     include-markdown "../aws-services/include-index-pattern.md"
     %}

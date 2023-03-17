@@ -1,7 +1,6 @@
 #set($ctx.args.confName = $util.urlDecode($ctx.args.confName))
-#if($ctx.args.confName.length() > 250)
-    $util.error("Value for config name cannot exceed 250 characters.")
-#end
+$util.validate($util.matches("^[\w\s_.:\/=+\-@]{1,128}$", $ctx.args.confName), "Invalid Config Name, can only contain alphanumeric characters, spaces, or any of the following: _.:/=+-@")
+
 
 #set($ctx.args.userLogFormat = $util.urlDecode($ctx.args.userLogFormat))
 

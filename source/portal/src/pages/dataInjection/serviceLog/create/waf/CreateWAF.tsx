@@ -20,6 +20,7 @@ import SpecifySettings from "./steps/SpecifySettings";
 import SpecifyOpenSearchCluster, {
   AOSInputValidRes,
   checkOpenSearchInput,
+  covertParametersByKeyAndConditions,
 } from "../common/SpecifyCluster";
 import CreateTags from "../common/CreateTags";
 import Button from "components/Button";
@@ -27,18 +28,25 @@ import Button from "components/Button";
 import Breadcrumb from "components/Breadcrumb";
 import { appSyncRequestMutation } from "assets/js/request";
 import { createServicePipeline } from "graphql/mutations";
-import { ServiceType, Tag } from "API";
-import { YesNo } from "types";
+import { CODEC, DestinationType, EngineType, ServiceType, Tag } from "API";
+import {
+  WarmTransitionType,
+  YesNo,
+  AmplifyConfigType,
+  SERVICE_LOG_INDEX_SUFFIX,
+} from "types";
 import { OptionType } from "components/AutoComplete/autoComplete";
 import { CreateLogMethod, ServiceLogType } from "assets/js/const";
 import HelpPanel from "components/HelpPanel";
 import SideMenu from "components/SideMenu";
-import { AmplifyConfigType } from "types";
 import { AppStateProps } from "reducer/appReducer";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Alert } from "assets/js/alert";
-import { splitStringToBucketAndPrefix } from "assets/js/utils";
+import {
+  bucketNameIsValid,
+  splitStringToBucketAndPrefix,
+} from "assets/js/utils";
 import { IngestOption } from "./steps/IngestOptionSelect";
 
 const EXCLUDE_PARAMS_COMMON = [
@@ -53,6 +61,7 @@ const EXCLUDE_PARAMS_COMMON = [
   "ingestOption",
   "webACLType",
   "logSource",
+  "rolloverSizeNotSupport",
 ];
 
 const EXCLUDE_PARAMS_FULL = [
@@ -77,6 +86,7 @@ export interface WAFTaskProps {
   target: string;
   logSourceAccountId: string;
   logSourceRegion: string;
+  destinationType: string;
   params: {
     // [index: string]: string | any;
     needCreateLogging: boolean;
@@ -97,9 +107,7 @@ export interface WAFTaskProps {
     vpcId: string;
     subnetIds: string;
     securityGroupId: string;
-    daysToWarm: string;
-    daysToCold: string;
-    daysToRetain: string;
+
     shardNumbers: string;
     replicaNumbers: string;
     webACLNames: string;
@@ -107,6 +115,18 @@ export interface WAFTaskProps {
     interval: string;
     webACLType: string;
     logSource: string;
+
+    enableRolloverByCapacity: boolean;
+    warmTransitionType: string;
+    warmAge: string;
+    coldAge: string;
+    retainAge: string;
+    rolloverSize: string;
+    indexSuffix: string;
+    codec: string;
+    refreshInterval: string;
+
+    rolloverSizeNotSupport: boolean;
   };
 }
 
@@ -118,6 +138,7 @@ const DEFAULT_TASK_VALUE: WAFTaskProps = {
   tags: [],
   logSourceAccountId: "",
   logSourceRegion: "",
+  destinationType: DestinationType.S3,
   params: {
     needCreateLogging: false,
     engineType: "",
@@ -137,16 +158,26 @@ const DEFAULT_TASK_VALUE: WAFTaskProps = {
     vpcId: "",
     subnetIds: "",
     securityGroupId: "",
-    daysToWarm: "0",
-    daysToCold: "0",
-    daysToRetain: "0",
-    shardNumbers: "5",
+
+    shardNumbers: "1",
     replicaNumbers: "1",
     webACLNames: "",
     ingestOption: IngestOption.SampledRequest,
     interval: "",
     webACLType: "",
     logSource: "",
+
+    enableRolloverByCapacity: true,
+    warmTransitionType: WarmTransitionType.IMMEDIATELY,
+    warmAge: "0",
+    coldAge: "60",
+    retainAge: "180",
+    rolloverSize: "30",
+    indexSuffix: SERVICE_LOG_INDEX_SUFFIX.yyyy_MM_dd,
+    codec: CODEC.best_compression,
+    refreshInterval: "1s",
+
+    rolloverSizeNotSupport: false,
   },
 };
 
@@ -178,6 +209,7 @@ const CreateWAF: React.FC = () => {
   const [autoWAFEmptyError, setAutoWAFEmptyError] = useState(false);
   const [manualWebACLEmptyError, setManualWebACLEmptyError] = useState(false);
   const [manualWAFEmpryError, setManualWAFEmpryError] = useState(false);
+  const [manualS3PathInvalid, setManualS3PathInvalid] = useState(false);
   const [esDomainEmptyError, setEsDomainEmptyError] = useState(false);
 
   const [nextStepDisable, setNextStepDisable] = useState(false);
@@ -191,6 +223,11 @@ const CreateWAF: React.FC = () => {
     warmLogInvalidError: false,
     coldLogInvalidError: false,
     logRetentionInvalidError: false,
+    coldMustLargeThanWarm: false,
+    logRetentionMustThanColdAndWarm: false,
+    capacityInvalidError: false,
+    indexEmptyError: false,
+    indexNameFormatError: false,
   });
 
   const checkSampleScheduleValue = () => {
@@ -229,28 +266,19 @@ const CreateWAF: React.FC = () => {
     createPipelineParams.logSourceAccountId =
       wafPipelineTask.logSourceAccountId;
     createPipelineParams.logSourceRegion = amplifyConfig.aws_project_region;
+    createPipelineParams.destinationType = wafPipelineTask.destinationType;
 
-    const tmpParamList: any = [];
+    let tmpParamList: any = [];
     if (wafPipelineTask.params.ingestOption === IngestOption.SampledRequest) {
-      Object.keys(wafPipelineTask.params).forEach((key) => {
-        console.info("key");
-        if (EXCLUDE_PARAMS_SAMPLED.indexOf(key) < 0) {
-          tmpParamList.push({
-            parameterKey: key,
-            parameterValue: (wafPipelineTask.params as any)?.[key] || "",
-          });
-        }
-      });
+      tmpParamList = covertParametersByKeyAndConditions(
+        wafPipelineTask,
+        EXCLUDE_PARAMS_SAMPLED
+      );
     } else {
-      Object.keys(wafPipelineTask.params).forEach((key) => {
-        console.info("key");
-        if (EXCLUDE_PARAMS_FULL.indexOf(key) < 0) {
-          tmpParamList.push({
-            parameterKey: key,
-            parameterValue: (wafPipelineTask.params as any)?.[key] || "",
-          });
-        }
-      });
+      tmpParamList = covertParametersByKeyAndConditions(
+        wafPipelineTask,
+        EXCLUDE_PARAMS_FULL
+      );
     }
 
     if (wafPipelineTask.params.ingestOption === IngestOption.FullRequest) {
@@ -311,55 +339,6 @@ const CreateWAF: React.FC = () => {
                     },
                   ]}
                   activeIndex={curStep}
-                  selectStep={(step: number) => {
-                    if (curStep === 0) {
-                      if (nextStepDisable || wafISChanging) {
-                        return;
-                      }
-                      if (needEnableAccessLog) {
-                        Alert(t("servicelog:waf.needEnableLogging"));
-                        return;
-                      }
-                      if (
-                        wafPipelineTask.params.taskType ===
-                        CreateLogMethod.Automatic
-                      ) {
-                        if (!wafPipelineTask.params.wafObj) {
-                          setAutoWAFEmptyError(true);
-                          return;
-                        }
-                      }
-                      if (
-                        wafPipelineTask.params.taskType ===
-                        CreateLogMethod.Manual
-                      ) {
-                        if (!wafPipelineTask.params.webACLNames) {
-                          setManualWebACLEmptyError(true);
-                          return;
-                        }
-                        if (
-                          !wafPipelineTask.params.logBucketName &&
-                          wafPipelineTask.params.ingestOption ===
-                            IngestOption.FullRequest
-                        ) {
-                          setManualWAFEmpryError(true);
-                          return;
-                        }
-                      }
-                      if (!checkSampleScheduleValue()) {
-                        return;
-                      }
-                    }
-                    if (curStep === 1) {
-                      if (!wafPipelineTask.params.domainName) {
-                        setEsDomainEmptyError(true);
-                        return;
-                      } else {
-                        setEsDomainEmptyError(false);
-                      }
-                    }
-                    setCurStep(step);
-                  }}
                 />
               </div>
               <div className="create-content m-w-800">
@@ -371,6 +350,7 @@ const CreateWAF: React.FC = () => {
                     }}
                     manualAclEmptyError={manualWebACLEmptyError}
                     manualWAFEmptyError={manualWAFEmpryError}
+                    manualS3PathInvalid={manualS3PathInvalid}
                     autoWAFEmptyError={autoWAFEmptyError}
                     changeNeedEnableLogging={(need: boolean) => {
                       setNeedEnableAccessLog(need);
@@ -420,6 +400,13 @@ const CreateWAF: React.FC = () => {
                     }}
                     manualChangeACL={(webACLName) => {
                       setManualWebACLEmptyError(false);
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          indexEmptyError: false,
+                          indexNameFormatError: false,
+                        };
+                      });
                       setWAFPipelineTask((prev: WAFTaskProps) => {
                         return {
                           ...prev,
@@ -428,7 +415,7 @@ const CreateWAF: React.FC = () => {
                             ...prev.params,
                             webACLNames: webACLName,
                             manualBucketName: webACLName,
-                            indexPrefix: webACLName,
+                            indexPrefix: webACLName.toLowerCase(),
                           },
                         };
                       });
@@ -447,7 +434,13 @@ const CreateWAF: React.FC = () => {
                     }}
                     changeWAFObj={(wafObj) => {
                       setAutoWAFEmptyError(false);
-                      console.info("wafObj:", wafObj);
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          indexEmptyError: false,
+                          indexNameFormatError: false,
+                        };
+                      });
                       setWAFPipelineTask((prev: WAFTaskProps) => {
                         return {
                           ...prev,
@@ -456,7 +449,7 @@ const CreateWAF: React.FC = () => {
                           params: {
                             ...prev.params,
                             webACLNames: wafObj?.name || "",
-                            indexPrefix: wafObj?.name || "",
+                            indexPrefix: wafObj?.name?.toLowerCase() || "",
                             wafObj: wafObj,
                             webACLType: wafObj?.description || "",
                             ingestOption: IngestOption.SampledRequest,
@@ -481,6 +474,7 @@ const CreateWAF: React.FC = () => {
                         CreateLogMethod.Manual
                       ) {
                         setManualWAFEmpryError(false);
+                        setManualS3PathInvalid(false);
                         const { bucket, prefix } =
                           splitStringToBucketAndPrefix(logPath);
                         setWAFPipelineTask((prev: WAFTaskProps) => {
@@ -549,6 +543,13 @@ const CreateWAF: React.FC = () => {
                       });
                     }}
                     changeBucketIndex={(indexPrefix) => {
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          indexEmptyError: false,
+                          indexNameFormatError: false,
+                        };
+                      });
                       setWAFPipelineTask((prev: WAFTaskProps) => {
                         return {
                           ...prev,
@@ -560,7 +561,9 @@ const CreateWAF: React.FC = () => {
                       });
                     }}
                     changeOpenSearchCluster={(cluster) => {
-                      console.info("cluster:", cluster);
+                      const NOT_SUPPORT_VERSION =
+                        cluster?.engine === EngineType.Elasticsearch ||
+                        parseFloat(cluster?.version || "") < 1.3;
                       setEsDomainEmptyError(false);
                       setWAFPipelineTask((prev: WAFTaskProps) => {
                         return {
@@ -579,12 +582,14 @@ const CreateWAF: React.FC = () => {
                             vpcId: cluster?.vpc?.vpcId || "",
                             warmEnable: cluster?.nodes?.warmEnabled || false,
                             coldEnable: cluster?.nodes?.coldEnabled || false,
+                            rolloverSizeNotSupport: NOT_SUPPORT_VERSION,
+                            enableRolloverByCapacity: !NOT_SUPPORT_VERSION,
+                            rolloverSize: NOT_SUPPORT_VERSION ? "" : "30",
                           },
                         };
                       });
                     }}
                     changeSampleDashboard={(yesNo) => {
-                      // setPiplineBucketPrefix(prefix);
                       setWAFPipelineTask((prev: WAFTaskProps) => {
                         return {
                           ...prev,
@@ -607,7 +612,7 @@ const CreateWAF: React.FC = () => {
                           ...prev,
                           params: {
                             ...prev.params,
-                            daysToWarm: value,
+                            warmAge: value,
                           },
                         };
                       });
@@ -617,6 +622,7 @@ const CreateWAF: React.FC = () => {
                         return {
                           ...prev,
                           coldLogInvalidError: false,
+                          coldMustLargeThanWarm: false,
                         };
                       });
                       setWAFPipelineTask((prev: WAFTaskProps) => {
@@ -624,7 +630,7 @@ const CreateWAF: React.FC = () => {
                           ...prev,
                           params: {
                             ...prev.params,
-                            daysToCold: value,
+                            coldAge: value,
                           },
                         };
                       });
@@ -634,6 +640,7 @@ const CreateWAF: React.FC = () => {
                         return {
                           ...prev,
                           logRetentionInvalidError: false,
+                          logRetentionMustThanColdAndWarm: false,
                         };
                       });
                       setWAFPipelineTask((prev: WAFTaskProps) => {
@@ -641,7 +648,80 @@ const CreateWAF: React.FC = () => {
                           ...prev,
                           params: {
                             ...prev.params,
-                            daysToRetain: value,
+                            retainAge: value,
+                          },
+                        };
+                      });
+                    }}
+                    changeIndexSuffix={(suffix: string) => {
+                      setWAFPipelineTask((prev: WAFTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            indexSuffix: suffix,
+                          },
+                        };
+                      });
+                    }}
+                    changeEnableRollover={(enable: boolean) => {
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          capacityInvalidError: false,
+                        };
+                      });
+                      setWAFPipelineTask((prev: WAFTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            enableRolloverByCapacity: enable,
+                          },
+                        };
+                      });
+                    }}
+                    changeRolloverSize={(size: string) => {
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          capacityInvalidError: false,
+                        };
+                      });
+                      setWAFPipelineTask((prev: WAFTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            rolloverSize: size,
+                          },
+                        };
+                      });
+                    }}
+                    changeCompressionType={(codec: string) => {
+                      setWAFPipelineTask((prev: WAFTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            codec: codec,
+                          },
+                        };
+                      });
+                    }}
+                    changeWarmSettings={(type: string) => {
+                      setAosInputValidRes((prev) => {
+                        return {
+                          ...prev,
+                          coldMustLargeThanWarm: false,
+                        };
+                      });
+                      setWAFPipelineTask((prev: WAFTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            warmTransitionType: type,
                           },
                         };
                       });
@@ -718,6 +798,19 @@ const CreateWAF: React.FC = () => {
                                 IngestOption.FullRequest
                             ) {
                               setManualWAFEmpryError(true);
+                              return;
+                            }
+                            if (
+                              wafPipelineTask.params.ingestOption ===
+                                IngestOption.FullRequest &&
+                              (!wafPipelineTask.params.manualBucketWAFPath
+                                .toLowerCase()
+                                .startsWith("s3") ||
+                                !bucketNameIsValid(
+                                  wafPipelineTask.params.logBucketName
+                                ))
+                            ) {
+                              setManualS3PathInvalid(true);
                               return;
                             }
                           }

@@ -113,6 +113,10 @@ def test_lambda_handler(mocker, engine, client, expected):
         "util.osutil.OpenSearch.create_ism_policy", return_value=Response(201, "OK")
     )
 
+    mocker.patch(
+        "util.osutil.OpenSearch.create_index", return_value=Response(201, "OK")
+    )
+
     result = lambda_function.lambda_handler(None, None)
     assert result == expected
 
@@ -140,6 +144,10 @@ def test_lambda_handler_with_aos_error(mocker, status, client, expected):
         "util.osutil.OpenSearch.create_ism_policy", return_value=Response(201, "OK")
     )
 
+    mocker.patch(
+        "util.osutil.OpenSearch.create_index", return_value=Response(201, "OK")
+    )
+
     result = lambda_function.lambda_handler(None, None)
     assert result == expected
 
@@ -151,6 +159,10 @@ def test_lambda_handler2(mocker, test_aos):
     mocker.patch(
         "util.osutil.OpenSearch.put_index_template", return_value=Response(201, "OK")
     )
+    mocker.patch(
+        "util.osutil.OpenSearch.create_index", return_value=Response(201, "OK")
+    )
+
     event = {"hello": "world"}
 
     assert lambda_function.lambda_handler(event, None) == "OK"
@@ -177,6 +189,9 @@ def test_lambda_handler2_with_event(mocker, test_aos, test_event):
     )
     mocker.patch(
         "util.osutil.OpenSearch.create_ism_policy", return_value=Response(201, "OK")
+    )
+    mocker.patch(
+        "util.osutil.OpenSearch.create_index", return_value=Response(201, "OK")
     )
 
     assert lambda_function.lambda_handler(test_event, None) == "OK"

@@ -3,7 +3,7 @@
   "title": "日志通控制台",
   "version": "版本号",
   "signin": {
-    "signInToLogHub": "登录到日志通",
+    "signInToSolution": "登录到日志通",
     "email": "邮箱地址 *",
     "inputEmail": "输入您的邮箱地址",
     "password": "密码 *",
@@ -18,8 +18,8 @@
   "menu": {
     "home": "首页",
     "cluster": "集群",
-    "osDomain": "Amazon OpenSearch 域",
-    "importOS": "导入 Amazon OpenSearch 域",
+    "osDomain": "OpenSearch 域",
+    "importOS": "导入 OpenSearch 域",
     "logPipeline": "日志分析管道",
     "serviceLog": "AWS 服务日志",
     "appLog": "应用日志",
@@ -57,7 +57,7 @@
   },
   "button": {
     "add": "添加",
-    "importDomain": "导入 Amazon OpenSearch 域",
+    "importDomain": "导入 OpenSearch 域",
     "createIngestion": "创建日志摄取",
     "viewDetail": "查看详情",
     "remove": "移除",
@@ -95,7 +95,8 @@
     "addCondition": "添加条件",
     "addInstances": "添加实例",
     "removeInstances": "移除实例",
-    "gotoInstanceGroup": "转到实例组"
+    "gotoInstanceGroup": "转到实例组",
+    "confirm": "确认"
   },
   "status": {
     "unknown": "未知",
@@ -127,5 +128,8 @@
   "maxmindCopyRight": "本产品包括 MaxMind 创建的 GeoLite2 数据，详情请访问 ",
   "signInAgain": "请重新登录",
   "reloginTips": "您已退出您的帐户。 请点击“重新加载”重新登录。",
-  "pendingCreation": "创建中"
+  "pendingCreation": "创建中",
+  "learnMore": "了解更多",
+  "intoDomain": "到 OpenSearch 域。",
+  "archDesc": "将日志数据摄取到 OpenSearch 域的架构图。"
 }

@@ -20,7 +20,6 @@ import Pagination from "@material-ui/lab/Pagination";
 import RefreshIcon from "@material-ui/icons/Refresh";
 import Button from "components/Button";
 import { TablePanel } from "components/TablePanel";
-// import Status from "components/Status/Status";
 import Breadcrumb from "components/Breadcrumb";
 import { SelectType } from "components/TablePanel/tablePanel";
 import { InstanceGroup, LogSourceType } from "API";
@@ -269,7 +268,6 @@ const InstanceGroupList: React.FC = () => {
                   loading={loadingDelete}
                   btnType="primary"
                   onClick={() => {
-                    // setOpenDeleteModel(false);
                     confimRemoveInstanceGroup();
                   }}
                 >

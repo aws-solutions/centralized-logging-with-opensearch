@@ -11,7 +11,7 @@ import boto3
 from botocore import config
 
 from util.agent_type import AgentType
-from util.aws_svc_mgr import Boto3API, SvcManager
+from aws_svc_mgr import Boto3API, SvcManager
 from util.exception import APIException
 from util.log_ingestion_svc import LogIngestionSvc
 from util.sys_enum_type import (
@@ -19,16 +19,19 @@ from util.sys_enum_type import (
     DEPLOYMENTKIND,
     LOGTYPE,
     MULTILINELOGPARSER,
-    S3CUSTOMIZEREGEXLOGTYPE,
-    S3PRESETLOGTYPE,
 )
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-solution = os.environ.get("SOLUTION",
-                          "SO8025/" + os.environ["SOLUTION_VERSION"])
-user_agent_config = {"user_agent_extra": f"AwsSolution/{solution}"}
+TEMP_DIR = "/tmp/log_config"
+INGESTION_NOT_FOUND_MSG = "App Log Ingestion item Not Found"
+
+solution_version = os.environ.get("SOLUTION_VERSION", "v1.0.0")
+solution_id = os.environ.get("SOLUTION_ID", "SO8025")
+user_agent_config = {
+    "user_agent_extra": f"AwsSolution/{solution_id}/{solution_version}"
+}
 default_config = config.Config(**user_agent_config)
 default_region = os.environ.get("AWS_REGION")
 # Get S3 resource
@@ -58,12 +61,12 @@ s3_log_source_table = dynamodb.Table(s3_log_source_table_name)
 
 # k8s parameters
 fluent_bit_image = os.environ.get(
-    "FLUENT_BIT_IMAGE",
-    "public.ecr.aws/aws-observability/aws-for-fluent-bit:2.28.4")
+    "FLUENT_BIT_IMAGE", "public.ecr.aws/aws-observability/aws-for-fluent-bit:2.28.4"
+)
 fluent_bit_eks_cluster_name_space = os.environ.get(
-    "FLUENT_BIT_EKS_CLUSTER_NAME_SPACE", "logging")
-container_log_path = os.environ.get("CONTAINER_LOG_PATH",
-                                    "/var/log/containers/")
+    "FLUENT_BIT_EKS_CLUSTER_NAME_SPACE", "logging"
+)
+container_log_path = os.environ.get("CONTAINER_LOG_PATH", "/var/log/containers/")
 
 FB_FILTER_UNIFORM_TIME_FORMAT = """\
 [FILTER]
@@ -79,16 +82,17 @@ account_id = sts.get_caller_identity()["Account"]
 
 
 class IngestionTask:
-
-    def __init__(self,
-                 agent_type: str,
-                 group_id: str,
-                 config_id: str,
-                 app_pipeline_id: str,
-                 log_ingestion_id: str,
-                 is_multiline: bool = False,
-                 time_key: str = "time",
-                 instance_id=str) -> None:
+    def __init__(
+        self,
+        agent_type: str,
+        group_id: str,
+        config_id: str,
+        app_pipeline_id: str,
+        log_ingestion_id: str,
+        is_multiline: bool = False,
+        time_key: str = "time",
+        instance_id=str,
+    ) -> None:
         # try to find a mapping class
         if agent := getattr(sys.modules[__name__], agent_type, None):
             self._agent = agent(
@@ -133,10 +137,12 @@ class FluentBit(AgentType):
     _service_template_path = "./util/fluentbit_template/log-agent-service.template"
     _input_template_path = "./util/fluentbit_template/log-agent-input.template"
     _input_multiline_template_path = (
-        "./util/fluentbit_template/log-agent-input-multiline.template")
+        "./util/fluentbit_template/log-agent-input-multiline.template"
+    )
     _output_template_path = "./util/fluentbit_template/log-agent-output.template"
     _system_parser_template_path = (
-        "./util/fluentbit_template/log-agent-system-parser.template")
+        "./util/fluentbit_template/log-agent-system-parser.template"
+    )
     _parser_template_path = "./util/fluentbit_template/log-agent-parser.template"
     _uniform_time_format_lua = "./util/fluentbit_template/uniform-time-format.lua"
     _filter_template_path = "./util/fluentbit_template/log-agent-grep-filter.template"
@@ -157,22 +163,7 @@ class FluentBit(AgentType):
     $LOGHUB_PARSER_NAME   
     $LOGHUB_KDS_ROLE_ARN
     """
-    # _k8s_input_output_filter_daemonset_aos_template_path = "./util/eks_cluster_pod_template/fluent-bit-input-output-filter-daemonset-aos.template.yaml"
-    """
-    The parameters that need to be replaced are as follows:
-    $LOGHUB_CHECKPOINT
-    $LOGHUB_CONFIG_TAG
-    $LOGHUB_CONFIG_REGION
-    $LOGHUB_CONFIG_KDS_NAME
-    $LOGHUB_USER_DEFINE_FILTER: 
-        1.it will be replace the content of user defined filter template in the daemonset pattern 
-        2.it will be replace '' in the sidecar pattern
-    $LOGHUB_CONFIG_TAG_PREFIX
-    $LOGHUB_MERGE_PARSER
-    $LOGHUB_PARSER_NAME
-    LOGHUB_AOS_IDX_NAME   
-    $LOGHUB_EC2_ROLE_ARN
-    """
+
     _k8s_input_output_sidecar_template_path = (
         "./util/eks_cluster_pod_template/fluent-bit-input-output-sidecar.template.yaml"
     )
@@ -186,32 +177,10 @@ class FluentBit(AgentType):
     $LOGHUB_CONFIG_KDS_NAME
     $LOGHUB_KDS_ROLE_ARN
     """
-    # _k8s_input_output_sidecar_aos_template_path = "./util/eks_cluster_pod_template/fluent-bit-input-output-sidecar-aos.template.yaml"
-    """
-    The parameters that need to be replaced are as follows:
-    $LOGHUB_CONFIG_TAG
-    $LOGHUB_CHECKPOINT
-    $LOGHUB_MULTILINE
-    $LOGHUB_PARSER_NAME   
-    $LOGHUB_CONFIG_REGION
-    $LOGHUB_CONFIG_KDS_NAME
-    $LOGHUB_AOS_IDX_NAME    
-    $LOGHUB_EC2_ROLE_ARN
-    """
 
     _k8s_configmap_template_path = (
-        "./util/eks_cluster_pod_template/fluent-bit-configmap.template.yaml")
-    """
-    Both daemonset and sidecar are required for configmap.
-    The parameters that need to be replaced are as follows:
-    $NAMESPACE=fluent_bit_eks_cluster_name_space
-    $FLUENT_BIT_INPUT_OUTPUT_FILTER=_k8s_input_output_filter_template_template_path
-    $USER_DEFINE_PARSER=_k8s_user_define_parser_template_path
-    """
-
-    # _k8s_configmap_aos_template_path = (
-    #     "./util/eks_cluster_pod_template/fluent-bit-configmap-aos.template.yaml"
-    # )
+        "./util/eks_cluster_pod_template/fluent-bit-configmap.template.yaml"
+    )
     """
     Both daemonset and sidecar are required for configmap.
     The parameters that need to be replaced are as follows:
@@ -253,7 +222,8 @@ class FluentBit(AgentType):
     $LOGHUB_TIME_FORMAT
     """
     _k8s_daemonset_template_path = (
-        "./util/eks_cluster_pod_template/fluent-bit-daemonset.template.")
+        "./util/eks_cluster_pod_template/fluent-bit-daemonset.template."
+    )
     """
     $NAMESPACE=fluent_bit_eks_cluster_name_space
     $FLUENT_BIT_IMAGE=fluent_bit_image
@@ -278,14 +248,16 @@ class FluentBit(AgentType):
     
     """
     _k8s_sidecar_template_path = (
-        "./util/eks_cluster_pod_template/fluent-bit-sidecar.template.yaml")
+        "./util/eks_cluster_pod_template/fluent-bit-sidecar.template.yaml"
+    )
     """
     The parameters that need to be replaced are as follows:
     $FLUENT_BIT_IMAGE=fluent_bit_image
     $EKS_CLUSTER_NAME
     """
     _k8s_name_space_template_path = (
-        "./util/eks_cluster_pod_template/fluent-bit-namespace.template.yaml")
+        "./util/eks_cluster_pod_template/fluent-bit-namespace.template.yaml"
+    )
     """
     Both daemonset and sidecar are required for svc account. BTW, Sidecar pattern needs to prompt the user to replace the namespace.
     The parameters that need to be replaced are as follows:
@@ -293,31 +265,25 @@ class FluentBit(AgentType):
     """
 
     _k8s_fluent_bit_k8s_filter_template_path = (
-        "./util/eks_cluster_pod_template/fluent-bit-k8s-filter.yaml")
+        "./util/eks_cluster_pod_template/fluent-bit-k8s-filter.yaml"
+    )
     """
     eks output template
     """
     _fluent_bit_output = {
-        "eks_fluent_bit_output_s3_template_path":
-            "./util/eks_cluster_pod_template/fluent-bit-output-s3.template.yaml",
-        "eks_fluent_bit_output_kds_template_path":
-            "./util/eks_cluster_pod_template/fluent-bit-output-kds.template.yaml",
-        "eks_fluent_bit_output_aos_template_path":
-            "./util/eks_cluster_pod_template/fluent-bit-output-aos.template.yaml",
-        "eks_fluent_bit_output_msk_template_path":
-            "./util/eks_cluster_pod_template/fluent-bit-output-msk.template.yaml",
-        "ec2_fluent_bit_output_s3_template_path":
-            "./util/fluentbit_template/fluent-bit-output-s3.template.yaml",
-        "ec2_fluent_bit_output_kds_template_path":
-            "./util/fluentbit_template/fluent-bit-output-kds.template.yaml",
-        "ec2_fluent_bit_output_aos_template_path":
-            "./util/fluentbit_template/fluent-bit-output-aos.template.yaml",
-        "ec2_fluent_bit_output_msk_template_path":
-            "./util/fluentbit_template/fluent-bit-output-msk.template.yaml"
+        "eks_fluent_bit_output_s3_template_path": "./util/eks_cluster_pod_template/fluent-bit-output-s3.template.yaml",
+        "eks_fluent_bit_output_kds_template_path": "./util/eks_cluster_pod_template/fluent-bit-output-kds.template.yaml",
+        "eks_fluent_bit_output_aos_template_path": "./util/eks_cluster_pod_template/fluent-bit-output-aos.template.yaml",
+        "eks_fluent_bit_output_msk_template_path": "./util/eks_cluster_pod_template/fluent-bit-output-msk.template.yaml",
+        "ec2_fluent_bit_output_s3_template_path": "./util/fluentbit_template/fluent-bit-output-s3.template.yaml",
+        "ec2_fluent_bit_output_kds_template_path": "./util/fluentbit_template/fluent-bit-output-kds.template.yaml",
+        "ec2_fluent_bit_output_aos_template_path": "./util/fluentbit_template/fluent-bit-output-aos.template.yaml",
+        "ec2_fluent_bit_output_msk_template_path": "./util/fluentbit_template/fluent-bit-output-msk.template.yaml",
     }
 
     _k8s_fluent_bit_grep_filter_template_path = (
-        "./util/eks_cluster_pod_template/fluent-bit-grep-filter.template.yaml")
+        "./util/eks_cluster_pod_template/fluent-bit-grep-filter.template.yaml"
+    )
     """
     The parameters that need to be replaced are as follows:
     $LOGHUB_CONFIG_TAG
@@ -326,21 +292,21 @@ class FluentBit(AgentType):
     $LOGHUB_FILTER_VALUE
     """
 
-    # S3
-
     __config_id: str
     __app_pipeline_id: str
     __config_info: dict
     __is_multiline: bool
 
-    def __init__(self,
-                 group_id="",
-                 config_id="",
-                 app_pipeline_id="",
-                 log_ingestion_id="",
-                 is_multiline=False,
-                 time_key="time",
-                 instance_id=""):
+    def __init__(
+        self,
+        group_id="",
+        config_id="",
+        app_pipeline_id="",
+        log_ingestion_id="",
+        is_multiline=False,
+        time_key="time",
+        instance_id="",
+    ):
         self.__group_id = group_id
         self.__config_id = config_id
         self.__app_pipeline_id = app_pipeline_id
@@ -356,42 +322,45 @@ class FluentBit(AgentType):
             self.__account_id = group.get("accountId", account_id)
             self.__region = group.get("region", default_region)
 
-            svcMgr = SvcManager()
-            s3 = svcMgr.get_client(
+            svc_mgr = SvcManager()
+            s3 = svc_mgr.get_client(
                 sub_account_id=self.__account_id,
                 service_name="s3",
                 type=Boto3API.RESOURCE,
                 region=self.__region,
             )
-            link_account = svcMgr.get_link_account(
-                sub_account_id=self.__account_id, region=self.__region)
+            link_account = svc_mgr.get_link_account(
+                sub_account_id=self.__account_id, region=self.__region
+            )
             if link_account:
                 bucket_name = link_account["subAccountBucketName"]
             else:
                 bucket_name = config_file_s3_bucket_name
             self._s3_bucket = s3.Bucket(bucket_name)
-            self._ssm = svcMgr.get_client(
+            self._ssm = svc_mgr.get_client(
                 sub_account_id=self.__account_id,
                 service_name="ssm",
                 type=Boto3API.CLIENT,
                 region=self.__region,
             )
-        self.__log_ingestion_svc = LogIngestionSvc(self.__account_id,
-                                                   self.__region)
+        self.__log_ingestion_svc = LogIngestionSvc(self.__account_id, self.__region)
         if config_id == "":
             self.__config_info = {}
         else:
             self.__config_info = self.__log_ingestion_svc.get_config_detail(
-                config_id=self.__config_id)
+                config_id=self.__config_id
+            )
         if app_pipeline_id == "":
             self.__app_pipeline_info = {}
         else:
             self.__app_pipeline_info = self.__log_ingestion_svc.get_app_pipeline(
-                app_pipeline_id)
+                app_pipeline_id
+            )
 
     @classmethod
-    def get_fluent_bit_instance(cls, config_id: str, app_pipeline_id: str,
-                                log_ingestion_id: str):
+    def get_fluent_bit_instance(
+        cls, config_id: str, app_pipeline_id: str, log_ingestion_id: str
+    ):
         return cls(
             group_id="",
             config_id=config_id,
@@ -405,18 +374,15 @@ class FluentBit(AgentType):
         generate applog_parsers.conf
         """
         self._generate_parser()
-        # self.__log_ingestion_svc.upload_folder_to_s3(self._s3_bucket,
-        #                                              "/tmp/log_config",
-        #                                              "app_log_config")
 
     def create_ingestion(self):
         """
         generate fluent-bit.conf
         """
         self._generate_conf_with_init_member()
-        self.__log_ingestion_svc.upload_folder_to_s3(self._s3_bucket,
-                                                     "/tmp/log_config",
-                                                     "app_log_config")
+        self.__log_ingestion_svc.upload_folder_to_s3(
+            self._s3_bucket, TEMP_DIR, "app_log_config"
+        )
         self.__log_ingestion_svc.upload_config_to_ec2(
             self,
             self.__group_id,
@@ -430,9 +396,9 @@ class FluentBit(AgentType):
         involve new instance into ingestions
         """
         self._generate_conf_with_init_member_for_single_instance()
-        self.__log_ingestion_svc.upload_folder_to_s3(self._s3_bucket,
-                                                     "/tmp/log_config",
-                                                     "app_log_config")  # 上传至s3
+        self.__log_ingestion_svc.upload_folder_to_s3(
+            self._s3_bucket, TEMP_DIR, "app_log_config"
+        )
         self.__log_ingestion_svc.upload_config_to_single_modified_ec2(
             self,
             self.__group_id,
@@ -440,16 +406,16 @@ class FluentBit(AgentType):
             self.__log_ingestion_id,
             self.__config_id,
             self.__app_pipeline_id,
-        )  # 根据instance下发
+        )
 
     def create_ingestion_to_auto_scaling_group(self):
         """
         generate ASG fluent-bit.conf
         """
         self._generate_conf_with_init_member()
-        self.__log_ingestion_svc.upload_folder_to_s3(self._s3_bucket,
-                                                     "/tmp/log_config",
-                                                     "app_log_config")
+        self.__log_ingestion_svc.upload_folder_to_s3(
+            self._s3_bucket, TEMP_DIR, "app_log_config"
+        )
         self.__log_ingestion_svc.upload_config_info_to_instance_meta_table(
             self,
             self.__group_id,
@@ -464,26 +430,25 @@ class FluentBit(AgentType):
         """
         # update the instance meta table
         self.__log_ingestion_svc.deactivate_new_deleted_instances(
-            self.__instance_id, self.__group_id)
+            self.__instance_id, self.__group_id
+        )
         # generate_config_again
         self._generate_conf_for_single_instance(
-            self.__group_id,
-            self.__instance_id,
-            is_multiline=self.__is_multiline)
+            self.__group_id, self.__instance_id, is_multiline=self.__is_multiline
+        )
         # send to the instances
-        self.__log_ingestion_svc.upload_folder_to_s3(self._s3_bucket,
-                                                     "/tmp/log_config",
-                                                     "app_log_config")
+        self.__log_ingestion_svc.upload_folder_to_s3(
+            self._s3_bucket, TEMP_DIR, "app_log_config"
+        )
         self.__log_ingestion_svc.upload_config_to_single_modified_ec2(
             self,
             self.__group_id,
             self.__instance_id,
-        )  # 根据instance下发
+        )
 
     def delete_ingestion_from_auto_scaling_group(self):
         # update the instance meta table
-        ids = self.__log_ingestion_svc.get_instance_meta_id(
-            self.__log_ingestion_id)
+        ids = self.__log_ingestion_svc.get_instance_meta_id(self.__log_ingestion_id)
         for id in ids:
             instance_meta_table.update_item(
                 Key={"id": id},
@@ -496,18 +461,16 @@ class FluentBit(AgentType):
                 },
             )
         # generate_config_again
-        response = app_log_ingestion_table.get_item(
-            Key={"id": self.__log_ingestion_id})
+        response = app_log_ingestion_table.get_item(Key={"id": self.__log_ingestion_id})
         if "Item" not in response:
-            raise APIException("App Log Ingestion item Not Found")
-        group_id = response["Item"].get("groupId",
-                                        response["Item"].get("sourceId"))
+            raise APIException(INGESTION_NOT_FOUND_MSG)
+        group_id = response["Item"].get("groupId", response["Item"].get("sourceId"))
         self._generate_conf(group_id, is_multiline=self.__is_multiline)
 
         # upload to s3
-        self.__log_ingestion_svc.upload_folder_to_s3(self._s3_bucket,
-                                                     "/tmp/log_config",
-                                                     "app_log_config")
+        self.__log_ingestion_svc.upload_folder_to_s3(
+            self._s3_bucket, TEMP_DIR, "app_log_config"
+        )
         self.__log_ingestion_svc.upload_config_info_to_instance_meta_table(
             self,
             self.__group_id,
@@ -518,8 +481,7 @@ class FluentBit(AgentType):
 
     def delete_ingestion(self):
         # update the instance meta table
-        ids = self.__log_ingestion_svc.get_instance_meta_id(
-            self.__log_ingestion_id)
+        ids = self.__log_ingestion_svc.get_instance_meta_id(self.__log_ingestion_id)
         for id in ids:
             instance_meta_table.update_item(
                 Key={"id": id},
@@ -532,20 +494,19 @@ class FluentBit(AgentType):
                 },
             )
         # generate_config_again
-        response = app_log_ingestion_table.get_item(
-            Key={"id": self.__log_ingestion_id})
+        response = app_log_ingestion_table.get_item(Key={"id": self.__log_ingestion_id})
         if "Item" not in response:
-            raise APIException("App Log Ingestion item Not Found")
-        group_id = response["Item"].get("groupId",
-                                        response["Item"].get("sourceId"))
+            raise APIException(INGESTION_NOT_FOUND_MSG)
+        group_id = response["Item"].get("groupId", response["Item"].get("sourceId"))
         self._generate_conf(group_id, is_multiline=self.__is_multiline)
 
         # send to the instances
-        self.__log_ingestion_svc.upload_folder_to_s3(self._s3_bucket,
-                                                     "/tmp/log_config",
-                                                     "app_log_config")
-        self.__log_ingestion_svc.upload_config_to_ec2(self, group_id,
-                                                      self.__log_ingestion_id)
+        self.__log_ingestion_svc.upload_folder_to_s3(
+            self._s3_bucket, TEMP_DIR, "app_log_config"
+        )
+        self.__log_ingestion_svc.upload_config_to_ec2(
+            self, group_id, self.__log_ingestion_id
+        )
 
     def _generate_parser(self):
         """Generate the parser config"""
@@ -556,33 +517,45 @@ class FluentBit(AgentType):
             file_data = ""
             if self.__config_id != "":
                 # Append the new parser in the parser config file
-                file_data += (self._generate_single_parser(
-                    self.__app_pipeline_id, self.__group_id, self.__config_id)
-                              + "\n")
+                file_data += (
+                    self._generate_single_parser(
+                        self.__app_pipeline_id, self.__group_id, self.__config_id
+                    )
+                    + "\n"
+                )
 
                 config_info = self.__log_ingestion_svc.get_config_detail(
-                    self.__config_id)
-                file_data += (self.__log_ingestion_svc._render_template(
-                    self._system_parser_template_path,
-                    LOGHUB_TIME_FORMAT=self.__log_ingestion_svc.
-                    _get_time_format(config_info.get("regularSpecs", [])),
-                ) + "\n")
+                    self.__config_id
+                )
+                file_data += (
+                    self.__log_ingestion_svc._render_template(
+                        self._system_parser_template_path,
+                        LOGHUB_TIME_FORMAT=self.__log_ingestion_svc._get_time_format(
+                            config_info.get("regularSpecs", [])
+                        ),
+                    )
+                    + "\n"
+                )
             else:
-                file_data += (self.__log_ingestion_svc._render_template(
-                    self._system_parser_template_path, LOGHUB_TIME_FORMAT='""')
-                              + "\n")
+                file_data += (
+                    self.__log_ingestion_svc._render_template(
+                        self._system_parser_template_path, LOGHUB_TIME_FORMAT='""'
+                    )
+                    + "\n"
+                )
 
             # Append the history parser
             mapping_history = self.__log_ingestion_svc.get_instance_history_mapping(
-                instance_id)
+                instance_id
+            )
             for mapping in mapping_history:
                 if mapping["status"] == "INACTIVE":
                     continue
                 file_data += self._generate_single_parser(
-                    mapping["appPipelineId"], mapping["groupId"],
-                    mapping["confId"])
+                    mapping["appPipelineId"], mapping["groupId"], mapping["confId"]
+                )
 
-            folder_path = "/tmp/log_config/" + instance_id
+            folder_path = TEMP_DIR + "/" + instance_id
             if not os.path.exists(folder_path):
                 os.makedirs(folder_path)
             updated_config_path = folder_path + "/applog_parsers.conf"
@@ -609,11 +582,9 @@ class FluentBit(AgentType):
             is_multiline=self.__is_multiline,
         )
 
-    def _generate_conf(self,
-                       group_id,
-                       config_id="",
-                       app_pipeline_id="",
-                       is_multiline=False):
+    def _generate_conf(
+        self, group_id, config_id="", app_pipeline_id="", is_multiline=False
+    ):
         """Used by EC2"""
 
         instance_ids = self.__log_ingestion_svc.get_instances(group_id)
@@ -639,7 +610,8 @@ class FluentBit(AgentType):
 
             # Append the history config pairs
             mapping_history = self.__log_ingestion_svc.get_instance_history_mapping(
-                instance_id)
+                instance_id
+            )
             for mapping in mapping_history:
                 if mapping["status"] == "INACTIVE":
                     continue
@@ -651,7 +623,7 @@ class FluentBit(AgentType):
                     is_multiline,
                 )
 
-            folder_path = "/tmp/log_config/" + instance_id
+            folder_path = TEMP_DIR + "/" + instance_id
             if not os.path.exists(folder_path):
                 os.makedirs(folder_path)
             updated_config_path = folder_path + "/fluent-bit.conf"
@@ -660,15 +632,18 @@ class FluentBit(AgentType):
             tmp_file.close()
 
             s = Template(fread(self._uniform_time_format_lua)).safe_substitute(
-                TIME_KEY=(self._time_key or "time"))
+                TIME_KEY=(self._time_key or "time")
+            )
             fwrite(f"{folder_path}/uniform-time-format.lua", s)
 
-    def _generate_conf_for_single_instance(self,
-                                           group_id="",
-                                           instance_id="",
-                                           config_id="",
-                                           app_pipeline_id="",
-                                           is_multiline=False):
+    def _generate_conf_for_single_instance(
+        self,
+        group_id="",
+        instance_id="",
+        config_id="",
+        app_pipeline_id="",
+        is_multiline=False,
+    ):
         """Used by EC2"""
 
         file_data = ""
@@ -690,7 +665,8 @@ class FluentBit(AgentType):
 
         # Append the history config pairs
         mapping_history = self.__log_ingestion_svc.get_instance_history_mapping(
-            instance_id)
+            instance_id
+        )
         for mapping in mapping_history:
             if mapping["status"] == "INACTIVE":
                 continue
@@ -702,7 +678,7 @@ class FluentBit(AgentType):
                 is_multiline,
             )
 
-        folder_path = "/tmp/log_config/" + instance_id
+        folder_path = TEMP_DIR + "/" + instance_id
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
         updated_config_path = folder_path + "/fluent-bit.conf"
@@ -711,45 +687,44 @@ class FluentBit(AgentType):
         tmp_file.close()
 
         s = Template(fread(self._uniform_time_format_lua)).safe_substitute(
-            TIME_KEY=(self._time_key or "time"))
+            TIME_KEY=(self._time_key or "time")
+        )
         fwrite(f"{folder_path}/uniform-time-format.lua", s)
 
-    def _generate_conf_input_output_pair(self,
-                                         config_id,
-                                         app_pipeline_id,
-                                         log_ingestion_id,
-                                         group_id,
-                                         is_multiline=False):
+    def _generate_conf_input_output_pair(
+        self, config_id, app_pipeline_id, log_ingestion_id, group_id, is_multiline=False
+    ):
         """Generate the config file part of a single pair"""
         config_info = self.__log_ingestion_svc.get_config_detail(config_id)
-        app_pipeline_info = self.__log_ingestion_svc.get_app_pipeline(
-            app_pipeline_id)
+        app_pipeline_info = self.__log_ingestion_svc.get_app_pipeline(app_pipeline_id)
 
         config_tag = config_id + "_" + app_pipeline_id
         config_checkpoint = "/tmp/checkpoint-" + config_tag + ".db"
-        parser_name = self.__generate_ec2_parser_name(config_info["logType"],
-                                                      app_pipeline_id,
-                                                      group_id, config_id)
+        parser_name = self.__generate_ec2_parser_name(
+            config_info["logType"], app_pipeline_id, group_id, config_id
+        )
 
         # Get Log Path from AppLogIngestion table. If it is null, it will be obtained from logConf table
         app_log_ingest_resp = app_log_ingestion_table.get_item(
-            Key={"id": log_ingestion_id})
+            Key={"id": log_ingestion_id}
+        )
         if "Item" not in app_log_ingest_resp:
-            raise APIException("App Log Ingestion item Not Found")
+            raise APIException(INGESTION_NOT_FOUND_MSG)
         app_log_ingestion_info = app_log_ingest_resp["Item"]
-        log_path = app_log_ingestion_info.get("logPath",
-                                              config_info.get("logPath"))
+        log_path = app_log_ingestion_info.get("logPath", config_info.get("logPath"))
         file_data = ""
         if is_multiline:
             file_data += self._generate_input_multiline(
-                log_path, config_tag, config_checkpoint, parser_name)
+                log_path, config_tag, config_checkpoint, parser_name
+            )
         else:
-            file_data += self._generate_input(log_path, config_tag,
-                                              config_checkpoint, parser_name)
+            file_data += self._generate_input(
+                log_path, config_tag, config_checkpoint, parser_name
+            )
 
-        file_data += self._generate_conf_filter(config_info,
-                                                config_tag,
-                                                type="FluentBit")
+        file_data += self._generate_conf_filter(
+            config_info, config_tag, type="FluentBit"
+        )
 
         # ARN of an IAM role to assume (for cross account access)
         role_arn = app_pipeline_info.get("bufferAccessRoleArn", "")
@@ -759,13 +734,12 @@ class FluentBit(AgentType):
             config_tag,
             default_region,
             role_arn,
-            time_key=config_info.get("timeKey", 'time'),
+            time_key=config_info.get("timeKey", "time"),
             type="EC2",
         )
         return file_data
 
-    def _generate_input(self, log_path, config_tag, config_checkpoint,
-                        parser_name):
+    def _generate_input(self, log_path, config_tag, config_checkpoint, parser_name):
         """Generate the input part"""
         return self._generate_input_with_template_file(
             template_file=self._input_template_path,
@@ -775,24 +749,26 @@ class FluentBit(AgentType):
             parser_name=parser_name,
         )
 
-    def _generate_input_with_template_file(self, template_file, log_path,
-                                           config_tag, config_checkpoint,
-                                           parser_name):
+    def _generate_input_with_template_file(
+        self, template_file, log_path, config_tag, config_checkpoint, parser_name
+    ):
         """Generate the input part"""
         input_data = ""
         with open(template_file, "r") as openFile:
             for line in openFile:
-                line = (line.replace("LOGHUB_CONFIG_PATH", log_path).replace(
-                    "LOGHUB_CONFIG_TAG", config_tag).replace(
-                    "LOGHUB_CHECKPOINT",
-                    config_checkpoint).replace("LOGHUB_PARSER",
-                                               parser_name))
+                line = (
+                    line.replace("LOGHUB_CONFIG_PATH", log_path)
+                    .replace("LOGHUB_CONFIG_TAG", config_tag)
+                    .replace("LOGHUB_CHECKPOINT", config_checkpoint)
+                    .replace("LOGHUB_PARSER", parser_name)
+                )
                 input_data += line
         input_data += "\n"
         return input_data
 
-    def _generate_input_multiline(self, log_path, config_tag,
-                                  config_checkpoint, parser_name):
+    def _generate_input_multiline(
+        self, log_path, config_tag, config_checkpoint, parser_name
+    ):
         """Generate the input part"""
         return self._generate_input_multiline_with_template_file(
             template_file=self._input_multiline_template_path,
@@ -802,10 +778,9 @@ class FluentBit(AgentType):
             parser_name=parser_name,
         )
 
-    def _generate_input_multiline_with_template_file(self, template_file,
-                                                     log_path, config_tag,
-                                                     config_checkpoint,
-                                                     parser_name):
+    def _generate_input_multiline_with_template_file(
+        self, template_file, log_path, config_tag, config_checkpoint, parser_name
+    ):
         """Generate the input part"""
         return self.__log_ingestion_svc._render_template(
             template_file,
@@ -822,13 +797,15 @@ class FluentBit(AgentType):
             _filter_template_path = self._filter_template_path
 
         filter_data = ""
-        if config_info.get("processorFilterRegex") is not None and (config_info.get("processorFilterRegex", {
-            "enable": False}).get("enable") is True):
-            for filter in config_info.get("processorFilterRegex").get(
-                    "filters"):
+        if config_info.get("processorFilterRegex") is not None and (
+            config_info.get("processorFilterRegex", {"enable": False}).get("enable")
+            is True
+        ):
+            for filter in config_info.get("processorFilterRegex").get("filters"):
                 filter_data += "\n"
-                filter_condition = ("Regex" if filter["condition"] == "Include"
-                                    else "Exclude")
+                filter_condition = (
+                    "Regex" if filter["condition"] == "Include" else "Exclude"
+                )
                 filter_key = filter["key"]
                 filter_value = filter["value"]
                 filter_data += self._generate_filter_with_template_file(
@@ -842,9 +819,9 @@ class FluentBit(AgentType):
             filter_data += "\n"
         return filter_data
 
-    def _generate_filter_with_template_file(self, template_file, config_tag,
-                                            filter_condition, filter_key,
-                                            filter_value):
+    def _generate_filter_with_template_file(
+        self, template_file, config_tag, filter_condition, filter_key, filter_value
+    ):
         """Generate the filter part"""
         return self.__log_ingestion_svc._render_template(
             template_file,
@@ -855,20 +832,19 @@ class FluentBit(AgentType):
         )
 
     def _generate_output(
-            self,
-            app_pipeline_info,
-            config_tag,
-            config_region,
-            role_arn="",
-            time_key='time',
-            type="EKS",
+        self,
+        app_pipeline_info,
+        config_tag,
+        config_region,
+        role_arn="",
+        time_key="time",
+        type="EKS",
     ):
         """Generate the output part"""
-        # TODO: Double check which one needs role_arn
         # Support of old data
         output = ""
         if not time_key:
-            time_key = 'time'
+            time_key = "time"
         aos_param_col = "aosParams"
         if "aosParas" in app_pipeline_info:
             aos_param_col = "aosParas"
@@ -881,15 +857,14 @@ class FluentBit(AgentType):
             buffer_type = app_pipeline_info.get("bufferType", "")
 
         if buffer_type == "KDS":
-            if "kdsParas" in app_pipeline_info and app_pipeline_info.get(
-                    "kdsParas"):
-                stream_name = app_pipeline_info["kdsParas"].get(
-                    "streamName", "")
+            if "kdsParas" in app_pipeline_info and app_pipeline_info.get("kdsParas"):
+                stream_name = app_pipeline_info["kdsParas"].get("streamName", "")
             else:
                 stream_name = app_pipeline_info.get("bufferResourceName", "")
             output = self.__log_ingestion_svc._render_template(
                 self._fluent_bit_output.get(
-                    type.lower() + "_fluent_bit_output_kds_template_path"),
+                    type.lower() + "_fluent_bit_output_kds_template_path"
+                ),
                 LOGHUB_CONFIG_TAG=config_tag,
                 LOGHUB_CONFIG_REGION=config_region,
                 LOGHUB_KDS_STREAM_NAME=stream_name,
@@ -899,7 +874,8 @@ class FluentBit(AgentType):
         elif buffer_type == "S3":
             bucket_name = app_pipeline_info.get("bufferResourceName")
             buffer_params = app_pipeline_info.get("bufferParams")
-            compressionType = ''
+            compression_type = ""
+            s3_storage_class = "INTELLIGENT_TIERING"
             for param in buffer_params:
                 if param["paramKey"] == "logBucketPrefix":
                     prefix = param["paramValue"]
@@ -908,23 +884,27 @@ class FluentBit(AgentType):
                 elif param["paramKey"] == "uploadTimeout":
                     upload_timeout = param["paramValue"]
                 elif param["paramKey"] == "compressionType":
-                    compressionType = param["paramValue"]
+                    compression_type = param["paramValue"]
+                elif param["paramKey"] == "s3StorageClass":
+                    s3_storage_class = param["paramValue"]
 
             output = self.__log_ingestion_svc._render_template(
                 self._fluent_bit_output.get(
-                    type.lower() + "_fluent_bit_output_s3_template_path"),
+                    type.lower() + "_fluent_bit_output_s3_template_path"
+                ),
                 LOGHUB_CONFIG_TAG=config_tag,
                 LOGHUB_CONFIG_REGION=config_region,
                 LOGHUB_S3_BUCKET_NAME=bucket_name,
                 LOGHUB_S3_PREFIX=prefix,
-                LOGHUB_S3_SUFFIX='.gz'
-                if compressionType.lower() == 'gzip' else '',
-                LOGHUB_S3_COMPRESSION=f'compression    {compressionType}'
-                if compressionType.lower() == 'gzip' else '',
-                LOGHUB_S3_MAX_FILE_SIZE=max_file_size + 'M',
-                LOGHUB_S3_UPLOAD_TIMEOUT=upload_timeout + 's',
+                LOGHUB_S3_SUFFIX=".gz" if compression_type.lower() == "gzip" else "",
+                LOGHUB_S3_COMPRESSION=f"compression    {compression_type}"
+                if compression_type.lower() == "gzip"
+                else "",
+                LOGHUB_S3_MAX_FILE_SIZE=max_file_size + "M",
+                LOGHUB_S3_UPLOAD_TIMEOUT=upload_timeout + "s",
                 LOGHUB_TIMEKEY=time_key,
                 LOGHUB_BUFFER_ACCESS_ROLE_ARN=role_arn,
+                S3_STORAGE_CLASS=s3_storage_class,
             )
         elif buffer_type == "MSK":
             buffer_params = app_pipeline_info.get("bufferParams")
@@ -935,7 +915,8 @@ class FluentBit(AgentType):
                     topic = param["paramValue"]
             output = self.__log_ingestion_svc._render_template(
                 self._fluent_bit_output.get(
-                    type.lower() + "_fluent_bit_output_msk_template_path"),
+                    type.lower() + "_fluent_bit_output_msk_template_path"
+                ),
                 LOGHUB_CONFIG_TAG=config_tag,
                 LOGHUB_CONFIG_REGION=config_region,
                 LOGHUB_MSK_BROKER_SERVERS=brokers,
@@ -945,10 +926,11 @@ class FluentBit(AgentType):
         else:
             # Buffer is None. set Output to AOS
             aos_params = app_pipeline_info.get(aos_param_col)
-            if aos_params == None:
+            if not aos_params:
                 output = self.__log_ingestion_svc._render_template(
                     self._fluent_bit_output.get(
-                        type.lower() + "_fluent_bit_output_aos_template_path"),
+                        type.lower() + "_fluent_bit_output_aos_template_path"
+                    ),
                     LOGHUB_CONFIG_TAG=config_tag,
                     LOGHUB_CONFIG_REGION=config_region,
                     LOGHUB_AOS_ENDPOINT="",
@@ -959,11 +941,11 @@ class FluentBit(AgentType):
             else:
                 output = self.__log_ingestion_svc._render_template(
                     self._fluent_bit_output.get(
-                        type.lower() + "_fluent_bit_output_aos_template_path"),
+                        type.lower() + "_fluent_bit_output_aos_template_path"
+                    ),
                     LOGHUB_CONFIG_TAG=config_tag,
                     LOGHUB_CONFIG_REGION=config_region,
-                    LOGHUB_AOS_ENDPOINT=aos_params.get("opensearchEndpoint",
-                                                       ""),
+                    LOGHUB_AOS_ENDPOINT=aos_params.get("opensearchEndpoint", ""),
                     LOGHUB_AOS_IDX_PREFIX=aos_params.get("indexPrefix", ""),
                     LOGHUB_TIMEKEY=time_key,
                     LOGHUB_BUFFER_ACCESS_ROLE_ARN=role_arn,
@@ -976,11 +958,11 @@ class FluentBit(AgentType):
     def _generate_single_parser(self, app_pipeline_id, group_id, config_id):
         """Generate the parer part"""
         config_info = self.__log_ingestion_svc.get_config_detail(config_id)
-        return self._generate_parser_by_config_info(app_pipeline_id, group_id,
-                                                    config_info)
+        return self._generate_parser_by_config_info(
+            app_pipeline_id, group_id, config_info
+        )
 
-    def _generate_parser_by_config_info(self, app_pipeline_id, group_id,
-                                        config_info):
+    def _generate_parser_by_config_info(self, app_pipeline_id, group_id, config_info):
         parser_format = "json"
         regex_content = ""
         if config_info["logType"] != LOGTYPE.JSON.value:
@@ -988,27 +970,29 @@ class FluentBit(AgentType):
             regex_content = "Regex       " + config_info["regularExpression"]
         time_key = ""
         time_format = ""
-        if ("regularSpecs" in config_info and config_info["regularSpecs"]):
-            time_key = f"Time_Key    {config_info.get('timeKey', 'time')}"
+        if "regularSpecs" in config_info and config_info["regularSpecs"]:
+            time_key = f"Time_Key    {config_info.get('timeKey') or 'time'}"
             time_format = "Time_Format " + self.__log_ingestion_svc._get_time_format(
-                config_info.get("regularSpecs"))
+                config_info.get("regularSpecs")
+            )
         user_define_parser = self.__log_ingestion_svc._render_template(
             self._parser_template_path,
             LOGHUB_PARSER_NAME=self.__generate_ec2_parser_name(
-                config_info["logType"], app_pipeline_id, group_id,
-                config_info["id"]),
+                config_info["logType"], app_pipeline_id, group_id, config_info["id"]
+            ),
             LOGHUB_PARSER_FORMAT=parser_format,
             LOGHUB_REGEX=regex_content,
             LOGHUB_TIME_KEY=time_key,
             LOGHUB_TIME_FORMAT=time_format,
             LOGHUB_TIME_OFFSET=flb_key_value(
-                key="Time_Offset", val=config_info.get("timeOffset")),
+                key="Time_Offset", val=config_info.get("timeOffset")
+            ),
         )
         return user_define_parser
 
-    def generate_k8s_ns_and_svcacct_and_role(self,
-                                             log_agent_role_arn: str,
-                                             create_ns=True) -> str:
+    def generate_k8s_ns_and_svcacct_and_role(
+        self, log_agent_role_arn: str, create_ns=True
+    ) -> str:
         """
         Generate namespace, service account, role and role-binding for fluent bit.
         """
@@ -1030,7 +1014,8 @@ class FluentBit(AgentType):
         return ns + svc_acct + role_and_role_binding
 
     def generate_k8s_fluent_bit_multiline_filter(
-            self, config_tag: str, multiline_parser_name: str) -> str:
+        self, config_tag: str, multiline_parser_name: str
+    ) -> str:
         """
         Multiline parsing log parsing
         """
@@ -1041,11 +1026,11 @@ class FluentBit(AgentType):
         )
 
     def generate_k8s_fluent_bit_inout_and_filter(
-            self,
-            cri=CRI.DOCKER.value,
-            deployment_kind=DEPLOYMENTKIND.DAEMONSET.value,
-            role_arn="",
-            extra_metadata_suffix="",
+        self,
+        cri=CRI.DOCKER.value,
+        deployment_kind=DEPLOYMENTKIND.DAEMONSET.value,
+        role_arn="",
+        extra_metadata_suffix="",
     ) -> str:
         """
         parse fluent-bit-input-output-filter.template
@@ -1079,16 +1064,15 @@ class FluentBit(AgentType):
         if self.__config_info["logType"] == LOGTYPE.MULTI_LINE_TEXT.value:
             container_log_parser = "Parser              cri_regex"
             key_name = "log"
-            docker_mode_parser = ("Docker_Mode_Parser  " +
-                                  self.__get_parser_name() +
-                                  ".docker.firstline")
+            docker_mode_parser = (
+                "Docker_Mode_Parser  " + self.__get_parser_name() + ".docker.firstline"
+            )
             # multiline_switch and loghub_parser are only for sidecar
             multiline_switch = "On"
             loghub_parser = "Parser_Firstline    " + self.__get_parser_name()
-            if (self.__config_info["multilineLogParser"] ==
-                    MULTILINELOGPARSER.JAVA_SPRING_BOOT.value):
-                multiline_filter = self.generate_k8s_fluent_bit_multiline_filter(
-                    config_tag_prefix, self.__get_parser_name())
+            multiline_filter = self.generate_k8s_fluent_bit_multiline_filter(
+                config_tag_prefix, self.__get_parser_name()
+            )
         else:
             key_name = "log"
             container_log_parser = "Parser              cri_regex"
@@ -1097,23 +1081,30 @@ class FluentBit(AgentType):
 
         # Get Log Path from AppLogIngestion table. If it is null, it will be obtained from logConf table
         app_log_ingest_resp = app_log_ingestion_table.get_item(
-            Key={"id": self.__log_ingestion_id})
+            Key={"id": self.__log_ingestion_id}
+        )
         if "Item" not in app_log_ingest_resp:
-            raise APIException("App Log Ingestion item Not Found")
+            raise APIException(INGESTION_NOT_FOUND_MSG)
         app_log_ingestion_info = app_log_ingest_resp["Item"]
         log_path = app_log_ingestion_info.get(
-            "logPath", self.__config_info.get("logPath"))
+            "logPath", self.__config_info.get("logPath")
+        )
 
         # Add Filters Config
-        filter_data = self._generate_conf_filter(self.__config_info,
-                                                 config_tag_prefix,
-                                                 type="EKS")
-        time_key = self.__config_info.get("timeKey", 'time')
-        # TODO: double check config region.
+        filter_data = self._generate_conf_filter(
+            self.__config_info, config_tag_prefix, type="EKS"
+        )
+
+        time_key = self.__config_info.get("timeKey") or "time"
+
         # Assuming pipeline region is same as current region
-        output_data = self._generate_output(self.__app_pipeline_info,
-                                            config_tag_prefix, default_region,
-                                            role_arn, time_key)
+        output_data = self._generate_output(
+            self.__app_pipeline_info,
+            config_tag_prefix,
+            default_region,
+            role_arn,
+            time_key,
+        )
         # Parser
         if deployment_kind == DEPLOYMENTKIND.DAEMONSET.value:
 
@@ -1162,27 +1153,40 @@ class FluentBit(AgentType):
     def __get_parser_name(self) -> str:
         # If using regex from front-end, parser_name will be appended with config_id
         if self.__config_info["logType"] in LOGTYPE._value2member_map_:
-            if ("multilineLogParser" in self.__config_info
-                    and self.__config_info["multilineLogParser"]
-                    in MULTILINELOGPARSER._value2member_map_):
+            if (
+                "multilineLogParser" in self.__config_info
+                and self.__config_info["multilineLogParser"]
+                in MULTILINELOGPARSER._value2member_map_
+            ):
                 parser_name = (
-                        self.__config_info["multilineLogParser"].lower() + "_" +
-                        self.__config_id)
+                    self.__config_info["multilineLogParser"].lower()
+                    + "_"
+                    + self.__config_id
+                )
             else:
-                parser_name = (self.__config_info["logType"].lower() + "_" +
-                               self.__config_id)
+                parser_name = (
+                    self.__config_info["logType"].lower() + "_" + self.__config_id
+                )
         else:
             parser_name = self.__config_info["logType"].lower()
         return parser_name
 
-    def __generate_ec2_parser_name(self, log_type, app_pipeline_id, group_id,
-                                   config_id) -> str:
+    def __generate_ec2_parser_name(
+        self, log_type, app_pipeline_id, group_id, config_id
+    ) -> str:
         """
         generate the parser name for Fluent-bit in ec2
         """
         if log_type in LOGTYPE._value2member_map_:
-            parser_name = (log_type.lower() + "_" + app_pipeline_id.lower() +
-                           "_" + group_id.lower() + "_" + config_id.lower())
+            parser_name = (
+                log_type.lower()
+                + "_"
+                + app_pipeline_id.lower()
+                + "_"
+                + group_id.lower()
+                + "_"
+                + config_id.lower()
+            )
         else:
             parser_name = log_type.lower()
         return parser_name
@@ -1194,19 +1198,18 @@ class FluentBit(AgentType):
         if self.__config_info["logType"] == LOGTYPE.MULTI_LINE_TEXT.value:
             user_define_docker_firstline_parser = (
                 self.__log_ingestion_svc._render_template(
-                    self.
-                    _k8s_user_defined_docker_firstline_parser_template_path,
+                    self._k8s_user_defined_docker_firstline_parser_template_path,
                     LOGHUB_PARSER_NAME=self.__get_parser_name(),
                     LOGHUB_REGEX=self.__config_info["regularExpression"],
-                ))
+                )
+            )
             return user_define_docker_firstline_parser
         else:
             return ""
 
     def generate_k8s_fluent_bit_user_defined_parser(
-            self,
-            deployment_kind=DEPLOYMENTKIND.DAEMONSET.value,
-            cri=CRI.DOCKER.value):
+        self, deployment_kind=DEPLOYMENTKIND.DAEMONSET.value, cri=CRI.DOCKER.value
+    ):
         """
         parse fluent-bit-user-defined-parser.template
         """
@@ -1214,25 +1217,18 @@ class FluentBit(AgentType):
         regex_content = ""
         if self.__config_info["logType"] != LOGTYPE.JSON.value:
             parser_format = "regex"
-            regex_content = "Regex       " + self.__config_info[
-                "regularExpression"]
+            regex_content = "Regex       " + self.__config_info["regularExpression"]
         time_key = ""
         time_format = ""
-        if ("regularSpecs" in self.__config_info
-                and self.__config_info["regularSpecs"]):
+        if "regularSpecs" in self.__config_info and self.__config_info["regularSpecs"]:
             time_key = f"Time_Key    time"
-            if self.__config_info.get('timeKey'):
+            if self.__config_info.get("timeKey"):
                 time_key = f"Time_Key    {self.__config_info.get('timeKey')}"
             time_format = "Time_Format " + self.__log_ingestion_svc._get_time_format(
-                self.__config_info.get("regularSpecs"))
+                self.__config_info.get("regularSpecs")
+            )
 
-        if (self.__config_info["logType"] == LOGTYPE.MULTI_LINE_TEXT.value
-                and self.__config_info["multilineLogParser"]
-                == MULTILINELOGPARSER.JAVA_SPRING_BOOT.value
-                and deployment_kind == DEPLOYMENTKIND.DAEMONSET.value
-                and cri == CRI.CONTAINERD.value):
-            time_key = ""
-            time_format = ""
+
 
         user_define_parser = self.__log_ingestion_svc._render_template(
             self._k8s_user_defined_parser_template_path,
@@ -1241,9 +1237,9 @@ class FluentBit(AgentType):
             LOGHUB_REGEX=regex_content,
             LOGHUB_TIME_KEY=time_key,
             LOGHUB_TIME_FORMAT=time_format,
-            LOGHUB_TIME_OFFSET=flb_key_value(key="Time_Offset",
-                                             val=self.__config_info.get(
-                                                 "timeOffset", "")),
+            LOGHUB_TIME_OFFSET=flb_key_value(
+                key="Time_Offset", val=self.__config_info.get("timeOffset", "")
+            ),
         )
         return user_define_parser
 
@@ -1251,32 +1247,44 @@ class FluentBit(AgentType):
         """
         parse fluent-bit-user-defined-multiline-parser.template
         """
-        if (self.__config_info["logType"] == LOGTYPE.MULTI_LINE_TEXT.value
-                and self.__config_info["multilineLogParser"]
-                == MULTILINELOGPARSER.JAVA_SPRING_BOOT.value):
-            return self.__log_ingestion_svc._render_template(
-                self._k8s_user_defined_multiline_parser_template_path,
-                LOGHUB_MULTILINE_PARSER_NAME="multiline-" +
-                                             self.__get_parser_name(),
-                LOGHUB_REGEX=self.__config_info["timeRegularExpression"],
-            )
+        if self.__config_info["logType"] == LOGTYPE.MULTI_LINE_TEXT.value:
+            if (
+                self.__config_info["multilineLogParser"]
+                == MULTILINELOGPARSER.JAVA_SPRING_BOOT.value
+            ):
+                return self.__log_ingestion_svc._render_template(
+                    self._k8s_user_defined_multiline_parser_template_path,
+                    LOGHUB_MULTILINE_PARSER_NAME="multiline-"
+                    + self.__get_parser_name(),
+                    LOGHUB_REGEX=self.__config_info["timeRegularExpression"],
+                )
+            else:
+                return self.__log_ingestion_svc._render_template(
+                    self._k8s_user_defined_multiline_parser_template_path,
+                    LOGHUB_MULTILINE_PARSER_NAME="multiline-"
+                    + self.__get_parser_name(),
+                    LOGHUB_REGEX=self.__config_info["regularExpression"],
+                )
         else:
             return ""
 
-    def generate_k8s_configmap(self,
-                               input_and_output_filter: str,
-                               docker_firstline_parser: str,
-                               user_define_parser: str,
-                               user_define_multiline_parser: str,
-                               deployment_kind=DEPLOYMENTKIND,
-                               cri=CRI.DOCKER.value) -> str:
+    def generate_k8s_configmap(
+        self,
+        input_and_output_filter: str,
+        docker_firstline_parser: str,
+        user_define_parser: str,
+        user_define_multiline_parser: str,
+        deployment_kind=DEPLOYMENTKIND,
+        cri=CRI.DOCKER.value,
+    ) -> str:
         """
         parse fluent-bit-configmap.template
         """
         configmap_template_file = self._k8s_configmap_template_path
         if deployment_kind.value == DEPLOYMENTKIND.DAEMONSET.value:
             k8s_filter = self.__log_ingestion_svc._render_template(
-                self._k8s_fluent_bit_k8s_filter_template_path)
+                self._k8s_fluent_bit_k8s_filter_template_path
+            )
         else:
             k8s_filter = ""
 
@@ -1293,19 +1301,41 @@ class FluentBit(AgentType):
 
         return configmap
 
-    def generate_k8s_daemonset_config(self,
-                                      eks_cluster_name: str,
-                                      eks_cluster_version: str,
-                                      cri=CRI.DOCKER.value) -> str:
+    def generate_k8s_daemonset_config(
+        self, eks_cluster_name: str, eks_cluster_version: str, cri=CRI.DOCKER.value
+    ) -> str:
         """
         parse fluent-bit-daemonset.template
         """
+
+        def generate_k8s_kubectl_binary_download_url(eks_cluster_version: str, arch: str) -> str:
+            version_map = {
+                "1.19": "1.19.6/2021-01-05",
+                "1.20": "1.20.1/2022-10-31",
+                "1.21": "1.21.14/2023-01-11",
+                "1.22": "1.22.17/2023-01-11",
+                "1.23": "1.23.15/2023-01-11",
+                "1.24": "1.24.9/2023-01-11",
+            }
+            if eks_cluster_version not in version_map.keys():
+                raise Exception(f'Not supported version: {eks_cluster_version}.')
+
+            if arch not in ["arm64", "amd64"]:
+                raise Exception(f'Not supported arch: {arch}, supported: amd64/arm64.')
+
+            version_path = version_map[eks_cluster_version]
+            return f"https://s3.us-west-2.amazonaws.com/amazon-eks/{version_path}/bin/linux/{arch}/kubectl"
+
+        eks_kubectl_download_url_x86_64 = generate_k8s_kubectl_binary_download_url(eks_cluster_version, "amd64")
+        eks_kubectl_download_url_arm64 = generate_k8s_kubectl_binary_download_url(eks_cluster_version, "arm64")
+
         daemonset = self.__log_ingestion_svc._render_template(
-            self._k8s_daemonset_template_path + cri + '.yaml',
+            self._k8s_daemonset_template_path + cri + ".yaml",
             LOGHUB_NAMESPACE=fluent_bit_eks_cluster_name_space,
             LOGHUB_FLUENT_BIT_IMAGE=fluent_bit_image,
             LOGHUB_EKS_CLUSTER_NAME=eks_cluster_name,
-            LOGHUB_EKS_CLUSTER_VERSION=eks_cluster_version,
+            LOGHUB_EKS_KUBECTL_DOWNLOAD_URL_ARM=eks_kubectl_download_url_arm64,
+            LOGHUB_EKS_KUBECTL_DOWNLOAD_URL_X86_64=eks_kubectl_download_url_x86_64,
         )
         return daemonset
 
@@ -1316,12 +1346,14 @@ class FluentBit(AgentType):
         # example: replace "/var/nginx/access.log" to "/var/nginx"
         # Get Log Path from AppLogIngestion table. If it is null, it will be obtained from logConf table
         app_log_ingest_resp = app_log_ingestion_table.get_item(
-            Key={"id": self.__log_ingestion_id})
+            Key={"id": self.__log_ingestion_id}
+        )
         if "Item" not in app_log_ingest_resp:
-            raise APIException("App Log Ingestion item Not Found")
+            raise APIException(INGESTION_NOT_FOUND_MSG)
         app_log_ingestion_info = app_log_ingest_resp["Item"]
         log_path = app_log_ingestion_info.get(
-            "logPath", self.__config_info.get("logPath"))
+            "logPath", self.__config_info.get("logPath")
+        )
 
         file_path = log_path.split("/")
         file_name = file_path[-1]
@@ -1343,8 +1375,7 @@ class FluentBit(AgentType):
                 InstanceIds=list(instance_id_set),
                 DocumentName="AWS-RunShellScript",
                 Parameters={
-                    "commands":
-                        ["curl -s http://127.0.0.1:2022/api/v1/health"]
+                    "commands": ["curl -s http://127.0.0.1:2022/api/v1/health"]
                 },
             )
             command_id = response["Command"]["CommandId"]
@@ -1359,7 +1390,8 @@ class FluentBit(AgentType):
                     InstanceId=instance_id,
                 )
                 if (len(output["StandardOutputContent"]) > 0) and (
-                        "fluent-bit" in output["StandardOutputContent"]):
+                    "fluent-bit" in output["StandardOutputContent"]
+                ):
                     continue
                 else:
                     unsuccessful_instances.add(instance_id)

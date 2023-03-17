@@ -8,6 +8,7 @@ from util.osutil import OpenSearch
 
 
 class TestOpenSearch:
+
     def setup(self):
         self.index_prefix = os.environ.get("INDEX_PREFIX").lower()
         endpoint = os.environ.get("ENDPOINT")
@@ -40,9 +41,11 @@ class TestOpenSearch:
         assert self.aos.log_type == "waf"
 
     def test_create_ism_policy(self, requests_mock):
-        url = f"https://{self.endpoint}/_plugins/_ism/policies/{self.index_prefix}-{self.log_type.lower()}-ism-policy"
+        url = (
+            f"https://{self.endpoint}/_plugins/_ism/"
+            f"policies/{self.index_prefix}-{self.log_type.lower()}-ism-policy")
         requests_mock.put(url, text="resp", status_code=201)
-        resp = self.aos.create_ism_policy(1, 2, 3)
+        resp = self.aos.create_ism_policy("1d", "2d", "3d", "12h", "200gb")
         assert resp.status_code == 201
 
     def test_exist_index_template(self, requests_mock):
@@ -64,6 +67,7 @@ class TestOpenSearch:
 
 
 class TestElasticsearch:
+
     def setup(self):
         self.index_prefix = os.environ.get("INDEX_PREFIX").lower()
         endpoint = os.environ.get("ENDPOINT")
@@ -84,5 +88,5 @@ class TestElasticsearch:
         url = f"https://{self.endpoint}/_opendistro/_ism/policies/{self.index_prefix}-{self.log_type.lower()}-ism-policy"
         print(url)
         requests_mock.put(url, text="resp", status_code=201)
-        resp = self.aos.create_ism_policy(1, 2, 3)
+        resp = self.aos.create_ism_policy("1d", "2d", "3d", "12h", "200gb")
         assert resp.status_code == 201

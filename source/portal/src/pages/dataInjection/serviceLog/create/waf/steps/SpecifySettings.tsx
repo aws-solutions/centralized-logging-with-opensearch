@@ -19,7 +19,6 @@ import HeaderPanel from "components/HeaderPanel";
 import PagePanel from "components/PagePanel";
 import Tiles from "components/Tiles";
 import { CreateLogMethod } from "assets/js/const";
-// import WAFSelect from "components/WAFSelect";
 import FormItem from "components/FormItem";
 import { SelectItem } from "components/Select/select";
 import { appSyncRequestQuery } from "assets/js/request";
@@ -43,7 +42,6 @@ import { useSelector } from "react-redux";
 import CrossAccountSelect from "pages/comps/account/CrossAccountSelect";
 import IngestOptionSelect, { IngestOption } from "./IngestOptionSelect";
 import SampleSchedule from "./SampleSchedule";
-// import Select from "components/Select";
 
 export enum WAF_TYPE {
   CLOUDFRONT = "CLOUDFRONT",
@@ -60,6 +58,7 @@ interface SpecifySettingsProps {
   autoWAFEmptyError: boolean;
   manualAclEmptyError: boolean;
   manualWAFEmptyError: boolean;
+  manualS3PathInvalid: boolean;
   intervalValueError: boolean;
   setNextStepDisableStatus: (status: boolean) => void;
   setISChanging: (changing: boolean) => void;
@@ -83,6 +82,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     autoWAFEmptyError,
     manualAclEmptyError,
     manualWAFEmptyError,
+    manualS3PathInvalid,
     intervalValueError,
     setNextStepDisableStatus,
     changeNeedEnableLogging,
@@ -93,16 +93,12 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     changeLogSource,
   } = props;
   const { t } = useTranslation();
-  // const [waf, setWAF] = useState(wafTask.params.wafObj);
-  // const [wafManualBucketName, setWAFManualBucketName] = useState("");
 
   const [loadingWAFList, setLoadingWAFList] = useState(false);
   const [loadingBucket, setLoadingBucket] = useState(false);
   const [wafOptionList, setWAFOptionList] = useState<SelectItem[]>([]);
 
-  // const [infoText, setInfoText] = useState("");
   const [showInfoText, setShowInfoText] = useState(false);
-  // const [successText, setSuccessText] = useState("");
   const [showSuccessText, setShowSuccessText] = useState(false);
   const [previewS3Path, setPreviewS3Path] = useState("");
   const [disableWAF, setDisableWAF] = useState(false);
@@ -152,12 +148,10 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
       changeWAFBucket(logginBucket.bucket || "");
       changeLogPath(logginBucket.prefix || "");
       changeLogSource(logginBucket.source || "");
-      // changeNeedAutoCreateLogging(false);
       setShowSuccessText(true);
     } else {
       setShowInfoText(true);
       setShowSuccessText(false);
-      // changeNeedAutoCreateLogging(true);
     }
   };
 
@@ -361,6 +355,8 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                       errorText={
                         manualWAFEmptyError
                           ? t("servicelog:waf.logLocationError")
+                          : manualS3PathInvalid
+                          ? t("servicelog:s3InvalidError")
                           : ""
                       }
                     >

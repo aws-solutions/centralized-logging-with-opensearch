@@ -1,4 +1,4 @@
-FROM amazon/aws-for-fluent-bit:2.28.2
+FROM amazon/aws-for-fluent-bit:2.28.4
 
 RUN yum update -y && yum install -y unzip
 

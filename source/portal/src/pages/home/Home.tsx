@@ -22,7 +22,8 @@ import HeaderPanel from "components/HeaderPanel";
 import { useHistory } from "react-router";
 import SideMenu from "components/SideMenu";
 import {
-  buildLogHubDocsLink,
+  buildSolutionDocsLink,
+  WORKSHOP_DOCS_LINK,
   OS_SERVICE_LINK,
   URL_FEEDBACK,
 } from "assets/js/const";
@@ -54,7 +55,7 @@ const HomeSelectOptions = [
 const Home: React.FC = () => {
   const [createType, setCreateType] = useState<string>(CreateType.Domain);
   const history = useHistory();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
 
   return (
     <div className="lh-main-content">
@@ -191,21 +192,17 @@ const Home: React.FC = () => {
                 <ul className="home-link-ul">
                   <li>
                     <a
-                      href={buildLogHubDocsLink(
-                        i18n.language,
-                        "implementation-guide/getting-started/"
-                      )}
+                      href={buildSolutionDocsLink("getting-started.html")}
                       target="_blank"
                       rel="noreferrer"
                     >
-                      {t("home:gettingStarted.withLogHub")}
+                      {t("home:gettingStarted.firstInSolution")}
                     </a>
                   </li>
                   <li>
                     <a
-                      href={buildLogHubDocsLink(
-                        i18n.language,
-                        "implementation-guide/aws-services/cloudtrail/"
+                      href={buildSolutionDocsLink(
+                        "amazon-cloudtrail-logs.html"
                       )}
                       target="_blank"
                       rel="noreferrer"
@@ -215,10 +212,7 @@ const Home: React.FC = () => {
                   </li>
                   <li>
                     <a
-                      href={buildLogHubDocsLink(
-                        i18n.language,
-                        "implementation-guide/applications/json/"
-                      )}
+                      href={buildSolutionDocsLink("json-format-logs.html")}
                       target="_blank"
                       rel="noreferrer"
                     >
@@ -227,10 +221,7 @@ const Home: React.FC = () => {
                   </li>
                   <li>
                     <a
-                      href={buildLogHubDocsLink(
-                        i18n.language,
-                        "implementation-guide/applications/multi-line-text/"
-                      )}
+                      href={buildSolutionDocsLink("multi-line-text.html")}
                       target="_blank"
                       rel="noreferrer"
                     >
@@ -239,11 +230,11 @@ const Home: React.FC = () => {
                   </li>
                   <li>
                     <a
-                      href={buildLogHubDocsLink("en", "workshop/introduction/")}
+                      href={WORKSHOP_DOCS_LINK}
                       target="_blank"
                       rel="noreferrer"
                     >
-                      {t("home:gettingStarted.loghubWorkShop")}
+                      {t("home:gettingStarted.solutionWorkShop")}
                     </a>
                   </li>
                 </ul>
@@ -258,7 +249,7 @@ const Home: React.FC = () => {
                 <ul className="home-link-ul">
                   <li>
                     <a
-                      href={buildLogHubDocsLink(i18n.language, "")}
+                      href={buildSolutionDocsLink("")}
                       target="_blank"
                       rel="noreferrer"
                     >
@@ -267,9 +258,8 @@ const Home: React.FC = () => {
                   </li>
                   <li>
                     <a
-                      href={buildLogHubDocsLink(
-                        i18n.language,
-                        "implementation-guide/faq/"
+                      href={buildSolutionDocsLink(
+                        "frequently-asked-questions.html"
                       )}
                       target="_blank"
                       rel="noreferrer"

@@ -14,11 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Construct } from "constructs";
+import { IConstruct, Construct } from "constructs";
 import {
   CfnOutput,
   CfnParameter,
   CfnCondition,
+  CfnResource,
   Stack,
   StackProps,
   Fn,
@@ -31,12 +32,20 @@ import {
   aws_iam as iam,
   Token,
   Annotations,
-  Aws
+  Aws,
+  Aspects,
+  IAspect,
 } from "aws-cdk-lib";
 import * as path from "path";
-import { NagSuppressions } from 'cdk-nag';
+import { NagSuppressions } from "cdk-nag";
 
 const { VERSION } = process.env;
+
+export interface NginxProps extends StackProps {
+  solutionName?: string;
+  solutionDesc?: string;
+  solutionId?: string;
+}
 
 export class NginxForOpenSearchStack extends Stack {
   private paramGroups: any[] = [];
@@ -59,9 +68,13 @@ export class NginxForOpenSearchStack extends Stack {
     };
   }
 
-  constructor(scope: Construct, id: string, props?: StackProps) {
+  constructor(scope: Construct, id: string, props: NginxProps) {
     super(scope, id, props);
-    this.templateOptions.description = `(SO8025-proxy) - Log hub nginx-for-opensearch-stack Template. Template version ${VERSION}`;
+
+    let solutionDesc =
+      props.solutionDesc || "Centralized Logging with OpenSearch";
+    let solutionId = props.solutionId || "SO8025";
+    this.templateOptions.description = `(${solutionId}-proxy) - ${solutionDesc} nginx-for-opensearch-stack Template. Template version ${VERSION}`;
 
     this.templateOptions.metadata = {
       "AWS::CloudFormation::Interface": {
@@ -163,13 +176,19 @@ export class NginxForOpenSearchStack extends Stack {
     });
     this.addToParamLabels("ELBDomain", elbDomain.logicalId);
 
-    const elbAccessLogBucketName = new CfnParameter(this, "elbAccessLogBucketName", {
-      description:
-        "The Access Log Bucket Name for Proxy ELB",
-      type: "String",
-      default: "",
-    });
-    this.addToParamLabels("ELBAccessLogBucketName", elbAccessLogBucketName.logicalId);
+    const elbAccessLogBucketName = new CfnParameter(
+      this,
+      "elbAccessLogBucketName",
+      {
+        description: "The Access Log Bucket Name for Proxy ELB",
+        type: "String",
+        default: "",
+      }
+    );
+    this.addToParamLabels(
+      "ELBAccessLogBucketName",
+      elbAccessLogBucketName.logicalId
+    );
 
     const engineType = new CfnParameter(this, "engineType", {
       description:
@@ -180,13 +199,32 @@ export class NginxForOpenSearchStack extends Stack {
     });
     this.addToParamLabels("EngineType", engineType.logicalId);
 
+    // Set proxy instance type
+    const proxyInstanceType = new CfnParameter(this, "proxyInstanceType", {
+      description: "OpenSearch proxy instance type. e.g. t3.micro",
+      type: "String",
+      allowedValues: ["t3.nano", "t3.micro", "t3.small", "t3.large"],
+      default: "t3.large",
+    });
+    this.addToParamLabels("ProxyInstanceType", proxyInstanceType.logicalId);
+
+    // Set proxy instance number (can be 1 ~ 4)
+    const proxyInstanceNumber = new CfnParameter(this, "proxyInstanceNumber", {
+      description: "OpenSearch proxy instance number. e.g. 1 to 4",
+      type: "Number",
+      default: 2,
+    });
+    this.addToParamLabels("ProxyInstanceNumber", proxyInstanceNumber.logicalId);
+
     this.addToParamGroups(
       "EC2 Information",
       vpcId.logicalId,
       publicSubnetIds.logicalId,
       privateSubnetIds.logicalId,
       keyName.logicalId,
-      nginxSecurityGroupId.logicalId
+      nginxSecurityGroupId.logicalId,
+      proxyInstanceType.logicalId,
+      proxyInstanceNumber.logicalId
     );
     this.addToParamGroups(
       "OpenSearch Information",
@@ -217,10 +255,11 @@ export class NginxForOpenSearchStack extends Stack {
       nginxSecurityGroupId.valueAsString
     );
     NagSuppressions.addResourceSuppressions(ec2SecurityGroup, [
-      { 
-        id: 'AwsSolutions-EC23', 
-        reason: 'This security group is open to allow public https access, e.g. for ELB' 
-      }
+      {
+        id: "AwsSolutions-EC23",
+        reason:
+          "This security group is open to allow public https access, e.g. for ELB",
+      },
     ]);
 
     const lbSecurityGroup = ec2.SecurityGroup.fromSecurityGroupId(
@@ -229,14 +268,15 @@ export class NginxForOpenSearchStack extends Stack {
       elbSecurityGroupId.valueAsString
     );
     NagSuppressions.addResourceSuppressions(lbSecurityGroup, [
-      { 
-        id: "AwsSolutions-IAM4", 
-        reason: "For PVRE compliance" 
+      {
+        id: "AwsSolutions-IAM4",
+        reason: "For PVRE compliance",
       },
-      { 
-        id: 'AwsSolutions-EC23', 
-        reason: 'This security group is open to allow public https access, e.g. for ELB' 
-      }
+      {
+        id: "AwsSolutions-EC23",
+        reason:
+          "This security group is open to allow public https access, e.g. for ELB",
+      },
     ]);
 
     //user data for Nginx proxy
@@ -244,14 +284,16 @@ export class NginxForOpenSearchStack extends Stack {
 
     //create ec2 role
     const ec2Role = new iam.Role(this, "ec2Role", {
-      assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
+      assumedBy: new iam.ServicePrincipal("ec2.amazonaws.com"),
     });
-    ec2Role.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore'));
+    ec2Role.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonSSMManagedInstanceCore")
+    );
     NagSuppressions.addResourceSuppressions(ec2Role, [
-      { 
-        id: "AwsSolutions-IAM4", 
-        reason: "For PVRE compliance" 
-      }
+      {
+        id: "AwsSolutions-IAM4",
+        reason: "For PVRE compliance",
+      },
     ]);
 
     const customEndpointNotProvided = new CfnCondition(
@@ -262,23 +304,41 @@ export class NginxForOpenSearchStack extends Stack {
       }
     );
 
-    //ASG for Nginx proxy, one per az for HA
+    const proxyLaunchTemplate = new ec2.LaunchTemplate(
+      this,
+      "NginxProxyEC2LaunchTemplate",
+      {
+        instanceType: new ec2.InstanceType(proxyInstanceType.valueAsString),
+        machineImage: new ec2.AmazonLinuxImage({
+          generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2,
+        }),
+        userData: ud_ec2,
+        role: ec2Role,
+        keyName: keyName.valueAsString,
+        securityGroup: ec2SecurityGroup,
+        blockDevices: [
+          {
+            deviceName: "/dev/xvda",
+            volume: ec2.BlockDeviceVolume.ebs(8, {
+              deleteOnTermination: true,
+              encrypted: true,
+              volumeType: ec2.EbsDeviceVolumeType.GP2,
+            }),
+          },
+        ],
+      }
+    );
+
+    // ASG for Nginx proxy, one per az for HA
     const nginx_asg = new au.AutoScalingGroup(this, "NginxProxyEC2", {
-      instanceType: new ec2.InstanceType("t3.large"),
-      machineImage: new ec2.AmazonLinuxImage({
-        generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2,
-      }),
       vpc: nginxVpc,
-      userData: ud_ec2,
-      role: ec2Role,
-      keyName: keyName.valueAsString,
-      securityGroup: ec2SecurityGroup,
       maxCapacity: 4,
       minCapacity: 0,
-      desiredCapacity: 2,
+      desiredCapacity: proxyInstanceNumber.valueAsNumber,
       signals: au.Signals.waitForMinCapacity(),
+      launchTemplate: proxyLaunchTemplate,
       vpcSubnets: {
-        subnetType: ec2.SubnetType.PRIVATE_WITH_NAT,
+        subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
         onePerAz: true,
       },
       healthCheck: au.HealthCheck.elb({
@@ -287,9 +347,10 @@ export class NginxForOpenSearchStack extends Stack {
     });
 
     NagSuppressions.addResourceSuppressions(nginx_asg, [
-      { 
-        id: 'AwsSolutions-AS3', 
-        reason: 'will enable ASG notifications configured for all scaling events.' 
+      {
+        id: "AwsSolutions-AS3",
+        reason:
+          "will enable ASG notifications configured for all scaling events.",
       },
     ]);
 
@@ -310,9 +371,9 @@ export class NginxForOpenSearchStack extends Stack {
       },
     });
     NagSuppressions.addResourceSuppressions(lb, [
-      { 
-        id: 'AwsSolutions-ELB2', 
-        reason: 'config log enabled for ELB' 
+      {
+        id: "AwsSolutions-ELB2",
+        reason: "config log enabled for ELB",
       },
     ]);
 
@@ -331,7 +392,7 @@ export class NginxForOpenSearchStack extends Stack {
       lb.logAccessLogs(albAccessLogBucket!, `${Aws.STACK_ID}-ELBAccessLog`);
     }
 
-    //lb listener, 443
+    // lb listener, 443
     const listener = lb.addListener("Listener", {
       port: 443,
       // 'open: true' is the default, you can leave it out if you want. Set it
@@ -428,9 +489,42 @@ export class NginxForOpenSearchStack extends Stack {
       `/etc/init.d/nginx start`
     );
 
+    const ec2LaunchTemplateNetworkInterfaceSetting = [
+      {
+        DeviceIndex: 0,
+        AssociatePublicIpAddress: "false",
+        Groups: [nginxSecurityGroupId.valueAsString],
+      },
+    ];
+
+    Aspects.of(this).add(
+      new InjectEC2LaunchTemplateNetWorkInterfaceSetting(
+        ec2LaunchTemplateNetworkInterfaceSetting
+      )
+    );
+
     new CfnOutput(this, "ALB CNAME", {
       value: `${lb.loadBalancerDnsName}`,
       description: "CNAME for ALB",
     });
+  }
+}
+
+class InjectEC2LaunchTemplateNetWorkInterfaceSetting implements IAspect {
+  public constructor(private ec2LaunchTemplateNetworkInterfaceSetting: any) {}
+
+  public visit(node: IConstruct): void {
+    if (
+      node instanceof CfnResource &&
+      node.cfnResourceType === "AWS::EC2::LaunchTemplate"
+    ) {
+      node.addOverride(
+        "Properties.LaunchTemplateData.NetworkInterfaces",
+        this.ec2LaunchTemplateNetworkInterfaceSetting
+      );
+      node.addDeletionOverride(
+        "Properties.LaunchTemplateData.SecurityGroupIds"
+      );
+    }
   }
 }

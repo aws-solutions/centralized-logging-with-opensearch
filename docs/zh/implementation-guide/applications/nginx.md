@@ -1,5 +1,5 @@
 # Nginx
-Nginx 能够将 [错误和访问日志] [nginx-logs] 文件写入本地目录。 您可以配置 Log Hub 以摄取 Nginx 日志。
+Nginx 能够将 [错误和访问日志] [nginx-logs] 文件写入本地目录。 您可以配置日志通以摄取 Nginx 日志。
 
 ## Prerequisites
 {%
@@ -8,7 +8,7 @@ include-markdown "include-prerequisites.md"
 
 ## 步骤 1: 创建一个 Nginx 日志配置
 
-1. 登录 Log Hub 控制台。
+1. 登录日志通控制台。
 2. 在左侧边栏中的 **资源** 下，选择 **日志配置**。
 3. 单击**创建日志配置**按钮。
 4. 指定**配置名称**。
@@ -44,7 +44,7 @@ include-markdown "include-prerequisites.md"
 
 ## 步骤 3: 查看 Nginx 服务器日志仪表板
 
-对于 Nginx 日志，Log Hub 会创建一个内置的示例仪表板。
+对于 Nginx 日志，日志通会创建一个内置的示例仪表板。
 
 1. 在浏览器中打开 OpenSearch 仪表板。
 2. 转到左侧边栏中的**仪表板**部分。

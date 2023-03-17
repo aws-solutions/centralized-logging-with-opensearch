@@ -30,7 +30,7 @@ const S3Desc: React.FC = () => {
         <ExtLink to={S3_ACCESS_LOG_LINK}>
           {t("servicelog:s3.desc.s3Log")}
         </ExtLink>{" "}
-        {t("servicelog:s3.desc.intoDomain")}
+        {t("intoDomain")}
       </div>
       <div>
         <ul>
@@ -42,7 +42,7 @@ const S3Desc: React.FC = () => {
       <div className="ingest-desc-title">
         {t("servicelog:s3.desc.archName")}
       </div>
-      <div className="ingest-desc-desc">{t("servicelog:s3.desc.archDesc")}</div>
+      <div className="ingest-desc-desc">{t("archDesc")}</div>
       <div className="mt-10">
         <img
           className="img-border"

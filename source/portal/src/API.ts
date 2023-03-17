@@ -32,12 +32,21 @@ export type ParameterInput = {
   parameterValue?: string | null;
 };
 
+export enum DestinationType {
+  S3 = "S3",
+  CloudWatch = "CloudWatch",
+  KDS = "KDS",
+  KDF = "KDF",
+}
+
 export type ProxyInput = {
   vpc: VPCInput;
   certificateArn: string;
   keyName: string;
   customEndpoint: string;
   cognitoEndpoint?: string | null;
+  proxyInstanceType?: string | null;
+  proxyInstanceNumber?: string | null;
 };
 
 export type AlarmStackInput = {
@@ -94,6 +103,15 @@ export enum LoggingBucketSource {
   WAF = "WAF",
   KinesisDataFirehoseForWAF = "KinesisDataFirehoseForWAF",
 }
+
+export type ResourceLogConf = {
+  __typename: "ResourceLogConf";
+  destinationType: DestinationType;
+  destinationName: string;
+  name?: string | null;
+  logFormat?: string | null;
+  region?: string | null;
+};
 
 export enum LogType {
   JSON = "JSON",
@@ -156,14 +174,30 @@ export type AOSParameterInput = {
   opensearchEndpoint: string;
   domainName: string;
   indexPrefix: string;
-  warmLogTransition: number;
-  coldLogTransition: number;
-  logRetention: number;
+  warmLogTransition?: string | null;
+  coldLogTransition?: string | null;
+  logRetention?: string | null;
+  rolloverSize?: string | null;
+  codec?: CODEC | null;
+  indexSuffix?: INDEX_SUFFIX | null;
+  refreshInterval?: string | null;
   shardNumbers: number;
   replicaNumbers: number;
   engine: EngineType;
   failedLogBucket: string;
 };
+
+export enum CODEC {
+  best_compression = "best_compression",
+  default = "default",
+}
+
+export enum INDEX_SUFFIX {
+  yyyy_MM_dd = "yyyy_MM_dd",
+  yyyy_MM_dd_HH = "yyyy_MM_dd_HH",
+  yyyy_MM = "yyyy_MM",
+  yyyy = "yyyy",
+}
 
 export enum EngineType {
   Elasticsearch = "Elasticsearch",
@@ -354,6 +388,7 @@ export type ServicePipeline = {
   __typename: "ServicePipeline";
   id: string;
   type: ServiceType;
+  destinationType?: DestinationType | null;
   source?: string | null;
   target?: string | null;
   parameters?: Array<Parameter | null> | null;
@@ -485,9 +520,13 @@ export type AOSParameter = {
   opensearchArn?: string | null;
   domainName?: string | null;
   indexPrefix?: string | null;
-  warmLogTransition?: number | null;
-  coldLogTransition?: number | null;
-  logRetention?: number | null;
+  warmLogTransition?: string | null;
+  coldLogTransition?: string | null;
+  logRetention?: string | null;
+  rolloverSize?: string | null;
+  codec?: CODEC | null;
+  indexSuffix?: INDEX_SUFFIX | null;
+  refreshInterval?: string | null;
   shardNumbers?: number | null;
   replicaNumbers?: number | null;
   engine?: EngineType | null;
@@ -606,19 +645,6 @@ export type AutoScalingGroup = {
   instances?: Array<string> | null;
 };
 
-export type InstanceMeta = {
-  __typename: "InstanceMeta";
-  id: string;
-  logAgent?: Array<LogAgentParameter | null> | null;
-  status?: LogAgentStatus | null;
-};
-
-export type LogAgentParameter = {
-  __typename: "LogAgentParameter";
-  agentName?: string | null;
-  version?: string | null;
-};
-
 export enum LogAgentStatus {
   Online = "Online",
   Offline = "Offline",
@@ -627,12 +653,6 @@ export enum LogAgentStatus {
   Not_Installed = "Not_Installed",
   Unknown = "Unknown",
 }
-
-export type ListLogSourceResponse = {
-  __typename: "ListLogSourceResponse";
-  LogSources?: Array<LogSource | null> | null;
-  total?: number | null;
-};
 
 export type ListEKSClustersResponse = {
   __typename: "ListEKSClustersResponse";
@@ -717,6 +737,7 @@ export type CreateServicePipelineMutationVariables = {
   tags?: Array<TagInput | null> | null;
   logSourceAccountId?: string | null;
   logSourceRegion?: string | null;
+  destinationType: DestinationType;
 };
 
 export type CreateServicePipelineMutation = {
@@ -786,6 +807,29 @@ export type PutResourceLoggingBucketMutation = {
     bucket?: string | null;
     prefix?: string | null;
     source?: LoggingBucketSource | null;
+  } | null;
+};
+
+export type PutResourceLogConfigMutationVariables = {
+  type: ResourceType;
+  resourceName: string;
+  accountId?: string | null;
+  region?: string | null;
+  destinationType: DestinationType;
+  destinationName: string;
+  LogFormat?: string | null;
+};
+
+export type PutResourceLogConfigMutation = {
+  // Add logging configuration to resources.
+  // Log Format is only requried if the format can be customized.
+  putResourceLogConfig?: {
+    __typename: "ResourceLogConf";
+    destinationType: DestinationType;
+    destinationName: string;
+    name?: string | null;
+    logFormat?: string | null;
+    region?: string | null;
   } | null;
 };
 
@@ -916,15 +960,6 @@ export type DeleteAppPipelineMutation = {
   deleteAppPipeline?: string | null;
 };
 
-export type UpgradeAppPipelineMutationVariables = {
-  ids: Array<string>;
-};
-
-export type UpgradeAppPipelineMutation = {
-  // Upgrade a app pipeline to v1.1
-  upgradeAppPipeline?: string | null;
-};
-
 export type CreateAppLogIngestionMutationVariables = {
   confId: string;
   sourceIds?: Array<string> | null;
@@ -972,24 +1007,6 @@ export type CreateLogSourceMutation = {
   createLogSource?: string | null;
 };
 
-export type DeleteLogSourceMutationVariables = {
-  id: string;
-};
-
-export type DeleteLogSourceMutation = {
-  // Remove a logging source conf
-  deleteLogSource?: string | null;
-};
-
-export type UpdateLogSourceMutationVariables = {
-  id: string;
-};
-
-export type UpdateLogSourceMutation = {
-  // Update a logging source conf
-  updateLogSource?: string | null;
-};
-
 export type ImportEKSClusterMutationVariables = {
   aosDomainId: string;
   eksClusterName: string;
@@ -1019,27 +1036,6 @@ export type GenerateErrorCodeMutationVariables = {
 };
 
 export type GenerateErrorCodeMutation = {
-  // create EKS Cluster Pod log pipeline & ingestion
-  // createEKSClusterPodLogIngestion(
-  // # kdsParas: KDSParameterInput!
-  // aosParas: AOSParameterInput!
-  // confId: String!
-  // eksClusterId: String!
-  // logPath: String!
-  // createDashboard: String!
-  // force: Boolean
-  // tags: [TagInput]
-  // ): String
-  // create EKS Cluster Pod log pipeline & ingestion without data buffer
-  // createEKSClusterPodLogWithoutDataBufferIngestion(
-  // aosParas: AOSParameterInput!
-  // confId: String!
-  // eksClusterId: String!
-  // logPath: String!
-  // createDashboard: String!
-  // force: Boolean
-  // tags: [TagInput]
-  // ): String
   // generate error code
   generateErrorCode?: string | null;
 };
@@ -1254,6 +1250,7 @@ export type ListServicePipelinesQuery = {
       __typename: "ServicePipeline";
       id: string;
       type: ServiceType;
+      destinationType?: DestinationType | null;
       source?: string | null;
       target?: string | null;
       parameters?: Array<{
@@ -1284,6 +1281,7 @@ export type GetServicePipelineQuery = {
     __typename: "ServicePipeline";
     id: string;
     type: ServiceType;
+    destinationType?: DestinationType | null;
     source?: string | null;
     target?: string | null;
     parameters?: Array<{
@@ -1320,17 +1318,6 @@ export type ListResourcesQuery = {
   } | null> | null;
 };
 
-export type CheckServiceExistingQueryVariables = {
-  type: ResourceType;
-  accountId?: string | null;
-  region?: string | null;
-};
-
-export type CheckServiceExistingQuery = {
-  // Verify that service already exists in the pipeline
-  checkServiceExisting?: boolean | null;
-};
-
 export type GetResourceLoggingBucketQueryVariables = {
   type: ResourceType;
   resourceName: string;
@@ -1347,6 +1334,25 @@ export type GetResourceLoggingBucketQuery = {
     prefix?: string | null;
     source?: LoggingBucketSource | null;
   } | null;
+};
+
+export type GetResourceLogConfigsQueryVariables = {
+  type: ResourceType;
+  resourceName: string;
+  accountId?: string | null;
+  region?: string | null;
+};
+
+export type GetResourceLogConfigsQuery = {
+  // Get a list of logging configurations for AWS Resource
+  getResourceLogConfigs?: Array<{
+    __typename: "ResourceLogConf";
+    destinationType: DestinationType;
+    destinationName: string;
+    name?: string | null;
+    logFormat?: string | null;
+    region?: string | null;
+  } | null> | null;
 };
 
 export type ListInstanceGroupsQueryVariables = {
@@ -1504,9 +1510,13 @@ export type ListAppPipelinesQuery = {
         opensearchArn?: string | null;
         domainName?: string | null;
         indexPrefix?: string | null;
-        warmLogTransition?: number | null;
-        coldLogTransition?: number | null;
-        logRetention?: number | null;
+        warmLogTransition?: string | null;
+        coldLogTransition?: string | null;
+        logRetention?: string | null;
+        rolloverSize?: string | null;
+        codec?: CODEC | null;
+        indexSuffix?: INDEX_SUFFIX | null;
+        refreshInterval?: string | null;
         shardNumbers?: number | null;
         replicaNumbers?: number | null;
         engine?: EngineType | null;
@@ -1551,9 +1561,13 @@ export type GetAppPipelineQuery = {
       opensearchArn?: string | null;
       domainName?: string | null;
       indexPrefix?: string | null;
-      warmLogTransition?: number | null;
-      coldLogTransition?: number | null;
-      logRetention?: number | null;
+      warmLogTransition?: string | null;
+      coldLogTransition?: string | null;
+      logRetention?: string | null;
+      rolloverSize?: string | null;
+      codec?: CODEC | null;
+      indexSuffix?: INDEX_SUFFIX | null;
+      refreshInterval?: string | null;
       shardNumbers?: number | null;
       replicaNumbers?: number | null;
       engine?: EngineType | null;
@@ -1809,24 +1823,6 @@ export type ListAutoScalingGroupsQuery = {
   } | null;
 };
 
-export type GetInstanceMetaQueryVariables = {
-  id: string;
-};
-
-export type GetInstanceMetaQuery = {
-  // Get Instance Meta by ID
-  getInstanceMeta?: {
-    __typename: "InstanceMeta";
-    id: string;
-    logAgent?: Array<{
-      __typename: "LogAgentParameter";
-      agentName?: string | null;
-      version?: string | null;
-    } | null> | null;
-    status?: LogAgentStatus | null;
-  } | null;
-};
-
 export type GetLogAgentStatusQueryVariables = {
   instanceId: string;
   region?: string | null;
@@ -1913,78 +1909,6 @@ export type GetLogSourceQuery = {
       } | null> | null;
     } | null;
     createdDt?: string | null;
-  } | null;
-};
-
-export type ListLogSourcesQueryVariables = {
-  page?: number | null;
-  count?: number | null;
-};
-
-export type ListLogSourcesQuery = {
-  // List logging source conf info
-  listLogSources?: {
-    __typename: "ListLogSourceResponse";
-    LogSources?: Array<{
-      __typename: "LogSource";
-      sourceId: string;
-      accountId?: string | null;
-      region?: string | null;
-      sourceName?: string | null;
-      logPath?: string | null;
-      sourceType?: LogSourceType | null;
-      sourceInfo?: Array<{
-        __typename: "SourceInfo";
-        key?: string | null;
-        value?: string | null;
-      } | null> | null;
-      s3Source?: {
-        __typename: "S3Source";
-        s3Name?: string | null;
-        s3Prefix?: string | null;
-        archiveFormat?: string | null;
-        defaultVpcId?: string | null;
-        defaultSubnetIds?: string | null;
-      } | null;
-      eksSource?: {
-        __typename: "EKSClusterLogSource";
-        id?: string | null;
-        aosDomain?: {
-          __typename: "ImportedDomain";
-          id: string;
-          domainName: string;
-          engine?: EngineType | null;
-          version: string;
-          endpoint: string;
-          metrics?: {
-            __typename: "DomainMetrics";
-            searchableDocs?: number | null;
-            freeStorageSpace?: number | null;
-            health?: DomainHealth | null;
-          } | null;
-        } | null;
-        eksClusterName?: string | null;
-        eksClusterArn?: string | null;
-        cri?: CRI | null;
-        vpcId?: string | null;
-        eksClusterSGId?: string | null;
-        subnetIds?: Array<string | null> | null;
-        oidcIssuer?: string | null;
-        endpoint?: string | null;
-        createdDt?: string | null;
-        accountId?: string | null;
-        region?: string | null;
-        logAgentRoleArn?: string | null;
-        deploymentKind?: EKSDeployKind | null;
-        tags?: Array<{
-          __typename: "Tag";
-          key?: string | null;
-          value?: string | null;
-        } | null> | null;
-      } | null;
-      createdDt?: string | null;
-    } | null> | null;
-    total?: number | null;
   } | null;
 };
 

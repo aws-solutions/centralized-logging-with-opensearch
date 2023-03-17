@@ -8,9 +8,9 @@ import re
 from enum import Enum
 
 from boto3 import Session
-
-from moto.core import ACCOUNT_ID
 from moto.eks import REGION as DEFAULT_REGION
+
+ACCOUNT_ID = "123456789012"
 
 DEFAULT_ENCODING = "utf-8"
 DEFAULT_HTTP_HEADERS = {"Content-type": "application/json"}

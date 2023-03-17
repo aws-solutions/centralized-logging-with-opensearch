@@ -28,6 +28,7 @@ import { AMPLIFY_CONFIG_JSON } from "./const";
 import { Auth } from "aws-amplify";
 import { AmplifyConfigType, AppSyncAuthType } from "types";
 import { ErrorCode } from "API";
+import cloneDeep from "lodash.clonedeep";
 import { decodeResData, encodeParams } from "./xss";
 
 const IGNORE_ERROR_CODE: string[] = [ErrorCode.AccountNotFound];
@@ -98,7 +99,6 @@ export const appSyncRequestQuery = (query: any, params?: any): any => {
 
   return new Promise(async (resolve, reject) => {
     try {
-      // const result: any = await API.graphql(graphqlOperation(query, params));
       const result: any = await client.query({
         query: gql(query),
         variables: params,
@@ -143,9 +143,8 @@ export const appSyncRequestMutation = (mutation: any, params?: any): any => {
 
   return new Promise(async (resolve, reject) => {
     try {
-      // const result: any = await API.graphql(graphqlOperation(query, params));
       // encode params string value
-      const encodedParams = encodeParams(mutation, structuredClone(params));
+      const encodedParams = encodeParams(mutation, cloneDeep(params));
       const result: any = await client.mutate({
         mutation: gql(mutation),
         variables: encodedParams,

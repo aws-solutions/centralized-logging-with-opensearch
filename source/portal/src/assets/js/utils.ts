@@ -74,7 +74,6 @@ export const splitStringToBucketAndPrefix = (
 };
 
 export const bucketNameIsValid = (bucketName: string): boolean => {
-  // return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const REG1 = bucketName && /^[a-z\d.-]*$/.test(bucketName);
   const REG2 = bucketName && /^[a-z\d]/.test(bucketName);
   const REG3 = bucketName && !/-$/.test(bucketName);
@@ -126,10 +125,10 @@ export const checkCrossAccountValid = (
     ).test(value);
   }
   if (type === CrossAccountFiled.INSATALL_DOC) {
-    return /.+-FluentBitDocumentInstallation-\w+/.test(value);
+    return /.*FluentBitDocumentInstallation-\w+/.test(value);
   }
   if (type === CrossAccountFiled.CONFIG_DOC) {
-    return /.+-FluentBitConfigDownloading-\w+/.test(value);
+    return /.*FluentBitConfigDownloading-\w+/.test(value);
   }
   if (type === CrossAccountFiled.S3_BUCKET) {
     return bucketNameIsValid(value);
@@ -169,7 +168,8 @@ export const IsJsonString = (str: string): boolean => {
 
 // format json string to dot
 export const JsonToDotNotate = (obj: any, target?: any, prefix?: string) => {
-  (target = target || {}), (prefix = prefix || "");
+  target = target || {};
+  prefix = prefix || "";
   Object.keys(obj).forEach(function (key) {
     if (typeof obj[key] !== "object" && obj[key] !== null) {
       return (target[prefix + key] = obj[key]);
@@ -178,25 +178,12 @@ export const JsonToDotNotate = (obj: any, target?: any, prefix?: string) => {
   return target;
 };
 
-// export const JsonToDotNotate = (obj: any, target?: any, prefix?: string) => {
-//   (target = target || {}), (prefix = prefix || "");
-//   Object.keys(obj).forEach(function (key) {
-//     if (typeof obj[key] === "object" && obj[key] !== null) {
-//       JsonToDotNotate(obj[key], target, prefix + key + ".");
-//     } else {
-//       return (target[prefix + key] = obj[key]);
-//     }
-//   });
-//   return target;
-// };
-
 // format date
 export const formatLocalTime = (time: string): string => {
-  if (time) {
-    return format(new Date(parseISO(time || "")), "yyyy-MM-dd HH:mm:ss");
-  } else {
-    return "-";
+  if (time.trim() !== "") {
+    return format(new Date(parseISO(time)), "yyyy-MM-dd HH:mm:ss");
   }
+  return "-";
 };
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
@@ -447,7 +434,6 @@ export const buildRegexFromNginxLog = (
     });
   }
   logContentString = tmpContentArr.join("");
-  // console.info(logContentString.split(" "))
   // 找出存在 双引号 "", 中括号 [], 这样分隔符的字段进行按需替换
   const regSplit = /("[^"]+")|(\[[^[\]].+\])/gm;
   // 替换以 $符号开头的变量
@@ -459,7 +445,7 @@ export const buildRegexFromNginxLog = (
     if (match === `$request`) {
       return `(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+`;
     } else if (match.startsWith("$time")) {
-      return `(${groupName}\\d+/\\S+/\\d+:\\d+:\\d+:\\d+)\\s+\\S+`;
+      return `(${groupName}\\d+/\\S+/\\d+:\\d+:\\d+:\\d+\\s+\\S+)`;
     } else if (match.startsWith("$http")) {
       return `(${groupName}[^"]*)`;
     } else if (match.startsWith("$")) {
@@ -639,10 +625,6 @@ export const buildSpringBootRegExFromConfig = (
   let finalaRegRegStr = logConfigString.replace(
     /%(\w+)\{(.+?)\}/gi,
     (match, key, str) => {
-      console.info("match with %xx{xxxx}");
-      // console.info("match:", match);
-      // console.info("key:", key);
-      // console.info("str:", str);
       if (key === "X") {
         // Customize Key, may be empty (space)
         return `(?<${str}>\\S+|\\s?)`;
@@ -662,8 +644,6 @@ export const buildSpringBootRegExFromConfig = (
   // Replace % 开头，并且不含特殊字符
   finalaRegRegStr = finalaRegRegStr.replace(/%([\w-]+)/gi, (match, key) => {
     console.info("match with %xx");
-    // console.info("match:", match);
-    // console.info("key:", key);
     key = key.replace(/[\W\d]+/, "");
     // 找到特殊的需要处理的正则表达式，如message(%m)，换行(%n)
     if (levelGroupNameArr.includes(key)) {
@@ -889,12 +869,11 @@ export const buildASGLink = (region: string, groupName: string): string => {
 
 export const buildCrossAccountTemplateLink = (
   region: string,
-  version: string
+  solutionVersion: string,
+  templateBucket: string,
+  solutionName: string
 ): string => {
-  if (region.startsWith("cn")) {
-    return `https://aws-gcr-solutions.s3.cn-north-1.amazonaws.com.cn/log-hub/${version}/CrossAccount.template`;
-  }
-  return `https://aws-gcr-solutions.s3.amazonaws.com/log-hub/${version}/CrossAccount.template`;
+  return `https://${templateBucket}.s3.amazonaws.com/${solutionName}/${solutionVersion}/CrossAccount.template`;
 };
 
 export const getRegexAndTimeByConfigAndFormat = (

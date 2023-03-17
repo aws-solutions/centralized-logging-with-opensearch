@@ -20,6 +20,8 @@ import {
 } from "aws-cdk-lib";
 import { Template } from "aws-cdk-lib/assertions";
 import * as svc from '../lib/pipeline/service/service-log-pipeline-stack';
+import * as cfr from '../lib/pipeline/service/cloudfront-realtime-log-stack';
+import * as cwl from '../lib/pipeline/service/cloudwatch-log-stack';
 
 beforeEach(() => {
     jest.resetModules()
@@ -54,7 +56,6 @@ describe("Service Log Stack", () => {
             CompatibleRuntimes: [
                 "python3.9"
             ],
-            Description: "Log Hub Default Lambda layer for Log Pipeline"
         });
 
     });
@@ -103,27 +104,6 @@ describe("Service Log Stack", () => {
         });
 
     });
-
-    test('Test waf logs stack', () => {
-        const app = new App();
-        // WHEN
-        const stack = new svc.ServiceLogPipelineStack(app, 'MyTestStack', {
-            logType: "WAF"
-        });
-        // Prepare the stack for assertions.
-        const template = Template.fromStack(stack);
-
-        // THEN
-        template.hasResourceProperties("AWS::Lambda::Function", {
-            Environment: {
-                "Variables": {
-                    "LOG_TYPE": "WAF",
-                }
-            }
-
-        });
-    });
-
 
 
     test('Test cloudtrail logs stack', () => {
@@ -253,6 +233,43 @@ describe("Service Log Stack", () => {
                 "Variables": {
                     "LOG_TYPE": "WAFSampled",
                 }
+            }
+        });
+
+    });
+
+
+    test('Test cloudfront real-time logs with KDS no autoscaling', () => {
+        const app = new App();
+        // WHEN
+        const stack = new cfr.CloudFrontRealtimeLogStack(app, 'MyTestStack', {
+            enableAutoScaling: false,
+        });
+        // Prepare the stack for assertions.
+        const template = Template.fromStack(stack);
+
+        // THEN
+        template.hasResourceProperties("AWS::Kinesis::Stream", {
+            StreamModeDetails: {
+                StreamMode: "PROVISIONED"
+            }
+        });
+
+    });
+
+    test('Test cloudwatch logs with KDS no autoscaling', () => {
+        const app = new App();
+        // WHEN
+        const stack = new cwl.CloudWatchLogStack(app, 'MyTestStack', {
+            enableAutoScaling: false,
+        });
+        // Prepare the stack for assertions.
+        const template = Template.fromStack(stack);
+
+        // THEN
+        template.hasResourceProperties("AWS::Kinesis::Stream", {
+            StreamModeDetails: {
+                StreamMode: "PROVISIONED"
             }
         });
 

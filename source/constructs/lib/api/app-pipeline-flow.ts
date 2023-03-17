@@ -15,6 +15,7 @@ limitations under the License.
 */
 import { Construct } from "constructs";
 import {
+  Aws,
   Fn,
   Duration,
   aws_stepfunctions_tasks as tasks,
@@ -24,7 +25,7 @@ import {
   aws_iam as iam,
   SymlinkFollowMode,
 } from "aws-cdk-lib";
-import { Table, ITable } from "aws-cdk-lib/aws-dynamodb";
+import { Table } from "aws-cdk-lib/aws-dynamodb";
 
 import * as path from "path";
 
@@ -81,7 +82,7 @@ export class AppPipelineFlowStack extends Construct {
         PIPELINE_TABLE: props.tableName,
         SOLUTION_VERSION: process.env.VERSION ? process.env.VERSION : "v1.0.0",
       },
-      description: "Log Hub - Helper function to update pipeline status",
+      description: `${Aws.STACK_NAME} - Helper function to update pipeline status`,
     });
 
     table.grantReadWriteData(appPipeFlowFn);
@@ -115,7 +116,7 @@ export class AppPipelineFlowStack extends Construct {
     });
 
     // Role for state machine
-    const LogHubAppPipelineAPIPipelineFlowSMRole = new iam.Role(
+    const pipelineFlowSMRole = new iam.Role(
       this,
       "SMRole",
       {
@@ -123,7 +124,7 @@ export class AppPipelineFlowStack extends Construct {
       }
     );
     // Least Privilage to enable logging for state machine
-    LogHubAppPipelineAPIPipelineFlowSMRole.addToPolicy(
+    pipelineFlowSMRole.addToPolicy(
       new iam.PolicyStatement({
         actions: [
           "logs:PutResourcePolicy",
@@ -149,14 +150,17 @@ export class AppPipelineFlowStack extends Construct {
       inputPath: "$",
     });
 
-    const pipeSM = new sfn.StateMachine(this, "PipelineFlowSM", {
+    const pipeSM = new sfn.StateMachine(this, "AppPipelineFlowSM", {
       definition: cfnTask.next(appPipeFlowFnTask),
-      role: LogHubAppPipelineAPIPipelineFlowSMRole,
+      role: pipelineFlowSMRole,
       logs: {
         destination: logGroup,
         level: sfn.LogLevel.ALL,
       },
     });
+
+    const cfnAppPipelineSM = pipeSM.node.defaultChild as sfn.CfnStateMachine;
+    cfnAppPipelineSM.overrideLogicalId('AppPipelineFlowSM')
 
     this.stateMachineArn = pipeSM.stateMachineArn;
   }

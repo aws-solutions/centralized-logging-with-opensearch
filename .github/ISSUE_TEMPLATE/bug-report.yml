@@ -61,10 +61,10 @@ body:
       required: false
 
   - type: input
-    id: log-hub-version
+    id: solution-version
     attributes:
-      label: Log Hub Version
-      description: Find from the bottom right corner of Log Hub console, or the CloudFormation stacks.
+      label: Solution Version
+      description: Find from the bottom right corner of solution web console, or the CloudFormation stacks.
     validations:
       required: true
 

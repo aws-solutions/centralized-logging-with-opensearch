@@ -1,18 +1,6 @@
-'''
-Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-'''
 
 import json
 import boto3
@@ -24,17 +12,20 @@ from boto3_client import get_client
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-logGroupNamesString = os.environ.get('LOGGROUP_NAMES')
-kdsArn = os.environ.get('DESTINATION_ARN')
-kdsName = os.environ.get('DESTINATION_NAME')
+log_group_names = os.environ.get("LOGGROUP_NAMES").split(",")
+kdsArn = os.environ.get("DESTINATION_ARN")
+kdsName = os.environ.get("DESTINATION_NAME")
 
-roleName = os.environ.get('ROLE_NAME')
-roleArn = os.environ.get('ROLE_ARN')
+roleName = os.environ.get("ROLE_NAME")
+roleArn = os.environ.get("ROLE_ARN")
 
-stackName = os.environ['STACK_NAME']
+stackName = os.environ["STACK_NAME"]
 
-solution = os.environ.get('SOLUTION', 'SO8025/' + os.environ['VERSION'])
-user_agent_config = {'user_agent_extra': f'AwsSolution/{solution}'}
+solution_version = os.environ.get("SOLUTION_VERSION", "v1.0.0")
+solution_id = os.environ.get("SOLUTION_ID", "SO8025")
+user_agent_config = {
+    "user_agent_extra": f"AwsSolution/{solution_id}/{solution_version}"
+}
 default_config = config.Config(**user_agent_config)
 
 default_region = os.environ.get("AWS_REGION")
@@ -43,63 +34,60 @@ account_id = sts.get_caller_identity()["Account"]
 
 log_source_account_id = os.environ.get("LOG_SOURCE_ACCOUNT_ID", account_id)
 
-log_source_account_assume_role = os.environ.get(
-    "LOG_SOURCE_ACCOUNT_ASSUME_ROLE", "")
+log_source_account_assume_role = os.environ.get("LOG_SOURCE_ACCOUNT_ASSUME_ROLE", "")
 
 
-def lambda_handler(event, context):
-    request_type = event['RequestType']
-    if request_type == 'Create' or request_type == 'Update':
+def lambda_handler(event, _):
+    request_type = event["RequestType"]
+    if request_type == "Create" or request_type == "Update":
         return on_create(event)
-    if request_type == 'Delete':
+    if request_type == "Delete":
         return on_delete(event)
     raise Exception("Invalid request type: %s" % request_type)
 
 
-def on_create(event):
-
-    log_group_names = logGroupNamesString.split(',')
+def on_create(_):
 
     for log_group_name in log_group_names:
         logger.info("Log group name is %s" % log_group_name)
         # Create a subscription filter
         try:
-            destination_name = f'{stackName}-{kdsName}'
-            client = get_client('logs')
-            if not is_log_group_exist(log_group_name):
+            destination_name = f"{stackName}-{kdsName}"
+            client = get_client("logs")
+            if not exist_log_group(log_group_name):
                 logger.info("Log Group %s doesn't exist!" % log_group_name)
                 create_log_group(log_group_name) if log_group_name else None
             if log_source_account_assume_role:
-                cwl = get_client('logs', is_local_session=True)
+                cwl = get_client("logs", is_local_session=True)
                 resp = cwl.put_destination(
                     destinationName=destination_name,
                     targetArn=kdsArn,
                     roleArn=roleArn,
                 )
-                destinationArn = resp['destination']['arn']
-                #setup cw put-destination-policy
+                destinationArn = resp["destination"]["arn"]
+                # setup cw put-destination-policy
                 access_policy = {
-                    "Version":
-                    "2012-10-17",
-                    "Statement": [{
-                        "Sid": "",
-                        "Effect": "Allow",
-                        "Principal": {
-                            "AWS": log_source_account_id
-                        },
-                        "Action": "logs:PutSubscriptionFilter",
-                        "Resource": destinationArn
-                    }]
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Sid": "",
+                            "Effect": "Allow",
+                            "Principal": {"AWS": log_source_account_id},
+                            "Action": "logs:PutSubscriptionFilter",
+                            "Resource": destinationArn,
+                        }
+                    ],
                 }
                 cwl.put_destination_policy(
                     destinationName=destination_name,
                     accessPolicy=json.dumps(access_policy),
-                    forceUpdate=True)
-                logger.info(f'destinationArn is {destinationArn}')
+                    forceUpdate=True,
+                )
+                logger.info(f"destinationArn is {destinationArn}")
                 client.put_subscription_filter(
                     logGroupName=log_group_name,
                     filterName=destination_name,
-                    filterPattern='',
+                    filterPattern="",
                     destinationArn=destinationArn,
                 )
             else:
@@ -108,60 +96,55 @@ def on_create(event):
                 client.put_subscription_filter(
                     logGroupName=log_group_name,
                     filterName=destination_name,
-                    filterPattern='',
+                    filterPattern="",
                     destinationArn=destinationArn,
                     roleArn=roleArn,
                 )
 
         except Exception as err:
-            logger.info(f"Create log group subscription filter failed, %s" %
-                        err)
+            logger.info("Create log group subscription filter failed, %s" % err)
             raise
 
     return {
-        'statusCode': 200,
-        'body': json.dumps('Create log group subscription filter success!')
+        "statusCode": 200,
+        "body": json.dumps("Create log group subscription filter success!"),
     }
 
 
-def on_delete(event):
+def on_delete(_):
     # Create CloudWatchLogs client
-    client = client = get_client('logs')
+    client = client = get_client("logs")
 
-    logGroupNames = logGroupNamesString.split(',')
-
-    print(logGroupNames)
-
-    for logGroupName in logGroupNames:
+    for log_group_name in log_group_names:
         # Delete a subscription filter
-        logger.info("Subscription of log group %s is going to be deleted." %
-                    logGroupName)
+        logger.info(
+            "Subscription of log group %s is going to be deleted." % log_group_name
+        )
         try:
             client.delete_subscription_filter(
-                filterName=f'{stackName}-{kdsName}',
-                logGroupName=logGroupName,
+                filterName=f"{stackName}-{kdsName}",
+                logGroupName=log_group_name,
             )
         except Exception as err:
-            logger.info("Delete log group subscription filter failed, %s" %
-                        err)
+            logger.info("Delete log group subscription filter failed, %s" % err)
 
     return {
-        'statusCode': 200,
-        'body': json.dumps('Delete log group subscription filter success!')
+        "statusCode": 200,
+        "body": json.dumps("Delete log group subscription filter success!"),
     }
 
 
-def is_log_group_exist(logGroupName):
-    client = get_client('logs')
-    response = client.describe_log_groups(logGroupNamePrefix=logGroupName)
+def exist_log_group(log_group_name):
+    client = get_client("logs")
+    response = client.describe_log_groups(logGroupNamePrefix=log_group_name)
     return response["logGroups"] != []
 
 
-def create_log_group(logGroupName):
-    logger.info("Create Log Group: %s" % logGroupName)
-    client = get_client('logs')
+def create_log_group(log_group_name):
+    logger.info("Create Log Group: %s" % log_group_name)
+    client = get_client("logs")
     try:
-        client.create_log_group(logGroupName=logGroupName)
+        client.create_log_group(logGroupName=log_group_name)
     except Exception as err:
         logger.info("Create log group %s failed, ", err)
         logger.error(err)

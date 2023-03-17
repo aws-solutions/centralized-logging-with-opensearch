@@ -10,7 +10,6 @@ from moto import (
     mock_dynamodb,
     mock_sts,
     mock_ec2,
-    mock_ssm,
 )
 from .conftest import init_ddb
 
@@ -20,7 +19,12 @@ test_events = [
 
 
 test_ssm_instances_info_list = [
-    {"InstanceId": "1", "PlatformName": "test", "IPAddress": "", "ComputerName": "test-1"}
+    {
+        "InstanceId": "1",
+        "PlatformName": "test",
+        "IPAddress": "",
+        "ComputerName": "test-1",
+    }
 ]
 
 
@@ -39,38 +43,43 @@ def test_event(request):
 @pytest.fixture
 def ddb_client():
     with mock_dynamodb():
-        init_ddb({
-            os.environ.get("INSTANCEMETA_TABLE"): [
-                {
-                    "id": "5e9d32ca-2e2c-4f15-9f25-5047f972177f",
-                    "appPipelineId": "42fb0147-c2fe-4ea9-ba55-0b5aab86703a",
-                    "confId": "d03ca90c-5c14-4816-a4f0-c3b13eb7a588",
-                    "createdDt": "2022-07-17T08:29:29Z",
-                    "groupId": "656a5ec9-6c72-47fb-9d12-af132b470777",
-                    "instanceId": "i-01dfa6dc7c3fa3416",
-                    "logIngestionId": "cd23aed6-5421-446b-85ba-2b17236806f6",
-                    "status": "ACTIVE"
-                },
-            ],
-        })
-        init_ddb({
-            os.environ.get("AGENTSTATUS_TABLE"): [
-                {
-                    "instanceId": "i-01dfa6dc7c3fa3416",
-                    "createDt": "2022-07-10T08:42:26Z",
-                    "id": "f571cf40-c674-4c37-b48b-cb0ad6de2d31",
-                    "status": "Online",
-                    "updatedDt": "2022-07-18T09:05:16Z"
-                },
-                {
-                    "instanceId": "i-0c3fdfaaeefe50b5f",
-                    "createDt": "2022-07-10T08:42:13Z",
-                    "id": "Empty_Command_Id",
-                    "status": "Not_Installed",
-                    "updatedDt": "2022-07-10T08:42:13Z"
-                }
-            ]
-        }, primary_key='instanceId')
+        init_ddb(
+            {
+                os.environ.get("INSTANCEMETA_TABLE"): [
+                    {
+                        "id": "5e9d32ca-2e2c-4f15-9f25-5047f972177f",
+                        "appPipelineId": "42fb0147-c2fe-4ea9-ba55-0b5aab86703a",
+                        "confId": "d03ca90c-5c14-4816-a4f0-c3b13eb7a588",
+                        "createdDt": "2022-07-17T08:29:29Z",
+                        "groupId": "656a5ec9-6c72-47fb-9d12-af132b470777",
+                        "instanceId": "i-01dfa6dc7c3fa3416",
+                        "logIngestionId": "cd23aed6-5421-446b-85ba-2b17236806f6",
+                        "status": "ACTIVE",
+                    },
+                ],
+            }
+        )
+        init_ddb(
+            {
+                os.environ.get("AGENTSTATUS_TABLE"): [
+                    {
+                        "instanceId": "i-01dfa6dc7c3fa3416",
+                        "createDt": "2022-07-10T08:42:26Z",
+                        "id": "f571cf40-c674-4c37-b48b-cb0ad6de2d31",
+                        "status": "Online",
+                        "updatedDt": "2022-07-18T09:05:16Z",
+                    },
+                    {
+                        "instanceId": "i-0c3fdfaaeefe50b5f",
+                        "createDt": "2022-07-10T08:42:13Z",
+                        "id": "Empty_Command_Id",
+                        "status": "Not_Installed",
+                        "updatedDt": "2022-07-10T08:42:13Z",
+                    },
+                ]
+            },
+            primary_key="instanceId",
+        )
         yield
 
 
@@ -95,7 +104,7 @@ class Boto3Mocker:
     def describe_instance_information(self, **args):
         return {
             "InstanceInformationList": test_ssm_instances_info_list,
-            "NextToken": ""
+            "NextToken": "",
         }
 
     def get_command_invocation(self, **args):
@@ -118,8 +127,8 @@ class Boto3Mocker:
             "StandardErrorUrl": "",
             "CloudWatchOutputConfig": {
                 "CloudWatchLogGroupName": "",
-                "CloudWatchOutputEnabled": False
-            }
+                "CloudWatchOutputEnabled": False,
+            },
         }
 
     def describe_instances(self, **args):
@@ -134,23 +143,18 @@ class Boto3Mocker:
                             "InstanceId": "i-06efded16952a190b",
                             "InstanceType": "t3.micro",
                             "LaunchTime": "2022-04-25T03:09:51+00:00",
-                            "Monitoring": {
-                                "State": "disabled"
-                            },
+                            "Monitoring": {"State": "disabled"},
                             "Placement": {
                                 "AvailabilityZone": "us-east-1a",
                                 "GroupName": "",
-                                "Tenancy": "default"
+                                "Tenancy": "default",
                             },
                             "PrivateDnsName": "ip-10-0-1-12.ec2.internal",
                             "PrivateIpAddress": "10.0.1.12",
                             "ProductCodes": [],
                             "PublicDnsName": "ec2-123-123-123-123.compute-1.amazonaws.com",
                             "PublicIpAddress": "123.123.123.123",
-                            "State": {
-                                "Code": 16,
-                                "Name": "running"
-                            },
+                            "State": {"Code": 16, "Name": "running"},
                             "StateTransitionReason": "",
                             "SubnetId": "subnet-00a1bfc79552f0331",
                             "VpcId": "vpc-07447ae9f5c8f2669",
@@ -162,8 +166,8 @@ class Boto3Mocker:
                                         "AttachTime": "2022-04-25T03:09:51+00:00",
                                         "DeleteOnTermination": True,
                                         "Status": "attached",
-                                        "VolumeId": "vol-0131d481b6c943d20"
-                                    }
+                                        "VolumeId": "vol-0131d481b6c943d20",
+                                    },
                                 }
                             ],
                             "ClientToken": "centr-WebSe-1F3DT7B4WEEF9",
@@ -172,14 +176,14 @@ class Boto3Mocker:
                             "Hypervisor": "xen",
                             "IamInstanceProfile": {
                                 "Arn": "arn:aws:iam::1234567890:instance-profile/centralizedlogging-CLDemoStackNestedStackCLDemoStackNestedStackResource3DB-WebServerDemoEC2InstanceProfileFA4B59C6-Y98C10HIAISU",
-                                "Id": "AIPAZJF44VX4SXECWEM5K"
+                                "Id": "AIPAZJF44VX4SXECWEM5K",
                             },
                             "NetworkInterfaces": [
                                 {
                                     "Association": {
                                         "IpOwnerId": "amazon",
                                         "PublicDnsName": "ec2-123-123-123-123.compute-1.amazonaws.com",
-                                        "PublicIp": "123.123.123.123"
+                                        "PublicIp": "123.123.123.123",
                                     },
                                     "Attachment": {
                                         "AttachTime": "2022-04-25T03:09:51+00:00",
@@ -187,13 +191,13 @@ class Boto3Mocker:
                                         "DeleteOnTermination": True,
                                         "DeviceIndex": 0,
                                         "Status": "attached",
-                                        "NetworkCardIndex": 0
+                                        "NetworkCardIndex": 0,
                                     },
                                     "Description": "",
                                     "Groups": [
                                         {
                                             "GroupName": "centralizedlogging-CLDemoStackNestedStackCLDemoStackNestedStackResource3DB21482-WTTNPSEKDMUK-WebServerDemoSGABCFDBC1-BXPGCVF4DG9A",
-                                            "GroupId": "sg-06125e48b2242b1dc"
+                                            "GroupId": "sg-06125e48b2242b1dc",
                                         }
                                     ],
                                     "Ipv6Addresses": [],
@@ -207,18 +211,18 @@ class Boto3Mocker:
                                             "Association": {
                                                 "IpOwnerId": "amazon",
                                                 "PublicDnsName": "ec2-123-123-123-123.compute-1.amazonaws.com",
-                                                "PublicIp": "123.123.123.123"
+                                                "PublicIp": "123.123.123.123",
                                             },
                                             "Primary": True,
                                             "PrivateDnsName": "ip-10-0-1-12.ec2.internal",
-                                            "PrivateIpAddress": "10.0.1.12"
+                                            "PrivateIpAddress": "10.0.1.12",
                                         }
                                     ],
                                     "SourceDestCheck": True,
                                     "Status": "in-use",
                                     "SubnetId": "subnet-00a1bfc79552f0331",
                                     "VpcId": "vpc-07447ae9f5c8f2669",
-                                    "InterfaceType": "interface"
+                                    "InterfaceType": "interface",
                                 }
                             ],
                             "RootDeviceName": "/dev/xvda",
@@ -226,126 +230,112 @@ class Boto3Mocker:
                             "SecurityGroups": [
                                 {
                                     "GroupName": "centralizedlogging-CLDemoStackNestedStackCLDemoStackNestedStackResource3DB21482-WTTNPSEKDMUK-WebServerDemoSGABCFDBC1-BXPGCVF4DG9A",
-                                    "GroupId": "sg-06125e48b2242b1dc"
+                                    "GroupId": "sg-06125e48b2242b1dc",
                                 }
                             ],
                             "SourceDestCheck": True,
                             "Tags": [
                                 {
                                     "Key": "Name",
-                                    "Value": "CL-PrimaryStack/CL-DemoStack/WebServer/DemoEC2"
+                                    "Value": "CL-PrimaryStack/CL-DemoStack/WebServer/DemoEC2",
                                 },
-                                {
-                                    "Key": "Patch Group",
-                                    "Value": "DEV"
-                                },
+                                {"Key": "Patch Group", "Value": "DEV"},
                                 {
                                     "Key": "aws:cloudformation:stack-name",
-                                    "Value": "centralizedlogging-CLDemoStackNestedStackCLDemoStackNestedStackResource3DB21482-WTTNPSEKDMUK"
+                                    "Value": "centralizedlogging-CLDemoStackNestedStackCLDemoStackNestedStackResource3DB21482-WTTNPSEKDMUK",
                                 },
                                 {
                                     "Key": "aws:cloudformation:stack-id",
-                                    "Value": "arn:aws:cloudformation:us-east-1:1234567890:stack/centralizedlogging-CLDemoStackNestedStackCLDemoStackNestedStackResource3DB21482-WTTNPSEKDMUK/ced52c60-c444-11ec-83aa-0a83f24026d3"
+                                    "Value": "arn:aws:cloudformation:us-east-1:1234567890:stack/centralizedlogging-CLDemoStackNestedStackCLDemoStackNestedStackResource3DB21482-WTTNPSEKDMUK/ced52c60-c444-11ec-83aa-0a83f24026d3",
                                 },
                                 {
                                     "Key": "aws:cloudformation:logical-id",
-                                    "Value": "WebServerDemoEC2F5BEF58E"
-                                }
+                                    "Value": "WebServerDemoEC2F5BEF58E",
+                                },
                             ],
                             "VirtualizationType": "hvm",
-                            "CpuOptions": {
-                                "CoreCount": 1,
-                                "ThreadsPerCore": 2
-                            },
+                            "CpuOptions": {"CoreCount": 1, "ThreadsPerCore": 2},
                             "CapacityReservationSpecification": {
                                 "CapacityReservationPreference": "open"
                             },
-                            "HibernationOptions": {
-                                "Configured": False
-                            },
+                            "HibernationOptions": {"Configured": False},
                             "MetadataOptions": {
                                 "State": "applied",
                                 "HttpTokens": "optional",
                                 "HttpPutResponseHopLimit": 1,
                                 "HttpEndpoint": "enabled",
                                 "HttpProtocolIpv6": "disabled",
-                                "InstanceMetadataTags": "disabled"
+                                "InstanceMetadataTags": "disabled",
                             },
-                            "EnclaveOptions": {
-                                "Enabled": False
-                            },
+                            "EnclaveOptions": {"Enabled": False},
                             "PlatformDetails": "Linux/UNIX",
                             "UsageOperation": "RunInstances",
                             "UsageOperationUpdateTime": "2022-04-25T03:09:51+00:00",
                             "PrivateDnsNameOptions": {
                                 "HostnameType": "ip-name",
                                 "EnableResourceNameDnsARecord": False,
-                                "EnableResourceNameDnsAAAARecord": False
+                                "EnableResourceNameDnsAAAARecord": False,
                             },
-                            "MaintenanceOptions": {
-                                "AutoRecovery": "default"
-                            }
+                            "MaintenanceOptions": {"AutoRecovery": "default"},
                         }
                     ],
                     "OwnerId": "1234567890",
-                    "RequesterId": "043234062703",
-                    "ReservationId": "r-05ec0255e520df0c8"
+                    "RequesterId": "00000000000",
+                    "ReservationId": "r-05ec0255e520df0c8",
                 }
             ]
         }
 
     def send_command(self, **args):
         return {
-            'Command': {
-                'CommandId': 'string',
-                'DocumentName': 'string',
-                'DocumentVersion': 'string',
-                'Comment': 'string',
-                'Parameters': {
-                    'string': [
-                        'string',
+            "Command": {
+                "CommandId": "string",
+                "DocumentName": "string",
+                "DocumentVersion": "string",
+                "Comment": "string",
+                "Parameters": {
+                    "string": [
+                        "string",
                     ]
                 },
-                'InstanceIds': [
-                    'string',
+                "InstanceIds": [
+                    "string",
                 ],
-                'Targets': [
+                "Targets": [
                     {
-                        'Key': 'string',
-                        'Values': [
-                            'string',
-                        ]
+                        "Key": "string",
+                        "Values": [
+                            "string",
+                        ],
                     },
                 ],
-                'Status': 'Success',
-                'StatusDetails': 'string',
-                'OutputS3Region': 'string',
-                'OutputS3BucketName': 'string',
-                'OutputS3KeyPrefix': 'string',
-                'MaxConcurrency': 'string',
-                'MaxErrors': 'string',
-                'TargetCount': 123,
-                'CompletedCount': 123,
-                'ErrorCount': 123,
-                'DeliveryTimedOutCount': 123,
-                'ServiceRole': 'string',
-                'CloudWatchOutputConfig': {
-                    'CloudWatchLogGroupName': 'string',
-                    'CloudWatchOutputEnabled': True
+                "Status": "Success",
+                "StatusDetails": "string",
+                "OutputS3Region": "string",
+                "OutputS3BucketName": "string",
+                "OutputS3KeyPrefix": "string",
+                "MaxConcurrency": "string",
+                "MaxErrors": "string",
+                "TargetCount": 123,
+                "CompletedCount": 123,
+                "ErrorCount": 123,
+                "DeliveryTimedOutCount": 123,
+                "ServiceRole": "string",
+                "CloudWatchOutputConfig": {
+                    "CloudWatchLogGroupName": "string",
+                    "CloudWatchOutputEnabled": True,
                 },
-                'TimeoutSeconds': 123
+                "TimeoutSeconds": 123,
             }
         }
 
     def describe_tags(self, **args):
-        return {
-            'Tags': self._tags
-        }
+        return {"Tags": self._tags}
 
     def describe_tags_noempty(self, **args):
         return {
-            'Tags': [
-                {'Key': 'Name', 'Value': 'test'},
+            "Tags": [
+                {"Key": "Name", "Value": "test"},
             ]
         }
 
@@ -369,12 +359,7 @@ def mock_list_instance(lambda_function, mocker):
     mocker.patch.multiple(lambda_function, SvcManager=svc_manager_mock)
 
 
-test_handler = {
-    "listInstances": (
-        mock_list_instance,
-        assert_list_instance_result
-    )
-}
+test_handler = {"listInstances": (mock_list_instance, assert_list_instance_result)}
 
 
 def test_lambda_handler(mocker, test_event, sts_client):
@@ -395,195 +380,199 @@ def test_lambda_handler(mocker, test_event, sts_client):
 def test_createInstanceMeta(ddb_client):
     import lambda_function
 
-    lambda_function.lambda_handler({
-        "arguments": {
-            "maxResults": 10,
-            "logAgent": "logAgent",
-            "instanceId": "instanceId",
-            "appPipelineId": "appPipelineId",
-            "confId": "confId",
-            "groupId": "groupId"
+    lambda_function.lambda_handler(
+        {
+            "arguments": {
+                "maxResults": 10,
+                "logAgent": "logAgent",
+                "instanceId": "instanceId",
+                "appPipelineId": "appPipelineId",
+                "confId": "confId",
+                "groupId": "groupId",
+            },
+            "identity": {},
+            "source": None,
+            "request": {},
+            "prev": None,
+            "info": {"fieldName": "createInstanceMeta", "variables": {}},
+            "stash": {},
         },
-        "identity": {
-        },
-        "source": None,
-        "request": {
-        },
-        "prev": None,
-        "info": {
-            "fieldName": "createInstanceMeta",
-            "variables": {}
-        },
-        "stash": {}
-    }, None)
+        None,
+    )
 
 
 def test_updateInstanceMeta(ddb_client):
     import lambda_function
 
-    lambda_function.lambda_handler({
-        "arguments": {
-            "id": "5e9d32ca-2e2c-4f15-9f25-5047f972177f",
-            "confIdset": ["1", "1", "2"],
-            "groupIdset": ["1", "1", "2"],
+    lambda_function.lambda_handler(
+        {
+            "arguments": {
+                "id": "5e9d32ca-2e2c-4f15-9f25-5047f972177f",
+                "confIdset": ["1", "1", "2"],
+                "groupIdset": ["1", "1", "2"],
+            },
+            "identity": {},
+            "source": None,
+            "request": {},
+            "prev": None,
+            "info": {"fieldName": "updateInstanceMeta", "variables": {}},
+            "stash": {},
         },
-        "identity": {
-        },
-        "source": None,
-        "request": {
-        },
-        "prev": None,
-        "info": {
-            "fieldName": "updateInstanceMeta",
-            "variables": {}
-        },
-        "stash": {}
-    }, None)
+        None,
+    )
 
-    dynamodb = boto3.resource('dynamodb')
+    dynamodb = boto3.resource("dynamodb")
 
     table = dynamodb.Table(os.environ.get("INSTANCEMETA_TABLE"))
 
-    response = table.get_item(Key={
-        "id": "5e9d32ca-2e2c-4f15-9f25-5047f972177f",
-    })
+    response = table.get_item(
+        Key={
+            "id": "5e9d32ca-2e2c-4f15-9f25-5047f972177f",
+        }
+    )
 
-    assert response['Item']['confIdset'] == set(('1', '2'))
-    assert response['Item']['groupIdset'] == set(('1', '2'))
+    assert response["Item"]["confIdset"] == set(("1", "2"))
+    assert response["Item"]["groupIdset"] == set(("1", "2"))
 
 
 def test_getLogAgentStatus(ddb_client):
     import lambda_function
 
-    lambda_function.lambda_handler({
-        "arguments": {
-            "instanceId": "i-01dfa6dc7c3fa3416",
-            "accountId": '123456789012',
-            "region": 'us-east-1',
+    lambda_function.lambda_handler(
+        {
+            "arguments": {
+                "instanceId": "i-01dfa6dc7c3fa3416",
+                "accountId": "123456789012",
+                "region": "us-east-1",
+            },
+            "identity": {},
+            "source": None,
+            "request": {},
+            "prev": None,
+            "info": {"fieldName": "getLogAgentStatus", "variables": {}},
+            "stash": {},
         },
-        "identity": {
-        },
-        "source": None,
-        "request": {
-        },
-        "prev": None,
-        "info": {
-            "fieldName": "getLogAgentStatus",
-            "variables": {}
-        },
-        "stash": {}
-    }, None)
+        None,
+    )
 
 
 def test_requestInstallLogAgent_where_instance_is_already_online(ddb_client):
     import lambda_function
 
-    lambda_function.lambda_handler({
-        "arguments": {
-            "instanceIdSet": ["i-01dfa6dc7c3fa3416"],
-            "accountId": '123456789012',
-            "region": 'us-east-1',
+    lambda_function.lambda_handler(
+        {
+            "arguments": {
+                "instanceIdSet": ["i-01dfa6dc7c3fa3416"],
+                "accountId": "123456789012",
+                "region": "us-east-1",
+            },
+            "identity": {},
+            "source": None,
+            "request": {},
+            "prev": None,
+            "info": {"fieldName": "requestInstallLogAgent", "variables": {}},
+            "stash": {},
         },
-        "identity": {
-        },
-        "source": None,
-        "request": {
-        },
-        "prev": None,
-        "info": {
-            "fieldName": "requestInstallLogAgent",
-            "variables": {}
-        },
-        "stash": {}
-    }, None)
+        None,
+    )
 
 
 def test_requestInstallLogAgent_where_instance_is_offline(ddb_client):
     import lambda_function
 
-    lambda_function.lambda_handler({
-        "arguments": {
-            "instanceIdSet": ["i-0c3fdfaaeefe50b5f"],
-            "accountId": '123456789012',
-            "region": 'us-east-1',
+    lambda_function.lambda_handler(
+        {
+            "arguments": {
+                "instanceIdSet": ["i-0c3fdfaaeefe50b5f"],
+                "accountId": "123456789012",
+                "region": "us-east-1",
+            },
+            "identity": {},
+            "source": None,
+            "request": {},
+            "prev": None,
+            "info": {"fieldName": "requestInstallLogAgent", "variables": {}},
+            "stash": {},
         },
-        "identity": {
-        },
-        "source": None,
-        "request": {
-        },
-        "prev": None,
-        "info": {
-            "fieldName": "requestInstallLogAgent",
-            "variables": {}
-        },
-        "stash": {}
-    }, None)
+        None,
+    )
 
 
 @mock_ec2
 def test_single_agent_installation_where_instance_is_offline(mocker, ddb_client):
     import lambda_function
 
-    ec2 = boto3.resource("ec2", region_name='us-east-1')
-    res = ec2.create_instances(ImageId='123456789012', MinCount=1, MaxCount=1)
-    instanceId = res[0].id
+    ec2 = boto3.resource("ec2", region_name="us-east-1")
+    res = ec2.create_instances(ImageId="123456789012", MinCount=1, MaxCount=1)
+    instance_id = res[0].id
 
     svc_manager_mock = mocker.MagicMock()
-    svc_manager_mock.return_value = SvcManagerMocker([{'Key': 'Name', 'Value': 'test'}])
+    svc_manager_mock.return_value = SvcManagerMocker([{"Key": "Name", "Value": "test"}])
 
     mocker.patch.multiple(lambda_function, SvcManager=svc_manager_mock)
 
-    lambda_function.single_agent_installation(instanceId, accountId='123456789012', region='us-east-1')
+    lambda_function.single_agent_installation(
+        instance_id, account_id="123456789012", region="us-east-1"
+    )
 
 
 @mock_ec2
 def test_get_agent_health_check_output(mocker, ddb_client):
     import lambda_function
 
-    ec2 = boto3.resource("ec2", region_name='us-east-1')
-    res = ec2.create_instances(ImageId='123456789012', MinCount=1, MaxCount=1)
-    instanceId = res[0].id
+    ec2 = boto3.resource("ec2", region_name="us-east-1")
+    res = ec2.create_instances(ImageId="123456789012", MinCount=1, MaxCount=1)
+    instance_id = res[0].id
 
     svc_manager_mock = mocker.MagicMock()
-    svc_manager_mock.return_value = SvcManagerMocker([{'Key': 'Name', 'Value': 'test'}])
+    svc_manager_mock.return_value = SvcManagerMocker([{"Key": "Name", "Value": "test"}])
 
     mocker.patch.multiple(lambda_function, SvcManager=svc_manager_mock)
 
+    unsuccess_instances = set()
     lambda_function.get_agent_health_check_output(
-        'aaa18f0f-9724-4e32-ae9e-acd12af9d7f1', instanceId, accountId='123456789012', region='us-east-1')
+        "aaa18f0f-9724-4e32-ae9e-acd12af9d7f1",
+        instance_id,
+        unsuccess_instances,
+        account_id="123456789012",
+        region="us-east-1",
+    )
 
 
 @mock_ec2
 def test_get_instance_invocation(mocker, ddb_client):
     import lambda_function
 
-    ec2 = boto3.resource("ec2", region_name='us-east-1')
-    res = ec2.create_instances(ImageId='123456789012', MinCount=1, MaxCount=1)
-    instanceId = res[0].id
+    ec2 = boto3.resource("ec2", region_name="us-east-1")
+    res = ec2.create_instances(ImageId="123456789012", MinCount=1, MaxCount=1)
+    instance_id = res[0].id
 
     svc_manager_mock = mocker.MagicMock()
-    svc_manager_mock.return_value = SvcManagerMocker([{'Key': 'Name', 'Value': 'test'}])
+    svc_manager_mock.return_value = SvcManagerMocker([{"Key": "Name", "Value": "test"}])
 
     mocker.patch.multiple(lambda_function, SvcManager=svc_manager_mock)
 
-    lambda_function.get_instance_invocation(instanceId, accountId='123456789012', region='us-east-1')
+    lambda_function.get_instance_invocation(
+        instance_id, account_id="123456789012", region="us-east-1"
+    )
 
 
 @mock_ec2
 def test_agent_health_check(mocker, ddb_client):
     import lambda_function
 
-    ec2 = boto3.resource("ec2", region_name='us-east-1')
-    res = ec2.create_instances(ImageId='123456789012', MinCount=1, MaxCount=1)
-    instanceId = res[0].id
+    ec2 = boto3.resource("ec2", region_name="us-east-1")
+    res = ec2.create_instances(ImageId="123456789012", MinCount=1, MaxCount=1)
+    instance_id = res[0].id
 
     svc_manager_mock = mocker.MagicMock()
-    svc_manager_mock.return_value = SvcManagerMocker([{'Key': 'Name', 'Value': 'test'}])
+    svc_manager_mock.return_value = SvcManagerMocker([{"Key": "Name", "Value": "test"}])
 
     mocker.patch.multiple(lambda_function, SvcManager=svc_manager_mock)
 
-    lambda_function.agent_health_check(instanceId, accountId='123456789012', region='us-east-1')
+    lambda_function.agent_health_check(
+        instance_id, account_id="123456789012", region="us-east-1"
+    )
 
 
 def test_parse_ssm_instance_info(mocker):
@@ -593,17 +582,17 @@ def test_parse_ssm_instance_info(mocker):
     ssm_instance_info = test_ssm_instances_info_list[0]
 
     svc_manager_mock = mocker.MagicMock()
-    svc_manager_mock.return_value = SvcManagerMocker([{'Key': 'Name', 'Value': 'test'}])
+    svc_manager_mock.return_value = SvcManagerMocker([{"Key": "Name", "Value": "test"}])
 
     mocker.patch.multiple(lambda_function, SvcManager=svc_manager_mock)
 
     # When ssm instance info is parsed
-    instance = lambda_function.parse_ssm_instance_info(ssm_instance_info,
-                                                       "123456789012",
-                                                       os.environ.get("AWS_REGION"))
+    instance = lambda_function.parse_ssm_instance_info(
+        ssm_instance_info, "123456789012", os.environ.get("AWS_REGION")
+    )
 
     # Then parsed result as expected
-    assert instance['name'] == 'test'
-    assert instance['id'] == ssm_instance_info['InstanceId']
-    assert instance['platformName'] == ssm_instance_info['PlatformName']
-    assert instance['ipAddress'] == ssm_instance_info['IPAddress']
+    assert instance["name"] == "test"
+    assert instance["id"] == ssm_instance_info["InstanceId"]
+    assert instance["platformName"] == ssm_instance_info["PlatformName"]
+    assert instance["ipAddress"] == ssm_instance_info["IPAddress"]
