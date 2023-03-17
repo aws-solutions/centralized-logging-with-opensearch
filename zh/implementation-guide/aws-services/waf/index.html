@@ -8,7 +8,7 @@
       
       
       
-        <link rel="canonical" href="https://awslabs.github.io/log-hub/implementation-guide/aws-services/waf/">
+        <link rel="canonical" href="https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/aws-services/waf/">
       
       
         <link rel="prev" href="../elb/">
@@ -17,18 +17,18 @@
         <link rel="next" href="../vpc/">
       
       <link rel="icon" href="../../../images/aws-solutions.png">
-      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.0.3">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.1.3">
     
     
       
-        <title>AWS WAF - Log Hub</title>
+        <title>AWS WAF - Centralized Logging with OpenSearch</title>
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.6b71719e.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.c4a75a56.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.2505c338.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.a0c5b2b5.min.css">
       
       
 
@@ -80,7 +80,7 @@
       
     </div>
     
-      <div data-md-component="outdated" hidden>
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
         
       </div>
     
@@ -89,7 +89,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="页眉">
-    <a href="../../.." title="Log Hub" class="md-header__button md-logo" aria-label="Log Hub" data-md-component="logo">
+    <a href="../../.." title="Centralized Logging with OpenSearch" class="md-header__button md-logo" aria-label="Centralized Logging with OpenSearch" data-md-component="logo">
       
   <img src="../../../images/aws-solutions.png" alt="logo">
 
@@ -101,7 +101,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            Log Hub
+            Centralized Logging with OpenSearch
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -125,13 +125,13 @@
             <ul class="md-select__list">
               
                 <li class="md-select__item">
-                  <a href="/log-hub/en/" hreflang="en" class="md-select__link">
+                  <a href="/centralized-logging-with-opensearch/en/" hreflang="en" class="md-select__link">
                     English
                   </a>
                 </li>
               
                 <li class="md-select__item">
-                  <a href="/log-hub/zh/" hreflang="zh" class="md-select__link">
+                  <a href="/centralized-logging-with-opensearch/zh/" hreflang="zh" class="md-select__link">
                     简体中文
                   </a>
                 </li>
@@ -168,7 +168,7 @@
           <div class="md-search-result__meta">
             正在初始化搜索引擎
           </div>
-          <ol class="md-search-result__list"></ol>
+          <ol class="md-search-result__list" role="presentation"></ol>
         </div>
       </div>
     </div>
@@ -177,13 +177,13 @@
     
     
       <div class="md-header__source">
-        <a href="https://github.com/awslabs/log-hub" title="前往仓库" class="md-source" data-md-component="source">
+        <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch" title="前往仓库" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.3.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
-    awslabs/log-hub
+    aws-solutions/centralized-logging-with-opensearch
   </div>
 </a>
       </div>
@@ -199,7 +199,7 @@
           
             
 <nav class="md-tabs" aria-label="标签" data-md-component="tabs">
-  <div class="md-tabs__inner md-grid">
+  <div class="md-grid">
     <ul class="md-tabs__list">
       
         
@@ -226,7 +226,7 @@
 
 
   <li class="md-tabs__item">
-    <a href="https://github.com/orgs/awslabs/projects/58" class="md-tabs__link">
+    <a href="https://github.com/orgs/aws-solutions/projects/17/" class="md-tabs__link">
       路线图
     </a>
   </li>
@@ -238,20 +238,8 @@
 
 
   <li class="md-tabs__item">
-    <a href="https://aws-samples.github.io/log-hub-workshop" class="md-tabs__link">
+    <a href="https://catalog.workshops.aws/centralized-logging-with-opensearch/" class="md-tabs__link">
       动手实验
-    </a>
-  </li>
-
-      
-        
-  
-  
-
-
-  <li class="md-tabs__item">
-    <a href="https://awslabs.github.io/log-hub/en/designs" class="md-tabs__link">
-      技术设计
     </a>
   </li>
 
@@ -277,22 +265,22 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="导航栏" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../.." title="Log Hub" class="md-nav__button md-logo" aria-label="Log Hub" data-md-component="logo">
+    <a href="../../.." title="Centralized Logging with OpenSearch" class="md-nav__button md-logo" aria-label="Centralized Logging with OpenSearch" data-md-component="logo">
       
   <img src="../../../images/aws-solutions.png" alt="logo">
 
     </a>
-    Log Hub
+    Centralized Logging with OpenSearch
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/awslabs/log-hub" title="前往仓库" class="md-source" data-md-component="source">
+      <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch" title="前往仓库" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.3.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
-    awslabs/log-hub
+    aws-solutions/centralized-logging-with-opensearch
   </div>
 </a>
     </div>
@@ -314,16 +302,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1" type="checkbox" id="__nav_1" checked>
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" checked>
       
       
       
-        <label class="md-nav__link" for="__nav_1" tabindex="0" aria-expanded="true">
+        <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
           实施指南
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="实施指南" data-md-level="1">
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="true">
         <label class="md-nav__title" for="__nav_1">
           <span class="md-nav__icon md-icon"></span>
           实施指南
@@ -411,16 +399,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_6" type="checkbox" id="__nav_1_6" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_6" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_6" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_6" id="__nav_1_6_label" tabindex="0">
           开始部署
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="开始部署" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_6_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_6">
           <span class="md-nav__icon md-icon"></span>
           开始部署
@@ -487,16 +475,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_7" type="checkbox" id="__nav_1_7" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_7" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_7" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_7" id="__nav_1_7_label" tabindex="0">
           快速入门
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="快速入门" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_7_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_7">
           <span class="md-nav__icon md-icon"></span>
           快速入门
@@ -591,16 +579,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_8" type="checkbox" id="__nav_1_8" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_8" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_8" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_8" id="__nav_1_8_label" tabindex="0">
           AOS 集群管理
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="AOS 集群管理" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_8_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_8">
           <span class="md-nav__icon md-icon"></span>
           AOS 集群管理
@@ -683,16 +671,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_9" type="checkbox" id="__nav_1_9" checked>
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_9" checked>
       
       
       
-        <label class="md-nav__link" for="__nav_1_9" tabindex="0" aria-expanded="true">
+        <label class="md-nav__link" for="__nav_1_9" id="__nav_1_9_label" tabindex="0">
           AWS 服务日志
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="AWS 服务日志" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_9_label" aria-expanded="true">
         <label class="md-nav__title" for="__nav_1_9">
           <span class="md-nav__icon md-icon"></span>
           AWS 服务日志
@@ -806,7 +794,7 @@
   
     <li class="md-nav__item md-nav__item--active">
       
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
         
@@ -845,8 +833,8 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#log-hub" class="md-nav__link">
-    使用 Log Hub 控制台
+  <a href="#_2" class="md-nav__link">
+    使用日志通控制台
   </a>
   
 </li>
@@ -864,7 +852,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#_3" class="md-nav__link">
     示例仪表板
   </a>
   
@@ -925,16 +913,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_10" type="checkbox" id="__nav_1_10" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_10" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_10" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_10" id="__nav_1_10_label" tabindex="0">
           应用日志
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="应用日志" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_10_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_10">
           <span class="md-nav__icon md-icon"></span>
           应用日志
@@ -966,16 +954,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_10_2" type="checkbox" id="__nav_1_10_2" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_10_2" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_10_2" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_10_2" id="__nav_1_10_2_label" tabindex="0">
           前提条件
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="前提条件" data-md-level="3">
+      <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_1_10_2_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_10_2">
           <span class="md-nav__icon md-icon"></span>
           前提条件
@@ -1156,20 +1144,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../upgrade/" class="md-nav__link">
-        更新解决方案
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../uninstall/" class="md-nav__link">
         卸载解决方案
       </a>
@@ -1189,17 +1163,17 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_16" type="checkbox" id="__nav_1_16" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_15" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_16" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_15" id="__nav_1_15_label" tabindex="0">
           资源
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="资源" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_16">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_15_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_1_15">
           <span class="md-nav__icon md-icon"></span>
           资源
         </label>
@@ -1282,7 +1256,7 @@
   
   
     <li class="md-nav__item">
-      <a href="https://github.com/orgs/awslabs/projects/58" class="md-nav__link">
+      <a href="https://github.com/orgs/aws-solutions/projects/17/" class="md-nav__link">
         路线图
       </a>
     </li>
@@ -1297,23 +1271,8 @@
   
   
     <li class="md-nav__item">
-      <a href="https://aws-samples.github.io/log-hub-workshop" class="md-nav__link">
+      <a href="https://catalog.workshops.aws/centralized-logging-with-opensearch/" class="md-nav__link">
         动手实验
-      </a>
-    </li>
-  
-
-    
-      
-      
-      
-
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="https://awslabs.github.io/log-hub/en/designs" class="md-nav__link">
-        技术设计
       </a>
     </li>
   
@@ -1354,8 +1313,8 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#log-hub" class="md-nav__link">
-    使用 Log Hub 控制台
+  <a href="#_2" class="md-nav__link">
+    使用日志通控制台
   </a>
   
 </li>
@@ -1373,7 +1332,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#_3" class="md-nav__link">
     示例仪表板
   </a>
   
@@ -1397,48 +1356,53 @@
   
 
 
-
 <h1 id="aws-waf">AWS WAF 日志</h1>
 <p><a href="https://docs.aws.amazon.com/waf/latest/developerguide/logging.html">WAF 访问日志</a> 提供有关由您的 Web ACL 分析的流量的详细信息。 记录的信息包括 AWS WAF 从您的 AWS 资源收到 Web 请求的时间、有关请求的详细信息以及有关请求匹配的规则的详细信息。</p>
 <h2 id="_1">创建日志摄取</h2>
-<p>您可以使用 Log Hub 控制台或通过部署独立的 CloudFormation 堆栈来将日志摄取到 AOS 中。</p>
+<p>您可以使用日志通控制台或通过部署独立的 CloudFormation 堆栈来将日志摄取到 Amazon OpenSearch Service 中。</p>
 <div class="admonition important">
-<p class="admonition-title">Important</p>
+<p class="admonition-title">重要提示</p>
 <ul>
-<li>WAF 日志存储桶必须和 Log Hub 位于同一区域。</li>
-<li>Log Hub 不支持 <a href="https://docs.aws.amazon.com/waf/latest/developerguide/classic-waf-chapter.html">WAF Classic</a> 产生的日志. 您可以了解如何<a href="https://aws.amazon.com/blogs/security/migrating-rules-from-aws-waf-classic-to-new-aws-waf/">从 WAF Classic 迁移到新 AWS WAF</a>.</li>
-<li>AOS索引每天轮换，不可调整。</li>
+<li>日志通解决方案必须与 Web ACL 部署在同一个可用区中，否则您将无法创建WAF日志摄取。
+例如:<ul>
+<li>如果您的 Web ACL 与 Global Cloudfront 相关联，那么您的日志通 必须部署在 us-east-1。</li>
+<li>如果您的 Web ACL 与在 Ohio 的 AWS 资源相关联，那么您的日志通 必须部署在 us-east-2。</li>
+</ul>
+</li>
+<li>WAF 日志存储桶必须和日志通 位于同一区域。</li>
+<li>日志通 不支持 <a href="https://docs.aws.amazon.com/waf/latest/developerguide/classic-waf-chapter.html">WAF Classic</a> 产生的日志。您可以了解如何<a href="https://aws.amazon.com/blogs/security/migrating-rules-from-aws-waf-classic-to-new-aws-waf/">从 WAF Classic 迁移到新 AWS WAF</a>。</li>
+<li>默认情况下，该解决方案将每天轮换索引。您可以在<strong>额外设置</strong>中进行调整。</li>
 </ul>
 </div>
-<h3 id="log-hub">使用 Log Hub 控制台</h3>
+<h3 id="_2">使用日志通控制台</h3>
 <ol>
-<li>登录 Log Hub 控制台。</li>
+<li>登录日志通控制台。</li>
 <li>在导航窗格中的 <strong>日志分析管道</strong> 下，选择 <strong>AWS 服务日志</strong>。</li>
 <li>选择<strong>创建日志摄取</strong>按钮。</li>
 <li>在 <strong>AWS 服务</strong> 部分，选择 <strong>AWS WAF</strong>。</li>
 <li>选择<strong>下一步</strong>。</li>
 <li>在 <strong>指定设置</strong> 下，选择 <strong>自动</strong> 或 <strong>手动</strong>。<ul>
-<li>对于 <strong>自动</strong> 模式，在下拉列表中选择一个 Web ACL。 </li>
+<li>对于 <strong>自动</strong> 模式，在下拉列表中选择一个 Web ACL。</li>
 <li>对于 <strong>手动</strong> 模式，输入 <strong>Web ACL name</strong>。</li>
 <li>(可选步骤) 如果需要跨账户摄取日志，需要先在 <strong>账户</strong> 的下拉列表中选择一个<a href="../../link-account/">链接的 AWS 账户</a>。</li>
 </ul>
 </li>
 <li>在 <strong>摄取选项</strong> 中. 选择 <strong>采样</strong> 或 <strong>全量</strong>.<ul>
 <li>对于 <strong>采样</strong>， 请输入摄取采样日志的频率。</li>
-<li>对于 <strong>全量</strong>， 如果未启用 Web ACL 日志，请单击 <strong>开启</strong> 启用访问日志。或在手动模式中输入日志位置</li>
+<li>对于 <strong>全量</strong>， 如果未启用 Web ACL 日志，请单击 <strong>开启</strong> 启用访问日志。或在手动模式中输入日志位置。请注意，使用日志通将自动启用使用 Kinesis Data Firehose 流作为 WAF 日志的目标。</li>
 </ul>
 </li>
 <li>选择<strong>下一步</strong>。</li>
 <li>在 <strong>指定 OpenSearch 域</strong> 部分，为 <strong>Amazon OpenSearch 域</strong> 选择一个导入的域。</li>
-<li>如果您要摄取关联的模板化 AOS 仪表板，请为 <strong>示例仪表板</strong> 选择 <strong>是</strong>。</li>
-<li>如果需要，您可以更改目标 AOS 索引的 <strong>索引前缀</strong>。默认前缀是<code>Web ACL 名称</code>。</li>
-<li>在 <strong>日志生命周期</strong> 部分，输入管理 AOS 索引生命周期的天数。 Log Hub 将为此管道自动创建关联的 <a href="https://opensearch.org/docs/latest/im-plugin/ism/index/">索引状态管理 (ISM)</a> 策略。</li>
+<li>如果您要摄取关联的模板化 Amazon OpenSearch Service 仪表板，请为 <strong>示例仪表板</strong> 选择 <strong>是</strong>。</li>
+<li>如果需要，您可以更改目标 Amazon OpenSearch Service 索引的 <strong>索引前缀</strong>。默认前缀是<code>Web ACL 名称</code>。</li>
+<li>在 <strong>日志生命周期</strong> 部分，输入管理 Amazon OpenSearch Service 索引生命周期的天数。日志通 将为此管道自动创建关联的 <a href="https://opensearch.org/docs/latest/im-plugin/ism/index/">索引状态管理 (ISM)</a> 策略。</li>
 <li>选择<strong>下一步</strong>。</li>
 <li>如果需要，添加标签。</li>
 <li>选择<strong>创建</strong>。</li>
 </ol>
 <h3 id="cloudformation">使用 CloudFormation 堆栈</h3>
-<p>此自动化 AWS CloudFormation 模板在 AWS 云中部署 <em>Log Hub - waf Log Ingestion</em> 解决方案。</p>
+<p>此自动化 AWS CloudFormation 模板在 AWS 云中部署 <em>日志通- waf Log Ingestion</em> 解决方案。</p>
 <table>
 <thead>
 <tr>
@@ -1450,23 +1414,23 @@
 <tbody>
 <tr>
 <td>AWS 海外区域 (全量请求)</td>
-<td><a href="https://console.aws.amazon.com/cloudformation/home#/stacks/create/template?stackName=LogHub-WAF&amp;templateURL=https://aws-gcr-solutions.s3.amazonaws.com/log-hub/latest/WAFLog.template" target="_blank"><img alt="启动堆栈" src="../../../images/launch-stack.png" /></a></td>
-<td><a href="https://aws-gcr-solutions.s3.amazonaws.com/log-hub/latest/WAFLog.template">模板</a></td>
+<td><a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/WAFLog.template" target="_blank"><img alt="启动堆栈" src="../../images/launch-stack.png" /></a></td>
+<td><a href="https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/WAFLog.template">模板</a></td>
 </tr>
 <tr>
 <td>AWS 中国区域 (全量请求)</td>
-<td><a href="https://console.amazonaws.cn/cloudformation/home#/stacks/create/template?stackName=LogHub-WAF&amp;templateURL=https://aws-gcr-solutions.s3.cn-north-1.amazonaws.com.cn/log-hub/latest/WAFLog.template" target="_blank"><img alt="启动堆栈" src="../../../images/launch-stack.png" /></a></td>
-<td><a href="https://aws-gcr-solutions.s3.cn-north-1.amazonaws.com.cn/log-hub/latest/WAFLog.template">模板</a></td>
+<td><a href="https://console.amazonaws.cn/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/WAFLog.template" target="_blank"><img alt="启动堆栈" src="../../images/launch-stack.png" /></a></td>
+<td><a href="https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/WAFLog.template">模板</a></td>
 </tr>
 <tr>
 <td>AWS 海外区域 (采样请求)</td>
-<td><a href="https://console.aws.amazon.com/cloudformation/home#/stacks/create/template?stackName=LogHub-WAF&amp;templateURL=https://aws-gcr-solutions.s3.amazonaws.com/log-hub/latest/WAFSampledLog.template" target="_blank"><img alt="启动堆栈" src="../../../images/launch-stack.png" /></a></td>
-<td><a href="https://aws-gcr-solutions.s3.amazonaws.com/log-hub/latest/WAFSampledLog.template">模板</a></td>
+<td><a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/WAFSampledLog.template" target="_blank"><img alt="启动堆栈" src="../../images/launch-stack.png" /></a></td>
+<td><a href="https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/WAFSampledLog.template">模板</a></td>
 </tr>
 <tr>
 <td>AWS 中国区域 (采样请求)</td>
-<td><a href="https://console.amazonaws.cn/cloudformation/home#/stacks/create/template?stackName=LogHub-WAF&amp;templateURL=https://aws-gcr-solutions.s3.cn-north-1.amazonaws.com.cn/log-hub/latest/WAFSampledLog.template" target="_blank"><img alt="启动堆栈" src="../../../images/launch-stack.png" /></a></td>
-<td><a href="https://aws-gcr-solutions.s3.cn-north-1.amazonaws.com.cn/log-hub/latest/WAFSampledLog.template">模板</a></td>
+<td><a href="https://console.amazonaws.cn/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/WAFSampledLog.template" target="_blank"><img alt="启动堆栈" src="../../images/launch-stack.png" /></a></td>
+<td><a href="https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/WAFSampledLog.template">模板</a></td>
 </tr>
 </tbody>
 </table>
@@ -1558,17 +1522,17 @@
 <tr>
 <td>Log Source Account ID</td>
 <td><code>&lt;可选输入&gt;</code></td>
-<td>存储日志的 S3 存储桶所在账户 ID. 对于跨账户日志摄取是必填 (需要先 <a href="../../link-account/">添加一个成员账户</a>). 默认情况下, 会使用您在 <strong>步骤 1</strong> 中登录的账户 ID.</td>
+<td>存储日志的 S3 存储桶所在账户 ID. 对于跨账户日志摄取是必填 (需要先 <a href="../../link-account/">添加一个成员账户</a>)。 默认情况下, 会使用您在 <strong>步骤 1</strong> 中登录的账户 ID。</td>
 </tr>
 <tr>
 <td>Log Source Region</td>
 <td><code>&lt;可选输入&gt;</code></td>
-<td>存储日志的 S3 存储桶所在的区域. 默认情况下, 会使用您在 <strong>步骤 2</strong> 中指定的区域</td>
+<td>存储日志的 S3 存储桶所在的区域. 默认情况下, 会使用您在 <strong>步骤 2</strong> 中指定的区域。</td>
 </tr>
 <tr>
 <td>Log Source Account Assume Role</td>
 <td><code>&lt;可选输入&gt;</code></td>
-<td>跨账户日志摄取所需要使用的 IAM Role. 对于跨账户日志摄取是必填 (需要先 <a href="../../link-account/">添加一个成员账户</a>).</td>
+<td>跨账户日志摄取所需要使用的 IAM Role. 对于跨账户日志摄取是必填 (需要先 <a href="../../link-account/">添加一个成员账户</a>)。</td>
 </tr>
 <tr>
 <td>Engine Type</td>
@@ -1618,7 +1582,7 @@
 <tr>
 <td>KMS-CMK ARN</td>
 <td><code>&lt;可选输入&gt;</code></td>
-<td>用于加密的 KMS-CMK ARN. 留空以创建新的 KMS CMK.</td>
+<td>用于加密的 KMS-CMK ARN。 留空以创建新的 KMS CMK。</td>
 </tr>
 <tr>
 <td>Number Of Shards</td>
@@ -1662,8 +1626,8 @@
 </li>
 </ol>
 <p>您可以在 AWS CloudFormation 控制台的 <strong>状态</strong> 列中查看堆栈的状态。正常情况下，您大约 10 分钟后会看到 <strong>CREATE_COMPLETE</strong> 状态。</p>
-<h2 id="_2">示例仪表板</h2>
-<p><a href="../../../images/dashboards/waf-db.png"><img alt="waf-db" src="../../../images/dashboards/waf-db.png" /></a></p>
+<h2 id="_3">示例仪表板</h2>
+<p><a href="../../images/dashboards/waf-db.png"><img alt="waf-db" src="../../images/dashboards/waf-db.png" /></a></p>
 
 
 
@@ -1696,10 +1660,10 @@
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.e5c33ebb.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": "latest"}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": "latest"}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.ba449ae6.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.efa0ade1.min.js"></script>
       
     
   </body>

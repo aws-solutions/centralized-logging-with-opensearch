@@ -8,7 +8,7 @@
       
       
       
-        <link rel="canonical" href="https://awslabs.github.io/log-hub/implementation-guide/deployment/with-oidc/">
+        <link rel="canonical" href="https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/deployment/with-oidc/">
       
       
         <link rel="prev" href="../with-cognito/">
@@ -17,18 +17,18 @@
         <link rel="next" href="../../getting-started/">
       
       <link rel="icon" href="../../../images/aws-solutions.png">
-      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.0.3">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.1.3">
     
     
       
-        <title>使用 OpenID Connect - Log Hub</title>
+        <title>使用 OpenID Connect - Centralized Logging with OpenSearch</title>
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.6b71719e.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.c4a75a56.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.2505c338.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.a0c5b2b5.min.css">
       
       
 
@@ -71,7 +71,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#aws" class="md-skip">
+        <a href="#openid-connect" class="md-skip">
           跳转至
         </a>
       
@@ -80,7 +80,7 @@
       
     </div>
     
-      <div data-md-component="outdated" hidden>
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
         
       </div>
     
@@ -89,7 +89,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="页眉">
-    <a href="../../.." title="Log Hub" class="md-header__button md-logo" aria-label="Log Hub" data-md-component="logo">
+    <a href="../../.." title="Centralized Logging with OpenSearch" class="md-header__button md-logo" aria-label="Centralized Logging with OpenSearch" data-md-component="logo">
       
   <img src="../../../images/aws-solutions.png" alt="logo">
 
@@ -101,7 +101,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            Log Hub
+            Centralized Logging with OpenSearch
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -125,13 +125,13 @@
             <ul class="md-select__list">
               
                 <li class="md-select__item">
-                  <a href="/log-hub/en/" hreflang="en" class="md-select__link">
+                  <a href="/centralized-logging-with-opensearch/en/" hreflang="en" class="md-select__link">
                     English
                   </a>
                 </li>
               
                 <li class="md-select__item">
-                  <a href="/log-hub/zh/" hreflang="zh" class="md-select__link">
+                  <a href="/centralized-logging-with-opensearch/zh/" hreflang="zh" class="md-select__link">
                     简体中文
                   </a>
                 </li>
@@ -168,7 +168,7 @@
           <div class="md-search-result__meta">
             正在初始化搜索引擎
           </div>
-          <ol class="md-search-result__list"></ol>
+          <ol class="md-search-result__list" role="presentation"></ol>
         </div>
       </div>
     </div>
@@ -177,13 +177,13 @@
     
     
       <div class="md-header__source">
-        <a href="https://github.com/awslabs/log-hub" title="前往仓库" class="md-source" data-md-component="source">
+        <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch" title="前往仓库" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.3.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
-    awslabs/log-hub
+    aws-solutions/centralized-logging-with-opensearch
   </div>
 </a>
       </div>
@@ -199,7 +199,7 @@
           
             
 <nav class="md-tabs" aria-label="标签" data-md-component="tabs">
-  <div class="md-tabs__inner md-grid">
+  <div class="md-grid">
     <ul class="md-tabs__list">
       
         
@@ -226,7 +226,7 @@
 
 
   <li class="md-tabs__item">
-    <a href="https://github.com/orgs/awslabs/projects/58" class="md-tabs__link">
+    <a href="https://github.com/orgs/aws-solutions/projects/17/" class="md-tabs__link">
       路线图
     </a>
   </li>
@@ -238,20 +238,8 @@
 
 
   <li class="md-tabs__item">
-    <a href="https://aws-samples.github.io/log-hub-workshop" class="md-tabs__link">
+    <a href="https://catalog.workshops.aws/centralized-logging-with-opensearch/" class="md-tabs__link">
       动手实验
-    </a>
-  </li>
-
-      
-        
-  
-  
-
-
-  <li class="md-tabs__item">
-    <a href="https://awslabs.github.io/log-hub/en/designs" class="md-tabs__link">
-      技术设计
     </a>
   </li>
 
@@ -277,22 +265,22 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="导航栏" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../.." title="Log Hub" class="md-nav__button md-logo" aria-label="Log Hub" data-md-component="logo">
+    <a href="../../.." title="Centralized Logging with OpenSearch" class="md-nav__button md-logo" aria-label="Centralized Logging with OpenSearch" data-md-component="logo">
       
   <img src="../../../images/aws-solutions.png" alt="logo">
 
     </a>
-    Log Hub
+    Centralized Logging with OpenSearch
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/awslabs/log-hub" title="前往仓库" class="md-source" data-md-component="source">
+      <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch" title="前往仓库" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.3.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
-    awslabs/log-hub
+    aws-solutions/centralized-logging-with-opensearch
   </div>
 </a>
     </div>
@@ -314,16 +302,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1" type="checkbox" id="__nav_1" checked>
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" checked>
       
       
       
-        <label class="md-nav__link" for="__nav_1" tabindex="0" aria-expanded="true">
+        <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
           实施指南
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="实施指南" data-md-level="1">
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="true">
         <label class="md-nav__title" for="__nav_1">
           <span class="md-nav__icon md-icon"></span>
           实施指南
@@ -413,16 +401,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_6" type="checkbox" id="__nav_1_6" checked>
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_6" checked>
       
       
       
-        <label class="md-nav__link" for="__nav_1_6" tabindex="0" aria-expanded="true">
+        <label class="md-nav__link" for="__nav_1_6" id="__nav_1_6_label" tabindex="0">
           开始部署
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="开始部署" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_6_label" aria-expanded="true">
         <label class="md-nav__title" for="__nav_1_6">
           <span class="md-nav__icon md-icon"></span>
           开始部署
@@ -466,7 +454,7 @@
   
     <li class="md-nav__item md-nav__item--active">
       
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
         
@@ -599,16 +587,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_7" type="checkbox" id="__nav_1_7" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_7" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_7" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_7" id="__nav_1_7_label" tabindex="0">
           快速入门
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="快速入门" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_7_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_7">
           <span class="md-nav__icon md-icon"></span>
           快速入门
@@ -703,16 +691,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_8" type="checkbox" id="__nav_1_8" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_8" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_8" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_8" id="__nav_1_8_label" tabindex="0">
           AOS 集群管理
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="AOS 集群管理" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_8_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_8">
           <span class="md-nav__icon md-icon"></span>
           AOS 集群管理
@@ -793,16 +781,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_9" type="checkbox" id="__nav_1_9" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_9" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_9" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_9" id="__nav_1_9_label" tabindex="0">
           AWS 服务日志
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="AWS 服务日志" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_9_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_9">
           <span class="md-nav__icon md-icon"></span>
           AWS 服务日志
@@ -967,16 +955,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_10" type="checkbox" id="__nav_1_10" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_10" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_10" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_10" id="__nav_1_10_label" tabindex="0">
           应用日志
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="应用日志" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_10_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_10">
           <span class="md-nav__icon md-icon"></span>
           应用日志
@@ -1008,16 +996,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_10_2" type="checkbox" id="__nav_1_10_2" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_10_2" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_10_2" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_10_2" id="__nav_1_10_2_label" tabindex="0">
           前提条件
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="前提条件" data-md-level="3">
+      <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_1_10_2_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_10_2">
           <span class="md-nav__icon md-icon"></span>
           前提条件
@@ -1198,20 +1186,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../upgrade/" class="md-nav__link">
-        更新解决方案
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../uninstall/" class="md-nav__link">
         卸载解决方案
       </a>
@@ -1231,17 +1205,17 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_16" type="checkbox" id="__nav_1_16" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_15" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_16" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_15" id="__nav_1_15_label" tabindex="0">
           资源
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="资源" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_16">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_15_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_1_15">
           <span class="md-nav__icon md-icon"></span>
           资源
         </label>
@@ -1324,7 +1298,7 @@
   
   
     <li class="md-nav__item">
-      <a href="https://github.com/orgs/awslabs/projects/58" class="md-nav__link">
+      <a href="https://github.com/orgs/aws-solutions/projects/17/" class="md-nav__link">
         路线图
       </a>
     </li>
@@ -1339,23 +1313,8 @@
   
   
     <li class="md-nav__item">
-      <a href="https://aws-samples.github.io/log-hub-workshop" class="md-nav__link">
+      <a href="https://catalog.workshops.aws/centralized-logging-with-opensearch/" class="md-nav__link">
         动手实验
-      </a>
-    </li>
-  
-
-    
-      
-      
-      
-
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="https://awslabs.github.io/log-hub/en/designs" class="md-nav__link">
-        技术设计
       </a>
     </li>
   
@@ -1481,17 +1440,17 @@
   
 
 
-
-<h1 id="aws">在 AWS 中国区域部署</h1>
+<h1 id="openid-connect">使用 OpenID Connect</h1>
 <p><strong>部署时间</strong>：大约 30 分钟</p>
 <h2 id="_1">前提条件</h2>
 <div class="admonition important">
 <p class="admonition-title">重要</p>
-<p>Log Hub 控制台通过 CloudFront 分发提供服务，该分发被视为 Internet 信息服务。 如果您在<strong>AWS 中国区域</strong>部署解决方案。域名必须有有效的<a href="https://www.amazonaws.cn/en/support/icp/?nc2=h_l2_su">ICP备案</a>才能正常使用。</p>
+<p>日志通控制台通过 CloudFront 分发提供服务，该分发被视为 Internet 信息服务。 如果您在<strong>AWS 中国区域</strong>部署解决方案。域名必须有有效的<a href="https://www.amazonaws.cn/en/support/icp/?nc2=h_l2_su">ICP备案</a>才能正常使用。</p>
 </div>
 <ul>
-<li>一个域名。 您将使用此域来访问 Log Hub 控制台。</li>
-<li>AWS IAM 中的 SSL 证书，且必须与给定的域相关联。 按照 <a href="../../resources/upload-ssl-certificate/">本指南</a> 将 SSL 证书上传到 IAM。</li>
+<li>一个域名。 您将使用此域来访问日志通控制台。（AWS 中国区域必需，AWS 海外区域可选）</li>
+<li>提供 AWS IAM 中的 SSL 证书，且必须与给定的域相关联。 您可以按照 <a href="../../resources/upload-ssl-certificate/">本指南</a> 将 SSL 证书上传到 IAM。（AWS 中国区域必需，AWS 海外区域不推荐）</li>
+<li>在美国东部（弗吉尼亚北部）区域 (us-east-1) 中请求（或导入）ACM 证书。（AWS 中国区域无需，AWS 海外区域可选）</li>
 </ul>
 <h2 id="_2">部署概览</h2>
 <p>使用以下步骤在 AWS 上部署此解决方案。</p>
@@ -1512,30 +1471,15 @@
 <h3 id="1-cognito-user-pool">(选项 1) 使用其他区域的 Cognito User Pool</h3>
 <ol>
 <li>在 AWS 海外区域登陆 <a href="https://console.aws.amazon.com/cognito/home">Amazon Cognito 控制台</a>。</li>
-<li>使用 Amazon Cognito 控制台设置托管 UI。(<a href="https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools-app-integration.html#cognito-user-pools-create-an-app-integration">详细步骤</a>)</li>
-<li>请注意，Amazon Cognito 控制台发布了一个新版本，新老版本都在使用。如果您正在使用新版本的 Cognito 控制台，请按照 <strong>New console</strong> 的步骤操作。并且：<ul>
-<li>对于 <strong>新版本的 Cognito 控制台</strong>：请在选择 App type（应用程序类型）时选择 Public client（公有客户端）。</li>
-<li>对于 <strong>旧版本的 Cognito 控制台</strong>：请在添加应用程序客户端时，<strong>清除</strong>选项 Generate client secret（生成客户端密钥）。该选项是默认开启的。</li>
-</ul>
-</li>
-<li>请在填写 Callback URL 和 Sign out URL 时，使用给 Log Hub 控制台准备的域名。在您的 hosted UI 设置成功后，您可以看到如下状态：<ul>
-<li>对于 <strong>新版本的 Cognito 控制台</strong>：hosted UI 的状态为 <strong>Available</strong>。
-    <a href="../../../images/OIDC/cognito-hostUI-new.png"><img alt="" src="../../../images/OIDC/cognito-hostUI-new.png" /></a></li>
-<li>对于 <strong>旧版本的 Cognito 控制台</strong>：可以看到 <strong>Launch Hosted UI</strong> 这个链接，并且该链接有效。
-    <a href="../../../images/OIDC/cognito-hostUI-old.png"><img alt="" src="../../../images/OIDC/cognito-hostUI-old.png" /></a></li>
-</ul>
-</li>
-<li>将 App client ID, User pool ID 和 Cognito 用户池所在的海外区域保存到一个文本文件中，以备后面使用。<ul>
-<li>对于 <strong>新版本的 Cognito 控制台</strong>：
-    <a href="../../../images/OIDC/cognito-new-console-clientID.png"><img alt="" src="../../../images/OIDC/cognito-new-console-clientID.png" /></a>
-    <a href="../../../images/OIDC/cognito-new-console-userpoolID.png"><img alt="" src="../../../images/OIDC/cognito-new-console-userpoolID.png" /></a></li>
-<li>对于 <strong>旧版本的 Cognito 控制台</strong>：
-    <a href="../../../images/OIDC/cognito-old-console-clientID.png"><img alt="" src="../../../images/OIDC/cognito-old-console-clientID.png" /></a>
-    <a href="../../../images/OIDC/cognito-old-console-userpoolID.png"><img alt="" src="../../../images/OIDC/cognito-old-console-userpoolID.png" /></a></li>
-</ul>
-</li>
+<li>按照此 <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools-configuring-app-integration.html">指南</a> 添加应用程序客户端并设置托管 UI。</li>
+<li>对于 <strong>应用程序类型</strong>，选择 <em>公共客户端</em>。</li>
+<li>请在填写 <strong>允许的回调 URL</strong> 和 <strong>允许的注销 URL</strong> 时，使用给日志通 控制台准备的域名。在您的 hosted UI 设置成功后，您可以看到如下状态：
+        <a href="../../images/OIDC/cognito-hostUI-new.png"><img alt="" src="../../images/OIDC/cognito-hostUI-new.png" /></a></li>
+<li>将 <code>客户端 ID</code>, <code>用户池 ID</code> 保存到一个文本文件中，以备后面使用。
+        <a href="../../images/OIDC/cognito-new-console-clientID.png"><img alt="" src="../../images/OIDC/cognito-new-console-clientID.png" /></a>
+        <a href="../../images/OIDC/cognito-new-console-userpoolID.png"><img alt="" src="../../images/OIDC/cognito-new-console-userpoolID.png" /></a></li>
 </ol>
-<p>在<a href="#2">步骤 2. 启动堆栈</a>中，OidcClientID 就是 <code>App client ID</code>, OidcProvider 是 <code>https://cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}</code>。</p>
+<p>在<a href="#2">步骤 2. 启动堆栈</a>中，OidcClientID 就是 <code>客户端 ID</code>, OidcProvider 是 <code>https://cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}</code>。</p>
 <h3 id="2-authingcn-oidc">(选项 2) Authing.cn OIDC 客户端</h3>
 <ol>
 <li>登录<a href="https://console.authing.cn/console" target="_blank">Authing 控制台</a>。</li>
@@ -1546,16 +1490,13 @@
 <li>输入<strong>应用名称</strong>和<strong>认证地址</strong>。</li>
 <li>
 <p>将Endpoint Information中的<code>App ID</code>（即<code>client_id</code>）和<code>Issuer</code>保存到一个文本文件中，以备后面使用。
-    <a href="../../../images/OIDC/endpoint-info.png"><img alt="" src="../../../images/OIDC/endpoint-info.png" /></a></p>
+    <a href="../../images/OIDC/endpoint-info.png"><img alt="" src="../../images/OIDC/endpoint-info.png" /></a></p>
 </li>
 <li>
-<p>将<code>Login Callback URL</code>和<code>Logout Callback URL</code>更新为IPC记录的域名。
-    <a href="../../../images/OIDC/authentication-configuration.png"><img alt="" src="../../../images/OIDC/authentication-configuration.png" /></a></p>
+<p>将<code>Login Callback URL</code>和<code>Logout Callback URL</code>更新为IPC记录的域名。</p>
 </li>
-<li>
-<p>设置以下授权配置。
-    <a href="../../../images/OIDC/authorization-configuration.png"><img alt="" src="../../../images/OIDC/authorization-configuration.png" /></a></p>
-</li>
+<li>设置以下授权配置。
+    <a href="../../images/OIDC/authorization-configuration.png"><img alt="" src="../../images/OIDC/authorization-configuration.png" /></a></li>
 </ol>
 <p>您已经成功创建了一个身份验证自建应用程序。</p>
 <h3 id="3-keycloak-oidc">(选项 3) Keycloak OIDC 客户端</h3>
@@ -1565,86 +1506,68 @@
 <li>在左侧导航栏，选择 <strong>Add Realm</strong>。如果您已经有一个 Realm，请跳过此步骤。</li>
 <li>
 <p>进入领域设置页面。选择 <strong>Endpoints</strong>，然后从列表中选择 <strong>OpenID Endpoint Configuration</strong>。</p>
-<p><a href="../../../images/OIDC/keycloak-example-realm.jpg"><img alt="" src="../../../images/OIDC/keycloak-example-realm.jpg" /></a></p>
+<p><a href="../../images/OIDC/keycloak-example-realm.jpg"><img alt="" src="../../images/OIDC/keycloak-example-realm.jpg" /></a></p>
 </li>
 <li>
 <p>在浏览器打开的 JSON 文件中，记录 <strong>issuer</strong> 值，以备后面使用。</p>
-<p><a href="../../../images/OIDC/OIDC-config.jpg"><img alt="" src="../../../images/OIDC/OIDC-config.jpg" /></a></p>
+<p><a href="../../images/OIDC/OIDC-config.jpg"><img alt="" src="../../images/OIDC/OIDC-config.jpg" /></a></p>
 </li>
 <li>
 <p>返回Keycloak控制台，在左侧导航栏选择<strong>Clients</strong>，然后选择<strong>Create</strong>。</p>
 </li>
 <li>输入客户 ID，必须包含 24 个字母（不区分大小写）或数字。记录 <strong>Client ID</strong>，以备后面使用。</li>
 <li>
-<p>更改Client设置，在 <strong>Valid Redirect URIs</strong> 处输入 <code>https://&lt;Log Hub 控制台域名&gt;</code>，在 <strong>Web Origins</strong> 输入 <code>*</code> 和 <code>+</code>。如下图所示：</p>
-<p><a href="../../../images/OIDC/keycloak-client-setting.jpg"><img alt="" src="../../../images/OIDC/keycloak-client-setting.jpg" /></a></p>
+<p>更改Client设置，在 <strong>Valid Redirect URIs</strong> 处输入 <code>https://&lt;日志通控制台域名&gt;</code>，在 <strong>Web Origins</strong> 输入 <code>*</code> 和 <code>+</code>。</p>
 </li>
 <li>
 <p>在 Advanced Settings 中, 请把 Access Token Lifespan 的值设置为5分钟或更长时间。</p>
-<p><a href="../../../images/OIDC/keycloak-access-token-setting.png"><img alt="" src="../../../images/OIDC/keycloak-access-token-setting.png" /></a></p>
 </li>
-<li>
-<p>选择左侧导航栏的 <strong>Users</strong>。</p>
-</li>
+<li>选择左侧导航栏的 <strong>Users</strong>。</li>
 <li>点击 <strong>Add user</strong>，并输入 <strong>username</strong>。</li>
 <li>创建用户后，选择<strong>Credentials</strong>，输入<strong>Password</strong>。</li>
 </ol>
 <p><code>Issuer</code> 的值的格式为 <code>https://&lt;KEYCLOAK_DOMAIN_NAME&gt;/auth/realms/&lt;REALM_NAME&gt;</code>。</p>
 <h3 id="4-adfs-openid-connect">(选项 4) 使用 ADFS OpenID Connect</h3>
 <ol>
-<li>确保您的 ADFS 已安装，您可以按照 <a href="https://docs.microsoft.com/en-us/windows-server/identity/ad-fs/deployment/ad-fs">本指南</a> 了解如何安装 ADFS -部署指南）。</li>
+<li>确保您的 ADFS 已安装，您可以按照 <a href="https://docs.microsoft.com/en-us/windows-server/identity/ad-fs/deployment/ad-fs">本指南</a> 了解如何安装 ADFS -部署指南。</li>
+<li>确保您可以登录到 ADFS 登录页面。 URL 应为“https://adfs.domain.com/adfs/ls/idpinitiatedSignOn.aspx”，将 <strong>adfs.domain.com</strong> 替换为您的真实 ADFS 域。</li>
+<li>登录您的<strong>域控制器</strong>，打开<strong>Active Directory 用户和计算机</strong>。</li>
+<li>为日志通 用户创建一个<strong>安全组</strong>，将您计划的日志通 用户添加到此安全组。</li>
+<li>登录 ADFS 服务器，打开 <strong>ADFS 管理</strong>。</li>
 <li>
-<p>确保您可以登录到 ADFS 登录页面。 URL 应为“https://adfs.domain.com/adfs/ls/idpinitiatedSignOn.aspx”，将 <strong>adfs.domain.com</strong> 替换为您的真实 ADFS 域。</p>
-<p><img alt="" src="../../../images/OIDC/adfs-1.png" /></p>
+<p>右击<strong>Application Groups</strong>，点击<strong>Application Group</strong>，输入Application Group的名称。在<strong>Client-Server Applications</strong>下选择<strong>Web browser access a web application</strong>选项，点击<strong>下一步</strong>。</p>
 </li>
 <li>
-<p>登录您的<strong>域控制器</strong>，打开<strong>Active Directory 用户和计算机</strong>。</p>
-</li>
-<li>
-<p>为 Log Hub 用户创建一个<strong>安全组</strong>，将您计划的 Log Hub 用户添加到此安全组。</p>
-<p><img alt="" src="../../../images/OIDC/adfs-2.png" /></p>
-</li>
-<li>
-<p>登录 ADFS 服务器，打开 <strong>ADFS 管理</strong>。</p>
-<p><img alt="" src="../../../images/OIDC/adfs-3.png" /></p>
-</li>
-<li>
-<p>右击<strong>Application Groups</strong>，点击<strong>Application Group</strong>，输入Application Group的名称，如LogHub。在<strong>Client-Server Applications</strong>下选择<strong>Web browser access a web application</strong>选项 ， 点击<strong>下一步</strong>。</p>
-<p><img alt="" src="../../../images/OIDC/adfs-4.png" /></p>
-</li>
-<li>
-<p>记录下此窗口中的 <strong>Client Identifier</strong> (<code>client_id</code>)，在 <strong>Redirect URI</strong> 下，输入您的 Log Hub 域名（例如，<code>loghub.domain.com</code>），然后单击 <strong>添加</strong> ，然后单击<strong>下一步</strong>。</p>
-<p><img alt="" src="../../../images/OIDC/adfs-5.png" /></p>
+<p>记录下此窗口中的 <strong>Client Identifier</strong> (<code>client_id</code>)，在 <strong>Redirect URI</strong> 下，输入您的日志通域名（例如，<code>xx.domain.com</code>），然后单击 <strong>添加</strong> ，然后单击<strong>下一步</strong>。</p>
 </li>
 <li>
 <p>在 <strong>Choose Access Control Policy</strong> 窗口中，选择 <strong>Permit specific group</strong>，单击 Policy 部分下的 <strong>parameters</strong>，添加在第 4 步中创建的安全组，然后单击 <strong>下一步</strong>（您也可以根据您的要求配置其他访问控制策略）。</p>
-<p><img alt="" src="../../../images/OIDC/adfs-6.png" /></p>
 </li>
 <li>
 <p>在摘要窗口下，单击<strong>下一步</strong>，然后单击<strong>关闭</strong>。</p>
 </li>
 <li>
-<p>在 ADFS 服务器上打开 Windows PowerShell，并运行以下命令来配置 ADFS 以允许对您计划的 LogHub URL 进行 CORS。</p>
+<p>在 ADFS 服务器上打开 Windows PowerShell，并运行以下命令来配置 ADFS 以允许对您计划的 URL 进行 CORS。</p>
 <div class="highlight"><pre><span></span><code>Set-AdfsResponseHeaders<span class="w"> </span>-EnableCORS<span class="w"> </span><span class="nv">$true</span>
-Set-AdfsResponseHeaders<span class="w"> </span>-CORSTrustedOrigins<span class="w"> </span>https://&lt;your-loghub-domain&gt;
+Set-AdfsResponseHeaders<span class="w"> </span>-CORSTrustedOrigins<span class="w"> </span>https://&lt;your-centralized-logging-with-opensearch-domain&gt;
 </code></pre></div>
 </li>
 <li>
 <p>在 ADFS 服务器上的 Windows PowerShell 下，运行以下命令获取 ADFS 的颁发者（<code>issuer</code>），类似于<code>https://adfs.domain.com/adfs</code>。</p>
 <div class="highlight"><pre><span></span><code>Get-ADFSProperties<span class="w"> </span><span class="p">|</span><span class="w"> </span>Select<span class="w"> </span>IdTokenIssuer
 </code></pre></div>
-<p><img alt="" src="../../../images/OIDC/adfs-9.png" /></p>
+<p><img alt="" src="../../images/OIDC/adfs-9.png" /></p>
 </li>
 </ol>
 <h2 id="2">步骤 2. 启动堆栈</h2>
 <div class="admonition important">
-<p class="admonition-title">Important</p>
-<p>在一个 AWS 账户的一个区域中，您只能部署一个 Log Hub solution的堆栈。
+<p class="admonition-title">重要</p>
+<p>在一个 AWS 账户的一个区域中，您只能部署一个日志通的堆栈。
 如果您在部署中碰到了错误，比如没有满足<a href="../">前提条件</a>， 请确保您删除了失败的堆栈，然后再重试部署。</p>
 </div>
 <ol>
 <li>
-<p>登录 AWS 管理控制台并使用下面的按钮启动 <code>log-hub</code> AWS CloudFormation 模板。</p>
+<p>登录 AWS 管理控制台并使用下面的按钮启动AWS CloudFormation 模板。</p>
 <table>
 <thead>
 <tr>
@@ -1655,32 +1578,32 @@ Set-AdfsResponseHeaders<span class="w"> </span>-CORSTrustedOrigins<span class="w
 <tbody>
 <tr>
 <td>在海外区域新的 VPC 中部署</td>
-<td><a href="https://console.aws.amazon.com/cloudformation/home#/stacks/create/template?stackName=LogHub&amp;templateURL=https://aws-gcr-solutions.s3.amazonaws.com/log-hub/latest/LogHubWithOIDC.template" target="_blank"><img alt="Launch Stack" src="../../../images/launch-stack.png" /></a></td>
+<td><a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/CentralizedLoggingWithOIDC.template" target="_blank"><img alt="Launch Stack" src="../../images/launch-stack.png" /></a></td>
 </tr>
 <tr>
 <td>在海外区域现有的 VPC 中部署</td>
-<td><a href="https://console.aws.amazon.com/cloudformation/home#/stacks/create/template?stackName=LogHub&amp;templateURL=https://aws-gcr-solutions.s3.amazonaws.com/log-hub/latest/LogHubFromExistingVPCWithOIDC.template" target="_blank"><img alt="Launch Stack" src="../../../images/launch-stack.png" /></a></td>
+<td><a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/CentralizedLoggingFromExistingVPCWithOIDC.template" target="_blank"><img alt="Launch Stack" src="../../images/launch-stack.png" /></a></td>
 </tr>
 <tr>
 <td>在中国区域新的 VPC 中部署</td>
-<td><a href="https://console.amazonaws.cn/cloudformation/home#/stacks/create/template?stackName=LogHub&amp;templateURL=https://aws-gcr-solutions.s3.amazonaws.com/log-hub/latest/LogHubWithOIDC.template" target="_blank"><img alt="Launch Stack" src="../../../images/launch-stack.png" /></a></td>
+<td><a href="https://console.amazonaws.cn/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/CentralizedLoggingWithOIDC.template" target="_blank"><img alt="Launch Stack" src="../../images/launch-stack.png" /></a></td>
 </tr>
 <tr>
 <td>在中国区域现有的 VPC 中部署</td>
-<td><a href="https://console.amazonaws.cn/cloudformation/home#/stacks/create/template?stackName=LogHub&amp;templateURL=https://aws-gcr-solutions.s3.amazonaws.com/log-hub/latest/LogHubFromExistingVPCWithOIDC.template" target="_blank"><img alt="Launch Stack" src="../../../images/launch-stack.png" /></a></td>
+<td><a href="https://console.amazonaws.cn/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/CentralizedLoggingFromExistingVPCWithOIDC.template" target="_blank"><img alt="Launch Stack" src="../../images/launch-stack.png" /></a></td>
 </tr>
 </tbody>
 </table>
 </li>
 <li>
-<p>登录控制台后，模板在默认区域启动。要在不同的 AWS 区域中启动 Log Hub 解决方案，请使用控制台导航栏中的区域选择器。</p>
+<p>登录控制台后，模板在默认区域启动。要在不同的 AWS 区域中启动日志通 解决方案，请使用控制台导航栏中的区域选择器。</p>
 </li>
 <li>在 <strong>创建堆栈</strong> 页面上，验证正确的模板 URL 显示在 <strong>Amazon S3 URL</strong> 文本框中，然后选择 <strong>下一步</strong>。</li>
 <li>在 <strong>指定堆栈详细信息</strong> 页面上，为您的解决方案堆栈分配一个名称。有关命名字符限制的信息，请参阅 <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_iam-limits.html" target="_blank">IAM 和 STS 限制</a> 中的 <em>AWS Identity and Access Management 用户指南</em>。</li>
 <li>
-<p>在 <strong>参数</strong> 部分，查看模板的参数并根据需要进行修改。</p>
+<p>在 <strong>参数</strong> 部分，查看模板的参数并根据需要进行修改。此解决方案使用以下默认值。</p>
 <ul>
-<li>如果从新的 VPC 中部署, 此解决方案使用以下参数:</li>
+<li>如果从新的 VPC 中部署, 此解决方案使用以下默认值:</li>
 </ul>
 <table>
 <thead>
@@ -1699,22 +1622,27 @@ Set-AdfsResponseHeaders<span class="w"> </span>-CORSTrustedOrigins<span class="w
 <tr>
 <td>OidcProvider</td>
 <td><code>&lt;需要输入&gt;</code></td>
-<td>OpenId 连接器提供者发行者。发行者必须以 <code>https://</code></td>
+<td>OpenId 连接器提供者发行者。发行者必须以 <code>https://</code> 开头。</td>
 </tr>
 <tr>
 <td>Domain</td>
-<td><code>&lt;需要输入&gt;</code></td>
-<td>Log Hub 控制台的自定义域。切记不要添加 <code>http(s)</code> 前缀。</td>
+<td><code>&lt;可选输入&gt;</code></td>
+<td>日志通 控制台的自定义域。切记不要添加 <code>http(s)</code> 前缀。</td>
 </tr>
 <tr>
 <td>IamCertificateID</td>
-<td><code>&lt;需要输入&gt;</code></td>
+<td><code>&lt;可选输入&gt;</code></td>
 <td>IAM 中 SSL 证书的 ID。 ID 由 21 个大写字母和数字字符组成。您可以使用 <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_server-certs.html#list-server-certificates" target="_blank"><code>list-server-certificates</code></a> 命令检索 ID。</td>
+</tr>
+<tr>
+<td>AcmCertificateArn</td>
+<td><code>&lt;可选输入&gt;</code></td>
+<td>美国东部（弗吉尼亚北部）区域 (us-east-1) 中请求（或导入）的 ACM 证书的 Arn。</td>
 </tr>
 </tbody>
 </table>
 <ul>
-<li>如果部署已有的 VPC 中, 此解决方案使用以下参数:</li>
+<li>如果从现有的 VPC 中部署, 此解决方案使用以下默认值:</li>
 </ul>
 <table>
 <thead>
@@ -1737,13 +1665,18 @@ Set-AdfsResponseHeaders<span class="w"> </span>-CORSTrustedOrigins<span class="w
 </tr>
 <tr>
 <td>Domain</td>
-<td><code>&lt;需要输入&gt;</code></td>
-<td>Log Hub 控制台的自定义域。切记不要添加 <code>http(s)</code> 前缀。</td>
+<td><code>&lt;可选输入&gt;</code></td>
+<td>日志通 控制台的自定义域。切记不要添加 <code>http(s)</code> 前缀。</td>
 </tr>
 <tr>
 <td>IamCertificateID</td>
-<td><code>&lt;需要输入&gt;</code></td>
+<td><code>可选输入&gt;</code></td>
 <td>IAM 中 SSL 证书的 ID。 ID 由 21 个大写字母和数字字符组成。您可以使用 <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_server-certs.html#list-server-certificates" target="_blank"><code>list-server-certificates</code></a> 命令检索 ID。</td>
+</tr>
+<tr>
+<td>AcmCertificateArn</td>
+<td><code>&lt;可选输入&gt;</code></td>
+<td>美国东部（弗吉尼亚北部）区域 (us-east-1) 中请求（或导入）的 ACM 证书的 Arn。</td>
 </tr>
 <tr>
 <td>VPC ID</td>
@@ -1762,6 +1695,18 @@ Set-AdfsResponseHeaders<span class="w"> </span>-CORSTrustedOrigins<span class="w
 </tr>
 </tbody>
 </table>
+<div class="admonition important">
+<p class="admonition-title">重要</p>
+<p>Domain, IamCertificateID, AcmCertificateArn 三者关系如下：</p>
+<ul>
+<li>若您在<strong>AWS 中国区域</strong>部署解决方案，则必须输入 Domain, IamCertificateID。</li>
+<li>若您在<strong>AWS 海外区域</strong>部署解决方案：<ul>
+<li>若需要自定义域名，则必须输入 Domain, AcmCertificateArn。</li>
+<li>若无需自定义域名，则保持 Domain, IamCertificateID, AcmCertificateArn 为空。</li>
+</ul>
+</li>
+</ul>
+</div>
 </li>
 <li>
 <p>选择<strong>下一步</strong>。</p>
@@ -1772,7 +1717,7 @@ Set-AdfsResponseHeaders<span class="w"> </span>-CORSTrustedOrigins<span class="w
 </ol>
 <p>您可以在 AWS CloudFormation 控制台的 <strong>状态</strong> 列中查看堆栈的状态。您应该会在大约 15 分钟内收到 <strong>CREATE_COMPLETE</strong> 状态。</p>
 <h2 id="3-dns">步骤 3. 配置 DNS 解析</h2>
-<p>此解决方案预置 CloudFront 分配，让您可以访问 Log Hub 控制台。</p>
+<p>此解决方案预置 CloudFront 分配，让您可以访问日志通控制台。</p>
 <ol>
 <li>登录 <a href="https://console.aws.amazon.com/cloudformation/" target="_blank">AWS CloudFormation 控制台</a>。</li>
 <li>选择解决方案的堆栈。</li>
@@ -1783,15 +1728,15 @@ Set-AdfsResponseHeaders<span class="w"> </span>-CORSTrustedOrigins<span class="w
 <h2 id="4">步骤 4. 登录控制台</h2>
 <div class="admonition important">
 <p class="admonition-title">重要</p>
-<p>您的登录凭据（用户名和密码）由 OIDC 提供商管理。 在登录 Log Hub 控制台之前，请确保您已在 OIDC 提供商的用户池中创建了至少一个用户。</p>
+<p>您的登录凭据由 OIDC 提供商管理。 在登录日志通 控制台之前，请确保您已在 OIDC 提供商的用户池中创建了至少一个用户。</p>
 </div>
 <ol>
 <li>使用网页浏览器打开DNS解析器中创建的CNAME记录。</li>
-<li>选择 <strong>登录 Log Hub</strong>，然后导航到 OIDC 提供商。</li>
+<li>选择 <strong>登录 Centralized Logging with OpenSearch</strong>，然后导航到 OIDC 提供商。</li>
 <li>输入用户名和密码。 您可能会被要求更改首次登录的默认密码，这取决于您的 OIDC 提供商的政策。</li>
-<li>验证完成后，系统打开 Log Hub 网页控制台。</li>
+<li>验证完成后，系统打开日志通网页控制台。</li>
 </ol>
-<p>后续操作：登录 Log Hub 控制台之后，您可以 <a href="../../domains/import/">导入 AOS 域</a> 并构建日志分析管道。</p>
+<p><strong>后续操作</strong>：登录日志通 控制台之后，您可以 <a href="../../domains/import/">导入 Amazon OpenSearch Service 域</a> 并构建日志分析管道。</p>
 
 
 
@@ -1824,10 +1769,10 @@ Set-AdfsResponseHeaders<span class="w"> </span>-CORSTrustedOrigins<span class="w
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.e5c33ebb.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": "latest"}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": "latest"}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.ba449ae6.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.efa0ade1.min.js"></script>
       
     
   </body>

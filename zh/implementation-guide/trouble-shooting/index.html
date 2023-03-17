@@ -8,27 +8,27 @@
       
       
       
-        <link rel="canonical" href="https://awslabs.github.io/log-hub/implementation-guide/trouble-shooting/">
+        <link rel="canonical" href="https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/trouble-shooting/">
       
       
         <link rel="prev" href="../faq/">
       
       
-        <link rel="next" href="../upgrade/">
+        <link rel="next" href="../uninstall/">
       
       <link rel="icon" href="../../images/aws-solutions.png">
-      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.0.3">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.1.3">
     
     
       
-        <title>故障排查 - Log Hub</title>
+        <title>故障排查 - Centralized Logging with OpenSearch</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.6b71719e.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.c4a75a56.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.2505c338.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.a0c5b2b5.min.css">
       
       
 
@@ -80,7 +80,7 @@
       
     </div>
     
-      <div data-md-component="outdated" hidden>
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
         
       </div>
     
@@ -89,7 +89,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="页眉">
-    <a href="../.." title="Log Hub" class="md-header__button md-logo" aria-label="Log Hub" data-md-component="logo">
+    <a href="../.." title="Centralized Logging with OpenSearch" class="md-header__button md-logo" aria-label="Centralized Logging with OpenSearch" data-md-component="logo">
       
   <img src="../../images/aws-solutions.png" alt="logo">
 
@@ -101,7 +101,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            Log Hub
+            Centralized Logging with OpenSearch
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -125,13 +125,13 @@
             <ul class="md-select__list">
               
                 <li class="md-select__item">
-                  <a href="/log-hub/en/" hreflang="en" class="md-select__link">
+                  <a href="/centralized-logging-with-opensearch/en/" hreflang="en" class="md-select__link">
                     English
                   </a>
                 </li>
               
                 <li class="md-select__item">
-                  <a href="/log-hub/zh/" hreflang="zh" class="md-select__link">
+                  <a href="/centralized-logging-with-opensearch/zh/" hreflang="zh" class="md-select__link">
                     简体中文
                   </a>
                 </li>
@@ -168,7 +168,7 @@
           <div class="md-search-result__meta">
             正在初始化搜索引擎
           </div>
-          <ol class="md-search-result__list"></ol>
+          <ol class="md-search-result__list" role="presentation"></ol>
         </div>
       </div>
     </div>
@@ -177,13 +177,13 @@
     
     
       <div class="md-header__source">
-        <a href="https://github.com/awslabs/log-hub" title="前往仓库" class="md-source" data-md-component="source">
+        <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch" title="前往仓库" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.3.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
-    awslabs/log-hub
+    aws-solutions/centralized-logging-with-opensearch
   </div>
 </a>
       </div>
@@ -199,7 +199,7 @@
           
             
 <nav class="md-tabs" aria-label="标签" data-md-component="tabs">
-  <div class="md-tabs__inner md-grid">
+  <div class="md-grid">
     <ul class="md-tabs__list">
       
         
@@ -226,7 +226,7 @@
 
 
   <li class="md-tabs__item">
-    <a href="https://github.com/orgs/awslabs/projects/58" class="md-tabs__link">
+    <a href="https://github.com/orgs/aws-solutions/projects/17/" class="md-tabs__link">
       路线图
     </a>
   </li>
@@ -238,20 +238,8 @@
 
 
   <li class="md-tabs__item">
-    <a href="https://aws-samples.github.io/log-hub-workshop" class="md-tabs__link">
+    <a href="https://catalog.workshops.aws/centralized-logging-with-opensearch/" class="md-tabs__link">
       动手实验
-    </a>
-  </li>
-
-      
-        
-  
-  
-
-
-  <li class="md-tabs__item">
-    <a href="https://awslabs.github.io/log-hub/en/designs" class="md-tabs__link">
-      技术设计
     </a>
   </li>
 
@@ -277,22 +265,22 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="导航栏" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="Log Hub" class="md-nav__button md-logo" aria-label="Log Hub" data-md-component="logo">
+    <a href="../.." title="Centralized Logging with OpenSearch" class="md-nav__button md-logo" aria-label="Centralized Logging with OpenSearch" data-md-component="logo">
       
   <img src="../../images/aws-solutions.png" alt="logo">
 
     </a>
-    Log Hub
+    Centralized Logging with OpenSearch
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/awslabs/log-hub" title="前往仓库" class="md-source" data-md-component="source">
+      <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch" title="前往仓库" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.3.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
-    awslabs/log-hub
+    aws-solutions/centralized-logging-with-opensearch
   </div>
 </a>
     </div>
@@ -314,16 +302,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1" type="checkbox" id="__nav_1" checked>
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" checked>
       
       
       
-        <label class="md-nav__link" for="__nav_1" tabindex="0" aria-expanded="true">
+        <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
           实施指南
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="实施指南" data-md-level="1">
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="true">
         <label class="md-nav__title" for="__nav_1">
           <span class="md-nav__icon md-icon"></span>
           实施指南
@@ -411,16 +399,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_6" type="checkbox" id="__nav_1_6" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_6" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_6" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_6" id="__nav_1_6_label" tabindex="0">
           开始部署
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="开始部署" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_6_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_6">
           <span class="md-nav__icon md-icon"></span>
           开始部署
@@ -487,16 +475,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_7" type="checkbox" id="__nav_1_7" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_7" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_7" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_7" id="__nav_1_7_label" tabindex="0">
           快速入门
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="快速入门" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_7_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_7">
           <span class="md-nav__icon md-icon"></span>
           快速入门
@@ -591,16 +579,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_8" type="checkbox" id="__nav_1_8" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_8" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_8" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_8" id="__nav_1_8_label" tabindex="0">
           AOS 集群管理
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="AOS 集群管理" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_8_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_8">
           <span class="md-nav__icon md-icon"></span>
           AOS 集群管理
@@ -681,16 +669,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_9" type="checkbox" id="__nav_1_9" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_9" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_9" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_9" id="__nav_1_9_label" tabindex="0">
           AWS 服务日志
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="AWS 服务日志" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_9_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_9">
           <span class="md-nav__icon md-icon"></span>
           AWS 服务日志
@@ -855,16 +843,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_10" type="checkbox" id="__nav_1_10" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_10" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_10" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_10" id="__nav_1_10_label" tabindex="0">
           应用日志
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="应用日志" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_10_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_10">
           <span class="md-nav__icon md-icon"></span>
           应用日志
@@ -896,16 +884,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_10_2" type="checkbox" id="__nav_1_10_2" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_10_2" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_10_2" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_10_2" id="__nav_1_10_2_label" tabindex="0">
           前提条件
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="前提条件" data-md-level="3">
+      <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_1_10_2_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_10_2">
           <span class="md-nav__icon md-icon"></span>
           前提条件
@@ -1075,7 +1063,7 @@
   
     <li class="md-nav__item md-nav__item--active">
       
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
         
@@ -1156,15 +1144,35 @@
       
         <li class="md-nav__item">
   <a href="#global-tenant-opensearch" class="md-nav__link">
-    我已经切换 global tenant。但是，我仍然无法在 OpenSearch 中找到仪表盘。
+    我已经切换 global tenant。但是，我仍然无法在 OpenSearch 中找到仪表板。
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#centos-7" class="md-nav__link">
-    CentOS 7 安装日志代理方法
+  <a href="#fluent-bit-error-version-glibc_225-not-found" class="md-nav__link">
+    Fluent-bit 日志代理显示Error: version `GLIBC_2.25' not found
   </a>
+  
+    <nav class="md-nav" aria-label="Fluent-bit 日志代理显示Error: version `GLIBC_2.25' not found">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#redhat-79" class="md-nav__link">
+    Redhat 7.9
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ubuntu-22" class="md-nav__link">
+    Ubuntu 22
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1172,20 +1180,6 @@
   
 </nav>
       
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../upgrade/" class="md-nav__link">
-        更新解决方案
-      </a>
     </li>
   
 
@@ -1216,17 +1210,17 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_16" type="checkbox" id="__nav_1_16" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_15" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_16" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_15" id="__nav_1_15_label" tabindex="0">
           资源
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="资源" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_16">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_15_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_1_15">
           <span class="md-nav__icon md-icon"></span>
           资源
         </label>
@@ -1309,7 +1303,7 @@
   
   
     <li class="md-nav__item">
-      <a href="https://github.com/orgs/awslabs/projects/58" class="md-nav__link">
+      <a href="https://github.com/orgs/aws-solutions/projects/17/" class="md-nav__link">
         路线图
       </a>
     </li>
@@ -1324,23 +1318,8 @@
   
   
     <li class="md-nav__item">
-      <a href="https://aws-samples.github.io/log-hub-workshop" class="md-nav__link">
+      <a href="https://catalog.workshops.aws/centralized-logging-with-opensearch/" class="md-nav__link">
         动手实验
-      </a>
-    </li>
-  
-
-    
-      
-      
-      
-
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="https://awslabs.github.io/log-hub/en/designs" class="md-nav__link">
-        技术设计
       </a>
     </li>
   
@@ -1423,15 +1402,35 @@
       
         <li class="md-nav__item">
   <a href="#global-tenant-opensearch" class="md-nav__link">
-    我已经切换 global tenant。但是，我仍然无法在 OpenSearch 中找到仪表盘。
+    我已经切换 global tenant。但是，我仍然无法在 OpenSearch 中找到仪表板。
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#centos-7" class="md-nav__link">
-    CentOS 7 安装日志代理方法
+  <a href="#fluent-bit-error-version-glibc_225-not-found" class="md-nav__link">
+    Fluent-bit 日志代理显示Error: version `GLIBC_2.25' not found
   </a>
+  
+    <nav class="md-nav" aria-label="Fluent-bit 日志代理显示Error: version `GLIBC_2.25' not found">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#redhat-79" class="md-nav__link">
+    Redhat 7.9
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ubuntu-22" class="md-nav__link">
+    Ubuntu 22
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1453,21 +1452,20 @@
   
 
 
-
 <h1 id="_1">故障排查</h1>
-<p>以下介绍在使用 Log Hub 时可能遇到的错误或问题，以及解决方法。</p>
+<p>以下介绍在使用日志通时可能遇到的错误或问题，以及解决方法。</p>
 <h2 id="error-failed-to-assume-service-linked-role-arnxxxawsserviceroleforappsync">Error: Failed to assume service-linked role <code>arn:x:x:x:/AWSServiceRoleForAppSync</code></h2>
 <p>出现此错误的原因是该账户从未使用过 <a href="https://aws.amazon.com/appsync/">AWS AppSync</a> 服务。您可以再次部署解决方案的 CloudFormation 模板。当您遇到错误时，AWS 已经自动创建了角色。</p>
 <p>您也可以前往 <a href="https://aws.amazon.com/cloudshell/">AWS CloudShell</a> 或本地终端并运行以下 AWS CLI 命令以链接 AppSync 角色：</p>
 <div class="highlight"><pre><span></span><code>aws iam create-service-linked-role --aws-service-name appsync.amazonaws.com
 </code></pre></div>
 <h2 id="error-unable-to-add-backend-role">Error: Unable to add backend role</h2>
-<p>Log Hub 仅支持启用了<a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/fgac.html">细粒度访问控制</a> 的 AOS 域。</p>
-<p>您需要转到 AOS 控制台，并编辑 AOS 域的<strong>访问策略</strong>。</p>
+<p>日志通仅支持启用了<a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/fgac.html">细粒度访问控制</a> 的 Amazon OpenSearch Service 域。</p>
+<p>您需要转到 Amazon OpenSearch Service 控制台，并编辑 Amazon OpenSearch Service 域的<strong>访问策略</strong>。</p>
 <h2 id="erroruser-xxx-is-not-authorized-to-perform-stsassumerole-on-resource">Error：User xxx is not authorized to perform sts:AssumeRole on resource</h2>
-<p><img alt="" src="../../images/faq/assume-role-latency.png" /></p>
-<p>如果出现了次错误，请先确保您在<a href="../link-account/">跨账户日志摄取设置</a>中正确填写了所有信息。然后请等待大约1分钟左右后再重试。</p>
-<p>Log Hub 使用了 <a href="https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html">AssumeRole</a> 来列出或创建您成员账户中的 AWS 资源。 
+<p><img alt="" src="../images/faq/assume-role-latency.png" /></p>
+<p>如果您发现该错误，请先确保您在<a href="../link-account/">跨账户日志摄取设置</a>中正确填写了所有信息。然后请等待大约1分钟左右后再重试。</p>
+<p>日志通使用了 <a href="https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html">AssumeRole</a> 来列出或创建您成员账户中的 AWS 资源。
 这些 IAM 角色是在您<a href="../link-account/">设置跨账户日志摄取</a>时被创建的，他们需要几秒钟或者几分钟的时间才能生效。</p>
 <h2 id="error-putrecords-api-responded-with-errorinvalidsignatureexception">Error: PutRecords API responded with error='InvalidSignatureException'</h2>
 <p>Fluent-bit agent 报错 PutRecords API responded with error='InvalidSignatureException', message='The request signature we calculated does not match the signature you provided. Check your AWS Secret Access Key and signing method. Consult the service documentation for details.'</p>
@@ -1476,67 +1474,115 @@
 </code></pre></div></p>
 <h2 id="error-putrecords-api-responded-with-erroraccessdeniedexception">Error: PutRecords API responded with error='AccessDeniedException'</h2>
 <p>Fluent-bit agent 在 EKS 集群中向 Kinesis 发送日志时汇报了 "AccessDeniedException" 错误。验证是否正确设置 IAM 角色信任关系。</p>
-<p>使用 Log Hub 控制台:</p>
+<p>使用日志通 控制台:</p>
 <ol>
-<li>打开 Log Hub 控制台。</li>
+<li>打开日志通 控制台。</li>
 <li>在左侧边栏中的<strong>日志源</strong>下，选择<strong>EKS 集群</strong>。</li>
-<li>选择要检查的EKS集群</li>
+<li>选择要检查的EKS集群。</li>
 <li>点击<strong>IAM 角色 ARN</strong>， 这会在 AWS 控制台中打开 IAM 角色。</li>
 <li>选择<strong>信任关系</strong>选项卡以验证 OIDC 提供方, 服务账户命名空间以及条件是否设置正确。</li>
 </ol>
-<p>您可以前往 Amazon EKS <a href="https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts-technical-overview.html#iam-role-configuration">IAM role configuration</a> 获得更多信息</p>
+<p>您可以前往 Amazon EKS <a href="https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts-technical-overview.html#iam-role-configuration">IAM role configuration</a> 获得更多信息。</p>
 <h2 id="cloudformation-awslambdafunction">我的 CloudFormation 堆栈在更新堆栈时被卡在删除 <code>AWS::Lambda::Function</code> 资源上。如何解决这个问题？</h2>
-<p><img alt="" src="../../images/faq/cloudformation-stuck.png" />
+<p><img alt="" src="../images/faq/cloudformation-stuck.png" />
 Lambda函数驻留在一个VPC中，你需要等待相关的ENI资源被删除。</p>
 <h2 id="ec2">重启 EC2 实例后，代理状态为离线，如何让它在实例重启时自动启动？</h2>
 <p>这种情况通常发生在你已经安装了日志代理，但是在你创建任何日志摄取之前实例发生重启。如果至少有一个日志摄取，日志代理将自动重新启动。如果你有一个日志摄取，但问题仍然存在，你可以使用 <code>systemctl status fluent-bit</code> 来检查实例内部的状态来检查它在实例中的状态。</p>
-<h2 id="global-tenant-opensearch">我已经切换 global tenant。但是，我仍然无法在 OpenSearch 中找到仪表盘。</h2>
-<p>这通常是因为 Log Hub 在创建索引模板和仪表盘时收到了来自 OpenSearch 的 403 错误。可以通过按照下面的步骤手动重新运行 Lambda 函数来解决。</p>
-<p>来到 Log Hub 控制台。</p>
+<h2 id="global-tenant-opensearch">我已经切换 global tenant。但是，我仍然无法在 OpenSearch 中找到仪表板。</h2>
+<p>这通常是因为日志通 在创建索引模板和仪表板时收到了来自 OpenSearch 的 403 错误。可以通过按照下面的步骤手动重新运行 Lambda 函数来解决。</p>
 <ol>
-<li>打开 Log Hub 控制台，并找到有此问题的 AWS 服务日志管道。</li>
+<li>打开日志通 控制台，并找到有此问题的 AWS 服务日志管道。</li>
 <li>复制 ID 部分的前 5 个字符。例如，你应该从 ID <code>c169cb23-88f3-4a7e-90d7-4ab4bc18982c</code> 复制 <code>c169c</code>。</li>
 <li>转到 AWS控制台 &gt; Lambda。粘贴在函数过滤器中。这将过滤所有为这个 AWS 服务日志摄取创建的 lambda 函数。</li>
 <li>点击名称包含 "OpenSearchHelperFn" 的 Lambda 函数。</li>
 <li>在<strong>测试</strong>标签中，用任何事件名称创建一个新事件。</li>
 <li>点击<strong>测试</strong>按钮来触发 Lambda，并等待 Lambda 函数的完成。</li>
-<li>仪表板应该可以在 OpenSearch 中使用。</li>
 </ol>
-<h2 id="centos-7">CentOS 7 安装日志代理方法</h2>
-<ol>
-<li>
-<p>登陆到 CentOS 7 机器中，手动安装 SSM Agent。</p>
-<p><div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>yum<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>http://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
-sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>amazon-ssm-agent
-sudo<span class="w"> </span>systemctl<span class="w"> </span>start<span class="w"> </span>amazon-ssm-agent
-</code></pre></div>
-2. 来到 Log Hub 控制台的<strong>实例组</strong>面板，创建<strong>实例组</strong>，选择 centos 7 机器，点击<strong>安装日志代理</strong>，等待其状态为<strong>离线</strong>。
-3. 登陆 centos7 手动安装 fluent-bit 1.9.3。</p>
-<p><div class="highlight"><pre><span></span><code><span class="nb">export</span><span class="w"> </span><span class="nv">RELEASE_URL</span><span class="o">=</span><span class="si">${</span><span class="nv">FLUENT_BIT_PACKAGES_URL</span><span class="k">:-</span><span class="nv">https</span><span class="p">://packages.fluentbit.io</span><span class="si">}</span>
-<span class="nb">export</span><span class="w"> </span><span class="nv">RELEASE_KEY</span><span class="o">=</span><span class="si">${</span><span class="nv">FLUENT_BIT_PACKAGES_KEY</span><span class="k">:-</span><span class="nv">https</span><span class="p">://packages.fluentbit.io/fluentbit.key</span><span class="si">}</span>
+<p>仪表板应该可以在 OpenSearch 中使用。</p>
+<h2 id="fluent-bit-error-version-glibc_225-not-found">Fluent-bit 日志代理显示Error: <code>version `GLIBC_2.25' not found</code></h2>
+<p>这个错误是由于 <code>glibc</code>版本过低. 对于1.2以上版本的日志通, 需要 glibc-2.25 或以上版本, 所以您需要先升级EC2内的glibc库文件。
+以下分别是不同操作系统可使用的升级命令:</p>
+<div class="admonition important">
+<p class="admonition-title">重要</p>
+<p>我们强烈建议您先在测试环境使用下列命令。如果升级失败，可能会导致严重损失。</p>
+</div>
+<h4 id="redhat-79">Redhat 7.9</h4>
+<p>对于 Redhat 7.9, 整个升级过程大概花费两小时, 请至少保证机器有10GiB以上的硬盘空间.</p>
+<div class="highlight"><pre><span></span><code># 安装库文件
+yum install -y gcc gcc-c++ m4 python3 bison  fontconfig-devel  libXpm-devel texinfo bzip2 wget
+echo /usr/local/lib  &gt;&gt; /etc/ld.so.conf
 
-sudo<span class="w"> </span>rpm<span class="w"> </span>--import<span class="w"> </span><span class="nv">$RELEASE_KEY</span>
-cat<span class="w"> </span><span class="s">&lt;&lt; EOF | sudo tee /etc/yum.repos.d/fluent-bit.repo</span>
-<span class="s">[fluent-bit]</span>
-<span class="s">name = Fluent Bit</span>
-<span class="s">baseurl = $RELEASE_URL/centos/VERSION_ARCH_SUBSTR</span>
-<span class="s">gpgcheck=1</span>
-<span class="s">repo_gpgcheck=1</span>
-<span class="s">gpgkey=$RELEASE_KEY</span>
-<span class="s">enabled=1</span>
-<span class="s">EOF</span>
-sudo<span class="w"> </span>sed<span class="w"> </span>-i<span class="w"> </span><span class="s1">&#39;s|VERSION_ARCH_SUBSTR|\$releasever/\$basearch/|g&#39;</span><span class="w"> </span>/etc/yum.repos.d/fluent-bit.repo
-sudo<span class="w"> </span>yum<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>fluent-bit-1.9.3-1
+# 创建 tmp 目录
+mkdir -p /tmp/library
+cd /tmp/library
 
-<span class="c1"># 修改配置文件</span>
-sudo<span class="w"> </span>sed<span class="w"> </span>-i<span class="w"> </span><span class="s1">&#39;s/ExecStart.*/ExecStart=\/opt\/fluent-bit\/bin\/fluent-bit -c \/opt\/fluent-bit\/etc\/fluent-bit.conf/g&#39;</span><span class="w"> </span>/usr/lib/systemd/system/fluent-bit.service
-sudo<span class="w"> </span>systemctl<span class="w"> </span>daemon-reload
-sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>fluent-bit
-sudo<span class="w"> </span>systemctl<span class="w"> </span>start<span class="w"> </span>fluent-bit
+# 安装 gmp-6.1.0
+wget https://ftp.gnu.org/gnu/gmp/gmp-6.1.0.tar.bz2
+tar xjvf gmp-6.1.0.tar.bz2
+cd gmp-6.1.0
+./configure --prefix=/usr/local
+make &amp;&amp; make install
+ldconfig
+cd ..
+
+# 安装 mpfr-3.1.4
+wget https://gcc.gnu.org/pub/gcc/infrastructure/mpfr-3.1.4.tar.bz2
+tar xjvf mpfr-3.1.4.tar.bz2
+cd mpfr-3.1.4
+./configure --with-gmp=/usr/local --prefix=/usr/local
+make &amp;&amp; make install
+ldconfig
+cd ..
+
+# 安装 mpc-1.0.3
+wget https://gcc.gnu.org/pub/gcc/infrastructure/mpc-1.0.3.tar.gz
+tar xzvf mpc-1.0.3.tar.gz
+cd mpc-1.0.3
+./configure --prefix=/usr/local
+make &amp;&amp; make install
+ldconfig
+cd ..
+
+# 安装 gcc-9.3.0
+wget https://ftp.gnu.org/gnu/gcc/gcc-9.3.0/gcc-9.3.0.tar.gz
+tar xzvf gcc-9.3.0.tar.gz
+cd gcc-9.3.0
+mkdir build
+cd build/
+../configure --enable-checking=release --enable-language=c,c++ --disable-multilib --prefix=/usr
+make -j4 &amp;&amp; make install
+ldconfig
+cd ../..
+
+# 安装 make-4.3
+wget https://ftp.gnu.org/gnu/make/make-4.3.tar.gz
+tar xzvf make-4.3.tar.gz
+cd make-4.3
+mkdir build
+cd build
+../configure --prefix=/usr
+make &amp;&amp; make install
+cd ../..
+
+# 安装 glibc-2.31
+wget https://ftp.gnu.org/gnu/glibc/glibc-2.31.tar.gz
+tar xzvf glibc-2.31.tar.gz
+cd glibc-2.31
+mkdir build
+cd build/
+../configure  --prefix=/usr --disable-profile --enable-add-ons --with-headers=/usr/include --with-binutils=/usr/bin --disable-sanity-checks --disable-werror
+make all &amp;&amp; make install
+make localedata/install-locales
+
+# 清理 tmp 目录
+cd /tmp
+rm -rf /tmp/library
 </code></pre></div>
-4. 回到 Log Hub 控制台的<strong>实例组</strong>面板，等待 CentOS 7 机器状态为<strong>在线</strong>并继续创建实例组。</p>
-</li>
-</ol>
+<h4 id="ubuntu-22">Ubuntu 22</h4>
+<div class="highlight"><pre><span></span><code>sudo ln -s /snap/core20/1623/usr/lib/x86_64-linux-gnu/libcrypto.so.1.1 /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1
+sudo ln -s /snap/core20/1623/usr/lib/x86_64-linux-gnu/libssl.so.1.1 /usr/lib/x86_64-linux-gnu/libssl.so.1.1
+sudo ln -s /usr/lib/x86_64-linux-gnu/libsasl2.so.2 /usr/lib/libsasl2.so.3
+</code></pre></div>
 
 
 
@@ -1569,10 +1615,10 @@ sudo<span class="w"> </span>systemctl<span class="w"> </span>start<span class="w
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs"], "search": "../../assets/javascripts/workers/search.e5c33ebb.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": "latest"}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs"], "search": "../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": "latest"}</script>
     
     
-      <script src="../../assets/javascripts/bundle.ba449ae6.min.js"></script>
+      <script src="../../assets/javascripts/bundle.efa0ade1.min.js"></script>
       
     
   </body>

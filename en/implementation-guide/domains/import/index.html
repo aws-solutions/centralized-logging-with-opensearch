@@ -8,7 +8,7 @@
       
       
       
-        <link rel="canonical" href="https://awslabs.github.io/log-hub/implementation-guide/domains/import/">
+        <link rel="canonical" href="https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/domains/import/">
       
       
         <link rel="prev" href="../">
@@ -17,18 +17,18 @@
         <link rel="next" href="../proxy/">
       
       <link rel="icon" href="../../../images/aws-solutions.png">
-      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.0.3">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.1.3">
     
     
       
-        <title>Domain Operations - Log Hub</title>
+        <title>Domain Operations - Centralized Logging with OpenSearch</title>
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.6b71719e.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.c4a75a56.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.2505c338.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.a0c5b2b5.min.css">
       
       
 
@@ -80,7 +80,7 @@
       
     </div>
     
-      <div data-md-component="outdated" hidden>
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
         
       </div>
     
@@ -89,7 +89,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../../.." title="Log Hub" class="md-header__button md-logo" aria-label="Log Hub" data-md-component="logo">
+    <a href="../../.." title="Centralized Logging with OpenSearch" class="md-header__button md-logo" aria-label="Centralized Logging with OpenSearch" data-md-component="logo">
       
   <img src="../../../images/aws-solutions.png" alt="logo">
 
@@ -101,7 +101,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            Log Hub
+            Centralized Logging with OpenSearch
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -125,13 +125,13 @@
             <ul class="md-select__list">
               
                 <li class="md-select__item">
-                  <a href="/log-hub/en/" hreflang="en" class="md-select__link">
+                  <a href="/centralized-logging-with-opensearch/en/" hreflang="en" class="md-select__link">
                     English
                   </a>
                 </li>
               
                 <li class="md-select__item">
-                  <a href="/log-hub/zh/" hreflang="zh" class="md-select__link">
+                  <a href="/centralized-logging-with-opensearch/zh/" hreflang="zh" class="md-select__link">
                     简体中文
                   </a>
                 </li>
@@ -168,7 +168,7 @@
           <div class="md-search-result__meta">
             Initializing search
           </div>
-          <ol class="md-search-result__list"></ol>
+          <ol class="md-search-result__list" role="presentation"></ol>
         </div>
       </div>
     </div>
@@ -177,13 +177,13 @@
     
     
       <div class="md-header__source">
-        <a href="https://github.com/awslabs/log-hub" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.3.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
-    awslabs/log-hub
+    aws-solutions/centralized-logging-with-opensearch
   </div>
 </a>
       </div>
@@ -199,7 +199,7 @@
           
             
 <nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
-  <div class="md-tabs__inner md-grid">
+  <div class="md-grid">
     <ul class="md-tabs__list">
       
         
@@ -226,7 +226,7 @@
 
 
   <li class="md-tabs__item">
-    <a href="https://github.com/orgs/awslabs/projects/58" class="md-tabs__link">
+    <a href="https://github.com/orgs/aws-solutions/projects/17/" class="md-tabs__link">
       Roadmap
     </a>
   </li>
@@ -238,26 +238,10 @@
 
 
   <li class="md-tabs__item">
-    <a href="https://aws-samples.github.io/log-hub-workshop" class="md-tabs__link">
+    <a href="https://catalog.workshops.aws/centralized-logging-with-opensearch/" class="md-tabs__link">
       Workshop
     </a>
   </li>
-
-      
-        
-  
-  
-
-
-  
-  
-  
-    <li class="md-tabs__item">
-      <a href="../../../designs/" class="md-tabs__link">
-        Technical Designs
-      </a>
-    </li>
-  
 
       
     </ul>
@@ -281,22 +265,22 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../.." title="Log Hub" class="md-nav__button md-logo" aria-label="Log Hub" data-md-component="logo">
+    <a href="../../.." title="Centralized Logging with OpenSearch" class="md-nav__button md-logo" aria-label="Centralized Logging with OpenSearch" data-md-component="logo">
       
   <img src="../../../images/aws-solutions.png" alt="logo">
 
     </a>
-    Log Hub
+    Centralized Logging with OpenSearch
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/awslabs/log-hub" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.3.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
-    awslabs/log-hub
+    aws-solutions/centralized-logging-with-opensearch
   </div>
 </a>
     </div>
@@ -318,16 +302,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1" type="checkbox" id="__nav_1" checked>
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" checked>
       
       
       
-        <label class="md-nav__link" for="__nav_1" tabindex="0" aria-expanded="true">
+        <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
           Implementation Guide
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Implementation Guide" data-md-level="1">
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="true">
         <label class="md-nav__title" for="__nav_1">
           <span class="md-nav__icon md-icon"></span>
           Implementation Guide
@@ -415,16 +399,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_6" type="checkbox" id="__nav_1_6" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_6" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_6" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_6" id="__nav_1_6_label" tabindex="0">
           Deployment
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Deployment" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_6_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_6">
           <span class="md-nav__icon md-icon"></span>
           Deployment
@@ -491,16 +475,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_7" type="checkbox" id="__nav_1_7" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_7" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_7" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_7" id="__nav_1_7_label" tabindex="0">
           Getting Started
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Getting Started" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_7_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_7">
           <span class="md-nav__icon md-icon"></span>
           Getting Started
@@ -597,16 +581,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_8" type="checkbox" id="__nav_1_8" checked>
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_8" checked>
       
       
       
-        <label class="md-nav__link" for="__nav_1_8" tabindex="0" aria-expanded="true">
+        <label class="md-nav__link" for="__nav_1_8" id="__nav_1_8_label" tabindex="0">
           Domain Management
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Domain Management" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_8_label" aria-expanded="true">
         <label class="md-nav__title" for="__nav_1_8">
           <span class="md-nav__icon md-icon"></span>
           Domain Management
@@ -636,7 +620,7 @@
   
     <li class="md-nav__item md-nav__item--active">
       
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
         
@@ -674,8 +658,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#import-an-aos-domain" class="md-nav__link">
-    Import an AOS Domain
+  <a href="#import-an-amazon-opensearch-service-domain" class="md-nav__link">
+    Import an Amazon OpenSearch Service Domain
   </a>
   
 </li>
@@ -715,8 +699,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#remove-an-aos-domain" class="md-nav__link">
-    Remove an AOS domain
+  <a href="#remove-an-amazon-opensearch-service-domain" class="md-nav__link">
+    Remove an Amazon OpenSearch Service domain
   </a>
   
 </li>
@@ -776,16 +760,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_9" type="checkbox" id="__nav_1_9" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_9" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_9" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_9" id="__nav_1_9_label" tabindex="0">
           AWS Services Logs
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="AWS Services Logs" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_9_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_9">
           <span class="md-nav__icon md-icon"></span>
           AWS Services Logs
@@ -950,16 +934,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_10" type="checkbox" id="__nav_1_10" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_10" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_10" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_10" id="__nav_1_10_label" tabindex="0">
           Applications Logs
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Applications Logs" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_10_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_10">
           <span class="md-nav__icon md-icon"></span>
           Applications Logs
@@ -991,16 +975,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_10_2" type="checkbox" id="__nav_1_10_2" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_10_2" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_10_2" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_10_2" id="__nav_1_10_2_label" tabindex="0">
           Prerequisites
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Prerequisites" data-md-level="3">
+      <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_1_10_2_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_10_2">
           <span class="md-nav__icon md-icon"></span>
           Prerequisites
@@ -1014,7 +998,7 @@
   
     <li class="md-nav__item">
       <a href="../../applications/create-log-source/" class="md-nav__link">
-        Create a Log Source
+        Create a log source
       </a>
     </li>
   
@@ -1181,22 +1165,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../upgrade/" class="md-nav__link">
-        Upgrading the solution
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../uninstall/" class="md-nav__link">
-        Uninstalling the solution
+        Uninstalling the Solution
       </a>
     </li>
   
@@ -1214,17 +1184,17 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_16" type="checkbox" id="__nav_1_16" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_15" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_16" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_15" id="__nav_1_15_label" tabindex="0">
           Resources
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Resources" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_16">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_15_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_1_15">
           <span class="md-nav__icon md-icon"></span>
           Resources
         </label>
@@ -1307,7 +1277,7 @@
   
   
     <li class="md-nav__item">
-      <a href="https://github.com/orgs/awslabs/projects/58" class="md-nav__link">
+      <a href="https://github.com/orgs/aws-solutions/projects/17/" class="md-nav__link">
         Roadmap
       </a>
     </li>
@@ -1322,474 +1292,9 @@
   
   
     <li class="md-nav__item">
-      <a href="https://aws-samples.github.io/log-hub-workshop" class="md-nav__link">
+      <a href="https://catalog.workshops.aws/centralized-logging-with-opensearch/" class="md-nav__link">
         Workshop
       </a>
-    </li>
-  
-
-    
-      
-      
-      
-
-  
-  
-  
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-      
-      
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_4" type="checkbox" id="__nav_4" >
-      
-      
-      
-        <label class="md-nav__link" for="__nav_4" tabindex="0" aria-expanded="false">
-          Technical Designs
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" aria-label="Technical Designs" data-md-level="1">
-        <label class="md-nav__title" for="__nav_4">
-          <span class="md-nav__icon md-icon"></span>
-          Technical Designs
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/" class="md-nav__link">
-        Overview
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/concepts/" class="md-nav__link">
-        Concepts
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/solution/high-level-design/" class="md-nav__link">
-        High Level Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-      
-      
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_4_4" type="checkbox" id="__nav_4_4" >
-      
-      
-      
-        <label class="md-nav__link" for="__nav_4_4" tabindex="0" aria-expanded="false">
-          Domain Management
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" aria-label="Domain Management" data-md-level="2">
-        <label class="md-nav__title" for="__nav_4_4">
-          <span class="md-nav__icon md-icon"></span>
-          Domain Management
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/domain-management/component-design/" class="md-nav__link">
-        Component Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/domain-management/process-design/" class="md-nav__link">
-        Process Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/domain-management/api-design/" class="md-nav__link">
-        API Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/domain-management/data-model-design/" class="md-nav__link">
-        Data Model Design
-      </a>
-    </li>
-  
-
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-      
-      
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_4_5" type="checkbox" id="__nav_4_5" >
-      
-      
-      
-        <label class="md-nav__link" for="__nav_4_5" tabindex="0" aria-expanded="false">
-          Service Log Analytics
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" aria-label="Service Log Analytics" data-md-level="2">
-        <label class="md-nav__title" for="__nav_4_5">
-          <span class="md-nav__icon md-icon"></span>
-          Service Log Analytics
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/service-log/component-design/" class="md-nav__link">
-        Component Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/service-log/process-design/" class="md-nav__link">
-        Process Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/service-log/api-design/" class="md-nav__link">
-        API Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/service-log/data-model-design/" class="md-nav__link">
-        Data Model Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/service-log/tutorial-extend-service-log/" class="md-nav__link">
-        Tutorial: Extend Service Logs
-      </a>
-    </li>
-  
-
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-      
-      
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_4_6" type="checkbox" id="__nav_4_6" >
-      
-      
-      
-        <label class="md-nav__link" for="__nav_4_6" tabindex="0" aria-expanded="false">
-          Application Log
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" aria-label="Application Log" data-md-level="2">
-        <label class="md-nav__title" for="__nav_4_6">
-          <span class="md-nav__icon md-icon"></span>
-          Application Log
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/app-log/log-analytics-pipeline-app/" class="md-nav__link">
-        Overview
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/app-log/architecture-design/" class="md-nav__link">
-        Architecture Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/app-log/process-design/" class="md-nav__link">
-        Process Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/app-log/api-design/" class="md-nav__link">
-        API Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/app-log/data-model-design/" class="md-nav__link">
-        Data Model Design
-      </a>
-    </li>
-  
-
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-      
-      
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_4_7" type="checkbox" id="__nav_4_7" >
-      
-      
-      
-        <label class="md-nav__link" for="__nav_4_7" tabindex="0" aria-expanded="false">
-          EKS Cluster Log
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" aria-label="EKS Cluster Log" data-md-level="2">
-        <label class="md-nav__title" for="__nav_4_7">
-          <span class="md-nav__icon md-icon"></span>
-          EKS Cluster Log
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/eks-log/architecture-design/" class="md-nav__link">
-        Architecture Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/eks-log/process-design/" class="md-nav__link">
-        Process Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/eks-log/api-design/" class="md-nav__link">
-        API Design
-      </a>
-    </li>
-  
-
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/assets/" class="md-nav__link">
-        Assets
-      </a>
-    </li>
-  
-
-            
-          
-        </ul>
-      </nav>
     </li>
   
 
@@ -1828,8 +1333,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#import-an-aos-domain" class="md-nav__link">
-    Import an AOS Domain
+  <a href="#import-an-amazon-opensearch-service-domain" class="md-nav__link">
+    Import an Amazon OpenSearch Service Domain
   </a>
   
 </li>
@@ -1869,8 +1374,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#remove-an-aos-domain" class="md-nav__link">
-    Remove an AOS domain
+  <a href="#remove-an-amazon-opensearch-service-domain" class="md-nav__link">
+    Remove an Amazon OpenSearch Service domain
   </a>
   
 </li>
@@ -1893,51 +1398,46 @@
   
 
 
-
 <h1 id="domain-operations">Domain Operations</h1>
-<p>Once logged into the Log Hub console, you can import an AOS domain. Log Hub supports OpenSearch domain with <a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/fgac.html">fine-grained access control</a> enabled <a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/vpc.html">within a VPC</a> only. </p>
+<p>Once logged into the Centralized Logging with OpenSearch console, you can import an Amazon OpenSearch Service domain. </p>
 <h2 id="prerequisite">Prerequisite</h2>
 <ol>
-<li>Log Hub supports Amazon OpenSearch Service, engine version Elasticsearch 7.10 and above, and engine version OpenSearch 1.0 and above.</li>
-<li>Log Hub supports OpenSearch clusters within VPC. If you don't have an AOS domain yet, you can create an AOS domain within VPC. See <a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/vpc.html">Launching your Amazon OpenSearch Service domains within a VPC</a>.</li>
-<li>Log Hub supports OpenSearch clusters with <a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/fgac.html">fine-grained access control</a> only. In the security configuration, the Access policy should look like the image below:
-   <img alt="" src="../../../images/domain/policy.png" /></li>
+<li>Centralized Logging with OpenSearch supports Amazon OpenSearch Service, engine version Elasticsearch 7.10 or later, and engine version OpenSearch 1.0 or later.</li>
+<li>Centralized Logging with OpenSearch supports OpenSearch clusters within VPC. If you don't have an Amazon OpenSearch Service domain yet, you can create an Amazon OpenSearch Service domain within VPC. See <a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/vpc.html">Launching your Amazon OpenSearch Service domains within a VPC</a>.</li>
+<li>Centralized Logging with OpenSearch supports OpenSearch clusters with <a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/fgac.html">fine-grained access control</a> only. In the security configuration, the Access policy should look like the image below:
+   <img alt="" src="../../images/domain/policy.png" /></li>
 </ol>
-<h2 id="import-an-aos-domain">Import an AOS Domain</h2>
+<h2 id="import-an-amazon-opensearch-service-domain">Import an Amazon OpenSearch Service Domain</h2>
 <ol>
-<li>Sign in to the Log Hub console.</li>
+<li>Sign in to the Centralized Logging with OpenSearch console.</li>
 <li>In the left navigation panel, under <strong>Domains</strong>, choose <strong>Import OpenSearch Domain</strong>.</li>
 <li>On the <strong>Select domain</strong> page, choose a domain from the dropdown list. The dropdown list will display only domains in the same region as the solution.</li>
 <li>Choose <strong>Next</strong>.</li>
-<li>On the <strong>Configure network</strong> page, under <strong>Network creation</strong>,<ul>
-<li>choose <strong>Manual</strong> and click <strong>Next</strong>;</li>
-<li>or choose <strong>Automatic</strong>, and go to step 9.</li>
-</ul>
-</li>
-<li>Under <strong>VPC</strong>, choose a VPC from the list. By default, the solution creates a standalone VPC, and you can choose the one named <code>LogHubVpc/DefaultVPC</code>. You can also choose the same VPC as your AOS domains.</li>
+<li>On the <strong>Configure network</strong> page, under <strong>Network creation</strong>, choose <strong>Manual</strong> and click <strong>Next</strong>; or choose <strong>Automatic</strong>, and go to step 9.</li>
+<li>Under <strong>VPC</strong>, choose a VPC from the list. By default, the solution creates a standalone VPC, and you can choose the one named <code>LogHubVpc/DefaultVPC</code>. You can also choose the same VPC as your Amazon OpenSearch Service domains.</li>
 <li>Under <strong>Log Processing Subnet Group</strong>, select at least 2 subnets from the dropdown list. By default, the solution creates two private subnets. You can choose subnets named <code>LogHubVpc/DefaultVPC/privateSubnet1</code> and <code>LogHubVpc/DefaultVPC/privateSubnet2</code>.</li>
 <li>Under <strong>Log Processing Security Group</strong>, select one from the dropdown list. By default, the solution creates one Security Group named <code>ProcessSecurityGroup</code>.</li>
 <li>On the <strong>Create tags</strong> page, add tags if needed.</li>
 <li>Choose <strong>Import</strong>.</li>
 </ol>
 <h2 id="set-up-vpc-peering">Set up VPC Peering</h2>
-<p>By default, the solution creates a standalone VPC. You need to create VPC Peering to allow the log processing layer to have access to your AOS domains.</p>
+<p>By default, the solution creates a standalone VPC. You need to create VPC Peering to allow the log processing layer to have access to your Amazon OpenSearch Service domains.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Automatic mode will create VPC peering and configure route table automatically. You do not need to set up VPC peering again.</p>
 </div>
-<p><img alt="" src="../../../images/domain/domain-vpc-peering.svg" /></p>
+<p><img alt="" src="../../images/domain/domain-vpc-peering.svg" /></p>
 <p>Follow this section to create VPC peering, update security group and update route tables.</p>
 <h3 id="create-vpc-peering-connection">Create VPC Peering Connection</h3>
 <ol>
-<li>Sign in to the Log Hub console.</li>
+<li>Sign in to the Centralized Logging with OpenSearch console.</li>
 <li>In the left navigation panel, under <strong>Domains</strong>, select <strong>OpenSearch Domains</strong>.</li>
 <li>Find the domain you imported and select the domain name.</li>
 <li>Choose the <strong>Network</strong> tab.</li>
 <li>Copy the VPC ID in both sections <strong>OpenSearch domain network</strong> and <strong>Log processing network</strong>. You will create Peering Connection between these two VPCs.</li>
 <li>Navigate to <a href="https://console.aws.amazon.com/vpc/home#PeeringConnections">VPC Console Peering Connections</a>.</li>
 <li>Select the <strong>Create peering connection</strong> button.</li>
-<li>On the <strong>Create peering connection</strong> page, enter a name, for example, <code>log-hub</code>.</li>
+<li>On the <strong>Create peering connection</strong> page, enter a name.</li>
 <li>For the <strong>Select a local VPC to peer with, VPC ID (Requester)</strong>, select the VPC ID of the <strong>Log processing network</strong>.</li>
 <li>For the <strong>Select another VPC to peer with, VPC ID (Accepter)</strong>, select the VPC ID of the <strong>OpenSearch domain network</strong>.</li>
 <li>Choose <strong>Create peering connection</strong>, and navigate to the peering connection detail page.</li>
@@ -1945,34 +1445,33 @@
 </ol>
 <h3 id="update-route-tables">Update Route Tables</h3>
 <ol>
-<li>Go to the Log Hub console.</li>
+<li>Go to the Centralized Logging with OpenSearch console.</li>
 <li>In the <strong>OpenSearch domain network</strong> section, click the subnet under <strong>AZs and Subnets</strong> to open the subnet console in a new tab.</li>
 <li>Select the subnet, and choose the <strong>Route table</strong> tab.</li>
 <li>Select the associated route table of the subnet to open the route table configuration page.</li>
 <li>Select the <strong>Routes</strong> tab, and choose <strong>Edit routes</strong>.</li>
-<li>Add a route <code>10.255.0.0/16</code> (the CIDR of Log Hub， if you created Log Hub with existing VPC, please change this value) pointing to the Peering Connection you just created.</li>
-<li>Go back to the Log Hub console.</li>
+<li>Add a route <code>10.255.0.0/16</code> (the CIDR of Centralized Logging with OpenSearch, if you created the solution with existing VPC, please change this value) pointing to the Peering Connection you just created.</li>
+<li>Go back to the Centralized Logging with OpenSearch console.</li>
 <li>Click the VPC ID under the <strong>OpenSearch domain network</strong> section.</li>
 <li>Select the VPC ID on the VPC Console and find its <strong>IPv4 CIDR</strong>.</li>
-<li>On the Log Hub console, in the <strong>Log processing network</strong> section, click the subnets under <strong>AZs and Subnets</strong> to open the subnets in new tabs.</li>
+<li>On the Centralized Logging with OpenSearch console, in the <strong>Log processing network</strong> section, click the subnets under <strong>AZs and Subnets</strong> to open the subnets in new tabs.</li>
 <li>Repeat step 3, 4, 5, 6 to add an opposite route. Namely, configure the IPv4 CIDR of the OpenSearch VPC to point to the Peering Connection. You need to repeat the steps for each subnet of Log processing network.</li>
 </ol>
 <h3 id="update-security-group-of-opensearch-domain">Update Security Group of OpenSearch Domain</h3>
 <ol>
-<li>On the Log Hub console, under the <strong>OpenSearch domain network</strong> section, select the Security Group ID in <strong>Security Groups</strong> to open the Security Group in a new tab.</li>
+<li>On the Centralized Logging with OpenSearch console, under the <strong>OpenSearch domain network</strong> section, select the Security Group ID in <strong>Security Groups</strong> to open the Security Group in a new tab.</li>
 <li>On the console, select <strong>Edit inbound rules</strong>.</li>
-<li>Add the rule <code>ALLOW TCP/443 from 10.255.0.0/16</code> (the CIDR of Log Hub， if you created Log Hub with existing VPC, please change this value).
-   <img alt="" src="../../../images/domain/add-sg-rules.png" /></li>
+<li>Add the rule <code>ALLOW TCP/443 from 10.255.0.0/16</code> (the CIDR of Centralized Logging with OpenSearch, if you created Centralized Logging with OpenSearch with existing VPC, change this value).</li>
 <li>Choose <strong>Save rules</strong>.</li>
 </ol>
-<h2 id="remove-an-aos-domain">Remove an AOS domain</h2>
-<p>If needed, you can remove the AOS domains. </p>
+<h2 id="remove-an-amazon-opensearch-service-domain">Remove an Amazon OpenSearch Service domain</h2>
+<p>If needed, you can remove the Amazon OpenSearch Service domains. </p>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
-<p>Removing the domain from Log Hub will <strong>NOT</strong> delete the AOS domain in your AWS account. It will <strong>NOT</strong> impact any existing log analytics pipelines.</p>
+<p>Removing the domain from Centralized Logging with OpenSearch will <strong>NOT</strong> delete the Amazon OpenSearch Service domain in your AWS account. It will <strong>NOT</strong> impact any existing log analytics pipelines.</p>
 </div>
 <ol>
-<li>Sign in to the Log Hub console.</li>
+<li>Sign in to the Centralized Logging with OpenSearch console.</li>
 <li>In the navigation pane, under <strong>Domains</strong>, choose <strong>OpenSearch Domains</strong>.</li>
 <li>Select the domain from the table.</li>
 <li>Choose <strong>Remove</strong>.</li>
@@ -2010,10 +1509,10 @@
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.e5c33ebb.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "latest"}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "latest"}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.ba449ae6.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.efa0ade1.min.js"></script>
       
     
   </body>

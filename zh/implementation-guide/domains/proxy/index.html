@@ -8,7 +8,7 @@
       
       
       
-        <link rel="canonical" href="https://awslabs.github.io/log-hub/implementation-guide/domains/proxy/">
+        <link rel="canonical" href="https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/domains/proxy/">
       
       
         <link rel="prev" href="../import/">
@@ -17,18 +17,18 @@
         <link rel="next" href="../alarms/">
       
       <link rel="icon" href="../../../images/aws-solutions.png">
-      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.0.3">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.1.3">
     
     
       
-        <title>访问代理 - Log Hub</title>
+        <title>访问代理 - Centralized Logging with OpenSearch</title>
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.6b71719e.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.c4a75a56.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.2505c338.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.a0c5b2b5.min.css">
       
       
 
@@ -80,7 +80,7 @@
       
     </div>
     
-      <div data-md-component="outdated" hidden>
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
         
       </div>
     
@@ -89,7 +89,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="页眉">
-    <a href="../../.." title="Log Hub" class="md-header__button md-logo" aria-label="Log Hub" data-md-component="logo">
+    <a href="../../.." title="Centralized Logging with OpenSearch" class="md-header__button md-logo" aria-label="Centralized Logging with OpenSearch" data-md-component="logo">
       
   <img src="../../../images/aws-solutions.png" alt="logo">
 
@@ -101,7 +101,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            Log Hub
+            Centralized Logging with OpenSearch
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -125,13 +125,13 @@
             <ul class="md-select__list">
               
                 <li class="md-select__item">
-                  <a href="/log-hub/en/" hreflang="en" class="md-select__link">
+                  <a href="/centralized-logging-with-opensearch/en/" hreflang="en" class="md-select__link">
                     English
                   </a>
                 </li>
               
                 <li class="md-select__item">
-                  <a href="/log-hub/zh/" hreflang="zh" class="md-select__link">
+                  <a href="/centralized-logging-with-opensearch/zh/" hreflang="zh" class="md-select__link">
                     简体中文
                   </a>
                 </li>
@@ -168,7 +168,7 @@
           <div class="md-search-result__meta">
             正在初始化搜索引擎
           </div>
-          <ol class="md-search-result__list"></ol>
+          <ol class="md-search-result__list" role="presentation"></ol>
         </div>
       </div>
     </div>
@@ -177,13 +177,13 @@
     
     
       <div class="md-header__source">
-        <a href="https://github.com/awslabs/log-hub" title="前往仓库" class="md-source" data-md-component="source">
+        <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch" title="前往仓库" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.3.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
-    awslabs/log-hub
+    aws-solutions/centralized-logging-with-opensearch
   </div>
 </a>
       </div>
@@ -199,7 +199,7 @@
           
             
 <nav class="md-tabs" aria-label="标签" data-md-component="tabs">
-  <div class="md-tabs__inner md-grid">
+  <div class="md-grid">
     <ul class="md-tabs__list">
       
         
@@ -226,7 +226,7 @@
 
 
   <li class="md-tabs__item">
-    <a href="https://github.com/orgs/awslabs/projects/58" class="md-tabs__link">
+    <a href="https://github.com/orgs/aws-solutions/projects/17/" class="md-tabs__link">
       路线图
     </a>
   </li>
@@ -238,20 +238,8 @@
 
 
   <li class="md-tabs__item">
-    <a href="https://aws-samples.github.io/log-hub-workshop" class="md-tabs__link">
+    <a href="https://catalog.workshops.aws/centralized-logging-with-opensearch/" class="md-tabs__link">
       动手实验
-    </a>
-  </li>
-
-      
-        
-  
-  
-
-
-  <li class="md-tabs__item">
-    <a href="https://awslabs.github.io/log-hub/en/designs" class="md-tabs__link">
-      技术设计
     </a>
   </li>
 
@@ -277,22 +265,22 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="导航栏" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../.." title="Log Hub" class="md-nav__button md-logo" aria-label="Log Hub" data-md-component="logo">
+    <a href="../../.." title="Centralized Logging with OpenSearch" class="md-nav__button md-logo" aria-label="Centralized Logging with OpenSearch" data-md-component="logo">
       
   <img src="../../../images/aws-solutions.png" alt="logo">
 
     </a>
-    Log Hub
+    Centralized Logging with OpenSearch
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/awslabs/log-hub" title="前往仓库" class="md-source" data-md-component="source">
+      <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch" title="前往仓库" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.3.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
-    awslabs/log-hub
+    aws-solutions/centralized-logging-with-opensearch
   </div>
 </a>
     </div>
@@ -314,16 +302,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1" type="checkbox" id="__nav_1" checked>
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" checked>
       
       
       
-        <label class="md-nav__link" for="__nav_1" tabindex="0" aria-expanded="true">
+        <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
           实施指南
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="实施指南" data-md-level="1">
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="true">
         <label class="md-nav__title" for="__nav_1">
           <span class="md-nav__icon md-icon"></span>
           实施指南
@@ -411,16 +399,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_6" type="checkbox" id="__nav_1_6" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_6" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_6" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_6" id="__nav_1_6_label" tabindex="0">
           开始部署
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="开始部署" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_6_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_6">
           <span class="md-nav__icon md-icon"></span>
           开始部署
@@ -487,16 +475,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_7" type="checkbox" id="__nav_1_7" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_7" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_7" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_7" id="__nav_1_7_label" tabindex="0">
           快速入门
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="快速入门" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_7_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_7">
           <span class="md-nav__icon md-icon"></span>
           快速入门
@@ -593,16 +581,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_8" type="checkbox" id="__nav_1_8" checked>
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_8" checked>
       
       
       
-        <label class="md-nav__link" for="__nav_1_8" tabindex="0" aria-expanded="true">
+        <label class="md-nav__link" for="__nav_1_8" id="__nav_1_8_label" tabindex="0">
           AOS 集群管理
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="AOS 集群管理" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_8_label" aria-expanded="true">
         <label class="md-nav__title" for="__nav_1_8">
           <span class="md-nav__icon md-icon"></span>
           AOS 集群管理
@@ -646,7 +634,7 @@
   
     <li class="md-nav__item md-nav__item--active">
       
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
         
@@ -692,8 +680,8 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#log-hub" class="md-nav__link">
-    使用 Log Hub 控制台
+  <a href="#_4" class="md-nav__link">
+    使用日志通控制台
   </a>
   
 </li>
@@ -701,6 +689,13 @@
           <li class="md-nav__item">
   <a href="#cloudformation" class="md-nav__link">
     使用 CloudFormation 堆栈
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    代理实例推荐机型选择
   </a>
   
 </li>
@@ -718,14 +713,14 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#aos" class="md-nav__link">
-    通过代理访问 AOS
+  <a href="#amazon-opensearch-service" class="md-nav__link">
+    通过代理访问 Amazon OpenSearch Service
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#_4" class="md-nav__link">
+  <a href="#_6" class="md-nav__link">
     删除代理
   </a>
   
@@ -772,16 +767,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_9" type="checkbox" id="__nav_1_9" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_9" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_9" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_9" id="__nav_1_9_label" tabindex="0">
           AWS 服务日志
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="AWS 服务日志" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_9_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_9">
           <span class="md-nav__icon md-icon"></span>
           AWS 服务日志
@@ -946,16 +941,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_10" type="checkbox" id="__nav_1_10" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_10" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_10" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_10" id="__nav_1_10_label" tabindex="0">
           应用日志
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="应用日志" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_10_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_10">
           <span class="md-nav__icon md-icon"></span>
           应用日志
@@ -987,16 +982,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_10_2" type="checkbox" id="__nav_1_10_2" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_10_2" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_10_2" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_10_2" id="__nav_1_10_2_label" tabindex="0">
           前提条件
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="前提条件" data-md-level="3">
+      <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_1_10_2_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_10_2">
           <span class="md-nav__icon md-icon"></span>
           前提条件
@@ -1177,20 +1172,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../upgrade/" class="md-nav__link">
-        更新解决方案
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../uninstall/" class="md-nav__link">
         卸载解决方案
       </a>
@@ -1210,17 +1191,17 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_16" type="checkbox" id="__nav_1_16" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_15" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_16" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_15" id="__nav_1_15_label" tabindex="0">
           资源
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="资源" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_16">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_15_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_1_15">
           <span class="md-nav__icon md-icon"></span>
           资源
         </label>
@@ -1303,7 +1284,7 @@
   
   
     <li class="md-nav__item">
-      <a href="https://github.com/orgs/awslabs/projects/58" class="md-nav__link">
+      <a href="https://github.com/orgs/aws-solutions/projects/17/" class="md-nav__link">
         路线图
       </a>
     </li>
@@ -1318,23 +1299,8 @@
   
   
     <li class="md-nav__item">
-      <a href="https://aws-samples.github.io/log-hub-workshop" class="md-nav__link">
+      <a href="https://catalog.workshops.aws/centralized-logging-with-opensearch/" class="md-nav__link">
         动手实验
-      </a>
-    </li>
-  
-
-    
-      
-      
-      
-
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="https://awslabs.github.io/log-hub/en/designs" class="md-nav__link">
-        技术设计
       </a>
     </li>
   
@@ -1382,8 +1348,8 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#log-hub" class="md-nav__link">
-    使用 Log Hub 控制台
+  <a href="#_4" class="md-nav__link">
+    使用日志通控制台
   </a>
   
 </li>
@@ -1391,6 +1357,13 @@
           <li class="md-nav__item">
   <a href="#cloudformation" class="md-nav__link">
     使用 CloudFormation 堆栈
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    代理实例推荐机型选择
   </a>
   
 </li>
@@ -1408,14 +1381,14 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#aos" class="md-nav__link">
-    通过代理访问 AOS
+  <a href="#amazon-opensearch-service" class="md-nav__link">
+    通过代理访问 Amazon OpenSearch Service
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#_4" class="md-nav__link">
+  <a href="#_6" class="md-nav__link">
     删除代理
   </a>
   
@@ -1439,19 +1412,18 @@
   
 
 
-
 <h1 id="_1">访问代理</h1>
-<p>默认情况下，无法从 Internet 访问 VPC 内的 AOS 域。 Log Hub 创建了一个高可用的 <a href="https://aws.amazon.com/premiumsupport/knowledge-center/opensearch-outside-vpc-nginx/">Nginx cluster</a>，它允许您从 Internet 访问 OpenSearch Dashboards。或者，您可以选择<a href="https://aws.amazon.com/premiumsupport/knowledge-center/opensearch-outside-vpc-ssh/">使用 SSH 隧道</a>访问 AOS 域。</p>
+<p>默认情况下，无法从 Internet 访问 VPC 内的 Amazon OpenSearch Service 域。日志通创建了一个高可用的 <a href="https://aws.amazon.com/premiumsupport/knowledge-center/opensearch-outside-vpc-nginx/">Nginx cluster</a>，它允许您从 Internet 访问 OpenSearch Dashboards。或者，您可以选择<a href="https://aws.amazon.com/premiumsupport/knowledge-center/opensearch-outside-vpc-ssh/">使用 SSH 隧道</a>访问 Amazon OpenSearch Service 域。</p>
 <p>本节介绍代理堆栈的架构以及以下内容：</p>
 <ol>
 <li><a href="#_3">创建代理</a></li>
 <li><a href="#dns">创建关联的DNS记录</a></li>
-<li><a href="#aos">通过代理访问AOS</a></li>
+<li><a href="#aos">通过代理访问Amazon OpenSearch Service</a></li>
 <li><a href="#_4">删除代理</a></li>
 </ol>
 <h2 id="_2">架构</h2>
-<p>Log Hub 创建一个 <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/what-is-amazon-ec2-auto-scaling.html">Auto Scaling Group (ASG)</a> 和一个 <a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/application/introduction.html">Application Load Balancer (ALB)</a>。</p>
-<p><img alt="代理堆栈架构" src="../../../images/architecture/proxy.svg" /></p>
+<p>日志通创建一个 <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/what-is-amazon-ec2-auto-scaling.html">Auto Scaling Group (ASG)</a> 和一个 <a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/application/introduction.html">Application Load Balancer (ALB)</a>。</p>
+<p><img alt="代理堆栈架构" src="../../images/architecture/proxy.svg" /></p>
 <p>工作流程如下：</p>
 <ol>
 <li>
@@ -1471,16 +1443,16 @@
 </li>
 </ol>
 <h2 id="_3">创建代理</h2>
-<p>您可以使用 Log Hub 控制台或通过部署独立的 CloudFormation 堆栈来创建基于 Nginx 的代理。</p>
+<p>您可以使用日志通控制台或通过部署独立的 CloudFormation 堆栈来创建基于 Nginx 的代理。</p>
 <p><strong>前提条件</strong></p>
 <ul>
-<li>确保 VPC 中的 AOS <strong>域</strong> 可用。</li>
+<li>确保 VPC 中的 Amazon OpenSearch Service <strong>域</strong> 可用。</li>
 <li>在 <a href="https://aws.amazon.com/certificate-manager/">Amazon Certificate Manager (ACM)</a> 中创建或上传域关联的<strong>SSL 证书</strong>。</li>
 <li>确保您拥有 EC2 私钥 (.pem) 文件。</li>
 </ul>
-<h3 id="log-hub">使用 Log Hub 控制台</h3>
+<h3 id="_4">使用日志通控制台</h3>
 <ol>
-<li>登录 Log Hub 控制台。</li>
+<li>登录日志通控制台。</li>
 <li>在导航窗格中的 <strong>集群</strong>，选择 <strong>OpenSearch 域</strong>。</li>
 <li>从表中选择域。</li>
 <li>
@@ -1491,21 +1463,21 @@
 </div>
 </li>
 <li>
-<p>在<strong>创建访问代理</strong>页面的<strong>公共访问代理</strong>部分，为<strong>公共子网</strong>选择至少 2 个子网。您可以选择 2 个名为<code>LogHubVPC/DefaultVPC/publicSubnet</code>的公有子网，它们是由 Log Hub 默认创建的。</p>
+<p>在<strong>创建访问代理</strong>页面的<strong>公共访问代理</strong>部分，为<strong>公共子网</strong>选择至少 2 个子网。您可以选择 2 个名为<code>LogHubVPC/DefaultVPC/publicSubnet</code>的公有子网，它们是由日志通 默认创建的。</p>
 </li>
-<li>在<strong>公共安全组</strong>中选择 ALB 的安全组。您可以选择一个名为 <code>ProxySecurityGroup</code> 的安全组，该安全组由 Log Hub 默认创建。</li>
+<li>在<strong>公共安全组</strong>中选择 ALB 的安全组。您可以选择一个名为 <code>ProxySecurityGroup</code> 的安全组，该安全组由日志通 默认创建。</li>
 <li>输入<strong>域名</strong>。</li>
 <li>选择与域名关联的<strong>Load Balancer SSL Certificate</strong>。</li>
 <li>选择<strong>Nginx 实例密钥名称</strong>。</li>
 <li>选择<strong>创建</strong>。</li>
 </ol>
 <h3 id="cloudformation">使用 CloudFormation 堆栈</h3>
-<p>此自动化 AWS CloudFormation 模板在 AWS 云中部署 <em>Log Hub - Nginx 访问代理</em> 解决方案。</p>
+<p>此自动化 AWS CloudFormation 模板在 AWS 云中部署 <em>日志通- Nginx 访问代理</em> 解决方案。</p>
 <ol>
 <li>
-<p>登录 AWS 管理控制台并选择按钮以启动 <code>nginx-for-opensearch</code> AWS CloudFormation 模板。</p>
-<p><a href="https://console.aws.amazon.com/cloudformation/home#/stacks/create/template?stackName=LogHub-NginxProxy&amp;templateURL=https://aws-gcr-solutions.s3.amazonaws.com/log-hub/latest/NginxForOpenSearch.template" target="_blank"><img alt="启动堆栈" src="../../../images/launch-stack.png" /></a></p>
-<p>您也可以<a href="https://aws-gcr-solutions.s3.amazonaws.com/log-hub/latest/NginxForOpenSearch.template">下载模板</a> 开始部署。</p>
+<p>登录 AWS 管理控制台并选择按钮以启动 AWS CloudFormation 模板。</p>
+<p><a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/NginxForOpenSearch.template" target="_blank"><img alt="启动堆栈" src="../../images/launch-stack.png" /></a></p>
+<p>您也可以<a href="https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/NginxForOpenSearch.template">下载模板</a> 开始部署。</p>
 </li>
 <li>
 <p>要在不同的 AWS 区域中启动堆栈，请使用控制台导航栏中的区域选择器。</p>
@@ -1517,7 +1489,7 @@
 <p>在 <strong>指定堆栈详细信息</strong> 页面上，为您的堆栈分配一个名称。</p>
 </li>
 <li>
-<p>在 <strong>参数</strong> 部分，查看模板的参数并根据需要进行修改。</p>
+<p>在 <strong>参数</strong> 部分，查看模板的参数并根据需要进行修改。此解决方案使用以下默认值。</p>
 <table>
 <thead>
 <tr>
@@ -1599,21 +1571,74 @@
 </li>
 </ol>
 <p>您可以在 AWS CloudFormation 控制台的 <strong>状态</strong> 列中查看堆栈的状态。您应该会在大约 15 分钟内收到 <strong>CREATE_COMPLETE</strong> 状态。</p>
+<h3 id="_5">代理实例推荐机型选择</h3>
+<p>下表列出了基于并行访问的用户数推荐的代理实例配置。您可以结合实际的应用场景进行具体的实例数量和机型的调整。</p>
+<table>
+<thead>
+<tr>
+<th>并行访问的用户数</th>
+<th>代理实例机型</th>
+<th>代理实例数量</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>4</td>
+<td>t3.nano</td>
+<td>1</td>
+</tr>
+<tr>
+<td>6</td>
+<td>t3.micro</td>
+<td>1</td>
+</tr>
+<tr>
+<td>8</td>
+<td>t3.nano</td>
+<td>2</td>
+</tr>
+<tr>
+<td>10</td>
+<td>t3.small</td>
+<td>1</td>
+</tr>
+<tr>
+<td>12</td>
+<td>t3.micro</td>
+<td>2</td>
+</tr>
+<tr>
+<td>20</td>
+<td>t3.small</td>
+<td>2</td>
+</tr>
+<tr>
+<td>25</td>
+<td>t3.large</td>
+<td>1</td>
+</tr>
+<tr>
+<td>50+</td>
+<td>t3.large</td>
+<td>2</td>
+</tr>
+</tbody>
+</table>
 <h2 id="dns">创建关联的 DNS 记录</h2>
 <p>配置代理基础架构后，您需要在 DNS 解析器中创建关联的 DNS 记录。 下面介绍如何找到 ALB 域，然后创建指向该域的 CNAME 记录。</p>
 <ol>
-<li>登录 Log Hub 控制台。</li>
+<li>登录日志通控制台。</li>
 <li>在导航窗格中的 <strong>集群</strong> 下，选择 <strong>OpenSearch 域</strong>。</li>
 <li>从表中选择域。</li>
 <li>选择<strong>访问代理</strong>选项卡。您可以看到 <strong>负载均衡域名</strong>，即 ALB 域。</li>
 <li>转到 DNS 解析器，创建指向该域的 CNAME 记录。如果您的域由 <a href="https://aws.amazon.com/route53/">Amazon Route 53</a> 管理，请参阅<a href="https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-creating.html">使用 Amazon Route 53 控制台创建记录</a>。</li>
 </ol>
-<h2 id="aos">通过代理访问 AOS</h2>
-<p>DNS 记录生效后，您可以通过代理从任何地方访问 AOS 内置仪表板。 您可以在浏览器中输入代理的域，或单击<strong>常规配置</strong>部分中<strong>访问代理</strong>下的<strong>链接</strong>按钮。</p>
-<p><img alt="访问代理链接" src="../../../images/access-proxy-link.png" /></p>
-<h2 id="_4">删除代理</h2>
+<h2 id="amazon-opensearch-service">通过代理访问 Amazon OpenSearch Service</h2>
+<p>DNS 记录生效后，您可以通过代理从任何地方访问 Amazon OpenSearch Service 内置仪表板。 您可以在浏览器中输入代理的域，或单击<strong>常规配置</strong>部分中<strong>访问代理</strong>下的<strong>链接</strong>按钮。</p>
+<p><img alt="访问代理链接" src="../../images/access-proxy-link.png" /></p>
+<h2 id="_6">删除代理</h2>
 <ol>
-<li>登录 Log Hub 控制台。</li>
+<li>登录日志通 控制台。</li>
 <li>在导航窗格中的 <strong>集群</strong> 下，选择 <strong>OpenSearch 域</strong>。</li>
 <li>从表中选择域。</li>
 <li>选择<strong>访问代理</strong>选项卡。</li>
@@ -1652,10 +1677,10 @@
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.e5c33ebb.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": "latest"}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": "latest"}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.ba449ae6.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.efa0ade1.min.js"></script>
       
     
   </body>

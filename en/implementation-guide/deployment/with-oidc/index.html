@@ -8,7 +8,7 @@
       
       
       
-        <link rel="canonical" href="https://awslabs.github.io/log-hub/implementation-guide/deployment/with-oidc/">
+        <link rel="canonical" href="https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/deployment/with-oidc/">
       
       
         <link rel="prev" href="../with-cognito/">
@@ -17,18 +17,18 @@
         <link rel="next" href="../../getting-started/">
       
       <link rel="icon" href="../../../images/aws-solutions.png">
-      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.0.3">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.1.3">
     
     
       
-        <title>Launch with OpenID Connect - Log Hub</title>
+        <title>Launch with OpenID Connect - Centralized Logging with OpenSearch</title>
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.6b71719e.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.c4a75a56.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.2505c338.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.a0c5b2b5.min.css">
       
       
 
@@ -80,7 +80,7 @@
       
     </div>
     
-      <div data-md-component="outdated" hidden>
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
         
       </div>
     
@@ -89,7 +89,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../../.." title="Log Hub" class="md-header__button md-logo" aria-label="Log Hub" data-md-component="logo">
+    <a href="../../.." title="Centralized Logging with OpenSearch" class="md-header__button md-logo" aria-label="Centralized Logging with OpenSearch" data-md-component="logo">
       
   <img src="../../../images/aws-solutions.png" alt="logo">
 
@@ -101,7 +101,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            Log Hub
+            Centralized Logging with OpenSearch
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -125,13 +125,13 @@
             <ul class="md-select__list">
               
                 <li class="md-select__item">
-                  <a href="/log-hub/en/" hreflang="en" class="md-select__link">
+                  <a href="/centralized-logging-with-opensearch/en/" hreflang="en" class="md-select__link">
                     English
                   </a>
                 </li>
               
                 <li class="md-select__item">
-                  <a href="/log-hub/zh/" hreflang="zh" class="md-select__link">
+                  <a href="/centralized-logging-with-opensearch/zh/" hreflang="zh" class="md-select__link">
                     简体中文
                   </a>
                 </li>
@@ -168,7 +168,7 @@
           <div class="md-search-result__meta">
             Initializing search
           </div>
-          <ol class="md-search-result__list"></ol>
+          <ol class="md-search-result__list" role="presentation"></ol>
         </div>
       </div>
     </div>
@@ -177,13 +177,13 @@
     
     
       <div class="md-header__source">
-        <a href="https://github.com/awslabs/log-hub" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.3.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
-    awslabs/log-hub
+    aws-solutions/centralized-logging-with-opensearch
   </div>
 </a>
       </div>
@@ -199,7 +199,7 @@
           
             
 <nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
-  <div class="md-tabs__inner md-grid">
+  <div class="md-grid">
     <ul class="md-tabs__list">
       
         
@@ -226,7 +226,7 @@
 
 
   <li class="md-tabs__item">
-    <a href="https://github.com/orgs/awslabs/projects/58" class="md-tabs__link">
+    <a href="https://github.com/orgs/aws-solutions/projects/17/" class="md-tabs__link">
       Roadmap
     </a>
   </li>
@@ -238,26 +238,10 @@
 
 
   <li class="md-tabs__item">
-    <a href="https://aws-samples.github.io/log-hub-workshop" class="md-tabs__link">
+    <a href="https://catalog.workshops.aws/centralized-logging-with-opensearch/" class="md-tabs__link">
       Workshop
     </a>
   </li>
-
-      
-        
-  
-  
-
-
-  
-  
-  
-    <li class="md-tabs__item">
-      <a href="../../../designs/" class="md-tabs__link">
-        Technical Designs
-      </a>
-    </li>
-  
 
       
     </ul>
@@ -281,22 +265,22 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../.." title="Log Hub" class="md-nav__button md-logo" aria-label="Log Hub" data-md-component="logo">
+    <a href="../../.." title="Centralized Logging with OpenSearch" class="md-nav__button md-logo" aria-label="Centralized Logging with OpenSearch" data-md-component="logo">
       
   <img src="../../../images/aws-solutions.png" alt="logo">
 
     </a>
-    Log Hub
+    Centralized Logging with OpenSearch
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/awslabs/log-hub" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.3.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
-    awslabs/log-hub
+    aws-solutions/centralized-logging-with-opensearch
   </div>
 </a>
     </div>
@@ -318,16 +302,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1" type="checkbox" id="__nav_1" checked>
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" checked>
       
       
       
-        <label class="md-nav__link" for="__nav_1" tabindex="0" aria-expanded="true">
+        <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
           Implementation Guide
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Implementation Guide" data-md-level="1">
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="true">
         <label class="md-nav__title" for="__nav_1">
           <span class="md-nav__icon md-icon"></span>
           Implementation Guide
@@ -417,16 +401,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_6" type="checkbox" id="__nav_1_6" checked>
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_6" checked>
       
       
       
-        <label class="md-nav__link" for="__nav_1_6" tabindex="0" aria-expanded="true">
+        <label class="md-nav__link" for="__nav_1_6" id="__nav_1_6_label" tabindex="0">
           Deployment
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Deployment" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_6_label" aria-expanded="true">
         <label class="md-nav__title" for="__nav_1_6">
           <span class="md-nav__icon md-icon"></span>
           Deployment
@@ -470,7 +454,7 @@
   
     <li class="md-nav__item md-nav__item--active">
       
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
         
@@ -603,16 +587,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_7" type="checkbox" id="__nav_1_7" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_7" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_7" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_7" id="__nav_1_7_label" tabindex="0">
           Getting Started
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Getting Started" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_7_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_7">
           <span class="md-nav__icon md-icon"></span>
           Getting Started
@@ -707,16 +691,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_8" type="checkbox" id="__nav_1_8" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_8" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_8" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_8" id="__nav_1_8_label" tabindex="0">
           Domain Management
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Domain Management" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_8_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_8">
           <span class="md-nav__icon md-icon"></span>
           Domain Management
@@ -797,16 +781,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_9" type="checkbox" id="__nav_1_9" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_9" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_9" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_9" id="__nav_1_9_label" tabindex="0">
           AWS Services Logs
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="AWS Services Logs" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_9_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_9">
           <span class="md-nav__icon md-icon"></span>
           AWS Services Logs
@@ -971,16 +955,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_10" type="checkbox" id="__nav_1_10" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_10" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_10" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_10" id="__nav_1_10_label" tabindex="0">
           Applications Logs
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Applications Logs" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_10_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_10">
           <span class="md-nav__icon md-icon"></span>
           Applications Logs
@@ -1012,16 +996,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_10_2" type="checkbox" id="__nav_1_10_2" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_10_2" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_10_2" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_10_2" id="__nav_1_10_2_label" tabindex="0">
           Prerequisites
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Prerequisites" data-md-level="3">
+      <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_1_10_2_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_10_2">
           <span class="md-nav__icon md-icon"></span>
           Prerequisites
@@ -1035,7 +1019,7 @@
   
     <li class="md-nav__item">
       <a href="../../applications/create-log-source/" class="md-nav__link">
-        Create a Log Source
+        Create a log source
       </a>
     </li>
   
@@ -1202,22 +1186,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../upgrade/" class="md-nav__link">
-        Upgrading the solution
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../uninstall/" class="md-nav__link">
-        Uninstalling the solution
+        Uninstalling the Solution
       </a>
     </li>
   
@@ -1235,17 +1205,17 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_16" type="checkbox" id="__nav_1_16" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_15" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_16" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_15" id="__nav_1_15_label" tabindex="0">
           Resources
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Resources" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_16">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_15_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_1_15">
           <span class="md-nav__icon md-icon"></span>
           Resources
         </label>
@@ -1328,7 +1298,7 @@
   
   
     <li class="md-nav__item">
-      <a href="https://github.com/orgs/awslabs/projects/58" class="md-nav__link">
+      <a href="https://github.com/orgs/aws-solutions/projects/17/" class="md-nav__link">
         Roadmap
       </a>
     </li>
@@ -1343,474 +1313,9 @@
   
   
     <li class="md-nav__item">
-      <a href="https://aws-samples.github.io/log-hub-workshop" class="md-nav__link">
+      <a href="https://catalog.workshops.aws/centralized-logging-with-opensearch/" class="md-nav__link">
         Workshop
       </a>
-    </li>
-  
-
-    
-      
-      
-      
-
-  
-  
-  
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-      
-      
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_4" type="checkbox" id="__nav_4" >
-      
-      
-      
-        <label class="md-nav__link" for="__nav_4" tabindex="0" aria-expanded="false">
-          Technical Designs
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" aria-label="Technical Designs" data-md-level="1">
-        <label class="md-nav__title" for="__nav_4">
-          <span class="md-nav__icon md-icon"></span>
-          Technical Designs
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/" class="md-nav__link">
-        Overview
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/concepts/" class="md-nav__link">
-        Concepts
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/solution/high-level-design/" class="md-nav__link">
-        High Level Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-      
-      
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_4_4" type="checkbox" id="__nav_4_4" >
-      
-      
-      
-        <label class="md-nav__link" for="__nav_4_4" tabindex="0" aria-expanded="false">
-          Domain Management
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" aria-label="Domain Management" data-md-level="2">
-        <label class="md-nav__title" for="__nav_4_4">
-          <span class="md-nav__icon md-icon"></span>
-          Domain Management
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/domain-management/component-design/" class="md-nav__link">
-        Component Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/domain-management/process-design/" class="md-nav__link">
-        Process Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/domain-management/api-design/" class="md-nav__link">
-        API Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/domain-management/data-model-design/" class="md-nav__link">
-        Data Model Design
-      </a>
-    </li>
-  
-
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-      
-      
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_4_5" type="checkbox" id="__nav_4_5" >
-      
-      
-      
-        <label class="md-nav__link" for="__nav_4_5" tabindex="0" aria-expanded="false">
-          Service Log Analytics
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" aria-label="Service Log Analytics" data-md-level="2">
-        <label class="md-nav__title" for="__nav_4_5">
-          <span class="md-nav__icon md-icon"></span>
-          Service Log Analytics
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/service-log/component-design/" class="md-nav__link">
-        Component Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/service-log/process-design/" class="md-nav__link">
-        Process Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/service-log/api-design/" class="md-nav__link">
-        API Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/service-log/data-model-design/" class="md-nav__link">
-        Data Model Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/service-log/tutorial-extend-service-log/" class="md-nav__link">
-        Tutorial: Extend Service Logs
-      </a>
-    </li>
-  
-
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-      
-      
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_4_6" type="checkbox" id="__nav_4_6" >
-      
-      
-      
-        <label class="md-nav__link" for="__nav_4_6" tabindex="0" aria-expanded="false">
-          Application Log
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" aria-label="Application Log" data-md-level="2">
-        <label class="md-nav__title" for="__nav_4_6">
-          <span class="md-nav__icon md-icon"></span>
-          Application Log
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/app-log/log-analytics-pipeline-app/" class="md-nav__link">
-        Overview
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/app-log/architecture-design/" class="md-nav__link">
-        Architecture Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/app-log/process-design/" class="md-nav__link">
-        Process Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/app-log/api-design/" class="md-nav__link">
-        API Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/app-log/data-model-design/" class="md-nav__link">
-        Data Model Design
-      </a>
-    </li>
-  
-
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-      
-      
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_4_7" type="checkbox" id="__nav_4_7" >
-      
-      
-      
-        <label class="md-nav__link" for="__nav_4_7" tabindex="0" aria-expanded="false">
-          EKS Cluster Log
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" aria-label="EKS Cluster Log" data-md-level="2">
-        <label class="md-nav__title" for="__nav_4_7">
-          <span class="md-nav__icon md-icon"></span>
-          EKS Cluster Log
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/eks-log/architecture-design/" class="md-nav__link">
-        Architecture Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/eks-log/process-design/" class="md-nav__link">
-        Process Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/eks-log/api-design/" class="md-nav__link">
-        API Design
-      </a>
-    </li>
-  
-
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../designs/assets/" class="md-nav__link">
-        Assets
-      </a>
-    </li>
-  
-
-            
-          
-        </ul>
-      </nav>
     </li>
   
 
@@ -1935,18 +1440,18 @@
   
 
 
-
 <h1 id="launch-with-openid-connect-oidc">Launch with OpenID Connect (OIDC)</h1>
 <p><strong>Time to deploy</strong>: Approximately 30 minutes</p>
 <h2 id="prerequisites">Prerequisites</h2>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
-<p>The Log Hub console is served via CloudFront distribution which is considered as an Internet information service.
-If you are deploying the solution in <strong>AWS China Regions</strong>, the domain must have a valid <a href="https://www.amazonaws.cn/en/support/icp/?nc2=h_l2_su">ICP Recordal</a>. </p>
+<p>The Centralized Logging with OpenSearch console is served via CloudFront distribution which is considered as an Internet information service.
+If you are deploying the solution in <strong>AWS China Regions</strong>, the domain must have a valid <a href="https://www.amazonaws.cn/en/support/icp/?nc2=h_l2_su">ICP Recordal</a>.</p>
 </div>
 <ul>
-<li>A domain. You will use this domain to access the Log Hub console. </li>
-<li>An SSL certificate in AWS IAM. The SSL must be associated with the given domain. Follow <a href="../../resources/upload-ssl-certificate/">this guide</a> to upload SSL certificate to IAM.</li>
+<li>A domain. You will use this domain to access the Centralized Logging with OpenSearch console (Required for AWS China Regions, optional for AWS Regions).</li>
+<li>An SSL certificate in AWS IAM. The SSL must be associated with the given domain. Follow <a href="../../resources/upload-ssl-certificate/">this guide</a> to upload SSL certificate to IAM. Note that this is required for AWS China Regions, but is not recommended for AWS Regions.</li>
+<li>Make sure to request or import the ACM certificate in the US East (N. Virginia) Region (us-east-1). Note that this is not required for AWS China Regions, and is optional for AWS Regions.</li>
 </ul>
 <h2 id="deployment-overview">Deployment Overview</h2>
 <p>Use the following steps to deploy this solution on AWS.</p>
@@ -1958,40 +1463,23 @@ If you are deploying the solution in <strong>AWS China Regions</strong>, the dom
 <p>You can use different kinds of OpenID Connector (OIDC) providers. This section introduces Option 1 to Option 4.</p>
 <ul>
 <li>(Option 1) Using Amazon Cognito from another region as OIDC provider.</li>
-<li>(Option 2) <a href="https://www.authing.cn/">Authing</a>, which is an example of a third-party authentication provider. </li>
-<li>(Option 3) <a href="https://github.com/aws-samples/keycloak-on-aws">Keycloak</a>, which is a solution maintained by AWS and can serve as an authentication identity provider. </li>
+<li>(Option 2) <a href="https://www.authing.cn/">Authing</a>, which is an example of a third-party authentication provider.</li>
+<li>(Option 3) <a href="https://github.com/aws-samples/keycloak-on-aws">Keycloak</a>, which is a solution maintained by AWS and can serve as an authentication identity provider.</li>
 <li>(Option 4) <a href="https://docs.microsoft.com/en-us/windows-server/identity/active-directory-federation-services" target="_blank">ADFS</a>, which is a service offered by Microsoft.</li>
 <li>(Option 5) Other third-party authentication platforms such as <a href="https://auth0.com/">Auth0</a>.</li>
 </ul>
-<p>Follow the steps below to create an OIDC client, and obtain the <code>client_id</code> and <code>issuer</code>. </p>
+<p>Follow the steps below to create an OIDC client, and obtain the <code>client_id</code> and <code>issuer</code>.</p>
 <h3 id="option-1-using-cognito-user-pool-from-another-region">(Option 1) Using Cognito User Pool from another region</h3>
 <p>You can leverage the <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-identity-pools.html">Cognito User Pool</a> in a supported AWS Standard Region as the OIDC provider.</p>
 <ol>
 <li>Go to the <a href="https://console.aws.amazon.com/cognito/home">Amazon Cognito console</a> in an AWS Standard Region.</li>
 <li>Set up the hosted UI with the Amazon Cognito console based on this <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools-app-integration.html#cognito-user-pools-create-an-app-integration">guide</a>.</li>
-<li>Note that there is a new UX design for the Amazon Cognito console. 
-If you are using the new UX of Amazon Cognito console, make sure you are following the instruction of <strong>New console</strong>. Moreover,<ul>
-<li>For <strong>New Amazon Cognito Console</strong>: make sure that <strong>Public client</strong> is chosen when selecting the <strong>App type</strong>.</li>
-<li>For <strong>Original Amazon Cognito Console</strong>: make sure that the option <strong>Generate client secret</strong> is <strong>unchecked</strong> when adding an app client. It is checked by default.</li>
-</ul>
-</li>
-<li>Enter the Callback URL and Sign out URL using your domain name for Log Hub console.
-If your hosted UI is set up, you should be able to see something like below:<ul>
-<li>For <strong>New Amazon Cognito Console</strong>, the hosted UI is <strong>Available</strong>:
-   <a href="../../../images/OIDC/cognito-hostUI-new.png"><img alt="" src="../../../images/OIDC/cognito-hostUI-new.png" /></a></li>
-<li>For <strong>Original Amazon Cognito Console</strong>, the <strong>Launch Hosted UI</strong> link is available:
-   <a href="../../../images/OIDC/cognito-hostUI-old.png"><img alt="" src="../../../images/OIDC/cognito-hostUI-old.png" /></a></li>
-</ul>
-</li>
-<li>Save the App client ID, User pool ID and the AWS Region to a file, which will be used later.<ul>
-<li>For <strong>New Amazon Cognito Console</strong>:
-   <a href="../../../images/OIDC/cognito-new-console-clientID.png"><img alt="" src="../../../images/OIDC/cognito-new-console-clientID.png" /></a>
-   <a href="../../../images/OIDC/cognito-new-console-userpoolID.png"><img alt="" src="../../../images/OIDC/cognito-new-console-userpoolID.png" /></a></li>
-<li>For <strong>Original Amazon Cognito Console</strong>:
-   <a href="../../../images/OIDC/cognito-old-console-clientID.png"><img alt="" src="../../../images/OIDC/cognito-old-console-clientID.png" /></a>
-   <a href="../../../images/OIDC/cognito-old-console-userpoolID.png"><img alt="" src="../../../images/OIDC/cognito-old-console-userpoolID.png" /></a></li>
-</ul>
-</li>
+<li>Choose <strong>Public client</strong> when selecting the <strong>App type</strong>.</li>
+<li>Enter the <strong>Callback URL</strong> and <strong>Sign out URL</strong> using your domain name for Centralized Logging with OpenSearch console. If your hosted UI is set up, you should be able to see something like below.
+       <a href="../../images/OIDC/cognito-hostUI-new.png"><img alt="" src="../../images/OIDC/cognito-hostUI-new.png" /></a></li>
+<li>Save the App client ID, User pool ID and the AWS Region to a file, which will be used later.
+       <a href="../../images/OIDC/cognito-new-console-clientID.png"><img alt="" src="../../images/OIDC/cognito-new-console-clientID.png" /></a>
+       <a href="../../images/OIDC/cognito-new-console-userpoolID.png"><img alt="" src="../../images/OIDC/cognito-new-console-userpoolID.png" /></a></li>
 </ol>
 <p>In <a href="#step-2-launch-the-stack">Step 2. Launch the stack</a>, the OidcClientID is the <code>App client ID</code>, and OidcProvider is <code>https://cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}</code>.</p>
 <h3 id="option-2-authingcn-oidc-client">(Option 2) Authing.cn OIDC client</h3>
@@ -1999,116 +1487,101 @@ If your hosted UI is set up, you should be able to see something like below:<ul>
 <li>Go to the <a href="https://console.authing.cn/console" target="_blank">Authing console</a>.</li>
 <li>Create a user pool if you don't have one.</li>
 <li>Select the user pool.</li>
-<li>On the left navigation bar, select <strong>Self-built App</strong> under <strong>Applications</strong>. </li>
+<li>On the left navigation bar, select <strong>Self-built App</strong> under <strong>Applications</strong>.</li>
 <li>Click the <strong>Create</strong> button.</li>
 <li>Enter the <strong>Application Name</strong>, and <strong>Subdomain</strong>.</li>
 <li>
 <p>Save the <code>App ID</code> (that is, <code>client_id</code>) and <code>Issuer</code> to a text file from Endpoint Information, which will be used later.
-    <a href="../../../images/OIDC/endpoint-info.png"><img alt="" src="../../../images/OIDC/endpoint-info.png" /></a></p>
+    <a href="../../images/OIDC/endpoint-info.png"><img alt="" src="../../images/OIDC/endpoint-info.png" /></a></p>
 </li>
 <li>
-<p>Update the <code>Login Callback URL</code> and <code>Logout Callback URL</code> to your IPC recorded domain name.
-    <a href="../../../images/OIDC/authentication-configuration.png"><img alt="" src="../../../images/OIDC/authentication-configuration.png" /></a></p>
+<p>Update the <code>Login Callback URL</code> and <code>Logout Callback URL</code> to your IPC recorded domain name.</p>
 </li>
 <li>
 <p>Set the Authorization Configuration.
-    <a href="../../../images/OIDC/authorization-configuration.png"><img alt="" src="../../../images/OIDC/authorization-configuration.png" /></a></p>
+    <a href="../../images/OIDC/authorization-configuration.png"><img alt="" src="../../images/OIDC/authorization-configuration.png" /></a></p>
 </li>
 </ol>
-<p>You have successfully created an authing self-built application. </p>
+<p>You have successfully created an authing self-built application.</p>
 <h3 id="option-3-keycloak-oidc-client">(Option 3) Keycloak OIDC client</h3>
 <ol>
 <li>
 <p>Deploy the Keycloak solution in AWS China Regions following <a href="https://aws-samples.github.io/keycloak-on-aws/en/implementation-guide/deployment/" target="_blank">this guide</a>.</p>
 </li>
 <li>
-<p>Make sure you can log in to the Keycloak console.</p>
+<p>Sign in to the Keycloak console.</p>
 </li>
 <li>
-<p>On the left navigation bar, select <strong>Add realm</strong>. Skip this step if you already have a realm. </p>
+<p>On the left navigation bar, select <strong>Add realm</strong>. Skip this step if you already have a realm.</p>
 </li>
 <li>
 <p>Go to the realm setting page. Choose <strong>Endpoints</strong>, and then <strong>OpenID Endpoint Configuration</strong> from the list.</p>
-<p><a href="../../../images/OIDC/keycloak-example-realm.jpg"><img alt="" src="../../../images/OIDC/keycloak-example-realm.jpg" /></a></p>
+<p><a href="../../images/OIDC/keycloak-example-realm.jpg"><img alt="" src="../../images/OIDC/keycloak-example-realm.jpg" /></a></p>
 </li>
 <li>
 <p>In the JSON file that opens up in your browser, record the <strong>issuer</strong> value which will be used later.</p>
-<p><a href="../../../images/OIDC/OIDC-config.jpg"><img alt="" src="../../../images/OIDC/OIDC-config.jpg" /></a></p>
+<p><a href="../../images/OIDC/OIDC-config.jpg"><img alt="" src="../../images/OIDC/OIDC-config.jpg" /></a></p>
 </li>
 <li>
 <p>Go back to Keycloak console and select <strong>Clients</strong> on the left navigation bar, and choose <strong>Create</strong>.</p>
 </li>
 <li>Enter a Client ID, which must contain 24 letters (case-insensitive) or numbers. Record the <strong>Client ID</strong> which will be used later.</li>
 <li>
-<p>Change client settings. Enter <code>https://&lt;Log Hub Console domain&gt;</code> in <strong>Valid Redirect URIs</strong>，and enter <code>*</code> and <code>+</code> in <strong>Web Origins</strong>, as shown below.</p>
-<p><a href="../../../images/OIDC/keycloak-client-setting.jpg"><img alt="" src="../../../images/OIDC/keycloak-client-setting.jpg" /></a></p>
+<p>Change client settings. Enter <code>https://&lt;Centralized Logging with OpenSearch Console domain&gt;</code> in <strong>Valid Redirect URIs</strong>，and enter <code>*</code> and <code>+</code> in <strong>Web Origins</strong>.</p>
 </li>
 <li>
 <p>In the Advanced Settings, set the <strong>Access Token Lifespan</strong> to at least 5 minutes.</p>
-<p><a href="../../../images/OIDC/keycloak-access-token-setting.png"><img alt="" src="../../../images/OIDC/keycloak-access-token-setting.png" /></a></p>
 </li>
-<li>
-<p>Select <strong>Users</strong> on the left navigation bar.</p>
-</li>
+<li>Select <strong>Users</strong> on the left navigation bar.</li>
 <li>Click <strong>Add user</strong> and enter <strong>Username</strong>.</li>
 <li>After the user is created, select <strong>Credentials</strong>, and enter <strong>Password</strong>.</li>
 </ol>
-<p>The issuer value is <code>https://&lt;KEYCLOAK_DOMAIN_NAME&gt;/auth/realms/&lt;REALM_NAME&gt;</code>. </p>
+<p>The issuer value is <code>https://&lt;KEYCLOAK_DOMAIN_NAME&gt;/auth/realms/&lt;REALM_NAME&gt;</code>.</p>
 <h3 id="option-4-adfs-openid-connect-client">(Option 4) ADFS OpenID Connect Client</h3>
 <ol>
 <li>Make sure your ADFS is installed. For information about how to install ADFS, refer to <a href="https://docs.microsoft.com/en-us/windows-server/identity/ad-fs/deployment/ad-fs-deployment-guide">this guide</a>.</li>
+<li>Make sure you can log in to the ADFS Sign On page. The URL should be <code>https://adfs.domain.com/adfs/ls/idpinitiatedSignOn.aspx</code>, and you need to replace <strong>adfs.domain.com</strong> with your real ADFS domain.</li>
+<li>Log on your <strong>Domain Controller</strong>, and open <strong>Active Directory Users and Computers</strong>.</li>
 <li>
-<p>Make sure you can log in to the ADFS Sign On page. The URL should be <code>https://adfs.domain.com/adfs/ls/idpinitiatedSignOn.aspx</code>, and you need to replace <strong>adfs.domain.com</strong> with your real ADFS domain.</p>
-<p><img alt="" src="../../../images/OIDC/adfs-1.png" /></p>
-</li>
-<li>
-<p>Log on your <strong>Domain Controller</strong>, and open <strong>Active Directory Users and Computers</strong>.</p>
-</li>
-<li>
-<p>Create a <strong>Security Group</strong> for Log Hub Users, and add your planned Log Hub users to this Security Group.</p>
-<p><img alt="" src="../../../images/OIDC/adfs-2.png" /></p>
+<p>Create a <strong>Security Group</strong> for Centralized Logging with OpenSearch Users, and add your planned Centralized Logging with OpenSearch users to this Security Group.</p>
 </li>
 <li>
 <p>Log on to ADFS server, and open <strong>ADFS Management</strong>.</p>
-<p><img alt="" src="../../../images/OIDC/adfs-3.png" /></p>
 </li>
 <li>
-<p>Right click <strong>Application Groups</strong>, click <strong>Application Group</strong>, and enter the name for the Application Group, such as LogHub. Select <strong>Web browser accessing a web application</strong> option under <strong>Client-Server Applications</strong>, and click <strong>Next</strong>.</p>
-<p><img alt="" src="../../../images/OIDC/adfs-4.png" /></p>
+<p>Right click <strong>Application Groups</strong>, choose <strong>Application Group</strong>, and enter the name for the Application Group. Select <strong>Web browser accessing a web application</strong> option under <strong>Client-Server Applications</strong>, and choose <strong>Next</strong>.</p>
 </li>
 <li>
-<p>Record the <strong>Client Identifier</strong> (<code>client_id</code>) under <strong>Redirect URI</strong>, enter your Log Hub domain (for example, <code>loghub.domain.com</code>), and click <strong>Add</strong>, and then click <strong>Next</strong>.</p>
-<p><img alt="" src="../../../images/OIDC/adfs-5.png" /></p>
+<p>Record the <strong>Client Identifier</strong> (<code>client_id</code>) under <strong>Redirect URI</strong>, enter your Centralized Logging with OpenSearch domain (for example, <code>xx.domain.com</code>), and choose <strong>Add</strong>, and then choose <strong>Next</strong>.</p>
 </li>
 <li>
-<p>In the <strong>Choose Access Control Policy</strong> window, select <strong>Permit specific group</strong>, click <strong>parameters</strong> under Policy part, add the created Security Group in Step 4, then click <strong>Next</strong>. You can configure other access control policy based on your requirements.</p>
-<p><img alt="" src="../../../images/OIDC/adfs-6.png" /></p>
+<p>In the <strong>Choose Access Control Policy</strong> window, select <strong>Permit specific group</strong>, choose <strong>parameters</strong> under Policy part, add the created Security Group in Step 4, then click <strong>Next</strong>. You can configure other access control policy based on your requirements.</p>
 </li>
 <li>
-<p>Under Summary window, click <strong>Next</strong>, and click <strong>Close</strong>.</p>
+<p>Under Summary window, choose <strong>Next</strong>, and choose <strong>Close</strong>.</p>
 </li>
 <li>
-<p>Open the Windows PowerShell on ADFS Server, and run the following commands to configure ADFS to allow CORS for your planned LogHub URL.</p>
+<p>Open the Windows PowerShell on ADFS Server, and run the following commands to configure ADFS to allow CORS for your planned URL.</p>
 <div class="highlight"><pre><span></span><code>Set-AdfsResponseHeaders<span class="w"> </span>-EnableCORS<span class="w"> </span><span class="nv">$true</span>
-Set-AdfsResponseHeaders<span class="w"> </span>-CORSTrustedOrigins<span class="w"> </span>https://&lt;your-loghub-domain&gt;
+Set-AdfsResponseHeaders<span class="w"> </span>-CORSTrustedOrigins<span class="w"> </span>https://&lt;your-centralized-logging-with-opensearch-domain&gt;
 </code></pre></div>
 </li>
 <li>
 <p>Under Windows PowerShell on ADFS server, run the following command to get the Issuer (<code>issuer</code>) of ADFS, which is similar to <code>https://adfs.domain.com/adfs</code>.</p>
 <div class="highlight"><pre><span></span><code>Get-ADFSProperties<span class="w"> </span><span class="p">|</span><span class="w"> </span>Select<span class="w"> </span>IdTokenIssuer
 </code></pre></div>
-<p><img alt="" src="../../../images/OIDC/adfs-9.png" /></p>
+<p><img alt="" src="../../images/OIDC/adfs-9.png" /></p>
 </li>
 </ol>
 <h2 id="step-2-launch-the-stack">Step 2. Launch the stack</h2>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
-<p>You can only have one active Log Hub solution stack in one region of an AWS account. 
+<p>You can only have one active Centralized Logging with OpenSearch solution stack in one region of an AWS account.
 If your deployment failed (for example, not meeting the requirements in <a href="../#Prerequisites">prerequisites</a>), make sure you have deleted the failed stack before retrying the deployment.</p>
 </div>
 <ol>
 <li>
-<p>Sign in to the AWS Management Console and use the button below to launch the <code>log-hub</code> AWS CloudFormation template.</p>
+<p>Sign in to the AWS Management Console and use the button below to launch the AWS CloudFormation template.</p>
 <table>
 <thead>
 <tr>
@@ -2118,26 +1591,26 @@ If your deployment failed (for example, not meeting the requirements in <a href=
 </thead>
 <tbody>
 <tr>
-<td>Launch with a new VPC in standard regions</td>
-<td><a href="https://console.aws.amazon.com/cloudformation/home#/stacks/create/template?stackName=LogHub&amp;templateURL=https://aws-gcr-solutions.s3.amazonaws.com/log-hub/latest/LogHubWithOIDC.template" target="_blank"><img alt="Launch Stack" src="../../../images/launch-stack.png" /></a></td>
+<td>Launch with a new VPC in AWS Regions</td>
+<td><a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/CentralizedLoggingWithOIDC.template" target="_blank"><img alt="Launch Stack" src="../../images/launch-stack.png" /></a></td>
 </tr>
 <tr>
-<td>Launch with an existing VPC in standard regions</td>
-<td><a href="https://console.aws.amazon.com/cloudformation/home#/stacks/create/template?stackName=LogHub&amp;templateURL=https://aws-gcr-solutions.s3.amazonaws.com/log-hub/latest/LogHubFromExistingVPCWithOIDC.template" target="_blank"><img alt="Launch Stack" src="../../../images/launch-stack.png" /></a></td>
+<td>Launch with an existing VPC in AWS Regions</td>
+<td><a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/CentralizedLoggingFromExistingVPCWithOIDC.template" target="_blank"><img alt="Launch Stack" src="../../images/launch-stack.png" /></a></td>
 </tr>
 <tr>
-<td>Launch with a new VPC in China Regions</td>
-<td><a href="https://console.amazonaws.cn/cloudformation/home#/stacks/create/template?stackName=LogHub&amp;templateURL=https://aws-gcr-solutions.s3.amazonaws.com/log-hub/latest/LogHubWithOIDC.template" target="_blank"><img alt="Launch Stack" src="../../../images/launch-stack.png" /></a></td>
+<td>Launch with a new VPC in AWS China Regions</td>
+<td><a href="https://console.amazonaws.cn/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/CentralizedLoggingWithOIDC.template" target="_blank"><img alt="Launch Stack" src="../../images/launch-stack.png" /></a></td>
 </tr>
 <tr>
-<td>Launch with an existing VPC in China Regions</td>
-<td><a href="https://console.amazonaws.cn/cloudformation/home#/stacks/create/template?stackName=LogHub&amp;templateURL=https://aws-gcr-solutions.s3.amazonaws.com/log-hub/latest/LogHubFromExistingVPCWithOIDC.template" target="_blank"><img alt="Launch Stack" src="../../../images/launch-stack.png" /></a></td>
+<td>Launch with an existing VPC in AWS China Regions</td>
+<td><a href="https://console.amazonaws.cn/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/CentralizedLoggingFromExistingVPCWithOIDC.template" target="_blank"><img alt="Launch Stack" src="../../images/launch-stack.png" /></a></td>
 </tr>
 </tbody>
 </table>
 </li>
 <li>
-<p>The template is launched in the default region after you log in to the console. To launch the Log Hub solution in a different AWS Region, use the Region selector in the console navigation bar.</p>
+<p>The template is launched in the default region after you log in to the console. To launch the Centralized Logging with OpenSearch solution in a different AWS Region, use the Region selector in the console navigation bar.</p>
 </li>
 <li>On the <strong>Create stack</strong> page, verify that the correct template URL shows in the <strong>Amazon S3 URL</strong> text box and choose <strong>Next</strong>.</li>
 <li>On the <strong>Specify stack details</strong> page, assign a name to your solution stack. For information about naming character limitations, refer to <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_iam-limits.html" target="_blank">IAM and STS Limits</a> in the <em>AWS Identity and Access Management User Guide</em>.</li>
@@ -2167,13 +1640,18 @@ If your deployment failed (for example, not meeting the requirements in <a href=
 </tr>
 <tr>
 <td>Domain</td>
-<td><code>&lt;Requires input&gt;</code></td>
-<td>Custom domain for Log Hub console. Do NOT add <code>http(s)</code> prefix.</td>
+<td><code>&lt;Optional&gt;</code></td>
+<td>Custom domain for Centralized Logging with OpenSearch console. Do NOT add <code>http(s)</code> prefix.</td>
 </tr>
 <tr>
 <td>IamCertificateID</td>
-<td><code>&lt;Requires input&gt;</code></td>
+<td><code>&lt;Optional&gt;</code></td>
 <td>The ID of the SSL certificate in IAM. The ID is composed of 21 characters of capital letters and digits. Use the <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_server-certs.html#list-server-certificates" target="_blank"><code>list-server-certificates</code></a> command to retrieve the ID.</td>
+</tr>
+<tr>
+<td>AcmCertificateArn</td>
+<td><code>&lt;Optional&gt;</code></td>
+<td>Arn for ACM certificates requested (or imported) the certificate in the US East (N. Virginia) Region (us-east-1).</td>
 </tr>
 </tbody>
 </table>
@@ -2201,31 +1679,47 @@ If your deployment failed (for example, not meeting the requirements in <a href=
 </tr>
 <tr>
 <td>Domain</td>
-<td><code>&lt;Requires input&gt;</code></td>
-<td>Custom domain for Log Hub console. Do NOT add <code>http(s)</code> prefix.</td>
+<td><code>&lt;Optional&gt;</code></td>
+<td>Custom domain for Centralized Logging with OpenSearch console. Do NOT add <code>http(s)</code> prefix.</td>
 </tr>
 <tr>
 <td>IamCertificateID</td>
-<td><code>&lt;Requires input&gt;</code></td>
+<td><code>&lt;Optional&gt;</code></td>
 <td>The ID of the SSL certificate in IAM. The ID is composed of 21 characters of capital letters and digits. Use the <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_server-certs.html#list-server-certificates" target="_blank"><code>list-server-certificates</code></a> command to retrieve the ID.</td>
+</tr>
+<tr>
+<td>AcmCertificateArn</td>
+<td><code>&lt;Optional&gt;</code></td>
+<td>Arn for ACM certificates requested (or imported) the certificate in the US East (N. Virginia) Region (us-east-1).</td>
 </tr>
 <tr>
 <td>VPC ID</td>
 <td><code>&lt;Requires input&gt;</code></td>
-<td>Specify the existing VPC ID which you are launching the Log Hub solution in.</td>
+<td>Specify the existing VPC ID in which you are launching the solution.</td>
 </tr>
 <tr>
 <td>Public Subnet IDs</td>
 <td><code>&lt;Requires input&gt;</code></td>
-<td>Specify the two public subnets in the selected VPC. The subnets must have routes point to an <a href="https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Internet_Gateway.html">Internet Gateway</a>.</td>
+<td>Specify the two public subnets in the selected VPC. The subnets must have routes pointing to an <a href="https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Internet_Gateway.html">Internet Gateway</a>.</td>
 </tr>
 <tr>
 <td>Private Subnet IDs</td>
 <td><code>&lt;Requires input&gt;</code></td>
-<td>Specify the two private subnets in the selected VPC. The subnets must have routes point to an <a href="https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html">NAT Gateway</a>.</td>
+<td>Specify the two private subnets in the selected VPC. The subnets must have routes pointing to an <a href="https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html">NAT Gateway</a>.</td>
 </tr>
 </tbody>
 </table>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<ul>
+<li>If you are deploying the solution in <strong>AWS China Regions</strong>, you must enter Domain, and IamCertificateID.</li>
+<li>If you are deploying the solution in <strong>AWS Regions</strong>,<ul>
+<li>when a custom domain name is required, you must enter Domain, and AcmCertificateArn.</li>
+<li>when no custom domain name is required, leave it blank for Domain, IamCertificateID, and AcmCertificateArn.</li>
+</ul>
+</li>
+</ul>
+</div>
 </li>
 <li>
 <p>Choose <strong>Next</strong>.</p>
@@ -2236,26 +1730,26 @@ If your deployment failed (for example, not meeting the requirements in <a href=
 </ol>
 <p>You can view the status of the stack in the AWS CloudFormation console in the <strong>Status</strong> column. You should receive a <strong>CREATE_COMPLETE</strong> status in approximately 15 minutes.</p>
 <h2 id="step-3-setup-dns-resolver">Step 3. Setup DNS Resolver</h2>
-<p>This solution provisions a CloudFront distribution that gives you access to the Log Hub console.  </p>
+<p>This solution provisions a CloudFront distribution that gives you access to the Centralized Logging with OpenSearch console.</p>
 <ol>
 <li>Sign in to the <a href="https://console.aws.amazon.com/cloudformation/" target="_blank">AWS CloudFormation console</a>.</li>
 <li>Select the solution's stack.</li>
 <li>Choose the <strong>Outputs</strong> tab.</li>
 <li>Obtain the <strong>WebConsoleUrl</strong> as the endpoint.</li>
-<li>Create a CNAME record in DNS resolver, which points to the endpoint address. </li>
+<li>Create a CNAME record in DNS resolver, which points to the endpoint address.</li>
 </ol>
 <h2 id="step-4-launch-the-web-console">Step 4. Launch the web console</h2>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
-<p>You login credentials (username &amp; password) is managed by the OIDC provider. Before signing in to the Log Hub console, make sure you have created at least one user in the OIDC provider's user pool.</p>
+<p>You login credentials is managed by the OIDC provider. Before signing in to the Centralized Logging with OpenSearch console, make sure you have created at least one user in the OIDC provider's user pool.</p>
 </div>
 <ol>
 <li>Use the previous assigned CNAME to open the <strong>OIDC Customer Domain URL</strong> using a web browser.</li>
-<li>Choose <strong>Sign in to Log Hub</strong>, and navigate to OIDC provider.</li>
-<li>Enter username and password. You may be asked to change your default password for first-time login, which depends on your OIDC provider's policy.</li>
-<li>After the verification is complete, the system opens the Log Hub web console.</li>
+<li>Choose <strong>Sign in to Centralized Logging with OpenSearch</strong>, and navigate to OIDC provider.</li>
+<li>Enter sign-in credentials. You may be asked to change your default password for first-time login, which depends on your OIDC provider's policy.</li>
+<li>After the verification is complete, the system opens the Centralized Logging with OpenSearch web console.</li>
 </ol>
-<p>Once you have logged into the Log Hub console, you can <a href="../../domains/import/#import-an-aos-domain">import an AOS domain</a> and build log analytics pipelines.</p>
+<p>Once you have logged into the Centralized Logging with OpenSearch console, you can <a href="../../domains/import/#import-an-aos-domain">import an Amazon OpenSearch Service domain</a> and build log analytics pipelines.</p>
 
 
 
@@ -2288,10 +1782,10 @@ If your deployment failed (for example, not meeting the requirements in <a href=
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.e5c33ebb.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "latest"}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "latest"}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.ba449ae6.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.efa0ade1.min.js"></script>
       
     
   </body>

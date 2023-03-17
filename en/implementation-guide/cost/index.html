@@ -8,7 +8,7 @@
       
       
       
-        <link rel="canonical" href="https://awslabs.github.io/log-hub/implementation-guide/cost/">
+        <link rel="canonical" href="https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/cost/">
       
       
         <link rel="prev" href="../..">
@@ -17,18 +17,18 @@
         <link rel="next" href="../architecture/">
       
       <link rel="icon" href="../../images/aws-solutions.png">
-      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.0.3">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.1.3">
     
     
       
-        <title>Cost - Log Hub</title>
+        <title>Cost - Centralized Logging with OpenSearch</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.6b71719e.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.c4a75a56.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.2505c338.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.a0c5b2b5.min.css">
       
       
 
@@ -80,7 +80,7 @@
       
     </div>
     
-      <div data-md-component="outdated" hidden>
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
         
       </div>
     
@@ -89,7 +89,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="Log Hub" class="md-header__button md-logo" aria-label="Log Hub" data-md-component="logo">
+    <a href="../.." title="Centralized Logging with OpenSearch" class="md-header__button md-logo" aria-label="Centralized Logging with OpenSearch" data-md-component="logo">
       
   <img src="../../images/aws-solutions.png" alt="logo">
 
@@ -101,7 +101,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            Log Hub
+            Centralized Logging with OpenSearch
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -125,13 +125,13 @@
             <ul class="md-select__list">
               
                 <li class="md-select__item">
-                  <a href="/log-hub/en/" hreflang="en" class="md-select__link">
+                  <a href="/centralized-logging-with-opensearch/en/" hreflang="en" class="md-select__link">
                     English
                   </a>
                 </li>
               
                 <li class="md-select__item">
-                  <a href="/log-hub/zh/" hreflang="zh" class="md-select__link">
+                  <a href="/centralized-logging-with-opensearch/zh/" hreflang="zh" class="md-select__link">
                     简体中文
                   </a>
                 </li>
@@ -168,7 +168,7 @@
           <div class="md-search-result__meta">
             Initializing search
           </div>
-          <ol class="md-search-result__list"></ol>
+          <ol class="md-search-result__list" role="presentation"></ol>
         </div>
       </div>
     </div>
@@ -177,13 +177,13 @@
     
     
       <div class="md-header__source">
-        <a href="https://github.com/awslabs/log-hub" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.3.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
-    awslabs/log-hub
+    aws-solutions/centralized-logging-with-opensearch
   </div>
 </a>
       </div>
@@ -199,7 +199,7 @@
           
             
 <nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
-  <div class="md-tabs__inner md-grid">
+  <div class="md-grid">
     <ul class="md-tabs__list">
       
         
@@ -226,7 +226,7 @@
 
 
   <li class="md-tabs__item">
-    <a href="https://github.com/orgs/awslabs/projects/58" class="md-tabs__link">
+    <a href="https://github.com/orgs/aws-solutions/projects/17/" class="md-tabs__link">
       Roadmap
     </a>
   </li>
@@ -238,26 +238,10 @@
 
 
   <li class="md-tabs__item">
-    <a href="https://aws-samples.github.io/log-hub-workshop" class="md-tabs__link">
+    <a href="https://catalog.workshops.aws/centralized-logging-with-opensearch/" class="md-tabs__link">
       Workshop
     </a>
   </li>
-
-      
-        
-  
-  
-
-
-  
-  
-  
-    <li class="md-tabs__item">
-      <a href="../../designs/" class="md-tabs__link">
-        Technical Designs
-      </a>
-    </li>
-  
 
       
     </ul>
@@ -281,22 +265,22 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="Log Hub" class="md-nav__button md-logo" aria-label="Log Hub" data-md-component="logo">
+    <a href="../.." title="Centralized Logging with OpenSearch" class="md-nav__button md-logo" aria-label="Centralized Logging with OpenSearch" data-md-component="logo">
       
   <img src="../../images/aws-solutions.png" alt="logo">
 
     </a>
-    Log Hub
+    Centralized Logging with OpenSearch
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/awslabs/log-hub" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.3.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
-    awslabs/log-hub
+    aws-solutions/centralized-logging-with-opensearch
   </div>
 </a>
     </div>
@@ -318,16 +302,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1" type="checkbox" id="__nav_1" checked>
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" checked>
       
       
       
-        <label class="md-nav__link" for="__nav_1" tabindex="0" aria-expanded="true">
+        <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
           Implementation Guide
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Implementation Guide" data-md-level="1">
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="true">
         <label class="md-nav__title" for="__nav_1">
           <span class="md-nav__icon md-icon"></span>
           Implementation Guide
@@ -357,7 +341,7 @@
   
     <li class="md-nav__item md-nav__item--active">
       
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
         
@@ -403,34 +387,6 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#aws-service-logs" class="md-nav__link">
-    AWS Service Logs
-  </a>
-  
-    <nav class="md-nav" aria-label="AWS Service Logs">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#logs-in-amazon-s3" class="md-nav__link">
-    Logs in Amazon S3
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#application-logs" class="md-nav__link">
-    Application Logs
-  </a>
-  
-    <nav class="md-nav" aria-label="Application Logs">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
   <a href="#log-ingestion-through-amazon-s3" class="md-nav__link">
     Log ingestion through Amazon S3
   </a>
@@ -438,14 +394,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#log-ingestion-through-amazon-kinesis-data-streams" class="md-nav__link">
-    Log ingestion through Amazon Kinesis Data Streams
+  <a href="#logs-ingestion-through-amazon-kinesis-data-streams" class="md-nav__link">
+    Logs ingestion through Amazon Kinesis Data Streams
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
         
@@ -466,6 +417,26 @@
   <a href="#access-proxy" class="md-nav__link">
     Access Proxy
   </a>
+  
+    <nav class="md-nav" aria-label="Access Proxy">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example-1-instance-type-t3nano-instance-number-2" class="md-nav__link">
+    Example 1: Instance Type - t3.nano, Instance Number - 2
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-2-instance-type-t3large-instance-number-2" class="md-nav__link">
+    Example 2: Instance Type - t3.large, Instance Number - 2
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -543,16 +514,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_6" type="checkbox" id="__nav_1_6" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_6" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_6" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_6" id="__nav_1_6_label" tabindex="0">
           Deployment
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Deployment" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_6_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_6">
           <span class="md-nav__icon md-icon"></span>
           Deployment
@@ -619,16 +590,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_7" type="checkbox" id="__nav_1_7" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_7" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_7" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_7" id="__nav_1_7_label" tabindex="0">
           Getting Started
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Getting Started" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_7_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_7">
           <span class="md-nav__icon md-icon"></span>
           Getting Started
@@ -723,16 +694,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_8" type="checkbox" id="__nav_1_8" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_8" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_8" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_8" id="__nav_1_8_label" tabindex="0">
           Domain Management
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Domain Management" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_8_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_8">
           <span class="md-nav__icon md-icon"></span>
           Domain Management
@@ -813,16 +784,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_9" type="checkbox" id="__nav_1_9" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_9" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_9" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_9" id="__nav_1_9_label" tabindex="0">
           AWS Services Logs
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="AWS Services Logs" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_9_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_9">
           <span class="md-nav__icon md-icon"></span>
           AWS Services Logs
@@ -987,16 +958,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_10" type="checkbox" id="__nav_1_10" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_10" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_10" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_10" id="__nav_1_10_label" tabindex="0">
           Applications Logs
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Applications Logs" data-md-level="2">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_10_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_10">
           <span class="md-nav__icon md-icon"></span>
           Applications Logs
@@ -1028,16 +999,16 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_10_2" type="checkbox" id="__nav_1_10_2" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_10_2" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_10_2" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_10_2" id="__nav_1_10_2_label" tabindex="0">
           Prerequisites
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Prerequisites" data-md-level="3">
+      <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_1_10_2_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_1_10_2">
           <span class="md-nav__icon md-icon"></span>
           Prerequisites
@@ -1051,7 +1022,7 @@
   
     <li class="md-nav__item">
       <a href="../applications/create-log-source/" class="md-nav__link">
-        Create a Log Source
+        Create a log source
       </a>
     </li>
   
@@ -1218,22 +1189,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../upgrade/" class="md-nav__link">
-        Upgrading the solution
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../uninstall/" class="md-nav__link">
-        Uninstalling the solution
+        Uninstalling the Solution
       </a>
     </li>
   
@@ -1251,17 +1208,17 @@
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1_16" type="checkbox" id="__nav_1_16" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_15" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_16" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_1_15" id="__nav_1_15_label" tabindex="0">
           Resources
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Resources" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_16">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_15_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_1_15">
           <span class="md-nav__icon md-icon"></span>
           Resources
         </label>
@@ -1344,7 +1301,7 @@
   
   
     <li class="md-nav__item">
-      <a href="https://github.com/orgs/awslabs/projects/58" class="md-nav__link">
+      <a href="https://github.com/orgs/aws-solutions/projects/17/" class="md-nav__link">
         Roadmap
       </a>
     </li>
@@ -1359,474 +1316,9 @@
   
   
     <li class="md-nav__item">
-      <a href="https://aws-samples.github.io/log-hub-workshop" class="md-nav__link">
+      <a href="https://catalog.workshops.aws/centralized-logging-with-opensearch/" class="md-nav__link">
         Workshop
       </a>
-    </li>
-  
-
-    
-      
-      
-      
-
-  
-  
-  
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-      
-      
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_4" type="checkbox" id="__nav_4" >
-      
-      
-      
-        <label class="md-nav__link" for="__nav_4" tabindex="0" aria-expanded="false">
-          Technical Designs
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" aria-label="Technical Designs" data-md-level="1">
-        <label class="md-nav__title" for="__nav_4">
-          <span class="md-nav__icon md-icon"></span>
-          Technical Designs
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../designs/" class="md-nav__link">
-        Overview
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../designs/concepts/" class="md-nav__link">
-        Concepts
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../designs/solution/high-level-design/" class="md-nav__link">
-        High Level Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-      
-      
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_4_4" type="checkbox" id="__nav_4_4" >
-      
-      
-      
-        <label class="md-nav__link" for="__nav_4_4" tabindex="0" aria-expanded="false">
-          Domain Management
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" aria-label="Domain Management" data-md-level="2">
-        <label class="md-nav__title" for="__nav_4_4">
-          <span class="md-nav__icon md-icon"></span>
-          Domain Management
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../designs/domain-management/component-design/" class="md-nav__link">
-        Component Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../designs/domain-management/process-design/" class="md-nav__link">
-        Process Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../designs/domain-management/api-design/" class="md-nav__link">
-        API Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../designs/domain-management/data-model-design/" class="md-nav__link">
-        Data Model Design
-      </a>
-    </li>
-  
-
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-      
-      
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_4_5" type="checkbox" id="__nav_4_5" >
-      
-      
-      
-        <label class="md-nav__link" for="__nav_4_5" tabindex="0" aria-expanded="false">
-          Service Log Analytics
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" aria-label="Service Log Analytics" data-md-level="2">
-        <label class="md-nav__title" for="__nav_4_5">
-          <span class="md-nav__icon md-icon"></span>
-          Service Log Analytics
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../designs/service-log/component-design/" class="md-nav__link">
-        Component Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../designs/service-log/process-design/" class="md-nav__link">
-        Process Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../designs/service-log/api-design/" class="md-nav__link">
-        API Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../designs/service-log/data-model-design/" class="md-nav__link">
-        Data Model Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../designs/service-log/tutorial-extend-service-log/" class="md-nav__link">
-        Tutorial: Extend Service Logs
-      </a>
-    </li>
-  
-
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-      
-      
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_4_6" type="checkbox" id="__nav_4_6" >
-      
-      
-      
-        <label class="md-nav__link" for="__nav_4_6" tabindex="0" aria-expanded="false">
-          Application Log
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" aria-label="Application Log" data-md-level="2">
-        <label class="md-nav__title" for="__nav_4_6">
-          <span class="md-nav__icon md-icon"></span>
-          Application Log
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../designs/app-log/log-analytics-pipeline-app/" class="md-nav__link">
-        Overview
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../designs/app-log/architecture-design/" class="md-nav__link">
-        Architecture Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../designs/app-log/process-design/" class="md-nav__link">
-        Process Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../designs/app-log/api-design/" class="md-nav__link">
-        API Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../designs/app-log/data-model-design/" class="md-nav__link">
-        Data Model Design
-      </a>
-    </li>
-  
-
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-      
-      
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_4_7" type="checkbox" id="__nav_4_7" >
-      
-      
-      
-        <label class="md-nav__link" for="__nav_4_7" tabindex="0" aria-expanded="false">
-          EKS Cluster Log
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" aria-label="EKS Cluster Log" data-md-level="2">
-        <label class="md-nav__title" for="__nav_4_7">
-          <span class="md-nav__icon md-icon"></span>
-          EKS Cluster Log
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../designs/eks-log/architecture-design/" class="md-nav__link">
-        Architecture Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../designs/eks-log/process-design/" class="md-nav__link">
-        Process Design
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../designs/eks-log/api-design/" class="md-nav__link">
-        API Design
-      </a>
-    </li>
-  
-
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../designs/assets/" class="md-nav__link">
-        Assets
-      </a>
-    </li>
-  
-
-            
-          
-        </ul>
-      </nav>
     </li>
   
 
@@ -1873,34 +1365,6 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#aws-service-logs" class="md-nav__link">
-    AWS Service Logs
-  </a>
-  
-    <nav class="md-nav" aria-label="AWS Service Logs">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#logs-in-amazon-s3" class="md-nav__link">
-    Logs in Amazon S3
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#application-logs" class="md-nav__link">
-    Application Logs
-  </a>
-  
-    <nav class="md-nav" aria-label="Application Logs">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
   <a href="#log-ingestion-through-amazon-s3" class="md-nav__link">
     Log ingestion through Amazon S3
   </a>
@@ -1908,14 +1372,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#log-ingestion-through-amazon-kinesis-data-streams" class="md-nav__link">
-    Log ingestion through Amazon Kinesis Data Streams
+  <a href="#logs-ingestion-through-amazon-kinesis-data-streams" class="md-nav__link">
+    Logs ingestion through Amazon Kinesis Data Streams
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
         
@@ -1936,6 +1395,26 @@
   <a href="#access-proxy" class="md-nav__link">
     Access Proxy
   </a>
+  
+    <nav class="md-nav" aria-label="Access Proxy">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example-1-instance-type-t3nano-instance-number-2" class="md-nav__link">
+    Example 1: Instance Type - t3.nano, Instance Number - 2
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-2-instance-type-t3large-instance-number-2" class="md-nav__link">
+    Example 2: Instance Type - t3.large, Instance Number - 2
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -1969,13 +1448,12 @@
   
 
 
-
 <h1 id="cost-estimation">Cost Estimation</h1>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
-<p>The cost estimation described in this section are just examples, which are calculated based on assumptions, and may vary in your environment. </p>
+<p>The following cost estimations are examples and may vary depending on your environment. </p>
 </div>
-<p>You will be responsible for the cost of the AWS services used when running the solution. As of October 2022, the main factors affecting the solution cost include:</p>
+<p>You will be responsible for the cost of the AWS services used when running the solution. The main factors affecting the solution cost include:</p>
 <ul>
 <li>Type of logs to be ingested</li>
 <li>Volume of logs to be ingested/processed</li>
@@ -1983,11 +1461,7 @@
 <li>Location of logs</li>
 <li>Additional features</li>
 </ul>
-<p>The following examples will demonstrate the cost estimation of 10/100/1000 GB daily log ingestion. The total cost is composed of <a href="#amazon-opensearch-cost"><strong>Amazon OpenSearch Cost</strong></a>, <a href="#processing-cost"><strong>Processing Cost</strong></a>, and <a href="#additional-features-cost"><strong>Additional Features Cost</strong></a>. </p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>All the cost estimation is based on the AWS service price in AWS N. Virginia Region (us-east-1). </p>
-</div>
+<p>As of March 2023, the following examples demonstrate the cost estimation of 10/100/1000 GB daily log ingestion for running this solution with default settings in the US East (N. Virginia) Region. The total cost is composed of <a href="#amazon-opensearch-cost"><strong>Amazon OpenSearch Cost</strong></a>, <a href="#processing-cost"><strong>Processing Cost</strong></a>, and <a href="#additional-features-cost"><strong>Additional Features Cost</strong></a>.  </p>
 <h2 id="amazon-opensearch-cost">Amazon OpenSearch Cost</h2>
 <ul>
 <li><strong>OD</strong>: On Demand</li>
@@ -2002,14 +1476,14 @@
 <th>Retention (days)</th>
 <th>Tiering</th>
 <th>Replica</th>
-<th>OD Monthly ($)</th>
-<th>AURI_1 Monthly  ($)</th>
+<th>OD Monthly (USD)</th>
+<th>AURI_1 Monthly  (USD)</th>
 <th>Dedicated Master</th>
 <th>Data Node</th>
 <th>EBS (GB)</th>
 <th>UltraWarm Nodes</th>
 <th>UltraWarm/Cold S3 Storage (GB)</th>
-<th>OD cost per GB ($)</th>
+<th>OD cost per GB (USD)</th>
 <th>AURI_1 cost per GB ($)</th>
 </tr>
 </thead>
@@ -2227,23 +1701,23 @@
 </tbody>
 </table>
 <h2 id="processing-cost">Processing Cost</h2>
-<h3 id="aws-service-logs">AWS Service Logs</h3>
-<p>Depending on the log location, the cost of ingesting and processing service logs may vary. </p>
-<h4 id="logs-in-amazon-s3">Logs in Amazon S3</h4>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Ingesting AWS service logs from S3 will incur SQS and S3 request fees which are very low, usually within the AWS Free Tier.</p>
-</div>
-<p>Here are the assumptions:</p>
+<h3 id="log-ingestion-through-amazon-s3">Log ingestion through Amazon S3</h3>
+<p>This section is applicable to:</p>
 <ul>
-<li>AWS Services save logs to Amazon S3 every 5 minutes in gzip format (most of AWS services output logs in gzip). </li>
-<li>A 4MiB compressed log file in S3 is roughly 100MiB in raw log size.</li>
-<li>A Lambda with 1GB memory takes about 26 seconds to process a 4MiB log file, namely 260 ms per MiB raw logs. </li>
-<li>The maximum compressed log file size is 5MiB.</li>
+<li>AWS service logs including Amazon S3 access logs, CloudFront standard logs, CloudTrail logs (S3), Application Load Balancing access logs, WAF logs, VPC Flow logs (S3), AWS Config logs, Amazon RDS/Aurora logs, and AWS Lambda Logs.</li>
+<li>Application Logs that use Amazon S3 as data buffer.</li>
+</ul>
+<p>Assumptions:</p>
+<ul>
+<li>The logs stored in Amazon S3 are in gzip format. </li>
+<li>A 4MB compressed log file in S3 is roughly 100 MB in raw log size.</li>
+<li>A Lambda with 1 GB memory takes about 26 seconds to process a 4 MB compressed log file, namely 260 milliseconds (ms) per MB raw logs. </li>
+<li>The maximum compressed log file size is 5 MB.</li>
+<li>Ingesting logs from S3 will incur SQS and S3 request fees which are very low, or usually within the free tier.</li>
 </ul>
 <p>You have <code>N</code> GB raw log per day, and the daily cost estimation is as follows: </p>
 <ul>
-<li>Lambda Cost = 260 ms per MiB x 1024 MiB x <code>N</code> GB/day x $0.0000000167 per ms</li>
+<li>Lambda Cost = 260 ms per MB x 1024 MB x <code>N</code> GB/day x $0.0000000167 per ms</li>
 <li>S3 Storage Cost = $0.023 per GB x <code>N</code>GB/day x 4% (compression)</li>
 </ul>
 <p>The total monthly cost for ingesting AWS service logs is:</p>
@@ -2252,9 +1726,9 @@
 <thead>
 <tr>
 <th>Daily Log Volume</th>
-<th>Daily Lambda Cost ($)</th>
-<th>Daily S3 Storage Cost ($)</th>
-<th>Monthly Cost ($)</th>
+<th>Daily Lambda Cost (USD)</th>
+<th>Daily S3 Storage Cost (USD)</th>
+<th>Monthly Cost (USD)</th>
 </tr>
 </thead>
 <tbody>
@@ -2278,83 +1752,36 @@
 </tr>
 </tbody>
 </table>
-<h3 id="application-logs">Application Logs</h3>
+<p>For Amazon RDS/Aurora logs and AWS Lambda Logs that deliver to CloudWatch Logs, apart from the S3 and Lambda costs listed above, there is additional cost of using Kinesis Data Firehose (KDF) to subscribe to the CloudWatch Logs Stream and put them into an Amazon S3 bucket, and KDF is charging for a 5KB increments (less than 5KB per record is billed as 5KB). </p>
+<p>Assuming Log size is 0.2 KB per record, then the daily KDF cost is estimated as below:</p>
+<ul>
+<li>Kinesis Data Firehose Cost = $0.029 per GB x <code>N</code> GB/day x (5KB/0.2 KB) </li>
+</ul>
+<p>For example, for 1GB logs per day, the extra monthly cost of KDF is $21.75.</p>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
-<p>If you have multiple log formats (index), you need to make cost estimation for each of them.</p>
+<p>If you want to save cost charged by Kinesis Data Firehose, make sure you activate logs only when needed. For example, don't activate RDS general logs unless required. </p>
 </div>
-<p>Depending on the log location, and the <a href="../applications/#log-buffer">Log Buffer</a>, the cost of ingesting and 
-processing application logs may vary. </p>
-<p>There is no additional cost when you ingest data from log agents to the OpenSearch domain directly. However,  it is recommended to use Log Buffer because it can help to aggregate logs and protect OpenSearch clusters from overwhelming during peak hours. If you have small volume of logs and you are very confident that the size of the OpenSearch clusters have the capacity to ingest logs during peak hours, you can go without the Log Buffer.</p>
-<h4 id="log-ingestion-through-amazon-s3">Log ingestion through Amazon S3</h4>
+<h3 id="logs-ingestion-through-amazon-kinesis-data-streams">Logs ingestion through Amazon Kinesis Data Streams</h3>
+<p>This section is applicable to:</p>
+<ul>
+<li>AWS Services Logs including CloudFront real-time logs, CloudTrail logs (CloudWatch), and VPC Flow logs (CloudWatch).</li>
+<li>Application Logs that use Amazon KDS as data buffer</li>
+</ul>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>The cost estimation does not include the logging cost of service. For example, CloudFront real-time logs are charged based on the number of log lines generated ($0.01 for every 1,000,000 log lines). There are also logs delivery to CloudWatch charges for CloudTrail and VPC Flow logs that enabled CloudWatch Logging. Please check the service pricing for more details.</p>
+</div>
 <p>The cost estimation is based on the following assumptions and facts:</p>
 <ul>
 <li>The average log message size is 1 KB.</li>
 <li>The daily log volume is <code>L</code> GB.</li>
-<li>The Lambda processor memory is 1024 MiB.</li>
-<li>The log agent deliveries logs to Amazon S3 when it hits the Buffer size (50 MiB) or Buffer interval (60 seconds) thresholds. The condition satisfied first triggers data delivery to Amazon S3.</li>
-<li>The compression rate of Gzip format is 20%. </li>
-<li>The Lambda runtime to process log less than 10 MiB is 1000ms.</li>
-<li>Each log file will encounter one S3 PUT request to upload the log file, and one S3 GET request to read the log file.</li>
-<li>The daily number of files <code>N</code> saved on Amazon S3 = Max(<code>L</code> GB per day x 1024 / 50 MiB, 24 hours x 60 seconds/hour)</li>
-<li>The daily volume of files <code>V</code> saved on Amazon S3 = <code>L</code> GB per day x 20% compression rate</li>
-</ul>
-<p>Base on the above assumptions, here is the daily cost estimation formula:</p>
-<ul>
-<li>Amazon S3 storage Cost = $0.023 per GB x daily volume of files <code>V</code></li>
-<li>Amazon S3 request Cost = ($0.005 per 1000 requests + $0.0004 per 1000 requests) x daily number of files <code>N</code> / 1000</li>
-<li>Lambda Cost = $0.0000000167 per 1ms x 1000 ms per invocation x daily number of files <code>N</code></li>
-</ul>
-<p><strong>Total Monthly Cost</strong> = (Lambda Cost + S3 Storage Cost + S3 request Cost) x 30 days</p>
-<table>
-<thead>
-<tr>
-<th>Daily Log Volume (GB)</th>
-<th>Daily Number of files</th>
-<th>Daily S3 Storage Cost ($)</th>
-<th>Daily S3 Request Cost ($)</th>
-<th>Daily Lambda Cost ($)</th>
-<th>Monthly Cost ($)</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>10</td>
-<td>1,440</td>
-<td>0.046</td>
-<td>0.008</td>
-<td>0.024</td>
-<td>2.335</td>
-</tr>
-<tr>
-<td>100</td>
-<td>2,048</td>
-<td>0.460</td>
-<td>0.011</td>
-<td>0.034</td>
-<td>15.158</td>
-</tr>
-<tr>
-<td>1000</td>
-<td>20,480</td>
-<td>4.600</td>
-<td>0.111</td>
-<td>0.342</td>
-<td>151.578</td>
-</tr>
-</tbody>
-</table>
-<h4 id="log-ingestion-through-amazon-kinesis-data-streams">Log ingestion through Amazon Kinesis Data Streams</h4>
-<p>The cost estimation is based on the following assumptions and facts:</p>
-<ul>
-<li>The average log message size is 1 KB.</li>
-<li>The daily log volume is <code>L</code> GB.</li>
-<li>The Lambda processor memory is 1024 MiB.</li>
-<li>Every Lambda invocation processes 1 MiB logs.</li>
-<li>One Lambda invocation processes one shard of Kinesis, and Lambda can scale up to more concurrent innovations to process multiple shards. </li>
-<li>The Lambda runtime to process log less than 5 MiB is 500ms.</li>
+<li>The Lambda processor memory is 1024 MB.</li>
+<li>Every Lambda invocation processes 1 MB logs.</li>
+<li>One Lambda invocation processes one shard of Kinesis, and Lambda can scale up to more concurrent invocations to process multiple shards. </li>
+<li>The Lambda runtime to process log less than 5 MB is 500ms.</li>
 <li>30% additional shards are provided to handle traffic jitter.</li>
-<li>One Kinesis shard intake log size is =  1 MiB /second x 3600 seconds per hour x 24 hours x 0.7 = 60.48 GB/day.</li>
+<li>One Kinesis shard intake log size is =  1 MB /second x 3600 seconds per hour x 24 hours x 0.7 = 60.48 GB/day.</li>
 <li>The desired Kinesis Shard number <code>S</code> is = Round_up_to_next_integer(Daily log volume <code>L</code> / 60.48).</li>
 </ul>
 <p>Based on the above assumptions, here is the daily cost estimation formula:</p>
@@ -2405,26 +1832,26 @@ processing application logs may vary. </p>
 <h2 id="additional-features-cost">Additional Features Cost</h2>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>You will not be charged if you choose not to use the additional features in the Log Hub console.</p>
+<p>You will not be charged if you do not use the additional features in the Centralized Logging with OpenSearch console.</p>
 </div>
 <h3 id="access-proxy">Access Proxy</h3>
-<p>If you deploy the <a href="../domains/proxy/">Access Proxy</a> through Log Hub, the following charges will apply.  </p>
-<p>The cost estimation is based on the following assumptions and facts:</p>
+<p>If you deploy the <a href="../domains/proxy/">Access Proxy</a> through Centralized Logging with OpenSearch, additional charges will apply. The total cost varies depending on the instance type and number of instances. As of March 2023, the following are two examples for the cost estimation in the US East (N. Virginia) Region.</p>
+<h4 id="example-1-instance-type-t3nano-instance-number-2">Example 1: Instance Type - t3.nano, Instance Number - 2</h4>
 <ul>
-<li>Proxy module provisioned 2 x t3.large instances.</li>
-<li>1 year all upfront reserved instances pricing model applies.</li>
-<li>The 1 year all upfront reserved instances for t3.large instance is $426.612/year.</li>
-<li>The EBS attached to the EC2 instance is 8 GB.</li>
+<li>EC2 cost = t3.nano 1Y RI All Upfront price $26.28 x 2 / 12 months = $4.38/month</li>
+<li>EBS Cost = EBS $0.1 GB/month x 8 GB x 2 = $1.6/month (The EBS attached to the EC2 instance is 8 GB)</li>
+<li>Elastic Load Balancer Cost = $0.0225 per ALB-hour x 720 hours/month = $16.2/month</li>
 </ul>
-<p>Based on the above assumptions, here is the monthly cost estimation formula:</p>
+<p><strong>Total Monthly Cost</strong> = $4.38 EC2 Cost + $1.6 EBS Cost + $16.2 Elastic Load Balancer Cost = <strong>$22.18</strong></p>
+<h4 id="example-2-instance-type-t3large-instance-number-2">Example 2: Instance Type - t3.large, Instance Number - 2</h4>
 <ul>
-<li>EC2 Cost = EC2 $426.612 x 2 / 12 months  = $71.1/month</li>
-<li>EBS Cost = EBS $0.1 GB/month x 8 GB x 2 = $1.6/month</li>
+<li>EC2 Cost = t3.large 1Y RI All Upfront $426.612 x 2  / 12 months  = $71.1/month</li>
+<li>EBS Cost = $0.1 GB/month x 8 GB x 2 = $1.6/month (The EBS attached to the EC2 instance is 8 GB)</li>
 <li>Elastic Load Balancer Cost = $0.0225 per ALB-hour x 720 hours/month = $16.2/month</li>
 </ul>
 <p><strong>Total Monthly Cost</strong> = $71.1 EC2 Cost + $1.6 EBS Cost + $16.2 Elastic Load Balancer Cost = <strong>$88.9</strong></p>
 <h3 id="alarms">Alarms</h3>
-<p>If you deploy the <a href="../domains/alarms/">Alarms</a> through Log Hub, the <a href="https://aws.amazon.com/cloudwatch/pricing/">CloudWatch Price</a> will apply.</p>
+<p>If you deploy the <a href="../domains/alarms/">Alarms</a> through Centralized Logging with OpenSearch, the <a href="https://aws.amazon.com/cloudwatch/pricing/">CloudWatch Price</a> will apply.</p>
 
 
 
@@ -2457,10 +1884,10 @@ processing application logs may vary. </p>
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs"], "search": "../../assets/javascripts/workers/search.e5c33ebb.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "latest"}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs"], "search": "../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "latest"}</script>
     
     
-      <script src="../../assets/javascripts/bundle.ba449ae6.min.js"></script>
+      <script src="../../assets/javascripts/bundle.efa0ade1.min.js"></script>
       
     
   </body>
