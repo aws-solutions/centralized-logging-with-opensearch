@@ -13,7 +13,7 @@ Prerequisites:
 Clone the repository and make desired code changes.
 
 ```
-git clone aws-solutions/centralized-logging-with-opensearch
+git clone aws-solutions/centralized-logging-on-aws
 ```
 
 
@@ -123,6 +123,6 @@ Once you have uploaded the distributable to your Amazon S3 bucket, you can start
     Then run:
     ```
     cd ./source/constructs
-    npx cdk deploy centralized-logging-with-opensearch --parameters adminEmail=<your email address>
+    npx cdk deploy centralized-logging-on-aws --parameters adminEmail=<your email address>
     ```
 

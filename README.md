@@ -32,7 +32,7 @@ Deploying this solution with the default parameters builds the following environ
 
 ## Deployment
 
-Please follow the [Implementation Guide](https://docs.aws.amazon.com/solutions/latest/centralized-logging-with-opensearch/) to deploy the solution in your AWS account.
+Please follow the [Implementation Guide](https://docs.aws.amazon.com/solutions/latest/centralized-logging-on-aws/) to deploy the solution in your aws account.
 
 
 ## Customization
