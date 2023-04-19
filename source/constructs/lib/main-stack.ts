@@ -369,6 +369,7 @@ export class MainStack extends Stack {
         encryption: s3.BucketEncryption.S3_MANAGED,
         blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
         accessControl: s3.BucketAccessControl.LOG_DELIVERY_WRITE,
+        objectOwnership: s3.ObjectOwnership.OBJECT_WRITER,
         versioned: true,
         enforceSSL: true,
         lifecycleRules: [
