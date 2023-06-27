@@ -555,7 +555,7 @@ export class CrossAccount extends Stack {
         new iam.PolicyStatement({
           sid: "EKSPolicy1",
           effect: iam.Effect.ALLOW,
-          actions: ["iam:GetOpenIDConnectProvider"],
+          actions: ["iam:GetOpenIDConnectProvider", "iam:TagOpenIDConnectProvider", "iam:CreateOpenIDConnectProvider"],
           resources: [
             `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:oidc-provider/oidc.eks.*`,
           ],
