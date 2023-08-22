@@ -14,11 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React, { useEffect, useState } from "react";
-import { BrowserRouter as Router, Link, Route, Switch } from "react-router-dom";
+import { Link, Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import Button from "components/Button";
 import Axios from "axios";
-import Amplify, { Hub } from "aws-amplify";
-import { AmplifyAuthenticator, AmplifySignIn } from "@aws-amplify/ui-react";
+import { Amplify, Auth, Hub, I18n } from "aws-amplify";
+import { Authenticator } from "@aws-amplify/ui-react";
 import { AuthState, onAuthUIStateChange } from "@aws-amplify/ui-components";
 
 import Footer from "components/layout/footer";
@@ -27,6 +27,9 @@ import ServiceLog from "pages/dataInjection/serviceLog/ServiceLog";
 import ServiceLogCreateChooseType from "pages/dataInjection/serviceLog/create/CreateChooseType";
 import ImportOpenSearchCluster from "pages/clusters/importcluster/ImportCluster";
 import CreateS3 from "pages/dataInjection/serviceLog/create/s3/CreateS3";
+import AppLogCreateS3 from "pages/dataInjection/applicationLog/create/s3/CreateS3";
+import AppLogCreateSyslog from "pages/dataInjection/applicationLog/create/syslog/CreateSyslog";
+import AppLogCreateEKS from "pages/dataInjection/applicationLog/create/eks/CreateEKS";
 import CreateCloudTrail from "pages/dataInjection/serviceLog/create/cloudtrail/CreateCloudTrail";
 import CreateELB from "pages/dataInjection/serviceLog/create/elb/CreateELB";
 import CreateWAF from "pages/dataInjection/serviceLog/create/waf/CreateWAF";
@@ -46,9 +49,6 @@ import EditLogConfig from "pages/resources/logConfig/EditLogConfig";
 import InstanceGroupDetail from "pages/resources/instanceGroup/InstanceGroupDetail";
 import CreateInstanceGroup from "pages/resources/instanceGroup/create/CreateInstanceGroup";
 import ApplicationLogDetail from "pages/dataInjection/applicationLog/ApplicationLogDetail";
-import CreatePipeline from "pages/dataInjection/applicationLog/create/CreatePipeline";
-import CreateIngestion from "pages/dataInjection/applicationLog/createIngestion/CreateIngestion";
-import CreateSysLogIngestion from "pages/dataInjection/applicationLog/createSyslogIngestion/CreateSysLogIngestion";
 import CrossAccountList from "pages/resources/crossAccount/CrossAccountList";
 import LinkAnAccount from "pages/resources/crossAccount/LinkAnAccount";
 
@@ -57,6 +57,7 @@ import { useDispatch } from "react-redux";
 import { ActionType } from "reducer/appReducer";
 import LoadingText from "components/LoadingText";
 import ServiceLogDetail from "pages/dataInjection/serviceLog/ServiceLogDetail";
+import LoggingEvents from "pages/loggingEvents/EventList";
 import DomainAlarm from "pages/clusters/domain/DomainAlarm";
 import LHeader from "components/layout/header";
 import { AmplifyConfigType, AppSyncAuthType } from "types";
@@ -71,278 +72,268 @@ import CreateConfig from "pages/dataInjection/serviceLog/create/config/CreateCon
 import CrossAccountDetail from "pages/resources/crossAccount/CrossAccountDetail";
 import AppIngestionDetail from "pages/dataInjection/ingestiondetail/AppIngestionDetail";
 import { useTranslation } from "react-i18next";
-import { I18n } from "aws-amplify";
-import CreateEKSIngestion from "pages/dataInjection/applicationLog/createEKSIngestion/CreateEKSIngestion";
+import SelectLogSource from "pages/dataInjection/applicationLog/SelectLogSource";
+import AppLogCreateEC2 from "pages/dataInjection/applicationLog/create/ec2/CreateEC2";
+import OnlySyslogIngestion from "pages/dataInjection/applicationLog/create/syslog/OnlyCreateSyslogIngestion";
+import "@aws-amplify/ui-react/styles.css";
 
 export interface SignedInAppProps {
   oidcSignOut?: () => void;
 }
 
+const loginComponents = {
+  Header() {
+    const { t } = useTranslation();
+    return (
+      <div className="clo-login-title">{t("signin.signInToSolution")}</div>
+    );
+  },
+};
+
 const AmplifyLoginPage: React.FC = () => {
   const { t } = useTranslation();
   return (
-    <div>
-      <AmplifyAuthenticator>
-        <AmplifySignIn
-          headerText={t("signin.signInToSolution")}
-          slot="sign-in"
-          usernameAlias="username"
-          submitButtonText={t("signin.signIn")}
-          formFields={[
-            {
-              type: "username",
-              label: t("signin.email"),
-              placeholder: t("signin.inputEmail"),
-              required: true,
-              inputProps: { autoComplete: "off" },
+    <div className="clo-login">
+      <Authenticator
+        hideSignUp
+        components={loginComponents}
+        formFields={{
+          signIn: {
+            username: {
+              label: t("signin.email") || "",
+              placeholder: t("signin.inputEmail") || "",
+              isRequired: true,
             },
-            {
-              type: "password",
-              label: t("signin.password"),
-              placeholder: t("signin.inputPassword"),
-              required: true,
-              inputProps: { autoComplete: "off" },
+            password: {
+              label: t("signin.password") || "",
+              placeholder: t("signin.inputPassword") || "",
+              isRequired: true,
             },
-          ]}
-        >
-          <div slot="secondary-footer-content"></div>
-        </AmplifySignIn>
-      </AmplifyAuthenticator>
+          },
+        }}
+      ></Authenticator>
     </div>
   );
 };
 
 const SignedInApp: React.FC<SignedInAppProps> = (props: SignedInAppProps) => {
+  const { t } = useTranslation();
   return (
     <div className="App">
       <LHeader oidcSignOut={props.oidcSignOut} />
       <Router>
         <main className="lh-main">
-          <Switch>
-            <Route exact path="/" component={Home} />
+          <Routes>
+            <Route path="/" element={<Home />} />
             <Route
-              exact
               path="/clusters/opensearch-domains"
-              component={ESDomainList}
+              element={<ESDomainList />}
             />
             <Route
-              exact
               path="/clusters/opensearch-domains/detail/:id"
-              component={ESDomainDetail}
+              element={<ESDomainDetail />}
             />
             <Route
-              exact
               path="/clusters/opensearch-domains/detail/:name/:id/access-proxy"
-              component={NginxForOpenSearch}
+              element={<NginxForOpenSearch />}
             />
             <Route
-              exact
               path="/clusters/opensearch-domains/detail/:name/:id/create-alarm"
-              component={DomainAlarm}
+              element={<DomainAlarm />}
             />
             <Route
-              exact
               path="/clusters/import-opensearch-cluster"
-              component={ImportOpenSearchCluster}
+              element={<ImportOpenSearchCluster />}
             />
+            <Route path="/log-pipeline/service-log" element={<ServiceLog />} />
             <Route
-              exact
-              path="/log-pipeline/service-log"
-              component={ServiceLog}
-            />
-            <Route
-              exact
               path="/log-pipeline/service-log/detail/:id"
-              component={ServiceLogDetail}
+              element={<ServiceLogDetail />}
             />
             <Route
-              exact
+              path="/log-pipeline/application-log/create"
+              element={<SelectLogSource />}
+            />
+            <Route
+              path="/log-pipeline/application-log/create/ec2"
+              element={<AppLogCreateEC2 />}
+            />
+            <Route
+              path="/log-pipeline/application-log/create/s3"
+              element={<AppLogCreateS3 />}
+            />
+            <Route
+              path="/log-pipeline/application-log/create/syslog"
+              element={<AppLogCreateSyslog />}
+            />
+            <Route
+              path="/log-pipeline/application-log/create/eks"
+              element={<AppLogCreateEKS />}
+            />
+            <Route
               path="/log-pipeline/service-log/create"
-              component={ServiceLogCreateChooseType}
+              element={<ServiceLogCreateChooseType />}
             />
             <Route
-              exact
               path="/log-pipeline/service-log/create/s3"
-              component={CreateS3}
+              element={<CreateS3 />}
             />
             <Route
-              exact
               path="/log-pipeline/service-log/create/cloudtrail"
-              component={CreateCloudTrail}
+              element={<CreateCloudTrail />}
             />
             <Route
-              exact
               path="/log-pipeline/service-log/create/rds"
-              component={CreateRDS}
+              element={<CreateRDS />}
             />
             <Route
-              exact
               path="/log-pipeline/service-log/create/cloudfront"
-              component={CreateCloudFront}
+              element={<CreateCloudFront />}
             />
             <Route
-              exact
               path="/log-pipeline/service-log/create/lambda"
-              component={CreateLambda}
+              element={<CreateLambda />}
             />
             <Route
-              exact
               path="/log-pipeline/service-log/create/elb"
-              component={CreateELB}
+              element={<CreateELB />}
             />
             <Route
-              exact
               path="/log-pipeline/service-log/create/waf"
-              component={CreateWAF}
+              element={<CreateWAF />}
             />
             <Route
-              exact
               path="/log-pipeline/service-log/create/vpclogs"
-              component={CreateVPCLog}
+              element={<CreateVPCLog />}
             />
             <Route
-              exact
               path="/log-pipeline/service-log/create/config"
-              component={CreateConfig}
+              element={<CreateConfig />}
             />
             {/* Application Log Router Start */}
             <Route
-              exact
               path="/log-pipeline/application-log"
-              component={ApplicationLog}
+              element={<ApplicationLog />}
             />
             <Route
-              exact
               path="/log-pipeline/application-log/detail/:id"
-              component={ApplicationLogDetail}
+              element={<ApplicationLogDetail />}
             />
             <Route
-              exact
-              path="/log-pipeline/application-log/create"
-              component={CreatePipeline}
-            />
-            <Route
-              exact
               path="/log-pipeline/application-log/detail/:id/create-ingestion-instance"
-              component={CreateIngestion}
+              element={<AppLogCreateEC2 />}
             />
             <Route
-              exact
               path="/log-pipeline/application-log/detail/:id/create-ingestion-eks"
-              component={CreateEKSIngestion}
+              element={<AppLogCreateEKS />}
             />
             <Route
-              exact
               path="/log-pipeline/application-log/detail/:id/create-ingestion-syslog"
-              component={CreateSysLogIngestion}
+              element={<OnlySyslogIngestion />}
             />
             <Route
-              exact
               path="/log-pipeline/application-log/ingestion/detail/:id"
-              component={AppIngestionDetail}
+              element={<AppIngestionDetail />}
             />
             {/* Application Log Router End */}
 
             {/* EKS Log Router Start */}
-            <Route exact path="/containers/eks-log" component={EksLogList} />
+            <Route path="/containers/eks-log" element={<EksLogList />} />
             <Route
-              exact
               path="/containers/eks-log/detail/:id/"
-              component={EksLogDetail}
+              element={<EksLogDetail />}
             />
             <Route
-              exact
               path="/containers/eks-log/detail/:id/:type"
-              component={EksLogDetail}
+              element={<EksLogDetail />}
             />
             <Route
-              exact
               path="/containers/eks-log/create"
-              component={ImportEksCluster}
+              element={<ImportEksCluster />}
             />
             <Route
-              exact
               path="/containers/eks-log/:id/ingestion"
-              component={EksLogIngest}
+              element={<EksLogIngest />}
             />
             <Route
-              exact
               path="/containers/eks-log/:eksId/ingestion/detail/:id"
-              component={EksIngestionDetail}
+              element={<EksIngestionDetail />}
             />
             {/* EKS Log Router End */}
 
             {/* Instance Group Router Start */}
             <Route
-              exact
               path="/resources/instance-group"
-              component={InstanceGroupList}
+              element={<InstanceGroupList />}
             />
             <Route
-              exact
               path="/resources/instance-group/detail/:id"
-              component={InstanceGroupDetail}
+              element={<InstanceGroupDetail />}
             />
             <Route
-              exact
               path="/resources/instance-group/create"
-              component={CreateInstanceGroup}
+              element={<CreateInstanceGroup />}
             />
             {/* Instance Group Router End */}
 
             {/* Log Config Router Start */}
-            <Route exact path="/resources/log-config" component={LogConfig} />
+            <Route path="/resources/log-config" element={<LogConfig />} />
             <Route
-              exact
               path="/resources/log-config/detail/:id"
-              component={ConfigDetail}
+              element={<ConfigDetail />}
             />
             <Route
-              exact
+              path="/resources/log-config/detail/:id/:version"
+              element={<ConfigDetail />}
+            />
+            <Route
               path="/resources/log-config/detail/:id/edit"
-              component={EditLogConfig}
+              element={<EditLogConfig />}
             />
             <Route
-              exact
               path="/resources/log-config/create"
-              component={CreateLogConfig}
+              element={<CreateLogConfig />}
             />
 
             {/* Log Config Router End */}
 
             {/* Member Account Router Start */}
             <Route
-              exact
               path="/resources/cross-account"
-              component={CrossAccountList}
+              element={<CrossAccountList />}
             />
             <Route
-              exact
               path="/resources/cross-account/link"
-              component={LinkAnAccount}
+              element={<LinkAnAccount />}
             />
             <Route
-              exact
               path="/resources/cross-account/detail/:id"
-              component={CrossAccountDetail}
+              element={<CrossAccountDetail />}
             />
             {/* Member Account Router End */}
 
+            {/* Monitoring and Logging Router Start */}
             <Route
-              render={() => (
+              path="/log-pipeline/log-events/detail/:type/:id/:logGroupName/:logStreamName"
+              element={<LoggingEvents />}
+            />
+            {/* Monitoring and Logging Router End */}
+            <Route
+              path="*"
+              element={
                 <div className="lh-main-content">
                   <div className="lh-container pd-20">
                     <div className="not-found">
-                      <h1>Page Not Found</h1>
+                      <h1>{t("pageNotFound")}</h1>
                       <Link to="/">
-                        <Button>Home</Button>
+                        <Button>{t("home")}</Button>
                       </Link>
                     </div>
                   </div>
                 </div>
-              )}
+              }
             />
-          </Switch>
+          </Routes>
         </main>
       </Router>
       <footer className="lh-footer">
@@ -354,26 +345,53 @@ const SignedInApp: React.FC<SignedInAppProps> = (props: SignedInAppProps) => {
 
 const AmplifyAppRouter: React.FC = () => {
   const [authState, setAuthState] = useState<AuthState>();
+
   const dispatch = useDispatch();
   const onAuthEvent = (payload: any) => {
     if (payload?.data?.code === "ResourceNotFoundException") {
       window.localStorage.removeItem(AMPLIFY_CONFIG_JSON);
       window.location.reload();
+    } else {
+      Auth?.currentAuthenticatedUser()
+        .then((authData: any) => {
+          dispatch({
+            type: ActionType.UPDATE_USER_EMAIL,
+            email: authData?.attributes?.email,
+          });
+          setAuthState(AuthState.SignedIn);
+        })
+        .catch((error) => {
+          console.error(error);
+        });
     }
   };
   Hub.listen("auth", (data) => {
     const { payload } = data;
     onAuthEvent(payload);
   });
+
   useEffect(() => {
+    if (authState === undefined) {
+      Auth?.currentAuthenticatedUser()
+        .then((authData: any) => {
+          dispatch({
+            type: ActionType.UPDATE_USER_EMAIL,
+            email: authData?.attributes?.email,
+          });
+          setAuthState(AuthState.SignedIn);
+        })
+        .catch((error) => {
+          console.error(error);
+        });
+    }
     return onAuthUIStateChange((nextAuthState, authData: any) => {
+      setAuthState(nextAuthState);
       dispatch({
         type: ActionType.UPDATE_USER_EMAIL,
         email: authData?.attributes?.email,
       });
-      setAuthState(nextAuthState);
     });
-  }, []);
+  }, [authState]);
 
   return authState === AuthState.SignedIn ? (
     <SignedInApp />
@@ -389,8 +407,7 @@ const OIDCAppRouter: React.FC = () => {
 
   useEffect(() => {
     // the `return` is important - addAccessTokenExpiring() returns a cleanup function
-    return auth?.events?.addAccessTokenExpiring((event) => {
-      console.info("addAccessTokenExpiring:event:", event);
+    return auth?.events?.addAccessTokenExpiring(() => {
       auth.signinSilent();
     });
   }, [auth.events, auth.signinSilent]);
@@ -504,7 +521,7 @@ const App: React.FC = () => {
   useEffect(() => {
     document.title = t("title");
     if (window.performance) {
-      if (performance.navigation.type === 1) {
+      if (performance.getEntriesByType("navigation")[0]?.type === "reload") {
         const timeStamp = new Date().getTime();
         setLoadingConfig(true);
         Axios.get(`/aws-exports.json?timestamp=${timeStamp}`).then((res) => {

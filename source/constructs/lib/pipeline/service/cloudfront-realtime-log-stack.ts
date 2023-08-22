@@ -20,6 +20,7 @@ import {
 import * as logs from "aws-cdk-lib/aws-logs";
 import * as cr from "aws-cdk-lib/custom-resources";
 import * as path from "path";
+import { constructFactory } from "../../util/stack-helper";
 
 const { VERSION } = process.env;
 
@@ -36,6 +37,7 @@ export class CloudFrontRealtimeLogStack extends SolutionStack {
     let solutionDesc =
       props.solutionDesc || "Centralized Logging with OpenSearch";
     let solutionId = props.solutionId || "SO8025";
+    const stackPrefix = "CL";
 
     this.setDescription(
       `(${solutionId}-cfr) - ${solutionDesc} - CloudFront Realtime Logs Through KDS Analysis Pipeline Template - Version ${VERSION}`
@@ -293,12 +295,14 @@ export class CloudFrontRealtimeLogStack extends SolutionStack {
         FIELD_NAMES: Fn.join(",", fieldNames.valueAsList),
         LOG_TYPE: "cloudfront-rt",
       },
-      source: "KDS",
+      logType: "CloudFront Realtime",
+      stackPrefix: stackPrefix,
     };
 
     const kdsBufferStack = new KDSStack(this, "KDSBuffer", pipelineProps);
 
     const logProcessorRoleArn = kdsBufferStack.logProcessorRoleArn;
+    const logProcessorLogGroupName = kdsBufferStack.logProcessorLogGroupName;
 
     const bufferAccessPolicy = new iam.Policy(this, "BufferAccessPolicy", {
       statements: [
@@ -312,6 +316,7 @@ export class CloudFrontRealtimeLogStack extends SolutionStack {
 
     this.cfnOutput("BufferResourceArn", kdsBufferStack.kinesisStreamArn);
     this.cfnOutput("BufferResourceName", kdsBufferStack.kinesisStreamName);
+    this.cfnOutput("ProcessorLogGroupName", logProcessorLogGroupName);
 
     const bufferAccessRole = new iam.Role(this, "BufferAccessRole", {
       assumedBy: new iam.CompositePrincipal(
@@ -327,7 +332,7 @@ export class CloudFrontRealtimeLogStack extends SolutionStack {
       })
     );
 
-    bufferAccessRole.attachInlinePolicy(bufferAccessPolicy!);
+    bufferAccessRole.attachInlinePolicy(bufferAccessPolicy);
 
     this.cfnOutput("BufferAccessRoleArn", bufferAccessRole.roleArn);
     this.cfnOutput("BufferAccessRoleName", bufferAccessRole.roleName);
@@ -338,7 +343,7 @@ export class CloudFrontRealtimeLogStack extends SolutionStack {
       createDashboard: createDashboard.valueAsString,
       logProcessorRoleArn:
         logProcessorRoleArn == ""
-          ? bufferAccessRole!.roleArn
+          ? bufferAccessRole.roleArn
           : logProcessorRoleArn,
       shardNumbers: shardNumbers.valueAsString,
       replicaNumbers: replicaNumbers.valueAsString,
@@ -353,7 +358,7 @@ export class CloudFrontRealtimeLogStack extends SolutionStack {
       solutionId: solutionId,
     };
 
-    new CloudFrontRealTimeLog(this, "CloudFrontRealTimeLog", {
+    constructFactory(CloudFrontRealTimeLog)(this, "CloudFrontRealTimeLog", {
       samplingRate: samplingRate.valueAsNumber,
       streamArn: kdsBufferStack.kinesisStreamArn,
       fields: fieldNames.valueAsList,
@@ -367,6 +372,7 @@ export class CloudFrontRealtimeLogStack extends SolutionStack {
     );
 
     this.cfnOutput("OSInitHelperFn", osInitStack.helperFn.functionArn);
+    this.cfnOutput("HelperLogGroupName", osInitStack.helperFn.logGroup.logGroupName);
 
     this.addToParamGroups(
       "Source Information",
@@ -465,7 +471,7 @@ export class CloudFrontRealTimeLog extends Construct {
       }
     );
 
-    new CustomResource(this, "Resource", {
+    constructFactory(CustomResource)(this, "Resource", {
       serviceToken: CloudFrontRealTimeLogConfigUpdater.getOrCreate(this),
       resourceType: "Custom::CFRTLogConfigUpdater",
       properties: {

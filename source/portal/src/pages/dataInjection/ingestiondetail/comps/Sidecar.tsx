@@ -17,7 +17,7 @@ import { appSyncRequestQuery } from "assets/js/request";
 import Alert from "components/Alert";
 import CodeCopy from "components/CodeCopy";
 import HeaderPanel from "components/HeaderPanel";
-import { getEKSDeploymentConf } from "graphql/queries";
+import { getK8sDeploymentContentWithSidecar } from "graphql/queries";
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -35,12 +35,15 @@ const Sidecar: React.FC<SidecarProps> = (props: SidecarProps) => {
   const getSidecarByIngestion = async () => {
     try {
       setLoadingData(true);
-      const sidecarData: any = await appSyncRequestQuery(getEKSDeploymentConf, {
-        eksClusterId: clusterId,
-        ingestionId: ingestionId,
-      });
+      const sidecarData: any = await appSyncRequestQuery(
+        getK8sDeploymentContentWithSidecar,
+        {
+          id: ingestionId,
+        }
+      );
       setLoadingData(false);
-      const tmpSidecarData = sidecarData?.data?.getEKSDeploymentConf;
+      const tmpSidecarData =
+        sidecarData?.data?.getK8sDeploymentContentWithSidecar;
       setSidecarGuide(tmpSidecarData);
     } catch (error) {
       setLoadingData(false);

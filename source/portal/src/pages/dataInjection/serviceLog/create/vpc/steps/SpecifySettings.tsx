@@ -107,6 +107,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
 
   const getVpcList = async (accountId: string) => {
     try {
+      setVpcOptionList([]);
       setLoadingVpcList(true);
       const resData: any = await appSyncRequestQuery(listResources, {
         type: ResourceType.VPC,
@@ -170,6 +171,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
           <HeaderPanel title={t("servicelog:vpc.title")}>
             <div>
               <CrossAccountSelect
+                disabled={loadingVpcList}
                 accountId={vpcLogTask.logSourceAccountId}
                 changeAccount={(id) => {
                   changeCrossAccount(id);

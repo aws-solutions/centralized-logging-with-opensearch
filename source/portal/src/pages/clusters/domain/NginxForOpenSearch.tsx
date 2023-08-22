@@ -18,7 +18,7 @@ import HeaderPanel from "components/HeaderPanel";
 import FormItem from "components/FormItem";
 import Button from "components/Button";
 import Breadcrumb from "components/Breadcrumb";
-import { RouteComponentProps, useHistory } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import Select from "components/Select";
 import {
   CreateProxyForOpenSearchMutationVariables,
@@ -44,26 +44,22 @@ import {
   buildVPCLink,
   domainIsValid,
 } from "assets/js/utils";
-import { AmplifyConfigType } from "types";
 import { useSelector } from "react-redux";
-import { AppStateProps, InfoBarTypes } from "reducer/appReducer";
+import { InfoBarTypes } from "reducer/appReducer";
 import HelpPanel from "components/HelpPanel";
 import SideMenu from "components/SideMenu";
 import { useTranslation } from "react-i18next";
-import { PROXY_INSTANCE_NUMBER_LIST, PROXY_INSTANCE_TYPE_LIST } from "types";
+import {
+  PROXY_INSTANCE_NUMBER_LIST,
+  PROXY_INSTANCE_TYPE_LIST,
+  AmplifyConfigType,
+} from "types";
+import { RootState } from "reducer/reducers";
 
-interface MatchParams {
-  id: string;
-  name: string;
-}
-
-const NginxForOpenSearch: React.FC<RouteComponentProps<MatchParams>> = (
-  props: RouteComponentProps<MatchParams>
-) => {
-  const id: string = props.match.params.id;
-  const name: string = props.match.params.name;
+const NginxForOpenSearch: React.FC = () => {
+  const { id, name } = useParams();
   const { t } = useTranslation();
-  const history = useHistory();
+  const navigate = useNavigate();
   const breadCrumbList = [
     { name: t("name"), link: "/" },
     {
@@ -74,7 +70,7 @@ const NginxForOpenSearch: React.FC<RouteComponentProps<MatchParams>> = (
   ];
 
   const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: AppStateProps) => state.amplifyConfig
+    (state: RootState) => state.app.amplifyConfig
   );
   const [domainInfo, setDomainInfo] = useState<
     DomainDetails | undefined | null
@@ -210,7 +206,7 @@ const NginxForOpenSearch: React.FC<RouteComponentProps<MatchParams>> = (
     try {
       setLoadingData(true);
       const resData: any = await appSyncRequestQuery(getDomainDetails, {
-        id: decodeURIComponent(id),
+        id: decodeURIComponent(id || ""),
       });
       const dataDomain: DomainDetails = resData.data.getDomainDetails;
       setDomainInfo(dataDomain);
@@ -240,14 +236,15 @@ const NginxForOpenSearch: React.FC<RouteComponentProps<MatchParams>> = (
   };
 
   const backToDetailPage = () => {
-    history.push({
-      pathname: `/clusters/opensearch-domains/detail/${id}`,
-    });
+    navigate(`/clusters/opensearch-domains/detail/${id}`);
   };
 
   const confirmCreateNginxForOpenSearch = async () => {
     // check subnet
-    if (!nginxForOpenSearch.input.vpc.publicSubnetIds) {
+    if (
+      !nginxForOpenSearch.input.vpc.publicSubnetIds ||
+      nginxForOpenSearch.input.vpc.publicSubnetIds.split(",").length < 2
+    ) {
       setSubnetEmptyError(true);
       return;
     }
@@ -342,9 +339,9 @@ const NginxForOpenSearch: React.FC<RouteComponentProps<MatchParams>> = (
                       <div>
                         {domainInfo?.vpc?.privateSubnetIds
                           ?.split(",")
-                          .map((element, index) => {
+                          .map((element) => {
                             return (
-                              <div key={index}>
+                              <div key={element}>
                                 <ExtLink
                                   to={buildSubnetLink(
                                     amplifyConfig.aws_project_region,
@@ -358,9 +355,9 @@ const NginxForOpenSearch: React.FC<RouteComponentProps<MatchParams>> = (
                           })}
                         {domainInfo?.vpc?.publicSubnetIds
                           ?.split(",")
-                          .map((element, index) => {
+                          .map((element) => {
                             return element ? (
-                              <div key={index}>
+                              <div key={element}>
                                 <ExtLink
                                   to={buildSubnetLink(
                                     amplifyConfig.aws_project_region,

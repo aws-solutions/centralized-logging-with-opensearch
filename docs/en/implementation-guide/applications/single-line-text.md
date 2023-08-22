@@ -1,4 +1,4 @@
-# Single-line Text
+# Single-line text
 Centralized Logging with OpenSearch uses custom Ruby Regular Expression to parse logs. It supports both single-line log format and multiple input format.
 
 You can configure Centralized Logging with OpenSearch to ingest single-line text logs.

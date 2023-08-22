@@ -105,12 +105,44 @@ You can view the status of the stack in the AWS CloudFormation console in the **
 a **CREATE_COMPLETE** status in approximately 10 minutes.
 
 
-## Sample Dashboard
+## View dashboard
+
+The dashboard includes the following visualizations.
+
+| Visualization Name                | Source Field                                                    | Description                                                                                                                                       |
+| --------------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Filters                           | <ul><li> Filters </li></ul>                                     | The following data can be filtered by query filter conditions.                                                                                    |
+| Web ACLs                          | <ul><li> log event</li><li>webaclName</li></ul>                 | Displays the count of requests made to the WAF, grouped by Web ACL Names.                                                                         |
+| Total Requests                    | <ul><li> log event </li></ul>                                   | Displays the total number of web requests.                                                                                                        |
+| Request Timeline                  | <ul><li> log event </li></ul>                                   | Presents a bar chart that displays the distribution of events over time.                                                                          |
+| WAF Rules                         | <ul><li> terminatingRuleId </li></ul>                           | Presents a pie chart that displays the distribution of events over the WAF rules in the Web ACL.                                                  |
+| Total Blocked Requests            | <ul><li> log event </li></ul>                                   | Displays the total number of blocked web requests.                                                                                                |
+| Unique Client IPs                 | <ul><li> Request.ClientIP</li></ul>                             | Displays unique visitors identified by client IP.                                                                                                 |
+| Country or Region By Request      | <ul><li> Request.Country </li></ul>                             | Displays the count of requests made to the Web ACL (grouped by the corresponding country or region resolved by the client IP).                    |
+| Http Methods                      | <ul><li> Request.HTTPMethod</li></ul>                           | Displays the count of requests made to the Web ACL using a pie chart, grouped by http request method names (e.g., POST, GET, HEAD, etc.).         |
+| Http Versions                     | <ul><li> Request.HTTPVersion</li></ul>                          | Displays the count of requests made to the Web ACL using a pie chart, grouped by http protocol version (e.g., HTTP/2.0, HTTP/1.1, etc.).          |
+| Top WebACLs                       | <ul><li> webaclName</li><li> webaclId.keyword</li></ul>         | The web requests view enables you to analyze the top web requests.                                                                                |
+| Top Hosts                         | <ul><li> host</li></ul>                                         | Lists the source IP addresses associated with events, enabling you to identify and investigate potentially suspicious or unauthorized activities. |
+| Top Request URIs                  | <ul><li> Request.URI</li></ul>                                  | Top 10 request URIs.                                                                                                                              |
+| Top Countries or Regions          | <ul><li> Request.country</li></ul>                              | Top 10 countries with the Web ACL Access.                                                                                                         |
+| Top Rules                         | <ul><li> terminatingRuleId</li></ul>                            | Top 10 rules in the web ACL that matched the request.                                                                                             |
+| Top Client IPs                    | <ul><li> Request.ClientIP</li></ul>                             | Provides the top 10 IP address.                                                                                                                   |
+| Top User Agents                   | <ul><li> userAgent</li></ul>                                    | Provides the top 10 user agents                                                                                                                   |
+| Block Allow Host Uri              | <ul><li> host</li><li>Request.URI</li><li>action</li></ul>      | Provides blocked or allowed web requests.                                                                                                         |
+| Top Labels with Host, Uri         | <ul><li> labels.name</li><li>host</li><li>Request.URI</li></ul> | Top 10 detailed logs by labels with host, URI                                                                                                     |
+| View by Matching Rule             | <ul><li> sc-status</li></ul>                                    | This visualization provides detailed logs by DQL "terminatingRuleId:*".                                                                           |
+| View by httpRequest args,uri,path | <ul><li> sc-status</li></ul>                                    | This visualization provides detailed logs by DQL.                                                                                                 |
+
+
+
+### Sample Dashboard
+
 {%
-include-markdown "include-dashboard.md"
+include-markdown "../include-dashboard.md"
 %}
 
 [![waf-db]][waf-db]
 
 [waf-db]: ../../images/dashboards/waf-db.png
+
 

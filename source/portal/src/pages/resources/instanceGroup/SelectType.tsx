@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import { LogSourceType } from "API";
+import { EC2GroupType } from "API";
 import Tiles from "components/Tiles";
 import React from "react";
 import { useTranslation } from "react-i18next";
@@ -38,12 +38,12 @@ const SelectType: React.FC<SelectTypeProps> = (props: SelectTypeProps) => {
             {
               label: t("resource:group.instances"),
               description: t("resource:group.instancesDesc"),
-              value: LogSourceType.EC2,
+              value: EC2GroupType.EC2,
             },
             {
               label: t("resource:group.asgs"),
               description: t("resource:group.asgsDesc"),
-              value: LogSourceType.ASG,
+              value: EC2GroupType.ASG,
             },
           ]}
         />

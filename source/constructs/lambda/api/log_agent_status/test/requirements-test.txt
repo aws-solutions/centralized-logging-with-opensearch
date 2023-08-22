@@ -3,6 +3,5 @@ pytest
 pytest-cov
 pyyaml
 docker
-openapi-spec-validator
 boto3
 pytest-mock

@@ -6,11 +6,20 @@ theme:
 
 nav:
   - 实施指南:
-      - 概览: index.md
-      - 成本预估: implementation-guide/cost.md
-      - 架构概述: implementation-guide/architecture.md
-      - 安全: implementation-guide/security.md
-      - 考虑因素: implementation-guide/considerations.md
+      - 解决方案概览:
+          - 概览: index.md
+          - 特性和收益: implementation-guide/solution-overview/features.md
+          - 应用场景: implementation-guide/solution-overview/use-cases.md
+      - 架构概览:
+          - 架构图: implementation-guide/architecture.md
+          - AWS Well-Architected 支柱: implementation-guide/architecture-overview/well-architected-pillars.md
+      - 架构细节:
+          - 解决方案组件: implementation-guide/architecture-details/solution-components.md
+          - AWS 服务: implementation-guide/architecture-details/services-in-this-solution.md
+      - 计划部署:
+          - 价格: implementation-guide/plan-deployment/cost.md
+          - 安全: implementation-guide/plan-deployment/security.md
+          - 支持的区域: implementation-guide/plan-deployment/considerations.md
       - 开始部署:
           - 概览: implementation-guide/deployment/index.md
           - 使用 Cognito User Pool: implementation-guide/deployment/with-cognito.md
@@ -49,13 +58,16 @@ nav:
           - JSON: implementation-guide/applications/json.md
           - Syslog: implementation-guide/applications/syslog.md
       - 跨账户日志摄取: implementation-guide/link-account/index.md
+      - 日志管道监控: 
+          - 告警: implementation-guide/alarm.md
+          - 监控: implementation-guide/monitoring.md
       - 常见问题: implementation-guide/faq.md
       - 故障排查: implementation-guide/trouble-shooting.md
       - 卸载解决方案: implementation-guide/uninstall.md
-      - 资源:
+      - 额外资源:
           - OpenSSL 安装: implementation-guide/resources/open-ssl.md
           - 上传证书: implementation-guide/resources/upload-ssl-certificate.md
-          - AWS 服务: implementation-guide/resources/aws-services.md
+      - 开发者资源: implementation-guide/source.md
       - 更新记录: implementation-guide/release-notes.md
   - 路线图: "https://github.com/orgs/aws-solutions/projects/17/"
   - 动手实验: "https://catalog.workshops.aws/centralized-logging-with-opensearch/"

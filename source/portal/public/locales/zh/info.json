@@ -12,6 +12,12 @@
     "pre3": "3.EC2 公钥",
     "createProxy": "创建访问代理"
   },
+  "monitoring": {
+    "intro": "此标签页提供本日志管道下每条日志摄取链路的监控，方便您监控端到端的日志摄取。",
+    "monitoringCost": "监控模块价格",
+    "flbAgents": "Fluent Bit日志收集代理",
+    "syslog": "Syslog 日志监控"
+  },
   "alarm": {
     "name": "告警",
     "tip1": "Amazon OpenSearch Service 提供了一组",
@@ -61,10 +67,11 @@
     "tip1": "指定日志文件位置。如果您有多个位置，请写下所有位置并使用','进行拆分。 例如",
     "eks": {
       "title": " 配置针对于 EKS 的日志路径，对于 Sidecar 和 DamonSet 分别参考以下说明进行配置：",
-      "dtip1": "以 Nginx 为例，选用 Amazon Linux2 作为节点的镜像时，如果用户在同一个 EKS 集群下部署同一个应用，并使用 Name Space 来区分不同的环境，建议日志路径使用以下方式",
-      "dtip2": "其中 prod-ns/staging-ns 是对应的区分不同环境的 Name Space， app-nginx-demo 为部署应用名称，名称是 Yaml 文件中定义的，这一点与 EC2 上部署 nginx 不同，EC2 下往往日志名为 access.log,日志名在 nginx.conf 里定义。在日志通中创建配置文件时，请注意路径位置。",
-      "stip1": "即在Pod中附加专用日志收集的容器，使用 emtyDir 共享日志目录让 Fluent Bit 的容器读取到数据。Fluent Bit 容器与应用容器共享存储、网络等资源。在日志通中定义的卷名为 app-log。例如：日志路径",
-      "stip2": ",对应部署的 emtyDir 共享卷名为 app-log，参考下图："
+      "dtip1": "以 Nginx 为例，选用 Amazon Linux2 作为节点的镜像时，如果用户在同一个 EKS 集群下部署同一个应用，并使用 Namespace 来区分不同的环境，建议日志路径使用以下方式",
+      "dtip2Title": "日志路径的格式是：",
+      "dtip2": "其中 <namespace> 对应用于区分不同环境的 Namespace， <application_name> 为部署应用名称，<container_name> 为部署容器名称。应用和容器名称是 Yaml 文件中定义的，这一点与 EC2 上部署 nginx 不同，EC2 下往往日志名为 access.log,日志名在 nginx.conf 里定义。在日志通中创建配置文件时，请注意路径位置。",
+      "stip1": "即在Pod中附加专用日志收集的容器，使用 emptyDir 共享日志目录让 Fluent Bit 的容器读取到数据。Fluent Bit 容器与应用容器共享存储、网络等资源。在日志通中定义的卷名为 app-log。例如：日志路径",
+      "stip2": ",对应部署的 emptyDir 共享卷名为 app-log，参考下图："
     }
   },
   "logLifecycle": {
@@ -162,5 +169,17 @@
     "conUser": "并发用户数",
     "instanceType": "代理实例类型",
     "proxyNumber": "代理实例个数"
+  },
+  "s3PrefixFilter": {
+    "name": "前缀过滤器",
+    "desc": "这里有一些例子供你设置前缀过滤器：",
+    "li1": "如果要摄取的文件都在log/文件夹中，你可以指定前缀为log/。",
+    "li2": "如果你想只摄取以log为文件扩展名的文件，你可以指定前缀为log/*.log。"
+  },
+  "pipelineAlarm": {
+    "name": "管道告警",
+    "desc": "如果任何关键指标超过阈值，就会触发管道告警，这会将通知发送到 SNS 主题。 这些告警是根据日志管道监控和故障排除的最佳实践创建的，您可以自定义这些告警或在 CloudWatch 中创建新告警",
+    "link1": "管道告警",
+    "link2": "Amazon CloudWatch 告警"
   }
 }

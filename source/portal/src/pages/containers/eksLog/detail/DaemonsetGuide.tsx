@@ -16,18 +16,18 @@ limitations under the License.
 import React, { useEffect, useState } from "react";
 import HeaderPanel from "components/HeaderPanel";
 import { useTranslation } from "react-i18next";
-import { EKSClusterLogSource } from "API";
+import { LogSource } from "API";
 import Alert from "components/Alert";
 import FormItem from "components/FormItem";
 import { appSyncRequestQuery } from "assets/js/request";
-import { getEKSDaemonSetConf } from "graphql/queries";
+import { getK8sDeploymentContentWithDaemonSet } from "graphql/queries";
 import CodeCopy from "components/CodeCopy";
 import LoadingText from "components/LoadingText";
 
 const KUBECTL_COMMAND = "kubectl apply -f ~/fluent-bit-logging.yaml";
 
 interface DaemonsetGuideProps {
-  eksLogSourceInfo: EKSClusterLogSource | undefined;
+  eksLogSourceInfo: LogSource | undefined;
 }
 
 const DaemonsetGuide: React.FC<DaemonsetGuideProps> = (
@@ -41,10 +41,13 @@ const DaemonsetGuide: React.FC<DaemonsetGuideProps> = (
   const getDaemonsetGuide = async () => {
     setLoading(true);
     try {
-      const res = await appSyncRequestQuery(getEKSDaemonSetConf, {
-        eksClusterId: eksLogSourceInfo?.id,
-      });
-      setGuide(res.data.getEKSDaemonSetConf);
+      const res = await appSyncRequestQuery(
+        getK8sDeploymentContentWithDaemonSet,
+        {
+          sourceId: eksLogSourceInfo?.sourceId || "",
+        }
+      );
+      setGuide(res.data.getK8sDeploymentContentWithDaemonSet);
       setLoading(false);
     } catch (error) {
       setLoading(false);
@@ -56,37 +59,47 @@ const DaemonsetGuide: React.FC<DaemonsetGuideProps> = (
     getDaemonsetGuide();
   }, []);
 
+  const renderGuide = () => {
+    if (guide) {
+      return (
+        <div>
+          <Alert
+            title=""
+            content={<div>{t("ekslog:detail.daemonsetGuide.alertDesc")}</div>}
+          ></Alert>
+          <div className="mt-20">
+            <FormItem
+              optionTitle={`1. ${t("ekslog:detail.daemonsetGuide.step1")}`}
+              optionDesc=""
+            >
+              <CodeCopy loading={loading} code={guide} />
+            </FormItem>
+          </div>
+          <div className="mt-20">
+            <FormItem
+              optionTitle={`2. ${t("ekslog:detail.daemonsetGuide.step2")}`}
+              optionDesc=""
+            >
+              <CodeCopy code={KUBECTL_COMMAND} />
+            </FormItem>
+          </div>
+        </div>
+      );
+    } else {
+      if (loading) {
+        return <LoadingText />;
+      } else {
+        return (
+          <Alert content={t("ekslog:detail.daemonsetGuide.createIngestion")} />
+        );
+      }
+    }
+  };
+
   return (
     <div>
       <HeaderPanel title={t("ekslog:detail.tab.daemonsetGuide")}>
-        {guide ? (
-          <div>
-            <Alert
-              title={t("ekslog:detail.daemonsetGuide.alert")}
-              content={<div>{t("ekslog:detail.daemonsetGuide.alertDesc")}</div>}
-            ></Alert>
-            <div className="mt-20">
-              <FormItem
-                optionTitle={`1. ${t("ekslog:detail.daemonsetGuide.step1")}`}
-                optionDesc=""
-              >
-                <CodeCopy loading={loading} code={guide} />
-              </FormItem>
-            </div>
-            <div className="mt-20">
-              <FormItem
-                optionTitle={`2. ${t("ekslog:detail.daemonsetGuide.step2")}`}
-                optionDesc=""
-              >
-                <CodeCopy code={KUBECTL_COMMAND} />
-              </FormItem>
-            </div>
-          </div>
-        ) : loading ? (
-          <LoadingText />
-        ) : (
-          <Alert content={t("ekslog:detail.daemonsetGuide.createIngestion")} />
-        )}
+        {renderGuide()}
       </HeaderPanel>
     </div>
   );

@@ -13,38 +13,42 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import { EKSDeployKind, Tag } from "API";
+import {
+  LogSourceType,
+  EKSSourceInput,
+  CRI,
+  EKSDeployKind,
+  CreateLogSourceMutationVariables,
+} from "API";
 import { appSyncRequestMutation } from "assets/js/request";
 import Breadcrumb from "components/Breadcrumb";
 import Button from "components/Button";
 import CreateStep from "components/CreateStep";
 import HelpPanel from "components/HelpPanel";
 import SideMenu from "components/SideMenu";
-import { importEKSCluster } from "graphql/mutations";
+import { createLogSource } from "graphql/mutations";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ActionType } from "reducer/appReducer";
-import CreateTags from "./steps/CreateTags";
-import SpecifyDomain from "./steps/SpecifyEKSDomain";
 import SpecifyEksSource from "./steps/SpecifyEksSource";
+import { CreateTags } from "pages/dataInjection/common/CreateTags";
+import { useTags } from "assets/js/hooks/useTags";
 
-export interface EKSClusterLogSourceType {
-  aosDomainId: string;
-  eksClusterName: string;
-  deploymentKind: EKSDeployKind;
-  accountId: string;
-  tags: Tag[];
-}
-
-export const DEFAULT_EMPTY_EKS_CLUSTER_LOG_SOURCE: EKSClusterLogSourceType = {
-  aosDomainId: "",
+export const DEFAULT_EMPTY_EKS_SOURCE_INPUT: EKSSourceInput = {
   eksClusterName: "",
+  cri: CRI.containerd,
   deploymentKind: EKSDeployKind.DaemonSet,
-  accountId: "",
-  tags: [],
 };
+
+export const DEFAULT_EMPTY_EKS_CLUSTER_LOG_SOURCE: CreateLogSourceMutationVariables =
+  {
+    type: LogSourceType.EKSCluster,
+    region: "",
+    eks: DEFAULT_EMPTY_EKS_SOURCE_INPUT,
+    accountId: "",
+  };
 
 const ImportEksCluster: React.FC = () => {
   const { t } = useTranslation();
@@ -58,18 +62,17 @@ const ImportEksCluster: React.FC = () => {
       name: t("ekslog:create.name"),
     },
   ];
-  const history = useHistory();
+  const navigate = useNavigate();
   const dispatch = useDispatch();
-
+  const tags = useTags();
   const [curStep, setCurStep] = useState(0);
   const [curEksClusterLogSourceInfo, setCurEksClusterLogSourceInfo] =
-    useState<EKSClusterLogSourceType>(DEFAULT_EMPTY_EKS_CLUSTER_LOG_SOURCE);
-  const [domainListIsLoading, setDomainListIsLoading] = useState(false);
+    useState<CreateLogSourceMutationVariables>(
+      DEFAULT_EMPTY_EKS_CLUSTER_LOG_SOURCE
+    );
+  const [domainListIsLoading] = useState(false);
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [eksEmptyError, setEksEmptyError] = useState(false);
-  const [esDomainEmptyError, setEsDomainEmptyError] = useState(false);
-  const [confirmNetwork, setConfirmNetwork] = useState(false);
-  const [confirmNetworkError, setConfirmNetworkError] = useState(false);
 
   useEffect(() => {
     dispatch({ type: ActionType.CLOSE_SIDE_MENU });
@@ -77,8 +80,8 @@ const ImportEksCluster: React.FC = () => {
 
   const validateEksSourceInput = () => {
     if (
-      !curEksClusterLogSourceInfo.eksClusterName ||
-      curEksClusterLogSourceInfo.eksClusterName.length <= 0
+      !curEksClusterLogSourceInfo.eks?.eksClusterName ||
+      curEksClusterLogSourceInfo.eks?.eksClusterName.length <= 0
     ) {
       setEksEmptyError(true);
       setCurStep(0);
@@ -87,30 +90,16 @@ const ImportEksCluster: React.FC = () => {
     return true;
   };
 
-  const validateOpenSearchInput = () => {
-    if (
-      !curEksClusterLogSourceInfo.aosDomainId ||
-      curEksClusterLogSourceInfo.aosDomainId.length <= 0
-    ) {
-      setEsDomainEmptyError(true);
-      setCurStep(1);
-      return false;
-    }
-    return true;
-  };
-
   const confirmImportEksCluster = async () => {
     try {
       setLoadingCreate(true);
-      const createRes = await appSyncRequestMutation(
-        importEKSCluster,
-        curEksClusterLogSourceInfo
-      );
+      const createRes = await appSyncRequestMutation(createLogSource, {
+        ...curEksClusterLogSourceInfo,
+        tags,
+      });
       console.info("createRes:", createRes);
       setLoadingCreate(false);
-      history.push({
-        pathname: "/containers/eks-log",
-      });
+      navigate("/containers/eks-log");
     } catch (error) {
       setLoadingCreate(false);
       console.error(error);
@@ -132,9 +121,6 @@ const ImportEksCluster: React.FC = () => {
                       name: t("ekslog:create.step.specifyEksSource"),
                     },
                     {
-                      name: t("ekslog:create.step.specifyOS"),
-                    },
-                    {
                       name: t("ekslog:create.step.createTags"),
                     },
                   ]}
@@ -149,10 +135,13 @@ const ImportEksCluster: React.FC = () => {
                     changeCurAccount={(id) => {
                       setEksEmptyError(false);
                       setCurEksClusterLogSourceInfo(
-                        (prev: EKSClusterLogSourceType) => {
+                        (prev: CreateLogSourceMutationVariables) => {
                           return {
                             ...prev,
-                            eksClusterName: "",
+                            eks: {
+                              ...prev.eks,
+                              eksClusterName: "",
+                            },
                             accountId: id,
                           };
                         }
@@ -162,73 +151,40 @@ const ImportEksCluster: React.FC = () => {
                       if (clusterName) {
                         setEksEmptyError(false);
                       }
+                      setEksEmptyError(false);
                       setCurEksClusterLogSourceInfo(
-                        (prev: EKSClusterLogSourceType) => {
+                        (prev: CreateLogSourceMutationVariables) => {
                           return {
                             ...prev,
-                            eksClusterName: clusterName,
+                            eks: {
+                              ...prev.eks,
+                              eksClusterName: clusterName,
+                            },
                           };
                         }
                       );
                     }}
                     changeEksLogAgentPattern={(pattern: EKSDeployKind) => {
                       setCurEksClusterLogSourceInfo(
-                        (prev: EKSClusterLogSourceType) => {
+                        (prev: CreateLogSourceMutationVariables) => {
                           return {
                             ...prev,
-                            deploymentKind: pattern,
+                            eks: {
+                              ...prev.eks,
+                              deploymentKind: pattern,
+                            },
                           };
                         }
                       );
                     }}
                   />
                 )}
-                {curStep === 1 && (
-                  <SpecifyDomain
-                    userIsConfirm={confirmNetwork}
-                    confirmNetworkError={confirmNetworkError}
-                    changeConfirmNetwork={(confirm) => {
-                      setConfirmNetwork(confirm);
-                      setConfirmNetworkError(false);
-                    }}
-                    eksClusterLogSource={curEksClusterLogSourceInfo}
-                    changeOpenSearchCluster={(clusterId) => {
-                      if (clusterId) {
-                        setEsDomainEmptyError(false);
-                      }
-                      setCurEksClusterLogSourceInfo((prev) => {
-                        return {
-                          ...prev,
-                          aosDomainId: clusterId || "",
-                        };
-                      });
-                    }}
-                    changeLoadingDomain={(loading: boolean) => {
-                      setDomainListIsLoading(loading);
-                    }}
-                    esDomainEmptyError={esDomainEmptyError}
-                  />
-                )}
-                {curStep === 2 && (
-                  <CreateTags
-                    importedCluster={curEksClusterLogSourceInfo}
-                    changeTags={(tags) => {
-                      setCurEksClusterLogSourceInfo((prev) => {
-                        return {
-                          ...prev,
-                          tags: tags,
-                        };
-                      });
-                    }}
-                  />
-                )}
+                {curStep === 1 && <CreateTags />}
                 <div className="button-action text-right">
                   <Button
                     btnType="text"
                     onClick={() => {
-                      history.push({
-                        pathname: "/containers/eks-log",
-                      });
+                      navigate("/containers/eks-log");
                     }}
                   >
                     {t("button.cancel")}
@@ -245,7 +201,7 @@ const ImportEksCluster: React.FC = () => {
                     </Button>
                   )}
 
-                  {curStep < 2 && (
+                  {curStep < 1 && (
                     <Button
                       btnType="primary"
                       disabled={domainListIsLoading}
@@ -255,24 +211,15 @@ const ImportEksCluster: React.FC = () => {
                             return;
                           }
                         }
-                        if (curStep === 1) {
-                          if (!validateOpenSearchInput()) {
-                            return;
-                          }
-                          if (!confirmNetwork) {
-                            setConfirmNetworkError(true);
-                            return;
-                          }
-                        }
                         setCurStep((curStep) => {
-                          return curStep + 1 > 2 ? 2 : curStep + 1;
+                          return curStep + 1 > 1 ? 1 : curStep + 1;
                         });
                       }}
                     >
                       {t("button.next")}
                     </Button>
                   )}
-                  {curStep === 2 && (
+                  {curStep === 1 && (
                     <Button
                       loading={loadingCreate}
                       btnType="primary"

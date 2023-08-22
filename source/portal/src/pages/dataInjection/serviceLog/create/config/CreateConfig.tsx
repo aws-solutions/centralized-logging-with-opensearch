@@ -13,7 +13,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import { CODEC, DestinationType, EngineType, ServiceType, Tag } from "API";
+import {
+  Codec,
+  DestinationType,
+  EngineType,
+  ServiceType,
+  MonitorInput,
+  DomainStatusCheckType,
+  DomainStatusCheckResponse,
+} from "API";
 import { Alert } from "assets/js/alert";
 import { CreateLogMethod, ServiceLogType } from "assets/js/const";
 import { appSyncRequestMutation } from "assets/js/request";
@@ -23,18 +31,16 @@ import CreateStep from "components/CreateStep";
 import HelpPanel from "components/HelpPanel";
 import SideMenu from "components/SideMenu";
 import { createServicePipeline } from "graphql/mutations";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
-import { useHistory } from "react-router-dom";
-import { AppStateProps } from "reducer/appReducer";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import {
   AmplifyConfigType,
   WarmTransitionType,
   YesNo,
   SERVICE_LOG_INDEX_SUFFIX,
 } from "types";
-import CreateTags from "../common/CreateTags";
 import SpecifyOpenSearchCluster, {
   AOSInputValidRes,
   checkOpenSearchInput,
@@ -45,6 +51,17 @@ import {
   bucketNameIsValid,
   splitStringToBucketAndPrefix,
 } from "assets/js/utils";
+import { MONITOR_ALARM_INIT_DATA } from "assets/js/init";
+import AlarmAndTags from "../../../../pipelineAlarm/AlarmAndTags";
+import { Actions, RootState } from "reducer/reducers";
+import { useTags } from "assets/js/hooks/useTags";
+import { Dispatch } from "redux";
+import { useAlarm } from "assets/js/hooks/useAlarm";
+import { ActionType } from "reducer/appReducer";
+import {
+  CreateAlarmActionTypes,
+  validateAalrmInput,
+} from "reducer/createAlarm";
 
 const EXCLUDE_PARAMS = [
   "esDomainId",
@@ -57,7 +74,6 @@ const EXCLUDE_PARAMS = [
 
 export interface ConfigTaskProps {
   type: ServiceType;
-  tags: Tag[];
   source: string;
   target: string;
   logSourceAccountId: string;
@@ -96,11 +112,11 @@ export interface ConfigTaskProps {
 
     rolloverSizeNotSupport: boolean;
   };
+  monitor: MonitorInput;
 }
 
 const DEFAULT_CONFIG_TASK_VALUE: ConfigTaskProps = {
   type: ServiceType.Config,
-  tags: [],
   source: "Default",
   target: "",
   logSourceAccountId: "",
@@ -133,11 +149,12 @@ const DEFAULT_CONFIG_TASK_VALUE: ConfigTaskProps = {
     retainAge: "180",
     rolloverSize: "30",
     indexSuffix: SERVICE_LOG_INDEX_SUFFIX.yyyy_MM_dd,
-    codec: CODEC.best_compression,
+    codec: Codec.best_compression,
     refreshInterval: "1s",
 
     rolloverSizeNotSupport: false,
   },
+  monitor: MONITOR_ALARM_INIT_DATA,
 };
 
 const CreateConfig: React.FC = () => {
@@ -156,9 +173,10 @@ const CreateConfig: React.FC = () => {
   ];
 
   const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: AppStateProps) => state.amplifyConfig
+    (state: RootState) => state.app.amplifyConfig
   );
-  const history = useHistory();
+  const dispatch = useDispatch<Dispatch<Actions>>();
+  const navigate = useNavigate();
 
   const [configPipelineTask, setConfigPipelineTask] = useState<ConfigTaskProps>(
     DEFAULT_CONFIG_TASK_VALUE
@@ -184,6 +202,10 @@ const CreateConfig: React.FC = () => {
     indexEmptyError: false,
     indexNameFormatError: false,
   });
+  const [domainCheckStatus, setDomainCheckStatus] =
+    useState<DomainStatusCheckResponse>();
+  const tags = useTags();
+  const monitor = useAlarm();
 
   const confirmCreatePipeline = async () => {
     console.info("configPipelineTask:", configPipelineTask);
@@ -191,11 +213,13 @@ const CreateConfig: React.FC = () => {
     createPipelineParams.type = ServiceType.Config;
     createPipelineParams.source = configPipelineTask.source;
     createPipelineParams.target = configPipelineTask.target;
-    createPipelineParams.tags = configPipelineTask.tags;
+    createPipelineParams.tags = tags;
     createPipelineParams.logSourceAccountId =
       configPipelineTask.logSourceAccountId;
     createPipelineParams.logSourceRegion = amplifyConfig.aws_project_region;
     createPipelineParams.destinationType = configPipelineTask.destinationType;
+
+    createPipelineParams.monitor = monitor.monitor;
 
     const tmpParamList: any = covertParametersByKeyAndConditions(
       configPipelineTask,
@@ -223,9 +247,7 @@ const CreateConfig: React.FC = () => {
       );
       console.info("createRes:", createRes);
       setLoadingCreate(false);
-      history.push({
-        pathname: "/log-pipeline/service-log",
-      });
+      navigate("/log-pipeline/service-log");
     } catch (error) {
       setLoadingCreate(false);
       console.error(error);
@@ -276,6 +298,19 @@ const CreateConfig: React.FC = () => {
     }
     return true;
   };
+
+  const isNextDisabled = () => {
+    return (
+      domainListIsLoading ||
+      nextStepDisable ||
+      (curStep === 1 &&
+        domainCheckStatus?.status !== DomainStatusCheckType.PASSED)
+    );
+  };
+
+  useEffect(() => {
+    dispatch({ type: ActionType.CLOSE_SIDE_MENU });
+  }, []);
 
   return (
     <div className="lh-main-content">
@@ -613,25 +648,33 @@ const CreateConfig: React.FC = () => {
                         };
                       });
                     }}
+                    domainCheckedStatus={domainCheckStatus}
+                    changeOSDomainCheckStatus={(status) => {
+                      setConfigPipelineTask((prev: ConfigTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            replicaNumbers: status.multiAZWithStandbyEnabled
+                              ? "2"
+                              : "1",
+                          },
+                        };
+                      });
+                      setDomainCheckStatus(status);
+                    }}
                   />
                 )}
                 {curStep === 2 && (
-                  <CreateTags
-                    pipelineTask={configPipelineTask}
-                    changeTags={(tags) => {
-                      setConfigPipelineTask((prev: ConfigTaskProps) => {
-                        return { ...prev, tags: tags };
-                      });
-                    }}
-                  />
+                  <div>
+                    <AlarmAndTags pipelineTask={configPipelineTask} />
+                  </div>
                 )}
                 <div className="button-action text-right">
                   <Button
                     btnType="text"
                     onClick={() => {
-                      history.push({
-                        pathname: "/log-pipeline/service-log/create",
-                      });
+                      navigate("/log-pipeline/service-log/create");
                     }}
                   >
                     {t("button.cancel")}
@@ -650,13 +693,21 @@ const CreateConfig: React.FC = () => {
 
                   {curStep < 2 && (
                     <Button
-                      disabled={domainListIsLoading || nextStepDisable}
+                      disabled={isNextDisabled()}
                       btnType="primary"
                       onClick={() => {
                         if (curStep === 0 && !isConfigSettingValid()) {
                           return;
                         }
                         if (curStep === 1 && !isClusterValid()) {
+                          return;
+                        }
+                        // Check domain connection status
+                        if (
+                          curStep === 1 &&
+                          domainCheckStatus?.status !==
+                            DomainStatusCheckType.PASSED
+                        ) {
                           return;
                         }
                         setCurStep((curStep) => {
@@ -672,6 +723,12 @@ const CreateConfig: React.FC = () => {
                       loading={loadingCreate}
                       btnType="primary"
                       onClick={() => {
+                        if (!validateAalrmInput(monitor)) {
+                          dispatch({
+                            type: CreateAlarmActionTypes.VALIDATE_ALARM_INPUT,
+                          });
+                          return;
+                        }
                         confirmCreatePipeline();
                       }}
                     >

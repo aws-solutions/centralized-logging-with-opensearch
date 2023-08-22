@@ -35,6 +35,7 @@ export class CloudWatchLogStack extends SolutionStack {
     let solutionDesc =
       props.solutionDesc || "Centralized Logging with OpenSearch";
     let solutionId = props.solutionId || "SO8025";
+    const stackPrefix = "CL";
 
     this.setDescription(
       `(${solutionId}-cwl) - ${solutionDesc} - CloudWatchLogs Through KDS Analysis Pipeline Template - Version ${VERSION}`
@@ -286,16 +287,18 @@ export class CloudWatchLogStack extends SolutionStack {
       maxCapacity: maxCapacity.valueAsNumber,
       minCapacity: minCapacity.valueAsNumber,
       enableAutoScaling: props.enableAutoScaling!,
-      source: "KDS",
       env: {
         LOG_TYPE: logType.valueAsString,
         LOG_FORMAT: logFormat.valueAsString,
       },
+      logType: logType.valueAsString,
+      stackPrefix: stackPrefix
     };
 
     const kdsBufferStack = new KDSStack(this, "KDSBuffer", pipelineProps);
 
     const logProcessorRoleArn = kdsBufferStack.logProcessorRoleArn;
+    const logProcessorLogGroupName = kdsBufferStack.logProcessorLogGroupName
 
     const bufferAccessPolicy = new iam.Policy(this, "BufferAccessPolicy", {
       statements: [
@@ -309,6 +312,7 @@ export class CloudWatchLogStack extends SolutionStack {
 
     this.cfnOutput("BufferResourceArn", kdsBufferStack.kinesisStreamArn);
     this.cfnOutput("BufferResourceName", kdsBufferStack.kinesisStreamName);
+    this.cfnOutput("ProcessorLogGroupName", logProcessorLogGroupName);
 
     const bufferAccessRole = new iam.Role(this, "BufferAccessRole", {
       assumedBy: new iam.CompositePrincipal(
@@ -324,7 +328,7 @@ export class CloudWatchLogStack extends SolutionStack {
       })
     );
 
-    bufferAccessRole.attachInlinePolicy(bufferAccessPolicy!);
+    bufferAccessRole.attachInlinePolicy(bufferAccessPolicy);
 
     this.cfnOutput("BufferAccessRoleArn", bufferAccessRole.roleArn);
     this.cfnOutput("BufferAccessRoleName", bufferAccessRole.roleName);
@@ -335,7 +339,7 @@ export class CloudWatchLogStack extends SolutionStack {
       createDashboard: createDashboard.valueAsString,
       logProcessorRoleArn:
         logProcessorRoleArn == ""
-          ? bufferAccessRole!.roleArn
+          ? bufferAccessRole.roleArn
           : logProcessorRoleArn,
       shardNumbers: shardNumbers.valueAsString,
       replicaNumbers: replicaNumbers.valueAsString,
@@ -357,6 +361,7 @@ export class CloudWatchLogStack extends SolutionStack {
     );
 
     this.cfnOutput("OSInitHelperFn", osInitStack.helperFn.functionArn);
+    this.cfnOutput("HelperLogGroupName", osInitStack.helperFn.logGroup.logGroupName);
 
     this.addToParamGroups(
       "Source Information",

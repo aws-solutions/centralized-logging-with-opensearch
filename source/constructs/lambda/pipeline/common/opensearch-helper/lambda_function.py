@@ -5,11 +5,11 @@ import os
 import time
 import json
 import logging
+import gzip
+import base64
 
-import boto3
-from botocore.client import Config
-
-from util.osutil import OpenSearch
+from commonlib.opensearch import OpenSearchUtil, Engine
+from commonlib import AWSConnection
 
 TOTAL_RETRIES = 5
 SLEEP_INTERVAL = 10
@@ -17,25 +17,19 @@ SLEEP_INTERVAL = 10
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+conn = AWSConnection()
+
 index_prefix = os.environ.get("INDEX_PREFIX")
 endpoint = os.environ.get("ENDPOINT")
 default_region = os.environ.get("AWS_REGION")
-log_type = os.environ.get("LOG_TYPE", "")
-engine = os.environ.get("ENGINE", "OpenSearch")
-
-aos = OpenSearch(
-    region=default_region,
-    endpoint=endpoint.strip("https://"),
-    index_prefix=index_prefix,
-    engine=engine,
-    log_type=log_type,
-)
+log_type = os.environ.get("LOG_TYPE", "").lower()
+engine_type = os.environ.get("ENGINE", "OpenSearch")
 
 warm_age = os.environ.get("WARM_AGE", "")
 cold_age = os.environ.get("COLD_AGE", "")
 retain_age = os.environ.get("RETAIN_AGE", "")
 index_suffix = os.environ.get("INDEX_SUFFIX", "yyyy-MM-dd")
-rollover_age = aos.get_rollover_age_by_format(index_suffix)
+
 rollover_size = os.environ.get("ROLLOVER_SIZE", "")
 
 number_of_shards = int(os.environ.get("NUMBER_OF_SHARDS", "5"))
@@ -43,78 +37,93 @@ number_of_replicas = int(os.environ.get("NUMBER_OF_REPLICAS", "1"))
 codec = os.environ.get("CODEC", "best_compression")
 refresh_interval = os.environ.get("REFRESH_INTERVAL", "1s")
 
-current_role_arn = os.environ.get("ROLE_ARN")
-log_processor_role_arn = os.environ.get("LOG_PROCESSOR_ROLE_ARN")
+current_role_arn = os.environ.get("ROLE_ARN", "")
+log_processor_role_arn = os.environ.get("LOG_PROCESSOR_ROLE_ARN", "")
 
 domain_name = os.environ.get("DOMAIN_NAME")
 create_dashboard = os.environ.get("CREATE_DASHBOARD", "No")
 
-solution_version = os.environ.get("SOLUTION_VERSION", "v1.0.0")
-solution_id = os.environ.get("SOLUTION_ID", "SO8025")
-user_agent_extra = f"AwsSolution/{solution_id}/{solution_version}"
-
-default_config = Config(connect_timeout=30,
-                        retries={"max_attempts": 3},
-                        user_agent_extra=user_agent_extra)
-es = boto3.client("es", region_name=default_region, config=default_config)
+INDEX_TEMPLATE_GZIP_BASE64 = os.environ.get("INDEX_TEMPLATE_GZIP_BASE64", "")
+IS_APP_PIPELINE = ("apppipe" in current_role_arn.lower()) or (
+    "apppipe" in log_processor_role_arn.lower()
+)
+IS_SVC_PIPELINE = not IS_APP_PIPELINE
 
 
-def lambda_handler(event, context):
-    """
-    Sample event
-    {
-        "action": "CreateIndexTemplate",
-        "props": {
-            "log_type": "nignx|apache|regex|json",
-            "mappings": {},
-        }
-    }
-    """
+aos = OpenSearchUtil(
+    region=default_region,
+    endpoint=endpoint,
+    index_prefix=index_prefix,
+    engine=Engine(engine_type),
+    log_type=log_type,
+)
+aos.index_name_has_log_type_suffix(IS_SVC_PIPELINE)
+es = conn.get_client("es")
+
+
+def lambda_handler(event, _):
     event = event or {}
     logger.info("Received event: " + json.dumps(event, indent=2))
 
     action = event.get("action")
     props = event.get("props", {})
     if action == "CreateIndexTemplate":
-        action_create_index_template(props)
-        if aos.exist_index() is False:
-            create_index()
+        handle_create_index_template_action(props)
     else:
-        advanced_security_enabled_flag = advanced_security_enabled()
-        if advanced_security_enabled_flag:
-            logger.info("OpenSearch domain has Advanced Security enabled")
-            # First add helper lambda role to OpenSearch all access
-            add_master_role(current_role_arn)
-            # Wait for some seconds for the role to be effective.
-            time.sleep(25)
+        handle_other_actions()
 
-        # Check and create index state management policy
-        create_ism()
-        if log_type and log_type != "Json":
-            index_template = aos.default_index_template(
-                number_of_shards, number_of_replicas, codec, refresh_interval)
-
-            # Check and Create index template
-            put_index_template(index_template)
-
-            # Check and Import dashboards or index patterns.
-            import_saved_objects()
-            create_index()
-
-        # Finally, add log processor lambda role to OpenSearch all access if needed.
-        # This role must be inserted after the previous steps such as put_index_template and create_index are completed.
-        if advanced_security_enabled_flag:
-            if log_processor_role_arn:
-                add_master_role(log_processor_role_arn)
     return "OK"
+
+
+def handle_create_index_template_action(props):
+    action_create_index_template(props)
+    if aos.exist_index_alias() is False:
+        create_index()
+
+
+def handle_other_actions():
+    advanced_security_enabled_flag = advanced_security_enabled()
+    if advanced_security_enabled_flag:
+        handle_advanced_security()
+
+    create_ism()
+
+    index_template = get_index_template()
+    create_index_template(index_template)
+
+    if log_type and log_type != "json":
+        import_saved_objects()
+
+    if not aos.exist_index_alias():
+        create_index()
+
+    if advanced_security_enabled_flag and log_processor_role_arn:
+        add_master_role(log_processor_role_arn)
+
+
+def handle_advanced_security():
+    logger.info("OpenSearch domain has Advanced Security enabled")
+    add_master_role(current_role_arn)
+    time.sleep(25)
+
+
+def get_index_template():
+    if INDEX_TEMPLATE_GZIP_BASE64:
+        logger.info("Using INDEX_TEMPLATE_GZIP_BASE64")
+        return decode_gzip_base64_json_safe(INDEX_TEMPLATE_GZIP_BASE64)
+    else:
+        logger.info("Using default index template")
+        return aos.default_index_template(
+            number_of_shards, number_of_replicas, codec, refresh_interval
+        )
 
 
 def action_create_index_template(props: dict):
     logger.info("CreateIndexTemplate props=%s", props)
 
     the_log_type = props.get("log_type", "").lower()
-    createDashboard = props.get("createDashboard", "no").lower()
-    logger.info("CreateDashboard:%s", createDashboard)
+    create_dashboard = props.get("createDashboard", "no").lower()
+    logger.info("CreateDashboard:%s", create_dashboard)
 
     if the_log_type in ["nginx", "apache"]:
         # {
@@ -126,7 +135,7 @@ def action_create_index_template(props: dict):
         # }
 
         logger.info(
-            f"{aos.create_predefined_index_template.__name__} of {the_log_type} : {createDashboard}"
+            f"{aos.create_predefined_index_template.__name__} of {the_log_type} : {create_dashboard}"
         )
 
         run_func_with_retry(
@@ -140,8 +149,7 @@ def action_create_index_template(props: dict):
         )
 
         if createDashboard.lower() == "yes":
-            logger.info(
-                f"{aos.import_saved_object.__name__} of {the_log_type}")
+            logger.info(f"{aos.import_saved_object.__name__} of {the_log_type}")
 
             run_func_with_retry(
                 aos.import_saved_object,
@@ -149,9 +157,7 @@ def action_create_index_template(props: dict):
                 log_type=the_log_type,
             )
 
-    elif the_log_type in [
-            "regex", "multilinetext", "singlelinetext", "json", "syslog"
-    ]:
+    elif the_log_type in ["regex", "multilinetext", "singlelinetext", "json", "syslog"]:
         # {
         #     "action": "CreateIndexTemplate",
         #     "props": {
@@ -173,11 +179,11 @@ def action_create_index_template(props: dict):
         )
         index_template["template"]["mappings"] = {"properties": mappings}
 
-        logger.info(f"Put index template: {index_template}")
+        logger.info(f"Create index template: {index_template}")
 
         run_func_with_retry(
-            aos.put_index_template,
-            aos.put_index_template.__name__,
+            aos.create_index_template,
+            aos.create_index_template.__name__,
             index_template=index_template,
         )
 
@@ -192,15 +198,15 @@ def advanced_security_enabled() -> bool:
         bool: True if enabled.
     """
     logger.info(
-        "Check if OpenSearch has Advanced Security enabled for domain %s",
-        domain_name)
+        "Check if OpenSearch has Advanced Security enabled for domain %s", domain_name
+    )
     result = False
     try:
         resp = es.describe_elasticsearch_domain_config(
-            DomainName=domain_name, )
+            DomainName=domain_name,
+        )
         print(resp)
-        result = resp["DomainConfig"]["AdvancedSecurityOptions"]["Options"][
-            "Enabled"]
+        result = resp["DomainConfig"]["AdvancedSecurityOptions"]["Options"]["Enabled"]
 
     except Exception as e:
         logger.error("Unable to access and get OpenSearch config")
@@ -208,15 +214,13 @@ def advanced_security_enabled() -> bool:
         logger.error(
             "Please ensure the subnet for this lambda is private with NAT enabled"
         )
-        logger.info(
-            "You may need to manually add access to OpenSearch for Lambda")
+        logger.info("You may need to manually add access to OpenSearch for Lambda")
     return result
 
 
 def add_master_role(role_arn: str):
     logger.info("Add backend role %s to domain %s", role_arn, domain_name)
     try:
-
         resp = es.update_elasticsearch_domain_config(
             DomainName=domain_name,
             AdvancedSecurityOptions={
@@ -225,30 +229,30 @@ def add_master_role(role_arn: str):
                 },
             },
         )
-        logger.info("Response status: %d",
-                    resp["ResponseMetadata"]["HTTPStatusCode"])
+        logger.info("Response status: %d", resp["ResponseMetadata"]["HTTPStatusCode"])
     except Exception as e:
         logger.error("Unable to automatically add backend role")
         logger.error(e)
         logger.info("Please manually add backend role for %s", role_arn)
 
 
-def put_index_template(index_template):
+def create_index_template(index_template):
     # no need to check whether log type is qualified
-    logger.info("Create index template for type %s with prefix %s", log_type,
-                index_prefix)
+    logger.info(
+        "Create index template for type %s with prefix %s", log_type, index_prefix
+    )
 
     kwargs = {"index_template": index_template}
-    run_func_with_retry(aos.put_index_template, "Create index template",
-                        **kwargs)
+    run_func_with_retry(aos.create_index_template, "Create index template", **kwargs)
 
 
 def import_saved_objects():
-    if create_dashboard.lower() == "yes" or (log_type in [
-            "cloudfront", "cloudtrail", "s3", "elb"
-    ]):
-        logger.info("Import saved objects for type %s with prefix %s",
-                    log_type, index_prefix)
+    if create_dashboard.lower() == "yes" or (
+        log_type in ["cloudfront", "cloudtrail", "s3", "elb", "nginx", "apache"]
+    ):
+        logger.info(
+            "Import saved objects for type %s with prefix %s", log_type, index_prefix
+        )
         run_func_with_retry(aos.import_saved_objects, "Import saved objects")
     else:
         # Do nothing,
@@ -256,11 +260,22 @@ def import_saved_objects():
         logger.info("No need to load saved objects")
 
 
+def get_rollover_age_by_format(format: str = "yyyy-MM-dd") -> str:
+    if format == "yyyy-MM":
+        return "30d"
+    elif format == "yyyy-MM-dd-HH":
+        return "1h"
+    elif format == "yyyy":
+        return "365d"
+    else:
+        return "24h"
+
+
 def create_ism():
-    if (warm_age == "" and cold_age == "" and retain_age == ""
-            and rollover_age == "" and rollover_size == ""):
+    if warm_age == "" and cold_age == "" and retain_age == "" and rollover_size == "":
         logger.info("No need to create ISM policy")
     else:
+        rollover_age = get_rollover_age_by_format(index_suffix)
         kwargs = {
             "warm_age": warm_age,
             "cold_age": cold_age,
@@ -305,3 +320,15 @@ def run_func_with_retry(func, func_name, **kwargs):
         logger.info("Sleep 10 seconds and retry...")
         retry += 1
         time.sleep(SLEEP_INTERVAL)
+
+
+def decode_gzip_base64_json_safe(s: str):
+    if not s:
+        return None
+
+    try:
+        return json.loads(gzip.decompress(base64.b64decode(s)))
+    except Exception as e:
+        logging.warn("Error decoding gzip base64 json string: %s", e)
+
+    return None

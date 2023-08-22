@@ -20,111 +20,73 @@ import AccessTimeIcon from "@material-ui/icons/AccessTime";
 import ErrorOutlineIcon from "@material-ui/icons/ErrorOutline";
 import RemoveCircleOutlineIcon from "@material-ui/icons/RemoveCircleOutline";
 import { useTranslation } from "react-i18next";
+import LoadingText from "components/LoadingText";
+import classNames from "classnames";
 
 export enum StatusType {
   Unknown = "Unknown",
   Active = "Active",
   Created = "Created",
+  Updated = "Updated",
+  InSufficient_Data = "InSufficient_Data",
   Creating = "Creating",
   Inactive = "Inactive",
   Error = "Error",
+  Alarm = "Alarm",
   Green = "Green",
+  OK = "OK",
   Red = "Red",
   Yellow = "Yellow",
   Deleting = "Deleting",
+  Deleted = "Deleted",
+  Reversed = "Reversed",
+  Unchanged = "Unchanged",
   Online = "Online",
   Offline = "Offline",
   Installing = "Installing",
+  Distributing = "Distributing",
 }
 
 interface StatusProps {
+  isLink?: boolean;
   status: string;
 }
+const iconMap: any = {
+  green: <CheckCircleOutlineIcon fontSize="small" />,
+  active: <CheckCircleOutlineIcon fontSize="small" />,
+  created: <CheckCircleOutlineIcon fontSize="small" />,
+  updated: <CheckCircleOutlineIcon fontSize="small" />,
+  online: <CheckCircleOutlineIcon fontSize="small" />,
+  ok: <CheckCircleOutlineIcon fontSize="small" />,
+  creating: <AccessTimeIcon fontSize="small" />,
+  installing: <AccessTimeIcon fontSize="small" />,
+  distributing: <AccessTimeIcon fontSize="small" />,
+  insufficient_data: <RemoveCircleOutlineIcon fontSize="small" />,
+  inactive: <RemoveCircleOutlineIcon fontSize="small" />,
+  deleted: <RemoveCircleOutlineIcon fontSize="small" />,
+  reversed: <RemoveCircleOutlineIcon fontSize="small" />,
+  unchanged: <RemoveCircleOutlineIcon fontSize="small" />,
+  deleting: <RemoveCircleOutlineIcon fontSize="small" />,
+  unknown: <RemoveCircleOutlineIcon fontSize="small" />,
+  yellow: <ErrorOutlineIcon fontSize="small" />,
+  offline: <HighlightOffIcon fontSize="small" />,
+  error: <HighlightOffIcon fontSize="small" />,
+  alarm: <HighlightOffIcon color="error" fontSize="small" />,
+  red: <HighlightOffIcon fontSize="small" />,
+};
 
 const Status: React.FC<StatusProps> = (props: StatusProps) => {
-  const { status } = props;
+  const { isLink, status } = props;
   const { t } = useTranslation();
+  if (status.toLocaleLowerCase() === "loading") {
+    return <LoadingText />;
+  }
   return (
-    <div className="inline-block gsui-status">
+    <div
+      className={classNames({ "flex gsui-status": true, "is-link": isLink })}
+    >
       <span className={"status-text " + status.toLocaleLowerCase()}>
-        {status.toLocaleUpperCase() ===
-          StatusType.Green.toLocaleUpperCase() && (
-          <i>
-            <CheckCircleOutlineIcon fontSize="small" />
-          </i>
-        )}
-        {status.toLocaleUpperCase() ===
-          StatusType.Active.toLocaleUpperCase() && (
-          <i>
-            <CheckCircleOutlineIcon fontSize="small" />
-          </i>
-        )}
-        {status.toLocaleUpperCase() ===
-          StatusType.Created.toLocaleUpperCase() && (
-          <i>
-            <CheckCircleOutlineIcon fontSize="small" />
-          </i>
-        )}
-        {status.toLocaleUpperCase() ===
-          StatusType.Online.toLocaleUpperCase() && (
-          <i>
-            <CheckCircleOutlineIcon fontSize="small" />
-          </i>
-        )}
-        {status.toLocaleUpperCase() ===
-          StatusType.Creating.toLocaleUpperCase() && (
-          <i>
-            <AccessTimeIcon fontSize="small" />
-          </i>
-        )}
-        {status.toLocaleUpperCase() ===
-          StatusType.Installing.toLocaleUpperCase() && (
-          <i>
-            <AccessTimeIcon fontSize="small" />
-          </i>
-        )}
-        {status.toLocaleUpperCase() ===
-          StatusType.Inactive.toLocaleUpperCase() && (
-          <i>
-            <RemoveCircleOutlineIcon fontSize="small" />
-          </i>
-        )}
-        {status.toLocaleUpperCase() ===
-          StatusType.Deleting.toLocaleUpperCase() && (
-          <i>
-            <RemoveCircleOutlineIcon fontSize="small" />
-          </i>
-        )}
-
-        {status.toLocaleUpperCase() ===
-          StatusType.Unknown.toLocaleUpperCase() && (
-          <i>
-            <RemoveCircleOutlineIcon fontSize="small" />
-          </i>
-        )}
-        {status.toLocaleUpperCase() ===
-          StatusType.Yellow.toLocaleUpperCase() && (
-          <i>
-            <ErrorOutlineIcon fontSize="small" />
-          </i>
-        )}
-        {status.toLocaleUpperCase() ===
-          StatusType.Offline.toLocaleUpperCase() && (
-          <i>
-            <HighlightOffIcon fontSize="small" />
-          </i>
-        )}
-        {status.toLocaleUpperCase() ===
-          StatusType.Error.toLocaleUpperCase() && (
-          <i>
-            <HighlightOffIcon fontSize="small" />
-          </i>
-        )}
-        {status.toLocaleUpperCase() === StatusType.Red.toLocaleUpperCase() && (
-          <i>
-            <HighlightOffIcon fontSize="small" />
-          </i>
-        )}
+        <i>{iconMap[status.toLocaleLowerCase()]}</i>
         {t("status." + status.toLocaleLowerCase())}
       </span>
     </div>

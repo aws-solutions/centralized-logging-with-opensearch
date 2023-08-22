@@ -14,21 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Construct } from "constructs";
-import { CfnParameter, Fn, Stack, StackProps } from "aws-cdk-lib";
+import { CfnParameter, Fn, StackProps } from "aws-cdk-lib";
 import { SecurityGroup, Vpc } from "aws-cdk-lib/aws-ec2";
+import { Construct } from "constructs";
 import {
-  S3toOpenSearchStack,
-  S3toOpenSearchStackProps,
-} from "./s3-to-opensearch-stack";
+  OpenSearchInitProps,
+  OpenSearchInitStack,
+} from "../common/opensearch-init-stack";
+import { SolutionStack } from "../common/solution-stack";
 import {
   CWtoFirehosetoS3Props,
   CWtoFirehosetoS3Stack,
 } from "./cw-to-firehose-to-s3-stack";
 import {
-  OpenSearchInitProps,
-  OpenSearchInitStack,
-} from "../common/opensearch-init-stack";
+  S3toOpenSearchStack,
+  S3toOpenSearchStackProps,
+} from "./s3-to-opensearch-stack";
 import { WAFSampledStack, WAFSampledStackProps } from "./waf-sampled-stack";
 
 const { VERSION } = process.env;
@@ -41,46 +42,17 @@ export interface PipelineStackProps extends StackProps {
   readonly solutionId?: string;
 }
 
-export class ServiceLogPipelineStack extends Stack {
-  private paramGroups: any[] = [];
-  private paramLabels: any = {};
-
-  private addToParamGroups(label: string, ...param: string[]) {
-    const result = this.paramGroups.findIndex((param) => {
-      return param.Label.default == label;
-    });
-    if (result === -1) {
-      this.paramGroups.push({
-        Label: { default: label },
-        Parameters: param,
-      });
-    } else {
-      this.paramGroups[result].Parameters.push(...param);
-    }
-  }
-
-  private addToParamLabels(label: string, param: string) {
-    this.paramLabels[param] = {
-      default: label,
-    };
-  }
-
+export class ServiceLogPipelineStack extends SolutionStack {
   constructor(scope: Construct, id: string, props: PipelineStackProps) {
     super(scope, id, props);
 
+    const stackPrefix = "CL";
     let solutionDesc =
       props.solutionDesc || "Centralized Logging with OpenSearch";
     let solutionId = props.solutionId || "SO8025";
 
     const tag = props.tag ? props.tag : props.logType.toLowerCase();
     this.templateOptions.description = `(${solutionId}-${tag}) - ${solutionDesc} - ${props.logType} Log Analysis Pipeline Template - Version ${VERSION}`;
-
-    this.templateOptions.metadata = {
-      "AWS::CloudFormation::Interface": {
-        ParameterGroups: this.paramGroups,
-        ParameterLabels: this.paramLabels,
-      },
-    };
 
     const engineType = new CfnParameter(this, "engineType", {
       description:
@@ -347,6 +319,7 @@ export class ServiceLogPipelineStack extends Stack {
         logSourceAccountId: logSourceAccountId.valueAsString,
         logSourceRegion: logSourceRegion.valueAsString,
         logSourceAccountAssumeRole: logSourceAccountAssumeRole.valueAsString,
+        stackPrefix: stackPrefix,
       };
 
       const pipelineStack = new S3toOpenSearchStack(
@@ -354,6 +327,12 @@ export class ServiceLogPipelineStack extends Stack {
         `LogPipeline`,
         pipelineProps
       );
+      this.cfnOutput(
+        "ProcessorLogGroupName",
+        pipelineStack.logProcessorLogGroupName
+      );
+      this.cfnOutput("LogEventQueueArn", pipelineStack.logEventQueueArn);
+      this.cfnOutput("LogEventQueueName", pipelineStack.logEventQueueName);
 
       // Create S3 to OpenSearch Stack
       const osProps: OpenSearchInitProps = {
@@ -372,7 +351,15 @@ export class ServiceLogPipelineStack extends Stack {
         refreshInterval: refreshInterval.valueAsString,
       };
 
-      new OpenSearchInitStack(this, "InitStack", osProps);
+      const openSearchInitStack = new OpenSearchInitStack(
+        this,
+        "InitStack",
+        osProps
+      );
+      this.cfnOutput(
+        "HelperLogGroupName",
+        openSearchInitStack.helperFn.logGroup.logGroupName
+      );
 
       if (["RDS", "Lambda"].includes(props.logType)) {
         const logGroupNames = new CfnParameter(this, "logGroupNames", {
@@ -397,10 +384,18 @@ export class ServiceLogPipelineStack extends Stack {
           logSourceAccountAssumeRole: logSourceAccountAssumeRole.valueAsString,
           solutionId: solutionId,
         };
-        new CWtoFirehosetoS3Stack(
+        const cwtoFirehosetoS3Stack = new CWtoFirehosetoS3Stack(
           this,
           `CWtoFirehosetoS3Stack`,
           cwtoFirehosetoS3StackProps
+        );
+        this.cfnOutput(
+          "DeliveryStreamArn",
+          cwtoFirehosetoS3Stack.deliveryStreamArn
+        );
+        this.cfnOutput(
+          "DeliveryStreamName",
+          cwtoFirehosetoS3Stack.deliveryStreamName
         );
       }
       this.addToParamGroups("Backup Settings", backupBucketName.logicalId);
@@ -412,12 +407,30 @@ export class ServiceLogPipelineStack extends Stack {
       });
       this.addToParamLabels("WebACL Names", webACLNames.logicalId);
 
+      const webACLScope = new CfnParameter(this, "webACLScope", {
+        description: `Resource type. Choose CLOUDFRONT for Amazon CloudFront distributions or REGIONAL for other regional resources such as Application Load Balancers etc.`,
+        type: "String",
+        default: "REGIONAL",
+        allowedValues: ["CLOUDFRONT", "REGIONAL"],
+      });
+      this.addToParamLabels("Resource type", webACLScope.logicalId);
+
       const interval = new CfnParameter(this, "interval", {
         description: `The Default Interval (in minutes) to get sampled logs, default is 1 minutes`,
         type: "Number",
         default: "1",
       });
       this.addToParamLabels("Interval", interval.logicalId);
+
+      const backupBucketName = new CfnParameter(this, "backupBucketName", {
+        description:
+          "The S3 backup bucket name to store the failed ingestion logs.",
+        type: "String",
+        allowedPattern: ".+",
+        constraintDescription:
+          "Failed ingestion log S3 Bucket must not be empty",
+      });
+      this.addToParamLabels("S3 Backup Bucket", backupBucketName.logicalId);
 
       this.addToParamGroups(
         "Source Information",
@@ -437,12 +450,19 @@ export class ServiceLogPipelineStack extends Stack {
         logSourceAccountId: logSourceAccountId.valueAsString,
         logSourceAccountAssumeRole: logSourceAccountAssumeRole.valueAsString,
         webACLNames: webACLNames.valueAsString,
+        webACLScope: webACLScope.valueAsString,
+        stackPrefix: stackPrefix,
+        backupBucketName: backupBucketName.valueAsString,
       };
 
       const pipelineStack = new WAFSampledStack(
         this,
         `LogPipeline`,
         pipelineProps
+      );
+      this.cfnOutput(
+        "ProcessorLogGroupName",
+        pipelineStack.logProcessorLogGroupName
       );
 
       // Create S3 to OpenSearch Stack
@@ -462,7 +482,15 @@ export class ServiceLogPipelineStack extends Stack {
         refreshInterval: refreshInterval.valueAsString,
       };
 
-      new OpenSearchInitStack(this, "InitStack", osProps);
+      const openSearchInitStack = new OpenSearchInitStack(
+        this,
+        "InitStack",
+        osProps
+      );
+      this.cfnOutput(
+        "HelperLogGroupName",
+        openSearchInitStack.helperFn.logGroup.logGroupName
+      );
     }
 
     this.addToParamGroups(
@@ -496,5 +524,7 @@ export class ServiceLogPipelineStack extends Stack {
       advancedOptions.push(plugins.logicalId);
     }
     this.addToParamGroups("Advanced Options", ...advancedOptions);
+
+    this.setMetadata();
   }
 }

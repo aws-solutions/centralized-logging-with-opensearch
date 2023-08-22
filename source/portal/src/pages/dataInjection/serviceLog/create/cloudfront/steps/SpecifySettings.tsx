@@ -31,11 +31,12 @@ import { OptionType } from "components/AutoComplete/autoComplete";
 import TextInput from "components/TextInput";
 import { buildCloudFrontLink } from "assets/js/utils";
 import { AmplifyConfigType } from "types";
-import { AppStateProps, InfoBarTypes } from "reducer/appReducer";
+import { InfoBarTypes } from "reducer/appReducer";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import CrossAccountSelect from "pages/comps/account/CrossAccountSelect";
 import SourceType from "../comps/SourceType";
+import { RootState } from "reducer/reducers";
 
 interface SpecifySettingsProps {
   cloudFrontTask: CloudFrontTaskProps;
@@ -103,7 +104,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
   } = props;
 
   const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: AppStateProps) => state.amplifyConfig
+    (state: RootState) => state.app.amplifyConfig
   );
   const { t } = useTranslation();
 
@@ -117,12 +118,12 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
 
   const getCloudFrontList = async (accountId: string) => {
     try {
+      setCloudFrontOptionList([]);
       setLoadingCloudFrontList(true);
       const resData: any = await appSyncRequestQuery(listResources, {
         type: ResourceType.Distribution,
         accountId: accountId,
       });
-      console.info("getCloudFrontList:", resData.data);
       const dataList: Resource[] = resData.data.listResources;
       const tmpOptionList: SelectItem[] = [];
       dataList.forEach((element) => {
@@ -193,6 +194,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
           <HeaderPanel title={t("servicelog:create.service.cloudfront")}>
             <div>
               <CrossAccountSelect
+                disabled={loadingCloudFrontList}
                 accountId={cloudFrontTask.logSourceAccountId}
                 changeAccount={(id) => {
                   changeCrossAccount(id);
@@ -325,11 +327,12 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                     optionTitle={t("servicelog:cloudfront.logLocation")}
                     optionDesc={t("servicelog:cloudfront.logLocationDesc")}
                     errorText={
-                      manualS3EmptyError
+                      (manualS3EmptyError
                         ? t("servicelog:cloudfront.logLocationError")
-                        : manualS3PathInvalid
+                        : "") ||
+                      (manualS3PathInvalid
                         ? t("servicelog:s3InvalidError")
-                        : ""
+                        : "")
                     }
                   >
                     <TextInput

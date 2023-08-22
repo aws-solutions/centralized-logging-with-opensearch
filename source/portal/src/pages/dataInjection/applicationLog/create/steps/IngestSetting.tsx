@@ -16,7 +16,7 @@ limitations under the License.
 import React from "react";
 import HeaderPanel from "components/HeaderPanel";
 import FormItem from "components/FormItem";
-import { ApplicationLogType } from "../CreatePipeline";
+import { ApplicationLogType } from "types";
 import TextInput from "components/TextInput";
 import { useTranslation } from "react-i18next";
 import SelectBuffer, { BufferType } from "./SelectBuffer";
@@ -85,13 +85,15 @@ const IngestSetting: React.FC<IngestSettingProps> = (
             optionTitle={t("applog:create.ingestSetting.indexName")}
             optionDesc={t("applog:create.ingestSetting.indexNameDesc")}
             errorText={
-              indexEmptyError
+              (indexEmptyError
                 ? t("applog:create.ingestSetting.indexNameError")
-                : indexFormatError
+                : "") ||
+              (indexFormatError
                 ? t("applog:create.ingestSetting.indexNameFormatError")
-                : indexDuplicatedError
+                : "") ||
+              (indexDuplicatedError
                 ? t("applog:create.ingestSetting.indexNameDuplicated")
-                : ""
+                : "")
             }
           >
             <TextInput

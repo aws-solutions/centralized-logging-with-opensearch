@@ -1,5 +1,6 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
+
 """
 This file should only contain constants used for the EKS tests.
 """
@@ -7,10 +8,10 @@ import re
 from enum import Enum
 
 from boto3 import Session
-
 from moto.eks import REGION as DEFAULT_REGION
 
 ACCOUNT_ID = "123456789012"
+
 DEFAULT_ENCODING = "utf-8"
 DEFAULT_HTTP_HEADERS = {"Content-type": "application/json"}
 DEFAULT_NAMESPACE = "namespace_1"
@@ -20,6 +21,7 @@ PARTITIONS = Session().get_available_partitions()
 REGION = Session().region_name or DEFAULT_REGION
 SERVICE = "eks"
 SUBNET_IDS = ["subnet-12345ab", "subnet-67890cd"]
+
 
 AMI_TYPE_KEY = "amiType"
 AMI_TYPE_VALUE = "AL2_x86_64"
@@ -85,7 +87,7 @@ TAGS_KEY = "tags"
 TAGS_VALUE = {"hello": "world"}
 
 VERSION_KEY = "version"
-VERSION_VALUE = "1.23"
+VERSION_VALUE = "1.27"
 
 AMI_TYPE = (AMI_TYPE_KEY, AMI_TYPE_VALUE)
 CLIENT_REQUEST_TOKEN = (CLIENT_REQUEST_TOKEN_KEY, CLIENT_REQUEST_TOKEN_VALUE)

@@ -1,4 +1,0 @@
-    [PARSER]
-        Name        $LOGHUB_PARSER_NAME.docker.firstline
-        Format      regex
-        Regex       (?<log>{"log":"$LOGHUB_REGEX)

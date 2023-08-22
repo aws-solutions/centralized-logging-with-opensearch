@@ -19,13 +19,12 @@ import Popper from "@material-ui/core/Popper";
 import { CopyToClipboard } from "react-copy-to-clipboard";
 import ClickAwayListener from "@material-ui/core/ClickAwayListener";
 import Button from "components/Button";
-import { TFunctionResult } from "i18next";
 import { useTranslation } from "react-i18next";
 
 interface CopyButtonProps {
   disabled?: boolean;
   text: string;
-  children: React.ReactChild | TFunctionResult;
+  children: any;
 }
 
 const CopyButton: React.FC<CopyButtonProps> = (props: CopyButtonProps) => {

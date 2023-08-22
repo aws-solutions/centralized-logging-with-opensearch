@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React from "react";
-import RefreshIcon from "@material-ui/icons/Refresh";
 import Select from "@material-ui/core/Select";
 import MenuItem from "@material-ui/core/MenuItem";
 import InputBase from "@material-ui/core/InputBase";
@@ -22,6 +21,11 @@ import { withStyles, makeStyles } from "@material-ui/core/styles";
 import LoadingText from "components/LoadingText";
 import Button from "components/Button";
 import { useTranslation } from "react-i18next";
+import CheckCircleOutlineIcon from "@material-ui/icons/CheckCircleOutline";
+import HighlightOffIcon from "@material-ui/icons/HighlightOff";
+import AccessTimeIcon from "@material-ui/icons/AccessTime";
+import ExtButton from "components/ExtButton";
+import ButtonRefresh from "components/ButtonRefresh";
 
 export const MenuProps: any = {
   getContentAnchorEl: null,
@@ -40,6 +44,46 @@ const usePlaceholderStyles = makeStyles(() => ({
 const Placeholder = ({ children }: any) => {
   const classes = usePlaceholderStyles();
   return <div className={classes.placeholder}>{children}</div>;
+};
+
+const ItemStatus = ({ status }: any) => {
+  const { t } = useTranslation();
+  return (
+    <>
+      {status === "ACTIVE" && (
+        <span className="select-item-status green">
+          <i className="icon">
+            <CheckCircleOutlineIcon fontSize="small" />
+          </i>
+          {t("status.active")}
+        </span>
+      )}
+      {status === "IN_PROGRESS" && (
+        <span className="select-item-status gray">
+          <i className="icon">
+            <AccessTimeIcon fontSize="small" />
+          </i>
+          {t("status.inProgress")}
+        </span>
+      )}
+      {status === "IMPORTED" && (
+        <span className="select-item-status gray">
+          <i className="icon">
+            <CheckCircleOutlineIcon fontSize="small" />
+          </i>
+          {t("status.imported")}
+        </span>
+      )}
+      {status === "FAILED" && (
+        <span className="select-item-status red">
+          <i className="icon">
+            <HighlightOffIcon fontSize="small" />
+          </i>
+          {t("status.failed")}
+        </span>
+      )}
+    </>
+  );
 };
 
 const BootstrapInput = withStyles((theme) => ({
@@ -67,20 +111,26 @@ export type SelectItem = {
   value: string;
   optTitle?: string;
   description?: string;
+  disabled?: boolean | false;
+  id?: string;
+  status?: string;
 };
 
 interface SelectProps {
   optionList: SelectItem[];
-  placeholder?: string;
+  placeholder?: string | null;
   className?: string;
   loading?: boolean;
   value: string;
-  onChange: (event: any) => void;
+  onChange?: (event: any) => void;
   hasRefresh?: boolean;
   clickRefresh?: () => void;
   disabled?: boolean;
   isI18N?: boolean;
   allowEmpty?: boolean;
+  hasStatus?: boolean;
+  createNewLink?: string;
+  viewDetailsLink?: string;
 }
 
 const GSSelect: React.FC<SelectProps> = (props: SelectProps) => {
@@ -96,6 +146,7 @@ const GSSelect: React.FC<SelectProps> = (props: SelectProps) => {
     disabled,
     isI18N,
     allowEmpty,
+    hasStatus,
   } = props;
   const { t } = useTranslation();
   return (
@@ -108,12 +159,10 @@ const GSSelect: React.FC<SelectProps> = (props: SelectProps) => {
           className="gsui-select"
           value={value}
           onChange={onChange}
-          placeholder={placeholder}
+          placeholder={placeholder || ""}
           input={<BootstrapInput />}
           renderValue={
-            allowEmpty
-              ? undefined
-              : value !== ""
+            allowEmpty || value !== ""
               ? undefined
               : () => <Placeholder>{placeholder}</Placeholder>
           }
@@ -123,17 +172,25 @@ const GSSelect: React.FC<SelectProps> = (props: SelectProps) => {
               <LoadingText text="loading" />
             </div>
           )}
-          {optionList.map((element, index) => {
+          {optionList.map((element) => {
             return (
-              <MenuItem key={index} value={element.value}>
-                {isI18N ? t(element.name) : element.name}
+              <MenuItem
+                key={element.value}
+                value={element.value}
+                className="flex flex-1"
+                disabled={element.disabled}
+              >
+                <span className="flex-1">
+                  {isI18N ? t(element.name) : element.name}
+                </span>
+                {hasStatus && <ItemStatus status={element.optTitle} />}
               </MenuItem>
             );
           })}
         </Select>
       </div>
       {hasRefresh && (
-        <div className="refresh-button">
+        <div className="refresh-button ml-10">
           <Button
             disabled={loading}
             btnType="icon"
@@ -146,8 +203,22 @@ const GSSelect: React.FC<SelectProps> = (props: SelectProps) => {
               }
             }}
           >
-            {loading ? <LoadingText /> : <RefreshIcon fontSize="small" />}
+            <ButtonRefresh loading={loading} fontSize="small" />
           </Button>
+        </div>
+      )}
+      {props.createNewLink && (
+        <div className="ml-10">
+          <ExtButton to={props.createNewLink}>
+            {t("common:button.createNew")}
+          </ExtButton>
+        </div>
+      )}
+      {props.viewDetailsLink && (
+        <div className="ml-10">
+          <ExtButton to={props.viewDetailsLink}>
+            {t("common:button.viewDetails")}
+          </ExtButton>
         </div>
       )}
     </div>

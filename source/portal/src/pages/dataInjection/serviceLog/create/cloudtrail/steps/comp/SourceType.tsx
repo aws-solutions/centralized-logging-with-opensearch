@@ -27,11 +27,11 @@ import { getResourceLogConfigs } from "graphql/queries";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { AppStateProps } from "reducer/appReducer";
 import { AmplifyConfigType, CWL_SOURCE_LIST } from "types";
 import AutoEnableLogging from "../../../common/AutoEnableLogging";
 import KDSSettings from "../../../common/KDSSettings";
 import { CloudTrailTaskProps } from "../../CreateCloudTrail";
+import { RootState } from "reducer/reducers";
 
 interface SourceTypeProps {
   cloudTrailTask: CloudTrailTaskProps;
@@ -83,7 +83,7 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
   const { t } = useTranslation();
 
   const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: AppStateProps) => state.amplifyConfig
+    (state: RootState) => state.app.amplifyConfig
   );
 
   const [loadingBucket, setLoadingBucket] = useState(false);
@@ -91,17 +91,9 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
   const [s3FLowList, setS3FLowList] = useState<SelectItem[]>([]);
   const [cwlFlowList, setCwlFlowList] = useState<SelectItem[]>([]);
 
-  const getCloudTrailLoggingConfig = async (trailId: string) => {
-    setLoadingBucket(true);
-    setISChanging(true);
-    const resData: any = await appSyncRequestQuery(getResourceLogConfigs, {
-      type: ResourceType.Trail,
-      resourceName: trailId,
-      accountId: cloudTrailTask.logSourceAccountId,
-    });
+  const buildSourceOptionList = (resSourceList: any) => {
     const tmpS3SourceList: SelectItem[] = [];
     const tmpCWLSourceList: SelectItem[] = [];
-    const resSourceList = resData?.data?.getResourceLogConfigs;
     if (resSourceList && resSourceList.length > 0) {
       resSourceList.forEach((element: ResourceLogConf) => {
         if (element.destinationType === DestinationType.S3) {
@@ -122,7 +114,20 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
         }
       });
     }
+    return { tmpS3SourceList, tmpCWLSourceList };
+  };
 
+  const getCloudTrailLoggingConfig = async (trailId: string) => {
+    setLoadingBucket(true);
+    setISChanging(true);
+    const resData: any = await appSyncRequestQuery(getResourceLogConfigs, {
+      type: ResourceType.Trail,
+      resourceName: trailId,
+      accountId: cloudTrailTask.logSourceAccountId,
+    });
+    const resSourceList = resData?.data?.getResourceLogConfigs;
+    const { tmpS3SourceList, tmpCWLSourceList } =
+      buildSourceOptionList(resSourceList);
     setS3FLowList(tmpS3SourceList);
     setCwlFlowList(tmpCWLSourceList);
 
@@ -183,16 +188,16 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
         optionTitle={t("servicelog:trail.logSource")}
         optionDesc={t("servicelog:trail.logSourceDesc")}
         successText={
-          cloudTrailTask.params.successTextType ===
+          (cloudTrailTask.params.successTextType ===
             SuccessTextType.S3_ENABLED && cloudTrailTask.params?.tmpFlowList[0]
             ? t("servicelog:trail.savedTips") +
               cloudTrailTask.params?.tmpFlowList[0]?.value
-            : cloudTrailTask.params.successTextType ===
-                SuccessTextType.CWL_ENABLED &&
-              cloudTrailTask.params?.tmpFlowList[0]
+            : "") ||
+          (cloudTrailTask.params.successTextType ===
+            SuccessTextType.CWL_ENABLED && cloudTrailTask.params?.tmpFlowList[0]
             ? t("servicelog:trail.logSourceCWLDest") +
               cloudTrailTask.params?.tmpFlowList[0]?.value
-            : ""
+            : "")
         }
         errorText={
           sourceTypeEmptyError ? t("servicelog:trail.logSourceEmptyError") : ""

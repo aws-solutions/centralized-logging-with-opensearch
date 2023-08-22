@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React, { useState, useEffect } from "react";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import CreateStep from "components/CreateStep";
 import SpecifySettings from "./steps/SpecifySettings";
 import SpecifyOpenSearchCluster, {
@@ -22,13 +22,20 @@ import SpecifyOpenSearchCluster, {
   checkOpenSearchInput,
   covertParametersByKeyAndConditions,
 } from "../common/SpecifyCluster";
-import CreateTags from "../common/CreateTags";
 import Button from "components/Button";
 
 import Breadcrumb from "components/Breadcrumb";
 import { appSyncRequestMutation } from "assets/js/request";
 import { createServicePipeline } from "graphql/mutations";
-import { CODEC, DestinationType, EngineType, ServiceType, Tag } from "API";
+import {
+  Codec,
+  DestinationType,
+  EngineType,
+  ServiceType,
+  MonitorInput,
+  DomainStatusCheckType,
+  DomainStatusCheckResponse,
+} from "API";
 import {
   WarmTransitionType,
   YesNo,
@@ -39,8 +46,7 @@ import { OptionType } from "components/AutoComplete/autoComplete";
 import { CreateLogMethod, ServiceLogType } from "assets/js/const";
 import HelpPanel from "components/HelpPanel";
 import SideMenu from "components/SideMenu";
-import { AppStateProps } from "reducer/appReducer";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Alert } from "assets/js/alert";
 import {
@@ -48,6 +54,17 @@ import {
   splitStringToBucketAndPrefix,
 } from "assets/js/utils";
 import { IngestOption } from "./steps/IngestOptionSelect";
+import { MONITOR_ALARM_INIT_DATA } from "assets/js/init";
+import AlarmAndTags from "../../../../pipelineAlarm/AlarmAndTags";
+import { Actions, RootState } from "reducer/reducers";
+import { useTags } from "assets/js/hooks/useTags";
+import { Dispatch } from "redux";
+import { useAlarm } from "assets/js/hooks/useAlarm";
+import { ActionType } from "reducer/appReducer";
+import {
+  CreateAlarmActionTypes,
+  validateAalrmInput,
+} from "reducer/createAlarm";
 
 const EXCLUDE_PARAMS_COMMON = [
   "esDomainId",
@@ -59,7 +76,6 @@ const EXCLUDE_PARAMS_COMMON = [
   "coldEnable",
   "needCreateLogging",
   "ingestOption",
-  "webACLType",
   "logSource",
   "rolloverSizeNotSupport",
 ];
@@ -68,6 +84,7 @@ const EXCLUDE_PARAMS_FULL = [
   ...EXCLUDE_PARAMS_COMMON,
   "webACLNames",
   "interval",
+  "webACLScope",
 ];
 
 const EXCLUDE_PARAMS_SAMPLED = [
@@ -80,7 +97,6 @@ const EXCLUDE_PARAMS_SAMPLED = [
 
 export interface WAFTaskProps {
   type: ServiceType;
-  tags: Tag[];
   arnId: string;
   source: string;
   target: string;
@@ -113,7 +129,7 @@ export interface WAFTaskProps {
     webACLNames: string;
     ingestOption: string;
     interval: string;
-    webACLType: string;
+    webACLScope: string;
     logSource: string;
 
     enableRolloverByCapacity: boolean;
@@ -128,6 +144,7 @@ export interface WAFTaskProps {
 
     rolloverSizeNotSupport: boolean;
   };
+  monitor: MonitorInput;
 }
 
 const DEFAULT_TASK_VALUE: WAFTaskProps = {
@@ -135,7 +152,6 @@ const DEFAULT_TASK_VALUE: WAFTaskProps = {
   source: "",
   target: "",
   arnId: "",
-  tags: [],
   logSourceAccountId: "",
   logSourceRegion: "",
   destinationType: DestinationType.S3,
@@ -164,7 +180,7 @@ const DEFAULT_TASK_VALUE: WAFTaskProps = {
     webACLNames: "",
     ingestOption: IngestOption.SampledRequest,
     interval: "",
-    webACLType: "",
+    webACLScope: "",
     logSource: "",
 
     enableRolloverByCapacity: true,
@@ -174,11 +190,12 @@ const DEFAULT_TASK_VALUE: WAFTaskProps = {
     retainAge: "180",
     rolloverSize: "30",
     indexSuffix: SERVICE_LOG_INDEX_SUFFIX.yyyy_MM_dd,
-    codec: CODEC.best_compression,
+    codec: Codec.best_compression,
     refreshInterval: "1s",
 
     rolloverSizeNotSupport: false,
   },
+  monitor: MONITOR_ALARM_INIT_DATA,
 };
 
 const CreateWAF: React.FC = () => {
@@ -197,11 +214,12 @@ const CreateWAF: React.FC = () => {
   ];
 
   const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: AppStateProps) => state.amplifyConfig
+    (state: RootState) => state.app.amplifyConfig
   );
+  const dispatch = useDispatch<Dispatch<Actions>>();
 
   const [curStep, setCurStep] = useState(0);
-  const history = useHistory();
+  const navigate = useNavigate();
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [wafPipelineTask, setWAFPipelineTask] =
     useState<WAFTaskProps>(DEFAULT_TASK_VALUE);
@@ -229,17 +247,11 @@ const CreateWAF: React.FC = () => {
     indexEmptyError: false,
     indexNameFormatError: false,
   });
+  const [domainCheckStatus, setDomainCheckStatus] =
+    useState<DomainStatusCheckResponse>();
 
   const checkSampleScheduleValue = () => {
     // Check Sample Schedule Interval
-    console.info(
-      "wafPipelineTask.params.ingestOption === IngestOption.SampledRequest",
-      wafPipelineTask.params.ingestOption === IngestOption.SampledRequest
-    );
-    console.info(
-      "parseInt(wafPipelineTask.params.interval):",
-      parseInt(wafPipelineTask.params.interval)
-    );
     if (wafPipelineTask.params.ingestOption === IngestOption.SampledRequest) {
       if (
         !wafPipelineTask.params.interval.trim() ||
@@ -252,6 +264,8 @@ const CreateWAF: React.FC = () => {
     }
     return true;
   };
+  const tags = useTags();
+  const monitor = useAlarm();
 
   const confirmCreatePipeline = async () => {
     console.info("wafPipelineTask:", wafPipelineTask);
@@ -262,11 +276,13 @@ const CreateWAF: React.FC = () => {
         : ServiceType.WAF;
     createPipelineParams.source = wafPipelineTask.source;
     createPipelineParams.target = wafPipelineTask.target;
-    createPipelineParams.tags = wafPipelineTask.tags;
+    createPipelineParams.tags = tags;
     createPipelineParams.logSourceAccountId =
       wafPipelineTask.logSourceAccountId;
     createPipelineParams.logSourceRegion = amplifyConfig.aws_project_region;
     createPipelineParams.destinationType = wafPipelineTask.destinationType;
+
+    createPipelineParams.monitor = monitor.monitor;
 
     let tmpParamList: any = [];
     if (wafPipelineTask.params.ingestOption === IngestOption.SampledRequest) {
@@ -282,18 +298,18 @@ const CreateWAF: React.FC = () => {
     }
 
     if (wafPipelineTask.params.ingestOption === IngestOption.FullRequest) {
-      // Add Default Failed Log Bucket
-      tmpParamList.push({
-        parameterKey: "backupBucketName",
-        parameterValue: amplifyConfig.default_logging_bucket,
-      });
-
       // Add defaultCmkArnParam
       tmpParamList.push({
         parameterKey: "defaultCmkArnParam",
         parameterValue: amplifyConfig.default_cmk_arn,
       });
     }
+
+    // Add Default Failed Log Bucket
+    tmpParamList.push({
+      parameterKey: "backupBucketName",
+      parameterValue: amplifyConfig.default_logging_bucket,
+    });
 
     createPipelineParams.parameters = tmpParamList;
     try {
@@ -304,9 +320,7 @@ const CreateWAF: React.FC = () => {
       );
       console.info("createRes:", createRes);
       setLoadingCreate(false);
-      history.push({
-        pathname: "/log-pipeline/service-log",
-      });
+      navigate("/log-pipeline/service-log");
     } catch (error) {
       setLoadingCreate(false);
       console.error(error);
@@ -314,8 +328,17 @@ const CreateWAF: React.FC = () => {
   };
 
   useEffect(() => {
-    console.info("wafPipelineTask:", wafPipelineTask);
-  }, [wafPipelineTask]);
+    dispatch({ type: ActionType.CLOSE_SIDE_MENU });
+  }, []);
+
+  const isNextDisabled = () => {
+    return (
+      wafISChanging ||
+      domainListIsLoading ||
+      (curStep === 1 &&
+        domainCheckStatus?.status !== DomainStatusCheckType.PASSED)
+    );
+  };
 
   return (
     <div className="lh-main-content">
@@ -451,7 +474,7 @@ const CreateWAF: React.FC = () => {
                             webACLNames: wafObj?.name || "",
                             indexPrefix: wafObj?.name?.toLowerCase() || "",
                             wafObj: wafObj,
-                            webACLType: wafObj?.description || "",
+                            webACLScope: wafObj?.description || "",
                             ingestOption: IngestOption.SampledRequest,
                           },
                         };
@@ -726,25 +749,33 @@ const CreateWAF: React.FC = () => {
                         };
                       });
                     }}
+                    domainCheckedStatus={domainCheckStatus}
+                    changeOSDomainCheckStatus={(status) => {
+                      setWAFPipelineTask((prev: WAFTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            replicaNumbers: status.multiAZWithStandbyEnabled
+                              ? "2"
+                              : "1",
+                          },
+                        };
+                      });
+                      setDomainCheckStatus(status);
+                    }}
                   />
                 )}
                 {curStep === 2 && (
-                  <CreateTags
-                    pipelineTask={wafPipelineTask}
-                    changeTags={(tags) => {
-                      setWAFPipelineTask((prev: WAFTaskProps) => {
-                        return { ...prev, tags: tags };
-                      });
-                    }}
-                  />
+                  <div>
+                    <AlarmAndTags pipelineTask={wafPipelineTask} />
+                  </div>
                 )}
                 <div className="button-action text-right">
                   <Button
                     btnType="text"
                     onClick={() => {
-                      history.push({
-                        pathname: "/log-pipeline/service-log/create",
-                      });
+                      navigate("/log-pipeline/service-log/create");
                     }}
                   >
                     {t("button.cancel")}
@@ -764,7 +795,7 @@ const CreateWAF: React.FC = () => {
                   {curStep < 2 && (
                     <Button
                       // loading={autoCreating}
-                      disabled={wafISChanging || domainListIsLoading}
+                      disabled={isNextDisabled()}
                       btnType="primary"
                       onClick={() => {
                         if (curStep === 0) {
@@ -831,6 +862,13 @@ const CreateWAF: React.FC = () => {
                           if (Object.values(validRes).indexOf(true) >= 0) {
                             return;
                           }
+                          // Check domain connection status
+                          if (
+                            domainCheckStatus?.status !==
+                            DomainStatusCheckType.PASSED
+                          ) {
+                            return;
+                          }
                         }
                         setCurStep((curStep) => {
                           return curStep + 1 > 2 ? 2 : curStep + 1;
@@ -845,6 +883,12 @@ const CreateWAF: React.FC = () => {
                       loading={loadingCreate}
                       btnType="primary"
                       onClick={() => {
+                        if (!validateAalrmInput(monitor)) {
+                          dispatch({
+                            type: CreateAlarmActionTypes.VALIDATE_ALARM_INPUT,
+                          });
+                          return;
+                        }
                         confirmCreatePipeline();
                       }}
                     >

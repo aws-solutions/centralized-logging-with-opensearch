@@ -14,15 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React, { useState, useEffect } from "react";
-import { Link, RouteComponentProps } from "react-router-dom";
-import RefreshIcon from "@material-ui/icons/Refresh";
+import { Link, useParams } from "react-router-dom";
 import ExtLink from "components/ExtLink";
 import HeaderPanel from "components/HeaderPanel";
 import ValueWithLabel from "components/ValueWithLabel";
 import { AntTabs, AntTab, TabPanel } from "components/Tab";
 import Overview from "./detail/Overview";
 import NetWork from "./detail/Network";
-import Tags from "./detail/Tags";
 import AccessProxy from "./detail/AccessProxy";
 import Breadcrumb from "components/Breadcrumb";
 import { appSyncRequestQuery } from "assets/js/request";
@@ -30,7 +28,7 @@ import { getDomainDetails } from "graphql/queries";
 import { DomainDetails, StackStatus } from "API";
 import LoadingText from "components/LoadingText";
 import { useSelector } from "react-redux";
-import { AppStateProps, InfoBarTypes } from "reducer/appReducer";
+import { InfoBarTypes } from "reducer/appReducer";
 import {
   buildAlarmLink,
   buildDashboardLink,
@@ -46,17 +44,14 @@ import PagePanel from "components/PagePanel";
 import { Button } from "components/Button/button";
 import { useTranslation } from "react-i18next";
 import { AUTO_REFRESH_INT } from "assets/js/const";
+import { RootState } from "reducer/reducers";
+import Tags from "pages/dataInjection/common/Tags";
+import ButtonRefresh from "components/ButtonRefresh";
 
-interface MatchParams {
-  id: string;
-}
-
-const ESDomainDetail: React.FC<RouteComponentProps<MatchParams>> = (
-  props: RouteComponentProps<MatchParams>
-) => {
-  const id: string = props.match.params.id;
+const ESDomainDetail: React.FC = () => {
+  const { id } = useParams();
   const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: AppStateProps) => state.amplifyConfig
+    (state: RootState) => state.app.amplifyConfig
   );
   const { t } = useTranslation();
   const [loadingData, setLoadingData] = useState(true);
@@ -87,7 +82,7 @@ const ESDomainDetail: React.FC<RouteComponentProps<MatchParams>> = (
     }
     try {
       const resData: any = await appSyncRequestQuery(getDomainDetails, {
-        id: decodeURIComponent(id),
+        id: decodeURIComponent(id || ""),
         metrics: true,
       });
       console.info("resData:", resData);
@@ -130,11 +125,7 @@ const ESDomainDetail: React.FC<RouteComponentProps<MatchParams>> = (
                       getDomainById(true);
                     }}
                   >
-                    {isRefreshing ? (
-                      <LoadingText />
-                    ) : (
-                      <RefreshIcon fontSize="small" />
-                    )}
+                    <ButtonRefresh loading={isRefreshing} />
                   </Button>
                 </div>
               }
@@ -292,7 +283,7 @@ const ESDomainDetail: React.FC<RouteComponentProps<MatchParams>> = (
                     <NetWork domainInfo={curDomain} />
                   </TabPanel>
                   <TabPanel value={activeTab} index={4}>
-                    <Tags domainInfo={curDomain} />
+                    <Tags tags={curDomain?.tags} />
                   </TabPanel>
                 </div>
               </div>

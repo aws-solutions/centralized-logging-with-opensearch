@@ -28,6 +28,7 @@ interface CrossAccountSelectProps {
   changeAccount: (id: string, accountInfo: SubAccountLink | null) => void;
   loadingAccount?: (loading: boolean) => void;
   className?: string;
+  disabled?: boolean;
 }
 
 const PAGE_SIZE = 999;
@@ -35,7 +36,8 @@ const PAGE_SIZE = 999;
 const CrossAccountSelect: React.FC<CrossAccountSelectProps> = (
   props: CrossAccountSelectProps
 ) => {
-  const { accountId, className, changeAccount, loadingAccount } = props;
+  const { accountId, className, changeAccount, loadingAccount, disabled } =
+    props;
   const [subAccountList, setSubAccountList] = useState<SubAccountLink[]>([]);
   const { t } = useTranslation();
   const [loadingData, setLoadingData] = useState(false);
@@ -63,7 +65,7 @@ const CrossAccountSelect: React.FC<CrossAccountSelectProps> = (
       dataLogAccountList.forEach((element) => {
         if (element.subAccountId) {
           tmpList.push({
-            description: element.id,
+            description: element.id || "",
             value: element.subAccountId || "",
             name: `${element.subAccountName}(${element.subAccountId})`,
           });
@@ -96,6 +98,7 @@ const CrossAccountSelect: React.FC<CrossAccountSelectProps> = (
       >
         <Select
           allowEmpty
+          disabled={disabled}
           className={className ? className : "m-w-75p"}
           loading={loadingData}
           optionList={accountOptionList}

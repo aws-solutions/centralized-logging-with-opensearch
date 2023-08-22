@@ -29,10 +29,10 @@ import ExtLink from "components/ExtLink";
 import { buildTrailLink } from "assets/js/utils";
 import { AmplifyConfigType } from "types";
 import { useSelector } from "react-redux";
-import { AppStateProps } from "reducer/appReducer";
 import { useTranslation } from "react-i18next";
 import CrossAccountSelect from "pages/comps/account/CrossAccountSelect";
 import SourceType from "./comp/SourceType";
+import { RootState } from "reducer/reducers";
 
 interface SpecifySettingsProps {
   cloudTrailTask: CloudTrailTaskProps;
@@ -80,7 +80,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
   } = props;
   const { t } = useTranslation();
   const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: AppStateProps) => state.amplifyConfig
+    (state: RootState) => state.app.amplifyConfig
   );
 
   const [cloudTrailOptionList, setCloudTrailOptionList] = useState<
@@ -91,6 +91,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
 
   const getCloudTrailList = async (accountId: string) => {
     try {
+      setCloudTrailOptionList([]);
       setLoadingCloudTrail(true);
       const resData: any = await appSyncRequestQuery(listResources, {
         type: ResourceType.Trail,
@@ -124,6 +125,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
             <div>
               <div className="pb-50">
                 <CrossAccountSelect
+                  disabled={loadingCloudTrail}
                   accountId={cloudTrailTask.logSourceAccountId}
                   changeAccount={(id) => {
                     changeCrossAccount(id);

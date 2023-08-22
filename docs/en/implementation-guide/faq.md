@@ -35,13 +35,21 @@ This solution uses GitHub project to manage the roadmap. You can find the roadma
 **Q: How can I submit a feature request or bug report?**</br>
 You can submit feature requests and bug report through the GitHub issues. Here are the templates for [feature request][github-fr]{target='_blank'}, [bug report][github-br]{target='_blank'}.
 
+**Q: How can I use stronger TLS Protocols to secure traffic, namely TLS 1.2 and above?**</br>
+By default, CloudFront uses the TLSv1 security policy along with a default certificate.
+Changing the TLS settings for CloudFront depends on the presence of your SSL certificates. If you don't have your own SSL certificates, you won't be able to alter the TLS setting for CloudFront.
+
+In order to configure TLS 1.2 or above, you will need a custom domain. This setup will enable you to enforce stronger TLS protocols for your traffic.
+
+To learn how to configure a custom domain and enable TLS 1.2+ for your service, you can follow the guide provided here: [Use a Custom Domain with AWS AppSync, Amazon CloudFront, and Amazon Route 53](https://aws.amazon.com/blogs/mobile/use-a-custom-domain-with-aws-appsync-amazon-cloudfront-and-amazon-route-53/).
+
 ## Setup and configuration
 
 **Q: Can I deploy Centralized Logging with OpenSearch on AWS in any AWS Region?**</br>
 Centralized Logging with OpenSearch provides two deployment options: option 1 with Cognito User Pool, and option 2 with OpenID Connect. For
 option 1, customers can deploy the solution in AWS Regions where Amazon Cognito User Pool, AWS AppSync, Amazon Kinesis Data Firehose (optional) are available.
 For option 2, customers can deploy the solution in AWS Regions where AWS AppSync, Amazon Kinesis Data Firehose (optional) are available.
-Refer to [supported regions for deployment](./considerations.md#regional-deployments) for more information.
+Refer to [supported regions for deployment](./plan-deployment/considerations.md#regional-deployments) for more information.
 
 **Q: What are the prerequisites of deploying this solution?**</br>
 Centralized Logging with OpenSearch does not provision Amazon OpenSearch clusters, and you need to import existing OpenSearch clusters through the web console. The clusters
@@ -96,7 +104,7 @@ user pool managed by the OIDC provider. Note that all users have the same privil
 
 **Q: How will I be charged and billed for the use of this solution?**</br>
 The solution is free to use, and you are responsible for the cost of AWS services used while running this solution.
-You pay only for what you use, and there are no minimum or setup fees. Refer to the Centralized Logging with OpenSearch [Cost](./cost.md) section for detailed cost estimation.
+You pay only for what you use, and there are no minimum or setup fees. Refer to the Centralized Logging with OpenSearch [Cost](./plan-deployment/cost.md) section for detailed cost estimation.
 
 **Q: Will there be additional cost for cross-account ingestion?**</br>
 No. The cost will be same as ingesting logs within the same AWS account.
@@ -125,7 +133,7 @@ to scale out to the desired number.
 1. Log in to your CentOS 7 machine and install SSM Agent manually.
 
     ```bash
-    sudo yum install -y http://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+    sudo yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
     sudo systemctl enable amazon-ssm-agent
     sudo systemctl start amazon-ssm-agent
     ```

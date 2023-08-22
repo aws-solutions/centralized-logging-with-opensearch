@@ -30,6 +30,7 @@ import { AmplifyConfigType, AppSyncAuthType } from "types";
 import { ErrorCode } from "API";
 import cloneDeep from "lodash.clonedeep";
 import { decodeResData, encodeParams } from "./xss";
+import i18n from "i18n";
 
 const IGNORE_ERROR_CODE: string[] = [ErrorCode.AccountNotFound];
 
@@ -41,6 +42,10 @@ export const refineErrorMessage = (message: string) => {
     errorCode = groups && groups.length >= 2 ? groups[1] : "";
     message = message.replace(/\[\S+\]/, "");
   }
+
+  message = message.replace(/\$\{(\S+)\}/g, (m, placeholder) => {
+    return i18n.t(placeholder);
+  });
   return {
     errorCode,
     message,
@@ -141,10 +146,20 @@ export const appSyncRequestMutation = (mutation: any, params?: any): any => {
     }),
   });
 
+  params = JSON.parse(
+    JSON.stringify(cloneDeep(params), (name, val) => {
+      if (name === "__typename") {
+        delete val[name];
+      } else {
+        return val;
+      }
+    })
+  );
+
   return new Promise(async (resolve, reject) => {
     try {
       // encode params string value
-      const encodedParams = encodeParams(mutation, cloneDeep(params));
+      const encodedParams = encodeParams(mutation, params);
       const result: any = await client.mutate({
         mutation: gql(mutation),
         variables: encodedParams,

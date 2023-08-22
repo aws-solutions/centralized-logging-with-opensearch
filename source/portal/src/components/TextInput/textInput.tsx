@@ -23,12 +23,14 @@ type TextInputProp = {
   value: string;
   isSearch?: boolean;
   className?: string;
-  placeholder?: string;
+  placeholder?: string | null | any;
   disabled?: boolean;
   readonly?: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onChange: (event: any) => void;
 };
+
+const POSITIVE_NUMBER = /^(0|[1-9]\d*)(\.\d+)?$/;
 
 const TextInput: React.FC<TextInputProp & DefautlProps> = (
   props: TextInputProp & DefautlProps
@@ -61,8 +63,15 @@ const TextInput: React.FC<TextInputProp & DefautlProps> = (
         value={value}
         type={type ? type : "text"}
         onWheel={(event) => event.currentTarget.blur()}
-        placeholder={placeholder}
+        placeholder={placeholder || ""}
         onChange={(event) => {
+          if (
+            type === "number" &&
+            event.target.value !== "" &&
+            !new RegExp(POSITIVE_NUMBER).test(event.target.value)
+          ) {
+            return false;
+          }
           onChange(event);
         }}
       />

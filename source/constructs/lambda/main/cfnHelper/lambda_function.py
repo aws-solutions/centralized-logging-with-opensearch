@@ -7,8 +7,7 @@ from abc import ABC, abstractmethod
 
 import boto3
 from botocore import config
-from aws_svc_mgr import SvcManager, Boto3API
-
+from commonlib import AWSConnection, LinkAccountHelper
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -22,11 +21,16 @@ default_config = config.Config(**user_agent_config)
 default_region = os.environ.get("AWS_REGION")
 
 template_output_bucket = os.environ.get("TEMPLATE_OUTPUT_BUCKET", "aws-gcr-solutions")
-solution_name = os.environ.get("SOLUTION_NAME", "log-hub")
+solution_name = os.environ.get("SOLUTION_NAME", "clo")
 template_prefix = f"https://{template_output_bucket}.s3.amazonaws.com/{solution_name}/{solution_version}"
 
 sts = boto3.client("sts", config=default_config)
 account_id = sts.get_caller_identity()["Account"]
+
+conn = AWSConnection()
+# link account
+sub_account_link_table_name = os.environ.get("SUB_ACCOUNT_LINK_TABLE_NAME")
+account_helper = LinkAccountHelper(sub_account_link_table_name)
 
 
 class Context:
@@ -38,15 +42,14 @@ class Context:
         else:
             self._state = QueryState(self, args)
 
-        svc_mgr = SvcManager()
         self._deploy_account_id = args.get("deployAccountId") or account_id
         self._deploy_region = args.get("deployRegion") or default_region
-        self._cfn = svc_mgr.get_client(
-            sub_account_id=args.get("deployAccountId") or account_id,
-            service_name="cloudformation",
-            type=Boto3API.CLIENT,
-            region=args.get("deployRegion") or default_region,
-        )
+        link_account = account_helper.get_link_account(self._deploy_account_id, self._deploy_region)
+        if link_account and "subAccountRoleArn" in link_account:
+            self._cfn = conn.get_client(service_name="cloudformation", region_name=self._deploy_region,sts_role_arn=link_account.get("subAccountRoleArn"))
+        else:
+            self._cfn = conn.get_client(service_name="cloudformation", region_name=self._deploy_region)
+        
 
     def get_client(self):
         return self._cfn
@@ -206,6 +209,7 @@ def start_cfn(cfn_client: boto3.client, stack_name, pattern, params):
         DisableRollback=False,
         Capabilities=[
             "CAPABILITY_IAM",
+            "CAPABILITY_NAMED_IAM",
         ],
         EnableTerminationProtection=False,
     )
@@ -248,6 +252,7 @@ def get_template_url(pattern):
         "ProxyForOpenSearch": f"{template_prefix}/NginxForOpenSearch.template",
         "AlarmForOpenSearch": f"{template_prefix}/AlarmForOpenSearch.template",
         "S3toKDSStack": f"{template_prefix}/S3toKDSStack.template",
+        "S3SourceStack": f"{template_prefix}/S3SourceStack.template",
         "AppLogKDSBuffer": f"{template_prefix}/AppLogKDSBuffer.template",
         "AppLogKDSBufferNoAutoScaling": f"{template_prefix}/AppLogKDSBufferNoAutoScaling.template",
         "AppLogMSKBuffer": f"{template_prefix}/AppLogMSKBuffer.template",

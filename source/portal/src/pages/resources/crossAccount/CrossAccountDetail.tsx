@@ -16,7 +16,7 @@ limitations under the License.
 import React, { useState, useEffect } from "react";
 import SideMenu from "components/SideMenu";
 import Breadcrumb from "components/Breadcrumb";
-import { RouteComponentProps } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { appSyncRequestQuery } from "assets/js/request";
 import { getSubAccountLink } from "graphql/queries";
@@ -26,14 +26,10 @@ import PagePanel from "components/PagePanel";
 import HeaderPanel from "components/HeaderPanel";
 import FormItem from "components/FormItem";
 import TextInput from "components/TextInput";
-interface MatchParams {
-  id: string;
-}
+import { handleErrorMessage } from "assets/js/alert";
 
-const CrossAccountDetail: React.FC<RouteComponentProps<MatchParams>> = (
-  props: RouteComponentProps<MatchParams>
-) => {
-  const id: string = props.match.params.id;
+const CrossAccountDetail: React.FC = () => {
+  const { id } = useParams();
   const { t } = useTranslation();
   const [curAccount, setCurAccount] = useState<SubAccountLink>();
   const [loadingData, setLoadingData] = useState(true);
@@ -49,15 +45,16 @@ const CrossAccountDetail: React.FC<RouteComponentProps<MatchParams>> = (
     setLoadingData(true);
     try {
       const resData: any = await appSyncRequestQuery(getSubAccountLink, {
-        id: decodeURIComponent(id),
+        subAccountId: decodeURIComponent(id || ""),
       });
       console.info("resData:", resData);
       const dataAccount: SubAccountLink = resData.data.getSubAccountLink;
       console.info("dataAccount:", dataAccount);
       setCurAccount(dataAccount);
       setLoadingData(false);
-    } catch (error) {
+    } catch (error: any) {
       setLoadingData(false);
+      handleErrorMessage(error.message);
       console.error(error);
     }
   };
@@ -163,7 +160,6 @@ const CrossAccountDetail: React.FC<RouteComponentProps<MatchParams>> = (
                         }}
                       />
                     </FormItem>
-
                     <FormItem
                       optionTitle={t("resource:crossAccount.link.kmsKey")}
                       optionDesc=""
@@ -171,6 +167,22 @@ const CrossAccountDetail: React.FC<RouteComponentProps<MatchParams>> = (
                       <TextInput
                         readonly
                         value={curAccount?.subAccountKMSKeyArn || ""}
+                        onChange={(event) => {
+                          console.info(event);
+                        }}
+                      />
+                    </FormItem>
+                    <FormItem
+                      optionTitle={t(
+                        "resource:crossAccount.link.iamInstanceProfileArn"
+                      )}
+                      optionDesc=""
+                    >
+                      <TextInput
+                        readonly
+                        value={
+                          curAccount?.subAccountIamInstanceProfileArn || ""
+                        }
                         onChange={(event) => {
                           console.info(event);
                         }}

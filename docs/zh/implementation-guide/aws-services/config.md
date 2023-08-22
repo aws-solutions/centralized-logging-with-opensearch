@@ -40,12 +40,34 @@
 include-markdown "include-cfn-common.md"
 %}
 
-##  示例仪表板
+## 查看仪表板
+
+仪表板包括以下可视化。
+
+| Visualization Name            | Source Field                                                                                                                                                                           | Description                                                                                                                              |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Global Filters                | <ul><li> awsAccountId </li><li> awsRegion </li><li>resourceType </li><li> resourceId </li><li> resourceName </li></ul>                                                                 |根据帐户 ID、区域、资源类型和其他条件过滤图表。                                         |
+| Total Change Events           | <ul><li> log event </li></ul>                                                                                                                                                          | 显示所选时间段内检测到的所有 AWS 资源的配置更改数量。                               |
+| Top Resource Types            | <ul><li> resourceType </li></ul>                                                                                                                                                       | 显示按最常修改的 AWS 资源类型在所选时间段内的配置更改分布。                        |
+| Config History                | <ul><li> log event </li></ul>                                                                                                                                                          | 展示一个显示事件分布的柱状图。                                                                 |
+| Total Delete Events           | <ul><li> log event </li></ul>                                                                                                                                                          | 显示 AWS Config 在所选时间段内检测到的 AWS 资源删除事件数量。                       |
+| Config Status                 | <ul><li> configurationItemStatus </li></ul>                                                                                                                                            | 显示 AWS Config 服务在监控的区域和帐户中的操作状态。                                      |
+| Top S3 Changes                | <ul><li> resourceName</li></ul>                                                                                                                                                        | 显示在所选时间段内经历最多配置更改的 Amazon S3 存储桶。                              |
+| Top Changed Resources         | <ul><li> resourceName</li><li> resourceId</li><li> resourceType</li></ul>                                                                                                              | 显示在所选时间段内经历最多配置更改的个别 AWS 资源。                                    |
+| Top VPC Changes               | <ul><li> resourceId</li></ul>                                                                                                                                                          | 展示一个显示在所选时间段内经历最多配置更改的 Amazon VPC。                             |
+| Top Subnet Changes            | <ul><li> resourceId</li></ul>                                                                                                                                                          | 提供有针对性的可见性，了解经历最多变换以供治理、安全性和稳定性。                 |
+| Top Network Interface Changes | <ul><li> resourceId</li></ul>                                                                                                                                                          | 突出显示在所选时间段内经历最多配置更改的 Amazon VPC 网络接口。                     |
+| Top Security Group Changes    | <ul><li> resourceId</li></ul>                                                                                                                                                          | 前 10 个更改的安全组按总修改次数排序。                                            |
+| EC2 Config                    | <ul><li>@timestamp</li><li>awsAccountId</li><li>awsRegion</li><li>resourceId</li><li>configurationItemStatus</li></ul>                                                                 | 允许重构逐步应用于 EC2 配置的更改，以进行审计。                                    |
+| RDS Config                    | <ul><li>@timestamp</li><li>awsAccountId</li><li>awsRegion</li><li>resourceId</li><li>resourceName</li><li>configurationItemStatus</li></ul>                                            | 显示由 AWS Config 检测到的 RDS 数据库资源的配置历史记录和更改。                    |
+| Latest Config Changes         | <ul><li>@timestamp</li><li>awsAccountId</li><li>awsRegion</li><li>resourceType</li><li>resourceId</li><li>resourceName</li><li>relationships</li><li>configurationItemStatus</li></ul> | 提供基础设施修改的一览概览。                                                          |
+
+### 样品仪表板
+
 {%
-include-markdown "include-dashboard.md"
+include-markdown "../include-dashboard.md"
 %}
 
 [![config-db]][config-db]
-
 
 [config-db]: ../../images/dashboards/config-db.png

@@ -1,14 +1,18 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+import datetime
 import json
 import logging
 import re
 import sys
+import threading
 import urllib.parse
 
 from abc import ABC, abstractmethod
 from copy import deepcopy
+from itertools import islice
+from typing import Iterable
 
 from util.protocol import get_protocal_code
 
@@ -119,7 +123,6 @@ class Regex(LogType):
     _fields = ["log"]
 
     def parse(self, line) -> dict:
-
         json_record = {}
 
         # Replace this to custom regex expression
@@ -130,6 +133,44 @@ class Regex(LogType):
                 json_record[attr] = result.group(i + 1).strip('"')
 
         return json_record
+
+
+class Syslog(Json):
+    """An implementation of LogType for Syslog Logs"""
+
+    _format = "syslog"
+
+
+class Nginx(Json):
+    """An implementation of LogType for Nginx Logs"""
+
+    _format = "nginx"
+
+
+class JSON(Json):
+    """An implementation of LogType for JSON Logs
+    This class is for fluent-bit json format input
+    """
+
+    _format = "json"
+
+
+class Apache(Json):
+    """An implementation of LogType for Apache Logs"""
+
+    _format = "apache"
+
+
+class SingleLineText(Json):
+    """An implementation of LogType for SingleLineText Logs"""
+
+    _format = "singlelinetext"
+
+
+class MultiLineText(Json):
+    """An implementation of LogType for MultiLineText Logs"""
+
+    _format = "multilinetext"
 
 
 class CloudTrail(LogType):
@@ -154,6 +195,108 @@ class CloudTrail(LogType):
                 cloudtrail_event["requestParameters"]["parameters"] = {
                     "value": cloudtrail_event["requestParameters"].get("parameters")
                 }
+            if isinstance(
+                cloudtrail_event["requestParameters"].get(
+                    "DescribeEgressOnlyInternetGatewaysRequest"
+                ),
+                str,
+            ):
+                cloudtrail_event["requestParameters"][
+                    "DescribeEgressOnlyInternetGatewaysRequest"
+                ] = {
+                    "value": cloudtrail_event["requestParameters"].get(
+                        "DescribeEgressOnlyInternetGatewaysRequest"
+                    )
+                }
+            if isinstance(
+                cloudtrail_event["requestParameters"].get(
+                    "DescribeVpcEndpointServiceConfigurationsRequest"
+                ),
+                str,
+            ):
+                cloudtrail_event["requestParameters"][
+                    "DescribeVpcEndpointServiceConfigurationsRequest"
+                ] = {
+                    "value": cloudtrail_event["requestParameters"].get(
+                        "DescribeVpcEndpointServiceConfigurationsRequest"
+                    )
+                }
+            if isinstance(
+                cloudtrail_event["requestParameters"].get("DescribeNatGatewaysRequest"),
+                str,
+            ):
+                cloudtrail_event["requestParameters"]["DescribeNatGatewaysRequest"] = {
+                    "value": cloudtrail_event["requestParameters"].get(
+                        "DescribeNatGatewaysRequest"
+                    )
+                }
+            if isinstance(
+                cloudtrail_event["requestParameters"].get(
+                    "DescribeVpcEndpointsRequest"
+                ),
+                str,
+            ):
+                cloudtrail_event["requestParameters"]["DescribeVpcEndpointsRequest"] = {
+                    "value": cloudtrail_event["requestParameters"].get(
+                        "DescribeVpcEndpointsRequest"
+                    )
+                }
+            if isinstance(
+                cloudtrail_event["requestParameters"].get("filter"),
+                str,
+            ):
+                cloudtrail_event["requestParameters"]["filter"] = {
+                    "value": cloudtrail_event["requestParameters"].get("filter")
+                }
+            if isinstance(
+                cloudtrail_event["requestParameters"].get("attribute"),
+                str,
+            ):
+                cloudtrail_event["requestParameters"]["attribute"] = {
+                    "value": cloudtrail_event["requestParameters"].get("attribute")
+                }
+            if isinstance(
+                cloudtrail_event["requestParameters"].get("iamInstanceProfile"),
+                str,
+            ):
+                cloudtrail_event["requestParameters"]["iamInstanceProfile"] = {
+                    "value": cloudtrail_event["requestParameters"].get(
+                        "iamInstanceProfile"
+                    )
+                }
+            if isinstance(
+                cloudtrail_event["requestParameters"].get("content"),
+                str,
+            ):
+                cloudtrail_event["requestParameters"]["content"] = {
+                    "value": cloudtrail_event["requestParameters"].get("content")
+                }
+            if isinstance(
+                cloudtrail_event["requestParameters"].get("DescribeFlowLogsRequest"),
+                str,
+            ):
+                cloudtrail_event["requestParameters"]["DescribeFlowLogsRequest"] = {
+                    "value": cloudtrail_event["requestParameters"].get(
+                        "DescribeFlowLogsRequest"
+                    )
+                }
+            if isinstance(
+                cloudtrail_event["requestParameters"].get("overrides"), dict
+            ) and isinstance(
+                cloudtrail_event["requestParameters"]["overrides"].get(
+                    "containerOverrides"
+                ),
+                list,
+            ):
+                container_overrides = cloudtrail_event["requestParameters"][
+                    "overrides"
+                ]["containerOverrides"]
+
+                for container_override in container_overrides:
+                    if isinstance(container_override.get("environment"), str):
+                        container_override["environment"] = {
+                            "value": container_override.get("environment")
+                        }
 
         # convert requestParameters.parameters from text to dict
         if "responseElements" in cloudtrail_event and isinstance(
@@ -163,6 +306,19 @@ class CloudTrail(LogType):
                 cloudtrail_event["responseElements"]["role"] = {
                     "value": cloudtrail_event["responseElements"].get("role")
                 }
+
+            if isinstance(cloudtrail_event["responseElements"].get("tasks"), list):
+                tasks = cloudtrail_event["responseElements"].get("tasks")
+                for task in tasks:
+                    if isinstance(task.get("overrides"), dict) and isinstance(
+                        task["overrides"].get("containerOverrides"), list
+                    ):
+                        container_overrides = task["overrides"]["containerOverrides"]
+                        for container_override in container_overrides:
+                            if isinstance(container_override.get("environment"), str):
+                                container_override["environment"] = {
+                                    "value": container_override.get("environment")
+                                }
 
     def parse(self, line: str):
         try:
@@ -206,18 +362,26 @@ class Config(LogType):
     def _check_az(self, cfg):
         # convert zone from text to dict
         if "availabilityZones" in cfg and isinstance(cfg["availabilityZones"], list):
-            if isinstance(cfg["availabilityZones"][0], str):
-                for az in cfg["availabilityZones"]:
-                    az["zoneName"] = az
+            azs = cfg["availabilityZones"]
+            if len(azs) > 0 and isinstance(cfg["availabilityZones"][0], str):
+                cfg["availabilityZones"] = [
+                    {"zoneName": az} for az in cfg["availabilityZones"]
+                ]
+            else:
+                cfg["availabilityZones"] = []
         else:
             cfg["availabilityZones"] = []
 
     def _check_sg(self, cfg):
         # convert securitygroup from text to dict
         if "securityGroups" in cfg and isinstance(cfg["securityGroups"], list):
-            if isinstance(cfg["securityGroups"][0], str):
-                for sg in cfg["securityGroups"]:
-                    sg["groupId"] = sg
+            security_groups = cfg["securityGroups"]
+            if len(security_groups) > 0 and isinstance(cfg["securityGroups"][0], str):
+                cfg["securityGroups"] = [
+                    {"groupId": sg} for sg in cfg["securityGroups"]
+                ]
+            else:
+                cfg["securityGroups"] = []
         else:
             cfg["securityGroups"] = []
 
@@ -298,7 +462,6 @@ class S3(LogType):
     ]
 
     def parse(self, line) -> dict:
-
         json_record = {}
         pattern = (
             '([^ ]*) ([^ ]*) \\[(.*?)\\] ([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*) ("[^"]*"|-) '
@@ -380,7 +543,6 @@ class CloudFront(LogType):
         )
 
         for key in ["sc-content-len", "sc-range-start", "sc-range-end"]:
-
             if json_record[key] == "-":
                 json_record[key] = "0"
         # print(json_record)
@@ -391,7 +553,6 @@ class VPCFlow(LogType):
     """An implementation of LogType for VPC Flow Logs"""
 
     def parse(self, line) -> dict:
-
         data = line.strip("\n").split()
         if "start" in data:
             # header row
@@ -550,23 +711,48 @@ class RDS(LogType):
     ) -> dict:
         json_record = {}
         result = re.match(log_pattern, log_message)
-        if result:
-            for i, attr in enumerate(log_fields):
-                # print(f'{attr} = {result.group(i+1)}')
-                if result.group(i + 1) is None:
-                    continue
-                json_record[attr] = result.group(i + 1).strip('"')
-                json_record["db-identifier"] = db_identifier
-                json_record["time"] = timestamp
 
-                if log_sub_type == "error":
-                    for key in ["err-label", "err-code", "err-sub-system"]:
-                        if key in json_record:
-                            json_record[key] = json_record[key].strip("[").strip("]")
+        if result:
+            json_record = self.handle_match_result(
+                json_record, result, log_fields, log_sub_type, db_identifier, timestamp
+            )
         else:
-            json_record["db-identifier"] = db_identifier
-            json_record["time"] = timestamp
-            json_record["log-detail"] = log_message
+            json_record = self.handle_no_match_result(
+                json_record, log_message, db_identifier, timestamp
+            )
+
+        return json_record
+
+    def handle_match_result(
+        self, json_record, result, log_fields, log_sub_type, db_identifier, timestamp
+    ):
+        for i, attr in enumerate(log_fields):
+            if result.group(i + 1) is None:
+                continue
+            json_record[attr] = result.group(i + 1).strip('"')
+
+        json_record["db-identifier"] = db_identifier
+        json_record["time"] = timestamp
+
+        if log_sub_type == "error":
+            json_record = self.clean_error_fields(json_record)
+
+        return json_record
+
+    def handle_no_match_result(
+        self, json_record, log_message, db_identifier, timestamp
+    ):
+        json_record["db-identifier"] = db_identifier
+        json_record["time"] = timestamp
+        json_record["log-detail"] = log_message
+
+        return json_record
+
+    def clean_error_fields(self, json_record):
+        for key in ["err-label", "err-code", "err-sub-system"]:
+            if key in json_record:
+                json_record[key] = json_record[key].strip("[").strip("]")
+
         return json_record
 
     def _parse_rds_log_multi_lines(
@@ -646,7 +832,6 @@ class RDS(LogType):
         return json_record
 
     def parse(self, line) -> list:
-
         json_records = []
         data_str = "[{}]".format(line.replace("}{", "},{"))
         try:
@@ -659,73 +844,82 @@ class RDS(LogType):
             if data_json[i]["messageType"] != "DATA_MESSAGE":
                 logger.info("Skipping Kinesis Firehose Test Message.")
                 continue
-            log_group = data_json[i].get("logGroup")
-            db_identifier = data_json[i].get("logStream")
-            for log_event in data_json[i].get("logEvents"):
-                timestamp = log_event["timestamp"]
-                log_message = log_event["message"].replace("\n", " ").replace("\r", " ")
-                if "/slowquery" in log_group:
-                    json_records.append(
-                        self._parse_rds_log_singel_line(
-                            "slowquery",
-                            log_message,
-                            self._slow_query_pattern,
-                            self._slow_query_fields,
-                            timestamp,
-                            db_identifier,
-                        )
-                    )
-                elif "/error" in log_group:
-                    if (
-                        "TRANSACTION" in log_event["message"]
-                        and "MySQL thread" in log_event["message"]
-                    ):
-                        logger.info("Get deadlock error log!")
-                        json_records.append(
-                            self._parse_rds_log_multi_lines(
-                                "deadlock",
-                                log_event["message"],
-                                self._deadlock_log_pattern,
-                                self._deadlock_fields,
-                                timestamp,
-                                db_identifier,
-                            )
-                        )
-                    elif "transactions deadlock detected" in log_event["message"]:
-                        continue
-                    else:
-                        json_records.append(
-                            self._parse_rds_log_singel_line(
-                                "error",
-                                log_message,
-                                self._error_pattern,
-                                self._error_fields,
-                                timestamp,
-                                db_identifier,
-                            )
-                        )
-                elif "/general" in log_group:
-                    json_records.append(
-                        self._parse_rds_log_singel_line(
-                            "general",
-                            log_message,
-                            self._general_pattern,
-                            self._general_fields,
-                            timestamp,
-                            db_identifier,
-                        )
-                    )
-                elif "/audit" in log_group:
-                    json_records.append(
-                        self._parse_rds_audit_log(
-                            log_message,
-                            self._audit_fields,
-                            timestamp,
-                            db_identifier,
-                        )
-                    )
+            json_records.extend(self.parse_log_event(data_json[i]))
 
         return json_records
+
+    def parse_log_event(self, log_event):
+        json_records = []
+        log_group = log_event.get("logGroup")
+        db_identifier = log_event.get("logStream")
+
+        for log in log_event.get("logEvents"):
+            timestamp = log["timestamp"]
+            log_message = log["message"].replace("\n", " ").replace("\r", " ")
+
+            if "/slowquery" in log_group:
+                json_records.append(
+                    self._parse_rds_log_singel_line(
+                        "slowquery",
+                        log_message,
+                        self._slow_query_pattern,
+                        self._slow_query_fields,
+                        timestamp,
+                        db_identifier,
+                    )
+                )
+            elif "/error" in log_group:
+                json_records.extend(
+                    self.parse_error_log(log, log_message, timestamp, db_identifier)
+                )
+            elif "/general" in log_group:
+                json_records.append(
+                    self._parse_rds_log_singel_line(
+                        "general",
+                        log_message,
+                        self._general_pattern,
+                        self._general_fields,
+                        timestamp,
+                        db_identifier,
+                    )
+                )
+            elif "/audit" in log_group:
+                json_records.append(
+                    self._parse_rds_audit_log(
+                        log_message,
+                        self._audit_fields,
+                        timestamp,
+                        db_identifier,
+                    )
+                )
+        return json_records
+
+    def parse_error_log(self, log, log_message, timestamp, db_identifier):
+        records = []
+        if "TRANSACTION" in log["message"] and "MySQL thread" in log["message"]:
+            logger.info("Get deadlock error log!")
+            records.append(
+                self._parse_rds_log_multi_lines(
+                    "deadlock",
+                    log["message"],
+                    self._deadlock_log_pattern,
+                    self._deadlock_fields,
+                    timestamp,
+                    db_identifier,
+                )
+            )
+        elif "transactions deadlock detected" not in log["message"]:
+            records.append(
+                self._parse_rds_log_singel_line(
+                    "error",
+                    log_message,
+                    self._error_pattern,
+                    self._error_fields,
+                    timestamp,
+                    db_identifier,
+                )
+            )
+        return records
 
 
 class Lambda(LogType):
@@ -740,7 +934,6 @@ class Lambda(LogType):
     ]
 
     def parse(self, line) -> list:
-
         json_records = []
         data_str = "[{}]".format(line.replace("}{", "},{"))
         try:
@@ -785,3 +978,116 @@ class LogParser:
 
     def export_format(self):
         return "json" if self._service.format == "json" else "csv"
+
+
+class LogEntry(dict):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.timestamp = datetime.datetime.now()
+        self._time_key = ""
+
+    def set_time(self, time_key: str, time_format: str, time_offset: str = ""):
+        if time_key not in self:
+            return
+
+        time_format = time_format.replace("%L", "%f")
+        self._time_key = time_key
+        self.timestamp = datetime.datetime.strptime(self[time_key], time_format)
+
+        if time_offset:
+            offset = int(time_offset)
+            tz_hours = int(offset / 100)
+            tz_minutes = (offset % 100) if offset > 0 else -(-offset % 100)
+            tz = datetime.timezone(
+                datetime.timedelta(hours=tz_hours, minutes=tz_minutes)
+            )
+            self.timestamp = self.timestamp.replace(tzinfo=tz)
+
+    def dict(self, time_key: str = "time"):
+        d = self.copy()
+        if self._time_key:
+            del d[self._time_key]
+        time_key = time_key or "time"
+        d[time_key] = self.timestamp.isoformat()
+        return d
+
+
+def parse_by_json(
+    lines: Iterable[str],
+    time_key: str = "",
+    time_format: str = "",
+    time_offset: str = "",
+) -> Iterable[LogEntry]:
+    for line in lines:
+        log = LogEntry(**json.loads(line))
+        if time_key:
+            log.set_time(time_key, time_format, time_offset)
+        yield log
+
+
+def parse_by_regex(
+    lines: Iterable[str],
+    pattern: str,
+    time_key: str = "",
+    time_format: str = "",
+    time_offset: str = "",
+) -> Iterable[LogEntry]:
+    log = None
+    last_key = None
+
+    def _mk_log(fields: dict, time_key: str, time_format: str, time_offset: str):
+        log = LogEntry(**fields)
+        if time_key:
+            log.set_time(time_key, time_format, time_offset)
+        return log
+
+    for line in lines:
+        match = re.match(pattern, line, re.MULTILINE)
+        if match:
+            if log:
+                yield log
+
+            last_key = match.lastgroup
+            log = _mk_log(match.groupdict(), time_key, time_format, time_offset)
+        else:
+            if log and last_key:
+                log[last_key] += line
+            else:
+                yield LogEntry(log=line)
+
+    if log:
+        yield log
+
+
+def batch_iter(iterable, batch_size=10):
+    iterator = iter(iterable)
+    while b := list(islice(iterator, batch_size)):
+        yield b
+
+
+class Counter:
+    def __init__(self):
+        self._value = 0
+        self._lock = threading.Lock()
+
+    @property
+    def value(self):
+        return self._value
+
+    def set_value(self, value):
+        with self._lock:
+            self._value = value
+
+    def increment(self):
+        with self._lock:
+            self._value += 1
+
+    def decrement(self):
+        with self._lock:
+            self._value -= 1
+
+
+def counter_iter(iterable: Iterable, counter: Counter):
+    for each in iterable:
+        counter.increment()
+        yield each

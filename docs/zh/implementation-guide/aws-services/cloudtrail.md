@@ -37,13 +37,34 @@ Amazon CloudTrail 监控和记录您的 AWS 基础设施中的账户活动。它
 include-markdown "include-cfn-common.md"
 %}
 
-## 示例仪表板
+## 查看仪表板
+
+仪表板包括以下可视化。
+
+| Visualization Name     | Source Field  | Description  |
+| ---------- | ------ | -------------- |
+| Global Control         |  awsRegion   | 为用户提供按区域拆分数据的能力。  |
+| Event History          | log event | 展示一个显示事件分布的柱状图。                                                                                       |
+| Event by Account ID    | userIdentity.accountId                                                                            | 根据 AWS 帐户 ID 细分事件，使您能够分析组织内不同帐户之间的活动模式。                  |
+| Top Event Names        | eventName  | 显示最常发生的事件名称，帮助您识别常见活动或潜在异常。                                                |
+| Top Event Sources      | eventSource      | 突出显示生成事件的顶级来源，提供有关最活跃或事件量最高的服务或资源的洞察。 |
+| Event Category         | eventCategory  | 将事件分类为不同的类型或分类，便于分析和了解跨类别的事件分布。                   |
+| Top Users              | <ul><li> userIdentity.sessionContext.sessionIssuer.userName </li> <li> userIdentity.sessionContext.sessionIssuer.arn </li> <li> userIdentity.accountId </li> <li> userIdentity.sessionContext.sessionIssuer.type </li> </ul>      | 识别与最多事件关联的用户或 IAM 角色，有助于用户活动监控和访问管理。                      |
+| Top Source IPs         | sourceIPAddress | 列出与事件相关的源 IP 地址，使您能够识别和调查潜在的可疑或未经授权的活动。              |
+| S3 Access Denied       | <ul><li> eventSource: s3\* </li><li> errorCode: AccessDenied</li></ul>       | 显示访问 Amazon S3 资源被拒绝的事件，帮助您识别和排除权限问题或潜在的安全漏洞。        |
+| S3 Buckets             | requestParameters.bucketName | 提供关于 S3 存储桶活动的摘要，包括创建、删除和修改操作，使您能够监控变更和访问模式。                |
+| Top S3 Change Events   | <ul><li> eventName</li><li> requestParameters.bucketName</li></ul>      | 呈现对 S3 资源最常见的更改类型，例如对象上传、删除或修改，有助于更改跟踪和审计。   |
+| EC2 Change Event Count | <ul><li> eventSource: ec2\* </li><li> eventName: (RunInstances or TerminateInstances or RunInstances or StopInstances)</li></ul>        | 显示与 EC2 相关的更改事件的总数，提供对 EC2 实例和资源的更改的数量和频率的概述。             |
+| EC2 Changed By         | userIdentity.sessionContext.sessionIssuer.userName   | 标识对 EC2 资源进行更改的用户或 IAM 角色，有助于追踪和修改的责任。                         |
+| Top EC2 Change Events  | eventName | 强调对 EC2 实例或相关资源进行的最常见更改类型，使您能够关注最重要或最频繁的更改。     |
+| Error Events           | <ul><li>awsRegion</li><li>errorCode</li><li>errorMessage</li><li>eventName</li><li>eventSource</li><li>sourceIPAddress</li><li>userAgent</li><li>userIdentity.​accountId</li><li>userIdentity.​sessionContext.​sessionIssuer.​accountId</li><li>userIdentity.​sessionContext.​sessionIssuer.​arn</li><li>userIdentity.​sessionContext.​sessionIssuer.​type</li><li>userIdentity.​sessionContext.​sessionIssuer.​userName</li></ul> | 显示导致错误或失败的事件，帮助您识别和排除与 API 调用或资源操作相关的问题。                 |
+
+### 示例仪表板
+
 {%
-include-markdown "include-dashboard.md"
+include-markdown "../include-dashboard.md"
 %}
 
 [![cloudtrail-db]][cloudtrail-db]
 
-
 [cloudtrail-db]: ../../images/dashboards/cloudtrail-db.png
-

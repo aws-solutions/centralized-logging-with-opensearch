@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Construct } from "constructs";
+import * as path from "path";
 import {
   CfnCondition,
   Fn,
@@ -23,16 +23,19 @@ import {
   aws_iam as iam,
   aws_lambda as lambda,
   CfnParameter,
-  SymlinkFollowMode,
   aws_ec2 as ec2,
+  aws_s3 as s3,
+  aws_logs as logs,
   CfnOutput,
+  RemovalPolicy,
   aws_events_targets as targets,
 } from "aws-cdk-lib";
 import { ISecurityGroup, IVpc } from "aws-cdk-lib/aws-ec2";
 import { Rule, Schedule } from "aws-cdk-lib/aws-events";
-import * as path from "path";
-
-
+import { Construct } from "constructs";
+import { SharedPythonLayer } from "../../layer/layer";
+import { CWLMetricStack, MetricSourceType } from "../common/cwl-metric-stack";
+import { constructFactory } from "../../util/stack-helper";
 
 export interface WAFSampledStackProps {
   /**
@@ -111,12 +114,15 @@ export interface WAFSampledStackProps {
    * @default - None.
    */
   readonly webACLNames: string;
-
+  readonly webACLScope: string;
   readonly solutionId: string;
+  readonly stackPrefix: string;
+  readonly backupBucketName: string;
 }
 
 export class WAFSampledStack extends Construct {
   readonly logProcessorRoleArn: string;
+  readonly logProcessorLogGroupName: string;
 
   constructor(scope: Construct, id: string, props: WAFSampledStackProps) {
     super(scope, id);
@@ -150,9 +156,22 @@ export class WAFSampledStack extends Construct {
       }
     );
 
+    // Create the Log Group for the Lambda function
+    const logGroup = new logs.LogGroup(this, "LogProcessorFnLogGroup", {
+      logGroupName: `/aws/lambda/${Aws.STACK_NAME}-LogProcessorFn`,
+      removalPolicy: RemovalPolicy.DESTROY,
+    });
+    this.logProcessorLogGroupName = logGroup.logGroupName;
+
+    constructFactory(CWLMetricStack)(this, "cwlMetricStack", {
+      metricSourceType: MetricSourceType.LOG_PROCESSOR_WAF_SAMPLE,
+      logGroup: logGroup,
+      stackPrefix: props.stackPrefix,
+    });
+
     // Create a lambda layer with required python packages.
     // This layer also includes standard plugins.
-    const pipeLayer = new lambda.LayerVersion(this, "LogHubPipeLayer", {
+    const pipeLayer = new lambda.LayerVersion(this, "LogProcessorLayer", {
       code: lambda.Code.fromAsset(
         path.join(__dirname, "../../../lambda/plugin/standard"),
         {
@@ -176,14 +195,11 @@ export class WAFSampledStack extends Construct {
       "WAFSampledLogProcessorFn",
       {
         description: `${Aws.STACK_NAME} - Function to process and load ${props.logType} logs into OpenSearch`,
+        functionName: `${Aws.STACK_NAME}-LogProcessorFn`,
         runtime: lambda.Runtime.PYTHON_3_9,
         handler: "waf_sampled_lambda_function.lambda_handler",
         code: lambda.Code.fromAsset(
-          path.join(
-            __dirname,
-            "../../../lambda/pipeline/service/log-processor"
-          ),
-          { followSymlinks: SymlinkFollowMode.ALWAYS }
+          path.join(__dirname, "../../../lambda/pipeline/service/log-processor")
         ),
         memorySize: 1024,
         timeout: Duration.seconds(120),
@@ -191,6 +207,7 @@ export class WAFSampledStack extends Construct {
         vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
         securityGroups: [props.securityGroup],
         environment: {
+          STACK_NAME: Aws.STACK_NAME,
           ENDPOINT: props.endpoint,
           ENGINE: props.engineType,
           LOG_TYPE: props.logType,
@@ -202,13 +219,23 @@ export class WAFSampledStack extends Construct {
           LOG_SOURCE_REGION: props.logSourceRegion,
           LOG_SOURCE_ACCOUNT_ASSUME_ROLE: props.logSourceAccountAssumeRole,
           WEB_ACL_NAMES: props.webACLNames,
+          SCOPE: props.webACLScope,
+          BACKUP_BUCKET_NAME: props.backupBucketName,
         },
-        layers: [pipeLayer],
+        layers: [SharedPythonLayer.getInstance(this), pipeLayer],
       }
     );
     wafSampledLogProcessorFn.role!.attachInlinePolicy(
       wafSampledlogProcessorPolicy
     );
+
+    // Grant access to log processor lambda
+    const backupBucket = s3.Bucket.fromBucketName(
+      this,
+      'backupBucket',
+      props.backupBucketName
+    );
+    backupBucket.grantWrite(wafSampledLogProcessorFn);
 
     // Create the policy and role for the Lambda to create and delete CloudWatch Log Group Subscription Filter with cross-account scenario
     const isCrossAccount = new CfnCondition(this, "IsCrossAccount", {
@@ -246,7 +273,7 @@ export class WAFSampledStack extends Construct {
       })
     );
 
-    new CfnOutput(this, "WAFSampledLogProcessorFnArn", {
+    constructFactory(CfnOutput)(this, "WAFSampledLogProcessorFnArn", {
       description: "WAF Sampled Log Processor Lambda ARN ",
       value: wafSampledLogProcessorFn.functionArn,
     }).overrideLogicalId("WAFSampledLogProcessorFnArn");

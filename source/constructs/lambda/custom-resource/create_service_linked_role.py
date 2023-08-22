@@ -11,7 +11,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-def lambda_handler(event, context):
+def lambda_handler(event, _):
     request_type = event["RequestType"]
     if request_type == "Create" or request_type == "Update":
         try:

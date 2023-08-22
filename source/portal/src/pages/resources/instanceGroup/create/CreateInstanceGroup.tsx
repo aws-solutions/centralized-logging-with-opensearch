@@ -18,19 +18,20 @@ import React, { useState } from "react";
 import Swal from "sweetalert2";
 import SideMenu from "components/SideMenu";
 import Breadcrumb from "components/Breadcrumb";
-import InstanceGroupComp, {
-  InstanceWithStatus,
-} from "../../common/InstanceGroupComp";
+import InstanceGroupComp from "../../common/InstanceGroupComp";
 import Button from "components/Button";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { appSyncRequestMutation } from "assets/js/request";
+import { createLogSource } from "graphql/mutations";
 import {
-  createInstanceGroup,
-  createInstanceGroupBaseOnASG,
-} from "graphql/mutations";
-import { LogAgentStatus, LogSourceType } from "API";
+  EC2GroupPlatform,
+  EC2GroupType,
+  LogAgentStatus,
+  LogSourceType,
+} from "API";
 import { useTranslation } from "react-i18next";
 import { OptionType } from "components/AutoComplete/autoComplete";
+import { InstanceWithStatusType } from "pages/resources/common/InstanceTable";
 
 export interface InstanceGroupType {
   groupName: string;
@@ -40,7 +41,7 @@ export interface InstanceGroupType {
 }
 
 const CreateInstanceGroup: React.FC = () => {
-  const history = useHistory();
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const breadCrumbList = [
     { name: t("name"), link: "/" },
@@ -52,7 +53,7 @@ const CreateInstanceGroup: React.FC = () => {
   ];
 
   const [checkedInstanceList, setCheckedInstanceList] = useState<
-    InstanceWithStatus[]
+    InstanceWithStatusType[]
   >([]);
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [curCreateInstanceGroup, setCurCreateInstanceGroup] =
@@ -71,8 +72,8 @@ const CreateInstanceGroup: React.FC = () => {
     // Check Instance Selected
     if (checkedInstanceList.length <= 0) {
       Swal.fire(
-        t("oops"),
-        t("resource:group.create.selectInstance"),
+        t("oops") || "",
+        t("resource:group.create.selectInstance") || "",
         "warning"
       );
       return;
@@ -80,7 +81,7 @@ const CreateInstanceGroup: React.FC = () => {
 
     // Check All Instance Install Agent Successfully
     const instanceStatusArr = checkedInstanceList.map(
-      (instance) => instance.instanceStatus
+      (instance) => instance.status
     );
 
     // Count Online Count
@@ -90,55 +91,72 @@ const CreateInstanceGroup: React.FC = () => {
 
     // If agent online count
     if (agentOnlineCount <= 0 || agentOnlineCount < instanceStatusArr.length) {
-      Swal.fire(t("oops"), t("resource:group.create.selectStatus"), "warning");
+      Swal.fire(
+        t("oops") || "",
+        t("resource:group.create.selectStatus") || "",
+        "warning"
+      );
       return;
     }
-    const createInstanceGroupParam = {
-      groupName: curCreateInstanceGroup.groupName,
+    const createLogSourceParam = {
+      type: LogSourceType.EC2,
       accountId: curAccountId,
-      instanceSet: checkedInstanceList.map((instance) => instance.id),
+      ec2: {
+        groupName: curCreateInstanceGroup.groupName,
+        groupType: EC2GroupType.EC2,
+        groupPlatform: EC2GroupPlatform.Linux,
+        instances: checkedInstanceList.map((instance) => ({
+          instanceId: instance.id,
+        })),
+      },
     };
     try {
       setLoadingCreate(true);
       const createRes = await appSyncRequestMutation(
-        createInstanceGroup,
-        createInstanceGroupParam
+        createLogSource,
+        createLogSourceParam
       );
       console.info("createRes:", createRes);
       setLoadingCreate(false);
-      history.push({
-        pathname: "/resources/instance-group",
-      });
+      navigate("/resources/instance-group");
     } catch (error) {
       setLoadingCreate(false);
       console.error(error);
     }
   };
 
-  const createLogInstanceGroupByASG = async () => {
+  const createLogSourceByASG = async () => {
     // Check Instance Selected
     if (!curCreateInstanceGroup.asgObj) {
-      Swal.fire(t("oops"), t("resource:group.create.asg.selectASG"), "warning");
+      Swal.fire(
+        t("oops") || "",
+        t("resource:group.create.asg.selectASG") || "",
+        "warning"
+      );
       return;
     }
 
-    const createInstanceGroupParam = {
+    const createLogSourceParam = {
       // region: "",
-      groupName: curCreateInstanceGroup.groupName,
+      type: LogSourceType.EC2,
       accountId: curAccountId,
-      autoScalingGroupName: curCreateInstanceGroup.asgObj.value,
+      ec2: {
+        groupName: curCreateInstanceGroup.groupName,
+        groupType: EC2GroupType.ASG,
+        asgName: curCreateInstanceGroup.asgObj.value,
+        groupPlatform: EC2GroupPlatform.Linux,
+        instances: { instanceId: curCreateInstanceGroup.asgObj.value },
+      },
     };
     try {
       setLoadingCreate(true);
       const createRes = await appSyncRequestMutation(
-        createInstanceGroupBaseOnASG,
-        createInstanceGroupParam
+        createLogSource,
+        createLogSourceParam
       );
       console.info("createRes:", createRes);
       setLoadingCreate(false);
-      history.push({
-        pathname: "/resources/instance-group",
-      });
+      navigate("/resources/instance-group");
     } catch (error) {
       setLoadingCreate(false);
       console.error(error);
@@ -151,11 +169,11 @@ const CreateInstanceGroup: React.FC = () => {
       setCreateShowNameEmptyError(true);
       return;
     }
-    if (curCreateInstanceGroup.groupType === LogSourceType.EC2) {
+    if (curCreateInstanceGroup.groupType === EC2GroupType.EC2) {
       createLogInstanceGroupByEC2();
     }
-    if (curCreateInstanceGroup.groupType === LogSourceType.ASG) {
-      createLogInstanceGroupByASG();
+    if (curCreateInstanceGroup.groupType === EC2GroupType.ASG) {
+      createLogSourceByASG();
     }
   };
 
@@ -175,7 +193,6 @@ const CreateInstanceGroup: React.FC = () => {
                   setCurAccountId(id);
                 }}
                 setCreateDisabled={(disable) => {
-                  console.info("disable:", disable);
                   setCreateButtonDisabled(disable);
                 }}
                 changeGroupName={(name) => {
@@ -185,7 +202,6 @@ const CreateInstanceGroup: React.FC = () => {
                   });
                 }}
                 changeInstanceSet={(sets) => {
-                  console.info("changeInstanceSet sets:", sets);
                   setCheckedInstanceList(sets);
                 }}
                 changeASG={(asg) => {
@@ -204,17 +220,15 @@ const CreateInstanceGroup: React.FC = () => {
               <Button
                 btnType="text"
                 onClick={() => {
-                  history.push({
-                    pathname: "/resources/instance-group",
-                  });
+                  navigate("/resources/instance-group");
                 }}
               >
                 {t("button.cancel")}
               </Button>
               <Button
                 btnType="primary"
-                loading={loadingCreate}
                 disabled={createButtonDisabled}
+                loading={loadingCreate}
                 onClick={() => {
                   createLogInstanceGroup();
                 }}

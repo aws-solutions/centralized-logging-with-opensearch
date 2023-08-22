@@ -22,26 +22,22 @@ import { CreateLogMethod } from "assets/js/const";
 import FormItem from "components/FormItem";
 import { SelectItem } from "components/Select/select";
 import { appSyncRequestQuery } from "assets/js/request";
-import {
-  LoggingBucket,
-  LoggingBucketSource,
-  Resource,
-  ResourceType,
-} from "API";
-import { getResourceLoggingBucket, listResources } from "graphql/queries";
+import { Resource, ResourceType, DestinationType } from "API";
+import { getResourceLogConfigs, listResources } from "graphql/queries";
 import AutoComplete from "components/AutoComplete";
 import { WAFTaskProps } from "../CreateWAF";
 import { OptionType } from "components/AutoComplete/autoComplete";
 import TextInput from "components/TextInput";
-import { AppStateProps, InfoBarTypes } from "reducer/appReducer";
+import { InfoBarTypes } from "reducer/appReducer";
 import { useTranslation } from "react-i18next";
 import AutoEnableLogging from "../../common/AutoEnableLogging";
-import { buildWAFLink } from "assets/js/utils";
+import { buildWAFLink, splitStringToBucketAndPrefix } from "assets/js/utils";
 import { AmplifyConfigType } from "types";
 import { useSelector } from "react-redux";
 import CrossAccountSelect from "pages/comps/account/CrossAccountSelect";
 import IngestOptionSelect, { IngestOption } from "./IngestOptionSelect";
 import SampleSchedule from "./SampleSchedule";
+import { RootState } from "reducer/reducers";
 
 export enum WAF_TYPE {
   CLOUDFRONT = "CLOUDFRONT",
@@ -101,14 +97,16 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
   const [showInfoText, setShowInfoText] = useState(false);
   const [showSuccessText, setShowSuccessText] = useState(false);
   const [previewS3Path, setPreviewS3Path] = useState("");
+  const [logRegion, setLogRegion] = useState("");
   const [disableWAF, setDisableWAF] = useState(false);
 
   const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: AppStateProps) => state.amplifyConfig
+    (state: RootState) => state.app.amplifyConfig
   );
 
   const getWAFList = async (accountId: string) => {
     try {
+      setWAFOptionList([]);
       setLoadingWAFList(true);
       const resData: any = await appSyncRequestQuery(listResources, {
         type: ResourceType.WAF,
@@ -131,24 +129,31 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     }
   };
 
-  const getBucketPrefix = async (bucket: string) => {
+  const getBucketPrefix = async (aclArn: string) => {
     setLoadingBucket(true);
     setISChanging(true);
-    const resData: any = await appSyncRequestQuery(getResourceLoggingBucket, {
+    const resData: any = await appSyncRequestQuery(getResourceLogConfigs, {
       type: ResourceType.WAF,
-      resourceName: bucket,
+      resourceName: aclArn,
       accountId: wafTask.logSourceAccountId,
     });
-    console.info("getBucketPrefix:", resData.data);
-    const logginBucket: LoggingBucket = resData?.data?.getResourceLoggingBucket;
+    const confs = resData?.data.getResourceLogConfigs;
     setLoadingBucket(false);
     setISChanging(false);
-    setPreviewS3Path(` s3://${logginBucket.bucket}/${logginBucket.prefix}`);
-    if (logginBucket.enabled) {
-      changeWAFBucket(logginBucket.bucket || "");
-      changeLogPath(logginBucket.prefix || "");
-      changeLogSource(logginBucket.source || "");
+    if (confs.length > 0) {
+      const { bucket, prefix } = splitStringToBucketAndPrefix(
+        confs[0].destinationName
+      );
+      setPreviewS3Path(` s3://${bucket}/${prefix}`);
+      changeWAFBucket(bucket || "");
+      changeLogPath(prefix || "");
       setShowSuccessText(true);
+      setLogRegion(confs[0].region);
+      if (confs[0].region !== amplifyConfig.aws_project_region) {
+        changeLogSource("S3_DIFF");
+      } else {
+        changeLogSource(confs[0].name || "");
+      }
     } else {
       setShowInfoText(true);
       setShowSuccessText(false);
@@ -218,6 +223,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
           <HeaderPanel title={t("servicelog:waf.title")}>
             <div>
               <CrossAccountSelect
+                disabled={loadingWAFList}
                 accountId={wafTask.logSourceAccountId}
                 changeAccount={(id) => {
                   changeCrossAccount(id);
@@ -258,8 +264,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                       changeIngestionOption(option);
                     }}
                     warningText={
-                      showSuccessText &&
-                      wafTask.params.logSource === LoggingBucketSource.WAF ? (
+                      showSuccessText && wafTask.params.logSource === "S3" ? (
                         <div>{t("servicelog:waf.sourceWAFTip")}</div>
                       ) : (
                         ""
@@ -268,21 +273,29 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                     successText={
                       showSuccessText &&
                       previewS3Path &&
-                      wafTask.params.logSource ===
-                        LoggingBucketSource.KinesisDataFirehoseForWAF
+                      wafTask.params.logSource === "KDF-to-S3"
                         ? t("servicelog:waf.savedTips") + previewS3Path
+                        : ""
+                    }
+                    errorText={
+                      showSuccessText &&
+                      previewS3Path &&
+                      wafTask.params.logSource === "S3_DIFF"
+                        ? t("servicelog:waf.diffRegion", {
+                            bucket: previewS3Path,
+                            logRegion: logRegion,
+                            homeRegion: amplifyConfig.aws_project_region,
+                          })
                         : ""
                     }
                   />
                   {showInfoText && (
                     <AutoEnableLogging
                       title={t("servicelog:waf.noLogOutput")}
-                      desc={
-                        t("servicelog:waf.noLogOutputDesc") +
-                        previewS3Path +
-                        " ?"
-                      }
+                      desc={t("servicelog:waf.noLogOutputDesc") + " ?"}
                       accountId={wafTask.logSourceAccountId}
+                      destName=""
+                      destType={DestinationType.S3}
                       resourceType={ResourceType.WAF}
                       resourceName={wafTask.arnId}
                       link={buildWAFLink(amplifyConfig.aws_project_region)}
@@ -353,11 +366,12 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                       optionTitle={t("servicelog:waf.logLocation")}
                       optionDesc={t("servicelog:waf.logLocationDesc")}
                       errorText={
-                        manualWAFEmptyError
+                        (manualWAFEmptyError
                           ? t("servicelog:waf.logLocationError")
-                          : manualS3PathInvalid
+                          : "") ||
+                        (manualS3PathInvalid
                           ? t("servicelog:s3InvalidError")
-                          : ""
+                          : "")
                       }
                     >
                       <TextInput

@@ -19,7 +19,7 @@
     #
     # by default 'info' is set, that means it includes 'error' and 'warning'.
     log_level    info
-    log_File /tmp/log-agent.log
+    # log_File /tmp/log-agent.log
     # HTTP Server
     # ===========
     # Enable/Disable the built-in HTTP Server for metrics, you use prometheus to monitor it.

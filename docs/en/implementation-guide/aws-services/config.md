@@ -40,12 +40,34 @@ This automated AWS CloudFormation template deploys the *Centralized Logging with
 include-markdown "include-cfn-common.md"
 %}
 
-## Sample Dashboard
+## View dashboard
+
+The dashboard includes the following visualizations.
+
+| Visualization Name            | Source Field                                                                                                                                                                           | Description                                                                                                                              |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Global Filters                | <ul><li> awsAccountId </li><li> awsRegion </li><li>resourceType </li><li> resourceId </li><li> resourceName </li></ul>                                                                 |The charts are filtered according to Account ID, Region, Resource Type and other conditions.                                         |
+| Total Change Events           | <ul><li> log event </li></ul>                                                                                                                                                          | Shows the number of configuration changes detected across all AWS resources during a selected time period.                               |
+| Top Resource Types            | <ul><li> resourceType </li></ul>                                                                                                                                                       | Displays the breakdown of configuration changes by the most frequently modified AWS resource types during a selected time period.        |
+| Config History                | <ul><li> log event </li></ul>                                                                                                                                                          | Presents a bar chart that displays the distribution of events over time.                                                                 |
+| Total Delete Events           | <ul><li> log event </li></ul>                                                                                                                                                          | Shows the number of AWS resource deletion events detected by AWS Config during a selected time period.                                   |
+| Config Status                 | <ul><li> configurationItemStatus </li></ul>                                                                                                                                            | Displays the operational state of the AWS Config service across monitored regions and accounts.                                          |
+| Top S3 Changes                | <ul><li> resourceName</li></ul>                                                                                                                                                        | Displays the Amazon S3 buckets undergoing the highest number of configuration changes during a selected time period.                     |
+| Top Changed Resources         | <ul><li> resourceName</li><li> resourceId</li><li> resourceType</li></ul>                                                                                                              | Displays the individual AWS resources undergoing the highest number of configuration changes during a selected time period.              |
+| Top VPC Changes               | <ul><li> resourceId</li></ul>                                                                                                                                                          | Presents a bar chart that Displays the Amazon VPCs undergoing the highest number of configuration changes during a selected time period. |
+| Top Subnet Changes            | <ul><li> resourceId</li></ul>                                                                                                                                                          | Delivers targeted visibility into the subnets undergoing the most transformation for governance, security and stability.                 |
+| Top Network Interface Changes | <ul><li> resourceId</li></ul>                                                                                                                                                          | Spotlights the Amazon VPC network interfaces seeing the most configuration changes during a selected period.                             |
+| Top Security Group Changes    | <ul><li> resourceId</li></ul>                                                                                                                                                          | Top 10 changed groups rank by total modification count.                                                                                  |
+| EC2 Config                    | <ul><li>@timestamp</li><li>awsAccountId</li><li>awsRegion</li><li>resourceId</li><li>configurationItemStatus</li></ul>                                                                 | Allows reconstructing the incremental changes applied to EC2 configurations over time for auditing.                                      |
+| RDS Config                    | <ul><li>@timestamp</li><li>awsAccountId</li><li>awsRegion</li><li>resourceId</li><li>resourceName</li><li>configurationItemStatus</li></ul>                                            | Shows the configuration history and changes detected by AWS Config for RDS database resources                                            |
+| Latest Config Changes         | <ul><li>@timestamp</li><li>awsAccountId</li><li>awsRegion</li><li>resourceType</li><li>resourceId</li><li>resourceName</li><li>relationships</li><li>configurationItemStatus</li></ul> | Offers an at-a-glance overview of infrastructure modifications.                                                                          |
+
+### Sample Dashboard
+
 {%
-include-markdown "include-dashboard.md"
+include-markdown "../include-dashboard.md"
 %}
 
 [![config-db]][config-db]
-
 
 [config-db]: ../../images/dashboards/config-db.png

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { BufferParameter, BufferType, LogType, SourceInfo } from "API";
+import { BufferParameter, BufferType, LogType } from "API";
 import { ExLogConf } from "pages/resources/common/LogConfigComp";
 
 // Get Value From Parameters List
@@ -44,20 +44,29 @@ export const getParamValueByKey = (
 };
 
 export const CovertObjToParameterKeyValue = (obj: any) => {
-  return Object.keys(obj).map((key) => {
-    return {
-      paramKey: key,
-      paramValue: obj[key],
-    };
-  });
+  return Object.keys(obj)
+    .filter((key) => obj[key] !== undefined)
+    .map((key) => {
+      return {
+        paramKey: key,
+        paramValue: obj[key],
+      };
+    });
 };
 
-export const getSourceInfoValueByKey = (
-  key: string,
-  params: (SourceInfo | null)[] | null | undefined
-): string => {
+export function ParamListToObj(
+  list: { paramKey: string; paramValue: unknown }[]
+) {
+  const obj: { [key: string]: unknown } = {};
+  list.forEach((item) => {
+    obj[item.paramKey] = item.paramValue;
+  });
+  return obj;
+}
+
+export const getSourceInfoValueByKey = (key: string, params: any): string => {
   if (params) {
-    return params.find((element) => element?.key === key)?.value || "";
+    return params.find((element: any) => element?.key === key)?.value || "";
   }
   return "";
 };
@@ -81,7 +90,7 @@ export const checkConfigInput = (
   const showUserLogFormatError = false;
   const showSampleLogInvalidError = false;
 
-  if (!curLogConfig?.confName?.trim()) {
+  if (!curLogConfig?.name?.trim()) {
     logConfigNameError = true;
   }
 
@@ -117,9 +126,7 @@ export const removeNewLineBreack = (curLogConfig: ExLogConf): ExLogConf => {
     curLogConfig?.logType === LogType.MultiLineText ||
     curLogConfig?.logType === LogType.SingleLineText
   ) {
-    curLogConfig.regularExpression = curLogConfig.regularExpression
-      ?.trim()
-      .replace(/[\n\t\r]/g, "");
+    curLogConfig.regex = curLogConfig.regex?.trim().replace(/[\n\t\r]/g, "");
     curLogConfig.userLogFormat = curLogConfig.userLogFormat
       ?.trim()
       .replace(/[\n\t\r]/g, "");

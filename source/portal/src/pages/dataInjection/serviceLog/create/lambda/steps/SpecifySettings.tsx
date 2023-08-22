@@ -28,11 +28,11 @@ import { OptionType } from "components/AutoComplete/autoComplete";
 import { LambdaTaskProps } from "../CreateLambda";
 import ExtLink from "components/ExtLink";
 import { AmplifyConfigType } from "types";
-import { AppStateProps } from "reducer/appReducer";
 import { useSelector } from "react-redux";
 import { buildLambdaLink } from "assets/js/utils";
 import { useTranslation } from "react-i18next";
 import CrossAccountSelect from "pages/comps/account/CrossAccountSelect";
+import { RootState } from "reducer/reducers";
 
 interface SpecifySettingsProps {
   lambdaTask: LambdaTaskProps;
@@ -47,7 +47,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
   props: SpecifySettingsProps
 ) => {
   const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: AppStateProps) => state.amplifyConfig
+    (state: RootState) => state.app.amplifyConfig
   );
   const { t } = useTranslation();
   const {
@@ -78,6 +78,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
 
   const getLambdaFunctionList = async (accountId: string) => {
     try {
+      setLambdaOptionList([]);
       setLoadingLambda(true);
       const resData: any = await appSyncRequestQuery(listResources, {
         type: ResourceType.Lambda,
@@ -119,6 +120,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
               <Alert content={t("servicelog:lambda.alert")} />
               <div className="pb-50">
                 <CrossAccountSelect
+                  disabled={loadingLambda}
                   accountId={lambdaTask.logSourceAccountId}
                   changeAccount={(id) => {
                     changeCrossAccount(id);

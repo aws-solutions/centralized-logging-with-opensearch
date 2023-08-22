@@ -20,7 +20,6 @@ This AWS CloudFormation template automatically deploys the Centralized Logging w
     | Launch with a new VPC       | [![Launch Stack](../../images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https://{{ bucket }}.s3.amazonaws.com/{{ solution }}/{{ version }}/CentralizedLogging.template){target=_blank}              |
     | Launch with an existing VPC | [![Launch Stack](../../images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https://{{ bucket }}.s3.amazonaws.com/{{ solution }}/{{ version }}/CentralizedLoggingFromExistingVPC.template){target=_blank} |
 
-
 2. The template is launched in the default region after you log in to the console. To launch the Centralized Logging with OpenSearch solution in a different AWS Region, use the Region selector in the console navigation bar.
 
 3. On the **Create stack** page, verify that the correct template URL is shown in the **Amazon S3 URL** text box and choose **Next**.
@@ -75,7 +74,7 @@ Meanwhile, an auto-generated temporary password (excluding the last digit `.`) w
 
 6. After the verification is complete, the system opens the Centralized Logging with OpenSearch web console.
 
-Once you have logged into the Centralized Logging with OpenSearch console, you can [import an Amazon OpenSearch Service domain](../domains/import.md#import-an-aos-domain) and build log analytics pipelines.
+Once you have logged into the Centralized Logging with OpenSearch console, you can [import an Amazon OpenSearch Service domain](../domains/import.md#import-an-amazon-opensearch-service-domain) and build log analytics pipelines.
 
 
 [NAT]: https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html

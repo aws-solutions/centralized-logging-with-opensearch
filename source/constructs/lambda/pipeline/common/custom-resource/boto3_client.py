@@ -36,7 +36,7 @@ def get_client(service_name: str, is_local_session=False):
 
     if (not is_local_session) and (log_source_account_assume_role):
         log_account = sts.assume_role(
-            RoleArn=log_source_account_assume_role, RoleSessionName="LogHubAcctSvcLog"
+            RoleArn=log_source_account_assume_role, RoleSessionName="SolutionAcctSvcLog"
         )
         return boto3.client(
             service_name,
@@ -66,7 +66,7 @@ def get_resource(service_name: str, is_local_session=False):
 
     if (not is_local_session) and (log_source_account_assume_role):
         log_account = sts.assume_role(
-            RoleArn=log_source_account_assume_role, RoleSessionName="LogHubAcctSvcLog"
+            RoleArn=log_source_account_assume_role, RoleSessionName="SolutionAcctSvcLog"
         )
         return boto3.resource(
             service_name,

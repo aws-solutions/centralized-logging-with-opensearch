@@ -81,6 +81,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
 
   const getS3List = async (accountId: string) => {
     try {
+      setS3BucketOptionList([]);
       setLoadingS3List(true);
       const resData: any = await appSyncRequestQuery(listResources, {
         type: ResourceType.S3Bucket,
@@ -186,6 +187,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
             <div>
               <Alert content={t("servicelog:s3.alert")} />
               <CrossAccountSelect
+                disabled={loadingS3List}
                 accountId={s3Task.logSourceAccountId}
                 changeAccount={(id) => {
                   changeCrossAccount(id);
@@ -283,11 +285,12 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                     optionTitle={t("servicelog:s3.s3LogLocation")}
                     optionDesc={t("servicelog:s3.s3LogLocationDesc")}
                     errorText={
-                      manualS3EmptyError
+                      (manualS3EmptyError
                         ? t("servicelog:s3.s3LogLocationError")
-                        : manualS3PathInvalid
+                        : "") ||
+                      (manualS3PathInvalid
                         ? t("servicelog:s3InvalidError")
-                        : ""
+                        : "")
                     }
                   >
                     <TextInput

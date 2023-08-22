@@ -1,0 +1,38 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+
+Resources:
+
+  KinesisScaleOut:
+    Type : "AWS::ApplicationAutoScaling::ScalingPolicy"
+    Properties: 
+      PolicyName: KinesisScaleOut
+      PolicyType: StepScaling
+      ResourceId: !Sub https://execute-api.${AWS::Region}.amazonaws.com/prod/scalableTargetDimensions/KinesisScale      
+      ScalableDimension: "custom-resource:ResourceType:Property"
+      ServiceNamespace: custom-resource
+      StepScalingPolicyConfiguration: 
+        AdjustmentType: ChangeInCapacity
+        Cooldown: 600
+        MetricAggregationType: Average
+        # ADDED
+        StepAdjustments:
+         - MetricIntervalLowerBound: 0
+           ScalingAdjustment: 1   
+
+  KinesisScaleIn:
+    Type : "AWS::ApplicationAutoScaling::ScalingPolicy"
+    Properties: 
+      PolicyName: KinesisScaleIn
+      PolicyType: StepScaling
+      ResourceId: !Sub https://execute-api.${AWS::Region}.amazonaws.com/prod/scalableTargetDimensions/KinesisScale    
+      ScalableDimension: "custom-resource:ResourceType:Property"
+      ServiceNamespace: custom-resource
+      StepScalingPolicyConfiguration: 
+        AdjustmentType: ChangeInCapacity
+        Cooldown: 600
+        MetricAggregationType: Average
+        StepAdjustments:
+         - MetricIntervalUpperBound: 0
+           ScalingAdjustment: -1

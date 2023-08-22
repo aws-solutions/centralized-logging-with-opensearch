@@ -37,7 +37,7 @@ export const CreateStep: React.FC<CreateStepProps> = (
         <ul>
           {list.map((element, index) => {
             return (
-              <li key={index}>
+              <li key={element.name}>
                 <small>Step {index + 1}</small>
                 <div className="step-name">
                   <span

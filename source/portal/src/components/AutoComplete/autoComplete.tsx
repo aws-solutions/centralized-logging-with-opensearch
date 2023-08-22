@@ -17,12 +17,19 @@ import React from "react";
 import SearchIcon from "@material-ui/icons/Search";
 import Autocomplete from "@material-ui/lab/Autocomplete";
 import LoadingText from "components/LoadingText";
+import HighlightOffIcon from "@material-ui/icons/HighlightOff";
+import { useTranslation } from "react-i18next";
+import { StatusType } from "components/Status/Status";
+
 export interface OptionType {
   name: string;
   value: string;
   description?: string;
   ec2RoleArn?: string;
   bufferType?: string;
+  logConfigId?: string;
+  logConfigVersionNumber?: number;
+  status?: string;
 }
 
 type AutoCompleteMenuProp = {
@@ -30,11 +37,28 @@ type AutoCompleteMenuProp = {
   value: OptionType | null;
   optionList: OptionType[];
   className?: string;
-  placeholder?: string;
+  placeholder?: string | null | any;
   loading?: boolean;
   outerLoading?: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onChange: (event: any, data: any) => void;
+  hasStatus?: boolean;
+};
+
+const ItemStatus = ({ status }: any) => {
+  const { t } = useTranslation();
+  return (
+    <>
+      {status === StatusType.Deleted && (
+        <span className="select-item-status red">
+          <i className="icon">
+            <HighlightOffIcon fontSize="small" />
+          </i>
+          {t("status.deleted")}
+        </span>
+      )}
+    </>
+  );
 };
 
 const autoComplete: React.FC<AutoCompleteMenuProp> = (
@@ -49,6 +73,7 @@ const autoComplete: React.FC<AutoCompleteMenuProp> = (
     placeholder,
     className,
     onChange,
+    hasStatus,
   } = props;
 
   return (
@@ -61,12 +86,22 @@ const autoComplete: React.FC<AutoCompleteMenuProp> = (
         className={className}
         options={optionList}
         value={value}
+        getOptionSelected={(option, value) => option.value === value.value}
         onChange={(event, data) => onChange(event, data)}
         getOptionLabel={(option) => option.name}
+        getOptionDisabled={(option) => option.status === StatusType.Deleted}
+        renderOption={(option) => (
+          <React.Fragment>
+            <div className="flex flex-1 space-between">
+              <span>{option.name}</span>
+              {hasStatus && <ItemStatus status={option.status} />}
+            </div>
+          </React.Fragment>
+        )}
         renderInput={(params) => (
           <div ref={params.InputProps.ref}>
             <input
-              placeholder={placeholder}
+              placeholder={placeholder || ""}
               type="search"
               autoComplete="off"
               {...params.inputProps}

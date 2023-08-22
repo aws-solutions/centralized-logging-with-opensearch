@@ -2,8 +2,10 @@
   border: 1px solid #0073bb;
   background-color: #f1faff;
   padding: 12px 20px;
-  display: flex;
-  align-items: flex-start;
+  .normal-container {
+    display: flex;
+    align-items: flex-start;
+  }
   &.margin {
     margin: 0 0 15px 0;
   }
@@ -14,6 +16,25 @@
   &.error {
     border: 1px solid #d13212;
     background-color: #fdf3f1;
+  }
+  &.pass {
+    .text {
+      &-content {
+        color: #008000;
+      }
+    }
+  }
+  &.inprogress {
+    border: 1px solid #0073bb;
+    background-color: #0073bb;
+    .text {
+      &-title {
+        color: #fff;
+      }
+      &-content {
+        color: #fff;
+      }
+    }
   }
   .red {
     color: #d13212;
@@ -41,5 +62,13 @@
   .space-between {
     display: flex;
     justify-content: space-between;
+  }
+  .wrap-line {
+    word-break: break-word !important;
+    white-space: break-spaces;
+  }
+  .alert-confirm-check {
+    padding-left: 35px;
+    margin-top: 15px;
   }
 }

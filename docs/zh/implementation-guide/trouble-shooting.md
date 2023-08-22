@@ -162,3 +162,27 @@ sudo ln -s /snap/core20/1623/usr/lib/x86_64-linux-gnu/libcrypto.so.1.1 /usr/lib/
 sudo ln -s /snap/core20/1623/usr/lib/x86_64-linux-gnu/libssl.so.1.1 /usr/lib/x86_64-linux-gnu/libssl.so.1.1
 sudo ln -s /usr/lib/x86_64-linux-gnu/libsasl2.so.2 /usr/lib/libsasl2.so.3
 ```
+
+#### Amazon Linux 2023
+
+##### x86-64:
+
+```
+wget https://europe.mirror.pkgbuild.com/core/os/x86_64/openssl-1.1-1.1.1.u-1-x86_64.pkg.tar.zst
+unzstd openssl-1.1-1.1.1.u-1-x86_64.pkg.tar.zst
+tar -xvf openssl-1.1-1.1.1.u-1-x86_64.pkg.tar
+sudo cp usr/lib/libcrypto.so.1.1 /usr/lib64/libcrypto.so.1.1
+sudo cp usr/lib/libssl.so.1.1 /usr/lib64/libssl.so.1.1
+
+```
+
+##### aarch64:
+
+```
+wget https://eu.mirror.archlinuxarm.org/aarch64/core/openssl-1.1-1.1.1.t-1-aarch64.pkg.tar.xz
+xz --decompress openssl-1.1-1.1.1.t-1-aarch64.pkg.tar.xz
+tar -xvf openssl-1.1-1.1.1.t-1-aarch64.pkg.tar
+sudo cp usr/lib/libcrypto.so.1.1 /usr/lib64/libcrypto.so.1.1
+sudo cp usr/lib/libssl.so.1.1 /usr/lib64/libssl.so.1.1
+
+```

@@ -9,8 +9,8 @@ class ISM:
 
     def __init__(
         self,
-        age='',
-        size='',
+        age="",
+        size="",
     ):
         # start from hot
         self._state = HotState(self, age, size)
@@ -18,24 +18,21 @@ class ISM:
         self._is_end = False
 
     def transit(self, state):
-        self._status = {
-            "name": self._state.name,
-            "actions": self._state.actions
-        }
+        self._status = {"name": self._state.name, "actions": self._state.actions}
 
         # move to new state
         self._state = state
         if state is None:
             self._is_end = True
         else:
-            self._status["transitions"] = [{
-                "state_name": self._state.name,
-                "conditions": {
-                    "min_index_age": f"{self._state.age}"
-                },
-            }]
+            self._status["transitions"] = [
+                {
+                    "state_name": self._state.name,
+                    "conditions": {"min_index_age": f"{self._state.age}"},
+                }
+            ]
 
-    def run(self, warm_age='', cold_age='', retain_age=''):
+    def run(self, warm_age="", cold_age="", retain_age=""):
         return self._state.run(warm_age, cold_age, retain_age)
 
     def get_status(self):
@@ -70,10 +67,7 @@ class HotState(State):
         action = {
             "rollover": {},
             "timeout": "24h",
-            "retry": {
-                "count": 5,
-                "delay": "1h"
-            },
+            "retry": {"count": 5, "delay": "1h"},
         }
         if size:
             action["rollover"]["min_size"] = f"{size}"
@@ -95,15 +89,14 @@ class WarmState(State):
     name = "warm"
 
     def __init__(self, ism: ISM, age):
-        super().__init__(ism, age, '')
-        self.actions = [{
-            "warm_migration": {},
-            "timeout": "24h",
-            "retry": {
-                "count": 5,
-                "delay": "1h"
-            },
-        }]
+        super().__init__(ism, age, "")
+        self.actions = [
+            {
+                "warm_migration": {},
+                "timeout": "24h",
+                "retry": {"count": 5, "delay": "1h"},
+            }
+        ]
 
     def run(self, warm_age, cold_age, retain_age):
         # can only be warm-to-cold or warm-to-delete
@@ -119,7 +112,7 @@ class ColdState(State):
     name = "cold"
 
     def __init__(self, ism: ISM, age):
-        super().__init__(ism, age, '')
+        super().__init__(ism, age, "")
         self.actions = [{"cold_migration": {"timestamp_field": "@timestamp"}}]
 
     def run(self, warm_age, cold_age, retain_age):
@@ -137,16 +130,8 @@ class DeleteState(State):
     name = "delete"
 
     def __init__(self, ism: ISM, age):
-        super().__init__(ism, age, '')
+        super().__init__(ism, age, "")
         self.actions = [{"delete": {}}]
 
     def run(self, warm_age, cold_age, retain_age):
         self._ism.transit(None)
-
-
-# if __name__ == "__main__":
-#     # Test code.
-#     test_ism = ISM()
-#     while test_ism.has_next():
-#         test_ism.run(1, 0, 10)
-#         print(test_ism.get_status())

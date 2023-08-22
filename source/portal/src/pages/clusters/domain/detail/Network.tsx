@@ -21,7 +21,7 @@ import { DomainDetails } from "API";
 import ExtLink from "components/ExtLink";
 import { AmplifyConfigType } from "types";
 import { useSelector } from "react-redux";
-import { AppStateProps, InfoBarTypes } from "reducer/appReducer";
+import { InfoBarTypes } from "reducer/appReducer";
 import {
   buildRoleLink,
   buildSGLink,
@@ -29,6 +29,7 @@ import {
   buildVPCLink,
 } from "assets/js/utils";
 import { t } from "i18next";
+import { RootState } from "reducer/reducers";
 
 interface OverviewProps {
   domainInfo: DomainDetails | undefined | null;
@@ -36,7 +37,7 @@ interface OverviewProps {
 
 const Network: React.FC<OverviewProps> = ({ domainInfo }: OverviewProps) => {
   const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: AppStateProps) => state.amplifyConfig
+    (state: RootState) => state.app.amplifyConfig
   );
 
   return (
@@ -60,9 +61,9 @@ const Network: React.FC<OverviewProps> = ({ domainInfo }: OverviewProps) => {
           <div className="flex-1 border-left-c">
             <ValueWithLabel label={t("cluster:detail.network.securityGroups")}>
               <div>
-                {domainInfo?.esVpc?.securityGroupIds?.map((element, index) => {
+                {domainInfo?.esVpc?.securityGroupIds?.map((element) => {
                   return (
-                    <div key={index}>
+                    <div key={element}>
                       <ExtLink
                         to={buildSGLink(
                           amplifyConfig.aws_project_region,
@@ -94,7 +95,7 @@ const Network: React.FC<OverviewProps> = ({ domainInfo }: OverviewProps) => {
               <div>
                 {domainInfo?.esVpc?.subnetIds?.map((element, index) => {
                   return (
-                    <div key={index}>
+                    <div key={element}>
                       <ExtLink
                         to={buildSubnetLink(
                           amplifyConfig.aws_project_region,
@@ -150,9 +151,9 @@ const Network: React.FC<OverviewProps> = ({ domainInfo }: OverviewProps) => {
               <div>
                 {domainInfo?.vpc?.privateSubnetIds
                   ?.split(",")
-                  .map((element, index) => {
+                  .map((element) => {
                     return (
-                      <div key={index}>
+                      <div key={element}>
                         <ExtLink
                           to={buildSubnetLink(
                             amplifyConfig.aws_project_region,
@@ -164,24 +165,22 @@ const Network: React.FC<OverviewProps> = ({ domainInfo }: OverviewProps) => {
                       </div>
                     );
                   })}
-                {domainInfo?.vpc?.publicSubnetIds
-                  ?.split(",")
-                  .map((element, index) => {
-                    return element ? (
-                      <div key={index}>
-                        <ExtLink
-                          to={buildSubnetLink(
-                            amplifyConfig.aws_project_region,
-                            element
-                          )}
-                        >
-                          {element}
-                        </ExtLink>
-                      </div>
-                    ) : (
-                      ""
-                    );
-                  })}
+                {domainInfo?.vpc?.publicSubnetIds?.split(",").map((element) => {
+                  return element ? (
+                    <div key={element}>
+                      <ExtLink
+                        to={buildSubnetLink(
+                          amplifyConfig.aws_project_region,
+                          element
+                        )}
+                      >
+                        {element}
+                      </ExtLink>
+                    </div>
+                  ) : (
+                    ""
+                  );
+                })}
               </div>
             </ValueWithLabel>
           </div>

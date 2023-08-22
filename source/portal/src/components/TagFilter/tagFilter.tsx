@@ -51,7 +51,7 @@ const TagFilter: React.FC<TagFilterProps> = (props: TagFilterProps) => {
       <div className="flex">
         <div className="flex-1 key">
           <TextInput
-            placeholder={t("tag.enterKey")}
+            placeholder={t("tag.enterKey") || ""}
             value={curTag?.key || ""}
             onChange={(event) => {
               setCurTag((prev: Tag) => {
@@ -65,7 +65,7 @@ const TagFilter: React.FC<TagFilterProps> = (props: TagFilterProps) => {
         </div>
         <div className="flex-1 value">
           <TextInput
-            placeholder={t("tag.enterValue")}
+            placeholder={t("tag.enterValue") || ""}
             value={curTag?.value || ""}
             onChange={(event) => {
               setCurTag((prev: Tag) => {
@@ -90,13 +90,13 @@ const TagFilter: React.FC<TagFilterProps> = (props: TagFilterProps) => {
             const key = (element.Key || "tag:").slice("tag:".length);
             const valueCount = (element.Values || []).length;
             return (
-              <div className="flex" key={elementIndex}>
+              <div className="flex" key={element.Key}>
                 {valueCount > 1 && (
                   <div className="flex t-operator parenthesis">(</div>
                 )}
                 {(element.Values || []).map((value, valueIndex) => {
                   return (
-                    <div className="flex" key={valueIndex}>
+                    <div className="flex" key={value}>
                       <div className="flex t-tag">
                         <div className="t-tag t-lable">
                           <span className="key">{key}: </span>

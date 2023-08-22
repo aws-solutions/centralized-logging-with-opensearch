@@ -7,9 +7,14 @@
     "streamName": "Stream Name",
     "bufferLayer": "Buffer Layer",
     "created": "Created time",
-    "status": "Status"
+    "logPath": "Log Path",
+    "status": "Status",
+    "logConfig": "Log Config"
   },
   "delete": "Delete Application Log",
+  "deletePipeline": {
+    "alarm": "Please open the pipeline and delete all log sources first."
+  },
   "deleteTips": "Are you sure you want to delete the application log ",
   "detail": {
     "config": "General configuration",
@@ -18,32 +23,69 @@
     "rolloverSize": "Rollover Size",
     "compressionType": "Compression Type",
     "openShards": "Open shards",
+    "shardNumber": "Shard number",
     "aos": "OpenSearch",
+    "domain": "Domain",
+    "sampleDashboard": "Sample Dashboard",
     "fanout": "Consumers with enhanced fan-out",
     "shards": "Shards (Kinesis Data Streams)",
     "autoScaling": "(Auto Scaling)",
+    "enabledAutoScaling": "Enable auto scaling",
+    "maxShardNum": "Maximum Shard number",
     "created": "Created",
-    "tip1": "If you create an ingestion from an instance group, make sure you have attached these ",
+    "bucket": "Bucket",
+    "kds": "Kinesis Data Streams",
+    "noneBuffer": "None buffer layer",
+    "analyticsEngine": "Analytics Engine",
+    "indexSettings": "Index Settings",
+    "cfnStack": "CloudFormation Stack",
+    "tip1": "If you create an log source from an instance group, make sure you have attached these ",
     "tip2": "permissions",
-    "tip3": " to the instances. This is NOT required if you create ingestion from Syslog or EKS cluster.",
+    "tip3": " to the instances. This is NOT required if you create log source from Syslog or EKS cluster.",
+    "noLogging": "This log pipeline has no buffer layer, logs are sent drectly to OpenSearch domain from source, no log processor lambda was created, hence no logs to dispiay",
     "tab": {
-      "ingestion": "Ingestion",
+      "ingestion": "Log Source",
+      "sources": "Log Source",
+      "logSources": "Log sources",
       "permission": "Permission",
-      "lifecycle": "Lifecycle",
-      "tags": "Tags"
+      "logConfig": "Log Config",
+      "bufferLayer": "Buffer Layer",
+      "lifecycle": "Lifecycle settings",
+      "analyticsEngine": "Analytics Engine",
+      "sourceDetail": "Source detail",
+      "tags": "Tags",
+      "monitoring": "Monitoring",
+      "alarm": "Pipeline Alarm",
+      "logging": "Logs"
     },
     "ingestion": {
+      "ingestionOverview": "Log Source Overview",
+      "prefixFilter": "Prefix filter",
+      "compression": "Compression",
+      "source": "Source",
+      "sourceType": "Source type",
+      "status": "Status",
+      "ingestionMode": "Log Source Mode",
       "logConfig": "Log Config",
       "instanceGroup": "Instance Group",
-      "created": "Created time",
-      "delete": "Delete Ingestion",
-      "deleteTips": "Are you sure you want to delete the log ingestion(s)? ",
+      "created": "Created",
+      "delete": "Delete Log Source",
+      "deleteTips": "Are you sure you want to delete the log source(s)? ",
       "upgradeGuide": "Upgrade Guide",
-      "eksTips1": "If you need to create additional EKS ingestions in this pipeline, go to ",
+      "eksTips1": "If you need to create additional EKS log source(s) in this pipeline, go to ",
       "eksTips2": "ESK Cluster",
-      "eksTips3": " create ingestion and select current pipeline.",
-      "oneMoreStep": "One more step to complete the ingestion setup...",
-      "groupTips": " We detect you had created an ingestion with an instance group based on EC2 auto scaling group, please wait for the ingestion's status become \"Created\", then go to the detail page of instance group(s), and follow the Auto Scaling Group Guide to update the User Data in the associated Launch Configuration."
+      "eksTips3": " create log source and select current pipeline.",
+      "oneMoreStep": "One more step to complete the log source setup...",
+      "groupTips": " We detect you had created an log source with an instance group based on EC2 auto scaling group, please wait for the log source's status become \"Created\", then go to the detail page of instance group(s), and follow the Auto Scaling Group Guide to update the User Data in the associated Launch Configuration.",
+      "oneMoreStepEKS": "Deploy Fluent Bit in your EKS cluster",
+      "eksDeamonSetTips_0": "One more step…",
+      "eksDeamonSetTips_1": "In order to activate the log pipeline, please follow the procedures in ",
+      "eksDeamonSetTips_2": " to deploy Fluent Bit in your EKS cluster.",
+      "eksDeamonSetLink": "DeamonSet Guide",
+      "permissionInfo": "For source of Instance Group, please make sure the instances in the Instance Group has correct permission attached. You can view the the required permission in the the source detail page by clicking the source ID."
+    },
+    "logConfig": {
+      "name": "Log Config"
     },
     "permission": {
       "name": "Instance Permission",
@@ -63,8 +105,8 @@
     "name": "Create",
     "step": {
       "ingestSetting": "Specify ingest setting",
-      "specifyOS": "Specify OpenSearch domain",
-      "createTags": "Create tags"
+      "specifyOS": "Specify OpenSearch domain settings",
+      "createTags": "Alarms and Tags"
     },
     "ingestSetting": {
       "index": "Index",
@@ -73,20 +115,25 @@
       "indexNameError": "Please input an index name",
       "indexNameFormatError": "Index name must start with a lowercase letter and can only support lowercase letter, number, - and _",
       "indexNameDuplicated": "Please change index name",
+      "create": "Create",
       "buffer": "Buffer",
       "bufferNone": "None",
-      "bufferNoneDesc": "Log will ingested to OpenSearch directly. Use this option if your OpenSearch domain can support your log peak througput.",
+      "bufferNoneDesc": "Log will ingested to OpenSearch directly. Use this option if your OpenSearch domain can support your log peak throughput.",
       "bufferKDS": "Kinesis Data Streams",
-      "bufferKDSDesc": "Second-level ingestion with additional cost. Use this option if you need real-time ingestion and your log througput is higher than your OpenSearch domain ingestion capacity.",
+      "bufferKDSDesc": "Second-level ingestion with additional cost. Use this option if you need real-time ingestion and your log throughput is higher than your OpenSearch domain ingestion capacity.",
       "bufferS3": "Amazon S3",
-      "bufferS3Desc": "Minute-level ingestion with additional cost. Use this option if you can accept minute-level latency for your log ingestion and your log througput is higher than your OpenSearch domain ingestion capacity.",
+      "bufferS3Desc": "Minute-level ingestion with additional cost. Use this option if you can accept minute-level latency for your log ingestion and your log throughput is higher than your OpenSearch domain ingestion capacity.",
+      "bufferNoneNetworkTitle": "Network connectivity",
+      "bufferNoneNetworkDesc": "When no buffer is selected, the log source will send logs to OpenSearch directly, you need to ensure the log sources (i.e., Instance group, EKS cluster, syslog agents) can connect to selected OpenSearch domain.",
+      "bufferNoneConfirm": "I acknowledge the requirement of network connectivity.",
+      "bufferNoneNotCheckError": "Please confirm and check acknowledge the requirement of network connectivity.",
       "s3Bucket": "Amazon S3 Bucket",
-      "s3BucketDesc": "Select a bucket to store the log data. By default. The solution will add prefix of 'AppLogs/<index-prefix>/year=%Y/month=%m/day=%d' (in UTC) to log data. You can customize the prefix in additional settings.",
+      "s3BucketDesc": "Select a bucket to store the log data. By default. The solution will add prefix of 'AppLogs/<index-prefix>/year=%Y/month=%m/day=%d/' (in UTC) to log data. You can customize the prefix in additional settings.",
       "s3BucketPrefix": "Amazon S3 Bucket Prefix",
       "selectS3Bucket": "Please select Amazon S3 Bucket",
-      "s3PrefixInvalid": "Amazon S3 Bucket Prefix should not end with '/'",
+      "s3PrefixInvalid": "Amazon S3 Bucket Prefix should not be '/' and must be end with '/'.",
       "s3BucketPrefixDesc1": "By default, Solution appends the prefix '",
-      "s3BucketPrefixDesc2": "' (in UTC) to the data it delivers to Amazon S3. You can override this default by specifying a custom prefix that includes expressions that are evaluated at runtime.",
+      "s3BucketPrefixDesc2": "' (in UTC) to the data it delivers to Amazon S3. You can override this default by specifying a custom prefix that includes expressions that are evaluated at runtime. If the files to be ingested are all in the log/ folder, you can specify the prefix as log/",
       "bufferSize": "Buffer size",
       "bufferSizeDesc": "Specify the buffer size in your log source before sending to Amazon S3. The higher buffer size may be lower in cost with higher latency. The lower buffer size will be faster in delivery with higher cost. Minimum: 1 MiB, maximum: 50 MiB.",
       "bufferSizeError": "The size of the buffer must be between 1MiB and 50MiB",
@@ -96,6 +143,7 @@
       "compressType": "Compression for data records",
       "compressTypeDesc": "Solution can compress records before delivering them to your S3 bucket",
       "compressChoose": "Choose a compress type",
+      "compressionMethod": "Compression method",
       "shardNum": "Shard number",
       "shardNumDesc": "Specify the number of Shards of the Kinesis Data Streams. Each shard can have up to 1,000 records per second and total data write rate of 1MB per second. (* Kinesis shard adjustment limit per 24 hours)",
       "shardNumError": "Shard Number must be greater than or equal to 1",
@@ -134,9 +182,10 @@
       "logRetentionDesc": "Delete aged logs from OpenSearch domain.",
       "logRetentionError": "Log retention invalid.",
       "logRetentionMustLargeThanCodeAndWarm": "Log retention must larger than cold log transition and warm log transition.",
-      "indexSuffix": "Index name",
+      "indexSuffix": "Index Prefix",
       "indexSuffixDesc": "The default index is <index name>-YYYY-MM-DD. You can choose a different suffix to adjust the index rollover time window. For example, if you select “YYYY-MM-DD-HH” suffix, OpenSearch will rollover the index by hour."
-    }
+    },
+    "domainStatusCheckFailedError": "The connectivity check for the selected domain has failed. Please check its network or choose another domain."
   },
   "ingestion": {
     "name": "Ingest",
@@ -145,6 +194,8 @@
     "type": "Type",
     "source": "Source",
     "syslogConfig": "Syslog Configuration Guide",
+    "syslogConfig5424": "RFC5424",
+    "syslogConfig3164": "RFC3164",
     "step": {
       "createInstanceGroup": "Create instance group",
       "chooseInstanceGroup": "Choose instance groups",
@@ -184,7 +235,8 @@
       "chooseConfig": "Choose a Log Config",
       "config": "Configuration",
       "configRequiredError": "Please select a Log Config",
-      "inputLogPath": "Please input the log path"
+      "inputLogPath": "Please input the log path",
+      "logPathMustBeginWithSlash": "Log path must begin with / slash"
     },
     "s3": {
       "ingestFromS3": "Ingest from Amazon Amazon S3",
@@ -207,10 +259,10 @@
         "fileZipped": "The file is zipped",
         "vpcId": "VPC",
         "vpcIdDesc": "Select the VPC will start EC2 instances for log ingestion.",
-        "chooseVpc": "Please chooose a VPC",
+        "chooseVpc": "Please choose a VPC",
         "subnetIds": "Public Subnets",
         "subnetIdsDesc": "Select the public subnets will start EC2 instances for log ingestion.",
-        "chooseSubnet": "Please chooose public subnets"
+        "chooseSubnet": "Please choose public subnets"
       },
       "specifyConfig": {
         "alert": "The 'Log Path' in the Log Config will be ignored as the Amazon S3 file path will be used when parsing your logs.",
@@ -236,17 +288,17 @@
       "ingestFromSysLog": "Ingest from syslog",
       "settings": "Syslog Source Setting",
       "protocol": "Protocol",
-      "protocolDesc": "Select the protocal of your syslog source",
-      "protocolRequire": "Please select protocal",
+      "protocolDesc": "Select the protocol of your syslog source",
+      "protocolRequire": "Please select protocol",
       "chooseProtocol": "Choose a protocol type",
       "port": "Port",
       "portDesc": "Specifies the port to receive the log server",
-      "portConflict": "Port conflicts with existing ingestions",
+      "portConflict": "Port conflicts with existing log source(s)",
       "portOutofRange": "The port number must be between 500 and 20000",
       "changePort": "Change port number",
       "guide": {
         "title": "Please refer to the following steps to ingest system logs",
-        "alert": "Below is a sample configuration to configure a Rsyslog client to send syslog to the pipeline. Please note, your syslog sender’s network should be able connect to the NLB network.",
+        "alert": "Make sure that the Syslog sender is connected to the NLB network. The following is an example configuration of rsyslog for your reference.",
         "step1Title": "1. Open the Rsyslog configuration file.",
         "step2Desc1": "Usually the Rsyslog configuration file path is",
         "step2Title": "2. Add the following information to the end of the Rsyslog configuration file",
@@ -264,5 +316,230 @@
         "step5Desc4": " commands."
       }
     }
+  },
+  "logSourceDesc": {
+    "ec2": {
+      "title": "Instance Group",
+      "instanceGroup": "Instance group",
+      "desc": " is a concept that represents a collection of one or multiple Amazon EC2 instances. The solution supports automatically collecting logs from the EC2 instances within an Instance Group. With this feature, you can:",
+      "li1": "Select Amazon EC2 instance(s) or an Auto Scaling Group to create Instance Group.",
+      "li2": "One-click to install log agent (Fluent Bit) on all instances in an Instance Group.",
+      "li3": "Use built-in or custom Log Config to parse logs before ingesting into OpenSearch.",
+      "arch": {
+        "title": "Architecture Diagram",
+        "desc": "The architecture diagram to ingest log data into Amazon OpenSearch domain."
+      },
+      "step1": {
+        "naviTitle": "Instance group",
+        "permissions": "Permissions",
+        "permissionMethod": "Permission grant method",
+        "permissionsDesc": "The instance groups needs permissions to access System Manager, S3, and Kinesis Data Stream services for log collection agent configuration and log transmission. Please select a method to add permissions to the instances. Learn more about ",
+        "permissionsDesc2": "Grant permission to EC2 instances",
+        "permissionAuto": "Solution automatically adds the required permission to the selected instances’ Instance Profile",
+        "permissionManual": "I will manually add the below required permissions after pipeline creation",
+        "permissionExpand": "Expand to view required permissions",
+        "userDataExpand": "Expand to view the user data scripts",
+        "title": "Choose instance groups",
+        "titleDesc": "Instance group is a collection of multiple instances that will be applied with same Log Config."
+      },
+      "step2": {
+        "logPathDesc": "Enter the location of the log files. All files under the specified folder will be included."
+      },
+      "step3": {
+        "naviTitle": "Buffer layer settings",
+        "panelTitle": "Specify buffer layer settings",
+        "title": "Buffer layer",
+        "desc": "Select a layer to buffer your logs before ingestion"
+      }
+    },
+    "eks": {
+      "title": "Amazon EKS",
+      "desc": "Amazon EKS is a fully-managed and certified Kubernetes service. The solution supports automatically collecting logs from application runs on Amazon EKS. With this feature, you can:",
+      "li1": "Automatically generate ready-to-use YAML file to easily install of log agent (Fluent Bit) on EKS.",
+      "li2": "Use built-in or custom Log Config to parse logs before ingesting into OpenSearch.",
+      "li3": "Ingest logs from EKS in different AWS accounts.",
+      "arch": {
+        "title": "Architecture Diagram",
+        "desc": "The architecture diagram to ingest log data into Amazon OpenSearch domain."
+      },
+      "step1": {
+        "naviTitle": "Choose EKS cluster",
+        "title": "Choose EKS cluster",
+        "titleDesc": "Select an EKS cluster to collect logs from.",
+        "settings": "Account Settings",
+        "account": "Account",
+        "accountDesc": "Select the AWS account at which the log is stored. To create a member account, go to ",
+        "cluster": "EKS cluster"
+      },
+      "step2": {
+        "naviTitle": "Log config",
+        "title": "Apply log config",
+        "titleDesc": "Create a new Log Config or select exists.",
+        "panelName": "Log Config",
+        "logConfig": "Log Config",
+        "logConfigDesc": "Choose a log config to parse your logs.",
+        "chooseALogConfig": "Choose a log config",
+        "createNew": "Create new",
+        "selectConfig": "Please select a Log Config",
+        "logConfigName": "Log Config Name"
+      },
+      "step3_1": {
+        "naviTitle": "Log processor",
+        "title": "Select log processor",
+        "desc": "Processor type",
+        "lambda": "Lambda",
+        "lambdaDesc": "Serverless processor that automatically scale out or in, cost efficient processor when daily log volume is less then 1 TB.",
+        "osis": "OpenSearch Ingestion Service",
+        "osisDesc": "Managed ingestion service that is cost efficient when log volume > 1TB/day, also provides rich log processing capabilities."
+      },
+      "step3": {
+        "naviTitle": "Buffer layer settings",
+        "title": "Buffer layer",
+        "desc": "Select a layer to buffer your logs before ingestion"
+      },
+      "step4": {
+        "naviTitle": "OpenSearch domain settings",
+        "title": "Specify OpenSearch domain settings"
+      },
+      "step5": {
+        "naviTitle": "Pipeline alarms and tags",
+        "title": "Pipeline alarms and tags"
+      },
+      "deleteAlarm1": "Please open the pipeline and delete all log sources first.",
+      "roleCheckFailed": "The role used to send logs to Buffering layer takes too long to be active. Please try again."
+    },
+    "syslog": {
+      "title": "Syslog Endpoint",
+      "desc": "Syslog is a standard network-based logging protocol that works on a wide variety of different types of devices and applications, such as Linux servers, firewalls, and network devices. This solution supports collecting logs from system agents (e.g., rsyslog, syslog-ng) directly. With this feature, you can:",
+      "li1": "Automatically deploy a highly-available network endpoint to collect syslog sent over network.",
+      "li2": "Use built-in Log Configs to parse standard syslog formats. (e.g., RFC3164, RFC5424)",
+      "li3": "Ingest syslog via UDP and TCP protocols.",
+      "arch": {
+        "title": "Architecture Diagram",
+        "desc": "The architecture diagram to ingest log data into Amazon OpenSearch domain."
+      },
+      "step1": {
+        "naviTitle": "Ingestion endpoint",
+        "title": "Ingestion endpoint",
+        "titleDesc": "Specify the settings for the endpoint to receive syslog.",
+        "panelName": "Endpoint Settings",
+        "desc": "Select the S3 bucket where your logs are stored.",
+        "alert": "Currently only support ingesting logs from solution-deployed region.",
+        "title2": "File path prefix filter",
+        "desc2": "Filter files by file path prefix to accurately locate the files to be ingested. We support both full file path matching and Wildcard matching. For example, if the files to be ingested are all in the log/ folder, you can specify the prefix as log/. If you want to only ingest file with log as file name, you can specify the prefix as log/*.log. If this parameter is not set, the entire S3 bucket will be traversed.",
+        "title3": "Ingestion mode",
+        "desc3": "Specify the interval for the ingestion job to execute.",
+        "onGoing": "On-going",
+        "onGoingDesc": "The ingestion job will run when a new file is delivered to the specified S3 location",
+        "oneTimeLoad": "One-time load",
+        "oneTimeLoadDesc": "The ingestion job will run at creation and only will run once to load all files in the specified location."
+      },
+      "step2": {
+        "naviTitle": "Log config",
+        "title": "Apply log config",
+        "titleDesc": "Create a new Log Config or select exists.",
+        "panelName": "Log Config",
+        "logConfig": "Log Config",
+        "logConfigDesc": "Choose a log config to parse your logs. Only can choose syslog-supported log config (i.e., Single-line Text, Syslog, JSON).",
+        "chooseALogConfig": "Choose a log config",
+        "createNew": "Create new"
+      },
+      "step3_1": {
+        "naviTitle": "Log processor",
+        "title": "Select log processor",
+        "desc": "Processor type",
+        "lambda": "Lambda",
+        "lambdaDesc": "Serverless processor that automatically scale out or in, cost efficient processor when daily log volume is less then 1 TB.",
+        "osis": "OpenSearch Ingestion Service",
+        "osisDesc": "Managed ingestion service that is cost efficient when log volume > 1TB/day, also provides rich log processing capabilities."
+      },
+      "step3": {
+        "naviTitle": "Buffer layer settings",
+        "title": "Buffer layer",
+        "desc": "Select a layer to buffer your logs before ingestion"
+      },
+      "step4": {
+        "naviTitle": "OpenSearch domain settings",
+        "title": "Specify OpenSearch domain settings"
+      },
+      "step5": {
+        "naviTitle": "Pipeline alarms and tags",
+        "title": "Pipeline alarms and tags"
+      }
+    },
+    "s3": {
+      "title": "Amazon S3",
+      "desc": "This solution supports ingesting logs that stored in a Amazon S3 bucket. You can use this feature to ingest logs of AWS services that support delivering logs to S3, ingest logs from on-premises, or ingest logs from third-party cloud providers that could be transferred to a S3 bucket. With this features, you can:",
+      "li1": "Ingest logs in a specified S3 location continuously or perform one-time ingestion.",
+      "li2": "Filter logs based on S3 prefix.",
+      "li3": "Parse logs with custom Log Config.",
+      "arch": {
+        "title": "Architecture Diagram",
+        "desc": "The architecture diagram to ingest log data into Amazon OpenSearch domain."
+      },
+      "step1": {
+        "naviTitle": "Source settings",
+        "title": "Specify source settings",
+        "alertCompressionType": "Note you can not change compression type when adding a new source into an existing pipeline, please make sure the new log source is in the same compression format.",
+        "titleDesc": "Specify the settings for the log sources.",
+        "panelName": "Ingest from S3 bucket",
+        "desc": "Select the S3 bucket where your logs are stored. Note that only the S3 buckets in the same region can be selected.",
+        "alert": "Currently only support ingesting logs from solution-deployed region.",
+        "title2": "Prefix filter - optional",
+        "desc2": "Filter log files by prefix to accurately locate the files to be ingested. The solution supports both full file path matching and Wildcard matching. If this parameter is not set, the entire S3 bucket will be traversed.",
+        "title3": "Ingestion mode",
+        "desc3": "Specify the interval for the ingestion job to execute.",
+        "title4": "Compression format",
+        "desc4": "Specify how the log files are compressed in S3",
+        "onGoing": "On-going",
+        "onGoingDesc": "The ingestion job will run when a new file is delivered to the specified S3 location",
+        "oneTimeLoad": "One-time",
+        "oneTimeLoadDesc": "The ingestion job will run at creation and only will run once to load all files in the specified location."
+      },
+      "step2": {
+        "naviTitle": "Log config",
+        "title": "Apply log config",
+        "titleDesc": "Create a new Log Config or select exists.",
+        "panelName": "Log Config",
+        "logConfig": "Log Config",
+        "logConfigDesc": "Choose a log config to parse your logs.",
+        "chooseALogConfig": "Choose a log config",
+        "createNew": "Create new",
+        "alert": "If you select a log config with filter enabled, filter in the log config will not take effect.",
+        "alertCanNotChangeLogConfig": "Note you can not change log config when add a new source into an existing pipeline, please review and ensure the existing log config can parse the new log source."
+      },
+      "step3": {
+        "naviTitle": "Log processor",
+        "title": "Select log processor",
+        "desc": "Processor type",
+        "lambda": "Lambda",
+        "lambdaDesc": "Serverless processor that automatically scale out or in, cost efficient processor when daily log volume is less then 1 TB.",
+        "osis": "OpenSearch Ingestion Service",
+        "osisDesc": "Managed ingestion service that is cost efficient when log volume > 1TB/day, also provides rich log processing capabilities."
+      },
+      "step4": {
+        "naviTitle": "OpenSearch domain settings",
+        "title": "Specify OpenSearch domain settings"
+      },
+      "step5": {
+        "naviTitle": "Pipeline alarms and tags",
+        "title": "Pipeline alarms and tags"
+      }
+    }
+  },
+  "selectLogSource": {
+    "name": "Select log source",
+    "logSources": "Log sources"
+  },
+  "installAgent": {
+    "refreshSwitch": "Automatically refresh",
+    "lastUpdateTime": "Last update: ",
+    "invocationOutputFirst": "Instance is Offline, due to \"",
+    "invocationOutputMid": "\". Refer to  ",
+    "invocationOutputLast": " to troubleshoot and fix."
+  },
+  "instancePermission": {
+    "title": "Instance Permission",
+    "alertContent": "Please make sure your instance have the following permissions."
   }
 }

@@ -16,14 +16,15 @@ AWS Lambda 会代表您自动监控 Lambda 函数并将函数指标发送到 Ama
 4. 在 **AWS 服务** 部分，选择 **AWS Lambda**。
 5. 选择**下一步**。
 6. 在 **指定设置** 下，从下拉列表中选择 Lambda 函数。（可选步骤）如果需要跨账户摄取日志，需要先在 **账户** 的下拉列表中选择一个[链接的 AWS 账户](../link-account/index.md)。
-9. 选择**下一步**。
-10. 在 **指定 OpenSearch 域** 部分，为 **Amazon OpenSearch 域** 选择一个导入的域。
-11. 如果您要摄取关联的模板化 Amazon OpenSearch Service 仪表板，请为 **示例仪表板** 选择 **是**。
-12. 如果需要，您可以更改目标 Amazon OpenSearch Service 索引的**索引前缀**。默认前缀是 Lambda 函数名称。
-13. 在 **日志生命周期** 部分，输入管理 Amazon OpenSearch Service 索引生命周期的天数。日志通 将为此管道自动创建关联的 [索引状态管理 (ISM)](https://opensearch.org/docs/latest/im-plugin/ism/index/) 策略。
-14. 选择**下一步**。
-15. 如果需要，添加标签。
-16. 选择**创建**。
+7. 选择 **下一步**。
+8. 在 **指定 OpenSearch 域** 部分，为 **Amazon OpenSearch 域** 选择一个已导入的域。
+9. 如果您想要加载关联的模板 Amazon OpenSearch 服务仪表板，请选择 **是**。
+10. 如果需要，您可以更改目标 Amazon OpenSearch 服务索引的 **索引前缀**。默认前缀是 Lambda 函数名称。
+11. 在 **日志生命周期** 部分，输入用于管理 Amazon OpenSearch 服务索引生命周期的天数。集中式日志功能将为此管道自动创建关联的 [索引状态管理 (ISM)](https://opensearch.org/docs/latest/im-plugin/ism/index/) 策略。
+12. 选择 **下一步**。
+13. 如有需要，添加标签。
+14. 选择 **创建**。
+
 
 ### 使用 CloudFormation 堆栈
 此自动化 AWS CloudFormation 模板在 AWS 云中部署 *日志通- Lambda Log Ingestion* 解决方案。
@@ -37,9 +38,21 @@ AWS Lambda 会代表您自动监控 Lambda 函数并将函数指标发送到 Ama
 include-markdown "include-cw-cfn-common.md"
 %}
 
-## 示例仪表板
+## 查看仪表板
+
+该仪表板包括以下可视化图表。
+
+| 可视化名称      | 数据源字段                 | 描述                                                                                                  |
+| ------------- | ------------------------ | ---------------------------------------------------------------------------------------------------- |
+| Lambda 事件   | <ul><li> log event </li></ul> | 显示随时间分布的事件的图表。                                                                   |
+| 日志帐户      | <ul><li> owner </li></ul> | 显示占不同 AWS 帐户（所有者）的日志事件比例的饼图。                                            |
+| 日志组        | <ul><li> log_group </li></ul> | 显示 Lambda 环境中各种日志组之间日志事件分布的饼图。                                          |
+| 日志列表      | <ul><li> time </li><li> log_group </li><li> log_stream </li><li> log_detail </li></ul> | 提供了包括时间戳、日志组、日志流和日志详细信息在内的日志事件的详细列表。 |
+
+### 示例仪表板
+
 {%
-include-markdown "include-dashboard.md"
+include-markdown "../include-dashboard.md"
 %}
 
 [![lambda-db]][lambda-db]

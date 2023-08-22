@@ -136,7 +136,6 @@
     | 在中国区域新的 VPC 中部署 | [![Launch Stack](../../images/launch-stack.png)](https://console.amazonaws.cn/cloudformation/home#/stacks/new?templateURL=https://{{ bucket }}.s3.amazonaws.com/{{ solution }}/{{ version }}/CentralizedLoggingWithOIDC.template){target=_blank} |
     | 在中国区域现有的 VPC 中部署 | [![Launch Stack](../../images/launch-stack.png)](https://console.amazonaws.cn/cloudformation/home#/stacks/new?templateURL=https://{{ bucket }}.s3.amazonaws.com/{{ solution }}/{{ version }}/CentralizedLoggingFromExistingVPCWithOIDC.template){target=_blank} |
 
-
 2. 登录控制台后，模板在默认区域启动。要在不同的 AWS 区域中启动日志通 解决方案，请使用控制台导航栏中的区域选择器。
 3. 在 **创建堆栈** 页面上，验证正确的模板 URL 显示在 **Amazon S3 URL** 文本框中，然后选择 **下一步**。
 4. 在 **指定堆栈详细信息** 页面上，为您的解决方案堆栈分配一个名称。有关命名字符限制的信息，请参阅 [IAM 和 STS 限制](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_iam-limits.html){target='_blank'} 中的 *AWS Identity and Access Management 用户指南*。

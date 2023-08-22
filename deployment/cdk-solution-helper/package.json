@@ -1,6 +1,8 @@
 {
   "name": "cdk-solution-helper",
+  "description": "cdk solution helper",
   "version": "0.1.0",
+  "license": "Apache-2.0",
   "devDependencies": {
     "fs": "0.0.1-security"
   },

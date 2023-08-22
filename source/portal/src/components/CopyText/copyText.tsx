@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React from "react";
+import React, { ReactElement } from "react";
 import FilterNoneIcon from "@material-ui/icons/FilterNone";
 import Popper from "@material-ui/core/Popper";
 import { CopyToClipboard } from "react-copy-to-clipboard";
@@ -21,7 +21,7 @@ import ClickAwayListener from "@material-ui/core/ClickAwayListener";
 
 interface CopyTextProps {
   text: string;
-  children: React.ReactChild;
+  children: ReactElement | string;
 }
 
 const CopyText: React.FC<CopyTextProps> = (props: CopyTextProps) => {

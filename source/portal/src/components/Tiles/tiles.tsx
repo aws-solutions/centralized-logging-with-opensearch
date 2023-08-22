@@ -14,12 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import classNames from "classnames";
-import React from "react";
+import React, { ReactElement } from "react";
 
 type TilesItemProps = {
   disabled?: boolean;
-  label: string;
-  description: string;
+  label: string | null;
+  description: string | ReactElement | null;
   value: string;
 };
 
@@ -27,7 +27,7 @@ interface TilesProps {
   displayInRow?: boolean;
   className?: string;
   value: string;
-  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
   items: TilesItemProps[];
 }
 
@@ -36,10 +36,10 @@ const Tiles: React.FC<TilesProps> = (props: TilesProps) => {
 
   return (
     <div className={`gsui-tiles-wrap ${displayInRow ? "row" : ""}`}>
-      {items.map((item, index) => {
+      {items.map((item) => {
         return (
           <label
-            key={index}
+            key={item.value}
             className={classNames({
               active: item.value === value,
               disabled: item.disabled,

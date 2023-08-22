@@ -1,0 +1,6 @@
+moto
+boto3
+pytest
+pytest-cov
+docker
+openapi_spec_validator

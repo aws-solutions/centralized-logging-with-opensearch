@@ -20,6 +20,7 @@ import {
   Duration,
   aws_cognito as cognito,
 } from "aws-cdk-lib";
+import { constructFactory } from "../util/stack-helper";
 export interface AuthProps {
   /**
    * Username to create an initial Admin user in Cognito User Pool
@@ -40,6 +41,8 @@ export class AuthStack extends Construct {
 
   constructor(scope: Construct, id: string, props: AuthProps) {
     super(scope, id);
+
+    const stackPrefix = 'CL';
 
     // Create Cognito User Pool
     const userPool = new cognito.UserPool(this, "UserPool", {
@@ -72,7 +75,7 @@ export class AuthStack extends Construct {
     });
 
     // Create an Admin User
-    new cognito.CfnUserPoolUser(this, "AdminUser", {
+    constructFactory(cognito.CfnUserPoolUser)(this, "AdminUser", {
       userPoolId: userPool.userPoolId,
       username: props.username,
       userAttributes: [
@@ -87,7 +90,7 @@ export class AuthStack extends Construct {
     const userPoolDomain = new cognito.UserPoolDomain(this, "UserPoolDomain", {
       userPool: userPool,
       cognitoDomain: {
-        domainPrefix: `loghub-portal-${Stack.of(this).account}`,
+        domainPrefix: `${stackPrefix.toLowerCase()}-portal-${Stack.of(this).account}`,
       },
     });
 

@@ -30,13 +30,22 @@ def lambda_handler(event, context):
 
 
 def make_graphql_lambda_event(name, args):
-    return {
-        "arguments": args,
-        "info": {
-            "fieldName": name
+    return {"arguments": args, "info": {"fieldName": name}}
 
-        }
-    }
+
+def make_ddb_table(table_name, pk="id", pk_type="S", sk=None, sk_type=None, rows=[]):
+    ddb = boto3.resource("dynamodb")
+    table = ddb.create_table(
+        TableName=table_name,
+        KeySchema=[{"AttributeName": pk, "KeyType": "HASH"}]
+        + ([{"AttributeName": sk, "KeyType": "RANGE"}] if sk else []),
+        AttributeDefinitions=[{"AttributeName": pk, "AttributeType": pk_type}]
+        + ([{"AttributeName": sk, "AttributeType": sk_type}] if sk else []),
+        ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
+    )
+    with table.batch_writer() as batch:
+        for data in rows:
+            batch.put_item(Item=data)
 
 
 def init_ddb(config):
@@ -85,9 +94,13 @@ def default_environment_variables():
     os.environ["APP_PIPELINE_TABLE_NAME"] = "mocked-app-pipeline-table-name"
     os.environ["APPPIPELINE_TABLE"] = "mocked-app-pipeline-table-name"
     os.environ["APP_LOG_CONFIG_TABLE_NAME"] = "mocked-app-log-config-table-name"
+    os.environ["LOG_CONFIG_TABLE"] = "mocked-app-log-config-table-name"
     os.environ["INSTANCE_GROUP_TABLE_NAME"] = "mocked-instance-group-table-name"
     os.environ["APPLOGINGESTION_TABLE"] = "mocked-app-log-ingestion-table-name"
     os.environ["EC2_LOG_SOURCE_TABLE_NAME"] = "mocked-ec2-log-source-table-name"
+    os.environ["LOG_SOURCE_TABLE_NAME"] = "mocked-log-source-table-name"
     os.environ["S3_LOG_SOURCE_TABLE_NAME"] = "mocked-s3-log-source-table-name"
     os.environ["EKS_CLUSTER_SOURCE_TABLE_NAME"] = "mocked-eks-log-source-table-name"
-    os.environ["LOG_AGENT_EKS_DEPLOYMENT_KIND_TABLE"] = "mocked-log-agent-eks-deployment-kind-table"
+    os.environ[
+        "LOG_AGENT_EKS_DEPLOYMENT_KIND_TABLE"
+    ] = "mocked-log-agent-eks-deployment-kind-table"

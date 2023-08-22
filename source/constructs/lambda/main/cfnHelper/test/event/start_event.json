@@ -1,7 +1,7 @@
 {
     "action": "START",
     "args": {
-        "stackName": "LogHub-Alarm-6336b",
+        "stackName": "Solution-Alarm-6336b",
         "pattern": "AlarmForOpenSearch",
         "parameters": [
             {

@@ -18,11 +18,11 @@ import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import { ActionType, InfoBarTypes } from "reducer/appReducer";
 
-interface spanInfo {
+interface SpanInfoProps {
   spanType: InfoBarTypes | undefined;
 }
 
-const InfoSpan: React.FC<spanInfo> = (props: spanInfo) => {
+const InfoSpan: React.FC<SpanInfoProps> = (props: SpanInfoProps) => {
   const { spanType } = props;
   const dispatch = useDispatch();
   const { t } = useTranslation();

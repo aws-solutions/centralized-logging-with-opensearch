@@ -15,10 +15,12 @@ limitations under the License.
 */
 import { INVALID } from "./const";
 import { format, parseISO } from "date-fns";
+import { formatWithOptions } from "date-fns/fp";
 import { EngineType, LogType, MultiLineLogParser, SyslogParser } from "API";
 import { ExLogConf } from "pages/resources/common/LogConfigComp";
 
 const SPRINGBOOT_DEFAULT_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss,SSS";
+const stackPrefix = "CL";
 
 // Build Dashboard Link
 export const buildDashboardLink = (
@@ -101,55 +103,6 @@ export const bucketNameIsValid = (bucketName: string): boolean => {
   return false;
 };
 
-// check Member Account Input Invalid
-export enum CrossAccountFiled {
-  ACCOUNT_ID = "ACCOUNT_ID",
-  CROSS_ACCOUNT_ROLE = "CROSS_ACCOUNT_ROLE",
-  INSATALL_DOC = "INSATALL_DOC",
-  CONFIG_DOC = "CONFIG_DOC",
-  S3_BUCKET = "S3_BUCKET",
-  STACK_ID = "STACK_ID",
-  KMS_KEY = "KMS_KEY",
-}
-export const checkCrossAccountValid = (
-  type: string,
-  value: string,
-  accountId?: string
-): boolean => {
-  if (type === CrossAccountFiled.ACCOUNT_ID) {
-    return /^\d{12}$/.test(value);
-  }
-  if (type === CrossAccountFiled.CROSS_ACCOUNT_ROLE) {
-    return new RegExp(
-      `^arn:(aws-cn|aws):iam::${accountId ? accountId : "\\d{12}"}:role\\/.+`
-    ).test(value);
-  }
-  if (type === CrossAccountFiled.INSATALL_DOC) {
-    return /.*FluentBitDocumentInstallation-\w+/.test(value);
-  }
-  if (type === CrossAccountFiled.CONFIG_DOC) {
-    return /.*FluentBitConfigDownloading-\w+/.test(value);
-  }
-  if (type === CrossAccountFiled.S3_BUCKET) {
-    return bucketNameIsValid(value);
-  }
-  if (type === CrossAccountFiled.STACK_ID) {
-    return new RegExp(
-      `^arn:(aws-cn|aws):cloudformation:\\w+-\\w+-\\d+:${
-        accountId ? accountId : "\\d{12}"
-      }:stack\\/\\S+`
-    ).test(value);
-  }
-  if (type === CrossAccountFiled.KMS_KEY) {
-    return new RegExp(
-      `^arn:(aws-cn|aws):kms:\\w+-\\w+-\\d:${
-        accountId ? accountId : "\\d{12}"
-      }:key\\/\\S+`
-    ).test(value);
-  }
-  return false;
-};
-
 // check index name is valid
 export const checkIndexNameValidate = (indexName: string): boolean => {
   const IndexRegEx = /^[a-z][a-z0-9_-]*$/;
@@ -172,10 +125,28 @@ export const JsonToDotNotate = (obj: any, target?: any, prefix?: string) => {
   prefix = prefix || "";
   Object.keys(obj).forEach(function (key) {
     if (typeof obj[key] !== "object" && obj[key] !== null) {
-      return (target[prefix + key] = obj[key]);
+      const newKey = `${prefix}${key}`;
+      target[newKey] = obj[key];
+      return target;
     }
   });
   return target;
+};
+
+// format event timestamp
+export const formatLogEventTimestamp = (timestamp: number): string => {
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const formatString = `yyyy-MM-dd'T'HH:mm:ss.SSSxxx`;
+  const options: any = { timeZone };
+  return formatWithOptions(options, formatString, new Date(timestamp));
+};
+
+// format timeStamp
+export const formatTimeStamp = (timestamp: number): string => {
+  if (timestamp) {
+    return format(new Date(timestamp), "yyyy-MM-dd HH:mm:ss");
+  }
+  return "-";
 };
 
 // format date
@@ -509,7 +480,6 @@ export const getLogFormatByUserLogConfig = (config: string): string => {
 };
 
 // Syslog RegEx Generator
-
 const SYSLOG_KEY_REGEX_MAP: any = {
   PRI: "[0-9]{1,5}",
   HOSTNAME: "([^\\s]+)|-",
@@ -522,17 +492,20 @@ const SYSLOG_KEY_REGEX_MAP: any = {
   MSG: ".+",
 };
 
-export const buidSyslogRegexFromConfig = (userFormatStr: string) => {
+const handleReplaceEnterAndBrackets = (str: string) => {
   // remove \n if at the last
-  if (userFormatStr.endsWith("\\n")) {
-    userFormatStr = userFormatStr.replace(/\\n$/, "");
+  if (str.endsWith("\\n")) {
+    str = str.replace(/\\n$/, "");
   }
-
   // if has the [ xxxx ]
-  let finalRegexStr = userFormatStr.replace(/\[.+?\]/, () => {
+  const finalRegexStr = str.replace(/\[.+?\]/, () => {
     return `(?<extradata>(\\[(.*)\\]|-))`;
   });
+  return finalRegexStr;
+};
 
+export const buidSyslogRegexFromConfig = (userFormatStr: string) => {
+  let finalRegexStr = handleReplaceEnterAndBrackets(userFormatStr);
   finalRegexStr = finalRegexStr.replace(/%([\w:-]+?)%/gi, (match, key) => {
     // if the timestamp without specify format
     if (key.toLowerCase() === "timestamp") {
@@ -701,11 +674,29 @@ export const buildKDSLink = (region: string, kdsName: string): string => {
   return `https://${region}.console.aws.amazon.com/kinesis/home?region=${region}#/streams/details/${kdsName}/monitoring`;
 };
 
+export const buildKDFLink = (region: string, kdfName: string): string => {
+  if (region.startsWith("cn")) {
+    return `https://${region}.console.amazonaws.cn/firehose/home?region=${region}#/details/${kdfName}/monitoring`;
+  }
+  return `https://${region}.console.aws.amazon.com/firehose/home?region=${region}#/details/${kdfName}/monitoring`;
+};
+
+export const buildCfnLink = (region: string, stackArn: string): string => {
+  if (region.startsWith("cn")) {
+    return `https://${region}.console.amazonaws.cn/cloudformation/home?region=${region}#/stacks/stackinfo?stackId=${encodeURIComponent(
+      stackArn
+    )}`;
+  }
+  return `https://${region}.console.aws.amazon.com/cloudformation/home?region=${region}#/stacks/stackinfo?stackId=${encodeURIComponent(
+    stackArn
+  )}`;
+};
+
 export const buildESLink = (region: string, domainName: string): string => {
   if (region.startsWith("cn")) {
     return `https://${region}.console.amazonaws.cn/esv3/home?region=${region}#opensearch/domains/${domainName}`;
   }
-  return `https://${region}.console.aws.amazon.com/esv3/home?region=${region}#opensearch/domains/${domainName}`;
+  return `https://${region}.console.aws.amazon.com/aos/home?region=${region}#opensearch/domains/${domainName}`;
 };
 
 export const buildESCloudWatchLink = (
@@ -732,6 +723,33 @@ export const buildSubnetLink = (region: string, subnetId: string): string => {
   return `https://console.aws.amazon.com/vpc/home?region=${region}#subnets:subnetId=${subnetId}`;
 };
 
+export const buildVPCPeeringLink = (
+  region: string,
+  vpcPeeringId: string
+): string => {
+  if (region.startsWith("cn")) {
+    return `https://console.amazonaws.cn/vpc/home?region=${region}#PeeringConnectionDetails:VpcPeeringConnectionId=${vpcPeeringId}`;
+  }
+  return `https://console.aws.amazon.com/vpc/home?region=${region}#PeeringConnectionDetails:VpcPeeringConnectionId=${vpcPeeringId}`;
+};
+
+export const buildNaclLink = (region: string, naclId: string): string => {
+  if (region.startsWith("cn")) {
+    return `https://console.amazonaws.cn/vpc/home?region=${region}#NetworkAclDetails:networkAclId=${naclId}`;
+  }
+  return `https://console.aws.amazon.com/vpc/home?region=${region}#NetworkAclDetails:networkAclId=${naclId}`;
+};
+
+export const buildRouteTableLink = (
+  region: string,
+  routeTableId: string
+): string => {
+  if (region.startsWith("cn")) {
+    return `https://console.amazonaws.cn/vpc/home?region=${region}#RouteTableDetails:RouteTableId=${routeTableId}`;
+  }
+  return `https://console.aws.amazon.com/vpc/home?region=${region}#RouteTableDetails:RouteTableId=${routeTableId}`;
+};
+
 export const buildSGLink = (region: string, sgId: string): string => {
   if (region.startsWith("cn")) {
     return `https://${region}.console.amazonaws.cn/ec2/v2/home?region=${region}#SecurityGroup:securityGroupId=${sgId}`;
@@ -746,6 +764,13 @@ const getDirPrefixByPrefixStr = (prefix: string) => {
   }
   return prefix;
 };
+
+export function buildCreateS3Link(region: string) {
+  if (region.startsWith("cn")) {
+    return `https://${region}.console.amazonaws.cn/s3/bucket/create?region=${region}`;
+  }
+  return `https://s3.console.aws.amazon.com/s3/bucket/create?region=${region}`;
+}
 
 export const buildS3Link = (
   region: string,
@@ -804,6 +829,19 @@ export const buildLambdaLink = (
   return `https://${region}.console.aws.amazon.com/lambda/home?region=${region}#/functions/${functionName}?tab=code`;
 };
 
+export const buildLambdaLogStreamLink = (
+  region: string,
+  functionName: string,
+  logStreamName: string
+): string => {
+  const funcUri = functionName;
+  const logStreamUri = logStreamName;
+  if (region.startsWith("cn")) {
+    return `https://${region}.console.amazonaws.cn/cloudwatch/home?region=${region}#logsV2:log-groups/log-group/${funcUri}/log-events/${logStreamUri}`;
+  }
+  return `https://${region}.console.aws.amazon.com/cloudwatch/home?region=${region}#logsV2:log-groups/log-group/${funcUri}/log-events/${logStreamUri}`;
+};
+
 export const buildRDSLink = (region: string): string => {
   if (region.startsWith("cn")) {
     return `https://console.amazonaws.cn/rds/home?region=${region}#databases:`;
@@ -825,11 +863,16 @@ export const buildAlarmLink = (region: string): string => {
   return `https://console.aws.amazon.com/cloudwatch/home?region=${region}#alarmsV2:`;
 };
 
-export const buildWAFLink = (region: string): string => {
+export const buildWAFLink = (region: string, webACLScope?: string): string => {
   if (region.startsWith("cn")) {
     return `https://console.amazonaws.cn/wafv2/homev2/web-acls?region=${region}`;
+  } else {
+    if (webACLScope === "CLOUDFRONT") {
+      return `https://console.aws.amazon.com/wafv2/homev2/web-acls?region=global`;
+    } else {
+      return `https://console.aws.amazon.com/wafv2/homev2/web-acls?region=${region}`;
+    }
   }
-  return `https://console.aws.amazon.com/wafv2/homev2/web-acls?region=${region}`;
 };
 
 export const buildELBLink = (region: string): string => {
@@ -876,6 +919,42 @@ export const buildCrossAccountTemplateLink = (
   return `https://${templateBucket}.s3.amazonaws.com/${solutionName}/${solutionVersion}/CrossAccount.template`;
 };
 
+export const buildSQSLink = (region: string, queueName: string): string => {
+  const uri = `https://sqs.${region}.amazonaws.com//`;
+  if (region.startsWith("cn")) {
+    return `https://${region}.console.amazonaws.cn/sqs/v2/home?region=${region}#/queues/${encodeURIComponent(
+      uri
+    )}${queueName}`;
+  }
+  return `https://${region}.console.aws.amazon.com/sqs/v2/home?region=${region}#/queues/${encodeURIComponent(
+    uri
+  )}${queueName}`;
+};
+
+export const buildNLBLinkByDNS = (region: string, dnsName: string): string => {
+  if (region.startsWith("cn")) {
+    return `https://${region}.console.amazonaws.cn/ec2/home?region=${region}#LoadBalancers:dnsName=${dnsName}`;
+  }
+  return `https://${region}.console.aws.amazon.com/ec2/home?region=${region}#LoadBalancers:dnsName=${dnsName}`;
+};
+
+export const buildLambdaCWLGroupLink = (
+  region: string,
+  groupName: string
+): string => {
+  if (region.startsWith("cn")) {
+    return `https://${region}.console.amazonaws.cn/cloudwatch/home?region=${region}#logsV2:log-groups/log-group/${groupName.replace(
+      /\//g,
+      decodeURIComponent("%24252F")
+    )}`;
+  }
+  return `https://${region}.console.aws.amazon.com/cloudwatch/home?region=${region}#logsV2:log-groups/log-group/${groupName.replace(
+    /\//g,
+    decodeURIComponent("%24252F")
+  )}
+    `;
+};
+
 export const getRegexAndTimeByConfigAndFormat = (
   curConfig: ExLogConf,
   format: string
@@ -911,4 +990,143 @@ export const getRegexAndTimeByConfigAndFormat = (
     tmpTimeExp = timeRegexStr;
   }
   return { tmpExp, tmpTimeExp };
+};
+
+export function containsNonLatinCodepoints(str: string) {
+  return [...str].some((char) => char.charCodeAt(0) > 127);
+}
+
+export function generateEc2Permissions(
+  awsPartition: string,
+  accountId: string,
+  getObjectResources: string[]
+): string {
+  return JSON.stringify(
+    {
+      Version: "2012-10-17",
+      Statement: [
+        {
+          Sid: "VisualEditor0",
+          Effect: "Allow",
+          Action: "s3:GetObject",
+          Resource: getObjectResources,
+        },
+        {
+          Sid: "AssumeRoleInMainAccount",
+          Effect: "Allow",
+          Action: "sts:AssumeRole",
+          Resource: [
+            `arn:${awsPartition}:iam::${accountId}:role/${stackPrefix}-buffer-access*`,
+          ],
+        },
+        {
+          Sid: "AssumeRoleInMainAccountCWL",
+          Effect: "Allow",
+          Action: "sts:AssumeRole",
+          Resource: [
+            `arn:${awsPartition}:iam::${accountId}:role/${stackPrefix}-cloudwatch-access*`,
+          ],
+        },
+        {
+          Effect: "Allow",
+          Action: [
+            "ssm:DescribeInstanceProperties",
+            "ssm:UpdateInstanceInformation",
+          ],
+          Resource: "*",
+        },
+        {
+          Effect: "Allow",
+          Action: [
+            "ec2messages:GetEndpoint",
+            "ec2messages:AcknowledgeMessage",
+            "ec2messages:SendReply",
+            "ec2messages:GetMessages",
+          ],
+          Resource: "*",
+        },
+      ],
+    },
+    null,
+    2
+  );
+}
+
+export const getAWSPartition = (region: string) => {
+  return region.startsWith("cn") ? "aws-cn" : "aws";
+};
+
+export type FieldValidator<T> = (param: T) => string;
+
+export const createFieldValidator =
+  <T extends any[]>(validator: (...params: T) => boolean) =>
+  (errorMessage: string) =>
+  (...params: T) => {
+    if (!validator(...params)) {
+      return errorMessage;
+    }
+    return "";
+  };
+
+export const validateRequiredText = createFieldValidator(
+  (text: string) => !!text
+);
+
+export const validateWithRegex = (reg: RegExp) =>
+  createFieldValidator((text: string) => reg.test(text));
+
+export const pipFieldValidator =
+  <T extends any[]>(...validators: ((...param: T) => string)[]) =>
+  (...param: T) => {
+    for (const validator of validators) {
+      const res = validator(...param);
+      if (res !== "") {
+        return res;
+      }
+    }
+    return "";
+  };
+
+export const validateS3BucketName = createFieldValidator((text: string) =>
+  bucketNameIsValid(text)
+);
+
+export const validateContainNonLatin = createFieldValidator((text: string) =>
+  containsNonLatinCodepoints(text)
+);
+
+type Reducer<State, Action> = (state: State, action: Action) => State;
+
+export const combineReducers =
+  <State, Action, K extends keyof State = keyof State>(slices: {
+    [k in K]: Reducer<State[k], any>;
+  }) =>
+  (state: State, action: Action) =>
+    Object.keys(slices).reduce((acc, prop) => {
+      const reducer = slices[prop as K];
+      return {
+        ...acc,
+        [prop as K]: reducer(acc[prop as K], action),
+      };
+    }, state);
+
+/**
+ * The `ternary` function in TypeScript returns `caseOne` if `cond` is true, otherwise it returns
+ * `caseTwo`.
+ * @param {any} cond - A boolean value that represents the condition to be evaluated.
+ * @param {T} caseOne - The `caseOne` parameter is the value that will be returned if the `cond`
+ * parameter is `true`.
+ * @param {T} caseTwo - The `caseTwo` parameter is the value that will be returned if the `cond`
+ * parameter is `false`.
+ */
+export const ternary = <T>(cond: any, caseOne: T, caseTwo: T) =>
+  cond ? caseOne : caseTwo;
+
+export const hasSamePrefix = (paths: string[]) => {
+  if (paths.length === 0) {
+    return false;
+  }
+  const prefixes = paths.map((path) => path.slice(0, path.lastIndexOf("/")));
+  console.info("prefixes:", prefixes);
+  return prefixes.every((prefix) => prefix === prefixes[0]);
 };

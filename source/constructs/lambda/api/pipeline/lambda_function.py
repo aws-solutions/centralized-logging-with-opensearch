@@ -7,89 +7,60 @@ import os
 import uuid
 from datetime import datetime
 
-import boto3
 from boto3.dynamodb.conditions import Attr
-from botocore import config
-from botocore.exceptions import ClientError
-from aws_svc_mgr import SvcManager
+
+from commonlib import AWSConnection, handle_error, AppSyncRouter
+from commonlib import DynamoDBUtil, LinkAccountHelper
+from commonlib.model import PipelineMonitorStatus
+from commonlib.exception import APIException, ErrorCode
+from commonlib.utils import paginate, create_stack_name
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-stack_prefix = os.environ.get("STACK_PREFIX", "CL")
-solution_version = os.environ.get("SOLUTION_VERSION", "v1.0.0")
-solution_id = os.environ.get("SOLUTION_ID", "SO8025")
-user_agent_config = {
-    "user_agent_extra": f"AwsSolution/{solution_id}/{solution_version}"
-}
-default_config = config.Config(**user_agent_config)
+conn = AWSConnection()
+router = AppSyncRouter()
 
-sts = boto3.client("sts", config=default_config)
-account_id = sts.get_caller_identity()["Account"]
+pipeline_table_name = os.environ.get("PIPELINE_TABLE")
+ddb_util = DynamoDBUtil(pipeline_table_name)
 
-table_name = os.environ.get("PIPELINE_TABLE")
 stateMachineArn = os.environ.get("STATE_MACHINE_ARN")
-default_region = os.environ.get("AWS_REGION")
+sfn = conn.get_client("stepfunctions")
 
-dynamodb = boto3.resource("dynamodb", region_name=default_region, config=default_config)
-sfn = boto3.client("stepfunctions", region_name=default_region, config=default_config)
-
-pipeline_table = dynamodb.Table(table_name)
-
-
-def handle_error(func):
-    """Decorator for exception handling"""
-
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except APIException as e:
-            logger.error(e)
-            raise e
-        except Exception as e:
-            logger.error(e)
-            raise RuntimeError(
-                "Unknown exception, please check Lambda log for more details"
-            )
-
-    return wrapper
+link_account_table_name = os.environ.get("SUB_ACCOUNT_LINK_TABLE_NAME")
+account_helper = LinkAccountHelper(link_account_table_name)
 
 
 @handle_error
 def lambda_handler(event, _):
-    # logger.info("Received event: " + json.dumps(event, indent=2))
-
-    action = event["info"]["fieldName"]
-    args = event["arguments"]
-
-    if action == "createServicePipeline":
-        return create_service_pipeline(**args)
-    elif action == "deleteServicePipeline":
-        return delete_service_pipeline(**args)
-    elif action == "listServicePipelines":
-        return list_pipelines(**args)
-    else:
-        logger.info("Event received: " + json.dumps(event, indent=2))
-        raise RuntimeError(f"Unknown action {action}")
+    return router.resolve(event)
 
 
+@router.route(field_name="createServicePipeline")
 def create_service_pipeline(**args):
     """Create a service pipeline deployment"""
     logger.info("Create Service Pipeline")
 
     pipeline_id = str(uuid.uuid4())
 
-    stack_name = create_stack_name(pipeline_id)
+    stack_name = create_stack_name("SvcPipe", pipeline_id)
     service_type = args["type"]
     source = args["source"]
     target = args["target"]
+    monitor = args.get("monitor") or {"status": PipelineMonitorStatus.ENABLED}
     destination_type = args["destinationType"]
 
     params = []
+    account_id = args.get("logSourceAccountId") or account_helper.default_account_id
+    region = args.get("logSourceRegion") or account_helper.default_region
+
+    account = account_helper.get_link_account(account_id, region)
+    log_source_account_assume_role = account.get("subAccountRoleArn", "")
+
     args["parameters"].append(
         {
             "parameterKey": "logSourceAccountId",
-            "parameterValue": args.get("logSourceAccountId") or account_id,
+            "parameterValue": account_id,
         }
     )
 
@@ -97,7 +68,7 @@ def create_service_pipeline(**args):
         args["parameters"].append(
             {
                 "parameterKey": "logSourceRegion",
-                "parameterValue": args.get("logSourceRegion") or default_region,
+                "parameterValue": region,
             }
         )
     else:
@@ -108,14 +79,6 @@ def create_service_pipeline(**args):
             }
         )
 
-    svc_mgr = SvcManager()
-    link_acct = svc_mgr.get_link_account(
-        sub_account_id=args.get("logSourceAccountId", account_id),
-        region=args.get("logSourceRegion") or default_region,
-    )
-    log_source_account_assume_role = ""
-    if link_acct:
-        log_source_account_assume_role = link_acct["subAccountRoleArn"]
     args["parameters"].append(
         {
             "parameterKey": "logSourceAccountAssumeRole",
@@ -143,55 +106,56 @@ def create_service_pipeline(**args):
         "parameters": params,
     }
 
-    # Check the OpenSearch status
-    domain_name = ""
-    for p in args["parameters"]:
-        if p["parameterKey"] == "domainName":
-            domain_name = p["parameterValue"]
-            break
-    check_aos_status(domain_name)
-
     # Start the pipeline flow
     exec_sfn_flow(pipeline_id, "START", sfn_args)
 
-    pipeline_table.put_item(
-        Item={
-            "id": pipeline_id,
-            "type": service_type,
-            "source": source,
-            "target": target,
-            "destinationType": destination_type,
-            "parameters": args["parameters"],
-            "tags": args.get("tags", []),
-            "createdDt": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "stackName": stack_name,
-            # 'startExecutionArn': start_exec_arn,
-            "status": "CREATING",
-        }
-    )
+    item = {
+        "id": pipeline_id,
+        "type": service_type,
+        "source": source,
+        "target": target,
+        "destinationType": destination_type,
+        "parameters": args["parameters"],
+        "tags": args.get("tags", []),
+        "createdAt": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "stackName": stack_name,
+        "monitor": monitor,
+        "status": "CREATING",
+    }
+    ddb_util.put_item(item)
     return pipeline_id
 
 
+@router.route(field_name="getServicePipeline")
+def get_service_pipeline(id: str):
+    """Get a service pipeline detail"""
+
+    item = ddb_util.get_item({"id": id})
+
+    # Get the error log prefix
+    error_log_prefix = get_error_export_info(item)
+    item["monitor"]["errorLogPrefix"] = error_log_prefix
+
+    return item
+
+
+@router.route(field_name="deleteServicePipeline")
 def delete_service_pipeline(id: str) -> str:
     """delete a service pipeline deployment"""
     logger.info("Delete Service Pipeline")
 
-    resp = pipeline_table.get_item(
-        Key={
-            "id": id,
-        }
-    )
-    if "Item" not in resp:
-        raise APIException("Pipeline Not Found")
+    item = ddb_util.get_item({"id": id})
+    if not item:
+        raise APIException(ErrorCode.ITEM_NOT_FOUND, "Pipeline is not found")
 
-    if resp["Item"].get("status") in ["INACTIVE", "DELETING"]:
-        raise APIException("No pipeline to delete")
+    if item.get("status") in ["INACTIVE", "DELETING"]:
+        raise APIException(ErrorCode.INVALID_ITEM, "No pipeline to delete")
 
     status = "INACTIVE"
 
-    if "stackId" in resp["Item"] and resp["Item"]["stackId"]:
+    if "stackId" in item and item["stackId"]:
         status = "DELETING"
-        args = {"stackId": resp["Item"]["stackId"]}
+        args = {"stackId": item["stackId"]}
         # Start the pipeline flow
         exec_sfn_flow(id, "STOP", args)
 
@@ -201,15 +165,7 @@ def delete_service_pipeline(id: str) -> str:
 
 def update_status(id: str, status: str):
     """Update pipeline status in pipeline table"""
-    logger.info("Update Pipeline Status in DynamoDB")
-    pipeline_table.update_item(
-        Key={"id": id},
-        UpdateExpression="SET #status = :s",
-        ExpressionAttributeNames={"#status": "status"},
-        ExpressionAttributeValues={
-            ":s": status,
-        },
-    )
+    ddb_util.update_item({"id": id}, {"status": status})
 
 
 def exec_sfn_flow(id: str, action="START", args=None):
@@ -232,69 +188,16 @@ def exec_sfn_flow(id: str, action="START", args=None):
     )
 
 
+@router.route(field_name="listServicePipelines")
 def list_pipelines(page=1, count=20):
     logger.info(f"List Pipelines from DynamoDB in page {page} with {count} of records")
-    response = pipeline_table.scan(
-        FilterExpression=Attr("status").ne("INACTIVE"),
-        ProjectionExpression="id, createdDt, #type, #source,#parameters,target, #status",
-        ExpressionAttributeNames={
-            "#status": "status",
-            "#source": "source",
-            "#parameters": "parameters",
-            "#type": "type",
-        },
-    )
 
-    # Assume all items are returned in the scan request
-    items = response["Items"]
-    # logger.info(items)
-
-    total = len(items)
-    start = (page - 1) * count
-    end = page * count
-
-    if start > total:
-        start, end = 0, count
-    logger.info(f"Return result from {start} to {end} in total of {total}")
-    items.sort(key=lambda x: x["createdDt"], reverse=True)
+    items = ddb_util.list_items(filter_expression=Attr("status").ne("INACTIVE"))
+    total, pipelines = paginate(items, page, count, sort_by="createdAt")
     return {
-        "total": len(items),
-        "pipelines": items[start:end],
+        "total": total,
+        "pipelines": pipelines,
     }
-
-
-def create_stack_name(id):
-    return stack_prefix + "-Pipe-" + id[:8]
-
-
-def check_aos_status(aos_domain_name):
-    """
-    Helper function to check the aos status before create pipeline or ingestion.
-    During the Upgrade and Pre-upgrade process, users can not create index template
-    and create backend role.
-    """
-    region = default_region
-
-    es = boto3.client("es", region_name=region)
-
-    # Get the domain status.
-    try:
-        describe_resp = es.describe_elasticsearch_domain(DomainName=aos_domain_name)
-        logger.info(json.dumps(describe_resp["DomainStatus"], indent=4, default=str))
-    except ClientError as err:
-        if err.response["Error"]["Code"] == "ResourceNotFoundException":
-            raise APIException("OpenSearch Domain Not Found")
-        raise err
-
-    # Check domain status.
-    if (
-        not (describe_resp["DomainStatus"]["Created"])
-        or describe_resp["DomainStatus"]["Processing"]
-    ):
-        raise APIException(
-            "OpenSearch is in the process of creating, upgrading or pre-upgrading,"
-            " please wait for it to be ready"
-        )
 
 
 def _get_pattern_by_buffer(service_type, destination_type, enable_autoscaling="no"):
@@ -314,6 +217,16 @@ def _get_pattern_by_buffer(service_type, destination_type, enable_autoscaling="n
         return service_type
 
 
-class APIException(Exception):
-    def __init__(self, message):
-        self.message = message
+def get_error_export_info(pipeline_item: dict):
+    """Generate processor error log location."""
+    log_type = pipeline_item.get("type")
+    index_prefix = get_cfn_param(pipeline_item, "indexPrefix")
+    return f"error/AWSLogs/{log_type}/index-prefix={index_prefix}/"
+
+
+def get_cfn_param(item, param_description):
+    """Get the task param from ddb"""
+    for stack_param in item.get("parameters"):
+        if stack_param.get("parameterKey") == param_description:
+            return stack_param.get("parameterValue")
+    return ""

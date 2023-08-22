@@ -14,12 +14,27 @@ export const importDomain = /* GraphQL */ `
       region: $region
       vpc: $vpc
       tags: $tags
-    )
+    ) {
+      id
+      resources {
+        name
+        values
+        status
+      }
+    }
   }
 `;
 export const removeDomain = /* GraphQL */ `
-  mutation RemoveDomain($id: ID!) {
-    removeDomain(id: $id)
+  mutation RemoveDomain($id: ID!, $isReverseConf: Boolean) {
+    removeDomain(id: $id, isReverseConf: $isReverseConf) {
+      error
+      errorCode
+      resources {
+        name
+        values
+        status
+      }
+    }
   }
 `;
 export const createServicePipeline = /* GraphQL */ `
@@ -32,6 +47,7 @@ export const createServicePipeline = /* GraphQL */ `
     $logSourceAccountId: String
     $logSourceRegion: String
     $destinationType: DestinationType!
+    $monitor: MonitorInput
   ) {
     createServicePipeline(
       type: $type
@@ -42,7 +58,13 @@ export const createServicePipeline = /* GraphQL */ `
       logSourceAccountId: $logSourceAccountId
       logSourceRegion: $logSourceRegion
       destinationType: $destinationType
+      monitor: $monitor
     )
+  }
+`;
+export const updateServicePipeline = /* GraphQL */ `
+  mutation UpdateServicePipeline($id: ID!, $monitor: MonitorInput) {
+    updateServicePipeline(id: $id, monitor: $monitor)
   }
 `;
 export const deleteServicePipeline = /* GraphQL */ `
@@ -117,133 +139,74 @@ export const putResourceLogConfig = /* GraphQL */ `
     }
   }
 `;
-export const createInstanceGroup = /* GraphQL */ `
-  mutation CreateInstanceGroup(
-    $accountId: String
-    $region: String
-    $groupName: String!
-    $groupType: String
-    $instanceSet: [String!]!
-  ) {
-    createInstanceGroup(
-      accountId: $accountId
-      region: $region
-      groupName: $groupName
-      groupType: $groupType
-      instanceSet: $instanceSet
-    )
-  }
-`;
-export const createInstanceGroupBaseOnASG = /* GraphQL */ `
-  mutation CreateInstanceGroupBaseOnASG(
-    $accountId: String
-    $region: String
-    $groupName: String!
-    $groupType: String
-    $autoScalingGroupName: String!
-  ) {
-    createInstanceGroupBaseOnASG(
-      accountId: $accountId
-      region: $region
-      groupName: $groupName
-      groupType: $groupType
-      autoScalingGroupName: $autoScalingGroupName
-    )
-  }
-`;
-export const deleteInstanceGroup = /* GraphQL */ `
-  mutation DeleteInstanceGroup($id: ID!) {
-    deleteInstanceGroup(id: $id)
-  }
-`;
-export const addInstancesToInstanceGroup = /* GraphQL */ `
-  mutation AddInstancesToInstanceGroup(
-    $sourceId: String!
-    $instanceIdSet: [String!]!
-  ) {
-    addInstancesToInstanceGroup(
-      sourceId: $sourceId
-      instanceIdSet: $instanceIdSet
-    )
-  }
-`;
-export const deleteInstancesFromInstanceGroup = /* GraphQL */ `
-  mutation DeleteInstancesFromInstanceGroup(
-    $sourceId: String!
-    $instanceIdSet: [String!]!
-  ) {
-    deleteInstancesFromInstanceGroup(
-      sourceId: $sourceId
-      instanceIdSet: $instanceIdSet
-    )
-  }
-`;
-export const createLogConf = /* GraphQL */ `
-  mutation CreateLogConf(
-    $confName: String!
+export const createLogConfig = /* GraphQL */ `
+  mutation CreateLogConfig(
+    $name: String!
     $logType: LogType!
+    $syslogParser: SyslogParser
+    $multilineLogParser: MultiLineLogParser
+    $filterConfigMap: ProcessorFilterRegexInput
+    $regex: String
+    $regexFieldSpecs: [RegularSpecInput]
     $timeKey: String
     $timeOffset: String
-    $multilineLogParser: MultiLineLogParser
-    $syslogParser: SyslogParser
-    $userSampleLog: String
+    $timeKeyRegex: String
     $userLogFormat: String
-    $regularExpression: String
-    $timeRegularExpression: String
-    $regularSpecs: [RegularSpecInput]
-    $processorFilterRegex: ProcessorFilterRegexInput
+    $userSampleLog: String
   ) {
-    createLogConf(
-      confName: $confName
+    createLogConfig(
+      name: $name
       logType: $logType
+      syslogParser: $syslogParser
+      multilineLogParser: $multilineLogParser
+      filterConfigMap: $filterConfigMap
+      regex: $regex
+      regexFieldSpecs: $regexFieldSpecs
       timeKey: $timeKey
       timeOffset: $timeOffset
-      multilineLogParser: $multilineLogParser
-      syslogParser: $syslogParser
-      userSampleLog: $userSampleLog
+      timeKeyRegex: $timeKeyRegex
       userLogFormat: $userLogFormat
-      regularExpression: $regularExpression
-      timeRegularExpression: $timeRegularExpression
-      regularSpecs: $regularSpecs
-      processorFilterRegex: $processorFilterRegex
+      userSampleLog: $userSampleLog
     )
   }
 `;
-export const deleteLogConf = /* GraphQL */ `
-  mutation DeleteLogConf($id: ID!) {
-    deleteLogConf(id: $id)
+export const deleteLogConfig = /* GraphQL */ `
+  mutation DeleteLogConfig($id: ID!) {
+    deleteLogConfig(id: $id)
   }
 `;
-export const updateLogConf = /* GraphQL */ `
-  mutation UpdateLogConf(
+export const updateLogConfig = /* GraphQL */ `
+  mutation UpdateLogConfig(
     $id: ID!
-    $confName: String!
+    $version: Int
+    $name: String!
     $logType: LogType!
+    $syslogParser: SyslogParser
+    $multilineLogParser: MultiLineLogParser
+    $filterConfigMap: ProcessorFilterRegexInput
+    $regex: String
+    $regexFieldSpecs: [RegularSpecInput]
     $timeKey: String
     $timeOffset: String
-    $multilineLogParser: MultiLineLogParser
-    $syslogParser: SyslogParser
-    $userSampleLog: String
+    $timeKeyRegex: String
     $userLogFormat: String
-    $regularExpression: String
-    $timeRegularExpression: String
-    $regularSpecs: [RegularSpecInput]
-    $processorFilterRegex: ProcessorFilterRegexInput
+    $userSampleLog: String
   ) {
-    updateLogConf(
+    updateLogConfig(
       id: $id
-      confName: $confName
+      version: $version
+      name: $name
       logType: $logType
+      syslogParser: $syslogParser
+      multilineLogParser: $multilineLogParser
+      filterConfigMap: $filterConfigMap
+      regex: $regex
+      regexFieldSpecs: $regexFieldSpecs
       timeKey: $timeKey
       timeOffset: $timeOffset
-      multilineLogParser: $multilineLogParser
-      syslogParser: $syslogParser
-      userSampleLog: $userSampleLog
+      timeKeyRegex: $timeKeyRegex
       userLogFormat: $userLogFormat
-      regularExpression: $regularExpression
-      timeRegularExpression: $timeRegularExpression
-      regularSpecs: $regularSpecs
-      processorFilterRegex: $processorFilterRegex
+      userSampleLog: $userSampleLog
     )
   }
 `;
@@ -252,6 +215,9 @@ export const createAppPipeline = /* GraphQL */ `
     $bufferType: BufferType!
     $bufferParams: [BufferInput]
     $aosParams: AOSParameterInput!
+    $logConfigId: ID!
+    $logConfigVersionNumber: Int!
+    $monitor: MonitorInput
     $force: Boolean
     $tags: [TagInput]
   ) {
@@ -259,9 +225,17 @@ export const createAppPipeline = /* GraphQL */ `
       bufferType: $bufferType
       bufferParams: $bufferParams
       aosParams: $aosParams
+      logConfigId: $logConfigId
+      logConfigVersionNumber: $logConfigVersionNumber
+      monitor: $monitor
       force: $force
       tags: $tags
     )
+  }
+`;
+export const updateAppPipeline = /* GraphQL */ `
+  mutation UpdateAppPipeline($id: ID!, $monitor: MonitorInput) {
+    updateAppPipeline(id: $id, monitor: $monitor)
   }
 `;
 export const deleteAppPipeline = /* GraphQL */ `
@@ -271,22 +245,18 @@ export const deleteAppPipeline = /* GraphQL */ `
 `;
 export const createAppLogIngestion = /* GraphQL */ `
   mutation CreateAppLogIngestion(
-    $confId: String!
-    $sourceIds: [String!]
-    $sourceType: LogSourceType!
+    $sourceId: String!
     $appPipelineId: String!
-    $createDashboard: String
     $tags: [TagInput]
     $logPath: String
+    $autoAddPermission: Boolean!
   ) {
     createAppLogIngestion(
-      confId: $confId
-      sourceIds: $sourceIds
-      sourceType: $sourceType
+      sourceId: $sourceId
       appPipelineId: $appPipelineId
-      createDashboard: $createDashboard
       tags: $tags
       logPath: $logPath
+      autoAddPermission: $autoAddPermission
     )
   }
 `;
@@ -310,50 +280,45 @@ export const requestInstallLogAgent = /* GraphQL */ `
 `;
 export const createLogSource = /* GraphQL */ `
   mutation CreateLogSource(
-    $sourceType: LogSourceType!
-    $accountId: String
+    $type: LogSourceType!
     $region: String
-    $sourceInfo: [SourceInfoInput]
+    $accountId: String
+    $ec2: EC2SourceInput
+    $syslog: SyslogSourceInput
+    $eks: EKSSourceInput
+    $s3: S3SourceInput
     $tags: [TagInput]
   ) {
     createLogSource(
-      sourceType: $sourceType
-      accountId: $accountId
+      type: $type
       region: $region
-      sourceInfo: $sourceInfo
+      accountId: $accountId
+      ec2: $ec2
+      syslog: $syslog
+      eks: $eks
+      s3: $s3
       tags: $tags
     )
   }
 `;
-export const importEKSCluster = /* GraphQL */ `
-  mutation ImportEKSCluster(
-    $aosDomainId: ID!
-    $eksClusterName: String!
-    $cri: CRI
-    $accountId: String
-    $region: String
-    $deploymentKind: EKSDeployKind!
-    $tags: [TagInput]
+export const updateLogSource = /* GraphQL */ `
+  mutation UpdateLogSource(
+    $type: LogSourceType!
+    $sourceId: ID!
+    $action: LogSourceUpdateAction!
+    $ec2: EC2SourceUpdateInput
   ) {
-    importEKSCluster(
-      aosDomainId: $aosDomainId
-      eksClusterName: $eksClusterName
-      cri: $cri
-      accountId: $accountId
-      region: $region
-      deploymentKind: $deploymentKind
-      tags: $tags
+    updateLogSource(
+      type: $type
+      sourceId: $sourceId
+      action: $action
+      ec2: $ec2
     )
   }
 `;
-export const removeEKSCluster = /* GraphQL */ `
-  mutation RemoveEKSCluster($id: ID!) {
-    removeEKSCluster(id: $id)
-  }
-`;
-export const generateErrorCode = /* GraphQL */ `
-  mutation GenerateErrorCode($code: ErrorCode) {
-    generateErrorCode(code: $code)
+export const deleteLogSource = /* GraphQL */ `
+  mutation DeleteLogSource($type: LogSourceType!, $sourceId: ID!) {
+    deleteLogSource(type: $type, sourceId: $sourceId)
   }
 `;
 export const createSubAccountLink = /* GraphQL */ `
@@ -367,6 +332,7 @@ export const createSubAccountLink = /* GraphQL */ `
     $subAccountBucketName: String!
     $subAccountStackId: String!
     $subAccountKMSKeyArn: String!
+    $subAccountIamInstanceProfileArn: String!
     $tags: [TagInput]
   ) {
     createSubAccountLink(
@@ -379,37 +345,53 @@ export const createSubAccountLink = /* GraphQL */ `
       subAccountBucketName: $subAccountBucketName
       subAccountStackId: $subAccountStackId
       subAccountKMSKeyArn: $subAccountKMSKeyArn
+      subAccountIamInstanceProfileArn: $subAccountIamInstanceProfileArn
       tags: $tags
     )
   }
 `;
-export const updateSubAccountLink = /* GraphQL */ `
-  mutation UpdateSubAccountLink(
-    $id: ID!
-    $subAccountName: String!
-    $agentInstallDoc: String!
-    $agentConfDoc: String!
-    $subAccountBucketName: String!
-    $subAccountStackId: String!
-    $subAccountKMSKeyArn: String!
-    $subAccountVpcId: String
-    $subAccountPublicSubnetIds: String
+export const deleteSubAccountLink = /* GraphQL */ `
+  mutation DeleteSubAccountLink($subAccountId: String!, $region: String) {
+    deleteSubAccountLink(subAccountId: $subAccountId, region: $region)
+  }
+`;
+export const createPipelineAlarm = /* GraphQL */ `
+  mutation CreatePipelineAlarm(
+    $pipelineId: String!
+    $pipelineType: PipelineType!
+    $snsTopicArn: String
+    $emails: String
+    $snsTopicName: String
   ) {
-    updateSubAccountLink(
-      id: $id
-      subAccountName: $subAccountName
-      agentInstallDoc: $agentInstallDoc
-      agentConfDoc: $agentConfDoc
-      subAccountBucketName: $subAccountBucketName
-      subAccountStackId: $subAccountStackId
-      subAccountKMSKeyArn: $subAccountKMSKeyArn
-      subAccountVpcId: $subAccountVpcId
-      subAccountPublicSubnetIds: $subAccountPublicSubnetIds
+    createPipelineAlarm(
+      pipelineId: $pipelineId
+      pipelineType: $pipelineType
+      snsTopicArn: $snsTopicArn
+      emails: $emails
+      snsTopicName: $snsTopicName
     )
   }
 `;
-export const deleteSubAccountLink = /* GraphQL */ `
-  mutation DeleteSubAccountLink($id: ID!) {
-    deleteSubAccountLink(id: $id)
+export const updatePipelineAlarm = /* GraphQL */ `
+  mutation UpdatePipelineAlarm(
+    $pipelineId: String!
+    $pipelineType: PipelineType!
+    $snsTopicArn: String
+    $emails: String
+  ) {
+    updatePipelineAlarm(
+      pipelineId: $pipelineId
+      pipelineType: $pipelineType
+      snsTopicArn: $snsTopicArn
+      emails: $emails
+    )
+  }
+`;
+export const deletePipelineAlarm = /* GraphQL */ `
+  mutation DeletePipelineAlarm(
+    $pipelineId: String!
+    $pipelineType: PipelineType!
+  ) {
+    deletePipelineAlarm(pipelineId: $pipelineId, pipelineType: $pipelineType)
   }
 `;

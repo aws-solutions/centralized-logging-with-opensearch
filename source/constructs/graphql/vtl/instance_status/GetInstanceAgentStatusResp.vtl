@@ -1,0 +1,6 @@
+#set($commandId = $util.urlEncode(commandId))
+#foreach( $InstanceAgentStatus in $ctx.result.instanceAgentStatusList )
+    #set($InstanceAgentStatus = $util.urlEncode($InstanceAgentStatus))    
+#end
+
+$util.toJson($ctx.result)

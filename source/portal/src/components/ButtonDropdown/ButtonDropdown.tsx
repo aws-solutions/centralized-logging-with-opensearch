@@ -120,10 +120,10 @@ export const Button: FC<ButtonProps> = (props) => {
           </button>
           {showDropdown && (
             <div className="drop-down-items">
-              {items?.map((element, index) => {
+              {items?.map((element) => {
                 return (
                   <div
-                    key={index}
+                    key={element.id}
                     onClick={() => {
                       if (onItemClick) {
                         onItemClick(element);

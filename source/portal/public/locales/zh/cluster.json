@@ -8,7 +8,16 @@
     "health": "集群运行状况",
     "remove": "移除域",
     "removeConfirm": "您确定要移除域",
-    "removeTips": "从解决方案中移除域不会删除 AWS 账户中的 OpenSearch 域。"
+    "removeTips": "以下资源是在导入域时由解决方案创建或更新的，请选择是否撤回或者保留相关的更改。 从解决方案中移除域不会删除 AWS 账户中的 OpenSearch 域。",
+    "resourceName": "资源名",
+    "resourceID": "资源 ID",
+    "status": "状态",
+    "chooseReverse": "回撤更改",
+    "chooseKeep": "保留更改",
+    "removeErrorMessage": "删除域失败，原因是：{{removeErrorMessage}}",
+    "removeErrorIngestionExists": "在删除此域之前，请确保删除所有将日志摄取到此域中的日志管道。",
+    "removeErrorSubstackUnderProcessing": "该域与正在处理中的堆栈相关联。请先删除相关的堆栈。",
+    "standByTips": "所选域已启用多可用区备用部署，至少需要两个副本。"
   },
   "detail": {
     "config": "基本配置",
@@ -109,7 +118,7 @@
     "publicProxy": "公共访问代理",
     "publicProxyDesc": "Access Proxy 是一个转发代理，用于访问VPC内的 OpenSearch dashboards。启用代理将创建一个ELB关联的 Nginx Auto Scaling 组，并将 Web 流量从互联网路由到 OpenSearch 内置的 dashboard",
     "publicSubnets": "公共子网",
-    "publicSubnetsDesc": "选择日志处理层的子网。子网必须连接到集群。",
+    "publicSubnetsDesc": "选择最少2个日志处理层的公有子网。子网必须连接到集群。",
     "chooseSubnet": "选择子网",
     "publicSG": "公共安全组",
     "publicSGDesc": "为应用负载均衡器选择一个安全组。此安全组必须有权访问日志处理安全组。",
@@ -127,7 +136,7 @@
     "keyPairs": "EC2 密钥对",
     "nginxKeyNameDesc2": " 中为 Nginx 实例选择一个 EC2 密钥。",
     "chooseKeyName": "选择 EC2 密钥",
-    "subnetError": "请选择公共子网组",
+    "subnetError": "请选择至少 2 个公有子网。",
     "sgError": "请选择公共安全组",
     "keyError": "请选择 EC2 密钥",
     "secureConn": "安全连接",
@@ -146,16 +155,32 @@
     "step": {
       "selectDomain": "选择域",
       "configNetwork": "配置网络",
-      "createTags": "创建标签"
+      "createTags": "创建标签",
+      "importDomain": "导入"
     },
     "selectDomain": {
       "osDomain": "OpenSearch 域",
       "domain": "域",
-      "domainDesc1": "集群必须与此解决方案位于同一区域，并且必须是 VPC 类型。或查看",
+      "domainDesc1": "域必须与此解决方案位于同一区域。 如果您所在区域没有域，请查看",
       "domainDesc2": "指南",
-      "domainDesc3": "创建一个集群。(* 确保您的 OpenSearch 的状态为有效，列表中只会显示状态为有效的 OpenSearch 域)",
+      "domainDesc3": "创建域。 （请注意，只有处于活动状态的域才能导入）",
       "domainError": "请选择一个域",
-      "selectDomain": "选择一个 OpenSearch 域"
+      "selectDomain": "选择一个 OpenSearch 域",
+      "checkDomain": "验证",
+      "checkDomainInProgressDesc": "验证所选域是否可以导入到此解决方案中",
+      "checkDomainPassDesc": "所选域满足导入此解决方案的要求。",
+      "checkDomainErrorDesc": "所选域不满足一项或多项要求，请更改域配置或选择其他域。",
+      "engineVersion": "引擎版本： ",
+      "engineType": "引擎类型： ",
+      "solutionPrivateSubnetWithNat": "检测解决方案是否具有使用 NAT 的私有子网： ",
+      "networkType": "域网络： ",
+      "fgace": "启用细粒度访问控制：",
+      "alertDomainVersion": "OpenSearch 域的版本需要高于v1.3.0。",
+      "alertDomainEngineType": "目前只支持OpenSearch。",
+      "alertDomainInVpc": "OpenSearch 域需要在 VPC 中部署。",
+      "alertSolutionPrivateNAT": "Solution 的Private Subnet 需要拥有NAT。",
+      "public": "公有访问权限",
+      "private": "VPC 访问"
     },
     "configNetwork": {
       "osNetwork": "OpenSearch 网络",
@@ -181,6 +206,46 @@
       "logProcessSG": "日志处理安全组",
       "logProcessSGDesc": "为日志处理层选择一个安全组。 安全组必须有权访问 OpenSearch 域。",
       "chooseSG": "选择安全组"
+    }
+  },
+  "imported": {
+    "setupVpcPeer": "设置 VPC 对等连接：",
+    "updateRouteTable": "更新路由表： ",
+    "updateSG": "更新 OpenSearch 域的安全组： ",
+    "updateDomainNACL": "更新 OpenSearch 域的网络访问控制列表： ",
+    "updateDomainRouteTable": "更新 OpenSearch 域的路由表： ",
+    "updateSolutionRouteTable": "更新解决方案 VPC 的路由表： ",
+    "errorSetup": "设置错误：",
+    "passedVpcPeer": "VPC 对等连接通过： ",
+    "checkRouteTable": "检查路由表：",
+    "checkSG": "检查 OpenSearch 域的安全组：",
+    "checkError": "检查错误：",
+    "domainRouteTableError": "更新域路由表失败",
+    "solutionRouteTableError": "更新解决方案路由表失败",
+    "domainNACLError": "更新域网络访问控制列表失败",
+    "domainSGError": "更新域安全组失败",
+    "vpcPeeringError": "设置 VPC 对等连接失败",
+    "vpcPeering": "VPC对等连接",
+    "openSearchSecurityGroup": "OpenSearch 安全组",
+    "openSearchRouteTables": "OpenSearch 路由表",
+    "openSearchNetworkACL": "OpenSearch 网络访问控制列表",
+    "SolutionRouteTables": "解决方案路由表",
+    "done": "您的域已经成功导入！"
+  },
+  "check": {
+    "dueTo": "由于连接到所选的 OpenSearch 域失败，原因是：",
+    "chooseAnother": "请更新 OpenSearch 域设置或选择另一个域。",
+    "failed": {
+      "DOMAIN_UNDER_PROCESSING": "域正在处理中。",
+      "UNSUPPORTED_DOMAIN_ENGINE": "域的引擎不受支持。",
+      "DOMAIN_NETWORK_TYPE_NOT_PRIVATE": "域的网络类型不是私有的。",
+      "OLD_DOMAIN_VERSION": "域的版本不受支持。",
+      "SUBNET_WITHOUT_NAT": "域子网缺乏 NAT。",
+      "AOS_SECURITY_GROUP_CHECK_FAILED": "域的安全组阻止连接。",
+      "NETWORK_ACL_CHECK_FAILED": "域的 ACL 阻止连接。",
+      "VPC_PEERING_CHECK_FAILED": "解决方案的 VPC 与域的 VPC 之间缺乏VPC对等连接。",
+      "AOS_VPC_ROUTING_CHECK_FAILED": "域的 VPC 路由表缺少将流量路由到解决方案的 VPC 的规则。",
+      "SOLUTION_VPC_ROUTING_CHECK_FAILED": "解决方案的 VPC 路由表缺少将流量路由到域的 VPC 的规则。"
     }
   }
 }

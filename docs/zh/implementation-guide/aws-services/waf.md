@@ -108,7 +108,40 @@
 
 您可以在 AWS CloudFormation 控制台的 **状态** 列中查看堆栈的状态。正常情况下，您大约 10 分钟后会看到 **CREATE_COMPLETE** 状态。
 
-## 示例仪表板
+## 查看仪表板
+
+该仪表板包括以下可视化图表。
+
+| 可视化名称                  | 源字段                                                                                                                                                                                                                                                     | 描述                                                                                                                                               |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Filters                   | <ul><li> Filters </li></ul>                                                                                                                                                             | 可以通过查询过滤条件对以下数据进行筛选。                                                                                                              |
+| Web ACLs                  | <ul><li> log event</li><li>webaclName</li></ul>                                                                                                                                        | 显示按 Web ACL 名称分组的请求总数。                                                                                                                  |
+| Total Requests            | <ul><li> log event </li></ul>                                                                                                                                                         | 显示总的 Web 请求数。                                                                                                                                |
+| Request Timeline          | <ul><li> log event </li></ul>                                                                                                                                                         | 提供一个柱状图，显示随时间分布的事件情况。                                                                                                           |
+| WAF Rules                 | <ul><li> terminatingRuleId </li></ul>                                                                                                                                                 | 提供一个饼图，显示 Web ACL 中的 WAF 规则分布情况。                                                                                                |
+| Total Blocked Requests    | <ul><li> log event </li></ul>                                                                                                                                                         | 显示被阻止的 Web 请求总数。                                                                                                                           |
+| Unique Client IPs         | <ul><li> Request.ClientIP</li></ul>                                                                                                                                                   | 显示通过客户端 IP 地址识别的唯一访问者。                                                                                                               |
+| Country or Region By Request | <ul><li> Request.Country </li></ul>                                                                                    | 显示 Web ACL 上的请求数（按客户端 IP 解析的相应国家或地区分组）。                                                                                     |
+| Http Methods              | <ul><li> Request.HTTPMethod</li></ul>                                                                                  | 使用饼图显示 Web ACL 上的请求数（按 HTTP 请求方法名称分组，如 POST、GET、HEAD 等）。                                                                    |
+| Http Versions             | <ul><li> Request.HTTPVersion</li></ul>                                                                                 | 使用饼图显示 Web ACL 上的请求数（按 HTTP 协议版本分组，如 HTTP/2.0、HTTP/1.1 等）。                                                                     |
+| Top WebACLs               | <ul><li> webaclName</li><li> webaclId.keyword</li></ul>                                                               | Web 请求视图使您能够分析顶级 Web 请求。                                                                                                               |
+| Top Hosts                 | <ul><li> host</li></ul>                                                                                                | 列出与事件关联的源 IP 地址，使您能够识别和调查潜在的可疑或未经授权的活动。                                                                                |
+| Top Request URIs          | <ul><li> Request.URI</li></ul>                                                                                        | 前 10 个请求 URI。                                                                                                                                    |
+| Top Countries or Regions  | <ul><li> Request.country</li></ul>                                                                                    | Web ACL 访问中前 10 个国家。                                                                                                                           |
+| Top Rules                 | <ul><li> terminatingRuleId</li></ul>                                                                                  | Web ACL 中匹配请求的前 10 条规则。                                                                                                                     |
+| Top Client IPs            | <ul><li> Request.ClientIP</li></ul>                                                                                     | 提供前 10 个 IP 地址。                                                                                                                               |
+| Top User Agents           | <ul><li> userAgent</li></ul>                                                                                            | 提供前 10 个用户代理。                                                                                                                               |
+| Block Allow Host Uri      | <ul><li> host</li><li>Request.URI</li><li>action</li></ul>                                                              | 提供被阻止或允许的 Web 请求。                                                                                                                         |
+| Top Labels with Host, Uri | <ul><li> labels.name</li><li>host</li><li>Request.URI</li></ul>                                                        | 使用主机和 URI 的标签的前 10 个详细日志。                                                                                                              |
+| View by Matching Rule     | <ul><li> sc-status</li></ul>                                                                                            | 该可视化图表提供了由 DQL“terminatingRuleId:*”提供的详细日志。                                                                                       |
+| View by httpRequest args,uri,path | <ul><li> sc-status</li></ul>                                                                                            | 该可视化图表提供了由 DQL 提供的详细日志。                                                                                                        |
+
+
+### 示例仪表板
+
+{%
+include-markdown "../include-dashboard.md"
+%}
 
 [![waf-db]][waf-db]
 

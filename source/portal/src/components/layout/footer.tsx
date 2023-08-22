@@ -23,9 +23,8 @@ import {
   URL_FEEDBACK,
   ZH_LANGUAGE_LIST,
 } from "assets/js/const";
-import { AmplifyConfigType } from "types";
 import { useSelector } from "react-redux";
-import { AppStateProps } from "reducer/appReducer";
+import { RootState } from "reducer/reducers";
 
 const langList = [
   {
@@ -50,8 +49,8 @@ const getCurrentLangObj = (id: string) => {
 
 const Bottom: React.FC = () => {
   const { t, i18n } = useTranslation();
-  const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: AppStateProps) => state.amplifyConfig
+  const amplifyConfig = useSelector(
+    (state: RootState) => state.app.amplifyConfig
   );
   if (EN_LANGUAGE_LIST.indexOf(i18n.language) >= 0) {
     i18n.language = "en";
@@ -87,10 +86,10 @@ const Bottom: React.FC = () => {
         {showLang ? (
           <div className="language-select">
             <ul>
-              {langList.map((item: any, index) => {
+              {langList.map((item: any) => {
                 return (
                   <li
-                    key={index}
+                    key={item.id}
                     data-lang={JSON.stringify(item)}
                     onClick={changeSelectLang}
                   >

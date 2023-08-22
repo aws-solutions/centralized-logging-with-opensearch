@@ -27,9 +27,9 @@ def kds_event():
                 "eventVersion": "1.0",
                 "eventID": "shardId-000000000041:49631468190676687901272308564704240562978646622126211730",
                 "eventName": "aws:kinesis:record",
-                "invokeIdentityArn": "arn:aws:iam::123456:role/LogHub-AppPipe-42fb0-LogProcessorLogProcessorFnSer-12R3WZ9O7QDWC",
+                "invokeIdentityArn": "arn:aws:iam::123456:role/Solution-AppPipe-42fb0-LogProcessorLogProcessorFnSer-12R3WZ9O7QDWC",
                 "awsRegion": "ap-northeast-1",
-                "eventSourceARN": "arn:aws:kinesis:ap-northeast-1:123456:stream/LogHub-AppPipe-42fb0-Stream790BDEE4-ByiPt1XoNpow",
+                "eventSourceARN": "arn:aws:kinesis:ap-northeast-1:123456:stream/Solution-AppPipe-42fb0-Stream790BDEE4-ByiPt1XoNpow",
             },
         ]
     }
@@ -143,8 +143,8 @@ def test_lambda_handler_kds_success(mocker, kds_event):
     os.environ["SOURCE"] = "KDS"
     import lambda_function
 
-    mocker.patch("util.osutil.OpenSearch.exist_index_template", return_value=True)
-    mocker.patch("util.osutil.OpenSearch.bulk_load", return_value=LOAD_SUCCESS_RESP)
+    mocker.patch("commonlib.opensearch.OpenSearchUtil.exist_index_template", return_value=True)
+    mocker.patch("commonlib.opensearch.OpenSearchUtil.bulk_load", return_value=LOAD_SUCCESS_RESP)
 
     lambda_function.lambda_handler(kds_event, None)
 
@@ -160,8 +160,8 @@ def test_lambda_handler_kds_failed(mocker, kds_event):
 
     import lambda_function
 
-    mocker.patch("util.osutil.OpenSearch.exist_index_template", return_value=True)
-    mocker.patch("util.osutil.OpenSearch.bulk_load", return_value=LOAD_FAILED_RESP)
+    mocker.patch("commonlib.opensearch.OpenSearchUtil.exist_index_template", return_value=True)
+    mocker.patch("commonlib.opensearch.OpenSearchUtil.bulk_load", return_value=LOAD_FAILED_RESP)
 
     lambda_function.lambda_handler(kds_event, None)
 
@@ -183,7 +183,7 @@ def test_lambda_handler_kds_cloudfront():
                 "eventName": "aws:kinesis:record",
                 "invokeIdentityArn": "arn:aws:iam::0000000000:role/service-role/KinesisTester-role-2gt0xp91",
                 "awsRegion": "us-east-2",
-                "eventSourceARN": "arn:aws:kinesis:us-east-2:0000000000:stream/LogHub-AppPipe-43ed3-KDSBufferStream21B531A6-h4zaMOJOBl51",
+                "eventSourceARN": "arn:aws:kinesis:us-east-2:0000000000:stream/Solution-AppPipe-43ed3-KDSBufferStream21B531A6-h4zaMOJOBl51",
             }
         ]
     }

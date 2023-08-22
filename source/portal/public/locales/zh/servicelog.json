@@ -38,11 +38,15 @@
   "tab": {
     "overview": "总览",
     "lifecycle": "生命周期",
+    "monitoring": "监控",
+    "logging": "日志",
+    "alarm": "告警",
     "tags": "标签"
   },
   "overview": {
     "name": "总览",
     "logLocation": "日志位置",
+    "logGroup": "日志组",
     "createSample": "创建示例仪表板",
     "created": "创建时间"
   },
@@ -71,7 +75,7 @@
       "specifySetting": "指定设置",
       "logProcessing": "日志处理",
       "specifyDomain": "指定 OpenSearch 域",
-      "createTags": "创建标签"
+      "createTags": "创建告警和标签"
     }
   },
   "cluster": {
@@ -113,7 +117,8 @@
     "compressType": "压缩类型",
     "compressTypeDesc": "指定要用于此索引的压缩类型。 默认情况下，该解决方案使用 best_compression，它使用 DEFLATE 以获得更高的压缩率，但代价是存储字段的性能稍慢。 如果您更喜欢更快的存储字段性能而不是索引存储大小，则可以更改为 default。",
     "warmImmediately": "立即将滚动索引传输到暖存储",
-    "warmByDays": "按时间移动日志（天）"
+    "warmByDays": "按时间移动日志（天）",
+    "domainStatusCheckFailedError": "该域连通性检测失败，请检查其网络或选择另一个域。"
   },
   "s3": {
     "s3logEnable": "Amazon S3 启用访问日志",
@@ -233,7 +238,7 @@
     "logLocationError": "请输入 CloudFront 标准日志位置",
     "savedTips": "CloudFront Distribution 的访问日志保存在",
     "ingestedFields": "摄取的字段",
-    "ingestedFieldsDesc": "选择您要摄取到 OpenSearchrch 集群的 CloudFront 访问日志字段。",
+    "ingestedFieldsDesc": "选择您要摄取到 OpenSearch 集群的 CloudFront 访问日志字段。",
     "enrichedFields": "丰富的字段",
     "enrichedFieldsDesc": "使用附加信息丰富 CloudFront 标准日志。 例如，经度、纬度、城市、州、国家、操作系统等。系统使用开源库来丰富数据。",
     "location": "定位",
@@ -345,7 +350,8 @@
     "savedTips": "Web ACL 访问日志存储在 ",
     "needEnableLogging": "请启用 Web ACL 访问日志",
     "noLogOutput": "无日志输出",
-    "noLogOutputDesc": "所选 Web ACL 的日志配置尚未启用， 是否要启用访问日志并输出到 ",
+    "noLogOutputDesc": "所选 Web ACL 的日志配置尚未启用， 是否要启用访问日志并输出到 Amazon S3",
+    "diffRegion": "Web ACL 日志保存在与解决方案的主区域 ({{homeRegion}}) 不同的区域 ({{logRegion}}) 中的 {{bucket}}。 要继续，请手动更改或者禁用当前 WAF ACL 的日志选项。",
     "sourceWAFTip": "日志通检测选定的 WAF 直接将其日志发送到 Amazon S3，这种方法的成本比通过 Kinesis Data Firehose (KDF) 发送到 Amazon S3 的成本更高。 如果要切换到 KDF，可以先禁用所选 WAF 的日志记录，然后解决方案会自动为您启用基于 KDF 的日志记录发送方式。",
     "sourceWAFTips1": "日志通检测到该 Web ACL 的日志直接存入 ",
     "sourceWAFTips2": "此方式的成本比使用 Kinesis Data Firehose(KDF) stream 收集再存到 Amazon S3 更贵（",

@@ -13,28 +13,28 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import { Construct } from "constructs";
+import * as path from 'path';
+import * as appsync from '@aws-cdk/aws-appsync-alpha';
 import {
   Aws,
   Fn,
   Duration,
+  CfnCondition,
   aws_dynamodb as ddb,
   aws_iam as iam,
   aws_s3 as s3,
   aws_lambda as lambda,
-  SymlinkFollowMode,
   aws_ecs as ecs,
-} from "aws-cdk-lib";
+} from 'aws-cdk-lib';
+import { DynamoEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
+import { CfnDocument } from 'aws-cdk-lib/aws-ssm';
+import { Construct } from 'constructs';
 
-import { CfnDocument } from "aws-cdk-lib/aws-ssm";
-import * as appsync from "@aws-cdk/aws-appsync-alpha";
-import * as eventsources from "aws-cdk-lib/aws-lambda-event-sources";
-import * as path from "path";
+import { AppIngestionFlowStack } from '../api/app-log-ingestion-flow';
 
-import { AppIngestionFlowStack } from "../api/app-log-ingestion-flow";
-import { IQueue } from "aws-cdk-lib/aws-sqs";
-
-import { addCfnNagSuppressRules } from "../main-stack";
+import { Ec2IamInstanceProfileStack } from '../api/ec2-iam-instance-profile';
+import { SharedPythonLayer } from '../layer/layer';
+import { addCfnNagSuppressRules } from '../main-stack';
 
 export interface AppLogIngestionStackProps {
   /**
@@ -71,267 +71,221 @@ export interface AppLogIngestionStackProps {
    * @default - None.
    */
   readonly cmkKeyArn: string;
-
-  readonly instanceGroupTable: ddb.Table;
-  readonly instanceMetaTable: ddb.Table;
   readonly logConfTable: ddb.Table;
   readonly appPipelineTable: ddb.Table;
-  readonly ec2LogSourceTable: ddb.Table;
-  readonly s3LogSourceTable: ddb.Table;
-  readonly logSourceTable: ddb.Table;
-  readonly eksClusterLogSourceTable: ddb.Table;
-  readonly configFileBucket: s3.Bucket;
   readonly appLogIngestionTable: ddb.Table;
-  readonly sqsEventTable: ddb.Table;
+  readonly logSourceTable: ddb.Table;
+  readonly instanceTable: ddb.Table;
+  readonly configFileBucket: s3.Bucket;
+
   readonly subAccountLinkTable: ddb.Table;
   readonly centralAssumeRolePolicy: iam.ManagedPolicy;
   readonly ecsCluster: ecs.Cluster;
-  readonly groupModificationEventQueue: IQueue;
+
+  readonly Ec2IamInstanceProfile: Ec2IamInstanceProfileStack;
 
   readonly solutionId: string;
   readonly stackPrefix: string;
+  readonly cwlAccessRole: iam.Role;
+  readonly fluentBitLogGroupName: string;
 }
 export class AppLogIngestionStack extends Construct {
   constructor(scope: Construct, id: string, props: AppLogIngestionStackProps) {
     super(scope, id);
 
+    const isCNRegion = new CfnCondition(this, 'isCNRegion', {
+      expression: Fn.conditionEquals(Aws.PARTITION, 'aws-cn'),
+    });
+    const flb_s3_addr = Fn.conditionIf(
+      isCNRegion.logicalId,
+      'aws-solutions-assets.s3.cn-north-1.amazonaws.com.cn',
+      'aws-gcr-solutions-assets.s3.amazonaws.com'
+    ).toString();
+
+    const FluentBitVersion = "v1.9.10";
+
     const downloadLogConfigDocument = new CfnDocument(
       this,
-      "Fluent-BitConfigDownloading",
+      'Fluent-BitConfigDownloading',
       {
         content: {
-          schemaVersion: "2.2",
+          schemaVersion: '2.2',
           description:
-            "Download Fluent-Bit config file and reboot the Fluent-Bit",
+            'Download Fluent-Bit config file and reboot the Fluent-Bit',
           parameters: {
-            INSTANCEID: {
+            ARCHITECTURE: {
               type: "String",
               default: "",
-              description: "(Required) Instance Id",
+              description: "(Required) Machine Architecture"
+            },
+            INSTANCEID: {
+              type: 'String',
+              default: '',
+              description: '(Required) Instance Id',
             },
           },
           mainSteps: [
             {
-              action: "aws:runShellScript",
-              name: "stopFluentBit",
+              action: 'aws:runShellScript',
+              name: 'stopFluentBit',
               inputs: {
-                runCommand: ["sudo service fluent-bit stop"],
-              },
-            },
-            {
-              action: "aws:downloadContent",
-              name: "downloadFluentBitParserConfig",
-              inputs: {
-                sourceType: "S3",
-                sourceInfo: `{\"path\":\"https://${props.configFileBucket.bucketRegionalDomainName}/app_log_config/{{INSTANCEID}}/applog_parsers.conf\"}`,
-                destinationPath: "/opt/fluent-bit/etc",
-              },
-            },
-            {
-              action: "aws:downloadContent",
-              name: "downloadFluentBitConfig",
-              inputs: {
-                sourceType: "S3",
-                sourceInfo: `{\"path\":\"https://${props.configFileBucket.bucketRegionalDomainName}/app_log_config/{{INSTANCEID}}/fluent-bit.conf\"}`,
-                destinationPath: "/opt/fluent-bit/etc",
-              },
-            },
-            {
-              action: "aws:downloadContent",
-              name: "downloadUniformTimeFormatLua",
-              inputs: {
-                sourceType: "S3",
-                sourceInfo: `{\"path\":\"https://${props.configFileBucket.bucketRegionalDomainName}/app_log_config/{{INSTANCEID}}/uniform-time-format.lua\"}`,
-                destinationPath: "/opt/fluent-bit/etc",
+                runCommand: ['sudo service fluent-bit stop'],
               },
             },
             {
               action: "aws:runShellScript",
-              name: "startFluentBit",
+              name: "updateFluentBitVersion",
               inputs: {
                 runCommand: [
-                  "sudo systemctl enable fluent-bit.service",
-                  "sudo service fluent-bit start",
+                  `[ -e /opt/fluent-bit/bin/fluent-bit ] && [ -z \"$(/opt/fluent-bit/bin/fluent-bit -V | grep '${FluentBitVersion}')\" ] && curl -o /opt/fluent-bit{{ARCHITECTURE}}.tar.gz 'https://${flb_s3_addr}/clo/${process.env.VERSION}/aws-for-fluent-bit/fluent-bit{{ARCHITECTURE}}.tar.gz' && tar xzvf /opt/fluent-bit{{ARCHITECTURE}}.tar.gz -C /opt/ --exclude=fluent-bit/etc; echo 0`
+                ]
+              },
+            },
+            {
+              action: 'aws:downloadContent',
+              name: 'downloadFluentBitParserConfig',
+              inputs: {
+                sourceType: 'S3',
+                sourceInfo: `{\"path\":\"https://${props.configFileBucket.bucketRegionalDomainName}/app_log_config/{{INSTANCEID}}/applog_parsers.conf\"}`,
+                destinationPath: '/opt/fluent-bit/etc',
+              },
+            },
+            {
+              action: 'aws:downloadContent',
+              name: 'downloadFluentBitConfig',
+              inputs: {
+                sourceType: 'S3',
+                sourceInfo: `{\"path\":\"https://${props.configFileBucket.bucketRegionalDomainName}/app_log_config/{{INSTANCEID}}/fluent-bit.conf\"}`,
+                destinationPath: '/opt/fluent-bit/etc',
+              },
+            },
+            {
+              action: 'aws:runShellScript',
+              name: 'startFluentBit',
+              inputs: {
+                runCommand: [
+                  'sudo systemctl enable fluent-bit.service',
+                  'sudo service fluent-bit start',
                 ],
               },
             },
           ],
         },
-        documentFormat: "JSON",
-        documentType: "Command",
+        documentFormat: 'JSON',
+        documentType: 'Command',
       }
     );
 
-    // Create the async child lambda to handle time-consuming tasks for ec2 source.
-    const appLogIngestionEC2AsyncHandler = new lambda.Function(
+    // Create a lambda layer with required python packages.
+    const appLogIngestionLayer = new lambda.LayerVersion(
       this,
-      "AppLogIngestionEC2AsyncHandler",
+      'AppLogIngestionLayer',
       {
-        code: lambda.AssetCode.fromAsset(
-          path.join(__dirname, "../../lambda/api/app_log_ingestion"),
-          { followSymlinks: SymlinkFollowMode.ALWAYS }
+        code: lambda.Code.fromAsset(
+          path.join(__dirname, '../../lambda/api/app_log_ingestion'),
+          {
+            bundling: {
+              image: lambda.Runtime.PYTHON_3_9.bundlingImage,
+              command: [
+                'bash',
+                '-c',
+                'pip install -r requirements.txt -t /asset-output/python && cp . -r /asset-output/python/',
+              ],
+            },
+          }
         ),
-        runtime: lambda.Runtime.PYTHON_3_9,
-        handler: "ec2_as_source_lambda_function.lambda_handler",
-        timeout: Duration.minutes(15),
-        memorySize: 1024,
-        environment: {
-          APPLOGINGESTION_TABLE: props.appLogIngestionTable.tableName,
-          SSM_LOG_CONFIG_DOCUMENT_NAME: downloadLogConfigDocument.ref,
-          CONFIG_FILE_S3_BUCKET_NAME: props.configFileBucket.bucketName,
-          INSTANCE_META_TABLE_NAME: props.instanceMetaTable.tableName,
-          APP_PIPELINE_TABLE_NAME: props.appPipelineTable.tableName,
-          APP_LOG_CONFIG_TABLE_NAME: props.logConfTable.tableName,
-          INSTANCE_GROUP_TABLE_NAME: props.instanceGroupTable.tableName,
-          EC2_LOG_SOURCE_TABLE_NAME: props.ec2LogSourceTable.tableName,
-          S3_LOG_SOURCE_TABLE_NAME: props.s3LogSourceTable.tableName,
-          LOG_SOURCE_TABLE_NAME: props.logSourceTable.tableName,
-          EKS_CLUSTER_SOURCE_TABLE_NAME:
-            props.eksClusterLogSourceTable.tableName,
-          SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
-          SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
-          SOLUTION_ID: props.solutionId,
-        },
-        description:
-          `${Aws.STACK_NAME} - Async Child AppLogIngestion Resolver for EC2 Source`,
+        compatibleRuntimes: [lambda.Runtime.PYTHON_3_9],
+        //compatibleArchitectures: [lambda.Architecture.X86_64, lambda.Architecture.ARM_64],
+        description: 'Default Lambda layer for AppLog Ingestion',
       }
     );
-    appLogIngestionEC2AsyncHandler.node.addDependency(
-      downloadLogConfigDocument
-    );
 
-    // Grant permissions to the appLogIngestion lambda
-    props.appLogIngestionTable.grantReadWriteData(
-      appLogIngestionEC2AsyncHandler
-    );
-    props.instanceMetaTable.grantReadWriteData(appLogIngestionEC2AsyncHandler);
-    props.appPipelineTable.grantReadWriteData(appLogIngestionEC2AsyncHandler);
-    props.logConfTable.grantReadWriteData(appLogIngestionEC2AsyncHandler);
-    props.instanceGroupTable.grantReadWriteData(appLogIngestionEC2AsyncHandler);
-    props.configFileBucket.grantReadWrite(appLogIngestionEC2AsyncHandler);
-    props.ec2LogSourceTable.grantReadWriteData(appLogIngestionEC2AsyncHandler);
-    props.s3LogSourceTable.grantReadWriteData(appLogIngestionEC2AsyncHandler);
-    props.logSourceTable.grantReadWriteData(appLogIngestionEC2AsyncHandler);
-    props.eksClusterLogSourceTable.grantReadWriteData(
-      appLogIngestionEC2AsyncHandler
-    );
-    props.subAccountLinkTable.grantReadData(appLogIngestionEC2AsyncHandler);
-
-    appLogIngestionEC2AsyncHandler.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: ["lambda:InvokeFunction", "lambda:InvokeAsync"],
-        effect: iam.Effect.ALLOW,
-        resources: ["*"],
-      })
-    );
-    appLogIngestionEC2AsyncHandler.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: [
-          "ssm:DescribeInstanceInformation",
-          "ssm:SendCommand",
-          "ssm:GetCommandInvocation",
-          "ec2:DescribeInstances",
-        ],
-        effect: iam.Effect.ALLOW,
-        resources: ["*"],
-      })
-    );
-    appLogIngestionEC2AsyncHandler.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: [
-          "iam:PutRolePolicy",
-          "iam:CreateRole",
-          "iam:GetRole",
-          "iam:UpdateAssumeRolePolicy",
-        ],
-        effect: iam.Effect.ALLOW,
-        resources: ["*"],
-      })
-    );
-
-    props.centralAssumeRolePolicy.attachToRole(
-      appLogIngestionEC2AsyncHandler.role!
-    );
-
-    //
     const appLogIngestionModificationEventHandler = new lambda.Function(
       this,
-      "AppLogIngestionEC2ModificationHandler",
+      'AppLogIngestionEC2ModificationHandler',
       {
         code: lambda.AssetCode.fromAsset(
-          path.join(__dirname, "../../lambda/api/app_log_ingestion"),
-          { followSymlinks: SymlinkFollowMode.ALWAYS }
+          path.join(__dirname, '../../lambda/api/app_log_ingestion')
         ),
+        layers: [SharedPythonLayer.getInstance(this), appLogIngestionLayer],
         runtime: lambda.Runtime.PYTHON_3_9,
-        handler: "ingestion_modification_event_lambda_function.lambda_handler",
+        handler: 'ingestion_modification_event_lambda_function.lambda_handler',
         timeout: Duration.minutes(15),
         memorySize: 1024,
         environment: {
-          INSTANCE_GROUP_MODIFICATION_EVENT_QUEUE_NAME:
-            props.groupModificationEventQueue.queueName,
-          APP_LOG_INGESTION_LAMBDA_ARN:
-            appLogIngestionEC2AsyncHandler.functionArn,
-          SQS_EVENT_TABLE: props.sqsEventTable.tableName,
-          APPLOGINGESTION_TABLE: props.appLogIngestionTable.tableName,
+          APP_LOG_INGESTION_TABLE_NAME: props.appLogIngestionTable.tableName,
+          INSTANCE_TABLE_NAME: props.instanceTable.tableName,
           SSM_LOG_CONFIG_DOCUMENT_NAME: downloadLogConfigDocument.ref,
           CONFIG_FILE_S3_BUCKET_NAME: props.configFileBucket.bucketName,
-          INSTANCE_META_TABLE_NAME: props.instanceMetaTable.tableName,
           APP_PIPELINE_TABLE_NAME: props.appPipelineTable.tableName,
           APP_LOG_CONFIG_TABLE_NAME: props.logConfTable.tableName,
-          INSTANCE_GROUP_TABLE_NAME: props.instanceGroupTable.tableName,
-          EC2_LOG_SOURCE_TABLE_NAME: props.ec2LogSourceTable.tableName,
-          S3_LOG_SOURCE_TABLE_NAME: props.s3LogSourceTable.tableName,
           LOG_SOURCE_TABLE_NAME: props.logSourceTable.tableName,
-          EKS_CLUSTER_SOURCE_TABLE_NAME:
-            props.eksClusterLogSourceTable.tableName,
           SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
-          SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+          SOLUTION_VERSION: process.env.VERSION || 'v1.0.0',
           SOLUTION_ID: props.solutionId,
+          FLUENT_BIT_LOG_GROUP_NAME: props.fluentBitLogGroupName,
+          FLUENT_BIT_IMAGE:
+            'public.ecr.aws/aws-observability/aws-for-fluent-bit:2.31.12',
+          FLUENT_BIT_EKS_CLUSTER_NAME_SPACE: 'logging',
+          FLUENT_BIT_MEM_BUF_LIMIT: '30M',
+          EC2_IAM_INSTANCE_PROFILE_ARN:
+            props.Ec2IamInstanceProfile.cfnEc2IamInstanceProfile.attrArn,
+          CWL_MONITOR_ROLE_ARN: props.cwlAccessRole.roleArn,
+          DEFAULT_OPEN_EXTRA_METADATA_FLAG: 'true',
+          LOG_AGENT_VPC_ID: props.defaultVPC,
+          LOG_AGENT_SUBNETS_IDS: Fn.join(',', props.defaultPublicSubnets),
+          DEFAULT_CMK_ARN: props.cmkKeyArn,
+          ECS_CLUSTER_NAME: props.ecsCluster.clusterName,
+          FLB_S3_ADDR: flb_s3_addr,
         },
-        description:
-          `${Aws.STACK_NAME} - Async AppLogIngestion Resolver for instance ingestion adding and deleting instances event`,
+        description: `${Aws.STACK_NAME} - Async AppLogIngestion Resolver for instance ingestion adding and deleting instances event`,
       }
     );
+
     appLogIngestionModificationEventHandler.addEventSource(
-      new eventsources.SqsEventSource(props.groupModificationEventQueue)
+      new DynamoEventSource(props.instanceTable, {
+        batchSize: 1,
+        retryAttempts: 3,
+        startingPosition: lambda.StartingPosition.LATEST,
+        filters: [
+          lambda.FilterCriteria.filter({
+            eventName: lambda.FilterRule.isEqual('INSERT'),
+          }),
+          lambda.FilterCriteria.filter({
+            eventName: lambda.FilterRule.isEqual('REMOVE'),
+          }),
+        ],
+      })
     );
-    props.sqsEventTable.grantReadWriteData(
-      appLogIngestionModificationEventHandler
-    );
-    props.groupModificationEventQueue.grantConsumeMessages(
-      appLogIngestionModificationEventHandler
-    );
+
     props.appLogIngestionTable.grantReadWriteData(
       appLogIngestionModificationEventHandler
     );
-    props.instanceMetaTable.grantReadWriteData(
-      appLogIngestionModificationEventHandler
-    );
+
     props.appPipelineTable.grantReadWriteData(
       appLogIngestionModificationEventHandler
     );
     props.logConfTable.grantReadWriteData(
       appLogIngestionModificationEventHandler
     );
-    props.instanceGroupTable.grantReadWriteData(
-      appLogIngestionModificationEventHandler
-    );
+
     props.configFileBucket.grantReadWrite(
       appLogIngestionModificationEventHandler
     );
-    props.ec2LogSourceTable.grantReadWriteData(
-      appLogIngestionModificationEventHandler
-    );
-    props.s3LogSourceTable.grantReadWriteData(
-      appLogIngestionModificationEventHandler
-    );
+
     props.logSourceTable.grantReadWriteData(
       appLogIngestionModificationEventHandler
     );
-    props.eksClusterLogSourceTable.grantReadWriteData(
+
+    props.subAccountLinkTable.grantReadData(
       appLogIngestionModificationEventHandler
     );
-    props.subAccountLinkTable.grantReadData(
+
+    props.instanceTable.grantReadWriteData(
+      appLogIngestionModificationEventHandler
+    );
+
+    props.instanceTable.grantStreamRead(
       appLogIngestionModificationEventHandler
     );
 
@@ -339,618 +293,417 @@ export class AppLogIngestionStack extends Construct {
       downloadLogConfigDocument
     );
 
-    const ingestionHandlerPolicy = new iam.Policy(this, "IngestionHandlerPolicy", {
+    const ssmPolicy = new iam.Policy(this, 'ssmPolicy', {
       statements: [
         new iam.PolicyStatement({
-          actions: ["sqs:*", "lambda:InvokeFunction", "lambda:InvokeAsync"],
-          effect: iam.Effect.ALLOW,
-          resources: ["*"],
-        }),
-        new iam.PolicyStatement({
           actions: [
-            "ssm:DescribeInstanceInformation",
-            "ssm:SendCommand",
-            "ssm:GetCommandInvocation",
-            "ec2:DescribeInstances",
+            'ssm:DescribeInstanceInformation',
+            'ssm:ListCommandInvocations',
+            'ssm:GetCommandInvocation',
           ],
           effect: iam.Effect.ALLOW,
-          resources: ["*"],
-        })
+          resources: ['*'],
+        }),
+        new iam.PolicyStatement({
+          sid: 'EC2SSMPolicy',
+          effect: iam.Effect.ALLOW,
+          actions: ['ssm:SendCommand', 'ssm:GetParameters'],
+          resources: [
+            `arn:${Aws.PARTITION}:ec2:*:${Aws.ACCOUNT_ID}:instance/*`,
+            `arn:${Aws.PARTITION}:ssm:*:${Aws.ACCOUNT_ID}:parameter/*`,
+            `arn:${Aws.PARTITION}:ssm:*:${Aws.ACCOUNT_ID}:document/AWS-RunShellScript`,
+            `arn:${Aws.PARTITION}:ssm:*:${Aws.ACCOUNT_ID}:document/*FluentBitDocumentInstallation*`,
+            `arn:${Aws.PARTITION}:ssm:*:${Aws.ACCOUNT_ID}:document/*FluentBitConfigDownloading*`,
+          ],
+        }),
       ],
     });
-    appLogIngestionModificationEventHandler.role!.attachInlinePolicy(ingestionHandlerPolicy);
+    addCfnNagSuppressRules(ssmPolicy.node.defaultChild as iam.CfnPolicy, [
+      {
+        id: 'F4',
+        reason: 'These actions can only support all resources',
+      },
+    ]);
 
-    addCfnNagSuppressRules(
-      ingestionHandlerPolicy.node.defaultChild as iam.CfnPolicy,
-      [
-        {
-          id: "F4",
-          reason: "These actions can only support all resources",
-        },
-      ]
+    const sourceCommonPolicy = new iam.Policy(this, 'SourceCommonPolicy', {
+      statements: [
+        // Attach Policy to Role
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['iam:UpdateAssumeRolePolicy'],
+          resources: [
+            `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/${props.stackPrefix}-EKS-LogAgent-Role-*`,
+            `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/*buffer-access*`,
+            `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/*BufferAccessRole*`,
+          ],
+        }),
+        // Attach Policy to Role
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            'iam:GetRole',
+            'iam:AttachRolePolicy',
+            'iam:ListAttachedRolePolicies',
+          ],
+          resources: [
+            `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/*`,
+            `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:instance-profile/*`,
+            `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/${props.stackPrefix}-EKS-LogAgent-Role-*`,
+            `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/*buffer-access*`,
+            `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/*BufferAccessRole*`,
+            props.Ec2IamInstanceProfile.Ec2IamInstanceProfileRole.roleArn,
+          ],
+        }),
+
+        // Attach Policy to Role
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['iam:AddRoleToInstanceProfile', 'iam:GetInstanceProfile'],
+          resources: [
+            `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:instance-profile/*`,
+          ],
+        }),
+
+        // PassRole For Ec2IamInstanceProfileRole
+        new iam.PolicyStatement({
+          sid: 'PassRoleForEc2IamInstanceProfileRole',
+          effect: iam.Effect.ALLOW,
+          actions: ['iam:PassRole'],
+          resources: [
+            props.Ec2IamInstanceProfile.Ec2IamInstanceProfileRole.roleArn,
+            props.Ec2IamInstanceProfile.cfnEc2IamInstanceProfile.attrArn,
+          ],
+        }),
+
+        // Grant elb permissions to source lambda
+        new iam.PolicyStatement({
+          actions: [
+            'elasticloadbalancing:CreateLoadBalancer',
+            'elasticloadbalancing:DeleteLoadBalancer',
+            'elasticloadbalancing:DescribeLoadBalancers',
+            'elasticloadbalancing:DescribeLoadBalancerAttributes',
+            'elasticloadbalancing:AddTags',
+            'elasticloadbalancing:RemoveTags',
+          ],
+          effect: iam.Effect.ALLOW,
+          resources: ['*'],
+        }),
+
+        // Grant EC2 role
+        new iam.PolicyStatement({
+          actions: [
+            'ec2:DescribeInstances',
+            'ec2:DescribeIamInstanceProfileAssociations',
+            'ec2:AssociateIamInstanceProfile',
+          ],
+          effect: iam.Effect.ALLOW,
+          resources: ['*'],
+        }),
+      ],
+    });
+
+    appLogIngestionModificationEventHandler.role!.attachInlinePolicy(
+      sourceCommonPolicy
     );
+
+    appLogIngestionModificationEventHandler.role!.attachInlinePolicy(ssmPolicy);
 
     props.centralAssumeRolePolicy.attachToRole(
       appLogIngestionModificationEventHandler.role!
     );
 
-    // Create the async child lambda to handle time-consuming tasks for S3 source.
-    const appLogIngestionS3AsyncHandler = new lambda.Function(
-      this,
-      "AppLogIngestionS3AsyncHandler",
-      {
-        code: lambda.AssetCode.fromAsset(
-          path.join(__dirname, "../../lambda/api/app_log_ingestion"),
-          { followSymlinks: SymlinkFollowMode.ALWAYS }
-        ),
-        runtime: lambda.Runtime.PYTHON_3_9,
-        handler: "s3_as_source_lambda_function.lambda_handler",
-        timeout: Duration.minutes(15),
-        memorySize: 1024,
-        environment: {
-          APPLOGINGESTION_TABLE: props.appLogIngestionTable.tableName,
-          SSM_LOG_CONFIG_DOCUMENT_NAME: downloadLogConfigDocument.ref,
-          CONFIG_FILE_S3_BUCKET_NAME: props.configFileBucket.bucketName,
-          INSTANCE_META_TABLE_NAME: props.instanceMetaTable.tableName,
-          APP_PIPELINE_TABLE_NAME: props.appPipelineTable.tableName,
-          APP_LOG_CONFIG_TABLE_NAME: props.logConfTable.tableName,
-          INSTANCE_GROUP_TABLE_NAME: props.instanceGroupTable.tableName,
-          EC2_LOG_SOURCE_TABLE_NAME: props.ec2LogSourceTable.tableName,
-          S3_LOG_SOURCE_TABLE_NAME: props.s3LogSourceTable.tableName,
-          LOG_SOURCE_TABLE_NAME: props.logSourceTable.tableName,
-          EKS_CLUSTER_SOURCE_TABLE_NAME:
-            props.eksClusterLogSourceTable.tableName,
-          SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
-          SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
-          SOLUTION_ID: props.solutionId,
-        },
-        description:
-          `${Aws.STACK_NAME}  - Async Child AppLogIngestion Resolver for S3 Source`,
-      }
-    );
-    appLogIngestionS3AsyncHandler.node.addDependency(downloadLogConfigDocument);
-
-    // Grant permissions to the appLogIngestion lambda
-    props.appLogIngestionTable.grantReadWriteData(
-      appLogIngestionS3AsyncHandler
-    );
-    props.instanceMetaTable.grantReadWriteData(appLogIngestionS3AsyncHandler);
-    props.appPipelineTable.grantReadWriteData(appLogIngestionS3AsyncHandler);
-    props.logConfTable.grantReadWriteData(appLogIngestionS3AsyncHandler);
-    props.instanceGroupTable.grantReadWriteData(appLogIngestionS3AsyncHandler);
-    props.configFileBucket.grantReadWrite(appLogIngestionS3AsyncHandler);
-    props.ec2LogSourceTable.grantReadWriteData(appLogIngestionS3AsyncHandler);
-    props.s3LogSourceTable.grantReadWriteData(appLogIngestionS3AsyncHandler);
-    props.logSourceTable.grantReadWriteData(appLogIngestionS3AsyncHandler);
-    props.eksClusterLogSourceTable.grantReadWriteData(
-      appLogIngestionS3AsyncHandler
-    );
-    props.subAccountLinkTable.grantReadData(appLogIngestionS3AsyncHandler);
-
-    appLogIngestionS3AsyncHandler.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: ["lambda:InvokeFunction", "lambda:InvokeAsync"],
-        effect: iam.Effect.ALLOW,
-        resources: ["*"],
-      })
-    );
-    appLogIngestionS3AsyncHandler.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: [
-          "ssm:DescribeInstanceInformation",
-          "ssm:SendCommand",
-          "ssm:GetCommandInvocation",
-          "ec2:DescribeInstances",
-        ],
-        effect: iam.Effect.ALLOW,
-        resources: ["*"],
-      })
-    );
-    appLogIngestionS3AsyncHandler.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: [
-          "iam:PutRolePolicy",
-          "iam:CreateRole",
-          "iam:GetRole",
-          "iam:UpdateAssumeRolePolicy",
-        ],
-        effect: iam.Effect.ALLOW,
-        resources: ["*"],
-      })
-    );
-    props.centralAssumeRolePolicy.attachToRole(
-      appLogIngestionS3AsyncHandler.role!
-    );
-
-    // Create the async child lambda to handle time-consuming tasks for Syslog source.
-    const appLogIngestionSyslogAsyncHandler = new lambda.Function(
-      this,
-      "AppLogIngestionSyslogAsyncHandler",
-      {
-        code: lambda.AssetCode.fromAsset(
-          path.join(__dirname, "../../lambda/api/app_log_ingestion"),
-          { followSymlinks: SymlinkFollowMode.ALWAYS }
-        ),
-        runtime: lambda.Runtime.PYTHON_3_9,
-        handler: "syslog_as_source_lambda_function.lambda_handler",
-        timeout: Duration.minutes(15),
-        memorySize: 1024,
-        environment: {
-          APPLOGINGESTION_TABLE: props.appLogIngestionTable.tableName,
-          CONFIG_FILE_S3_BUCKET_NAME: props.configFileBucket.bucketName,
-          INSTANCE_META_TABLE_NAME: props.instanceMetaTable.tableName,
-          APP_PIPELINE_TABLE_NAME: props.appPipelineTable.tableName,
-          APP_LOG_CONFIG_TABLE_NAME: props.logConfTable.tableName,
-          INSTANCE_GROUP_TABLE_NAME: props.instanceGroupTable.tableName,
-          EC2_LOG_SOURCE_TABLE_NAME: props.ec2LogSourceTable.tableName,
-          S3_LOG_SOURCE_TABLE_NAME: props.s3LogSourceTable.tableName,
-          LOG_SOURCE_TABLE_NAME: props.logSourceTable.tableName,
-          EKS_CLUSTER_SOURCE_TABLE_NAME:
-            props.eksClusterLogSourceTable.tableName,
-          SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
-          SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
-          SOLUTION_ID: props.solutionId,
-        },
-        description:
-          `${Aws.STACK_NAME} - Async Child AppLogIngestion Resolver for Syslog Source`,
-      }
-    );
-
-    // Grant permissions to the appLogIngestion lambda
-    props.appLogIngestionTable.grantReadWriteData(
-      appLogIngestionSyslogAsyncHandler
-    );
-    props.appPipelineTable.grantReadWriteData(
-      appLogIngestionSyslogAsyncHandler
-    );
-    props.logConfTable.grantReadWriteData(appLogIngestionSyslogAsyncHandler);
-    props.configFileBucket.grantReadWrite(appLogIngestionSyslogAsyncHandler);
-    props.logSourceTable.grantReadWriteData(appLogIngestionSyslogAsyncHandler);
-    props.subAccountLinkTable.grantReadData(appLogIngestionSyslogAsyncHandler);
-
-    appLogIngestionSyslogAsyncHandler.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: ["lambda:InvokeFunction", "lambda:InvokeAsync"],
-        effect: iam.Effect.ALLOW,
-        resources: ["*"],
-      })
-    );
-    appLogIngestionSyslogAsyncHandler.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: [
-          "ssm:DescribeInstanceInformation",
-          "ssm:SendCommand",
-          "ssm:GetCommandInvocation",
-          "ec2:DescribeInstances",
-        ],
-        effect: iam.Effect.ALLOW,
-        resources: ["*"],
-      })
-    );
-    appLogIngestionSyslogAsyncHandler.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: [
-          "iam:PutRolePolicy",
-          "iam:CreateRole",
-          "iam:GetRole",
-          "iam:UpdateAssumeRolePolicy",
-        ],
-        effect: iam.Effect.ALLOW,
-        resources: ["*"],
-      })
-    );
-    props.centralAssumeRolePolicy.attachToRole(
-      appLogIngestionSyslogAsyncHandler.role!
-    );
-
     // Create a Step Functions to orchestrate pipeline flow
-    const appIngestionFlow = new AppIngestionFlowStack(this, "PipelineFlowSM", {
-      tableArn: props.appLogIngestionTable.tableArn,
+    const appIngestionFlow = new AppIngestionFlowStack(this, 'PipelineFlowSM', {
+      logSourceTableArn: props.logSourceTable.tableArn,
+      ingestionTableArn: props.appLogIngestionTable.tableArn,
       cfnFlowSMArn: props.cfnFlowSMArn,
     });
 
     // Create a lambda to handle all appLogIngestion related APIs.
     const appLogIngestionHandler = new lambda.Function(
       this,
-      "AppLogIngestionHandler",
+      'AppLogIngestionHandler',
       {
         code: lambda.AssetCode.fromAsset(
-          path.join(__dirname, "../../lambda/api/app_log_ingestion"),
-          { followSymlinks: SymlinkFollowMode.ALWAYS }
+          path.join(__dirname, '../../lambda/api/app_log_ingestion')
         ),
+        layers: [SharedPythonLayer.getInstance(this), appLogIngestionLayer],
         runtime: lambda.Runtime.PYTHON_3_9,
-        handler: "lambda_function.lambda_handler",
-        timeout: Duration.seconds(60),
+        handler: 'lambda_function.lambda_handler',
+        timeout: Duration.seconds(120),
         memorySize: 1024,
         environment: {
-          ASYNC_EC2_CHILD_LAMBDA_ARN:
-            appLogIngestionEC2AsyncHandler.functionArn,
-          ASYNC_S3_CHILD_LAMBDA_ARN: appLogIngestionS3AsyncHandler.functionArn,
-          ASYNC_SYSLOG_CHILD_LAMBDA_ARN:
-            appLogIngestionSyslogAsyncHandler.functionArn,
-          APPLOGINGESTION_TABLE: props.appLogIngestionTable.tableName,
           SSM_LOG_CONFIG_DOCUMENT_NAME: downloadLogConfigDocument.ref,
           CONFIG_FILE_S3_BUCKET_NAME: props.configFileBucket.bucketName,
-          INSTANCE_META_TABLE_NAME: props.instanceMetaTable.tableName,
+          CWL_MONITOR_ROLE_ARN: props.cwlAccessRole.roleArn,
+          DEFAULT_OPEN_EXTRA_METADATA_FLAG: 'true',
+          FLUENT_BIT_EKS_CLUSTER_NAME_SPACE: 'logging',
+          FLUENT_BIT_MEM_BUF_LIMIT: '30M',
+          INSTANCE_TABLE_NAME: props.instanceTable.tableName,
+          APP_LOG_INGESTION_TABLE_NAME: props.appLogIngestionTable.tableName,
           APP_PIPELINE_TABLE_NAME: props.appPipelineTable.tableName,
           APP_LOG_CONFIG_TABLE_NAME: props.logConfTable.tableName,
-          EC2_LOG_SOURCE_TABLE_NAME: props.ec2LogSourceTable.tableName,
-          S3_LOG_SOURCE_TABLE_NAME: props.s3LogSourceTable.tableName,
           LOG_SOURCE_TABLE_NAME: props.logSourceTable.tableName,
-          EKS_CLUSTER_SOURCE_TABLE_NAME:
-            props.eksClusterLogSourceTable.tableName,
           STATE_MACHINE_ARN: appIngestionFlow.stateMachineArn,
-          INSTANCE_GROUP_TABLE_NAME: props.instanceGroupTable.tableName,
+          EC2_IAM_INSTANCE_PROFILE_ARN:
+            props.Ec2IamInstanceProfile.cfnEc2IamInstanceProfile.attrArn,
           SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
           LOG_AGENT_VPC_ID: props.defaultVPC,
-          LOG_AGENT_SUBNETS_IDS: Fn.join(",", props.defaultPublicSubnets),
+          LOG_AGENT_SUBNETS_IDS: Fn.join(',', props.defaultPublicSubnets),
           DEFAULT_CMK_ARN: props.cmkKeyArn,
           ECS_CLUSTER_NAME: props.ecsCluster.clusterName,
-          SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+          SOLUTION_VERSION: process.env.VERSION || 'v2.0.0',
           SOLUTION_ID: props.solutionId,
           STACK_PREFIX: props.stackPrefix,
+          FLUENT_BIT_LOG_GROUP_NAME: props.fluentBitLogGroupName,
+          FLUENT_BIT_IMAGE:
+            'public.ecr.aws/aws-observability/aws-for-fluent-bit:2.31.12',
+          FLB_S3_ADDR: flb_s3_addr,
         },
         description: `${Aws.STACK_NAME} - AppLogIngestion APIs Resolver`,
       }
     );
-    appLogIngestionHandler.node.addDependency(
-      downloadLogConfigDocument,
-      appLogIngestionEC2AsyncHandler,
-      appLogIngestionS3AsyncHandler
-    );
+    appLogIngestionHandler.node.addDependency(downloadLogConfigDocument);
 
     // Grant permissions to the appLogIngestion lambda
     props.appLogIngestionTable.grantReadWriteData(appLogIngestionHandler);
-    props.instanceMetaTable.grantReadWriteData(appLogIngestionHandler);
     props.appPipelineTable.grantReadWriteData(appLogIngestionHandler);
     props.logConfTable.grantReadWriteData(appLogIngestionHandler);
-    props.instanceGroupTable.grantReadWriteData(appLogIngestionHandler);
+    props.instanceTable.grantReadWriteData(appLogIngestionHandler);
     props.configFileBucket.grantReadWrite(appLogIngestionHandler);
-    props.s3LogSourceTable.grantReadWriteData(appLogIngestionHandler);
-    props.eksClusterLogSourceTable.grantReadWriteData(appLogIngestionHandler);
     props.logSourceTable.grantReadWriteData(appLogIngestionHandler);
     props.subAccountLinkTable.grantReadData(appLogIngestionHandler);
-    // Grant SSM Policy to the InstanceMeta lambda
-    const ssmPolicy = new iam.PolicyStatement({
-      actions: [
-        "ssm:DescribeInstanceInformation",
-        "ssm:SendCommand",
-        "ssm:GetCommandInvocation",
-        "ec2:DescribeInstances",
-      ],
-      effect: iam.Effect.ALLOW,
-      resources: ["*"],
-    });
-    appLogIngestionHandler.addToRolePolicy(ssmPolicy);
-    appLogIngestionHandler.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: ["lambda:InvokeFunction"],
-        effect: iam.Effect.ALLOW,
-        resources: ["*"],
-      })
-    );
+
+    appLogIngestionHandler.role!.attachInlinePolicy(sourceCommonPolicy);
+
+    //Grant step function for deleting stack
     appLogIngestionHandler.addToRolePolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
         resources: [appIngestionFlow.stateMachineArn],
-        actions: ["states:StartExecution"],
+        actions: ['states:StartExecution'],
       })
     );
+    // Grant eks permissions to the app ingestion lambda
     appLogIngestionHandler.addToRolePolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
-        resources: ["*"],
-        actions: [
-          "iam:PutRolePolicy",
-          "iam:CreateRole",
-          "iam:GetRole",
-          "iam:UpdateAssumeRolePolicy",
+        resources: ['*'],
+        actions: ['eks:DescribeCluster'],
+      })
+    );
+
+    appLogIngestionHandler.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        resources: [
+          `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/*-EKS-LogAgent-Role-*`,
         ],
+        actions: ['iam:PutRolePolicy'],
       })
     );
     // Grant es permissions to the app ingestion lambda
     appLogIngestionHandler.addToRolePolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
-        resources: ["*"],
-        actions: ["es:DescribeElasticsearchDomain", "es:DescribeDomain"],
+        resources: ['*'],
+        actions: ['es:DescribeElasticsearchDomain', 'es:DescribeDomain'],
       })
     );
-    // Grant elb permissions to app ingestion lambda
-    appLogIngestionHandler.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: [
-          "elasticloadbalancing:CreateLoadBalancer",
-          "elasticloadbalancing:DeleteLoadBalancer",
-        ],
-        effect: iam.Effect.ALLOW,
-        resources: ["*"],
-      })
-    );
-    props.centralAssumeRolePolicy.attachToRole(appLogIngestionHandler.role!);
 
-    // Add appLogIngestion table as a Datasource
-    const appLogIngestionDynamoDS = props.graphqlApi.addDynamoDbDataSource(
-      "AppLogIngestionDynamoDS",
-      props.appLogIngestionTable,
-      {
-        description: "DynamoDB Resolver Datasource",
-      }
-    );
-    appLogIngestionDynamoDS.createResolver('getAppLogIngestion', {
-      typeName: "Query",
-      fieldName: "getAppLogIngestion",
-      requestMappingTemplate: appsync.MappingTemplate.dynamoDbGetItem(
-        "id",
-        "id"
-      ),
-      responseMappingTemplate: appsync.MappingTemplate.fromFile(
-        path.join(
-          __dirname,
-          "../../graphql/vtl/app_log_ingestion/GetAppLogIngestionResp.vtl"
-        )
-      ),
-    });
+    props.centralAssumeRolePolicy.attachToRole(appLogIngestionHandler.role!);
 
     // Add appLogIngestion lambda as a Datasource
     const appLogIngestionLambdaDS = props.graphqlApi.addLambdaDataSource(
-      "AppLogIngestionLambdaDS",
+      'AppLogIngestionLambdaDS',
       appLogIngestionHandler,
       {
-        description: "Lambda Resolver Datasource",
+        description: 'Lambda Resolver Datasource',
       }
     );
 
     // Set resolver for releted appLogIngestion API methods
     appLogIngestionLambdaDS.createResolver('listAppLogIngestions', {
-      typeName: "Query",
-      fieldName: "listAppLogIngestions",
+      typeName: 'Query',
+      fieldName: 'listAppLogIngestions',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
       responseMappingTemplate: appsync.MappingTemplate.fromFile(
         path.join(
           __dirname,
-          "../../graphql/vtl/app_log_ingestion/ListAppLogIngestionsResp.vtl"
+          '../../graphql/vtl/app_log_ingestion/ListAppLogIngestionsResp.vtl'
+        )
+      ),
+    });
+    appLogIngestionLambdaDS.createResolver(
+      'getK8sDeploymentContentWithSidecar',
+      {
+        typeName: 'Query',
+        fieldName: 'getK8sDeploymentContentWithSidecar',
+        requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+        responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      }
+    );
+
+    appLogIngestionLambdaDS.createResolver(
+      'getK8sDeploymentContentWithDaemonSet',
+      {
+        typeName: 'Query',
+        fieldName: 'getK8sDeploymentContentWithDaemonSet',
+        requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+        responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      }
+    );
+
+    appLogIngestionLambdaDS.createResolver('getAppLogIngestion', {
+      typeName: 'Query',
+      fieldName: 'getAppLogIngestion',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.fromFile(
+        path.join(
+          __dirname,
+          '../../graphql/vtl/app_log_ingestion/GetAppLogIngestionResp.vtl'
         )
       ),
     });
 
     appLogIngestionLambdaDS.createResolver('createAppLogIngestion', {
-      typeName: "Mutation",
-      fieldName: "createAppLogIngestion",
+      typeName: 'Mutation',
+      fieldName: 'createAppLogIngestion',
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
         path.join(
           __dirname,
-          "../../graphql/vtl/app_log_ingestion/CreateAppLogIngestion.vtl"
+          '../../graphql/vtl/app_log_ingestion/CreateAppLogIngestion.vtl'
         )
       ),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
     appLogIngestionLambdaDS.createResolver('deleteAppLogIngestion', {
-      typeName: "Mutation",
-      fieldName: "deleteAppLogIngestion",
+      typeName: 'Mutation',
+      fieldName: 'deleteAppLogIngestion',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
-    // Create a Step Functions to orchestrate eks cluster pod log pipeline flow
-    const eksClusterPodLogPipelineStfnLambdaHandle = new lambda.Function(
+    const ec2IngestionDistributionEventHandler = new lambda.Function(
       this,
-      "EKSClusterPodLogPipelineStfnLambdaHandle",
+      'EC2IngestionDistributionEventHandler',
       {
         code: lambda.AssetCode.fromAsset(
-          path.join(__dirname, "../../lambda/api/app_log_ingestion"),
-          { followSymlinks: SymlinkFollowMode.ALWAYS }
+          path.join(__dirname, '../../lambda/api/app_log_ingestion')
         ),
+        layers: [SharedPythonLayer.getInstance(this), appLogIngestionLayer],
         runtime: lambda.Runtime.PYTHON_3_9,
         handler:
-          "eks_cluster_pod_log_pipeline_stfn_lambda_function.lambda_handler",
-        timeout: Duration.seconds(60),
+          'ec2_ingestion_distribution_event_lambda_function.lambda_handler',
+        timeout: Duration.minutes(15),
         memorySize: 1024,
         environment: {
+          APP_LOG_INGESTION_TABLE_NAME: props.appLogIngestionTable.tableName,
+          INSTANCE_TABLE_NAME: props.instanceTable.tableName,
+          SSM_LOG_CONFIG_DOCUMENT_NAME: downloadLogConfigDocument.ref,
           CONFIG_FILE_S3_BUCKET_NAME: props.configFileBucket.bucketName,
-
-          INSTANCE_META_TABLE_NAME: props.instanceMetaTable.tableName,
           APP_PIPELINE_TABLE_NAME: props.appPipelineTable.tableName,
           APP_LOG_CONFIG_TABLE_NAME: props.logConfTable.tableName,
-          INSTANCE_GROUP_TABLE_NAME: props.instanceGroupTable.tableName,
-          APPLOGINGESTION_TABLE: props.appLogIngestionTable.tableName,
-
-          EC2_LOG_SOURCE_TABLE_NAME: props.ec2LogSourceTable.tableName,
-          S3_LOG_SOURCE_TABLE_NAME: props.s3LogSourceTable.tableName,
           LOG_SOURCE_TABLE_NAME: props.logSourceTable.tableName,
-
-          EKS_CLUSTER_SOURCE_TABLE_NAME:
-            props.eksClusterLogSourceTable.tableName,
           SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
-          SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+          SOLUTION_VERSION: process.env.VERSION || 'v1.0.0',
           SOLUTION_ID: props.solutionId,
+          FLUENT_BIT_LOG_GROUP_NAME: props.fluentBitLogGroupName,
+          FLUENT_BIT_IMAGE:
+            'public.ecr.aws/aws-observability/aws-for-fluent-bit:2.31.12',
+          FLUENT_BIT_EKS_CLUSTER_NAME_SPACE: 'logging',
+          FLUENT_BIT_MEM_BUF_LIMIT: '30M',
+          EC2_IAM_INSTANCE_PROFILE_ARN:
+            props.Ec2IamInstanceProfile.cfnEc2IamInstanceProfile.attrArn,
+          CWL_MONITOR_ROLE_ARN: props.cwlAccessRole.roleArn,
+          DEFAULT_OPEN_EXTRA_METADATA_FLAG: 'true',
+          LOG_AGENT_VPC_ID: props.defaultVPC,
+          LOG_AGENT_SUBNETS_IDS: Fn.join(',', props.defaultPublicSubnets),
+          DEFAULT_CMK_ARN: props.cmkKeyArn,
+          ECS_CLUSTER_NAME: props.ecsCluster.clusterName,
+          FLB_S3_ADDR: flb_s3_addr,
         },
-        description: `${Aws.STACK_NAME} - Updating EKS Cluster Pod Log Ingestion APIs`,
+        description: `${Aws.STACK_NAME} - Async AppLogIngestion Resolver for instance ingestion distribution event`,
       }
     );
-    eksClusterPodLogPipelineStfnLambdaHandle.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: ["lambda:InvokeFunction", "lambda:InvokeAsync"],
-        effect: iam.Effect.ALLOW,
-        resources: ["*"],
-      })
-    );
-    eksClusterPodLogPipelineStfnLambdaHandle.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: [
-          "iam:PutRolePolicy",
-          "iam:CreateRole",
-          "iam:GetRole",
-          "iam:UpdateAssumeRolePolicy",
+
+    ec2IngestionDistributionEventHandler.addEventSource(
+      new DynamoEventSource(props.appLogIngestionTable, {
+        batchSize: 1,
+        retryAttempts: 3,
+        startingPosition: lambda.StartingPosition.LATEST,
+        filters: [
+          lambda.FilterCriteria.filter({
+            eventName: lambda.FilterRule.isEqual('INSERT'),
+          }),
+          lambda.FilterCriteria.filter({
+            eventName: lambda.FilterRule.isEqual('MODIFY'),
+          }),
         ],
-        effect: iam.Effect.ALLOW,
-        resources: ["*"],
-      })
-    );
-    // Grant es permissions to the appPipeline lambda
-    eksClusterPodLogPipelineStfnLambdaHandle.addToRolePolicy(
-      new iam.PolicyStatement({
-        effect: iam.Effect.ALLOW,
-        resources: ["*"],
-        actions: ["es:DescribeElasticsearchDomain", "es:DescribeDomain"],
       })
     );
 
-    // Grant permissions to the eksClusterPodLogIngestionLambdaHandler lambda
-    props.appPipelineTable.grantReadWriteData(
-      eksClusterPodLogPipelineStfnLambdaHandle
+    ec2IngestionDistributionEventHandler.role!.attachInlinePolicy(
+      sourceCommonPolicy
     );
-    props.logConfTable.grantReadWriteData(
-      eksClusterPodLogPipelineStfnLambdaHandle
-    );
+    ec2IngestionDistributionEventHandler.role!.attachInlinePolicy(ssmPolicy);
 
     props.appLogIngestionTable.grantReadWriteData(
-      eksClusterPodLogPipelineStfnLambdaHandle
+      ec2IngestionDistributionEventHandler
     );
 
-    props.eksClusterLogSourceTable.grantReadWriteData(
-      eksClusterPodLogPipelineStfnLambdaHandle
+    props.appPipelineTable.grantReadWriteData(
+      ec2IngestionDistributionEventHandler
     );
+    props.logConfTable.grantReadWriteData(ec2IngestionDistributionEventHandler);
+
+    props.configFileBucket.grantReadWrite(ec2IngestionDistributionEventHandler);
+
+    props.logSourceTable.grantReadWriteData(
+      ec2IngestionDistributionEventHandler
+    );
+
     props.subAccountLinkTable.grantReadData(
-      eksClusterPodLogPipelineStfnLambdaHandle
+      ec2IngestionDistributionEventHandler
     );
 
-    props.logSourceTable.grantReadData(
-      eksClusterPodLogPipelineStfnLambdaHandle
+    props.instanceTable.grantReadWriteData(
+      ec2IngestionDistributionEventHandler
+    );
+
+    props.instanceTable.grantStreamRead(ec2IngestionDistributionEventHandler);
+
+    ec2IngestionDistributionEventHandler.node.addDependency(
+      downloadLogConfigDocument
     );
 
     props.centralAssumeRolePolicy.attachToRole(
-      eksClusterPodLogPipelineStfnLambdaHandle.role!
+      ec2IngestionDistributionEventHandler.role!
     );
-
-    // Create a lambda to handle all appLogIngestion related APIs.
-    const eksAgentConfigGenerateFn = new lambda.Function(
-      this,
-      "EKSAgentConfigGenerateFn",
-      {
-        code: lambda.AssetCode.fromAsset(
-          path.join(__dirname, "../../lambda/api/app_log_ingestion"),
-          { followSymlinks: SymlinkFollowMode.ALWAYS }
-        ),
-        runtime: lambda.Runtime.PYTHON_3_9,
-        handler: "eks_daemonset_sidecar_config_lambda_function.lambda_handler",
-        timeout: Duration.seconds(60),
-        memorySize: 1024,
-        environment: {
-          SSM_LOG_CONFIG_DOCUMENT_NAME: downloadLogConfigDocument.ref,
-          CONFIG_FILE_S3_BUCKET_NAME: props.configFileBucket.bucketName,
-          INSTANCE_META_TABLE_NAME: props.instanceMetaTable.tableName,
-          APP_PIPELINE_TABLE_NAME: props.appPipelineTable.tableName,
-          APP_LOG_CONFIG_TABLE_NAME: props.logConfTable.tableName,
-          INSTANCE_GROUP_TABLE_NAME: props.instanceGroupTable.tableName,
-          APPLOGINGESTION_TABLE: props.appLogIngestionTable.tableName,
-          EC2_LOG_SOURCE_TABLE_NAME: props.ec2LogSourceTable.tableName,
-          S3_LOG_SOURCE_TABLE_NAME: props.s3LogSourceTable.tableName,
-          LOG_SOURCE_TABLE_NAME: props.logSourceTable.tableName,
-          EKS_CLUSTER_SOURCE_TABLE_NAME:
-            props.eksClusterLogSourceTable.tableName,
-          SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
-          DEFAULT_OPEN_EXTRA_METADATA_FLAG: "true",
-          DEFAULT_OPEN_CONTAINERD_RUNTIME_FLAG: "true",
-          FLUENT_BIT_IMAGE:
-            "public.ecr.aws/aws-observability/aws-for-fluent-bit:2.28.4",
-          SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
-          SOLUTION_ID: props.solutionId,
-        },
-        description:
-          `${Aws.STACK_NAME} - EKS Cluster DaemonSet And Sidecar Config APIs Resolver`,
-      }
-    );
-
-    props.appPipelineTable.grantReadWriteData(eksAgentConfigGenerateFn);
-    props.logConfTable.grantReadWriteData(eksAgentConfigGenerateFn);
-    props.appLogIngestionTable.grantReadWriteData(eksAgentConfigGenerateFn);
-
-    props.eksClusterLogSourceTable.grantReadWriteData(eksAgentConfigGenerateFn);
-    props.logSourceTable.grantReadWriteData(eksAgentConfigGenerateFn);
-    props.subAccountLinkTable.grantReadData(eksAgentConfigGenerateFn);
-
-    eksAgentConfigGenerateFn.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: ["lambda:InvokeFunction"],
-        effect: iam.Effect.ALLOW,
-        resources: ["*"],
-      })
-    );
-
-    // add eks policy documents
-    eksAgentConfigGenerateFn.addToRolePolicy(
-      new iam.PolicyStatement({
-        sid: "eks",
-        actions: ["eks:DescribeCluster"],
-        effect: iam.Effect.ALLOW,
-        resources: [`arn:${Aws.PARTITION}:eks:*:${Aws.ACCOUNT_ID}:cluster/*`],
-      })
-    );
-
-    props.centralAssumeRolePolicy.attachToRole(eksAgentConfigGenerateFn.role!);
-
-    // Add eksClusterAsSourceIngestion lambda as a Datasource
-    const eksAgentConfigGeneratorDS = props.graphqlApi.addLambdaDataSource(
-      "EKSAgentConfigGeneratorDS",
-      eksAgentConfigGenerateFn,
-      {
-        description: "Lambda Resolver Datasource",
-      }
-    );
-
-    eksAgentConfigGeneratorDS.createResolver('getEKSDaemonSetConf', {
-      typeName: "Query",
-      fieldName: "getEKSDaemonSetConf",
-      requestMappingTemplate: appsync.MappingTemplate.fromFile(
-        path.join(
-          __dirname,
-          "../../graphql/vtl/app_log_ingestion/GetEKSDaemonSetConf.vtl"
-        )
-      ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
-    });
-    eksAgentConfigGeneratorDS.createResolver('getEKSDeploymentConf', {
-      typeName: "Query",
-      fieldName: "getEKSDeploymentConf",
-      requestMappingTemplate: appsync.MappingTemplate.fromFile(
-        path.join(
-          __dirname,
-          "../../graphql/vtl/app_log_ingestion/GetEKSDeploymentConf.vtl"
-        )
-      ),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
-    });
 
     // Create a lambda to handle ASG config generation and return
     const asgConfigGenerateFn = new lambda.Function(
       this,
-      "ASGConfigGenerateFn",
+      'ASGConfigGenerateFn',
       {
         code: lambda.AssetCode.fromAsset(
-          path.join(__dirname, "../../lambda/api/app_log_ingestion"),
-          { followSymlinks: SymlinkFollowMode.ALWAYS }
+          path.join(__dirname, '../../lambda/api/app_log_ingestion')
         ),
+        layers: [SharedPythonLayer.getInstance(this)],
         runtime: lambda.Runtime.PYTHON_3_9,
-        handler: "auto_scaling_group_config_lambda_function.lambda_handler",
+        handler: 'auto_scaling_group_config_lambda_function.lambda_handler',
         timeout: Duration.seconds(60),
         memorySize: 1024,
         environment: {
           SSM_LOG_CONFIG_DOCUMENT_NAME: downloadLogConfigDocument.ref,
           CONFIG_FILE_S3_BUCKET_NAME: props.configFileBucket.bucketName,
-          INSTANCE_META_TABLE_NAME: props.instanceMetaTable.tableName,
           APP_PIPELINE_TABLE_NAME: props.appPipelineTable.tableName,
           APP_LOG_CONFIG_TABLE_NAME: props.logConfTable.tableName,
-          INSTANCE_GROUP_TABLE_NAME: props.instanceGroupTable.tableName,
-          APPLOGINGESTION_TABLE: props.appLogIngestionTable.tableName,
+          APP_LOG_INGESTION_TABLE_NAME: props.appLogIngestionTable.tableName,
           LOG_SOURCE_TABLE_NAME: props.logSourceTable.tableName,
           SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
-          S3_LOG_SOURCE_TABLE_NAME: props.s3LogSourceTable.tableName,
-          EKS_CLUSTER_SOURCE_TABLE_NAME:
-            props.eksClusterLogSourceTable.tableName,
-          EC2_LOG_SOURCE_TABLE_NAME: props.ec2LogSourceTable.tableName,
-          SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+          SOLUTION_VERSION: process.env.VERSION || 'v1.0.0',
           SOLUTION_ID: props.solutionId,
         },
         description: `${Aws.STACK_NAME} - EC2 Auto-Scaling Group Config APIs Resolver`,
@@ -960,8 +713,6 @@ export class AppLogIngestionStack extends Construct {
     props.appPipelineTable.grantReadWriteData(asgConfigGenerateFn);
     props.logConfTable.grantReadWriteData(asgConfigGenerateFn);
     props.appLogIngestionTable.grantReadWriteData(asgConfigGenerateFn);
-    props.instanceGroupTable.grantReadWriteData(asgConfigGenerateFn);
-
     props.logSourceTable.grantReadWriteData(asgConfigGenerateFn);
     props.subAccountLinkTable.grantReadData(asgConfigGenerateFn);
 
@@ -969,20 +720,20 @@ export class AppLogIngestionStack extends Construct {
 
     // Add ASG Ingestion lambda as a Datasource
     const asgConfigGeneratorDS = props.graphqlApi.addLambdaDataSource(
-      "ASGConfigGeneratorDS",
+      'ASGConfigGeneratorDS',
       asgConfigGenerateFn,
       {
-        description: "Lambda Resolver Datasource",
+        description: 'Lambda Resolver Datasource',
       }
     );
 
     asgConfigGeneratorDS.createResolver('getAutoScalingGroupConf', {
-      typeName: "Query",
-      fieldName: "getAutoScalingGroupConf",
+      typeName: 'Query',
+      fieldName: 'getAutoScalingGroupConf',
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
         path.join(
           __dirname,
-          "../../graphql/vtl/app_log_ingestion/GetASGConf.vtl"
+          '../../graphql/vtl/app_log_ingestion/GetASGConf.vtl'
         )
       ),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),

@@ -32,7 +32,7 @@ def s3_client():
     with mock_s3():
         region = os.environ.get("AWS_REGION")
         version = os.environ.get("SOLUTION_VERSION")
-        solution_name = os.environ.get("SOLUTION_NAME", "log-hub")
+        solution_name = os.environ.get("SOLUTION_NAME", "clo")
         key = f"{solution_name}/{version}/AlarmForOpenSearch.template"
 
         s3 = boto3.resource("s3", region_name=region)

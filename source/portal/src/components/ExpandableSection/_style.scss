@@ -1,0 +1,17 @@
+.gsui-expendable-section {
+  .addtional-settings {
+    color: #545b64;
+    border-top: 1px solid #eaeded;
+    padding: 10px 0 10px 25px;
+    font-size: $font-size-base;
+    font-weight: 600;
+    position: relative;
+    span {
+      cursor: pointer;
+      .icon {
+        margin: -5px 0 0 -32px;
+        position: absolute;
+      }
+    }
+  }
+}

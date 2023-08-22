@@ -13,56 +13,51 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import { EKSClusterLogSource, EKSDeployKind } from "API";
+import { EKSDeployKind, LogSourceType, LogSource } from "API";
 import { appSyncRequestQuery } from "assets/js/request";
-import {
-  buildEKSLink,
-  buildESLink,
-  buildRoleLink,
-  formatLocalTime,
-} from "assets/js/utils";
+import { buildEKSLink, buildRoleLink, formatLocalTime } from "assets/js/utils";
 import Breadcrumb from "components/Breadcrumb";
 import CopyText from "components/CopyText";
 import ExtLink from "components/ExtLink";
 import HeaderPanel from "components/HeaderPanel";
 import HelpPanel from "components/HelpPanel";
 import LoadingText from "components/LoadingText";
+import Modal from "components/Modal";
+import Button from "components/Button";
+import Alert from "components/Alert";
+import { AlertType } from "components/Alert/alert";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import SideMenu from "components/SideMenu";
 import { AntTab, AntTabs, TabPanel } from "components/Tab";
 import ValueWithLabel from "components/ValueWithLabel";
-import { getEKSClusterDetails } from "graphql/queries";
+import { getLogSource } from "graphql/queries";
 import AccountName from "pages/comps/account/AccountName";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { RouteComponentProps } from "react-router-dom";
-import { AppStateProps, InfoBarTypes } from "reducer/appReducer";
+import { InfoBarTypes } from "reducer/appReducer";
 import { AmplifyConfigType } from "types";
 import DaemonsetGuide from "./detail/DaemonsetGuide";
 import EksIngestions from "./detail/Ingestions";
-import Tags from "./detail/Tags";
+import { RootState } from "reducer/reducers";
+import Tags from "pages/dataInjection/common/Tags";
 
-interface MatchParams {
-  id: string;
-  type: string;
-}
-
-const EksLogDetail: React.FC<RouteComponentProps<MatchParams>> = (
-  props: RouteComponentProps<MatchParams>
-) => {
-  const id: string = props.match.params.id;
-  const type: string = props.match.params.type;
+const EksLogDetail: React.FC = () => {
+  const { id, type } = useParams();
   const { t } = useTranslation();
   const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: AppStateProps) => state.amplifyConfig
+    (state: RootState) => state.app.amplifyConfig
   );
 
   const [loadingData, setLoadingData] = useState(true);
   const [curEksLogSource, setCurEksLogSource] = useState<
-    EKSClusterLogSource | undefined
+    LogSource | undefined
   >();
   const [activeTab, setActiveTab] = useState(type === "guide" ? 1 : 0);
   const [showDaemonsetGuide, setShowDaemonsetGuide] = useState(false);
+  const [showEKSDaemonSetModal, setShowEKSDaemonSetModal] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const breadCrumbList = [
     { name: t("name"), link: "/" },
@@ -71,22 +66,23 @@ const EksLogDetail: React.FC<RouteComponentProps<MatchParams>> = (
       link: "/containers/eks-log",
     },
     {
-      name: curEksLogSource?.eksClusterName || "",
+      name: curEksLogSource?.eks?.eksClusterName || "",
     },
   ];
 
   const getEksLogSourceById = async () => {
     try {
       setLoadingData(true);
-      const resData: any = await appSyncRequestQuery(getEKSClusterDetails, {
-        eksClusterId: id,
+      const resData: any = await appSyncRequestQuery(getLogSource, {
+        type: LogSourceType.EKSCluster,
+        sourceId: id,
       });
-      console.info(resData);
-      const configData = resData.data.getEKSClusterDetails;
+      console.info("resData", resData);
+      const configData = resData.data.getLogSource;
       setCurEksLogSource(configData);
       setLoadingData(false);
       setShowDaemonsetGuide(() => {
-        return configData.deploymentKind === EKSDeployKind.DaemonSet;
+        return configData.eks?.deploymentKind === EKSDeployKind.DaemonSet;
       });
     } catch (error) {
       setCurEksLogSource(undefined);
@@ -96,6 +92,11 @@ const EksLogDetail: React.FC<RouteComponentProps<MatchParams>> = (
   };
 
   useEffect(() => {
+    const state = location.state as {
+      showEKSDaemonSetModal?: boolean;
+      eksSourceId?: string;
+    };
+    setShowEKSDaemonSetModal(state?.showEKSDaemonSetModal || false);
     getEksLogSourceById();
   }, []);
 
@@ -119,33 +120,23 @@ const EksLogDetail: React.FC<RouteComponentProps<MatchParams>> = (
                             <ExtLink
                               to={buildEKSLink(
                                 amplifyConfig.aws_project_region,
-                                curEksLogSource?.eksClusterName
+                                curEksLogSource.eks?.eksClusterName
                               )}
                             >
-                              {curEksLogSource?.eksClusterName}
+                              {curEksLogSource?.eks?.eksClusterName}
                             </ExtLink>
                           ) : (
-                            curEksLogSource?.eksClusterName
+                            curEksLogSource?.eks?.eksClusterName
                           )}
                         </div>
                       </ValueWithLabel>
                       <ValueWithLabel
                         label={t("ekslog:detail.deploymentPattern")}
                       >
-                        <div>{curEksLogSource?.deploymentKind}</div>
+                        <div>{curEksLogSource?.eks?.deploymentKind}</div>
                       </ValueWithLabel>
                     </div>
                     <div className="flex-1 border-left-c">
-                      <ValueWithLabel label={t("ekslog:detail.aos")}>
-                        <ExtLink
-                          to={buildESLink(
-                            amplifyConfig.aws_project_region,
-                            curEksLogSource?.aosDomain?.domainName || ""
-                          )}
-                        >
-                          {curEksLogSource?.aosDomain?.domainName}
-                        </ExtLink>
-                      </ValueWithLabel>
                       {curEksLogSource?.accountId && (
                         <ValueWithLabel
                           label={t("resource:crossAccount.account")}
@@ -162,16 +153,20 @@ const EksLogDetail: React.FC<RouteComponentProps<MatchParams>> = (
                         label={t("ekslog:detail.iamRole")}
                         infoType={InfoBarTypes.EKS_IAM_ROLE}
                       >
-                        <CopyText text={curEksLogSource?.logAgentRoleArn || ""}>
+                        <CopyText
+                          text={curEksLogSource?.eks?.logAgentRoleArn || ""}
+                        >
                           <ExtLink
                             to={buildRoleLink(
-                              curEksLogSource?.logAgentRoleArn
-                                ? curEksLogSource.logAgentRoleArn.split("/")[1]
+                              curEksLogSource?.eks?.logAgentRoleArn
+                                ? curEksLogSource.eks?.logAgentRoleArn.split(
+                                    "/"
+                                  )[1]
                                 : "",
                               amplifyConfig.aws_project_region
                             )}
                           >
-                            {curEksLogSource?.logAgentRoleArn}
+                            {curEksLogSource?.eks?.logAgentRoleArn}
                           </ExtLink>
                         </CopyText>
                       </ValueWithLabel>
@@ -179,7 +174,7 @@ const EksLogDetail: React.FC<RouteComponentProps<MatchParams>> = (
                     <div className="flex-1 border-left-c">
                       <ValueWithLabel label={t("ekslog:detail.created")}>
                         <div>
-                          {formatLocalTime(curEksLogSource?.createdDt || "")}
+                          {formatLocalTime(curEksLogSource?.createdAt || "")}
                         </div>
                       </ValueWithLabel>
                     </div>
@@ -212,7 +207,7 @@ const EksLogDetail: React.FC<RouteComponentProps<MatchParams>> = (
                     value={activeTab}
                     index={showDaemonsetGuide ? 2 : 1}
                   >
-                    <Tags eksLogSourceInfo={curEksLogSource} />
+                    <Tags tags={curEksLogSource?.tags} />
                   </TabPanel>
                 </div>
               )}
@@ -220,6 +215,68 @@ const EksLogDetail: React.FC<RouteComponentProps<MatchParams>> = (
           )}
         </div>
       </div>
+      {curEksLogSource?.eks?.deploymentKind === EKSDeployKind.DaemonSet && (
+        <Modal
+          title={t("applog:detail.ingestion.oneMoreStepEKS")}
+          fullWidth={false}
+          isOpen={showEKSDaemonSetModal}
+          closeModal={() => {
+            setShowEKSDaemonSetModal(false);
+          }}
+          actions={
+            <div className="button-action no-pb text-right">
+              <Button
+                btnType="text"
+                onClick={() => {
+                  setShowEKSDaemonSetModal(false);
+                }}
+              >
+                {t("button.cancel")}
+              </Button>
+              <Button
+                btnType="primary"
+                onClick={() => {
+                  setShowEKSDaemonSetModal(false);
+                  const newHistoryState = {
+                    showEKSDaemonSetModal: false,
+                    eksSourceId: "",
+                  };
+                  navigate(`/containers/eks-log/detail/${id}`, {
+                    state: newHistoryState,
+                  });
+                }}
+              >
+                {t("button.confirm")}
+              </Button>
+            </div>
+          }
+        >
+          <div className="modal-content alert-content">
+            <Alert
+              noMargin
+              type={AlertType.Warning}
+              content={
+                <div>
+                  <p>
+                    <strong>
+                      {t("applog:detail.ingestion.eksDeamonSetTips_0")}
+                    </strong>
+                  </p>
+                  {t("applog:detail.ingestion.eksDeamonSetTips_1")}
+                  <a
+                    href={`/containers/eks-log/detail/${curEksLogSource?.sourceId}/guide`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {t("applog:detail.ingestion.eksDeamonSetLink")}
+                  </a>
+                  {t("applog:detail.ingestion.eksDeamonSetTips_2")}
+                </div>
+              }
+            />
+          </div>
+        </Modal>
+      )}
       <HelpPanel />
     </div>
   );

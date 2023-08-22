@@ -19,9 +19,9 @@ include-markdown "include-prerequisites.md"
 
     For example:
     ```json
-    {"host":"81.95.250.9", "user-identifier":"-", "time":"08/Mar/2022:06:28:03 +0000", "method": "PATCH", "request": "/clicks-and-mortar/24%2f7", "protocol":"HTTP/2.0", "status":502, "bytes":24337, "referer": "http://www.investorturn-key.net/functionalities/innovative/integrated"}
+    {"host":"81.95.250.9", "user-identifier":"-", "time":"08/Mar/2022:06:28:03 +0000", "method": "PATCH", "request": "/clicks-and-mortar/24%2f7", "protocol":"HTTP/2.0", "status":502, "bytes":24337, "referer": "https://www.investorturn-key.net/functionalities/innovative/integrated"}
     ```
-   
+
 8. Check if each fields type mapping is correct. You can change the type by selecting the dropdown menu in the second column. For all supported types, see [Data Types](https://opensearch.org/docs/latest/search-plugins/sql/datatypes/).
 
     !!! Note "Note"
@@ -36,7 +36,7 @@ include-markdown "include-prerequisites.md"
 
 ## Step 2: Create an application log ingestion
 
-The steps are similar to creating an application log ingestion for single-line text. Refer to [Single-line Text](./single-line-text.md) for details.
+The steps are similar to creating an application log ingestion for single-line text. Refer to [Single-line Text](./single-line-text.md#step-2-create-an-application-log-ingestion) for details.
 
 ## Step 3: View your logs in OpenSearch
 

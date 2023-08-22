@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React, { useState, useEffect } from "react";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import CreateStep from "components/CreateStep";
 import SpecifySettings from "./steps/SpecifySettings";
 import SpecifyOpenSearchCluster, {
@@ -22,13 +22,20 @@ import SpecifyOpenSearchCluster, {
   checkOpenSearchInput,
   covertParametersByKeyAndConditions,
 } from "../common/SpecifyCluster";
-import CreateTags from "../common/CreateTags";
 import Button from "components/Button";
 
 import Breadcrumb from "components/Breadcrumb";
 import { appSyncRequestMutation } from "assets/js/request";
 import { createServicePipeline } from "graphql/mutations";
-import { CODEC, DestinationType, EngineType, ServiceType, Tag } from "API";
+import {
+  Codec,
+  DestinationType,
+  EngineType,
+  ServiceType,
+  MonitorInput,
+  DomainStatusCheckType,
+  DomainStatusCheckResponse,
+} from "API";
 import {
   WarmTransitionType,
   YesNo,
@@ -39,14 +46,23 @@ import { OptionType } from "components/AutoComplete/autoComplete";
 import { CreateLogMethod, ServiceLogType } from "assets/js/const";
 import HelpPanel from "components/HelpPanel";
 import SideMenu from "components/SideMenu";
-import { AppStateProps } from "reducer/appReducer";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Alert } from "assets/js/alert";
 import {
   bucketNameIsValid,
   splitStringToBucketAndPrefix,
 } from "assets/js/utils";
+import { MONITOR_ALARM_INIT_DATA } from "assets/js/init";
+import AlarmAndTags from "../../../../pipelineAlarm/AlarmAndTags";
+import { Actions, RootState } from "reducer/reducers";
+import { useTags } from "assets/js/hooks/useTags";
+import { useAlarm } from "assets/js/hooks/useAlarm";
+import { Dispatch } from "redux";
+import {
+  CreateAlarmActionTypes,
+  validateAalrmInput,
+} from "reducer/createAlarm";
 
 const EXCLUDE_PARAMS = [
   "esDomainId",
@@ -61,7 +77,6 @@ const EXCLUDE_PARAMS = [
 ];
 export interface S3TaskProps {
   type: ServiceType;
-  tags: Tag[];
   source: string;
   target: string;
   logSourceAccountId: string;
@@ -102,13 +117,13 @@ export interface S3TaskProps {
 
     rolloverSizeNotSupport: boolean;
   };
+  monitor: MonitorInput;
 }
 
 const DEFAULT_TASK_VALUE: S3TaskProps = {
   type: ServiceType.S3,
   source: "",
   target: "",
-  tags: [],
   logSourceAccountId: "",
   logSourceRegion: "",
   destinationType: DestinationType.S3,
@@ -142,11 +157,12 @@ const DEFAULT_TASK_VALUE: S3TaskProps = {
     retainAge: "180",
     rolloverSize: "30",
     indexSuffix: SERVICE_LOG_INDEX_SUFFIX.yyyy_MM_dd,
-    codec: CODEC.best_compression,
+    codec: Codec.best_compression,
     refreshInterval: "1s",
 
     rolloverSizeNotSupport: false,
   },
+  monitor: MONITOR_ALARM_INIT_DATA,
 };
 
 const CreateS3: React.FC = () => {
@@ -165,11 +181,12 @@ const CreateS3: React.FC = () => {
   ];
 
   const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: AppStateProps) => state.amplifyConfig
+    (state: RootState) => state.app.amplifyConfig
   );
+  const dispatch = useDispatch<Dispatch<Actions>>();
 
   const [curStep, setCurStep] = useState(0);
-  const history = useHistory();
+  const navigate = useNavigate();
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [s3PipelineTask, setS3PipelineTask] =
     useState<S3TaskProps>(DEFAULT_TASK_VALUE);
@@ -195,6 +212,10 @@ const CreateS3: React.FC = () => {
     indexEmptyError: false,
     indexNameFormatError: false,
   });
+  const [domainCheckStatus, setDomainCheckStatus] =
+    useState<DomainStatusCheckResponse>();
+  const tags = useTags();
+  const monitor = useAlarm();
 
   const confirmCreatePipeline = async () => {
     console.info("s3PipelineTask:", s3PipelineTask);
@@ -202,10 +223,12 @@ const CreateS3: React.FC = () => {
     createPipelineParams.type = ServiceType.S3;
     createPipelineParams.source = s3PipelineTask.source;
     createPipelineParams.target = s3PipelineTask.target;
-    createPipelineParams.tags = s3PipelineTask.tags;
+    createPipelineParams.tags = tags;
     createPipelineParams.logSourceAccountId = s3PipelineTask.logSourceAccountId;
     createPipelineParams.logSourceRegion = amplifyConfig.aws_project_region;
     createPipelineParams.destinationType = s3PipelineTask.destinationType;
+
+    createPipelineParams.monitor = monitor.monitor;
 
     const tmpParamList: any = covertParametersByKeyAndConditions(
       s3PipelineTask,
@@ -233,9 +256,7 @@ const CreateS3: React.FC = () => {
       );
       console.info("createRes:", createRes);
       setLoadingCreate(false);
-      history.push({
-        pathname: "/log-pipeline/service-log",
-      });
+      navigate("/log-pipeline/service-log");
     } catch (error) {
       setLoadingCreate(false);
       console.error(error);
@@ -245,6 +266,47 @@ const CreateS3: React.FC = () => {
   useEffect(() => {
     console.info("s3PipelineTask:", s3PipelineTask);
   }, [s3PipelineTask]);
+
+  const validateStep0 = () => {
+    if (nextStepDisable) {
+      return false;
+    }
+    if (needEnableAccessLog) {
+      Alert(t("servicelog:s3.needEnableLogging"));
+      return false;
+    }
+    if (s3PipelineTask.params.taskType === CreateLogMethod.Automatic) {
+      if (!s3PipelineTask.params.logBucketObj) {
+        setAutoS3EmptyError(true);
+        return false;
+      }
+    }
+    if (s3PipelineTask.params.taskType === CreateLogMethod.Manual) {
+      if (!s3PipelineTask.params.logBucketName) {
+        setManualS3EmpryError(true);
+        return false;
+      }
+      if (
+        !s3PipelineTask.params.manualBucketS3Path
+          .toLowerCase()
+          .startsWith("s3") ||
+        !bucketNameIsValid(s3PipelineTask.params.logBucketName)
+      ) {
+        setManualS3PathInvalid(true);
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const isNextDisabled = () => {
+    return (
+      bucketISChanging ||
+      domainListIsLoading ||
+      (curStep === 1 &&
+        domainCheckStatus?.status !== DomainStatusCheckType.PASSED)
+    );
+  };
 
   return (
     <div className="lh-main-content">
@@ -617,25 +679,33 @@ const CreateS3: React.FC = () => {
                         };
                       });
                     }}
+                    domainCheckedStatus={domainCheckStatus}
+                    changeOSDomainCheckStatus={(status) => {
+                      setS3PipelineTask((prev: S3TaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            replicaNumbers: status.multiAZWithStandbyEnabled
+                              ? "2"
+                              : "1",
+                          },
+                        };
+                      });
+                      setDomainCheckStatus(status);
+                    }}
                   />
                 )}
                 {curStep === 2 && (
-                  <CreateTags
-                    pipelineTask={s3PipelineTask}
-                    changeTags={(tags) => {
-                      setS3PipelineTask((prev: S3TaskProps) => {
-                        return { ...prev, tags: tags };
-                      });
-                    }}
-                  />
+                  <div>
+                    <AlarmAndTags pipelineTask={s3PipelineTask} />
+                  </div>
                 )}
                 <div className="button-action text-right">
                   <Button
                     btnType="text"
                     onClick={() => {
-                      history.push({
-                        pathname: "/log-pipeline/service-log/create",
-                      });
+                      navigate("/log-pipeline/service-log/create");
                     }}
                   >
                     {t("button.cancel")}
@@ -654,45 +724,12 @@ const CreateS3: React.FC = () => {
 
                   {curStep < 2 && (
                     <Button
-                      disabled={bucketISChanging || domainListIsLoading}
+                      disabled={isNextDisabled()}
                       btnType="primary"
                       onClick={() => {
                         if (curStep === 0) {
-                          if (nextStepDisable) {
+                          if (!validateStep0()) {
                             return;
-                          }
-                          if (needEnableAccessLog) {
-                            Alert(t("servicelog:s3.needEnableLogging"));
-                            return;
-                          }
-                          if (
-                            s3PipelineTask.params.taskType ===
-                            CreateLogMethod.Automatic
-                          ) {
-                            if (!s3PipelineTask.params.logBucketObj) {
-                              setAutoS3EmptyError(true);
-                              return;
-                            }
-                          }
-                          if (
-                            s3PipelineTask.params.taskType ===
-                            CreateLogMethod.Manual
-                          ) {
-                            if (!s3PipelineTask.params.logBucketName) {
-                              setManualS3EmpryError(true);
-                              return;
-                            }
-                            if (
-                              !s3PipelineTask.params.manualBucketS3Path
-                                .toLowerCase()
-                                .startsWith("s3") ||
-                              !bucketNameIsValid(
-                                s3PipelineTask.params.logBucketName
-                              )
-                            ) {
-                              setManualS3PathInvalid(true);
-                              return;
-                            }
                           }
                         }
                         if (curStep === 1) {
@@ -705,6 +742,13 @@ const CreateS3: React.FC = () => {
                           const validRes = checkOpenSearchInput(s3PipelineTask);
                           setAosInputValidRes(validRes);
                           if (Object.values(validRes).indexOf(true) >= 0) {
+                            return;
+                          }
+                          // Check domain connection status
+                          if (
+                            domainCheckStatus?.status !==
+                            DomainStatusCheckType.PASSED
+                          ) {
                             return;
                           }
                         }
@@ -721,6 +765,12 @@ const CreateS3: React.FC = () => {
                       loading={loadingCreate}
                       btnType="primary"
                       onClick={() => {
+                        if (!validateAalrmInput(monitor)) {
+                          dispatch({
+                            type: CreateAlarmActionTypes.VALIDATE_ALARM_INPUT,
+                          });
+                          return;
+                        }
                         confirmCreatePipeline();
                       }}
                     >

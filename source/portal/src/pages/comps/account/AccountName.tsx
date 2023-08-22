@@ -17,7 +17,7 @@ import React, { useState, useEffect } from "react";
 import LoadingText from "components/LoadingText";
 import { Link } from "react-router-dom";
 import { SubAccountLink } from "API";
-import { getSubAccountLinkByAccountIdRegion } from "graphql/queries";
+import { getSubAccountLink } from "graphql/queries";
 import { appSyncRequestQuery } from "assets/js/request";
 
 interface AccouNameProps {
@@ -33,16 +33,17 @@ const AccountName: React.FC<AccouNameProps> = (props: AccouNameProps) => {
   const getAccountByIdAndRegion = async () => {
     setLoadingData(true);
     try {
-      const resData: any = await appSyncRequestQuery(
-        getSubAccountLinkByAccountIdRegion,
-        {
-          accountId: accountId,
-          region: region,
-        }
-      );
+      const resData: any = await appSyncRequestQuery(getSubAccountLink, {
+        subAccountId: accountId || "",
+        region: region,
+      });
       console.info("resData:", resData);
-      if (resData.data && resData.data.getSubAccountLinkByAccountIdRegion) {
-        setCurAccount(resData.data.getSubAccountLinkByAccountIdRegion);
+      if (
+        resData.data &&
+        resData.data.getSubAccountLink &&
+        resData.data.getSubAccountLink.subAccountId
+      ) {
+        setCurAccount(resData.data.getSubAccountLink);
       }
       setLoadingData(false);
     } catch (error) {
@@ -63,7 +64,9 @@ const AccountName: React.FC<AccouNameProps> = (props: AccouNameProps) => {
       ) : (
         <>
           {curAccount ? (
-            <Link to={`/resources/cross-account/detail/${curAccount?.id}`}>
+            <Link
+              to={`/resources/cross-account/detail/${curAccount?.subAccountId}`}
+            >
               {curAccount?.subAccountName}
             </Link>
           ) : (

@@ -47,13 +47,13 @@ This automated AWS CloudFormation template deploys the *Centralized Logging with
     | KMSKeyError | `Yes`              | Whether to enable alarm when KMS encryption key is disabled. KMSKeyError is >= 1 for 1 minute, 1 consecutive time.                                                                                            |
     | KMSKeyInaccessible | `Yes`              | Whether to enable alarm when KMS encryption key has been deleted or has revoked its grants to OpenSearch Service. KMSKeyInaccessible is >= 1 for 1 minute, 1 consecutive time.                                |
 
-7. Choose **Next**.
+6. Choose **Next**.
 
-8. On the **Configure stack options** page, choose **Next**.
+7. On the **Configure stack options** page, choose **Next**.
 
-9. On the **Review** page, review and confirm the settings. Check the box acknowledging that the template creates AWS Identity and Access Management (IAM) resources.
+8. On the **Review** page, review and confirm the settings. Check the box acknowledging that the template creates AWS Identity and Access Management (IAM) resources.
 
-10. Choose **Create** stack to deploy the stack.
+9. Choose **Create** stack to deploy the stack.
 
 You can view the status of the stack in the AWS CloudFormation console in the **Status** column. You should receive
 a **CREATE_COMPLETE** status in approximately 5 minutes.

@@ -45,28 +45,41 @@ class Plugin:
     def process(self, records):
         """Enrich with geo information based on ip field"""
 
-        if self._ip_field:
-            for record in records:
-                ip_field = record.get(self._ip_field)
-                if ip_field:
-                    try:
-                        # if address not found, AddressNotFoundError will be raised.
-                        geo = self._reader.get(ip_field)
-                        if geo:
-                            if "country" in geo:
-                                record["geo_iso_code"] = geo["country"]["iso_code"]
-                                record["geo_country"] = geo["country"]["names"]["en"]
-                                if "city" in geo:
-                                    record["geo_city"] = geo["city"]["names"]["en"]
-                            if "location" in geo:
-                                record[
-                                    "geo_location"
-                                ] = f'{geo["location"]["latitude"]},{geo["location"]["longitude"]}'
-                    except Exception as e:
-                        # Do nothing
-                        logger.error(e)
+        if not self._ip_field:
+            return records
 
-        return records
+        return [self.enrich_with_geo_info(record) for record in records]
+
+    def enrich_with_geo_info(self, record):
+        ip_field = record.get(self._ip_field)
+        if not ip_field:
+            return record
+
+        try:
+            geo = self._reader.get(ip_field)
+            if not geo:
+                return record
+
+            self.add_country_info(record, geo)
+            self.add_location_info(record, geo)
+        except Exception as e:
+            logger.error(e)
+
+        return record
+
+    def add_country_info(self, record, geo):
+        if "country" in geo:
+            record["geo_iso_code"] = geo["country"]["iso_code"]
+            record["geo_country"] = geo["country"]["names"]["en"]
+
+            if "city" in geo:
+                record["geo_city"] = geo["city"]["names"]["en"]
+
+    def add_location_info(self, record, geo):
+        if "location" in geo:
+            record[
+                "geo_location"
+            ] = f'{geo["location"]["latitude"]},{geo["location"]["longitude"]}'
 
     def get_mapping(self):
         """Returns an extra index mappings for logs"""

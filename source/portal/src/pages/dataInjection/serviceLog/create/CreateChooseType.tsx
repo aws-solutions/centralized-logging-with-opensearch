@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React, { useEffect, useState } from "react";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import classNames from "classnames";
 import PagePanel from "components/PagePanel";
 import HeaderPanel from "components/HeaderPanel";
@@ -40,6 +40,7 @@ import HelpPanel from "components/HelpPanel";
 import SideMenu from "components/SideMenu";
 import { useTranslation } from "react-i18next";
 import VPCDesc from "./common/desc/VPCDesc";
+import { identity } from "lodash";
 
 const CreateChooseType: React.FC = () => {
   const { t } = useTranslation();
@@ -51,7 +52,7 @@ const CreateChooseType: React.FC = () => {
     },
     { name: t("servicelog:create.name") },
   ];
-  const history = useHistory();
+  const navigate = useNavigate();
   const dispatch = useDispatch();
 
   const [logType, setLogType] = useState(ServiceLogType.Amazon_S3);
@@ -59,9 +60,7 @@ const CreateChooseType: React.FC = () => {
   const goToCreatePage = () => {
     console.info("ServiceLogTypeMap:", ServiceLogTypeMap);
     console.info("logType:", logType);
-    history.push({
-      pathname: `/log-pipeline/service-log/create/${ServiceLogTypeMap[logType]}`,
-    });
+    navigate(`/log-pipeline/service-log/create/${ServiceLogTypeMap[logType]}`);
   };
 
   useEffect(() => {
@@ -82,7 +81,7 @@ const CreateChooseType: React.FC = () => {
                     <div className="service-item-list">
                       {ServiceLogList.map((element, index) => {
                         return (
-                          <label key={index}>
+                          <label key={identity(index)}>
                             <div
                               className={classNames("service-item", {
                                 active: element.value === logType,
@@ -136,9 +135,7 @@ const CreateChooseType: React.FC = () => {
                 <Button
                   btnType="text"
                   onClick={() => {
-                    history.push({
-                      pathname: `/log-pipeline/service-log`,
-                    });
+                    navigate(`/log-pipeline/service-log`);
                   }}
                 >
                   {t("button.cancel")}

@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React from "react";
+import React, { ReactElement } from "react";
 import { withStyles, Theme, createStyles } from "@material-ui/core/styles";
 import Tabs from "@material-ui/core/Tabs";
 import Tab from "@material-ui/core/Tab";
@@ -57,12 +57,12 @@ const AntTab = withStyles((theme: Theme) =>
 )((props: StyledTabProps) => <Tab disableRipple {...props} />);
 
 interface TabPanelProps {
-  children?: React.ReactNode;
+  children?: any;
   index: number;
   value: number;
 }
 
-const TabPanel = (props: TabPanelProps): JSX.Element => {
+const TabPanel = (props: TabPanelProps): ReactElement => {
   const { children, value, index, ...other } = props;
 
   return (

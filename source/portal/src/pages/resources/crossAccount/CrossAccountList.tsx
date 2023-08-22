@@ -14,28 +14,28 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React, { useState, useEffect } from "react";
-import RefreshIcon from "@material-ui/icons/Refresh";
 import Breadcrumb from "components/Breadcrumb";
 import SideMenu from "components/SideMenu";
 import { useTranslation } from "react-i18next";
 import { SelectType, TablePanel } from "components/TablePanel";
 import Button from "components/Button";
 import { SubAccountLink } from "API";
-import { Link, useHistory } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Pagination } from "@material-ui/lab";
 import HelpPanel from "components/HelpPanel";
 import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
 import { listSubAccountLinks } from "graphql/queries";
-import LoadingText from "components/LoadingText";
 import { deleteSubAccountLink } from "graphql/mutations";
 import Modal from "components/Modal";
 import { formatLocalTime } from "assets/js/utils";
+import { handleErrorMessage } from "assets/js/alert";
+import ButtonRefresh from "components/ButtonRefresh";
 
 const PAGE_SIZE = 10;
 
 const CrossAccountList: React.FC = () => {
   const { t } = useTranslation();
-  const history = useHistory();
+  const navigate = useNavigate();
   const breadCrumbList = [
     { name: t("name"), link: "/" },
     { name: t("resource:crossAccount.name") },
@@ -83,14 +83,15 @@ const CrossAccountList: React.FC = () => {
     try {
       setLoadingDelete(true);
       const removeRes = await appSyncRequestMutation(deleteSubAccountLink, {
-        id: curAccount?.id,
+        subAccountId: curAccount?.subAccountId,
       });
       console.info("removeRes:", removeRes);
       setLoadingDelete(false);
       setOpenDeleteModel(false);
       getCrossAccountList();
-    } catch (error) {
+    } catch (error: any) {
       setLoadingDelete(false);
+      handleErrorMessage(error.message);
       console.error(error);
     }
   };
@@ -112,6 +113,14 @@ const CrossAccountList: React.FC = () => {
     getCrossAccountList();
   }, []);
 
+  const renderAccountId = (data: SubAccountLink) => {
+    return (
+      <Link to={`/resources/cross-account/detail/${data.subAccountId}`}>
+        {data.subAccountName}
+      </Link>
+    );
+  };
+
   return (
     <div className="lh-main-content">
       <SideMenu />
@@ -121,6 +130,7 @@ const CrossAccountList: React.FC = () => {
             <Breadcrumb list={breadCrumbList} />
             <div className="table-data">
               <TablePanel
+                trackId="subAccountId"
                 title={t("resource:crossAccount.list.accounts")}
                 changeSelected={(item) => {
                   setSelectedAccount(item);
@@ -132,13 +142,7 @@ const CrossAccountList: React.FC = () => {
                     // width: 110,
                     id: "ID",
                     header: t("resource:crossAccount.list.accountName"),
-                    cell: (e: SubAccountLink) => {
-                      return (
-                        <Link to={`/resources/cross-account/detail/${e.id}`}>
-                          {e.subAccountName}
-                        </Link>
-                      );
-                    },
+                    cell: (e: SubAccountLink) => renderAccountId(e),
                   },
                   {
                     id: "Name",
@@ -159,7 +163,7 @@ const CrossAccountList: React.FC = () => {
                     id: "created",
                     header: t("resource:crossAccount.list.created"),
                     cell: (e: SubAccountLink) => {
-                      return formatLocalTime(e?.createdDt || "");
+                      return formatLocalTime(e?.createdAt || "");
                     },
                   },
                 ]}
@@ -177,11 +181,7 @@ const CrossAccountList: React.FC = () => {
                         }
                       }}
                     >
-                      {loadingData ? (
-                        <LoadingText />
-                      ) : (
-                        <RefreshIcon fontSize="small" />
-                      )}
+                      <ButtonRefresh loading={loadingData} fontSize="small" />
                     </Button>
 
                     <Button
@@ -196,9 +196,7 @@ const CrossAccountList: React.FC = () => {
                     <Button
                       btnType="primary"
                       onClick={() => {
-                        history.push({
-                          pathname: "/resources/cross-account/link",
-                        });
+                        navigate("/resources/cross-account/link");
                       }}
                     >
                       {t("button.linkAnAccount")}

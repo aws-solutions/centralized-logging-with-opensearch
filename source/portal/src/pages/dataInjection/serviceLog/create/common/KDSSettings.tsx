@@ -20,11 +20,11 @@ import TextInput from "components/TextInput";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { AppStateProps } from "reducer/appReducer";
 import { AmplifyConfigType, YesNo, YESNO_LIST } from "types";
 import { CloudFrontTaskProps } from "../cloudfront/CreateCloudFront";
 import { CloudTrailTaskProps } from "../cloudtrail/CreateCloudTrail";
 import { VpcLogTaskProps } from "../vpc/CreateVPC";
+import { RootState } from "reducer/reducers";
 
 interface KDSSettingsProps {
   pipelineTask: CloudFrontTaskProps | CloudTrailTaskProps | VpcLogTaskProps;
@@ -46,7 +46,7 @@ const KDSSettings: React.FC<KDSSettingsProps> = (props: KDSSettingsProps) => {
     changeMaxCapacity,
   } = props;
   const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: AppStateProps) => state.amplifyConfig
+    (state: RootState) => state.app.amplifyConfig
   );
   return (
     <>

@@ -26,32 +26,27 @@ import { appSyncRequestQuery } from "assets/js/request";
 import {
   getAppLogIngestion,
   getAppPipeline,
-  getEKSClusterDetails,
+  getLogSource,
 } from "graphql/queries";
 import Sidecar from "./comps/Sidecar";
 import {
   AppLogIngestion,
   AppPipeline,
   BufferType,
-  EKSClusterLogSource,
   EKSDeployKind,
+  LogSource,
+  LogSourceType,
   Tag,
 } from "API";
 import { buildKDSLink, buildS3Link, formatLocalTime } from "assets/js/utils";
 import ExtLink from "components/ExtLink";
 import { AmplifyConfigType } from "types";
-import { AppStateProps } from "reducer/appReducer";
 import { useSelector } from "react-redux";
-import Tags from "./comps/Tags";
-import LogConfig from "./comps/LogConfig";
 import DaemonSet from "./comps/DaemonSet";
 import { getParamValueByKey } from "assets/js/applog";
 import AccountName from "pages/comps/account/AccountName";
-
-interface MatchParams {
-  eksId: string;
-  id: string;
-}
+import { RootState } from "reducer/reducers";
+import Tags from "../common/Tags";
 
 export interface EksDetailProps {
   deploymentKind: EKSDeployKind | null | undefined;
@@ -61,7 +56,6 @@ export interface EksDetailProps {
   bufferNname: string;
   appPipelineId: string;
   created: string;
-  configId: string;
   logPath: string;
   tags: (Tag | null)[] | null | undefined;
 }
@@ -69,13 +63,13 @@ export interface EksDetailProps {
 const EksIngestionDetail: React.FC = () => {
   const { t } = useTranslation();
   const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: AppStateProps) => state.amplifyConfig
+    (state: RootState) => state.app.amplifyConfig
   );
-  const { id, eksId }: MatchParams = useParams();
+  const { id, eksId } = useParams();
   const [loadingData, setLoadingData] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const [eksIngestionData, setEksIngestionData] = useState<EksDetailProps>();
-  const [eksClusterInfo, setEksClusterInfo] = useState<EKSClusterLogSource>();
+  const [eksClusterInfo, setEksClusterInfo] = useState<LogSource>();
   const breadCrumbList = [
     { name: t("name"), link: "/" },
     {
@@ -83,7 +77,7 @@ const EksIngestionDetail: React.FC = () => {
       link: "/containers/eks-log",
     },
     {
-      name: eksClusterInfo?.eksClusterName || "",
+      name: eksClusterInfo?.eks?.eksClusterName || "",
       link: "/containers/eks-log/detail/" + eksId,
     },
     { name: id },
@@ -99,11 +93,11 @@ const EksIngestionDetail: React.FC = () => {
       setLoadingData(true);
 
       // Get Ingestion Info By ingestionId
-      const resEksData: any = await appSyncRequestQuery(getEKSClusterDetails, {
-        eksClusterId: eksId,
+      const resEksData: any = await appSyncRequestQuery(getLogSource, {
+        type: LogSourceType.EKSCluster,
+        sourceId: eksId,
       });
-      const tmpEksData: EKSClusterLogSource =
-        resEksData?.data?.getEKSClusterDetails;
+      const tmpEksData: LogSource = resEksData?.data?.getLogSource;
       setEksClusterInfo(tmpEksData);
 
       // Get Ingestion Info By ingestionId
@@ -124,7 +118,7 @@ const EksIngestionDetail: React.FC = () => {
         resPipelineData?.data?.getAppPipeline;
 
       setEksIngestionData({
-        deploymentKind: tmpEksData.deploymentKind,
+        deploymentKind: tmpEksData.eks?.deploymentKind,
         indexPrefix: tmpPipelineData.aosParams?.indexPrefix || "",
         bufferType: tmpPipelineData.bufferType,
         bufferNname: tmpPipelineData.bufferResourceName || "",
@@ -135,9 +129,8 @@ const EksIngestionDetail: React.FC = () => {
           ) === "true"
             ? true
             : false,
-        appPipelineId: tmpPipelineData.id,
-        configId: tmpIngestionData.confId || "",
-        created: tmpIngestionData.createdDt || "",
+        appPipelineId: tmpPipelineData.pipelineId,
+        created: tmpIngestionData.createdAt || "",
         logPath: tmpIngestionData.logPath || "",
         tags: tmpIngestionData.tags,
       });
@@ -259,27 +252,20 @@ const EksIngestionDetail: React.FC = () => {
                     EKSDeployKind.DaemonSet && (
                     <AntTab label={t("ekslog:ingest.detail.daemonset")} />
                   )}
-                  <AntTab label={t("ekslog:ingest.detail.logConfig")} />
                   <AntTab label={t("ekslog:ingest.detail.tag")} />
                 </AntTabs>
                 <TabPanel value={activeTab} index={0}>
                   {eksIngestionData?.deploymentKind ===
                     EKSDeployKind.Sidecar && (
-                    <Sidecar clusterId={eksId} ingestionId={id} />
+                    <Sidecar clusterId={eksId || ""} ingestionId={id || ""} />
                   )}
                   {eksIngestionData?.deploymentKind ===
                     EKSDeployKind.DaemonSet && (
-                    <DaemonSet clusterId={eksId} ingestionId={id} />
+                    <DaemonSet clusterId={eksId || ""} ingestionId={id || ""} />
                   )}
                 </TabPanel>
                 <TabPanel value={activeTab} index={1}>
-                  <LogConfig
-                    logPath={eksIngestionData?.logPath}
-                    configId={eksIngestionData?.configId}
-                  />
-                </TabPanel>
-                <TabPanel value={activeTab} index={2}>
-                  <Tags ingestionInfo={eksIngestionData} />
+                  <Tags tags={eksIngestionData?.tags} />
                 </TabPanel>
               </div>
             )}

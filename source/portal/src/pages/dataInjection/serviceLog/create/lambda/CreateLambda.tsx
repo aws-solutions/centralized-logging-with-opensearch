@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React, { useState, useEffect } from "react";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import CreateStep from "components/CreateStep";
 import SpecifySettings from "./steps/SpecifySettings";
 import SpecifyOpenSearchCluster, {
@@ -22,11 +22,18 @@ import SpecifyOpenSearchCluster, {
   checkOpenSearchInput,
   covertParametersByKeyAndConditions,
 } from "../common/SpecifyCluster";
-import CreateTags from "../common/CreateTags";
 import Button from "components/Button";
 
 import Breadcrumb from "components/Breadcrumb";
-import { CODEC, DestinationType, EngineType, ServiceType, Tag } from "API";
+import {
+  Codec,
+  DestinationType,
+  EngineType,
+  ServiceType,
+  MonitorInput,
+  DomainStatusCheckType,
+  DomainStatusCheckResponse,
+} from "API";
 import {
   WarmTransitionType,
   YesNo,
@@ -41,9 +48,19 @@ import { LAMBDA_TASK_GROUP_PREFIX, ServiceLogType } from "assets/js/const";
 import HelpPanel from "components/HelpPanel";
 import SideMenu from "components/SideMenu";
 
-import { AppStateProps } from "reducer/appReducer";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
+import { MONITOR_ALARM_INIT_DATA } from "assets/js/init";
+import AlarmAndTags from "../../../../pipelineAlarm/AlarmAndTags";
+import { Actions, RootState } from "reducer/reducers";
+import { useTags } from "assets/js/hooks/useTags";
+import { Dispatch } from "redux";
+import { useAlarm } from "assets/js/hooks/useAlarm";
+import { ActionType } from "reducer/appReducer";
+import {
+  CreateAlarmActionTypes,
+  validateAalrmInput,
+} from "reducer/createAlarm";
 
 const EXCLUDE_PARAMS = [
   "esDomainId",
@@ -56,7 +73,6 @@ const EXCLUDE_PARAMS = [
 ];
 export interface LambdaTaskProps {
   type: ServiceType;
-  tags: Tag[];
   source: string;
   target: string;
   logSourceAccountId: string;
@@ -97,11 +113,11 @@ export interface LambdaTaskProps {
 
     rolloverSizeNotSupport: boolean;
   };
+  monitor: MonitorInput;
 }
 
 const DEFAULT_LAMBDA_TASK_VALUE: LambdaTaskProps = {
   type: ServiceType.Lambda,
-  tags: [],
   source: "",
   target: "",
   logSourceAccountId: "",
@@ -136,11 +152,12 @@ const DEFAULT_LAMBDA_TASK_VALUE: LambdaTaskProps = {
     retainAge: "180",
     rolloverSize: "30",
     indexSuffix: SERVICE_LOG_INDEX_SUFFIX.yyyy_MM_dd,
-    codec: CODEC.best_compression,
+    codec: Codec.best_compression,
     refreshInterval: "1s",
 
     rolloverSizeNotSupport: false,
   },
+  monitor: MONITOR_ALARM_INIT_DATA,
 };
 
 const CreateLambda: React.FC = () => {
@@ -159,15 +176,16 @@ const CreateLambda: React.FC = () => {
   ];
 
   const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: AppStateProps) => state.amplifyConfig
+    (state: RootState) => state.app.amplifyConfig
   );
+  const dispatch = useDispatch<Dispatch<Actions>>();
 
   const [lambdaPipelineTask, setLambdaPipelineTask] = useState<LambdaTaskProps>(
     DEFAULT_LAMBDA_TASK_VALUE
   );
 
   const [curStep, setCurStep] = useState(0);
-  const history = useHistory();
+  const navigate = useNavigate();
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [lambdaEmptyError, setLambdaEmptyError] = useState(false);
   const [esDomainEmptyError, setEsDomainEmptyError] = useState(false);
@@ -185,6 +203,11 @@ const CreateLambda: React.FC = () => {
     indexEmptyError: false,
     indexNameFormatError: false,
   });
+  const [domainCheckStatus, setDomainCheckStatus] =
+    useState<DomainStatusCheckResponse>();
+
+  const tags = useTags();
+  const monitor = useAlarm();
 
   const confirmCreatePipeline = async () => {
     console.info("lambdaPipelineTask:", lambdaPipelineTask);
@@ -192,11 +215,13 @@ const CreateLambda: React.FC = () => {
     createPipelineParams.type = ServiceType.Lambda;
     createPipelineParams.source = lambdaPipelineTask.source;
     createPipelineParams.target = lambdaPipelineTask.target;
-    createPipelineParams.tags = lambdaPipelineTask.tags;
+    createPipelineParams.tags = tags;
     createPipelineParams.logSourceAccountId =
       lambdaPipelineTask.logSourceAccountId;
     createPipelineParams.logSourceRegion = amplifyConfig.aws_project_region;
     createPipelineParams.destinationType = lambdaPipelineTask.destinationType;
+
+    createPipelineParams.monitor = monitor.monitor;
 
     const tmpParamList: any = covertParametersByKeyAndConditions(
       lambdaPipelineTask,
@@ -224,9 +249,7 @@ const CreateLambda: React.FC = () => {
       );
       console.info("createRes:", createRes);
       setLoadingCreate(false);
-      history.push({
-        pathname: "/log-pipeline/service-log",
-      });
+      navigate("/log-pipeline/service-log");
     } catch (error) {
       setLoadingCreate(false);
       console.error(error);
@@ -234,8 +257,17 @@ const CreateLambda: React.FC = () => {
   };
 
   useEffect(() => {
-    console.info("lambdaPipelineTask:", lambdaPipelineTask);
-  }, [lambdaPipelineTask]);
+    dispatch({ type: ActionType.CLOSE_SIDE_MENU });
+  }, []);
+
+  const isNextDisabled = () => {
+    return (
+      lambdaIsChanging ||
+      domainListIsLoading ||
+      (curStep === 1 &&
+        domainCheckStatus?.status !== DomainStatusCheckType.PASSED)
+    );
+  };
 
   return (
     <div className="lh-main-content">
@@ -553,26 +585,35 @@ const CreateLambda: React.FC = () => {
                         };
                       });
                     }}
+                    domainCheckedStatus={domainCheckStatus}
+                    changeOSDomainCheckStatus={(status) => {
+                      setLambdaPipelineTask((prev: LambdaTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            replicaNumbers: status.multiAZWithStandbyEnabled
+                              ? "2"
+                              : "1",
+                          },
+                        };
+                      });
+
+                      setDomainCheckStatus(status);
+                    }}
                   />
                 )}
                 {curStep === 2 && (
-                  <CreateTags
-                    pipelineTask={lambdaPipelineTask}
-                    changeTags={(tags) => {
-                      setLambdaPipelineTask((prev: LambdaTaskProps) => {
-                        return { ...prev, tags: tags };
-                      });
-                    }}
-                  />
+                  <div>
+                    <AlarmAndTags pipelineTask={lambdaPipelineTask} />
+                  </div>
                 )}
                 <div className="button-action text-right">
                   <Button
                     disabled={loadingCreate}
                     btnType="text"
                     onClick={() => {
-                      history.push({
-                        pathname: "/log-pipeline/service-log/create",
-                      });
+                      navigate("/log-pipeline/service-log/create");
                     }}
                   >
                     {t("button.cancel")}
@@ -592,7 +633,7 @@ const CreateLambda: React.FC = () => {
 
                   {curStep < 2 && (
                     <Button
-                      disabled={lambdaIsChanging || domainListIsLoading}
+                      disabled={isNextDisabled()}
                       btnType="primary"
                       onClick={() => {
                         if (curStep === 0) {
@@ -614,6 +655,13 @@ const CreateLambda: React.FC = () => {
                           if (Object.values(validRes).indexOf(true) >= 0) {
                             return;
                           }
+                          // Check domain connection status
+                          if (
+                            domainCheckStatus?.status !==
+                            DomainStatusCheckType.PASSED
+                          ) {
+                            return;
+                          }
                         }
                         setCurStep((curStep) => {
                           return curStep + 1 > 2 ? 2 : curStep + 1;
@@ -628,6 +676,12 @@ const CreateLambda: React.FC = () => {
                       loading={loadingCreate}
                       btnType="primary"
                       onClick={() => {
+                        if (!validateAalrmInput(monitor)) {
+                          dispatch({
+                            type: CreateAlarmActionTypes.VALIDATE_ALARM_INPUT,
+                          });
+                          return;
+                        }
                         confirmCreatePipeline();
                       }}
                     >

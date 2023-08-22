@@ -13,13 +13,13 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 log_group_names = os.environ.get("LOGGROUP_NAMES").split(",")
-kdsArn = os.environ.get("DESTINATION_ARN")
-kdsName = os.environ.get("DESTINATION_NAME")
+kds_arn = os.environ.get("DESTINATION_ARN")
+kds_name = os.environ.get("DESTINATION_NAME")
 
-roleName = os.environ.get("ROLE_NAME")
-roleArn = os.environ.get("ROLE_ARN")
 
-stackName = os.environ["STACK_NAME"]
+role_arn = os.environ.get("ROLE_ARN")
+
+stack_name = os.environ["STACK_NAME"]
 
 solution_version = os.environ.get("SOLUTION_VERSION", "v1.0.0")
 solution_id = os.environ.get("SOLUTION_ID", "SO8025")
@@ -43,16 +43,15 @@ def lambda_handler(event, _):
         return on_create(event)
     if request_type == "Delete":
         return on_delete(event)
-    raise Exception("Invalid request type: %s" % request_type)
+    raise ValueError("Invalid request type: %s" % request_type)
 
 
 def on_create(_):
-
     for log_group_name in log_group_names:
         logger.info("Log group name is %s" % log_group_name)
         # Create a subscription filter
         try:
-            destination_name = f"{stackName}-{kdsName}"
+            destination_name = f"{stack_name}-{kds_name}"
             client = get_client("logs")
             if not exist_log_group(log_group_name):
                 logger.info("Log Group %s doesn't exist!" % log_group_name)
@@ -61,10 +60,10 @@ def on_create(_):
                 cwl = get_client("logs", is_local_session=True)
                 resp = cwl.put_destination(
                     destinationName=destination_name,
-                    targetArn=kdsArn,
-                    roleArn=roleArn,
+                    targetArn=kds_arn,
+                    roleArn=role_arn,
                 )
-                destinationArn = resp["destination"]["arn"]
+                destination_arn = resp["destination"]["arn"]
                 # setup cw put-destination-policy
                 access_policy = {
                     "Version": "2012-10-17",
@@ -74,7 +73,7 @@ def on_create(_):
                             "Effect": "Allow",
                             "Principal": {"AWS": log_source_account_id},
                             "Action": "logs:PutSubscriptionFilter",
-                            "Resource": destinationArn,
+                            "Resource": destination_arn,
                         }
                     ],
                 }
@@ -83,22 +82,21 @@ def on_create(_):
                     accessPolicy=json.dumps(access_policy),
                     forceUpdate=True,
                 )
-                logger.info(f"destinationArn is {destinationArn}")
+                logger.info(f"destinationArn is {destination_arn}")
                 client.put_subscription_filter(
                     logGroupName=log_group_name,
                     filterName=destination_name,
                     filterPattern="",
-                    destinationArn=destinationArn,
+                    destinationArn=destination_arn,
                 )
             else:
-
-                destinationArn = kdsArn
+                destination_arn = kds_arn
                 client.put_subscription_filter(
                     logGroupName=log_group_name,
                     filterName=destination_name,
                     filterPattern="",
-                    destinationArn=destinationArn,
-                    roleArn=roleArn,
+                    destinationArn=destination_arn,
+                    roleArn=role_arn,
                 )
 
         except Exception as err:
@@ -122,7 +120,7 @@ def on_delete(_):
         )
         try:
             client.delete_subscription_filter(
-                filterName=f"{stackName}-{kdsName}",
+                filterName=f"{stack_name}-{kds_name}",
                 logGroupName=log_group_name,
             )
         except Exception as err:

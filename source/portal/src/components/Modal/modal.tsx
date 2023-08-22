@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React from "react";
+import React, { ReactElement } from "react";
 import { withStyles } from "@material-ui/core/styles";
 import Dialog from "@material-ui/core/Dialog";
 import MuiDialogTitle from "@material-ui/core/DialogTitle";
@@ -76,12 +76,14 @@ interface ModalProps {
   isOpen: boolean;
   fullWidth: boolean;
   closeModal: () => void;
-  children: React.ReactChild;
-  actions: React.ReactChild;
+  children: ReactElement;
+  actions: ReactElement;
+  width?: number;
 }
 
 const Modal: React.FC<ModalProps> = (props: ModalProps) => {
-  const { title, isOpen, fullWidth, closeModal, children, actions } = props;
+  const { title, isOpen, fullWidth, closeModal, children, actions, width } =
+    props;
   const handleClose = (event: any, reason: string) => {
     console.info("reason:", reason);
     if (reason !== "backdropClick") {
@@ -99,7 +101,9 @@ const Modal: React.FC<ModalProps> = (props: ModalProps) => {
       <DialogTitle id="customized-dialog-title" onClose={handleClose}>
         {title}
       </DialogTitle>
-      <DialogContent dividers>{children}</DialogContent>
+      <DialogContent dividers style={{ width: width ? width : "auto" }}>
+        {children}
+      </DialogContent>
       <DialogActions>{actions}</DialogActions>
     </Dialog>
   );

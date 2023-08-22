@@ -76,16 +76,21 @@ export interface MSKStackProps {
    */
   readonly topic: string;
 
+  /**
+   * Stack Prefix
+   */
+  readonly stackPrefix: string;
+
+  readonly logType: string;
 }
 
 
 export class MSKStack extends Construct {
   readonly logProcessorRoleArn: string;
+  readonly logProcessorLogGroupName: string;
 
   constructor(scope: Construct, id: string, props: MSKStackProps) {
     super(scope, id);
-
-    // TODO: Add custom resource to auto-create kafka topic
 
 
     const logProcessor = new AppLogProcessor(this, "LogProcessor", {
@@ -96,7 +101,8 @@ export class MSKStack extends Construct {
       endpoint: props.endpoint,
       engineType: props.engineType,
       backupBucketName: props.backupBucketName,
-
+      stackPrefix: props.stackPrefix,
+      logType: props.logType,
     });
 
     // The Kafka topic you want to subscribe to
@@ -115,6 +121,7 @@ export class MSKStack extends Construct {
     logProcessor.logProcessorFn.addEventSource(mskSource);
 
     this.logProcessorRoleArn = logProcessor.logProcessorFn.role!.roleArn
+    this.logProcessorLogGroupName = logProcessor.logProcessorFn.logGroup.logGroupName
 
   }
 

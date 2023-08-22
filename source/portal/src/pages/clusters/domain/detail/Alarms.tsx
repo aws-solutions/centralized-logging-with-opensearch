@@ -50,6 +50,18 @@ const Alarms: React.FC<TagProps> = (props: TagProps) => {
     }
   };
 
+  const buildAlarmValue = (value?: any, type?: AlarmType | null) => {
+    if (Number.isInteger(parseInt(value || ""))) {
+      if (type === AlarmType.FREE_STORAGE_SPACE) {
+        return parseFloat(value || "") / 1024;
+      } else {
+        return value;
+      }
+    } else {
+      return "N/A";
+    }
+  };
+
   return (
     <div>
       <HeaderPanel
@@ -81,9 +93,9 @@ const Alarms: React.FC<TagProps> = (props: TagProps) => {
                 <b>{t("cluster:detail.alarms.value")}</b>
               </div>
             </div>
-            {domainInfo?.alarmInput?.alarms?.map((alarm, index) => {
+            {domainInfo?.alarmInput?.alarms?.map((alarm) => {
               return (
-                <div key={index} className="flex show-tag-list">
+                <div key={`${alarm?.type}`} className="flex show-tag-list">
                   <div className="tag-key w-alarm">
                     {t(
                       domainAlramList.find((item) => item.key === alarm?.type)
@@ -91,11 +103,7 @@ const Alarms: React.FC<TagProps> = (props: TagProps) => {
                     )}
                   </div>
                   <div className="tag-value flex-1">
-                    {Number.isInteger(parseInt(alarm?.value || ""))
-                      ? alarm?.type === AlarmType.FREE_STORAGE_SPACE
-                        ? parseFloat(alarm?.value || "") / 1024
-                        : alarm?.value
-                      : "N/A"}
+                    {buildAlarmValue(alarm?.value, alarm?.type)}
                   </div>
                 </div>
               );

@@ -8,7 +8,16 @@
     "health": "Cluster Health",
     "remove": "Remove Domain",
     "removeConfirm": "Are you sure you want to remove the domain ",
-    "removeTips": "Remove the domain from the solution will not delete the OpenSearch domain in the AWS account."
+    "removeTips": "The following resources were created or updated by the solution during importing domain, please choose to reverse or keep the related changes. Remove the domain from the solution will not delete the OpenSearch domain in the AWS account.",
+    "resourceName": "Resource Name",
+    "resourceID": "Resource ID",
+    "status": "Status",
+    "chooseReverse": "Reverse the changes",
+    "chooseKeep": "Keep the changes",
+    "removeErrorMessage": "Remove domain failed due to: {{removeErrorMessage}}",
+    "removeErrorIngestionExists": "Please make sure you delete all log ingestion pipelines that are ingesting logs into this domain before removing it.",
+    "removeErrorSubstackUnderProcessing": "The domain is associated with a stack that is under processing. Please remove the associated stack first.",
+    "standByTips": "The selected domain has enabled Multi-AZ with Standy deployment, at least two replicas are required."
   },
   "detail": {
     "config": "General configuration",
@@ -109,7 +118,7 @@
     "publicProxy": "Public access proxy",
     "publicProxyDesc": "Access Proxy is a Forward proxy to access the OpenSearch dashboards within the VPC. Enabling the proxy will create an ELB associated Nginx Auto Scaling Group and route web traffics from Internet to the OpenSearch built-in dashboards.",
     "publicSubnets": "Public Subnets",
-    "publicSubnetsDesc": "Select the Subnets of the log processing layer. The Subnet must be connected to the Cluster.",
+    "publicSubnetsDesc": "Select at least 2 subnets of the log processing layer. The Subnet must be connected to the Cluster.",
     "chooseSubnet": "Choose subnet",
     "publicSG": "Public Security Group",
     "publicSGDesc": "Select a Security Group for the Application Load Balancer. This Security Group must have access to the Log Processing Security Group.",
@@ -127,7 +136,7 @@
     "keyPairs": "EC2 Key pairs",
     "nginxKeyNameDesc2": " for the Nginx instance.",
     "chooseKeyName": "Choose a EC2 Key Name",
-    "subnetError": "Please choose public subnets.",
+    "subnetError": "Please choose at least 2 public subnets.",
     "sgError": "Please choose public security group",
     "keyError": "Please choose an EC2 key",
     "secureConn": "Secured Connection",
@@ -146,16 +155,32 @@
     "step": {
       "selectDomain": "Select domain",
       "configNetwork": "Configure network",
-      "createTags": "Create tags"
+      "createTags": "Create tags",
+      "importDomain": "Import"
     },
     "selectDomain": {
       "osDomain": "OpenSearch domain",
       "domain": "Domain",
-      "domainDesc1": "The cluster MUST be in the same region as Solution and must be enabled with VPC access. Or follow ",
+      "domainDesc1": "The domain must be in the same region as this solution. Follow ",
       "domainDesc2": "this guide",
-      "domainDesc3": " to create a cluster. (* Make sure your OpenSearch status is Active, only domains with Active status will be displayed in the list)",
+      "domainDesc3": " to create a cluster if you don’t have one in the region. (Notes that only domains with Active status is able to import)",
       "domainError": "Please select a domain",
-      "selectDomain": "Select an OpenSearch domain"
+      "selectDomain": "Select an OpenSearch domain",
+      "checkDomain": "Validate",
+      "checkDomainInProgressDesc": "Evaluate if the selected domain can be imported into this solution",
+      "checkDomainPassDesc": "The selected domain meets the requirements to be imported into this solution.",
+      "checkDomainErrorDesc": "The selected domain did not meet one or more requirements, please change the domain configuration or select a different domain.",
+      "engineVersion": "Engine version: ",
+      "engineType": "Engine type: ",
+      "solutionPrivateSubnetWithNat": "NAT in solution private subnet: ",
+      "networkType": "Network: ",
+      "fgace": "Fine-grained access control enabled",
+      "alertDomainVersion": "The version of the OpenSearch domain needs to be higher than v1.3.0.",
+      "alertDomainEngineType": "Only OpenSearch engine type is currently supported.",
+      "alertDomainInVpc": "Requires the domain deployed within a VPC.",
+      "alertSolutionPrivateNAT": "The private subnet for the Solution requires NAT.",
+      "public": "Public access",
+      "private": "VPC access"
     },
     "configNetwork": {
       "osNetwork": "OpenSearch network",
@@ -181,6 +206,46 @@
       "logProcessSG": "Log Processing Security Group",
       "logProcessSGDesc": "Select a Security Group for the log processing layer. The Security Group must have access the OpenSearch domain.",
       "chooseSG": "Choose a Security Group"
+    }
+  },
+  "imported": {
+    "setupVpcPeer": "Set up VPC peering: ",
+    "updateRouteTable": "Update route table: ",
+    "updateSG": "Update security group of the OpenSearch domain: ",
+    "updateDomainNACL": "Update Network ACL of the OpenSearch domain: ",
+    "updateDomainRouteTable": "Update route tables of the OpenSearch domain: ",
+    "updateSolutionRouteTable": "Update route tables of the solution vpc: ",
+    "errorSetup": "Error in setting up ",
+    "passedVpcPeer": "VPC peering passed: ",
+    "checkRouteTable": "Checking route table: ",
+    "checkSG": "Check security group of the OpenSearch domain: ",
+    "checkError": "Error check: ",
+    "domainRouteTableError": "Update domain route table failed",
+    "solutionRouteTableError": "Update solution route table failed",
+    "domainNACLError": "Update domain Network ACL failed",
+    "domainSGError": "Update domain security group failed",
+    "vpcPeeringError": "Set VPC Peering failed",
+    "vpcPeering": "VPC Peering",
+    "openSearchSecurityGroup": "OpenSearch Security Group",
+    "openSearchRouteTables": "OpenSearch Route Tables",
+    "openSearchNetworkACL": "OpenSearch Network ACL",
+    "SolutionRouteTables": "Solution Route Tables",
+    "done": "Your domain has been imported successfully!"
+  },
+  "check": {
+    "dueTo": "Fail to connect to selected OpenSearch domain due to: ",
+    "chooseAnother": " Please update OpenSearch domain setting or select another domain.",
+    "failed": {
+      "DOMAIN_UNDER_PROCESSING": "Domain is under processing.",
+      "UNSUPPORTED_DOMAIN_ENGINE": "Domain's engine is not supported.",
+      "DOMAIN_NETWORK_TYPE_NOT_PRIVATE": "Domain's network type is not private.",
+      "OLD_DOMAIN_VERSION": "Domain's version is not supported.",
+      "SUBNET_WITHOUT_NAT": "Lack of NAT in domain's subnets.",
+      "AOS_SECURITY_GROUP_CHECK_FAILED": "Domain's security group is blocking connectivity.",
+      "NETWORK_ACL_CHECK_FAILED": "Domain's ACL is blocking connectivity.",
+      "VPC_PEERING_CHECK_FAILED": "Lack of VPC peering between solution's VPC and domain's VPC.",
+      "AOS_VPC_ROUTING_CHECK_FAILED": "Domain's VPC route table misses rule to route traffic to solution' VPC.",
+      "SOLUTION_VPC_ROUTING_CHECK_FAILED": "Solution's VPC route table misses rule to route traffic to domain' VPC."
     }
   }
 }

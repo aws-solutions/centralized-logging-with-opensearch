@@ -36,7 +36,7 @@ _图1: 解决方案架构图_
 AWS 服务将日志输出到不同的目的地，包括 Amazon S3 存储桶、CloudWatch 日志组、Kinesis Data Streams 和 Kinesis Firehose。 该解决方案使用不同的工作流程摄取这些日志。
 
 !!! Note "注意"
-   
+
     日志通支持[跨账户日志摄取](./link-account/index.md)。 如果您想从同一帐户摄取日志，**Sources** 组中的资源需要与您的日志通帐户位于同一帐户中。 否则，它们将位于另一个 AWS 账户中。
 
 ### 通过 Amazon S3 提取日志
@@ -89,7 +89,7 @@ AWS 服务将日志输出到不同的目的地，包括 Amazon S3 存储桶、Cl
 此工作流支持以下两个类别：
 
 - **直接记录到Amazon KDS 的实时日志**
-    
+
     该AWS服务可以直接将日志发送到 Amazon [KDS].
 
     [![arch-service-pipeline-kds]][arch-service-pipeline-kds]
@@ -148,7 +148,7 @@ _图 6：应用程序日志分析架构_
     1. 请确保您的 Syslog 生成器/发送器的子网已连接到日志通的**两个**私有子网，以便可以提取日志，您需要使用 VPC [Peering Connection][peering-connection] 或 [Transit Gateway][tgw] 连接这些 VPC。
     2. 架构图中的 NLB 和 ECS 容器只会在您创建 Syslog 摄取时提供，并在没有 Syslog 摄取时自动删除。
 
-[![arch-syslog-pipeline]][arch-syslog-pipeline]    
+[![arch-syslog-pipeline]][arch-syslog-pipeline]
 _图 7：Syslog 的应用程序日志管道架构_
 
 1. Syslog 代理（如 [Rsyslog][rsyslog]）将日志发送到日志通私有子网中的网络负载均衡器 (NLB)。NLB 会将日志路由到特定的 Amazon Elastic Container Service (ECS) Fargate 服务。
@@ -181,7 +181,6 @@ _图 7：Syslog 的应用程序日志管道架构_
 [arch-service-pipeline-kds]: ../images/architecture/service-pipeline-kds.svg
 [arch-service-pipeline-cwl-to-kds]: ../images/architecture/service-pipeline-cwl-to-kds.svg
 [arch-app-log-pipeline]: ../images/architecture/app-log-pipeline-ec2-eks.svg
-[arch-eks-aos-pipeline]: ../images/architecture/eks-aos-pipeline.svg
 [arch-syslog-pipeline]: ../images/architecture/app-log-pipeline-syslog.svg
 [peering-connection]: https://docs.aws.amazon.com/vpc/latest/peering/working-with-vpc-peering.html
 [tgw]: https://docs.aws.amazon.com/vpc/latest/tgw/what-is-transit-gateway.html

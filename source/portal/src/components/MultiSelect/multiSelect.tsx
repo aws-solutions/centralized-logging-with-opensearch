@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React, { useState, useEffect } from "react";
-import RefreshIcon from "@material-ui/icons/Refresh";
 import Select from "@material-ui/core/Select";
 import MenuItem from "@material-ui/core/MenuItem";
 import InputBase from "@material-ui/core/InputBase";
@@ -23,6 +22,7 @@ import LoadingText from "components/LoadingText";
 import CloseIcon from "@material-ui/icons/Close";
 import Button from "components/Button";
 import { SelectItem } from "components/Select/select";
+import ButtonRefresh from "components/ButtonRefresh";
 
 export const MenuProps: any = {
   getContentAnchorEl: null,
@@ -65,7 +65,7 @@ const BootstrapInput = withStyles((theme) => ({
 
 interface SelectProps {
   optionList: SelectItem[];
-  placeholder?: string;
+  placeholder?: string | null;
   className?: string;
   loading?: boolean;
   value: string[];
@@ -127,10 +127,10 @@ const MultiSelect: React.FC<SelectProps> = (props: SelectProps) => {
               <LoadingText text="loading" />
             </div>
           ) : (
-            optionList.map((element, index) => (
+            optionList.map((element) => (
               <MenuItem
                 disabled={defaultSelectItems?.includes(element.value)}
-                key={index}
+                key={element.value}
                 value={element.value}
                 style={{ margin: 0, padding: 0 }}
               >
@@ -161,9 +161,9 @@ const MultiSelect: React.FC<SelectProps> = (props: SelectProps) => {
         <div>
           {optionList &&
             optionList.length > 0 &&
-            selected.map((item: string, index: number) => {
+            selected.map((item: string) => {
               return (
-                <div className="gsui-multi-select-item-box" key={index}>
+                <div className="gsui-multi-select-item-box" key={item}>
                   <div className="item-content">
                     <div className="item-title">
                       {optionList.find((element) => element.value === item)
@@ -206,7 +206,7 @@ const MultiSelect: React.FC<SelectProps> = (props: SelectProps) => {
               }
             }}
           >
-            {loading ? <LoadingText /> : <RefreshIcon fontSize="small" />}
+            <ButtonRefresh loading={loading} fontSize="small" />
           </Button>
         </div>
       )}

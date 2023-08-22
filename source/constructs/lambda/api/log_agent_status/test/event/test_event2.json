@@ -1,0 +1,22 @@
+{
+  "arguments": {
+    "instanceIds": [
+      "i-0a123456789012345",
+      "i-0b123456789012345",
+      "i-0c123456789012345"
+    ],
+    "region": "us-east-1",
+    "accountId": "123456789012"
+  },
+  "identity": {},
+  "request": {},
+  "info": {
+    "fieldName": "getInstanceAgentStatus",
+    "parentTypeName": "Query",
+    "variables": {}
+  },
+  "error": null,
+  "prev": null,
+  "stash": {},
+  "outErrors": []
+}

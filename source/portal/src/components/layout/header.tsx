@@ -16,20 +16,17 @@ limitations under the License.
 import React from "react";
 import SignOut from "components/SignOut";
 import { useSelector } from "react-redux";
-import { AppStateProps } from "reducer/appReducer";
 import { useTranslation } from "react-i18next";
-import { AmplifyConfigType, AppSyncAuthType } from "types";
+import { AppSyncAuthType } from "types";
 import { AMPLIFY_CONFIG_JSON } from "assets/js/const";
 import { SignedInAppProps } from "App";
+import { RootState } from "reducer/reducers";
 
 const LHeader: React.FC<SignedInAppProps> = (props: SignedInAppProps) => {
   const { t } = useTranslation();
   const { oidcSignOut } = props;
-  const userEmail: string = useSelector(
-    (state: AppStateProps) => state.userEmail
-  );
-  const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: AppStateProps) => state.amplifyConfig
+  const { userEmail, amplifyConfig } = useSelector(
+    (state: RootState) => state.app
   );
   const oidcSignOUt = () => {
     localStorage.removeItem(AMPLIFY_CONFIG_JSON);

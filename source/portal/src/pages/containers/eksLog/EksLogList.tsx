@@ -17,20 +17,20 @@ limitations under the License.
 import { formatLocalTime } from "assets/js/utils";
 import Breadcrumb from "components/Breadcrumb";
 import Button from "components/Button";
-import LoadingText from "components/LoadingText";
 import SideMenu from "components/SideMenu";
 import { SelectType, TablePanel } from "components/TablePanel";
 import React, { useEffect, useState } from "react";
-import RefreshIcon from "@material-ui/icons/Refresh";
 import { useTranslation } from "react-i18next";
-import { Link, useHistory } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Pagination from "@material-ui/lab/Pagination";
 import Modal from "components/Modal";
 import HelpPanel from "components/HelpPanel";
-import { listImportedEKSClusters } from "graphql/queries";
+import { listLogSources } from "graphql/queries";
 import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
-import { EKSClusterLogSource } from "API";
-import { removeEKSCluster } from "graphql/mutations";
+import { LogSourceType, LogSource } from "API";
+import { deleteLogSource } from "graphql/mutations";
+import { handleErrorMessage } from "assets/js/alert";
+import ButtonRefresh from "components/ButtonRefresh";
 
 const PAGE_SIZE = 10;
 
@@ -41,17 +41,15 @@ const EksLogList: React.FC = () => {
     { name: t("menu.eksLog") },
   ];
 
-  const history = useHistory();
+  const navigate = useNavigate();
   const [loadingData, setLoadingData] = useState(false);
   const [openDeleteModel, setOpenDeleteModel] = useState(false);
   const [loadingDelete, setLoadingDelete] = useState(false);
-  const [curEksLog, setCurEksLog] = useState<EKSClusterLogSource>();
-  const [selectedEksLog, setSelectedEksLog] = useState<EKSClusterLogSource[]>(
-    []
-  );
+  const [curEksLog, setCurEksLog] = useState<LogSource>();
+  const [selectedEksLog, setSelectedEksLog] = useState<LogSource[]>([]);
   const [disabledDetail, setDisabledDetail] = useState(false);
   const [disabledDelete, setDisabledDelete] = useState(false);
-  const [eksLogList, setEksLogList] = useState<EKSClusterLogSource[]>([]);
+  const [eksLogList, setEksLogList] = useState<LogSource[]>([]);
   const [totoalCount, setTotoalCount] = useState(0);
   const [curPage, setCurPage] = useState(1);
 
@@ -61,15 +59,13 @@ const EksLogList: React.FC = () => {
     try {
       setLoadingData(true);
       setEksLogList([]);
-      const resData: any = await appSyncRequestQuery(listImportedEKSClusters, {
+      const resData: any = await appSyncRequestQuery(listLogSources, {
+        type: LogSourceType.EKSCluster,
         page: curPage,
         count: PAGE_SIZE,
       });
-      console.info("resData:", resData);
-      setTotoalCount(resData.data.listImportedEKSClusters.total || 0);
-      setEksLogList(
-        resData.data.listImportedEKSClusters.eksClusterLogSourceList || []
-      );
+      setTotoalCount(resData.data.listLogSources.total || 0);
+      setEksLogList(resData.data.listLogSources.logSources || []);
       setLoadingData(false);
     } catch (error) {
       console.error(error);
@@ -92,25 +88,25 @@ const EksLogList: React.FC = () => {
   const confimRemoveEksLog = async () => {
     try {
       setLoadingDelete(true);
-      const removeRes = await appSyncRequestMutation(removeEKSCluster, {
-        id: curEksLog?.id,
+      const removeRes = await appSyncRequestMutation(deleteLogSource, {
+        type: LogSourceType.EKSCluster,
+        sourceId: curEksLog?.sourceId,
       });
       console.info("removeRes:", removeRes);
       setLoadingDelete(false);
       setOpenDeleteModel(false);
       getEksLogList();
-    } catch (error) {
+    } catch (error: any) {
       setLoadingDelete(false);
       setOpenDeleteModel(false);
+      handleErrorMessage(error.message);
       console.error(error);
     }
   };
 
   // Click View Detail Button Redirect to detail page
   const clickToReviewDetail = () => {
-    history.push({
-      pathname: `/containers/eks-log/detail/${selectedEksLog[0]?.id}`,
-    });
+    navigate(`/containers/eks-log/detail/${selectedEksLog[0]?.sourceId}`);
   };
 
   // Get EKS Log list when page rendered.
@@ -132,6 +128,14 @@ const EksLogList: React.FC = () => {
     }
   }, [selectedEksLog]);
 
+  const renderClusterName = (data: LogSource) => {
+    return (
+      <Link to={`/containers/eks-log/detail/${data.sourceId}`}>
+        {data.eks?.eksClusterName}
+      </Link>
+    );
+  };
+
   return (
     <div className="lh-main-content">
       <SideMenu />
@@ -141,6 +145,7 @@ const EksLogList: React.FC = () => {
             <Breadcrumb list={breadCrumbList} />
             <div className="table-data">
               <TablePanel
+                trackId="sourceId"
                 title={t("ekslog:clusters")}
                 changeSelected={(item) => {
                   console.info("item:", item);
@@ -152,41 +157,28 @@ const EksLogList: React.FC = () => {
                   {
                     id: "ClusterName",
                     header: t("ekslog:list.clusterName"),
-                    cell: (e: EKSClusterLogSource) => {
-                      return (
-                        <Link to={`/containers/eks-log/detail/${e.id}`}>
-                          {e.eksClusterName}
-                        </Link>
-                      );
-                    },
+                    cell: (e: LogSource) => renderClusterName(e),
                   },
                   {
                     id: "Account",
                     header: t("ekslog:list.account"),
-                    cell: (e: EKSClusterLogSource) => {
+                    cell: (e: LogSource) => {
                       return e.accountId || "-";
                     },
                   },
                   {
                     id: "Pattern",
                     header: t("ekslog:list.pattern"),
-                    cell: (e: EKSClusterLogSource) => {
-                      return e.deploymentKind;
-                    },
-                  },
-                  {
-                    id: "OpenSearch",
-                    header: t("ekslog:list.os"),
-                    cell: (e: EKSClusterLogSource) => {
-                      return e.aosDomain?.domainName || "";
+                    cell: (e: LogSource) => {
+                      return e.eks?.deploymentKind;
                     },
                   },
                   {
                     width: 170,
-                    id: "created",
+                    id: "createdTime",
                     header: t("ekslog:list.created"),
-                    cell: (e: EKSClusterLogSource) => {
-                      return formatLocalTime(e?.createdDt || "");
+                    cell: (e: LogSource) => {
+                      return formatLocalTime(e?.createdAt || "");
                     },
                   },
                 ]}
@@ -204,11 +196,7 @@ const EksLogList: React.FC = () => {
                         }
                       }}
                     >
-                      {loadingData ? (
-                        <LoadingText />
-                      ) : (
-                        <RefreshIcon fontSize="small" />
-                      )}
+                      <ButtonRefresh loading={loadingData} />
                     </Button>
                     <Button
                       disabled={disabledDetail}
@@ -224,14 +212,12 @@ const EksLogList: React.FC = () => {
                         removeEksLog();
                       }}
                     >
-                      {t("button.delete")}
+                      {t("button.remove")}
                     </Button>
                     <Button
                       btnType="primary"
                       onClick={() => {
-                        history.push({
-                          pathname: "/containers/eks-log/create",
-                        });
+                        navigate("/containers/eks-log/create");
                       }}
                     >
                       {t("button.importEksCluster")}
@@ -281,7 +267,7 @@ const EksLogList: React.FC = () => {
           >
             <div className="modal-content">
               {t("ekslog:deleteTips")}
-              <b>{`${curEksLog?.eksClusterName}`}</b> {"?"}
+              <b>{`${curEksLog?.eks?.eksClusterName}`}</b> {"?"}
             </div>
           </Modal>
         </div>

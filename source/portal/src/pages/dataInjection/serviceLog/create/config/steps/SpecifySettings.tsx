@@ -150,6 +150,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
           <HeaderPanel title={t("servicelog:create.service.config")}>
             <div>
               <CrossAccountSelect
+                disabled={isLoading}
                 accountId={configTask.logSourceAccountId}
                 changeAccount={(id) => {
                   changeCrossAccount(id);
@@ -222,11 +223,12 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                         optionTitle={t("servicelog:config.logLocation")}
                         optionDesc={t("servicelog:config.logLocationDesc")}
                         errorText={
-                          manualConfigEmptyError
+                          (manualConfigEmptyError
                             ? t("servicelog:config.logLocationError")
-                            : manualS3PathInvalid
+                            : "") ||
+                          (manualS3PathInvalid
                             ? t("servicelog:s3InvalidError")
-                            : ""
+                            : "")
                         }
                       >
                         <TextInput

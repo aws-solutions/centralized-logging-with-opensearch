@@ -15,12 +15,10 @@ limitations under the License.
 */
 /* eslint-disable react/display-name */
 import React, { useEffect, useState } from "react";
-import { Link, useHistory } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Pagination from "@material-ui/lab/Pagination";
-import RefreshIcon from "@material-ui/icons/Refresh";
 import Button from "components/Button";
 import { TablePanel } from "components/TablePanel";
-import Status from "components/Status/Status";
 import Breadcrumb from "components/Breadcrumb";
 import { SelectType } from "components/TablePanel/tablePanel";
 import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
@@ -28,12 +26,13 @@ import { listServicePipelines } from "graphql/queries";
 import { Parameter, PipelineStatus, ServicePipeline } from "API";
 import Modal from "components/Modal";
 import { deleteServicePipeline } from "graphql/mutations";
-import LoadingText from "components/LoadingText";
 import { AUTO_REFRESH_INT, ServiceTypeMap } from "assets/js/const";
 import HelpPanel from "components/HelpPanel";
 import SideMenu from "components/SideMenu";
 import { formatLocalTime } from "assets/js/utils";
 import { useTranslation } from "react-i18next";
+import PipelineStatusComp from "../common/PipelineStatus";
+import ButtonRefresh from "components/ButtonRefresh";
 
 const PAGE_SIZE = 10;
 
@@ -44,7 +43,7 @@ const ServiceLog: React.FC = () => {
     { name: t("servicelog:name") },
   ];
 
-  const history = useHistory();
+  const navigate = useNavigate();
   const [loadingData, setLoadingData] = useState(false);
   const [serviceLogList, setServiceLogList] = useState<ServicePipeline[]>([]);
   const [openDeleteModel, setOpenDeleteModel] = useState(false);
@@ -121,9 +120,7 @@ const ServiceLog: React.FC = () => {
 
   // Click View Detail Button Redirect to detail page
   const clickToReviewDetail = () => {
-    history.push({
-      pathname: `/log-pipeline/service-log/detail/${selectedServiceLog[0]?.id}`,
-    });
+    navigate(`/log-pipeline/service-log/detail/${selectedServiceLog[0]?.id}`);
   };
 
   // Get Service log list when page rendered.
@@ -162,6 +159,22 @@ const ServiceLog: React.FC = () => {
     return () => clearInterval(refreshInterval);
   }, [curPage]);
 
+  const renderPipelineId = (data: ServicePipeline) => {
+    return (
+      <Link to={`/log-pipeline/service-log/detail/${data.id}`}>{data.id}</Link>
+    );
+  };
+
+  const renderStatus = (data: ServicePipeline) => {
+    return (
+      <PipelineStatusComp
+        status={data.status}
+        stackId={data.stackId}
+        error={data.error}
+      />
+    );
+  };
+
   return (
     <div className="lh-main-content">
       <SideMenu />
@@ -171,6 +184,7 @@ const ServiceLog: React.FC = () => {
             <Breadcrumb list={breadCrumbList} />
             <div className="table-data">
               <TablePanel
+                trackId="id"
                 defaultSelectItem={selectedServiceLog}
                 title={t("servicelog:title")}
                 changeSelected={(item) => {
@@ -183,13 +197,7 @@ const ServiceLog: React.FC = () => {
                     id: "id",
                     header: "ID",
                     width: 320,
-                    cell: (e: ServicePipeline) => {
-                      return (
-                        <Link to={`/log-pipeline/service-log/detail/${e.id}`}>
-                          {e.id}
-                        </Link>
-                      );
-                    },
+                    cell: (e: ServicePipeline) => renderPipelineId(e),
                   },
                   {
                     width: 110,
@@ -229,16 +237,14 @@ const ServiceLog: React.FC = () => {
                     id: "created",
                     header: t("servicelog:list.created"),
                     cell: (e: ServicePipeline) => {
-                      return formatLocalTime(e?.createdDt || "");
+                      return formatLocalTime(e?.createdAt || "");
                     },
                   },
                   {
                     width: 120,
                     id: "status",
                     header: t("servicelog:list.status"),
-                    cell: (e: ServicePipeline) => {
-                      return <Status status={e.status || ""} />;
-                    },
+                    cell: (e: ServicePipeline) => renderStatus(e),
                   },
                 ]}
                 items={serviceLogList}
@@ -255,11 +261,7 @@ const ServiceLog: React.FC = () => {
                         }
                       }}
                     >
-                      {loadingData ? (
-                        <LoadingText />
-                      ) : (
-                        <RefreshIcon fontSize="small" />
-                      )}
+                      <ButtonRefresh loading={loadingData} />
                     </Button>
                     <Button
                       disabled={disabledDetail}
@@ -280,9 +282,7 @@ const ServiceLog: React.FC = () => {
                     <Button
                       btnType="primary"
                       onClick={() => {
-                        history.push({
-                          pathname: "/log-pipeline/service-log/create",
-                        });
+                        navigate("/log-pipeline/service-log/create");
                       }}
                     >
                       {t("button.createIngestion")}

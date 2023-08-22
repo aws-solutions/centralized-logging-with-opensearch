@@ -13,14 +13,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React from "react";
+import React, { ReactElement } from "react";
 
 interface PagePanelProps {
   className?: string;
-  title: string;
-  desc?: string;
-  actions?: React.ReactChild;
-  children?: React.ReactChild | React.ReactChild[];
+  title: string | null;
+  desc?: string | null;
+  actions?: ReactElement;
+  children?: ReactElement | ReactElement[];
 }
 
 export const PagePanel: React.FC<PagePanelProps> = (props: PagePanelProps) => {

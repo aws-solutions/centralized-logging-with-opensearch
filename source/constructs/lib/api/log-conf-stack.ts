@@ -14,138 +14,118 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {
-    Construct,
-} from 'constructs';
+import * as path from 'path';
+import * as appsync from '@aws-cdk/aws-appsync-alpha';
 import {
     Aws,
     Duration,
-    RemovalPolicy,
     aws_dynamodb as ddb,
     aws_lambda as lambda,
-
 } from 'aws-cdk-lib';
-import * as appsync from "@aws-cdk/aws-appsync-alpha";
-import * as path from 'path';
-import { addCfnNagSuppressRules } from "../main-stack";
+import { Construct } from 'constructs';
+import { SharedPythonLayer } from '../layer/layer';
 
 export interface LogConfStackProps {
-
     /**
      * Default Appsync GraphQL API for OpenSearch REST API Handler
      *
      * @default - None.
      */
-    readonly graphqlApi: appsync.GraphqlApi
+    readonly graphqlApi: appsync.GraphqlApi;
 
     readonly solutionId: string;
 
+    readonly logConfTable: ddb.Table;
 }
 export class LogConfStack extends Construct {
-    logConfTable: ddb.Table;
-
     constructor(scope: Construct, id: string, props: LogConfStackProps) {
         super(scope, id);
 
-        // Create a table to store logging logConf info
-        this.logConfTable = new ddb.Table(this, 'LogConfTable', {
-            partitionKey: {
-                name: 'id',
-                type: ddb.AttributeType.STRING
-            },
-            billingMode: ddb.BillingMode.PAY_PER_REQUEST,
-            removalPolicy: RemovalPolicy.DESTROY,
-            encryption: ddb.TableEncryption.DEFAULT,
-            pointInTimeRecovery: true,
-        })
-
-        const cfnLogConfTable = this.logConfTable.node.defaultChild as ddb.CfnTable;
-        cfnLogConfTable.overrideLogicalId('LogConfTable')
-        addCfnNagSuppressRules(cfnLogConfTable, [
-            {
-                id: 'W73',
-                reason: 'This table has billing mode as PROVISIONED'
-            },
-            {
-                id: 'W74',
-                reason: 'This table is set to use DEFAULT encryption, the key is owned by DDB.'
-            },
-        ])
-
-
-
-        // Create a lambda to handle all logConf related APIs.
+        // Create a lambda to handle all LogConf related APIs.
         const logConfHandler = new lambda.Function(this, 'LogConfHandler', {
-            code: lambda.AssetCode.fromAsset(path.join(__dirname, '../../lambda/api/log_conf')),
+            code: lambda.AssetCode.fromAsset(
+                path.join(__dirname, '../../lambda/api/log_conf')
+            ),
             runtime: lambda.Runtime.PYTHON_3_9,
             handler: 'lambda_function.lambda_handler',
+            layers: [SharedPythonLayer.getInstance(this)],
             timeout: Duration.seconds(60),
             memorySize: 1024,
             environment: {
-                LOGCONF_TABLE: this.logConfTable.tableName,
-                SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+                LOGCONFIG_TABLE: props.logConfTable.tableName,
+                SOLUTION_VERSION: process.env.VERSION || 'v1.0.0',
                 SOLUTION_ID: props.solutionId,
             },
             description: `${Aws.STACK_NAME} - LogConf APIs Resolver`,
-        })
-
-        // Grant permissions to the logConf lambda
-        this.logConfTable.grantReadWriteData(logConfHandler)
-
-
-        // Add logConf table as a Datasource
-        const logConfDynamoDS = props.graphqlApi.addDynamoDbDataSource('LogConfDynamoDS', this.logConfTable, {
-            description: 'DynamoDB Resolver Datasource'
-        })
-
-        logConfDynamoDS.createResolver('getLogConf', {
-            typeName: 'Query',
-            fieldName: 'getLogConf',
-            requestMappingTemplate: appsync.MappingTemplate.dynamoDbGetItem('id', 'id'),
-            responseMappingTemplate: appsync.MappingTemplate.fromFile(path.join(__dirname, '../../graphql/vtl/log_conf/GetLogConfResp.vtl')),
-        })
-
-        // Add logConf lambda as a Datasource
-        const LogConfLambdaDS = props.graphqlApi.addLambdaDataSource('LogConfLambdaDS', logConfHandler, {
-            description: 'Lambda Resolver Datasource'
         });
 
+        // Add logConf lambda  as a Datasource
+        const LogConfLambdaDS = props.graphqlApi.addLambdaDataSource(
+            'LogConfLambdaDS',
+            logConfHandler,
+            {
+                description: 'LogConf Lambda  Resolver Datasource',
+            }
+        );
+
+        // Grant permissions to the logConf lambda
+        props.logConfTable.grantReadWriteData(logConfHandler);
+
         // Set resolver for releted logConf API methods
-        LogConfLambdaDS.createResolver('listLogConfs', {
+        LogConfLambdaDS.createResolver('createLogConfig', {
+            typeName: 'Mutation',
+            fieldName: 'createLogConfig',
+            requestMappingTemplate: appsync.MappingTemplate.fromFile(
+                path.join(__dirname, '../../graphql/vtl/log_conf/CreateLogConfig.vtl')
+            ),
+            // requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+            responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+        });
+
+        LogConfLambdaDS.createResolver('updateLogConfig', {
+            typeName: 'Mutation',
+            fieldName: 'updateLogConfig',
+            requestMappingTemplate: appsync.MappingTemplate.fromFile(
+                path.join(__dirname, '../../graphql/vtl/log_conf/UpdateLogConfig.vtl')
+            ),
+            responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+        });
+
+        LogConfLambdaDS.createResolver('deleteLogConfig', {
+            typeName: 'Mutation',
+            fieldName: 'deleteLogConfig',
+            requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+            responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+        });
+
+        LogConfLambdaDS.createResolver('getLogConfig', {
             typeName: 'Query',
-            fieldName: 'listLogConfs',
-            requestMappingTemplate: appsync.MappingTemplate.fromFile(path.join(__dirname, '../../graphql/vtl/log_conf/ListLogConfs.vtl')),
-            responseMappingTemplate: appsync.MappingTemplate.fromFile(path.join(__dirname, '../../graphql/vtl/log_conf/ListLogConfsResp.vtl')),
-        })
+            fieldName: 'getLogConfig',
+            requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+            responseMappingTemplate: appsync.MappingTemplate.fromFile(
+                path.join(__dirname, '../../graphql/vtl/log_conf/GetLogConfigResp.vtl')
+            ),
+        });
+
+        LogConfLambdaDS.createResolver('listLogConfigs', {
+            typeName: 'Query',
+            fieldName: 'listLogConfigs',
+            requestMappingTemplate: appsync.MappingTemplate.fromFile(
+                path.join(__dirname, '../../graphql/vtl/log_conf/ListLogConfigs.vtl')
+            ),
+            responseMappingTemplate: appsync.MappingTemplate.fromFile(
+                path.join(
+                    __dirname,
+                    '../../graphql/vtl/log_conf/ListLogConfigsResp.vtl'
+                )
+            ),
+        });
 
         LogConfLambdaDS.createResolver('checkTimeFormat', {
             typeName: 'Query',
             fieldName: 'checkTimeFormat',
             requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-            responseMappingTemplate: appsync.MappingTemplate.lambdaResult()
-        })
-
-        LogConfLambdaDS.createResolver('createLogConf', {
-            typeName: 'Mutation',
-            fieldName: 'createLogConf',
-            requestMappingTemplate: appsync.MappingTemplate.fromFile(path.join(__dirname, '../../graphql/vtl/log_conf/CreateLogConf.vtl')),
-            responseMappingTemplate: appsync.MappingTemplate.lambdaResult()
-        })
-
-        LogConfLambdaDS.createResolver('deleteLogConf', {
-            typeName: 'Mutation',
-            fieldName: 'deleteLogConf',
-            requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-            responseMappingTemplate: appsync.MappingTemplate.lambdaResult()
-        })
-
-        LogConfLambdaDS.createResolver('updateLogConf', {
-            typeName: 'Mutation',
-            fieldName: 'updateLogConf',
-            requestMappingTemplate: appsync.MappingTemplate.fromFile(path.join(__dirname, '../../graphql/vtl/log_conf/UpdateLogConf.vtl')),
-            responseMappingTemplate: appsync.MappingTemplate.lambdaResult()
-        })
-
+            responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+        });
     }
 }
-

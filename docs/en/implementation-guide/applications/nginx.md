@@ -49,13 +49,38 @@ For Nginx logs, Centralized Logging with OpenSearch creates a built-in sample da
 2. Go to **Dashboard** section in the left sidebar.
 3. Find the dashboard whose name starts with `<the application pipeline>`.
 
-## Sample Dashboard
+## View dashboard
+
+The dashboard includes the following visualizations.
+
+| Visualization Name | Source Field                                                                                                                                                                                   | Description                                                                                                                                                                     |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Total Requests     | <ul><li> log event </li></ul>                                                                                                                                                                  | Displays aggregated events based on a specified time interval.                                                                                                                  |
+| Http Method        | <ul><li> request_method </li></ul>                                                                                                                                                             | Presents a pipe chart that shows the distribution of request methods handled by Nginx during a selected time period.                                                            |
+| Request History    | <ul><li> log event</li></ul>                                                                                                                                                                   | Shows a historical log of all requests handled by Nginx, visualized using a bar chart. This allows administrators to analyze traffic volumes and patterns over time.            |
+| Unique Visitors     | <ul><li> remote_addr</li></ul>                                                                                                                                                                 | Shows the number of distinct IP addresses that have made requests to the application over a given time period.                                                                  |
+| Bandwidth          | <ul><li> body_bytes_sent</li></ul>                                                                                                                                                             | The bandwidth metric tracks the total amount of data transferred to clients by the Nginx server over time.                                                                      |
+| Status Code Metric | <ul><li> status</li></ul>                                                                                                                                                                      | Displays the distribution of HTTP response codes served by the Nginx server over a period of time.                                                                              |
+| Status Code        | <ul><li>status</li></ul>                                                                                                                                                                       | The proportion of each status code relative to the total number of responses is also displayed as a percentage. This allows easy identification of the dominant response types. |
+| Bandwidth History  | <ul><li> body_bytes_sent</li></ul>                                                                                                                                                             | Shows the historical trend of the data transfer activities by the Nginx server to clients.                                                                                      |
+| Top IPs            | <ul><li>body_bytes_sent</li><li>remote_addr</li></ul>                                                                                                                                          | Displays the 10 client IP addresses generating the most requests to the application during a specified time period.                                                             |
+| Top Referers        | <ul><li> http_referer</li></ul>                                                                                                                                                                | Referers are the URLs of pages that link to requests for the application. Tracking referers reveal the primary external sources of visits and engagement.                      |
+| Top User Agents    | <ul><li> http_user_agent</li></ul>                                                                                                                                                             | Shows the breakdown of client browser and device types generating traffic.                                                                                                      |
+| Top Access URL     | <ul><li> remote</li><li> method </li></ul>                                                                                                                                                     | Shows the most frequently requested URLs on the application during a specified time period.                                                                                     |
+| Nginx Error Log    | <ul><li> @timestamp</li><li> status </li><li> remote_addr </li><li> request_uri </li><li> request_method </li><li> http_referer </li><li> body_bytes_sent </li><li> http_user_agent </li></ul> | Provides a detailed record of errors encountered by the web server.                                                                                                             |
+
+### Sample Dashboard
+
+{%
+include-markdown "../include-dashboard.md"
+%}
 
 [![nginx-1]][nginx-1]
-[![nginx-2]][nginx-2]
-
 
 [nginx-1]: ../../images/dashboards/nginx-1.png
+
+[![nginx-2]][nginx-2]
+
 [nginx-2]: ../../images/dashboards/nginx-2.png
 
 

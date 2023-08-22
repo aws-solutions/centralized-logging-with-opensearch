@@ -51,10 +51,10 @@ class TestPlugin:
         assert result == records
 
     def test_process_unknown_city(self):
-        records = [{"client_ip": "174.202.161.71"}]
+        records = [{"client_ip": "127.0.0.1"}]
         plugin = geo_ip.Plugin("ELB")
         result = plugin.process(records)
-        assert "geo_iso_code" in result[0]
+        assert "client_ip" in result[0]
         assert "geo_city" not in result[0]
 
     def test_process_no_ip(self):

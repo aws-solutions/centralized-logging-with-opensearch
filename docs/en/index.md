@@ -1,17 +1,19 @@
 The Centralized Logging with OpenSearch solution provides comprehensive log management and analysis functions to help you simplify the build of log analytics pipelines. Built on top of Amazon OpenSearch Service, the solution allows you to streamline log ingestion, log processing, and log visualization. You can leverage the solution in multiple use cases such as to abide by security and compliance regulations, achieve refined business operations, and enhance IT troubleshooting and maintenance.
 
-The solution has the following features:
+Use this navigation table to quickly find answers to these questions:
 
-- **All-in-one log ingestion**: provides a single web console to ingest both application logs and AWS service logs into the Amazon OpenSearch Service domains. For supported AWS service logs, refer to [AWS Service Logs](implementation-guide/aws-services/index.md). For supported application logs, refer to [Application Logs](implementation-guide/applications/index.md).
+| If you want to … | Read… |
+|----------|--------|
+| Know the cost for running this solution | [Cost](./implementation-guide/plan-deployment/cost.md) |
+| Understand the security considerations for this solution | [Security](./implementation-guide/plan-deployment/security.md) |
+| Know which AWS Regions are supported for this solution | [Supported AWS Regions](./implementation-guide/plan-deployment/considerations.md) |
+| Get started with the solution quickly to import an Amazon OpenSearch Service domain, build a log analytics pipeline, and access the built-in dashboard  | [Getting started](./implementation-guide/getting-started/index.md) |
+| Learn the operations related to Amazon OpenSearch Service domains | [Domain management](./implementation-guide/domains/index.md) |
+| Walk through the processes of building log analytics pipelines | [AWS Services logs](./implementation-guide/aws-services/index.md) and [Applications logs](./implementation-guide/applications/index.md) |
 
-- **Codeless log processor**: supports log processor plugins developed by AWS. You are allowed to enrich the raw log data through a few steps on the web console.
 
-- **Out-of-the-box dashboard template**: offers a collection of reference designs of visualization templates, for both commonly used software such as Nginx and Apache HTTP Server, and AWS services such as Amazon S3 and Amazon CloudTrail.
+这份实施指南描述了在AWS云中部署Centralized Logging with OpenSearch解决方案的架构考虑和配置步骤。它包括了链接到[CloudFormation][cloudformation]模板，通过使用AWS安全性和可用性的最佳实践，启动并配置了部署此解决方案所需的AWS服务。
 
-This guide includes a [getting started](implementation-guide/getting-started/index.md) chapter to walk you through the process of building log analytics pipelines, and a [domain management](implementation-guide/domains/index.md) chapter to introduce how to import Amazon OpenSearch Service domains on the Centralized Logging with OpenSearch web console.
+该指南面向具有在AWS云上进行架构设计实践经验的IT架构师、开发人员、DevOps以及数据工程师。
 
-This implementation guide describes architectural considerations and configuration steps for deploying the Centralized Logging with OpenSearch solution in the AWS cloud. It includes links to [CloudFormation][cloudformation] templates that launches and configures the AWS services required to deploy this solution using AWS best practices for security and availability.
-
-The guide is intended for IT architects, developers, DevOps, data engineers with practical experience architecting on the AWS Cloud.
-
-[cloudformation]: https://aws.amazon.com/en/cloudformation/
+[cloudformation]: https://aws.amazon.com/zh/cloudformation/

@@ -4,7 +4,7 @@
 
 ## 前提条件
 
-检查所有的[考虑因素](../considerations.md)，并确保您要部署解决方案的目标区域满足以下条件：
+检查所有的[考虑因素](../plan-deployment/considerations.md)，并确保您要部署解决方案的目标区域满足以下条件：
 
 - 如果您启动时选择创建新的VPC，至少能有1个新的 VPC 空缺。
 - 如果您启动时选择创建新的VPC，至少需要2个弹性 IP (EIP) 地址空缺。
@@ -13,7 +13,7 @@
 ## 在 AWS 海外区域部署
 日志通提供了两种方式来验证和登录日志通控制台。 Cognito 用户池在一些 AWS 区域
 缺失（例如：香港）。 在这些区域，您需要按照说明使用 OpenID Connect 的方式启动解决方案。
-有关受支持区域的更多信息，请参阅 [可部署区域](../considerations.md)。
+有关受支持区域的更多信息，请参阅 [可部署区域](../plan-deployment/considerations.md)。
 
 * [使用 Cognito User Pool 启动](./with-cognito.md)
 * [使用 OpenID Connect 启动](./with-oidc.md)

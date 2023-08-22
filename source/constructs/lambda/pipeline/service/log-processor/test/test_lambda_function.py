@@ -6,7 +6,7 @@ import os
 
 import boto3
 import pytest
-from moto import mock_s3, mock_sts, mock_dynamodb
+from moto import mock_s3, mock_sts
 
 
 @pytest.fixture
@@ -148,8 +148,10 @@ def test_lambda_handler(
     # Can only import here, as the environment variables need to be set first.
     import lambda_function
 
-    mocker.patch("util.osutil.OpenSearch.exist_index_template", return_value=True)
-    mocker.patch("util.osutil.OpenSearch.bulk_load", return_value=resp)
+    mocker.patch(
+        "commonlib.opensearch.OpenSearchUtil.exist_index_template", return_value=True
+    )
+    mocker.patch("commonlib.opensearch.OpenSearchUtil.bulk_load", return_value=resp)
 
     total, failed = lambda_function.lambda_handler(s3_event, None)
     assert total == expected_total
@@ -164,13 +166,21 @@ def test_lambda_handler(
     ],
 )
 def test_lambda_handler_multi_events(
-    mocker, s3_client, sts_client, s3_multi_events, resp, expected_total, expected_failed
+    mocker,
+    s3_client,
+    sts_client,
+    s3_multi_events,
+    resp,
+    expected_total,
+    expected_failed,
 ):
     # Can only import here, as the environment variables need to be set first.
     import lambda_function
 
-    mocker.patch("util.osutil.OpenSearch.exist_index_template", return_value=True)
-    mocker.patch("util.osutil.OpenSearch.bulk_load", return_value=resp)
+    mocker.patch(
+        "commonlib.opensearch.OpenSearchUtil.exist_index_template", return_value=True
+    )
+    mocker.patch("commonlib.opensearch.OpenSearchUtil.bulk_load", return_value=resp)
 
     total, failed = lambda_function.lambda_handler(s3_multi_events, None)
     assert total == expected_total
@@ -181,8 +191,12 @@ def test_lambda_handler_direct_put_events(mocker, s3_client, sts_client, put_eve
     # Can only import here, as the environment variables need to be set first.
     import lambda_function
 
-    mocker.patch("util.osutil.OpenSearch.exist_index_template", return_value=True)
-    mocker.patch("util.osutil.OpenSearch.bulk_load", return_value=load_success_resp)
+    mocker.patch(
+        "commonlib.opensearch.OpenSearchUtil.exist_index_template", return_value=True
+    )
+    mocker.patch(
+        "commonlib.opensearch.OpenSearchUtil.bulk_load", return_value=load_success_resp
+    )
 
     total, failed = lambda_function.lambda_handler(put_event, None)
     assert total == 2
@@ -208,28 +222,36 @@ def test_lambda_handler_unknown_sqs_event():
 def test_key_not_found(mocker, s3_event):
     import lambda_function
 
-    mocker.patch("util.osutil.OpenSearch.exist_index_template", return_value=True)
+    mocker.patch(
+        "commonlib.opensearch.OpenSearchUtil.exist_index_template", return_value=True
+    )
     mocker.patch("lambda_function.get_object_key", return_value="unknown_file")
     with pytest.raises(RuntimeError):
         lambda_function.lambda_handler(s3_event, None)
 
 
-# def test_aos_error(mocker, s3_event, s3_client):
-#     import lambda_function
+def test_aos_error(mocker, s3_event, s3_client):
+    import lambda_function
 
-#     mocker.patch("util.osutil.OpenSearch.exist_index_template", return_value=True)
-#     mocker.patch(
-#         "util.osutil.OpenSearch.bulk_load",
-#         return_value=Response(503),
-#     )
+    mocker.patch(
+        "commonlib.opensearch.OpenSearchUtil.exist_index_template", return_value=True
+    )
+    mocker.patch(
+        "commonlib.opensearch.OpenSearchUtil.bulk_load",
+        return_value=Response(503),
+    )
+    mocker.patch("time.sleep")
 
-#     with pytest.raises(RuntimeError):
-#         lambda_function.lambda_handler(s3_event, None)
+    with pytest.raises(RuntimeError):
+        lambda_function.lambda_handler(s3_event, None)
 
 
-# def test_index_template_not_exist(mocker, s3_event):
-#     import lambda_function
+def test_index_template_not_exist(mocker, s3_event):
+    import lambda_function
 
-#     mocker.patch("util.osutil.OpenSearch.exist_index_template", return_value=False)
-#     with pytest.raises(RuntimeError):
-#         lambda_function.lambda_handler(s3_event, None)
+    mocker.patch(
+        "commonlib.opensearch.OpenSearchUtil.exist_index_template", return_value=False
+    )
+    mocker.patch("time.sleep")
+    with pytest.raises(RuntimeError):
+        lambda_function.lambda_handler(s3_event, None)

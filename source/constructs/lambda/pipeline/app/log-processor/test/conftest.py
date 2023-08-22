@@ -17,10 +17,11 @@ def default_environment_variables():
     os.environ["SOLUTION_VERSION"] = "v1.0.0"
     os.environ["SOLUTION_ID"] = "SO8025"
 
-    os.environ["LOG_BUCKET_NAME"] = "loghub-bucket"
-    os.environ["BACKUP_BUCKET_NAME"] = "loghub-bucket"
+    os.environ["LOG_BUCKET_NAME"] = "solution-bucket"
+    os.environ["BACKUP_BUCKET_NAME"] = "solution-bucket"
     os.environ["INDEX_PREFIX"] = "hello"
     os.environ["ENDPOINT"] = "vpc-dev-abc.us-east-1.es.amazonaws.com"
+    os.environ["ENGINE"] = "OpenSearch"
     os.environ["LOG_TYPE"] = "ELB"
     os.environ["BULK_BATCH_SIZE"] = "10"
     os.environ[

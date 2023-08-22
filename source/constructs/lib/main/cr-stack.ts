@@ -110,12 +110,7 @@ export interface CRProps {
    */
   readonly oidcClientId: string;
 
-  readonly appPipelineTableName: string;
-  readonly pipelineTableName: string;
-  readonly eksDeployKindTableName: string;
-  readonly eksLogSourceTableName: string;
-  readonly subAccountLinkTableName: string;
-  readonly centralAssumeRolePolicy: iam.ManagedPolicy;
+
 }
 
 /**
@@ -144,8 +139,8 @@ export class CustomResourceStack extends Construct {
 
     Aspects.of(this).add(new InjectCustomerResourceConfig(installLatestAwsSdk));
 
-    // This Lambda is to perform neccessary actions during stack creation or update
-    // Including export a aws-exports.json to web portal bucket etc.
+    // This Lambda is to perform necessary actions during stack creation or update
+    // Including export the aws-exports.json to web portal bucket etc.
     this.initConfigFn = new lambda.Function(this, "InitConfig", {
       runtime: lambda.Runtime.PYTHON_3_9,
       code: lambda.Code.fromAsset(
@@ -170,12 +165,6 @@ export class CustomResourceStack extends Construct {
         SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
         TEMPLATE_OUTPUT_BUCKET: templateBucket,
         SOLUTION_NAME: solutionName,
-        EKS_DEPLOY_KIND_TABLE: props.eksDeployKindTableName,
-        EKS_LOG_SOURCE_TABLE: props.eksLogSourceTableName,
-        APP_PIPELINE_TABLE: props.appPipelineTableName,
-        PIPELINE_TABLE: props.pipelineTableName,
-        CENTRAL_ASSUME_ROLE_POLICY_ARN: props.centralAssumeRolePolicy.managedPolicyArn,
-        SUB_ACCOUNT_LINK_TABLE: props.subAccountLinkTableName,
       },
       description: `${Aws.STACK_NAME} - Init Config Handler`,
     });
@@ -189,23 +178,6 @@ export class CustomResourceStack extends Construct {
         ],
         resources: [
           `arn:${Aws.PARTITION}:cloudfront::${Aws.ACCOUNT_ID}:distribution/${props.cloudFrontDistributionId}`,
-        ],
-      })
-    );
-
-    this.initConfigFn.addToRolePolicy(
-      new iam.PolicyStatement({
-        effect: iam.Effect.ALLOW,
-        actions: [
-          'iam:GetPolicy',
-          'iam:GetPolicyVersion',
-          'iam:CreatePolicyVersion',
-          'iam:SetDefaultPolicyVersion',
-          'iam:ListPolicyVersions',
-          'iam:DeletePolicyVersion',
-        ],
-        resources: [
-          props.centralAssumeRolePolicy.managedPolicyArn,
         ],
       })
     );
