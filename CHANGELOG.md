@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Log Config: Time key in Fluent Bit config for Spring Boot should be time type instead of None #71
-- EventBridge will be disabled automatically if deleting instances in instance group #64
+- EventBridge will be disabled automatically if deleting instances in instance group #164
 - Log Config should not be created without Regex/Log Format #163
 - Lack of region check before creating WAF log pipeline #162
 - The Fluent bit configuration file generated in sidecar deployment option has a wrong shared volume #160
