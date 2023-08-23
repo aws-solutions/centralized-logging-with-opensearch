@@ -1733,10 +1733,10 @@
 <li>按照此 <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools-configuring-app-integration.html">指南</a> 添加应用程序客户端并设置托管 UI。</li>
 <li>对于 <strong>应用程序类型</strong>，选择 <em>公共客户端</em>。</li>
 <li>请在填写 <strong>允许的回调 URL</strong> 和 <strong>允许的注销 URL</strong> 时，使用给日志通 控制台准备的域名。在您的 hosted UI 设置成功后，您可以看到如下状态：
-        <a href="../../images/OIDC/cognito-hostUI-new.png"><img alt="" src="../../images/OIDC/cognito-hostUI-new.png" /></a></li>
+        <a href="../../../images/OIDC/cognito-hostUI-new.png"><img alt="" src="../../../images/OIDC/cognito-hostUI-new.png" /></a></li>
 <li>将 <code>客户端 ID</code>, <code>用户池 ID</code> 保存到一个文本文件中，以备后面使用。
-        <a href="../../images/OIDC/cognito-new-console-clientID.png"><img alt="" src="../../images/OIDC/cognito-new-console-clientID.png" /></a>
-        <a href="../../images/OIDC/cognito-new-console-userpoolID.png"><img alt="" src="../../images/OIDC/cognito-new-console-userpoolID.png" /></a></li>
+        <a href="../../../images/OIDC/cognito-new-console-clientID.png"><img alt="" src="../../../images/OIDC/cognito-new-console-clientID.png" /></a>
+        <a href="../../../images/OIDC/cognito-new-console-userpoolID.png"><img alt="" src="../../../images/OIDC/cognito-new-console-userpoolID.png" /></a></li>
 </ol>
 <p>在<a href="#2">步骤 2. 启动堆栈</a>中，OidcClientID 就是 <code>客户端 ID</code>, OidcProvider 是 <code>https://cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}</code>。</p>
 <h3 id="2-authingcn-oidc">(选项 2) Authing.cn OIDC 客户端</h3>
@@ -1749,13 +1749,13 @@
 <li>输入<strong>应用名称</strong>和<strong>认证地址</strong>。</li>
 <li>
 <p>将Endpoint Information中的<code>App ID</code>（即<code>client_id</code>）和<code>Issuer</code>保存到一个文本文件中，以备后面使用。
-    <a href="../../images/OIDC/endpoint-info.png"><img alt="" src="../../images/OIDC/endpoint-info.png" /></a></p>
+    <a href="../../../images/OIDC/endpoint-info.png"><img alt="" src="../../../images/OIDC/endpoint-info.png" /></a></p>
 </li>
 <li>
 <p>将<code>Login Callback URL</code>和<code>Logout Callback URL</code>更新为IPC记录的域名。</p>
 </li>
 <li>设置以下授权配置。
-    <a href="../../images/OIDC/authorization-configuration.png"><img alt="" src="../../images/OIDC/authorization-configuration.png" /></a></li>
+    <a href="../../../images/OIDC/authorization-configuration.png"><img alt="" src="../../../images/OIDC/authorization-configuration.png" /></a></li>
 </ol>
 <p>您已经成功创建了一个身份验证自建应用程序。</p>
 <h3 id="3-keycloak-oidc">(选项 3) Keycloak OIDC 客户端</h3>
@@ -1765,11 +1765,11 @@
 <li>在左侧导航栏，选择 <strong>Add Realm</strong>。如果您已经有一个 Realm，请跳过此步骤。</li>
 <li>
 <p>进入领域设置页面。选择 <strong>Endpoints</strong>，然后从列表中选择 <strong>OpenID Endpoint Configuration</strong>。</p>
-<p><a href="../../images/OIDC/keycloak-example-realm.jpg"><img alt="" src="../../images/OIDC/keycloak-example-realm.jpg" /></a></p>
+<p><a href="../../../images/OIDC/keycloak-example-realm.jpg"><img alt="" src="../../../images/OIDC/keycloak-example-realm.jpg" /></a></p>
 </li>
 <li>
 <p>在浏览器打开的 JSON 文件中，记录 <strong>issuer</strong> 值，以备后面使用。</p>
-<p><a href="../../images/OIDC/OIDC-config.jpg"><img alt="" src="../../images/OIDC/OIDC-config.jpg" /></a></p>
+<p><a href="../../../images/OIDC/OIDC-config.jpg"><img alt="" src="../../../images/OIDC/OIDC-config.jpg" /></a></p>
 </li>
 <li>
 <p>返回Keycloak控制台，在左侧导航栏选择<strong>Clients</strong>，然后选择<strong>Create</strong>。</p>
@@ -1815,7 +1815,7 @@ Set-AdfsResponseHeaders<span class="w"> </span>-CORSTrustedOrigins<span class="w
 <p>在 ADFS 服务器上的 Windows PowerShell 下，运行以下命令获取 ADFS 的颁发者（<code>issuer</code>），类似于<code>https://adfs.domain.com/adfs</code>。</p>
 <div class="highlight"><pre><span></span><code>Get-ADFSProperties<span class="w"> </span><span class="p">|</span><span class="w"> </span>Select<span class="w"> </span>IdTokenIssuer
 </code></pre></div>
-<p><img alt="" src="../../images/OIDC/adfs-9.png" /></p>
+<p><img alt="" src="../../../images/OIDC/adfs-9.png" /></p>
 </li>
 </ol>
 <h2 id="2">步骤 2. 启动堆栈</h2>
@@ -1837,19 +1837,19 @@ Set-AdfsResponseHeaders<span class="w"> </span>-CORSTrustedOrigins<span class="w
 <tbody>
 <tr>
 <td>在海外区域新的 VPC 中部署</td>
-<td><a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/CentralizedLoggingWithOIDC.template" target="_blank"><img alt="Launch Stack" src="../../images/launch-stack.png" /></a></td>
+<td><a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/CentralizedLoggingWithOIDC.template" target="_blank"><img alt="Launch Stack" src="../../../images/launch-stack.png" /></a></td>
 </tr>
 <tr>
 <td>在海外区域现有的 VPC 中部署</td>
-<td><a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/CentralizedLoggingFromExistingVPCWithOIDC.template" target="_blank"><img alt="Launch Stack" src="../../images/launch-stack.png" /></a></td>
+<td><a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/CentralizedLoggingFromExistingVPCWithOIDC.template" target="_blank"><img alt="Launch Stack" src="../../../images/launch-stack.png" /></a></td>
 </tr>
 <tr>
 <td>在中国区域新的 VPC 中部署</td>
-<td><a href="https://console.amazonaws.cn/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/CentralizedLoggingWithOIDC.template" target="_blank"><img alt="Launch Stack" src="../../images/launch-stack.png" /></a></td>
+<td><a href="https://console.amazonaws.cn/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/CentralizedLoggingWithOIDC.template" target="_blank"><img alt="Launch Stack" src="../../../images/launch-stack.png" /></a></td>
 </tr>
 <tr>
 <td>在中国区域现有的 VPC 中部署</td>
-<td><a href="https://console.amazonaws.cn/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/CentralizedLoggingFromExistingVPCWithOIDC.template" target="_blank"><img alt="Launch Stack" src="../../images/launch-stack.png" /></a></td>
+<td><a href="https://console.amazonaws.cn/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/CentralizedLoggingFromExistingVPCWithOIDC.template" target="_blank"><img alt="Launch Stack" src="../../../images/launch-stack.png" /></a></td>
 </tr>
 </tbody>
 </table>
