@@ -10,14 +10,8 @@
       
         <link rel="canonical" href="https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/applications/apache/">
       
-      
-        <link rel="prev" href="../create-applog-pipeline/">
-      
-      
-        <link rel="next" href="../nginx/">
-      
       <link rel="icon" href="../../../images/aws-solutions.png">
-      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.18">
+      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.5.3">
     
     
       
@@ -25,7 +19,11 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.26e3688c.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.7a952b86.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.cbb835fc.min.css">
+        
       
       
 
@@ -53,11 +51,14 @@
   </head>
   
   
-    <body dir="ltr">
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="none" data-md-color-accent="none">
   
     
-    
-      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
@@ -74,7 +75,7 @@
       
     </div>
     
-      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+      <div data-md-component="outdated" hidden>
         
       </div>
     
@@ -123,13 +124,13 @@
                     English
                   </a>
                 </li>
-              
+                
                 <li class="md-select__item">
                   <a href="/centralized-logging-with-opensearch/zh/" hreflang="zh" class="md-select__link">
                     简体中文
                   </a>
                 </li>
-              
+                
             </ul>
           </div>
         </div>
@@ -162,7 +163,7 @@
           <div class="md-search-result__meta">
             正在初始化搜索引擎
           </div>
-          <ol class="md-search-result__list" role="presentation"></ol>
+          <ol class="md-search-result__list"></ol>
         </div>
       </div>
     </div>
@@ -174,7 +175,7 @@
         <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch" title="前往仓库" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
     aws-solutions/centralized-logging-with-opensearch
@@ -193,7 +194,7 @@
           
             
 <nav class="md-tabs" aria-label="标签" data-md-component="tabs">
-  <div class="md-grid">
+  <div class="md-tabs__inner md-grid">
     <ul class="md-tabs__list">
       
         
@@ -206,11 +207,18 @@
   
   
   
+    
+
+  
+  
+  
     <li class="md-tabs__item">
       <a href="../../.." class="md-tabs__link md-tabs__link--active">
         实施指南
       </a>
     </li>
+  
+
   
 
       
@@ -271,7 +279,7 @@
       <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch" title="前往仓库" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
     aws-solutions/centralized-logging-with-opensearch
@@ -294,21 +302,46 @@
     <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1" type="checkbox" id="__nav_1" checked>
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" checked>
       
       
-      
-        <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
+        <label class="md-nav__link" for="__nav_1">
           实施指南
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="true">
+      <nav class="md-nav" aria-label="实施指南" data-md-level="1">
         <label class="md-nav__title" for="__nav_1">
           <span class="md-nav__icon md-icon"></span>
           实施指南
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_1" type="checkbox" id="__nav_1_1" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1_1">
+          解决方案概览
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="解决方案概览" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_1">
+          <span class="md-nav__icon md-icon"></span>
+          解决方案概览
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -332,8 +365,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cost/" class="md-nav__link">
-        成本预估
+      <a href="../../solution-overview/features/" class="md-nav__link">
+        特性和收益
       </a>
     </li>
   
@@ -346,37 +379,16 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/" class="md-nav__link">
-        架构概述
+      <a href="../../solution-overview/use-cases/" class="md-nav__link">
+        应用场景
       </a>
     </li>
   
 
             
           
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../security/" class="md-nav__link">
-        安全
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../considerations/" class="md-nav__link">
-        考虑因素
-      </a>
+        </ul>
+      </nav>
     </li>
   
 
@@ -391,19 +403,215 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_2" type="checkbox" id="__nav_1_2" >
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_6" >
+      
+      
+        <label class="md-nav__link" for="__nav_1_2">
+          架构概览
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="架构概览" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_2">
+          <span class="md-nav__icon md-icon"></span>
+          架构概览
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/" class="md-nav__link">
+        架构图
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-overview/well-architected-pillars/" class="md-nav__link">
+        AWS Well-Architected 支柱
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_3" type="checkbox" id="__nav_1_3" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_6" id="__nav_1_6_label" tabindex="0">
+      
+        <label class="md-nav__link" for="__nav_1_3">
+          架构细节
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="架构细节" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_3">
+          <span class="md-nav__icon md-icon"></span>
+          架构细节
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-details/solution-components/" class="md-nav__link">
+        解决方案组件
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-details/services-in-this-solution/" class="md-nav__link">
+        AWS 服务
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_4" type="checkbox" id="__nav_1_4" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1_4">
+          计划部署
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="计划部署" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_4">
+          <span class="md-nav__icon md-icon"></span>
+          计划部署
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plan-deployment/cost/" class="md-nav__link">
+        价格
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plan-deployment/security/" class="md-nav__link">
+        安全
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plan-deployment/considerations/" class="md-nav__link">
+        支持的区域
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_5" type="checkbox" id="__nav_1_5" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1_5">
           开始部署
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_6_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_1_6">
+      <nav class="md-nav" aria-label="开始部署" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_5">
           <span class="md-nav__icon md-icon"></span>
           开始部署
         </label>
@@ -467,19 +675,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_6" type="checkbox" id="__nav_1_6" >
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_7" >
       
       
-      
-        <label class="md-nav__link" for="__nav_1_7" id="__nav_1_7_label" tabindex="0">
+        <label class="md-nav__link" for="__nav_1_6">
           快速入门
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_7_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_1_7">
+      <nav class="md-nav" aria-label="快速入门" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_6">
           <span class="md-nav__icon md-icon"></span>
           快速入门
         </label>
@@ -571,19 +778,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_7" type="checkbox" id="__nav_1_7" >
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_8" >
       
       
-      
-        <label class="md-nav__link" for="__nav_1_8" id="__nav_1_8_label" tabindex="0">
+        <label class="md-nav__link" for="__nav_1_7">
           AOS 集群管理
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_8_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_1_8">
+      <nav class="md-nav" aria-label="AOS 集群管理" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_7">
           <span class="md-nav__icon md-icon"></span>
           AOS 集群管理
         </label>
@@ -661,19 +867,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_8" type="checkbox" id="__nav_1_8" >
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_9" >
       
       
-      
-        <label class="md-nav__link" for="__nav_1_9" id="__nav_1_9_label" tabindex="0">
+        <label class="md-nav__link" for="__nav_1_8">
           AWS 服务日志
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_9_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_1_9">
+      <nav class="md-nav" aria-label="AWS 服务日志" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_8">
           <span class="md-nav__icon md-icon"></span>
           AWS 服务日志
         </label>
@@ -837,19 +1042,18 @@
     <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9" type="checkbox" id="__nav_1_9" checked>
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_10" checked>
       
       
-      
-        <label class="md-nav__link" for="__nav_1_10" id="__nav_1_10_label" tabindex="0">
+        <label class="md-nav__link" for="__nav_1_9">
           应用日志
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_10_label" aria-expanded="true">
-        <label class="md-nav__title" for="__nav_1_10">
+      <nav class="md-nav" aria-label="应用日志" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_9">
           <span class="md-nav__icon md-icon"></span>
           应用日志
         </label>
@@ -878,19 +1082,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9_2" type="checkbox" id="__nav_1_9_2" >
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_10_2" >
       
       
-      
-        <label class="md-nav__link" for="__nav_1_10_2" id="__nav_1_10_2_label" tabindex="0">
+        <label class="md-nav__link" for="__nav_1_9_2">
           前提条件
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_1_10_2_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_1_10_2">
+      <nav class="md-nav" aria-label="前提条件" data-md-level="3">
+        <label class="md-nav__title" for="__nav_1_9_2">
           <span class="md-nav__icon md-icon"></span>
           前提条件
         </label>
@@ -940,7 +1143,7 @@
   
     <li class="md-nav__item md-nav__item--active">
       
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
       
       
         
@@ -1000,8 +1203,8 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#eks" class="md-nav__link">
-    EKS 集群作为日志源
+  <a href="#amazon-eks" class="md-nav__link">
+    Amazon EKS 集群作为日志源
   </a>
   
 </li>
@@ -1020,8 +1223,21 @@
       
         <li class="md-nav__item">
   <a href="#_3" class="md-nav__link">
+    查看仪表板
+  </a>
+  
+    <nav class="md-nav" aria-label="查看仪表板">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
     示例仪表板
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1130,6 +1346,67 @@
   
   
   
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_11" type="checkbox" id="__nav_1_11" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1_11">
+          日志管道监控
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="日志管道监控" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_11">
+          <span class="md-nav__icon md-icon"></span>
+          日志管道监控
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../alarm/" class="md-nav__link">
+        告警
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../monitoring/" class="md-nav__link">
+        监控
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
     <li class="md-nav__item">
       <a href="../../faq/" class="md-nav__link">
         常见问题
@@ -1176,21 +1453,20 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_15" type="checkbox" id="__nav_1_15" >
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_15" >
       
       
-      
-        <label class="md-nav__link" for="__nav_1_15" id="__nav_1_15_label" tabindex="0">
-          资源
+        <label class="md-nav__link" for="__nav_1_15">
+          额外资源
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_15_label" aria-expanded="false">
+      <nav class="md-nav" aria-label="额外资源" data-md-level="2">
         <label class="md-nav__title" for="__nav_1_15">
           <span class="md-nav__icon md-icon"></span>
-          资源
+          额外资源
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -1222,22 +1498,22 @@
 
             
           
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
             
               
   
   
   
     <li class="md-nav__item">
-      <a href="../../resources/aws-services/" class="md-nav__link">
-        AWS 服务
+      <a href="../../source/" class="md-nav__link">
+        开发者资源
       </a>
-    </li>
-  
-
-            
-          
-        </ul>
-      </nav>
     </li>
   
 
@@ -1349,8 +1625,8 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#eks" class="md-nav__link">
-    EKS 集群作为日志源
+  <a href="#amazon-eks" class="md-nav__link">
+    Amazon EKS 集群作为日志源
   </a>
   
 </li>
@@ -1369,8 +1645,21 @@
       
         <li class="md-nav__item">
   <a href="#_3" class="md-nav__link">
+    查看仪表板
+  </a>
+  
+    <nav class="md-nav" aria-label="查看仪表板">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
     示例仪表板
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1388,8 +1677,10 @@
                 
                   
 
-  
-  
+  <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch/edit/master/docs/implementation-guide/applications/apache.md" title="编辑此页" class="md-content__button md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
+  </a>
 
 
 <h1 id="apache-http">Apache HTTP 服务器日志</h1>
@@ -1436,14 +1727,20 @@
 <li>登录日志通控制台。</li>
 <li>在左侧边栏中的 <strong>日志分析管道</strong> 下，选择<strong>应用日志</strong>。</li>
 <li>单击在<strong>前提条件</strong>期间创建的应用程序管道。</li>
-<li>转到 <strong>Permission</strong> 选项卡并复制提供的 JSON 策略。</li>
+<li>选择 <strong>Permission grant method</strong>。如果您选择 <strong>I will manually add the below required permissions after pipeline creation</strong>，您需要点击 <strong>Expand to view required permissions</strong> 并复制提供的 JSON policy。</li>
 <li>
-<p>在 <strong>AWS Console &gt; IAM &gt; Policies</strong> 进行如下操作。</p>
-<ul>
-<li>点击<strong>Create Policy</strong>，选择<strong>JSON</strong>并替换文本块内的所有内容。请记住用您的帐户 ID 替换 <code>&lt;YOUR ACCOUNT ID&gt;</code>。</li>
-<li>选择<strong>下一步</strong>，再选择 <strong>下一步</strong>，然后输入此策略的名称。</li>
-<li>将该策略附加到您的 EC2 实例配置文件，以允许日志代理有权将日志发送到应用程序日志管道。如果您使用的是 Auto Scaling 组，则需要更新与 Auto Scaling 组关联的 IAM 实例配置文件（根据您的 Auto Scaling 组的设置进行配置，请参照 AWS 文档进行更新 <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/create-launch-template.html#advanced-settings-for-your-launch-template">Launch Template</a> 或 <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/change-launch-config.html">launch-configuration</a>)</li>
-</ul>
+<p>转到 <strong>AWS Console &gt; IAM &gt; Policies</strong> 在左侧列，并</p>
+<ol>
+<li>
+<p>选择 <strong>Create Policy</strong>，选择 <strong>JSON</strong> 并替换文本块内的所有内容。记得用您的账户ID替换 <code>&lt;YOUR ACCOUNT ID&gt;</code>。</p>
+</li>
+<li>
+<p>选择 <strong>Next</strong>，<strong>Next</strong>，然后为此策略输入名称。</p>
+</li>
+<li>
+<p>将策略附加到您的 EC2 实例配置文件，以授予日志代理将日志发送到应用日志 管道的权限。如果您使用的是弹性伸缩组，您需要更新与弹性伸缩组关联的 IAM 实例配置文件。如有需要，您可以按照文档来更新您的 <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/create-launch-template.html#advanced-settings-for-your-launch-template">launch template</a> 或 <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/change-launch-config.html">launch configuration</a>。</p>
+</li>
+</ol>
 </li>
 <li>
 <p>单击<strong>创建日志摄取</strong>下拉菜单，然后选择<strong>从实例组</strong>。</p>
@@ -1452,23 +1749,32 @@
 <li>选择您在<strong>前提条件</strong>中创建的实例组，然后选择<strong>下一步</strong>。</li>
 <li>（仅限Auto Scaling Group）如果您的实例组是基于Auto Scaling Group创建的，当摄取状态变为“已创建”后，您可以在实例组的详细信息页面中找到生成的Shell 脚本。复制 shell 脚本并更新 Auto Scaling <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/launch-configurations.html">启动配置</a> 或  <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html">启动模版</a>。</li>
 <li>选择<strong>选择已存在</strong>，并选择在先前设置中创建的日志配置。</li>
-<li>选择<strong>下一步</strong>，然后选择<strong>创建</strong>。</li>
 </ol>
 <!--ig-end-->
 
 <!--eks-start-->
-<h3 id="eks">EKS 集群作为日志源</h3>
+<h3 id="amazon-eks">Amazon EKS 集群作为日志源</h3>
 <ol>
 <li>登录日志通控制台。</li>
 <li>在左侧边栏中的 <strong>日志源</strong> 下，选择 <strong>EKS 集群</strong>。</li>
 <li>单击已导入为日志源的 EKS 集群。</li>
-<li>转到 <strong>应用日志摄取</strong> 选项卡，然后单击 <strong>创建日志摄取</strong>。<ul>
-<li>选择"选择已存在" 并选择在<strong>前提条件</strong>中创建的应用程序管道。选择<strong>下一步</strong>。</li>
-<li>选择之前设置中创建的日志配置，然后选择<strong>下一步</strong>。</li>
-<li>根据需要添加标签，然后选择<strong>创建</strong>完成创建摄取。</li>
-</ul>
+<li>
+<p>转到 <strong>App Log Ingestion</strong> 标签并选择 <strong>Create an Ingestion</strong>。</p>
+<ol>
+<li>
+<p>选择 <strong>Choose exists</strong> 并选择在 <strong>Prerequisites</strong> 中创建的应用日志 管道。选择 <strong>Next</strong>。</p>
 </li>
-<li>按照日志通 生成的指南部署 Fluent-bit 日志代理。<ul>
+<li>
+<p>选择在之前设置中创建的日志配置。</p>
+</li>
+<li>
+<p>选择 <strong>Create</strong> 以完成创建一个导入。</p>
+</li>
+</ol>
+</li>
+<li>
+<p>按照日志通 生成的指南部署 Fluent-bit 日志代理。</p>
+<ul>
 <li>选择刚刚创建的应用日志摄取。</li>
 <li>按照 <strong>DaemonSet</strong> 或 <strong>Sidecar</strong> 指南部署日志代理。</li>
 </ul>
@@ -1483,9 +1789,101 @@
 <li>转到左侧边栏中的<strong>仪表板</strong>部分。</li>
 <li>找到名称以<code>&lt;the-application-pipeline&gt;</code>开头的仪表板。</li>
 </ol>
-<h2 id="_3">示例仪表板</h2>
-<p><a href="../../../images/dashboards/nginx-1.png"><img alt="nginx-1" src="../../../images/dashboards/nginx-1.png" /></a>
-<a href="../../../images/dashboards/nginx-2.png"><img alt="nginx-2" src="../../../images/dashboards/nginx-2.png" /></a></p>
+<h2 id="_3">查看仪表板</h2>
+<p>该仪表板包含以下可视化内容。</p>
+<table>
+<thead>
+<tr>
+<th>Visualization Name</th>
+<th>数据来源字段</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Total Request</td>
+<td>日志事件</td>
+<td>在指定的时间间隔内显示汇总的事件。</td>
+</tr>
+<tr>
+<td>Status Codes</td>
+<td>status</td>
+<td>显示 Apache Web 服务器在选定时间段内提供的 HTTP 响应代码的分布。</td>
+</tr>
+<tr>
+<td>Access History</td>
+<td>日志事件</td>
+<td>显示 Apache Web 服务器处理的所有请求的历史日志，通过条形图进行可视化。这使管理员能够随时间分析流量量和模式。</td>
+</tr>
+<tr>
+<td>Unique Visitors</td>
+<td>remote_addr</td>
+<td>提供从同一 IP 地址重复访问 Apache 服务器的用户或设备总数的估计。</td>
+</tr>
+<tr>
+<td>Status Code Metric</td>
+<td>status</td>
+<td>显示 Apache 服务器在一段时间内提供的 HTTP 响应代码的分布。</td>
+</tr>
+<tr>
+<td>Top Access Paths</td>
+<td>request_uri</td>
+<td>显示选定时间段内 Apache 服务器上最常请求的 URL。</td>
+</tr>
+<tr>
+<td>Top Client IPs</td>
+<td><ul><li>response_size_bytes</li><li>remote_addr</li></ul></td>
+<td>显示在选定时间段内由 Apache 服务器接收到最多请求数的前 10 个源 IP 地址。</td>
+</tr>
+<tr>
+<td>Bandwidth</td>
+<td>response_size_bytes</td>
+<td>跟踪从 Apache 服务器到客户端传输的数据量，选定时间段内。</td>
+</tr>
+<tr>
+<td>Top Agents</td>
+<td>http_user_agent</td>
+<td>提供访问者的概要。这些数据指导了更好地服务核心受众的决策。</td>
+</tr>
+<tr>
+<td>Http Methods</td>
+<td>request_method</td>
+<td>呈现一个饼图，显示 Apache 服务器在选定时间段内处理的请求方法的分布。</td>
+</tr>
+<tr>
+<td>Top Access URIs</td>
+<td>request_uri</td>
+<td>显示在选定时间段内 Apache 处理的最常命中的 URI 路径。</td>
+</tr>
+<tr>
+<td>Top Referers</td>
+<td>http_referer</td>
+<td>引荐者是链接到应用程序请求的页面的 URL。跟踪引荐者揭示了访问和参与的主要外部来源。</td>
+</tr>
+<tr>
+<td>Bandwidth History</td>
+<td>response_size_bytes</td>
+<td>显示 Apache 服务器向客户端传输数据的历史趋势。</td>
+</tr>
+<tr>
+<td>Apache Error Log</td>
+<td><ul><li> status</li><li>request_uri</li><li>request_method</li><li>http_referer</li><li>response_size_bytes</li><li>http_user_agent</li><li>remote_addr</li></ul></td>
+<td>提供 Web 服务器遇到的错误的详细记录。</td>
+</tr>
+<tr>
+<td>Apache Log Examples</td>
+<td><ul><li> @timestamp</li><li>_index</li><li>http_user_agent</li><li>remote_addr</li><li> status</li><li>request_method</li><li>request_uri</li><li>response_size_bytes</li><li>request_protocol</li><li>file_name</li><li>http_referer</li><li>remote_user</li></ul></td>
+<td>用于解释 Apache 访问和错误日志的快速入口。</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_4">示例仪表板</h3>
+<!-- BEGIN INCLUDE ../include-dashboard.md -->
+<p>您可以访问Amazon OpenSearch中的内置仪表板来查看日志数据。更多信息请参阅<a href="../../getting-started/4.view-dashboard/">访问仪表板</a>。</p>
+<p>您可以点击下面的图像查看高分辨率的示例仪表板。</p>
+<!-- END INCLUDE -->
+
+<p><a href="../../images/dashboards/apache.png"><img alt="apache" src="../../images/dashboards/apache.png" /></a></p>
 
 
 
@@ -1501,6 +1899,42 @@
       </main>
       
         <footer class="md-footer">
+  
+    
+    <nav class="md-footer__inner md-grid" aria-label="页脚" >
+      
+        
+        <a href="../create-applog-pipeline/" class="md-footer__link md-footer__link--prev" aria-label="上一页: 创建应用日志管道" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                上一页
+              </span>
+              创建应用日志管道
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../nginx/" class="md-footer__link md-footer__link--next" aria-label="下一页: Nginx" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                下一页
+              </span>
+              Nginx
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
@@ -1518,10 +1952,10 @@
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.74e28a9f.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": "latest"}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.config.lang": "ja", "search.config.pipeline": "trimmer, stemmer", "search.config.separator": "[\\s\\-\uff0c\u3002]+", "search.placeholder": "\u641c\u7d22", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version.title": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": "latest"}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.220ee61c.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.37e9125f.min.js"></script>
       
     
   </body>

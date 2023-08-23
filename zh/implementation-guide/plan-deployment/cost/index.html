@@ -1,0 +1,2196 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/plan-deployment/cost/">
+      
+      <link rel="icon" href="../../../images/aws-solutions.png">
+      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.5.3">
+    
+    
+      
+        <title>价格 - Centralized Logging with OpenSearch</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.7a952b86.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.cbb835fc.min.css">
+        
+      
+      
+
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="none" data-md-color-accent="none">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#_1" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../../.." title="Centralized Logging with OpenSearch" class="md-header__button md-logo" aria-label="Centralized Logging with OpenSearch" data-md-component="logo">
+      
+  <img src="../../../images/aws-solutions.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Centralized Logging with OpenSearch
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              价格
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <div class="md-header__option">
+        <div class="md-select">
+          
+          <button class="md-header__button md-icon" aria-label="选择当前语言">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.52 17.52 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04M18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12m-2.62 7 1.62-4.33L19.12 17h-3.24Z"/></svg>
+          </button>
+          <div class="md-select__inner">
+            <ul class="md-select__list">
+              
+                <li class="md-select__item">
+                  <a href="/centralized-logging-with-opensearch/en/" hreflang="en" class="md-select__link">
+                    English
+                  </a>
+                </li>
+                
+                <li class="md-select__item">
+                  <a href="/centralized-logging-with-opensearch/zh/" hreflang="zh" class="md-select__link">
+                    简体中文
+                  </a>
+                </li>
+                
+            </ul>
+          </div>
+        </div>
+      </div>
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    aws-solutions/centralized-logging-with-opensearch
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="标签" data-md-component="tabs">
+  <div class="md-tabs__inner md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+    
+  
+
+
+  
+  
+  
+    
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link md-tabs__link--active">
+        实施指南
+      </a>
+    </li>
+  
+
+  
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="https://github.com/orgs/aws-solutions/projects/17/" class="md-tabs__link">
+      路线图
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="https://catalog.workshops.aws/centralized-logging-with-opensearch/" class="md-tabs__link">
+      动手实验
+    </a>
+  </li>
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="Centralized Logging with OpenSearch" class="md-nav__button md-logo" aria-label="Centralized Logging with OpenSearch" data-md-component="logo">
+      
+  <img src="../../../images/aws-solutions.png" alt="logo">
+
+    </a>
+    Centralized Logging with OpenSearch
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    aws-solutions/centralized-logging-with-opensearch
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1" type="checkbox" id="__nav_1" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1">
+          实施指南
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="实施指南" data-md-level="1">
+        <label class="md-nav__title" for="__nav_1">
+          <span class="md-nav__icon md-icon"></span>
+          实施指南
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_1" type="checkbox" id="__nav_1_1" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1_1">
+          解决方案概览
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="解决方案概览" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_1">
+          <span class="md-nav__icon md-icon"></span>
+          解决方案概览
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        概览
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../solution-overview/features/" class="md-nav__link">
+        特性和收益
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../solution-overview/use-cases/" class="md-nav__link">
+        应用场景
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_2" type="checkbox" id="__nav_1_2" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1_2">
+          架构概览
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="架构概览" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_2">
+          <span class="md-nav__icon md-icon"></span>
+          架构概览
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/" class="md-nav__link">
+        架构图
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-overview/well-architected-pillars/" class="md-nav__link">
+        AWS Well-Architected 支柱
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_3" type="checkbox" id="__nav_1_3" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1_3">
+          架构细节
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="架构细节" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_3">
+          <span class="md-nav__icon md-icon"></span>
+          架构细节
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-details/solution-components/" class="md-nav__link">
+        解决方案组件
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-details/services-in-this-solution/" class="md-nav__link">
+        AWS 服务
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_4" type="checkbox" id="__nav_1_4" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1_4">
+          计划部署
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="计划部署" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_4">
+          <span class="md-nav__icon md-icon"></span>
+          计划部署
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          价格
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        价格
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#amazon-opensearch" class="md-nav__link">
+    Amazon OpenSearch 费用
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    处理费用
+  </a>
+  
+    <nav class="md-nav" aria-label="处理费用">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#amazon-s3" class="md-nav__link">
+    通过 Amazon S3 提取日志
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#amazon-kinesis-data-streams-kds" class="md-nav__link">
+    通过 Amazon Kinesis Data Streams (KDS) 提取日志
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    额外特性费用
+  </a>
+  
+    <nav class="md-nav" aria-label="额外特性费用">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    访问代理
+  </a>
+  
+    <nav class="md-nav" aria-label="访问代理">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-t3nano-2" class="md-nav__link">
+    示例 1: 实例类型 - t3.nano, 2台
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-t3large-2" class="md-nav__link">
+    示例 2: 实例类型 - t3.large, 2台
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    告警
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        安全
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../considerations/" class="md-nav__link">
+        支持的区域
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_5" type="checkbox" id="__nav_1_5" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1_5">
+          开始部署
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="开始部署" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_5">
+          <span class="md-nav__icon md-icon"></span>
+          开始部署
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deployment/" class="md-nav__link">
+        概览
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deployment/with-cognito/" class="md-nav__link">
+        使用 Cognito User Pool
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deployment/with-oidc/" class="md-nav__link">
+        使用 OpenID Connect
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_6" type="checkbox" id="__nav_1_6" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1_6">
+          快速入门
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="快速入门" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_6">
+          <span class="md-nav__icon md-icon"></span>
+          快速入门
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        概览
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/1.import-domain/" class="md-nav__link">
+        步骤 1. 导入 AOS 域
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/2.create-proxy/" class="md-nav__link">
+        步骤 2. 创建访问代理
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/3.build-cloudtrail-pipeline/" class="md-nav__link">
+        步骤 3. 摄取 CloudTrail 日志
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/4.view-dashboard/" class="md-nav__link">
+        步骤 4. 查看仪表板
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_7" type="checkbox" id="__nav_1_7" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1_7">
+          AOS 集群管理
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="AOS 集群管理" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_7">
+          <span class="md-nav__icon md-icon"></span>
+          AOS 集群管理
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../domains/" class="md-nav__link">
+        概览
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../domains/import/" class="md-nav__link">
+        集群操作
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../domains/proxy/" class="md-nav__link">
+        访问代理
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../domains/alarms/" class="md-nav__link">
+        告警
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_8" type="checkbox" id="__nav_1_8" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1_8">
+          AWS 服务日志
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="AWS 服务日志" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_8">
+          <span class="md-nav__icon md-icon"></span>
+          AWS 服务日志
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../aws-services/" class="md-nav__link">
+        概览
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../aws-services/cloudtrail/" class="md-nav__link">
+        Amazon CloudTrail
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../aws-services/s3/" class="md-nav__link">
+        Amazon S3
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../aws-services/rds/" class="md-nav__link">
+        Amazon RDS/Aurora
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../aws-services/cloudfront/" class="md-nav__link">
+        Amazon CloudFront
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../aws-services/lambda/" class="md-nav__link">
+        AWS Lambda
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../aws-services/elb/" class="md-nav__link">
+        Elastic Load Balancing
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../aws-services/waf/" class="md-nav__link">
+        AWS WAF
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../aws-services/vpc/" class="md-nav__link">
+        VPC Flow Log
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../aws-services/config/" class="md-nav__link">
+        AWS Config
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9" type="checkbox" id="__nav_1_9" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1_9">
+          应用日志
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="应用日志" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_9">
+          <span class="md-nav__icon md-icon"></span>
+          应用日志
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../applications/" class="md-nav__link">
+        概览
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9_2" type="checkbox" id="__nav_1_9_2" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1_9_2">
+          前提条件
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="前提条件" data-md-level="3">
+        <label class="md-nav__title" for="__nav_1_9_2">
+          <span class="md-nav__icon md-icon"></span>
+          前提条件
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../applications/create-log-source/" class="md-nav__link">
+        创建日志源
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../applications/create-applog-pipeline/" class="md-nav__link">
+        创建应用日志管道
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../applications/apache/" class="md-nav__link">
+        Apache HTTP 服务器
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../applications/nginx/" class="md-nav__link">
+        Nginx
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../applications/single-line-text/" class="md-nav__link">
+        单行文本
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../applications/multi-line-text/" class="md-nav__link">
+        多行文本
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../applications/json/" class="md-nav__link">
+        JSON
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../applications/syslog/" class="md-nav__link">
+        Syslog
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../link-account/" class="md-nav__link">
+        跨账户日志摄取
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_11" type="checkbox" id="__nav_1_11" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1_11">
+          日志管道监控
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="日志管道监控" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_11">
+          <span class="md-nav__icon md-icon"></span>
+          日志管道监控
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../alarm/" class="md-nav__link">
+        告警
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../monitoring/" class="md-nav__link">
+        监控
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../faq/" class="md-nav__link">
+        常见问题
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../trouble-shooting/" class="md-nav__link">
+        故障排查
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../uninstall/" class="md-nav__link">
+        卸载解决方案
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_15" type="checkbox" id="__nav_1_15" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1_15">
+          额外资源
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="额外资源" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_15">
+          <span class="md-nav__icon md-icon"></span>
+          额外资源
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../resources/open-ssl/" class="md-nav__link">
+        OpenSSL 安装
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../resources/upload-ssl-certificate/" class="md-nav__link">
+        上传证书
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../source/" class="md-nav__link">
+        开发者资源
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/" class="md-nav__link">
+        更新记录
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/orgs/aws-solutions/projects/17/" class="md-nav__link">
+        路线图
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://catalog.workshops.aws/centralized-logging-with-opensearch/" class="md-nav__link">
+        动手实验
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#amazon-opensearch" class="md-nav__link">
+    Amazon OpenSearch 费用
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    处理费用
+  </a>
+  
+    <nav class="md-nav" aria-label="处理费用">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#amazon-s3" class="md-nav__link">
+    通过 Amazon S3 提取日志
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#amazon-kinesis-data-streams-kds" class="md-nav__link">
+    通过 Amazon Kinesis Data Streams (KDS) 提取日志
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    额外特性费用
+  </a>
+  
+    <nav class="md-nav" aria-label="额外特性费用">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    访问代理
+  </a>
+  
+    <nav class="md-nav" aria-label="访问代理">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-t3nano-2" class="md-nav__link">
+    示例 1: 实例类型 - t3.nano, 2台
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-t3large-2" class="md-nav__link">
+    示例 2: 实例类型 - t3.large, 2台
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    告警
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch/edit/master/docs/implementation-guide/plan-deployment/cost.md" title="编辑此页" class="md-content__button md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
+  </a>
+
+
+<h1 id="_1">费用预估</h1>
+<div class="admonition important">
+<p class="admonition-title">重要</p>
+<p>本节中描述的成本估算只是示例，可能会因您的环境而异。</p>
+</div>
+<p>您需要承担运行解决方案时使用亚马逊云科技各个服务的成本费用。影响解决方案成本的主要因素包括：</p>
+<ul>
+<li>要摄取的日志类型</li>
+<li>要摄取/处理的日志量</li>
+<li>日志消息的大小</li>
+<li>日志的位置</li>
+<li>额外的特性</li>
+</ul>
+<p>以下示例将演示截至最新发布的版本，基于亚马逊云科技美国东部（弗吉尼亚北部）区域 (us-east-1) 10/100/1000 GB 每日日志摄取的成本估算。 总成本包括 <a href="#amazon-opensearch"><strong>Amazon OpenSearch 费用</strong></a>、<a href="#_1"><strong>处理费用</strong></a> 和 <a href="#_4"><strong>额外特性费用</strong></a>。</p>
+<h2 id="amazon-opensearch">Amazon OpenSearch 费用</h2>
+<ul>
+<li><strong>OD</strong>: 按需实例价格模型</li>
+<li><strong>AURI_1</strong>: 全额预付1年预留实例</li>
+<li><strong>分层</strong>：存储在层中的天数。 例如，7H + 23W + 60C 表示日志在热层存储 7 天，温层存储 23 天，冷层存储 60 天。</li>
+<li><strong>副本</strong>: 分片副本的数量。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>每日日志量 (GB)</th>
+<th>存储 (天)</th>
+<th>分层</th>
+<th>副本</th>
+<th>OD 每月 (USD)</th>
+<th>AURI_1 每月  (USD)</th>
+<th>专用主节点</th>
+<th>数据节点</th>
+<th>EBS (GB)</th>
+<th>UltraWarm 节点</th>
+<th>UltraWarm/Cold S3 存储 (GB)</th>
+<th>OD 每GB费用 (USD)</th>
+<th>AURI_1 每GB费用 (USD)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>10</td>
+<td>30</td>
+<td>30H</td>
+<td>0</td>
+<td>216.28</td>
+<td>158.54</td>
+<td>N/A</td>
+<td>c6g.large[2]</td>
+<td>380</td>
+<td>N/A</td>
+<td>0</td>
+<td>0.72093</td>
+<td>0.52847</td>
+</tr>
+<tr>
+<td>10</td>
+<td>30</td>
+<td>30H</td>
+<td>1</td>
+<td>289.35</td>
+<td>223.94</td>
+<td>N/A</td>
+<td>m6g.large[2]</td>
+<td>760</td>
+<td>N/A</td>
+<td>0</td>
+<td>0.9645</td>
+<td>0.74647</td>
+</tr>
+<tr>
+<td>100</td>
+<td>30</td>
+<td>7H + 23W</td>
+<td>0</td>
+<td>989.49</td>
+<td>825.97</td>
+<td>m6g.large[3]</td>
+<td>m6g.large[2]</td>
+<td>886</td>
+<td>medium[2]</td>
+<td>0</td>
+<td>0.32983</td>
+<td>0.27532</td>
+</tr>
+<tr>
+<td>100</td>
+<td>30</td>
+<td>7H + 23W</td>
+<td>1</td>
+<td>1295.85</td>
+<td>1066.92</td>
+<td>m6g.large[3]</td>
+<td>m6g.large[4]</td>
+<td>1772</td>
+<td>medium[2]</td>
+<td>0</td>
+<td>0.43195</td>
+<td>0.35564</td>
+</tr>
+<tr>
+<td>100</td>
+<td>90</td>
+<td>7H + 23W + 60C</td>
+<td>0</td>
+<td>1133.49</td>
+<td>969.97</td>
+<td>m6g.large[3]</td>
+<td>m6g.large[2]</td>
+<td>886</td>
+<td>medium[2]</td>
+<td>8300</td>
+<td>0.12594</td>
+<td>0.10777</td>
+</tr>
+<tr>
+<td>100</td>
+<td>90</td>
+<td>7H + 23W + 60C</td>
+<td>1</td>
+<td>1439.85</td>
+<td>1210.92</td>
+<td>m6g.large[3]</td>
+<td>m6g.large[4]</td>
+<td>1772</td>
+<td>medium[2]</td>
+<td>8300</td>
+<td>0.15998</td>
+<td>0.13455</td>
+</tr>
+<tr>
+<td>100</td>
+<td>180</td>
+<td>7H + 23W + 150C</td>
+<td>0</td>
+<td>1349.49</td>
+<td>1185.97</td>
+<td>m6g.large[3]</td>
+<td>m6g.large[2]</td>
+<td>886</td>
+<td>medium[2]</td>
+<td>17300</td>
+<td>0.07497</td>
+<td>0.06589</td>
+</tr>
+<tr>
+<td>100</td>
+<td>180</td>
+<td>7H + 23W + 150C</td>
+<td>1</td>
+<td>1655.85</td>
+<td>1426.92</td>
+<td>m6g.large[3]</td>
+<td>m6g.large[4]</td>
+<td>1772</td>
+<td>medium[2]</td>
+<td>17300</td>
+<td>0.09199</td>
+<td>0.07927</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>30</td>
+<td>7H + 23W</td>
+<td>0</td>
+<td>6101.15</td>
+<td>5489.48</td>
+<td>m6g.large[3]</td>
+<td>r6g.xlarge[6]</td>
+<td>8856</td>
+<td>medium[15]</td>
+<td>23000</td>
+<td>0.20337</td>
+<td>0.18298</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>30</td>
+<td>7H + 23W</td>
+<td>1</td>
+<td>8759.49</td>
+<td>7635.8</td>
+<td>m6g.large[3]</td>
+<td>r6g.2xlarge[6]</td>
+<td>17712</td>
+<td>medium[15]</td>
+<td>23000</td>
+<td>0.29198</td>
+<td>0.25453</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>90</td>
+<td>7H + 23W + 60C</td>
+<td>0</td>
+<td>8027.33</td>
+<td>7245.45</td>
+<td>m6g.large[3]</td>
+<td>r6g.xlarge[6]</td>
+<td>8856</td>
+<td>medium[15]</td>
+<td>83000</td>
+<td>0.08919</td>
+<td>0.0805</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>90</td>
+<td>7H + 23W + 60C</td>
+<td>1</td>
+<td>10199.49</td>
+<td>9075.8</td>
+<td>m6g.large[3]</td>
+<td>r6g.2xlarge[6]</td>
+<td>17712</td>
+<td>medium[15]</td>
+<td>83000</td>
+<td>0.11333</td>
+<td>0.10084</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>180</td>
+<td>7H + 23W + 150C</td>
+<td>0</td>
+<td>9701.15</td>
+<td>9089.48</td>
+<td>m6g.large[3]</td>
+<td>r6g.xlarge[6]</td>
+<td>8856</td>
+<td>medium[15]</td>
+<td>173000</td>
+<td>0.0539</td>
+<td>0.0505</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>180</td>
+<td>7H + 23W + 150C</td>
+<td>1</td>
+<td>12644.19</td>
+<td>11420.86</td>
+<td>m6g.large[3]</td>
+<td>r6g.2xlarge[6]</td>
+<td>17712</td>
+<td>medium[15]</td>
+<td>173000</td>
+<td>0.07025</td>
+<td>0.06345</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_2">处理费用</h2>
+<h3 id="amazon-s3">通过 Amazon S3 提取日志</h3>
+<div class="admonition note">
+<p class="admonition-title">信息</p>
+<p>本节适用于：</p>
+<ul>
+<li>AWS 服务日志包括 Amazon S3 访问日志，CloudFront 标准日志，CloudTrail 日志 (S3)，Application Load Balancing 访问日志，WAF 日志，VPC 流 日志 (S3)，AWS Config 日志，Amazon RDS/Aurora 日志，AWS Lambda 日志。</li>
+<li>使用 Amazon S3 作为数据缓冲区的应用日志。</li>
+</ul>
+</div>
+<p>以下是假设：</p>
+<ul>
+<li>日志以 gzip 格式保存到 Amazon S3。</li>
+<li>S3 中 4MB 的压缩日志文件的原始日志大小约为 100MB。</li>
+<li>一个 1GB 内存的 Lambda 处理一个 4MB 的压缩日志文件大约需要 26 秒，即每 MB 原始日志需要 260 毫秒。</li>
+<li>最大压缩日志文件大小为 5MB。</li>
+<li>从 S3 提取 AWS 服务日志会产生非常低的 SQS 和 S3 请求费用，或者通常在 AWS 免费套餐内。</li>
+</ul>
+<p>您每天有 <code>N</code> GB 原始日志，每日成本估算如下：</p>
+<ul>
+<li>Lambda 成本 = 每 MB 260 毫秒 x 1024 MB x <code>N</code> GB/天 x 每毫秒 0.0000000167 美元</li>
+<li>S3 存储成本 = 每 GB 0.023 美元 x <code>N</code> GB/天 x 4%（压缩）</li>
+</ul>
+<p>处理 AWS 服务日志的每月总成本为：</p>
+<p><strong>每月总成本</strong> =（Lambda 成本 + S3 存储成本）x 30 天</p>
+<table>
+<thead>
+<tr>
+<th>每日的日志量</th>
+<th>每日的 Lambda 费用 ($)</th>
+<th>每次的 S3 存储费用 ($)</th>
+<th>每月的费用 ($)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>10</td>
+<td>0.044</td>
+<td>0.009</td>
+<td>1.610</td>
+</tr>
+<tr>
+<td>100</td>
+<td>0.445</td>
+<td>0.092</td>
+<td>16.099</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>4.446</td>
+<td>0.920</td>
+<td>160.986</td>
+</tr>
+</tbody>
+</table>
+<p>对于记录到Amazon CloudWatch 的 Amazon RDS/Aurora 日志和 AWS Lambda 日志，除了上面列出的 S3 和 Lambda 成本外，还有使用Kinesis Data Firehose (KDF) 来订阅 CloudWatch 日志流并将它们放入Amazon S3桶的额外成本，KDF 以 5KB 为增量收费（每条记录小于 5KB 按 5KB 计费）。 假设日志大小为每条记录 0.2 KB，则每天的 KDF 成本估算如下：</p>
+<ul>
+<li>Kinesis Data Firehose 成本 = 每 GB 0.029 美元 x <code>N</code> GB/天 x (5KB/0.2 KB) </li>
+</ul>
+<p>例如，每天 1GB 的日志，KDF 的每月额外费用为 21.75 美元。</p>
+<div class="admonition important">
+<p class="admonition-title">重要</p>
+<p>为了节约 KDF 的成本，请确保您只记录需要的日志。 例如，除非需要，否则不要打开 RDS 常规日志(General Log)。</p>
+</div>
+<h3 id="amazon-kinesis-data-streams-kds">通过 Amazon Kinesis Data Streams (KDS) 提取日志</h3>
+<div class="admonition note">
+<p class="admonition-title">信息</p>
+<p>本节适用于：</p>
+<ul>
+<li>AWS 服务日志包括 CloudFront 实时日志，CloudTrail 日志 (CloudWatch)，VPC 流日志 (CloudWatch).</li>
+<li>使用 Amazon KDS 作为数据缓冲区的应用日志</li>
+</ul>
+</div>
+<div class="admonition important">
+<p class="admonition-title">重要</p>
+<p>AWS服务使用日志功能的成本不包括在以下估算中，例如，CloudFront 使用实时日志会根据生成的日志行数收费（每 1,000,000 行日志行 0.01 美元）。 对于启用 CloudWatch 日志记录的 CloudTrail 和 VPC 流日志，还有日志传输到 CloudWatch 的费用。 请查看服务定价以了解更多详情。</p>
+</div>
+<p>成本估算基于以下假设和事实：</p>
+<ul>
+<li>平均日志消息大小为 1 KB。</li>
+<li>每日日志量为<code>L</code>GB。</li>
+<li>Lambda 内存为 1024 MB。</li>
+<li>每个 Lambda 调用处理 1 MB 日志。</li>
+<li>一个 Lambda 调用处理 Kinesis 的一个分片，Lambda 可以扩展到更多并发创新以处理多个分片。</li>
+<li>处理小于 5 MB 的日志的 Lambda 运行时为 500 毫秒。</li>
+<li>提供 30% 的额外分片来处理流量抖动。</li>
+<li>一个 Kinesis 分片引入日志大小为 = 1 MB/秒 x 3600 秒/小时 x 24 小时 x 0.7 = 60.48 GB/天。</li>
+<li>所需的 Kinesis 分片数 <code>S</code> = Round_up_to_next_integer（每日日志量 <code>L</code> / 60.48）。</li>
+</ul>
+<p>基于上述假设，以下是每日成本估算公式：</p>
+<ul>
+<li>Kinesis 分片小时成本 = 0.015 USD/分片小时 x 每天 24 小时 x <code>S</code>分片</li>
+<li>Kinesis PUT 有效负载单位成本 = 每百万单位 0.014 USD x 100 万/GB x <code>L</code>GB/天</li>
+<li>Lambda 成本 = 0.0000000167 USD/1ms x 500 毫秒/调用 x 1000 次调用/GB x <code>L</code>GB/天</li>
+</ul>
+<p><strong>每月总成本</strong> =（Kinesis Shard 小时成本 + Kinesis PUT 有效负载单位成本 + Lambda 成本）x 30 天</p>
+<table>
+<thead>
+<tr>
+<th>每日的日志量 (GB)</th>
+<th>分片数</th>
+<th>每日 Kinesis 分片小时费</th>
+<th>每日 Kinesis PUT 有效负载费用</th>
+<th>每次的 Lambda 费用</th>
+<th>每月的总费用 (USD)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>10</td>
+<td>1</td>
+<td>0.36</td>
+<td>0.14</td>
+<td>0.0835</td>
+<td>17.505</td>
+</tr>
+<tr>
+<td>100</td>
+<td>2</td>
+<td>0.72</td>
+<td>1.4</td>
+<td>0.835</td>
+<td>88.65</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>17</td>
+<td>6.12</td>
+<td>14</td>
+<td>8.35</td>
+<td>854.1</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_3">额外特性费用</h2>
+<div class="admonition note">
+<p class="admonition-title">注意</p>
+<p>如果您选择不使用日志通控制台中的附加功能，则不会向您收费。</p>
+</div>
+<h3 id="_4">访问代理</h3>
+<p>如果通过日志通部署并创建了<a href="./domains/proxy.md">访问代理</a>，将收取以下费用。根据您选择的实例类型和实例数量，总成本会有所不同。 以下是两个示例供您参考（基于截至最新发布版本的 us-east-1 价格）。</p>
+<h4 id="1-t3nano-2">示例 1: 实例类型 - t3.nano, 2台</h4>
+<ul>
+<li>EC2 成本 = t3.nano 1Y 全部预付预留实例 $26.28 x 2 / 12 个月 = $4.38/月</li>
+<li>EBS 成本 = 0.1 GB/月 x 8 GB x 2 = $1.6/月</li>
+<li>弹性负载均衡器成本 = 每 ALB 小时 $0.0225 x 720 小时/月 = $16.2/月</li>
+</ul>
+<p><strong>每月总费用</strong> = 4.38 美元 EC2 成本 + 1.6 美元 EBS 成本 + 16.2 美元弹性负载均衡器成本 = <strong>22.18 美元</strong></p>
+<h4 id="2-t3large-2">示例 2: 实例类型 - t3.large, 2台</h4>
+<ul>
+<li>EC2 成本 = t3.large 1Y 全部预付预留实例 $426.612 x 2 / 12 个月 = $71.1/月</li>
+<li>EBS 成本 = 0.1 GB/月 x 8 GB x 2 = $1.6/月</li>
+<li>弹性负载均衡器成本 = 每 ALB 小时 $0.0225 x 720 小时/月 = $16.2/月</li>
+</ul>
+<p><strong>每月总费用</strong> = 71.1 美元 EC2 成本 + 1.6 美元 EBS 成本 + 16.2 美元弹性负载均衡器成本 = <strong>88.9 美元</strong></p>
+<h3 id="_5">告警</h3>
+<p>如果通过日志通部署并创建了<a href="./domains/alarms.md">告警</a>，可参考<a href="https://aws.amazon.com/cloudwatch/pricing/">CloudWatch 价格</a>。</p>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+    <nav class="md-footer__inner md-grid" aria-label="页脚" >
+      
+        
+        <a href="../../architecture-details/services-in-this-solution/" class="md-footer__link md-footer__link--prev" aria-label="上一页: AWS 服务" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                上一页
+              </span>
+              AWS 服务
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../security/" class="md-footer__link md-footer__link--next" aria-label="下一页: 安全" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                下一页
+              </span>
+              安全
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.config.lang": "ja", "search.config.pipeline": "trimmer, stemmer", "search.config.separator": "[\\s\\-\uff0c\u3002]+", "search.placeholder": "\u641c\u7d22", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version.title": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": "latest"}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.37e9125f.min.js"></script>
+      
+    
+  </body>
+</html>

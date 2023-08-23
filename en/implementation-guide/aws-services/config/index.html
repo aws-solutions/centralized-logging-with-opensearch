@@ -10,14 +10,8 @@
       
         <link rel="canonical" href="https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/aws-services/config/">
       
-      
-        <link rel="prev" href="../vpc/">
-      
-      
-        <link rel="next" href="../../applications/">
-      
       <link rel="icon" href="../../../images/aws-solutions.png">
-      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.18">
+      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.5.3">
     
     
       
@@ -25,7 +19,11 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.26e3688c.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.7a952b86.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.cbb835fc.min.css">
+        
       
       
 
@@ -53,11 +51,14 @@
   </head>
   
   
-    <body dir="ltr">
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="none" data-md-color-accent="none">
   
     
-    
-      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
@@ -74,7 +75,7 @@
       
     </div>
     
-      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+      <div data-md-component="outdated" hidden>
         
       </div>
     
@@ -123,13 +124,13 @@
                     English
                   </a>
                 </li>
-              
+                
                 <li class="md-select__item">
                   <a href="/centralized-logging-with-opensearch/zh/" hreflang="zh" class="md-select__link">
                     简体中文
                   </a>
                 </li>
-              
+                
             </ul>
           </div>
         </div>
@@ -162,7 +163,7 @@
           <div class="md-search-result__meta">
             Initializing search
           </div>
-          <ol class="md-search-result__list" role="presentation"></ol>
+          <ol class="md-search-result__list"></ol>
         </div>
       </div>
     </div>
@@ -174,7 +175,7 @@
         <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
     aws-solutions/centralized-logging-with-opensearch
@@ -193,7 +194,7 @@
           
             
 <nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
-  <div class="md-grid">
+  <div class="md-tabs__inner md-grid">
     <ul class="md-tabs__list">
       
         
@@ -206,11 +207,18 @@
   
   
   
+    
+
+  
+  
+  
     <li class="md-tabs__item">
       <a href="../../.." class="md-tabs__link md-tabs__link--active">
         Implementation Guide
       </a>
     </li>
+  
+
   
 
       
@@ -271,7 +279,7 @@
       <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
   </div>
   <div class="md-source__repository">
     aws-solutions/centralized-logging-with-opensearch
@@ -294,21 +302,46 @@
     <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1" type="checkbox" id="__nav_1" checked>
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" checked>
       
       
-      
-        <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
+        <label class="md-nav__link" for="__nav_1">
           Implementation Guide
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="true">
+      <nav class="md-nav" aria-label="Implementation Guide" data-md-level="1">
         <label class="md-nav__title" for="__nav_1">
           <span class="md-nav__icon md-icon"></span>
           Implementation Guide
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_1" type="checkbox" id="__nav_1_1" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1_1">
+          Solution overview
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Solution overview" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_1">
+          <span class="md-nav__icon md-icon"></span>
+          Solution overview
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -332,8 +365,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cost/" class="md-nav__link">
-        Cost
+      <a href="../../solution-overview/features/" class="md-nav__link">
+        Features and benefits
       </a>
     </li>
   
@@ -346,37 +379,16 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/" class="md-nav__link">
-        Architecture Overview
+      <a href="../../solution-overview/use-cases/" class="md-nav__link">
+        Use cases
       </a>
     </li>
   
 
             
           
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../security/" class="md-nav__link">
-        Security
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../considerations/" class="md-nav__link">
-        Considerations
-      </a>
+        </ul>
+      </nav>
     </li>
   
 
@@ -391,19 +403,215 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_2" type="checkbox" id="__nav_1_2" >
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_6" >
+      
+      
+        <label class="md-nav__link" for="__nav_1_2">
+          Architecture overview
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Architecture overview" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_2">
+          <span class="md-nav__icon md-icon"></span>
+          Architecture overview
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/" class="md-nav__link">
+        Architecture diagram
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-overview/well-architected-pillars/" class="md-nav__link">
+        AWS Well-Architected pillars
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_3" type="checkbox" id="__nav_1_3" >
       
       
       
-        <label class="md-nav__link" for="__nav_1_6" id="__nav_1_6_label" tabindex="0">
+      
+        <label class="md-nav__link" for="__nav_1_3">
+          Architecture details
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Architecture details" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_3">
+          <span class="md-nav__icon md-icon"></span>
+          Architecture details
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-details/solution-components/" class="md-nav__link">
+        Solution components
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-details/services-in-this-solution/" class="md-nav__link">
+        AWS services in this solution
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_4" type="checkbox" id="__nav_1_4" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1_4">
+          Plan your deployment
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Plan your deployment" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_4">
+          <span class="md-nav__icon md-icon"></span>
+          Plan your deployment
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plan-deployment/cost/" class="md-nav__link">
+        Cost
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plan-deployment/security/" class="md-nav__link">
+        Security
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plan-deployment/considerations/" class="md-nav__link">
+        Supported AWS Regions
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_5" type="checkbox" id="__nav_1_5" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1_5">
           Deployment
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_6_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_1_6">
+      <nav class="md-nav" aria-label="Deployment" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_5">
           <span class="md-nav__icon md-icon"></span>
           Deployment
         </label>
@@ -467,21 +675,20 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_6" type="checkbox" id="__nav_1_6" >
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_7" >
       
       
-      
-        <label class="md-nav__link" for="__nav_1_7" id="__nav_1_7_label" tabindex="0">
-          Getting Started
+        <label class="md-nav__link" for="__nav_1_6">
+          Getting started
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_7_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_1_7">
+      <nav class="md-nav" aria-label="Getting started" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_6">
           <span class="md-nav__icon md-icon"></span>
-          Getting Started
+          Getting started
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -506,7 +713,7 @@
   
     <li class="md-nav__item">
       <a href="../../getting-started/1.import-domain/" class="md-nav__link">
-        Step 1. Import Domain
+        Step 1. Import domain
       </a>
     </li>
   
@@ -520,7 +727,7 @@
   
     <li class="md-nav__item">
       <a href="../../getting-started/2.create-proxy/" class="md-nav__link">
-        Step 2. Create Proxy
+        Step 2. Create proxy
       </a>
     </li>
   
@@ -534,7 +741,7 @@
   
     <li class="md-nav__item">
       <a href="../../getting-started/3.build-cloudtrail-pipeline/" class="md-nav__link">
-        Step 3. Ingest CloudTrail Logs
+        Step 3. Ingest CloudTrail logs
       </a>
     </li>
   
@@ -548,7 +755,7 @@
   
     <li class="md-nav__item">
       <a href="../../getting-started/4.view-dashboard/" class="md-nav__link">
-        Step 4. View Dashboard
+        Step 4. Access dashboard
       </a>
     </li>
   
@@ -571,21 +778,20 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_7" type="checkbox" id="__nav_1_7" >
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_8" >
       
       
-      
-        <label class="md-nav__link" for="__nav_1_8" id="__nav_1_8_label" tabindex="0">
-          Domain Management
+        <label class="md-nav__link" for="__nav_1_7">
+          Domain management
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_8_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_1_8">
+      <nav class="md-nav" aria-label="Domain management" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_7">
           <span class="md-nav__icon md-icon"></span>
-          Domain Management
+          Domain management
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -610,7 +816,7 @@
   
     <li class="md-nav__item">
       <a href="../../domains/import/" class="md-nav__link">
-        Domain Operations
+        Domain operations
       </a>
     </li>
   
@@ -624,7 +830,7 @@
   
     <li class="md-nav__item">
       <a href="../../domains/proxy/" class="md-nav__link">
-        Access Proxy
+        Access proxy
       </a>
     </li>
   
@@ -638,7 +844,7 @@
   
     <li class="md-nav__item">
       <a href="../../domains/alarms/" class="md-nav__link">
-        Alarms
+        Domain alarms
       </a>
     </li>
   
@@ -663,21 +869,20 @@
     <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_8" type="checkbox" id="__nav_1_8" checked>
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_9" checked>
       
       
-      
-        <label class="md-nav__link" for="__nav_1_9" id="__nav_1_9_label" tabindex="0">
-          AWS Services Logs
+        <label class="md-nav__link" for="__nav_1_8">
+          AWS Services logs
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_9_label" aria-expanded="true">
-        <label class="md-nav__title" for="__nav_1_9">
+      <nav class="md-nav" aria-label="AWS Services logs" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_8">
           <span class="md-nav__icon md-icon"></span>
-          AWS Services Logs
+          AWS Services logs
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -816,7 +1021,7 @@
   
     <li class="md-nav__item md-nav__item--active">
       
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
       
       
         
@@ -874,9 +1079,22 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#view-dashboard" class="md-nav__link">
+    View dashboard
+  </a>
+  
+    <nav class="md-nav" aria-label="View dashboard">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#sample-dashboard" class="md-nav__link">
     Sample Dashboard
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -905,21 +1123,20 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9" type="checkbox" id="__nav_1_9" >
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_10" >
       
       
-      
-        <label class="md-nav__link" for="__nav_1_10" id="__nav_1_10_label" tabindex="0">
-          Applications Logs
+        <label class="md-nav__link" for="__nav_1_9">
+          Applications logs
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_10_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_1_10">
+      <nav class="md-nav" aria-label="Applications logs" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_9">
           <span class="md-nav__icon md-icon"></span>
-          Applications Logs
+          Applications logs
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -946,19 +1163,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9_2" type="checkbox" id="__nav_1_9_2" >
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_10_2" >
       
       
-      
-        <label class="md-nav__link" for="__nav_1_10_2" id="__nav_1_10_2_label" tabindex="0">
+        <label class="md-nav__link" for="__nav_1_9_2">
           Prerequisites
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_1_10_2_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_1_10_2">
+      <nav class="md-nav" aria-label="Prerequisites" data-md-level="3">
+        <label class="md-nav__title" for="__nav_1_9_2">
           <span class="md-nav__icon md-icon"></span>
           Prerequisites
         </label>
@@ -1034,7 +1250,7 @@
   
     <li class="md-nav__item">
       <a href="../../applications/single-line-text/" class="md-nav__link">
-        Single-line Text
+        Single-line text
       </a>
     </li>
   
@@ -1048,7 +1264,7 @@
   
     <li class="md-nav__item">
       <a href="../../applications/multi-line-text/" class="md-nav__link">
-        Multiline-line Text
+        Multi-line text
       </a>
     </li>
   
@@ -1097,8 +1313,69 @@
   
     <li class="md-nav__item">
       <a href="../../link-account/" class="md-nav__link">
-        Cross-Account Ingestion
+        Cross-account ingestion
       </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_11" type="checkbox" id="__nav_1_11" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1_11">
+          Log pipeline monitoring
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Log pipeline monitoring" data-md-level="2">
+        <label class="md-nav__title" for="__nav_1_11">
+          <span class="md-nav__icon md-icon"></span>
+          Log pipeline monitoring
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../alarm/" class="md-nav__link">
+        Log alarms
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../monitoring/" class="md-nav__link">
+        Monitoring
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
     </li>
   
 
@@ -1139,7 +1416,7 @@
   
     <li class="md-nav__item">
       <a href="../../uninstall/" class="md-nav__link">
-        Uninstalling the Solution
+        Uninstall the solution
       </a>
     </li>
   
@@ -1155,21 +1432,20 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_15" type="checkbox" id="__nav_1_15" >
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_15" >
       
       
-      
-        <label class="md-nav__link" for="__nav_1_15" id="__nav_1_15_label" tabindex="0">
-          Resources
+        <label class="md-nav__link" for="__nav_1_15">
+          Additional resources
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_15_label" aria-expanded="false">
+      <nav class="md-nav" aria-label="Additional resources" data-md-level="2">
         <label class="md-nav__title" for="__nav_1_15">
           <span class="md-nav__icon md-icon"></span>
-          Resources
+          Additional resources
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -1180,7 +1456,7 @@
   
     <li class="md-nav__item">
       <a href="../../resources/open-ssl/" class="md-nav__link">
-        OpenSSL Installation
+        OpenSSL installation
       </a>
     </li>
   
@@ -1194,21 +1470,7 @@
   
     <li class="md-nav__item">
       <a href="../../resources/upload-ssl-certificate/" class="md-nav__link">
-        Upload Certificate
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../resources/aws-services/" class="md-nav__link">
-        AWS Services
+        Upload certificate
       </a>
     </li>
   
@@ -1228,8 +1490,22 @@
   
   
     <li class="md-nav__item">
+      <a href="../../source/" class="md-nav__link">
+        Developer guide
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../release-notes/" class="md-nav__link">
-        Release Notes
+        Revisions
       </a>
     </li>
   
@@ -1326,9 +1602,22 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#view-dashboard" class="md-nav__link">
+    View dashboard
+  </a>
+  
+    <nav class="md-nav" aria-label="View dashboard">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#sample-dashboard" class="md-nav__link">
     Sample Dashboard
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1346,8 +1635,10 @@
                 
                   
 
-  
-  
+  <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch/edit/master/docs/implementation-guide/aws-services/config.md" title="Edit this page" class="md-content__button md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
+  </a>
 
 
 <h1 id="aws-config-logs">AWS Config Logs</h1>
@@ -1397,12 +1688,12 @@
 <tbody>
 <tr>
 <td>AWS Standard Regions</td>
-<td><a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/ConfigLog.template" target="_blank"><img alt="Launch Stack" src="../../../images/launch-stack.png" /></a></td>
+<td><a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/ConfigLog.template" target="_blank"><img alt="Launch Stack" src="../../images/launch-stack.png" /></a></td>
 <td><a href="https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/ConfigLog.template">Template</a></td>
 </tr>
 <tr>
 <td>AWS China Regions</td>
-<td><a href="https://console.amazonaws.cn/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/ConfigLog.template" target="_blank"><img alt="Launch Stack" src="../../../images/launch-stack.png" /></a></td>
+<td><a href="https://console.amazonaws.cn/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/ConfigLog.template" target="_blank"><img alt="Launch Stack" src="../../images/launch-stack.png" /></a></td>
 <td><a href="https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/ConfigLog.template">Template</a></td>
 </tr>
 </tbody>
@@ -1520,12 +1811,12 @@
 <tr>
 <td>Age to Warm Storage</td>
 <td><code>&lt;Optional&gt;</code></td>
-<td>The age required to move the index into warm storage (e.g. 7d). Index age is the time between its creation and the present. Supported units are d (days) and h (hours). This is only effecitve when warm storage is enabled in OpenSearch.</td>
+<td>The age required to move the index into warm storage (e.g. 7d). Index age is the time between its creation and the present. Supported units are d (days) and h (hours). This is only effective when warm storage is enabled in OpenSearch.</td>
 </tr>
 <tr>
 <td>Age to Cold Storage</td>
 <td><code>&lt;Optional&gt;</code></td>
-<td>The age required to move the index into cold storage (e.g. 30d). Index age is the time between its creation and the present. Supported units are d (days) and h (hours). This is only effecitve when cold storage is enabled in OpenSearch.</td>
+<td>The age required to move the index into cold storage (e.g. 30d). Index age is the time between its creation and the present. Supported units are d (days) and h (hours). This is only effective when cold storage is enabled in OpenSearch.</td>
 </tr>
 <tr>
 <td>Age to Retain</td>
@@ -1572,13 +1863,101 @@
 a <strong>CREATE_COMPLETE</strong> status in approximately 10 minutes.</p>
 <!-- END INCLUDE -->
 
-<h2 id="sample-dashboard">Sample Dashboard</h2>
-<!-- BEGIN INCLUDE include-dashboard.md -->
-<p>You can access the built-in dashboard in Amazon OpenSearch to view log data. For more information, see <a href="../../getting-started/4.view-dashboard/">View Dashboard</a>.</p>
+<h2 id="view-dashboard">View dashboard</h2>
+<p>The dashboard includes the following visualizations.</p>
+<table>
+<thead>
+<tr>
+<th>Visualization Name</th>
+<th>Source Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Global Filters</td>
+<td><ul><li> awsAccountId </li><li> awsRegion </li><li>resourceType </li><li> resourceId </li><li> resourceName </li></ul></td>
+<td>The charts are filtered according to Account ID, Region, Resource Type and other conditions.</td>
+</tr>
+<tr>
+<td>Total Change Events</td>
+<td><ul><li> log event </li></ul></td>
+<td>Shows the number of configuration changes detected across all AWS resources during a selected time period.</td>
+</tr>
+<tr>
+<td>Top Resource Types</td>
+<td><ul><li> resourceType </li></ul></td>
+<td>Displays the breakdown of configuration changes by the most frequently modified AWS resource types during a selected time period.</td>
+</tr>
+<tr>
+<td>Config History</td>
+<td><ul><li> log event </li></ul></td>
+<td>Presents a bar chart that displays the distribution of events over time.</td>
+</tr>
+<tr>
+<td>Total Delete Events</td>
+<td><ul><li> log event </li></ul></td>
+<td>Shows the number of AWS resource deletion events detected by AWS Config during a selected time period.</td>
+</tr>
+<tr>
+<td>Config Status</td>
+<td><ul><li> configurationItemStatus </li></ul></td>
+<td>Displays the operational state of the AWS Config service across monitored regions and accounts.</td>
+</tr>
+<tr>
+<td>Top S3 Changes</td>
+<td><ul><li> resourceName</li></ul></td>
+<td>Displays the Amazon S3 buckets undergoing the highest number of configuration changes during a selected time period.</td>
+</tr>
+<tr>
+<td>Top Changed Resources</td>
+<td><ul><li> resourceName</li><li> resourceId</li><li> resourceType</li></ul></td>
+<td>Displays the individual AWS resources undergoing the highest number of configuration changes during a selected time period.</td>
+</tr>
+<tr>
+<td>Top VPC Changes</td>
+<td><ul><li> resourceId</li></ul></td>
+<td>Presents a bar chart that Displays the Amazon VPCs undergoing the highest number of configuration changes during a selected time period.</td>
+</tr>
+<tr>
+<td>Top Subnet Changes</td>
+<td><ul><li> resourceId</li></ul></td>
+<td>Delivers targeted visibility into the subnets undergoing the most transformation for governance, security and stability.</td>
+</tr>
+<tr>
+<td>Top Network Interface Changes</td>
+<td><ul><li> resourceId</li></ul></td>
+<td>Spotlights the Amazon VPC network interfaces seeing the most configuration changes during a selected period.</td>
+</tr>
+<tr>
+<td>Top Security Group Changes</td>
+<td><ul><li> resourceId</li></ul></td>
+<td>Top 10 changed groups rank by total modification count.</td>
+</tr>
+<tr>
+<td>EC2 Config</td>
+<td><ul><li>@timestamp</li><li>awsAccountId</li><li>awsRegion</li><li>resourceId</li><li>configurationItemStatus</li></ul></td>
+<td>Allows reconstructing the incremental changes applied to EC2 configurations over time for auditing.</td>
+</tr>
+<tr>
+<td>RDS Config</td>
+<td><ul><li>@timestamp</li><li>awsAccountId</li><li>awsRegion</li><li>resourceId</li><li>resourceName</li><li>configurationItemStatus</li></ul></td>
+<td>Shows the configuration history and changes detected by AWS Config for RDS database resources</td>
+</tr>
+<tr>
+<td>Latest Config Changes</td>
+<td><ul><li>@timestamp</li><li>awsAccountId</li><li>awsRegion</li><li>resourceType</li><li>resourceId</li><li>resourceName</li><li>relationships</li><li>configurationItemStatus</li></ul></td>
+<td>Offers an at-a-glance overview of infrastructure modifications.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="sample-dashboard">Sample Dashboard</h3>
+<!-- BEGIN INCLUDE ../include-dashboard.md -->
+<p>You can access the built-in dashboard in Amazon OpenSearch to view log data. For more information, see <a href="../../getting-started/4.view-dashboard/">Access Dashboard</a>.</p>
 <p>You can click the below image to view the high-resolution sample dashboard.</p>
 <!-- END INCLUDE -->
 
-<p><a href="../../../images/dashboards/config-db.png"><img alt="config-db" src="../../../images/dashboards/config-db.png" /></a></p>
+<p><a href="../../images/dashboards/config-db.png"><img alt="config-db" src="../../images/dashboards/config-db.png" /></a></p>
 
 
 
@@ -1594,6 +1973,42 @@ a <strong>CREATE_COMPLETE</strong> status in approximately 10 minutes.</p>
       </main>
       
         <footer class="md-footer">
+  
+    
+    <nav class="md-footer__inner md-grid" aria-label="Footer" >
+      
+        
+        <a href="../vpc/" class="md-footer__link md-footer__link--prev" aria-label="Previous: VPC Flow Log" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              VPC Flow Log
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../../applications/" class="md-footer__link md-footer__link--next" aria-label="Next: Overview" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Overview
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
@@ -1611,10 +2026,10 @@ a <strong>CREATE_COMPLETE</strong> status in approximately 10 minutes.</p>
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.74e28a9f.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "latest"}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": "latest"}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.220ee61c.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.37e9125f.min.js"></script>
       
     
   </body>
