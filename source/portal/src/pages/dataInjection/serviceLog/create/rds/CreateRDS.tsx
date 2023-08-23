@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React, { useState, useEffect } from "react";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import CreateStep from "components/CreateStep";
 import SpecifySettings from "./steps/SpecifySettings";
 import SpecifyOpenSearchCluster, {
@@ -22,13 +22,20 @@ import SpecifyOpenSearchCluster, {
   checkOpenSearchInput,
   covertParametersByKeyAndConditions,
 } from "../common/SpecifyCluster";
-import CreateTags from "../common/CreateTags";
 import Button from "components/Button";
 
 import Breadcrumb from "components/Breadcrumb";
 import { appSyncRequestMutation } from "assets/js/request";
 import { createServicePipeline } from "graphql/mutations";
-import { CODEC, DestinationType, EngineType, ServiceType, Tag } from "API";
+import {
+  Codec,
+  DestinationType,
+  EngineType,
+  ServiceType,
+  MonitorInput,
+  DomainStatusCheckType,
+  DomainStatusCheckResponse,
+} from "API";
 import {
   WarmTransitionType,
   YesNo,
@@ -46,9 +53,19 @@ import {
 } from "assets/js/const";
 import HelpPanel from "components/HelpPanel";
 import SideMenu from "components/SideMenu";
-import { AppStateProps } from "reducer/appReducer";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
+import { MONITOR_ALARM_INIT_DATA } from "assets/js/init";
+import AlarmAndTags from "../../../../pipelineAlarm/AlarmAndTags";
+import { Actions, RootState } from "reducer/reducers";
+import { useTags } from "assets/js/hooks/useTags";
+import { Dispatch } from "redux";
+import { useAlarm } from "assets/js/hooks/useAlarm";
+import { ActionType } from "reducer/appReducer";
+import {
+  CreateAlarmActionTypes,
+  validateAalrmInput,
+} from "reducer/createAlarm";
 
 const EXCLUDE_PARAMS = [
   "esDomainId",
@@ -73,7 +90,6 @@ const EXCLUDE_PARAMS = [
 ];
 export interface RDSTaskProps {
   type: ServiceType;
-  tags: Tag[];
   source: string;
   target: string;
   logSourceAccountId: string;
@@ -125,13 +141,13 @@ export interface RDSTaskProps {
 
     rolloverSizeNotSupport: boolean;
   };
+  monitor: MonitorInput;
 }
 
 const DEFAULT_TASK_VALUE: RDSTaskProps = {
   type: ServiceType.RDS,
   source: "",
   target: "",
-  tags: [],
   logSourceAccountId: "",
   logSourceRegion: "",
   destinationType: DestinationType.CloudWatch,
@@ -175,11 +191,12 @@ const DEFAULT_TASK_VALUE: RDSTaskProps = {
     retainAge: "180",
     rolloverSize: "30",
     indexSuffix: SERVICE_LOG_INDEX_SUFFIX.yyyy_MM_dd,
-    codec: CODEC.best_compression,
+    codec: Codec.best_compression,
     refreshInterval: "1s",
 
     rolloverSizeNotSupport: false,
   },
+  monitor: MONITOR_ALARM_INIT_DATA,
 };
 
 const CreateRDS: React.FC = () => {
@@ -198,11 +215,12 @@ const CreateRDS: React.FC = () => {
   ];
 
   const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: AppStateProps) => state.amplifyConfig
+    (state: RootState) => state.app.amplifyConfig
   );
+  const dispatch = useDispatch<Dispatch<Actions>>();
 
   const [curStep, setCurStep] = useState(0);
-  const history = useHistory();
+  const navigate = useNavigate();
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [rdsPipelineTask, setRDSPipelineTask] =
     useState<RDSTaskProps>(DEFAULT_TASK_VALUE);
@@ -226,6 +244,57 @@ const CreateRDS: React.FC = () => {
     indexEmptyError: false,
     indexNameFormatError: false,
   });
+  const [domainCheckStatus, setDomainCheckStatus] =
+    useState<DomainStatusCheckResponse>();
+
+  const tags = useTags();
+  const monitor = useAlarm();
+
+  const getGroupNamesForAutomatic = () => {
+    // Add logGroupNames by User Select
+    const groupNames: string[] = [];
+    if (rdsPipelineTask.params.errorLogEnable) {
+      groupNames.push(
+        rdsPipelineTask.params.autoLogGroupPrefix + RDS_LOG_GROUP_SUFFIX_ERROR
+      );
+    }
+    if (rdsPipelineTask.params.queryLogEnable) {
+      groupNames.push(
+        rdsPipelineTask.params.autoLogGroupPrefix +
+          RDS_LOG_GROUP_SUFFIX_SLOWQUERY
+      );
+    }
+    if (rdsPipelineTask.params.generalLogEnable) {
+      groupNames.push(
+        rdsPipelineTask.params.autoLogGroupPrefix + RDS_LOG_GROUP_SUFFIX_GENERAL
+      );
+    }
+    if (rdsPipelineTask.params.auditLogEnable) {
+      groupNames.push(
+        rdsPipelineTask.params.autoLogGroupPrefix + RDS_LOG_GROUP_SUFFIX_AUDIT
+      );
+    }
+    return groupNames;
+  };
+
+  const getGroupNamesForManual = () => {
+    // Add logGroupNames by User Select
+    const groupNames: string[] = [];
+    // Add logGroupNames by User Select
+    if (rdsPipelineTask.params.errorLogEnable) {
+      groupNames.push(rdsPipelineTask.params.errorLogARN);
+    }
+    if (rdsPipelineTask.params.queryLogEnable) {
+      groupNames.push(rdsPipelineTask.params.queryLogARN);
+    }
+    if (rdsPipelineTask.params.generalLogEnable) {
+      groupNames.push(rdsPipelineTask.params.generalLogARN);
+    }
+    if (rdsPipelineTask.params.auditLogEnable) {
+      groupNames.push(rdsPipelineTask.params.auditLogARN);
+    }
+    return groupNames;
+  };
 
   const confirmCreatePipeline = async () => {
     console.info("rdsPipelineTask:", rdsPipelineTask);
@@ -233,11 +302,13 @@ const CreateRDS: React.FC = () => {
     createPipelineParams.type = ServiceType.RDS;
     createPipelineParams.source = rdsPipelineTask.source;
     createPipelineParams.target = rdsPipelineTask.target;
-    createPipelineParams.tags = rdsPipelineTask.tags;
+    createPipelineParams.tags = tags;
     createPipelineParams.logSourceAccountId =
       rdsPipelineTask.logSourceAccountId;
     createPipelineParams.logSourceRegion = amplifyConfig.aws_project_region;
     createPipelineParams.destinationType = rdsPipelineTask.destinationType;
+
+    createPipelineParams.monitor = monitor.monitor;
 
     const tmpParamList: any = covertParametersByKeyAndConditions(
       rdsPipelineTask,
@@ -245,48 +316,16 @@ const CreateRDS: React.FC = () => {
     );
 
     // Automatic Task
-    const tmpLogGroupNameArr: string[] = [];
+    let tmpLogGroupNameArr: string[] = [];
     if (rdsPipelineTask.params.taskType === CreateLogMethod.Automatic) {
-      // Add logGroupNames by User Select
-      if (rdsPipelineTask.params.errorLogEnable) {
-        tmpLogGroupNameArr.push(
-          rdsPipelineTask.params.autoLogGroupPrefix + RDS_LOG_GROUP_SUFFIX_ERROR
-        );
-      }
-      if (rdsPipelineTask.params.queryLogEnable) {
-        tmpLogGroupNameArr.push(
-          rdsPipelineTask.params.autoLogGroupPrefix +
-            RDS_LOG_GROUP_SUFFIX_SLOWQUERY
-        );
-      }
-      if (rdsPipelineTask.params.generalLogEnable) {
-        tmpLogGroupNameArr.push(
-          rdsPipelineTask.params.autoLogGroupPrefix +
-            RDS_LOG_GROUP_SUFFIX_GENERAL
-        );
-      }
-      if (rdsPipelineTask.params.auditLogEnable) {
-        tmpLogGroupNameArr.push(
-          rdsPipelineTask.params.autoLogGroupPrefix + RDS_LOG_GROUP_SUFFIX_AUDIT
-        );
-      }
+      tmpLogGroupNameArr = tmpLogGroupNameArr.concat(
+        getGroupNamesForAutomatic()
+      );
     }
 
     // Manual Task
     if (rdsPipelineTask.params.taskType === CreateLogMethod.Manual) {
-      // Add logGroupNames by User Select
-      if (rdsPipelineTask.params.errorLogEnable) {
-        tmpLogGroupNameArr.push(rdsPipelineTask.params.errorLogARN);
-      }
-      if (rdsPipelineTask.params.queryLogEnable) {
-        tmpLogGroupNameArr.push(rdsPipelineTask.params.queryLogARN);
-      }
-      if (rdsPipelineTask.params.generalLogEnable) {
-        tmpLogGroupNameArr.push(rdsPipelineTask.params.generalLogARN);
-      }
-      if (rdsPipelineTask.params.auditLogEnable) {
-        tmpLogGroupNameArr.push(rdsPipelineTask.params.auditLogARN);
-      }
+      tmpLogGroupNameArr = tmpLogGroupNameArr.concat(getGroupNamesForManual());
     }
 
     // Add logGroupNames
@@ -316,9 +355,7 @@ const CreateRDS: React.FC = () => {
       );
       console.info("createRes:", createRes);
       setLoadingCreate(false);
-      history.push({
-        pathname: "/log-pipeline/service-log",
-      });
+      navigate("/log-pipeline/service-log");
     } catch (error) {
       setLoadingCreate(false);
       console.error(error);
@@ -326,8 +363,55 @@ const CreateRDS: React.FC = () => {
   };
 
   useEffect(() => {
-    console.info("rdsPipelineTask:", rdsPipelineTask);
-  }, [rdsPipelineTask]);
+    dispatch({ type: ActionType.CLOSE_SIDE_MENU });
+  }, []);
+
+  const validateStep0 = () => {
+    if (nextStepDisable) {
+      return false;
+    }
+    if (rdsPipelineTask?.params?.taskType === CreateLogMethod.Automatic) {
+      if (!rdsPipelineTask?.params?.rdsObj) {
+        setAutoRDSEmptyError(true);
+        return false;
+      }
+    }
+    if (rdsPipelineTask?.params?.taskType === CreateLogMethod.Manual) {
+      if (!rdsPipelineTask?.params?.manualDBIdentifier) {
+        setManualRDSEmpryError(true);
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const validateStep1 = () => {
+    if (!rdsPipelineTask?.params?.domainName) {
+      setEsDomainEmptyError(true);
+      return false;
+    } else {
+      setEsDomainEmptyError(false);
+    }
+    const validRes = checkOpenSearchInput(rdsPipelineTask);
+    setAosInputValidRes(validRes);
+    if (Object.values(validRes).indexOf(true) >= 0) {
+      return false;
+    }
+    // Check domain connection status
+    if (domainCheckStatus?.status !== DomainStatusCheckType.PASSED) {
+      return false;
+    }
+    return true;
+  };
+
+  const isNextDisabled = () => {
+    return (
+      rdsIsChanging ||
+      domainListIsLoading ||
+      (curStep === 1 &&
+        domainCheckStatus?.status !== DomainStatusCheckType.PASSED)
+    );
+  };
 
   return (
     <div className="lh-main-content">
@@ -351,40 +435,6 @@ const CreateRDS: React.FC = () => {
                     },
                   ]}
                   activeIndex={curStep}
-                  selectStep={(step: number) => {
-                    if (curStep === 0) {
-                      if (nextStepDisable || rdsIsChanging) {
-                        return;
-                      }
-                      if (
-                        rdsPipelineTask.params.taskType ===
-                        CreateLogMethod.Automatic
-                      ) {
-                        if (!rdsPipelineTask.params.rdsObj) {
-                          setAutoRDSEmptyError(true);
-                          return;
-                        }
-                      }
-                      if (
-                        rdsPipelineTask.params.taskType ===
-                        CreateLogMethod.Manual
-                      ) {
-                        if (!rdsPipelineTask.params.manualDBIdentifier) {
-                          setManualRDSEmpryError(true);
-                          return;
-                        }
-                      }
-                    }
-                    if (curStep === 1) {
-                      if (!rdsPipelineTask.params.domainName) {
-                        setEsDomainEmptyError(true);
-                        return;
-                      } else {
-                        setEsDomainEmptyError(false);
-                      }
-                    }
-                    setCurStep(step);
-                  }}
                 />
               </div>
               <div className="create-content m-w-800">
@@ -828,25 +878,33 @@ const CreateRDS: React.FC = () => {
                         };
                       });
                     }}
+                    domainCheckedStatus={domainCheckStatus}
+                    changeOSDomainCheckStatus={(status) => {
+                      setRDSPipelineTask((prev: RDSTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            replicaNumbers: status.multiAZWithStandbyEnabled
+                              ? "2"
+                              : "1",
+                          },
+                        };
+                      });
+                      setDomainCheckStatus(status);
+                    }}
                   />
                 )}
                 {curStep === 2 && (
-                  <CreateTags
-                    pipelineTask={rdsPipelineTask}
-                    changeTags={(tags) => {
-                      setRDSPipelineTask((prev: RDSTaskProps) => {
-                        return { ...prev, tags: tags };
-                      });
-                    }}
-                  />
+                  <div>
+                    <AlarmAndTags pipelineTask={rdsPipelineTask} />
+                  </div>
                 )}
                 <div className="button-action text-right">
                   <Button
                     btnType="text"
                     onClick={() => {
-                      history.push({
-                        pathname: "/log-pipeline/service-log/create",
-                      });
+                      navigate("/log-pipeline/service-log/create");
                     }}
                   >
                     {t("button.cancel")}
@@ -865,43 +923,16 @@ const CreateRDS: React.FC = () => {
 
                   {curStep < 2 && (
                     <Button
-                      disabled={rdsIsChanging || domainListIsLoading}
+                      disabled={isNextDisabled()}
                       btnType="primary"
                       onClick={() => {
                         if (curStep === 0) {
-                          if (nextStepDisable) {
+                          if (!validateStep0()) {
                             return;
-                          }
-                          if (
-                            rdsPipelineTask.params.taskType ===
-                            CreateLogMethod.Automatic
-                          ) {
-                            if (!rdsPipelineTask.params.rdsObj) {
-                              setAutoRDSEmptyError(true);
-                              return;
-                            }
-                          }
-                          if (
-                            rdsPipelineTask.params.taskType ===
-                            CreateLogMethod.Manual
-                          ) {
-                            if (!rdsPipelineTask.params.manualDBIdentifier) {
-                              setManualRDSEmpryError(true);
-                              return;
-                            }
                           }
                         }
                         if (curStep === 1) {
-                          if (!rdsPipelineTask.params.domainName) {
-                            setEsDomainEmptyError(true);
-                            return;
-                          } else {
-                            setEsDomainEmptyError(false);
-                          }
-                          const validRes =
-                            checkOpenSearchInput(rdsPipelineTask);
-                          setAosInputValidRes(validRes);
-                          if (Object.values(validRes).indexOf(true) >= 0) {
+                          if (!validateStep1()) {
                             return;
                           }
                         }
@@ -918,6 +949,12 @@ const CreateRDS: React.FC = () => {
                       loading={loadingCreate}
                       btnType="primary"
                       onClick={() => {
+                        if (!validateAalrmInput(monitor)) {
+                          dispatch({
+                            type: CreateAlarmActionTypes.VALIDATE_ALARM_INPUT,
+                          });
+                          return;
+                        }
                         confirmCreatePipeline();
                       }}
                     >

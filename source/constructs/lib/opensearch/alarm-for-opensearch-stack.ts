@@ -39,20 +39,35 @@ import { CfnAlarm } from "aws-cdk-lib/aws-cloudwatch";
 
 const { VERSION } = process.env;
 
-//function to create alarm base on conditions
-function createOpenSearchAlarm(
-  stack: Stack,
-  domain: opensearch.IDomain,
+type CreateOpenSearchAlarmProps = {
   nameOfMetric: string,
   nameOfAlarm: string,
   evaluationPeriods: number,
   threshold: number,
-  statistics: string,
+  statistics: "average" | "minimum" | "maximum",
   periodInSeconds: number,
   comparisonOperator: cloudwatch.ComparisonOperator,
   topic: sns.Topic,
   enabled: CfnCondition
+}
+
+//function to create alarm base on conditions
+function createOpenSearchAlarm(
+  stack: Stack,
+  domain: opensearch.IDomain,
+  props: CreateOpenSearchAlarmProps
 ) {
+  const {
+    nameOfMetric,
+    nameOfAlarm,
+    evaluationPeriods,
+    threshold,
+    statistics,
+    periodInSeconds,
+    comparisonOperator,
+    topic,
+    enabled,
+  } = props;
   const metric = domain.metric(`${nameOfMetric}`).with({
     statistic: statistics,
     period: Duration.seconds(periodInSeconds),
@@ -103,7 +118,7 @@ function createSubscription(
   region: string,
   topic: sns.Topic
 ) {
-  new sns.Subscription(stack, `${name}Subscription`, {
+  return new sns.Subscription(stack, `${name}Subscription`, {
     protocol: protocol,
     endpoint: endpoint,
     region: region,
@@ -425,15 +440,17 @@ export class AlarmForOpenSearchStack extends Stack {
     createOpenSearchAlarm(
       this,
       domain,
-      "ClusterStatus.red",
-      "ClusterStatus.red",
-      1, //evaluationPeriods
-      1, //threshold
-      "average", //statistics
-      60, //periodInSeconds
-      cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
-      topic,
-      ClusterStatusRedNotEnabled
+      {
+        nameOfMetric: "ClusterStatus.red",
+        nameOfAlarm: "ClusterStatus.red",
+        evaluationPeriods: 1,
+        threshold: 1,
+        statistics: "average",
+        periodInSeconds: 60,
+        comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        topic,
+        enabled: ClusterStatusRedNotEnabled
+      },
     );
 
     // Create alarm for ClusterStatus.yellow metrics
@@ -451,15 +468,17 @@ export class AlarmForOpenSearchStack extends Stack {
     createOpenSearchAlarm(
       this,
       domain,
-      "ClusterStatus.yellow",
-      "ClusterStatus.yellow",
-      1, //evaluationPeriods
-      1, //threshold
-      "average", //statistics
-      60, //periodInSeconds
-      cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
-      topic,
-      ClusterStatusYellowNotEnabled
+      {
+        nameOfMetric: "ClusterStatus.yellow",
+        nameOfAlarm: "ClusterStatus.yellow",
+        evaluationPeriods: 1,
+        threshold: 1,
+        statistics: "average",
+        periodInSeconds: 60,
+        comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        topic,
+        enabled: ClusterStatusYellowNotEnabled
+      },
     );
 
     // Create alarm for FreeStorageSpace metrics
@@ -477,15 +496,17 @@ export class AlarmForOpenSearchStack extends Stack {
     createOpenSearchAlarm(
       this,
       domain,
-      "FreeStorageSpace",
-      "FreeStorageSpace",
-      1, //evaluationPeriods
-      freeStorageSpace.valueAsNumber, //threshold
-      "minimum", //statistics
-      60, //periodInSeconds
-      cloudwatch.ComparisonOperator.LESS_THAN_OR_EQUAL_TO_THRESHOLD,
-      topic,
-      FreeStorageSpaceNotEnabled
+      {
+        nameOfMetric: "FreeStorageSpace",
+        nameOfAlarm: "FreeStorageSpace",
+        evaluationPeriods: 1,
+        threshold: freeStorageSpace.valueAsNumber,
+        statistics: "minimum",
+        periodInSeconds: 60,
+        comparisonOperator: cloudwatch.ComparisonOperator.LESS_THAN_OR_EQUAL_TO_THRESHOLD,
+        topic,
+        enabled: FreeStorageSpaceNotEnabled
+      },
     );
 
     // Create alarm for ClusterIndexWritesBlocked metrics
@@ -503,15 +524,17 @@ export class AlarmForOpenSearchStack extends Stack {
     createOpenSearchAlarm(
       this,
       domain,
-      "ClusterIndexWritesBlocked",
-      "ClusterIndexWritesBlocked",
-      1, //evaluationPeriods
-      clusterIndexWritesBlocked.valueAsNumber, //threshold
-      "average", //statistics
-      300, //periodInSeconds
-      cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
-      topic,
-      ClusterIndexWritesBlockedNotEnabled
+      {
+        nameOfMetric: "ClusterIndexWritesBlocked",
+        nameOfAlarm: "ClusterIndexWritesBlocked",
+        evaluationPeriods: 1,
+        threshold: clusterIndexWritesBlocked.valueAsNumber,
+        statistics: "average",
+        periodInSeconds: 300,
+        comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        topic,
+        enabled: ClusterIndexWritesBlockedNotEnabled,
+      },
     );
 
     // Create alarm for Nodes metrics
@@ -525,15 +548,17 @@ export class AlarmForOpenSearchStack extends Stack {
     createOpenSearchAlarm(
       this,
       domain,
-      "Nodes",
-      "Nodes",
-      1, //evaluationPeriods
-      unreachableNodeNumber.valueAsNumber, //threshold
-      "minimum", //statistics
-      86400, //periodInSeconds
-      cloudwatch.ComparisonOperator.LESS_THAN_THRESHOLD,
-      topic,
-      NodesNotEnabled
+      {
+        nameOfMetric: "Nodes",
+        nameOfAlarm: "Nodes",
+        evaluationPeriods: 1,
+        threshold: unreachableNodeNumber.valueAsNumber,
+        statistics: "minimum",
+        periodInSeconds: 86400,
+        comparisonOperator: cloudwatch.ComparisonOperator.LESS_THAN_THRESHOLD,
+        topic,
+        enabled: NodesNotEnabled,
+      },
     );
 
     // Create alarm for AutomatedSnapshotFailure metrics
@@ -551,15 +576,17 @@ export class AlarmForOpenSearchStack extends Stack {
     createOpenSearchAlarm(
       this,
       domain,
-      "AutomatedSnapshotFailure",
-      "AutomatedSnapshotFailure",
-      1, //evaluationPeriods
-      1, //threshold
-      "maximum", //statistics
-      60, //periodInSeconds
-      cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
-      topic,
-      AutomatedSnapshotFailureNotEnabled
+      {
+        nameOfMetric: "AutomatedSnapshotFailure",
+        nameOfAlarm: "AutomatedSnapshotFailure",
+        evaluationPeriods: 1,
+        threshold: 1,
+        statistics: "maximum",
+        periodInSeconds: 60,
+        comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        topic,
+        enabled: AutomatedSnapshotFailureNotEnabled,
+      },
     );
 
     // Create alarm for CPUUtilization or WarmCPUUtilization metrics
@@ -577,29 +604,33 @@ export class AlarmForOpenSearchStack extends Stack {
     createOpenSearchAlarm(
       this,
       domain,
-      "CPUUtilization",
-      "CPUUtilization",
-      3, //evaluationPeriods
-      80, //threshold
-      "average", //statistics
-      300, //periodInSeconds
-      cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
-      topic,
-      CPUUtilizationNotEnabled
+      {
+        nameOfMetric: "CPUUtilization",
+        nameOfAlarm: "CPUUtilization",
+        evaluationPeriods: 3,
+        threshold: 80,
+        statistics: "average",
+        periodInSeconds: 300,
+        comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        topic,
+        enabled: CPUUtilizationNotEnabled,
+      },
     );
 
     createOpenSearchAlarm(
       this,
       domain,
-      "WarmCPUUtilization",
-      "WarmCPUUtilization",
-      3, //evaluationPeriods
-      80, //threshold
-      "average", //statistics
-      900, //periodInSeconds
-      cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
-      topic,
-      CPUUtilizationNotEnabled
+      {
+        nameOfMetric: "WarmCPUUtilization",
+        nameOfAlarm: "WarmCPUUtilization",
+        evaluationPeriods: 3,
+        threshold: 80,
+        statistics: "average",
+        periodInSeconds: 900,
+        comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        topic,
+        enabled: CPUUtilizationNotEnabled,
+      },
     );
 
     // Create alarm for JVMMemoryPressure or WarmJVMMemoryPressure metrics
@@ -617,28 +648,32 @@ export class AlarmForOpenSearchStack extends Stack {
     createOpenSearchAlarm(
       this,
       domain,
-      "JVMMemoryPressure",
-      "JVMMemoryPressure",
-      3, //evaluationPeriods
-      80, //threshold
-      "average", //statistics
-      300, //periodInSeconds
-      cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
-      topic,
-      JVMMemoryPressureNotEnabled
+      {
+        nameOfMetric: "JVMMemoryPressure",
+        nameOfAlarm: "JVMMemoryPressure",
+        evaluationPeriods: 3,
+        threshold: 80,
+        statistics: "average",
+        periodInSeconds: 300,
+        comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        topic,
+        enabled: JVMMemoryPressureNotEnabled,
+      },
     );
     createOpenSearchAlarm(
       this,
       domain,
-      "WarmJVMMemoryPressure",
-      "WarmJVMMemoryPressure",
-      3, //evaluationPeriods
-      80, //threshold
-      "average", //statistics
-      300, //periodInSeconds
-      cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
-      topic,
-      JVMMemoryPressureNotEnabled
+      {
+        nameOfMetric: "WarmJVMMemoryPressure",
+        nameOfAlarm: "WarmJVMMemoryPressure",
+        evaluationPeriods: 3,
+        threshold: 80,
+        statistics: "average",
+        periodInSeconds: 300,
+        comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        topic,
+        enabled: JVMMemoryPressureNotEnabled,
+      },
     );
 
     // Create alarm for MasterCPUUtilization metrics
@@ -656,15 +691,17 @@ export class AlarmForOpenSearchStack extends Stack {
     createOpenSearchAlarm(
       this,
       domain,
-      "MasterCPUUtilization",
-      "MasterCPUUtilization",
-      3, //evaluationPeriods
-      50, //threshold
-      "average", //statistics
-      900, //periodInSeconds
-      cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
-      topic,
-      MasterCPUUtilizationNotEnabled
+      {
+        nameOfMetric: "MasterCPUUtilization",
+        nameOfAlarm: "MasterCPUUtilization",
+        evaluationPeriods: 3,
+        threshold: 50,
+        statistics: "average",
+        periodInSeconds: 900,
+        comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        topic,
+        enabled: MasterCPUUtilizationNotEnabled,
+      },
     );
 
     // Create alarm for MasterJVMMemoryPressure metrics
@@ -682,15 +719,17 @@ export class AlarmForOpenSearchStack extends Stack {
     createOpenSearchAlarm(
       this,
       domain,
-      "MasterJVMMemoryPressure",
-      "MasterJVMMemoryPressure",
-      1, //evaluationPeriods
-      80, //threshold
-      "average", //statistics
-      900, //periodInSeconds
-      cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
-      topic,
-      MasterJVMMemoryPressureNotEnabled
+      {
+        nameOfMetric: "MasterJVMMemoryPressure",
+        nameOfAlarm: "MasterJVMMemoryPressure",
+        evaluationPeriods: 1,
+        threshold: 80,
+        statistics: "average",
+        periodInSeconds: 900,
+        comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        topic,
+        enabled: MasterJVMMemoryPressureNotEnabled,
+      },
     );
 
     // Create alarm for KMSKeyError metrics
@@ -708,15 +747,17 @@ export class AlarmForOpenSearchStack extends Stack {
     createOpenSearchAlarm(
       this,
       domain,
-      "KMSKeyError",
-      "KMSKeyError",
-      1, //evaluationPeriods
-      1, //threshold
-      "average", //statistics
-      60, //periodInSeconds
-      cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
-      topic,
-      KMSKeyErrorNotEnabled
+      {
+        nameOfMetric: "KMSKeyError",
+        nameOfAlarm: "KMSKeyError",
+        evaluationPeriods: 1,
+        threshold: 1,
+        statistics: "average",
+        periodInSeconds: 60,
+        comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        topic,
+        enabled: KMSKeyErrorNotEnabled,
+      },
     );
 
     // Create alarm for KMSKeyInaccessible metrics
@@ -734,15 +775,17 @@ export class AlarmForOpenSearchStack extends Stack {
     createOpenSearchAlarm(
       this,
       domain,
-      "KMSKeyInaccessible",
-      "KMSKeyInaccessible",
-      1, //evaluationPeriods
-      1, //threshold
-      "average", //statistics
-      60, //periodInSeconds
-      cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
-      topic,
-      KMSKeyInaccessibleNotEnabled
+      {
+        nameOfMetric: "KMSKeyInaccessible",
+        nameOfAlarm: "KMSKeyInaccessible",
+        evaluationPeriods: 1,
+        threshold: 1,
+        statistics: "average",
+        periodInSeconds: 60,
+        comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        topic,
+        enabled: KMSKeyInaccessibleNotEnabled,
+      },
     );
   }
 }

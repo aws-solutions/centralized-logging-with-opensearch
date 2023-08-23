@@ -4,11 +4,13 @@ The Centralized Logging with OpenSearch solution provides comprehensive log mana
 
 ## Table of content
 
-- [Solution Overview](#solution-overview)
-- [Architecture](#architecture)
-- [Deployment](#deployment)
-- [Customization](#customization)
-- [License](#License)
+- [Centralized Logging with OpenSearch](#centralized-logging-with-opensearch)
+  - [Table of content](#table-of-content)
+  - [Solution Overview](#solution-overview)
+  - [Architecture](#architecture)
+  - [Deployment](#deployment)
+  - [Customization](#customization)
+  - [Collection of operational metrics](#collection-of-operational-metrics)
 
 
 ## Solution Overview
@@ -17,9 +19,9 @@ The solution has the following features:
 
 - **All-in-one log ingestion**: provides a single web console to ingest both application logs and AWS service logs into the Amazon OpenSearch (AOS) domains.
 
-- **Codeless log processor**: supports log processor plugins developed by AWS. You are allowed to enrich the raw log data through a few clicks on the web console. 
+- **Codeless log processor**: supports log processor plugins developed by AWS. You are allowed to enrich the raw log data through a few clicks on the web console.
 
-- **Out-of-box dashboard template**: offers a collection of reference designs of visualization templates, for both commonly used software such as Nginx and Apache HTTP Server, and AWS services such as Amazon S3 and Amazon CloudTrail. 
+- **Out-of-box dashboard template**: offers a collection of reference designs of visualization templates, for both commonly used software such as Nginx and Apache HTTP Server, and AWS services such as Amazon S3 and Amazon CloudTrail.
 
 
 
@@ -40,7 +42,11 @@ Please follow the [Implementation Guide](https://docs.aws.amazon.com/solutions/l
 Please follow the [Customization Guide](CUSTOM_BUILD.md) for custom build.
 
 
-## License
+## Collection of operational metrics
+
+This solution collects anonymous operational metrics to help AWS improve the quality and features of the solution. For more information, including how to disable this capability, please see the [implementation guide](https://docs.aws.amazon.com/solutions/latest/centralized-logging-with-opensearch/collection-of-operational-metrics.html).
+
+***
 
 Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 

@@ -14,7 +14,7 @@ from io import StringIO
 import boto3
 
 from typing import Dict
-from util.osutil import OpenSearch
+from commonlib.opensearch import OpenSearchUtil, Engine
 from util.helper import tsv2json, fillna
 from util import log_parser
 from config import FIELD_NAMES
@@ -28,6 +28,8 @@ BULK_BATCH_SIZE = 20000
 DEFAULT_BULK_BATCH_SIZE = 20000
 BULK_ACTION = "index"
 
+ERROR_UNABLE_TO_PARSE_LOG_RECORDS = "Unable to parse log records: %s"
+
 batch_size = int(os.environ.get("BULK_BATCH_SIZE", DEFAULT_BULK_BATCH_SIZE))
 backup_bucket_name = os.environ.get("BACKUP_BUCKET_NAME")
 
@@ -36,22 +38,26 @@ endpoint = os.environ.get("ENDPOINT")
 default_region = os.environ.get("AWS_REGION")
 log_type = os.environ.get("LOG_TYPE", "")
 log_format = os.environ.get("LOG_FORMAT")
-engine = os.environ.get("ENGINE")
+engine = os.environ.get("ENGINE", "OpenSearch")
 source = os.environ.get("SOURCE", "KDS")
+stack_name = os.environ.get("STACK_NAME", "")
+
+IS_APP_PIPELINE = "apppipe" in stack_name.lower()
+IS_SVC_PIPELINE = not IS_APP_PIPELINE
 
 s3 = boto3.resource("s3", region_name=default_region)
 
-aos = OpenSearch(
+aos = OpenSearchUtil(
     region=default_region,
     endpoint=endpoint.strip("https://"),
     index_prefix=index_prefix,
-    engine=engine,
+    engine=Engine(engine),
     log_type=log_type,
 )
+aos.index_name_has_log_type_suffix(IS_SVC_PIPELINE)
 
 
 def process_msk_event(event):
-
     if "eventSource" not in event or event["eventSource"] != "aws:kafka":
         logger.error("Unknown event source, expected event source is Kafka")
         return
@@ -76,7 +82,7 @@ def process_msk_event(event):
                 records.append(value)
             except Exception as e:
                 logger.error(e)
-                logger.error("Unable to parse log records: %s", msg.get("value", ""))
+                logger.error(ERROR_UNABLE_TO_PARSE_LOG_RECORDS, msg.get("value", ""))
 
     return records
 
@@ -92,7 +98,7 @@ def process_kds_event(event, parse_func):
             )
             records.append(value)
         except Exception:
-            logger.error("Unable to parse log records: %s", record)
+            logger.error(ERROR_UNABLE_TO_PARSE_LOG_RECORDS, record)
 
     return records
 
@@ -109,7 +115,7 @@ def process_gzip_kds_event(event, parse_func):
             for value in values:
                 result.append(value)
         except Exception:
-            logger.error("Unable to parse log records: %s", record)
+            logger.error(ERROR_UNABLE_TO_PARSE_LOG_RECORDS, record)
     return result
 
 
@@ -136,16 +142,23 @@ def parse_vpc_logs_cwl(line: str):
             if len(values) != len(keys):
                 logger.info("unequal length")
                 continue
+            no_data = False
             for i in range(len(keys)):
+                if keys[i] == "log-status" and (
+                    values[i] == "NODATA" or values[i] == "SKIPDATA"
+                ):
+                    no_data = True
+                    break
                 record[keys[i]] = values[i]
-            records.append(record)
+            if not no_data:
+                records.append(record)
         return records
     except Exception as e:
-        logger.error("unable to parse log line, error:", e)
+        logger.error("unable to parse log line, error: %s", e)
         return []
 
 
-def lambda_handler(event, context):
+def lambda_handler(event, _):
     logs = []
     logger.info(f"source is {source}")
     if source == "KDS":
@@ -172,7 +185,8 @@ def lambda_handler(event, context):
     failed_logs = batch_bulk_load(logs, aos.default_index_name())
 
     logger.info(
-        "--> Total: %d Loaded: %d Failed: %d",
+        "--> StackName: %s Total: %d Excluded: 0 Loaded: %d Failed: %d",
+        stack_name,
         total,
         total - len(failed_logs),
         len(failed_logs),
@@ -205,17 +219,21 @@ def write_to_csv(json_records) -> str:
     return f.read()
 
 
+def log_type_mapping(the_type: str) -> str:
+    if the_type == "VPCFlow":
+        return "VPC"
+    return the_type
+
+
 def get_export_key() -> str:
     """Generate export key prefix."""
     now = datetime.now()
     date = now.strftime("%Y-%m-%d")
     filename = now.strftime("%H-%M-%S") + ".json"
-    if log_type == "cloudfront-rt":
-        return f"error/AWSLogs/{log_type}/index-prefix={index_prefix}/date={date}/{filename}"
+    if IS_SVC_PIPELINE:
+        return f"error/AWSLogs/{log_type_mapping(log_type)}/index-prefix={index_prefix}/date={date}/{filename}"
     else:
-        return (
-            f"error/AWSLogs/APPLogs/index-prefix={index_prefix}/date={date}/{filename}"
-        )
+        return f"error/APPLogs/index-prefix={index_prefix}/date={date}/{filename}"
 
 
 def export_failed_records(failed_records: list, bucket: str, key: str) -> str:

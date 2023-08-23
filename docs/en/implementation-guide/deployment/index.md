@@ -5,7 +5,7 @@ guide. Follow the step-by-step instructions in this section to configure and dep
 
 ## Prerequisites
 
-Review all the [considerations](../considerations.md) and make sure you have the following in the target region you want to deploy the solution:
+Review all the [considerations](../plan-deployment/considerations.md) and make sure you have the following in the target region you want to deploy the solution:
 
 - At least one vacancy to create new VPCs, if you choose to launch with new VPC.
 - At least two vacant Elastic IP (EIP) addresses, if you choose to launch with new VPC.
@@ -18,7 +18,7 @@ Centralized Logging with OpenSearch provides two ways to authenticate and log in
 * [Launch with Cognito User Pool](./with-cognito.md)
 * [Launch with OpenID Connect](./with-oidc.md)
 
-For more information about supported regions, see [Regional deployments](../considerations.md).
+For more information about supported regions, see [Regional deployments](../plan-deployment/considerations.md).
 
 ## Deployment in AWS China Regions
 

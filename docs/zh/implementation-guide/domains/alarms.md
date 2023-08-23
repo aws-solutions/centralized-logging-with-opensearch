@@ -46,13 +46,13 @@ Amazon OpenSearch 提供一组[推荐的 CloudWatch 告警](https://docs.aws.ama
     | KMSKeyError | `是` |禁用 KMS 加密密钥时是否启用告警。 KMSKeyError 在 1 分钟内 >= 1，连续 1 次。 |
     | KMSKeyInaccessible | `是` |是否在 KMS 加密密钥已被删除或已撤销其对 OpenSearch 服务的授权时启用告警。 KMSKeyInaccessible 在 1 分钟内 >= 1，连续 1 次。 |
 
-7. 选择**下一步**。
+6. 选择**下一步**。
 
-8. 在 **配置堆栈选项** 页面上，选择 **下一步**。
+7. 在 **配置堆栈选项** 页面上，选择 **下一步**。
 
-9. 在 **审核** 页面上，查看并确认设置。 选中确认模板创建 AWS Identity and Access Management (IAM) 资源的复选框。
+8. 在 **审核** 页面上，查看并确认设置。 选中确认模板创建 AWS Identity and Access Management (IAM) 资源的复选框。
 
-10. 选择 **创建堆栈** 部署堆栈。
+9. 选择 **创建堆栈** 部署堆栈。
 
 您可以在 AWS CloudFormation 控制台的 **状态** 列中查看堆栈的状态。 你应该收到
 大约 5 分钟后出现 **CREATE_COMPLETE** 状态。

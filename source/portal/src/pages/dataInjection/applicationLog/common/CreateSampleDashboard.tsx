@@ -35,34 +35,41 @@ const CreateSampleDashboard: React.FC<CreateSampleDashboardProps> = (
   return (
     <div>
       {logType === LogType.Nginx || logType === LogType.Apache ? (
-        <FormItem
-          infoType={InfoBarTypes.SAMPLE_DASHBAORD}
-          optionTitle={t("servicelog:cluster.sampleDashboard")}
-          optionDesc={t("servicelog:cluster.sampleDashboardDesc")}
-        >
-          {Object.values(YesNo).map((key) => {
-            return (
-              <div key={key}>
-                <label>
-                  <input
-                    value={createDashboard}
-                    onChange={(event) => {
-                      console.info(event);
-                    }}
-                    onClick={() => {
-                      console.info(key);
-                      changeSampleDashboard(key);
-                    }}
-                    checked={createDashboard === key}
-                    name="sampleDashboard"
-                    type="radio"
-                  />{" "}
-                  {t(key.toLocaleLowerCase())}
-                </label>
-              </div>
-            );
-          })}
-        </FormItem>
+        <>
+          <hr />
+          <FormItem
+            infoType={
+              logType === LogType.Apache
+                ? InfoBarTypes.APACHE_SAMPLE_DASHBOARD
+                : InfoBarTypes.SAMPLE_DASHBAORD
+            }
+            optionTitle={t("servicelog:cluster.sampleDashboard")}
+            optionDesc={t("servicelog:cluster.sampleDashboardDesc")}
+          >
+            {Object.values(YesNo).map((key) => {
+              return (
+                <div key={key}>
+                  <label>
+                    <input
+                      value={createDashboard}
+                      onChange={(event) => {
+                        console.info(event);
+                      }}
+                      onClick={() => {
+                        console.info(key);
+                        changeSampleDashboard(key);
+                      }}
+                      checked={createDashboard === key}
+                      name="sampleDashboard"
+                      type="radio"
+                    />{" "}
+                    {t(key.toLocaleLowerCase())}
+                  </label>
+                </div>
+              );
+            })}
+          </FormItem>
+        </>
       ) : (
         ""
       )}

@@ -1,5 +1,0 @@
-moto
-pytest
-pytest-cov
-pyOpenSSL
-certifi

@@ -103,18 +103,27 @@ def test_lambda_handler(mocker, engine, client, expected):
     import lambda_function
 
     mocker.patch(
-        "util.osutil.OpenSearch.put_index_template", return_value=Response(201, "OK")
+        "commonlib.opensearch.OpenSearchUtil.create_index_template",
+        return_value=Response(201, "OK"),
     )
     mocker.patch(
-        "util.osutil.OpenSearch.import_saved_objects", return_value=Response(201, "OK")
-    )
-
-    mocker.patch(
-        "util.osutil.OpenSearch.create_ism_policy", return_value=Response(201, "OK")
+        "commonlib.opensearch.OpenSearchUtil.import_saved_objects",
+        return_value=Response(201, "OK"),
     )
 
     mocker.patch(
-        "util.osutil.OpenSearch.create_index", return_value=Response(201, "OK")
+        "commonlib.opensearch.OpenSearchUtil.create_ism_policy",
+        return_value=Response(201, "OK"),
+    )
+
+    mocker.patch(
+        "commonlib.opensearch.OpenSearchUtil.create_index",
+        return_value=Response(201, "OK"),
+    )
+
+    mocker.patch(
+        "commonlib.opensearch.OpenSearchUtil.exist_index_alias",
+        return_value=Response(404, "NotFound"),
     )
 
     result = lambda_function.lambda_handler(None, None)
@@ -133,65 +142,30 @@ def test_lambda_handler_with_aos_error(mocker, status, client, expected):
     import lambda_function
 
     mocker.patch(
-        "util.osutil.OpenSearch.put_index_template",
+        "commonlib.opensearch.OpenSearchUtil.create_index_template",
         return_value=Response(status, "resp"),
     )
     mocker.patch(
-        "util.osutil.OpenSearch.import_saved_objects", return_value=Response(201, "OK")
+        "commonlib.opensearch.OpenSearchUtil.import_saved_objects",
+        return_value=Response(201, "OK"),
     )
 
     mocker.patch(
-        "util.osutil.OpenSearch.create_ism_policy", return_value=Response(201, "OK")
+        "commonlib.opensearch.OpenSearchUtil.create_ism_policy",
+        return_value=Response(201, "OK"),
     )
 
     mocker.patch(
-        "util.osutil.OpenSearch.create_index", return_value=Response(201, "OK")
+        "commonlib.opensearch.OpenSearchUtil.create_index",
+        return_value=Response(201, "OK"),
     )
+
+    mocker.patch(
+        "commonlib.opensearch.OpenSearchUtil.exist_index_alias",
+        return_value=Response(404, "NotFound"),
+    )
+
+    mocker.patch("time.sleep")
 
     result = lambda_function.lambda_handler(None, None)
     assert result == expected
-
-
-def test_lambda_handler2(mocker, test_aos):
-    # Can only import here, as the environment variables need to be set first.
-    import lambda_function
-
-    mocker.patch(
-        "util.osutil.OpenSearch.put_index_template", return_value=Response(201, "OK")
-    )
-    mocker.patch(
-        "util.osutil.OpenSearch.create_index", return_value=Response(201, "OK")
-    )
-
-    event = {"hello": "world"}
-
-    assert lambda_function.lambda_handler(event, None) == "OK"
-
-
-@pytest.fixture
-def test_event():
-    return {
-        "action": "CreateIndexTemplate",
-        "props": {
-            "log_type": "nignx",
-            "createDashboard": "Yes",
-            "mappings": {"a": "b"},
-        },
-    }
-
-
-def test_lambda_handler2_with_event(mocker, test_aos, test_event):
-    # Can only import here, as the environment variables need to be set first.
-    import lambda_function
-
-    mocker.patch(
-        "util.osutil.OpenSearch.import_saved_objects", return_value=Response(201, "OK")
-    )
-    mocker.patch(
-        "util.osutil.OpenSearch.create_ism_policy", return_value=Response(201, "OK")
-    )
-    mocker.patch(
-        "util.osutil.OpenSearch.create_index", return_value=Response(201, "OK")
-    )
-
-    assert lambda_function.lambda_handler(test_event, None) == "OK"

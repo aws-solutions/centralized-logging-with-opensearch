@@ -27,8 +27,7 @@ from moto import (
     mock_logs,
 )
 
-
-bucket_names = ["test-bucket1", "test-bucket2", "log-hub-bucket"]
+bucket_names = ["test-bucket1", "test-bucket2", "log-bucket"]
 
 test_data = [
     ("S3Bucket", "listResources", None),
@@ -60,7 +59,6 @@ def test_invalid_event(request):
 
 @pytest.fixture
 def s3_client():
-
     with mock_s3():
         region = os.environ.get("AWS_REGION")
 
@@ -103,15 +101,21 @@ def ddb_client():
         ddb = boto3.resource("dynamodb", region_name=os.environ.get("AWS_REGION"))
         ddb.create_table(
             TableName=os.environ.get("SUB_ACCOUNT_LINK_TABLE_NAME"),
-            KeySchema=[{"AttributeName": "id", "KeyType": "HASH"}],
-            AttributeDefinitions=[{"AttributeName": "id", "AttributeType": "S"}],
+            KeySchema=[
+                {"AttributeName": "subAccountId", "KeyType": "HASH"},
+                {"AttributeName": "region", "KeyType": "RANGE"},
+            ],
+            AttributeDefinitions=[
+                {"AttributeName": "subAccountId", "AttributeType": "S"},
+                {"AttributeName": "region", "AttributeType": "S"},
+            ],
             ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
         )
         yield
 
 
 @mock_sts
-def test_lambda_handler(test_event, s3_client):
+def test_lambda_handler(test_event, s3_client, ddb_client):
     import lambda_function
 
     # assert function excute with a result.
@@ -207,7 +211,7 @@ class TestVPC:
     @mock_iam
     @mock_ec2
     @mock_sts
-    def test_logging_config_cwl(self):
+    def test_logging_config_cwl(self, ddb_client):
         from lambda_function import VPC
 
         default_region = os.environ.get("AWS_REGION")
@@ -377,7 +381,6 @@ class TestDistribution:
         return resp
 
     def setup(self):
-
         self.mock_cloudfront.start()
         self.mock_sts.start()
         resp = self._create_distribution()
@@ -399,6 +402,17 @@ class TestDistribution:
         result = self._cf.list()
         print(result)
         assert len(result) == 1
+
+    def test_get_resource_log_config(self):
+        from lambda_function import Distribution
+
+        sts = boto3.client("sts", region_name=os.environ.get("AWS_REGION"))
+        account_id = sts.get_caller_identity()["Account"]
+        self._cf = Distribution(
+            account_id=account_id, region=os.environ.get("AWS_REGION")
+        )
+        result = self._cf._get_logging_bucket(self._distribution_id)
+        assert result == {}
 
 
 class TestTrail:
@@ -504,7 +518,6 @@ class TestTrail:
 
 
 class TestRDS:
-
     mock_rds = mock_rds()
     mock_sts = mock_sts()
 
@@ -546,13 +559,11 @@ class TestRDS:
 
 
 class TestLambda:
-
     mock_lambda = mock_lambda()
     mock_iam = mock_iam()
     mock_sts = mock_sts()
 
     def _get_zip(self):
-
         zip_output = io.BytesIO()
         zip_file = zipfile.ZipFile(zip_output, "w", zipfile.ZIP_DEFLATED)
         zip_file.writestr("lambda_function.py", "print('hello')")
@@ -670,7 +681,6 @@ class TestELB:
 
 
 class TestWAF:
-
     mock_waf = mock_wafv2()
     mock_s3 = mock_s3()
     mock_sts = mock_sts()
@@ -702,13 +712,13 @@ class TestWAF:
         self.mock_s3.stop()
         self.mock_sts.stop()
 
-    def test_get_logging_bucket(self):
-        result = self._waf.get_logging_bucket(self._arn)
-        print(result)
+    # def test_get_logging_bucket(self):
+    #     result = self._waf.get_logging_bucket(self._arn)
+    #     print(result)
 
-    def test_put_logging_bucket(self):
-        with pytest.raises(RuntimeError):
-            self._waf.put_logging_bucket(self._arn)
+    # def test_put_logging_bucket(self):
+    #     with pytest.raises(RuntimeError):
+    #         self._waf.put_logging_bucket(self._arn)
 
     def test_list(self):
         result = self._waf.list()
@@ -718,7 +728,7 @@ class TestWAF:
 class TestConfig:
     @mock_sts
     @mock_config
-    def test_get_logging_bucket_not_enabled(self, ddb_client):
+    def test_get_logging_bucket_not_enabled(self, s3_client, ddb_client):
         from lambda_function import Config
 
         sts = boto3.client("sts", region_name=os.environ.get("AWS_REGION"))

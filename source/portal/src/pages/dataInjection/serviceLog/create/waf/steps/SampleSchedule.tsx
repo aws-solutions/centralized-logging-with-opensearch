@@ -21,7 +21,7 @@ import { useTranslation } from "react-i18next";
 interface SampleScheduleProps {
   interval: string;
   changeScheduleInterval: (interval: string) => void;
-  errorText?: string;
+  errorText?: string | null | any;
 }
 
 const SampleSchedule: React.FC<SampleScheduleProps> = (

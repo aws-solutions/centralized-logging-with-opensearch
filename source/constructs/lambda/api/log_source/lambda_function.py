@@ -1,75 +1,63 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+
 import json
 import logging
-import os
 
-import boto3
-from botocore import config
+from util.log_source import LogSourceUtil
+from log_source_helper import SyslogHelper
 
-from log_source_helper import LogSourceHelper
+from commonlib import handle_error, AppSyncRouter
+
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-solution_version = os.environ.get("SOLUTION_VERSION", "v1.0.0")
-solution_id = os.environ.get("SOLUTION_ID", "SO8025")
-user_agent_config = {
-    "user_agent_extra": f"AwsSolution/{solution_id}/{solution_version}"
-}
-default_config = config.Config(**user_agent_config)
-
-# Get DDB resource.
-dynamodb = boto3.resource("dynamodb", config=default_config)
-s3_log_source_table_name = os.environ.get("S3_LOG_SOURCE_TABLE_NAME")
-log_source_table_name = os.environ.get("LOG_SOURCE_TABLE_NAME")
-
-s3_log_source_table = dynamodb.Table(s3_log_source_table_name)
-log_source_table = dynamodb.Table(log_source_table_name)
-
-default_region = os.environ.get("AWS_REGION")
-
-
-class APIException(Exception):
-    def __init__(self, message):
-        self.message = message
-
-
-def handle_error(func):
-    """Decorator for exception handling"""
-
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except APIException as e:
-            logger.error(e)
-            raise e
-        except Exception as e:
-            logger.error(e)
-            raise RuntimeError(
-                "Unknown exception, please check Lambda log for more details"
-            )
-
-    return wrapper
+router = AppSyncRouter()
 
 
 @handle_error
-def lambda_handler(event, context):
-    # logger.info("Received event: " + json.dumps(event, indent=2))
+def lambda_handler(event, _):
+    logger.info("Received event: " + json.dumps(event, indent=2))
+    return router.resolve(event)
 
-    action = event["info"]["fieldName"]
-    args = event["arguments"]
-    source_type = args["sourceType"]
 
-    log_source_helper = LogSourceHelper(source_type, args, log_source_table)
+@router.route(field_name="createLogSource")
+def create_log_source(**args):
+    return LogSourceUtil.get_source(args["type"]).create_log_source(**args)
 
-    if action == "createLogSource":
-        return log_source_helper.create_log_source()
-    elif action == "getLogSource":
-        return log_source_helper.get_log_source()
-    elif action == "checkCustomPort":
-        return log_source_helper.check_custom_port()
-    else:
-        logger.info("Event received: " + json.dumps(event, indent=2))
-        raise RuntimeError(f"Unknown action {action}")
+
+@router.route(field_name="getLogSource")
+def get_log_source(**args):
+    # Call specific get_log_source function by type.
+    source_id = args.get("sourceId")
+    return LogSourceUtil.get_source(args["type"]).get_log_source(source_id)
+
+
+@router.route(field_name="listLogSources")
+def list_log_sources(**args):
+    # Call specific list_log_sources function by type.
+
+    page, count = args.get("page", 1), args.get("count", 20)
+    return LogSourceUtil.get_source(args["type"]).list_log_sources(page, count)
+
+
+@router.route(field_name="deleteLogSource")
+def delete_log_source(**args):
+    # Call specific delete_log_source function by type.
+    source_id = args.get("sourceId")
+    return LogSourceUtil.get_source(args["type"]).delete_log_source(source_id)
+
+
+@router.route(field_name="updateLogSource")
+def update_log_source(**args):
+    # Call specific delete_log_source function by type.
+    return LogSourceUtil.get_source(args["type"]).update_log_source(**args)
+
+
+@router.route(field_name="checkCustomPort")
+def check_custom_port(**args):
+    port = args.get("syslogPort")
+    syslog_helper = SyslogHelper()
+    return syslog_helper.check_custom_port(port)

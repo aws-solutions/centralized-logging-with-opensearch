@@ -15,26 +15,26 @@ limitations under the License.
 */
 /* eslint-disable react/display-name */
 import React, { useEffect, useState } from "react";
-import { Link, useHistory } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Pagination from "@material-ui/lab/Pagination";
-import RefreshIcon from "@material-ui/icons/Refresh";
 import Button from "components/Button";
 import { TablePanel } from "components/TablePanel";
 import Breadcrumb from "components/Breadcrumb";
 import { SelectType } from "components/TablePanel/tablePanel";
 import { AppPipeline, BufferType, PipelineStatus } from "API";
 import Modal from "components/Modal";
-import LoadingText from "components/LoadingText";
 import HelpPanel from "components/HelpPanel";
 import SideMenu from "components/SideMenu";
 import { listAppPipelines } from "graphql/queries";
 import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
-import Status from "components/Status/Status";
 import { deleteAppPipeline } from "graphql/mutations";
 import { formatLocalTime } from "assets/js/utils";
 import { useTranslation } from "react-i18next";
 import { AUTO_REFRESH_INT } from "assets/js/const";
 import { getListBufferLayer } from "assets/js/applog";
+import { handleErrorMessage } from "assets/js/alert";
+import PipelineStatusComp from "../common/PipelineStatus";
+import ButtonRefresh from "components/ButtonRefresh";
 
 const PAGE_SIZE = 10;
 
@@ -45,7 +45,7 @@ const ApplicationLog: React.FC = () => {
     { name: t("applog:name") },
   ];
 
-  const history = useHistory();
+  const navigate = useNavigate();
   const [loadingData, setLoadingData] = useState(false);
   const [openDeleteModel, setOpenDeleteModel] = useState(false);
   const [loadingDelete, setLoadingDelete] = useState(false);
@@ -76,7 +76,9 @@ const ApplicationLog: React.FC = () => {
       const dataAppLogs: AppPipeline[] =
         resData.data.listAppPipelines.appPipelines;
       setTotoalCount(resData.data.listAppPipelines.total);
-      setApplicationLogs(dataAppLogs);
+      setApplicationLogs(
+        dataAppLogs.map((each) => ({ ...each, id: each.pipelineId }))
+      );
       setLoadingData(false);
     } catch (error) {
       console.error(error);
@@ -93,30 +95,31 @@ const ApplicationLog: React.FC = () => {
     setOpenDeleteModel(true);
   };
 
-  // Confirm to Remove Application Log By Id
+  // Confirm to Remove Application Log By ID
   const confimRemoveApplicationLog = async () => {
     try {
       setLoadingDelete(true);
       const removeRes = await appSyncRequestMutation(deleteAppPipeline, {
-        id: curTipsApplicationLog?.id,
+        id: curTipsApplicationLog?.pipelineId,
       });
       console.info("removeRes:", removeRes);
       setLoadingDelete(false);
       setOpenDeleteModel(false);
       getApplicationLogList();
       setSelectedApplicationLog([]);
-    } catch (error) {
+    } catch (error: any) {
       setLoadingDelete(false);
       setOpenDeleteModel(false);
+      handleErrorMessage(error.message);
       console.error(error);
     }
   };
 
   // Click View Detail Button Redirect to detail page
   const clickToReviewDetail = () => {
-    history.push({
-      pathname: `/log-pipeline/application-log/detail/${selectedApplicationLog[0]?.id}`,
-    });
+    navigate(
+      `/log-pipeline/application-log/detail/${selectedApplicationLog[0]?.id}`
+    );
   };
 
   // Get Application log list when page rendered.
@@ -154,15 +157,58 @@ const ApplicationLog: React.FC = () => {
     return () => clearInterval(refreshInterval);
   }, [curPage]);
 
+  const renderPipelineId = (data: AppPipeline) => {
+    return (
+      <Link to={`/log-pipeline/application-log/detail/${data.pipelineId}`}>
+        {data.pipelineId}
+      </Link>
+    );
+  };
+
+  const renderBufferLayer = (data: AppPipeline) => {
+    if (
+      data.bufferType !== BufferType.None &&
+      data.status === PipelineStatus.CREATING
+    ) {
+      return <i className="gray">({t("pendingCreation")})</i>;
+    } else if (data.bufferType === BufferType.None) {
+      return t("none");
+    } else {
+      return getListBufferLayer(data.bufferType, data.bufferResourceName || "");
+    }
+  };
+
+  const renderStatus = (data: AppPipeline) => {
+    return (
+      <PipelineStatusComp
+        status={data.status}
+        stackId={data.stackId}
+        error={data.error}
+      />
+    );
+  };
+
+  const renderLogConfig = (data: AppPipeline) => {
+    return (
+      <Link
+        target="_blank"
+        to={`/resources/log-config/detail/${data?.logConfig?.id}/${data?.logConfigVersionNumber}`}
+      >
+        {`${data?.logConfig?.name || ""}`}
+      </Link>
+    );
+  };
+
   return (
     <div className="lh-main-content">
       <SideMenu />
       <div className="lh-container">
         <div className="lh-content">
-          <div className="service-log">
+          <div className="application-log">
             <Breadcrumb list={breadCrumbList} />
             <div className="table-data">
               <TablePanel
+                trackId="pipelineId"
                 title={t("applog:title")}
                 defaultSelectItem={selectedApplicationLog}
                 changeSelected={(item) => {
@@ -176,15 +222,7 @@ const ApplicationLog: React.FC = () => {
                     id: "id",
                     header: "ID",
                     // width: 120,
-                    cell: (e: AppPipeline) => {
-                      return (
-                        <Link
-                          to={`/log-pipeline/application-log/detail/${e.id}`}
-                        >
-                          {e.id}
-                        </Link>
-                      );
-                    },
+                    cell: (e: AppPipeline) => renderPipelineId(e),
                   },
                   {
                     // width: 110,
@@ -204,37 +242,26 @@ const ApplicationLog: React.FC = () => {
                   {
                     id: "bufferLayer",
                     header: t("applog:list.bufferLayer"),
-                    cell: (e: AppPipeline) => {
-                      if (
-                        e.bufferType !== BufferType.None &&
-                        e.status === PipelineStatus.CREATING
-                      ) {
-                        return <i className="gray">({t("pendingCreation")})</i>;
-                      } else if (e.bufferType === BufferType.None) {
-                        return t("none");
-                      } else {
-                        return getListBufferLayer(
-                          e.bufferType,
-                          e.bufferResourceName || ""
-                        );
-                      }
-                    },
+                    cell: (e: AppPipeline) => renderBufferLayer(e),
+                  },
+                  {
+                    id: "logConfig",
+                    header: t("applog:list.logConfig"),
+                    cell: (e: AppPipeline) => renderLogConfig(e),
                   },
                   {
                     width: 170,
                     id: "created",
                     header: t("applog:list.created"),
                     cell: (e: AppPipeline) => {
-                      return formatLocalTime(e?.createdDt || "");
+                      return formatLocalTime(e?.createdAt || "");
                     },
                   },
                   {
                     width: 120,
                     id: "status",
                     header: t("applog:list.status"),
-                    cell: (e: AppPipeline) => {
-                      return <Status status={e.status || ""} />;
-                    },
+                    cell: (e: AppPipeline) => renderStatus(e),
                   },
                 ]}
                 items={applicationLogs}
@@ -251,11 +278,7 @@ const ApplicationLog: React.FC = () => {
                         }
                       }}
                     >
-                      {loadingData ? (
-                        <LoadingText />
-                      ) : (
-                        <RefreshIcon fontSize="small" />
-                      )}
+                      <ButtonRefresh loading={loadingData} />
                     </Button>
                     <Button
                       disabled={disabledDetail}
@@ -276,9 +299,7 @@ const ApplicationLog: React.FC = () => {
                     <Button
                       btnType="primary"
                       onClick={() => {
-                        history.push({
-                          pathname: "/log-pipeline/application-log/create",
-                        });
+                        navigate("/log-pipeline/application-log/create");
                       }}
                     >
                       {t("button.createPipeline")}
@@ -328,7 +349,7 @@ const ApplicationLog: React.FC = () => {
           >
             <div className="modal-content">
               {t("applog:deleteTips")}
-              <b>{`${curTipsApplicationLog?.id}`}</b> {"?"}
+              <b>{`${curTipsApplicationLog?.pipelineId}`}</b> {"?"}
             </div>
           </Modal>
         </div>

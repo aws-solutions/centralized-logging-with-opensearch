@@ -1,0 +1,26 @@
+{
+  "Records": [
+    {
+      "eventID": "ad6b8e759485ba860592f610cd2040ff",
+      "eventName": "REMOVE",
+      "eventVersion": "1.1",
+      "eventSource": "aws:dynamodb",
+      "awsRegion": "us-east-1",
+      "dynamodb": {
+        "ApproximateCreationDateTime": 1690467848,
+        "Keys": {
+          "sourceId": {
+            "S": "edc2835f-09d9-498c-82c0-205009bfe3a3"
+          },
+          "id": {
+            "S": "i-03d8650a16f449114"
+          }
+        },
+        "SequenceNumber": "10135600000000022245222389",
+        "SizeBytes": 65,
+        "StreamViewType": "NEW_IMAGE"
+      },
+      "eventSourceARN": "arn:aws:dynamodb:us-west-1:111111111111:table/CentralizedLogging-Instance-FNKKL69BBMB1/stream/2023-07-25T09:31:12.813"
+    }
+  ]
+}

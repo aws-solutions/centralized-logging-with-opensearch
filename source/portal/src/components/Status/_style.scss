@@ -17,7 +17,13 @@
     &.created {
       color: green;
     }
+    &.updated {
+      color: green;
+    }
     &.online {
+      color: green;
+    }
+    &.ok {
       color: green;
     }
     &.installing {
@@ -26,7 +32,19 @@
     &.creating {
       color: #666;
     }
+    &.distributing {
+      color: #666;
+    }
     &.inactive {
+      color: #666;
+    }
+    &.deleted {
+      color: #666;
+    }
+    &.reversed {
+      color: #666;
+    }
+    &.insufficient_data {
       color: #666;
     }
     &.error {
@@ -38,8 +56,17 @@
     &.offline {
       color: red;
     }
+    &.alarm {
+      color: red;
+    }
     &.yellow {
       color: #ff9900;
+    }
+  }
+  &.is-link {
+    .status-text {
+      cursor: pointer;
+      text-decoration: underline;
     }
   }
 }

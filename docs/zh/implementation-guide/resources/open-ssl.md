@@ -18,8 +18,8 @@ sudo yum install openssl11
 
 ```bash
 ln -s /usr/lib/x86_64-linux-gnu/libsasl2.so.2 /usr/lib/libsasl2.so.3
-ln -s /snap/core18/2667/usr/lib/x86_64-linux-gnu/libssl.so.1.1 /usr/lib/libssl.so.1.1
-ln -s /snap/core18/2667/usr/lib/x86_64-linux-gnu/libcrypto.so.1.1 /usr/lib/libcrypto.so.1.1
+ln -s /snap/core18/current/usr/lib/x86_64-linux-gnu/libssl.so.1.1 /usr/lib/libssl.so.1.1
+ln -s /snap/core18/current/usr/lib/x86_64-linux-gnu/libcrypto.so.1.1 /usr/lib/libcrypto.so.1.1
 ```
 
 ### 20.04
@@ -87,11 +87,11 @@ OpenSSL 1.1 已经默认安装。
 1. 登录到 CentOS 7 机器中，手动安装 SSM Agent。
 
     ```bash
-    sudo yum install -y http://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+    sudo yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
     sudo systemctl enable amazon-ssm-agent
     sudo systemctl start amazon-ssm-agent
     ```
-    
+
 2. 来到日志通 控制台的**实例组**面板，创建**实例组**，选择 centos 7 机器，点击**安装日志代理**，等待其状态为**离线**。
 
 3. 登录 centos7 手动安装 fluent-bit 1.9.3。

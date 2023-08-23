@@ -17,9 +17,9 @@ import React, { useState, useEffect } from "react";
 import AutoComplete from "components/AutoComplete";
 import FormItem from "components/FormItem";
 import { SelectItem } from "components/Select/select";
-import { listAutoScalingGroups } from "graphql/queries";
+import { listResources } from "graphql/queries";
 import { appSyncRequestQuery } from "assets/js/request";
-import { AutoScalingGroup } from "API";
+import { Resource, ResourceType } from "API";
 import { OptionType } from "components/AutoComplete/autoComplete";
 import { InstanceGroupType } from "../instanceGroup/create/CreateInstanceGroup";
 import { useTranslation } from "react-i18next";
@@ -38,20 +38,18 @@ const ASGSelect: React.FC<ASGSelectProps> = (props: ASGSelectProps) => {
   const getASGList = async () => {
     try {
       setLoadingASGList(true);
-      const resData: any = await appSyncRequestQuery(listAutoScalingGroups, {
+      const resData: any = await appSyncRequestQuery(listResources, {
         // type: ResourceType.S3Bucket,
-        maxResults: 100,
+        type: ResourceType.ASG,
         accountId: accountId,
-        nextToken: "",
       });
       console.info("asgData:", resData.data);
-      const dataList: AutoScalingGroup[] =
-        resData.data.listAutoScalingGroups.autoScalingGroups;
+      const dataList: Resource[] = resData.data.listResources;
       const tmpOptionList: SelectItem[] = [];
       dataList.forEach((element) => {
         tmpOptionList.push({
-          name: `${element.autoScalingGroupName}`,
-          value: element.autoScalingGroupName || "",
+          name: `${element.name}`,
+          value: element.name || "",
         });
       });
       setASGOptionList(tmpOptionList);

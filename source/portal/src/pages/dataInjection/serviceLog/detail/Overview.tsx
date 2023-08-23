@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React from "react";
+import React, { useMemo } from "react";
 import HeaderPanel from "components/HeaderPanel";
 import ValueWithLabel from "components/ValueWithLabel";
 import { ServiceLogDetailProps } from "../ServiceLogDetail";
@@ -28,18 +28,24 @@ const Overview: React.FC<OverviewProps> = (props: OverviewProps) => {
   console.info("props:", props);
   const { pipelineInfo } = props;
   const { t } = useTranslation();
+  const logLocationLabel = useMemo(
+    () =>
+      pipelineInfo?.destinationType === DestinationType.CloudWatch
+        ? t("servicelog:overview.logGroup")
+        : t("servicelog:overview.logLocation"),
+    [pipelineInfo?.destinationType]
+  );
   return (
     <div>
       <HeaderPanel title={t("servicelog:overview.name")}>
         <div className="flex value-label-span">
           <div className="flex-1">
-            <ValueWithLabel label={t("servicelog:overview.logLocation")}>
+            <ValueWithLabel label={logLocationLabel}>
               <div>
-                {pipelineInfo?.destinationType === DestinationType.KDS
+                {(pipelineInfo?.destinationType === DestinationType.KDS
                   ? "Kinesis Data Streams"
-                  : pipelineInfo?.logLocation
-                  ? pipelineInfo.logLocation
-                  : "-"}
+                  : "") ||
+                  (pipelineInfo?.logLocation ? pipelineInfo.logLocation : "-")}
               </div>
             </ValueWithLabel>
 

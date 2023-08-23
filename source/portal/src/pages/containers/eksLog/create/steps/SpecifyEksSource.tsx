@@ -13,35 +13,36 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import { EKSDeployKind } from "API";
+import {
+  EKSDeployKind,
+  CreateLogSourceMutationVariables,
+  Resource,
+  ResourceType,
+  LogSourceType,
+  LogSource,
+} from "API";
 import { appSyncRequestQuery } from "assets/js/request";
 import { buildEKSLink } from "assets/js/utils";
-import AutoComplete from "components/AutoComplete";
 import ExtLink from "components/ExtLink";
 import FormItem from "components/FormItem";
 import HeaderPanel from "components/HeaderPanel";
 import Select, { SelectItem } from "components/Select/select";
-import { listEKSClusterNames } from "graphql/queries";
+import { listLogSources, listResources } from "graphql/queries";
 import CrossAccountSelect from "pages/comps/account/CrossAccountSelect";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { AppStateProps, InfoBarTypes } from "reducer/appReducer";
+import { InfoBarTypes } from "reducer/appReducer";
+import { RootState } from "reducer/reducers";
 import { AmplifyConfigType } from "types";
-import { EKSClusterLogSourceType } from "../ImportEksCluster";
 
 const EKS_LOG_AGENT_PATTERN_LIST: SelectItem[] = [
   { name: "DaemonSet", value: EKSDeployKind.DaemonSet },
   { name: "Sidecar", value: EKSDeployKind.Sidecar },
 ];
 
-const EMPTY_EKS_SELECT_ITEM: SelectItem = {
-  name: "",
-  value: "",
-};
-
 interface SpecifyEksSourceProps {
-  eksClusterLogSource: EKSClusterLogSourceType;
+  eksClusterLogSource: CreateLogSourceMutationVariables;
   eksEmptyError: boolean;
   changeEksClusterSource: (EksClusterName: string) => void;
   changeEksLogAgentPattern: (pattern: EKSDeployKind) => void;
@@ -60,55 +61,58 @@ const SpecifyEksSource: React.FC<SpecifyEksSourceProps> = (
   } = props;
   const { t } = useTranslation();
   const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: AppStateProps) => state.amplifyConfig
+    (state: RootState) => state.app.amplifyConfig
   );
 
-  const [curEks, setCurEks] = useState<SelectItem | null>({
-    name: eksClusterLogSource.eksClusterName,
-    value: eksClusterLogSource.eksClusterName,
-  });
+  const [curEks, setCurEks] = useState<string>("");
   const [loadingEksList, setLoadingEksList] = useState(false);
   const [eksOptionList, setEksOptionList] = useState<SelectItem[]>([]);
   const [loadingAccount, setLoadingAccount] = useState(false);
 
   const getEksClusterList = async () => {
     try {
+      setEksOptionList([]);
       setLoadingEksList(true);
-      const clusterNames: string[] = await getAllEksClusterNamesList("", []);
-      const optionList: SelectItem[] = clusterNames.map((name: string) => {
-        return { name: name, value: name };
+
+      const importedClusters: any = await appSyncRequestQuery(listLogSources, {
+        type: LogSourceType.EKSCluster,
+        page: 1,
+        count: 999,
       });
-      setEksOptionList(optionList);
+      let filterAccountId = amplifyConfig.default_cmk_arn.split(":")[4];
+      if (eksClusterLogSource.accountId) {
+        filterAccountId = eksClusterLogSource.accountId;
+      }
+      const importedSourceList: LogSource[] =
+        importedClusters?.data?.listLogSources?.logSources?.filter(
+          (element: LogSource) => element.accountId === filterAccountId
+        ) || [];
+      const eksClusterNames = importedSourceList.map(
+        (cluster) => cluster?.eks?.eksClusterName
+      );
+      const resData: any = await appSyncRequestQuery(listResources, {
+        type: ResourceType.EKSCluster,
+        accountId: eksClusterLogSource.accountId,
+      });
+      const dataList: Resource[] = resData.data.listResources;
+      const tmpOptionList: SelectItem[] = [];
+      dataList.forEach((element) => {
+        tmpOptionList.push({
+          name: `${element.name}`,
+          value: element.id,
+          optTitle: eksClusterNames.includes(element.id) ? "IMPORTED" : "",
+          disabled: eksClusterNames.includes(element.id),
+        });
+      });
+      setEksOptionList(tmpOptionList);
       setLoadingEksList(false);
     } catch (error) {
       console.error(error);
     }
   };
 
-  // recursively get all clusterNames.
-  const getAllEksClusterNamesList = async (
-    pageToken: string,
-    clusterNames: string[]
-  ): Promise<string[]> => {
-    const resData: any = await appSyncRequestQuery(listEKSClusterNames, {
-      nextToken: pageToken,
-      accountId: eksClusterLogSource.accountId,
-      isListAll: false, // isListAll目前传False，True代表非AWS EKS
-    });
-    const nextPage = resData.data.listEKSClusterNames.nextToken;
-    (resData.data.listEKSClusterNames.clusters || []).forEach(
-      (cluster: string) => {
-        clusterNames.push(cluster);
-      }
-    );
-    if (!nextPage || nextPage.length <= 0) {
-      return clusterNames;
-    }
-    return getAllEksClusterNamesList(nextPage, clusterNames);
-  };
-
   useEffect(() => {
-    setCurEks(null);
+    setCurEks("");
     getEksClusterList();
   }, [eksClusterLogSource.accountId]);
 
@@ -117,7 +121,8 @@ const SpecifyEksSource: React.FC<SpecifyEksSourceProps> = (
       <HeaderPanel title={t("ekslog:create.eksSource.eks")}>
         <div>
           <CrossAccountSelect
-            accountId={eksClusterLogSource.accountId}
+            disabled={loadingEksList}
+            accountId={eksClusterLogSource.accountId as string}
             changeAccount={(id) => {
               changeCurAccount(id);
             }}
@@ -140,19 +145,23 @@ const SpecifyEksSource: React.FC<SpecifyEksSourceProps> = (
               eksEmptyError ? t("ekslog:create.eksSource.eksClusterError") : ""
             }
           >
-            <AutoComplete
+            <Select
+              hasStatus
               disabled={loadingEksList || loadingAccount}
-              outerLoading
               className="m-w-75p"
-              placeholder={t("ekslog:select")}
-              value={curEks}
+              placeholder={t("cluster:import.selectDomain.selectDomain")}
               loading={loadingEksList}
               optionList={eksOptionList}
-              onChange={(event: any, data: SelectItem) => {
-                setCurEks(data || EMPTY_EKS_SELECT_ITEM);
-                changeEksClusterSource(data?.value || "");
+              value={curEks}
+              onChange={(event) => {
+                setCurEks(event.target.value);
+                changeEksClusterSource(event.target.value);
               }}
-            ></AutoComplete>
+              hasRefresh
+              clickRefresh={() => {
+                getEksClusterList();
+              }}
+            />
           </FormItem>
           <FormItem
             infoType={InfoBarTypes.EKS_PATTERN}
@@ -162,7 +171,7 @@ const SpecifyEksSource: React.FC<SpecifyEksSourceProps> = (
             <Select
               className="m-w-75p"
               optionList={EKS_LOG_AGENT_PATTERN_LIST}
-              value={eksClusterLogSource.deploymentKind}
+              value={eksClusterLogSource.eks?.deploymentKind as string}
               onChange={(event) => {
                 changeEksLogAgentPattern(event.target.value);
               }}

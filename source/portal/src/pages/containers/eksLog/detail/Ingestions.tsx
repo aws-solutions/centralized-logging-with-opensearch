@@ -14,18 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React, { useEffect, useState } from "react";
-import RefreshIcon from "@material-ui/icons/Refresh";
 import { useTranslation } from "react-i18next";
-import {
-  AppLogIngestion,
-  AppPipeline,
-  EKSClusterLogSource,
-  LogSourceType,
-} from "API";
+import { AppLogIngestion, AppPipeline, LogSource, LogSourceType } from "API";
 import { SelectType, TablePanel } from "components/TablePanel";
 import Button from "components/Button";
-import LoadingText from "components/LoadingText";
-import { Link, useHistory } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { formatLocalTime } from "assets/js/utils";
 import Status, { StatusType } from "components/Status/Status";
 import Modal from "components/Modal";
@@ -33,10 +26,11 @@ import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
 import { deleteAppLogIngestion } from "graphql/mutations";
 import { getAppPipeline, listAppLogIngestions } from "graphql/queries";
 import { AUTO_REFRESH_INT } from "assets/js/const";
+import ButtonRefresh from "components/ButtonRefresh";
 
 const PAGE_SIZE = 1000;
 interface IngestionsProps {
-  eksLogSourceInfo: EKSClusterLogSource | undefined;
+  eksLogSourceInfo: LogSource | undefined;
 }
 
 interface EksIngestion {
@@ -58,7 +52,7 @@ const EksIngestions: React.FC<IngestionsProps> = (props: IngestionsProps) => {
   const [disableDelete, setDisableDelete] = useState(true);
   const [openDeleteModel, setOpenDeleteModel] = useState(false);
 
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const getIngestions = async (hideLoading = false) => {
     try {
@@ -69,9 +63,11 @@ const EksIngestions: React.FC<IngestionsProps> = (props: IngestionsProps) => {
       const resData: any = await appSyncRequestQuery(listAppLogIngestions, {
         page: 1,
         count: PAGE_SIZE,
-        sourceId: eksLogSourceInfo?.id,
+        appPipelineId: "",
+        sourceId: eksLogSourceInfo?.sourceId,
         sourceType: LogSourceType.EKSCluster,
       });
+      console.info("Ingestion resData", resData);
       const appLogIngestions: AppLogIngestion[] =
         resData.data?.listAppLogIngestions?.appLogIngestions || [];
       const tmpEksIngestions: EksIngestion[] = await Promise.all(
@@ -119,7 +115,7 @@ const EksIngestions: React.FC<IngestionsProps> = (props: IngestionsProps) => {
   };
 
   useEffect(() => {
-    if (eksLogSourceInfo && eksLogSourceInfo.id) {
+    if (eksLogSourceInfo && eksLogSourceInfo.sourceId) {
       getIngestions();
     }
   }, [eksLogSourceInfo]);
@@ -150,10 +146,44 @@ const EksIngestions: React.FC<IngestionsProps> = (props: IngestionsProps) => {
     return () => clearInterval(refreshInterval);
   }, []);
 
+  const renderIngestionId = (data: EksIngestion) => {
+    return (
+      <Link
+        to={`/containers/eks-log/${eksLogSourceInfo?.sourceId}/ingestion/detail/${data?.ingestion?.id}`}
+      >
+        {data?.ingestion?.id}
+      </Link>
+    );
+  };
+
+  const renderPipelineId = (data: EksIngestion) => {
+    return (
+      <Link
+        to={`/log-pipeline/application-log/detail/${data?.pipeline?.pipelineId}`}
+      >
+        {data?.pipeline?.pipelineId}
+      </Link>
+    );
+  };
+
+  const renderStatus = (data: EksIngestion) => {
+    return (
+      <Status
+        status={
+          data?.ingestion?.status?.toLocaleLowerCase() ===
+          StatusType.Active.toLocaleLowerCase()
+            ? StatusType.Created
+            : data?.ingestion?.status || ""
+        }
+      />
+    );
+  };
+
   return (
     <div>
       <TablePanel
-        title={t("ekslog:detail.tab.ingestions")}
+        trackId="id"
+        title={t("ekslog:detail.ingestions.sources")}
         loading={loadingData}
         actions={
           <div>
@@ -164,7 +194,7 @@ const EksIngestions: React.FC<IngestionsProps> = (props: IngestionsProps) => {
                 getIngestions();
               }}
             >
-              {loadingData ? <LoadingText /> : <RefreshIcon fontSize="small" />}
+              <ButtonRefresh loading={loadingData} />
             </Button>
             <Button
               disabled={disableDelete}
@@ -178,9 +208,9 @@ const EksIngestions: React.FC<IngestionsProps> = (props: IngestionsProps) => {
               btnType="primary"
               disabled={loadingData}
               onClick={() => {
-                history.push({
-                  pathname: `/containers/eks-log/${eksLogSourceInfo?.id}/ingestion`,
-                });
+                navigate(
+                  `/containers/eks-log/${eksLogSourceInfo?.sourceId}/ingestion`
+                );
               }}
             >
               {t("button.createAnIngestion")}
@@ -192,15 +222,7 @@ const EksIngestions: React.FC<IngestionsProps> = (props: IngestionsProps) => {
           {
             id: "id",
             header: "ID",
-            cell: (e: EksIngestion) => {
-              return (
-                <Link
-                  to={`/containers/eks-log/${eksLogSourceInfo?.id}/ingestion/detail/${e?.ingestion?.id}`}
-                >
-                  {e?.ingestion?.id}
-                </Link>
-              );
-            },
+            cell: (e: EksIngestion) => renderIngestionId(e),
           },
           {
             id: "indexPrefix",
@@ -212,53 +234,21 @@ const EksIngestions: React.FC<IngestionsProps> = (props: IngestionsProps) => {
           {
             id: "pipeline",
             header: t("ekslog:detail.ingestions.pipeline"),
-            cell: (e: EksIngestion) => {
-              return (
-                <Link
-                  to={`/log-pipeline/application-log/detail/${e?.pipeline.id}`}
-                >
-                  {e?.pipeline?.id}
-                </Link>
-              );
-            },
-          },
-          {
-            id: "logConfig",
-            header: t("ekslog:detail.ingestions.logConfig"),
-            cell: (e: EksIngestion) => {
-              return (
-                <Link
-                  to={`/resources/log-config/detail/${e?.ingestion?.confId}`}
-                >
-                  {e?.ingestion?.confName}
-                </Link>
-              );
-            },
+            cell: (e: EksIngestion) => renderPipelineId(e),
           },
           {
             width: 170,
             id: "created",
             header: t("ekslog:detail.ingestions.created"),
             cell: (e: EksIngestion) => {
-              return formatLocalTime(e?.ingestion?.createdDt || "");
+              return formatLocalTime(e?.ingestion?.createdAt || "");
             },
           },
           {
             width: 120,
             id: "status",
             header: t("ekslog:detail.ingestions.status"),
-            cell: (e: EksIngestion) => {
-              return (
-                <Status
-                  status={
-                    e?.ingestion?.status?.toLocaleLowerCase() ===
-                    StatusType.Active.toLocaleLowerCase()
-                      ? StatusType.Created
-                      : e?.ingestion?.status || ""
-                  }
-                />
-              );
-            },
+            cell: (e: EksIngestion) => renderStatus(e),
           },
         ]}
         items={ingestions}
@@ -300,9 +290,9 @@ const EksIngestions: React.FC<IngestionsProps> = (props: IngestionsProps) => {
         <div className="modal-content">
           {t("ekslog:detail.ingestions.deleteTips")}
           {JSON.parse(JSON.stringify(selectedIngestion)).map(
-            (element: EksIngestion, index: number) => {
+            (element: EksIngestion) => {
               return (
-                <div key={index}>
+                <div key={`${element.id}`}>
                   <b>{element?.ingestion?.id}</b>
                 </div>
               );

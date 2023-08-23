@@ -5,7 +5,10 @@
 export const listDomainNames = /* GraphQL */ `
   query ListDomainNames($region: String) {
     listDomainNames(region: $region) {
-      domainNames
+      domainNames {
+        domainName
+        status
+      }
     }
   }
 `;
@@ -20,8 +23,8 @@ export const getDomainVpc = /* GraphQL */ `
   }
 `;
 export const listImportedDomains = /* GraphQL */ `
-  query ListImportedDomains($metrics: Boolean) {
-    listImportedDomains(metrics: $metrics) {
+  query ListImportedDomains($metrics: Boolean, $includeFailed: Boolean) {
+    listImportedDomains(metrics: $metrics, includeFailed: $includeFailed) {
       id
       domainName
       engine
@@ -117,6 +120,11 @@ export const getDomainDetails = /* GraphQL */ `
         health
       }
       status
+      resources {
+        name
+        values
+        status
+      }
     }
   }
 `;
@@ -133,13 +141,28 @@ export const listServicePipelines = /* GraphQL */ `
           parameterKey
           parameterValue
         }
-        createdDt
+        createdAt
         status
         tags {
           key
           value
         }
         error
+        monitor {
+          status
+          backupBucketName
+          errorLogPrefix
+          pipelineAlarmStatus
+          snsTopicName
+          snsTopicArn
+          emails
+        }
+        processorLogGroupName
+        helperLogGroupName
+        logEventQueueName
+        deliveryStreamName
+        bufferResourceName
+        stackId
       }
       total
     }
@@ -157,13 +180,28 @@ export const getServicePipeline = /* GraphQL */ `
         parameterKey
         parameterValue
       }
-      createdDt
+      createdAt
       status
       tags {
         key
         value
       }
       error
+      monitor {
+        status
+        backupBucketName
+        errorLogPrefix
+        pipelineAlarmStatus
+        snsTopicName
+        snsTopicArn
+        emails
+      }
+      processorLogGroupName
+      helperLogGroupName
+      logEventQueueName
+      deliveryStreamName
+      bufferResourceName
+      stackId
     }
   }
 `;
@@ -228,103 +266,70 @@ export const getResourceLogConfigs = /* GraphQL */ `
     }
   }
 `;
-export const listInstanceGroups = /* GraphQL */ `
-  query ListInstanceGroups($page: Int, $count: Int) {
-    listInstanceGroups(page: $page, count: $count) {
-      instanceGroups {
+export const listLogConfigs = /* GraphQL */ `
+  query ListLogConfigs($page: Int!, $count: Int!) {
+    listLogConfigs(page: $page, count: $count) {
+      logConfigs {
         id
-        accountId
-        region
-        groupName
-        groupType
-        instanceSet
-        createdDt
-        status
-      }
-      total
-    }
-  }
-`;
-export const getInstanceGroup = /* GraphQL */ `
-  query GetInstanceGroup($id: ID!) {
-    getInstanceGroup(id: $id) {
-      id
-      accountId
-      region
-      groupName
-      groupType
-      instanceSet
-      createdDt
-      status
-    }
-  }
-`;
-export const listLogConfs = /* GraphQL */ `
-  query ListLogConfs($page: Int, $count: Int) {
-    listLogConfs(page: $page, count: $count) {
-      logConfs {
-        id
-        confName
+        version
+        createdAt
+        name
         logType
-        logPath
-        timeKey
-        timeOffset
-        multilineLogParser
         syslogParser
-        createdDt
-        userLogFormat
-        userSampleLog
-        regularExpression
-        timeRegularExpression
-        regularSpecs {
-          key
-          type
-          format
-        }
-        processorFilterRegex {
-          enable
+        multilineLogParser
+        filterConfigMap {
+          enabled
           filters {
             key
             condition
             value
           }
         }
-        status
+        regex
+        regexFieldSpecs {
+          key
+          type
+          format
+        }
+        timeKey
+        timeOffset
+        timeKeyRegex
+        userLogFormat
+        userSampleLog
       }
       total
     }
   }
 `;
-export const getLogConf = /* GraphQL */ `
-  query GetLogConf($id: ID!) {
-    getLogConf(id: $id) {
+export const getLogConfig = /* GraphQL */ `
+  query GetLogConfig($id: ID!, $version: Int) {
+    getLogConfig(id: $id, version: $version) {
       id
-      confName
+      version
+      createdAt
+      name
       logType
-      logPath
-      timeKey
-      timeOffset
-      multilineLogParser
       syslogParser
-      createdDt
-      userLogFormat
-      userSampleLog
-      regularExpression
-      timeRegularExpression
-      regularSpecs {
-        key
-        type
-        format
-      }
-      processorFilterRegex {
-        enable
+      multilineLogParser
+      filterConfigMap {
+        enabled
         filters {
           key
           condition
           value
         }
       }
-      status
+      regex
+      regexFieldSpecs {
+        key
+        type
+        format
+      }
+      timeKey
+      timeOffset
+      timeKeyRegex
+      userLogFormat
+      userSampleLog
     }
   }
 `;
@@ -332,7 +337,7 @@ export const listAppPipelines = /* GraphQL */ `
   query ListAppPipelines($page: Int, $count: Int) {
     listAppPipelines(page: $page, count: $count) {
       appPipelines {
-        id
+        pipelineId
         bufferType
         bufferParams {
           paramKey
@@ -353,12 +358,56 @@ export const listAppPipelines = /* GraphQL */ `
           replicaNumbers
           engine
         }
-        createdDt
+        createdAt
         status
+        logConfigId
+        logConfigVersionNumber
+        logConfig {
+          id
+          version
+          createdAt
+          name
+          logType
+          syslogParser
+          multilineLogParser
+          filterConfigMap {
+            enabled
+            filters {
+              key
+              condition
+              value
+            }
+          }
+          regex
+          regexFieldSpecs {
+            key
+            type
+            format
+          }
+          timeKey
+          timeOffset
+          timeKeyRegex
+          userLogFormat
+          userSampleLog
+        }
         bufferAccessRoleArn
         bufferAccessRoleName
         bufferResourceName
         bufferResourceArn
+        processorLogGroupName
+        helperLogGroupName
+        logEventQueueName
+        monitor {
+          status
+          backupBucketName
+          errorLogPrefix
+          pipelineAlarmStatus
+          snsTopicName
+          snsTopicArn
+          emails
+        }
+        stackId
+        error
         tags {
           key
           value
@@ -371,7 +420,7 @@ export const listAppPipelines = /* GraphQL */ `
 export const getAppPipeline = /* GraphQL */ `
   query GetAppPipeline($id: ID!) {
     getAppPipeline(id: $id) {
-      id
+      pipelineId
       bufferType
       bufferParams {
         paramKey
@@ -392,12 +441,56 @@ export const getAppPipeline = /* GraphQL */ `
         replicaNumbers
         engine
       }
-      createdDt
+      createdAt
       status
+      logConfigId
+      logConfigVersionNumber
+      logConfig {
+        id
+        version
+        createdAt
+        name
+        logType
+        syslogParser
+        multilineLogParser
+        filterConfigMap {
+          enabled
+          filters {
+            key
+            condition
+            value
+          }
+        }
+        regex
+        regexFieldSpecs {
+          key
+          type
+          format
+        }
+        timeKey
+        timeOffset
+        timeKeyRegex
+        userLogFormat
+        userSampleLog
+      }
       bufferAccessRoleArn
       bufferAccessRoleName
       bufferResourceName
       bufferResourceArn
+      processorLogGroupName
+      helperLogGroupName
+      logEventQueueName
+      monitor {
+        status
+        backupBucketName
+        errorLogPrefix
+        pipelineAlarmStatus
+        snsTopicName
+        snsTopicArn
+        emails
+      }
+      stackId
+      error
       tags {
         key
         value
@@ -411,80 +504,33 @@ export const listAppLogIngestions = /* GraphQL */ `
     $count: Int
     $appPipelineId: String
     $sourceId: String
-    $sourceType: LogSourceType
+    $region: String
+    $accountId: String
   ) {
     listAppLogIngestions(
       page: $page
       count: $count
       appPipelineId: $appPipelineId
       sourceId: $sourceId
-      sourceType: $sourceType
+      region: $region
+      accountId: $accountId
     ) {
       appLogIngestions {
         id
-        confId
-        confName
-        sourceInfo {
-          sourceId
-          accountId
-          region
-          sourceName
-          logPath
-          sourceType
-          sourceInfo {
-            key
-            value
-          }
-          s3Source {
-            s3Name
-            s3Prefix
-            archiveFormat
-            defaultVpcId
-            defaultSubnetIds
-          }
-          eksSource {
-            id
-            aosDomain {
-              id
-              domainName
-              engine
-              version
-              endpoint
-            }
-            eksClusterName
-            eksClusterArn
-            cri
-            vpcId
-            eksClusterSGId
-            subnetIds
-            oidcIssuer
-            endpoint
-            createdDt
-            accountId
-            region
-            logAgentRoleArn
-            deploymentKind
-            tags {
-              key
-              value
-            }
-          }
-          createdDt
-        }
         stackId
         stackName
         appPipelineId
         logPath
         sourceId
         sourceType
-        accountId
-        region
-        createdDt
+        createdAt
         status
         tags {
           key
           value
         }
+        accountId
+        region
       }
       total
     }
@@ -494,75 +540,31 @@ export const getAppLogIngestion = /* GraphQL */ `
   query GetAppLogIngestion($id: ID!) {
     getAppLogIngestion(id: $id) {
       id
-      confId
-      confName
-      sourceInfo {
-        sourceId
-        accountId
-        region
-        sourceName
-        logPath
-        sourceType
-        sourceInfo {
-          key
-          value
-        }
-        s3Source {
-          s3Name
-          s3Prefix
-          archiveFormat
-          defaultVpcId
-          defaultSubnetIds
-        }
-        eksSource {
-          id
-          aosDomain {
-            id
-            domainName
-            engine
-            version
-            endpoint
-            metrics {
-              searchableDocs
-              freeStorageSpace
-              health
-            }
-          }
-          eksClusterName
-          eksClusterArn
-          cri
-          vpcId
-          eksClusterSGId
-          subnetIds
-          oidcIssuer
-          endpoint
-          createdDt
-          accountId
-          region
-          logAgentRoleArn
-          deploymentKind
-          tags {
-            key
-            value
-          }
-        }
-        createdDt
-      }
       stackId
       stackName
       appPipelineId
       logPath
       sourceId
       sourceType
-      accountId
-      region
-      createdDt
+      createdAt
       status
       tags {
         key
         value
       }
+      accountId
+      region
     }
+  }
+`;
+export const getK8sDeploymentContentWithSidecar = /* GraphQL */ `
+  query GetK8sDeploymentContentWithSidecar($id: ID!) {
+    getK8sDeploymentContentWithSidecar(id: $id)
+  }
+`;
+export const getK8sDeploymentContentWithDaemonSet = /* GraphQL */ `
+  query GetK8sDeploymentContentWithDaemonSet($sourceId: ID!) {
+    getK8sDeploymentContentWithDaemonSet(sourceId: $sourceId)
   }
 `;
 export const listInstances = /* GraphQL */ `
@@ -593,30 +595,6 @@ export const listInstances = /* GraphQL */ `
     }
   }
 `;
-export const listAutoScalingGroups = /* GraphQL */ `
-  query ListAutoScalingGroups(
-    $maxResults: Int
-    $nextToken: String
-    $region: String
-    $accountId: String
-  ) {
-    listAutoScalingGroups(
-      maxResults: $maxResults
-      nextToken: $nextToken
-      region: $region
-      accountId: $accountId
-    ) {
-      autoScalingGroups {
-        autoScalingGroupName
-        minSize
-        maxSize
-        desiredCapacity
-        instances
-      }
-      nextToken
-    }
-  }
-`;
 export const getLogAgentStatus = /* GraphQL */ `
   query GetLogAgentStatus(
     $instanceId: String!
@@ -630,45 +608,42 @@ export const getLogAgentStatus = /* GraphQL */ `
     )
   }
 `;
+export const getInstanceAgentStatus = /* GraphQL */ `
+  query GetInstanceAgentStatus(
+    $instanceIds: [String]!
+    $region: String
+    $accountId: String
+    $commandId: String
+  ) {
+    getInstanceAgentStatus(
+      instanceIds: $instanceIds
+      region: $region
+      accountId: $accountId
+      commandId: $commandId
+    ) {
+      commandId
+      instanceAgentStatusList {
+        instanceId
+        status
+        invocationOutput
+        curlOutput
+      }
+    }
+  }
+`;
 export const validateVpcCidr = /* GraphQL */ `
   query ValidateVpcCidr($domainName: String!, $region: String) {
     validateVpcCidr(domainName: $domainName, region: $region)
   }
 `;
 export const getLogSource = /* GraphQL */ `
-  query GetLogSource($sourceType: LogSourceType!, $id: ID!) {
-    getLogSource(sourceType: $sourceType, id: $id) {
+  query GetLogSource($type: LogSourceType!, $sourceId: ID!) {
+    getLogSource(type: $type, sourceId: $sourceId) {
       sourceId
+      type
       accountId
       region
-      sourceName
-      logPath
-      sourceType
-      sourceInfo {
-        key
-        value
-      }
-      s3Source {
-        s3Name
-        s3Prefix
-        archiveFormat
-        defaultVpcId
-        defaultSubnetIds
-      }
-      eksSource {
-        id
-        aosDomain {
-          id
-          domainName
-          engine
-          version
-          endpoint
-          metrics {
-            searchableDocs
-            freeStorageSpace
-            health
-          }
-        }
+      eks {
         eksClusterName
         eksClusterArn
         cri
@@ -677,49 +652,34 @@ export const getLogSource = /* GraphQL */ `
         subnetIds
         oidcIssuer
         endpoint
-        createdDt
-        accountId
-        region
         logAgentRoleArn
         deploymentKind
-        tags {
-          key
-          value
+      }
+      s3 {
+        mode
+        bucketName
+        keyPrefix
+        keySuffix
+        compressionType
+      }
+      ec2 {
+        groupName
+        groupType
+        groupPlatform
+        asgName
+        instances {
+          instanceId
         }
       }
-      createdDt
-    }
-  }
-`;
-export const getEKSClusterDetails = /* GraphQL */ `
-  query GetEKSClusterDetails($eksClusterId: String!) {
-    getEKSClusterDetails(eksClusterId: $eksClusterId) {
-      id
-      aosDomain {
-        id
-        domainName
-        engine
-        version
-        endpoint
-        metrics {
-          searchableDocs
-          freeStorageSpace
-          health
-        }
+      syslog {
+        protocol
+        port
+        nlbArn
+        nlbDNSName
       }
-      eksClusterName
-      eksClusterArn
-      cri
-      vpcId
-      eksClusterSGId
-      subnetIds
-      oidcIssuer
-      endpoint
-      createdDt
-      accountId
-      region
-      logAgentRoleArn
-      deploymentKind
+      createdAt
+      updatedAt
+      status
       tags {
         key
         value
@@ -727,77 +687,56 @@ export const getEKSClusterDetails = /* GraphQL */ `
     }
   }
 `;
-export const getEKSDaemonSetConf = /* GraphQL */ `
-  query GetEKSDaemonSetConf($eksClusterId: String!) {
-    getEKSDaemonSetConf(eksClusterId: $eksClusterId)
-  }
-`;
-export const getEKSDeploymentConf = /* GraphQL */ `
-  query GetEKSDeploymentConf(
-    $eksClusterId: String!
-    $ingestionId: String!
-    $openExtraMetadataFlag: Boolean
-  ) {
-    getEKSDeploymentConf(
-      eksClusterId: $eksClusterId
-      ingestionId: $ingestionId
-      openExtraMetadataFlag: $openExtraMetadataFlag
-    )
-  }
-`;
 export const getAutoScalingGroupConf = /* GraphQL */ `
   query GetAutoScalingGroupConf($groupId: String!) {
     getAutoScalingGroupConf(groupId: $groupId)
   }
 `;
-export const listEKSClusterNames = /* GraphQL */ `
-  query ListEKSClusterNames(
-    $accountId: String
-    $region: String
-    $nextToken: String!
-    $isListAll: Boolean
-  ) {
-    listEKSClusterNames(
-      accountId: $accountId
-      region: $region
-      nextToken: $nextToken
-      isListAll: $isListAll
-    ) {
-      clusters
-      nextToken
-    }
-  }
-`;
-export const listImportedEKSClusters = /* GraphQL */ `
-  query ListImportedEKSClusters($page: Int, $count: Int) {
-    listImportedEKSClusters(page: $page, count: $count) {
-      eksClusterLogSourceList {
-        id
-        aosDomain {
-          id
-          domainName
-          engine
-          version
-          endpoint
-          metrics {
-            searchableDocs
-            freeStorageSpace
-            health
-          }
-        }
-        eksClusterName
-        eksClusterArn
-        cri
-        vpcId
-        eksClusterSGId
-        subnetIds
-        oidcIssuer
-        endpoint
-        createdDt
+export const listLogSources = /* GraphQL */ `
+  query ListLogSources($type: LogSourceType!, $page: Int!, $count: Int!) {
+    listLogSources(type: $type, page: $page, count: $count) {
+      logSources {
+        sourceId
+        type
         accountId
         region
-        logAgentRoleArn
-        deploymentKind
+        eks {
+          eksClusterName
+          eksClusterArn
+          cri
+          vpcId
+          eksClusterSGId
+          subnetIds
+          oidcIssuer
+          endpoint
+          logAgentRoleArn
+          deploymentKind
+        }
+        s3 {
+          mode
+          bucketName
+          keyPrefix
+          keySuffix
+          compressionType
+        }
+        ec2 {
+          groupName
+          groupType
+          groupPlatform
+          asgName
+          instances {
+            instanceId
+          }
+        }
+        syslog {
+          protocol
+          port
+          nlbArn
+          nlbDNSName
+        }
+        createdAt
+        updatedAt
+        status
         tags {
           key
           value
@@ -830,7 +769,8 @@ export const listSubAccountLinks = /* GraphQL */ `
         subAccountKMSKeyArn
         subAccountVpcId
         subAccountPublicSubnetIds
-        createdDt
+        subAccountIamInstanceProfileArn
+        createdAt
         status
         tags {
           key
@@ -842,8 +782,8 @@ export const listSubAccountLinks = /* GraphQL */ `
   }
 `;
 export const getSubAccountLink = /* GraphQL */ `
-  query GetSubAccountLink($id: ID!) {
-    getSubAccountLink(id: $id) {
+  query GetSubAccountLink($subAccountId: String!, $region: String) {
+    getSubAccountLink(subAccountId: $subAccountId, region: $region) {
       id
       subAccountId
       region
@@ -856,34 +796,8 @@ export const getSubAccountLink = /* GraphQL */ `
       subAccountKMSKeyArn
       subAccountVpcId
       subAccountPublicSubnetIds
-      createdDt
-      status
-      tags {
-        key
-        value
-      }
-    }
-  }
-`;
-export const getSubAccountLinkByAccountIdRegion = /* GraphQL */ `
-  query GetSubAccountLinkByAccountIdRegion(
-    $accountId: String!
-    $region: String
-  ) {
-    getSubAccountLinkByAccountIdRegion(accountId: $accountId, region: $region) {
-      id
-      subAccountId
-      region
-      subAccountName
-      subAccountRoleArn
-      agentInstallDoc
-      agentConfDoc
-      subAccountBucketName
-      subAccountStackId
-      subAccountKMSKeyArn
-      subAccountVpcId
-      subAccountPublicSubnetIds
-      createdDt
+      subAccountIamInstanceProfileArn
+      createdAt
       status
       tags {
         key
@@ -906,6 +820,120 @@ export const checkCustomPort = /* GraphQL */ `
       isAllowedPort
       msg
       recommendedPort
+    }
+  }
+`;
+export const listLogStreams = /* GraphQL */ `
+  query ListLogStreams(
+    $logGroupName: String!
+    $logStreamNamePrefix: String
+    $page: Int
+    $count: Int
+  ) {
+    listLogStreams(
+      logGroupName: $logGroupName
+      logStreamNamePrefix: $logStreamNamePrefix
+      page: $page
+      count: $count
+    ) {
+      logStreams {
+        logStreamName
+        creationTime
+        firstEventTimestamp
+        lastEventTimestamp
+        lastIngestionTime
+        uploadSequenceToken
+        arn
+        storedBytes
+      }
+      total
+    }
+  }
+`;
+export const getLogEvents = /* GraphQL */ `
+  query GetLogEvents(
+    $logGroupName: String!
+    $logStreamName: String!
+    $startTime: Int
+    $endTime: Int
+    $filterPattern: String
+    $limit: Int
+    $nextToken: String
+  ) {
+    getLogEvents(
+      logGroupName: $logGroupName
+      logStreamName: $logStreamName
+      startTime: $startTime
+      endTime: $endTime
+      filterPattern: $filterPattern
+      limit: $limit
+      nextToken: $nextToken
+    ) {
+      logEvents {
+        timestamp
+        message
+        ingestionTime
+      }
+      nextForwardToken
+      nextBackwardToken
+    }
+  }
+`;
+export const getMetricHistoryData = /* GraphQL */ `
+  query GetMetricHistoryData(
+    $pipelineId: String!
+    $pipelineType: PipelineType!
+    $metricNames: [MetricName]
+    $startTime: Int
+    $endTime: Int
+  ) {
+    getMetricHistoryData(
+      pipelineId: $pipelineId
+      pipelineType: $pipelineType
+      metricNames: $metricNames
+      startTime: $startTime
+      endTime: $endTime
+    ) {
+      series {
+        name
+        data
+      }
+      xaxis {
+        categories
+      }
+    }
+  }
+`;
+export const getPipelineAlarm = /* GraphQL */ `
+  query GetPipelineAlarm(
+    $pipelineId: String!
+    $pipelineType: PipelineType!
+    $alarmName: AlarmMetricName!
+  ) {
+    getPipelineAlarm(
+      pipelineId: $pipelineId
+      pipelineType: $pipelineType
+      alarmName: $alarmName
+    ) {
+      alarms {
+        name
+        status
+        resourceId
+      }
+    }
+  }
+`;
+export const domainStatusCheck = /* GraphQL */ `
+  query DomainStatusCheck($domainName: String!, $region: String) {
+    domainStatusCheck(domainName: $domainName, region: $region) {
+      status
+      details {
+        name
+        values
+        errorCode
+        status
+      }
+      multiAZWithStandbyEnabled
     }
   }
 `;

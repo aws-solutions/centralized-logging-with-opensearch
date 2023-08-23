@@ -13,10 +13,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React from "react";
+import React, { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
 
-const SampleDashboard: React.FC = () => {
+interface SampleDashboardProps {
+  content?: ReactElement;
+}
+
+function SampleDashboard(props: SampleDashboardProps) {
   const { t } = useTranslation();
   return (
     <div className="gsui-help-container">
@@ -24,9 +28,10 @@ const SampleDashboard: React.FC = () => {
         {t("info:sampleDashboard.tip1")}
         <b>{t("yes")}</b>
         {t("info:sampleDashboard.tip2")}
+        {props.content}
       </div>
     </div>
   );
-};
+}
 
 export default SampleDashboard;

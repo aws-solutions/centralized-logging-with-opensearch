@@ -21,6 +21,7 @@ import TextArea from "components/TextArea";
 import { useTranslation } from "react-i18next";
 import { formatLocalTime } from "assets/js/utils";
 import { FILTER_CONDITION_LIST } from "assets/js/const";
+import { identity } from "lodash";
 
 interface ConfDetailProps {
   curLogConfig: ExLogConf | undefined;
@@ -33,14 +34,14 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
   props: ConfDetailProps
 ) => {
   const { t } = useTranslation();
-  const { curLogConfig, hideLogPath, logPath, hideBasicInfo } = props;
+  const { curLogConfig, hideBasicInfo } = props;
   return (
     <div>
       {!hideBasicInfo && (
         <div className="flex value-label-span">
           <div className="flex-1">
             <ValueWithLabel label={t("ekslog:ingest.detail.configTab.name")}>
-              <div>{curLogConfig?.confName}</div>
+              <div>{curLogConfig?.name}</div>
             </ValueWithLabel>
           </div>
           <div className="flex-1 border-left-c">
@@ -50,30 +51,15 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
           </div>
           <div className="flex-1 border-left-c">
             <ValueWithLabel label={t("ekslog:ingest.detail.configTab.created")}>
-              {formatLocalTime(curLogConfig?.createdDt || "")}
+              {formatLocalTime(curLogConfig?.createdAt || "")}
             </ValueWithLabel>
           </div>
         </div>
       )}
       <div className="flex value-label-span">
         <div className="flex-1">
-          {!hideLogPath && (
-            <ValueWithLabel label={t("resource:config.detail.path")}>
-              <div>{logPath ? logPath : curLogConfig?.logPath || "-"}</div>
-            </ValueWithLabel>
-          )}
-
           <ValueWithLabel label={t("resource:config.detail.sampleLog")}>
-            <div className="m-w-75p">
-              <TextArea
-                rows={2}
-                disabled
-                value={curLogConfig?.userSampleLog || "-"}
-                onChange={(event) => {
-                  console.info(event);
-                }}
-              />
-            </div>
+            {curLogConfig?.userSampleLog || "-"}
           </ValueWithLabel>
 
           {curLogConfig?.logType === LogType.Nginx && (
@@ -156,16 +142,7 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
             curLogConfig?.logType === LogType.SingleLineText ||
             curLogConfig?.logType === LogType.MultiLineText) && (
             <ValueWithLabel label={t("resource:config.detail.regExp")}>
-              <div className="m-w-75p">
-                <TextArea
-                  rows={5}
-                  disabled
-                  value={curLogConfig.regularExpression || "-"}
-                  onChange={(event) => {
-                    console.info(event);
-                  }}
-                />
-              </div>
+              {curLogConfig.regex || "-"}
             </ValueWithLabel>
           )}
 
@@ -175,8 +152,8 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
             curLogConfig?.logType === LogType.Syslog ||
             curLogConfig?.logType === LogType.SingleLineText ||
             curLogConfig?.logType === LogType.MultiLineText) &&
-          curLogConfig.regularSpecs &&
-          curLogConfig.regularSpecs.length > 0 ? (
+          curLogConfig.regexFieldSpecs &&
+          curLogConfig.regexFieldSpecs.length > 0 ? (
             <div className="mt-10">
               <ValueWithLabel label={t("resource:config.detail.logSpecs")}>
                 <div className="m-w-75p">
@@ -190,14 +167,30 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
                           {" "}
                           {t("resource:config.detail.specType")}
                         </th>
+                        <th className="time format">
+                          {" "}
+                          {t("resource:config.detail.timeFormat")}
+                        </th>
+                        <th className="time key">
+                          {" "}
+                          {t("resource:config.parsing.timeKey")}
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {curLogConfig.regularSpecs?.map((element, index) => {
+                      {curLogConfig.regexFieldSpecs?.map((element, index) => {
                         return (
-                          <tr key={index}>
+                          <tr key={identity(index)}>
                             <td className="flex-1">{element?.key}</td>
                             <td className="flex-1">{element?.type}</td>
+                            <td className="flex-1">
+                              {element?.type === "date" ? element?.format : "-"}
+                            </td>
+                            <td className="flex-1">
+                              {element?.key === curLogConfig.timeKey
+                                ? "Yes(" + element?.format + ")"
+                                : "No"}
+                            </td>
                           </tr>
                         );
                       })}
@@ -214,12 +207,12 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
             curLogConfig?.logType === LogType.Syslog ||
             curLogConfig?.logType === LogType.SingleLineText ||
             curLogConfig?.logType === LogType.MultiLineText) &&
-            curLogConfig.regularSpecs &&
-            curLogConfig.regularSpecs.length > 0 &&
-            curLogConfig.regularSpecs.map((element, index) => {
+            curLogConfig.regexFieldSpecs &&
+            curLogConfig.regexFieldSpecs.length > 0 &&
+            curLogConfig.regexFieldSpecs.map((element, index) => {
               if (element?.type === "date") {
                 return (
-                  <div className="mt-10" key={index}>
+                  <div className="mt-10" key={identity(index)}>
                     <ValueWithLabel
                       label={`${t("resource:config.detail.timeFormat")}(${
                         element.key
@@ -250,7 +243,7 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
                   <ValueWithLabel
                     label={t("resource:config.parsing.timeKeyFormat")}
                   >
-                    {curLogConfig?.regularSpecs?.find(
+                    {curLogConfig?.regexFieldSpecs?.find(
                       (element) => element?.key === curLogConfig.timeKey
                     )?.format || "-"}
                   </ValueWithLabel>
@@ -272,17 +265,15 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
             </>
           )}
 
-          {curLogConfig?.processorFilterRegex?.filters && (
+          {curLogConfig?.filterConfigMap?.filters && (
             <div className="mt-10">
               <ValueWithLabel label={t("resource:config.filter.name")}>
                 <>
                   <div className="mt-10">
                     {t("resource:config.filter.enabled")}:{" "}
-                    {curLogConfig.processorFilterRegex.enable
-                      ? t("yes")
-                      : t("no")}
+                    {curLogConfig.filterConfigMap.enabled ? t("yes") : t("no")}
                   </div>
-                  {curLogConfig.processorFilterRegex.enable && (
+                  {curLogConfig.filterConfigMap.enabled && (
                     <div className="mt-10 m-w-75p">
                       <table className="log-detail-specs">
                         <thead>
@@ -299,10 +290,10 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
                           </tr>
                         </thead>
                         <tbody>
-                          {curLogConfig.processorFilterRegex.filters?.map(
+                          {curLogConfig.filterConfigMap.filters?.map(
                             (element, index) => {
                               return (
-                                <tr key={index}>
+                                <tr key={identity(index)}>
                                   <td className="flex-1">{element?.key}</td>
                                   <td className="flex-1">
                                     {t(

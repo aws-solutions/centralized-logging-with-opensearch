@@ -4,163 +4,234 @@
 import json
 import logging
 import os
+from typing import List
 import uuid
+import gzip
+import base64
 from datetime import datetime
 
-import boto3
+
 from boto3.dynamodb.conditions import Attr
-from botocore import config
 from botocore.exceptions import ClientError
-from common import APIException
-from util.validator import AppPipelineValidator
+from commonlib import AWSConnection, handle_error, AppSyncRouter
+from commonlib.utils import create_stack_name, paginate
+from commonlib.exception import APIException, ErrorCode
+from commonlib.model import (
+    AppPipeline,
+    BufferParam,
+    BufferTypeEnum,
+    CompressionType,
+    LogConfig,
+    LogTypeEnum,
+    PipelineMonitorStatus,
+    StatusEnum,
+)
+from commonlib.dao import AppLogIngestionDao, AppPipelineDao, LogConfigDao
+from util.utils import make_index_template
+
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-stack_prefix = os.environ.get("STACK_PREFIX", "CL")
-solution_version = os.environ.get("SOLUTION_VERSION", "v1.0.0")
-solution_id = os.environ.get("SOLUTION_ID", "SO8025")
-user_agent_config = {
-    "user_agent_extra": f"AwsSolution/{solution_id}/{solution_version}"
-}
-default_config = config.Config(**user_agent_config)
-
-# Get DDB resource.
-dynamodb = boto3.resource("dynamodb", config=default_config)
-sfn = boto3.client("stepfunctions", config=default_config)
-
+stateMachine_arn = os.environ.get("STATE_MACHINE_ARN") or ""
 app_pipeline_table_name = os.environ.get("APPPIPELINE_TABLE")
 app_log_ingestion_table_name = os.environ.get("APPLOGINGESTION_TABLE")
-default_region = os.environ.get("AWS_REGION")
-stateMachineArn = os.environ.get("STATE_MACHINE_ARN")
+log_config_table_name = os.environ.get("LOG_CONFIG_TABLE")
+
+conn = AWSConnection()
+router = AppSyncRouter()
+
+dynamodb = conn.get_client("dynamodb", client_type="resource")
+sfn = conn.get_client("stepfunctions")
+kds = conn.get_client("kinesis")
+iam = conn.get_client("iam")
+
 app_pipeline_table = dynamodb.Table(app_pipeline_table_name)
 app_log_ingestion_table = dynamodb.Table(app_log_ingestion_table_name)
 
-# Get kinesis resource.
-kds = boto3.client("kinesis", config=default_config)
 
-
-def handle_error(func):
-    """Decorator for exception handling"""
-
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except APIException as e:
-            logger.exception(e)
-            raise e
-        except Exception as e:
-            logger.exception(e)
-            raise RuntimeError(
-                "Unknown exception, please check Lambda log for more details"
-            )
-
-    return wrapper
+def dict_to_gzip_base64(d: dict) -> str:
+    return base64.b64encode(gzip.compress(json.dumps(d).encode())).decode("utf8")
 
 
 @handle_error
 def lambda_handler(event, context):
-    # logger.info("Received event: " + json.dumps(event, indent=2))
-
-    action = event["info"]["fieldName"]
-    args = event["arguments"]
-
-    if action == "createAppPipeline":
-        return create_app_pipeline(**args)
-    elif action == "deleteAppPipeline":
-        return delete_app_pipeline(**args)
-    elif action == "listAppPipelines":
-        return list_app_pipelines(**args)
-    elif action == "getAppPipeline":
-        return get_app_pipeline(**args)
-    else:
-        logger.info("Event received: " + json.dumps(event, indent=2))
-        raise RuntimeError(f"Unknown action {action}")
+    logger.info("Received event: " + json.dumps(event, indent=2))
+    return router.resolve(event)
 
 
+@router.route(field_name="createAppPipeline")
 def create_app_pipeline(**args):
-    """Create a appPipeline"""
-    logger.info("create appPipeline")
+    buffer_type = args.get("bufferType")
+    buffer_params = args.get("bufferParams")
+    aos_params = args.get("aosParams")
+    log_config_id = args.get("logConfigId")
+    log_config_version_number = args.get("logConfigVersionNumber")
+    force = args.get("force")
+    monitor = args.get("monitor")
+    tags = args.get("tags") or []
 
-    aos_params = args["aosParams"]
+    app_pipeline_dao = AppPipelineDao(app_pipeline_table_name)
+    log_config_dao = LogConfigDao(log_config_table_name)
 
-    # Check if index prefix is duplicated in the same opensearch
     index_prefix = str(aos_params["indexPrefix"])
-    domain_name = str(aos_params["domainName"])
 
-    # Check the OpenSearch status
-    # During the Upgrade and Pre-upgrade process, users can not create index template
-    #  and create backend role.
-    check_aos_status(domain_name)
-
-    buffer_type = args["bufferType"]
-    buffer_params = args.get("bufferParams", [])
-
-    validator = AppPipelineValidator(app_pipeline_table)
-    validator.validate_duplicate_index_prefix(args)
-    validator.validate_index_prefix_overlap(
-        index_prefix, domain_name, args.get("force")
+    app_pipeline = AppPipeline(
+        indexPrefix=index_prefix,
+        bufferType=buffer_type,
+        aosParams=aos_params,
+        bufferParams=buffer_params,
+        logConfigId=log_config_id,
+        logConfigVersionNumber=log_config_version_number,
+        tags=tags,
+        monitor=monitor,
     )
-    # TODO: Support optional parameters
-    validator.validate_buffer_params(buffer_type, buffer_params)
+    app_pipeline_dao.validate(app_pipeline, force=force)
 
-    pipeline_id = str(uuid.uuid4())
-    stack_name = create_stack_name(pipeline_id)
+    log_config = log_config_dao.get_log_config(
+        app_pipeline.logConfigId, app_pipeline.logConfigVersionNumber
+    )
 
-    base_params_map = {
-        "domainName": aos_params["domainName"],
-        "engineType": aos_params["engine"],
-        "endpoint": aos_params["opensearchEndpoint"],
-        "indexPrefix": aos_params["indexPrefix"],
-        "shardNumbers": aos_params["shardNumbers"],
-        "replicaNumbers": aos_params["replicaNumbers"],
-        "warmAge": aos_params.get("warmLogTransition", ""),
-        "coldAge": aos_params.get("coldLogTransition", ""),
-        "retainAge": aos_params.get("logRetention", ""),
-        "rolloverSize": aos_params["rolloverSize"],
-        "codec": aos_params.get("codec", "best_compression"),
-        "indexSuffix": aos_params.get("indexSuffix", "yyyy-MM-dd"),
-        "refreshInterval": aos_params["refreshInterval"],
-        "vpcId": aos_params["vpc"]["vpcId"],
-        "subnetIds": aos_params["vpc"]["privateSubnetIds"],
-        "securityGroupId": aos_params["vpc"]["securityGroupId"],
-        "backupBucketName": aos_params["failedLogBucket"],
-    }
-    # backup bucket is not required if no buffer is required.
-    if buffer_type == "None":
-        base_params_map.pop("backupBucketName")
+    index_template = make_index_template(
+        log_config=log_config,
+        index_alias=index_prefix,
+        number_of_shards=app_pipeline.aosParams.shardNumbers,
+        number_of_replicas=app_pipeline.aosParams.replicaNumbers,
+        codec=app_pipeline.aosParams.codec,
+        refresh_interval=app_pipeline.aosParams.refreshInterval,
+    )
 
-    # Also need to Add the required buffer parameters
-    buffer_params_map = _get_buffer_params(buffer_type, buffer_params)
-    enable_autoscaling = buffer_params_map.pop("enableAutoScaling", "false")
-    parameters = _create_stack_params(base_params_map | buffer_params_map)
+    index_template_gzip_base64 = dict_to_gzip_base64(index_template)
+
+    parameters = app_pipeline_dao.get_stack_parameters(app_pipeline) + [
+        {
+            "ParameterKey": "indexTemplateGzipBase64",
+            "ParameterValue": index_template_gzip_base64,
+        }
+    ]
+
+    parts = stateMachine_arn.split(":")
+    partition = parts[1]
+    region = parts[3]
+    account_id = parts[4]
+
+    buffer_access_role_name = f"CL-buffer-access-{app_pipeline.pipelineId}"
+    create_role_response = iam.create_role(
+        RoleName=buffer_access_role_name,
+        AssumeRolePolicyDocument=json.dumps(
+            {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Principal": {"AWS": account_id},
+                        "Action": "sts:AssumeRole",
+                    }
+                ],
+            }
+        ),
+    )
+    app_pipeline.bufferAccessRoleName = create_role_response["Role"]["RoleName"]
+    app_pipeline.bufferAccessRoleArn = create_role_response["Role"]["Arn"]
+
+    parameters += [
+        {
+            "ParameterKey": "bufferAccessRoleArn",
+            "ParameterValue": app_pipeline.bufferAccessRoleArn,
+        },
+        {
+            "ParameterKey": "logType",
+            "ParameterValue": log_config.logType,
+        },
+    ]
+
+    if app_pipeline.bufferType == BufferTypeEnum.KDS:
+        kds_name = f"CL-kds-{app_pipeline.pipelineId}"
+
+        # fmt: off
+        app_pipeline.bufferResourceArn = f"arn:{partition}:kinesis:{region}:{account_id}:stream/{kds_name}"
+        app_pipeline.bufferResourceName = kds_name
+        # fmt: on
+
+        parameters += [
+            {
+                "ParameterKey": "StreamName",
+                "ParameterValue": kds_name,
+            },
+        ]
+
+    if app_pipeline.bufferType == BufferTypeEnum.S3:
+        role_name = f"CL-log-processor-{app_pipeline.pipelineId}"
+        sqs_name = f"CL-sqs-{app_pipeline.pipelineId}"
+        # fmt: off
+        app_pipeline.logProcessorRoleArn = f"arn:{partition}:iam::{account_id}:role/{role_name}"
+        app_pipeline.queueArn = f"arn:{partition}:sqs:{region}:{account_id}:{sqs_name}"
+        # fmt: on
+
+        kv = params_to_kv(parameters)
+
+        parameters += [
+            {
+                "ParameterKey": "LogProcessorRoleName",
+                "ParameterValue": role_name,
+            },
+            {
+                "ParameterKey": "QueueName",
+                "ParameterValue": sqs_name,
+            },
+        ]
+
+        is_s3_source = find_in_buffer_params(app_pipeline.bufferParams, "isS3Source")
+        if is_s3_source:
+            parameters += [
+                {
+                    "ParameterKey": "ConfigJSON",
+                    "ParameterValue": json.dumps(
+                        {
+                            "parser": "json"
+                            if log_config.logType == LogTypeEnum.JSON
+                            else "regex",
+                            "regex": log_config.regex,
+                            "time_key": log_config.timeKey,
+                            "time_format": get_time_format(log_config),
+                            "time_offset": log_config.timeOffset,
+                            "is_gzip": find_in_buffer_params(
+                                app_pipeline.bufferParams, "compressionType"
+                            )
+                            == CompressionType.GZIP,
+                        }
+                    ),
+                },
+            ]
+
+        app_pipeline.bufferResourceArn = f"arn:{partition}:s3:::{kv['logBucketName']}"
+        app_pipeline.bufferResourceName = kv["logBucketName"]
 
     # Check which CloudFormation template to use
-    pattern = _get_pattern_by_buffer(buffer_type, enable_autoscaling)
+    pattern = app_pipeline_dao.get_stack_name(app_pipeline)
 
     sfn_args = {
-        "stackName": stack_name,
+        "stackName": create_stack_name("AppPipe", app_pipeline.pipelineId),
         "pattern": pattern,
         "parameters": parameters,
     }
 
     # Start the pipeline flow
-    exec_sfn_flow(pipeline_id, "START", sfn_args)
-    app_pipeline_table.put_item(
-        Item={
-            "id": pipeline_id,
-            "aosParams": args["aosParams"],
-            "bufferType": args["bufferType"],
-            "bufferParams": args["bufferParams"],
-            "tags": args.get("tags", []),
-            "createdDt": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "status": "CREATING",
-        }
-    )
+    exec_sfn_flow(app_pipeline.pipelineId, "START", sfn_args)
 
-    return pipeline_id
+    app_pipeline_dao.save(app_pipeline)
+
+    return app_pipeline.pipelineId
 
 
+def app_pipeline_to_dict(p: AppPipeline, log_config_dao: LogConfigDao) -> dict:
+    config = log_config_dao.get_log_config(p.logConfigId, p.logConfigVersionNumber)
+    ret = p.dict()
+    ret["logConfig"] = config.dict()
+    return ret
+
+
+@router.route(field_name="listAppPipelines")
 def list_app_pipelines(status: str = "", page=1, count=20):
     """List app pipelines"""
     logger.info(
@@ -168,111 +239,111 @@ def list_app_pipelines(status: str = "", page=1, count=20):
     )
     """ build filter conditions """
 
-    if not status:
-        conditions = Attr("status").ne("INACTIVE")
-    else:
-        conditions = Attr("status").eq(status)
+    app_pipeline_dao = AppPipelineDao(app_pipeline_table_name)
+    log_config_dao = LogConfigDao(log_config_table_name)
 
-    response = app_pipeline_table.scan(
-        FilterExpression=conditions,
+    pipelines = app_pipeline_dao.list_app_pipelines(
+        Attr("status").eq(status) if status else None
     )
 
-    # Assume all items returned are in the scan request
-    items = response["Items"]
-    # logger.info(items)
-    # build pagination
-    total = len(items)
-    start = (page - 1) * count
-    end = page * count
+    pipelines.sort(key=lambda p: p.createdAt, reverse=False)
 
-    if start > total:
-        start, end = 0, count
-    logger.info(f"Return result from {start} to {end} in total of {total}")
-    items.sort(key=lambda x: x["createdDt"], reverse=True)
+    total, pipelines = paginate(
+        [app_pipeline_to_dict(i, log_config_dao) for i in pipelines],
+        page=page,
+        count=count,
+    )
 
     return {
-        "total": len(items),
-        "appPipelines": items[start:end],
+        "total": total,
+        "appPipelines": pipelines,
     }
 
 
 # obtain the app pipeline details and kds details
-def get_app_pipeline(id: str) -> str:
-    resp = app_pipeline_table.get_item(Key={"id": id})
-    if "Item" not in resp:
-        raise APIException("AppPipeline Not Found")
+@router.route(field_name="getAppPipeline")
+def get_app_pipeline(id: str):
+    app_pipeline_dao = AppPipelineDao(app_pipeline_table_name)
+    log_config_dao = LogConfigDao(log_config_table_name)
 
-    item = resp["Item"]
+    item = app_pipeline_to_dict(app_pipeline_dao.get_app_pipeline(id), log_config_dao)
 
     # If buffer is KDS, then
     # Get up-to-date shard count and consumer count.
     if item.get("bufferType") == "KDS" and item.get("bufferResourceName"):
         stream_name = item["bufferResourceName"]
-        kds_resp = kds.describe_stream_summary(StreamName=stream_name)
-        logger.info(f"kds_resp is {kds_resp}")
-        if "StreamDescriptionSummary" in kds_resp:
-            summary = kds_resp["StreamDescriptionSummary"]
-            item["bufferParams"].append(
-                {
-                    "paramKey": "OpenShardCount",
-                    "paramValue": summary.get("OpenShardCount"),
-                }
-            )
-            item["bufferParams"].append(
-                {
-                    "paramKey": "ConsumerCount",
-                    "paramValue": summary.get("ConsumerCount"),
-                }
-            )
+        try:
+            kds_resp = kds.describe_stream_summary(StreamName=stream_name)
+            logger.info(f"kds_resp is {kds_resp}")
+            if "StreamDescriptionSummary" in kds_resp:
+                summary = kds_resp["StreamDescriptionSummary"]
+                item["bufferParams"].append(
+                    {
+                        "paramKey": "OpenShardCount",
+                        "paramValue": summary.get("OpenShardCount"),
+                    }
+                )
+                item["bufferParams"].append(
+                    {
+                        "paramKey": "ConsumerCount",
+                        "paramValue": summary.get("ConsumerCount"),
+                    }
+                )
+        except ClientError as ex:
+            if ex.response["Error"]["Code"] == "ResourceNotFoundException":
+                logger.error(f"Kinesis Data Stream not found right now: {ex}")
+            else:
+                raise ex
+
+    # Get the error log prefix
+    item["monitor"]["errorLogPrefix"] = get_error_export_info(item)
 
     return item
 
 
+@router.route(field_name="deleteAppPipeline")
 def delete_app_pipeline(id: str):
     """set status to INACTIVE in AppPipeline table"""
     logger.info("Update AppPipeline Status in DynamoDB")
-    pipeline_resp = app_pipeline_table.get_item(Key={"id": id})
-    if "Item" not in pipeline_resp:
-        raise APIException("AppPipeline Not Found")
 
-    # Check if data exists in the AppLog Ingestion table
-    # build filter conditions
-    conditions = Attr("status").ne("INACTIVE")
-    conditions = conditions.__and__(Attr("appPipelineId").eq(id))
+    app_pipeline_dao = AppPipelineDao(app_pipeline_table_name)
+    app_pipeline = app_pipeline_dao.get_app_pipeline(id)
 
-    ingestion_resp = app_log_ingestion_table.scan(
-        FilterExpression=conditions,
-        ProjectionExpression="id,#status,sourceType,sourceId,appPipelineId ",
-        ExpressionAttributeNames={"#status": "status"},
+    app_log_ingestion = AppLogIngestionDao(app_log_ingestion_table_name)
+    ingestions = app_log_ingestion.list_app_log_ingestions(
+        Attr("status").ne(StatusEnum.INACTIVE)
+        & Attr("appPipelineId").eq(app_pipeline.pipelineId)
     )
-    # Assume all items are returned in the scan request
-    items = ingestion_resp["Items"]
-    # logger.info(items)
-    # build pagination
-    total = len(items)
-    if total > 0:
-        raise APIException("Please delete the application log ingestion first")
 
-    stack_id = pipeline_resp["Item"]["stackId"]
+    if len(ingestions) > 0:
+        raise APIException(
+            ErrorCode.UNSUPPORTED_ACTION_HAS_INGESTION,
+            "Please open the pipeline and delete all log sources first.",
+        )
+
+    if app_pipeline.bufferAccessRoleName:
+        response = iam.list_role_policies(RoleName=app_pipeline.bufferAccessRoleName)
+        inline_policy_names = response["PolicyNames"]
+
+        for policy_name in inline_policy_names:
+            iam.delete_role_policy(
+                RoleName=app_pipeline.bufferAccessRoleName, PolicyName=policy_name
+            )
+
+        iam.delete_role(RoleName=app_pipeline.bufferAccessRoleName)
+
+    stack_id = app_pipeline.stackId
     if stack_id:
         args = {"stackId": stack_id}
         # Start the pipeline flow
         exec_sfn_flow(id, "STOP", args)
 
-    app_pipeline_table.update_item(
-        Key={"id": id},
-        UpdateExpression="SET #status = :s, #updatedDt= :uDt",
-        ExpressionAttributeNames={"#status": "status", "#updatedDt": "updatedDt"},
-        ExpressionAttributeValues={
-            ":s": "DELETING",
-            ":uDt": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
-        },
-    )
+    app_pipeline_dao.update_app_pipeline(id, status=StatusEnum.DELETING)
 
 
 def exec_sfn_flow(id: str, action="START", args=None):
     """Helper function to execute a step function flow"""
-    logger.info(f"Execute Step Function Flow: {stateMachineArn}")
+    logger.info(f"Execute Step Function Flow: {stateMachine_arn}")
 
     if args is None:
         args = {}
@@ -285,43 +356,9 @@ def exec_sfn_flow(id: str, action="START", args=None):
 
     sfn.start_execution(
         name=f"{id}-{action}",
-        stateMachineArn=stateMachineArn,
+        stateMachineArn=stateMachine_arn,
         input=json.dumps(input_args),
     )
-
-
-def create_stack_name(id):
-    return stack_prefix + "-AppPipe-" + id[:8]
-
-
-def check_aos_status(aos_domain_name):
-    """
-    Helper function to check the aos status before create pipeline or ingestion.
-    During the Upgrade and Pre-upgrade process, users can not create index template
-    and create backend role.
-    """
-    region = default_region
-
-    es = boto3.client("es", region_name=region)
-
-    # Get the domain status.
-    try:
-        describe_resp = es.describe_elasticsearch_domain(DomainName=aos_domain_name)
-        logger.info(json.dumps(describe_resp["DomainStatus"], indent=4, default=str))
-    except ClientError as err:
-        if err.response["Error"]["Code"] == "ResourceNotFoundException":
-            raise APIException("OpenSearch Domain Not Found")
-        raise err
-
-    # Check domain status.
-    if (
-        not (describe_resp["DomainStatus"]["Created"])
-        or describe_resp["DomainStatus"]["Processing"]
-    ):
-        raise APIException(
-            "OpenSearch is in the process of creating, upgrading or pre-upgrading,"
-            " please wait for it to be ready"
-        )
 
 
 def _get_pattern_by_buffer(buffer_type, enable_autoscaling="True"):
@@ -338,57 +375,28 @@ def _get_pattern_by_buffer(buffer_type, enable_autoscaling="True"):
         return "AppLog"
 
 
-def _get_buffer_params(buffer_type, buffer_params):
-    """Helper function to get param key-value for buffer"""
-    if buffer_type == "KDS":
-        keys = ["shardCount", "minCapacity", "maxCapacity", "enableAutoScaling"]
-    elif buffer_type == "MSK":
-        keys = [
-            "mskClusterArn",
-            "mskClusterName",
-            "topic",
-        ]
-    elif buffer_type == "S3":
-        keys = [
-            "logBucketName",
-            "logBucketPrefix",
-            "defaultCmkArn",
-        ]
-    else:
-        keys = ["logProcessorRoleArn"]
-
-    param_map = {}
-    for param in buffer_params:
-        if param["paramKey"] in keys:
-            if param["paramKey"] == "logBucketPrefix":
-                param_map[param["paramKey"]] = s3_notification_prefix(
-                    param["paramValue"]
-                )
-            else:
-                param_map[param["paramKey"]] = param["paramValue"]
-    return param_map
+def get_error_export_info(pipeline_item: dict):
+    """Generate processor error log location."""
+    index_prefix = pipeline_item.get("indexPrefix")
+    return f"error/APPLogs/index-prefix={index_prefix}/"
 
 
-def _create_stack_params(param_map):
-    """Helper function to create cfn stack parameter key-value pairs"""
-
-    params = []
-    for k, v in param_map.items():
-        params.append(
-            {
-                "ParameterKey": k,
-                "ParameterValue": str(v),
-            }
-        )
-
-    return params
+def find_in_buffer_params(params: List[BufferParam], key: str):
+    for p in params:
+        if p.paramKey == key:
+            return p.paramValue
+    return ""
 
 
-def s3_notification_prefix(s: str):
-    s = s.lstrip("/")
+def params_to_kv(lst) -> dict:
+    d = {}
+    for each in lst:
+        d[each["ParameterKey"]] = each["ParameterValue"]
+    return d
 
-    placeholder_sign_index = min(
-        filter(lambda x: x >= 0, (len(s), s.find("%"), s.find("$")))
-    )
-    rear_slash_index = s.rfind("/", 0, placeholder_sign_index)
-    return s[0 : rear_slash_index + 1]
+
+def get_time_format(log_config: LogConfig):
+    for each in log_config.regexFieldSpecs:
+        if each.format:
+            return each.format
+    return ""

@@ -73,7 +73,7 @@ const LogProcessing: React.FC<LogProcessingProps> = (
             <div className="cf-check-list">
               {locationList.map((element, index) => {
                 return (
-                  <label className="item" key={index}>
+                  <label className="item" key={element.value}>
                     <input
                       disabled={true}
                       checked={pipelineTask.params.geoPlugin}
@@ -112,7 +112,7 @@ const LogProcessing: React.FC<LogProcessingProps> = (
             <div className="cf-check-list">
               {osList.map((element, index) => {
                 return (
-                  <label className="item" key={index}>
+                  <label className="item" key={element.value}>
                     <input
                       disabled={true}
                       checked={pipelineTask.params.userAgentPlugin}

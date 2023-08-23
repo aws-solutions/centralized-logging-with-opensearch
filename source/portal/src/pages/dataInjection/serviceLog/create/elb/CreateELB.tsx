@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React, { useState, useEffect } from "react";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import CreateStep from "components/CreateStep";
 import SpecifySettings from "./steps/SpecifySettings";
 import SpecifyOpenSearchCluster, {
@@ -22,13 +22,20 @@ import SpecifyOpenSearchCluster, {
   checkOpenSearchInput,
   covertParametersByKeyAndConditions,
 } from "../common/SpecifyCluster";
-import CreateTags from "../common/CreateTags";
 import Button from "components/Button";
 
 import Breadcrumb from "components/Breadcrumb";
 import { appSyncRequestMutation } from "assets/js/request";
 import { createServicePipeline } from "graphql/mutations";
-import { CODEC, DestinationType, EngineType, ServiceType, Tag } from "API";
+import {
+  Codec,
+  DestinationType,
+  EngineType,
+  ServiceType,
+  MonitorInput,
+  DomainStatusCheckType,
+  DomainStatusCheckResponse,
+} from "API";
 import {
   SupportPlugin,
   WarmTransitionType,
@@ -40,8 +47,7 @@ import { OptionType } from "components/AutoComplete/autoComplete";
 import { CreateLogMethod, ServiceLogType } from "assets/js/const";
 import HelpPanel from "components/HelpPanel";
 import SideMenu from "components/SideMenu";
-import { AppStateProps } from "reducer/appReducer";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Alert } from "assets/js/alert";
 import LogProcessing from "../common/LogProcessing";
@@ -49,6 +55,17 @@ import {
   bucketNameIsValid,
   splitStringToBucketAndPrefix,
 } from "assets/js/utils";
+import { MONITOR_ALARM_INIT_DATA } from "assets/js/init";
+import AlarmAndTags from "../../../../pipelineAlarm/AlarmAndTags";
+import { Actions, RootState } from "reducer/reducers";
+import { useTags } from "assets/js/hooks/useTags";
+import { Dispatch } from "redux";
+import { useAlarm } from "assets/js/hooks/useAlarm";
+import { ActionType } from "reducer/appReducer";
+import {
+  CreateAlarmActionTypes,
+  validateAalrmInput,
+} from "reducer/createAlarm";
 
 const EXCLUDE_PARAMS = [
   "esDomainId",
@@ -65,7 +82,6 @@ const EXCLUDE_PARAMS = [
 ];
 export interface ELBTaskProps {
   type: ServiceType;
-  tags: Tag[];
   arnId: string;
   source: string;
   target: string;
@@ -110,6 +126,7 @@ export interface ELBTaskProps {
 
     rolloverSizeNotSupport: boolean;
   };
+  monitor?: MonitorInput | null;
 }
 
 const DEFAULT_TASK_VALUE: ELBTaskProps = {
@@ -117,7 +134,6 @@ const DEFAULT_TASK_VALUE: ELBTaskProps = {
   source: "",
   target: "",
   arnId: "",
-  tags: [],
   logSourceAccountId: "",
   logSourceRegion: "",
   destinationType: DestinationType.S3,
@@ -153,11 +169,12 @@ const DEFAULT_TASK_VALUE: ELBTaskProps = {
     retainAge: "180",
     rolloverSize: "30",
     indexSuffix: SERVICE_LOG_INDEX_SUFFIX.yyyy_MM_dd,
-    codec: CODEC.best_compression,
+    codec: Codec.best_compression,
     refreshInterval: "1s",
 
     rolloverSizeNotSupport: false,
   },
+  monitor: MONITOR_ALARM_INIT_DATA,
 };
 
 const CreateELB: React.FC = () => {
@@ -176,11 +193,11 @@ const CreateELB: React.FC = () => {
   ];
 
   const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: AppStateProps) => state.amplifyConfig
+    (state: RootState) => state.app.amplifyConfig
   );
-
+  const dispatch = useDispatch<Dispatch<Actions>>();
   const [curStep, setCurStep] = useState(0);
-  const history = useHistory();
+  const navigate = useNavigate();
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [elbPipelineTask, setELBPipelineTask] =
     useState<ELBTaskProps>(DEFAULT_TASK_VALUE);
@@ -205,6 +222,10 @@ const CreateELB: React.FC = () => {
     indexEmptyError: false,
     indexNameFormatError: false,
   });
+  const [domainCheckStatus, setDomainCheckStatus] =
+    useState<DomainStatusCheckResponse>();
+  const tags = useTags();
+  const monitor = useAlarm();
 
   const confirmCreatePipeline = async () => {
     console.info("elbPipelineTask:", elbPipelineTask);
@@ -212,11 +233,13 @@ const CreateELB: React.FC = () => {
     createPipelineParams.type = ServiceType.ELB;
     createPipelineParams.source = elbPipelineTask.source;
     createPipelineParams.target = elbPipelineTask.target;
-    createPipelineParams.tags = elbPipelineTask.tags;
+    createPipelineParams.tags = tags;
     createPipelineParams.logSourceAccountId =
       elbPipelineTask.logSourceAccountId;
     createPipelineParams.logSourceRegion = amplifyConfig.aws_project_region;
     createPipelineParams.destinationType = elbPipelineTask.destinationType;
+
+    createPipelineParams.monitor = monitor.monitor;
 
     const tmpParamList: any = covertParametersByKeyAndConditions(
       elbPipelineTask,
@@ -259,9 +282,7 @@ const CreateELB: React.FC = () => {
       );
       console.info("createRes:", createRes);
       setLoadingCreate(false);
-      history.push({
-        pathname: "/log-pipeline/service-log",
-      });
+      navigate("/log-pipeline/service-log");
     } catch (error) {
       setLoadingCreate(false);
       console.error(error);
@@ -269,8 +290,49 @@ const CreateELB: React.FC = () => {
   };
 
   useEffect(() => {
-    console.info("elbPipelineTask:", elbPipelineTask);
-  }, [elbPipelineTask]);
+    dispatch({ type: ActionType.CLOSE_SIDE_MENU });
+  }, []);
+
+  const validateStep0 = () => {
+    if (nextStepDisable) {
+      return false;
+    }
+    if (needEnableAccessLog) {
+      Alert(t("servicelog:elb.needEnableLogging"));
+      return false;
+    }
+    if (elbPipelineTask.params.taskType === CreateLogMethod.Automatic) {
+      if (!elbPipelineTask.params.elbObj) {
+        setAutoELBEmptyError(true);
+        return false;
+      }
+    }
+    if (elbPipelineTask.params.taskType === CreateLogMethod.Manual) {
+      if (!elbPipelineTask.params.logBucketName) {
+        setManualELBEmpryError(true);
+        return false;
+      }
+      if (
+        !elbPipelineTask.params.manualBucketELBPath
+          .toLowerCase()
+          .startsWith("s3") ||
+        !bucketNameIsValid(elbPipelineTask.params.logBucketName)
+      ) {
+        setManualS3PathInvalid(true);
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const isNextDisabled = () => {
+    return (
+      elbISChanging ||
+      domainListIsLoading ||
+      (curStep === 2 &&
+        domainCheckStatus?.status !== DomainStatusCheckType.PASSED)
+    );
+  };
 
   return (
     <div className="lh-main-content">
@@ -672,25 +734,33 @@ const CreateELB: React.FC = () => {
                         };
                       });
                     }}
+                    domainCheckedStatus={domainCheckStatus}
+                    changeOSDomainCheckStatus={(status) => {
+                      setELBPipelineTask((prev: ELBTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            replicaNumbers: status.multiAZWithStandbyEnabled
+                              ? "2"
+                              : "1",
+                          },
+                        };
+                      });
+                      setDomainCheckStatus(status);
+                    }}
                   />
                 )}
                 {curStep === 3 && (
-                  <CreateTags
-                    pipelineTask={elbPipelineTask}
-                    changeTags={(tags) => {
-                      setELBPipelineTask((prev: ELBTaskProps) => {
-                        return { ...prev, tags: tags };
-                      });
-                    }}
-                  />
+                  <div>
+                    <AlarmAndTags pipelineTask={elbPipelineTask} />
+                  </div>
                 )}
                 <div className="button-action text-right">
                   <Button
                     btnType="text"
                     onClick={() => {
-                      history.push({
-                        pathname: "/log-pipeline/service-log/create",
-                      });
+                      navigate("/log-pipeline/service-log/create");
                     }}
                   >
                     {t("button.cancel")}
@@ -710,45 +780,12 @@ const CreateELB: React.FC = () => {
                   {curStep < 3 && (
                     <Button
                       // loading={autoCreating}
-                      disabled={elbISChanging || domainListIsLoading}
+                      disabled={isNextDisabled()}
                       btnType="primary"
                       onClick={() => {
                         if (curStep === 0) {
-                          if (nextStepDisable) {
+                          if (!validateStep0()) {
                             return;
-                          }
-                          if (needEnableAccessLog) {
-                            Alert(t("servicelog:elb.needEnableLogging"));
-                            return;
-                          }
-                          if (
-                            elbPipelineTask.params.taskType ===
-                            CreateLogMethod.Automatic
-                          ) {
-                            if (!elbPipelineTask.params.elbObj) {
-                              setAutoELBEmptyError(true);
-                              return;
-                            }
-                          }
-                          if (
-                            elbPipelineTask.params.taskType ===
-                            CreateLogMethod.Manual
-                          ) {
-                            if (!elbPipelineTask.params.logBucketName) {
-                              setManualELBEmpryError(true);
-                              return;
-                            }
-                            if (
-                              !elbPipelineTask.params.manualBucketELBPath
-                                .toLowerCase()
-                                .startsWith("s3") ||
-                              !bucketNameIsValid(
-                                elbPipelineTask.params.logBucketName
-                              )
-                            ) {
-                              setManualS3PathInvalid(true);
-                              return;
-                            }
                           }
                         }
                         if (curStep === 2) {
@@ -762,6 +799,13 @@ const CreateELB: React.FC = () => {
                             checkOpenSearchInput(elbPipelineTask);
                           setAosInputValidRes(validRes);
                           if (Object.values(validRes).indexOf(true) >= 0) {
+                            return;
+                          }
+                          // Check domain connection status
+                          if (
+                            domainCheckStatus?.status !==
+                            DomainStatusCheckType.PASSED
+                          ) {
                             return;
                           }
                         }
@@ -778,6 +822,12 @@ const CreateELB: React.FC = () => {
                       loading={loadingCreate}
                       btnType="primary"
                       onClick={() => {
+                        if (!validateAalrmInput(monitor)) {
+                          dispatch({
+                            type: CreateAlarmActionTypes.VALIDATE_ALARM_INPUT,
+                          });
+                          return;
+                        }
                         confirmCreatePipeline();
                       }}
                     >

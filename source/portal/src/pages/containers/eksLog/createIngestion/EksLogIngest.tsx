@@ -18,84 +18,48 @@ import Breadcrumb from "components/Breadcrumb";
 import CreateStep from "components/CreateStep";
 import SideMenu from "components/SideMenu";
 import SpecifySettings from "./step/SpecifySettings";
-import SpecifyLogConfig from "./step/SpecifyLogConfig";
-import CreateTags from "./step/CreateTags";
 import Button from "components/Button";
-import { useHistory, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import HelpPanel from "components/HelpPanel";
-import { EKSClusterLogSource, LogSourceType, Tag } from "API";
-import { ActionType, AppStateProps } from "reducer/appReducer";
-import { useDispatch, useSelector } from "react-redux";
+import { EKSDeployKind, LogSource, LogSourceType } from "API";
+import { ActionType } from "reducer/appReducer";
+import { useDispatch } from "react-redux";
 import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
-import { getDomainDetails, getEKSClusterDetails } from "graphql/queries";
-import { AmplifyConfigType, CreationMethod, YesNo } from "types";
+import { getLogSource } from "graphql/queries";
+import { CreationMethod } from "types";
 import LoadingText from "components/LoadingText";
 import { createAppLogIngestion } from "graphql/mutations";
 import { OptionType } from "components/AutoComplete/autoComplete";
-
-interface MatchParams {
-  id: string;
-}
+import HeaderPanel from "components/HeaderPanel";
+import LogPathInput from "pages/dataInjection/applicationLog/common/LogPathInput";
+import PagePanel from "components/PagePanel";
+import { UnmodifiableLogConfigSelector } from "pages/dataInjection/applicationLog/common/UnmodifiableLogConfigSelector";
+import { Validator } from "pages/comps/Validator";
+import { CreateTags } from "pages/dataInjection/common/CreateTags";
+import { useTags } from "assets/js/hooks/useTags";
+import { hasSamePrefix } from "assets/js/utils";
 
 export interface EksIngestionPropsType {
-  indexPrefixRequiredError?: boolean;
-  indexPrefixFormatError?: boolean;
-  shardNumFormatError?: boolean;
-  maxShardNumFormatError?: boolean;
-  warmTransError?: boolean;
-  coldTransError?: boolean;
-  retentionError?: boolean;
-  shardsError?: boolean;
+  createMethod: CreationMethod;
   pipelineRequiredError?: boolean;
-  configRequiredError?: boolean;
-  logPathEmptyError?: boolean;
-
-  createMethod: string;
   existsPipeline: OptionType;
-  warmEnable: boolean;
-  coldEnable: boolean;
-  confId: string;
-  createDashboard: string;
   eksClusterId: string;
   logPath: string;
-
-  aosParams: {
-    coldLogTransition: string;
-    domainName: string;
-    engine: string;
-    failedLogBucket: string;
-    indexPrefix: string;
-    logRetention: string;
-    opensearchArn: string;
-    opensearchEndpoint: string;
-    replicaNumbers: string;
-    shardNumbers: string;
-    vpc: {
-      privateSubnetIds: string;
-      securityGroupId: string;
-      vpcId: string;
-    };
-    warmLogTransition: string;
-  };
-  tags: Tag[];
   force: boolean;
 }
 
 const EksLogIngest: React.FC = () => {
-  const history = useHistory();
+  const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { id }: MatchParams = useParams();
+  const { id } = useParams();
   const { t } = useTranslation();
-  const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: AppStateProps) => state.amplifyConfig
-  );
 
   const [loadingEKSData, setLoadingEKSData] = useState(false);
-  const [curStep, setCurStep] = useState(0);
+  const [currentStep, setCurrentStep] = useState(0);
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [curEksLogSource, setCurEksLogSource] = useState<
-    EKSClusterLogSource | undefined
+    LogSource | undefined
   >();
 
   const breadCrumbList = [
@@ -105,80 +69,62 @@ const EksLogIngest: React.FC = () => {
       link: "/containers/eks-log",
     },
     {
-      name: curEksLogSource?.eksClusterName || "",
+      name: curEksLogSource?.eks?.eksClusterName || "",
       link: "/containers/eks-log/detail/" + id,
     },
     {
       name: t("ekslog:ingest.ingest"),
     },
   ];
+  const tags = useTags();
 
   const [eksIngestionInfo, setEksIngestionInfo] =
     useState<EksIngestionPropsType>({
+      eksClusterId: "",
       createMethod: CreationMethod.Exists,
       existsPipeline: {
         name: "",
         value: "",
+        logConfigId: "",
       },
-      warmEnable: false,
-      coldEnable: false,
-      confId: "",
-      createDashboard: YesNo.Yes,
-      eksClusterId: "",
       logPath: "",
-      aosParams: {
-        coldLogTransition: "",
-        domainName: "",
-        engine: "",
-        failedLogBucket: amplifyConfig.default_logging_bucket,
-        indexPrefix: "",
-        logRetention: "",
-        opensearchArn: "",
-        opensearchEndpoint: "",
-        replicaNumbers: "1",
-        shardNumbers: "1",
-        vpc: {
-          privateSubnetIds: "",
-          securityGroupId: "",
-          vpcId: "",
-        },
-        warmLogTransition: "",
-      },
-      tags: [],
       force: false,
     });
+
+  const logPathValidator = new Validator(() => {
+    if (!eksIngestionInfo.logPath) {
+      throw new Error(t("applog:ingestion.applyConfig.inputLogPath") || "");
+    }
+
+    // check esk sidecar path
+    if (curEksLogSource?.eks?.deploymentKind === EKSDeployKind.Sidecar) {
+      const multiPathArray = eksIngestionInfo.logPath?.split(",");
+      if (multiPathArray.length > 1 && !hasSamePrefix(multiPathArray)) {
+        throw new Error(t("error.sideCarPathInvalid") || "");
+      }
+    }
+
+    if (!eksIngestionInfo.logPath.startsWith("/")) {
+      throw new Error(
+        t("applog:ingestion.applyConfig.logPathMustBeginWithSlash") || ""
+      );
+    }
+  });
 
   const getEksLogById = async () => {
     try {
       setLoadingEKSData(true);
-      const resEksData: any = await appSyncRequestQuery(getEKSClusterDetails, {
-        eksClusterId: id,
+      const resEksData: any = await appSyncRequestQuery(getLogSource, {
+        type: LogSourceType.EKSCluster,
+        sourceId: id,
       });
-      const resAosData: any = await appSyncRequestQuery(getDomainDetails, {
-        id: resEksData.data.getEKSClusterDetails.aosDomain.id,
-      });
-      const eksData = resEksData.data?.getEKSClusterDetails;
-      const aosData = resAosData.data?.getDomainDetails;
+      const eksData = resEksData.data?.getLogSource;
+      console.info("eksData:", eksData);
       setCurEksLogSource(eksData);
       setEksIngestionInfo((prev) => {
         return {
           ...prev,
-          eksClusterId: id,
-          warmEnable: aosData?.nodes?.warmEnabled || false,
-          coldEnable: aosData?.nodes?.coldEnabled || false,
-          aosParams: {
-            ...prev.aosParams,
-            domainName: aosData?.domainName || "",
-            opensearchArn: aosData?.domainArn || "",
-            opensearchEndpoint: aosData?.endpoint || "",
-            engine: aosData?.engine || "",
-            vpc: {
-              privateSubnetIds: aosData?.vpc?.privateSubnetIds || "",
-              publicSubnetIds: aosData?.vpc?.publicSubnetIds || "",
-              securityGroupId: aosData?.vpc?.securityGroupId || "",
-              vpcId: aosData?.vpc?.vpcId || "",
-            },
-          },
+          eksClusterId: id || "",
         };
       });
 
@@ -194,12 +140,11 @@ const EksLogIngest: React.FC = () => {
   ) => {
     const logIngestionParams = {
       sourceType: LogSourceType.EKSCluster,
-      sourceIds: [eksIngestionInfo.eksClusterId],
+      sourceId: eksIngestionInfo.eksClusterId,
       appPipelineId: pipelineId || eksIngestionInfo.existsPipeline.value,
-      confId: eksIngestionInfo.confId,
+      tags,
       logPath: eksIngestionInfo.logPath,
-      createDashboard: eksIngestionInfo.createDashboard,
-      tags: eksIngestionInfo.tags,
+      autoAddPermission: false,
     };
     try {
       setLoadingCreate(true);
@@ -209,8 +154,13 @@ const EksLogIngest: React.FC = () => {
       );
       console.info("createRes:", createRes);
       setLoadingCreate(false);
-      history.push({
-        pathname: `/containers/eks-log/detail/${id}`,
+      // We set the showEKSDaemonSetModal to be true here
+      // and it will be disabled for Sidecar scenario in EksLogDetail.tsx
+      navigate(`/containers/eks-log/detail/${id}`, {
+        state: {
+          showEKSDaemonSetModal: true,
+          eksSourceId: id,
+        },
       });
     } catch (error: any) {
       setLoadingCreate(false);
@@ -230,6 +180,75 @@ const EksLogIngest: React.FC = () => {
     console.info("eksIngestionInfo:", eksIngestionInfo);
   }, [eksIngestionInfo]);
 
+  const stepComps = [
+    {
+      name: t("ekslog:ingest.step.specifyPipeline"),
+      disabled: false,
+      element: (
+        <SpecifySettings
+          eksIngestionInfo={eksIngestionInfo}
+          changeExistsPipeline={(pipeline) => {
+            setEksIngestionInfo((prev) => {
+              return {
+                ...prev,
+                pipelineRequiredError: false,
+                existsPipeline: pipeline,
+              };
+            });
+          }}
+        />
+      ),
+      validators: [],
+    },
+    {
+      name: t("applog:logSourceDesc.eks.step2.naviTitle"),
+      element: (
+        <PagePanel
+          title={t("applog:logSourceDesc.eks.step2.title")}
+          desc={t("")}
+        >
+          <HeaderPanel title={t("resource:config.common.logPath")}>
+            <LogPathInput
+              value={eksIngestionInfo.logPath}
+              setValue={(value) => {
+                setEksIngestionInfo((prev) => {
+                  return {
+                    ...prev,
+                    logPath: value as string,
+                  };
+                });
+              }}
+              logSourceType={LogSourceType.EKSCluster}
+              validator={logPathValidator}
+            />
+          </HeaderPanel>
+          <HeaderPanel title={t("resource:config.common.logPath")}>
+            <UnmodifiableLogConfigSelector
+              hideRefreshButton
+              hideViewDetailButton
+              title={t("applog:logSourceDesc.eks.step2.logConfigName")}
+              desc=""
+              configId={eksIngestionInfo.existsPipeline.logConfigId || ""}
+              configVersion={
+                eksIngestionInfo.existsPipeline.logConfigVersionNumber || 0
+              }
+            />
+          </HeaderPanel>
+        </PagePanel>
+      ),
+      validators: [logPathValidator],
+    },
+    {
+      name: t("applog:logSourceDesc.eks.step5.naviTitle"),
+      element: (
+        <PagePanel title={t("applog:logSourceDesc.eks.step5.title")}>
+          <CreateTags />
+        </PagePanel>
+      ),
+      validators: [],
+    },
+  ].filter((each) => !each.disabled);
+
   return (
     <div className="lh-main-content">
       <SideMenu />
@@ -243,108 +262,34 @@ const EksLogIngest: React.FC = () => {
             ) : (
               <div className="create-wrapper">
                 <div className="create-step">
-                  <CreateStep
-                    list={[
-                      {
-                        name: t("ekslog:ingest.step.specifyPipeline"),
-                      },
-                      {
-                        name: t("ekslog:ingest.step.specifyConfig"),
-                      },
-                      {
-                        name: t("ekslog:ingest.step.createTags"),
-                      },
-                    ]}
-                    activeIndex={curStep}
-                  />
+                  <CreateStep list={stepComps} activeIndex={currentStep} />
                 </div>
                 <div className="create-content m-w-1024">
-                  {curStep === 0 && (
-                    <SpecifySettings
-                      eksIngestionInfo={eksIngestionInfo}
-                      changeExistsPipeline={(pipeline) => {
-                        setEksIngestionInfo((prev) => {
-                          return {
-                            ...prev,
-                            pipelineRequiredError: false,
-                            existsPipeline: pipeline,
-                          };
-                        });
-                      }}
-                    />
-                  )}
-                  {curStep === 1 && (
-                    <SpecifyLogConfig
-                      eksIngestionInfo={eksIngestionInfo}
-                      changeLogConfig={(confId) => {
-                        setEksIngestionInfo((prev) => {
-                          return {
-                            ...prev,
-                            configRequiredError: false,
-                            confId: confId,
-                          };
-                        });
-                      }}
-                      changeSampleDashboard={(yesNo) => {
-                        setEksIngestionInfo((prev) => {
-                          return {
-                            ...prev,
-                            createDashboard: yesNo,
-                          };
-                        });
-                      }}
-                      changeLogConfPath={(path) => {
-                        setEksIngestionInfo((prev) => {
-                          return {
-                            ...prev,
-                            logPathEmptyError: false,
-                            logPath: path,
-                          };
-                        });
-                      }}
-                    />
-                  )}
-                  {curStep === 2 && (
-                    <CreateTags
-                      eksIngestionInfo={eksIngestionInfo}
-                      changeTags={(tags) => {
-                        setEksIngestionInfo((prev) => {
-                          return {
-                            ...prev,
-                            tags: tags,
-                          };
-                        });
-                      }}
-                    />
-                  )}
+                  {stepComps[currentStep].element}
                   <div className="button-action text-right">
                     <Button
                       btnType="text"
                       onClick={() => {
-                        history.push({
-                          pathname: `/containers/eks-log/detail/${id}`,
-                        });
+                        navigate(`/containers/eks-log/detail/${id}`);
                       }}
                     >
                       {t("button.cancel")}
                     </Button>
-                    {curStep > 0 && (
+                    {currentStep > 0 && (
                       <Button
                         onClick={() => {
-                          setCurStep((curStep) => {
-                            return curStep - 1 < 0 ? 0 : curStep - 1;
-                          });
+                          setCurrentStep(Math.max(currentStep - 1, 0));
                         }}
                       >
                         {t("button.previous")}
                       </Button>
                     )}
 
-                    {curStep < 2 && (
+                    {currentStep < stepComps.length - 1 && (
                       <Button
                         btnType="primary"
                         onClick={() => {
-                          if (curStep === 0) {
+                          if (currentStep === 0) {
                             if (
                               eksIngestionInfo.createMethod ===
                                 CreationMethod.Exists &&
@@ -359,40 +304,25 @@ const EksLogIngest: React.FC = () => {
                               return;
                             }
                           }
-                          if (curStep === 1) {
-                            if (!eksIngestionInfo.logPath) {
-                              setEksIngestionInfo((prev) => {
-                                return {
-                                  ...prev,
-                                  logPathEmptyError: true,
-                                };
-                              });
-                              return;
-                            }
-                            if (!eksIngestionInfo.confId) {
-                              setEksIngestionInfo((prev) => {
-                                return {
-                                  ...prev,
-                                  configRequiredError: true,
-                                };
-                              });
-                              return;
-                            }
+                          if (
+                            stepComps[currentStep].validators
+                              .map((each) => each.validate())
+                              .every(Boolean)
+                          ) {
+                            setCurrentStep(
+                              Math.min(currentStep + 1, stepComps.length)
+                            );
                           }
-                          setCurStep((curStep) => {
-                            return curStep + 1 > 2 ? 2 : curStep + 1;
-                          });
                         }}
                       >
                         {t("button.next")}
                       </Button>
                     )}
-                    {curStep === 2 && (
+                    {currentStep === stepComps.length - 1 && (
                       <Button
                         loading={loadingCreate}
                         btnType="primary"
                         onClick={() => {
-                          console.info("confirm to create");
                           confirmCreateEksLogIngestionWithExistsPipeline();
                         }}
                       >

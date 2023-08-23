@@ -10,6 +10,7 @@
     "list": {
       "name": "名称",
       "type": "类型",
+      "account": "账户",
       "platform": "平台",
       "created": "创建时间"
     },
@@ -45,7 +46,8 @@
         "asgTips2": "启动模板",
         "asgTips3": " 或 ",
         "asgTips4": "启动配置",
-        "asgTipsTitle": "您需要将以下内容添加到您的启动模板中以更新您的 EC2 用户数据部分。"
+        "asgTipsTitle": "您需要将以下内容添加到您的启动模板中以更新您的 EC2 用户数据部分。",
+        "asgTipsDesc": "Add below permissions to the IAM instance profile for your ASG."
       }
     },
     "create": {
@@ -65,12 +67,12 @@
       "tips1": "安装在实例上的 AWS Systems Manager 代理（SSM 代理）。",
       "tips2": "与实例关联的 AmazonSSMManagedInstanceCore 策略。",
       "tips3": "这些实例具有对 AWS Systems Manager 的网络访问权限。",
-      "tips4": "这些实例具有对 Amazon Kinesis Data Streams 的网络访问权限。",
-      "tips5": "Fluent Bit 代理依赖 OpenSSL 1.1，请确保 Linux 实例上安装了 OpenSSL 1.1。",
+      "tips4": "Fluent Bit 代理依赖 OpenSSL 1.1，请确保 Linux 实例上安装了 OpenSSL 1.1。",
       "settings": "实例组设置",
       "groupName": "组名",
       "groupNameDesc": "输入日志组的名称。名称必须是唯一的，并且只能包含小写字母和 -。",
       "groupNameError": "请输入组名称",
+      "defaultOfflineError": "获取命令调用响应失败，请手动检查 Fluent Bit 状态。",
       "instances": {
         "title": "实例",
         "name": "名称",
@@ -108,6 +110,7 @@
       "name": "名称",
       "type": "类型",
       "agent": "代理",
+      "version": "版本号",
       "created": "创建时间",
       "logConfig": "日志配置",
       "path": "日志路径",
@@ -123,7 +126,9 @@
       "specType": "类型",
       "specFormat": "格式",
       "timeFormat": "时间格式",
-      "notExist": "日志配置不存在."
+      "indexName": "索引名称",
+      "notExist": "日志配置不存在.",
+      "notSupportEdit": "您正在查看的是创建管道时使用的日志配置，要查看最新版本的日志配置或编辑日志配置，请点击: "
     },
     "common": {
       "configName": "配置名称",
@@ -185,6 +190,9 @@
       "selectTimezone": "请选择时区",
       "timezoneDesc": "为您的日志指定时区，默认情况下，它是从您的时间字段解析的时区。也就是说，如果您的日志中的时间字段包含时区，则无需选择。如果您想使用不同的时区，请从时区列表中选择时区。",
       "inputJSON": "请输入 JSON 格式的日志样例",
+      "userLogFormatError": "用户日志格式包含非拉丁字符。",
+      "userLogFormatNotEmpty": "用户日志格式不能为空。",
+      "regexMustNotBeEmpty": "正则表达式不能为空",
       "notJSONFormat": "日志样例不是合法的 JSON 格式"
     },
     "filter": {
@@ -195,7 +203,8 @@
       "condition": "条件",
       "regex": "正则表达式",
       "include": "包含",
-      "exclude": "不包含"
+      "exclude": "不包含",
+      "alert": "你必须提供样本日志来添加过滤条件，请在提供样本日志后重试。"
     }
   },
   "crossAccount": {
@@ -235,11 +244,11 @@
       "accountRolesDesc": "输入步骤 1 的 CloudFormation 输出中的 MemberAccountRoleARN。",
       "inputAccountRoles": "请输入成员账户角色 ARN",
       "accountRolesFormatError": "成员账户角色 ARN 格式错误",
-      "installDocs": "FluentBit 代理安装文档",
+      "installDocs": "Fluent Bit 代理安装文档",
       "installDocsDesc": "在步骤 1 的 CloudFormation 输出中的 AgentInstallDocument。",
       "inputInstallDocs": "请输入代理安装文件",
       "installDocsFormatError": "代理安装文件格式错误",
-      "configDocs": "FluentBit 代理配置文档",
+      "configDocs": "Fluent Bit 代理配置文档",
       "configDocsDesc": "在步骤 1 的 CloudFormation 输出中的 AgentConfigDocument。",
       "inputConfigDocs": "请输入配置文件",
       "configDocsFormatError": "配置文件格式错误",
@@ -255,7 +264,14 @@
       "kmsKey": "成员账户 KMS 密钥",
       "kmsKeyDesc": "在步骤 1 的 CloudFormation 输出中的 MemberAccountKMSKeyARN。",
       "inputKmsKey": "请输入成员账户 KMS 密钥",
-      "kmsKeyFormatError": " KMS 密钥格式错误"
+      "kmsKeyFormatError": " KMS 密钥格式错误",
+      "iamInstanceProfileArn": "成员账户 IAM Instance Profile ARN",
+      "iamInstanceProfileArnDesc": "输入步骤 1 的 CloudFormation 输出中的 MemberAccountIamInstanceProfileARN。",
+      "inputIamInstanceProfileArn": "请输入成员账户 Instance Profile ARN",
+      "iamInstanceProfileArnFormatError": "Instance Profile ARN 格式错误",
+      "updateCwlRoleFailed": "更新主账户 CloudWatch 角色失败",
+      "accountNotFound": "账户未找到",
+      "accountAlreadyExists": "账户已存在"
     }
   }
 }

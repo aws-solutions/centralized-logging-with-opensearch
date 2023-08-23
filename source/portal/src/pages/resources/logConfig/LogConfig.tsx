@@ -15,24 +15,22 @@ limitations under the License.
 */
 /* eslint-disable react/display-name */
 import React, { useEffect, useState } from "react";
-import { Link, useHistory } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Pagination from "@material-ui/lab/Pagination";
-import RefreshIcon from "@material-ui/icons/Refresh";
 import Button from "components/Button";
 import { TablePanel } from "components/TablePanel";
 import Breadcrumb from "components/Breadcrumb";
 import { SelectType } from "components/TablePanel/tablePanel";
-import { LogConf } from "API";
+import { LogConfig as LogConf } from "API";
 import Modal from "components/Modal";
-import LoadingText from "components/LoadingText";
 import HelpPanel from "components/HelpPanel";
 import SideMenu from "components/SideMenu";
 import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
-import { listLogConfs } from "graphql/queries";
-import { deleteLogConf } from "graphql/mutations";
-import { DEFAULT_AGENT_VERSION } from "assets/js/const";
+import { listLogConfigs } from "graphql/queries";
+import { deleteLogConfig } from "graphql/mutations";
 import { formatLocalTime } from "assets/js/utils";
 import { useTranslation } from "react-i18next";
+import ButtonRefresh from "components/ButtonRefresh";
 
 const PAGE_SIZE = 10;
 
@@ -43,7 +41,7 @@ const LogConfig: React.FC = () => {
     { name: t("resource:config.name") },
   ];
 
-  const history = useHistory();
+  const navigate = useNavigate();
   const [loadingData, setLoadingData] = useState(false);
   const [openDeleteModel, setOpenDeleteModel] = useState(false);
   const [loadingDelete, setLoadingDelete] = useState(false);
@@ -61,13 +59,14 @@ const LogConfig: React.FC = () => {
     try {
       setLoadingData(true);
       setLogConfigList([]);
-      const resData: any = await appSyncRequestQuery(listLogConfs, {
+      const resData: any = await appSyncRequestQuery(listLogConfigs, {
         page: curPage,
         count: PAGE_SIZE,
       });
       console.info("resData:", resData);
-      const dataLogConfigList: LogConf[] = resData.data.listLogConfs.logConfs;
-      setTotoalCount(resData.data.listLogConfs.total);
+      const dataLogConfigList: LogConf[] =
+        resData.data.listLogConfigs.logConfigs;
+      setTotoalCount(resData.data.listLogConfigs.total);
       setLogConfigList(dataLogConfigList);
       setLoadingData(false);
     } catch (error) {
@@ -89,7 +88,7 @@ const LogConfig: React.FC = () => {
   const confimRemoveLogConfig = async () => {
     try {
       setLoadingDelete(true);
-      const removeRes = await appSyncRequestMutation(deleteLogConf, {
+      const removeRes = await appSyncRequestMutation(deleteLogConfig, {
         id: curTipsLogConfig?.id,
       });
       console.info("removeRes:", removeRes);
@@ -104,9 +103,7 @@ const LogConfig: React.FC = () => {
 
   // Click View Detail Button Redirect to detail page
   const clickToReviewDetail = () => {
-    history.push({
-      pathname: `/resources/log-config/detail/${selectedLogConfig[0]?.id}`,
-    });
+    navigate(`/resources/log-config/detail/${selectedLogConfig[0]?.id}`);
   };
 
   // Get Log Config list when page rendered.
@@ -129,6 +126,12 @@ const LogConfig: React.FC = () => {
     }
   }, [selectedLogConfig]);
 
+  const renderConfigName = (data: LogConf) => {
+    return (
+      <Link to={`/resources/log-config/detail/${data.id}`}>{data.name}</Link>
+    );
+  };
+
   return (
     <div className="lh-main-content">
       <SideMenu />
@@ -138,6 +141,7 @@ const LogConfig: React.FC = () => {
             <Breadcrumb list={breadCrumbList} />
             <div className="table-data">
               <TablePanel
+                trackId="id"
                 title={t("resource:config.list.config")}
                 changeSelected={(item) => {
                   console.info("item:", item);
@@ -147,16 +151,9 @@ const LogConfig: React.FC = () => {
                 selectType={SelectType.RADIO}
                 columnDefinitions={[
                   {
-                    // width: 110,
                     id: "Name",
                     header: t("resource:config.list.name"),
-                    cell: (e: LogConf) => {
-                      return (
-                        <Link to={`/resources/log-config/detail/${e.id}`}>
-                          {e.confName}
-                        </Link>
-                      );
-                    },
+                    cell: (e: LogConf) => renderConfigName(e),
                   },
                   {
                     id: "Type",
@@ -166,18 +163,11 @@ const LogConfig: React.FC = () => {
                     },
                   },
                   {
-                    id: "Agent",
-                    header: t("resource:config.list.agent"),
-                    cell: () => {
-                      return DEFAULT_AGENT_VERSION;
-                    },
-                  },
-                  {
                     width: 170,
                     id: "created",
                     header: t("resource:config.list.created"),
                     cell: (e: LogConf) => {
-                      return formatLocalTime(e?.createdDt || "");
+                      return formatLocalTime(e?.createdAt || "");
                     },
                   },
                 ]}
@@ -195,11 +185,7 @@ const LogConfig: React.FC = () => {
                         }
                       }}
                     >
-                      {loadingData ? (
-                        <LoadingText />
-                      ) : (
-                        <RefreshIcon fontSize="small" />
-                      )}
+                      <ButtonRefresh loading={loadingData} />
                     </Button>
                     <Button
                       disabled={disabledDetail}
@@ -220,9 +206,7 @@ const LogConfig: React.FC = () => {
                     <Button
                       btnType="primary"
                       onClick={() => {
-                        history.push({
-                          pathname: "/resources/log-config/create",
-                        });
+                        navigate("/resources/log-config/create");
                       }}
                     >
                       {t("button.createLogConfig")}
@@ -272,7 +256,7 @@ const LogConfig: React.FC = () => {
           >
             <div className="modal-content">
               {t("resource:config.deleteTips")}
-              <b>{`${curTipsLogConfig?.confName}`}</b> {"?"}
+              <b>{`${curTipsLogConfig?.name}`}</b> {"?"}
             </div>
           </Modal>
         </div>

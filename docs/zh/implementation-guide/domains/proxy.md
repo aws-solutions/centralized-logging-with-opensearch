@@ -44,12 +44,12 @@
     !!! note "注意"
          启用访问代理后，访问代理的链接将可用。
 
-6. 在**创建访问代理**页面的**公共访问代理**部分，为**公共子网**选择至少 2 个子网。您可以选择 2 个名为`LogHubVPC/DefaultVPC/publicSubnet`的公有子网，它们是由日志通 默认创建的。
-7. 在**公共安全组**中选择 ALB 的安全组。您可以选择一个名为 `ProxySecurityGroup` 的安全组，该安全组由日志通 默认创建。
-8. 输入**域名**。
-9. 选择与域名关联的**Load Balancer SSL Certificate**。
-10. 选择**Nginx 实例密钥名称**。
-11. 选择**创建**。
+5. 在**创建访问代理**页面的**公共访问代理**部分，为**公共子网**选择至少 2 个子网。您可以选择 2 个名为`LogHubVPC/DefaultVPC/publicSubnet`的公有子网，它们是由日志通 默认创建的。
+6. 在**公共安全组**中选择 ALB 的安全组。您可以选择一个名为 `ProxySecurityGroup` 的安全组，该安全组由日志通 默认创建。
+7. 输入**域名**。
+8. 选择与域名关联的**Load Balancer SSL Certificate**。
+9. 选择**Nginx 实例密钥名称**。
+10. 选择**创建**。
 
 ### 使用 CloudFormation 堆栈
 此自动化 AWS CloudFormation 模板在 AWS 云中部署 *日志通- Nginx 访问代理* 解决方案。

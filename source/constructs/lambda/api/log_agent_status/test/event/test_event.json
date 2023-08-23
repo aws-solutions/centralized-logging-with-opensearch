@@ -1,16 +1,23 @@
 {
   "arguments": {
-    "maxResults": 10
+    "instanceIds": [
+      "i-0a123456789012345",
+      "i-0b123456789012345",
+      "i-0c123456789012345"
+    ],
+    "region": "us-east-1",
+    "accountId": "123456789012",
+    "commandId": "12345678-1234-1234-1234-123456789012"
   },
-  "identity": {
-  },
-  "source": null,
-  "request": {
-  },
-  "prev": null,
+  "identity": {},
+  "request": {},
   "info": {
-    "fieldName": "listInstances",
+    "fieldName": "getInstanceAgentStatus",
+    "parentTypeName": "Query",
     "variables": {}
   },
-  "stash": {}
+  "error": null,
+  "prev": null,
+  "stash": {},
+  "outErrors": []
 }

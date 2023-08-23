@@ -38,7 +38,9 @@ export class EcsClusterStack extends Construct {
   constructor(scope: Construct, id: string, props: EcsClusterProps) {
     super(scope, id);
 
-    this.ecsCluster =  new ecs.Cluster(this, 'LogHubCluster', {
+    const stackPrefix = 'CL';
+
+    this.ecsCluster =  new ecs.Cluster(this, `${stackPrefix}Cluster`, {
       vpc: props.vpc,
       containerInsights: true,
     });

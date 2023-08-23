@@ -22,12 +22,12 @@ import ExtLink from "components/ExtLink";
 
 import { useSelector, useDispatch } from "react-redux";
 import { ActionType } from "reducer/appReducer";
-import { AppStateProps } from "reducer/appReducer";
 import {
   buildSolutionDocsLink,
   SIDE_BAR_OPEN_STORAGE_ID,
 } from "assets/js/const";
 import { useTranslation } from "react-i18next";
+import { RootState } from "reducer/reducers";
 
 interface SideMenuProps {
   className?: string;
@@ -104,8 +104,8 @@ const SIDE_MENU_LIST = [
 
 export const SideMenu: React.FC<SideMenuProps> = (props: SideMenuProps) => {
   const { className } = props;
-  const openMenu: boolean = useSelector(
-    (state: AppStateProps) => state.openSideMenu
+  const openMenu = useSelector(
+    (state: RootState) => state.app.openSideMenu
   );
   const { t } = useTranslation();
   const [sideMenuList, setSideMenuList] = useState(SIDE_MENU_LIST);
@@ -141,7 +141,7 @@ export const SideMenu: React.FC<SideMenuProps> = (props: SideMenuProps) => {
             <div className="head-title">{t("name")}</div>
             {sideMenuList.map((element, index) => {
               return (
-                <div className="menu-item" key={index}>
+                <div className="menu-item" key={element.name}>
                   {element.subMenu && element.subMenu.length > 0 ? (
                     <div
                       className="collapse-title"
@@ -173,10 +173,10 @@ export const SideMenu: React.FC<SideMenuProps> = (props: SideMenuProps) => {
                     element.subMenu.length > 0 &&
                     element.open && (
                       <div>
-                        {element.subMenu.map((subItem, index) => {
+                        {element.subMenu.map((subItem) => {
                           return (
                             <div
-                              key={index}
+                              key={subItem.name}
                               className={
                                 location.pathname === subItem.link
                                   ? "active"

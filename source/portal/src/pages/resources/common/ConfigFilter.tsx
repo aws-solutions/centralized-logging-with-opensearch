@@ -14,6 +14,9 @@ import {
 } from "API";
 import Button from "components/Button";
 import { InfoBarTypes } from "reducer/appReducer";
+import Alert from "components/Alert";
+import { AlertType } from "components/Alert/alert";
+import { identity } from "lodash";
 
 interface ConfigFilterProps {
   logConfig: ExLogConf;
@@ -28,7 +31,7 @@ const ConfigFilter: React.FC<ConfigFilterProps> = (
 
   const changeCurrentFilter = (filters: LogConfFilterInput[]) => {
     changeFilter({
-      enable: logConfig.processorFilterRegex?.enable ? true : false,
+      enabled: logConfig.filterConfigMap?.enabled ? true : false,
       filters: filters,
     });
   };
@@ -42,15 +45,22 @@ const ConfigFilter: React.FC<ConfigFilterProps> = (
         <Switch
           label={t("resource:config.filter.enabled")}
           desc={t("resource:config.filter.desc")}
-          isOn={logConfig.processorFilterRegex?.enable || false}
+          isOn={logConfig.filterConfigMap?.enabled || false}
           handleToggle={() => {
             console.info("toggle");
-            const tmpFilter: any = logConfig.processorFilterRegex;
-            tmpFilter.enable = !logConfig.processorFilterRegex?.enable;
+            const tmpFilter: any = logConfig.filterConfigMap;
+            tmpFilter.enabled = !logConfig.filterConfigMap?.enabled;
             changeFilter(tmpFilter);
           }}
         />
-        {logConfig.processorFilterRegex?.enable && (
+        {logConfig.filterConfigMap?.enabled && !logConfig.userSampleLog && (
+          <Alert
+            type={AlertType.Error}
+            content={t("resource:config.filter.alert")}
+          />
+        )}
+
+        {logConfig.filterConfigMap?.enabled && logConfig.userSampleLog && (
           <>
             <div className="flex show-tag-list top-header">
               <div className="tag-key log">
@@ -63,23 +73,30 @@ const ConfigFilter: React.FC<ConfigFilterProps> = (
                 <b>{t("resource:config.filter.regex")}</b>
               </div>
             </div>
-            {logConfig.processorFilterRegex?.filters?.map(
+            {logConfig.filterConfigMap?.filters?.map(
               (element: any, index: number) => {
                 return (
-                  <div key={index} className="flex show-tag-list no-stripe">
+                  <div
+                    key={identity(index)}
+                    className="flex show-tag-list no-stripe"
+                  >
                     <div className="tag-key log">
                       <div className="pr-20">
                         <Select
-                          optionList={logConfig.selectKeyList?.slice(1) || []}
+                          optionList={
+                            logConfig?.regexKeyList?.map(({ key }) => ({
+                              name: key,
+                              value: key,
+                            })) || []
+                          }
                           value={element.key}
                           onChange={(event) => {
-                            console.info("event:", event);
                             const tmpFilterArr: LogConfFilter[] = JSON.parse(
-                              JSON.stringify(
-                                logConfig.processorFilterRegex?.filters
-                              )
+                              JSON.stringify(logConfig.filterConfigMap?.filters)
                             );
+                            console.info("event.target.value:", event);
                             tmpFilterArr[index].key = event.target.value || "";
+                            console.info("tmpFilterArr:", tmpFilterArr);
                             changeCurrentFilter(tmpFilterArr);
                           }}
                           placeholder="Select Key"
@@ -96,9 +113,7 @@ const ConfigFilter: React.FC<ConfigFilterProps> = (
                         onChange={(event) => {
                           console.info("event:", event);
                           const tmpFilterArr: LogConfFilter[] = JSON.parse(
-                            JSON.stringify(
-                              logConfig.processorFilterRegex?.filters
-                            )
+                            JSON.stringify(logConfig.filterConfigMap?.filters)
                           );
                           tmpFilterArr[index].condition =
                             event.target.value || "";
@@ -114,9 +129,7 @@ const ConfigFilter: React.FC<ConfigFilterProps> = (
                           value={element?.value || ""}
                           onChange={(event) => {
                             const tmpFilterArr: LogConfFilter[] = JSON.parse(
-                              JSON.stringify(
-                                logConfig.processorFilterRegex?.filters
-                              )
+                              JSON.stringify(logConfig.filterConfigMap?.filters)
                             );
                             tmpFilterArr[index].value =
                               event.target.value || "";
@@ -130,9 +143,7 @@ const ConfigFilter: React.FC<ConfigFilterProps> = (
                         className="ml-10"
                         onClick={() => {
                           const tmpFilterArr: LogConfFilterInput[] = JSON.parse(
-                            JSON.stringify(
-                              logConfig.processorFilterRegex?.filters
-                            )
+                            JSON.stringify(logConfig.filterConfigMap?.filters)
                           );
                           tmpFilterArr.splice(index, 1);
                           changeCurrentFilter(tmpFilterArr);
@@ -150,7 +161,7 @@ const ConfigFilter: React.FC<ConfigFilterProps> = (
                 className="ml-20 mt-10"
                 onClick={() => {
                   const tmpFilterArr: LogConfFilterInput[] = JSON.parse(
-                    JSON.stringify(logConfig.processorFilterRegex?.filters)
+                    JSON.stringify(logConfig.filterConfigMap?.filters)
                   );
                   tmpFilterArr.push({
                     key: "",

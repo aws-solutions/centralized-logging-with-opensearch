@@ -19,7 +19,7 @@ include-markdown "include-prerequisites.md"
 
     如:
     ```json
-    {"host":"81.95.250.9", "user-identifier":"-", "time":"08/Mar/2022:06:28:03 +0000", "method": "PATCH", "request": "/clicks-and-mortar/24%2f7", "protocol":"HTTP/2.0", "status":502, "bytes":24337, "referer": "http://www.investorturn-key.net/functionalities/innovative/integrated"}
+    {"host":"81.95.250.9", "user-identifier":"-", "time":"08/Mar/2022:06:28:03 +0000", "method": "PATCH", "request": "/clicks-and-mortar/24%2f7", "protocol":"HTTP/2.0", "status":502, "bytes":24337, "referer": "https://www.investorturn-key.net/functionalities/innovative/integrated"}
     ```
 
 8. 检查每个字段类型映射是否正确。 您可以通过选择第二列中的下拉菜单来更改类型。 对于所有支持的类型，请参阅 [数据类型](https://opensearch.org/docs/latest/search-plugins/sql/datatypes/)。

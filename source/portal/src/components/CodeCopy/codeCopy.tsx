@@ -17,6 +17,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import CopyButton from "components/CopyButton";
 import LoadingText from "components/LoadingText";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
+import { RootState } from "reducer/reducers";
 
 interface CodeCopyProps {
   loading?: boolean;
@@ -26,14 +28,15 @@ interface CodeCopyProps {
 const CodeCopy: React.FC<CodeCopyProps> = (props: CodeCopyProps) => {
   const { loading, code } = props;
   const { t } = useTranslation();
-  const [width, setWidth] = useState(null);
-  const [menuWidth, setMenuWidth] = useState(0);
-  const div = useCallback((node) => {
+  const openMenu = useSelector(
+    (state: RootState) => state.app.openSideMenu,
+  );
+  const [width, setWidth] = useState(0);
+  const [menuWidth] = useState(openMenu ? 100 : 300);
+
+  const div = useCallback((node: any) => {
     if (node !== null) {
-      setWidth(node.getBoundingClientRect().width);
-      setMenuWidth(
-        window.innerWidth - parseInt(node.getBoundingClientRect().width)
-      );
+      setWidth(node.getBoundingClientRect().width - menuWidth);
     }
   }, []);
 
@@ -49,12 +52,14 @@ const CodeCopy: React.FC<CodeCopyProps> = (props: CodeCopyProps) => {
 
   return (
     <div className="flex">
-      <div className="flex-1">
-        <div ref={div} style={{ width: width || "100%" }}>
-          <pre className="code">
-            {loading ? <LoadingText /> : <code>{code}</code>}
-          </pre>
-        </div>
+      <div
+        ref={div}
+        style={{ width: width || "100%", overflow: "auto" }}
+        className="flex-1"
+      >
+        <pre className="code">
+          {loading ? <LoadingText /> : <code>{code}</code>}
+        </pre>
       </div>
       <div className="ml-10">
         {

@@ -18,7 +18,7 @@ import HeaderPanel from "components/HeaderPanel";
 import FormItem from "components/FormItem";
 import Button from "components/Button";
 import Breadcrumb from "components/Breadcrumb";
-import { RouteComponentProps, useHistory } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   AlarmInput,
   AlarmType,
@@ -49,18 +49,10 @@ interface DomainAlarmProps {
   };
 }
 
-interface MatchParams {
-  id: string;
-  name: string;
-}
-
-const DomainAlarm: React.FC<RouteComponentProps<MatchParams>> = (
-  props: RouteComponentProps<MatchParams>
-) => {
-  const id: string = props.match.params.id;
-  const name: string = props.match.params.name;
+const DomainAlarm: React.FC = () => {
+  const { id, name } = useParams();
   const { t } = useTranslation();
-  const history = useHistory();
+  const navigate = useNavigate();
   const breadCrumbList = [
     { name: t("name"), link: "/" },
     {
@@ -81,7 +73,7 @@ const DomainAlarm: React.FC<RouteComponentProps<MatchParams>> = (
   const [nodeMinError, setNodeMinError] = useState(false);
   const [writeBlockError, setWriteBlockError] = useState(false);
   const [alarmData, setAlarmData] = useState<DomainAlarmProps>({
-    id: decodeURIComponent(id),
+    id: decodeURIComponent(id ?? ""),
     input: {
       email: "",
       phone: "",
@@ -95,7 +87,7 @@ const DomainAlarm: React.FC<RouteComponentProps<MatchParams>> = (
     try {
       setLoadingData(true);
       const resData: any = await appSyncRequestQuery(getDomainDetails, {
-        id: decodeURIComponent(id),
+        id: decodeURIComponent(id ?? ""),
       });
       console.info("resData:", resData);
       const dataDomain: DomainDetails = resData.data.getDomainDetails;
@@ -113,22 +105,72 @@ const DomainAlarm: React.FC<RouteComponentProps<MatchParams>> = (
   }, []);
 
   const backToDetailPage = () => {
-    history.push({
-      pathname: `/clusters/opensearch-domains/detail/${id}`,
-    });
+    navigate(`/clusters/opensearch-domains/detail/${id}`);
   };
 
-  const confirmCreateDomainAlarm = async () => {
-    if (!alarmData.input.email) {
-      setShowRequireEmailError(true);
-      return;
+  const checkMinStorage = () => {
+    // Check Min Storage Value
+    if (
+      alarmData.input.alarmParams.find(
+        (element) => element.key === AlarmType.FREE_STORAGE_SPACE
+      )?.isChecked &&
+      minFreeStorageError
+    ) {
+      Alert(
+        t(
+          domainAlramList.find(
+            (element) => element.key === AlarmType.FREE_STORAGE_SPACE
+          )?.name || ""
+        ) + t("cluster:alarm.forbidNegative")
+      );
+      return false;
     }
-    if (!emailIsValid(alarmData.input.email)) {
-      setEmailFormatError(true);
-      return;
+    return true;
+  };
+
+  const checkWriteBlockValue = () => {
+    // Check Write Block Value
+    if (
+      alarmData.input.alarmParams.find(
+        (element) => element.key === AlarmType.WRITE_BLOCKED
+      )?.isChecked &&
+      writeBlockError
+    ) {
+      Alert(
+        t(
+          domainAlramList.find(
+            (element) => element.key === AlarmType.WRITE_BLOCKED
+          )?.name || ""
+        ) + t("cluster:alarm.forbidNegative")
+      );
+      return false;
     }
+    return true;
+  };
+
+  const checkNodeMinValue = () => {
+    // Check Node Min Value
+    if (
+      alarmData.input.alarmParams.find(
+        (element) => element.key === AlarmType.NODE_UNREACHABLE
+      )?.isChecked &&
+      nodeMinError
+    ) {
+      Alert(
+        t(
+          domainAlramList.find(
+            (element) => element.key === AlarmType.NODE_UNREACHABLE
+          )?.name || ""
+        ) + t("cluster:alarm.forbidNegative")
+      );
+      return false;
+    }
+    return true;
+  };
+
+  const buildAlarmList = (alarmDataParams: AlarmParamType[]) => {
     const alarmsList: AlarmInput[] = [];
-    alarmData.input.alarmParams.forEach((element) => {
+    alarmDataParams.forEach((element) => {
       if (element.isChecked) {
         // if is min space, need to convert to MiB
         if (element.key === AlarmType.FREE_STORAGE_SPACE) {
@@ -144,54 +186,31 @@ const DomainAlarm: React.FC<RouteComponentProps<MatchParams>> = (
         }
       }
     });
-    // Check Min Storage Value
-    if (
-      alarmData.input.alarmParams.find(
-        (element) => element.key === AlarmType.FREE_STORAGE_SPACE
-      )?.isChecked &&
-      minFreeStorageError
-    ) {
-      Alert(
-        t(
-          domainAlramList.find(
-            (element) => element.key === AlarmType.FREE_STORAGE_SPACE
-          )?.name || ""
-        ) + t("cluster:alarm.forbidNegative")
-      );
+    return alarmsList;
+  };
+
+  const confirmCreateDomainAlarm = async () => {
+    if (!alarmData.input.email) {
+      setShowRequireEmailError(true);
+      return;
+    }
+    if (!emailIsValid(alarmData.input.email)) {
+      setEmailFormatError(true);
+      return;
+    }
+    const alarmsList: AlarmInput[] = buildAlarmList(
+      alarmData.input.alarmParams
+    );
+
+    if (!checkMinStorage()) {
       return;
     }
 
-    // Check Write Block Value
-    if (
-      alarmData.input.alarmParams.find(
-        (element) => element.key === AlarmType.WRITE_BLOCKED
-      )?.isChecked &&
-      writeBlockError
-    ) {
-      Alert(
-        t(
-          domainAlramList.find(
-            (element) => element.key === AlarmType.WRITE_BLOCKED
-          )?.name || ""
-        ) + t("cluster:alarm.forbidNegative")
-      );
+    if (!checkWriteBlockValue()) {
       return;
     }
 
-    // Check Node Min Value
-    if (
-      alarmData.input.alarmParams.find(
-        (element) => element.key === AlarmType.NODE_UNREACHABLE
-      )?.isChecked &&
-      nodeMinError
-    ) {
-      Alert(
-        t(
-          domainAlramList.find(
-            (element) => element.key === AlarmType.NODE_UNREACHABLE
-          )?.name || ""
-        ) + t("cluster:alarm.forbidNegative")
-      );
+    if (!checkNodeMinValue()) {
       return;
     }
 
@@ -256,6 +275,39 @@ const DomainAlarm: React.FC<RouteComponentProps<MatchParams>> = (
     }
   }, [alarmData]);
 
+  const updateAlarmData = (event: any, element: any) => {
+    setAlarmData((prev) => {
+      const prevObj: any = JSON.parse(JSON.stringify(prev));
+      const paramIndex = prevObj.input.alarmParams.findIndex(
+        (item: any) => item.key === element.key
+      );
+      prevObj.input.alarmParams[paramIndex].isChecked = event.target.checked;
+      if (!element.isNumber) {
+        prevObj.input.alarmParams[paramIndex].value = event.target.checked;
+      }
+      return prevObj;
+    });
+  };
+
+  const updateAlarmDataValue = (event: any, element: any) => {
+    setAlarmData((prev) => {
+      const prevObj: any = JSON.parse(JSON.stringify(prev));
+      const paramIndex = prevObj.input.alarmParams.findIndex(
+        (item: any) => item.key === element.key
+      );
+      if (element.isNumber) {
+        if (element.key === AlarmType.FREE_STORAGE_SPACE) {
+          setMinFreeStorageError(false);
+        }
+        if (element.key === AlarmType.NODE_UNREACHABLE) {
+          setNodeMinError(false);
+        }
+        prevObj.input.alarmParams[paramIndex].value = event.target.value;
+      }
+      return prevObj;
+    });
+  };
+
   return (
     <div className="lh-main-content">
       <SideMenu />
@@ -278,11 +330,12 @@ const DomainAlarm: React.FC<RouteComponentProps<MatchParams>> = (
                     optionTitle={t("cluster:alarm.email")}
                     optionDesc={t("cluster:alarm.emailDesc")}
                     errorText={
-                      showRequireEmailError
+                      (showRequireEmailError
                         ? t("cluster:alarm.emailError")
-                        : emailFormatError
+                        : "") ||
+                      (emailFormatError
                         ? t("cluster:alarm.emailFormatError")
-                        : ""
+                        : "")
                     }
                   >
                     <TextInput
@@ -304,53 +357,6 @@ const DomainAlarm: React.FC<RouteComponentProps<MatchParams>> = (
                       placeholder="abc@example.com"
                     />
                   </FormItem>
-
-                  {/* <FormItem
-                    optionTitle="SMS Notification - optional"
-                    optionDesc="Notification will be sent to "
-                  >
-                    <div className="flex m-w-75p">
-                      <div style={{ width: 100, padding: "0 15px 0 0" }}>
-                        <TextInput
-                          value={alarmData.input.phonePostNum}
-                          onChange={(event) => {
-                            setAlarmData((prev) => {
-                              return {
-                                ...prev,
-                                input: {
-                                  ...prev.input,
-                                  phone:
-                                    event.target.value + prev.input.phoneNum,
-                                  phonePostNum: event.target.value,
-                                },
-                              };
-                            });
-                          }}
-                          placeholder="+1"
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <TextInput
-                          value={alarmData.input.phoneNum}
-                          onChange={(event) => {
-                            setAlarmData((prev) => {
-                              return {
-                                ...prev,
-                                input: {
-                                  ...prev.input,
-                                  phone:
-                                    prev.input.phonePostNum +
-                                    event.target.value,
-                                  phoneNum: event.target.value,
-                                },
-                              };
-                            });
-                          }}
-                          placeholder="60111111"
-                        />
-                      </div>
-                    </div>
-                  </FormItem> */}
                 </div>
 
                 <div>
@@ -394,31 +400,15 @@ const DomainAlarm: React.FC<RouteComponentProps<MatchParams>> = (
                       <b>{t("cluster:alarm.value")}</b>
                     </div>
                   </div>
-                  {alarmData.input.alarmParams.map((element, key) => {
+                  {alarmData.input.alarmParams.map((element) => {
                     return (
-                      <div key={key} className="flex show-tag-list">
+                      <div key={element.key} className="flex show-tag-list">
                         <div className="checkbox">
                           <input
                             type="checkbox"
                             checked={element.isChecked}
                             onChange={(event) => {
-                              setAlarmData((prev) => {
-                                const prevObj: any = JSON.parse(
-                                  JSON.stringify(prev)
-                                );
-                                const paramIndex =
-                                  prevObj.input.alarmParams.findIndex(
-                                    (item: any) => item.key === element.key
-                                  );
-                                prevObj.input.alarmParams[
-                                  paramIndex
-                                ].isChecked = event.target.checked;
-                                if (!element.isNumber) {
-                                  prevObj.input.alarmParams[paramIndex].value =
-                                    event.target.checked;
-                                }
-                                return prevObj;
-                              });
+                              updateAlarmData(event, element);
                             }}
                           />
                         </div>
@@ -454,32 +444,7 @@ const DomainAlarm: React.FC<RouteComponentProps<MatchParams>> = (
                               type="number"
                               value={element.value.toString()}
                               onChange={(event) => {
-                                setAlarmData((prev) => {
-                                  const prevObj: any = JSON.parse(
-                                    JSON.stringify(prev)
-                                  );
-                                  const paramIndex =
-                                    prevObj.input.alarmParams.findIndex(
-                                      (item: any) => item.key === element.key
-                                    );
-                                  if (element.isNumber) {
-                                    if (
-                                      element.key ===
-                                      AlarmType.FREE_STORAGE_SPACE
-                                    ) {
-                                      setMinFreeStorageError(false);
-                                    }
-                                    if (
-                                      element.key === AlarmType.NODE_UNREACHABLE
-                                    ) {
-                                      setNodeMinError(false);
-                                    }
-                                    prevObj.input.alarmParams[
-                                      paramIndex
-                                    ].value = event.target.value;
-                                  }
-                                  return prevObj;
-                                });
+                                updateAlarmDataValue(event, element);
                               }}
                             />
                           ) : (
@@ -500,7 +465,7 @@ const DomainAlarm: React.FC<RouteComponentProps<MatchParams>> = (
                     backToDetailPage();
                   }}
                 >
-                  Cancel
+                  {t("button.cancel")}
                 </Button>
                 <Button
                   loading={loadingCreate}
@@ -509,7 +474,7 @@ const DomainAlarm: React.FC<RouteComponentProps<MatchParams>> = (
                     confirmCreateDomainAlarm();
                   }}
                 >
-                  Create
+                  {t("button.create")}
                 </Button>
               </div>
             </div>

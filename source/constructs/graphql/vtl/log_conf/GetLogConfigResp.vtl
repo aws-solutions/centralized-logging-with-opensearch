@@ -1,0 +1,16 @@
+#set($ctx.result.name = $util.urlEncode($ctx.result.name))
+#set($ctx.result.userLogFormat = $util.urlEncode($ctx.result.userLogFormat))
+#set($ctx.result.userSampleLog = $util.urlEncode($ctx.result.userSampleLog))
+#set($ctx.result.regex = $util.urlEncode($ctx.result.regex))
+#set($ctx.result.timeKeyRegex = $util.urlEncode($ctx.result.timeKeyRegex))
+#foreach($param in $ctx.result.regexFieldSpecs)
+    #set($param.key = $util.urlEncode($param.key))    
+    #set($param.type = $util.urlEncode($param.type))
+#end
+
+#foreach($param in $ctx.result.filterConfigMap.filters)
+    #set($param.key = $util.urlEncode($param.key))
+    #set($param.value = $util.urlEncode($param.value))
+#end
+
+$util.toJson($ctx.result)

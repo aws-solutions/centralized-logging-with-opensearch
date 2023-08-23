@@ -50,13 +50,38 @@ include-markdown "include-prerequisites.md"
 2. 转到左侧边栏中的**仪表板**部分。
 3. 找到名称以`<the-application-pipeline>`开头的仪表板。
 
-## 示例仪表板
+## 查看仪表板
+
+仪表板包括以下可视化内容。
+
+| 图表名称 | 源字段                                                                                                                                                                                     | 描述                                                                                                                                                                         |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Total Requests     | <ul><li> log event </li></ul>                                                                                                                                                              | 基于指定的时间间隔显示聚合事件。                                                                                                                                           |
+| Http Method        | <ul><li> request_method </li></ul>                                                                                                                                                         | 使用管道图显示 Nginx 在选定时间段内处理的请求方法的分布。                                                                                                                  |
+| Request History    | <ul><li> log event</li></ul>                                                                                                                                                               | 使用条形图显示 Nginx 处理的所有请求的历史日志。这允许管理员分析流量量和模式。                                                                                               |
+| Unique Visitors    | <ul><li> remote_addr</li></ul>                                                                                                                                                             | 显示在给定时间段内对应用程序进行请求的不同 IP 地址的数量。                                                                                                                 |
+| Bandwidth          | <ul><li> body_bytes_sent</li></ul>                                                                                                                                                         | 带宽指标跟踪 Nginx 服务器在一段时间内向客户端传输的数据总量。                                                                                                              |
+| Status Code Metric | <ul><li> status</li></ul>                                                                                                                                                                  | 显示 Nginx 服务器在一段时间内提供的 HTTP 响应代码的分布。                                                                                                                 |
+| Status Code        | <ul><li>status</li></ul>                                                                                                                                                                   | 与总响应数量相对的每个状态代码的比例也显示为百分比。这使得容易识别主导的响应类型。                                                                                         |
+| Bandwidth History  | <ul><li> body_bytes_sent</li></ul>                                                                                                                                                         | 显示 Nginx 服务器到客户端的数据传输活动的历史趋势。                                                                                                                       |
+| Top IPs            | <ul><li>body_bytes_sent</li><li>remote_addr</li></ul>                                                                                                                                      | 显示在指定时间段内向应用程序生成最多请求的前10个客户端 IP 地址。                                                                                                          |
+| Top Referers       | <ul><li> http_referer</li></ul>                                                                                                                                                            | 引荐者是链接到应用程序请求的页面的 URL。跟踪引荐者揭示了主要的外部访问和参与来源。                                                                                        |
+| Top User Agents    | <ul><li> http_user_agent</li></ul>                                                                                                                                                         | 显示产生流量的客户端浏览器和设备类型的分解。                                                                                                                               |
+| Top Access URL     | <ul><li> remote</li><li> method </li></ul>                                                                                                                                                 | 显示在指定时间段内应用程序上最常请求的 URL。                                                                                                                               |
+| Nginx Error Log    | <ul><li> @timestamp</li><li> status </li><li> remote_addr </li><li> request_uri </li><li> request_method </li><li> http_referer </li><li> body_bytes_sent </li><li> http_user_agent </li></ul> | 提供 web 服务器遇到的错误的详细记录。                                                                                                        |
+
+### 样本仪表板
+
+{%
+include-markdown "../include-dashboard.md"
+%}
 
 [![nginx-1]][nginx-1]
-[![nginx-2]][nginx-2]
 
 [nginx-1]: ../../images/dashboards/nginx-1.png
-[nginx-2]: ../../images/dashboards/nginx-2.png
 
+[![nginx-2]][nginx-2]
+
+[nginx-2]: ../../images/dashboards/nginx-2.png
 
 [nginx-logs]: https://docs.nginx.com/nginx/admin-guide/monitoring/logging/

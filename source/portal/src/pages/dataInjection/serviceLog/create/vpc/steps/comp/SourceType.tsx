@@ -29,9 +29,9 @@ import AutoEnableLogging from "../../../common/AutoEnableLogging";
 import { SelectItem } from "components/Select/select";
 import { splitStringToBucketAndPrefix } from "assets/js/utils";
 import { useSelector } from "react-redux";
-import { AppStateProps } from "reducer/appReducer";
 import { AlertType } from "components/Alert/alert";
 import KDSSettings from "../../../common/KDSSettings";
+import { RootState } from "reducer/reducers";
 
 interface SourceTypeProps {
   vpcLogTask: VpcLogTaskProps;
@@ -97,7 +97,7 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
   const { t } = useTranslation();
 
   const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: AppStateProps) => state.amplifyConfig
+    (state: RootState) => state.app.amplifyConfig
   );
 
   const [loadingBucket, setLoadingBucket] = useState(false);
@@ -148,33 +148,37 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
     }
   }, [vpcLogTask.params.vpcLogObj]);
 
+  const changeSourceTypeWhenDestS3 = () => {
+    if (vpcLogTask.params.s3FLowList.length > 0) {
+      // check the only one s3 source
+      if (vpcLogTask.params.s3FLowList.length === 1) {
+        if (
+          vpcLogTask.params.s3FLowList[0].optTitle ===
+          amplifyConfig.aws_project_region
+        ) {
+          // means the only exists one is valid
+          changeVpcLogSourceType(VPCLogSourceType.ONE_S3_SAME_REGION);
+          const { bucket, prefix } = splitStringToBucketAndPrefix(
+            vpcLogTask.params.s3FLowList[0].value
+          );
+          changeBucket(bucket);
+          changeLogPath(prefix);
+        } else {
+          changeVpcLogSourceType(VPCLogSourceType.ONE_S3_DIFF_REGION);
+        }
+      } else {
+        changeVpcLogSourceType(VPCLogSourceType.MULTI_S3_NOT_SELECT);
+      }
+    } else {
+      changeVpcLogSourceType(VPCLogSourceType.NONE);
+    }
+  };
+
   // Monitor source type / destination change
   useEffect(() => {
     if (vpcLogTask.destinationType === DestinationType.S3) {
       changeTmpFlowList(vpcLogTask.params.s3FLowList);
-      if (vpcLogTask.params.s3FLowList.length > 0) {
-        // check the only one s3 source
-        if (vpcLogTask.params.s3FLowList.length === 1) {
-          if (
-            vpcLogTask.params.s3FLowList[0].optTitle ===
-            amplifyConfig.aws_project_region
-          ) {
-            // means the only exists one is valid
-            changeVpcLogSourceType(VPCLogSourceType.ONE_S3_SAME_REGION);
-            const { bucket, prefix } = splitStringToBucketAndPrefix(
-              vpcLogTask.params.s3FLowList[0].value
-            );
-            changeBucket(bucket);
-            changeLogPath(prefix);
-          } else {
-            changeVpcLogSourceType(VPCLogSourceType.ONE_S3_DIFF_REGION);
-          }
-        } else {
-          changeVpcLogSourceType(VPCLogSourceType.MULTI_S3_NOT_SELECT);
-        }
-      } else {
-        changeVpcLogSourceType(VPCLogSourceType.NONE);
-      }
+      changeSourceTypeWhenDestS3();
     }
 
     if (vpcLogTask.destinationType === DestinationType.CloudWatch) {
@@ -233,16 +237,17 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
           sourceTypeEmptyError ? t("servicelog:vpc.logSourceEmptyError") : ""
         }
         successText={
-          vpcLogTask.params.vpcLogSourceType ===
+          (vpcLogTask.params.vpcLogSourceType ===
           VPCLogSourceType.ONE_S3_SAME_REGION
             ? `${t("servicelog:vpc.savedTips")} ${
                 vpcLogTask.params.tmpFlowList[0]?.value
               }`
-            : vpcLogTask.params.vpcLogSourceType === VPCLogSourceType.ONE_CWL
+            : "") ||
+          (vpcLogTask.params.vpcLogSourceType === VPCLogSourceType.ONE_CWL
             ? `${t("servicelog:vpc.logCWLEnabled1")} ${
                 vpcLogTask.params.tmpFlowList[0]?.value
               } ${t("servicelog:vpc.logCWLEnabled2")}`
-            : ""
+            : "")
         }
       >
         <Select
@@ -323,20 +328,20 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
                 optionTitle={t("servicelog:vpc.selectFlowLog")}
                 optionDesc={t("servicelog:vpc.selectFlowLogDesc")}
                 successText={
-                  vpcLogTask.destinationType === DestinationType.S3 &&
+                  (vpcLogTask.destinationType === DestinationType.S3 &&
                   vpcLogTask.params.vpcLogSourceType ===
                     VPCLogSourceType.MULTI_S3_SAME_REGION
                     ? t("servicelog:vpc.savedTips") +
                       vpcLogTask.params.logSource
-                    : vpcLogTask.destinationType ===
-                        DestinationType.CloudWatch &&
-                      vpcLogTask.params.vpcLogSourceType ===
-                        VPCLogSourceType.MULTI_CWL &&
-                      vpcLogTask.params.logSource
+                    : "") ||
+                  (vpcLogTask.destinationType === DestinationType.CloudWatch &&
+                  vpcLogTask.params.vpcLogSourceType ===
+                    VPCLogSourceType.MULTI_CWL &&
+                  vpcLogTask.params.logSource
                     ? `${t("servicelog:vpc.logCWLEnabled1")} ${
                         vpcLogTask.params.logSource
                       } ${t("servicelog:vpc.logCWLEnabled2")}`
-                    : ""
+                    : "")
                 }
                 errorText={
                   vpcFlowLogEmptyError
@@ -398,11 +403,10 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
                   optionTitle={t("servicelog:vpc.vpcLogLocation")}
                   optionDesc={t("servicelog:vpc.vpcLogLocationDesc")}
                   errorText={
-                    manualS3EmptyError
+                    (manualS3EmptyError
                       ? t("servicelog:vpc.vpcLogLocationError")
-                      : manualS3PathInvalid
-                      ? t("servicelog:s3InvalidError")
-                      : ""
+                      : "") ||
+                    (manualS3PathInvalid ? t("servicelog:s3InvalidError") : "")
                   }
                 >
                   <TextInput

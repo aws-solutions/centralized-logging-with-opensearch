@@ -14,30 +14,26 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 /* eslint-disable react/display-name */
-import React from "react";
+import React, { useState } from "react";
 import PagePanel from "components/PagePanel";
 import HeaderPanel from "components/HeaderPanel";
 import FormItem from "components/FormItem";
 import TextInput from "components/TextInput";
-import { Instance, LogSourceType } from "API";
+import { EC2GroupType, LogSourceType } from "API";
 import { InstanceGroupType } from "../instanceGroup/create/CreateInstanceGroup";
 import { useTranslation } from "react-i18next";
 import CrossAccountSelect from "pages/comps/account/CrossAccountSelect";
-import InstanceTable from "./InstanceTable";
+import InstanceTable, { InstanceWithStatusType } from "./InstanceTable";
 import SelectType from "../instanceGroup/SelectType";
 import ASGSelect from "./ASGSelect";
 import { OptionType } from "components/AutoComplete/autoComplete";
 
-export interface InstanceWithStatus extends Instance {
-  instanceStatus: string;
-  isChecked: boolean;
-}
 interface InstanceGroupCompProps {
   accountId: string;
   instanceGroup?: InstanceGroupType;
   changeGroupName: (name: string) => void;
   changeGroupType: (type: string) => void;
-  changeInstanceSet: (sets: InstanceWithStatus[]) => void;
+  changeInstanceSet: (sets: InstanceWithStatusType[]) => void;
   showNameEmptyError: boolean;
   setCreateDisabled: (disable: boolean) => void;
   changeCurAccount: (accountId: string) => void;
@@ -62,6 +58,7 @@ const InstanceGroupComp: React.FC<InstanceGroupCompProps> = (
   } = props;
 
   const { t } = useTranslation();
+  const [instanceIsLoading, setInstanceIsLoading] = useState(true);
 
   return (
     <div>
@@ -76,13 +73,13 @@ const InstanceGroupComp: React.FC<InstanceGroupCompProps> = (
               <li>{t("resource:group.comp.tips2")}</li>
               <li>{t("resource:group.comp.tips3")}</li>
               <li>{t("resource:group.comp.tips4")}</li>
-              <li>{t("resource:group.comp.tips5")}</li>
             </ul>
           </div>
 
           {!hideAccountSetting && (
             <HeaderPanel title={t("resource:crossAccount.accountSettings")}>
               <CrossAccountSelect
+                disabled={instanceIsLoading}
                 accountId={accountId || ""}
                 changeAccount={(id) => {
                   console.info(id);
@@ -134,12 +131,12 @@ const InstanceGroupComp: React.FC<InstanceGroupCompProps> = (
                       changeInstanceSet(sets);
                     }}
                     setCreateDisabled={(disable) => {
-                      console.info(disable);
+                      setInstanceIsLoading(disable);
                       setCreateDisabled(disable);
                     }}
                   />
                 )}
-                {instanceGroup?.groupType === LogSourceType.ASG && (
+                {instanceGroup?.groupType === EC2GroupType.ASG && (
                   <ASGSelect
                     accountId={accountId}
                     instanceGroupInfo={instanceGroup}

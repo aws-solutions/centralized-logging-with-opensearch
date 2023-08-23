@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React, { useState, useEffect } from "react";
-import ArrowDropDownIcon from "@material-ui/icons/ArrowDropDown";
 import FormItem from "components/FormItem";
 import TextInput from "components/TextInput";
 import { useTranslation } from "react-i18next";
@@ -24,7 +23,6 @@ import {
   S3_BUFFER_PREFIX,
   S3_STORAGE_CLASS_LINK,
 } from "assets/js/const";
-import { ApplicationLogType } from "../../dataInjection/applicationLog/create/CreatePipeline";
 import AutoComplete from "components/AutoComplete";
 import { appSyncRequestQuery } from "assets/js/request";
 import { listResources } from "graphql/queries";
@@ -32,7 +30,16 @@ import { Resource, ResourceType } from "API";
 import { SelectItem } from "components/Select/select";
 import { OptionType } from "components/AutoComplete/autoComplete";
 import ExtLink from "components/ExtLink";
-import { S3_STORAGE_CLASS_OPTIONS } from "types";
+import {
+  AmplifyConfigType,
+  S3_STORAGE_CLASS_OPTIONS,
+  ApplicationLogType,
+} from "types";
+import ExtButton from "components/ExtButton";
+import { useSelector } from "react-redux";
+import { buildCreateS3Link } from "assets/js/utils";
+import { RootState } from "reducer/reducers";
+import ExpandableSection from "components/ExpandableSection";
 
 interface BufferS3Props {
   applicationLog: ApplicationLogType;
@@ -63,7 +70,6 @@ const BufferS3: React.FC<BufferS3Props> = (props: BufferS3Props) => {
     changeS3CompressionType,
     changeS3StorageClass,
   } = props;
-  const [showAdvanceSetting, setShowAdvanceSetting] = useState(false);
   const [loadingS3List, setLoadingS3List] = useState(false);
   const [s3BucketOptionList, setS3BucketOptionList] = useState<SelectItem[]>(
     []
@@ -95,6 +101,10 @@ const BufferS3: React.FC<BufferS3Props> = (props: BufferS3Props) => {
     getS3List();
   }, []);
 
+  const amplifyConfig: AmplifyConfigType = useSelector(
+    (state: RootState) => state.app.amplifyConfig
+  );
+
   return (
     <div>
       <FormItem
@@ -106,142 +116,141 @@ const BufferS3: React.FC<BufferS3Props> = (props: BufferS3Props) => {
             : ""
         }
       >
-        <AutoComplete
-          outerLoading
-          disabled={loadingS3List}
-          className="m-w-75p"
-          placeholder={t("servicelog:s3.selectBucket")}
-          loading={loadingS3List}
-          optionList={s3BucketOptionList}
-          value={applicationLog.s3BufferBucketObj}
-          onChange={(event: React.ChangeEvent<HTMLInputElement>, data) => {
-            changeS3BufferBucket(data);
-          }}
-        />
+        <div className="flex m-w-75p">
+          <div className="flex-1">
+            <AutoComplete
+              outerLoading
+              disabled={loadingS3List}
+              placeholder={t("servicelog:s3.selectBucket") || ""}
+              loading={loadingS3List}
+              optionList={s3BucketOptionList}
+              value={applicationLog.s3BufferBucketObj}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>, data) => {
+                changeS3BufferBucket(data);
+              }}
+            />
+          </div>
+          <div className="ml-10">
+            <ExtButton to={buildCreateS3Link(amplifyConfig.aws_appsync_region)}>
+              {t("applog:create.ingestSetting.create")}
+            </ExtButton>
+          </div>
+        </div>
       </FormItem>
 
       <div>
-        <div
-          className="addtional-settings"
-          onClick={() => {
-            setShowAdvanceSetting(!showAdvanceSetting);
-          }}
+        <ExpandableSection
+          defaultExpanded={false}
+          headerText={t("servicelog:cluster.additionalSetting")}
         >
-          <i className="icon">
-            {showAdvanceSetting && <ArrowDropDownIcon fontSize="large" />}
-            {!showAdvanceSetting && (
-              <ArrowDropDownIcon className="reverse-90" fontSize="large" />
-            )}
-          </i>
-          {t("servicelog:cluster.additionalSetting")}
-        </div>
-        <div className={showAdvanceSetting ? "" : "hide"}>
-          <FormItem
-            optionTitle={t("applog:create.ingestSetting.s3BucketPrefix")}
-            optionDesc={
-              t("applog:create.ingestSetting.s3BucketPrefixDesc1") +
-              S3_BUFFER_PREFIX +
-              t("applog:create.ingestSetting.s3BucketPrefixDesc2")
-            }
-            errorText={
-              s3PrefixError
-                ? t("applog:create.ingestSetting.s3PrefixInvalid")
-                : ""
-            }
-          >
-            <TextInput
-              placeholder={S3_BUFFER_PREFIX}
-              className="m-w-45p"
-              value={applicationLog.s3BufferParams.logBucketPrefix}
-              onChange={(event) => {
-                changeS3BufferPrefix(event.target.value);
-              }}
-            />
-          </FormItem>
+          <div>
+            <FormItem
+              optionTitle={t("applog:create.ingestSetting.s3BucketPrefix")}
+              optionDesc={
+                t("applog:create.ingestSetting.s3BucketPrefixDesc1") +
+                S3_BUFFER_PREFIX +
+                t("applog:create.ingestSetting.s3BucketPrefixDesc2")
+              }
+              errorText={
+                s3PrefixError
+                  ? t("applog:create.ingestSetting.s3PrefixInvalid")
+                  : ""
+              }
+            >
+              <TextInput
+                placeholder={S3_BUFFER_PREFIX}
+                className="m-w-75p"
+                value={applicationLog.s3BufferParams.logBucketPrefix}
+                onChange={(event) => {
+                  changeS3BufferPrefix(event.target.value);
+                }}
+              />
+            </FormItem>
 
-          <FormItem
-            optionTitle={t("applog:create.ingestSetting.bufferSize")}
-            optionDesc={t("applog:create.ingestSetting.bufferSizeDesc")}
-            errorText={
-              bufferSizeError
-                ? t("applog:create.ingestSetting.bufferSizeError")
-                : ""
-            }
-          >
-            <div className="flex">
-              <div>
-                <TextInput
-                  type="number"
-                  placeholder="50"
-                  value={applicationLog.s3BufferParams.maxFileSize}
-                  onChange={(event) => {
-                    changeS3BufferBufferSize(event.target.value);
-                  }}
-                />
+            <FormItem
+              optionTitle={t("applog:create.ingestSetting.bufferSize")}
+              optionDesc={t("applog:create.ingestSetting.bufferSizeDesc")}
+              errorText={
+                bufferSizeError
+                  ? t("applog:create.ingestSetting.bufferSizeError")
+                  : ""
+              }
+            >
+              <div className="flex">
+                <div>
+                  <TextInput
+                    type="number"
+                    placeholder="50"
+                    value={applicationLog.s3BufferParams.maxFileSize}
+                    onChange={(event) => {
+                      changeS3BufferBufferSize(event.target.value);
+                    }}
+                  />
+                </div>
+                <div className="ml-10">MiB</div>
               </div>
-              <div className="ml-10">MiB</div>
-            </div>
-          </FormItem>
+            </FormItem>
 
-          <FormItem
-            optionTitle={t("applog:create.ingestSetting.bufferInt")}
-            optionDesc={t("applog:create.ingestSetting.bufferIntDesc")}
-            errorText={
-              bufferIntervalError
-                ? t("applog:create.ingestSetting.bufferIntError")
-                : ""
-            }
-          >
-            <div className="flex">
-              <div>
-                <TextInput
-                  type="number"
-                  placeholder="60"
-                  value={applicationLog.s3BufferParams.uploadTimeout}
-                  onChange={(event) => {
-                    changeS3BufferTimeout(event.target.value);
-                  }}
-                />
+            <FormItem
+              optionTitle={t("applog:create.ingestSetting.bufferInt")}
+              optionDesc={t("applog:create.ingestSetting.bufferIntDesc")}
+              errorText={
+                bufferIntervalError
+                  ? t("applog:create.ingestSetting.bufferIntError")
+                  : ""
+              }
+            >
+              <div className="flex">
+                <div>
+                  <TextInput
+                    type="number"
+                    placeholder="60"
+                    value={applicationLog.s3BufferParams.uploadTimeout}
+                    onChange={(event) => {
+                      changeS3BufferTimeout(event.target.value);
+                    }}
+                  />
+                </div>
+                <div className="ml-10">{t("seconds")}</div>
               </div>
-              <div className="ml-10">{t("seconds")}</div>
-            </div>
-          </FormItem>
+            </FormItem>
 
-          <FormItem
-            optionTitle={t("applog:create.ingestSetting.s3StorageClass")}
-            optionDesc={
-              <div>
-                {t("applog:create.ingestSetting.s3StorageClassDesc")}
-                <ExtLink to={S3_STORAGE_CLASS_LINK}>{t("learnMore")}</ExtLink>
-              </div>
-            }
-          >
-            <Select
-              className="m-w-45p"
-              optionList={S3_STORAGE_CLASS_OPTIONS}
-              value={applicationLog.s3BufferParams.s3StorageClass}
-              onChange={(event) => {
-                changeS3StorageClass(event.target.value);
-              }}
-            />
-          </FormItem>
+            <FormItem
+              optionTitle={t("applog:create.ingestSetting.s3StorageClass")}
+              optionDesc={
+                <div>
+                  {t("applog:create.ingestSetting.s3StorageClassDesc")}
+                  <ExtLink to={S3_STORAGE_CLASS_LINK}>{t("learnMore")}</ExtLink>
+                </div>
+              }
+            >
+              <Select
+                className="m-w-75p"
+                optionList={S3_STORAGE_CLASS_OPTIONS}
+                value={applicationLog.s3BufferParams.s3StorageClass}
+                onChange={(event) => {
+                  changeS3StorageClass(event.target.value);
+                }}
+              />
+            </FormItem>
 
-          <FormItem
-            optionTitle={t("applog:create.ingestSetting.compressType")}
-            optionDesc={t("applog:create.ingestSetting.compressTypeDesc")}
-          >
-            <Select
-              allowEmpty
-              placeholder={t("applog:create.ingestSetting.compressChoose")}
-              className="m-w-45p"
-              optionList={COMPRESS_TYPE}
-              value={applicationLog.s3BufferParams.compressionType}
-              onChange={(event) => {
-                changeS3CompressionType(event.target.value);
-              }}
-            />
-          </FormItem>
-        </div>
+            <FormItem
+              optionTitle={t("applog:create.ingestSetting.compressType")}
+              optionDesc={t("applog:create.ingestSetting.compressTypeDesc")}
+            >
+              <Select
+                allowEmpty
+                placeholder={t("applog:create.ingestSetting.compressChoose")}
+                className="m-w-75p"
+                optionList={COMPRESS_TYPE}
+                value={applicationLog.s3BufferParams.compressionType}
+                onChange={(event) => {
+                  changeS3CompressionType(event.target.value);
+                }}
+              />
+            </FormItem>
+          </div>
+        </ExpandableSection>
       </div>
     </div>
   );

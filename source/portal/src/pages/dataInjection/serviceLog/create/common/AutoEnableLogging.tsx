@@ -171,7 +171,8 @@ const AutoEnableLogging: React.FC<AutoEnableProps> = (
               onClick={() => {
                 if (
                   resourceType === ResourceType.VPC ||
-                  resourceType === ResourceType.Trail
+                  resourceType === ResourceType.Trail ||
+                  resourceType === ResourceType.WAF
                 ) {
                   autoCreateConfigLogging();
                 } else {

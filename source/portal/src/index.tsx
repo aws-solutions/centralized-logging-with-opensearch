@@ -15,14 +15,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React, { Suspense } from "react";
-import ReactDOM from "react-dom";
+import ReactDOM from "react-dom/client";
 import "./styles/index.scss";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
-import { createStore } from "redux";
+import { legacy_createStore as createStore } from "redux";
 import { Provider } from "react-redux";
-import appReducer from "reducer/appReducer";
 import "./i18n";
+import { reducer } from "reducer/reducers";
 
 if (process.env.NODE_ENV === "production") {
   console.log = () => {};
@@ -30,16 +30,17 @@ if (process.env.NODE_ENV === "production") {
   console.debug = () => {};
 }
 
-const store = createStore(appReducer);
-ReactDOM.render(
-  // <React.StrictMode>
+const store = createStore(reducer);
+
+const root = ReactDOM.createRoot(
+  document.getElementById("root") as HTMLElement
+);
+root.render(
   <Provider store={store}>
-    <Suspense fallback={<div className="loading"></div>}>
+    <Suspense fallback={<div className="page-loading"></div>}>
       <App />
     </Suspense>
-  </Provider>,
-  // </React.StrictMode>,
-  document.getElementById("root")
+  </Provider>
 );
 
 // If you want to start measuring performance in your app, pass a function

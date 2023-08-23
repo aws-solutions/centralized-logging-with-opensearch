@@ -18,9 +18,10 @@ import Button from "components/Button";
 import { TagInput } from "API";
 import TextInput from "components/TextInput";
 import { useTranslation } from "react-i18next";
+import { identity } from "lodash";
 
 interface TagListProps {
-  tagList: TagInput[];
+  tagList: TagInput[] | null;
   addTag: () => void;
   onChange: (index: number, key: string, value: string) => void;
   removeTag: (index: number) => void;
@@ -32,10 +33,10 @@ const TagList: React.FC<TagListProps> = (props: TagListProps) => {
   const { t } = useTranslation();
   return (
     <div className="gsui-tag-list">
-      {tagList.length === 0 && (
+      {(tagList || []).length === 0 && (
         <div className="no-tag-tips pd-10">{t("tag.noTagDesc")}</div>
       )}
-      {tagList.length > 0 && (
+      {(tagList || []).length > 0 && (
         <div>
           <div className="flex">
             <div className="flex-1 key t-title">{t("tag.key")}</div>
@@ -44,9 +45,9 @@ const TagList: React.FC<TagListProps> = (props: TagListProps) => {
             </div>
             <div className="remove t-title">&nbsp;</div>
           </div>
-          {tagList.map((element, index) => {
+          {tagList?.map((element, index) => {
             return (
-              <div className="flex" key={index}>
+              <div className="flex" key={identity(index)}>
                 <div className="flex-1 key">
                   <TextInput
                     placeholder={t("tag.enterKey")}
@@ -79,11 +80,11 @@ const TagList: React.FC<TagListProps> = (props: TagListProps) => {
           })}
         </div>
       )}
-      {tagList.length < tagLimit && (
+      {(tagList || []).length < tagLimit && (
         <div className="pd-10">
           <Button onClick={addTag}>{t("button.addTag")}</Button>
           <div className="add-tag-tips">
-            {t("tag.tagLimit1")} {tagLimit - tagList.length}{" "}
+            {t("tag.tagLimit1")} {tagLimit - (tagList || []).length}{" "}
             {t("tag.tagLimit2")}.
           </div>
         </div>

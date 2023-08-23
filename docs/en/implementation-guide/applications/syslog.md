@@ -16,7 +16,7 @@ include-markdown "include-prerequisites.md"
 2. In the left sidebar, under **Resources**, choose **Log Config**.
 3. Click the **Create a log config** button.
 4. Specify **Config Name**.
-6. Choose **Syslog** in the log type dropdown menu. Note that Centralized Logging with OpenSearch also supports Syslog with [JSON](./json.md) format and [single-line text](./single-line-text.md) format.
+5. Choose **Syslog** in the log type dropdown menu. Note that Centralized Logging with OpenSearch also supports Syslog with [JSON](./json.md) format and [single-line text](./single-line-text.md) format.
 
 ### RFC5424
 1. Paste a sample RFC5424 log. For example:
@@ -80,7 +80,7 @@ include-markdown "include-prerequisites.md"
     <35>1 2013-10-11T22:14:15.003Z client_machine su - - 'su root' failed for joe on /dev/pts/2
     ```
 
-3. Check if each fields type mapping is correct. Change the type by selecting the dropdown menu in the second column. For all supported types, see [Data Types](https://opensearch.org/docs/latest/search-plugins/sql/datatypes/). 
+3. Check if each fields type mapping is correct. Change the type by selecting the dropdown menu in the second column. For all supported types, see [Data Types](https://opensearch.org/docs/latest/search-plugins/sql/datatypes/).
 
     !!! Note "Note"
 

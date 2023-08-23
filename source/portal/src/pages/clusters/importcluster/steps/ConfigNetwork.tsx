@@ -29,10 +29,11 @@ import MultiSelect from "components/MultiSelect";
 import { ImportedDomainType } from "../ImportCluster";
 import { AmplifyConfigType } from "types";
 import { useSelector } from "react-redux";
-import { AppStateProps, InfoBarTypes } from "reducer/appReducer";
+import { InfoBarTypes } from "reducer/appReducer";
 import { buildSGLink, buildSubnetLink, buildVPCLink } from "assets/js/utils";
 import Alert from "components/Alert";
 import { useTranslation } from "react-i18next";
+import { RootState } from "reducer/reducers";
 interface ConfigNetworkProps {
   importedCluster: ImportedDomainType;
   changeVpc: (domain: string) => void;
@@ -63,7 +64,7 @@ const ConfigNetwork: React.FC<ConfigNetworkProps> = (
   } = props;
   const { t } = useTranslation();
   const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: AppStateProps) => state.amplifyConfig
+    (state: RootState) => state.app.amplifyConfig
   );
 
   const [loadingRes, setLoadingRes] = useState(false);
@@ -148,9 +149,9 @@ const ConfigNetwork: React.FC<ConfigNetworkProps> = (
           <div className="flex-1 border-left-c">
             <ValueWithLabel label={t("cluster:import.configNetwork.clusterSG")}>
               <div>
-                {esVPCInfo?.securityGroupIds?.map((element, index) => {
+                {esVPCInfo?.securityGroupIds?.map((element) => {
                   return (
-                    <div key={index}>
+                    <div key={element}>
                       <ExtLink
                         to={buildSGLink(
                           amplifyConfig.aws_project_region,
@@ -170,7 +171,7 @@ const ConfigNetwork: React.FC<ConfigNetworkProps> = (
               <div>
                 {esVPCInfo?.subnetIds?.map((element, index) => {
                   return (
-                    <div key={index}>
+                    <div key={element}>
                       <ExtLink
                         to={buildSubnetLink(
                           amplifyConfig.aws_project_region,

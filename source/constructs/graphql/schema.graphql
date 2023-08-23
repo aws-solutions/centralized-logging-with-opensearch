@@ -1,3 +1,5 @@
+scalar AWSDateTime
+
 schema {
   query: Query
   mutation: Mutation
@@ -11,7 +13,10 @@ type Query {
   getDomainVpc(domainName: String!, region: String): ESVPCInfo
 
   # List imported domain details.
-  listImportedDomains(metrics: Boolean): [ImportedDomain]
+  listImportedDomains(
+    metrics: Boolean
+    includeFailed: Boolean
+  ): [ImportedDomain]
 
   # Get Domain Detail by ID
   getDomainDetails(id: ID!, metrics: Boolean): DomainDetails
@@ -46,19 +51,11 @@ type Query {
     region: String
   ): [ResourceLogConf]
 
-  # *The following belongs to applog* #
+  # List logging conf info v2
+  listLogConfigs(page: Int!, count: Int!): ListLogConfigsResponse
 
-  # List instance group info
-  listInstanceGroups(page: Int, count: Int): ListInstanceGroupResponse
-
-  # Get instance group info by ID
-  getInstanceGroup(id: ID!): InstanceGroup
-
-  # List logging conf info
-  listLogConfs(page: Int, count: Int): ListLogConfResponse
-
-  # Get logging conf info by ID
-  getLogConf(id: ID!): LogConf
+  # Get logging conf v2 info by ID
+  getLogConfig(id: ID!, version: Int): LogConfig
 
   # List app pipeline info
   listAppPipelines(page: Int, count: Int): ListAppPipelineResponse
@@ -72,11 +69,18 @@ type Query {
     count: Int
     appPipelineId: String
     sourceId: String
-    sourceType: LogSourceType
+    region: String
+    accountId: String
   ): ListAppLogIngestionResponse
 
   # Get app logging ingestion info by ID
   getAppLogIngestion(id: ID!): AppLogIngestion
+
+  # Get k8s deployment YAML with Sidecar by ID
+  getK8sDeploymentContentWithSidecar(id: ID!): String
+
+  # Get k8s deployment YAML with DaemonSet by sourceId
+  getK8sDeploymentContentWithDaemonSet(sourceId: ID!): String
 
   # List AWS Instance
   listInstances(
@@ -88,15 +92,6 @@ type Query {
     accountId: String
   ): ListInstanceResponse
 
-  # List Auto-Scaling Groups
-  listAutoScalingGroups(
-    maxResults: Int
-    nextToken: String
-    region: String
-    accountId: String
-  ): listAutoScalingGroupResponse
-
-
   # Get logging Agent Status by instanceId
   getLogAgentStatus(
     instanceId: String!
@@ -104,63 +99,83 @@ type Query {
     accountId: String
   ): LogAgentStatus
 
+  # Get log Agent Status by instanceId
+  getInstanceAgentStatus(
+    instanceIds: [String]!
+    region: String
+    accountId: String
+    commandId: String
+  ): InstanceAgentStatusResponse
+
   # Verify if CIDR Conflict
   validateVpcCidr(domainName: String!, region: String): String
 
   # Get logging source info by ID
-  getLogSource(sourceType: LogSourceType!, id: ID!): LogSource
-
-  # Get imported EKS Cluster details by eksClusterId
-  getEKSClusterDetails(eksClusterId: String!): EKSClusterLogSource
-
-  # Get eks daemon set config by eks source id
-  getEKSDaemonSetConf(eksClusterId: String!): String
-
-  # Get eks deployment configuration by eksClusterId and ingestion id
-  getEKSDeploymentConf(
-    eksClusterId: String!
-    ingestionId: String!
-    openExtraMetadataFlag: Boolean
-  ): String
+  getLogSource(type: LogSourceType!, sourceId: ID!): LogSource
 
   getAutoScalingGroupConf(groupId: String!): String
 
-  # List EKS Cluster info
-  listEKSClusterNames(
-    accountId: String
-    region: String
-    nextToken: String!
-    isListAll: Boolean
-  ): ListEKSClustersResponse
-
-  # List imported EKS Cluster info
-  listImportedEKSClusters(
-    page: Int
-    count: Int
-  ): ListImportedEKSClustersResponse
+  listLogSources(
+    type: LogSourceType!
+    page: Int!
+    count: Int!
+  ): ListLogSourceResponse
 
   # Check Time format
   checkTimeFormat(timeStr: String!, formatStr: String!): CheckTimeFormatRes
 
-  # *The following belongs to cross account* #
-
   # List sub account info
   listSubAccountLinks(page: Int, count: Int): ListSubAccountLinkResponse
 
-  # Get sub account info by ID
-  getSubAccountLink(id: ID!): SubAccountLink
-
-  # Get sub account info by Account Id and region
-  getSubAccountLinkByAccountIdRegion(
-    accountId: String!
-    region: String
-  ): SubAccountLink
+  # Get sub account info
+  getSubAccountLink(subAccountId: String!, region: String): SubAccountLink
 
   checkCustomPort(
     sourceType: LogSourceType
     syslogProtocol: ProtocolType!
     syslogPort: Int!
   ): checkCustomPortResponse
+
+  # Get the list of log group by log group name
+  listLogStreams(
+    logGroupName: String!
+    logStreamNamePrefix: String
+    page: Int
+    count: Int
+  ): ListLogStreamsResponse
+
+  # Get the log events by log group name and log stream name
+  getLogEvents(
+    logGroupName: String!
+    logStreamName: String!
+    startTime: Int
+    endTime: Int
+    filterPattern: String
+    limit: Int = 100
+    nextToken: String
+  ): GetLogEventsResponse
+
+  # Get the log metric history data
+  getMetricHistoryData(
+    pipelineId: String!
+    pipelineType: PipelineType!
+    metricNames: [MetricName]
+    startTime: Int
+    endTime: Int
+  ): MetricHistoryData
+
+  # Get the pipeline alarm status of a specific metric alarm
+  getPipelineAlarm(
+    pipelineId: String!
+    pipelineType: PipelineType!
+    alarmName: AlarmMetricName!
+  ): PipelineAlarm
+
+  # Check the networking requirements and any other requirements for a AOS domain
+  domainStatusCheck(
+    domainName: String!
+    region: String
+  ): DomainStatusCheckResponse
 }
 
 type Mutation {
@@ -170,10 +185,10 @@ type Mutation {
     region: String
     vpc: VPCInput
     tags: [TagInput]
-  ): String
+  ): ImportDomainResponse
 
-  # Remove an OpenSearch Domain by ID
-  removeDomain(id: ID!): String
+  # Remove an OpenSearch Domain by ID V2
+  removeDomain(id: ID!, isReverseConf: Boolean): RemoveDomainResponse
 
   # Create a new service pipeline
   createServicePipeline(
@@ -185,7 +200,11 @@ type Mutation {
     logSourceAccountId: String
     logSourceRegion: String
     destinationType: DestinationType!
+    monitor: MonitorInput
   ): String
+
+  # Update a service pipeline
+  updateServicePipeline(id: ID!, monitor: MonitorInput): String
 
   # Remove a service pipeline
   deleteServicePipeline(id: ID!): String
@@ -224,95 +243,66 @@ type Mutation {
 
   # *The following belongs to applog* #
 
-  # Create a new instance group
-  createInstanceGroup(
-    accountId: String
-    region: String
-    groupName: String!
-    groupType: String
-    instanceSet: [String!]!
-  ): String
-
-  # Create a new instance group base on auto-scaling group
-  createInstanceGroupBaseOnASG(
-    accountId: String
-    region: String
-    groupName: String!
-    groupType: String
-    autoScalingGroupName: String!
-  ): String
-
-  # Remove a instance group
-  deleteInstanceGroup(id: ID!): String
-
-  # Update a instance group
-  addInstancesToInstanceGroup(
-    sourceId: String!
-    instanceIdSet: [String!]!
-  ): String
-
-  deleteInstancesFromInstanceGroup(
-    sourceId: String!
-    instanceIdSet: [String!]!
-  ): String
-
-  # Create a logging conf
-  createLogConf(
-    confName: String!
+  # Create a logging conf v2
+  createLogConfig(
+    name: String!
     logType: LogType!
+    syslogParser: SyslogParser
+    multilineLogParser: MultiLineLogParser
+    filterConfigMap: ProcessorFilterRegexInput
+    regex: String
+    regexFieldSpecs: [RegularSpecInput]
     timeKey: String
     timeOffset: String
-    multilineLogParser: MultiLineLogParser
-    syslogParser: SyslogParser
-    userSampleLog: String
+    timeKeyRegex: String
     userLogFormat: String
-    regularExpression: String
-    timeRegularExpression: String
-    regularSpecs: [RegularSpecInput]
-    processorFilterRegex: ProcessorFilterRegexInput
+    userSampleLog: String
   ): String
 
-  # Remove a logging conf
-  deleteLogConf(id: ID!): String
+  # Remove a logging conf v2
+  deleteLogConfig(id: ID!): String
 
-  # Update a logging conf
-  updateLogConf(
+  # Update a logging conf v2
+  updateLogConfig(
     id: ID!
-    confName: String!
+    version: Int
+    name: String!
     logType: LogType!
+    syslogParser: SyslogParser
+    multilineLogParser: MultiLineLogParser
+    filterConfigMap: ProcessorFilterRegexInput
+    regex: String
+    regexFieldSpecs: [RegularSpecInput]
     timeKey: String
     timeOffset: String
-    multilineLogParser: MultiLineLogParser
-    syslogParser: SyslogParser
-    userSampleLog: String
+    timeKeyRegex: String
     userLogFormat: String
-    regularExpression: String
-    timeRegularExpression: String
-    regularSpecs: [RegularSpecInput]
-    processorFilterRegex: ProcessorFilterRegexInput
+    userSampleLog: String
   ): String
 
-  # Create a new app pipeline
   createAppPipeline(
     bufferType: BufferType!
     bufferParams: [BufferInput]
     aosParams: AOSParameterInput!
+    logConfigId: ID!
+    logConfigVersionNumber: Int!
+    monitor: MonitorInput
     force: Boolean
     tags: [TagInput]
-  ): String
+  ): ID
+  # Update a app pipeline
+  updateAppPipeline(id: ID!, monitor: MonitorInput): String
 
   # Remove a app pipeline
   deleteAppPipeline(id: ID!): String
 
   # Create a new app logging ingestion
   createAppLogIngestion(
-    confId: String!
-    sourceIds: [String!]
-    sourceType: LogSourceType!
+    sourceId: String!
     appPipelineId: String!
-    createDashboard: String
     tags: [TagInput]
     logPath: String
+    autoAddPermission: Boolean! = false
   ): String
 
   # Remove a app logging ingestion
@@ -326,29 +316,25 @@ type Mutation {
   ): String
 
   createLogSource(
-    sourceType: LogSourceType!
-    accountId: String
+    type: LogSourceType!
     region: String
-    sourceInfo: [SourceInfoInput]
+    accountId: String
+    ec2: EC2SourceInput # required if type == EC2
+    syslog: SyslogSourceInput # required if type == Syslog
+    eks: EKSSourceInput # required if type == EKS
+    s3: S3SourceInput # required if type == S3
     tags: [TagInput]
+  ): ID
+
+  updateLogSource(
+    type: LogSourceType!
+    sourceId: ID!
+    action: LogSourceUpdateAction!
+    ec2: EC2SourceUpdateInput # required if type == EC2
   ): String
 
+  deleteLogSource(type: LogSourceType!, sourceId: ID!): String
 
-  #Import an EKS Cluster
-  importEKSCluster(
-    aosDomainId: ID!
-    eksClusterName: String!
-    cri: CRI
-    accountId: String
-    region: String
-    deploymentKind: EKSDeployKind!
-    tags: [TagInput]
-  ): String
-  # Remove an EKS Cluster by ID
-  removeEKSCluster(id: ID!): String
-
-  #generate error code
-  generateErrorCode(code: ErrorCode): String
   # *The following belongs to cross account* #
 
   # Create a new cross account link
@@ -362,28 +348,50 @@ type Mutation {
     subAccountBucketName: String!
     subAccountStackId: String!
     subAccountKMSKeyArn: String!
+    subAccountIamInstanceProfileArn: String!
     tags: [TagInput]
   ): String
 
-  # Update a cross account link
-  updateSubAccountLink(
-    id: ID!
-    subAccountName: String!
-    agentInstallDoc: String!
-    agentConfDoc: String!
-    subAccountBucketName: String!
-    subAccountStackId: String!
-    subAccountKMSKeyArn: String!
-    subAccountVpcId: String
-    subAccountPublicSubnetIds: String
+  # Remove a cross account link
+  deleteSubAccountLink(subAccountId: String!, region: String): String
+
+  # Create the alarm config of a specific Pipeline, including App and Service
+  createPipelineAlarm(
+    pipelineId: String!
+    pipelineType: PipelineType!
+    snsTopicArn: String
+    emails: String
+    snsTopicName: String
   ): String
 
-  # Remove a cross account link
-  deleteSubAccountLink(id: ID!): String
+  # Update the alarm config of a specific Pipeline, including App and Service
+  updatePipelineAlarm(
+    pipelineId: String!
+    pipelineType: PipelineType!
+    snsTopicArn: String
+    emails: String
+  ): String
+
+  # Delete the alarm config of a specific Pipeline, including App and Service
+  deletePipelineAlarm(pipelineId: String!, pipelineType: PipelineType!): String
+}
+
+enum DomainImportStatus {
+  ACTIVE
+  IMPORTED
+  INACTIVE
+  IN_PROGRESS
+  UNKNOWN
+  FAILED
+}
+
+type DomainNameAndStatus {
+  domainName: String
+  status: DomainImportStatus
 }
 
 type DomainNames {
-  domainNames: [String!]
+  domainNames: [DomainNameAndStatus!]
 }
 
 enum DomainHealth {
@@ -391,6 +399,7 @@ enum DomainHealth {
   RED
   YELLOW
   UNKNOWN
+  ERROR
 }
 
 enum EngineType {
@@ -402,20 +411,6 @@ type DomainMetrics {
   searchableDocs: Float
   freeStorageSpace: Float
   health: DomainHealth
-}
-
-input ISMInput {
-  index: String
-  hotAge: Int
-  warmAge: Int
-  retention: Int
-}
-
-type ISM {
-  index: String
-  hotAge: Int
-  warmAge: Int
-  retention: Int
 }
 
 input VPCInput {
@@ -507,6 +502,7 @@ type DomainDetails {
   alarmInput: AlarmStackInfo
   metrics: DomainMetrics
   status: String
+  resources: [DomainRelevantResource]
 }
 
 enum StackStatus {
@@ -542,6 +538,23 @@ enum ProtocolType {
   UDP
 }
 
+enum PipelineMonitorStatus {
+  ENABLED
+  DISABLED
+}
+
+enum PipelineAlarmStatus {
+  ENABLED
+  DISABLED
+}
+
+enum AlarmMetricStatus {
+  ALARM
+  OK
+  INSUFFICIENT_DATA
+  LOADING
+}
+
 type Tag {
   key: String
   value: String
@@ -554,10 +567,17 @@ type ServicePipeline {
   source: String
   target: String
   parameters: [Parameter]
-  createdDt: String
+  createdAt: String
   status: PipelineStatus
   tags: [Tag]
   error: String
+  monitor: MonitorDetail
+  processorLogGroupName: String
+  helperLogGroupName: String
+  logEventQueueName: String
+  deliveryStreamName: String
+  bufferResourceName: String
+  stackId: String
 }
 
 type ListServicePipelineResponse {
@@ -585,16 +605,6 @@ input ParameterInput {
   parameterValue: String
 }
 
-type SourceInfo {
-  key: String
-  value: String
-}
-
-input SourceInfoInput {
-  key: String
-  value: String
-}
-
 type Resource {
   id: String!
   name: String!
@@ -616,6 +626,9 @@ enum ResourceType {
   ELB
   WAF
   Config
+  EKSCluster
+  ASG
+  SNS
 }
 
 # Log Format is only requried if the format can be customized.
@@ -698,23 +711,6 @@ type LoggingBucket {
 }
 
 # *The following belongs to applog* #
-
-type InstanceGroup {
-  id: ID!
-  accountId: String
-  region: String
-  groupName: String
-  groupType: String
-  instanceSet: [String]
-  createdDt: String
-  status: String
-}
-
-type ListInstanceGroupResponse {
-  instanceGroups: [InstanceGroup]
-  total: Int
-}
-
 enum LogType {
   JSON
   Regex
@@ -747,7 +743,12 @@ enum LogSourceType {
   S3
   EKSCluster
   Syslog
-  ASG
+}
+
+enum LogSourceUpdateAction {
+  ADD
+  REMOVE
+  MODIFY
 }
 
 enum LoggingBucketSource {
@@ -761,34 +762,67 @@ enum ErrorCode {
   OverlapIndexPrefix
   OverlapWithInactiveIndexPrefix
   AccountNotFound
+  OldAOSVersion
+  AOSNotInPrivateSubnet
+  WithoutNAT
+  EKS_CLUSTER_NOT_CLEANED
+  ASSOCIATED_STACK_UNDER_PROCESSING
+  SVC_PIPELINE_NOT_CLEANED
+  APP_PIPELINE_NOT_CLEANED
+  DOMAIN_ALREADY_IMPORTED
+  DOMAIN_NOT_ACTIVE
+  DOMAIN_UNDER_PROCESSING
+  DOMAIN_RELATED_RESOURCES_REVERSE_FAILED
+  IMPORT_OPENSEARCH_DOMAIN_FAILED
+  REMOVE_OPENSEARCH_DOMAIN_FAILED
+  UNSUPPORTED_DOMAIN_ENGINE
+  DOMAIN_NETWORK_TYPE_NOT_PRIVATE
+  OLD_DOMAIN_VERSION
+  SUBNET_WITHOUT_NAT
+  AOS_SECURITY_GROUP_CHECK_FAILED
+  NETWORK_ACL_CHECK_FAILED
+  VPC_PEERING_CHECK_FAILED
+  AOS_VPC_ROUTING_CHECK_FAILED
+  SOLUTION_VPC_ROUTING_CHECK_FAILED
+  DUPLICATED_INDEX_PREFIX
+  DUPLICATED_WITH_INACTIVE_INDEX_PREFIX
+  OVERLAP_INDEX_PREFIX
+  OVERLAP_WITH_INACTIVE_INDEX_PREFIX
+  UNSUPPORTED_ACTION_HAS_INGESTION
+  UNSUPPORTED_ACTION_SOURCE_HAS_INGESTION
+  UPDATE_CWL_ROLE_FAILED
+  ASSUME_ROLE_CHECK_FAILED
+  ACCOUNT_NOT_FOUND
+  ACCOUNT_ALREADY_EXISTS
+  ITEM_NOT_FOUND
+  UNKNOWN_ERROR
 }
 
-type LogConf {
-  id: ID!
-  confName: String
+type LogConfig {
+  id: ID
+  version: Int
+  createdAt: String
+  name: String
   logType: LogType
-  logPath: String
+  syslogParser: SyslogParser
+  multilineLogParser: MultiLineLogParser
+  filterConfigMap: ProcessorFilterRegex
+  regex: String
+  regexFieldSpecs: [RegularSpec]
   timeKey: String
   timeOffset: String
-  multilineLogParser: MultiLineLogParser
-  syslogParser: SyslogParser
-  createdDt: String
+  timeKeyRegex: String
   userLogFormat: String
   userSampleLog: String
-  regularExpression: String
-  timeRegularExpression: String
-  regularSpecs: [RegularSpec]
-  processorFilterRegex: ProcessorFilterRegex
-  status: String
 }
 
 input ProcessorFilterRegexInput {
-  enable: Boolean!
+  enabled: Boolean!
   filters: [LogConfFilterInput]
 }
 
 type ProcessorFilterRegex {
-  enable: Boolean!
+  enabled: Boolean
   filters: [LogConfFilter]
 }
 
@@ -809,35 +843,28 @@ enum LogConfFilterCondition {
   Exclude
 }
 
-type ListLogConfResponse {
-  logConfs: [LogConf]
+type ListLogConfigsResponse {
+  logConfigs: [LogConfig]
   total: Int
 }
 
-type S3Source {
-  s3Name: String
-  s3Prefix: String
-  archiveFormat: String
-  defaultVpcId: String
-  defaultSubnetIds: String
-}
-
-
 type LogSource {
   sourceId: ID!
+  type: LogSourceType
   accountId: String
   region: String
-  sourceName: String
-  logPath: String
-  sourceType: LogSourceType
-  sourceInfo: [SourceInfo]
-  s3Source: S3Source
-  eksSource: EKSClusterLogSource
-  createdDt: String
+  eks: EKSSource
+  s3: S3Source
+  ec2: EC2Source
+  syslog: SyslogSource
+  createdAt: AWSDateTime
+  updatedAt: AWSDateTime
+  status: PipelineStatus
+  tags: [Tag]
 }
 
 type ListLogSourceResponse {
-  LogSources: [LogSource]
+  logSources: [LogSource]
   total: Int
 }
 
@@ -870,7 +897,6 @@ enum Codec {
   default
 }
 
-
 type AOSParameter {
   opensearchArn: String
   domainName: String
@@ -888,16 +914,25 @@ type AOSParameter {
 }
 
 type AppPipeline {
-  id: ID!
+  pipelineId: ID!
   bufferType: BufferType
   bufferParams: [BufferParameter]
   aosParams: AOSParameter
-  createdDt: String
+  createdAt: String
   status: PipelineStatus
+  logConfigId: String
+  logConfigVersionNumber: Int
+  logConfig: LogConfig
   bufferAccessRoleArn: String
   bufferAccessRoleName: String
   bufferResourceName: String
   bufferResourceArn: String
+  processorLogGroupName: String
+  helperLogGroupName: String
+  logEventQueueName: String
+  monitor: MonitorDetail
+  stackId: String
+  error: String
   tags: [Tag]
 }
 
@@ -908,20 +943,17 @@ type ListAppPipelineResponse {
 
 type AppLogIngestion {
   id: ID!
-  confId: String
-  confName: String
-  sourceInfo: LogSource
   stackId: String
   stackName: String
   appPipelineId: String
   logPath: String
   sourceId: String
   sourceType: String
-  accountId: String
-  region: String
-  createdDt: String
+  createdAt: String
   status: String
   tags: [Tag]
+  accountId: String
+  region: String
 }
 
 type ListAppLogIngestionResponse {
@@ -938,6 +970,18 @@ enum LogAgentStatus {
   Unknown
 }
 
+type InstanceAgentStatusResponse {
+  commandId: String
+  instanceAgentStatusList: [InstanceAgentStatus]
+}
+
+type InstanceAgentStatus {
+  instanceId: String
+  status: LogAgentStatus
+  invocationOutput: String
+  curlOutput: String
+}
+
 input LogAgentParameterInput {
   agentName: String
   version: String
@@ -949,11 +993,11 @@ type LogAgentParameter {
 }
 
 # InstanceMeta
-type InstanceMeta {
-  id: ID!
-  logAgent: [LogAgentParameter]
-  status: LogAgentStatus
-}
+# type InstanceMeta {
+#   id: ID!
+#   logAgent: [LogAgentParameter]
+#   status: LogAgentStatus
+# }
 
 # Instance info
 type Instance {
@@ -964,22 +1008,8 @@ type Instance {
   name: String
 }
 
-# Auto-Scaling Group info
-type AutoScalingGroup {
-  autoScalingGroupName: String
-  minSize: Int
-  maxSize: Int
-  desiredCapacity: Int
-  instances: [String!]
-}
-
 type ListInstanceResponse {
   instances: [Instance]
-  nextToken: String
-}
-
-type listAutoScalingGroupResponse {
-  autoScalingGroups: [AutoScalingGroup]
   nextToken: String
 }
 
@@ -995,16 +1025,6 @@ type RegularSpec {
   format: String
 }
 
-type ListEKSClustersResponse {
-  clusters: [String]
-  nextToken: String
-}
-
-type ListImportedEKSClustersResponse {
-  eksClusterLogSourceList: [EKSClusterLogSource]
-  total: Int
-}
-
 enum EKSDeployKind {
   DaemonSet
   Sidecar
@@ -1014,9 +1034,90 @@ enum CRI {
   docker
 }
 
-type EKSClusterLogSource {
-  id: ID
-  aosDomain: ImportedDomain
+enum IngestionMode {
+  ONE_TIME
+  ON_GOING
+}
+
+enum CompressionType {
+  GZIP
+  NONE
+}
+
+type S3Source {
+  mode: IngestionMode
+  bucketName: String
+  keyPrefix: String
+  keySuffix: String
+  compressionType: CompressionType
+}
+
+input S3SourceInput {
+  mode: IngestionMode
+  bucketName: String
+  keyPrefix: String
+  keySuffix: String
+  compressionType: CompressionType
+}
+
+type SyslogSource {
+  protocol: ProtocolType
+  port: Int
+  nlbArn: String
+  nlbDNSName: String
+}
+
+input SyslogSourceInput {
+  protocol: ProtocolType
+  port: Int
+  nlbArn: String
+  nlbDNSName: String
+}
+
+enum EC2GroupType {
+  EC2
+  ASG
+}
+
+enum EC2GroupPlatform {
+  Linux
+}
+
+type EC2Instances {
+  instanceId: String!
+  # instanceName: String
+  # platformName: String
+  # platformVersion: String
+}
+
+input EC2InstancesInput {
+  instanceId: String
+  # instanceName: String
+  # platformName: String
+  # platformVersion: String
+}
+
+type EC2Source {
+  groupName: String!
+  groupType: EC2GroupType!
+  groupPlatform: EC2GroupPlatform!
+  asgName: String
+  instances: [EC2Instances]
+}
+
+input EC2SourceInput {
+  groupName: String
+  groupType: EC2GroupType
+  groupPlatform: EC2GroupPlatform
+  asgName: String
+  instances: [EC2InstancesInput]
+}
+
+input EC2SourceUpdateInput {
+  instances: [EC2InstancesInput]
+}
+
+type EKSSource {
   eksClusterName: String
   eksClusterArn: String
   cri: CRI
@@ -1025,12 +1126,14 @@ type EKSClusterLogSource {
   subnetIds: [String]
   oidcIssuer: String
   endpoint: String
-  createdDt: String
-  accountId: String
-  region: String
   logAgentRoleArn: String
   deploymentKind: EKSDeployKind
-  tags: [Tag]
+}
+
+input EKSSourceInput {
+  eksClusterName: String
+  cri: CRI
+  deploymentKind: EKSDeployKind
 }
 
 type CheckTimeFormatRes {
@@ -1038,7 +1141,7 @@ type CheckTimeFormatRes {
 }
 
 type SubAccountLink {
-  id: ID!
+  id: ID
   subAccountId: String
   region: String
   subAccountName: String
@@ -1050,7 +1153,8 @@ type SubAccountLink {
   subAccountKMSKeyArn: String
   subAccountVpcId: String
   subAccountPublicSubnetIds: String
-  createdDt: String
+  subAccountIamInstanceProfileArn: String
+  createdAt: String
   status: String
   tags: [Tag]
 }
@@ -1080,4 +1184,168 @@ type BufferParameter {
 input BufferInput {
   paramKey: String
   paramValue: String
+}
+
+type LogStream {
+  logStreamName: String
+  creationTime: String
+  firstEventTimestamp: String
+  lastEventTimestamp: String
+  lastIngestionTime: String
+  uploadSequenceToken: String
+  arn: String
+  storedBytes: Int
+}
+
+type ListLogStreamsResponse {
+  logStreams: [LogStream]
+  total: Int
+}
+
+type LogEvent {
+  timestamp: String
+  message: String
+  ingestionTime: String
+}
+
+type GetLogEventsResponse {
+  logEvents: [LogEvent]
+  nextForwardToken: String
+  nextBackwardToken: String
+}
+
+type DataSerie {
+  name: String
+  data: [Float]
+}
+
+type GraphXaxis {
+  categories: [Float]
+}
+
+type MetricHistoryData {
+  series: [DataSerie]
+  xaxis: GraphXaxis
+}
+
+enum PipelineType {
+  APP
+  SERVICE
+}
+
+enum AlarmMetricName {
+  OLDEST_MESSAGE_AGE_ALARM
+  PROCESSOR_ERROR_INVOCATION_ALARM
+  PROCESSOR_ERROR_RECORD_ALARM
+  PROCESSOR_DURATION_ALARM
+  KDS_THROTTLED_RECORDS_ALARM
+  FLUENTBIT_OUTPUT_RETRIED_RECORDS_ALARM
+}
+
+type AlarmMetricDetail {
+  name: AlarmMetricName
+  status: AlarmMetricStatus
+  resourceId: String
+}
+
+type PipelineAlarm {
+  alarms: [AlarmMetricDetail]
+}
+
+enum DomainStatusCheckType {
+  FAILED
+  PASSED
+  CHECKING
+}
+
+type DomainStatusCheckDetail {
+  name: String
+  values: [String]
+  errorCode: ErrorCode
+  status: DomainStatusCheckType
+}
+
+type DomainStatusCheckResponse {
+  status: DomainStatusCheckType
+  details: [DomainStatusCheckDetail]
+  multiAZWithStandbyEnabled: Boolean
+}
+
+enum ResourceStatus {
+  CREATED
+  UPDATED
+  DELETED
+  REVERSED
+  UNCHANGED
+  ERROR
+}
+
+type DomainRelevantResource {
+  name: String
+  values: [String]
+  status: ResourceStatus
+}
+
+type RemoveDomainResponse {
+  error: String
+  errorCode: ErrorCode
+  resources: [DomainRelevantResource]
+}
+
+input MonitorInput {
+  status: PipelineMonitorStatus
+  pipelineAlarmStatus: PipelineAlarmStatus
+  snsTopicName: String
+  snsTopicArn: String
+  emails: String
+}
+
+type MonitorDetail {
+  status: PipelineMonitorStatus
+  backupBucketName: String
+  errorLogPrefix: String
+  pipelineAlarmStatus: PipelineAlarmStatus
+  snsTopicName: String
+  snsTopicArn: String
+  emails: String
+}
+
+type ImportDomainResponse {
+  id: String
+  resources: [DomainRelevantResource]
+}
+
+enum MetricName {
+  TotalLogs
+  FailedLogs
+  ExcludedLogs
+  LoadedLogs
+  SQSNumberOfMessagesSent
+  SQSNumberOfMessagesDeleted
+  SQSApproximateNumberOfMessagesVisible
+  SQSApproximateAgeOfOldestMessage
+  ProcessorFnError
+  ProcessorFnConcurrentExecutions
+  ProcessorFnDuration
+  ProcessorFnThrottles
+  ProcessorFnInvocations
+  KDFIncomingBytes
+  KDFIncomingRecords
+  KDFDeliveryToS3Bytes
+  KDSIncomingBytes
+  KDSIncomingRecords
+  KDSPutRecordsBytes
+  KDSThrottledRecords
+  KDSWriteProvisionedThroughputExceeded
+  SyslogNLBActiveFlowCount
+  SyslogNLBProcessedBytes
+  FluentBitInputBytes
+  FluentBitInputRecords
+  FluentBitOutputDroppedRecords
+  FluentBitOutputErrors
+  FluentBitOutputRetriedRecords
+  FluentBitOutputRetriesFailed
+  FluentBitOutputRetries
+  FluentBitOutputProcBytes
+  FluentBitOutputProcRecords
 }

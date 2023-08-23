@@ -14,6 +14,5 @@ def default_environment_variables():
     os.environ["SOLUTION_VERSION"] = "v1.0.0"
     os.environ["SOLUTION_ID"] = "SO8025"
 
-    os.environ["DEFAULT_LOGGING_BUCKET"] = "log-hub-bucket"
-    os.environ["SUB_ACCOUNT_LINK_TABLE_NAME"] = "mocked-sub-account-link-table-name"
-    os.environ["SUB_ACCOUNT_LINK_TABLE"] = "mocked-sub-account-link-table-name"
+    os.environ["DEFAULT_LOGGING_BUCKET"] = "log-bucket"
+    os.environ["SUB_ACCOUNT_LINK_TABLE_NAME"] = "sub-account-link-table"

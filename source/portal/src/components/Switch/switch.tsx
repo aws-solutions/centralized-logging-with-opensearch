@@ -19,12 +19,12 @@ interface SwithProps {
   disabled?: boolean;
   reverse?: boolean;
   label: string;
-  desc: string;
+  desc?: string;
   isOn: boolean;
   handleToggle: () => void;
 }
 
-const Alert: React.FC<SwithProps> = (props: SwithProps) => {
+const Switch: React.FC<SwithProps> = (props: SwithProps) => {
   const { disabled, reverse, label, desc, isOn, handleToggle } = props;
   return (
     <div className="gsui-switch">
@@ -54,4 +54,4 @@ const Alert: React.FC<SwithProps> = (props: SwithProps) => {
   );
 };
 
-export default Alert;
+export default Switch;

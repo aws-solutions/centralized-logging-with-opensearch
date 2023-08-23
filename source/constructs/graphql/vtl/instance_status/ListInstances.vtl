@@ -1,0 +1,5 @@
+#if($ctx.args.maxResults<1 or $ctx.args.maxResults>1000)
+    $util.error("Max Results (per page) must between 1 and 1000")
+#end
+
+{"version": "2017-02-28", "operation": "Invoke", "payload": $util.toJson($ctx)}

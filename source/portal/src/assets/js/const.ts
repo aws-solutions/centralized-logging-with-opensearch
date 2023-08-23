@@ -25,6 +25,7 @@ import IMAGE_SL_Amazon_Config from "assets/images/type/amazon_config.svg";
 
 import {
   AlarmType,
+  CompressionType,
   LogConfFilterCondition,
   LogType,
   MultiLineLogParser,
@@ -37,7 +38,7 @@ export const AUTO_REFRESH_INT = 8000;
 
 export const SLUTION_REPO_NAME = "centralized-logging-with-opensearch";
 
-export const DEFAULT_AGENT_VERSION = "FluentBit 1.9.9";
+export const DEFAULT_AGENT_VERSION = "FluentBit 1.9.10";
 export const DEFAULT_PLATFORM = "Linux";
 export const ASG_SELECTION = "Auto Scaling group";
 export const DEFAULT_INSTANCE_SELECTION = "Manual";
@@ -64,8 +65,8 @@ export const RDS_LOG_GROUP_SUFFIX_SLOWQUERY = "/slowquery";
 export const RDS_LOG_GROUP_SUFFIX_GENERAL = "/general";
 export const RDS_LOG_GROUP_SUFFIX_AUDIT = "/audit";
 
-export const EN_LANGUAGE_LIST = ["en", "en_US", "en_GB"];
-export const ZH_LANGUAGE_LIST = ["zh", "zh_CN", "zh_TW"];
+export const EN_LANGUAGE_LIST = ["en", "en_US", "en-US", "en_GB"];
+export const ZH_LANGUAGE_LIST = ["zh", "zh_CN", "zh-CN", "zh_TW"];
 
 export const GITHUB_LINK =
   "https://github.com/aws-solutions/" + SLUTION_REPO_NAME;
@@ -193,6 +194,15 @@ export const S3_STORAGE_CLASS_LINK =
 export const CLOUDWATCH_PRICING_LINK =
   "https://aws.amazon.com/cloudwatch/pricing/";
 
+export const PIPELINE_ALARM_DOC_LINK =
+  "https://docs.aws.amazon.com/solutions/latest/centralized-logging-with-opensearch/log-alarms.html";
+
+export const PIPLINE_MONITORING_COST_LINK =
+  "https://docs.aws.amazon.com/solutions/latest/centralized-logging-with-opensearch/pipeline-monitoring.html";
+
+export const CLOUDWATCH_ALARM_LINK =
+  "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/AlarmThatSendsEmail.html";
+
 export enum ServiceLogType {
   Amazon_S3 = "Amazon_S3",
   Amazon_RDS = "Amazon_RDS",
@@ -203,6 +213,13 @@ export enum ServiceLogType {
   Amazon_ELB = "Amazon_ELB",
   Amazon_WAF = "Amazon_WAF",
   Amazon_Config = "Amazon_Config",
+}
+
+export enum AppLogSourceType {
+  EC2 = "ec2",
+  EKS = "eks",
+  SYSLOG = "syslog",
+  S3 = "s3",
 }
 
 type ServiceTypeDesc = {
@@ -500,7 +517,7 @@ export const domainAlramList: AlarmParamType[] = [
   },
   {
     key: AlarmType.KMS_KEY_INACCESSIBLE,
-    name: "cluster:detail.alarms.list.kmsKeyDisabled",
+    name: "cluster:detail.alarms.list.kmsKeyInAccess",
     value: "false",
     isChecked: false,
   },
@@ -520,63 +537,92 @@ export const REPLICA_COUNT_LIST = [
 
 export const AMPLIFY_ZH_DICT = {
   zh: {
-    "Sign In": "登录",
-    "Sign Up": "注册",
-    "Sign Out": "退出",
-    "Forgot your password?": "忘记密码？",
-    "Reset your password": "重置密码",
-    "Reset password": "重置密码",
-    Username: "用户名",
-    Password: "密码",
-    "Change Password": "修改密码",
-    Email: "邮箱",
-    email: "邮箱",
-    "Phone Number": "电话",
-    "Confirm a Code": "确认码",
-    "Confirm Sign In": "确认登录",
-    "Confirm Sign Up": "确认注册",
-    "Back to Sign In": "回到登录",
-    "Send Code": "发送确认码",
-    Confirm: "确认",
-    "Resend a Code": "重发确认码",
-    Submit: "提交",
-    Skip: "跳过",
-    Verify: "验证",
-    "Verify Contact": "验证联系方式",
-    Code: "确认码",
     "Account recovery requires verified contact information":
-      "账户恢复需要验证过的联系方式",
-    "User does not exist": "用户不存在",
-    "User already exists": "用户已经存在",
-    "Incorrect username or password.": "用户名或密码错误",
-    "Invalid password format": "密码格式错误",
-    "Invalid phone number format": "电话格式错误，请使用格式 +12345678900",
-    "Enter your username": "请输入您的邮箱",
-    "Enter your password": "请输入您的密码",
-    "Enter your phone number": "请输入您的手机号",
-    "Enter your email": "请输入您的邮箱",
-    "Enter your code": "请输入您的验证码",
-    "Lost your code?": "没收到验证码？",
-    "Resend Code": "重新发送验证码",
+      "帐户恢复需要验证的联系信息",
+    "Add your Profile": "添加您的个人资料",
+    "Add your Website": "添加您的网站",
+    "Back to Sign In": "返回登录",
+    "Change Password": "更改密码",
+    Changing: "正在更改",
+    Code: "代码",
+    "Confirm Password": "确认密码",
+    "Confirm Sign Up": "确认注册",
+    "Confirm SMS Code": "确认短信验证码",
+    "Confirm TOTP Code": "确认 TOTP 验证码",
+    Confirm: "确认",
+    "Confirmation Code": "确认码",
+    Confirming: "正在确认",
+    "Create a new account": "创建新帐户",
+    "Create Account": "创建帐户",
+    "Creating Account": "正在创建帐户",
+    "Dismiss alert": "关闭告警",
+    Email: "电子邮件",
+    "Enter your Birthdate": "输入您的生日",
+    "Enter your code": "输入您的代码",
+    "Enter your Confirmation Code": "输入您的确认码",
+    "Enter your Email": "输入您的电子邮件",
+    "Enter your Family Name": "输入您的姓",
+    "Enter your Given Name": "输入您的名",
+    "Enter your Middle Name": "输入您的中间名",
+    "Enter your Name": "输入您的姓名",
+    "Enter your Nickname": "输入您的昵称",
+    "Enter your Password": "输入您的密码",
+    "Enter your phone number": "输入您的电话号码",
+    "Enter your Preferred Username": "输入您的首选用户名",
+    "Enter your username": "输入您的邮箱",
+    "Forgot password?": "忘记密码？",
+    "Forgot your password?": "忘记密码？",
+    "Hide password": "隐藏密码",
+    "It may take a minute to arrive": "可能需要一分钟",
+    Loading: "加载中",
     "New password": "新密码",
-    "Enter your new password": "请输入新密码",
-    Change: "修改",
+    or: "或",
+    Password: "密码",
+    "Phone Number": "电话号码",
+    "Please confirm your Password": "请确认您的密码",
+    "Resend Code": "重新发送代码",
+    "Reset your password": "重置密码",
+    "Reset your Password": "重置密码",
+    "Send code": "发送代码",
+    "Send Code": "发送代码",
+    Sending: "正在发送",
+    "Setup TOTP": "设置 TOTP",
+    "Show password": "显示密码",
+    "Sign in to your account": "登录到您的帐户",
+    "Sign In with Amazon": "使用亚马逊登录",
+    "Sign In with Apple": "使用苹果登录",
+    "Sign In with Facebook": "使用 Facebook 登录",
+    "Sign In with Google": "使用 Google 登录",
+    "Sign in": "登录",
+    "Sign In": "登录",
+    "Signing in": "正在登录",
+    Skip: "跳过",
+    Submit: "提交",
+    Submitting: "正在提交",
+    Username: "用户名",
+    "Verify Contact": "验证联系方式",
+    Verify: "验证",
+    "Reset Password": "重置密码",
+    "We Emailed You": "我们已向您发送电子邮件",
+    "We Sent A Code": "我们已发送代码",
+    "We Texted You": "我们已向您发送短信",
+    "Your code is on the way. To log in, enter the code we emailed to":
+      "您的代码已发送。要登录，请输入我们发送到您电子邮件的代码",
+    "Your code is on the way. To log in, enter the code we sent you":
+      "您的代码已发送。要登录，请输入我们发送给您的代码",
+    "Your code is on the way. To log in, enter the code we texted to":
+      "您的代码已发送。要登录，请输入我们发送到您手机的代码",
   },
 };
-
-export enum CompressionType {
-  None = "",
-  Gzip = "gzip",
-}
 
 export const COMPRESS_TYPE = [
   {
     name: "None",
-    value: CompressionType.None,
+    value: CompressionType.NONE,
   },
   {
     name: "Gzip",
-    value: CompressionType.Gzip,
+    value: CompressionType.GZIP,
   },
 ];
 
@@ -620,7 +666,7 @@ export const PROTOCOL_LIST = [
 ];
 
 export const S3_BUFFER_PREFIX =
-  "AppLogs/<index-prefix>/year=%Y/month=%m/day=%d";
+  "AppLogs/<index-prefix>/year=%Y/month=%m/day=%d/";
 
 export const RFC3164_DEFAULT_REGEX = `^\\<(?<pri>[0-9]+)\\>(?<time>[^ ]* {1,2}[^ ]* [^ ]*) (?<host>[^ ]*) (?<ident>[a-zA-Z0-9_\\/\\.\\-]*)(?:\\[(?<pid>[0-9]+)\\])?(?:[^\\:]*\\:)? *(?<message>.*)$`;
 export const RFC5424_DEFAULT_REGEX = `^\\<(?<pri>[0-9]{1,5})\\>1 (?<time>[^ ]+) (?<host>[^ ]+) (?<ident>[^ ]+) (?<pid>[-0-9]+) (?<msgid>[^ ]+) (?<extradata>(\\[(.*)\\]|-)) (?<message>.+)$`;
@@ -745,3 +791,5 @@ export const PROXY_INSTANCE_TYPE_AND_NUMBER_LIST = [
   { conUser: "25", instanceType: "t3.large", instanceNumber: "1" },
   { conUser: "50+", instanceType: "t3.large", instanceNumber: "2" },
 ];
+
+export const TOPIC_NAME_REGEX = /^[a-zA-Z0-9-_]{1,128}$/;

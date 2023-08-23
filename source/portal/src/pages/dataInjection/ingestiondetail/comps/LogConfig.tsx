@@ -17,7 +17,7 @@ import React, { useState, useEffect } from "react";
 import { ExLogConf } from "pages/resources/common/LogConfigComp";
 import HeaderPanel from "components/HeaderPanel";
 import { appSyncRequestQuery } from "assets/js/request";
-import { getLogConf } from "graphql/queries";
+import { getLogConfig } from "graphql/queries";
 import LoadingText from "components/LoadingText";
 import ConfigDetailComps from "pages/resources/logConfig/ConfigDetailComps";
 import { useTranslation } from "react-i18next";
@@ -37,12 +37,12 @@ const LogConfig: React.FC<LogConfigProps> = (props: LogConfigProps) => {
   const getLogConfigById = async () => {
     try {
       setLoadingData(true);
-      const resConfigData: any = await appSyncRequestQuery(getLogConf, {
+      const resConfigData: any = await appSyncRequestQuery(getLogConfig, {
         id: configId,
       });
       console.info("resConfigData:", resConfigData);
       setLoadingData(false);
-      const tmpConfData = resConfigData?.data?.getLogConf;
+      const tmpConfData = resConfigData?.data?.getLogConfig;
       setCurConfig(tmpConfData);
     } catch (error) {
       setLoadingData(false);

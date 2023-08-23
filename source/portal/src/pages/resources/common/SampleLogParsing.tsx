@@ -13,7 +13,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React, { useState, useEffect } from "react";
+import React, {
+  useState,
+  useEffect,
+  forwardRef,
+  useImperativeHandle,
+  Ref,
+} from "react";
 import { LogType, MultiLineLogParser } from "API";
 import Button from "components/Button";
 import FormItem from "components/FormItem";
@@ -25,16 +31,18 @@ import Select from "components/Select";
 import { FB_TYPE_LIST, generateTimeZoneList } from "assets/js/const";
 import Alert from "components/Alert";
 import { Alert as AlertInfo } from "assets/js/alert";
-import { ExLogConf } from "./LogConfigComp";
+import { ExLogConf, PageType } from "./LogConfigComp";
 import {
   getLogFormatByUserLogConfig,
   IsJsonString,
   JsonToDotNotate,
   replaceSpringbootTimeFormat,
+  ternary,
 } from "assets/js/utils";
 import { appSyncRequestQuery } from "assets/js/request";
 import { checkTimeFormat } from "graphql/queries";
 import { OptionType } from "components/AutoComplete/autoComplete";
+import { defaultTo, identity } from "lodash";
 
 export interface RegexListType {
   key: string;
@@ -43,9 +51,11 @@ export interface RegexListType {
   value: string;
   loadingCheck: boolean;
   showError: boolean;
+  error: string;
   showSuccess: boolean;
 }
 interface SampleLogParsingProps {
+  pageType: PageType;
   changeSpecs: (specs: any) => void;
   changeSampleLog: (log: string) => void;
   logConfig: ExLogConf;
@@ -59,10 +69,16 @@ interface SampleLogParsingProps {
   changeTimeOffset?: (offset: string) => void;
 }
 
-const SampleLogParsing: React.FC<SampleLogParsingProps> = (
-  props: SampleLogParsingProps
-) => {
+export interface SampleLogParsingRefType {
+  validate: () => boolean;
+}
+
+function SampleLogParsing(
+  props: SampleLogParsingProps,
+  ref?: Ref<SampleLogParsingRefType>
+) {
   const {
+    pageType,
     logType,
     logConfig,
     showSampleLogRequiredError,
@@ -137,7 +153,6 @@ const SampleLogParsing: React.FC<SampleLogParsingProps> = (
     const tmpJsonObj = JsonToDotNotate(
       JSON.parse(logConfig.userSampleLog || "")
     );
-    console.info("tmpJsonFormat:", tmpJsonObj);
     const initArr: any = [];
     Object.keys(tmpJsonObj).forEach((key) => {
       initArr.push({
@@ -151,7 +166,7 @@ const SampleLogParsing: React.FC<SampleLogParsingProps> = (
   };
 
   const parseLog = () => {
-    const regex = logConfig.regularExpression || "";
+    const regex = logConfig.regex || "";
     if (!regex.trim()) {
       return;
     }
@@ -162,7 +177,7 @@ const SampleLogParsing: React.FC<SampleLogParsingProps> = (
       isValid = false;
     }
     if (!isValid) {
-      Alert(t("resource:config.parsing.alert"));
+      AlertInfo(t("resource:config.parsing.alert"));
       return;
     }
     const found: any = logConfig?.userSampleLog?.match(regex);
@@ -195,12 +210,17 @@ const SampleLogParsing: React.FC<SampleLogParsingProps> = (
         changeSampleLogInvalid(false);
         const foundObjectList = Object.entries(found.groups);
         if (foundObjectList.length) {
-          console.info("foundObjectList:", foundObjectList);
           foundObjectList.forEach((element: any) => {
+            const type = getDefaultType(element[0], element[1]);
+            // date format for SpringBoot is immutable, pre-assign the format
+            const format =
+              type === "date" && isSpringBootType()
+                ? timeFormatForSpringBoot
+                : "";
             initArr.push({
               key: element[0],
-              type: getDefaultType(element[0], element[1]),
-              format: "",
+              type,
+              format,
               value:
                 element[1]?.length > 450
                   ? element[1].substr(0, 448) + "..."
@@ -208,6 +228,7 @@ const SampleLogParsing: React.FC<SampleLogParsingProps> = (
               loadingCheck: false,
               showError: false,
               showSuccess: false,
+              error: "",
             });
           });
         }
@@ -242,7 +263,6 @@ const SampleLogParsing: React.FC<SampleLogParsingProps> = (
         resData?.data?.checkTimeFormat?.isMatch || false;
       tmpDataRes[index].showError = !resData?.data?.checkTimeFormat?.isMatch;
       changeRegExpList && changeRegExpList(tmpDataRes);
-      console.info("resData:", resData);
     }
   };
 
@@ -264,15 +284,16 @@ const SampleLogParsing: React.FC<SampleLogParsingProps> = (
         resData?.data?.checkTimeFormat?.isMatch === false
       );
       setTimeKeyFormatValid(resData?.data?.checkTimeFormat?.isMatch === true);
-      console.info("resData:", resData);
     }
   };
 
   useEffect(() => {
-    setShowValidInfo(false);
-    changeRegExpList && changeRegExpList([]);
-    setLogResMap({});
-    setTimeFormatForSpringBoot("");
+    if (pageType === PageType.New) {
+      setShowValidInfo(false);
+      changeRegExpList && changeRegExpList([]);
+      setLogResMap({});
+      setTimeFormatForSpringBoot("");
+    }
   }, [
     logConfig.logType,
     logConfig.multilineLogParser,
@@ -294,27 +315,26 @@ const SampleLogParsing: React.FC<SampleLogParsingProps> = (
   useEffect(() => {
     // set format undefine when format is empty
     if (logConfig.regexKeyList && logConfig.regexKeyList.length > 0) {
-      const tmpSpecList = [];
-      for (let i = 0; i < logConfig.regexKeyList.length; i++) {
-        if (isSpringBootType()) {
-          tmpSpecList.push({
-            key: logConfig.regexKeyList[i].key,
-            type: logConfig.regexKeyList[i].type,
-            format:
-              logConfig.regexKeyList[i].key === "time"
-                ? timeFormatForSpringBoot
-                : undefined,
-          });
-        } else {
-          tmpSpecList.push({
-            key: logConfig.regexKeyList[i].key,
-            type: logConfig.regexKeyList[i].type,
-            format: logConfig.regexKeyList[i].format
-              ? logConfig.regexKeyList[i].format
-              : undefined,
-          });
+      const tmpSpecList = logConfig.regexKeyList.map(
+        ({ key, type, format }) => {
+          if (isSpringBootType()) {
+            return {
+              key,
+              type,
+              format: ternary(
+                key === "time",
+                timeFormatForSpringBoot,
+                undefined
+              ),
+            };
+          }
+          return {
+            key,
+            type,
+            format: ternary(format, format, undefined),
+          };
         }
-      }
+      );
       changeSpecs(tmpSpecList);
     }
 
@@ -325,11 +345,13 @@ const SampleLogParsing: React.FC<SampleLogParsingProps> = (
         value: "",
       },
     ];
-    logConfig?.regexKeyList?.map((element) => {
-      tmpTimeKeyList.push({
-        name: element.key,
-        value: element.key,
-      });
+    logConfig?.regexKeyList?.forEach((element) => {
+      if (element.type === "date") {
+        tmpTimeKeyList.push({
+          name: element.key,
+          value: element.key,
+        });
+      }
     });
     changeSelectKeyList && changeSelectKeyList(tmpTimeKeyList);
     setTimeKeyFormatInvalid(false);
@@ -337,44 +359,71 @@ const SampleLogParsing: React.FC<SampleLogParsingProps> = (
   }, [logConfig.regexKeyList, timeFormatForSpringBoot]);
 
   useEffect(() => {
-    if (logConfig.logType !== LogType.JSON) {
-      parseLog();
+    if (pageType === PageType.New) {
+      if (logConfig.logType !== LogType.JSON) {
+        parseLog();
+      }
     }
   }, [logConfig?.userSampleLog]);
+
+  useImperativeHandle(ref, () => ({
+    validate: () => {
+      const list = logConfig.regexKeyList || [];
+      let ret = true;
+      for (const each of list) {
+        if (each.type === "date") {
+          if (each?.format?.trim()) {
+            each.error = "";
+          } else {
+            each.error = t("error.timeFormatShouldNotBeEmpty");
+            ret = false;
+          }
+        }
+      }
+      changeRegExpList && changeRegExpList(list);
+      return ret;
+    },
+  }));
 
   return (
     <div>
       <FormItem
-        infoType={
-          logConfig.logType === LogType.Nginx
-            ? InfoBarTypes.NGINX_SAMPLE_LOG_PARSING
-            : logConfig.logType === LogType.Apache
-            ? InfoBarTypes.APACHE_SAMPLE_LOG_PARSING
-            : undefined
-        }
-        optionTitle={`${t("resource:config.parsing.sampleLog")}${
+        infoType={defaultTo(
+          ternary<InfoBarTypes | undefined>(
+            logConfig.logType === LogType.Nginx,
+            InfoBarTypes.NGINX_SAMPLE_LOG_PARSING,
+            undefined
+          ),
+          ternary<InfoBarTypes | undefined>(
+            logConfig.logType === LogType.Apache,
+            InfoBarTypes.APACHE_SAMPLE_LOG_PARSING,
+            undefined
+          )
+        )}
+        optionTitle={`${t("resource:config.parsing.sampleLog")}${ternary(
           logConfig.logType === LogType.Nginx ||
-          logConfig.logType === LogType.Apache
-            ? " - " + t("optional")
-            : ""
-        }`}
-        optionDesc={
-          logConfig.logType === LogType.JSON
-            ? t("resource:config.parsing.sampleLogJSONDesc")
-            : t("resource:config.parsing.sampleLogDesc")
-        }
-        successText={
-          showValidInfo && !sampleLogInvalid
-            ? t("resource:config.parsing.valid")
-            : ""
-        }
-        errorText={
-          showSampleLogRequiredError
-            ? t("resource:config.parsing.sampleRequired")
-            : sampleLogInvalid
-            ? t("resource:config.parsing.invalid")
-            : ""
-        }
+            logConfig.logType === LogType.Apache,
+          " - " + t("optional"),
+          ""
+        )}`}
+        optionDesc={ternary(
+          logConfig.logType === LogType.JSON,
+          t("resource:config.parsing.sampleLogJSONDesc"),
+          t("resource:config.parsing.sampleLogDesc")
+        )}
+        successText={ternary(
+          showValidInfo && !sampleLogInvalid,
+          t("resource:config.parsing.valid"),
+          ""
+        )}
+        errorText={defaultTo(
+          ternary(
+            showSampleLogRequiredError,
+            t("resource:config.parsing.sampleRequired"),
+            undefined
+          ),
+          ternary(sampleLogInvalid, t("resource:config.parsing.invalid"), "")
+        )}
       >
         <div className="flex m-w-75p">
           <div style={{ flex: 1 }}>
@@ -386,6 +435,9 @@ const SampleLogParsing: React.FC<SampleLogParsingProps> = (
                 changeSampleLogInvalid(false);
                 setShowValidInfo(false);
                 changeSampleLog(event.target.value);
+                if (event.target.value) {
+                  parseLog();
+                }
               }}
             />
           </div>
@@ -428,7 +480,10 @@ const SampleLogParsing: React.FC<SampleLogParsingProps> = (
           {(logType === LogType.Nginx || logType === LogType.Apache) &&
             Object.keys(logResMap).map((item: any, index: number) => {
               return (
-                <div key={index} className="flex show-tag-list no-stripe">
+                <div
+                  key={identity(index)}
+                  className="flex show-tag-list no-stripe"
+                >
                   <div className="tag-key log">
                     <div>{item}</div>
                   </div>
@@ -444,7 +499,7 @@ const SampleLogParsing: React.FC<SampleLogParsingProps> = (
             logConfig?.regexKeyList?.map((item: any, index: number) => {
               return (
                 <div
-                  key={index}
+                  key={identity(index)}
                   className="flex show-tag-list flex-start no-stripe has-border-bottom"
                 >
                   <div className="tag-key log">
@@ -492,7 +547,7 @@ const SampleLogParsing: React.FC<SampleLogParsingProps> = (
                       {item.type === "date" && isCustomType() && (
                         <div className="m-w-75p">
                           <FormItem
-                            key={index}
+                            key={identity(index)}
                             optionTitle={`${t(
                               "resource:config.parsing.timeFormat"
                             )}`}
@@ -506,7 +561,8 @@ const SampleLogParsing: React.FC<SampleLogParsingProps> = (
                             errorText={
                               item.showError
                                 ? t("resource:config.parsing.formatError")
-                                : ""
+                                : logConfig.regexKeyList &&
+                                  logConfig.regexKeyList[index].error
                             }
                           >
                             <div className="flex">
@@ -673,6 +729,6 @@ const SampleLogParsing: React.FC<SampleLogParsingProps> = (
       )}
     </div>
   );
-};
+}
 
-export default SampleLogParsing;
+export default forwardRef(SampleLogParsing);

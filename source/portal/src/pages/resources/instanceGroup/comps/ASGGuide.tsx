@@ -13,7 +13,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import { InstanceGroup } from "API";
+import { LogSource } from "API";
+import { handleErrorMessage } from "assets/js/alert";
 import {
   ASG_LAUNCH_CONFIG_LINK,
   ASG_LAUNCH_TEMPLATE_LINK,
@@ -21,17 +22,18 @@ import {
 import { appSyncRequestQuery } from "assets/js/request";
 import Alert from "components/Alert";
 import CodeCopy from "components/CodeCopy";
+import ExpandableSection from "components/ExpandableSection";
 import ExtLink from "components/ExtLink";
-import FormItem from "components/FormItem";
 import HeaderPanel from "components/HeaderPanel";
 import LoadingText from "components/LoadingText";
 import { getAutoScalingGroupConf } from "graphql/queries";
+import Permission from "pages/dataInjection/applicationLog/detail/Permission";
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
 interface ASGGuideProps {
-  instanceGroup: InstanceGroup;
+  instanceGroup: LogSource;
 }
 
 const ASGGuide: React.FC<ASGGuideProps> = (props: ASGGuideProps) => {
@@ -43,53 +45,74 @@ const ASGGuide: React.FC<ASGGuideProps> = (props: ASGGuideProps) => {
     setLoading(true);
     try {
       const res = await appSyncRequestQuery(getAutoScalingGroupConf, {
-        groupId: instanceGroup.id,
+        groupId: instanceGroup.sourceId,
       });
       setGuide(res.data.getAutoScalingGroupConf);
       setLoading(false);
-    } catch (error) {
+    } catch (error: any) {
       setLoading(false);
+      handleErrorMessage(error.message);
       console.error(error);
     }
   };
 
   useEffect(() => {
-    if (instanceGroup.id) {
+    if (instanceGroup.sourceId) {
       getASGConfig();
     }
-  }, [instanceGroup.id]);
+  }, [instanceGroup.sourceId]);
 
-  return (
-    <HeaderPanel title={t("resource:group.detail.asg.asgGuide")}>
-      <>
-        {guide ? (
-          <>
-            <Alert
-              content={
-                <div>
-                  {t("resource:group.detail.asg.asgTips1")}
-                  <ExtLink to={ASG_LAUNCH_TEMPLATE_LINK}>
-                    {t("resource:group.detail.asg.asgTips2")}
-                  </ExtLink>
-                  {t("resource:group.detail.asg.asgTips3")}
-                  <ExtLink to={ASG_LAUNCH_CONFIG_LINK}>
-                    {t("resource:group.detail.asg.asgTips4")}
-                  </ExtLink>
-                </div>
-              }
-            ></Alert>
-            <div className="mt-20">
-              <FormItem
-                optionTitle={t("resource:group.detail.asg.asgTipsTitle")}
-                optionDesc=""
-              >
-                <CodeCopy loading={loading} code={guide} />
-              </FormItem>
-            </div>
-          </>
-        ) : loading ? (
-          <LoadingText />
-        ) : (
+  const renderGuide = () => {
+    if (guide) {
+      return (
+        <>
+          <Alert
+            content={
+              <div>
+                {t("resource:group.detail.asg.asgTips1")}
+                <ExtLink to={ASG_LAUNCH_TEMPLATE_LINK}>
+                  {t("resource:group.detail.asg.asgTips2")}
+                </ExtLink>
+                {t("resource:group.detail.asg.asgTips3")}
+                <ExtLink to={ASG_LAUNCH_CONFIG_LINK}>
+                  {t("resource:group.detail.asg.asgTips4")}
+                </ExtLink>
+              </div>
+            }
+          ></Alert>
+          <div className="mt-20">
+            <ol>
+              <li>
+                <p>{t("resource:group.detail.asg.asgTipsDesc")}</p>
+                <ExpandableSection
+                  defaultExpanded={false}
+                  headerText={t(
+                    "applog:logSourceDesc.ec2.step1.permissionExpand"
+                  )}
+                >
+                  <Permission />
+                </ExpandableSection>
+              </li>
+              <li>
+                <p>{t("resource:group.detail.asg.asgTipsTitle")}</p>
+                <ExpandableSection
+                  defaultExpanded={false}
+                  headerText={t(
+                    "applog:logSourceDesc.ec2.step1.userDataExpand"
+                  )}
+                >
+                  <CodeCopy loading={loading} code={guide} />
+                </ExpandableSection>
+              </li>
+            </ol>
+          </div>
+        </>
+      );
+    } else {
+      if (loading) {
+        return <LoadingText />;
+      } else {
+        return (
           <Alert
             title=""
             content={
@@ -102,8 +125,14 @@ const ASGGuide: React.FC<ASGGuideProps> = (props: ASGGuideProps) => {
               </div>
             }
           ></Alert>
-        )}
-      </>
+        );
+      }
+    }
+  };
+
+  return (
+    <HeaderPanel title={t("resource:group.detail.asg.asgGuide")}>
+      <>{renderGuide()}</>
     </HeaderPanel>
   );
 };

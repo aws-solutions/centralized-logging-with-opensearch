@@ -13,7 +13,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import { CODEC, DestinationType, EngineType, ServiceType, Tag } from "API";
+import {
+  Codec,
+  DestinationType,
+  EngineType,
+  ServiceType,
+  MonitorInput,
+  DomainStatusCheckType,
+  DomainStatusCheckResponse,
+} from "API";
 import { CreateLogMethod, ServiceLogType } from "assets/js/const";
 import { Alert } from "assets/js/alert";
 import { OptionType } from "components/AutoComplete/autoComplete";
@@ -24,22 +32,20 @@ import HelpPanel from "components/HelpPanel";
 import SideMenu from "components/SideMenu";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   AmplifyConfigType,
   WarmTransitionType,
   YesNo,
   SERVICE_LOG_INDEX_SUFFIX,
 } from "types";
-import CreateTags from "../common/CreateTags";
 import SpecifyOpenSearchCluster, {
   AOSInputValidRes,
   checkOpenSearchInput,
   covertParametersByKeyAndConditions,
 } from "../common/SpecifyCluster";
 import SpecifySettings from "./steps/SpecifySettings";
-import { useSelector } from "react-redux";
-import { AppStateProps } from "reducer/appReducer";
+import { useDispatch, useSelector } from "react-redux";
 import { appSyncRequestMutation } from "assets/js/request";
 import { createServicePipeline } from "graphql/mutations";
 import {
@@ -48,6 +54,16 @@ import {
 } from "assets/js/utils";
 import { SelectItem } from "components/Select/select";
 import { VPCLogSourceType } from "./steps/comp/SourceType";
+import { MONITOR_ALARM_INIT_DATA } from "assets/js/init";
+import AlarmAndTags from "../../../../pipelineAlarm/AlarmAndTags";
+import { Actions, RootState } from "reducer/reducers";
+import { useTags } from "assets/js/hooks/useTags";
+import { Dispatch } from "redux";
+import { useAlarm } from "assets/js/hooks/useAlarm";
+import {
+  CreateAlarmActionTypes,
+  validateAalrmInput,
+} from "reducer/createAlarm";
 
 const BASE_EXCLUDE_PARAMS = [
   "esDomainId",
@@ -82,7 +98,6 @@ const CWL_EXCLUDE_PARAMS = [
 
 export interface VpcLogTaskProps {
   type: ServiceType;
-  tags: Tag[];
   source: string;
   target: string;
   logSourceAccountId: string;
@@ -136,13 +151,13 @@ export interface VpcLogTaskProps {
 
     rolloverSizeNotSupport: boolean;
   };
+  monitor: MonitorInput;
 }
 
 const DEFAULT_TASK_VALUE: VpcLogTaskProps = {
   type: ServiceType.VPC,
   source: "",
   target: "",
-  tags: [],
   logSourceAccountId: "",
   logSourceRegion: "",
   destinationType: "",
@@ -174,7 +189,7 @@ const DEFAULT_TASK_VALUE: VpcLogTaskProps = {
     retainAge: "180",
     rolloverSize: "30",
     indexSuffix: SERVICE_LOG_INDEX_SUFFIX.yyyy_MM_dd,
-    codec: CODEC.best_compression,
+    codec: Codec.best_compression,
     refreshInterval: "1s",
 
     s3FLowList: [],
@@ -186,7 +201,7 @@ const DEFAULT_TASK_VALUE: VpcLogTaskProps = {
     shardCount: "1",
     minCapacity: "1",
     enableAutoScaling: YesNo.No,
-    maxCapacity: "",
+    maxCapacity: "1",
 
     logType: "VPCFlow",
     logSource: "",
@@ -194,11 +209,12 @@ const DEFAULT_TASK_VALUE: VpcLogTaskProps = {
 
     rolloverSizeNotSupport: false,
   },
+  monitor: MONITOR_ALARM_INIT_DATA,
 };
 
 const CreateVPCLog: React.FC = () => {
   const { t } = useTranslation();
-  const history = useHistory();
+  const navigate = useNavigate();
   const breadCrumbList = [
     { name: t("name"), link: "/" },
     {
@@ -212,8 +228,9 @@ const CreateVPCLog: React.FC = () => {
     { name: t("servicelog:create.service.vpc") },
   ];
   const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: AppStateProps) => state.amplifyConfig
+    (state: RootState) => state.app.amplifyConfig
   );
+  const dispatch = useDispatch<Dispatch<Actions>>();
 
   const [curStep, setCurStep] = useState(0);
   const [nextStepDisable, setNextStepDisable] = useState(false);
@@ -246,17 +263,24 @@ const CreateVPCLog: React.FC = () => {
     indexEmptyError: false,
     indexNameFormatError: false,
   });
+  const [domainCheckStatus, setDomainCheckStatus] =
+    useState<DomainStatusCheckResponse>();
+
+  const tags = useTags();
+  const monitor = useAlarm();
 
   const confirmCreatePipeline = async () => {
     const createPipelineParams: any = {};
     createPipelineParams.type = ServiceType.VPC;
     createPipelineParams.source = vpcLogPipelineTask.source;
     createPipelineParams.target = vpcLogPipelineTask.target;
-    createPipelineParams.tags = vpcLogPipelineTask.tags;
+    createPipelineParams.tags = tags;
     createPipelineParams.logSourceAccountId =
       vpcLogPipelineTask.logSourceAccountId;
     createPipelineParams.logSourceRegion = amplifyConfig.aws_project_region;
     createPipelineParams.destinationType = vpcLogPipelineTask.destinationType;
+
+    createPipelineParams.monitor = monitor.monitor;
 
     let tmpParamList: any = [];
 
@@ -295,9 +319,7 @@ const CreateVPCLog: React.FC = () => {
       );
       console.info("createRes:", createRes);
       setLoadingCreate(false);
-      history.push({
-        pathname: "/log-pipeline/service-log",
-      });
+      navigate("/log-pipeline/service-log");
     } catch (error) {
       setLoadingCreate(false);
       console.error(error);
@@ -437,6 +459,15 @@ const CreateVPCLog: React.FC = () => {
       return false;
     }
     return true;
+  };
+
+  const isNextDisabled = () => {
+    return (
+      vpcLogIsChanging ||
+      domainListIsLoading ||
+      (curStep === 1 &&
+        domainCheckStatus?.status !== DomainStatusCheckType.PASSED)
+    );
   };
 
   return (
@@ -920,25 +951,33 @@ const CreateVPCLog: React.FC = () => {
                         };
                       });
                     }}
+                    domainCheckedStatus={domainCheckStatus}
+                    changeOSDomainCheckStatus={(status) => {
+                      setVpcLogPipelineTask((prev: VpcLogTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            replicaNumbers: status.multiAZWithStandbyEnabled
+                              ? "2"
+                              : "1",
+                          },
+                        };
+                      });
+                      setDomainCheckStatus(status);
+                    }}
                   />
                 )}
                 {curStep === 2 && (
-                  <CreateTags
-                    pipelineTask={vpcLogPipelineTask}
-                    changeTags={(tags) => {
-                      setVpcLogPipelineTask((prev: VpcLogTaskProps) => {
-                        return { ...prev, tags: tags };
-                      });
-                    }}
-                  />
+                  <div>
+                    <AlarmAndTags pipelineTask={vpcLogPipelineTask} />
+                  </div>
                 )}
                 <div className="button-action text-right">
                   <Button
                     btnType="text"
                     onClick={() => {
-                      history.push({
-                        pathname: "/log-pipeline/service-log/create",
-                      });
+                      navigate("/log-pipeline/service-log/create");
                     }}
                   >
                     {t("button.cancel")}
@@ -957,13 +996,21 @@ const CreateVPCLog: React.FC = () => {
 
                   {curStep < 2 && (
                     <Button
-                      disabled={vpcLogIsChanging || domainListIsLoading}
+                      disabled={isNextDisabled()}
                       btnType="primary"
                       onClick={() => {
                         if (curStep === 0 && !isVpcSettingValid()) {
                           return;
                         }
                         if (curStep === 1 && !isClusterValid()) {
+                          return;
+                        }
+                        // Check domain connection status
+                        if (
+                          curStep === 1 &&
+                          domainCheckStatus?.status !==
+                            DomainStatusCheckType.PASSED
+                        ) {
                           return;
                         }
                         setCurStep((curStep) => {
@@ -979,6 +1026,12 @@ const CreateVPCLog: React.FC = () => {
                       loading={loadingCreate}
                       btnType="primary"
                       onClick={() => {
+                        if (!validateAalrmInput(monitor)) {
+                          dispatch({
+                            type: CreateAlarmActionTypes.VALIDATE_ALARM_INPUT,
+                          });
+                          return;
+                        }
                         confirmCreatePipeline();
                       }}
                     >

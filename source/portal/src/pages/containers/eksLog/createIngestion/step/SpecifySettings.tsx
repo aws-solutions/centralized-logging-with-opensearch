@@ -14,14 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React, { useState, useEffect } from "react";
-import Alert from "components/Alert";
 import PagePanel from "components/PagePanel";
 import HeaderPanel from "components/HeaderPanel";
 import FormItem from "components/FormItem";
 import { AmplifyConfigType, CreationMethod } from "types";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { AppStateProps } from "reducer/appReducer";
 import ExtLink from "components/ExtLink";
 import AutoComplete from "components/AutoComplete";
 import { OptionType } from "components/AutoComplete/autoComplete";
@@ -29,7 +27,7 @@ import ValueWithLabel from "components/ValueWithLabel";
 import { EksIngestionPropsType } from "../EksLogIngest";
 import { appSyncRequestQuery } from "assets/js/request";
 import { listAppPipelines } from "graphql/queries";
-import { AppPipeline, BufferType, PipelineStatus } from "API";
+import { AppPipeline, BufferType } from "API";
 import {
   buildESLink,
   buildKDSLink,
@@ -38,6 +36,7 @@ import {
 } from "assets/js/utils";
 import LoadingText from "components/LoadingText";
 import { getParamValueByKey } from "assets/js/applog";
+import { RootState } from "reducer/reducers";
 
 interface SpecifySettingProps {
   eksIngestionInfo: EksIngestionPropsType;
@@ -50,7 +49,7 @@ const SpecifySettings: React.FC<SpecifySettingProps> = (
   const { t } = useTranslation();
   const { eksIngestionInfo, changeExistsPipeline } = props;
   const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: AppStateProps) => state.amplifyConfig
+    (state: RootState) => state.app.amplifyConfig
   );
 
   const [loadingPipeline, setLoadingPipeline] = useState(false);
@@ -72,21 +71,17 @@ const SpecifySettings: React.FC<SpecifySettingProps> = (
       const appPipelineArr: AppPipeline[] =
         resData.data.listAppPipelines.appPipelines;
       const tmpPipelineIdMap: any = {};
-
+      console.info(appPipelineArr);
       appPipelineArr.forEach((element) => {
-        if (
-          element.aosParams?.domainName ===
-            eksIngestionInfo.aosParams.domainName &&
-          element.status === PipelineStatus.ACTIVE
-        ) {
-          tmpOptionList.push({
-            name: `[${element.bufferType}] ${element.id}(${element.aosParams.indexPrefix})`,
-            value: element.id,
-            description: element.bufferAccessRoleArn || "",
-            bufferType: element.bufferType || "",
-          });
-          tmpPipelineIdMap[element.id] = element;
-        }
+        tmpOptionList.push({
+          name: `[${element.aosParams?.indexPrefix}]-[${element?.logConfig?.name}]-[${element.bufferType}]-${element.pipelineId}`,
+          value: element.pipelineId,
+          description: element.bufferAccessRoleArn || "",
+          bufferType: element.bufferType || "",
+          logConfigId: element.logConfigId || "",
+          logConfigVersionNumber: element.logConfigVersionNumber || 0,
+        });
+        tmpPipelineIdMap[element.pipelineId] = element;
       });
       setPipelineOptionList(tmpOptionList);
       setPipelineIdMap(tmpPipelineIdMap);
@@ -104,16 +99,7 @@ const SpecifySettings: React.FC<SpecifySettingProps> = (
 
   return (
     <div>
-      <PagePanel title={t("ekslog:ingest.step.specifyPipeline")}>
-        <Alert
-          content={
-            <div>
-              {t("ekslog:ingest.specifyPipeline.alert")}{" "}
-              <b>{eksIngestionInfo.aosParams.domainName}</b>
-            </div>
-          }
-        />
-      </PagePanel>
+      <PagePanel title={t("ekslog:ingest.step.specifyPipeline")}></PagePanel>
 
       {eksIngestionInfo.createMethod === CreationMethod.Exists && (
         <>
@@ -260,7 +246,7 @@ const SpecifySettings: React.FC<SpecifySettingProps> = (
                           {formatLocalTime(
                             pipelineIdMap?.[
                               eksIngestionInfo.existsPipeline.value
-                            ]?.createdDt || ""
+                            ]?.createdAt || ""
                           )}
                         </div>
                       </ValueWithLabel>

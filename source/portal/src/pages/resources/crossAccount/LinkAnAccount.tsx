@@ -13,13 +13,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import Breadcrumb from "components/Breadcrumb";
 import SideMenu from "components/SideMenu";
 import { useTranslation } from "react-i18next";
 import Button from "components/Button";
 import { CreateSubAccountLinkMutationVariables } from "API";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import HelpPanel from "components/HelpPanel";
 import { appSyncRequestMutation } from "assets/js/request";
 import HeaderPanel from "components/HeaderPanel";
@@ -28,25 +28,67 @@ import TextInput from "components/TextInput";
 import { createSubAccountLink } from "graphql/mutations";
 import CopyText from "components/CopyText";
 import { AmplifyConfigType } from "types";
-import { AppStateProps } from "reducer/appReducer";
 import { useSelector } from "react-redux";
 import {
   buildCrossAccountTemplateLink,
-  checkCrossAccountValid,
-  CrossAccountFiled,
+  FieldValidator,
+  pipFieldValidator,
+  validateRequiredText,
+  validateWithRegex,
+  validateS3BucketName,
+  createFieldValidator,
 } from "assets/js/utils";
+import { handleErrorMessage } from "assets/js/alert";
+import { RootState } from "reducer/reducers";
+
+let validateAccountName: FieldValidator<string>;
+let validateAccountId: FieldValidator<string>;
+let validateAccountRole: FieldValidator<string>;
+let validateInstallDoc: FieldValidator<string>;
+let validateConfigDoc: FieldValidator<string>;
+let validateS3Bucket: FieldValidator<string>;
+let validateStackId: FieldValidator<string>;
+let validateKMSArn: FieldValidator<string>;
+let validateInstanceProfileArn: FieldValidator<string>;
+
+export const validateLinedAccount = (
+  state: CreateSubAccountLinkMutationVariables
+) =>
+  validateAccountName(state.subAccountName) === "" &&
+  validateAccountId(state.subAccountId) === "" &&
+  validateAccountRole(state.subAccountRoleArn) === "" &&
+  validateInstallDoc(state.agentInstallDoc) === "" &&
+  validateConfigDoc(state.agentConfDoc) === "" &&
+  validateS3Bucket(state.subAccountBucketName) === "" &&
+  validateStackId(state.subAccountStackId) === "" &&
+  validateKMSArn(state.subAccountKMSKeyArn) === "" &&
+  validateInstanceProfileArn(state.subAccountIamInstanceProfileArn) === "";
 
 const LinkAnAccount: React.FC = () => {
-  const { t } = useTranslation();
-  const history = useHistory();
+  const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: AppStateProps) => state.amplifyConfig
+    (state: RootState) => state.app.amplifyConfig
   );
   const breadCrumbList = [
     { name: t("name"), link: "/" },
     { name: t("resource:crossAccount.name"), link: "/resources/cross-account" },
     { name: t("resource:crossAccount.link.name") },
   ];
+
+  const validateStackARN = (stackId: string) => {
+    if (stackId) {
+      const stackPartArr = stackId.split(":");
+      if (stackPartArr.length > 4) {
+        return stackPartArr[3] === amplifyConfig.aws_project_region;
+      }
+    }
+    return false;
+  };
+
+  const validateStackInSameRegion = createFieldValidator((text: string) =>
+    validateStackARN(text)
+  );
 
   const [linkAccountInfo, setLinkAccountInfo] =
     useState<CreateSubAccountLinkMutationVariables>({
@@ -59,252 +101,150 @@ const LinkAnAccount: React.FC = () => {
       subAccountStackId: "",
       subAccountKMSKeyArn: "",
       region: amplifyConfig.aws_project_region,
+      subAccountIamInstanceProfileArn: "", // New
       tags: [],
     });
 
-  const [validateError, setValidateError] = useState({
-    accountNameEmpty: false,
-    accountIdEmpty: false,
-    accountIdFormatError: false,
-    accountRoleEmpty: false,
-    accountRoleFormatError: false,
-    installDocEmpty: false,
-    installDocFormatError: false,
-    configDocEmpty: false,
-    configDocFormatError: false,
-    s3BucketEmpty: false,
-    s3BucketFormatError: false,
-    stackIdEmpty: false,
-    stackIdFormatError: false,
-    stackRegionError: false,
-    stackKMSArnEmpty: false,
-    stackKMSARnFormatError: false,
-  });
+  const [accountNameError, setAccountNameError] = useState("");
+  const [accountIdError, setAccountIdError] = useState("");
+  const [accountRoleArnError, setAccountRoleArnError] = useState("");
+  const [accountInstallDocError, setAccountInstallDocError] = useState("");
+  const [accountConfigDocError, setAccountConfigDocError] = useState("");
+  const [accountS3BucketError, setAccountS3BucketError] = useState("");
+  const [accountStackIdError, setAccountStackIdError] = useState("");
+  const [accountKMSArnError, setAccountKMSArnError] = useState("");
+  const [accountInstanceProfileError, setAccountInstanceProfileError] =
+    useState("");
+
+  validateAccountName = useCallback(
+    validateRequiredText(t("resource:crossAccount.link.inputAccountName")),
+    [i18n.language]
+  );
+
+  validateAccountId = useCallback(
+    pipFieldValidator(
+      validateRequiredText(t("resource:crossAccount.link.inputAccountId")),
+      validateWithRegex(/^\d{12}$/)(
+        t("resource:crossAccount.link.accountIdFormatError")
+      )
+    ),
+    [i18n.language]
+  );
+
+  validateAccountRole = useCallback(
+    pipFieldValidator(
+      validateRequiredText(t("resource:crossAccount.link.inputAccountRoles")),
+      validateWithRegex(
+        new RegExp(
+          `^arn:(aws-cn|aws):iam::${
+            linkAccountInfo.subAccountId || "\\d{12}"
+          }:role\\/.+`
+        )
+      )(t("resource:crossAccount.link.accountRolesFormatError"))
+    ),
+    [i18n.language]
+  );
+
+  validateInstallDoc = useCallback(
+    pipFieldValidator(
+      validateRequiredText(t("resource:crossAccount.link.installDocsDesc")),
+      validateWithRegex(/.*FluentBitDocumentInstallation-\w+/)(
+        t("resource:crossAccount.link.installDocsFormatError")
+      )
+    ),
+    [i18n.language]
+  );
+
+  validateConfigDoc = useCallback(
+    pipFieldValidator(
+      validateRequiredText(t("resource:crossAccount.link.inputConfigDocs")),
+      validateWithRegex(/.*FluentBitConfigDownloading-\w+/)(
+        t("resource:crossAccount.link.configDocsFormatError")
+      )
+    ),
+    [i18n.language]
+  );
+
+  validateS3Bucket = useCallback(
+    pipFieldValidator(
+      validateRequiredText(t("resource:crossAccount.link.inputS3Bucket")),
+      validateS3BucketName(t("resource:crossAccount.link.s3BucketFormatError"))
+    ),
+    [i18n.language]
+  );
+
+  validateStackId = useCallback(
+    pipFieldValidator(
+      validateRequiredText(t("resource:crossAccount.link.inputStackId")),
+      validateStackInSameRegion(
+        t("resource:crossAccount.link.stackIdSameRegion")
+      ),
+      validateWithRegex(
+        new RegExp(
+          `^arn:(aws-cn|aws):cloudformation:\\w+-\\w+-\\d+:${
+            linkAccountInfo.subAccountId || "\\d{12}"
+          }:stack\\/\\S+`
+        )
+      )(t("resource:crossAccount.link.stackIdFormatError"))
+    ),
+    [i18n.language]
+  );
+
+  validateKMSArn = useCallback(
+    pipFieldValidator(
+      validateRequiredText(t("resource:crossAccount.link.inputKmsKey")),
+      validateWithRegex(
+        new RegExp(
+          `^arn:(aws-cn|aws):kms:\\w+-\\w+-\\d:${
+            linkAccountInfo.subAccountId || "\\d{12}"
+          }:key\\/\\S+`
+        )
+      )(t("resource:crossAccount.link.kmsKeyFormatError"))
+    ),
+    [i18n.language]
+  );
+
+  validateInstanceProfileArn = useCallback(
+    pipFieldValidator(
+      validateRequiredText(
+        t("resource:crossAccount.link.inputIamInstanceProfileArn")
+      ),
+      validateWithRegex(
+        new RegExp(
+          `^arn:(aws-cn|aws):iam::${
+            linkAccountInfo.subAccountId || "\\d{12}"
+          }:instance-profile\\/.+`
+        )
+      )(t("resource:crossAccount.link.iamInstanceProfileArnFormatError"))
+    ),
+    [i18n.language]
+  );
 
   const [loadingCreate, setLoadingCreate] = useState(false);
 
-  const validateStackARN = (stackId: string) => {
-    if (stackId) {
-      const stackPartArr = stackId.split(":");
-      if (stackPartArr.length > 4) {
-        return stackPartArr[3] === amplifyConfig.aws_project_region;
-      }
-    }
-    return false;
-  };
-
   const createCrossAccountLink = async () => {
-    // Check Account Name
-    if (!linkAccountInfo.subAccountName?.trim()) {
-      setValidateError((prev) => {
-        return {
-          ...prev,
-          accountNameEmpty: true,
-        };
-      });
-      return;
-    }
-
-    // Check Account Id
-    if (!linkAccountInfo.subAccountId?.trim()) {
-      setValidateError((prev) => {
-        return {
-          ...prev,
-          accountIdEmpty: true,
-        };
-      });
-      return;
-    }
-
-    // Check Account Id Format
-    if (
-      !checkCrossAccountValid(
-        CrossAccountFiled.ACCOUNT_ID,
-        linkAccountInfo.subAccountId?.trim()
+    const isLinkedAccountValid = validateLinedAccount(linkAccountInfo);
+    setAccountNameError(validateAccountName(linkAccountInfo.subAccountName));
+    setAccountIdError(validateAccountId(linkAccountInfo.subAccountId));
+    setAccountRoleArnError(
+      validateAccountRole(linkAccountInfo.subAccountRoleArn)
+    );
+    setAccountInstallDocError(
+      validateInstallDoc(linkAccountInfo.agentInstallDoc)
+    );
+    setAccountConfigDocError(validateConfigDoc(linkAccountInfo.agentConfDoc));
+    setAccountS3BucketError(
+      validateS3Bucket(linkAccountInfo.subAccountBucketName)
+    );
+    setAccountStackIdError(validateStackId(linkAccountInfo.subAccountStackId));
+    setAccountKMSArnError(validateKMSArn(linkAccountInfo.subAccountKMSKeyArn));
+    setAccountInstanceProfileError(
+      validateInstanceProfileArn(
+        linkAccountInfo.subAccountIamInstanceProfileArn
       )
-    ) {
-      setValidateError((prev) => {
-        return {
-          ...prev,
-          accountIdFormatError: true,
-        };
-      });
-      return;
-    }
-
-    // Check Account Role
-    if (!linkAccountInfo.subAccountRoleArn?.trim()) {
-      setValidateError((prev) => {
-        return {
-          ...prev,
-          accountRoleEmpty: true,
-        };
-      });
-      return;
-    }
-
-    // Check Account Role Format
-    if (
-      !checkCrossAccountValid(
-        CrossAccountFiled.CROSS_ACCOUNT_ROLE,
-        linkAccountInfo.subAccountRoleArn?.trim(),
-        linkAccountInfo.subAccountId
-      )
-    ) {
-      setValidateError((prev) => {
-        return {
-          ...prev,
-          accountRoleFormatError: true,
-        };
-      });
-      return;
-    }
-
-    // Check Install Document
-    if (!linkAccountInfo.agentInstallDoc?.trim()) {
-      setValidateError((prev) => {
-        return {
-          ...prev,
-          installDocEmpty: true,
-        };
-      });
-      return;
-    }
-
-    // Check Install Document Format
-    if (
-      !checkCrossAccountValid(
-        CrossAccountFiled.INSATALL_DOC,
-        linkAccountInfo.agentInstallDoc?.trim()
-      )
-    ) {
-      setValidateError((prev) => {
-        return {
-          ...prev,
-          installDocFormatError: true,
-        };
-      });
-      return;
-    }
-
-    // Check Config Document
-    if (!linkAccountInfo.agentConfDoc?.trim()) {
-      setValidateError((prev) => {
-        return {
-          ...prev,
-          configDocEmpty: true,
-        };
-      });
-      return;
-    }
-
-    // Check Config Document Format
-    if (
-      !checkCrossAccountValid(
-        CrossAccountFiled.CONFIG_DOC,
-        linkAccountInfo.agentConfDoc?.trim()
-      )
-    ) {
-      setValidateError((prev) => {
-        return {
-          ...prev,
-          configDocFormatError: true,
-        };
-      });
-      return;
-    }
-
-    // Check S3 Bucket
-    if (!linkAccountInfo.subAccountBucketName?.trim()) {
-      setValidateError((prev) => {
-        return {
-          ...prev,
-          s3BucketEmpty: true,
-        };
-      });
-      return;
-    }
-
-    // Check S3 Format
-    if (
-      !checkCrossAccountValid(
-        CrossAccountFiled.S3_BUCKET,
-        linkAccountInfo.subAccountBucketName?.trim()
-      )
-    ) {
-      setValidateError((prev) => {
-        return {
-          ...prev,
-          s3BucketFormatError: true,
-        };
-      });
-      return;
-    }
-
-    // Check Stack ID
-    if (!linkAccountInfo.subAccountStackId?.trim()) {
-      setValidateError((prev) => {
-        return {
-          ...prev,
-          stackIdEmpty: true,
-        };
-      });
-      return;
-    }
-
-    // Check Stack Id Format
-    if (
-      !checkCrossAccountValid(
-        CrossAccountFiled.STACK_ID,
-        linkAccountInfo.subAccountStackId?.trim(),
-        linkAccountInfo.subAccountId
-      )
-    ) {
-      setValidateError((prev) => {
-        return {
-          ...prev,
-          stackIdFormatError: true,
-        };
-      });
-      return;
-    }
-
-    if (!validateStackARN(linkAccountInfo.subAccountStackId?.trim())) {
-      setValidateError((prev) => {
-        return {
-          ...prev,
-          stackRegionError: true,
-        };
-      });
-      return;
-    }
-
-    // Check KMS Key
-    if (!linkAccountInfo.subAccountKMSKeyArn?.trim()) {
-      setValidateError((prev) => {
-        return {
-          ...prev,
-          stackKMSArnEmpty: true,
-        };
-      });
-      return;
-    }
-
-    // Check KMS Key Format
-    if (
-      !checkCrossAccountValid(
-        CrossAccountFiled.KMS_KEY,
-        linkAccountInfo.subAccountKMSKeyArn?.trim(),
-        linkAccountInfo.subAccountId
-      )
-    ) {
-      setValidateError((prev) => {
-        return {
-          ...prev,
-          stackKMSARnFormatError: true,
-        };
-      });
-      return;
+    );
+    if (!isLinkedAccountValid) {
+      return false;
     }
 
     // Trim All Parameter value
@@ -328,19 +268,16 @@ const LinkAnAccount: React.FC = () => {
       );
       console.info("createRes:", createRes);
       setLoadingCreate(false);
-      history.push({
-        pathname: "/resources/cross-account",
-      });
-    } catch (error) {
+      navigate("/resources/cross-account");
+    } catch (error: any) {
       setLoadingCreate(false);
+      handleErrorMessage(error.message);
       console.error(error);
     }
   };
 
   const backToListPage = () => {
-    history.push({
-      pathname: "/resources/cross-account",
-    });
+    navigate("/resources/cross-account");
   };
 
   return (
@@ -394,210 +331,138 @@ const LinkAnAccount: React.FC = () => {
                 <FormItem
                   optionTitle={t("resource:crossAccount.link.accountName")}
                   optionDesc={t("resource:crossAccount.link.accountNameDesc")}
-                  errorText={
-                    validateError.accountNameEmpty
-                      ? t("resource:crossAccount.link.inputAccountName")
-                      : ""
-                  }
+                  errorText={accountNameError}
                 >
                   <TextInput
                     value={linkAccountInfo.subAccountName || ""}
-                    onChange={(event) => {
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                       setLinkAccountInfo((prev) => {
                         return {
                           ...prev,
                           subAccountName: event.target.value,
                         };
                       });
-                      setValidateError((prev) => {
-                        return {
-                          ...prev,
-                          accountNameEmpty: false,
-                        };
-                      });
+                      setAccountNameError(
+                        validateAccountName(event.target.value)
+                      );
                     }}
                   />
                 </FormItem>
                 <FormItem
                   optionTitle={t("resource:crossAccount.link.accountId")}
                   optionDesc={t("resource:crossAccount.link.accountIdDesc")}
-                  errorText={
-                    validateError.accountIdEmpty
-                      ? t("resource:crossAccount.link.inputAccountId")
-                      : validateError.accountIdFormatError
-                      ? t("resource:crossAccount.link.accountIdFormatError")
-                      : ""
-                  }
+                  errorText={accountIdError}
                 >
                   <TextInput
                     value={linkAccountInfo.subAccountId || ""}
-                    onChange={(event) => {
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                       setLinkAccountInfo((prev) => {
                         return {
                           ...prev,
                           subAccountId: event.target.value,
                         };
                       });
-                      setValidateError((prev) => {
-                        return {
-                          ...prev,
-                          accountIdEmpty: false,
-                          accountIdFormatError: false,
-                        };
-                      });
+                      setAccountIdError(validateAccountId(event.target.value));
                     }}
                   />
                 </FormItem>
                 <FormItem
                   optionTitle={t("resource:crossAccount.link.accountRoles")}
                   optionDesc={t("resource:crossAccount.link.accountRolesDesc")}
-                  errorText={
-                    validateError.accountRoleEmpty
-                      ? t("resource:crossAccount.link.inputAccountRoles")
-                      : validateError.accountRoleFormatError
-                      ? t("resource:crossAccount.link.accountRolesFormatError")
-                      : ""
-                  }
+                  errorText={accountRoleArnError}
                 >
                   <TextInput
                     value={linkAccountInfo.subAccountRoleArn || ""}
-                    onChange={(event) => {
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                       setLinkAccountInfo((prev) => {
                         return {
                           ...prev,
                           subAccountRoleArn: event.target.value,
                         };
                       });
-                      setValidateError((prev) => {
-                        return {
-                          ...prev,
-                          accountRoleEmpty: false,
-                          accountRoleFormatError: false,
-                        };
-                      });
+                      setAccountRoleArnError(
+                        validateAccountRole(event.target.value)
+                      );
                     }}
                   />
                 </FormItem>
                 <FormItem
                   optionTitle={t("resource:crossAccount.link.installDocs")}
                   optionDesc={t("resource:crossAccount.link.installDocsDesc")}
-                  errorText={
-                    validateError.installDocEmpty
-                      ? t("resource:crossAccount.link.installDocsDesc")
-                      : validateError.installDocFormatError
-                      ? t("resource:crossAccount.link.installDocsFormatError")
-                      : ""
-                  }
+                  errorText={accountInstallDocError}
                 >
                   <TextInput
                     value={linkAccountInfo.agentInstallDoc || ""}
-                    onChange={(event) => {
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                       setLinkAccountInfo((prev) => {
                         return {
                           ...prev,
                           agentInstallDoc: event.target.value,
                         };
                       });
-                      setValidateError((prev) => {
-                        return {
-                          ...prev,
-                          installDocEmpty: false,
-                          installDocFormatError: false,
-                        };
-                      });
+                      setAccountInstallDocError(
+                        validateInstallDoc(event.target.value)
+                      );
                     }}
                   />
                 </FormItem>
                 <FormItem
                   optionTitle={t("resource:crossAccount.link.configDocs")}
                   optionDesc={t("resource:crossAccount.link.configDocsDesc")}
-                  errorText={
-                    validateError.configDocEmpty
-                      ? t("resource:crossAccount.link.inputConfigDocs")
-                      : validateError.configDocFormatError
-                      ? t("resource:crossAccount.link.configDocsFormatError")
-                      : ""
-                  }
+                  errorText={accountConfigDocError}
                 >
                   <TextInput
                     value={linkAccountInfo.agentConfDoc || ""}
-                    onChange={(event) => {
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                       setLinkAccountInfo((prev) => {
                         return {
                           ...prev,
                           agentConfDoc: event.target.value,
                         };
                       });
-                      setValidateError((prev) => {
-                        return {
-                          ...prev,
-                          configDocEmpty: false,
-                          configDocFormatError: false,
-                        };
-                      });
+                      setAccountConfigDocError(
+                        validateConfigDoc(event.target.value)
+                      );
                     }}
                   />
                 </FormItem>
                 <FormItem
                   optionTitle={t("resource:crossAccount.link.s3Bucket")}
                   optionDesc={t("resource:crossAccount.link.s3BucketDesc")}
-                  errorText={
-                    validateError.s3BucketEmpty
-                      ? t("resource:crossAccount.link.inputS3Bucket")
-                      : validateError.s3BucketFormatError
-                      ? t("resource:crossAccount.link.s3BucketFormatError")
-                      : ""
-                  }
+                  errorText={accountS3BucketError}
                 >
                   <TextInput
                     value={linkAccountInfo.subAccountBucketName || ""}
-                    onChange={(event) => {
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                       setLinkAccountInfo((prev) => {
                         return {
                           ...prev,
                           subAccountBucketName: event.target.value,
                         };
                       });
-                      setValidateError((prev) => {
-                        return {
-                          ...prev,
-                          s3BucketEmpty: false,
-                          s3BucketFormatError: false,
-                        };
-                      });
+                      setAccountS3BucketError(
+                        validateS3Bucket(event.target.value)
+                      );
                     }}
                   />
                 </FormItem>
                 <FormItem
                   optionTitle={t("resource:crossAccount.link.stackId")}
                   optionDesc={t("resource:crossAccount.link.stackIdDesc")}
-                  errorText={
-                    validateError.stackIdEmpty
-                      ? t("resource:crossAccount.link.inputStackId")
-                      : validateError.stackRegionError
-                      ? t("resource:crossAccount.link.stackIdSameRegion")
-                      : validateError.stackIdFormatError
-                      ? t("resource:crossAccount.link.stackIdFormatError")
-                      : ""
-                  }
+                  errorText={accountStackIdError}
                 >
                   <TextInput
                     value={linkAccountInfo.subAccountStackId || ""}
-                    onChange={(event) => {
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                       setLinkAccountInfo((prev) => {
                         return {
                           ...prev,
                           subAccountStackId: event.target.value,
                         };
                       });
-                      setValidateError((prev) => {
-                        return {
-                          ...prev,
-                          stackIdEmpty: false,
-                          stackIdFormatError: false,
-                          stackRegionError: false,
-                        };
-                      });
+                      setAccountStackIdError(
+                        validateStackId(event.target.value)
+                      );
                     }}
                   />
                 </FormItem>
@@ -605,30 +470,45 @@ const LinkAnAccount: React.FC = () => {
                 <FormItem
                   optionTitle={t("resource:crossAccount.link.kmsKey")}
                   optionDesc={t("resource:crossAccount.link.kmsKeyDesc")}
-                  errorText={
-                    validateError.stackKMSArnEmpty
-                      ? t("resource:crossAccount.link.inputKmsKey")
-                      : validateError.stackKMSARnFormatError
-                      ? t("resource:crossAccount.link.kmsKeyFormatError")
-                      : ""
-                  }
+                  errorText={accountKMSArnError}
                 >
                   <TextInput
                     value={linkAccountInfo.subAccountKMSKeyArn || ""}
-                    onChange={(event) => {
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                       setLinkAccountInfo((prev) => {
                         return {
                           ...prev,
                           subAccountKMSKeyArn: event.target.value,
                         };
                       });
-                      setValidateError((prev) => {
+                      setAccountKMSArnError(validateKMSArn(event.target.value));
+                    }}
+                  />
+                </FormItem>
+
+                <FormItem
+                  optionTitle={t(
+                    "resource:crossAccount.link.iamInstanceProfileArn"
+                  )}
+                  optionDesc={t(
+                    "resource:crossAccount.link.iamInstanceProfileArnDesc"
+                  )}
+                  errorText={accountInstanceProfileError}
+                >
+                  <TextInput
+                    value={
+                      linkAccountInfo.subAccountIamInstanceProfileArn || ""
+                    }
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                      setLinkAccountInfo((prev) => {
                         return {
                           ...prev,
-                          stackKMSArnEmpty: false,
-                          stackKMSARnFormatError: false,
+                          subAccountIamInstanceProfileArn: event.target.value,
                         };
                       });
+                      setAccountInstanceProfileError(
+                        validateInstanceProfileArn(event.target.value)
+                      );
                     }}
                   />
                 </FormItem>

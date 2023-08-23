@@ -80,6 +80,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
 
   const getELBList = async (accountId: string) => {
     try {
+      setELBOptionList([]);
       setLoadingELBList(true);
       const resData: any = await appSyncRequestQuery(listResources, {
         type: ResourceType.ELB,
@@ -183,6 +184,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
           <HeaderPanel title={t("servicelog:elb.title")}>
             <div>
               <CrossAccountSelect
+                disabled={loadingELBList}
                 accountId={elbTask.logSourceAccountId}
                 changeAccount={(id) => {
                   changeCrossAccount(id);
@@ -271,11 +273,12 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                     optionTitle={t("servicelog:elb.logLocation")}
                     optionDesc={t("servicelog:elb.logLocationDesc")}
                     errorText={
-                      manualELBEmptyError
+                      (manualELBEmptyError
                         ? t("servicelog:elb.logLocationError")
-                        : manualS3PathInvalid
+                        : "") ||
+                      (manualS3PathInvalid
                         ? t("servicelog:s3InvalidError")
-                        : ""
+                        : "")
                     }
                   >
                     <TextInput

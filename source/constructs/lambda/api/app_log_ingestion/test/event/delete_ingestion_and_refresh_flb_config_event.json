@@ -1,0 +1,247 @@
+{
+  "Records": [
+    {
+      "eventID": "27c01296bbc677f8bcac42f5759bafbf",
+      "eventName": "MODIFY",
+      "eventVersion": "1.1",
+      "eventSource": "aws:dynamodb",
+      "awsRegion": "us-east-1",
+      "dynamodb": {
+        "ApproximateCreationDateTime": 1691682614,
+        "Keys": {
+          "id": {
+            "S": "cb287147-21da-41b4-89bc-6cc131b1831d"
+          }
+        },
+        "NewImage": {
+          "sourceId": {
+            "S": "e6521c5c-cf73-4f6b-86af-4bac56f5d5d1"
+          },
+          "logConfig": {
+            "M": {
+              "logType": {
+                "S": "Nginx"
+              },
+              "regexFieldSpecs": {
+                "L": []
+              },
+              "userLogFormat": {
+                "S": "log_format  main  '$remote_addr - $remote_user [$time_local] \"$request\" '\n'$status $body_bytes_sent \"$http_referer\" '\n'\"$http_user_agent\" \"$http_x_forwarded_for\"';"
+              },
+              "userSampleLog": {
+                "S": "127.0.0.1 - - [24/Dec/2021:01:27:11 +0000] \"GET / HTTP/1.1\" 200 3520 \"-\" \"curl/7.79.1\" \"-\""
+              },
+              "timeOffset": {
+                "S": ""
+              },
+              "version": {
+                "N": "1"
+              },
+              "tags": {
+                "L": []
+              },
+              "createdAt": {
+                "S": "2023-08-10T07:20:17Z"
+              },
+              "regex": {
+                "S": "(?<remote_addr>\\S+)\\s+-\\s+(?<remote_user>\\S+)\\s+\\[(?<time_local>\\d+/\\S+/\\d+:\\d+:\\d+:\\d+\\s+\\S+)\\]\\s+\"(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+\"\\s+(?<status>\\S+)\\s+(?<body_bytes_sent>\\S+)\\s+\"(?<http_referer>[^\"]*)\"\\s+\"(?<http_user_agent>[^\"]*)\"\\s+\"(?<http_x_forwarded_for>[^\"]*)\".*"
+              },
+              "filterConfigMap": {
+                "M": {
+                  "filters": {
+                    "L": []
+                  },
+                  "enabled": {
+                    "BOOL": false
+                  }
+                }
+              },
+              "name": {
+                "S": "nginx-config"
+              },
+              "timeKeyRegex": {
+                "S": ""
+              },
+              "id": {
+                "S": "7c67d1fd-48b4-451c-bacd-eb23032c3e13"
+              },
+              "timeKey": {
+                "S": ""
+              },
+              "status": {
+                "S": "INACTIVE"
+              },
+              "updatedAt": {
+                "S": "2023-08-10T07:20:17Z"
+              }
+            }
+          },
+          "appPipelineId": {
+            "S": "daa44adb-d48b-4bb3-990b-e91d45bb0ff5"
+          },
+          "tags": {
+            "L": []
+          },
+          "output": {
+            "M": {
+              "roleArn": {
+                "S": "arn:aws:iam::111111111111:role/CL-buffer-access-daa44adb-d48b-4bb3-990b-e91d45bb0ff5"
+              },
+              "name": {
+                "S": "S3"
+              },
+              "roleName": {
+                "S": "CL-buffer-access-daa44adb-d48b-4bb3-990b-e91d45bb0ff5"
+              },
+              "params": {
+                "L": [
+                  {
+                    "M": {
+                      "paramKey": {
+                        "S": "logBucketName"
+                      },
+                      "paramValue": {
+                        "S": "centralizedlogging-clloggingbucket5f34e4eb-tugpydf8sf7s"
+                      }
+                    }
+                  },
+                  {
+                    "M": {
+                      "paramKey": {
+                        "S": "logBucketPrefix"
+                      },
+                      "paramValue": {
+                        "S": "AppLogs/test-index-10/year=%Y/month=%m/day=%d/"
+                      }
+                    }
+                  },
+                  {
+                    "M": {
+                      "paramKey": {
+                        "S": "logBucketSuffix"
+                      },
+                      "paramValue": {
+                        "S": ""
+                      }
+                    }
+                  },
+                  {
+                    "M": {
+                      "paramKey": {
+                        "S": "defaultCmkArn"
+                      },
+                      "paramValue": {
+                        "S": "arn:aws:kms:us-east-2:111111111111:key/f1546162-4e91-49ab-9b93-2c6d41244717"
+                      }
+                    }
+                  },
+                  {
+                    "M": {
+                      "paramKey": {
+                        "S": "maxFileSize"
+                      },
+                      "paramValue": {
+                        "S": "50"
+                      }
+                    }
+                  },
+                  {
+                    "M": {
+                      "paramKey": {
+                        "S": "uploadTimeout"
+                      },
+                      "paramValue": {
+                        "S": "60"
+                      }
+                    }
+                  },
+                  {
+                    "M": {
+                      "paramKey": {
+                        "S": "compressionType"
+                      },
+                      "paramValue": {
+                        "S": "GZIP"
+                      }
+                    }
+                  },
+                  {
+                    "M": {
+                      "paramKey": {
+                        "S": "s3StorageClass"
+                      },
+                      "paramValue": {
+                        "S": "INTELLIGENT_TIERING"
+                      }
+                    }
+                  },
+                  {
+                    "M": {
+                      "paramKey": {
+                        "S": "createDashboard"
+                      },
+                      "paramValue": {
+                        "S": "Yes"
+                      }
+                    }
+                  },
+                  {
+                    "M": {
+                      "paramKey": {
+                        "S": "logBucketName"
+                      },
+                      "paramValue": {
+                        "S": "centralizedlogging-clloggingbucket5f34e4eb-tugpydf8sf7s"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "accountId": {
+            "S": "111111111111"
+          },
+          "createdAt": {
+            "S": "2023-08-10T15:50:13Z"
+          },
+          "input": {
+            "M": {
+              "name": {
+                "S": "tail"
+              },
+              "params": {
+                "L": []
+              }
+            }
+          },
+          "autoAddPermission": {
+            "BOOL": true
+          },
+          "logPath": {
+            "S": "/var"
+          },
+          "sourceType": {
+            "S": "EC2"
+          },
+          "id": {
+            "S": "cb287147-21da-41b4-89bc-6cc131b1831d"
+          },
+          "region": {
+            "S": "us-east-1"
+          },
+          "status": {
+            "S": "INACTIVE"
+          },
+          "updatedAt": {
+            "S": "2023-08-10T15:50:13Z"
+          }
+        },
+        "SequenceNumber": "6212700000000005293786252",
+        "SizeBytes": 2012,
+        "StreamViewType": "NEW_IMAGE"
+      },
+      "eventSourceARN": "arn:aws:dynamodb:us-east-2:111111111111:table/CentralizedLogging-AppLogIngestion-5Z42FY8PN4FM/stream/2023-08-09T07:25:04.229"
+    }
+  ]
+}

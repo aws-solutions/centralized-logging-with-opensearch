@@ -25,19 +25,16 @@ import {
   Fn,
   Duration,
   aws_ec2 as ec2,
-  aws_s3 as s3,
   aws_elasticloadbalancingv2 as elbv2,
   aws_autoscaling as au,
   aws_certificatemanager as acm,
   aws_iam as iam,
-  Token,
-  Annotations,
-  Aws,
   Aspects,
   IAspect,
 } from "aws-cdk-lib";
 import * as path from "path";
 import { NagSuppressions } from "cdk-nag";
+import { constructFactory } from "../util/stack-helper";
 
 const { VERSION } = process.env;
 
@@ -378,19 +375,9 @@ export class NginxForOpenSearchStack extends Stack {
     ]);
 
     // enable proxy stack ELB access log
-    const region = Stack.of(this).region;
-    if (Token.isUnresolved(region)) {
-      Annotations.of(this).addWarning(
-        "Region is not specified can not enable ELBv2 access logging"
-      );
-    } else {
-      const albAccessLogBucket = s3.Bucket.fromBucketName(
-        this,
-        "elbAccessLogBucketName",
-        elbAccessLogBucketName.valueAsString
-      );
-      lb.logAccessLogs(albAccessLogBucket!, `${Aws.STACK_ID}-ELBAccessLog`);
-    }
+    lb.setAttribute("access_logs.s3.enabled", "true")
+    lb.setAttribute("access_logs.s3.bucket", elbAccessLogBucketName.valueAsString)
+    lb.setAttribute("access_logs.s3.prefix", `ELBLogs/opensearchproxy`)
 
     // lb listener, 443
     const listener = lb.addListener("Listener", {
@@ -466,7 +453,7 @@ export class NginxForOpenSearchStack extends Stack {
     );
     //proxy user data
     ud_ec2.addCommands(
-      `amazon-linux-extras install nginx1`,
+      `amazon-linux-extras install -y nginx1`,
       `openssl genrsa -out /etc/nginx/cert.key 2048`,
       `openssl req -config /etc/nginx/openssl.cnf -new -key /etc/nginx/cert.key -out /etc/nginx/cert.csr`,
       `openssl x509 -req -days 2048 -in /etc/nginx/cert.csr -signkey /etc/nginx/cert.key -out /etc/nginx/cert.crt`,
@@ -503,7 +490,7 @@ export class NginxForOpenSearchStack extends Stack {
       )
     );
 
-    new CfnOutput(this, "ALB CNAME", {
+    constructFactory(CfnOutput)(this, "ALB CNAME", {
       value: `${lb.loadBalancerDnsName}`,
       description: "CNAME for ALB",
     });
@@ -511,7 +498,7 @@ export class NginxForOpenSearchStack extends Stack {
 }
 
 class InjectEC2LaunchTemplateNetWorkInterfaceSetting implements IAspect {
-  public constructor(private ec2LaunchTemplateNetworkInterfaceSetting: any) {}
+  public constructor(private ec2LaunchTemplateNetworkInterfaceSetting: any) { }
 
   public visit(node: IConstruct): void {
     if (

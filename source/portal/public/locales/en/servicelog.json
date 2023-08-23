@@ -38,11 +38,15 @@
   "tab": {
     "overview": "Overview",
     "lifecycle": "Lifecycle",
+    "monitoring": "Monitoring",
+    "logging": "Logs",
+    "alarm": "Alarm",
     "tags": "Tags"
   },
   "overview": {
     "name": "Overview",
     "logLocation": "Log Location",
+    "logGroup": "Log Group",
     "createSample": "Create sample dashboard",
     "created": "Created"
   },
@@ -70,12 +74,12 @@
     "step": {
       "specifySetting": "Specify settings",
       "logProcessing": "Log Processing",
-      "specifyDomain": "Specify OpenSearch domain",
-      "createTags": "Create tags"
+      "specifyDomain": "Specify OpenSearch domain settings",
+      "createTags": "Alarms and Tags"
     }
   },
   "cluster": {
-    "specifyDomain": "Specify OpenSearch domain",
+    "specifyDomain": "Specify OpenSearch domain settings",
     "aosDomain": "OpenSearch domain",
     "aosDomainDesc1": "Select an imported cluster. You must ",
     "aosDomainDesc2": "import cluster",
@@ -109,11 +113,12 @@
     "shardNumError": "Number of Shards must be greater than or equal to 1.",
     "rolloverError": "Index rollover by capacity must be greater than 0.",
     "enableRolloverByCap": "Enable index rollover by capacity",
-    "enableRolloverByCapDesc": "If you enabled this option, OpenSearch will rollover your index when index size reaches below specified size, regarless of the rollover time window. Note OpenSearch will append a 6-digit suffix to the index name automatically.",
+    "enableRolloverByCapDesc": "If you enabled this option, OpenSearch will rollover your index when index size reaches below specified size, regardless of the rollover time window. Note OpenSearch will append a 6-digit suffix to the index name automatically.",
     "compressType": "Compression type",
-    "compressTypeDesc": "Specify which compression type to use for this index. By default, the solution uses best_compression which uses DEFLATE for a higher compression ratio, at the expense of slighly slower stored fields performance. You can change to default if you prefer faster stored fields performance over index storage size.",
+    "compressTypeDesc": "Specify which compression type to use for this index. By default, the solution uses best_compression which uses DEFLATE for a higher compression ratio, at the expense of slightly slower stored fields performance. You can change to default if you prefer faster stored fields performance over index storage size.",
     "warmImmediately": "Move rollover index to warm storage immediately",
-    "warmByDays": "Move log by age (days)"
+    "warmByDays": "Move log by age (days)",
+    "domainStatusCheckFailedError": "The connectivity check for the selected domain has failed. Please check its network or choose another domain."
   },
   "s3": {
     "s3logEnable": "Amazon S3 Access log enabling",
@@ -235,7 +240,7 @@
     "ingestedFields": "Ingested fields",
     "ingestedFieldsDesc": "Select the CloudFront access log fields you want to ingest into the Amazon Elasticsearch cluster.",
     "enrichedFields": "Enriched fields",
-    "enrichedFieldsDesc": "Enrich the CloudFront standard logs with additional informaiton. For example, the longtitude, latitude, city, state, country, OS and etc. The system use an open source library to enrich the data.",
+    "enrichedFieldsDesc": "Enrich the CloudFront standard logs with additional information. For example, the longitude, latitude, city, state, country, OS and etc. The system use an open source library to enrich the data.",
     "location": "Location",
     "osAgent": "OS/User Agent",
     "logType": "Log type",
@@ -345,7 +350,8 @@
     "savedTips": "The Web ACL has Access Log saved at ",
     "needEnableLogging": "Please enable the Web ACL logging",
     "noLogOutput": "No log output",
-    "noLogOutputDesc": "The log configuration of the selected Web ACL has not been enabled. Would you like to enable logging and output to the ",
+    "noLogOutputDesc": "The log configuration of the selected Web ACL has not been enabled. Would you like to enable logging and output to the Amazon S3",
+    "diffRegion": "The WAF Logs is saved at {{bucket}} that is in a different region ({{logRegion}}) than the solution' home region ({{homeRegion}}). To proceed, please manually change or disable the logging for the selected WAF ACL, and then try again.",
     "sourceWAFTip": "Solution detects the selected WAF deliver its logs to Amazon S3 directly, the cost of this method is more expensive than delivering through Kinesis Data Firehose (KDF) to Amazon S3. If you want to switch to KDF, you can disable the logging of the select  WAF first, then Solution can automatically enable the KDF-based logging delivery method for you.",
     "sourceWAFTips1": "Solution detects the web ACL's logs directly to ",
     "sourceWAFTips2": "the cost of this method is more expensive (",
@@ -374,7 +380,7 @@
     "selectVpc": "Select a VPC",
     "vpcName": "VPC ID",
     "vpcNameDesc": "Input the VPC ID which the VPC Flow Logs belongs to.",
-    "inputVpc": "Pleaset input VPC ID",
+    "inputVpc": "Please input VPC ID",
     "vpcLogLocation": "VPC Flow Logs location",
     "vpcLogLocationDesc": "Specify the location of the VPC Flow Logs.",
     "vpcLogLocationError": "Please input VPC Flow Logs location",

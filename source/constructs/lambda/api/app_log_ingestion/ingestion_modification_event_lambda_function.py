@@ -5,99 +5,128 @@ import json
 import logging
 import os
 
-import boto3
-from botocore import config
-from util.exception import APIException
-from util.ec2_log_ingestion_svc import EC2LogIngestionSvc
+from svc.ec2 import EC2SourceHandler
+from commonlib import AWSConnection, handle_error, AppSyncRouter, LinkAccountHelper
+from commonlib.dao import AppLogIngestionDao, LogSourceDao, InstanceDao
+from commonlib.model import (
+    LogSource,
+)
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+
+conn = AWSConnection()
+router = AppSyncRouter()
+
 solution_version = os.environ.get("SOLUTION_VERSION", "v1.0.0")
 solution_id = os.environ.get("SOLUTION_ID", "SO8025")
-user_agent_config = {
-    "user_agent_extra": f"AwsSolution/{solution_id}/{solution_version}"
-}
-default_config = config.Config(**user_agent_config)
-awslambda = boto3.client("lambda", config=default_config)
-dynamodb = boto3.resource("dynamodb", config=default_config)
-sqs = boto3.resource("sqs", config=default_config)
-app_log_ingestion_lambda_arn = os.environ.get("APP_LOG_INGESTION_LAMBDA_ARN")
-instance_group_modification_event_queue_name = os.environ.get(
-    "INSTANCE_GROUP_MODIFICATION_EVENT_QUEUE_NAME"
-)
-sqs_event_table_name = os.environ.get("SQS_EVENT_TABLE")
-sqs_event_table = dynamodb.Table(sqs_event_table_name)
 
-sts = boto3.client("sts", config=default_config)
+awslambda = conn.get_client("lambda")
+dynamodb = conn.get_client("dynamodb", client_type="resource")
+sqs = conn.get_client("sqs")
+app_log_ingestion_table_name = os.environ.get("APP_LOG_INGESTION_TABLE_NAME")
+instance_table_name = os.environ.get("INSTANCE_TABLE_NAME")
+log_source_table_name = os.environ.get("LOG_SOURCE_TABLE_NAME")
+# link account
+sub_account_link_table_name = os.environ.get("SUB_ACCOUNT_LINK_TABLE_NAME")
+# Get SSM resource
+ssm_log_config_document_name = os.environ.get("SSM_LOG_CONFIG_DOCUMENT_NAME")
+
+sts = conn.get_client("sts")
 account_id = sts.get_caller_identity()["Account"]
 
-iam = boto3.client("iam", config=default_config)
-iam_res = boto3.resource("iam", config=default_config)
+iam = conn.get_client("iam")
+iam_res = conn.get_client("iam", client_type="resource")
 
-
-def handle_error(func):
-    """Decorator for exception handling"""
-
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except APIException as e:
-            logger.error(e, exc_info=True)
-            raise e
-        except Exception as e:
-            logger.error(e, exc_info=True)
-            raise RuntimeError(
-                "Unknown exception, please check Lambda log for more details"
-            )
-
-    return wrapper
+ingestion_dao = AppLogIngestionDao(table_name=app_log_ingestion_table_name)
+instance_dao = InstanceDao(table_name=instance_table_name)
+log_source_dao = LogSourceDao(table_name=log_source_table_name)
+account_helper = LinkAccountHelper(sub_account_link_table_name)
 
 
 @handle_error
 def lambda_handler(event, context):
-    # logger.info("Received event: " + json.dumps(event, indent=2))
+    logger.info("Received event: " + json.dumps(event, indent=2))
     message = event["Records"][0]
-    message_body = json.loads(message["body"])
-    action = message_body["info"]["fieldName"]
+    logger.info(message)
+    instance_id = event["Records"][0]["dynamodb"]["Keys"]["id"]["S"]
+    source_id = event["Records"][0]["dynamodb"]["Keys"]["sourceId"]["S"]
+    event_type = event["Records"][0]["eventName"]
+    if event_type == "INSERT":
+        apply_app_log_ingestion_for_single_instance(instance_id, source_id)
+    elif event_type == "REMOVE":
+        refresh_app_log_ingestion_for_single_instance(instance_id, source_id)
+    logger.info("Ingestion modified for instance:" + instance_id)
 
-    if action == "asyncAddInstancesToInstanceGroup":
-        return async_add_instances_to_instance_group(message)
-    elif action == "asyncDeleteInstancesFromInstanceGroup":
-        return async_delete_instances_from_instance_group(message)
+
+def apply_app_log_ingestion_for_single_instance(instance_id, source_id):
+    """Apply ingestions to single instance"""
+    ingestion_obj_list = ingestion_dao.get_app_log_ingestions_by_source_id(source_id)
+    ec2_source = EC2SourceHandler(ingestion_dao)
+    log_source: LogSource = log_source_dao.get_log_source(source_id)
+    link_account = account_helper.get_link_account(
+        log_source.accountId, log_source.region
+    )
+    sts_role_arn = link_account.get("subAccountRoleArn", "")
+    ssm_config_document_name = link_account.get(
+        "agentConfDoc", ssm_log_config_document_name
+    )
+    if ssm_config_document_name == ssm_log_config_document_name:
+        ssm = conn.get_client("ssm")
     else:
-        logger.info("Event received: " + json.dumps(event, indent=2))
-        raise RuntimeError(f"Unknown action {action}")
-
-
-def async_add_instances_to_instance_group(message):
-    message_id = message["messageId"]
-    message_body = json.loads(message["body"])
-    group_id = message_body["arguments"]["groupId"]
-    instance_set = set(message_body["arguments"]["instanceSet"])
-    if EC2LogIngestionSvc.does_event_already_exist(message_id):
-        raise RuntimeError("Duplicate sqs event received in modification event lambda.")
-    else:
-        EC2LogIngestionSvc.create_sqs_event_record(message)
-        EC2LogIngestionSvc.apply_app_log_ingestion_for_new_added_instances(
-            EC2LogIngestionSvc.get_current_ingestion_relationship_from_instance_meta(
-                group_id
-            ),
-            group_id,
-            instance_set,
+        ssm = conn.get_client(
+            "ssm",
+            region_name=link_account.get("region"),
+            sts_role_arn=sts_role_arn,
         )
-        EC2LogIngestionSvc.update_sqs_event_record(message_id, "DONE")
+    if ingestion_obj_list:
+        for ingestion in ingestion_obj_list:
+            ec2_source.create_ingestion_by_instance_id_set(
+                log_source, [instance_id], ingestion
+            )
+            ec2_source.refresh_config_to_single_ec2(ssm, [instance_id], ssm_config_document_name, link_account)
+            logger.info(
+                "Ingestion:" + ingestion.id + "applied for instance:" + instance_id
+            )
 
 
-def async_delete_instances_from_instance_group(message):
-    message_id = message["messageId"]
-    message_body = json.loads(message["body"])
-    group_id = message_body["arguments"]["groupId"]
-    instance_set = set(message_body["arguments"]["instanceSet"])
-    if EC2LogIngestionSvc.does_event_already_exist(message_id):
-        raise RuntimeError("Duplicate sqs event received in modification event lambda.")
+def refresh_app_log_ingestion_for_single_instance(instance_id, source_id):
+    """Refresh ingestions to single instance"""
+    instance_obj_list = instance_dao.get_instance_by_instance_id(instance_id)
+    ec2_source = EC2SourceHandler(ingestion_dao)
+    log_source: LogSource = log_source_dao.get_log_source(source_id)
+    link_account = account_helper.get_link_account(
+        log_source.accountId, log_source.region
+    )
+    sts_role_arn = link_account.get("subAccountRoleArn", "")
+    ssm_config_document_name = link_account.get(
+        "agentConfDoc", ssm_log_config_document_name
+    )
+    if ssm_config_document_name == ssm_log_config_document_name:
+        ssm = conn.get_client("ssm")
     else:
-        EC2LogIngestionSvc.create_sqs_event_record(message)
-        EC2LogIngestionSvc.remove_app_log_ingestion_from_new_removed_instances(
-            group_id, instance_set
+        ssm = conn.get_client(
+            "ssm",
+            region_name=link_account.get("region"),
+            sts_role_arn=sts_role_arn,
         )
-        EC2LogIngestionSvc.update_sqs_event_record(message_id, "DONE")
+    if instance_obj_list:
+        for instance_obj in instance_obj_list:
+            ingestion_id_set = instance_obj.ingestionIds
+            remained_source_id = instance_obj.sourceId
+            log_source: LogSource = log_source_dao.get_log_source(remained_source_id)
+            for ingestion_id in ingestion_id_set:
+                ingestion = ingestion_dao.get_app_log_ingestion(ingestion_id)
+                ec2_source.create_ingestion_by_instance_id_set(
+                    log_source, [instance_id], ingestion
+                )
+                ec2_source.refresh_config_to_single_ec2(ssm, [instance_id], ssm_config_document_name, link_account)
+        logger.info("Ingestion refreshed for instance:" + instance_id)
+    else:
+        log_source: LogSource = log_source_dao.get_log_source(source_id)
+        instance_with_ingestion_list = { instance_id: [] }
+        ec2_source.generate_flb_config_to_s3(
+            log_source, [instance_id], instance_with_ingestion_list, None
+        )
+        ec2_source.refresh_config_to_single_ec2(ssm, [instance_id], ssm_config_document_name, link_account)
+        logger.info("The last ingestion was removed for instance:" + instance_id)

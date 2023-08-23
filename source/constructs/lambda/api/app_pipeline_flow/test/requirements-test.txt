@@ -1,4 +1,0 @@
-moto
-boto3
-pytest
-pytest-cov

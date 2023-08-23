@@ -5,39 +5,32 @@ import logging
 import os
 import re
 import sys
-import time
 import json
 import uuid
-import boto3
-
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from functools import partial, wraps
-from botocore import config
 from datetime import datetime
-from aws_svc_mgr import SvcManager, Boto3API
+
 from botocore.exceptions import ClientError
+
+from commonlib import AWSConnection, LinkAccountHelper, retry
+from commonlib import get_bucket_location, create_log_group
+from commonlib.utils import get_partition, get_name_from_tags, get_resource_from_arn
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+
+conn = AWSConnection()
 
 UNABLE_TO_ENABLE_LOGGING_ERROR = (
     "Unable to add logging to service, please try it manually"
 )
 
-solution_version = os.environ.get("SOLUTION_VERSION", "v1.0.0")
-solution_id = os.environ.get("SOLUTION_ID", "SO8025")
-user_agent_config = {
-    "user_agent_extra": f"AwsSolution/{solution_id}/{solution_version}"
-}
-default_config = config.Config(**user_agent_config)
 stack_prefix = os.environ.get("STACK_PREFIX", "CL")
 
-default_region = os.environ.get("AWS_REGION")
 default_logging_bucket = os.environ.get("DEFAULT_LOGGING_BUCKET")
-
-sts = boto3.client("sts", config=default_config)
-default_account_id = sts.get_caller_identity()["Account"]
+sub_account_link_table_name = os.environ.get("SUB_ACCOUNT_LINK_TABLE_NAME")
+account_helper = LinkAccountHelper(sub_account_link_table_name)
 
 
 def lambda_handler(event, _):
@@ -58,8 +51,8 @@ def lambda_handler(event, _):
         action = event["info"]["fieldName"]
         args = event["arguments"]
         resource_type = args["type"]
-        region = args.get("region") or default_region
-        account_id = args.get("accountId") or default_account_id
+        region = args.get("region")
+        account_id = args.get("accountId")
 
         resource = getattr(sys.modules[__name__], resource_type, None)
         if not resource:
@@ -93,86 +86,20 @@ def lambda_handler(event, _):
         raise e
 
 
-def retry(func=None, exception=Exception, n_tries=4, delay=5, backoff=2, logger=logger):
-    """Retry decorator with exponential backoff.
-
-    Parameters
-    ----------
-    func : typing.Callable, optional
-        Callable on which the decorator is applied, by default None
-    exception : Exception or tuple of Exceptions, optional
-        Exception(s) that invoke retry, by default Exception
-    n_tries : int, optional
-        Number of tries before giving up, by default 4
-    delay : int, optional
-        Initial delay between retries in seconds, by default 5
-    backoff : int, optional
-        Backoff multiplier e.g. value of 2 will double the delay, by default 2
-    logger : logging.logger, optional
-        Option to log or print, by default False
-
-    Returns
-    -------
-    typing.Callable
-        Decorated callable that calls itself when exception(s) occur.
-
-    Examples
-    --------
-    >>> import random
-    >>> @retry(exception=Exception, n_tries=4)
-    ... def test_random(text):
-    ...    x = random.random()
-    ...    if x < 0.5:
-    ...        raise Exception("Fail")
-    ...    else:
-    ...        print("Success: ", text)
-    >>> test_random("It works!")
-    """
-
-    if func is None:
-        return partial(
-            retry,
-            exception=exception,
-            n_tries=n_tries,
-            delay=delay,
-            backoff=backoff,
-            logger=logger,
-        )
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        ntries, ndelay = n_tries, delay
-
-        while ntries > 1:
-            try:
-                return func(*args, **kwargs)
-            except exception as e:
-                msg = f"{str(e)}, Retrying in {ndelay} seconds..."
-                if logger:
-                    logging.warning(msg)
-                else:
-                    logger.info(msg)
-                time.sleep(ndelay)
-                ntries -= 1
-                ndelay *= backoff
-
-        return func(*args, **kwargs)
-
-    return wrapper
-
-
-def is_arn(s: str, svc: str):
-    return re.match(rf"^arn:aws.*:{svc}", s, re.MULTILINE)
-
-
 class Resource:
     """Basic Class represents a type of AWS resource"""
 
-    def __init__(self, account_id=default_account_id, region=default_region):
+    def __init__(self, account_id: str = "", region: str = ""):
         super().__init__()
-        self._account_id = account_id
-        self._region = region
-        self._partition = get_partition(region)
+        account = account_helper.get_link_account(account_id, region)
+        self._default_logging_bucket = account.get(
+            "subAccountBucketName", default_logging_bucket
+        )
+        self._sts_role = account.get("subAccountRoleArn", "")
+
+        self._account_id = account_id or account_helper.default_account_id
+        self._region = region or account_helper.default_region
+        self._partition = get_partition(self._region)
 
     def list(self, parent_id=""):
         """returned all resources filtered by parent id if any"""
@@ -216,25 +143,16 @@ class Resource:
         logger.info("log_format is %s", log_format)
         raise NotImplementedError
 
-    def _log_resource_name(self, resource_name):
+    @staticmethod
+    def _log_resource_name(resource_name):
         logger.info("resource_name is %s", resource_name)
 
 
 class S3Bucket(Resource):
-    def __init__(self, account_id=default_account_id, region=default_region):
+    def __init__(self, account_id: str = "", region: str = ""):
         super().__init__(account_id, region)
-        svc_mgr = SvcManager()
-        self._s3 = svc_mgr.get_client(
-            sub_account_id=account_id,
-            region=region,
-            service_name="s3",
-            type=Boto3API.CLIENT,
-        )
-        link_acct = svc_mgr.get_link_account(account_id, region)
-        if link_acct:
-            self._default_logging_bucket = link_acct["subAccountBucketName"]
-        else:
-            self._default_logging_bucket = default_logging_bucket
+
+        self._s3 = conn.get_client("s3", sts_role_arn=self._sts_role)
 
     def list(self, parent_id=""):
         # Only return buckets in one region
@@ -292,7 +210,6 @@ class S3Bucket(Resource):
         }
 
     def put_logging_bucket(self, bucket_name: str):
-
         default_prefix = self._default_prefix(bucket_name)
         try:
             self._s3.put_bucket_logging(
@@ -317,16 +234,10 @@ class S3Bucket(Resource):
 
 
 class Certificate(Resource):
-    def __init__(self, account_id=default_account_id, region=default_region):
+    def __init__(self, account_id: str = "", region: str = ""):
         super().__init__(account_id, region)
 
-        svc_mgr = SvcManager()
-        self._acm = svc_mgr.get_client(
-            sub_account_id=account_id,
-            region=region,
-            service_name="acm",
-            type=Boto3API.CLIENT,
-        )
+        self._acm = conn.get_client("acm", sts_role_arn=self._sts_role)
 
     def describe_expiration_time(self, cert_arn=""):
         response = self._acm.describe_certificate(CertificateArn=cert_arn)
@@ -372,39 +283,12 @@ class Certificate(Resource):
 
 
 class VPC(Resource):
-    def __init__(self, account_id=default_account_id, region=default_region):
+    def __init__(self, account_id: str = "", region: str = ""):
         super().__init__(account_id, region)
-
-        svc_mgr = SvcManager()
-        self._ec2 = svc_mgr.get_client(
-            sub_account_id=account_id,
-            region=region,
-            service_name="ec2",
-            type=Boto3API.CLIENT,
-        )
-        self._s3 = svc_mgr.get_client(
-            sub_account_id=account_id, service_name="s3", type=Boto3API.CLIENT
-        )
-
-        self._iam_client = svc_mgr.get_client(
-            sub_account_id=account_id,
-            region=region,
-            service_name="iam",
-            type=Boto3API.CLIENT,
-        )
-
-        self._cwl = svc_mgr.get_client(
-            sub_account_id=account_id,
-            region=region,
-            service_name="logs",
-            type=Boto3API.CLIENT,
-        )
-
-        link_acct = svc_mgr.get_link_account(account_id, region)
-        if link_acct:
-            self._default_logging_bucket = link_acct["subAccountBucketName"]
-        else:
-            self._default_logging_bucket = default_logging_bucket
+        self._ec2 = conn.get_client("ec2", sts_role_arn=self._sts_role)
+        self._s3 = conn.get_client("s3", sts_role_arn=self._sts_role)
+        self._iam_client = conn.get_client("iam", sts_role_arn=self._sts_role)
+        self._cwl = conn.get_client("logs", sts_role_arn=self._sts_role)
 
         self._default_prefix = (
             f"/AWSLogs/{self._account_id}/vpcflowlogs/{self._region}/"
@@ -426,13 +310,7 @@ class VPC(Resource):
         # print(response)
 
         for vpc in response["Vpcs"]:
-            name = "-"
-            if "Tags" in vpc:
-                for tag in vpc["Tags"]:
-                    if tag["Key"] == "Name":
-                        name = tag["Value"]
-                        break
-
+            name = get_name_from_tags(vpc.get("Tags", []))
             result.append(
                 {
                     "id": vpc["VpcId"],
@@ -559,7 +437,6 @@ class VPC(Resource):
                 logger.error(resp["Unsuccessful"])
                 raise RuntimeError(resp["Unsuccessful"][0]["Error"]["Message"])
             else:
-
                 return {
                     "destinationType": "S3",
                     "destinationName": dest.rstrip("/") + self._default_prefix,
@@ -568,9 +445,9 @@ class VPC(Resource):
                     "region": self._region,
                 }
         elif dest_type == "CloudWatch":
-
             log_group_name = dest_name
-            log_group_arn = self._create_log_group(log_group_name)
+            create_log_group(self._cwl, log_group_name)
+            log_group_arn = f"arn:{self._partition}:logs:{self._region}:{self._account_id}:log-group:{log_group_name}:*"
 
             # create role with random name
             suffix = str(uuid.uuid4())[:8]
@@ -581,24 +458,8 @@ class VPC(Resource):
 
             # The role can't be used immediately after created.
             # There is a delay of using the role
-            resp = retry(func=self._ec2.create_flow_logs)(
-                ResourceIds=[vpc_id],
-                ResourceType="VPC",
-                TrafficType="ALL",
-                LogDestinationType="cloud-watch-logs",
-                DeliverLogsPermissionArn=role_arn,
-                LogGroupName=log_group_name,
-                TagSpecifications=[
-                    {
-                        "ResourceType": "vpc-flow-log",
-                        "Tags": [
-                            {
-                                "Key": "Name",
-                                "Value": default_name,
-                            },
-                        ],
-                    },
-                ],
+            resp = self._create_flow_logs(
+                vpc_id, role_arn, log_group_name, default_name
             )
             if resp.get("Unsuccessful", []):
                 logger.error(resp["Unsuccessful"])
@@ -617,16 +478,27 @@ class VPC(Resource):
                 f"Unsupported destination type {dest_type} for VPC Flow Logs"
             )
 
-    def _create_log_group(self, log_group_name):
-        try:
-            self._cwl.create_log_group(logGroupName=log_group_name)
-        except self._cwl.exceptions.ResourceAlreadyExistsException:
-            logger.info("Log Group already exists, do nothing.")
-        except Exception as e2:
-            logger.error(e2)
-            raise RuntimeError("Unable to create log group")
-
-        return f"arn:{self._partition}:logs:{self._region}:{self._account_id}:log-group:{log_group_name}:*"
+    @retry
+    def _create_flow_logs(self, vpc_id, role_arn, log_group_name, default_name):
+        return self._ec2.create_flow_logs(
+            ResourceIds=[vpc_id],
+            ResourceType="VPC",
+            TrafficType="ALL",
+            LogDestinationType="cloud-watch-logs",
+            DeliverLogsPermissionArn=role_arn,
+            LogGroupName=log_group_name,
+            TagSpecifications=[
+                {
+                    "ResourceType": "vpc-flow-log",
+                    "Tags": [
+                        {
+                            "Key": "Name",
+                            "Value": default_name,
+                        },
+                    ],
+                },
+            ],
+        )
 
     def _create_iam_role(self, role_name, log_group_arn):
         try:
@@ -647,16 +519,9 @@ class VPC(Resource):
 
 
 class Subnet(Resource):
-    def __init__(self, account_id=default_account_id, region=default_region):
+    def __init__(self, account_id: str = "", region: str = ""):
         super().__init__(account_id, region)
-
-        svc_mgr = SvcManager()
-        self._ec2 = svc_mgr.get_client(
-            sub_account_id=account_id,
-            region=region,
-            service_name="ec2",
-            type=Boto3API.CLIENT,
-        )
+        self._ec2 = conn.get_client("ec2", sts_role_arn=self._sts_role)
 
     def list(self, parent_id=""):
         result = []
@@ -688,12 +553,7 @@ class Subnet(Resource):
         # print(response)
 
         for subnet in response["Subnets"]:
-            name = "-"
-            if "Tags" in subnet:
-                for tag in subnet["Tags"]:
-                    if tag["Key"] == "Name":
-                        name = tag["Value"]
-                        break
+            name = get_name_from_tags(subnet.get("Tags", []))
             result.append(
                 {
                     "id": subnet["SubnetId"],
@@ -706,16 +566,9 @@ class Subnet(Resource):
 
 
 class SecurityGroup(Resource):
-    def __init__(self, account_id=default_account_id, region=default_region):
+    def __init__(self, account_id: str = "", region: str = ""):
         super().__init__(account_id, region)
-
-        svc_mgr = SvcManager()
-        self._ec2 = svc_mgr.get_client(
-            sub_account_id=account_id,
-            region=region,
-            service_name="ec2",
-            type=Boto3API.CLIENT,
-        )
+        self._ec2 = conn.get_client("ec2", sts_role_arn=self._sts_role)
 
     def list(self, parent_id=""):
         result = []
@@ -746,33 +599,12 @@ class SecurityGroup(Resource):
 
 
 class Trail(Resource):
-    def __init__(self, account_id=default_account_id, region=default_region):
+    def __init__(self, account_id: str = "", region: str = ""):
         super().__init__(account_id, region)
-
-        svc_mgr = SvcManager()
-        self._cloudtrail = svc_mgr.get_client(
-            sub_account_id=account_id,
-            region=region,
-            service_name="cloudtrail",
-            type=Boto3API.CLIENT,
-        )
-        self._s3 = svc_mgr.get_client(
-            sub_account_id=account_id, service_name="s3", type=Boto3API.CLIENT
-        )
-
-        self._iam_client = svc_mgr.get_client(
-            sub_account_id=account_id,
-            region=region,
-            service_name="iam",
-            type=Boto3API.CLIENT,
-        )
-
-        self._cwl = svc_mgr.get_client(
-            sub_account_id=account_id,
-            region=region,
-            service_name="logs",
-            type=Boto3API.CLIENT,
-        )
+        self._cloudtrail = conn.get_client("cloudtrail", sts_role_arn=self._sts_role)
+        self._s3 = conn.get_client("s3", sts_role_arn=self._sts_role)
+        self._iam_client = conn.get_client("iam", sts_role_arn=self._sts_role)
+        self._cwl = conn.get_client("logs", sts_role_arn=self._sts_role)
 
     def list(self, parent_id=""):
         result = []
@@ -852,7 +684,8 @@ class Trail(Resource):
             )
 
         log_group_name = dest_name
-        log_group_arn = self._create_log_group(log_group_name)
+        create_log_group(self._cwl, log_group_name)
+        log_group_arn = f"arn:{self._partition}:logs:{self._region}:{self._account_id}:log-group:{log_group_name}:*"
 
         # create role with random name
         suffix = str(uuid.uuid4())[:8]
@@ -877,17 +710,6 @@ class Trail(Resource):
         else:
             raise RuntimeError("Unable to enable the CloudWatch logging for this trail")
 
-    def _create_log_group(self, log_group_name):
-        try:
-            self._cwl.create_log_group(logGroupName=log_group_name)
-        except self._cwl.exceptions.ResourceAlreadyExistsException:
-            logger.info("Log Group already exists, do nothing.")
-        except Exception as e2:
-            logger.error(e2)
-            raise RuntimeError("Unable to create log group")
-
-        return f"arn:{self._partition}:logs:{self._region}:{self._account_id}:log-group:{log_group_name}:*"
-
     def _create_iam_role(self, role_name, log_group_arn):
         try:
             principal = "cloudtrail.amazonaws.com"
@@ -908,19 +730,10 @@ class Trail(Resource):
 
 
 class Config(Resource):
-    def __init__(self, account_id=default_account_id, region=default_region):
+    def __init__(self, account_id: str = "", region: str = ""):
         super().__init__(account_id, region)
-
-        svc_mgr = SvcManager()
-        self._config = svc_mgr.get_client(
-            sub_account_id=account_id,
-            region=region,
-            service_name="config",
-            type=Boto3API.CLIENT,
-        )
-        self._s3 = svc_mgr.get_client(
-            sub_account_id=account_id, service_name="s3", type=Boto3API.CLIENT
-        )
+        self._config = conn.get_client("config", sts_role_arn=self._sts_role)
+        self._s3 = conn.get_client("s3", sts_role_arn=self._sts_role)
 
     def get_logging_bucket(self, resource_name):
         try:
@@ -953,16 +766,9 @@ class Config(Resource):
 
 
 class KeyPair(Resource):
-    def __init__(self, account_id=default_account_id, region=default_region):
+    def __init__(self, account_id: str = "", region: str = ""):
         super().__init__(account_id, region)
-
-        svc_mgr = SvcManager()
-        self._ec2 = svc_mgr.get_client(
-            sub_account_id=account_id,
-            region=region,
-            service_name="ec2",
-            type=Boto3API.CLIENT,
-        )
+        self._ec2 = conn.get_client("ec2", sts_role_arn=self._sts_role)
 
     def list(self, parent_id=""):
         result = []
@@ -984,30 +790,16 @@ class KeyPair(Resource):
 class Distribution(Resource):
     """For Cloudfront Distribution"""
 
-    def __init__(self, account_id=default_account_id, region=default_region):
+    def __init__(self, account_id: str = "", region: str = ""):
         super().__init__(account_id, region)
-
-        svc_mgr = SvcManager()
-        self._cf = svc_mgr.get_client(
-            sub_account_id=account_id,
-            region=region,
-            service_name="cloudfront",
-            type=Boto3API.CLIENT,
-        )
-        self._s3 = svc_mgr.get_client(
-            sub_account_id=account_id, service_name="s3", type=Boto3API.CLIENT
-        )
-        link_acct = svc_mgr.get_link_account(account_id, region)
-        if link_acct:
-            self._default_logging_bucket = link_acct["subAccountBucketName"]
-        else:
-            self._default_logging_bucket = default_logging_bucket
+        self._cf = conn.get_client("cloudfront", sts_role_arn=self._sts_role)
+        self._s3 = conn.get_client("s3", sts_role_arn=self._sts_role)
 
     def list(self, parent_id=""):
         result = []
         response = self._cf.list_distributions(MaxItems="1000")
 
-        for dist in response["DistributionList"]["Items"]:
+        for dist in response["DistributionList"].get("Items", []):
             result.append(
                 {
                     "id": dist["Id"],
@@ -1055,7 +847,7 @@ class Distribution(Resource):
                     "destinationName": kds_name,
                     "logFormat": "",
                     "name": "Realtime-Logs",
-                    "region": default_region,
+                    "region": self._region,
                 }
             else:
                 return {}
@@ -1091,17 +883,9 @@ class Distribution(Resource):
 
 
 class Lambda(Resource):
-    def __init__(self, account_id=default_account_id, region=default_region):
+    def __init__(self, account_id: str = "", region: str = ""):
         super().__init__(account_id, region)
-
-        svc_mgr = SvcManager()
-        self._client = svc_mgr.get_client(
-            sub_account_id=account_id,
-            region=region,
-            service_name="lambda",
-            type=Boto3API.CLIENT,
-        )
-        self._default_logging_bucket = default_logging_bucket
+        self._client = conn.get_client("lambda", sts_role_arn=self._sts_role)
 
     def list(self, parent_id=""):
         result = []
@@ -1127,30 +911,23 @@ class Lambda(Resource):
                 break
         return result
 
-    def _default_prefix(self, id):
-        return f"AWSLogs/{self._account_id}/Lambda/{self._region}/{id}/"
+    def _default_prefix(self, lambda_id):
+        return f"AWSLogs/{self._account_id}/Lambda/{self._region}/{lambda_id}/"
 
     def get_logging_bucket(self, function_name):
+        # for lambda log pipeline, whether it is cross account or within the same account
+        # the S3 logging bucket used is the central bucket of the master account.
         return {
             "enabled": True,
-            "bucket": self._default_logging_bucket,
+            "bucket": default_logging_bucket,
             "prefix": self._default_prefix(function_name),
         }
 
 
 class RDS(Resource):
-    def __init__(self, account_id=default_account_id, region=default_region):
+    def __init__(self, account_id: str = "", region: str = ""):
         super().__init__(account_id, region)
-
-        svc_mgr = SvcManager()
-        self._client = svc_mgr.get_client(
-            sub_account_id=account_id,
-            region=region,
-            service_name="rds",
-            type=Boto3API.CLIENT,
-        )
-
-        self._default_logging_bucket = default_logging_bucket
+        self._client = conn.get_client("rds", sts_role_arn=self._sts_role)
 
     def _get_db_instances(self):
         result = []
@@ -1215,13 +992,15 @@ class RDS(Resource):
         db_clusters = self._get_db_clusters()
         return db_instances + db_clusters
 
-    def _default_prefix(self, id):
-        return f"AWSLogs/{self._account_id}/RDS/{self._region}/{id}/"
+    def _default_prefix(self, unique_id):
+        return f"AWSLogs/{self._account_id}/RDS/{self._region}/{unique_id}/"
 
     def get_logging_bucket(self, id):
+        # for rds log pipeline, whether it is cross account or within the same account
+        # the S3 logging bucket used is the central bucket of the master account.
         return {
             "enabled": True,
-            "bucket": self._default_logging_bucket,
+            "bucket": default_logging_bucket,
             "prefix": self._default_prefix(id),
         }
 
@@ -1232,21 +1011,9 @@ class RDS(Resource):
 
 
 class ELB(Resource):
-    def __init__(self, account_id=default_account_id, region=default_region):
+    def __init__(self, account_id: str = "", region: str = ""):
         super().__init__(account_id, region)
-
-        svc_mgr = SvcManager()
-        self._client = svc_mgr.get_client(
-            sub_account_id=account_id,
-            region=region,
-            service_name="elbv2",
-            type=Boto3API.CLIENT,
-        )
-        link_acct = svc_mgr.get_link_account(account_id, region)
-        if link_acct:
-            self._default_logging_bucket = link_acct["subAccountBucketName"]
-        else:
-            self._default_logging_bucket = default_logging_bucket
+        self._client = conn.get_client("elbv2", sts_role_arn=self._sts_role)
 
     def _get_alb(self):
         result = []
@@ -1356,94 +1123,145 @@ class ELB(Resource):
 
 
 class WAF(Resource):
-    def __init__(self, account_id=default_account_id, region=default_region):
+    def __init__(self, account_id: str = "", region: str = ""):
         super().__init__(account_id, region)
 
-        svc_mgr = SvcManager()
-        self._client = svc_mgr.get_client(
-            sub_account_id=account_id,
-            region=region,
-            service_name="wafv2",
-            type=Boto3API.CLIENT,
+        self._s3_client = conn.get_client("s3", sts_role_arn=self._sts_role)
+        self._iam_client = conn.get_client("iam", sts_role_arn=self._sts_role)
+
+    def _get_default_prefix(self, acl_arn):
+        web_acl_name = re.search("/webacl/([^/]*)", acl_arn).group(1)
+        region = "cloudfront" if ":global/" in acl_arn else self._region
+        return f"AWSLogs/{self._account_id}/WAFLogs/{region}/{web_acl_name}/"
+
+    @staticmethod
+    def _get_scope(acl_arn):
+        if ":global/" in acl_arn:
+            return "CLOUDFRONT"
+        return "REGIONAL"
+
+    def _get_waf_client(self, scope):
+        if scope == "CLOUDFRONT":
+            return conn.get_client(
+                "wafv2", region_name="us-east-1", sts_role_arn=self._sts_role
+            )
+        return conn.get_client("wafv2", sts_role_arn=self._sts_role)
+
+    def _get_kdf_client(self, scope):
+        if scope == "CLOUDFRONT":
+            return conn.get_client(
+                "firehose", region_name="us-east-1", sts_role_arn=self._sts_role
+            )
+        return conn.get_client("firehose", sts_role_arn=self._sts_role)
+
+    def get_resource_log_config(self, acl_arn):
+        scope = self._get_scope(acl_arn)
+        waf_client = self._get_waf_client(scope)
+
+        try:
+            resp = waf_client.get_logging_configuration(ResourceArn=acl_arn)
+            log_dest_arn = resp["LoggingConfiguration"]["LogDestinationConfigs"][0]
+        except Exception as e:
+            logger.error(e)
+            log_dest_arn = ""
+
+        result = []
+
+        if ":s3:" in log_dest_arn:
+            # Target is S3
+            logging_bucket = get_resource_from_arn(log_dest_arn)
+            default_prefix = self._get_default_prefix(acl_arn)
+
+            bucket_loc = get_bucket_location(self._s3_client, logging_bucket)
+            result.append(
+                {
+                    "destinationType": "S3",
+                    "destinationName": f"s3://{logging_bucket}/{default_prefix}",
+                    "logFormat": "",
+                    "name": "S3",
+                    "region": bucket_loc,
+                }
+            )
+
+        if ":firehose:" in log_dest_arn:
+            # Target is KDf-to-S3
+            delivery_stream_name = get_resource_from_arn(log_dest_arn)
+
+            kdf_client = self._get_kdf_client(scope)
+            ds = kdf_client.describe_delivery_stream(
+                DeliveryStreamName=delivery_stream_name,
+                Limit=1,
+            )
+            s3_dest_desc = ds["DeliveryStreamDescription"]["Destinations"][0][
+                "ExtendedS3DestinationDescription"
+            ]
+            bucket_arn = s3_dest_desc["BucketARN"]
+            bucket_name = get_resource_from_arn(bucket_arn)
+            prefix = s3_dest_desc["Prefix"]
+            bucket_loc = get_bucket_location(self._s3_client, bucket_name)
+            result.append(
+                {
+                    "destinationType": "S3",
+                    "destinationName": f"s3://{bucket_name}/{prefix}",
+                    "logFormat": "",
+                    "name": "KDF-to-S3",
+                    "region": bucket_loc,
+                }
+            )
+
+        return result
+
+    def put_resource_log_config(self, acl_arn, dest_type, dest_name, log_format):
+        if dest_type != "S3":
+            raise RuntimeError(f"Unsupported destination type {dest_type} for WAF Logs")
+
+        scope = self._get_scope(acl_arn)
+        waf_client = self._get_waf_client(scope)
+        kdf_client = self._get_kdf_client(scope)
+
+        bucket_arn = f"arn:{self._partition}:s3:::{self._default_logging_bucket}"
+        default_prefix = self._get_default_prefix(acl_arn)
+        dest = f"s3://{self._default_logging_bucket}/{default_prefix}"
+
+        suffix = str(uuid.uuid4())[:8]
+        delivery_stream_name = f"aws-waf-logs-{stack_prefix}-s3-{suffix}"
+        delivery_stream_arn = self._create_s3_delivery_stream(
+            kdf_client=kdf_client,
+            bucket_arn=bucket_arn,
+            s3_prefix=default_prefix,
+            delivery_stream_name=delivery_stream_name,
         )
 
-        self._cf_client = svc_mgr.get_client(
-            sub_account_id=account_id,
-            region="us-east-1",
-            service_name="wafv2",
-            type=Boto3API.CLIENT,
+        waf_client.put_logging_configuration(
+            LoggingConfiguration={
+                "ResourceArn": acl_arn,
+                "LogDestinationConfigs": [delivery_stream_arn],
+            }
         )
 
-        self._s3_client = svc_mgr.get_client(
-            sub_account_id=account_id,
-            region=region,
-            service_name="s3",
-            type=Boto3API.CLIENT,
-        )
+        return {
+            "destinationType": "S3",
+            "destinationName": dest,
+            "logFormat": "",
+            "name": "KDF-to-S3",
+            "region": self._region,
+        }
 
-        self._iam_client = svc_mgr.get_client(
-            sub_account_id=account_id,
-            region=region,
-            service_name="iam",
-            type=Boto3API.CLIENT,
-        )
-
-        self._firehose_client = svc_mgr.get_client(
-            sub_account_id=account_id,
-            region=region,
-            service_name="firehose",
-            type=Boto3API.CLIENT,
-        )
-
-        self._firehose_us_east_1_client = svc_mgr.get_client(
-            sub_account_id=account_id,
-            region="us-east-1",
-            service_name="firehose",
-            type=Boto3API.CLIENT,
-        )
-
-        link_acct = svc_mgr.get_link_account(account_id, region)
-        if link_acct:
-            self._default_logging_bucket = link_acct["subAccountBucketName"]
-        else:
-            self._default_logging_bucket = default_logging_bucket
-
-    def _wafv2(self, is_global=True):
-        if is_global:
-            logging.info("using global(us-east-1) wafv2 client")
-            return self._cf_client
-        else:
-            logging.info(f"using regional({self._region}) wafv2 client")
-            return self._client
-
-    def _firehose(self, is_global=True):
-        if is_global:
-            logging.info("using global(us-east-1) firehose client")
-            return self._firehose_us_east_1_client
-        else:
-            logging.info(f"using regional({self._region}) firehose client")
-            return self._firehose_client
-
-    def create_s3_delivery_stream(
-        self, bucket_arn, s3_prefix, delivery_stream_name, firehose_client=None
+    def _create_s3_delivery_stream(
+        self, kdf_client, bucket_arn, s3_prefix, delivery_stream_name
     ):
-
         role_name = f"{stack_prefix}-RoleForKDF-{delivery_stream_name}"[:64]
 
-        if not firehose_client:
-            firehose_client = self._firehose_client
-
         logging.info(
-            "create_s3_delivery_stream bucket_arn=%s s3_prefix=%s delivery_stream=%s firehose_client=%s",
+            "create_s3_delivery_stream bucket_arn=%s s3_prefix=%s delivery_stream=%s",
             bucket_arn,
             s3_prefix,
             delivery_stream_name,
-            firehose_client,
         )
 
         role_arn = self._create_firehose_role(role_name, bucket_arn)
 
-        ds = retry(func=firehose_client.create_delivery_stream)(
+        ds = retry(func=kdf_client.create_delivery_stream)(
             DeliveryStreamName=delivery_stream_name,
             DeliveryStreamType="DirectPut",
             ExtendedS3DestinationConfiguration=dict(
@@ -1520,15 +1338,11 @@ class WAF(Resource):
         role_arn = role["Role"]["Arn"]
         return role_arn
 
-    def _get_waf_acl(self, scope):
-        if scope == "CLOUDFRONT":
-            if self._partition == "aws":
-                client = self._cf_client
-            else:
-                return []
-        else:
-            client = self._client
+    def _list_waf_acls(self, scope):
+        if scope == "CLOUDFRONT" and self._partition == "aws-cn":
+            return []
 
+        waf_client = self._get_waf_client(scope)
         result = []
         next_marker = ""
         # Default maximum items is 100
@@ -1539,7 +1353,7 @@ class WAF(Resource):
         while True:
             if next_marker:
                 kwargs["NextMarker"] = next_marker
-            resp = client.list_web_acls(**kwargs)
+            resp = waf_client.list_web_acls(**kwargs)
 
             for acl in resp["WebACLs"]:
                 result.append(
@@ -1558,132 +1372,108 @@ class WAF(Resource):
                 break
         return result
 
-    def _parse_web_acl_name(self, acl_arn):
-        end_pos = acl_arn.rfind("/") - 1
-        start_pos = acl_arn.rfind("/", 0, end_pos)
-        web_acl_name = acl_arn[start_pos + 1 : end_pos + 1]
-        return web_acl_name
-
-    def _generate_default_prefix(self, acl_arn, scope):
-        web_acl_name = self._parse_web_acl_name(acl_arn)
-        if scope == "CLOUDFRONT":
-            default_prefix = (
-                f"AWSLogs/{self._account_id}/WAFLogs/cloudfront/{web_acl_name}/"
-            )
-        else:
-            default_prefix = (
-                f"AWSLogs/{self._account_id}/WAFLogs/{self._region}/{web_acl_name}/"
-            )
-        return default_prefix
-
-    def _get_logging_bucket(self, acl_arn, scope):
-
-        default_prefix = self._generate_default_prefix(acl_arn, scope)
-        is_global = scope == "CLOUDFRONT" and self._partition == "aws"
-
-        try:
-            wafv2 = self._wafv2(is_global=is_global)
-            resp = wafv2.get_logging_configuration(ResourceArn=acl_arn)
-            log_dest_arn = resp["LoggingConfiguration"]["LogDestinationConfigs"][0]
-
-            if is_arn(s=log_dest_arn, svc="s3"):
-                # Determine if the target is S3
-                logging_bucket = log_dest_arn[log_dest_arn.rindex(":") + 1 :]
-
-                return {
-                    "enabled": True,
-                    "bucket": logging_bucket,
-                    "prefix": default_prefix,
-                    "source": "WAF",
-                }
-
-            elif is_arn(s=log_dest_arn, svc="firehose"):
-                delivery_stream_name = log_dest_arn.split("/")[-1]
-
-                firehose = self._firehose(is_global=is_global)
-                ds = firehose.describe_delivery_stream(
-                    DeliveryStreamName=delivery_stream_name,
-                    Limit=1,
-                )
-                s3_dest_desc = ds["DeliveryStreamDescription"]["Destinations"][0][
-                    "ExtendedS3DestinationDescription"
-                ]
-                bucket_arn = s3_dest_desc["BucketARN"]
-                bucker_name = bucket_arn[bucket_arn.rindex(":") + 1 :]
-                prefix = s3_dest_desc["Prefix"]
-                return {
-                    "enabled": True,
-                    "bucket": bucker_name,
-                    "prefix": prefix,
-                    "source": "KinesisDataFirehoseForWAF",
-                }
-
-        except Exception as e:
-            logger.error(e, exc_info=True)
-            logger.info(f"{acl_arn} doesn't have logging Enabled.")
-
-        return {
-            "enabled": False,
-            "bucket": self._default_logging_bucket,
-            "prefix": default_prefix,
-        }
-
-    def put_logging_bucket(self, acl_arn):
-        resp = self.get_logging_bucket(acl_arn)
-        if resp["enabled"]:
-            return resp
-
-        bucket_name = resp["bucket"]
-        default_prefix = resp["prefix"]
-
-        bucket_arn = f"arn:{self._partition}:s3:::{bucket_name}"
-        try:
-            suffix = str(uuid.uuid4())[:8]
-            is_global = ":global/" in acl_arn and self._partition == "aws"
-            delivery_stream_name = f"aws-waf-logs-{stack_prefix}-s3-{suffix}"
-            firehose = self._firehose(is_global=is_global)
-            wafv2 = self._wafv2(is_global=is_global)
-
-            delivery_stream_arn = self.create_s3_delivery_stream(
-                bucket_arn=bucket_arn,
-                s3_prefix=default_prefix,
-                delivery_stream_name=delivery_stream_name,
-                firehose_client=firehose,
-            )
-
-            wafv2.put_logging_configuration(
-                LoggingConfiguration={
-                    "ResourceArn": acl_arn,
-                    "LogDestinationConfigs": [delivery_stream_arn],
-                }
-            )
-            return {
-                "enabled": True,
-                "bucket": bucket_name,
-                "prefix": default_prefix,
-                "source": "KinesisDataFirehoseForWAF",
-            }
-        except Exception as e:
-            logger.error(e, exc_info=True)
-            raise RuntimeError(UNABLE_TO_ENABLE_LOGGING_ERROR)
-
     def list(self, parent_id=""):
-        acls = self._get_waf_acl("CLOUDFRONT") + self._get_waf_acl("REGIONAL")
+        acls = self._list_waf_acls("CLOUDFRONT") + self._list_waf_acls("REGIONAL")
         return acls
 
-    def get_logging_bucket(self, acl_arn):
-        if ":regional/" in acl_arn:
-            result = self._get_logging_bucket(acl_arn, "REGIONAL")
-        else:
-            result = self._get_logging_bucket(acl_arn, "CLOUDFRONT")
+
+class EKSCluster(Resource):
+    def __init__(self, account_id: str = "", region: str = ""):
+        super().__init__(account_id, region)
+        self._client = conn.get_client("eks", sts_role_arn=self._sts_role)
+
+    def list(self, parent_id=""):
+        result = []
+
+        next_token = ""
+        # Default maximum items is 50
+        kwargs = {"maxResults": 100, "include": ["all"]}
+        while True:
+            if next_token:
+                kwargs["nextToken"] = next_token
+            resp = self._client.list_clusters(**kwargs)
+            for cluster in resp["clusters"]:
+                result.append(
+                    {
+                        "id": cluster,
+                        "name": cluster,
+                        "description": cluster,
+                    }
+                )
+            if "nextToken" in resp:
+                next_token = resp["nextToken"]
+            else:
+                break
         return result
 
 
-def get_partition(region_name):
-    if region_name in ["cn-north-1", "cn-northwest-1"]:
-        return "aws-cn"
-    else:
-        return "aws"
+class ASG(Resource):
+    def __init__(self, account_id: str = "", region: str = ""):
+        super().__init__(account_id, region)
+        self._client = conn.get_client("autoscaling", sts_role_arn=self._sts_role)
+
+    def list(self, parent_id=""):
+        result = []
+
+        next_token = ""
+        # Default maximum items is 100
+        kwargs = {"MaxRecords": 100}
+        while True:
+            if next_token:
+                kwargs["NextToken"] = next_token
+            resp = self._client.describe_auto_scaling_groups(**kwargs)
+            for group in resp["AutoScalingGroups"]:
+                result.append(
+                    {
+                        "id": group["AutoScalingGroupARN"],
+                        "name": group["AutoScalingGroupName"],
+                        "description": group["AutoScalingGroupName"],
+                    }
+                )
+            if "NextToken" in resp:
+                next_token = resp["NextToken"]
+            else:
+                break
+        return result
+
+
+class SNS(Resource):
+    def __init__(self, account_id: str = "", region: str = ""):
+        super().__init__(account_id, region)
+        self._client = conn.get_client("sns", sts_role_arn=self._sts_role)
+
+    def _get_topic_name(self, topic_arn):
+        match = re.search(r"(?<=:)[^:]+$", topic_arn)
+        topic_name = ""
+        if match:
+            topic_name = match.group()
+            return topic_name
+        return topic_name
+
+    def _list_sns(self):
+        result = []
+        next_token = ""
+        kwargs = {}
+        while True:
+            if next_token:
+                kwargs["NextToken"] = next_token
+            resp = self._client.list_topics(**kwargs)
+            for topic in resp["Topics"]:
+                result.append(
+                    {
+                        "id": topic["TopicArn"],
+                        "name": self._get_topic_name(topic["TopicArn"]),
+                    }
+                )
+            if "NextToken" in resp:
+                next_token = resp["NextToken"]
+            else:
+                break
+        return result
+
+    def list(self, parent_id=""):
+        topics = self._list_sns()
+        return topics
 
 
 def create_service_role(iam_client, role_name, principal):
@@ -1726,19 +1516,3 @@ def default_logging_policy(log_group_arn):
             ],
         }
     )
-
-
-def get_bucket_location(s3_client, bucket_name):
-    resp = s3_client.get_bucket_location(
-        Bucket=bucket_name,
-    )
-    loc = resp["LocationConstraint"]
-    # For us-east-1, the location is None
-    return "us-east-1" if loc is None else loc
-
-
-def get_name_from_tags(tags):
-    for tag in tags:
-        if tag["Key"] == "Name":
-            return tag["Value"]
-    return "-"

@@ -44,14 +44,13 @@ log_type = os.environ.get("LOG_TYPE")
 notification_id = f"{stack_name}-{log_event_queue_name}"
 
 
-def lambda_handler(event, context):
-
+def lambda_handler(event, _):
     request_type = event["RequestType"]
     if request_type == "Create" or request_type == "Update":
         return on_create()
     if request_type == "Delete":
         return on_delete()
-    raise Exception("Invalid request type: %s" % request_type)
+    raise ValueError("Invalid request type: %s" % request_type)
 
 
 def on_create():

@@ -1,0 +1,17 @@
+{
+    "arguments": {
+        "sourceType": "S3",
+        "id": "9e2a1ebf-f738-4f67-bb5b-986b9360107c"
+    },
+    "source": null,
+    "result": null,
+    "info": {
+        "fieldName": "deleteLogSource",
+        "parentTypeName": "Mutation",
+        "variables": {}
+    },
+    "error": null,
+    "prev": null,
+    "stash": {},
+    "outErrors": []
+}

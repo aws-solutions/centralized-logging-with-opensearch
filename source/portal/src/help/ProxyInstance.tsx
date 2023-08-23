@@ -39,9 +39,9 @@ const ProxyInstance: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {PROXY_INSTANCE_TYPE_AND_NUMBER_LIST.map((element, index) => {
+            {PROXY_INSTANCE_TYPE_AND_NUMBER_LIST.map((element) => {
               return (
-                <tr key={index}>
+                <tr key={element.instanceNumber}>
                   <td>{element.conUser}</td>
                   <td>{element.instanceType}</td>
                   <td>{element.instanceNumber}</td>

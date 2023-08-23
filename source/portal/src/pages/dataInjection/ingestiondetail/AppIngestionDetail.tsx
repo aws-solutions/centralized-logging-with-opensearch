@@ -29,45 +29,50 @@ import {
   getLogSource,
 } from "graphql/queries";
 
+import { ResourceStatus } from "assets/js/const";
 import {
   AppLogIngestion,
   AppPipeline,
-  BufferType,
+  EC2GroupType,
   LogSource,
   LogSourceType,
+  SyslogParser,
 } from "API";
 import {
-  buildKDSLink,
+  buildNLBLinkByDNS,
   buildS3Link,
   formatLocalTime,
-  splitStringToBucketAndPrefix,
 } from "assets/js/utils";
 import ExtLink from "components/ExtLink";
 import { AmplifyConfigType } from "types";
-import { AppStateProps } from "reducer/appReducer";
 import { useSelector } from "react-redux";
-import Tags from "./comps/Tags";
-import LogConfig from "./comps/LogConfig";
-import AccountName from "pages/comps/account/AccountName";
-import { getParamValueByKey, getSourceInfoValueByKey } from "assets/js/applog";
-import CopyText from "components/CopyText";
 import SyslogGuide from "./comps/SyslogGuide";
-
-interface MatchParams {
-  id: string;
-}
+import Status from "components/Status/Status";
+import { S3SourceDetail } from "./S3SourceDetail";
+import { Alert } from "assets/js/alert";
+import DetailEC2 from "pages/resources/instanceGroup/comps/DetailEC2";
+import DetailASG from "pages/resources/instanceGroup/comps/DetailASG";
+import InstancePermission from "../applicationLog/common/InstancePermission";
+import { RootState } from "reducer/reducers";
+import Tags from "../common/Tags";
 
 const AppIngestionDetail: React.FC = () => {
   const { t } = useTranslation();
   const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: AppStateProps) => state.amplifyConfig
+    (state: RootState) => state.app.amplifyConfig
   );
-  const { id }: MatchParams = useParams();
+  const { id } = useParams();
   const [loadingData, setLoadingData] = useState(true);
   const [activeTab, setActiveTab] = useState(0);
-  const [appIngestionData, setAppIngestionData] = useState<AppLogIngestion>();
+  const [appIngestionData, setAppIngestionData] = useState<AppLogIngestion>({
+    __typename: "AppLogIngestion",
+    id: "",
+  });
   const [appPipelineData, setAppPipelineData] = useState<AppPipeline>();
-  const [sourceInfo, setSourceInfo] = useState<LogSource>();
+  const [sourceInfo, setSourceInfo] = useState<LogSource>({
+    __typename: "LogSource",
+    sourceId: "",
+  });
   const breadCrumbList = [
     { name: t("name"), link: "/" },
     {
@@ -76,13 +81,13 @@ const AppIngestionDetail: React.FC = () => {
     },
     {
       name: appIngestionData?.appPipelineId || "",
-      link: "/log-pipeline/application-log/detail/" + appPipelineData?.id,
+      link:
+        "/log-pipeline/application-log/detail/" + appPipelineData?.pipelineId,
     },
-    { name: id },
+    { name: id || "" },
   ];
 
   const changeTab = (event: any, newTab: number) => {
-    console.info("newTab:", newTab);
     setActiveTab(newTab);
   };
 
@@ -109,16 +114,16 @@ const AppIngestionDetail: React.FC = () => {
           id: id,
         }
       );
+      console.info("resIngestionData:", resIngestionData);
       const tmpIngestionData: AppLogIngestion =
         resIngestionData?.data?.getAppLogIngestion;
       if (tmpIngestionData && tmpIngestionData.appPipelineId) {
-        if (tmpIngestionData.sourceType === LogSourceType.Syslog) {
-          const sourceData = await appSyncRequestQuery(getLogSource, {
-            sourceType: tmpIngestionData.sourceType,
-            id: tmpIngestionData.sourceId,
-          });
-          setSourceInfo(sourceData.data.getLogSource);
-        }
+        const sourceData = await appSyncRequestQuery(getLogSource, {
+          type: tmpIngestionData.sourceType,
+          sourceId: tmpIngestionData.sourceId,
+        });
+        console.log("sourceData:", sourceData);
+        setSourceInfo(sourceData.data.getLogSource);
         getAppPiplelineInfoById(tmpIngestionData.appPipelineId);
       }
       setAppIngestionData(tmpIngestionData);
@@ -130,6 +135,145 @@ const AppIngestionDetail: React.FC = () => {
   useEffect(() => {
     getAppLogIngestionById();
   }, []);
+
+  const renderSysLogDetail = () => {
+    return (
+      <HeaderPanel title={t("applog:detail.ingestion.ingestionOverview")}>
+        <div className="flex value-label-span">
+          <div className="flex-1">
+            <ValueWithLabel label={t("applog:detail.ingestion.source")}>
+              <div>
+                <ExtLink
+                  to={buildNLBLinkByDNS(
+                    amplifyConfig.aws_project_region,
+                    sourceInfo?.syslog?.nlbDNSName || ""
+                  )}
+                >
+                  {sourceInfo?.syslog?.nlbDNSName || "-"}
+                </ExtLink>
+              </div>
+            </ValueWithLabel>
+          </div>
+          <div className="flex-1 border-left-c">
+            <ValueWithLabel
+              label={`${t("applog:detail.ingestion.sourceType")}`}
+            >
+              <div>{appIngestionData?.sourceType || "-"}</div>
+            </ValueWithLabel>
+          </div>
+          <div className="flex-1 border-left-c">
+            <ValueWithLabel
+              label={`${t("applog:ingestion.syslog.port")} | ${t(
+                "applog:ingestion.syslog.protocol"
+              )}`}
+            >
+              <div>
+                {`${sourceInfo?.syslog?.port || ""} | ${
+                  sourceInfo?.syslog?.protocol || ""
+                }`}
+              </div>
+            </ValueWithLabel>
+          </div>
+          <div className="flex-1 border-left-c">
+            <ValueWithLabel label={t("applog:detail.ingestion.status")}>
+              <Status status={appIngestionData.status || ""} />
+            </ValueWithLabel>
+          </div>
+          <div className="flex-1 border-left-c">
+            <ValueWithLabel label={t("ekslog:ingest.detail.created")}>
+              <div>{formatLocalTime(appIngestionData?.createdAt || "")}</div>
+            </ValueWithLabel>
+          </div>
+        </div>
+      </HeaderPanel>
+    );
+  };
+
+  const renderS3Detail = () => {
+    return (
+      <HeaderPanel title={t("applog:detail.ingestion.ingestionOverview")}>
+        <div className="flex value-label-span">
+          <div className="flex-1">
+            <ValueWithLabel label={t("applog:detail.ingestion.source")}>
+              <div>
+                <ExtLink
+                  to={buildS3Link(
+                    amplifyConfig.aws_project_region,
+                    sourceInfo?.s3?.bucketName || ""
+                  )}
+                >
+                  {sourceInfo?.s3?.bucketName}
+                </ExtLink>
+              </div>
+            </ValueWithLabel>
+          </div>
+          <div className="flex-1 border-left-c">
+            <ValueWithLabel label={t("applog:detail.ingestion.sourceType")}>
+              <div>
+                {t("other")}
+                {`(${appIngestionData?.sourceType || "-"})`}
+              </div>
+            </ValueWithLabel>
+          </div>
+          <div className="flex-1 border-left-c">
+            <ValueWithLabel label={t("applog:detail.ingestion.ingestionMode")}>
+              <div>{t(sourceInfo?.s3?.mode || "")}</div>
+            </ValueWithLabel>
+          </div>
+          <div className="flex-1 border-left-c">
+            <ValueWithLabel label={t("applog:detail.ingestion.status")}>
+              <Status status={appIngestionData.status || ""} />
+            </ValueWithLabel>
+          </div>
+          <div className="flex-1 border-left-c">
+            <ValueWithLabel label={t("ekslog:ingest.detail.created")}>
+              <div>{formatLocalTime(appIngestionData?.createdAt || "")}</div>
+            </ValueWithLabel>
+          </div>
+        </div>
+      </HeaderPanel>
+    );
+  };
+
+  const renderEC2Detail = () => {
+    return (
+      <HeaderPanel title={t("applog:detail.ingestion.ingestionOverview")}>
+        <div className="flex value-label-span">
+          <div className="flex-1">
+            <ValueWithLabel label={t("applog:detail.ingestion.source")}>
+              <>
+                <Link
+                  to={`/resources/instance-group/detail/${sourceInfo.sourceId}`}
+                >
+                  {sourceInfo?.ec2?.groupName}
+                </Link>
+              </>
+            </ValueWithLabel>
+          </div>
+          <div className="flex-1 border-left-c">
+            <ValueWithLabel label={t("applog:detail.ingestion.sourceType")}>
+              <div>{t("instanceGroup")}</div>
+            </ValueWithLabel>
+          </div>
+          <div className="flex-1 border-left-c">
+            <ValueWithLabel label={t("sourceAccount")}>
+              <div>{sourceInfo.accountId || "-"}</div>
+            </ValueWithLabel>
+          </div>
+          <div className="flex-1 border-left-c">
+            <ValueWithLabel label={t("applog:detail.ingestion.status")}>
+              <Status status={appIngestionData.status || ""} />
+            </ValueWithLabel>
+          </div>
+          <div className="flex-1 border-left-c">
+            <ValueWithLabel label={t("ekslog:ingest.detail.created")}>
+              <div>{formatLocalTime(appIngestionData?.createdAt || "")}</div>
+            </ValueWithLabel>
+          </div>
+        </div>
+      </HeaderPanel>
+    );
+  };
 
   return (
     <div className="lh-main-content">
@@ -143,210 +287,120 @@ const AppIngestionDetail: React.FC = () => {
               <LoadingText text="" />
             ) : (
               <div>
-                <HeaderPanel title={t("ekslog:ingest.detail.ingestionDetail")}>
-                  <div className="flex value-label-span">
-                    <div className="flex-1">
-                      <ValueWithLabel
-                        label={t("ekslog:ingest.detail.osIndexPrefix")}
-                      >
-                        <div>{appPipelineData?.aosParams?.indexPrefix}</div>
-                      </ValueWithLabel>
-                      {appIngestionData?.accountId && (
-                        <ValueWithLabel
-                          label={t("resource:crossAccount.account")}
-                        >
-                          <AccountName
-                            accountId={appIngestionData?.accountId || ""}
-                            region={amplifyConfig.aws_project_region}
-                          />
-                        </ValueWithLabel>
-                      )}
-                    </div>
-                    <div className="flex-1 border-left-c">
-                      <ValueWithLabel
-                        label={`${t("ekslog:ingest.detail.bufferLayer")}(${
-                          appPipelineData?.bufferType
-                        })`}
-                      >
-                        <>
-                          {appPipelineData?.bufferType === BufferType.KDS && (
-                            <div>
-                              <ExtLink
-                                to={buildKDSLink(
-                                  amplifyConfig.aws_project_region,
-                                  appPipelineData?.bufferResourceName || ""
-                                )}
-                              >
-                                {appPipelineData?.bufferResourceName || "-"}
-                              </ExtLink>
-                              {getParamValueByKey(
-                                "enableAutoScaling",
-                                appPipelineData.bufferParams
-                              ) === "true"
-                                ? t("applog:detail.autoScaling")
-                                : ""}
-                            </div>
-                          )}
-                          {appPipelineData?.bufferType === BufferType.S3 && (
-                            <div>
-                              <ExtLink
-                                to={buildS3Link(
-                                  amplifyConfig.aws_project_region,
-                                  appPipelineData?.bufferResourceName || ""
-                                )}
-                              >
-                                {appPipelineData?.bufferResourceName || "-"}
-                              </ExtLink>
-                            </div>
-                          )}
-                          {appPipelineData?.bufferType === BufferType.None && (
-                            <div>{t("none")}</div>
-                          )}
-                        </>
-                      </ValueWithLabel>
-                    </div>
-                    <div className="flex-1 border-left-c">
-                      <ValueWithLabel
-                        label={`${t("applog:ingestion.source")}(${
-                          appIngestionData?.sourceType || "-"
-                        })`}
-                      >
-                        <div>
-                          {appIngestionData?.sourceType === LogSourceType.S3 &&
-                          appIngestionData?.logPath ? (
-                            <a
-                              target="_blank"
-                              href={buildS3Link(
-                                amplifyConfig.aws_project_region,
-                                splitStringToBucketAndPrefix(
-                                  appIngestionData.logPath
-                                ).bucket || "",
-                                splitStringToBucketAndPrefix(
-                                  appIngestionData.logPath
-                                ).prefix || ""
-                              )}
-                              rel="noreferrer"
-                            >
-                              {appIngestionData?.logPath}
-                            </a>
-                          ) : (
-                            ""
-                          )}
-                          {appIngestionData?.sourceType === LogSourceType.EC2 &&
-                          appIngestionData?.sourceId ? (
-                            <Link
-                              to={`/resources/instance-group/detail/${appIngestionData.sourceId}`}
-                            >
-                              {appIngestionData?.sourceId}
-                            </Link>
-                          ) : (
-                            ""
-                          )}
-                          {appIngestionData?.sourceType ===
-                            LogSourceType.Syslog && (
-                            <CopyText
-                              text={
-                                getSourceInfoValueByKey(
-                                  "syslogNlbDNSName",
-                                  sourceInfo?.sourceInfo
-                                ) || ""
-                              }
-                            >
-                              {getSourceInfoValueByKey(
-                                "syslogNlbDNSName",
-                                sourceInfo?.sourceInfo
-                              ) || ""}
-                            </CopyText>
-                          )}
-                        </div>
-                      </ValueWithLabel>
-                      {appIngestionData?.sourceType ===
-                        LogSourceType.Syslog && (
-                        <>
-                          <ValueWithLabel
-                            label={t("applog:ingestion.syslog.protocol")}
-                          >
-                            <div>
-                              {getSourceInfoValueByKey(
-                                "syslogProtocol",
-                                sourceInfo?.sourceInfo
-                              )}
-                            </div>
-                          </ValueWithLabel>
-                        </>
-                      )}
-                    </div>
-                    <div className="flex-1 border-left-c">
-                      {appIngestionData?.sourceType ===
-                        LogSourceType.Syslog && (
-                        <>
-                          <ValueWithLabel
-                            label={t("applog:ingestion.syslog.port")}
-                          >
-                            <div>
-                              {getSourceInfoValueByKey(
-                                "syslogPort",
-                                sourceInfo?.sourceInfo
-                              )}
-                            </div>
-                          </ValueWithLabel>
-                        </>
-                      )}
-                      <ValueWithLabel label={t("ekslog:ingest.detail.created")}>
-                        <div>
-                          {formatLocalTime(appIngestionData?.createdDt || "")}
-                        </div>
-                      </ValueWithLabel>
-                    </div>
-                  </div>
-                </HeaderPanel>
+                {appIngestionData?.sourceType === LogSourceType.Syslog &&
+                  renderSysLogDetail()}
+                {appIngestionData?.sourceType === LogSourceType.S3 &&
+                  renderS3Detail()}
+                {appIngestionData?.sourceType === LogSourceType.EC2 &&
+                  renderEC2Detail()}
+                {sourceInfo.ec2?.groupType !== EC2GroupType.ASG && (
+                  <AntTabs
+                    value={activeTab}
+                    onChange={(event, newTab) => {
+                      changeTab(event, newTab);
+                    }}
+                  >
+                    {appIngestionData?.sourceType !== LogSourceType.Syslog && (
+                      <AntTab label={t("applog:detail.tab.sourceDetail")} />
+                    )}
 
-                <AntTabs
-                  value={activeTab}
-                  onChange={(event, newTab) => {
-                    changeTab(event, newTab);
-                  }}
-                >
-                  {appIngestionData?.sourceType === LogSourceType.Syslog && (
-                    <AntTab label={t("applog:ingestion.syslogConfig")} />
-                  )}
-                  <AntTab label={t("ekslog:ingest.detail.logConfig")} />
-                  <AntTab label={t("ekslog:ingest.detail.tag")} />
-                </AntTabs>
+                    {appIngestionData?.sourceType === LogSourceType.Syslog && (
+                      <AntTab label={t("applog:ingestion.syslogConfig5424")} />
+                    )}
+                    {appIngestionData?.sourceType === LogSourceType.Syslog && (
+                      <AntTab label={t("applog:ingestion.syslogConfig3164")} />
+                    )}
+                  </AntTabs>
+                )}
                 {appIngestionData?.sourceType === LogSourceType.Syslog && (
                   <TabPanel value={activeTab} index={0}>
                     <SyslogGuide
                       ingestion={appIngestionData}
                       sourceData={sourceInfo}
+                      syslogType={SyslogParser.RFC5424}
                     />
                   </TabPanel>
                 )}
-                <TabPanel
-                  value={activeTab}
-                  index={
-                    appIngestionData?.sourceType === LogSourceType.Syslog
-                      ? 1
-                      : 0
-                  }
-                >
-                  <LogConfig
-                    hideLogPath={
+                {appIngestionData?.sourceType === LogSourceType.Syslog && (
+                  <TabPanel value={activeTab} index={1}>
+                    <SyslogGuide
+                      ingestion={appIngestionData}
+                      sourceData={sourceInfo}
+                      syslogType={SyslogParser.RFC3164}
+                    />
+                  </TabPanel>
+                )}
+
+                {appIngestionData?.sourceType === LogSourceType.S3 && (
+                  <TabPanel value={activeTab} index={0}>
+                    <S3SourceDetail
+                      sourceInfo={sourceInfo}
+                      appIngestionData={appIngestionData}
+                    />
+                  </TabPanel>
+                )}
+                {appIngestionData?.sourceType === LogSourceType.Syslog && (
+                  <TabPanel
+                    value={activeTab}
+                    index={
                       appIngestionData?.sourceType === LogSourceType.Syslog
+                        ? 2
+                        : 1
                     }
-                    logPath={appIngestionData?.logPath || ""}
-                    configId={appIngestionData?.confId || ""}
-                  />
-                </TabPanel>
-                <TabPanel
-                  value={activeTab}
-                  index={
-                    appIngestionData?.sourceType === LogSourceType.Syslog
-                      ? 2
-                      : 1
-                  }
-                >
-                  <Tags ingestionInfo={appIngestionData} />
-                </TabPanel>
+                  >
+                    <Tags tags={appIngestionData?.tags} />
+                  </TabPanel>
+                )}
+                {appIngestionData.sourceType === LogSourceType.EC2 && (
+                  <div>
+                    <TabPanel value={activeTab} index={0}>
+                      {sourceInfo.ec2?.groupType !== EC2GroupType.ASG && (
+                        <div className="panel-content">
+                          <div className="flex value-label-span">
+                            <div className="flex-1">
+                              <ValueWithLabel label={t("instanceName")}>
+                                <div>{sourceInfo.ec2?.groupName}</div>
+                              </ValueWithLabel>
+                            </div>
+                            <div className="flex-1 border-left-c">
+                              <ValueWithLabel label={t("instanceSelection")}>
+                                <>{t("manual")}</>
+                              </ValueWithLabel>
+                            </div>
+                            <div className="flex-1 border-left-c">
+                              <ValueWithLabel
+                                label={t(
+                                  "applog:ingestion.chooseInstanceGroup.list.platform"
+                                )}
+                              >
+                                <>{sourceInfo.ec2?.groupPlatform}</>
+                              </ValueWithLabel>
+                            </div>
+                            <div className="flex-1 border-left-c">
+                              <ValueWithLabel
+                                label={t("ekslog:ingest.detail.created")}
+                              >
+                                <div>
+                                  {formatLocalTime(
+                                    appIngestionData?.createdAt || ""
+                                  )}
+                                </div>
+                              </ValueWithLabel>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {sourceInfo.ec2?.groupType === EC2GroupType.ASG ? (
+                        <DetailASG instanceGroup={sourceInfo} />
+                      ) : (
+                        <ShowDetailEC2 instanceGroupId={sourceInfo.sourceId} />
+                      )}
+                    </TabPanel>
+                    {sourceInfo.ec2?.groupType !== EC2GroupType.ASG && (
+                      <InstancePermission />
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -357,3 +411,56 @@ const AppIngestionDetail: React.FC = () => {
 };
 
 export default AppIngestionDetail;
+
+interface ShowDetailEC2Props {
+  instanceGroupId: string;
+}
+
+function ShowDetailEC2(props: ShowDetailEC2Props) {
+  const [loadingData, setLoadingData] = useState(true);
+  const [curInstanceGroup, setCurInstanceGroup] = useState<LogSource>({
+    __typename: "LogSource",
+    sourceId: "",
+  });
+  const { t } = useTranslation();
+
+  const getInstanceGroupById = async () => {
+    try {
+      setLoadingData(true);
+      const resData: any = await appSyncRequestQuery(getLogSource, {
+        sourceId: props.instanceGroupId,
+        type: LogSourceType.EC2,
+      });
+      console.info("resData:", resData);
+      const dataInstanceGroup: LogSource = resData.data.getLogSource;
+      if (
+        (dataInstanceGroup.status as unknown as ResourceStatus) ===
+        ResourceStatus.INACTIVE
+      ) {
+        Alert(t("resource:group.detail.notExist"));
+        return;
+      }
+      setCurInstanceGroup(dataInstanceGroup);
+      setLoadingData(false);
+    } catch (error) {
+      setLoadingData(false);
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    getInstanceGroupById();
+  }, []);
+
+  return (
+    <DetailEC2
+      loadingData={loadingData}
+      instanceGroup={curInstanceGroup}
+      disableAddInstance
+      disableRemoveInstance
+      refreshInstanceGroup={() => {
+        getInstanceGroupById();
+      }}
+    />
+  );
+}

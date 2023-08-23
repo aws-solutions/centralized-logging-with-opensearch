@@ -13,25 +13,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React, { useState, useEffect } from "react";
-import ArrowDropDownIcon from "@material-ui/icons/ArrowDropDown";
+import React from "react";
 import PagePanel from "components/PagePanel";
 import HeaderPanel from "components/HeaderPanel";
 import FormItem from "components/FormItem";
 import TextInput from "components/TextInput";
 import ExtLink from "components/ExtLink";
-import { appSyncRequestQuery } from "assets/js/request";
-import { getDomainDetails, listImportedDomains } from "graphql/queries";
-import { SelectItem } from "components/Select/select";
-import { DomainDetails, ImportedDomain } from "API";
+import { DomainDetails, DomainStatusCheckResponse } from "API";
 import Select from "components/Select";
-import { S3TaskProps } from "../s3/CreateS3";
-import { CloudFrontTaskProps } from "../cloudfront/CreateCloudFront";
-import { CloudTrailTaskProps } from "../cloudtrail/CreateCloudTrail";
-import { LambdaTaskProps } from "../lambda/CreateLambda";
-import { RDSTaskProps } from "../rds/CreateRDS";
-import { ELBTaskProps } from "../elb/CreateELB";
-import { WAFTaskProps } from "../waf/CreateWAF";
 
 import {
   YesNo,
@@ -43,29 +32,22 @@ import {
 import {
   ENABLE_CLODSTATE,
   ENABLE_ULTRAWARM,
-  PIPELINE_TASK_ES_USER_DEFAULT,
   REPLICA_COUNT_LIST,
   ServiceLogType,
   ServiceTypeDescMap,
 } from "assets/js/const";
 import { InfoBarTypes } from "reducer/appReducer";
 import { useTranslation } from "react-i18next";
-import { VpcLogTaskProps } from "../vpc/CreateVPC";
-import { ConfigTaskProps } from "../config/CreateConfig";
 import Switch from "components/Switch";
-import { checkIndexNameValidate } from "assets/js/utils";
+import { checkIndexNameValidate, ternary } from "assets/js/utils";
+import { ParticalServiceType } from "pages/pipelineAlarm/AlarmAndTags";
+import { identity, defaultTo } from "lodash";
+import SelectOpenSearchDomain from "pages/dataInjection/common/SelectOpenSearchDomain";
+import ExpandableSection from "components/ExpandableSection";
+
 interface SpecifyOpenSearchClusterProps {
   taskType: ServiceLogType;
-  pipelineTask:
-    | S3TaskProps
-    | CloudFrontTaskProps
-    | CloudTrailTaskProps
-    | LambdaTaskProps
-    | RDSTaskProps
-    | ELBTaskProps
-    | WAFTaskProps
-    | VpcLogTaskProps
-    | ConfigTaskProps;
+  pipelineTask: ParticalServiceType;
   changeBucketIndex: (prefix: string) => void;
   changeOpenSearchCluster: (domain: DomainDetails | undefined) => void;
   changeSampleDashboard: (yesNo: string) => void;
@@ -82,6 +64,8 @@ interface SpecifyOpenSearchClusterProps {
   changeRolloverSize: (size: string) => void;
   changeCompressionType: (codec: string) => void;
   changeWarmSettings: (type: string) => void;
+  domainCheckedStatus?: DomainStatusCheckResponse;
+  changeOSDomainCheckStatus: (status: DomainStatusCheckResponse) => void;
 }
 
 export interface AOSInputValidRes {
@@ -96,18 +80,7 @@ export interface AOSInputValidRes {
   indexNameFormatError: boolean;
 }
 
-export const checkOpenSearchInput = (
-  pipelineTask:
-    | S3TaskProps
-    | CloudFrontTaskProps
-    | CloudTrailTaskProps
-    | LambdaTaskProps
-    | RDSTaskProps
-    | ELBTaskProps
-    | WAFTaskProps
-    | VpcLogTaskProps
-    | ConfigTaskProps
-) => {
+export const checkOpenSearchInput = (pipelineTask: ParticalServiceType) => {
   const validRes: AOSInputValidRes = {
     shardsInvalidError: false,
     warmLogInvalidError: false,
@@ -209,16 +182,7 @@ export const checkOpenSearchInput = (
 
 const AOS_EXCLUDE_PARAMS = ["enableRolloverByCapacity", "warmTransitionType"];
 export const covertParametersByKeyAndConditions = (
-  pipelineTask:
-    | S3TaskProps
-    | CloudFrontTaskProps
-    | CloudTrailTaskProps
-    | LambdaTaskProps
-    | RDSTaskProps
-    | ELBTaskProps
-    | WAFTaskProps
-    | VpcLogTaskProps
-    | ConfigTaskProps,
+  pipelineTask: ParticalServiceType,
   taskExcludeParams: string[]
 ) => {
   const resParamList: any[] = [];
@@ -243,7 +207,7 @@ export const covertParametersByKeyAndConditions = (
             WarmTransitionType.IMMEDIATELY
           ) {
             tmpWarmAge = "1s";
-          } else if (userInputWarmAge && userInputWarmAge !== "0") {
+          } else if (userInputWarmAge !== "0") {
             tmpWarmAge = userInputWarmAge + "d";
           }
         }
@@ -310,106 +274,25 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
     changeRolloverSize,
     changeCompressionType,
     changeWarmSettings,
+    changeOSDomainCheckStatus,
+    domainCheckedStatus,
   } = props;
   const { t } = useTranslation();
-  const [loadingDomain, setLoadingDomain] = useState(false);
-  const [openSearchCluster, setOpenSearchCuster] = useState(
-    pipelineTask.params.esDomainId
-  );
-  const [domainOptionList, setDomainOptionList] = useState<SelectItem[]>([]);
-  const [showAdvanceSetting, setShowAdvanceSetting] = useState(false);
-
-  const getImportedESDomainList = async () => {
-    try {
-      setLoadingDomain(true);
-      changeLoadingDomain(true);
-      const resData: any = await appSyncRequestQuery(listImportedDomains);
-      const dataDomains: ImportedDomain[] = resData.data.listImportedDomains;
-      const tmpDomainList: SelectItem[] = [];
-      const userDefaultES: string =
-        localStorage.getItem(PIPELINE_TASK_ES_USER_DEFAULT) || "";
-      const tmpESIdList: string[] = [];
-      dataDomains.forEach((element) => {
-        tmpESIdList.push(element.id);
-        tmpDomainList.push({
-          name: element.domainName,
-          value: element.id,
-        });
-      });
-      setDomainOptionList(tmpDomainList);
-      // select user default cluster when multiple es
-      if (tmpESIdList.includes(userDefaultES)) {
-        setOpenSearchCuster(userDefaultES);
-      } else {
-        // select the only one es item
-        if (tmpDomainList.length === 1) {
-          setOpenSearchCuster(tmpDomainList[0].value);
-        }
-      }
-      setLoadingDomain(false);
-      changeLoadingDomain(false);
-    } catch (error) {
-      console.error(error);
-      changeLoadingDomain(false);
-    }
-  };
-
-  useEffect(() => {
-    getImportedESDomainList();
-  }, []);
-
-  const esSelectChanged = async (cluster: string) => {
-    console.info("cluster:", cluster);
-    const resData: any = await appSyncRequestQuery(getDomainDetails, {
-      id: cluster,
-    });
-    const dataDomain: DomainDetails = resData.data.getDomainDetails;
-    changeOpenSearchCluster(dataDomain);
-  };
-
-  useEffect(() => {
-    if (openSearchCluster) {
-      esSelectChanged(openSearchCluster);
-      localStorage.setItem(PIPELINE_TASK_ES_USER_DEFAULT, openSearchCluster);
-    }
-  }, [openSearchCluster]);
 
   return (
     <div>
       <PagePanel title={t("servicelog:cluster.specifyDomain")}>
         <div>
           <HeaderPanel title={t("servicelog:cluster.aosDomain")}>
-            <FormItem
-              optionTitle={t("servicelog:cluster.aosDomain")}
-              optionDesc={
-                <div>
-                  {t("servicelog:cluster.aosDomainDesc1")}
-                  <ExtLink to="/clusters/import-opensearch-cluster">
-                    {t("servicelog:cluster.aosDomainDesc2")}
-                  </ExtLink>
-                  {t("servicelog:cluster.aosDomainDesc3")}
-                </div>
-              }
-              errorText={
-                esDomainEmptyError ? t("servicelog:cluster.aosDomainError") : ""
-              }
-            >
-              <Select
-                placeholder={t("servicelog:cluster.selectOS")}
-                className="m-w-75p"
-                loading={loadingDomain}
-                optionList={domainOptionList}
-                value={openSearchCluster}
-                onChange={(event) => {
-                  setOpenSearchCuster(event.target.value);
-                  console.info("event.target.value:", event.target.value);
-                }}
-                hasRefresh
-                clickRefresh={() => {
-                  getImportedESDomainList();
-                }}
-              />
-            </FormItem>
+            <SelectOpenSearchDomain
+              changeLoadingDomain={changeLoadingDomain}
+              changeOpenSearchDomain={changeOpenSearchCluster}
+              openSearchCluster={pipelineTask.params.esDomainId}
+              esDomainEmptyError={esDomainEmptyError}
+              changeOSDomainCheckStatus={(status) => {
+                changeOSDomainCheckStatus(status);
+              }}
+            />
 
             <FormItem
               infoType={InfoBarTypes.SAMPLE_DASHBAORD}
@@ -441,38 +324,28 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
             </FormItem>
 
             <div>
-              <div
-                className="addtional-settings"
-                onClick={() => {
-                  setShowAdvanceSetting(!showAdvanceSetting);
-                }}
+              <ExpandableSection
+                defaultExpanded={false}
+                headerText={t("servicelog:cluster.additionalSetting")}
               >
-                <i className="icon">
-                  {showAdvanceSetting && <ArrowDropDownIcon fontSize="large" />}
-                  {!showAdvanceSetting && (
-                    <ArrowDropDownIcon
-                      className="reverse-90"
-                      fontSize="large"
-                    />
-                  )}
-                </i>
-                {t("servicelog:cluster.additionalSetting")}
-              </div>
-
-              <div className={showAdvanceSetting ? "" : "hide"}>
                 <>
                   <FormItem
                     optionTitle={t("servicelog:cluster.indexPrefix")}
                     optionDesc={`${t("servicelog:cluster.indexPrefixDesc1")} ${
                       ServiceTypeDescMap[taskType].desc
                     }${t("servicelog:cluster.indexPrefixDesc2")}`}
-                    errorText={
-                      aosInputValidRes.indexEmptyError
-                        ? t("applog:create.ingestSetting.indexNameError")
-                        : aosInputValidRes.indexNameFormatError
-                        ? t("applog:create.ingestSetting.indexNameFormatError")
-                        : ""
-                    }
+                    errorText={defaultTo(
+                      ternary(
+                        aosInputValidRes.indexEmptyError,
+                        t("applog:create.ingestSetting.indexNameError"),
+                        ""
+                      ),
+                      ternary(
+                        aosInputValidRes.indexNameFormatError,
+                        t("applog:create.ingestSetting.indexNameFormatError"),
+                        ""
+                      )
+                    )}
                   >
                     <div className="flex align-center m-w-75p">
                       <div style={{ flex: 1 }}>
@@ -522,9 +395,18 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
                   <FormItem
                     optionTitle={t("servicelog:cluster.replicaNum")}
                     optionDesc={t("servicelog:cluster.replicaNumDesc")}
+                    infoText={
+                      domainCheckedStatus?.multiAZWithStandbyEnabled
+                        ? t("cluster:domain.standByTips")
+                        : ""
+                    }
                   >
                     <div className="m-w-75p">
                       <Select
+                        disabled={
+                          domainCheckedStatus?.multiAZWithStandbyEnabled ??
+                          false
+                        }
                         optionList={REPLICA_COUNT_LIST}
                         value={pipelineTask.params.replicaNumbers}
                         onChange={(event) => {
@@ -589,7 +471,7 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
                     />
                   </FormItem>
                 </>
-              </div>
+              </ExpandableSection>
             </div>
           </HeaderPanel>
 
@@ -616,9 +498,9 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
                 }
               >
                 <>
-                  {WarmLogSettingsList.map((element, key) => {
+                  {WarmLogSettingsList.map((element, index) => {
                     return (
-                      <div key={key}>
+                      <div key={identity(index)}>
                         <label>
                           <input
                             disabled={!pipelineTask.params.warmEnable}
@@ -672,11 +554,12 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
                   </div>
                 }
                 errorText={
-                  aosInputValidRes?.coldLogInvalidError
+                  (aosInputValidRes?.coldLogInvalidError
                     ? t("applog:create.specifyOS.coldLogInvalid")
-                    : aosInputValidRes.coldMustLargeThanWarm
+                    : "") ||
+                  (aosInputValidRes.coldMustLargeThanWarm
                     ? t("applog:create.specifyOS.coldLogMustThanWarm")
-                    : ""
+                    : "")
                 }
               >
                 <TextInput
@@ -697,13 +580,14 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
                 optionTitle={t("servicelog:cluster.logRetention")}
                 optionDesc={t("servicelog:cluster.logRetentionDesc")}
                 errorText={
-                  aosInputValidRes?.logRetentionInvalidError
+                  (aosInputValidRes?.logRetentionInvalidError
                     ? t("applog:create.specifyOS.logRetentionError")
-                    : aosInputValidRes.logRetentionMustThanColdAndWarm
+                    : "") ||
+                  (aosInputValidRes.logRetentionMustThanColdAndWarm
                     ? t(
                         "applog:create.specifyOS.logRetentionMustLargeThanCodeAndWarm"
                       )
-                    : ""
+                    : "")
                 }
               >
                 <TextInput

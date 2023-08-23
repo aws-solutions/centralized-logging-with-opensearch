@@ -14,27 +14,60 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React, { useState, useEffect } from "react";
-import RefreshIcon from "@material-ui/icons/Refresh";
 import { LogAgentStatus, TagFilterInput } from "API";
-import { DEFAULT_AGENT_VERSION } from "assets/js/const";
-import { buildEC2LInk } from "assets/js/utils";
+import { DEFAULT_AGENT_VERSION, buildSolutionDocsLink } from "assets/js/const";
+import { buildEC2LInk, formatLocalTime, ternary } from "assets/js/utils";
 import Button from "components/Button";
+import Switch from "components/Switch";
 import LoadingText from "components/LoadingText";
 import Status from "components/Status/Status";
 import { SelectType, TablePanel } from "components/TablePanel";
 import TagFilter from "components/TagFilter";
 import TextInput from "components/TextInput";
 import { useTranslation } from "react-i18next";
-import { InstanceWithStatus } from "./InstanceGroupComp";
 import Swal from "sweetalert2";
 import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
 import { requestInstallLogAgent } from "graphql/mutations";
 import { AmplifyConfigType } from "types";
 import { useSelector } from "react-redux";
-import { AppStateProps } from "reducer/appReducer";
-import { getLogAgentStatus, listInstances } from "graphql/queries";
+import { getInstanceAgentStatus, listInstances } from "graphql/queries";
+import { handleErrorMessage } from "assets/js/alert";
+import ClickableRichTooltip from "components/ClickableRichTooltip";
+import ExtLink from "components/ExtLink";
+import cloneDeep from "lodash.clonedeep";
+import { RootState } from "reducer/reducers";
+import { defaultTo } from "lodash";
+import ButtonRefresh from "components/ButtonRefresh";
 
 const PAGE_SIZE = 50;
+const REFRESH_INTERVAL = 180000; // 3 minutes to refresh
+interface InstanceItemType {
+  computerName: string;
+  id: string;
+  ipAddress: string;
+  name: string;
+  platformName: string;
+}
+
+interface ListInstanceResponse {
+  instances: InstanceItemType[];
+  nextToken: string;
+}
+
+interface InstanceStatusType {
+  curlOutput: string;
+  instanceId: string;
+  invocationOutput: string;
+  status: string;
+}
+
+interface CommandResponse {
+  commandId: string;
+  instanceAgentStatusList: InstanceStatusType[];
+}
+
+export type InstanceWithStatusType = Partial<InstanceItemType> &
+  Partial<InstanceStatusType>;
 
 interface InstanceTableProps {
   isASGList?: boolean;
@@ -44,6 +77,8 @@ interface InstanceTableProps {
   setCreateDisabled: (disable: boolean) => void;
   defaultDisabledIds?: (string | null)[];
 }
+
+let intervalId: any = 0;
 
 const InstanceTable: React.FC<InstanceTableProps> = (
   props: InstanceTableProps
@@ -58,121 +93,165 @@ const InstanceTable: React.FC<InstanceTableProps> = (
   } = props;
   const { t } = useTranslation();
   const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: AppStateProps) => state.amplifyConfig
+    (state: RootState) => state.app.amplifyConfig
   );
   const [loadingData, setLoadingData] = useState(false);
   const [loadingRefresh, setLoadingRefresh] = useState(false);
+  const [instanceWithStatusList, setInstanceWithStatusList] = useState<
+    InstanceWithStatusType[]
+  >([]);
+
+  const [loadedInstanceList, setLoadedInstanceList] = useState<
+    InstanceItemType[]
+  >([]);
+
   const [loadingInstall, setLoadingInstall] = useState(false);
-  const [instanceList, setInstanceList] = useState<InstanceWithStatus[]>([]);
   const [tagFilter, setTagFilter] = useState<TagFilterInput[]>(
     defaultTagFilter || []
   );
   const [selectInstanceList, setSelectInstanceList] = useState<
-    InstanceWithStatus[]
+    InstanceWithStatusType[]
   >([]);
-  const [showInstanceList, setShowInstanceList] = useState<
-    InstanceWithStatus[]
-  >([]);
-  const [startCheckStatus, setStartCheckStatus] = useState(false);
-  const [getStatusInterval, setGetStatusInterval] = useState<any>();
+  const [enableAutoRefresh, setEnableAutoRefresh] = useState(false);
   const [searchParams, setSearchParams] = useState("");
-  const [reloadTableData, setReloadTableData] = useState(false);
   const [hasMoreInstance, setHasMoreInstance] = useState(false);
   const [nextToken, setNextToken] = useState("");
-  const [loadingMore, setLoadingMore] = useState(false);
   const [loadmoreIsClick, setLoadmoreIsClick] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [lastUpdateTime, setLastUpdateTime] = useState("");
 
-  const getMoreInstanceWithStatus = async () => {
-    if (nextToken) {
+  const [showInstanceList, setShowInstanceList] = useState<
+    InstanceWithStatusType[]
+  >([]);
+
+  // Get All Instance Status
+  const getAllInstanceWithStatus = async (
+    refresh = false,
+    isLoadingMore = false
+  ) => {
+    ternary(
+      !refresh,
+      () => {
+        setLoadingData(true);
+        setLoadedInstanceList([]);
+        setInstanceWithStatusList([]);
+      },
+      () => {
+        setCreateDisabled(true);
+      }
+    )();
+    if (isLoadingMore) {
       setLoadingMore(true);
-      setLoadmoreIsClick(true);
-      const moreInstanceData: any = await appSyncRequestQuery(listInstances, {
+    }
+    setLoadingRefresh(true);
+    let instanceIDs = [];
+    let dataInstanceList: InstanceItemType[] = [];
+    let instanceListNextToken = "";
+    if (!refresh || isLoadingMore) {
+      if (isLoadingMore) {
+        setLoadmoreIsClick(true);
+      }
+      const resInstanceData = await appSyncRequestQuery(listInstances, {
         maxResults: PAGE_SIZE,
-        nextToken: nextToken,
+        nextToken: defaultTo(nextToken, ""),
         tags: tagFilter,
         accountId: accountId,
         region: amplifyConfig.aws_project_region,
       });
-      const dataInstanceList: InstanceWithStatus[] =
-        moreInstanceData.data.listInstances.instances;
-      console.info("moreInstanceData:", moreInstanceData);
-      if (moreInstanceData.data.listInstances.nextToken) {
-        setHasMoreInstance(true);
-        setNextToken(moreInstanceData.data.listInstances.nextToken);
+      const instanceRespData: ListInstanceResponse =
+        resInstanceData.data.listInstances;
+      if (isLoadingMore) {
+        dataInstanceList = [
+          ...loadedInstanceList,
+          ...instanceRespData.instances,
+        ];
+        setLoadedInstanceList(dataInstanceList);
       } else {
+        dataInstanceList = instanceRespData.instances;
+        setLoadedInstanceList(instanceRespData.instances);
+      }
+      instanceListNextToken = instanceRespData.nextToken;
+      instanceIDs = dataInstanceList.map((instance) => instance.id);
+    } else {
+      instanceIDs = instanceWithStatusList.map((instance) => instance.id);
+    }
+    const statusCallResp = await appSyncRequestQuery(getInstanceAgentStatus, {
+      instanceIds: instanceIDs,
+      accountId: accountId,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    const statusData = await appSyncRequestQuery(getInstanceAgentStatus, {
+      instanceIds: instanceIDs,
+      commandId: statusCallResp.data.getInstanceAgentStatus.commandId,
+      accountId: accountId,
+    });
+
+    const instanceStatuResp: CommandResponse =
+      statusData.data.getInstanceAgentStatus;
+    const instanceStatusList = instanceStatuResp.instanceAgentStatusList;
+
+    const tmpInstanceWithStatus: InstanceWithStatusType[] = [];
+
+    let fetchStatusList: InstanceItemType[] | InstanceWithStatusType[] =
+      dataInstanceList;
+    if (refresh && !isLoadingMore) {
+      fetchStatusList = instanceWithStatusList;
+    }
+    for (const instanceInfo of fetchStatusList) {
+      let mergedObj;
+      // find same id object
+      const statusInfo = instanceStatusList?.find(
+        (status) => status?.instanceId === instanceInfo?.id
+      );
+      if (statusInfo) {
+        // found
+        mergedObj = { ...instanceInfo, ...statusInfo };
+      } else {
+        mergedObj = {
+          ...instanceInfo,
+          ...{
+            instanceId: instanceInfo?.id,
+            status: LogAgentStatus.Offline,
+            invocationOutput: t("resource:group.comp.defaultOfflineError"),
+            curlOutput: "",
+          },
+        };
+      }
+      // merge and push to template array
+      tmpInstanceWithStatus.push(mergedObj);
+    }
+
+    // Set Token after Load more and status
+    ternary(
+      instanceListNextToken,
+      () => {
+        setHasMoreInstance(true);
+        setNextToken(instanceListNextToken);
+      },
+      () => {
         setHasMoreInstance(false);
         setNextToken("");
       }
-      const tmpInstanceInfoList: InstanceWithStatus[] = [...instanceList];
-      await Promise.all(
-        dataInstanceList.map(async (item) => {
-          const statusData = await appSyncRequestQuery(getLogAgentStatus, {
-            instanceId: item.id,
-            accountId: accountId,
-          });
-          tmpInstanceInfoList.push({
-            ...item,
-            instanceStatus: statusData.data.getLogAgentStatus,
-          });
-        })
-      );
-      setLoadingMore(false);
-      setInstanceList(tmpInstanceInfoList);
-    }
-  };
+    )();
 
-  // Get All Instance Status
-  const getAllInstanceWithStatus = async (refresh = false) => {
-    if (!refresh) {
-      setInstanceList([]);
-      setSelectInstanceList([]);
-      setLoadingData(true);
-      setReloadTableData(true);
-    }
-    const resInstanceData: any = await appSyncRequestQuery(listInstances, {
-      maxResults: PAGE_SIZE,
-      nextToken: "",
-      tags: tagFilter,
-      accountId: accountId,
-      region: amplifyConfig.aws_project_region,
-    });
-    const dataInstanceList: InstanceWithStatus[] =
-      resInstanceData.data.listInstances.instances;
-    if (resInstanceData.data.listInstances.nextToken) {
-      setHasMoreInstance(true);
-      setNextToken(resInstanceData.data.listInstances.nextToken);
-    } else {
-      setHasMoreInstance(false);
-      setNextToken("");
-    }
-
-    const tmpInstanceInfoList: InstanceWithStatus[] = [];
-    await Promise.all(
-      dataInstanceList.map(async (item) => {
-        const statusData = await appSyncRequestQuery(getLogAgentStatus, {
-          instanceId: item.id,
-          accountId: accountId,
-        });
-        tmpInstanceInfoList.push({
-          ...item,
-          instanceStatus: statusData.data.getLogAgentStatus,
-        });
-      })
-    );
+    setInstanceWithStatusList(tmpInstanceWithStatus);
     setLoadingData(false);
-    setReloadTableData(false);
-    setInstanceList(tmpInstanceInfoList);
+    setLoadingRefresh(false);
+    setCreateDisabled(false);
+    setLoadingMore(false);
   };
 
   // Install Log Agent
   const installLogAgentByInstance = async () => {
     if (selectInstanceList.length <= 0) {
-      Swal.fire(t("oops"), t("resource:group.comp.selectInstance"), "warning");
+      Swal.fire(
+        t("oops") || "",
+        t("resource:group.comp.selectInstance") || "",
+        "warning"
+      );
       return;
     }
-    clearInterval(getStatusInterval);
-    setStartCheckStatus(false);
-    setCreateDisabled(true);
+    clearInterval(intervalId);
     try {
       setLoadingInstall(true);
       const installIds = selectInstanceList.map((instance) => instance.id);
@@ -186,93 +265,56 @@ const InstanceTable: React.FC<InstanceTableProps> = (
       );
       console.info("installRes:", installRes);
       setLoadingInstall(false);
-      setStartCheckStatus(true);
-      getAllInstanceStatus(selectInstanceList);
-      setCreateDisabled(false);
-    } catch (error) {
-      console.error(error);
-      setCreateDisabled(false);
+      setEnableAutoRefresh(true);
+    } catch (error: any) {
       setLoadingInstall(false);
+      setEnableAutoRefresh(true);
+      handleErrorMessage(error.message);
+      console.error(error);
     }
-  };
-
-  // Get Instance Status
-  const getAllInstanceStatus = async (
-    selInstanceListParam: InstanceWithStatus[]
-  ) => {
-    console.info("call getAllInstanceStatus");
-    setLoadingRefresh(true);
-    setCreateDisabled(true);
-    const tmpInstanceInfoList: InstanceWithStatus[] = [];
-    const checkedIdArr = selInstanceListParam.map((instance) => instance.id);
-    const tmpSelectInstanceList: InstanceWithStatus[] = [];
-    await Promise.all(
-      instanceList.map(async (item) => {
-        const statusData = await appSyncRequestQuery(getLogAgentStatus, {
-          instanceId: item.id,
-          accountId: accountId,
-        });
-        tmpInstanceInfoList.push({
-          ...item,
-          instanceStatus: statusData.data.getLogAgentStatus,
-        });
-        if (checkedIdArr.indexOf(item.id) >= 0) {
-          tmpSelectInstanceList.push({
-            ...item,
-            instanceStatus: statusData.data.getLogAgentStatus,
-          });
-        }
-      })
-    );
-    setCreateDisabled(false);
-    setLoadingRefresh(false);
-    setInstanceList(tmpInstanceInfoList);
-    changeInstanceSet(tmpSelectInstanceList);
   };
 
   // Get instance group list when page rendered.
   useEffect(() => {
+    setCreateDisabled(true);
+    clearInterval(intervalId);
     getAllInstanceWithStatus();
   }, [tagFilter, accountId]);
 
   useEffect(() => {
-    clearInterval(getStatusInterval);
-    setStartCheckStatus(false);
-  }, [accountId]);
-
-  // Auto Loop to check instance status
-  useEffect(() => {
-    let id: any = 0;
-    if (startCheckStatus) {
-      id = setInterval(() => {
-        getAllInstanceStatus(selectInstanceList);
-        setSelectInstanceList((prev) => {
-          getAllInstanceStatus([...prev]);
-          return prev;
-        });
-      }, 6000);
-      setGetStatusInterval(id);
+    if (enableAutoRefresh) {
+      setLastUpdateTime(
+        t("applog:installAgent.lastUpdateTime") +
+          formatLocalTime(new Date().toISOString())
+      );
+      getAllInstanceWithStatus(true);
+      intervalId = setInterval(() => {
+        getAllInstanceWithStatus(true);
+        setLastUpdateTime(
+          t("applog:installAgent.lastUpdateTime") +
+            formatLocalTime(new Date().toISOString())
+        );
+      }, REFRESH_INTERVAL);
     } else {
-      clearInterval(id);
-      clearInterval(getStatusInterval);
+      clearInterval(intervalId);
     }
-    return () => clearInterval(id);
-  }, [startCheckStatus]);
+    return () => clearInterval(intervalId);
+  }, [enableAutoRefresh]);
 
   useEffect(() => {
-    console.info("[selectInstanceList]CHANGED");
-    changeInstanceSet(selectInstanceList);
-  }, [selectInstanceList]);
-
-  useEffect(() => {
+    const cloneInstanceList = cloneDeep(instanceWithStatusList);
     setShowInstanceList(
-      instanceList
+      cloneInstanceList
         .filter((element) => {
-          return element.id.indexOf(searchParams) >= 0;
+          return (element?.id || "").indexOf(searchParams) >= 0;
         })
-        .sort((a, b) => (a.id > b.id ? 1 : -1))
+        .sort((a, b) =>
+          (a?.name?.toLowerCase() || "") > (b?.name?.toLowerCase() || "")
+            ? 1
+            : -1
+        )
     );
-  }, [instanceList, searchParams]);
+  }, [instanceWithStatusList, searchParams]);
 
   // add tag filter
   const addTag = (tag: TagFilterInput) => {
@@ -301,15 +343,86 @@ const InstanceTable: React.FC<InstanceTableProps> = (
     });
   };
 
+  const renderInstanceId = (data: InstanceWithStatusType) => {
+    return (
+      <a
+        target="_blank"
+        href={buildEC2LInk(amplifyConfig.aws_project_region, data.id || "")}
+        rel="noreferrer"
+      >
+        {data.id}
+      </a>
+    );
+  };
+
+  const renderAgentInstallStatus = (data: InstanceWithStatusType) => {
+    if (data.status !== LogAgentStatus.Not_Installed) {
+      if (data.status === LogAgentStatus.Installing) {
+        return <Status status={LogAgentStatus.Installing} />;
+      } else {
+        return DEFAULT_AGENT_VERSION;
+      }
+    } else {
+      return "-";
+    }
+  };
+
+  const renderAgentStatus = (data: InstanceWithStatusType) => {
+    if (data.status !== LogAgentStatus.Not_Installed) {
+      if (data.status === LogAgentStatus.Installing) {
+        return "-";
+      } else {
+        return (
+          <ClickableRichTooltip
+            content={
+              <div style={{ maxWidth: "30em" }}>
+                {t("applog:installAgent.invocationOutputFirst")}
+                {data.invocationOutput}
+                {t("applog:installAgent.invocationOutputMid")}
+                {
+                  <ExtLink to={buildSolutionDocsLink("troubleshooting.html")}>
+                    {t("doc.guide")}
+                  </ExtLink>
+                }{" "}
+                {t("applog:installAgent.invocationOutputLast")}
+              </div>
+            }
+            placement="left"
+            disabled={
+              data.status !== LogAgentStatus.Offline ||
+              data.invocationOutput === ""
+            }
+          >
+            <div className="flex">
+              <Status
+                isLink={data.status === LogAgentStatus.Offline}
+                status={data.status || ""}
+              />
+              {loadingRefresh && (
+                <div className="ml-5">
+                  <LoadingText />
+                </div>
+              )}
+            </div>
+          </ClickableRichTooltip>
+        );
+      }
+    } else {
+      return "-";
+    }
+  };
+
   return (
     <div>
       <div className="pb-20">
         <TablePanel
+          trackId="id"
           defaultDisabledIds={defaultDisabledIds}
           title={t("resource:group.comp.instances.title")}
-          isReload={reloadTableData}
+          // isReload={reloadTableData}
           changeSelected={(item) => {
             setSelectInstanceList(item);
+            changeInstanceSet(item);
           }}
           loading={loadingData}
           selectType={isASGList ? SelectType.NONE : SelectType.CHECKBOX}
@@ -319,33 +432,20 @@ const InstanceTable: React.FC<InstanceTableProps> = (
                   {
                     id: "Name",
                     header: t("resource:group.comp.instances.name"),
-                    cell: (e: InstanceWithStatus) => {
+                    cell: (e: InstanceWithStatusType) => {
                       return e.name;
                     },
                   },
                   {
                     id: "instanceId",
                     header: t("resource:group.comp.instances.instanceId"),
-                    cell: (e: InstanceWithStatus) => {
-                      return (
-                        <a
-                          target="_blank"
-                          href={buildEC2LInk(
-                            amplifyConfig.aws_project_region,
-                            e.id
-                          )}
-                          rel="noreferrer"
-                        >
-                          {e.id}
-                        </a>
-                      );
-                    },
+                    cell: (e: InstanceWithStatusType) => renderInstanceId(e),
                   },
 
                   {
                     id: "ip",
                     header: t("resource:group.comp.instances.primaryIp"),
-                    cell: (e: InstanceWithStatus) => {
+                    cell: (e: InstanceWithStatusType) => {
                       return e.ipAddress;
                     },
                   },
@@ -354,99 +454,74 @@ const InstanceTable: React.FC<InstanceTableProps> = (
                   {
                     id: "Name",
                     header: t("resource:group.comp.instances.name"),
-                    cell: (e: InstanceWithStatus) => {
+                    cell: (e: InstanceWithStatusType) => {
                       return e.name;
                     },
                   },
                   {
                     id: "instanceId",
                     header: t("resource:group.comp.instances.instanceId"),
-                    cell: (e: InstanceWithStatus) => {
-                      return (
-                        <a
-                          target="_blank"
-                          href={buildEC2LInk(
-                            amplifyConfig.aws_project_region,
-                            e.id
-                          )}
-                          rel="noreferrer"
-                        >
-                          {e.id}
-                        </a>
-                      );
-                    },
+                    cell: (e: InstanceWithStatusType) => renderInstanceId(e),
                   },
 
                   {
                     id: "ip",
                     header: t("resource:group.comp.instances.primaryIp"),
-                    cell: (e: InstanceWithStatus) => {
+                    cell: (e: InstanceWithStatusType) => {
                       return e.ipAddress;
                     },
                   },
                   {
                     id: "agent",
                     header: t("resource:group.comp.instances.logAgent"),
-                    cell: (e: InstanceWithStatus) => {
-                      return e.instanceStatus !==
-                        LogAgentStatus.Not_Installed ? (
-                        e.instanceStatus === LogAgentStatus.Installing ? (
-                          <Status status={LogAgentStatus.Installing} />
-                        ) : (
-                          DEFAULT_AGENT_VERSION
-                        )
-                      ) : (
-                        "-"
-                      );
-                    },
+                    cell: (e: InstanceWithStatusType) =>
+                      renderAgentInstallStatus(e),
                   },
                   {
                     id: "pendingStatus",
-                    header: t("resource:group.comp.instances.pendingStatus"),
-                    cell: (e: InstanceWithStatus) => {
-                      return e.instanceStatus !==
-                        LogAgentStatus.Not_Installed ? (
-                        e.instanceStatus === LogAgentStatus.Installing ? (
-                          "-"
-                        ) : (
-                          <Status status={e.instanceStatus || ""} />
-                        )
-                      ) : (
-                        "-"
-                      );
-                    },
+                    width: 200,
+                    header: (
+                      <div>
+                        {t("resource:group.comp.instances.pendingStatus")}
+                        <div className="last-update-time">
+                          {lastUpdateTime}{" "}
+                        </div>
+                      </div>
+                    ),
+                    cell: (e: InstanceWithStatusType) => renderAgentStatus(e),
                   },
                 ]
           }
           items={showInstanceList}
           actions={
             isASGList ? (
-              <div></div>
+              <div className="flex">
+                <Switch
+                  isOn={enableAutoRefresh}
+                  handleToggle={() => {
+                    setEnableAutoRefresh(!enableAutoRefresh);
+                  }}
+                  label={" "}
+                />
+                <div className="ml-5 font-bold">
+                  {t("applog:installAgent.refreshSwitch")}
+                </div>
+              </div>
             ) : (
               <div>
                 <Button
                   btnType="icon"
-                  disabled={
-                    loadingData ||
-                    loadingRefresh ||
-                    loadingInstall ||
-                    startCheckStatus
-                  }
+                  disabled={loadingData || loadingRefresh || loadingInstall}
                   onClick={() => {
-                    if (!startCheckStatus) {
-                      getAllInstanceWithStatus();
-                    }
+                    getAllInstanceWithStatus(true);
                   }}
                 >
-                  {loadingData || loadingRefresh ? (
-                    <LoadingText />
-                  ) : (
-                    <RefreshIcon fontSize="small" />
-                  )}
+                  <ButtonRefresh loading={loadingData || loadingRefresh} />
                 </Button>
                 <Button
                   btnType="primary"
                   loading={loadingInstall}
+                  disabled={loadingData || loadingInstall}
                   onClick={() => {
                     installLogAgentByInstance();
                   }}
@@ -478,8 +553,26 @@ const InstanceTable: React.FC<InstanceTableProps> = (
               </div>
             )
           }
-          pagination={<div></div>}
+          pagination={
+            <>
+              {!isASGList && (
+                <div className="flex" style={{ paddingTop: "104px" }}>
+                  <Switch
+                    isOn={enableAutoRefresh}
+                    handleToggle={() => {
+                      setEnableAutoRefresh(!enableAutoRefresh);
+                    }}
+                    label={" "}
+                  />
+                  <div className="ml-5 font-bold">
+                    {t("applog:installAgent.refreshSwitch")}
+                  </div>
+                </div>
+              )}
+            </>
+          }
         />
+
         {!hasMoreInstance && !loadingData && loadmoreIsClick && (
           <div className="no-more-data">{t("noMoreInstance")}</div>
         )}
@@ -490,7 +583,7 @@ const InstanceTable: React.FC<InstanceTableProps> = (
               loadingColor="#666"
               loading={loadingMore}
               onClick={() => {
-                getMoreInstanceWithStatus();
+                getAllInstanceWithStatus(true, true);
               }}
             >
               {t("button.loadMoreInstance")}

@@ -14,14 +14,14 @@ You can create a log ingestion into Amazon OpenSearch Service either by using th
 4. In the **AWS Services** section, choose **AWS Lambda**.
 5. Choose **Next**.
 6. Under **Specify settings**, choose the Lambda function from the dropdown list. (Optional) If you are ingesting logs from another account, select a [linked account](../link-account/index.md) from the **Account** dropdown first.
-9. Choose **Next**.
-10. In the **Specify OpenSearch domain** section, select an imported domain for **Amazon OpenSearch domain**.
-11. Choose **Yes** for **Sample dashboard** if you want to ingest an associated templated Amazon OpenSearch Service dashboard.
-12. You can change the **Index Prefix** of the target Amazon OpenSearch Service index if needed. The default prefix is the Lambda function name.
-13. In the **Log Lifecycle** section, input the number of days to manage the Amazon OpenSearch Service index lifecycle. The Centralized Logging with OpenSearch will create the associated [Index State Management (ISM)](https://opensearch.org/docs/latest/im-plugin/ism/index/) policy automatically for this pipeline.
-14. Choose **Next**.
-15. Add tags if needed.
-16. Choose **Create**.
+7. Choose **Next**.
+8. In the **Specify OpenSearch domain** section, select an imported domain for **Amazon OpenSearch domain**.
+9. Choose **Yes** for **Sample dashboard** if you want to ingest an associated templated Amazon OpenSearch Service dashboard.
+10. You can change the **Index Prefix** of the target Amazon OpenSearch Service index if needed. The default prefix is the Lambda function name.
+11. In the **Log Lifecycle** section, input the number of days to manage the Amazon OpenSearch Service index lifecycle. The Centralized Logging with OpenSearch will create the associated [Index State Management (ISM)](https://opensearch.org/docs/latest/im-plugin/ism/index/) policy automatically for this pipeline.
+12. Choose **Next**.
+13. Add tags if needed.
+14. Choose **Create**.
 
 ### Using the CloudFormation Stack
 This automated AWS CloudFormation template deploys the *Centralized Logging with OpenSearch - Lambda Log Ingestion* solution in the AWS Cloud.
@@ -35,12 +35,24 @@ This automated AWS CloudFormation template deploys the *Centralized Logging with
 include-markdown "include-cw-cfn-common.md"
 %}
 
-## Sample Dashboard
+## View dashboard
+
+The dashboard includes the following visualizations.
+
+| Visualization Name | Source Field                                                                           | Description                                                                                                       |
+| ------------------ | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Lambda Events      | <ul><li> log event </li></ul>                                                          | Presents a chart that displays the distribution of events over time.                                              |
+| Log Accounts       | <ul><li> owner </li></ul>                                                              | Shows a pie chart representing the proportion of log events from different AWS accounts (owners).                 |
+| Log Groups         | <ul><li> log_group </li></ul>                                                          | Displays a pie chart depicting the distribution of log events among various log groups in the Lambda environment. |
+| Log-List           | <ul><li> time </li><li> log_group </li><li> log_stream </li><li> log_detail </li></ul> | Provides a detailed list of log events, including timestamps, log groups, log streams, and log details.           |
+
+### Sample Dashboard
+
 {%
-include-markdown "include-dashboard.md"
+include-markdown "../include-dashboard.md"
 %}
 
 [![lambda-db]][lambda-db]
 
-
 [lambda-db]: ../../images/dashboards/lambda-db.png
+

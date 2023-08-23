@@ -1,7 +1,7 @@
 Deploying this solution with the default parameters builds the following environment in the AWS Cloud.
 
 [![arch]][arch]
-_Figure 1: Centralized Logging with OpenSearch architecture_
+**_Centralized Logging with OpenSearch architecture_**
 
 This solution deploys the AWS CloudFormation template in your AWS Cloud account and completes the following settings.
 
@@ -27,6 +27,8 @@ This solution deploys the AWS CloudFormation template in your AWS Cloud account 
 
 11. Service log pipelines read, parse, process AWS service logs and ingest them into Amazon OpenSearch domains.
 
+After deploying the solution, you can use [AWS WAF](https://aws.amazon.com/waf/) to protect CloudFront or AppSync. Moreover, you can follow this [guide](https://docs.aws.amazon.com/appsync/latest/devguide/WAF-Integration.html) to configure your WAF settings to prevent GraphQL schema introspection.
+
 This solution supports two types of log pipelines: **Service Log Analytics Pipeline** and **Application Log Analytics Pipeline**.
 
 ## Service log analytics pipeline
@@ -37,7 +39,6 @@ This solution ingests different AWS service logs using different workflows.
 
 !!! note "Note"
     Centralized Logging with OpenSearch supports [cross-account log ingestion](./link-account/index.md). If you want to ingest the logs from another AWS account, the resources in the **Sources** group in the architecture diagram will be in another account.
-
 ### Logs through Amazon S3
 
 This section is applicable to Amazon S3 access logs, CloudFront standard logs, CloudTrail logs (S3), Application Load Balancing access logs, WAF logs, VPC Flow logs (S3), AWS Config logs, Amazon RDS/Aurora logs, and AWS Lambda Logs.
@@ -50,14 +51,14 @@ The workflow supports two scenarios:
     In this scenario, the service directly sends logs to Amazon S3.
 
     [![arch-service-pipeline-s3]][arch-service-pipeline-s3]
-    _Figure 2: Amazon S3 based service log pipeline architecture_
+    **_Amazon S3 based service log pipeline architecture_**
 
 - **Logs to Amazon S3 via Kinesis Data Firehose**
 
     In this scenario, the service cannot directly put their logs to Amazon S3. The logs are sent to Amazon CloudWatch, and Kinesis Data Firehose ([KDF]) is used to subscribe the logs from CloudWatch Log Group and then put logs into Amazon S3.
 
     [![arch-service-pipeline-kdf-to-s3]][arch-service-pipeline-kdf-to-s3]
-    _Figure 3: Amazon S3 (via KDF) based service log pipeline architecture_
+    **_Amazon S3 (via KDF) based service log pipeline architecture_**
 
 The log pipeline runs the following workflow:
 
@@ -83,18 +84,18 @@ This section is applicable to CloudFront real-time logs, CloudTrail logs (CloudW
 The workflow supports two scenarios:
 
 - **Logs to KDS directly**
-    
+
     In this scenario, the service directly streams logs to Amazon Kinesis Data Streams ([KDS]).
 
     [![arch-service-pipeline-kds]][arch-service-pipeline-kds]
-    _Figure 4: Amazon KDS based service log pipeline architecture_
+    **_Amazon KDS based service log pipeline architecture_**
 
 - **Logs to KDS via subscription**
 
     In this scenario, the service delivers the logs to CloudWatch Log Group, and then CloudWatch Logs stream the logs in real-time to [KDS] as the subscription destination.
 
     [![arch-service-pipeline-cwl-to-kds]][arch-service-pipeline-cwl-to-kds]
-    _Figure 5: Amazon KDS (via subscription) based service log pipeline architecture_
+    **_Amazon KDS (via subscription) based service log pipeline architecture_**
 
 The log pipeline runs the following workflow:
 
@@ -115,7 +116,7 @@ For cross-account ingestion, the AWS Services store logs on Amazon CloudWatch lo
 
 ## Application log analytics pipeline
 
-Centralized Logging with OpenSearch supports log analysis for application logs, such as Nginx/Apache HTTP Server logs or custom application logs. 
+Centralized Logging with OpenSearch supports log analysis for application logs, such as Nginx/Apache HTTP Server logs or custom application logs.
 
 !!! note "Note"
     Centralized Logging with OpenSearch supports [cross-account log ingestion](./link-account/index.md). If you want to ingest logs from the same account, the resources in the **Sources** group will be in the same account as your Centralized Logging with OpenSearch account.
@@ -124,11 +125,11 @@ Centralized Logging with OpenSearch supports log analysis for application logs, 
 ### Logs from Amazon EC2 / Amazon EKS
 
 [![arch-app-log-pipeline]][arch-app-log-pipeline]
-_Figure 6: Application log pipeline architecture for EC2/EKS_
+**_Application log pipeline architecture for EC2/EKS_**
 
 The log pipeline runs the following workflow:
 
-1. [Fluent Bit](https://fluentbit.io/) works as the underlying log agent to collect logs from application servers and send them to an optional [Log Buffer](./applications/index.md#log-buffer), or ingest into OpenSearch domain directly. 
+1. [Fluent Bit](https://fluentbit.io/) works as the underlying log agent to collect logs from application servers and send them to an optional [Log Buffer](./applications/index.md#log-buffer), or ingest into OpenSearch domain directly.
 
 2. The Log Buffer triggers the Lambda (Log Processor) to run.
 
@@ -143,8 +144,8 @@ The log pipeline runs the following workflow:
     1. Make sure your Syslog generator/sender's subnet is connected to Centralized Logging with OpenSearch' **two** private subnets. You need to use VPC [Peering Connection][peering-connection] or [Transit Gateway][tgw] to connect these VPCs.
     2. The NLB together with the ECS containers in the architecture diagram will be provisioned only when you create a Syslog ingestion and be automated deleted when there is no Syslog ingestion.
 
-[![arch-syslog-pipeline]][arch-syslog-pipeline]     
-_Figure 7: Application log pipeline architecture for Syslog_
+[![arch-syslog-pipeline]][arch-syslog-pipeline]
+**_Application log pipeline architecture for Syslog_**
 
 1. Syslog client (like [Rsyslog][rsyslog]) send logs to a Network Load Balancer (NLB) in Centralized Logging with OpenSearch's private subnets, and NLB routes to the ECS containers running Syslog servers.
 
@@ -176,7 +177,6 @@ _Figure 7: Application log pipeline architecture for Syslog_
 [arch-service-pipeline-kds]: ../images/architecture/service-pipeline-kds.svg
 [arch-service-pipeline-cwl-to-kds]: ../images/architecture/service-pipeline-cwl-to-kds.svg
 [arch-app-log-pipeline]: ../images/architecture/app-log-pipeline-ec2-eks.svg
-[arch-eks-aos-pipeline]: ../images/architecture/eks-aos-pipeline.svg
 [arch-syslog-pipeline]: ../images/architecture/app-log-pipeline-syslog.svg
 [peering-connection]: https://docs.aws.amazon.com/vpc/latest/peering/working-with-vpc-peering.html
 [tgw]: https://docs.aws.amazon.com/vpc/latest/tgw/what-is-transit-gateway.html

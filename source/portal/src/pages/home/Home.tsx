@@ -19,7 +19,7 @@ import { useTranslation } from "react-i18next";
 import "./home.scss";
 import Button from "components/Button";
 import HeaderPanel from "components/HeaderPanel";
-import { useHistory } from "react-router";
+import { useNavigate } from "react-router";
 import SideMenu from "components/SideMenu";
 import {
   buildSolutionDocsLink,
@@ -54,7 +54,7 @@ const HomeSelectOptions = [
 
 const Home: React.FC = () => {
   const [createType, setCreateType] = useState<string>(CreateType.Domain);
-  const history = useHistory();
+  const navigate = useNavigate();
   const { t } = useTranslation();
 
   return (
@@ -120,9 +120,9 @@ const Home: React.FC = () => {
           <div className="home-content-right">
             <div className="get-start-box">
               <div className="start-title">{t("home:getStarted.title")}</div>
-              {HomeSelectOptions.map((element, index) => {
+              {HomeSelectOptions.map((element) => {
                 return (
-                  <div key={index} className="home-select-item">
+                  <div key={element.title} className="home-select-item">
                     <label className="flex">
                       <div>
                         <input
@@ -149,9 +149,7 @@ const Home: React.FC = () => {
                   <Button
                     btnType="primary"
                     onClick={() => {
-                      history.push({
-                        pathname: "/clusters/import-opensearch-cluster",
-                      });
+                      navigate("/clusters/import-opensearch-cluster");
                     }}
                   >
                     {t("button.importDomain")}
@@ -161,9 +159,7 @@ const Home: React.FC = () => {
                   <Button
                     btnType="primary"
                     onClick={() => {
-                      history.push({
-                        pathname: "/log-pipeline/service-log/create",
-                      });
+                      navigate("/log-pipeline/service-log/create");
                     }}
                   >
                     {t("button.createIngestion")}
@@ -173,9 +169,7 @@ const Home: React.FC = () => {
                   <Button
                     btnType="primary"
                     onClick={() => {
-                      history.push({
-                        pathname: "/log-pipeline/application-log/create",
-                      });
+                      navigate("/log-pipeline/application-log/create");
                     }}
                   >
                     {t("button.createIngestion")}

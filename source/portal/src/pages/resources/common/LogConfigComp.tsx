@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React from "react";
+import React, { Ref } from "react";
 import FormItem from "components/FormItem";
 import TextInput from "components/TextInput";
 import Select from "components/Select";
@@ -24,8 +24,8 @@ import {
   SYS_LOG_PARSER_LIST,
 } from "assets/js/const";
 import {
-  LogConf,
   LogConfFilterInput,
+  LogConfig,
   LogSourceType,
   LogType,
   MultiLineLogParser,
@@ -34,23 +34,27 @@ import {
 } from "API";
 import TextArea from "components/TextArea";
 import HeaderPanel from "components/HeaderPanel";
-import SampleLogParsing, { RegexListType } from "./SampleLogParsing";
+import SampleLogParsing, {
+  RegexListType,
+  SampleLogParsingRefType,
+} from "./SampleLogParsing";
 import { ActionType, InfoBarTypes } from "reducer/appReducer";
 import { useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 import LoadingText from "components/LoadingText";
 import ConfigFilter from "./ConfigFilter";
 import { OptionType } from "components/AutoComplete/autoComplete";
+import { ternary } from "assets/js/utils";
 
 export interface ProcessorFilterRegexInputExt
   extends Omit<ProcessorFilterRegexInput, "filters"> {
   filters: LogConfFilterInput[];
 }
 
-export interface ExLogConf extends Omit<LogConf, "processorFilterRegex"> {
+export interface ExLogConf extends Omit<LogConfig, "filterConfigMap"> {
   smapleLogDateFormatStr?: string;
   regexKeyList?: RegexListType[];
-  processorFilterRegex?: ProcessorFilterRegexInput;
+  filterConfigMap?: ProcessorFilterRegexInput;
   selectKeyList?: OptionType[];
 }
 
@@ -74,6 +78,9 @@ interface LogConfigProps {
   showNameRequiredError: boolean;
   showTypeRequiedError: boolean;
   userLogFormatError: boolean;
+  userLogFormatErrorMsg?: string;
+  syslogParserError?: boolean;
+  regexErrorMsg?: string;
   sampleLogRequiredError: boolean;
   isLoading: boolean;
   sampleLogInvalid: boolean;
@@ -83,10 +90,12 @@ interface LogConfigProps {
   changeFilterRegex: (filter: ProcessorFilterRegexInput) => void;
   changeSelectKeyList: (list: OptionType[]) => void;
   changeTimeOffset: (offset: string) => void;
+  sampleLogParsingRef?: Ref<SampleLogParsingRefType>;
 }
 
 const LogConfigComp: React.FC<LogConfigProps> = (props: LogConfigProps) => {
   const {
+    pageType,
     headerTitle,
     logSourceType,
     curConfig,
@@ -100,6 +109,7 @@ const LogConfigComp: React.FC<LogConfigProps> = (props: LogConfigProps) => {
     showNameRequiredError,
     showTypeRequiedError,
     userLogFormatError,
+    syslogParserError,
     sampleLogRequiredError,
     isLoading,
     sampleLogInvalid,
@@ -116,9 +126,9 @@ const LogConfigComp: React.FC<LogConfigProps> = (props: LogConfigProps) => {
   return (
     <div>
       <HeaderPanel title={headerTitle}>
-        {isLoading ? (
-          <LoadingText />
-        ) : (
+        {ternary(
+          isLoading,
+          <LoadingText />,
           <div>
             <FormItem
               optionTitle={t("resource:config.common.configName")}
@@ -130,8 +140,9 @@ const LogConfigComp: React.FC<LogConfigProps> = (props: LogConfigProps) => {
               }
             >
               <TextInput
+                disabled={pageType === PageType.Edit}
                 className="m-w-75p"
-                value={curConfig?.confName || ""}
+                value={curConfig?.name || ""}
                 onChange={(event) => {
                   changeLogConfName && changeLogConfName(event.target.value);
                 }}
@@ -154,6 +165,7 @@ const LogConfigComp: React.FC<LogConfigProps> = (props: LogConfigProps) => {
             >
               <Select
                 isI18N
+                disabled={pageType === PageType.Edit}
                 className="m-w-45p"
                 optionList={
                   logSourceType === LogSourceType.Syslog
@@ -176,13 +188,16 @@ const LogConfigComp: React.FC<LogConfigProps> = (props: LogConfigProps) => {
               <FormItem
                 optionTitle={t("resource:config.common.parser")}
                 optionDesc={t("resource:config.common.parserDesc")}
+                errorText={
+                  syslogParserError ? t("error.syslogParserError") : ""
+                }
               >
                 <Select
+                  disabled={pageType === PageType.Edit}
                   className="m-w-45p"
                   optionList={SYS_LOG_PARSER_LIST}
                   value={curConfig?.syslogParser || ""}
                   onChange={(event) => {
-                    console.info("event:", event);
                     changeSyslogParser &&
                       changeSyslogParser(event.target.value);
                   }}
@@ -197,6 +212,7 @@ const LogConfigComp: React.FC<LogConfigProps> = (props: LogConfigProps) => {
                   <FormItem
                     optionTitle={t("resource:config.common.syslogFormat")}
                     optionDesc={t("resource:config.common.syslogFormatDesc")}
+                    errorText={props.regexErrorMsg}
                   >
                     <TextInput
                       placeholder="<%pri%>1 %timestamp:::date-rfc3339% %HOSTNAME% %app-name% %procid% %msgid% %msg%\n"
@@ -208,8 +224,7 @@ const LogConfigComp: React.FC<LogConfigProps> = (props: LogConfigProps) => {
                     />
                   </FormItem>
                   <div className="input-tip">
-                    {t("resource:config.common.regName") +
-                      curConfig.regularExpression}
+                    {t("resource:config.common.regName") + curConfig.regex}
                   </div>
                 </div>
               )}
@@ -220,11 +235,11 @@ const LogConfigComp: React.FC<LogConfigProps> = (props: LogConfigProps) => {
                 optionDesc={t("resource:config.common.parserDesc")}
               >
                 <Select
+                  disabled={pageType === PageType.Edit}
                   className="m-w-45p"
                   optionList={MULTI_LINE_LOG_PARSER_LIST}
                   value={curConfig?.multilineLogParser || ""}
                   onChange={(event) => {
-                    console.info("event:", event);
                     changeLogParser && changeLogParser(event.target.value);
                   }}
                   placeholder={t("resource:config.common.chooseParser")}
@@ -243,9 +258,10 @@ const LogConfigComp: React.FC<LogConfigProps> = (props: LogConfigProps) => {
                     optionDesc={t(
                       "resource:config.common.springbootLogFormatDesc"
                     )}
+                    errorText={props.userLogFormatErrorMsg}
                   >
                     <TextInput
-                      placeholder="%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} – %msg%n"
+                      placeholder="%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
                       value={curConfig?.userLogFormat || ""}
                       onChange={(event) => {
                         changeUserLogFormat &&
@@ -254,8 +270,7 @@ const LogConfigComp: React.FC<LogConfigProps> = (props: LogConfigProps) => {
                     />
                   </FormItem>
                   <div className="input-tip">
-                    {t("resource:config.common.regName") +
-                      curConfig.regularExpression}
+                    {t("resource:config.common.regName") + curConfig.regex}
                   </div>
                 </div>
               )}
@@ -268,7 +283,7 @@ const LogConfigComp: React.FC<LogConfigProps> = (props: LogConfigProps) => {
                 errorText={
                   userLogFormatError
                     ? t("resource:config.common.nginxFormatInvalid")
-                    : ""
+                    : props.userLogFormatErrorMsg
                 }
               >
                 <div className="m-w-75p">
@@ -282,8 +297,7 @@ const LogConfigComp: React.FC<LogConfigProps> = (props: LogConfigProps) => {
                     }}
                   />
                   <div className="input-tip">
-                    {t("resource:config.common.regName") +
-                      curConfig.regularExpression}
+                    {t("resource:config.common.regName") + curConfig.regex}
                   </div>
                 </div>
               </FormItem>
@@ -297,7 +311,7 @@ const LogConfigComp: React.FC<LogConfigProps> = (props: LogConfigProps) => {
                 errorText={
                   userLogFormatError
                     ? t("resource:config.common.apacheFormatError")
-                    : ""
+                    : props.userLogFormatErrorMsg
                 }
               >
                 <div className="m-w-75p">
@@ -311,8 +325,7 @@ const LogConfigComp: React.FC<LogConfigProps> = (props: LogConfigProps) => {
                     }}
                   />
                   <div className="input-tip">
-                    {t("resource:config.common.regName") +
-                      curConfig.regularExpression}
+                    {t("resource:config.common.regName") + curConfig.regex}
                   </div>
                 </div>
               </FormItem>
@@ -323,10 +336,11 @@ const LogConfigComp: React.FC<LogConfigProps> = (props: LogConfigProps) => {
                 infoType={InfoBarTypes.REGEX_LOG_FORMAT}
                 optionTitle={t("resource:config.common.regexFormat")}
                 optionDesc={t("resource:config.common.regexFormatDesc")}
+                errorText={props.regexErrorMsg}
               >
                 <div className="m-w-75p">
                   <TextArea
-                    value={curConfig.regularExpression || ""}
+                    value={curConfig.regex || ""}
                     placeholder="\S\s+.*"
                     rows={4}
                     onChange={(event) => {
@@ -351,7 +365,7 @@ const LogConfigComp: React.FC<LogConfigProps> = (props: LogConfigProps) => {
                         curConfig.syslogParser === SyslogParser.RFC5424 ||
                         curConfig.syslogParser === SyslogParser.RFC3164
                       }
-                      value={curConfig.regularExpression || ""}
+                      value={curConfig.regex || ""}
                       placeholder="\S\s+.*"
                       rows={4}
                       onChange={(event) => {
@@ -369,10 +383,11 @@ const LogConfigComp: React.FC<LogConfigProps> = (props: LogConfigProps) => {
                   infoType={InfoBarTypes.REGEX_LOG_FORMAT}
                   optionTitle={t("resource:config.common.firstLineRegEx")}
                   optionDesc={t("resource:config.common.firstLineRegExDesc")}
+                  errorText={props.regexErrorMsg}
                 >
                   <div className="m-w-75p">
                     <TextArea
-                      value={curConfig.regularExpression || ""}
+                      value={curConfig.regex || ""}
                       placeholder="\S\s+.*"
                       rows={4}
                       onChange={(event) => {
@@ -399,16 +414,16 @@ const LogConfigComp: React.FC<LogConfigProps> = (props: LogConfigProps) => {
           curConfig?.multilineLogParser === MultiLineLogParser.CUSTOM)) && (
         <HeaderPanel title={t("resource:config.common.sampleParsing")}>
           <SampleLogParsing
+            pageType={pageType}
+            ref={props.sampleLogParsingRef}
             sampleLogInvalid={sampleLogInvalid}
             changeSampleLogInvalid={(invalid) => {
               changeSampleLogInvalid && changeSampleLogInvalid(invalid);
             }}
             changeSpecs={(specs) => {
-              console.info(specs);
               changeRegExpSpecs && changeRegExpSpecs(specs);
             }}
             changeSampleLog={(log) => {
-              console.info("sample log from log config comp:", log);
               changeUserSmapleLog && changeUserSmapleLog(log);
             }}
             changeTimeKey={(key) => {
@@ -430,17 +445,14 @@ const LogConfigComp: React.FC<LogConfigProps> = (props: LogConfigProps) => {
         </HeaderPanel>
       )}
 
-      {curConfig?.regexKeyList &&
-        curConfig.regexKeyList.length > 0 &&
-        curConfig?.processorFilterRegex && (
-          <ConfigFilter
-            logConfig={curConfig}
-            changeFilter={(filter) => {
-              console.info(filter);
-              changeFilterRegex && changeFilterRegex(filter);
-            }}
-          />
-        )}
+      {curConfig && (
+        <ConfigFilter
+          logConfig={curConfig}
+          changeFilter={(filter) => {
+            changeFilterRegex && changeFilterRegex(filter);
+          }}
+        />
+      )}
     </div>
   );
 };

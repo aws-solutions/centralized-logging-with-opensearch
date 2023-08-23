@@ -19,8 +19,8 @@ import Breadcrumbs from "@material-ui/core/Breadcrumbs";
 import Typography from "@material-ui/core/Typography";
 import NavigateNextIcon from "@material-ui/icons/NavigateNext";
 
-type BreadcrumbType = {
-  name: string;
+export type BreadcrumbType = {
+  name?: string | null;
   link?: string;
 };
 
@@ -36,16 +36,16 @@ const breadcrumb: React.FC<BreadcrumbProps> = (props: BreadcrumbProps) => {
         aria-label="breadcrumb"
         separator={<NavigateNextIcon fontSize="medium" />}
       >
-        {list.map((element, index) => {
+        {list.map((element) => {
           if (element.link) {
             return (
-              <Link key={index} color="inherit" to={element.link}>
+              <Link key={element.name} color="inherit" to={element.link}>
                 {element.name}
               </Link>
             );
           } else {
             return (
-              <Typography key={index} color="textPrimary">
+              <Typography key={element.name} color="textPrimary">
                 {element.name}
               </Typography>
             );

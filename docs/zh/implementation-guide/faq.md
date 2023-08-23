@@ -42,7 +42,7 @@ S3 桶中的日志位置。对于 EC2 和 EKS 上的应用日志，你需要设�
 日志通提供两种部署方案：方案一使用 Cognito 用户池，方案二使用OpenID连接。对于
 方案一，客户可以在有Amazon Cognito User Pool、AWS AppSync、Amazon Kinesis Data Firehose（可选）的AWS地区部署该解决方案。
 对于方案二，客户可以在有AWS AppSync、Amazon Kinesis Data Firehose（可选）的AWS地区部署该解决方案。
-更多信息请参考[支持的部署区域](./considerations.md#regional-deployments)。
+更多信息请参考[支持的部署区域](./plan-deployment/considerations.md#regional-deployments)。
 
 **问：部署该解决方案的前提条件是什么？**</br>
 日志通不提供 Amazon OpenSearch 集群，你需要通过 Web 控制台导入现有的 OpenSearch 集群。该集群
@@ -97,7 +97,7 @@ VPC，需要选择VPC和对应的子网。 参考[使用 Cognito 用户池启动
 
 **问：使用此解决方案如何收费和计费？**</br>
 该解决方案可免费使用，您需要承担运行该解决方案时使用的 AWS 服务的费用。
-您只需为使用的内容付费，没有最低费用或设置费用。 有关详细的成本估算，请参阅 [成本](./cost.md) 部分。
+您只需为使用的内容付费，没有最低费用或设置费用。 有关详细的成本估算，请参阅 [成本](./plan-deployment/cost.md) 部分。
 
 **问：跨账户摄取会产生额外费用吗？**</br>
 不会。费用与 AWS 账户中提取日志的费用相同。

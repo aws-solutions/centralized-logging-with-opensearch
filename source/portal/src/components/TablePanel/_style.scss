@@ -14,6 +14,8 @@ $input-max-width: 50px;
     display: flex;
     padding: 10px 20px 10px 20px;
     justify-content: space-between;
+    align-items: center;
+    align-content: center;
     .title {
       flex: 1;
       font-size: $font-size-18;
@@ -32,6 +34,11 @@ $input-max-width: 50px;
     .filter {
       flex: 1;
       max-width: 700px;
+    }
+  }
+  &.no-padding {
+    .table-header {
+      padding: 10px 0 10px 0;
     }
   }
   .gsui-table {

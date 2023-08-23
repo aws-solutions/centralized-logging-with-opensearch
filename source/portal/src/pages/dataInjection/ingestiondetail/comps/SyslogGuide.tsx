@@ -16,18 +16,18 @@ limitations under the License.
 import React, { useState, useEffect } from "react";
 import HeaderPanel from "components/HeaderPanel";
 import { useTranslation } from "react-i18next";
-import { AppLogIngestion, LogSource, ProtocolType } from "API";
-import { getSourceInfoValueByKey } from "assets/js/applog";
+import { AppLogIngestion, LogSource, ProtocolType, SyslogParser } from "API";
 import CopyText from "components/CopyText";
 import Alert from "components/Alert";
 
 interface SyslogGuideProps {
   ingestion: AppLogIngestion | undefined;
   sourceData: LogSource | undefined;
+  syslogType: SyslogParser | undefined;
 }
 
 const SyslogGuide: React.FC<SyslogGuideProps> = (props: SyslogGuideProps) => {
-  const { sourceData } = props;
+  const { sourceData, syslogType } = props;
   const { t } = useTranslation();
 
   const [nlbName, setNlbName] = useState("");
@@ -35,34 +35,24 @@ const SyslogGuide: React.FC<SyslogGuideProps> = (props: SyslogGuideProps) => {
   const [port, setPort] = useState("");
 
   useEffect(() => {
-    if (sourceData && sourceData.sourceInfo) {
-      const nlbNameRes = getSourceInfoValueByKey(
-        "syslogNlbDNSName",
-        sourceData.sourceInfo
-      );
-      const protocolRes = getSourceInfoValueByKey(
-        "syslogProtocol",
-        sourceData.sourceInfo
-      );
-      const portRes = getSourceInfoValueByKey(
-        "syslogPort",
-        sourceData?.sourceInfo
-      );
-      setNlbName(nlbNameRes);
-      setProtocol(protocolRes);
-      setPort(portRes);
+    if (sourceData && sourceData.syslog) {
+      const nlbNameRes = sourceData.syslog.nlbDNSName;
+      const protocolRes = sourceData.syslog.protocol;
+      const portRes = (sourceData.syslog.port ?? -1).toString();
+      setNlbName(nlbNameRes ?? "");
+      setProtocol(protocolRes ?? "");
+      setPort(portRes ?? "");
     }
   }, [sourceData]);
 
   return (
     <div>
-      <HeaderPanel title={t("applog:ingestion.syslogConfig")}>
+      <HeaderPanel
+        title={`${t("applog:ingestion.syslogConfig")} - ${syslogType}`}
+      >
         <>
           <Alert content={t("applog:ingestion.syslog.guide.alert")} />
           <div className="syslog-guide">
-            <div className="deploy-desc">
-              {t("applog:ingestion.syslog.guide.title")}
-            </div>
             <div className="deploy-steps">
               <div>{t("applog:ingestion.syslog.guide.step1Title")}</div>
               <div className="step-desc">
@@ -76,12 +66,20 @@ const SyslogGuide: React.FC<SyslogGuideProps> = (props: SyslogGuideProps) => {
                 <CopyText
                   text={`*.* ${
                     protocol === ProtocolType.TCP ? "@@" : "@"
-                  }${nlbName}:${port}`}
+                  }${nlbName}:${port}${
+                    syslogType === SyslogParser.RFC5424
+                      ? ";RSYSLOG_SyslogProtocol23Format"
+                      : ""
+                  }`}
                 >
                   <code className="guide-code">
                     {`*.* ${
                       protocol === ProtocolType.TCP ? "@@" : "@"
-                    }${nlbName}:${port}`}
+                    }${nlbName}:${port}${
+                      syslogType === SyslogParser.RFC5424
+                        ? ";RSYSLOG_SyslogProtocol23Format"
+                        : ""
+                    }`}
                   </code>
                 </CopyText>
               </div>

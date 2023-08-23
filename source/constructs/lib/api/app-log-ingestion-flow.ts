@@ -17,16 +17,22 @@ import {
     Construct,
 } from 'constructs';
 import {
+    Aws,
     Fn,
+    Duration,
     aws_stepfunctions_tasks as tasks,
     aws_stepfunctions as sfn,
     aws_logs as logs,
-    aws_iam as iam
+    aws_iam as iam,
+    aws_lambda as lambda,
 } from 'aws-cdk-lib';
 import {
     Table,
-    ITable
 } from 'aws-cdk-lib/aws-dynamodb';
+import { SharedPythonLayer } from "../layer/layer";
+
+import * as path from "path";
+
 export interface PipelineFlowProps {
 
     /**
@@ -37,11 +43,18 @@ export interface PipelineFlowProps {
     readonly cfnFlowSMArn: string
 
     /**
-     * Pipeline Table ARN
+     * Ingestion Table ARN
      *
      * @default - None.
      */
-    readonly tableArn: string
+    readonly ingestionTableArn: string
+
+    /**
+     * Log Source Table ARN
+     *
+     * @default - None.
+     */
+    readonly logSourceTableArn: string
 
 }
 
@@ -53,43 +66,48 @@ export class AppIngestionFlowStack extends Construct {
 
     readonly stateMachineArn: string
 
-    private updateStatus(table: ITable, status: string) {
-        return new tasks.DynamoUpdateItem(this, `Set ${status} Status`, {
-            key: {
-                id: tasks.DynamoAttributeValue.fromString(sfn.JsonPath.stringAt('$.id'))
-            },
-            table: table,
-            expressionAttributeNames: {
-                '#status': 'status',
-                '#sid': 'stackId',
-            },
-            expressionAttributeValues: {
-                ':status': tasks.DynamoAttributeValue.fromString(status),
-                ':sid': tasks.DynamoAttributeValue.fromString(sfn.JsonPath.stringAt('$.result.stackId')),
-            },
-            updateExpression: 'SET #status = :status, #sid = :sid',
-            resultPath: sfn.JsonPath.DISCARD,
-        })
-    }
-
     constructor(scope: Construct, id: string, props: PipelineFlowProps) {
         super(scope, id);
+        const solution_id = "SO8025";
 
         // Step Functions Tasks
-        const table = Table.fromTableArn(this, 'Table', props.tableArn);
+        const ingestionTable = Table.fromTableArn(this, 'Table', props.ingestionTableArn);
+        const logSourceTable = Table.fromTableArn(this, "LogSourceTable", props.logSourceTableArn);
 
+        // Create a Lambda to handle the status update to backend table.
+        const appIngestionFlowFn = new lambda.Function(this, "AppIngestionFlowFn", {
+            code: lambda.AssetCode.fromAsset(
+                path.join(__dirname, "../../lambda/api/pipeline_ingestion_flow")
+            ),
+            runtime: lambda.Runtime.PYTHON_3_9,
+            handler: "app_ingestion_flow.lambda_handler",
+            timeout: Duration.seconds(60),
+            memorySize: 128,
+            layers: [SharedPythonLayer.getInstance(this)],
+            environment: {
+                SOLUTION_ID: solution_id,
+                INGESTION_TABLE: ingestionTable.tableName,
+                LOG_SOURCE_TABLE: logSourceTable.tableName,
+                SOLUTION_VERSION: process.env.VERSION ? process.env.VERSION : "v1.0.0"
+            },
+            description: `${Aws.STACK_NAME} - Helper function to update Ingestion status for S3 Source and Syslog Ingestion`
+        });
 
-        const activeStatus = this.updateStatus(table, 'ACTIVE')
-        const errorStatus = this.updateStatus(table, 'ERROR')
-        const inactiveStatus = this.updateStatus(table, 'INACTIVE')
+        ingestionTable.grantReadWriteData(appIngestionFlowFn);
+        logSourceTable.grantReadWriteData(appIngestionFlowFn);
+        appIngestionFlowFn.addToRolePolicy(
+            new iam.PolicyStatement({
+                actions: ['cloudformation:DescribeStackEvents'],
+                effect: iam.Effect.ALLOW,
+                resources: [`arn:${Aws.PARTITION}:cloudformation:${Aws.REGION}:${Aws.ACCOUNT_ID}:stack/*`],
+            })
+        );
 
-        const checkStatus = new sfn.Choice(this, 'Check Stack Status')
-            .when(
-                sfn.Condition.stringEquals('$.result.stackStatus', 'DELETE_COMPLETE'), inactiveStatus)
-            .when(
-                sfn.Condition.stringEquals('$.result.stackStatus', 'CREATE_COMPLETE'), activeStatus)
-            .otherwise(errorStatus)
-
+        const appIngestionFlowFnTask = new tasks.LambdaInvoke(this, "Update Status", {
+            lambdaFunction: appIngestionFlowFn,
+            outputPath: "$.Payload",
+            inputPath: "$"
+        });
 
         const child = sfn.StateMachine.fromStateMachineArn(this, 'ChildSM', props.cfnFlowSMArn)
 
@@ -113,7 +131,7 @@ export class AppIngestionFlowStack extends Construct {
         const appLogIngestionFlowSMRole = new iam.Role(this, 'SMRole', {
             assumedBy: new iam.ServicePrincipal('states.amazonaws.com'),
         })
-        // Least Privilage to enable logging for state machine
+        // Least Privilege to enable logging for state machine
         appLogIngestionFlowSMRole.addToPolicy(
             new iam.PolicyStatement({
                 actions: [
@@ -135,7 +153,7 @@ export class AppIngestionFlowStack extends Construct {
         )
 
         const pipeSM = new sfn.StateMachine(this, 'PipelineFlowSM', {
-            definition: cfnTask.next(checkStatus),
+            definitionBody: sfn.DefinitionBody.fromChainable(cfnTask.next(appIngestionFlowFnTask)),
             role: appLogIngestionFlowSMRole,
             logs: {
                 destination: logGroup,

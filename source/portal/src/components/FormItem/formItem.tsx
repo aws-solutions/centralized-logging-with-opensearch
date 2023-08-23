@@ -24,17 +24,17 @@ import InfoSpan from "components/InfoSpan";
 import { useTranslation } from "react-i18next";
 interface FormItemProps {
   infoType?: InfoBarTypes;
-  optionTitle: string;
-  optionDesc: ReactElement | string;
+  optionTitle?: string | null;
+  optionDesc?: ReactElement | string | null;
   showRequiredError?: boolean;
   requiredErrorMsg?: string;
   showFormatError?: boolean;
   formatErrorMsg?: string;
-  children?: React.ReactChild | React.ReactChild[];
-  errorText?: string;
-  infoText?: string;
-  successText?: string;
-  warningText?: string | JSX.Element;
+  children?: ReactElement | ReactElement[];
+  errorText?: string | null;
+  infoText?: string | null;
+  successText?: string | null;
+  warningText?: string | ReactElement | null;
   isOptional?: boolean;
 }
 

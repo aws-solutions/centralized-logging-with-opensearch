@@ -14,14 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Construct, IConstruct } from "constructs";
+import * as path from 'path';
 import {
   Aws,
   CfnResource,
   Duration,
   RemovalPolicy,
   CfnCondition,
-  CfnOutput,
   Fn,
   Aspects,
   IAspect,
@@ -35,11 +34,18 @@ import {
   aws_s3_notifications as s3n,
   CustomResource,
   custom_resources as cr,
-  SymlinkFollowMode,
-} from "aws-cdk-lib";
-import { ISecurityGroup, IVpc } from "aws-cdk-lib/aws-ec2";
-import * as path from "path";
-import { NagSuppressions } from "cdk-nag";
+  aws_logs as logs,
+  CfnParameter,
+  Stack,
+} from 'aws-cdk-lib';
+import { ISecurityGroup, IVpc } from 'aws-cdk-lib/aws-ec2';
+import { CfnRole } from 'aws-cdk-lib/aws-iam';
+import { CfnQueue } from 'aws-cdk-lib/aws-sqs';
+import { NagSuppressions } from 'cdk-nag';
+import { Construct, IConstruct } from 'constructs';
+import { SharedPythonLayer } from '../../layer/layer';
+import { CWLMetricStack, MetricSourceType } from '../common/cwl-metric-stack';
+import { constructFactory } from '../../util/stack-helper';
 
 /**
  * cfn-nag suppression rule interface
@@ -53,7 +59,7 @@ export function addCfnNagSuppressRules(
   resource: CfnResource,
   rules: CfnNagSuppressRule[]
 ) {
-  resource.addMetadata("cfn_nag", {
+  resource.addMetadata('cfn_nag', {
     rules_to_suppress: rules,
   });
 }
@@ -110,6 +116,7 @@ export interface S3toOpenSearchStackProps {
 
   readonly logBucketName: string;
   readonly logBucketPrefix: string;
+  readonly logBucketSuffix?: string;
   readonly backupBucketName: string;
   /**
    * The Account Id of log source
@@ -134,62 +141,67 @@ export interface S3toOpenSearchStackProps {
   readonly defaultCmkArn?: string;
 
   readonly solutionId: string;
+  readonly stackPrefix: string;
+  readonly metricSourceType?: MetricSourceType;
 }
 
 export class S3toOpenSearchStack extends Construct {
   readonly logProcessorRoleArn: string;
+  readonly logProcessorLogGroupName: string;
+  readonly logEventQueueArn: string;
+  readonly logEventQueueName: string;
 
   private newKMSKey = new kms.Key(this, `SQS-CMK`, {
     removalPolicy: RemovalPolicy.DESTROY,
     pendingWindow: Duration.days(7),
-    description: "KMS-CMK for encrypting the objects in SQS",
+    description: 'KMS-CMK for encrypting the objects in SQS',
     enableKeyRotation: true,
     policy: new iam.PolicyDocument({
       statements: [
         new iam.PolicyStatement({
           actions: [
-            "kms:CreateKey",
-            "kms:CreateAlias",
-            "kms:CreateCustomKeyStore",
-            "kms:DescribeKey",
-            "kms:DescribeCustomKeyStores",
-            "kms:EnableKey",
-            "kms:EnableKeyRotation",
-            "kms:ListAliases",
-            "kms:ListKeys",
-            "kms:ListGrants",
-            "kms:ListKeyPolicies",
-            "kms:ListResourceTags",
-            "kms:PutKeyPolicy",
-            "kms:UpdateAlias",
-            "kms:UpdateCustomKeyStore",
-            "kms:UpdateKeyDescription",
-            "kms:UpdatePrimaryRegion",
-            "kms:RevokeGrant",
-            "kms:GetKeyPolicy",
-            "kms:GetParametersForImport",
-            "kms:GetKeyRotationStatus",
-            "kms:GetPublicKey",
-            "kms:ScheduleKeyDeletion",
-            "kms:GenerateDataKey",
-            "kms:TagResource",
-            "kms:UntagResource",
-            "kms:Decrypt",
-            "kms:Encrypt",
+            'kms:CreateKey',
+            'kms:CreateAlias',
+            'kms:CreateCustomKeyStore',
+            'kms:DescribeKey',
+            'kms:DescribeCustomKeyStores',
+            'kms:EnableKey',
+            'kms:EnableKeyRotation',
+            'kms:ListAliases',
+            'kms:ListKeys',
+            'kms:ListGrants',
+            'kms:ListKeyPolicies',
+            'kms:ListResourceTags',
+            'kms:PutKeyPolicy',
+            'kms:UpdateAlias',
+            'kms:UpdateCustomKeyStore',
+            'kms:UpdateKeyDescription',
+            'kms:UpdatePrimaryRegion',
+            'kms:RevokeGrant',
+            'kms:GetKeyPolicy',
+            'kms:GetParametersForImport',
+            'kms:GetKeyRotationStatus',
+            'kms:GetPublicKey',
+            'kms:ScheduleKeyDeletion',
+            'kms:GenerateDataKey',
+            'kms:TagResource',
+            'kms:UntagResource',
+            'kms:Decrypt',
+            'kms:Encrypt',
           ],
-          resources: ["*"],
+          resources: ['*'],
           effect: iam.Effect.ALLOW,
           principals: [new iam.AccountRootPrincipal()],
         }),
         new iam.PolicyStatement({
-          actions: ["kms:GenerateDataKey*", "kms:Decrypt", "kms:Encrypt"],
-          resources: ["*"], // support app log from s3 by not limiting the resource
+          actions: ['kms:GenerateDataKey*', 'kms:Decrypt', 'kms:Encrypt'],
+          resources: ['*'], // support app log from s3 by not limiting the resource
           principals: [
-            new iam.ServicePrincipal("s3.amazonaws.com"),
-            new iam.ServicePrincipal("lambda.amazonaws.com"),
-            new iam.ServicePrincipal("ec2.amazonaws.com"),
-            new iam.ServicePrincipal("sqs.amazonaws.com"),
-            new iam.ServicePrincipal("cloudwatch.amazonaws.com"),
+            new iam.ServicePrincipal('s3.amazonaws.com'),
+            new iam.ServicePrincipal('lambda.amazonaws.com'),
+            new iam.ServicePrincipal('ec2.amazonaws.com'),
+            new iam.ServicePrincipal('sqs.amazonaws.com'),
+            new iam.ServicePrincipal('cloudwatch.amazonaws.com'),
           ],
         }),
       ],
@@ -202,28 +214,28 @@ export class S3toOpenSearchStack extends Construct {
     // Get the logBucket
     const logBucket = s3.Bucket.fromBucketName(
       this,
-      "logBucket",
+      'logBucket',
       props.logBucketName
     );
 
-    const isCreateNewKMS = new CfnCondition(this, "isCreateNew", {
-      expression: Fn.conditionEquals(props.defaultCmkArn, ""),
+    const isCreateNewKMS = new CfnCondition(this, 'isCreateNew', {
+      expression: Fn.conditionEquals(props.defaultCmkArn, ''),
     });
     this.enable({ construct: this.newKMSKey, if: isCreateNewKMS });
 
     // Create the policy and role for processor Lambda
-    const logProcessorPolicy = new iam.Policy(this, "logProcessorPolicy", {
+    const logProcessorPolicy = new iam.Policy(this, 'logProcessorPolicy', {
       statements: [
         new iam.PolicyStatement({
           actions: [
-            "es:ESHttpGet",
-            "es:ESHttpDelete",
-            "es:ESHttpPatch",
-            "es:ESHttpPost",
-            "es:ESHttpPut",
-            "es:ESHttpHead",
+            'es:ESHttpGet',
+            'es:ESHttpDelete',
+            'es:ESHttpPatch',
+            'es:ESHttpPost',
+            'es:ESHttpPut',
+            'es:ESHttpHead',
           ],
-          resources: ["*"],
+          resources: ['*'],
         }),
         new iam.PolicyStatement({
           effect: iam.Effect.ALLOW,
@@ -235,25 +247,79 @@ export class S3toOpenSearchStack extends Construct {
             ).toString(),
           ],
           actions: [
-            "kms:Decrypt",
-            "kms:Encrypt",
-            "kms:ReEncrypt*",
-            "kms:GenerateDataKey*",
-            "kms:DescribeKey",
+            'kms:Decrypt',
+            'kms:Encrypt',
+            'kms:ReEncrypt*',
+            'kms:GenerateDataKey*',
+            'kms:DescribeKey',
           ],
         }),
       ],
     });
     NagSuppressions.addResourceSuppressions(logProcessorPolicy, [
       {
-        id: "AwsSolutions-IAM5",
-        reason: "The managed policy needs to use any resources.",
+        id: 'AwsSolutions-IAM5',
+        reason: 'The managed policy needs to use any resources.',
       },
     ]);
 
+    // Create the Log Group for the Lambda function
+    const logGroup = new logs.LogGroup(this, 'LogProcessorFnLogGroup', {
+      logGroupName: `/aws/lambda/${Aws.STACK_NAME}-LogProcessorFn`,
+      removalPolicy: RemovalPolicy.DESTROY,
+    });
+    this.logProcessorLogGroupName = logGroup.logGroupName;
+
+    constructFactory(CWLMetricStack)(this, 'cwlMetricStack', {
+      metricSourceType: props.metricSourceType || MetricSourceType.LOG_PROCESSOR_SVC,
+      logGroup: logGroup,
+      stackPrefix: props.stackPrefix,
+    });
+
+    const configJSON = new CfnParameter(this, 'ConfigJSON', {
+      type: 'String',
+      default: '',
+    });
+    configJSON.overrideLogicalId('ConfigJSON');
+
+    const logProcessorRoleName = new CfnParameter(
+      this,
+      'LogProcessorRoleName',
+      {
+        type: 'String',
+        default: '',
+      }
+    );
+    logProcessorRoleName.overrideLogicalId('LogProcessorRoleName');
+
+    const hasLogProcessorRoleName = new CfnCondition(
+      this,
+      'HasLogProcessorRoleName',
+      {
+        expression: Fn.conditionNot(
+          Fn.conditionEquals(logProcessorRoleName.valueAsString, '')
+        ),
+      }
+    );
+
+    const enableS3NotificationParam = new CfnParameter(
+      this,
+      'EnableS3Notification',
+      { type: 'String', default: 'True', allowedValues: ['True', 'False'] }
+    );
+    enableS3NotificationParam.overrideLogicalId('EnableS3Notification');
+
+    const shouldEnableS3Notification = new CfnCondition(
+      this,
+      'shouldEnableS3Notification',
+      {
+        expression: Fn.conditionEquals(enableS3NotificationParam, 'True'),
+      }
+    );
+
     // Create a lambda layer with required python packages.
     // This layer also includes standard plugins.
-    const pipeLayer = new lambda.LayerVersion(this, "LogHubPipeLayer", {
+    const pipeLayer = new lambda.LayerVersion(this, "LogProcessorLayer", {
       code: lambda.Code.fromAsset(
         path.join(__dirname, "../../../lambda/plugin/standard"),
         {
@@ -272,13 +338,13 @@ export class S3toOpenSearchStack extends Construct {
     });
 
     // Create the Log Processor Lambda
-    const logProcessorFn = new lambda.Function(this, "LogProcessorFn", {
+    const logProcessorFn = new lambda.Function(this, 'LogProcessorFn', {
       description: `${Aws.STACK_NAME} - Function to process and load ${props.logType} logs into OpenSearch`,
+      functionName: `${Aws.STACK_NAME}-LogProcessorFn`,
       runtime: lambda.Runtime.PYTHON_3_9,
-      handler: "lambda_function.lambda_handler",
+      handler: 'lambda_function.lambda_handler',
       code: lambda.Code.fromAsset(
-        path.join(__dirname, "../../../lambda/pipeline/service/log-processor"),
-        { followSymlinks: SymlinkFollowMode.ALWAYS }
+        path.join(__dirname, '../../../lambda/pipeline/service/log-processor')
       ),
       memorySize: 1024,
       timeout: Duration.seconds(900),
@@ -286,39 +352,53 @@ export class S3toOpenSearchStack extends Construct {
       vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
       securityGroups: [props.securityGroup],
       environment: {
+        STACK_NAME: Aws.STACK_NAME,
         ENDPOINT: props.endpoint,
         ENGINE: props.engineType,
         LOG_TYPE: props.logType,
         INDEX_PREFIX: props.indexPrefix,
         LOG_BUCKET_NAME: props.logBucketName,
         BACKUP_BUCKET_NAME: props.backupBucketName,
-        SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+        SOLUTION_VERSION: process.env.VERSION || 'v1.0.0',
         SOLUTION_ID: props.solutionId,
         PLUGINS: props.plugins,
         LOG_SOURCE_ACCOUNT_ID: props.logSourceAccountId,
         LOG_SOURCE_REGION: props.logSourceRegion,
         LOG_SOURCE_ACCOUNT_ASSUME_ROLE: props.logSourceAccountAssumeRole,
+        CONFIG_JSON: configJSON.valueAsString,
       },
-      layers: [pipeLayer],
+      layers: [SharedPythonLayer.getInstance(this), pipeLayer],
     });
     // No cross-account distinction is made here
     logBucket.grantRead(logProcessorFn);
 
     logProcessorFn.role!.attachInlinePolicy(logProcessorPolicy);
 
+    Aspects.of(logProcessorFn.role!).add(
+      new SetRoleName(
+        Stack.of(this).resolve(
+          Fn.conditionIf(
+            hasLogProcessorRoleName.logicalId,
+            logProcessorRoleName.valueAsString,
+            Aws.NO_VALUE
+          )
+        )
+      )
+    );
+
     //Handle cross-account
-    const isCrossAccount = new CfnCondition(this, "IsCrossAccount", {
+    const isCrossAccount = new CfnCondition(this, 'IsCrossAccount', {
       expression: Fn.conditionAnd(
-        Fn.conditionNot(Fn.conditionEquals(props.logSourceAccountId, "")),
+        Fn.conditionNot(Fn.conditionEquals(props.logSourceAccountId, '')),
         Fn.conditionNot(
           Fn.conditionEquals(props.logSourceAccountId.trim(), Aws.ACCOUNT_ID)
         )
       ),
     });
-    const isCurrentAccount = new CfnCondition(this, "IsCurrentAccount", {
+    const isCurrentAccount = new CfnCondition(this, 'IsCurrentAccount', {
       expression: Fn.conditionNot(
         Fn.conditionAnd(
-          Fn.conditionNot(Fn.conditionEquals(props.logSourceAccountId, "")),
+          Fn.conditionNot(Fn.conditionEquals(props.logSourceAccountId, '')),
           Fn.conditionNot(
             Fn.conditionEquals(props.logSourceAccountId.trim(), Aws.ACCOUNT_ID)
           )
@@ -328,15 +408,18 @@ export class S3toOpenSearchStack extends Construct {
 
     const isEnableS3Notification = new CfnCondition(
       this,
-      "isEnableS3Notification",
+      'isEnableS3Notification',
       {
-        expression: Fn.conditionOr(
-          isCurrentAccount,
-          Fn.conditionAnd(
-            isCrossAccount,
-            Fn.conditionOr(
-              Fn.conditionEquals(props.logType.trim(), "Lambda"),
-              Fn.conditionEquals(props.logType.trim(), "RDS")
+        expression: Fn.conditionAnd(
+          shouldEnableS3Notification,
+          Fn.conditionOr(
+            isCurrentAccount,
+            Fn.conditionAnd(
+              isCrossAccount,
+              Fn.conditionOr(
+                Fn.conditionEquals(props.logType.trim(), 'Lambda'),
+                Fn.conditionEquals(props.logType.trim(), 'RDS')
+              )
             )
           )
         ),
@@ -345,7 +428,7 @@ export class S3toOpenSearchStack extends Construct {
 
     logProcessorFn.addToRolePolicy(
       new iam.PolicyStatement({
-        actions: ["sts:AssumeRole"],
+        actions: ['sts:AssumeRole'],
         effect: iam.Effect.ALLOW,
         resources: [
           `arn:${Aws.PARTITION}:logs:${Aws.REGION}:${Aws.ACCOUNT_ID}:*`,
@@ -361,8 +444,8 @@ export class S3toOpenSearchStack extends Construct {
       logProcessorFn,
       [
         {
-          id: "AwsSolutions-IAM5",
-          reason: "The managed policy needs to use any resources.",
+          id: 'AwsSolutions-IAM5',
+          reason: 'The managed policy needs to use any resources.',
         },
       ],
       true
@@ -371,30 +454,30 @@ export class S3toOpenSearchStack extends Construct {
     this.logProcessorRoleArn = logProcessorFn.role!.roleArn;
 
     // Setup SQS and DLQ
-    const logEventDLQ = new sqs.Queue(this, "LogEventDLQ", {
+    const logEventDLQ = new sqs.Queue(this, 'LogEventDLQ', {
       visibilityTimeout: Duration.minutes(15),
       retentionPeriod: Duration.days(7),
       encryption: sqs.QueueEncryption.KMS_MANAGED,
     });
     logEventDLQ.addToResourcePolicy(
       new iam.PolicyStatement({
-        actions: ["sqs:*"],
+        actions: ['sqs:*'],
         effect: iam.Effect.DENY,
         resources: [logEventDLQ.queueArn],
         conditions: {
-          ["Bool"]: {
-            "aws:SecureTransport": "false",
+          ['Bool']: {
+            'aws:SecureTransport': 'false',
           },
         },
         principals: [new iam.AnyPrincipal()],
       })
     );
     NagSuppressions.addResourceSuppressions(logEventDLQ, [
-      { id: "AwsSolutions-SQS3", reason: "it is a DLQ" },
+      { id: 'AwsSolutions-SQS3', reason: 'it is a DLQ' },
     ]);
 
     const cfnLogEventDLQ = logEventDLQ.node.defaultChild as sqs.CfnQueue;
-    cfnLogEventDLQ.overrideLogicalId("LogEventDLQ");
+    cfnLogEventDLQ.overrideLogicalId('LogEventDLQ');
 
     // Generate the sqsKMSKey from the new generated KMS Key or the default KMS Key
     const sqsKMSKeyArn = Fn.conditionIf(
@@ -408,7 +491,19 @@ export class S3toOpenSearchStack extends Construct {
       sqsKMSKeyArn
     );
 
-    const logEventQueue = new sqs.Queue(this, "LogEventQueue", {
+    const queueName = new CfnParameter(this, 'QueueName', {
+      type: 'String',
+      default: '',
+    });
+    queueName.overrideLogicalId('QueueName');
+
+    const hasQueueName = new CfnCondition(this, 'HasQueueName', {
+      expression: Fn.conditionNot(
+        Fn.conditionEquals(queueName.valueAsString, '')
+      ),
+    });
+
+    const logEventQueue = new sqs.Queue(this, 'LogEventQueue', {
       visibilityTimeout: Duration.seconds(910),
       retentionPeriod: Duration.days(14),
       deadLetterQueue: {
@@ -419,13 +514,27 @@ export class S3toOpenSearchStack extends Construct {
       dataKeyReuse: Duration.minutes(5),
       encryptionMasterKey: sqsKMSKey,
     });
+    this.logEventQueueArn = logEventQueue.queueArn;
+    this.logEventQueueName = logEventQueue.queueName;
+
+    Aspects.of(logEventQueue).add(
+      new SetSQSQueueName(
+        Stack.of(this).resolve(
+          Fn.conditionIf(
+            hasQueueName.logicalId,
+            queueName.valueAsString,
+            Aws.NO_VALUE
+          )
+        )
+      )
+    );
 
     const cfnLogEventQueue = logEventQueue.node.defaultChild as sqs.CfnQueue;
-    cfnLogEventQueue.overrideLogicalId("LogEventQueue");
+    cfnLogEventQueue.overrideLogicalId('LogEventQueue');
     addCfnNagSuppressRules(cfnLogEventQueue, [
       {
-        id: "W48",
-        reason: "No need to use encryption",
+        id: 'W48',
+        reason: 'No need to use encryption',
       },
     ]);
 
@@ -441,6 +550,7 @@ export class S3toOpenSearchStack extends Construct {
       new s3n.SqsDestination(logEventQueue),
       {
         prefix: props.logBucketPrefix,
+        suffix: props.logBucketSuffix,
       }
     );
     // Only enable it in these scenarios
@@ -453,7 +563,7 @@ export class S3toOpenSearchStack extends Construct {
     // Grant access to log processor lambda
     const backupBucket = s3.Bucket.fromBucketName(
       this,
-      "backupBucket",
+      'backupBucket',
       props.backupBucketName
     );
     backupBucket.grantWrite(logProcessorFn);
@@ -463,27 +573,27 @@ export class S3toOpenSearchStack extends Construct {
         effect: iam.Effect.ALLOW,
         conditions: {
           ArnLike: {
-            "aws:SourceArn": logBucket.bucketArn,
+            'aws:SourceArn': logBucket.bucketArn,
           },
         },
-        principals: [new iam.ServicePrincipal("s3.amazonaws.com")],
+        principals: [new iam.ServicePrincipal('s3.amazonaws.com')],
         resources: [logEventQueue.queueArn],
         actions: [
-          "sqs:SendMessage",
-          "sqs:GetQueueAttributes",
-          "sqs:GetQueueUrl",
+          'sqs:SendMessage',
+          'sqs:GetQueueAttributes',
+          'sqs:GetQueueUrl',
         ],
       })
     );
 
     logEventQueue.addToResourcePolicy(
       new iam.PolicyStatement({
-        actions: ["sqs:*"],
+        actions: ['sqs:*'],
         effect: iam.Effect.DENY,
         resources: [logEventQueue.queueArn],
         conditions: {
-          ["Bool"]: {
-            "aws:SecureTransport": "false",
+          ['Bool']: {
+            'aws:SecureTransport': 'false',
           },
         },
         principals: [new iam.AnyPrincipal()],
@@ -493,15 +603,15 @@ export class S3toOpenSearchStack extends Construct {
     // Lambda to enable bucket notification of log source account.
     const logSourceS3NotificationFn = new lambda.Function(
       this,
-      "logSourceS3NotificationFn",
+      'logSourceS3NotificationFn',
       {
         description: `${Aws.STACK_NAME} - Create Log Source S3 Notification Processor`,
         runtime: lambda.Runtime.PYTHON_3_9,
-        handler: "log_source_s3_bucket_policy_processor.lambda_handler",
+        handler: 'log_source_s3_bucket_policy_processor.lambda_handler',
         code: lambda.Code.fromAsset(
           path.join(
             __dirname,
-            "../../../lambda/pipeline/common/custom-resource/"
+            '../../../lambda/pipeline/common/custom-resource/'
           )
         ),
         memorySize: 256,
@@ -509,7 +619,7 @@ export class S3toOpenSearchStack extends Construct {
         environment: {
           STACK_ID: Aws.STACK_ID,
           STACK_NAME: Aws.STACK_NAME,
-          SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+          SOLUTION_VERSION: process.env.VERSION || 'v1.0.0',
           SOLUTION_ID: props.solutionId,
           LOG_TYPE: props.logType,
           LOG_SOURCE_ACCOUNT_ID: props.logSourceAccountId,
@@ -527,7 +637,7 @@ export class S3toOpenSearchStack extends Construct {
     // Create the policy and role for the Lambda to create and delete CloudWatch Log Group Subscription Filter with cross-account scenario
     logSourceS3NotificationFn.addToRolePolicy(
       new iam.PolicyStatement({
-        actions: ["sts:AssumeRole"],
+        actions: ['sts:AssumeRole'],
         effect: iam.Effect.ALLOW,
         resources: [
           `arn:${Aws.PARTITION}:logs:${Aws.REGION}:${Aws.ACCOUNT_ID}:*`,
@@ -543,8 +653,8 @@ export class S3toOpenSearchStack extends Construct {
       logSourceS3NotificationFn,
       [
         {
-          id: "AwsSolutions-IAM5",
-          reason: "The managed policy needs to use any resources.",
+          id: 'AwsSolutions-IAM5',
+          reason: 'The managed policy needs to use any resources.',
         },
       ],
       true
@@ -552,7 +662,7 @@ export class S3toOpenSearchStack extends Construct {
 
     const logSourceS3NotificationProvider = new cr.Provider(
       this,
-      "logSourceS3NotificationProvider",
+      'logSourceS3NotificationProvider',
       {
         onEventHandler: logSourceS3NotificationFn,
       }
@@ -561,8 +671,8 @@ export class S3toOpenSearchStack extends Construct {
       logSourceS3NotificationProvider,
       [
         {
-          id: "AwsSolutions-IAM5",
-          reason: "The managed policy needs to use any resources.",
+          id: 'AwsSolutions-IAM5',
+          reason: 'The managed policy needs to use any resources.',
         },
       ],
       true
@@ -574,7 +684,7 @@ export class S3toOpenSearchStack extends Construct {
 
     const logSourceS3NotificationlambdaTrigger = new CustomResource(
       this,
-      "logSourceS3NotificationlambdaTrigger",
+      'logSourceS3NotificationlambdaTrigger',
       {
         serviceToken: logSourceS3NotificationProvider.serviceToken,
       }
@@ -593,10 +703,6 @@ export class S3toOpenSearchStack extends Construct {
       construct: logSourceS3NotificationlambdaTrigger,
       if: isCrossAccount,
     });
-    new CfnOutput(this, "LogEventQueueARN", {
-      description: "logEvent Queue ARN",
-      value: logEventQueue.queueArn,
-    }).overrideLogicalId("LogEventQueueARN");
   }
 
   protected enable(param: { construct: IConstruct; if: CfnCondition }) {
@@ -620,9 +726,29 @@ class InjectS3NotificationCondition implements IAspect {
   public visit(node: IConstruct): void {
     if (
       node instanceof CfnResource &&
-      node.cfnResourceType === "Custom::S3BucketNotifications"
+      node.cfnResourceType === 'Custom::S3BucketNotifications'
     ) {
       node.cfnOptions.condition = this.condition;
+    }
+  }
+}
+
+class SetSQSQueueName implements IAspect {
+  public constructor(private queueName: string) { }
+
+  public visit(node: IConstruct): void {
+    if (node instanceof CfnQueue) {
+      node.queueName = this.queueName;
+    }
+  }
+}
+
+class SetRoleName implements IAspect {
+  public constructor(private roleName: string) { }
+
+  public visit(node: IConstruct): void {
+    if (node instanceof CfnRole) {
+      node.roleName = this.roleName;
     }
   }
 }

@@ -1,6 +1,6 @@
 # 域操作
 
-登录日志通控制台后，您可以导入 Amazon OpenSearch Service 域。 
+登录日志通控制台后，您可以导入 Amazon OpenSearch Service 域。
 
 !!! note "注意"
 
@@ -66,8 +66,8 @@
 7. 返回日志通控制台。
 8. 单击 **OpenSearch 集群网络** 部分下的 VPC ID。
 9. 在 VPC 控制台上选择 VPC ID 并找到它的 **IPv4 CIDR**。
-9. 在日志通 控制台的 **日志处理网络** 部分中，单击 **AZs and Subnets** 下的子网以在新选项卡中打开子网。
-10. 重复步骤 3、4、5、6 以添加相反的路线。即配置 OpenSearch VPC 的 IPv4 CIDR 指向对等连接。您需要对日志处理网络的每个子网重复这些步骤。
+10. 在日志通 控制台的 **日志处理网络** 部分中，单击 **AZs and Subnets** 下的子网以在新选项卡中打开子网。
+11. 重复步骤 3、4、5、6 以添加相反的路线。即配置 OpenSearch VPC 的 IPv4 CIDR 指向对等连接。您需要对日志处理网络的每个子网重复这些步骤。
 
 ### 更新 OpenSearch 域的安全组
 
@@ -91,6 +91,6 @@
 5. 在确认对话框中，选择**删除**。
 
 
-[dg]: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/createupdatedomains.html 
+[dg]: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/createupdatedomains.html
 [vpc]:https://docs.aws.amazon.com/opensearch-service/latest/developerguide/vpc.html
 

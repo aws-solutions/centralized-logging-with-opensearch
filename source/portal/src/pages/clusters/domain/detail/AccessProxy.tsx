@@ -21,13 +21,13 @@ import CopyText from "components/CopyText";
 import ExtLink from "components/ExtLink";
 import { AmplifyConfigType } from "types";
 import { useSelector } from "react-redux";
-import { AppStateProps } from "reducer/appReducer";
 import { buildSGLink, buildSubnetLink, buildVPCLink } from "assets/js/utils";
 import Button from "components/Button";
 import Modal from "components/Modal";
 import { appSyncRequestMutation } from "assets/js/request";
 import { deleteProxyForOpenSearch } from "graphql/mutations";
 import { useTranslation } from "react-i18next";
+import { RootState } from "reducer/reducers";
 
 interface OverviewProps {
   domainInfo: DomainDetails | undefined | null;
@@ -38,7 +38,7 @@ const AccessProxy: React.FC<OverviewProps> = ({
   reloadDetailInfo,
 }: OverviewProps) => {
   const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: AppStateProps) => state.amplifyConfig
+    (state: RootState) => state.app.amplifyConfig
   );
   const { t } = useTranslation();
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
@@ -91,9 +91,9 @@ const AccessProxy: React.FC<OverviewProps> = ({
                 <div>
                   {domainInfo.proxyInput?.vpc?.publicSubnetIds
                     ?.split(",")
-                    .map((element, index) => {
+                    .map((element) => {
                       return element ? (
-                        <div key={index}>
+                        <div key={element}>
                           <ExtLink
                             to={buildSubnetLink(
                               amplifyConfig.aws_project_region,

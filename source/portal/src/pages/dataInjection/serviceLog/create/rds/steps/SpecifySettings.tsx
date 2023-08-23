@@ -44,10 +44,11 @@ import { AlertType } from "components/Alert/alert";
 import ExtLink from "components/ExtLink";
 import { AmplifyConfigType } from "types";
 import { useSelector } from "react-redux";
-import { AppStateProps, InfoBarTypes } from "reducer/appReducer";
+import { InfoBarTypes } from "reducer/appReducer";
 import { buildRDSLink } from "assets/js/utils";
 import { useTranslation } from "react-i18next";
 import CrossAccountSelect from "pages/comps/account/CrossAccountSelect";
+import { RootState } from "reducer/reducers";
 
 interface SpecifySettingsProps {
   rdsTask: RDSTaskProps;
@@ -100,7 +101,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
   } = props;
 
   const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: AppStateProps) => state.amplifyConfig
+    (state: RootState) => state.app.amplifyConfig
   );
   const { t } = useTranslation();
 
@@ -111,6 +112,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
 
   const getRDSList = async (accountId: string) => {
     try {
+      setRDSOptionList([]);
       setLoadingRDSList(true);
       const resData: any = await appSyncRequestQuery(listResources, {
         type: ResourceType.RDS,
@@ -218,6 +220,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                 />
               )}
               <CrossAccountSelect
+                disabled={loadingRDSList}
                 accountId={rdsTask.logSourceAccountId}
                 changeAccount={(id) => {
                   changeCrossAccount(id);

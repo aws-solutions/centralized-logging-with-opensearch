@@ -182,7 +182,7 @@ export class ClusterFlowStack extends Construct {
         )
 
         const clusterSM = new sfn.StateMachine(this, 'ClusterFlowSM', {
-            definition: checkType,
+            definitionBody: sfn.DefinitionBody.fromChainable(checkType),
             role: clusterFlowSMRole,
             logs: {
                 destination: logGroup,

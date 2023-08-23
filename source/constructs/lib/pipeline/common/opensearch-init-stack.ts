@@ -30,6 +30,9 @@ import {
 import { ISecurityGroup, IVpc, SubnetType } from "aws-cdk-lib/aws-ec2";
 import * as path from "path";
 import { NagSuppressions } from "cdk-nag";
+
+import { SharedPythonLayer } from '../../layer/layer';
+
 export interface OpenSearchInitProps {
   /**
    * Default VPC for lambda to call OpenSearch REST API
@@ -105,6 +108,11 @@ export interface OpenSearchInitProps {
   readonly replicaNumbers?: string;
 
   readonly solutionId: string;
+
+  /**
+   * A gzip base64 encoded string of OpenSearch index template.
+   */
+  readonly indexTemplateGzipBase64?: string;
 }
 
 /**
@@ -181,25 +189,6 @@ export class OpenSearchInitStack extends Construct {
     });
     osHelperPolicy.attachToRole(osHelperRole);
 
-    // Create a lambda layer with required python packages.
-    const pipeLayer = new lambda.LayerVersion(this, "LogHubPipeLayer", {
-      code: lambda.Code.fromAsset(
-        path.join(__dirname, "../../../lambda/plugin/standard"),
-        {
-          bundling: {
-            image: lambda.Runtime.PYTHON_3_9.bundlingImage,
-            command: [
-              "bash",
-              "-c",
-              "pip install -r requirements.txt -t /asset-output/python && cp . -r /asset-output/python/",
-            ],
-          },
-        }
-      ),
-      compatibleRuntimes: [lambda.Runtime.PYTHON_3_9],
-      description: "Default Lambda layer for Log Pipeline",
-    });
-
     // Create a lambda to handle all opensearch domain related APIs.
     const osHelperFn = new lambda.Function(this, "OpenSearchHelperFn", {
       code: lambda.AssetCode.fromAsset(
@@ -216,7 +205,7 @@ export class OpenSearchInitStack extends Construct {
       vpc: props.vpc,
       vpcSubnets: { subnetType: SubnetType.PRIVATE_WITH_EGRESS },
       securityGroups: [props.securityGroup],
-      layers: [pipeLayer],
+      layers: [SharedPythonLayer.getInstance(this)],
       description: `${Aws.STACK_NAME} - Function to create index template (${props.logType}), policy and import saved objects in OpenSearch`,
       environment: {
         ENDPOINT: props.endpoint,
@@ -238,6 +227,7 @@ export class OpenSearchInitStack extends Construct {
         NUMBER_OF_REPLICAS: props.replicaNumbers || "0",
         SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
         SOLUTION_ID: props.solutionId,
+        INDEX_TEMPLATE_GZIP_BASE64: props.indexTemplateGzipBase64 || '',
       },
     });
     osHelperFn.node.addDependency(osHelperRole, osHelperPolicy);

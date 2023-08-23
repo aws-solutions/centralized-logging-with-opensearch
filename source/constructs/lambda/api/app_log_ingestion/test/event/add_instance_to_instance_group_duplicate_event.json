@@ -7,13 +7,13 @@
             "attributes": {
                 "ApproximateReceiveCount": "4",
                 "SentTimestamp": "1668092435315",
-                "SenderId": "AROAZO67AT2OLYUUX3HRJ:LogHub-LogHubInstanceGroupAPIInstanceGroupHandlerE-if09OTL61M5j",
+                "SenderId": "AROAZO67AT2OLYUUX3HRJ:Solution-SolutionInstanceGroupAPIInstanceGroupHandlerE-if09OTL61M5j",
                 "ApproximateFirstReceiveTimestamp": "1668092435315"
             },
             "messageAttributes": {},
             "md5OfBody": "a784e31a0245a9c4eb46da85b602b937",
             "eventSource": "aws:sqs",
-            "eventSourceARN": "arn:aws:sqs:us-west-1:123456789012:LogHub-LogHubAPIInstanceGroupModificationQueue33525CFB-OwGtUeAPadSy",
+            "eventSourceARN": "arn:aws:sqs:us-west-1:123456789012:Solution-SolutionAPIInstanceGroupModificationQueue33525CFB-OwGtUeAPadSy",
             "awsRegion": "us-west-1"
         }
     ]

@@ -1,0 +1,23 @@
+.gsui-status-indicator {
+  .status-text {
+    position: relative;
+    padding-left: 22px;
+    i {
+      position: absolute;
+      margin-left: -22px;
+      margin-top: -1px;
+    }
+    &.success {
+      color: green;
+    }
+    &.normal {
+      color: #666;
+    }
+    &.pending {
+      color: #666;
+    }
+    &.error {
+      color: red;
+    }
+  }
+}

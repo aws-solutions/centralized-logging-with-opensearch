@@ -16,13 +16,13 @@ limitations under the License.
 import React, { useState } from "react";
 import { AntTab, AntTabs, TabPanel } from "components/Tab";
 import InstanceTable from "pages/resources/common/InstanceTable";
-import { InstanceGroup } from "API";
+import { LogSource } from "API";
 import { useTranslation } from "react-i18next";
 
 import ASGGuide from "./ASGGuide";
 
 interface DetailASGProps {
-  instanceGroup: InstanceGroup;
+  instanceGroup: LogSource;
 }
 
 const DetailASG: React.FC<DetailASGProps> = (props: DetailASGProps) => {
@@ -50,7 +50,9 @@ const DetailASG: React.FC<DetailASGProps> = (props: DetailASGProps) => {
           defaultTagFilter={[
             {
               Key: "tag:aws:autoscaling:groupName",
-              Values: instanceGroup.instanceSet,
+              Values: [
+                instanceGroup.ec2?.asgName ? instanceGroup.ec2?.asgName : "",
+              ],
             },
           ]}
           accountId={instanceGroup.accountId || ""}

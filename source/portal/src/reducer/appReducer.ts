@@ -37,6 +37,7 @@ export enum InfoBarTypes {
   LOG_PROCESSING_NETWORK = "LOG_PROCESSING_NETWORK",
   INGESTION_CREATION_METHOD = "INGESTION_CREATION_METHOD",
   SAMPLE_DASHBAORD = "SAMPLE_DASHBAORD",
+  APACHE_SAMPLE_DASHBOARD = "APACHE_SAMPLE_DASHBOARD",
   LOG_LIFECYCLE = "LOG_LIFECYCLE",
   NGINX_LOG_FORMAT = "NGINX_LOG_FORMAT",
   NGINX_SAMPLE_LOG_PARSING = "NGINX_SAMPLE_LOG_PARSING",
@@ -52,6 +53,12 @@ export enum InfoBarTypes {
   CONFIG_TIME_FORMAT = "CONFIG_TIME_FORMAT",
   CONFIG_FILTER = "CONFIG_FILTER",
   PROXY_INSTANCE = "PROXY_INSTANCE",
+  PROCESSOR_TYPE = "PROCESSOR_TYPE",
+  PERMISSIONS_TYPE = "PERMISSIONS_TYPE",
+  LOG_PATH = "LOG_PATH",
+  BUFFER_LAYER = "BUFFER_LAYER",
+  S3_PREFIX_FILTER = "S3_PREFIX_FILTER",
+  PIPELINE_ALARM = "PIPELINE_ALARM",
 }
 
 export const InfoBarTitleMap: any = {
@@ -63,6 +70,7 @@ export const InfoBarTitleMap: any = {
   INGESTION_CREATION_METHOD: "info:ingestionCreationMethod.name",
   INSTANCE_GROUP_CREATION_METHOD: "info:instanceGroupCreationMethod.name",
   SAMPLE_DASHBAORD: "info:sampleDashboard.name",
+  APACHE_SAMPLE_DASHBOARD: "info:sampleDashboard.name",
   LOG_LIFECYCLE: "info:logLifecycle.name",
   NGINX_LOG_FORMAT: "info:nginxLogFormat.name",
   NGINX_SAMPLE_LOG_PARSING: "info:nginxLogParsing.name",
@@ -77,6 +85,8 @@ export const InfoBarTitleMap: any = {
   CONFIG_TIME_FORMAT: "info:configTimeFormat.name",
   CONFIG_FILTER: "info:configFilter.name",
   PROXY_INSTANCE: "info:proxyInstance.name",
+  S3_PREFIX_FILTER: "info:s3PrefixFilter.name",
+  PIPELINE_ALARM: "info:pipelineAlarm.name",
 };
 
 export interface AppStateProps {

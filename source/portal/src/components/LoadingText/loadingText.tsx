@@ -17,7 +17,7 @@ import React from "react";
 import CircularProgress from "@material-ui/core/CircularProgress";
 
 interface LoadingTextProps {
-  text?: string;
+  text?: string | null;
   color?: string;
 }
 

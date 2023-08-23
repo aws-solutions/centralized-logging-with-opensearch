@@ -15,24 +15,24 @@ limitations under the License.
 */
 /* eslint-disable react/display-name */
 import React, { useEffect, useState } from "react";
-import { Link, useHistory } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Pagination from "@material-ui/lab/Pagination";
-import RefreshIcon from "@material-ui/icons/Refresh";
 import Button from "components/Button";
 import { TablePanel } from "components/TablePanel";
 import Breadcrumb from "components/Breadcrumb";
 import { SelectType } from "components/TablePanel/tablePanel";
-import { InstanceGroup, LogSourceType } from "API";
+import { EC2GroupType, LogSource, LogSourceType } from "API";
 import Modal from "components/Modal";
-import LoadingText from "components/LoadingText";
 import HelpPanel from "components/HelpPanel";
 import SideMenu from "components/SideMenu";
 import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
-import { listInstanceGroups } from "graphql/queries";
-import { deleteInstanceGroup } from "graphql/mutations";
+import { listLogSources } from "graphql/queries";
+import { deleteLogSource } from "graphql/mutations";
 import { DEFAULT_PLATFORM } from "assets/js/const";
 import { formatLocalTime } from "assets/js/utils";
 import { useTranslation } from "react-i18next";
+import { handleErrorMessage } from "assets/js/alert";
+import ButtonRefresh from "components/ButtonRefresh";
 
 const PAGE_SIZE = 10;
 
@@ -43,17 +43,15 @@ const InstanceGroupList: React.FC = () => {
     { name: t("resource:group.name") },
   ];
 
-  const history = useHistory();
+  const navigate = useNavigate();
   const [loadingData, setLoadingData] = useState(false);
   const [openDeleteModel, setOpenDeleteModel] = useState(false);
   const [loadingDelete, setLoadingDelete] = useState(false);
-  const [curInstanceGroup, setCurInstantceGroup] = useState<InstanceGroup>();
+  const [curInstanceGroup, setCurInstantceGroup] = useState<LogSource>();
   const [selectedInstanceGroup, setSelectedInstanceGroup] = useState<any[]>([]);
   const [disabledDetail, setDisabledDetail] = useState(false);
   const [disabledDelete, setDisabledDelete] = useState(false);
-  const [instanceGroupList, setInstanceGroupList] = useState<InstanceGroup[]>(
-    []
-  );
+  const [instanceGroupList, setInstanceGroupList] = useState<LogSource[]>([]);
   const [totoalCount, setTotoalCount] = useState(0);
   const [curPage, setCurPage] = useState(1);
 
@@ -63,18 +61,20 @@ const InstanceGroupList: React.FC = () => {
     try {
       setLoadingData(true);
       setInstanceGroupList([]);
-      const resData: any = await appSyncRequestQuery(listInstanceGroups, {
+      const resData: any = await appSyncRequestQuery(listLogSources, {
         page: curPage,
         count: PAGE_SIZE,
+        type: LogSourceType.EC2,
       });
       console.info("resData:", resData);
-      const dataInstanceGroupList: InstanceGroup[] =
-        resData.data.listInstanceGroups.instanceGroups;
-      setTotoalCount(resData.data.listInstanceGroups.total);
+      const dataInstanceGroupList: LogSource[] =
+        resData.data.listLogSources.logSources;
+      setTotoalCount(resData.data.listLogSources.total);
       setInstanceGroupList(dataInstanceGroupList);
       setLoadingData(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
+      handleErrorMessage(error.message);
     }
   };
 
@@ -94,24 +94,26 @@ const InstanceGroupList: React.FC = () => {
   const confimRemoveInstanceGroup = async () => {
     try {
       setLoadingDelete(true);
-      const removeRes = await appSyncRequestMutation(deleteInstanceGroup, {
-        id: curInstanceGroup?.id,
+      const removeRes = await appSyncRequestMutation(deleteLogSource, {
+        type: LogSourceType.EC2,
+        sourceId: curInstanceGroup?.sourceId,
       });
       console.info("removeRes:", removeRes);
       setLoadingDelete(false);
       setOpenDeleteModel(false);
       getInstanceGroupList();
-    } catch (error) {
+    } catch (error: any) {
       setLoadingDelete(false);
+      handleErrorMessage(error.message);
       console.error(error);
     }
   };
 
   // Click View Detail Button Redirect to detail page
   const clickToReviewDetail = () => {
-    history.push({
-      pathname: `/resources/instance-group/detail/${selectedInstanceGroup[0]?.id}`,
-    });
+    navigate(
+      `/resources/instance-group/detail/${selectedInstanceGroup[0]?.sourceId}`
+    );
   };
 
   // Get instance group list when page rendered.
@@ -133,6 +135,14 @@ const InstanceGroupList: React.FC = () => {
     }
   }, [selectedInstanceGroup]);
 
+  const renderGroupName = (data: LogSource) => {
+    return (
+      <Link to={`/resources/instance-group/detail/${data.sourceId}`}>
+        {data.ec2?.groupName}
+      </Link>
+    );
+  };
+
   return (
     <div className="lh-main-content">
       <SideMenu />
@@ -142,6 +152,7 @@ const InstanceGroupList: React.FC = () => {
             <Breadcrumb list={breadCrumbList} />
             <div className="table-data">
               <TablePanel
+                trackId="sourceId"
                 title={t("resource:group.groups")}
                 changeSelected={(item) => {
                   console.info("item:", item);
@@ -154,21 +165,15 @@ const InstanceGroupList: React.FC = () => {
                     // width: 110,
                     id: "Name",
                     header: t("resource:group.list.name"),
-                    cell: (e: InstanceGroup) => {
-                      return (
-                        <Link to={`/resources/instance-group/detail/${e.id}`}>
-                          {e.groupName}
-                        </Link>
-                      );
-                    },
+                    cell: (e: LogSource) => renderGroupName(e),
                   },
                   {
                     id: "Type",
                     header: t("resource:group.list.type"),
-                    cell: (e: InstanceGroup) => {
-                      return e.groupType === LogSourceType.ASG
+                    cell: (e: LogSource) => {
+                      return e.ec2?.groupType === EC2GroupType.ASG
                         ? "EC2/Auto Scaling Group"
-                        : e.groupType;
+                        : e.ec2?.groupType;
                     },
                   },
                   {
@@ -182,8 +187,8 @@ const InstanceGroupList: React.FC = () => {
                     width: 170,
                     id: "created",
                     header: t("resource:group.list.created"),
-                    cell: (e: InstanceGroup) => {
-                      return formatLocalTime(e?.createdDt || "");
+                    cell: (e: LogSource) => {
+                      return formatLocalTime(e?.createdAt || "");
                     },
                   },
                 ]}
@@ -201,11 +206,7 @@ const InstanceGroupList: React.FC = () => {
                         }
                       }}
                     >
-                      {loadingData ? (
-                        <LoadingText />
-                      ) : (
-                        <RefreshIcon fontSize="small" />
-                      )}
+                      <ButtonRefresh loading={loadingData} />
                     </Button>
                     <Button
                       disabled={disabledDetail}
@@ -226,9 +227,7 @@ const InstanceGroupList: React.FC = () => {
                     <Button
                       btnType="primary"
                       onClick={() => {
-                        history.push({
-                          pathname: "/resources/instance-group/create",
-                        });
+                        navigate("/resources/instance-group/create");
                       }}
                     >
                       {t("button.createInstanceGroup")}
@@ -278,7 +277,7 @@ const InstanceGroupList: React.FC = () => {
           >
             <div className="modal-content">
               {t("resource:group.deleteTips")}
-              <b>{`${curInstanceGroup?.groupName}`}</b> {"?"}
+              <b>{`${curInstanceGroup?.ec2?.groupName}`}</b> {"?"}
             </div>
           </Modal>
         </div>

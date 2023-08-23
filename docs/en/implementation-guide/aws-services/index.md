@@ -30,3 +30,37 @@ In this chapter, you will learn how to create log ingestion and dashboards for t
 - [Amazon VPC](vpc.md)
 - [AWS Config](config.md)
 
+## Cross-region log ingestion
+
+When you deploy Centralized Logging with OpenSearch in one Region, the solution allows you to process service logs from another Region.
+
+!!! note "Note"
+    For Amazon RDS/Aurora and AWS Lambda service logs, this feature is not supported.
+
+!!! important "Important"
+
+     The Region where the service resides is referred to as “Source Region”, while the Region where the Centralized Logging with OpenSearch console is deployed as “Logging Region”.
+
+For Amazon CloudTrail, you can create a new trail which send logs into a S3 bucket in the Logging Region, and you can find the CloudTrail in the list. To learn how to create a new trail, please refer to [Creating a trail][cloudtrail]. 
+
+For other services with logs located in S3 buckets, you can manually transfer logs (for example, using S3 Cross-Region Replication feature) to the Logging Region S3 bucket.
+
+You can follow the steps below to implement Cross-Region Logging:
+
+1. Set the service log location in another Region to be the Logging Region (such as Amazon WAF), or automatically copy logs from the Source Region to the Logging Region using [Cross-Region Replication (CRR)][crr].
+
+2. In the solution console, choose **AWS Service Log** in the left navigation pane, and choose **Create a pipeline**.
+
+3. In the **Select an AWS Service** area, choose a service in the list, and choose **Next**.
+
+4. In **Creation Method**, choose **Manual**, then enter the resource name and S3 log location parameter, and choose **Next**.
+
+5. Set **OpenSearch domain** and **Log Lifecycle** as needed, and choose **Next**.
+
+6. Add tags if you need, and choose **Next** to create the pipeline.
+
+Then you can use the OpenSearch dashboard to discover logs and view dashboards.
+
+[cloudtrail]: https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-create-a-trail-using-the-console-first-time.html?icmpid=docs_console_unmapped
+[crr]: https://docs.aws.amazon.com/AmazonS3/latest/userguide/replication-how-setup.html
+

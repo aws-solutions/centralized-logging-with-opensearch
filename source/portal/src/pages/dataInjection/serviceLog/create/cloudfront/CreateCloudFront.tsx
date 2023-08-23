@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React, { useState, useEffect } from "react";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import CreateStep from "components/CreateStep";
 import SpecifySettings from "./steps/SpecifySettings";
 import SpecifyOpenSearchCluster, {
@@ -22,13 +22,20 @@ import SpecifyOpenSearchCluster, {
   checkOpenSearchInput,
   covertParametersByKeyAndConditions,
 } from "../common/SpecifyCluster";
-import CreateTags from "../common/CreateTags";
 import Button from "components/Button";
 
 import Breadcrumb from "components/Breadcrumb";
 import { appSyncRequestMutation } from "assets/js/request";
 import { createServicePipeline } from "graphql/mutations";
-import { CODEC, DestinationType, EngineType, ServiceType, Tag } from "API";
+import {
+  Codec,
+  DestinationType,
+  EngineType,
+  ServiceType,
+  MonitorInput,
+  DomainStatusCheckType,
+  DomainStatusCheckResponse,
+} from "API";
 import {
   SupportPlugin,
   WarmTransitionType,
@@ -46,8 +53,7 @@ import {
 } from "assets/js/const";
 import HelpPanel from "components/HelpPanel";
 import SideMenu from "components/SideMenu";
-import { AppStateProps } from "reducer/appReducer";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import LogProcessing from "../common/LogProcessing";
 import {
@@ -56,6 +62,17 @@ import {
 } from "assets/js/utils";
 import { SelectItem } from "components/Select/select";
 import { S3SourceType } from "../cloudtrail/steps/comp/SourceType";
+import { MONITOR_ALARM_INIT_DATA } from "assets/js/init";
+import AlarmAndTags from "../../../../pipelineAlarm/AlarmAndTags";
+import { Actions, RootState } from "reducer/reducers";
+import { useTags } from "assets/js/hooks/useTags";
+import { Dispatch } from "redux";
+import { useAlarm } from "assets/js/hooks/useAlarm";
+import { ActionType } from "reducer/appReducer";
+import {
+  CreateAlarmActionTypes,
+  validateAalrmInput,
+} from "reducer/createAlarm";
 
 const BASE_EXCLUDE_PARAMS = [
   "esDomainId",
@@ -91,7 +108,6 @@ const EXCLUDE_PARAMS_KDS = [
 ];
 export interface CloudFrontTaskProps {
   type: ServiceType;
-  tags: Tag[];
   source: string;
   target: string;
   logSourceAccountId: string;
@@ -147,13 +163,13 @@ export interface CloudFrontTaskProps {
 
     rolloverSizeNotSupport: boolean;
   };
+  monitor: MonitorInput;
 }
 
 const DEFAULT_TASK_VALUE: CloudFrontTaskProps = {
   type: ServiceType.CloudFront,
   source: "",
   target: "",
-  tags: [],
   logSourceAccountId: "",
   logSourceRegion: "",
   destinationType: "",
@@ -189,7 +205,7 @@ const DEFAULT_TASK_VALUE: CloudFrontTaskProps = {
     shardCount: "1",
     minCapacity: "1",
     enableAutoScaling: YesNo.No,
-    maxCapacity: "",
+    maxCapacity: "1",
 
     enableRolloverByCapacity: true,
     warmTransitionType: WarmTransitionType.IMMEDIATELY,
@@ -198,7 +214,7 @@ const DEFAULT_TASK_VALUE: CloudFrontTaskProps = {
     retainAge: "180",
     rolloverSize: "30",
     indexSuffix: SERVICE_LOG_INDEX_SUFFIX.yyyy_MM_dd,
-    codec: CODEC.best_compression,
+    codec: Codec.best_compression,
     refreshInterval: "1s",
     tmpFlowList: [],
 
@@ -207,6 +223,7 @@ const DEFAULT_TASK_VALUE: CloudFrontTaskProps = {
 
     rolloverSizeNotSupport: false,
   },
+  monitor: MONITOR_ALARM_INIT_DATA,
 };
 
 const CreateCloudFront: React.FC = () => {
@@ -225,14 +242,17 @@ const CreateCloudFront: React.FC = () => {
   ];
 
   const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: AppStateProps) => state.amplifyConfig
+    (state: RootState) => state.app.amplifyConfig
   );
+  const dispatch = useDispatch<Dispatch<Actions>>();
 
   const [curStep, setCurStep] = useState(0);
-  const history = useHistory();
+  const navigate = useNavigate();
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [cloudFrontPipelineTask, setCloudFrontPipelineTask] =
     useState<CloudFrontTaskProps>(DEFAULT_TASK_VALUE);
+  const [domainCheckStatus, setDomainCheckStatus] =
+    useState<DomainStatusCheckResponse>();
 
   const [autoS3EmptyError, setAutoS3EmptyError] = useState(false);
   const [manualS3EmpryError, setManualS3EmpryError] = useState(false);
@@ -260,19 +280,34 @@ const CreateCloudFront: React.FC = () => {
     indexEmptyError: false,
     indexNameFormatError: false,
   });
+  const tags = useTags();
+  const monitor = useAlarm();
+
+  const sortCloudFrontArray = (arr: string[]) => {
+    return arr.sort((a: string, b: string) => {
+      return FieldSortingArr.indexOf(a) - FieldSortingArr.indexOf(b);
+    });
+  };
 
   const confirmCreatePipeline = async () => {
-    console.info("cloudFrontPipelineTask:", cloudFrontPipelineTask);
     const createPipelineParams: any = {};
     createPipelineParams.type = ServiceType.CloudFront;
     createPipelineParams.source = cloudFrontPipelineTask.source;
     createPipelineParams.target = cloudFrontPipelineTask.target;
-    createPipelineParams.tags = cloudFrontPipelineTask.tags;
+    createPipelineParams.tags = tags;
     createPipelineParams.logSourceAccountId =
       cloudFrontPipelineTask.logSourceAccountId;
     createPipelineParams.logSourceRegion = amplifyConfig.aws_project_region;
     createPipelineParams.destinationType =
       cloudFrontPipelineTask.destinationType;
+
+    createPipelineParams.monitor = monitor.monitor;
+
+    // Set max capacity to min when auto scaling is false
+    if (cloudFrontPipelineTask.params.enableAutoScaling === YesNo.No) {
+      cloudFrontPipelineTask.params.maxCapacity =
+        cloudFrontPipelineTask.params.minCapacity;
+    }
 
     let tmpParamList: any = [];
 
@@ -313,9 +348,7 @@ const CreateCloudFront: React.FC = () => {
         const allFieldArray = CloudFrontFieldTypeList.map(
           (element) => element.value
         );
-        const sortedArray = allFieldArray.sort((a: string, b: string) => {
-          return FieldSortingArr.indexOf(a) - FieldSortingArr.indexOf(b);
-        });
+        const sortedArray = sortCloudFrontArray(allFieldArray);
         tmpParamList.push({
           parameterKey: "fieldNames",
           parameterValue: sortedArray.join(","),
@@ -324,10 +357,8 @@ const CreateCloudFront: React.FC = () => {
       if (
         cloudFrontPipelineTask.params.fieldType === CloudFrontFieldType.CUSTOM
       ) {
-        const sortedArray = cloudFrontPipelineTask.params.customFields.sort(
-          (a: string, b: string) => {
-            return FieldSortingArr.indexOf(a) - FieldSortingArr.indexOf(b);
-          }
+        const sortedArray = sortCloudFrontArray(
+          cloudFrontPipelineTask.params.customFields
         );
         tmpParamList.push({
           parameterKey: "fieldNames",
@@ -351,9 +382,7 @@ const CreateCloudFront: React.FC = () => {
       );
       console.info("createRes:", createRes);
       setLoadingCreate(false);
-      history.push({
-        pathname: "/log-pipeline/service-log",
-      });
+      navigate("/log-pipeline/service-log");
     } catch (error) {
       setLoadingCreate(false);
       console.error(error);
@@ -361,8 +390,18 @@ const CreateCloudFront: React.FC = () => {
   };
 
   useEffect(() => {
-    console.info("cloudFrontPipelineTask:", cloudFrontPipelineTask);
-  }, [cloudFrontPipelineTask]);
+    dispatch({ type: ActionType.CLOSE_SIDE_MENU });
+  }, []);
+
+  const isNextDisabled = () => {
+    return (
+      cloudFrontIsChanging ||
+      domainListIsLoading ||
+      nextStepDisable ||
+      (curStep === 2 &&
+        domainCheckStatus?.status !== DomainStatusCheckType.PASSED)
+    );
+  };
 
   return (
     <div className="lh-main-content">
@@ -919,25 +958,33 @@ const CreateCloudFront: React.FC = () => {
                         };
                       });
                     }}
+                    domainCheckedStatus={domainCheckStatus}
+                    changeOSDomainCheckStatus={(status) => {
+                      setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
+                        return {
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            replicaNumbers: status.multiAZWithStandbyEnabled
+                              ? "2"
+                              : "1",
+                          },
+                        };
+                      });
+                      setDomainCheckStatus(status);
+                    }}
                   />
                 )}
                 {curStep === 3 && (
-                  <CreateTags
-                    pipelineTask={cloudFrontPipelineTask}
-                    changeTags={(tags) => {
-                      setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
-                        return { ...prev, tags: tags };
-                      });
-                    }}
-                  />
+                  <div>
+                    <AlarmAndTags pipelineTask={cloudFrontPipelineTask} />
+                  </div>
                 )}
                 <div className="button-action text-right">
                   <Button
                     btnType="text"
                     onClick={() => {
-                      history.push({
-                        pathname: "/log-pipeline/service-log/create",
-                      });
+                      navigate("/log-pipeline/service-log/create");
                     }}
                   >
                     {t("button.cancel")}
@@ -956,11 +1003,7 @@ const CreateCloudFront: React.FC = () => {
 
                   {curStep < 3 && (
                     <Button
-                      disabled={
-                        cloudFrontIsChanging ||
-                        domainListIsLoading ||
-                        nextStepDisable
-                      }
+                      disabled={isNextDisabled()}
                       btnType="primary"
                       onClick={() => {
                         if (curStep === 0) {
@@ -1085,6 +1128,13 @@ const CreateCloudFront: React.FC = () => {
                           if (Object.values(validRes).indexOf(true) >= 0) {
                             return;
                           }
+                          // Check domain connection status
+                          if (
+                            domainCheckStatus?.status !==
+                            DomainStatusCheckType.PASSED
+                          ) {
+                            return;
+                          }
                         }
                         setCurStep((curStep) => {
                           return curStep + 1 > 3 ? 3 : curStep + 1;
@@ -1099,6 +1149,12 @@ const CreateCloudFront: React.FC = () => {
                       loading={loadingCreate}
                       btnType="primary"
                       onClick={() => {
+                        if (!validateAalrmInput(monitor)) {
+                          dispatch({
+                            type: CreateAlarmActionTypes.VALIDATE_ALARM_INPUT,
+                          });
+                          return;
+                        }
                         confirmCreatePipeline();
                       }}
                     >

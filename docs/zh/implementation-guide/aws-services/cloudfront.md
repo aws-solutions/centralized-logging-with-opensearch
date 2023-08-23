@@ -40,12 +40,41 @@
 include-markdown "include-cfn-plugins-common.md"
 %}
 
-##  示例仪表板
+## 查看仪表板
+
+仪表板包括以下可视化。
+
+| Visualization Name                     | Source Field                                                               | Description                                                                                                                                                         |
+| -------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Total Requests                         | <ul><li> log event </li></ul>                                              | 显示 Amazon CloudFront 接收的总观众请求次数，包括所有 HTTP 方法以及 HTTP 和 HTTPS 请求。                                                                                                 |
+| Edge Locations                         | <ul><li> x-edge-location </li></ul>                                        | 显示代表 CloudFront 边缘服务器位置比例的饼图。                                                                                                                                       |
+| Request History                        | <ul><li> log event </li></ul>                                              | 展示一个显示事件分布的柱状图。                                                                                                                                     |
+| Unique Visitors                        | <ul><li> c-ip </li></ul>                                                   | 显示由客户端 IP 地址识别的唯一访客。                                                                                                                            |
+| Cache Hit Rate                         | <ul><li> sc-bytes </li></ul>                                               | 显示从 CloudFront 缓存直接为您的观众请求提供内容的比例，而不是去原始服务器获取内容。                                                                                          |
+| Result Type                            | <ul><li> x-edge-response-result-type </li></ul>                            | 显示对所选 CloudFront 分发的命中、未命中和错误的百分比：<ul><li>Hit - 来自 CloudFront 边缘缓存的对象的观众请求。在访问日志中，这些是 x-edge-response-result-type 值为 Hit 的请求。</li><li>Miss - 对象不在边缘缓存中的观众请求，所以 CloudFront 必须从您的源获取对象。在访问日志中，这些是 x-edge-response-result-type 值为 Miss 的请求。</li><li>Error - 导致错误的观众请求，所以 CloudFront 没有提供对象。在访问日志中，这些是 x-edge-response-result-type 值为 Error、LimitExceeded 或 CapacityExceeded 的请求。</li></ul> 图表不包括刷新命中-在边缘缓存中但已过期的对象的请求。在访问日志中，刷新命中是 x-edge-response-result-type 值为 RefreshHit 的请求。                     |
+| Top Miss URI                           | <ul><li> cs-uri-stem</li> <li> cs-method </li>  </ul>                      | 显示不在缓存中的前 10 个请求对象。                                                                                                                             |
+| Bandwidth                              | <ul><li> cs-bytes</li><li> sc-bytes</li></ul>                              | 提供来自 CloudFront 边缘位置的数据传输活动的洞察。                                                                                                                       |
+| Bandwidth History                      | <ul><li> cs-bytes</li><li> sc-bytes </li></ul>                             | 显示来自 CloudFront 边缘位置的数据传输活动的历史趋势。                                                                                                                       |
+| Top Client IPs                         | <ul><li> c-ip</li></ul>                                                    | 提供访问您的 Amazon CloudFront 的前 10 个 IP 地址。                                                                                                               |
+| Status Code Count                      | <ul><li> sc-status</li></ul>                                               | 显示按 HTTP 状态代码（例如 200、404、403 等）分组的对 Amazon CloudFront 的请求计数。                                                                                       |
+| Status History                         | <ul><li> @timestamp</li><li>sc-status </li></ul>                           | 显示 Amazon CloudFront 在特定时间段返回的 HTTP 状态代码的历史趋势。                                                                                                  |
+| Status Code                            | <ul><li> sc-status</li></ul>                                               | 标识对 EC2 资源进行更改的用户或 IAM 角色，协助追踪和修改的责任。                                                                                                   |
+| Average Time Taken                     | <ul><li> time-taken</li></ul>                                              | 此可视化计算并显示 Amazon CloudFront 中各种操作的平均时间（例如 GET、PUT 请求的平均时间等）。                                                                      |
+| Average Time History                   | <ul><li>time-taken</li><li>time-to-first-byte</li><li>@timestamp</li></ul> | 显示 Amazon CloudFront 中各种操作的平均时间的历史趋势。                                                                                                                |
+| Http Method                            | <ul><li> cs-method</li></ul>                                               | 使用饼图显示按 http 请求方法名称（例如 POST、GET、HEAD 等）分组的对 Amazon CloudFront 的请求计数。                                                                    |
+| Average Time To First Byte             | <ul><li> time-to-first-byte</li></ul>                                      | 提供原始服务器响应第一个字节的响应所需的平均时间。                                                                                                                         |
+| Top Request URIs                       | <ul><li> cs-uri-stem</li><li>cs-method</li></ul>                           | 提供访问您的 CloudFront 的前 10 个请求 URIs。                                                                                                                           |
+| Top User Agents                        | <ul><li> cs-user-agent</li></ul>                                           | 提供访问您的 CloudFront 的前 10 个用户代理。                                                                                                                         |
+| Edge Location Heatmap                  | <ul><li> x-edge-location</li><li>x-edge-result-type</li></ul>              | 显示代表每个边缘位置的结果类型的热图。                                                                                                                              |
+| Top Referers                           | <ul><li> cs-referer</li></ul>                                              | 与 Amazon CloudFront 访问的前 10 个引荐者。                                                                                                                           |
+| Top Countries or Regions               | <ul><li> c_country</li></ul>                                               | 与 Amazon CloudFront 访问的前 10 个国家。                                                                                                                            |
+
+### 样品仪表板
+
 {%
-include-markdown "include-dashboard.md"
+include-markdown "../include-dashboard.md"
 %}
 
 [![cloudfront-db]][cloudfront-db]
-
 
 [cloudfront-db]: ../../images/dashboards/cloudfront-db.png

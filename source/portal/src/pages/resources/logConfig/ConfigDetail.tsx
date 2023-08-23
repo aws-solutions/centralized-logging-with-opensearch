@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React, { useState, useEffect } from "react";
-import { RouteComponentProps, useHistory } from "react-router-dom";
 import SideMenu from "components/SideMenu";
 import Breadcrumb from "components/Breadcrumb";
 import PagePanel from "components/PagePanel";
@@ -23,26 +22,20 @@ import HeaderPanel from "components/HeaderPanel";
 import ValueWithLabel from "components/ValueWithLabel";
 import LoadingText from "components/LoadingText";
 import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
-import { getLogConf } from "graphql/queries";
-import { deleteLogConf } from "graphql/mutations";
+import { getLogConfig } from "graphql/queries";
+import { deleteLogConfig } from "graphql/mutations";
 import Modal from "components/Modal";
-import { DEFAULT_AGENT_VERSION, ResourceStatus } from "assets/js/const";
 import { formatLocalTime } from "assets/js/utils";
 import { useTranslation } from "react-i18next";
 import ConfigDetailComps from "./ConfigDetailComps";
-import { Alert } from "assets/js/alert";
+import { Alert as AlertMsg } from "assets/js/alert";
 import { ExLogConf } from "../common/LogConfigComp";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import Alert from "components/Alert";
 
-interface MatchParams {
-  id: string;
-  name: string;
-}
-
-const ConfigDetail: React.FC<RouteComponentProps<MatchParams>> = (
-  props: RouteComponentProps<MatchParams>
-) => {
-  const id: string = props.match.params.id;
-  const history = useHistory();
+const ConfigDetail: React.FC = () => {
+  const { id, version } = useParams();
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const [loadingData, setLoadingData] = useState(true);
   const [curLogConfig, setCurLogConfig] = useState<ExLogConf>();
@@ -55,7 +48,7 @@ const ConfigDetail: React.FC<RouteComponentProps<MatchParams>> = (
       name: t("resource:config.name"),
       link: "/resources/log-config",
     },
-    { name: curLogConfig?.confName || "" },
+    { name: curLogConfig?.name || "" },
   ];
 
   // Show Remove Log Config Dialog
@@ -63,19 +56,17 @@ const ConfigDetail: React.FC<RouteComponentProps<MatchParams>> = (
     setOpenDeleteModel(true);
   };
 
-  // Confirm to Remove Log Config By Id
+  // Confirm to Remove Log Config By ID
   const confimRemoveLogConfig = async () => {
     try {
       setLoadingDelete(true);
-      const removeRes = await appSyncRequestMutation(deleteLogConf, {
+      const removeRes = await appSyncRequestMutation(deleteLogConfig, {
         id: curLogConfig?.id,
       });
       console.info("removeRes:", removeRes);
       setLoadingDelete(false);
       setOpenDeleteModel(false);
-      history.push({
-        pathname: `/resources/log-config`,
-      });
+      navigate(`/resources/log-config`);
     } catch (error) {
       setLoadingDelete(false);
       console.error(error);
@@ -85,13 +76,14 @@ const ConfigDetail: React.FC<RouteComponentProps<MatchParams>> = (
   const getLogConfigById = async () => {
     try {
       setLoadingData(true);
-      const resData: any = await appSyncRequestQuery(getLogConf, {
+      const resData: any = await appSyncRequestQuery(getLogConfig, {
         id: id,
+        version: version ? version : 0,
       });
       console.info("resData:", resData);
-      const dataLogConfig: ExLogConf = resData.data.getLogConf;
-      if (dataLogConfig.status === ResourceStatus.INACTIVE) {
-        Alert(t("resource:config.detail.notExist"));
+      const dataLogConfig: ExLogConf = resData.data.getLogConfig;
+      if (!dataLogConfig.id) {
+        AlertMsg(t("resource:config.detail.notExist"));
         return;
       }
       setCurLogConfig(dataLogConfig);
@@ -104,7 +96,7 @@ const ConfigDetail: React.FC<RouteComponentProps<MatchParams>> = (
 
   useEffect(() => {
     getLogConfigById();
-  }, []);
+  }, [version]);
 
   return (
     <div className="lh-main-content">
@@ -119,37 +111,54 @@ const ConfigDetail: React.FC<RouteComponentProps<MatchParams>> = (
             ) : (
               <div>
                 <PagePanel
-                  title={curLogConfig?.confName || ""}
+                  title={curLogConfig?.name || ""}
                   actions={
-                    <div>
-                      <Button
-                        onClick={() => {
-                          console.info("edit click");
-                          history.push({
-                            pathname:
-                              "/resources/log-config/detail/" + id + "/edit",
-                          });
-                        }}
-                      >
-                        {t("button.edit")}
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          removeLogConfig();
-                        }}
-                      >
-                        {t("button.delete")}
-                      </Button>
-                    </div>
+                    version ? undefined : (
+                      <div>
+                        <Button
+                          onClick={() => {
+                            console.info("edit click");
+                            navigate(
+                              "/resources/log-config/detail/" + id + "/edit"
+                            );
+                          }}
+                        >
+                          {t("button.edit")}
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            removeLogConfig();
+                          }}
+                        >
+                          {t("button.delete")}
+                        </Button>
+                      </div>
+                    )
                   }
                 >
+                  <>
+                    {version && (
+                      <Alert
+                        content={
+                          <div>
+                            {t("resource:config.detail.notSupportEdit")}
+                            <Link
+                              to={`/resources/log-config/detail/${curLogConfig?.id}`}
+                            >
+                              {curLogConfig?.name}
+                            </Link>
+                          </div>
+                        }
+                      />
+                    )}
+                  </>
                   <HeaderPanel title={t("resource:config.detail.general")}>
                     <div className="flex value-label-span">
                       <div className="flex-1">
                         <ValueWithLabel
                           label={t("resource:config.detail.name")}
                         >
-                          <div>{curLogConfig?.confName}</div>
+                          <div>{curLogConfig?.name}</div>
                         </ValueWithLabel>
                       </div>
                       <div className="flex-1 border-left-c">
@@ -161,9 +170,9 @@ const ConfigDetail: React.FC<RouteComponentProps<MatchParams>> = (
                       </div>
                       <div className="flex-1 border-left-c">
                         <ValueWithLabel
-                          label={t("resource:config.detail.agent")}
+                          label={t("resource:config.detail.version")}
                         >
-                          <div>{DEFAULT_AGENT_VERSION}</div>
+                          <div>{version ? version : "latest"}</div>
                         </ValueWithLabel>
                       </div>
                       <div className="flex-1 border-left-c">
@@ -171,7 +180,7 @@ const ConfigDetail: React.FC<RouteComponentProps<MatchParams>> = (
                           label={t("resource:config.detail.created")}
                         >
                           <div>
-                            {formatLocalTime(curLogConfig?.createdDt || "")}
+                            {formatLocalTime(curLogConfig?.createdAt || "")}
                           </div>
                         </ValueWithLabel>
                       </div>
@@ -222,7 +231,7 @@ const ConfigDetail: React.FC<RouteComponentProps<MatchParams>> = (
         >
           <div className="modal-content">
             {t("resource:config.deleteTips")}
-            <b>{`${curLogConfig?.confName}`}</b> {"?"}
+            <b>{`${curLogConfig?.name}`}</b> {"?"}
           </div>
         </Modal>
       </div>

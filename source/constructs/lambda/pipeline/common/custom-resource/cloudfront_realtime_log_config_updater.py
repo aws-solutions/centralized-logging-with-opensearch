@@ -7,7 +7,7 @@ import logging
 logging.getLogger().setLevel(logging.INFO)
 
 
-def on_event(event, ctx):
+def on_event(event, _):
     logging.info("on_event %s", event)
 
     props = event["ResourceProperties"]

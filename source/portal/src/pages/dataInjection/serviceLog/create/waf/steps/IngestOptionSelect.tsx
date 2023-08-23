@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React from "react";
+import React, { ReactElement } from "react";
 import FormItem from "components/FormItem";
 import Select from "components/Select";
 import { useTranslation } from "react-i18next";
@@ -43,9 +43,9 @@ interface IngestOptionSelectProps {
   onlySampled?: boolean;
   ingestOption: string;
   changeIngestOption: (option: string) => void;
-  errorText?: string;
-  successText?: string;
-  warningText?: string | JSX.Element;
+  errorText?: string | null;
+  successText?: string | null;
+  warningText?: string | ReactElement | null;
 }
 
 const IngestOptionSelect: React.FC<IngestOptionSelectProps> = (

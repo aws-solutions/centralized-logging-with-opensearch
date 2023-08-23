@@ -19,10 +19,14 @@ import Select from "components/Select";
 import TextInput from "components/TextInput";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { AppStateProps } from "reducer/appReducer";
-import { AmplifyConfigType, YesNo, YESNO_LIST } from "types";
-import { ApplicationLogType } from "../../dataInjection/applicationLog/create/CreatePipeline";
+import {
+  AmplifyConfigType,
+  YesNo,
+  YESNO_LIST,
+  ApplicationLogType,
+} from "types";
 import { NOT_SUPPORT_KDS_AUTO_SCALING_REGION } from "assets/js/const";
+import { RootState } from "reducer/reducers";
 
 interface BufferKDSProps {
   shardNumInvalidError: boolean | undefined;
@@ -36,7 +40,7 @@ interface BufferKDSProps {
 const BufferKDS: React.FC<BufferKDSProps> = (props: BufferKDSProps) => {
   const { t } = useTranslation();
   const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: AppStateProps) => state.amplifyConfig
+    (state: RootState) => state.app.amplifyConfig
   );
   const {
     shardNumInvalidError,

@@ -4,13 +4,14 @@
 
 * Amazon EC2 实例组
 * EKS 集群
+* Amazon S3
 * Syslog
 
 有关详细信息，请参阅 [概念](./index.md#concepts)。
 
 ## Amazon EC2 实例组
 
-实例组是指托管相同应用程序的一组 EC2 Linux 实例。这是一种将 [Log Config](./index.md#log-config) 与一组 EC2 实例相关联的方法。 日志通使用 [Systems Manager Agent(SSM Agent)][ssm-agent]{target="_blank"} 安装和配置 Fluent Bit 代理，并将日志数据发送到 [Kinesis Data Streams][kds]{target="_blank “}。
+一个实例组代表了一组 EC2 Linux 实例，这使得解决方案能够快速地将 [Log Config](./index.md#log-config) 与多个 EC2 实例关联。日志通 使用 [Systems Manager Agent(SSM Agent)][ssm-agent]{target="_blank"} 来安装/配置 Fluent Bit agent，并将日志数据发送到 [Kinesis Data Streams][kds]{target="_blank"}。
 
 ### 前提条件
 
@@ -54,7 +55,7 @@
 8. 选择**创建**。 使用 Instance Group 创建 Log Ingestion 后，您可以在详细信息页面中找到生成的 Shell Script。
 9. 复制 shell 脚本并更新 Auto Scaling 组的 [启动配置](https://docs.aws.amazon.com/autoscaling/ec2/userguide/launch-configurations.html) 或 [启动模板](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html)。如果需要，shell 脚本将自动安装 Fluent Bit、SSM 代理，并下载 Fluent Bit 配置。
 10. 一旦您更新了启动配置或启动模板，您需要启动 [instance refresh] [instance-refresh] 来更新 Auto Scaling 组中的实例。
-新启动的实例会将日志提取到 OpenSearch 集群或 [Log Buffer](./index.md#log-buffer) 层。
+新启动的实例会将日志提取到 OpenSearch 集群或 [Log Buffer](./index.md#日志缓冲区log-buffer) 层。
 
 ## Amazon EKS 集群
 
@@ -80,8 +81,16 @@
 10. 如果需要，添加标签。
 11. 选择**创建**。
 
+## Amazon S3
 
-## Syslog 
+[S3][s3] 在日志通中指的是您想要从中收集存储在您桶中的应用日志的 Amazon S3。您可以选择 **持续加载** 或 **一次性加载** 来创建您的导入任务。
+
+!!! important "重要"
+
+    * 持续加载 表示当新文件传送到指定的 S3 位置时，导入作业将运行。
+    * 一次性加载 表示导入工作将在创建时运行，并且只会运行一次以加载指定位置中的所有文件。
+
+## Syslog
 !!! important "重要"
 
     请确保您的 Syslog 生成器/发送者的子网连接到日志通 的**两个**私有子网，以便可以提取日志。 有关连接 VPC 的方法的更多详细信息，请参阅 [VPC Connectivity][vpc-connectivity]。
@@ -92,6 +101,7 @@
 [ssm-agent]: https://docs.aws.amazon.com/systems-manager/latest/userguide/ssm-agent.html
 [open-ssl]: https://www.openssl.org/source/
 [eks]: https://docs.aws.amazon.com/eks/latest/userguide/what-is-eks.html
+[s3]: https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html
 [daemonset]: https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/
 [sidecar]: https://kubernetes.io/docs/concepts/workloads/pods/#workload-resources-for-managing-pods
 [bucket]: https://docs.aws.amazon.com/AmazonS3/latest/userguide//UsingBucket.html

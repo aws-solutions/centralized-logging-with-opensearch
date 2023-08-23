@@ -27,7 +27,7 @@ import { Construct, IConstruct } from "constructs";
 
 const { VERSION } = process.env;
 const GB = 1024;
-const ECR_IMG_VERSION = "2.28.4";
+const ECR_IMG_VERSION = "2.31.12";
 const NLB_MIN_PORT = 500;
 const NLB_MAX_PORT = 20000;
 
@@ -44,7 +44,8 @@ export class SyslogtoECSStack extends SolutionStack {
     let solutionDesc =
       props.solutionDesc || "Centralized Logging with OpenSearch";
     let solutionId = props.solutionId || "SO8025";
-
+    const stackPrefix = 'CL';
+    
     this.setDescription(
       `(${solutionId}-sys) - ${solutionDesc} - Syslog Pipeline Template - Version ${VERSION}`
     );
@@ -140,7 +141,7 @@ export class SyslogtoECSStack extends SolutionStack {
 
     const ecsCluster = ecs.Cluster.fromClusterAttributes(
       this,
-      "LogHubCluster",
+      `${stackPrefix}Cluster`,
       {
         clusterName: ecsClusterName.valueAsString,
         vpc: vpc,
@@ -156,7 +157,7 @@ export class SyslogtoECSStack extends SolutionStack {
 
     const ecsServiceSG = new ec2.SecurityGroup(this, "ECSServiceSG", {
       vpc,
-      allowAllOutbound: true,
+      allowAllOutbound: false,
       description: "security group for ECS Service",
     });
     ecsServiceSG.addIngressRule(
@@ -173,6 +174,11 @@ export class SyslogtoECSStack extends SolutionStack {
       ec2.Peer.anyIpv4(),
       ec2.Port.tcp(2022),
       "allow HTTP traffic for Fluent-bit health check"
+    );
+    ecsServiceSG.addEgressRule(
+      ec2.Peer.anyIpv4(),
+      ec2.Port.tcp(443),
+      "allow Fluent-bit to access HTTPS."
     );
     NagSuppressions.addResourceSuppressions(ecsServiceSG, [
       {
@@ -348,6 +354,8 @@ export class SyslogtoECSStack extends SolutionStack {
     targetGroup.addTarget(service);
 
     this.setMetadata();
+
+    Aspects.of(this).add(new InjectRemoveECSAlarm());
   }
 
   protected enable(param: { construct: IConstruct; if: CfnCondition }) {
@@ -361,6 +369,19 @@ class InjectCondition implements IAspect {
   public visit(node: IConstruct): void {
     if (node instanceof CfnResource) {
       node.cfnOptions.condition = this.condition;
+    }
+  }
+}
+
+class InjectRemoveECSAlarm implements IAspect {
+  public visit(node: IConstruct): void {
+    if (
+      node instanceof CfnResource &&
+      node.cfnResourceType === "AWS::ECS::Service"
+    ) {
+      node.addDeletionOverride(
+        "Properties.DeploymentConfiguration.Alarms"
+      );
     }
   }
 }

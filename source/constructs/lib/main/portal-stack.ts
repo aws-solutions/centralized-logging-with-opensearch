@@ -28,6 +28,7 @@ import {
 } from 'aws-cdk-lib';
 import { NagSuppressions } from 'cdk-nag';
 import { Construct } from 'constructs';
+import { constructFactory } from '../util/stack-helper';
 
 export interface PortalProps {
   /**
@@ -286,7 +287,7 @@ export class PortalStack extends Construct {
       portal.cloudFrontWebDistribution.distributionId;
 
     // upload static web assets
-    new s3d.BucketDeployment(this, 'DeployWebAssets', {
+    constructFactory(s3d.BucketDeployment)(this, 'DeployWebAssets', {
       sources: [
         s3d.Source.asset(path.join(__dirname, '../../../portal/build')),
       ],

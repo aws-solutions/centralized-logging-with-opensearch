@@ -1,5 +1,6 @@
-| Date         | Change           |
-|---------------|-------------------|
-| June 2023 | Fix the EKS Fluent-Bit deployment configuration generation issue. |
-| April 2023 | Fix deployment failure due to S3 ACL changes. |
-| March 2023 | Initial release. |
+| Date       | Changes                                                            |
+|------------|-------------------------------------------------------------------|
+| March 2023  | Initial release.  |
+| April 2023 | Released version 1.0.1</br>Fixed deployment failure due to S3 ACL changes.                     |
+| June 2023 |  Released version 1.0.3</br>Fixed the EKS Fluent Bit deployment configuration generation issue.                                               |
+| Aug 2023 | Released version 2.0.0</br> <li> Added feature of ingesting log from S3 bucket continuously or on-demand</br> <li> Added log pipeline monitoring dashboard into the solution console</br> <li>Supported one-click enablement of pipeline alarms</br>  <li> Added an option to automatically attach required IAM policies when creating an Instance Group</br> <li> Displayed an error message on the console when the installation of log agent fails</br> <li> Updated Application log pipeline creation process by allowing customer to specify a log source</br> <li> Added validations to OpenSearch domain when importing a domain or selecting a domain to create log pipeline</br> <li> Supported installing log agent on AL2023 instances</br> <li>Supported ingesting WAF (associated with CloudFront) sampled logs to OpenSearch in other regions except us-east-1</br> <li> Allowed the same index name in different OpenSearch domains 

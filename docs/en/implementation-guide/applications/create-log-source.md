@@ -2,13 +2,14 @@ You need to create a log source first before collecting application logs. Centra
 
 * [Amazon EC2 instance group](#amazon-ec2-instance-group)
 * [Amazon EKS cluster](#amazon-eks-cluster)
+* [Amazon S3](#amazon-s3)
 * [Syslog](#syslog)
 
 For more information, see [concepts](./index.md#concepts).
 
 ## Amazon EC2 Instance Group
 
-An instance group represents a group of EC2 Linux instances, which enables the solution to associate a [Log Config](./index.md#log-config) with multiple EC2 instances quickly. Centralized Logging with OpenSearch uses [Systems Manager Agent(SSM Agent)][ssm-agent]{target="_blank"} to install/configure Fluent Bit agent, and sends log data to [Kinesis Data Streams][kds]{target="_blank"}. 
+An instance group represents a group of EC2 Linux instances, which enables the solution to associate a [Log Config](./index.md#log-config) with multiple EC2 instances quickly. Centralized Logging with OpenSearch uses [Systems Manager Agent(SSM Agent)][ssm-agent]{target="_blank"} to install/configure Fluent Bit agent, and sends log data to [Kinesis Data Streams][kds]{target="_blank"}.
 
 ### Prerequisites
 
@@ -40,19 +41,19 @@ Make sure the instances meet the following requirements:
 
 ### (Option 2) Select an Auto Scaling group to create an Instance Group
 When creating an Instance Group with Amazon EC2 Auto Scaling group, the solution will generate a shell script which you
-should include in the [EC2 User Data][ec2-user-data].  
+should include in the [EC2 User Data][ec2-user-data].
 
 1. Sign in to the Centralized Logging with OpenSearch Console.
 2. In the left sidebar, under **Log Source**, choose **Instance Group**.
 3. Click the **Create an instance group** button.
 4. In the **Settings** section, specify a group name.
 5. In the **Configuration** section, select **Auto Scaling Groups**.
-6. In the **Auto Scaling groups** section, select the auto scaling group from which you want to collect logs.
+6. In the **Auto Scaling groups** section, select the autoscaling group from which you want to collect logs.
 7. (Optional) If you want to ingest logs from another account, select a [linked account](../link-account/index.md) in the **Account Settings** section to create an instance group log source from another account.
 8. Choose **Create**. After you created a Log Ingestion using the Instance Group, you can find the generated Shell Script in the details page.
 9. Copy the shell script and update the User Data of the Auto Scaling Group's [launch configurations](https://docs.aws.amazon.com/autoscaling/ec2/userguide/launch-configurations.html) or [launch template](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html).
-The shell script will automatically install Fluent Bit, SSM agent if needed, and download Fluent Bit configurations. 
-10. Once you have updated the launch configurations or launch template, you need to start an [instance refresh][instance-refresh] to update the instances within the Auto Scaling group. 
+The shell script will automatically install Fluent Bit, SSM agent if needed, and download Fluent Bit configurations.
+10. Once you have updated the launch configurations or launch template, you need to start an [instance refresh][instance-refresh] to update the instances within the Auto Scaling group.
 The newly launched instances will ingest logs to the OpenSearch cluster or the [Log Buffer](./index.md#log-buffer) layer.
 
 ## Amazon EKS cluster
@@ -67,9 +68,9 @@ The [EKS Cluster][eks] in Centralized Logging with OpenSearch refers to the Amaz
 1. Sign in to the Centralized Logging with OpenSearch Console.
 2. In the left sidebar, under **Log Source**, choose **EKS Cluster**.
 3. Click the **Import a Cluster** button.
-4. Choose the **EKS Cluster** where Centralized Logging with OpenSearch collects logs from. 
+4. Choose the **EKS Cluster** where Centralized Logging with OpenSearch collects logs from.
 (Optional) If you want to ingest logs from another account, select a [linked account](../link-account/index.md) from the **Account** dropdown to import an EKS log source from another account.
-5. Select **DaemonSet** or **Sidecar** as log agent's deployment pattern. 
+5. Select **DaemonSet** or **Sidecar** as log agent's deployment pattern.
 6. Choose **Next**.
 7. Specify the **Amazon OpenSearch** where Centralized Logging with OpenSearch sends the logs to.
 8. Follow the guidance to establish a VPC peering connection between EKS's VPC and OpenSearch's VPC.
@@ -80,19 +81,29 @@ The [EKS Cluster][eks] in Centralized Logging with OpenSearch refers to the Amaz
 10. Add tags if needed.
 11. Choose **Create**.
 
+## Amazon S3
+
+The [S3][s3] in Centralized Logging with OpenSearch refers to the Amazon S3 from which you want to collect application logs stored in your bucket. You can choose **On-going** or **One-time** to create your ingestion job.
+
+!!! important "Important"
+
+    * On-going means that the ingestion job will run when a new file is delivered to the specified S3 location.
+    * One-time means that the ingestion job will run at creation and only will run once to load all files in the specified location.
 
 ## Syslog
+
 !!! important "Important"
 
     To ingest logs, make sure your Syslog generator/sender’s subnet is connected to Centralized Logging with OpenSearch’s **two** private subnets. Refer to [VPC Connectivity][vpc-connectivity] for more details about how to connect VPCs.
 
- You can use UDP or TCP custom port number to collect syslog in Centralized Logging with OpenSearch. Syslog refers to logs generated by Linux instance, routers or network equipment. For more information, see [Syslog][syslog] in Wikipedia. 
+ You can use UDP or TCP custom port number to collect syslog in Centralized Logging with OpenSearch. Syslog refers to logs generated by Linux instance, routers or network equipment. For more information, see [Syslog][syslog] in Wikipedia.
 
 
 [kds]: https://aws.amazon.com/kinesis/data-streams/
 [ssm-agent]: https://docs.aws.amazon.com/systems-manager/latest/userguide/ssm-agent.html
 [open-ssl]: https://www.openssl.org/source/
 [eks]: https://docs.aws.amazon.com/eks/latest/userguide/what-is-eks.html
+[s3]: https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html
 [daemonset]: https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/
 [sidecar]: https://kubernetes.io/docs/concepts/workloads/pods/#workload-resources-for-managing-pods
 [syslog]: https://en.wikipedia.org/wiki/Syslog

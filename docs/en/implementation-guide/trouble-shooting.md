@@ -1,10 +1,10 @@
-# Troubleshooting 
+# Troubleshooting
 
 The following help you to fix errors or problems that you might encounter when using Centralized Logging with OpenSearch.
 
 ## Error: Failed to assume service-linked role `arn:x:x:x:/AWSServiceRoleForAppSync`
 
-The reason for this error is that the account has never used the [AWS AppSync](https://aws.amazon.com/appsync/) service. You can deploy the solution's CloudFormation template again. AWS has already created the role automatically when you encountered the error. 
+The reason for this error is that the account has never used the [AWS AppSync](https://aws.amazon.com/appsync/) service. You can deploy the solution's CloudFormation template again. AWS has already created the role automatically when you encountered the error.
 
 You can also go to [AWS CloudShell](https://aws.amazon.com/cloudshell/) or the local terminal and run the following AWS CLI command to Link AppSync Role
 
@@ -24,7 +24,7 @@ You need to go to Amazon OpenSearch Service console, and edit the **Access polic
 If you see this error, please make sure you have entered the correct information during [cross account setup](./link-account/index.md), and then please wait for several minutes.
 
 Centralized Logging with OpenSearch uses [AssumeRole](https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html) for cross-account access.
-This is the best practice to temporary access the AWS resources in your sub-account. 
+This is the best practice to temporary access the AWS resources in your member account.
 However, these roles created during [cross account setup](./link-account/index.md) take seconds or minutes to be affective.
 
 
@@ -39,7 +39,7 @@ sudo service fluent-bit restart
 
 ## Error: PutRecords API responded with error='AccessDeniedException'
 
-Fluent-bit agent deployed on EKS Cluster reports "AccessDeniedException" when sending records to Kinesis. Verify that 
+Fluent-bit agent deployed on EKS Cluster reports "AccessDeniedException" when sending records to Kinesis. Verify that
 the IAM role trust relations are correctly set. With the Centralized Logging with OpenSearch console:
 
 1. Open the Centralized Logging with OpenSearch console.
@@ -62,13 +62,13 @@ to check its status inside the instance.
 
 ## I have switched to Global tenant. However, I still cannot find the dashboard in OpenSearch.
 
-This is usually because Centralized Logging with OpenSearch received 403 error from OpenSearch when creating the index template and dashboard. This 
+This is usually because Centralized Logging with OpenSearch received 403 error from OpenSearch when creating the index template and dashboard. This
 can be fixed by re-run the Lambda function manually by following the steps below:
 
 With the Centralized Logging with OpenSearch console:
 
 1. Open the Centralized Logging with OpenSearch console, and find the AWS Service Log pipeline which has this issue.
-2. Copy the first 5 characters from the ID section. Eg. you should copy `c169c` from ID `c169cb23-88f3-4a7e-90d7-4ab4bc18982c`
+2. Copy the first 5 characters from the ID section. E.g. you should copy `c169c` from ID `c169cb23-88f3-4a7e-90d7-4ab4bc18982c`
 3. Go to AWS Console > Lambda. Paste in function filters. This will filter in all the lambda function created for this AWS Service Log ingestion.
 4. Click the Lambda function whose name contains "OpenSearchHelperFn".
 5. In the **Test** tab, create a new event with any Event name.
@@ -88,7 +88,7 @@ For Redhat 7.9, the whole process will take about 2 hours,and at least 10 GB sto
 
 ```
 # install library
-yum install -y gcc gcc-c++ m4 python3 bison  fontconfig-devel  libXpm-devel texinfo bzip2 wget 
+yum install -y gcc gcc-c++ m4 python3 bison  fontconfig-devel  libXpm-devel texinfo bzip2 wget
 echo /usr/local/lib  >> /etc/ld.so.conf
 
 # create tmp directory
@@ -164,4 +164,28 @@ rm -rf /tmp/library
 sudo ln -s /snap/core20/1623/usr/lib/x86_64-linux-gnu/libcrypto.so.1.1 /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1
 sudo ln -s /snap/core20/1623/usr/lib/x86_64-linux-gnu/libssl.so.1.1 /usr/lib/x86_64-linux-gnu/libssl.so.1.1
 sudo ln -s /usr/lib/x86_64-linux-gnu/libsasl2.so.2 /usr/lib/libsasl2.so.3
+```
+
+#### Amazon Linux 2023
+
+##### x86-64:
+
+```
+wget https://europe.mirror.pkgbuild.com/core/os/x86_64/openssl-1.1-1.1.1.u-1-x86_64.pkg.tar.zst
+unzstd openssl-1.1-1.1.1.u-1-x86_64.pkg.tar.zst
+tar -xvf openssl-1.1-1.1.1.u-1-x86_64.pkg.tar
+sudo cp usr/lib/libcrypto.so.1.1 /usr/lib64/libcrypto.so.1.1
+sudo cp usr/lib/libssl.so.1.1 /usr/lib64/libssl.so.1.1
+
+```
+
+##### aarch64:
+
+```
+wget https://eu.mirror.archlinuxarm.org/aarch64/core/openssl-1.1-1.1.1.t-1-aarch64.pkg.tar.xz
+xz --decompress openssl-1.1-1.1.1.t-1-aarch64.pkg.tar.xz
+tar -xvf openssl-1.1-1.1.1.t-1-aarch64.pkg.tar
+sudo cp usr/lib/libcrypto.so.1.1 /usr/lib64/libcrypto.so.1.1
+sudo cp usr/lib/libssl.so.1.1 /usr/lib64/libssl.so.1.1
+
 ```

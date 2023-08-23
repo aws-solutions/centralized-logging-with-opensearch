@@ -71,6 +71,9 @@ export interface CWtoFirehosetoS3Props {
 }
 
 export class CWtoFirehosetoS3Stack extends Construct {
+  readonly deliveryStreamArn: string;
+  readonly deliveryStreamName: string;
+
   constructor(scope: Construct, id: string, props: CWtoFirehosetoS3Props) {
     super(scope, id);
 
@@ -102,6 +105,8 @@ export class CWtoFirehosetoS3Stack extends Construct {
       ],
       true
     );
+    this.deliveryStreamArn = logFirehose.deliveryStreamArn;
+    this.deliveryStreamName = logFirehose.deliveryStreamName;
 
     // Create the IAM role for CloudWatch Logs destination
     const cwDestinationRole = new iam.Role(this, "CWDestinationRole", {

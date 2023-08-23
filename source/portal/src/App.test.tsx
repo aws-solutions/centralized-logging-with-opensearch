@@ -14,11 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React from "react";
-import { render, screen } from "@testing-library/react";
-import App from "./App";
+import { render } from "@testing-library/react";
+import App from "App";
 
-test("renders learn react link", () => {
-  render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+describe("App", () => {
+  test("Should render without crash", async () => {
+    render(<App />);
+  });
 });

@@ -95,11 +95,6 @@ describe("MainStack", () => {
       Type: "AWS_LAMBDA",
     });
 
-    // GraphQL API DDB Data Source
-    template.hasResourceProperties("AWS::AppSync::DataSource", {
-      Type: "AMAZON_DYNAMODB",
-    });
-
     // Cognito User Pool
     template.hasResourceProperties("AWS::Cognito::UserPool", {
       AdminCreateUserConfig: {

@@ -13,20 +13,39 @@
 [ "$DEBUG" == 'true' ] && set -x
 set -e
 
+
+build_common_lib() {
+
+	echo "Build Common Lib"
+	cd $source_dir/constructs/lambda/common-lib
+	python3 -m venv .venv-test
+	source .venv-test/bin/activate
+
+	pip3 install --upgrade build
+	python -m build
+
+	echo "deactivate virtual environment"
+	deactivate
+
+	rm -fr .venv-test
+}
+
 setup_python_env() {
 	if [ -d "./.venv-test" ]; then
 		echo "Reusing already setup python venv in ./.venv-test. Delete ./.venv-test if you want a fresh one created."
 		return
 	fi
 
-  echo "Setting up python venv"
+  	echo "Setting up python venv"
 	python3 -m venv .venv-test
 	echo "Initiating virtual environment"
 	source .venv-test/bin/activate
 
     echo "Installing python packages"
     # install test dependencies in the python virtual environment
+	pip install --upgrade pip
 	pip3 install -r test/requirements-test.txt
+	pip3 install -e $source_dir/constructs/lambda/common-lib
 	# pip3 install -r requirements.txt --target .
 
 	echo "deactivate virtual environment"
@@ -114,7 +133,7 @@ run_javascript_test() {
 
 run_cdk_project_test() {
 	local component_path=$1
-  local component_name=solutions-constructs
+  	local component_name=solutions-constructs
 
 	echo "------------------------------------------------------------------------------"
 	echo "[Test] $component_name"
@@ -151,87 +170,101 @@ coverage_reports_top_path=$source_dir/test/coverage-reports
 
 portal_dir=$source_dir/portal
 cd $portal_dir
-npm install
+npm install --legacy-peer-deps
 npm run build
 
 construct_dir=$source_dir/constructs
 
 cd $construct_dir
 
-rm -vf ./lambda/pipeline/service/log-processor/boto3_client.py
-
-rm -vf ./lambda/api/app_pipeline/common.py
-rm -vf ./lambda/api/app_log_ingestion/common.py
-rm -vf ./lambda/api/app_log_ingestion/util/aws_svc_mgr.py
-rm -vf ./lambda/api/app_log_ingestion/aws_svc_mgr.py
-rm -vf ./lambda/api/pipeline/aws_svc_mgr.py
-rm -vf ./lambda/api/log_agent_status/aws_svc_mgr.py
-rm -vf ./lambda/api/instance_meta/aws_svc_mgr.py
-rm -vf ./lambda/api/instance_group/aws_svc_mgr.py
-rm -vf ./lambda/api/resource/aws_svc_mgr.py
-rm -vf ./lambda/api/eks_cluster/aws_svc_mgr.py
-rm -vf ./lambda/main/cfnHelper/aws_svc_mgr.py
-
-
-cp -vf ./lambda/pipeline/service/log-processor/../../common/custom-resource/boto3_client.py ./lambda/pipeline/service/log-processor/boto3_client.py
-cp -vf ./lambda/api/app_pipeline/../common/common.py ./lambda/api/app_pipeline/common.py
-cp -vf ./lambda/api/app_log_ingestion/../common/common.py ./lambda/api/app_log_ingestion/common.py
-cp -vf ./lambda/api/pipeline/../common/aws_svc_mgr.py ./lambda/api/pipeline/aws_svc_mgr.py
-cp -vf ./lambda/api/instance_group/../common/aws_svc_mgr.py ./lambda/api/instance_group/aws_svc_mgr.py
-cp -vf ./lambda/api/app_log_ingestion/../common/aws_svc_mgr.py ./lambda/api/app_log_ingestion/aws_svc_mgr.py
-cp -vf ./lambda/api/log_agent_status/../common/aws_svc_mgr.py ./lambda/api/log_agent_status/aws_svc_mgr.py
-cp -vf ./lambda/api/instance_meta/../common/aws_svc_mgr.py ./lambda/api/instance_meta/aws_svc_mgr.py
-cp -vf ./lambda/api/resource/../common/aws_svc_mgr.py ./lambda/api/resource/aws_svc_mgr.py
-cp -vf ./lambda/api/eks_cluster/../common/aws_svc_mgr.py ./lambda/api/eks_cluster/aws_svc_mgr.py
-cp -vf ./lambda/main/cfnHelper/../../api/common/aws_svc_mgr.py ./lambda/main/cfnHelper/aws_svc_mgr.py
-
-# Add test_aws_svc_mgr.py for UT
-cp -vf ./lambda/api/eks_cluster/../common/test/test_aws_svc_mgr.py ./lambda/api/eks_cluster/test/test_aws_svc_mgr.py
-cp -vf ./lambda/api/resource/../common/test/test_aws_svc_mgr.py ./lambda/api/resource/test/test_aws_svc_mgr.py
-cp -vf ./lambda/api/pipeline/../common/test/test_aws_svc_mgr.py ./lambda/api/pipeline/test/test_aws_svc_mgr.py
-cp -vf ./lambda/api/instance_group/../common/test/test_aws_svc_mgr.py ./lambda/api/instance_group/test/test_aws_svc_mgr.py
-cp -vf ./lambda/api/app_log_ingestion/../common/test/test_aws_svc_mgr.py ./lambda/api/app_log_ingestion/test/test_aws_svc_mgr.py
-cp -vf ./lambda/api/log_agent_status/../common/test/test_aws_svc_mgr.py ./lambda/api/log_agent_status/test/test_aws_svc_mgr.py
-cp -vf ./lambda/api/instance_meta/../common/test/test_aws_svc_mgr.py ./lambda/api/instance_meta/test/test_aws_svc_mgr.py
-cp -vf ./lambda/main/cfnHelper/../../api/common/test/test_aws_svc_mgr.py ./lambda/main/cfnHelper/test/test_aws_svc_mgr.py
-
 # Test the CDK project
 run_cdk_project_test $construct_dir
 
 # Test the attached Lambda function
-run_python_test $construct_dir/lambda/pipeline/service/log-processor svc-log-processor
-run_python_test $construct_dir/lambda/pipeline/app/log-processor app-log-processor
-run_python_test $construct_dir/lambda/pipeline/common/opensearch-helper opensearch-helper
-run_python_test $construct_dir/lambda/plugin/standard plugin
-run_python_test $construct_dir/lambda/api/resource resource-api
-run_python_test $construct_dir/lambda/api/instance_meta instance-meta-api
-run_python_test $construct_dir/lambda/api/pipeline svc-pipeline-api
-run_python_test $construct_dir/lambda/api/log_agent_status log_agent_status
-run_python_test $construct_dir/lambda/main/cfnHelper cfnHelper
-run_python_test $construct_dir/lambda/main/sfnHelper sfnHelper
-run_python_test $construct_dir/lambda/custom-resource custom-resource
-run_python_test $construct_dir/lambda/api/app_log_ingestion app_log_ingestion
-run_python_test $construct_dir/lambda/api/eks_cluster eks_cluster
-run_python_test $construct_dir/lambda/api/log_source log_source
-run_python_test $construct_dir/lambda/api/instance_group instance_group
-run_python_test $construct_dir/lambda/api/log_conf log_conf
-run_python_test $construct_dir/lambda/api/app_pipeline app_pipeline
-run_python_test $construct_dir/lambda/api/cross_account cross_account
-run_python_test $construct_dir/lambda/api/common common
-run_python_test $construct_dir/lambda/api/cluster aos_cluster
-run_python_test $construct_dir/lambda/pipeline/common/custom-resource custom-resource2
-run_python_test $construct_dir/lambda/api/app_pipeline_flow app_pipeline_flow
+# Create a process pool
+tests_to_run=()
 
-# Remove test_aws_svc_mgr.py
-echo "Remove UT file"
-rm -rf $construct_dir/lambda/api/eks_cluster/test/test_aws_svc_mgr.py
-rm -rf $construct_dir/lambda/api/resource/test/test_aws_svc_mgr.py
-rm -rf $construct_dir/lambda/api/pipeline/test/test_aws_svc_mgr.py
-rm -rf $construct_dir/lambda/api/instance_group/test/test_aws_svc_mgr.py
-rm -rf $construct_dir/lambda/api/app_log_ingestion/test/test_aws_svc_mgr.py
-rm -rf $construct_dir/lambda/api/log_agent_status/test/test_aws_svc_mgr.py
-rm -rf $construct_dir/lambda/api/instance_meta/test/test_aws_svc_mgr.py
-rm -rf $construct_dir/lambda/main/cfnHelper/test/test_aws_svc_mgr.py
+run_python_test $construct_dir/lambda/common-lib common-lib &
+tests_to_run+=($!)
+run_python_test $construct_dir/lambda/custom-resource custom-resource &
+tests_to_run+=($!)
+run_python_test $construct_dir/lambda/main/cfnHelper cfnHelper &
+tests_to_run+=($!)
+run_python_test $construct_dir/lambda/main/sfnHelper sfnHelper &
+tests_to_run+=($!)
+run_python_test $construct_dir/lambda/pipeline/service/log-processor svc-log-processor &
+tests_to_run+=($!)
+run_python_test $construct_dir/lambda/pipeline/app/log-processor app-log-processor &
+tests_to_run+=($!)
+run_python_test $construct_dir/lambda/pipeline/common/opensearch-helper opensearch-helper &
+tests_to_run+=($!)
+run_python_test $construct_dir/lambda/pipeline/common/custom-resource custom-resource2 &
+tests_to_run+=($!)
+run_python_test $construct_dir/lambda/plugin/standard plugin &
+tests_to_run+=($!)
+
+run_python_test $construct_dir/lambda/api/resource resource-api &
+tests_to_run+=($!)
+run_python_test $construct_dir/lambda/api/pipeline svc-pipeline-api &
+tests_to_run+=($!)
+run_python_test $construct_dir/lambda/api/log_agent_status log_agent_status &
+tests_to_run+=($!)
+run_python_test $construct_dir/lambda/api/app_log_ingestion app_log_ingestion &  
+tests_to_run+=($!)
+run_python_test $construct_dir/lambda/api/log_source log_source &
+tests_to_run+=($!)
+run_python_test $construct_dir/lambda/api/log_conf log_conf &
+tests_to_run+=($!)
+run_python_test $construct_dir/lambda/api/app_pipeline app_pipeline &
+tests_to_run+=($!)
+run_python_test $construct_dir/lambda/api/cross_account cross_account &
+tests_to_run+=($!)
+run_python_test $construct_dir/lambda/api/cluster aos_cluster &
+tests_to_run+=($!)
+run_python_test $construct_dir/lambda/api/pipeline_ingestion_flow pipeline_ingestion_flow &
+tests_to_run+=($!)
+run_python_test $construct_dir/lambda/api/cwl cloudwatch_api &
+tests_to_run+=($!)
+run_python_test $construct_dir/lambda/api/alarm alarm_api &
+tests_to_run+=($!)
+run_python_test $construct_dir/ecr/s3-list-objects s3-list-objects &
+tests_to_run+=($!)
+run_python_test $construct_dir/lib/kinesis/lambda lambda &
+tests_to_run+=($!)
+run_python_test $construct_dir/migration/ migration &
+tests_to_run+=($!)
+
+for i in "${!tests_to_run[@]}"; do
+  test_pid=${tests_to_run[$i]}
+  wait "$test_pid"
+done
+
+echo "All tests completed successfully."
+
+# run_python_test $construct_dir/lambda/common-lib common-lib
+# run_python_test $construct_dir/lambda/custom-resource custom-resource
+# run_python_test $construct_dir/lambda/main/cfnHelper cfnHelper
+# run_python_test $construct_dir/lambda/main/sfnHelper sfnHelper
+# run_python_test $construct_dir/lambda/pipeline/service/log-processor svc-log-processor
+# run_python_test $construct_dir/lambda/pipeline/app/log-processor app-log-processor
+# run_python_test $construct_dir/lambda/pipeline/common/opensearch-helper opensearch-helper
+# run_python_test $construct_dir/lambda/pipeline/common/custom-resource custom-resource2
+# run_python_test $construct_dir/lambda/plugin/standard plugin
+
+# run_python_test $construct_dir/lambda/api/resource resource-api
+# run_python_test $construct_dir/lambda/api/pipeline svc-pipeline-api
+# run_python_test $construct_dir/lambda/api/log_agent_status log_agent_status  
+# run_python_test $construct_dir/lambda/api/app_log_ingestion app_log_ingestion  
+# run_python_test $construct_dir/lambda/api/log_source log_source
+# run_python_test $construct_dir/lambda/api/log_conf log_conf
+# run_python_test $construct_dir/lambda/api/app_pipeline app_pipeline
+# run_python_test $construct_dir/lambda/api/cross_account cross_account
+# run_python_test $construct_dir/lambda/api/cluster aos_cluster
+# run_python_test $construct_dir/lambda/api/pipeline_ingestion_flow pipeline_ingestion_flow
+# run_python_test $construct_dir/lambda/api/cwl cloudwatch_api
+# run_python_test $construct_dir/lambda/api/alarm alarm_api
+# run_python_test $construct_dir/ecr/s3-list-objects s3-list-objects
+# run_python_test $construct_dir/lib/kinesis/lambda lambda
 
 # Return to the source/ level
 cd $source_dir

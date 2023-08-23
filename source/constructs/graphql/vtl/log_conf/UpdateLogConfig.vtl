@@ -1,0 +1,26 @@
+#set($ctx.args.name = $util.urlDecode($ctx.args.name))
+$util.validate($util.matches("^[\w\s_.:\/=+\-@]{1,128}$", $ctx.args.name), "Invalid Config Name, can only contain alphanumeric characters, spaces, or any of the following: _.:/=+-@")
+
+
+#set($ctx.args.userLogFormat = $util.urlDecode($ctx.args.userLogFormat))
+#set($ctx.args.userSampleLog = $util.urlDecode($ctx.args.userSampleLog))
+#set($ctx.args.regex = $util.urlDecode($ctx.args.regex))
+#set($ctx.args.timeKeyRegex = $util.urlDecode($ctx.args.timeKeyRegex))
+
+#foreach($param in $ctx.args.regexFieldSpecs)
+    #set($param.key = $util.urlDecode($param.key))
+    #if($param.key.length() > 250)
+    $util.error("Value for key cannot exceed 250 characters.")
+    #end
+    #set($param.type = $util.urlDecode($param.type))
+    #if($param.type.length() > 250)
+    $util.error("Value for type cannot exceed 250 characters.")
+    #end
+#end
+
+#foreach($param in $ctx.args.filterConfigMap.filters)
+    #set($param.key = $util.urlDecode($param.key))
+    #set($param.value = $util.urlDecode($param.value))
+#end
+ 
+{"version": "2017-02-28", "operation": "Invoke", "payload": $util.toJson($ctx)}

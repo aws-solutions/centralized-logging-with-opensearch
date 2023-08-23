@@ -27,6 +27,8 @@ def default_environment_variables():
     os.environ["LOG_BUECKET_PREFIX"] = "test"
 
     os.environ["LOG_EVENT_QUEUE_ARN"] = "arn:aws:sqs:us-east-1:123456789012:test-queue"
+
+    os.environ["S3_ARN"] = "arn:aws:s3:us-east-1:123456789012:mocked-s3"
     os.environ[
         "LOG_EVENT_QUEUE_URL"
     ] = "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"
@@ -35,6 +37,5 @@ def default_environment_variables():
     os.environ["ROLE_NAME"] = "test-role"
     os.environ["ROLE_ARN"] = "arn:aws:iam::123456789012:role/test-role"
 
-    # os.environ[
-    #     "LOG_SOURCE_ACCOUNT_ASSUME_ROLE"
-    # ] = "arn:aws:iam::123456789012:role/test-role"
+    os.environ["QUEUE_NAME"] = "test-queue"
+    os.environ["QUEUE_URL"] = "http://queue.amazonaws.com"

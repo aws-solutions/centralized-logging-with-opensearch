@@ -13,8 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React from "react";
-import { ReactElement } from "react";
+import React, { ReactElement } from "react";
 import classNames from "classnames";
 import { InfoBarTypes } from "reducer/appReducer";
 import InfoSpan from "components/InfoSpan";
@@ -24,9 +23,9 @@ interface HeaderPanelProps {
   count?: number;
   className?: string;
   action?: ReactElement;
-  title: string;
-  desc?: string;
-  children?: React.ReactChild | React.ReactChild[];
+  title: string | null;
+  desc?: string | ReactElement | ReactElement[] | null;
+  children?: ReactElement | ReactElement[];
   contentNoPadding?: boolean;
   marginBottom?: number;
 }

@@ -38,9 +38,9 @@ import KDSSettings from "../../common/KDSSettings";
 import { SelectItem } from "components/Select/select";
 import { splitStringToBucketAndPrefix } from "assets/js/utils";
 import { S3SourceType } from "../../cloudtrail/steps/comp/SourceType";
-import { AppStateProps } from "reducer/appReducer";
 import { useSelector } from "react-redux";
 import { AlertType } from "components/Alert/alert";
+import { RootState } from "reducer/reducers";
 
 interface LogTypeProps {
   cloudFrontTask: CloudFrontTaskProps;
@@ -94,13 +94,39 @@ const SourceType: React.FC<LogTypeProps> = (props: LogTypeProps) => {
   const { t } = useTranslation();
 
   const amplifyConfig: AmplifyConfigType = useSelector(
-    (state: AppStateProps) => state.amplifyConfig
+    (state: RootState) => state.app.amplifyConfig
   );
 
   const [loadingBucket, setLoadingBucket] = useState(false);
 
   const [s3FLowList, setS3FLowList] = useState<SelectItem[]>([]);
   const [kdsFlowList, setKdsFlowList] = useState<SelectItem[]>([]);
+
+  const buildSourceOptions = (resSourceList: any) => {
+    const tmpS3SourceList: SelectItem[] = [];
+    const tmpCWLSourceList: SelectItem[] = [];
+    if (resSourceList && resSourceList.length > 0) {
+      resSourceList.forEach((element: ResourceLogConf) => {
+        if (element.destinationType === DestinationType.S3) {
+          tmpS3SourceList.push({
+            name: element.name || "",
+            value: element.destinationName,
+            description: element.logFormat || "",
+            optTitle: element.region || "",
+          });
+        }
+        if (element.destinationType === DestinationType.KDS) {
+          tmpCWLSourceList.push({
+            name: element.name || "",
+            value: element.destinationName,
+            description: element.logFormat || "",
+            optTitle: element.region || "",
+          });
+        }
+      });
+    }
+    return { tmpS3SourceList, tmpCWLSourceList };
+  };
 
   const getCloudFrontLogConfig = async (cloudFrontId: string) => {
     setLoadingBucket(true);
@@ -112,30 +138,9 @@ const SourceType: React.FC<LogTypeProps> = (props: LogTypeProps) => {
         accountId: cloudFrontTask.logSourceAccountId,
         region: cloudFrontTask.logSourceRegion,
       });
-
-      const tmpS3SourceList: SelectItem[] = [];
-      const tmpCWLSourceList: SelectItem[] = [];
       const resSourceList = resData?.data?.getResourceLogConfigs;
-      if (resSourceList && resSourceList.length > 0) {
-        resSourceList.forEach((element: ResourceLogConf) => {
-          if (element.destinationType === DestinationType.S3) {
-            tmpS3SourceList.push({
-              name: element.name || "",
-              value: element.destinationName,
-              description: element.logFormat || "",
-              optTitle: element.region || "",
-            });
-          }
-          if (element.destinationType === DestinationType.KDS) {
-            tmpCWLSourceList.push({
-              name: element.name || "",
-              value: element.destinationName,
-              description: element.logFormat || "",
-              optTitle: element.region || "",
-            });
-          }
-        });
-      }
+      const { tmpS3SourceList, tmpCWLSourceList } =
+        buildSourceOptions(resSourceList);
 
       setS3FLowList(tmpS3SourceList);
       setKdsFlowList(tmpCWLSourceList);
@@ -194,28 +199,40 @@ const SourceType: React.FC<LogTypeProps> = (props: LogTypeProps) => {
     }
   }, [cloudFrontTask.destinationType]);
 
+  const buildWaringText = () => {
+    if (
+      !loadingBucket &&
+      cloudFrontTask?.params?.taskType === CreateLogMethod.Automatic &&
+      cloudFrontTask?.destinationType === DestinationType.S3 &&
+      cloudFrontTask?.params?.tmpFlowList?.length <= 0
+    ) {
+      return t("servicelog:cloudfront.cloudfrontWarning");
+    }
+    return "";
+  };
+
+  const buildSuccessText = () => {
+    if (
+      !loadingBucket &&
+      cloudFrontTask.destinationType === DestinationType.S3 &&
+      cloudFrontTask.params.s3SourceType === S3SourceType.SAMEREGION &&
+      cloudFrontTask.params.tmpFlowList.length > 0
+    ) {
+      return (
+        t("servicelog:cloudfront.savedTips") +
+        cloudFrontTask?.params?.tmpFlowList[0]?.value
+      );
+    }
+    return "";
+  };
+
   return (
     <>
       <FormItem
         optionTitle={t("servicelog:cloudfront.logType")}
         optionDesc={t("servicelog:cloudfront.logTypeDesc")}
-        warningText={
-          !loadingBucket &&
-          cloudFrontTask.params.taskType === CreateLogMethod.Automatic &&
-          cloudFrontTask.destinationType === DestinationType.S3 &&
-          cloudFrontTask.params.tmpFlowList.length <= 0
-            ? t("servicelog:cloudfront.cloudfrontWarning")
-            : ""
-        }
-        successText={
-          !loadingBucket &&
-          cloudFrontTask.destinationType === DestinationType.S3 &&
-          cloudFrontTask.params.s3SourceType === S3SourceType.SAMEREGION &&
-          cloudFrontTask.params.tmpFlowList.length > 0
-            ? t("servicelog:cloudfront.savedTips") +
-              cloudFrontTask.params.tmpFlowList[0]?.value
-            : ""
-        }
+        warningText={buildWaringText()}
+        successText={buildSuccessText()}
         errorText={
           logTypeEmptyError ? t("servicelog:cloudfront.selectLogType") : ""
         }
@@ -353,9 +370,9 @@ const SourceType: React.FC<LogTypeProps> = (props: LogTypeProps) => {
                           : ""
                       }
                     >
-                      {CLOUDFRONT_FIELDS_TYPE.map((element, key) => {
+                      {CLOUDFRONT_FIELDS_TYPE.map((element) => {
                         return (
-                          <div key={key}>
+                          <div key={element.value}>
                             <label>
                               <input
                                 value={cloudFrontTask.params.fieldType}

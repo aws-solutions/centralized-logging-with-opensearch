@@ -23,9 +23,10 @@ import IndeterminateCheckbox, {
 } from "components/IndeterminateCheckbox";
 import Checkbox from "components/CheckBox";
 import { useTranslation } from "react-i18next";
+import ReportProblemOutlinedIcon from "@material-ui/icons/ReportProblemOutlined";
 interface ColumnDefProps {
   id: string;
-  header: string;
+  header: ReactElement | string | null;
   width?: number;
   cell: (item: any) => any;
 }
@@ -37,10 +38,11 @@ enum SelectType {
 }
 
 interface TablePanelProps {
+  trackId: string | number;
   isReload?: boolean;
   defaultSelectItem?: any[];
   defaultDisabledIds?: (string | null)[];
-  title: string;
+  title: string | ReactElement;
   desc?: string;
   className?: string;
   actions: ReactElement;
@@ -53,10 +55,14 @@ interface TablePanelProps {
   changeSelected: (item: any[]) => void;
   loadingText?: string;
   emptyText?: string;
+  errorText?: string;
+  hideFilterAndPagination?: boolean;
+  noPadding?: boolean;
 }
 
 const TablePanel: React.FC<TablePanelProps> = (props: TablePanelProps) => {
   const {
+    trackId,
     isReload,
     defaultSelectItem,
     defaultDisabledIds,
@@ -72,6 +78,8 @@ const TablePanel: React.FC<TablePanelProps> = (props: TablePanelProps) => {
     pagination,
     loading,
     emptyText,
+    hideFilterAndPagination,
+    noPadding,
   } = props;
   const { t } = useTranslation();
   const [dataList, setDataList] = useState<any>(items);
@@ -152,19 +160,33 @@ const TablePanel: React.FC<TablePanelProps> = (props: TablePanelProps) => {
   }, [defaultSelectItem]);
 
   return (
-    <div className="gsui-table-pannel">
-      <div className="table-header">
-        <div className="title">{title}</div>
-        <div className="action">{actions}</div>
-      </div>
+    <div
+      className={
+        noPadding ? "no-padding gsui-table-pannel" : "gsui-table-pannel"
+      }
+    >
+      {!hideFilterAndPagination && (
+        <div className="table-header">
+          <div className="title">{title}</div>
+          <div className="action">{actions}</div>
+        </div>
+      )}
       {desc && <div className="desc">{desc}</div>}
-      <div className="table-header">
-        <div className="filter">{filter}</div>
-        <div className="pagination">{pagination}</div>
-      </div>
+      {!hideFilterAndPagination && (
+        <div className="table-header">
+          <div className="filter">{filter}</div>
+          <div className="pagination">{pagination}</div>
+        </div>
+      )}
+
       <div>
-        <div className="gsui-table">
-          <table role="table">
+        <div
+          className={classNames({
+            "gsui-table": true,
+            invalid: props.errorText,
+          })}
+        >
+          <table role="table" width="100%">
             <thead>
               <tr>
                 <>
@@ -183,11 +205,11 @@ const TablePanel: React.FC<TablePanelProps> = (props: TablePanelProps) => {
                       </div>
                     </th>
                   )}
-                  {columnDefinitions.map((element, index) => {
+                  {columnDefinitions.map((element: any) => {
                     return (
                       <th
                         className="body-cell"
-                        key={index}
+                        key={element[trackId] ?? element.id}
                         style={{ width: element.width }}
                       >
                         <div className="content">{element.header}</div>
@@ -214,7 +236,7 @@ const TablePanel: React.FC<TablePanelProps> = (props: TablePanelProps) => {
                         });
                       }
                     }}
-                    key={index}
+                    key={element[trackId] ?? element.id}
                     className={classNames({
                       selected:
                         selectItemsIds.includes(element.id) ||
@@ -226,7 +248,7 @@ const TablePanel: React.FC<TablePanelProps> = (props: TablePanelProps) => {
                         <div>
                           {selectType === SelectType.CHECKBOX && (
                             <Checkbox
-                              key={element.id}
+                              key={element[trackId] ?? element.id}
                               type="checkbox"
                               name={element.id}
                               id={element.id}
@@ -260,9 +282,12 @@ const TablePanel: React.FC<TablePanelProps> = (props: TablePanelProps) => {
                         </div>
                       </td>
                     )}
-                    {columnDefinitions.map((item, index) => {
+                    {columnDefinitions.map((item: any) => {
                       return (
-                        <td className="body-cell" key={index}>
+                        <td
+                          className="body-cell"
+                          key={item[trackId] ?? item.id}
+                        >
                           <div>{item.cell(element)}</div>
                         </td>
                       );
@@ -273,6 +298,21 @@ const TablePanel: React.FC<TablePanelProps> = (props: TablePanelProps) => {
             </tbody>
           </table>
         </div>
+        {props.errorText && (
+          <div
+            className={classNames({
+              "gsui-formitem-wrap": true,
+              invalid: props.errorText,
+            })}
+          >
+            <div className="form-text error-text">
+              <i className="icon">
+                <ReportProblemOutlinedIcon fontSize="small" />
+              </i>
+              {props.errorText}
+            </div>
+          </div>
+        )}
         {loading && (
           <div className="table-loading">
             <LoadingText text={t("loading")} />

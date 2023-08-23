@@ -19,7 +19,6 @@ import CloseIcon from "@material-ui/icons/Close";
 import ErrorOutlineIcon from "@material-ui/icons/ErrorOutline";
 import {
   ActionType,
-  AppStateProps,
   InfoBarTitleMap,
   InfoBarTypes,
 } from "reducer/appReducer";
@@ -46,6 +45,8 @@ import EKSIAMRole from "help/EKSIAMRole";
 import ConfigTimeFormat from "help/ConfigTimeFormat";
 import ConfigFilter from "help/ConfigFilter";
 import ProxyInstance from "help/ProxyInstance";
+import PipelineAlarms from "help/PipelineAlarms";
+import { RootState } from "reducer/reducers";
 
 interface HelpPanelProps {
   className?: string;
@@ -54,7 +55,7 @@ interface HelpPanelProps {
 export const HelpPanel: React.FC<HelpPanelProps> = (props: HelpPanelProps) => {
   const { className } = props;
   const { showInfoBar, infoBarType } = useSelector(
-    (state: AppStateProps) => state
+    (state: RootState) => state.app
   );
   const dispatch = useDispatch();
   const { t } = useTranslation();
@@ -104,6 +105,16 @@ export const HelpPanel: React.FC<HelpPanelProps> = (props: HelpPanelProps) => {
             <InstanceGroupCreationMethod />
           )}
           {infoBarType === InfoBarTypes.SAMPLE_DASHBAORD && <SampleDashboard />}
+          {infoBarType === InfoBarTypes.APACHE_SAMPLE_DASHBOARD && (
+            <SampleDashboard
+              content={
+                <a href="https://aws-solutions.github.io/centralized-logging-with-opensearch/zh/implementation-guide/applications/apache/">
+                  &nbsp;
+                  https://aws-solutions.github.io/centralized-logging-with-opensearch/zh/implementation-guide/applications/apache/
+                </a>
+              }
+            />
+          )}
           {infoBarType === InfoBarTypes.LOG_LIFECYCLE && <LogLifeCycle />}
           {infoBarType === InfoBarTypes.NGINX_LOG_FORMAT && <NginxLogFormat />}
           {infoBarType === InfoBarTypes.APACHE_LOG_FORMAT && (
@@ -128,6 +139,18 @@ export const HelpPanel: React.FC<HelpPanelProps> = (props: HelpPanelProps) => {
           )}
           {infoBarType === InfoBarTypes.CONFIG_FILTER && <ConfigFilter />}
           {infoBarType === InfoBarTypes.PROXY_INSTANCE && <ProxyInstance />}
+          {infoBarType === InfoBarTypes.S3_PREFIX_FILTER && (
+            <div className="gsui-help-container">
+              <div className="gsui-help-content">
+                <p>{t("info:s3PrefixFilter.desc")}</p>
+                <ul>
+                  <li>{t("info:s3PrefixFilter.li1")}</li>
+                  <li>{t("info:s3PrefixFilter.li2")}</li>
+                </ul>
+              </div>
+            </div>
+          )}
+          {infoBarType === InfoBarTypes.PIPELINE_ALARM && <PipelineAlarms />}
         </div>
       )}
     </div>

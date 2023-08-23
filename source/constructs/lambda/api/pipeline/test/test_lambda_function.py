@@ -6,6 +6,8 @@ import pytest
 
 import os
 import boto3
+
+from commonlib.exception import APIException
 from moto import mock_dynamodb, mock_stepfunctions, mock_sts, mock_es
 
 
@@ -20,7 +22,7 @@ def create_event():
             "destinationType": "KDS",
             "parameters": [
                 {"parameterKey": "hello", "parameterValue": "world"},
-                {"parameterKey": "domainName", "parameterValue": "loghub-os"},
+                {"parameterKey": "domainName", "parameterValue": "solution-os"},
             ],
             "tags": [],
         }
@@ -70,7 +72,7 @@ def sfn_client():
     with mock_stepfunctions():
         region = os.environ.get("AWS_REGION")
         sfn = boto3.client("stepfunctions", region_name=region)
-        name = "LogHubAPIPipelineFlowSM"
+        name = "SolutionAPIPipelineFlowSM"
         response = sfn.create_state_machine(
             name=name,
             definition=str(simple_definition),
@@ -86,7 +88,7 @@ def sfn_client():
 def ddb_client():
     with mock_dynamodb():
         region = os.environ.get("AWS_REGION")
-        ddb_name = "log-hub-pipeline-table"
+        ddb_name = "solution-pipeline-table"
         os.environ["PIPELINE_TABLE"] = ddb_name
 
         ddb = boto3.resource("dynamodb", region_name=region)
@@ -99,8 +101,14 @@ def ddb_client():
         # Mock the Sub account link table
         ddb.create_table(
             TableName=os.environ.get("SUB_ACCOUNT_LINK_TABLE_NAME"),
-            KeySchema=[{"AttributeName": "id", "KeyType": "HASH"}],
-            AttributeDefinitions=[{"AttributeName": "id", "AttributeType": "S"}],
+            KeySchema=[
+                {"AttributeName": "subAccountId", "KeyType": "HASH"},
+                {"AttributeName": "region", "KeyType": "RANGE"},
+            ],
+            AttributeDefinitions=[
+                {"AttributeName": "subAccountId", "AttributeType": "S"},
+                {"AttributeName": "region", "AttributeType": "S"},
+            ],
             ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
         )
 
@@ -118,7 +126,7 @@ def sts_client():
 def aos_client():
     with mock_es():
         es = boto3.client("es", region_name=os.environ.get("AWS_REGION"))
-        es.create_elasticsearch_domain(DomainName="loghub-os")
+        es.create_elasticsearch_domain(DomainName="solution-os")
         yield
 
 
@@ -151,7 +159,7 @@ def test_lambda_function(
     assert "target" in pipelines[0]
 
     # delete an non-existing one
-    with pytest.raises(lambda_function.APIException):
+    with pytest.raises(APIException):
         lambda_function.lambda_handler(delete_event, None)
 
     # delete a real one

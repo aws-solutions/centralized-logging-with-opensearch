@@ -13,8 +13,20 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import { CODEC, DestinationType, INDEX_SUFFIX } from "API";
+import {
+  Codec,
+  CompressionType,
+  DestinationType,
+  IndexSuffix,
+  LogSource,
+  MonitorInput,
+} from "API";
+import { ConfigValidateType } from "assets/js/applog";
 import { AUTH_TYPE } from "aws-appsync-auth-link";
+import { OptionType } from "components/AutoComplete/autoComplete";
+import { InstanceWithStatusType } from "pages/resources/common/InstanceTable";
+import { ExLogConf } from "pages/resources/common/LogConfigComp";
+import { InstanceGroupType } from "pages/resources/instanceGroup/create/CreateInstanceGroup";
 export enum YesNo {
   Yes = "Yes",
   No = "No",
@@ -116,11 +128,11 @@ export const CLOUDFRONT_FIELDS_TYPE = [
 export const AppLogClusterIndexSuffixFormatList = [
   {
     name: "YYYY-MM-DD-HH",
-    value: INDEX_SUFFIX.yyyy_MM_dd_HH,
+    value: IndexSuffix.yyyy_MM_dd_HH,
   },
-  { name: "YYYY-MM-DD", value: INDEX_SUFFIX.yyyy_MM_dd },
-  { name: "YYYY-MM", value: INDEX_SUFFIX.yyyy_MM },
-  { name: "YYYY", value: INDEX_SUFFIX.yyyy },
+  { name: "YYYY-MM-DD", value: IndexSuffix.yyyy_MM_dd },
+  { name: "YYYY-MM", value: IndexSuffix.yyyy_MM },
+  { name: "YYYY", value: IndexSuffix.yyyy },
 ];
 
 export enum SERVICE_LOG_INDEX_SUFFIX {
@@ -141,8 +153,8 @@ export const ServiceLogClusterIndexSuffixFormatList = [
 ];
 
 export const ClusterCompressionTypeList = [
-  { name: "best_compression", value: CODEC.best_compression },
-  { name: "default", value: CODEC.default },
+  { name: "best_compression", value: Codec.best_compression },
+  { name: "default", value: Codec.default },
 ];
 
 export enum WarmTransitionType {
@@ -187,3 +199,78 @@ export const S3_STORAGE_CLASS_OPTIONS = [
     value: S3_STORAGE_CLASS_TYPE.INTELLIGENT_TIERING,
   },
 ];
+
+export interface ApplicationLogType {
+  openSearchId: string;
+  warmEnable: boolean;
+  coldEnable: boolean;
+  confirmNetworkChecked: boolean;
+  rolloverSizeNotSupport: boolean;
+  enableRolloverByCapacity: boolean;
+  warmTransitionType: string;
+  aosParams: {
+    coldLogTransition: string;
+    domainName: string;
+    engine: string;
+    failedLogBucket: string;
+    indexPrefix: string;
+    logRetention: string;
+    opensearchArn: string;
+    opensearchEndpoint: string;
+    replicaNumbers: string;
+    shardNumbers: string;
+    rolloverSize: string;
+    indexSuffix: string;
+    codec: string;
+    refreshInterval: string;
+    vpc: {
+      privateSubnetIds: string;
+      securityGroupId: string;
+      vpcId: string;
+    };
+    warmLogTransition: string;
+  };
+  bufferType: string;
+  kdsBufferParams: {
+    enableAutoScaling: string;
+    shardCount: string;
+    minCapacity: string;
+    maxCapacity: string;
+  };
+  s3BufferBucketObj: OptionType | null;
+  s3BufferParams: {
+    logBucketName: string;
+    logBucketPrefix: string;
+    logBucketSuffix: string;
+    defaultCmkArn: string;
+    maxFileSize: string;
+    uploadTimeout: string;
+    compressionType: CompressionType | string;
+    s3StorageClass: string;
+  };
+  mskBufferParams: {
+    mskClusterName: string;
+    mskClusterArn: string;
+    mskBrokerServers: string;
+    topic: string;
+  };
+  force: boolean;
+  monitor: MonitorInput;
+}
+
+export interface IngestionPropsType {
+  instanceGroupMethod: CreationMethod | string;
+  chooseInstanceGroup: LogSource[];
+  curInstanceGroup: InstanceGroupType;
+  instanceGroupCheckedInstances: InstanceWithStatusType[];
+  createNewInstanceGroupId: string;
+  instanceGroupNameEmpty: boolean;
+  logConfigMethod: CreationMethod | string;
+  curLogConfig: ExLogConf;
+  logConfigError: ConfigValidateType;
+  logPathEmptyError: boolean;
+  showChooseExistsError: boolean;
+  createDashboard: string;
+  accountId: string;
+  logPath: string;
+}

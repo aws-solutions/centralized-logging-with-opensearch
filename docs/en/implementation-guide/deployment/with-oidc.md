@@ -205,7 +205,7 @@ This solution provisions a CloudFront distribution that gives you access to the 
 3. Enter sign-in credentials. You may be asked to change your default password for first-time login, which depends on your OIDC provider's policy.
 4. After the verification is complete, the system opens the Centralized Logging with OpenSearch web console.
 
-Once you have logged into the Centralized Logging with OpenSearch console, you can [import an Amazon OpenSearch Service domain](../domains/import.md#import-an-aos-domain) and build log analytics pipelines.
+Once you have logged into the Centralized Logging with OpenSearch console, you can [import an Amazon OpenSearch Service domain](../domains/import.md#import-an-amazon-opensearch-service-domain) and build log analytics pipelines.
 
 [cognito]: https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-identity-pools.html
 [openid-connect]: https://openid.net/connect/

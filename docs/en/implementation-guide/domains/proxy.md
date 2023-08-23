@@ -4,7 +4,7 @@ This section introduces the proxy stack architecture and how to complete the fol
 
 1. [Create a proxy](#create-a-proxy)
 2. [Create an associated DNS record](#create-an-associated-dns-record)
-3. [Access Amazon OpenSearch Service via proxy](#access-aos-via-proxy)
+3. [Access Amazon OpenSearch Service via proxy](#access-amazon-opensearch-service-via-proxy)
 4. [Delete a proxy](#delete-a-proxy)
 
 ## Architecture
@@ -16,13 +16,13 @@ The workflow is as follows:
 
 1. Users access the custom domain for the proxy, and the domain needs to be resolved via DNS service (for example, using Route 53 on AWS).
 
-1. The DNS service routes the traffic to internet-facing ALB.
+2. The DNS service routes the traffic to internet-facing ALB.
 
-1. The ALB distributes traffic to backend Nginx server running on Amazon EC2 within ASG.
+3. The ALB distributes traffic to backend Nginx server running on Amazon EC2 within ASG.
 
-1. The Nginx server redirects the requests to OpenSearch Dashboards.
+4. The Nginx server redirects the requests to OpenSearch Dashboards.
 
-1. (optional) VPC peering is required if the VPC for the proxy is not the same as the OpenSearch service.
+5. (optional) VPC peering is required if the VPC for the proxy is not the same as the OpenSearch service.
 
 ## Create a proxy
 You can create the Nginx-based proxy using the Centralized Logging with OpenSearch console or by deploying a standalone CloudFormation stack.

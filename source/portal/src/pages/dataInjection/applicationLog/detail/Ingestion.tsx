@@ -14,36 +14,39 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 /* eslint-disable react/display-name */
-import React, { useState, useEffect } from "react";
-import RefreshIcon from "@material-ui/icons/Refresh";
-import { SelectType, TablePanel } from "components/TablePanel";
-import { Link, useHistory } from "react-router-dom";
-import Button from "components/Button";
 import { Pagination } from "@material-ui/lab";
-import LoadingText from "components/LoadingText";
 import {
   AppLogIngestion,
   AppPipeline,
+  GetLogSourceQueryVariables,
   LogSource,
   LogSourceType,
   PipelineStatus,
 } from "API";
 import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
-import { getLogSource, listAppLogIngestions } from "graphql/queries";
-import Modal from "components/Modal";
-import { deleteAppLogIngestion } from "graphql/mutations";
-import { formatLocalTime } from "assets/js/utils";
-import { useTranslation } from "react-i18next";
-import Status, { StatusType } from "components/Status/Status";
+import { buildS3Link, formatLocalTime } from "assets/js/utils";
+import Button from "components/Button";
 import ButtonDropdown from "components/ButtonDropdown";
+import Modal from "components/Modal";
+import Status, { StatusType } from "components/Status/Status";
+import { SelectType, TablePanel } from "components/TablePanel";
+import { deleteAppLogIngestion } from "graphql/mutations";
+import { getLogSource, listAppLogIngestions } from "graphql/queries";
+import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { AUTO_REFRESH_INT } from "assets/js/const";
 import Alert from "components/Alert";
 import { AlertType } from "components/Alert/alert";
-import { getSourceInfoValueByKey } from "assets/js/applog";
+import { useSelector } from "react-redux";
+import { AmplifyConfigType } from "types";
+import ExtLink from "components/ExtLink";
+import { RootState } from "reducer/reducers";
+import { identity } from "lodash";
+import ButtonRefresh from "components/ButtonRefresh";
 
 const PAGE_SIZE = 20;
-const TIMP_SPAN = 2 * 60 * 1000;
 interface OverviewProps {
   pipelineInfo: AppPipeline | undefined;
   changeTab: (index: number) => void;
@@ -63,27 +66,34 @@ interface AppIngestionItem {
 }
 
 const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
-  const { pipelineInfo, changeTab } = props;
+  const { pipelineInfo } = props;
   const { t } = useTranslation();
 
+  const amplifyConfig: AmplifyConfigType = useSelector(
+    (state: RootState) => state.app.amplifyConfig
+  );
   const [loadingData, setLoadingData] = useState(false);
   const [ingestionList, setIngestionList] = useState<AppIngestionItem[]>([]);
-  const [selectedIngestion, setSelectedIngestion] = useState<AppLogIngestion[]>(
-    []
-  );
+  const [selectedIngestion, setSelectedIngestion] = useState<
+    AppIngestionItem[]
+  >([]);
   const [openDeleteModel, setOpenDeleteModel] = useState(false);
   const [loadingDelete, setLoadingDelete] = useState(false);
   const [disableDelete, setDisableDelete] = useState(true);
   const [curPage, setCurPage] = useState(1);
   const [totoalCount, setTotoalCount] = useState(0);
   const [userSelectType, setUserSelectType] = useState<string>("");
-  const history = useHistory();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const [hasRecentASG, setHasRecentASG] = useState(false);
   const [recentASGIngestList, setRecentASGIngestList] = useState<
     AppLogIngestion[]
   >([]);
   const [showASGModal, setShowASGModal] = useState(false);
+  const [showEKSDaemonSetModal, setShowEKSDaemonSetModal] = useState(false);
+  const [eksSourceId, setEksSourceId] = useState("");
+
   const [instanceGroupLink, setInstanceGroupLink] = useState(
     "/resources/instance-group"
   );
@@ -116,11 +126,12 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
       if (!hideLoading) {
         setLoadingData(true);
         setIngestionList([]);
+        setSelectedIngestion([]);
       }
       const resData: any = await appSyncRequestQuery(listAppLogIngestions, {
         page: curPage,
         count: PAGE_SIZE,
-        appPipelineId: pipelineInfo?.id,
+        appPipelineId: pipelineInfo?.pipelineId,
       });
       console.info("ingestion resData:", resData);
       const dataIngestion: AppLogIngestion[] =
@@ -129,19 +140,6 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
       console.info("dataIngestion:dataIngestion:", dataIngestion);
       const tmpRecentASGIngestionList: AppLogIngestion[] = [];
       const creatingASGIngestionList: AppLogIngestion[] = [];
-      dataIngestion.forEach((element) => {
-        const timeSpan =
-          new Date().getTime() - new Date(element?.createdDt || "").getTime();
-        if (
-          element.sourceInfo?.sourceType === LogSourceType.ASG &&
-          timeSpan < TIMP_SPAN
-        ) {
-          tmpRecentASGIngestionList.push(element);
-          if (element.status === PipelineStatus.CREATING) {
-            creatingASGIngestionList.push(element);
-          }
-        }
-      });
 
       if (creatingASGIngestionList.length > 0) {
         setGroupButtonDisabled(true);
@@ -158,24 +156,16 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
 
       const tmpAppIngestions: AppIngestionItem[] = await Promise.all(
         dataIngestion.map(async (appLogIngestion: AppLogIngestion) => {
-          if (appLogIngestion.sourceType === LogSourceType.Syslog) {
-            const sourceData = await appSyncRequestQuery(getLogSource, {
-              sourceType: appLogIngestion.sourceType,
-              id: appLogIngestion.sourceId,
-            });
+          const sourceData = await appSyncRequestQuery(getLogSource, {
+            type: appLogIngestion.sourceType,
+            sourceId: appLogIngestion.sourceId,
+          } as GetLogSourceQueryVariables);
 
-            return {
-              id: appLogIngestion.id,
-              ingestion: appLogIngestion,
-              sourceData: sourceData.data.getLogSource,
-            };
-          } else {
-            return {
-              id: appLogIngestion.id,
-              ingestion: appLogIngestion,
-              sourceData: null,
-            };
-          }
+          return {
+            id: appLogIngestion.id,
+            ingestion: appLogIngestion,
+            sourceData: sourceData.data.getLogSource,
+          };
         })
       );
 
@@ -193,16 +183,30 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
   };
 
   useEffect(() => {
-    if (pipelineInfo && pipelineInfo.id) {
+    if (pipelineInfo && pipelineInfo.pipelineId) {
       getIngestionByAppPipelineId();
     }
   }, [pipelineInfo, curPage]);
 
   useEffect(() => {
+    const state = location.state as {
+      showEKSDaemonSetModal?: boolean;
+      eksSourceId?: string;
+    };
+    setShowEKSDaemonSetModal(state?.showEKSDaemonSetModal || false);
+    setEksSourceId(state?.eksSourceId || "");
+  }, []);
+
+  useEffect(() => {
     console.info("selectedIngestion:", selectedIngestion);
-    if (selectedIngestion && selectedIngestion.length > 0) {
+    if (
+      (pipelineInfo?.status === PipelineStatus.ACTIVE ||
+        pipelineInfo?.status === PipelineStatus.ERROR) &&
+      selectedIngestion &&
+      selectedIngestion.length > 0
+    ) {
       const statusArr = selectedIngestion.map((element) => {
-        return element.status;
+        return element.ingestion.status;
       });
       if (
         statusArr.includes(StatusType.Creating.toUpperCase()) ||
@@ -218,35 +222,33 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
   }, [selectedIngestion]);
 
   // Redirect create ingestion page by ingestion type
-  const redirectToCreateIngestionPage = (type?: string) => {
+  const redirectToCreateIngestionPage = (type?: string, state?: unknown) => {
     const ingestionType = type || userSelectType;
     if (ingestionType === INGESTION_TYPE.INSTANCE) {
-      history.push({
-        pathname: `/log-pipeline/application-log/detail/${pipelineInfo?.id}/create-ingestion-instance`,
-      });
+      navigate(
+        `/log-pipeline/application-log/detail/${pipelineInfo?.pipelineId}/create-ingestion-instance`,
+        { state: state }
+      );
     }
     if (ingestionType === INGESTION_TYPE.S3) {
-      history.push({
-        pathname: `/log-pipeline/application-log/detail/${pipelineInfo?.id}/create-ingestion-s3`,
-      });
+      navigate(`/log-pipeline/application-log/create/s3`, { state: state });
     }
     if (ingestionType === INGESTION_TYPE.EKS) {
-      history.push({
-        pathname: `/log-pipeline/application-log/detail/${pipelineInfo?.id}/create-ingestion-eks`,
-      });
+      navigate(
+        `/log-pipeline/application-log/detail/${pipelineInfo?.pipelineId}/create-ingestion-eks`,
+        { state: state }
+      );
     }
     if (ingestionType === INGESTION_TYPE.SYSLOG) {
-      history.push({
-        pathname: `/log-pipeline/application-log/detail/${pipelineInfo?.id}/create-ingestion-syslog`,
-      });
+      navigate(
+        `/log-pipeline/application-log/detail/${pipelineInfo?.pipelineId}/create-ingestion-syslog`
+      );
     }
   };
 
   // go to instance group
   const goToInstanceGroup = () => {
-    history.push({
-      pathname: instanceGroupLink,
-    });
+    navigate(instanceGroupLink);
   };
 
   // Auto Refresh List
@@ -275,27 +277,94 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
     }
   }, [recentASGIngestList]);
 
+  const renderEKSId = (data: AppIngestionItem) => {
+    if (data.ingestion?.sourceType === LogSourceType.EKSCluster) {
+      return (
+        <Link
+          to={`/containers/eks-log/${data.ingestion.sourceId}/ingestion/detail/${data.id}`}
+        >
+          {data.id}
+        </Link>
+      );
+    }
+    if (
+      data.ingestion.sourceType === LogSourceType.EC2 ||
+      data.ingestion.sourceType === LogSourceType.S3 ||
+      data.ingestion.sourceType === LogSourceType.Syslog
+    ) {
+      return (
+        <Link to={`/log-pipeline/application-log/ingestion/detail/${data.id}`}>
+          {data.id}
+        </Link>
+      );
+    }
+    return data.id;
+  };
+
+  const renderEKSSource = (data: AppIngestionItem) => {
+    if (data.ingestion?.sourceType === LogSourceType.EKSCluster) {
+      return (
+        <Link to={`/containers/eks-log/detail/${data.ingestion?.sourceId}`}>
+          {data.sourceData?.eks?.eksClusterName}
+        </Link>
+      );
+    } else if (data.ingestion?.sourceType === LogSourceType.Syslog) {
+      return (
+        data.sourceData?.syslog?.protocol + ":" + data.sourceData?.syslog?.port
+      );
+    } else if (data.ingestion?.sourceType === LogSourceType.S3) {
+      return (
+        <>
+          <ExtLink
+            to={buildS3Link(
+              amplifyConfig.aws_project_region,
+              data.sourceData?.s3?.bucketName ?? ""
+            )}
+          >
+            {data.sourceData?.s3?.bucketName}
+          </ExtLink>
+          ({data.sourceData?.s3?.compressionType})
+        </>
+      );
+    } else if (data.ingestion?.sourceType === LogSourceType.EC2) {
+      return (
+        <Link
+          to={`/resources/instance-group/detail/${data.ingestion?.sourceId}`}
+        >
+          {data.sourceData?.ec2?.groupName}
+        </Link>
+      );
+    }
+    return <></>;
+  };
+
+  const renderStatus = (data: AppIngestionItem) => {
+    return (
+      <Status
+        status={(() => {
+          if (pipelineInfo?.status === PipelineStatus.ERROR) {
+            return StatusType.Error;
+          }
+          if (pipelineInfo?.status === PipelineStatus.CREATING) {
+            return StatusType.Creating;
+          }
+          return data.ingestion.status?.toLocaleLowerCase() ===
+            StatusType.Active.toLocaleLowerCase()
+            ? StatusType.Created
+            : data.ingestion.status || "";
+        })()}
+      />
+    );
+  };
+
   return (
     <div>
       <Alert
-        content={
-          <div>
-            {t("applog:detail.tip1")}
-            <span
-              onClick={() => {
-                changeTab(1);
-              }}
-              className="link"
-            >
-              {t("applog:detail.tip2")}
-            </span>
-            {t("applog:detail.tip3")}
-          </div>
-        }
+        content={<div>{t("applog:detail.ingestion.permissionInfo")}</div>}
       />
-
       <TablePanel
-        title={t("applog:detail.tab.ingestion")}
+        trackId="id"
+        title={t("applog:detail.tab.sources")}
         changeSelected={(item) => {
           console.info("item:", item);
           setSelectedIngestion(item);
@@ -307,31 +376,7 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
             id: "id",
             header: "ID",
             width: 320,
-            cell: (e: AppIngestionItem) => {
-              if (e.ingestion?.sourceType === LogSourceType.EKSCluster) {
-                return (
-                  <Link
-                    to={`/containers/eks-log/${e.ingestion.sourceId}/ingestion/detail/${e.id}`}
-                  >
-                    {e.id}
-                  </Link>
-                );
-              }
-              if (
-                e.ingestion.sourceType === LogSourceType.EC2 ||
-                e.ingestion.sourceType === LogSourceType.S3 ||
-                e.ingestion.sourceType === LogSourceType.Syslog
-              ) {
-                return (
-                  <Link
-                    to={`/log-pipeline/application-log/ingestion/detail/${e.id}`}
-                  >
-                    {e.id}
-                  </Link>
-                );
-              }
-              return e.id;
-            },
+            cell: (e: AppIngestionItem) => renderEKSId(e),
           },
 
           {
@@ -340,9 +385,7 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
             width: 120,
             cell: (e: AppIngestionItem) => {
               return e.ingestion.sourceType === LogSourceType.EC2
-                ? e.ingestion.sourceInfo?.sourceType === LogSourceType.ASG
-                  ? "EC2/ASG"
-                  : "EC2"
+                ? "EC2"
                 : e.ingestion.sourceType;
             },
           },
@@ -350,73 +393,27 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
           {
             id: "source",
             header: t("applog:ingestion.source"),
-            cell: (e: AppIngestionItem) => {
-              if (e.ingestion?.sourceType === LogSourceType.EKSCluster) {
-                return (
-                  <Link
-                    to={`/containers/eks-log/detail/${e.ingestion?.sourceId}`}
-                  >
-                    {e.ingestion.sourceInfo?.sourceName}
-                  </Link>
-                );
-              }
-              if (e.ingestion?.sourceType === LogSourceType.Syslog) {
-                return (
-                  getSourceInfoValueByKey(
-                    "syslogProtocol",
-                    e.sourceData?.sourceInfo
-                  ) +
-                  ":" +
-                  getSourceInfoValueByKey(
-                    "syslogPort",
-                    e.sourceData?.sourceInfo
-                  )
-                );
-              }
-              return (
-                <Link
-                  to={`/resources/instance-group/detail/${e.ingestion?.sourceId}`}
-                >
-                  {e.ingestion?.sourceInfo?.sourceName}
-                </Link>
-              );
-            },
+            cell: (e: AppIngestionItem) => renderEKSSource(e),
           },
           {
-            // width: 110,
-            id: "logCOnfig",
-            header: t("applog:detail.ingestion.logConfig"),
+            id: "logPath",
+            header: t("applog:list.logPath"),
             cell: (e: AppIngestionItem) => {
-              return (
-                <Link to={`/resources/log-config/detail/${e.ingestion.confId}`}>
-                  {e.ingestion.confName}
-                </Link>
-              );
-            },
-          },
-          {
-            width: 170,
-            id: "created",
-            header: t("applog:detail.ingestion.created"),
-            cell: (e: AppIngestionItem) => {
-              return formatLocalTime(e?.ingestion.createdDt || "");
+              return e.ingestion.logPath ? e.ingestion.logPath : "N/A";
             },
           },
           {
             width: 120,
             id: "status",
             header: t("applog:list.status"),
+            cell: (e: AppIngestionItem) => renderStatus(e),
+          },
+          {
+            width: 170,
+            id: "created",
+            header: t("applog:detail.ingestion.created"),
             cell: (e: AppIngestionItem) => {
-              return (
-                <Status
-                  status={
-                    e.ingestion.status?.toLocaleLowerCase() ===
-                    StatusType.Active.toLocaleLowerCase()
-                      ? StatusType.Created
-                      : e.ingestion.status || ""
-                  }
-                />
-              );
+              return formatLocalTime(e?.ingestion.createdAt || "");
             },
           },
         ]}
@@ -430,7 +427,7 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
                 getIngestionByAppPipelineId();
               }}
             >
-              {loadingData ? <LoadingText /> : <RefreshIcon fontSize="small" />}
+              <ButtonRefresh loading={loadingData} fontSize="medium" />
             </Button>
             <Button
               disabled={disableDelete}
@@ -442,17 +439,39 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
             </Button>
             <ButtonDropdown
               isI18N
-              items={[
-                { id: INGESTION_TYPE.INSTANCE, text: "button.fromInstance" },
-                { id: INGESTION_TYPE.EKS, text: "button.fromEKS" },
-                { id: INGESTION_TYPE.SYSLOG, text: "button.fromSysLog" },
-              ]}
+              items={(() => {
+                const list = [
+                  {
+                    id: INGESTION_TYPE.INSTANCE,
+                    text: "button.fromInstance",
+                    disabled: pipelineInfo && isS3SourcePipeline(pipelineInfo),
+                  },
+                  {
+                    id: INGESTION_TYPE.EKS,
+                    text: "button.fromEKS",
+                    disabled: pipelineInfo && isS3SourcePipeline(pipelineInfo),
+                  },
+                  {
+                    id: INGESTION_TYPE.SYSLOG,
+                    text: "button.fromSysLog",
+                    disabled: pipelineInfo && isS3SourcePipeline(pipelineInfo),
+                  },
+                  {
+                    id: INGESTION_TYPE.S3,
+                    text: "button.fromOtherSourceS3",
+                    disabled: !(
+                      pipelineInfo && isS3SourcePipeline(pipelineInfo)
+                    ),
+                  },
+                ];
+                return list.filter((each) => !each.disabled);
+              })()}
               className="drop-down"
               btnType="primary"
               disabled={pipelineInfo?.status !== PipelineStatus.ACTIVE}
               onItemClick={(item) => {
                 setUserSelectType(item.id);
-                redirectToCreateIngestionPage(item.id);
+                redirectToCreateIngestionPage(item.id, pipelineInfo);
               }}
             >
               {t("button.createAnIngestion")}
@@ -504,7 +523,7 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
           {JSON.parse(JSON.stringify(selectedIngestion)).map(
             (element: any, index: number) => {
               return (
-                <div key={index}>
+                <div key={identity(index)}>
                   <b>{element.id}</b>
                 </div>
               );
@@ -550,8 +569,78 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
           />
         </div>
       </Modal>
+
+      <Modal
+        title={t("applog:detail.ingestion.oneMoreStepEKS")}
+        fullWidth={false}
+        isOpen={showEKSDaemonSetModal}
+        closeModal={() => {
+          setShowEKSDaemonSetModal(false);
+        }}
+        actions={
+          <div className="button-action no-pb text-right">
+            <Button
+              btnType="text"
+              onClick={() => {
+                setShowEKSDaemonSetModal(false);
+              }}
+            >
+              {t("button.cancel")}
+            </Button>
+            <Button
+              btnType="primary"
+              onClick={() => {
+                setShowEKSDaemonSetModal(false);
+                const newHistoryState = {
+                  showEKSDaemonSetModal: false,
+                  eksSourceId: "",
+                };
+                navigate(
+                  `/log-pipeline/application-log/detail/${pipelineInfo?.pipelineId}`,
+                  {
+                    state: newHistoryState,
+                  }
+                );
+              }}
+            >
+              {t("button.confirm")}
+            </Button>
+          </div>
+        }
+      >
+        <div className="modal-content alert-content">
+          <Alert
+            noMargin
+            type={AlertType.Warning}
+            content={
+              <div>
+                <p>
+                  <strong>
+                    {t("applog:detail.ingestion.eksDeamonSetTips_0")}
+                  </strong>
+                </p>
+                {t("applog:detail.ingestion.eksDeamonSetTips_1")}
+                <Link to={`/containers/eks-log/detail/${eksSourceId}/guide`}>
+                  {t("applog:detail.ingestion.eksDeamonSetLink")}
+                </Link>
+                {t("applog:detail.ingestion.eksDeamonSetTips_2")}
+              </div>
+            }
+          />
+        </div>
+      </Modal>
     </div>
   );
 };
 
 export default Ingestion;
+
+function isS3SourcePipeline(pipelineInfo: AppPipeline) {
+  const list = pipelineInfo.bufferParams?.filter((param) => {
+    return param?.paramKey === "isS3Source";
+  });
+  if (list) {
+    return list.length > 0;
+  }
+  return false;
+}

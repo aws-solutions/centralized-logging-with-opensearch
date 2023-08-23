@@ -10,6 +10,7 @@
     "list": {
       "name": "Name",
       "type": "Type",
+      "account": "Account",
       "platform": "Platform",
       "created": "Created time"
     },
@@ -45,7 +46,8 @@
         "asgTips2": "Launch Template",
         "asgTips3": " or ",
         "asgTips4": "Launch Configurations",
-        "asgTipsTitle": "You will need add below content into your launch template to update your EC2 user data section."
+        "asgTipsTitle": "You will need add below content into your launch template to update your EC2 user data section.",
+        "asgTipsDesc": "Add below permissions to the IAM instance profile for your ASG."
       }
     },
     "create": {
@@ -65,12 +67,12 @@
       "tips1": "AWS Systems Manager Agent (SSM Agent) is installed on the instances.",
       "tips2": "AmazonSSMManagedInstanceCore policy is associated with the instances.",
       "tips3": "The instances have network access to AWS Systems Manager.",
-      "tips4": "The instances have network access to Amazon Kinesis Data Streams.",
-      "tips5": " The Fluent Bit agent has a dependency of OpenSSL 1.1, please make sure OpenSSL 1.1 installed on Linux instances.",
+      "tips4": " The Fluent Bit agent has a dependency of OpenSSL 1.1, please make sure OpenSSL 1.1 installed on Linux instances.",
       "settings": "Instance Group Settings",
       "groupName": "Group Name",
       "groupNameDesc": "Enter the name of the log group. The name must be unique, and can only contains lower case letters and -.",
       "groupNameError": "Please input the group name",
+      "defaultOfflineError": "Failed to get command invocation response, please check Fluent Bit manually.",
       "instances": {
         "title": "Instances",
         "name": "Name",
@@ -108,6 +110,7 @@
       "name": "Name",
       "type": "Type",
       "agent": "Agent",
+      "version": "Version",
       "created": "Created",
       "logConfig": "Log configuration",
       "path": "Path",
@@ -123,7 +126,9 @@
       "specType": "Type",
       "specFormat": "Format",
       "timeFormat": "Time Format",
-      "notExist": "Log Config does not exist."
+      "indexName": "Index name",
+      "notExist": "Log Config does not exist.",
+      "notSupportEdit": "You are viewing the log config that was used at the time when the pipeline was created, to view the latest version of the log config or edit the log config, please go to: "
     },
     "common": {
       "configName": "Config Name",
@@ -185,6 +190,9 @@
       "selectTimezone": "Please select timezone",
       "timezoneDesc": "Specify the timezone for your log, by default, it is the timezone parsed from your time key. That is, if the time field in your log contains a time zone, you don't need to select it. If you wish to use a different timezone, please select time zone from the timezone list.",
       "inputJSON": "Please input the sample json log",
+      "userLogFormatError": "User log format contains non latin characters.",
+      "userLogFormatNotEmpty": "User log format must not be empty.",
+      "regexMustNotBeEmpty": "Regex must not be empty",
       "notJSONFormat": "Sample Log is not a JSON format"
     },
     "filter": {
@@ -195,7 +203,8 @@
       "condition": "Condition",
       "regex": "RegEx",
       "include": "Include",
-      "exclude": "Exclude"
+      "exclude": "Exclude",
+      "alert": "You must provide sample logs to add filter condition, please retry after you provide sample logs."
     }
   },
   "crossAccount": {
@@ -203,8 +212,8 @@
     "accountSettings": "Account Settings",
     "account": "Account",
     "currentAccount": "Current Account",
-    "selectDesc1": "Select the AWS account at which the log is stored. To link an Account go to ",
-    "linkAccount": "Link an Account",
+    "selectDesc1": "Select the AWS account at which the log is stored. To create a member account, go to ",
+    "linkAccount": "Member Accounts",
     "detail": "Details",
     "list": {
       "accounts": "Member Accounts",
@@ -217,13 +226,13 @@
     },
     "link": {
       "name": "Link",
-      "stepOneTitle": "Step1. Setup Linking Account",
+      "stepOneTitle": "Step1. Setup Member Account",
       "stepOneTipsDesc": "Please deploy the CloudFormation stack in the member account.",
       "stepOne1": "1. Go to the CloudFormation Console.",
       "stepOne2": "2. Switch to the same region as Solution deployed in: ",
       "stepOne3": "3. Create new stack using the template URL:",
       "stepOne4": "4. Wait till complete",
-      "stepTwoTitle": "Step2. Link an Account",
+      "stepTwoTitle": "Step2. Create a Member Account",
       "accountName": "Account Name",
       "accountNameDesc": "Input a friendly name of the account. The name must be unique. (e.g. sub-account-1)",
       "inputAccountName": "Please input Account Name",
@@ -235,11 +244,11 @@
       "accountRolesDesc": "Input the MemberAccountRoleARN in the CloudFormation Output in Step 1.",
       "inputAccountRoles": "Please input Member Account ARN",
       "accountRolesFormatError": "Account Roles format error",
-      "installDocs": "FluentBit Agent Installation Document",
+      "installDocs": "Fluent Bit Agent Installation Document",
       "installDocsDesc": "Input the AgentInstallDocument in the CloudFormation Output in Step 1.",
       "inputInstallDocs": "Please input Installation Document",
       "installDocsFormatError": "Installation Document format error",
-      "configDocs": "FluentBit Agent Configuration Document",
+      "configDocs": "Fluent Bit Agent Configuration Document",
       "configDocsDesc": "Input the AgentConfigDocument in the CloudFormation Output in Step 1.",
       "inputConfigDocs": "Please input the AgentConfigDocument.",
       "configDocsFormatError": "Configuration Document format error",
@@ -255,7 +264,14 @@
       "kmsKey": "Member Account KMS Key ARN",
       "kmsKeyDesc": "Input the MemberAccountKMSKeyARN in the CloudFormation output in Step 1.",
       "inputKmsKey": "Please input Member Account KMS Key ARN",
-      "kmsKeyFormatError": "KMS Key format error"
+      "kmsKeyFormatError": "KMS Key format error",
+      "iamInstanceProfileArn": "Member Account Instance Profile ARN",
+      "iamInstanceProfileArnDesc": "Input MemberAccountIamInstanceProfileARN in the CloudFormation Output in Step 1.",
+      "inputIamInstanceProfileArn": "Please input Member Account Instance Profile ARN",
+      "iamInstanceProfileArnFormatError": "Instance Profile ARN format error",
+      "updateCwlRoleFailed": "Update centralized cloudwatch role failed",
+      "accountNotFound": "Account is not found",
+      "accountAlreadyExists": "Account already exists"
     }
   }
 }

@@ -1,0 +1,46 @@
+{
+    "id": "64e7b8a3-aad6-476a-9c68-2fdc3f92108a",
+    "action": "START",
+    "args": {
+        "stackName": "CL-AppIngestion-Syslog-64e7b8a3",
+        "pattern": "AppLogS3Buffer",
+        "parameters": [
+            {
+                "ParameterKey": "domainName",
+                "ParameterValue": "dev"
+            }
+        ]
+    },
+    "result": {
+        "stackId": "arn:aws:cloudformation:us-west-2:123456789012:stack/CL-AppIngestion-Syslog-64e7b8a3/14c52fd0-5f46-11ed-b4e9-065e187d83f7",
+        "stackStatus": "CREATE_COMPLETE",
+        "error": "",
+        "outputs": [
+            {
+                "OutputKey": "OSInitHelperFn",
+                "OutputValue": "arn:aws:lambda:us-west-2:123456789012:function:CL-AppIngestion-Syslog-64e7b8a3-OpenSearchHelperFn-XUa9m968toZo"
+            },
+            {
+                "OutputKey": "BufferResourceArn",
+                "OutputValue": "arn:aws:s3:::solution-solutionloggingbucket0fa53b76-111"
+            },
+            {
+                "OutputKey": "BufferAccessRoleName",
+                "OutputValue": "CL-AppIngestion-Syslog-64e7b8a3-BufferAccessRoleDF53FD85-Q3I123XEEPCJ"
+            },
+            {
+                "OutputKey": "BufferResourceName",
+                "OutputValue": "solution-solutionloggingbucket0fa53b76-111"
+            },
+            {
+                "OutputKey": "LogEventQueueARN",
+                "OutputValue": "arn:aws:sqs:us-west-2:123456789012:CL-AppIngestion-Syslog-64e7b8a3-LogEventQueue-4cO8weKgwADi",
+                "Description": "logEvent Queue ARN"
+            },
+            {
+                "OutputKey": "BufferAccessRoleArn",
+                "OutputValue": "arn:aws:iam::123456789012:role/CL-AppIngestion-Syslog-64e7b8a3-BufferAccessRoleDF53FD85-Q3I123XEEPCJ"
+            }
+        ]
+    }
+}
