@@ -72,15 +72,19 @@
     | ---------- | ---------------- | -------------------------------------------------- ---------- |
     | VPCId | `<需要输入>` |用于部署 Nginx 代理资源的 VPC，例如 `vpc-bef13dc7`。 |
     | PublicSubnetIds | `<需要输入>` |部署 ELB 的公共子网。您需要至少选择两个公有子网，例如，`subnet-12345abc，subnet-54321cba`。 |
+    | PrivateSubnetIds | `<需要输入>` |部署 Nginx 实例的私有子网。您需要至少选择两个私有子网，例如，`subnet-12345abc，subnet-54321cba`。 |
+    | KeyName | `<需要输入>` | Nginx 实例的 PEM 密钥名称。 |
+    | NginxSecurityGroupId | `<需要输入>` |与 Nginx 实例关联的安全组。安全组必须允许来自 ELB 安全组的访问。 |
+    | ProxyInstanceType | t3.large | OpenSearch代理实例的类型。例如t3.micro |
+    | ProxyInstanceNumber | 2 | OpenSearch代理实例的数量。例如1到4 |
+    | Endpoint | `<需要输入>` | OpenSearch 端点，例如，`vpc-your_opensearch_domain_name-xcvgw6uu2o6zafsiefxubwuohe.us-east-1.es.amazonaws.com`。 |
+    | EngineType | OpenSearch | OpenSearch 的引擎类型。选择 OpenSearch 或 Elasticsearch。 |
+    | CognitoEndpoint | `<可选>` | OpenSearch 域的 Cognito 用户池端点 URL，例如，`mydomain.auth.us-east-1.amazoncognito.com`。如果您的 OpenSearch 域不是通过 Cognito 用户池认证，请留空。 |
     | ELBSecurityGroupId | `<需要输入>` |与 ELB 关联的安全组，例如，`sg-123456`。 |
     | ELBDomain | `<需要输入>` | ELB的自定义域名，例如`dashboard.example.com`。 |
     | ELBDomainCertificateArn | `<需要输入>` |与 ELBDomain 关联的 SSL 证书 ARN。证书必须从 [Amazon Certificate Manager (ACM)][acm] 创建。 |
-    | PrivateSubnetIds | `<需要输入>` |部署 Nginx 实例的私有子网。您需要至少选择两个私有子网，例如，`subnet-12345abc，subnet-54321cba`。 |
-    | NginxSecurityGroupId | `<需要输入>` |与 Nginx 实例关联的安全组。安全组必须允许来自 ELB 安全组的访问。 |
-    | KeyName | `<需要输入>` | Nginx 实例的 PEM 密钥名称。 |
-    | EngineType | OpenSearch | OpenSearch 的引擎类型。选择 OpenSearch 或 Elasticsearch。 |
-    | Endpoint | `<需要输入>` | OpenSearch 端点，例如，`vpc-your_opensearch_domain_name-xcvgw6uu2o6zafsiefxubwuohe.us-east-1.es.amazonaws.com`。 |
-    | CognitoEndpoint | `<可选>` | OpenSearch 域的 Cognito 用户池端点 URL，例如，`mydomain.auth.us-east-1.amazoncognito.com`。如果您的 OpenSearch 域不是通过 Cognito 用户池认证，请留空。 |
+    | ELBAccessLogBucketName | `<需要输入>` | 代理ELB的访问日志存储桶的名称。 |
+    | SsmParameterValueawsserviceamiamazonlinuxlatestamzn2amihvmx8664gp2C96584B6F00A464EAD1953AFF4B05118Parameter | /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2 | 代理实例AMI的SSM参数。大多数情况下可以使用默认值。 |
 
 6. 选择**下一步**。
 

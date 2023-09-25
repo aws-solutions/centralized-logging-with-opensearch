@@ -34,6 +34,9 @@
     | Index Suffix                 | yyyy-MM-dd | The common suffix format of OpenSearch index for the log(Example: yyyy-MM-dd, yyyy-MM-dd-HH). The index name will be `<Index Prefix>-<Log Type>-<Index Suffix>-000001`.                                                                     |
     | Compression type                 | best_compression | The compression type to use to compress stored data. Available values are best_compression and default.                                                                                                                                     |
     | Refresh Interval                 | 1s | How often the index should refresh, which publishes its most recent changes and makes them available for searching. Can be set to -1 to disable refreshing. Default is 1s.                                                                  |
+    | EnableS3Notification                 | True | A binary option is available to enable or disable notifications for Amazon S3 buckets. The default option is recommended for most cases.                                                        |
+    | LogProcessorRoleName                 | `<Optional>` | Specify a role name for the log processor. The name should NOT duplicate an existing role name. If no name is specified, a random name is generated. (Optional)                                                        |
+    | QueueName                 | `<Optional>` | Specify a queue name for a SQS. The name should NOT duplicate an existing role name. If no name is given, a random name will be generated. (Optional)                                                        |
 
 6. Choose **Next**.
 
