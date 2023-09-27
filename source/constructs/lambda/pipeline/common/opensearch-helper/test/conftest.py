@@ -20,8 +20,12 @@ def default_environment_variables():
     os.environ["LOG_TYPE"] = "ELB"
     os.environ["DOMAIN_NAME"] = "dev"
 
-    # os.environ["DAYS_TO_WARM"] = "10"
-    # os.environ["DAYS_TO_COLD"] = "10"
-    os.environ["DAYS_TO_RETAIN"] = "180"
+    os.environ["WARM_AGE"] = "10"
+    os.environ["COLD_AGE"] = "10"
+    os.environ["RETAIN_AGE"] = "180"
+    os.environ["ROLLOVER_SIZE"] = "30g"
+    os.environ["INDEX_SUFFIX"] = "yyyy-MM-dd"
+    
+    # os.environ["DAYS_TO_RETAIN"] = "180"
     # os.environ["NUMBER_OF_SHARDS"] = "10"
     # os.environ["NUMBER_OF_REPLICAS"] = "10"

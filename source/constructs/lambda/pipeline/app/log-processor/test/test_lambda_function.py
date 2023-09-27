@@ -7,7 +7,7 @@ import base64
 import boto3
 import pytest
 
-from moto import mock_s3
+from moto import mock_s3, mock_lambda, mock_iam
 
 
 @pytest.fixture
@@ -139,12 +139,58 @@ LOAD_FAILED_RESP = Response(
 )
 
 
+@pytest.fixture(autouse=True)
+def mock_iam_context():
+    with mock_iam():
+        role_name = "OpenSearch_helper_lambda"
+
+        iam_client = boto3.client("iam")
+        response = iam_client.create_role(
+            RoleName=role_name,
+            AssumeRolePolicyDocument='{"Version": "2012-10-17","Statement": [{"Effect": "Allow","Action": ["logs:CreateLogGroup","logs:CreateLogStream","logs:PutLogEvents"],"Resource": "*}]}',
+        )
+        os.environ["AOS_HELPER_LAMBDA_ROLE_ARN"] = response["Role"]["Arn"]
+        yield
+
+
+@pytest.fixture(autouse=True)
+def mock_lambda_context():
+    with mock_lambda():
+        function_name = "AOSHelperLambda"
+        os.environ["AOS_HELPER_FUNCTION_NAME"] = function_name
+        role_arn = os.environ["AOS_HELPER_LAMBDA_ROLE_ARN"]
+
+        lambda_client = boto3.client("lambda")
+        lambda_client.create_function(
+            FunctionName=function_name,
+            Handler="index.lambda_handler",
+            Role=role_arn,
+            Code={
+                "ZipFile": b"",
+            },
+            Environment={"Variables": {"BULK_BATCH_SIZE": "20000"}},
+        )
+
+        yield
+
+
+def test_adjust_bulk_batch_size():
+    import lambda_function
+
+    lambda_function.adjust_bulk_batch_size()
+
+
+@mock_lambda
 def test_lambda_handler_kds_success(mocker, kds_event):
     os.environ["SOURCE"] = "KDS"
     import lambda_function
 
-    mocker.patch("commonlib.opensearch.OpenSearchUtil.exist_index_template", return_value=True)
-    mocker.patch("commonlib.opensearch.OpenSearchUtil.bulk_load", return_value=LOAD_SUCCESS_RESP)
+    mocker.patch(
+        "commonlib.opensearch.OpenSearchUtil.exist_index_template", return_value=True
+    )
+    mocker.patch(
+        "commonlib.opensearch.OpenSearchUtil.bulk_load", return_value=LOAD_SUCCESS_RESP
+    )
 
     lambda_function.lambda_handler(kds_event, None)
 
@@ -152,6 +198,7 @@ def test_lambda_handler_kds_success(mocker, kds_event):
 
 
 @mock_s3
+@mock_lambda
 def test_lambda_handler_kds_failed(mocker, kds_event):
     os.environ["SOURCE"] = "KDS"
     bucket_name = os.environ.get("BACKUP_BUCKET_NAME")
@@ -160,12 +207,16 @@ def test_lambda_handler_kds_failed(mocker, kds_event):
 
     import lambda_function
 
-    mocker.patch("commonlib.opensearch.OpenSearchUtil.exist_index_template", return_value=True)
-    mocker.patch("commonlib.opensearch.OpenSearchUtil.bulk_load", return_value=LOAD_FAILED_RESP)
-
+    mocker.patch(
+        "commonlib.opensearch.OpenSearchUtil.exist_index_template", return_value=True
+    )
+    mocker.patch(
+        "commonlib.opensearch.OpenSearchUtil.bulk_load", return_value=LOAD_FAILED_RESP
+    )
     lambda_function.lambda_handler(kds_event, None)
 
 
+@mock_lambda
 def test_lambda_handler_kds_cloudfront():
     event = {
         "Records": [
@@ -239,3 +290,10 @@ def test_lambda_handler_kds_cloudfront():
             "asn": "16509",
         }
     ]
+
+
+def test_parse_vpc_logs_cwl():
+    import lambda_function
+
+    line = '{"logEvents" : "2 131 eni-038cb4e8f751b7186 - - - - - - - 123 123 - NODATA"}'
+    lambda_function.parse_vpc_logs_cwl(line)

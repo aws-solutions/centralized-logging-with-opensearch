@@ -1,8 +1,8 @@
 /*
 Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
+Licensed under the Apache License, Version 2.0 (the "License").
+You may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
@@ -143,6 +143,7 @@ export interface S3toOpenSearchStackProps {
   readonly solutionId: string;
   readonly stackPrefix: string;
   readonly metricSourceType?: MetricSourceType;
+  readonly enableConfigJsonParam?: boolean;
 }
 
 export class S3toOpenSearchStack extends Construct {
@@ -276,11 +277,7 @@ export class S3toOpenSearchStack extends Construct {
       stackPrefix: props.stackPrefix,
     });
 
-    const configJSON = new CfnParameter(this, 'ConfigJSON', {
-      type: 'String',
-      default: '',
-    });
-    configJSON.overrideLogicalId('ConfigJSON');
+
 
     const logProcessorRoleName = new CfnParameter(
       this,
@@ -288,6 +285,7 @@ export class S3toOpenSearchStack extends Construct {
       {
         type: 'String',
         default: '',
+        description: 'Specify a role name for the log processor. The name should NOT duplicate an existing role name. If no name is specified, a random name is generated. (Optional)',
       }
     );
     logProcessorRoleName.overrideLogicalId('LogProcessorRoleName');
@@ -305,7 +303,12 @@ export class S3toOpenSearchStack extends Construct {
     const enableS3NotificationParam = new CfnParameter(
       this,
       'EnableS3Notification',
-      { type: 'String', default: 'True', allowedValues: ['True', 'False'] }
+      {
+        type: 'String',
+        default: 'True',
+        allowedValues: ['True', 'False'],
+        description: 'A binary option is available to enable or disable notifications for Amazon S3 buckets. The default option is recommended for most cases.',
+      }
     );
     enableS3NotificationParam.overrideLogicalId('EnableS3Notification');
 
@@ -365,10 +368,33 @@ export class S3toOpenSearchStack extends Construct {
         LOG_SOURCE_ACCOUNT_ID: props.logSourceAccountId,
         LOG_SOURCE_REGION: props.logSourceRegion,
         LOG_SOURCE_ACCOUNT_ASSUME_ROLE: props.logSourceAccountAssumeRole,
-        CONFIG_JSON: configJSON.valueAsString,
+        CONFIG_JSON: (() => {
+          if (props.enableConfigJsonParam) {
+            const configJSON = new CfnParameter(this, 'ConfigJSON', {
+              type: 'String',
+              default: '',
+              description: 'A string in JSON format that controls how to parse the logs in the S3 bucket. (Optional)',
+            });
+            configJSON.overrideLogicalId('ConfigJSON');
+            return configJSON.valueAsString;
+          }
+          return '';
+        })(),
+        BULK_BATCH_SIZE: '10000',
+        FUNCTION_NAME: `${Aws.STACK_NAME}-LogProcessorFn`,
       },
       layers: [SharedPythonLayer.getInstance(this), pipeLayer],
     });
+    logProcessorFn.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: [
+          'lambda:UpdateFunctionConfiguration',
+          'lambda:GetFunctionConfiguration',
+        ],
+        resources: [`arn:${Aws.PARTITION}:lambda:${Aws.REGION}:${Aws.ACCOUNT_ID}:function:${Aws.STACK_NAME}-LogProcessorFn`,],
+      })
+    );
+
     // No cross-account distinction is made here
     logBucket.grantRead(logProcessorFn);
 
@@ -494,6 +520,7 @@ export class S3toOpenSearchStack extends Construct {
     const queueName = new CfnParameter(this, 'QueueName', {
       type: 'String',
       default: '',
+      description: 'Specify a queue name for a SQS. The name should NOT duplicate an existing role name. If no name is given, a random name will be generated. (Optional)',
     });
     queueName.overrideLogicalId('QueueName');
 

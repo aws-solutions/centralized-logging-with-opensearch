@@ -231,8 +231,6 @@ run_python_test $construct_dir/ecr/s3-list-objects s3-list-objects &
 tests_to_run+=($!)
 run_python_test $construct_dir/lib/kinesis/lambda lambda &
 tests_to_run+=($!)
-run_python_test $construct_dir/migration/ migration &
-tests_to_run+=($!)
 
 for i in "${!tests_to_run[@]}"; do
   test_pid=${tests_to_run[$i]}

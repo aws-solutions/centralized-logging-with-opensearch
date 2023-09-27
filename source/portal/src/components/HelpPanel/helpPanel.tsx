@@ -1,8 +1,8 @@
 /*
 Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
+Licensed under the Apache License, Version 2.0 (the "License").
+You may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
@@ -17,11 +17,7 @@ import React from "react";
 import { useSelector, useDispatch } from "react-redux";
 import CloseIcon from "@material-ui/icons/Close";
 import ErrorOutlineIcon from "@material-ui/icons/ErrorOutline";
-import {
-  ActionType,
-  InfoBarTitleMap,
-  InfoBarTypes,
-} from "reducer/appReducer";
+import { ActionType, InfoBarTitleMap, InfoBarTypes } from "reducer/appReducer";
 import Alarms from "help/Alarms";
 import AccessProxy from "help/AccessProxy";
 import CreationMethodNetwork from "help/CreationMethodNetwork";

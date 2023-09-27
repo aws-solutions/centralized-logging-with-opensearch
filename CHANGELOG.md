@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] - 2023-09-27
+
+### Fixed
+
+- Automatically adjust log processor lambda request's body size based on Amazon OpenSearch Service data nodes instance type #119
+- When creating Application log pipeline and selecting Nginx, default sample dashboard option to be "Yes" #192
+- Monitoring page cannot show metrics when there is only one dot
+- The time of the data point of the monitoring metrics does not match the time of the abscissa
+
 ## [2.0.0] - 2023-08-22
 
 ### Added
@@ -27,7 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Log Config: Time key in Fluent Bit config for Spring Boot should be time type instead of None #71
-- EventBridge will be disabled automatically if deleting instances in instance group #164
+- EventBridge will be disabled automatically if deleting instances in instance group #64
 - Log Config should not be created without Regex/Log Format #163
 - Lack of region check before creating WAF log pipeline #162
 - The Fluent bit configuration file generated in sidecar deployment option has a wrong shared volume #160

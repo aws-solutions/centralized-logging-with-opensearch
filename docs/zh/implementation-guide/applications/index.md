@@ -1,29 +1,22 @@
 # 应用程序日志分析管道
 
-日志通支持从 EC2 实例、EKS 集群、 和Syslog中摄取应用程序日志。
+日志通支持从以下日志源摄取应用程序日志：
 
-- 对于 EC2 实例，日志通会自动安装 [log agent](#logging-agent) ([Fluent Bit 1.9][fluent-bit])，收集 EC2 实例上的应用程序日志，然后将日志发送到 Amazon OpenSearch。
-- 对于 EKS 集群，日志通将生成一体化配置文件供客户将 [log agent](#logging-agent) ([Fluent Bit 1.9][fluent-bit]) 部署为 DaemonSet 或 Sidecar。 部署日志代理后，日志通将开始收集 pod 日志并发送到 Amazon OpenSearch。
-- 对于 Syslog，日志通将通过 UDP 或 TCP 协议收集 Syslog 日志。
+- [EC2实例](./ec2-pipeline.md): 日志通会自动安装 [log agent](#log-agent) (Fluent Bit 1.9), 收集 EC2 实例上的应用程序日志，然后将日志发送到 Amazon OpenSearch。
+- [EKS集群](./eks-pipeline.md): 日志通将生成一体化配置文件供客户将[log agent](#log-agent) (Fluent Bit 1.9) 部署为 DaemonSet 或 Sidecar。 部署日志代理后，日志通将开始收集 pod 日志并发送到 Amazon OpenSearch。
+- [Amazon S3](./s3-pipeline.md): 日志通既可以连续提取指定 Amazon S3 位置中的日志，也可以执行一次性提取。 您还可以根据 Amazon S3 前缀过滤日志或使用自定义日志配置来解析日志。
+- [Syslog](./syslog-pipeline.md): 对于 Syslog，日志通将通过 UDP 或 TCP 协议收集 Syslog 日志。
 
-## 支持的日志格式和数据源
+创建日志分析管道后，您可以向日志分析管道添加更多日志源。 有关更多信息，请参阅 [添加新的日志源](./create-log-source.md#add-a-new-log-source)。
+
+!!! Important "重要"
+
+    如果您是第一次使用日志通创建应用程序日志管道，建议您先了解概念以及支持的日志格式和日志源。
+
+## 支持的日志格式和日志源
 {%
 include-markdown "include-supported-app-logs.md"
 %}
-
-在本章中，您将学习如何为以下日志格式创建日志摄取：
-
-- [Apache HTTP server 日志](./apache.md)
-- [Nginx 日志](./nginx.md)
-- [单行文本日志](./single-line-text.md)
-- [多行文本日志](./multi-line-text.md)
-- [JSON 日志](./json.md)
-- [Syslog 日志](./syslog.md)
-
-在创建日志摄取之前，您需要：
-
-- [创建日志源](./create-log-source.md)（不适用于S3存储桶和Syslog）
-- [创建应用程序日志管道](./create-applog-pipeline.md)
 
 ## 概念
 
@@ -36,6 +29,7 @@ include-markdown "include-supported-app-logs.md"
 ### 日志摄取 (Log Ingestion)
 日志摄取为日志通使用的日志记录代理配置日志源、日志类型和应用程序日志分析管道。
 之后，日志通将开始从日志源收集特定类型的日志并将它们发送到 Amazon OpenSearch。
+
 
 ### 日志代理 (Log Agent)
 日志代理是一个程序，它从一个位置读取日志并将它们发送到另一个位置（例如，OpenSearch）。
@@ -52,29 +46,31 @@ include-markdown "include-supported-app-logs.md"
 创建应用程序日志分析管道时，日志缓冲区是可选的。对于所有类型的应用程序日志，日志通解决方案还提供了一种没有任何缓冲层的摄取日志方式。但是，我们仅推荐您在日志量小情况时才使用此选项，并且您有足够的信心，认为不会触发 OpenSearch 端阈值。
 
 ### 日志源 (Log Source)
-日志源是指您希望日志通从中收集应用程序日志的 Amazon 服务。
+日志源是指您希望日志通从中收集应用程序日志的 Amazon 服务。支持的日志源有：
 
-支持的日志源有：
-
-* [实例组 (Instance Group)](#实例组-instance-group)
-* [EKS 集群 (EKS Cluster)](#eks-集群-eks-cluster)
+* [实例组（Instance Group）](#instance-group)
+* [EKS集群（EKS Cluster）](#eks-cluster)
+* [Amazon S3](#amazon-s3)
 * [Syslog](#syslog)
 
 #### 实例组 (Instance Group)
 
-实例组是您要从中收集应用程序日志的 EC2 实例的集合。日志通 将帮助您在组内的每个实例中安装日志记录代理。你可以通过界面选择任意 EC2 实例或者选择一个[EC2 Auto Scaling 组][asg]。
+实例组是您要从中收集应用程序日志的 EC2 实例的集合。日志通 将帮助您在组内的每个实例中安装日志记录代理。你可以通过界面选择任意 EC2 实例或者选择一个[EC2 Auto Scaling 组][asg]。 
 
 #### EKS 集群 (EKS Cluster)
 
 日志通中的 EKS 集群是指您要从中收集 pod 日志的 Amazon EKS。日志通 将指导您将日志记录代理部署为 EKS 集群中的 DaemonSet 或 Sidecar。
 
-#### Syslog
+#### Amazon S3
+日志通支持收集存储在 Amazon S3 存储桶中的日志。
 
+#### Syslog
 日志通将通过 UDP 或 TCP 协议收集 syslog 日志。
 
 ### 日志配置 (Log Config)
 
 日志配置是一种配置，它告诉日志通日志在日志源上的存储位置、您要收集的日志类型、日志行包含哪些字段以及每个字段的类型。
+
 
 [fluent-bit]: https://docs.fluentbit.io/manual/
 [open-ssl]: https://www.openssl.org/source/

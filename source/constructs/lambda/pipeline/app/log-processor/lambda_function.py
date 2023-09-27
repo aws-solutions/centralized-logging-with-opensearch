@@ -24,7 +24,7 @@ logger.setLevel(logging.INFO)
 
 TOTAL_RETRIES = 3
 SLEEP_INTERVAL = 10
-BULK_BATCH_SIZE = 20000
+
 DEFAULT_BULK_BATCH_SIZE = 20000
 BULK_ACTION = "index"
 
@@ -46,7 +46,8 @@ IS_APP_PIPELINE = "apppipe" in stack_name.lower()
 IS_SVC_PIPELINE = not IS_APP_PIPELINE
 
 s3 = boto3.resource("s3", region_name=default_region)
-
+lambda_client = boto3.client("lambda", region_name=default_region)
+function_name = os.environ.get("FUNCTION_NAME")
 aos = OpenSearchUtil(
     region=default_region,
     endpoint=endpoint.strip("https://"),
@@ -270,15 +271,17 @@ def batch_bulk_load(records: list, index_name: str) -> list:
 
     failed_records = []
     total = len(records)
-
+    end = 2000
+    if batch_size > 2000:
+        end = batch_size
     start = 0
     while start < total:
         batch_failed_records = bulk_load_records(
-            records[start : start + batch_size], index_name
+            records[start : start + end], index_name
         )
         if batch_failed_records:
             failed_records.extend(batch_failed_records)
-        start += batch_size
+        start += end
 
     return failed_records
 
@@ -323,7 +326,10 @@ def bulk_load_records(records: list, index_name: str) -> list:
                     failed_records.append(records[idx])
 
             break
-
+        elif response.status_code == 413:
+            adjust_bulk_batch_size()
+            raise RuntimeError("Due to status code 413, unable to bulk load the records, we will retry.")
+            
         if retry >= TOTAL_RETRIES:
             raise RuntimeError(f"Unable to bulk load the records after {retry} retries")
         else:
@@ -333,3 +339,18 @@ def bulk_load_records(records: list, index_name: str) -> list:
             time.sleep(SLEEP_INTERVAL)
 
     return failed_records
+
+
+def adjust_bulk_batch_size():
+    global batch_size
+    if batch_size >= 4000:
+        batch_size = batch_size - 2000
+    logger.info(f"batch_size: {batch_size}")
+    response = lambda_client.get_function_configuration(
+        FunctionName=function_name
+    )
+    variables = response["Environment"]["Variables"]
+    
+    if variables.get("BULK_BATCH_SIZE") and int(variables["BULK_BATCH_SIZE"]) >= 4000:
+        variables["BULK_BATCH_SIZE"] = str(int(variables["BULK_BATCH_SIZE"]) - 2000)
+        lambda_client.update_function_configuration(FunctionName=function_name, Environment={"Variables": variables})
