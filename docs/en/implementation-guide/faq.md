@@ -167,6 +167,9 @@ to scale out to the desired number.
     ```
 4. Go back to the **Instance Groups** panel of the Centralized Logging with OpenSearch console and wait for the CentOS 7 machine status to be **Online** and proceed to create the instance group.
 
+**Q: How can I consume CloudWatch custom logs?**</br>
+You can use Firehose to subscribe CloudWatch logs and transfer logs into Amazon S3. Firstly, create subscription filters with Amazon Kinesis Data Firehose based on this [guide](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CrossAccountSubscriptions-Firehose.html). Next, follow the [instructions](https://docs.aws.amazon.com/firehose/latest/dev/what-is-this-service.html) to learn how to transfer logs to Amazon S3. Then, you can use Centralized Logging with OpenSearch to ingest logs from Amazon S3 to OpenSearch.
+
 ## Log Visualization
 
 **Q: How can I find the built-in dashboards in OpenSearch?**</br>

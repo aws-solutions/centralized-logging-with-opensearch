@@ -6,7 +6,49 @@ import os
 
 import boto3
 import pytest
-from moto import mock_s3, mock_sts
+from moto import mock_s3, mock_sts, mock_lambda, mock_iam
+from dataclasses import dataclass
+
+
+@pytest.fixture(autouse=True)
+def mock_iam_context():
+    with mock_iam():
+        role_name = "OpenSearch_helper_lambda"
+
+        iam_client = boto3.client("iam")
+        response = iam_client.create_role(
+            RoleName=role_name,
+            AssumeRolePolicyDocument='{"Version": "2012-10-17","Statement": [{"Effect": "Allow","Action": ["logs:CreateLogGroup","logs:CreateLogStream","logs:PutLogEvents"],"Resource": "*}]}',
+        )
+        os.environ["AOS_HELPER_LAMBDA_ROLE_ARN"] = response["Role"]["Arn"]
+        yield
+
+
+@pytest.fixture(autouse=True)
+def mock_lambda_context():
+    with mock_lambda():
+        function_name = "AOSHelperLambda"
+        os.environ["AOS_HELPER_FUNCTION_NAME"] = function_name
+        role_arn = os.environ["AOS_HELPER_LAMBDA_ROLE_ARN"]
+
+        lambda_client = boto3.client("lambda")
+        responses = lambda_client.create_function(
+            FunctionName=function_name,
+            Handler="index.lambda_handler",
+            Role=role_arn,
+            Code={
+                "ZipFile": b"",
+            },
+            Environment={"Variables": {"BULK_BATCH_SIZE": "10000"}},
+        )
+        print(responses)
+        yield
+
+
+def test_adjust_bulk_batch_size():
+    import lambda_function
+
+    lambda_function.adjust_bulk_batch_size()
 
 
 @pytest.fixture
@@ -142,6 +184,7 @@ load_failed_resp = Response(201, json.dumps(LOAD_ERR))
         (load_failed_resp, 2, 2),
     ],
 )
+@mock_lambda
 def test_lambda_handler(
     mocker, s3_client, sts_client, s3_event, resp, expected_total, expected_failed
 ):
@@ -165,6 +208,7 @@ def test_lambda_handler(
         (load_failed_resp, 4, 4),
     ],
 )
+@mock_lambda
 def test_lambda_handler_multi_events(
     mocker,
     s3_client,
@@ -187,6 +231,7 @@ def test_lambda_handler_multi_events(
     assert failed == expected_failed
 
 
+@mock_lambda
 def test_lambda_handler_direct_put_events(mocker, s3_client, sts_client, put_event):
     # Can only import here, as the environment variables need to be set first.
     import lambda_function
@@ -203,6 +248,7 @@ def test_lambda_handler_direct_put_events(mocker, s3_client, sts_client, put_eve
     assert failed == 0
 
 
+@mock_lambda
 def test_lambda_handler_test_event(test_event):
     import lambda_function
 
@@ -211,14 +257,17 @@ def test_lambda_handler_test_event(test_event):
     assert failed == 0
 
 
+@mock_lambda
 def test_lambda_handler_unknown_sqs_event():
     import lambda_function
 
     unknown_event = {"hello": "world"}
+
     with pytest.raises(RuntimeError):
         lambda_function.lambda_handler(unknown_event, None)
 
 
+@mock_lambda
 def test_key_not_found(mocker, s3_event):
     import lambda_function
 
@@ -226,10 +275,12 @@ def test_key_not_found(mocker, s3_event):
         "commonlib.opensearch.OpenSearchUtil.exist_index_template", return_value=True
     )
     mocker.patch("lambda_function.get_object_key", return_value="unknown_file")
+
     with pytest.raises(RuntimeError):
         lambda_function.lambda_handler(s3_event, None)
 
 
+@mock_lambda
 def test_aos_error(mocker, s3_event, s3_client):
     import lambda_function
 
@@ -246,6 +297,7 @@ def test_aos_error(mocker, s3_event, s3_client):
         lambda_function.lambda_handler(s3_event, None)
 
 
+@mock_lambda
 def test_index_template_not_exist(mocker, s3_event):
     import lambda_function
 
@@ -253,5 +305,6 @@ def test_index_template_not_exist(mocker, s3_event):
         "commonlib.opensearch.OpenSearchUtil.exist_index_template", return_value=False
     )
     mocker.patch("time.sleep")
+
     with pytest.raises(RuntimeError):
         lambda_function.lambda_handler(s3_event, None)

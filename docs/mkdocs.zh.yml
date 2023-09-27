@@ -48,15 +48,13 @@ nav:
           - AWS Config: implementation-guide/aws-services/config.md
       -  应用日志:
           - 概览: implementation-guide/applications/index.md
-          - 前提条件:
-              - 创建日志源: implementation-guide/applications/create-log-source.md
-              - 创建应用日志管道: implementation-guide/applications/create-applog-pipeline.md
-          - Apache HTTP 服务器: implementation-guide/applications/apache.md
-          - Nginx: implementation-guide/applications/nginx.md
-          - 单行文本: implementation-guide/applications/single-line-text.md
-          - 多行文本: implementation-guide/applications/multi-line-text.md
-          - JSON: implementation-guide/applications/json.md
-          - Syslog: implementation-guide/applications/syslog.md
+          - EC2 实例组: implementation-guide/applications/ec2-pipeline.md
+          - EKS 集群: implementation-guide/applications/eks-pipeline.md
+          - S3: implementation-guide/applications/s3-pipeline.md
+          - Syslog: implementation-guide/applications/syslog-pipeline.md
+          - 管道资源:
+              - 日志源: implementation-guide/applications/create-log-source.md
+              - 日志配置: implementation-guide/applications/create-log-config.md
       - 跨账户日志摄取: implementation-guide/link-account/index.md
       - 日志管道监控: 
           - 告警: implementation-guide/alarm.md

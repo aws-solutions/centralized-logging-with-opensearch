@@ -34,6 +34,9 @@
     | Index Suffix                 | yyyy-MM-dd | 索引后缀格式（例如：yyyy-MM-dd、yyyy-MM-dd-HH）。索引名称将为 `<Index Prefix>-<Log Type>-<Index Suffix>-000001`。                                                                                 |
     | Compression type                 | best_compression | 用于压缩存储数据的压缩类型。 可用值为 best_compression 和 default。                                                                           |
     | Refresh Interval                 | 1s | 索引多久刷新，即刷新索引最近的更改数据并使它们可用于搜索。 可以设置为 -1 以禁用刷新。 默认为 1秒。                                                                                 |
+    | EnableS3Notification | True | 一个二进制选项，用于启用或禁用针对Amazon S3存储桶的通知。大多数情况下，建议使用默认选项。 |
+    | LogProcessorRoleName | `<可选>` | 为日志处理器指定一个角色名称。该名称不能与现有角色名称重复。如果没有指定名称，将生成一个随机名称。可选参数，不是必填项。 |
+    | QueueName | `<可选>` | 为SQS指定一个队列名称。该名称不能与现有角色名称重复。如果没有指定名称，将生成一个随机名称。可选参数，不是必填项。 |
 
 
 6. 选择**下一步**。

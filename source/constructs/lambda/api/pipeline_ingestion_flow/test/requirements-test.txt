@@ -4,3 +4,4 @@ pytest
 pytest-cov
 docker
 openapi_spec_validator
+jsonSchema==4.19.0

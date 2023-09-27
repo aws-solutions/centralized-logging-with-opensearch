@@ -3,6 +3,11 @@
   "description": "cdk solution helper",
   "version": "0.1.0",
   "license": "Apache-2.0",
+  "author": {
+    "name": "Amazon Web Services",
+    "url": "https://aws.amazon.com/solutions",
+    "organization": true
+  },
   "devDependencies": {
     "fs": "0.0.1-security"
   },

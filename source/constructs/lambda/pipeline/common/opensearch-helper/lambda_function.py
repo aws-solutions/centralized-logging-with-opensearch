@@ -64,22 +64,8 @@ es = conn.get_client("es")
 def lambda_handler(event, _):
     event = event or {}
     logger.info("Received event: " + json.dumps(event, indent=2))
-
-    action = event.get("action")
-    props = event.get("props", {})
-    if action == "CreateIndexTemplate":
-        handle_create_index_template_action(props)
-    else:
-        handle_other_actions()
-
+    handle_other_actions()
     return "OK"
-
-
-def handle_create_index_template_action(props):
-    action_create_index_template(props)
-    if aos.exist_index_alias() is False:
-        create_index()
-
 
 def handle_other_actions():
     advanced_security_enabled_flag = advanced_security_enabled()
@@ -116,79 +102,6 @@ def get_index_template():
         return aos.default_index_template(
             number_of_shards, number_of_replicas, codec, refresh_interval
         )
-
-
-def action_create_index_template(props: dict):
-    logger.info("CreateIndexTemplate props=%s", props)
-
-    the_log_type = props.get("log_type", "").lower()
-    create_dashboard = props.get("createDashboard", "no").lower()
-    logger.info("CreateDashboard:%s", create_dashboard)
-
-    if the_log_type in ["nginx", "apache"]:
-        # {
-        #     "action": "CreateIndexTemplate",
-        #     "props": {
-        #         "log_type": "nginx/apache",
-        #         "createDashboard": "yes/no"
-        #     }
-        # }
-
-        logger.info(
-            f"{aos.create_predefined_index_template.__name__} of {the_log_type} : {create_dashboard}"
-        )
-
-        run_func_with_retry(
-            aos.create_predefined_index_template,
-            aos.create_predefined_index_template.__name__,
-            name=the_log_type,
-            number_of_shards=number_of_shards,
-            number_of_replicas=number_of_replicas,
-            codec=codec,
-            refresh_interval=refresh_interval,
-        )
-
-        if createDashboard.lower() == "yes":
-            logger.info(f"{aos.import_saved_object.__name__} of {the_log_type}")
-
-            run_func_with_retry(
-                aos.import_saved_object,
-                aos.import_saved_object.__name__,
-                log_type=the_log_type,
-            )
-
-    elif the_log_type in ["regex", "multilinetext", "singlelinetext", "json", "syslog"]:
-        # {
-        #     "action": "CreateIndexTemplate",
-        #     "props": {
-        #         "log_type": "regex",
-        #         "mappings": {
-        #             "ip": { "type": "ip" },
-        #             "method": { "type": "text" },
-        #             "time_local": { "type": "date", "format": "dd/MMM/yyyy:HH:mm:ss Z||epoch_millis" }
-        #         }
-        #     }
-        # }
-
-        mappings = props.get("mappings", {})
-        index_template = aos.default_index_template(
-            number_of_shards,
-            number_of_replicas,
-            codec=codec,
-            refresh_interval=refresh_interval,
-        )
-        index_template["template"]["mappings"] = {"properties": mappings}
-
-        logger.info(f"Create index template: {index_template}")
-
-        run_func_with_retry(
-            aos.create_index_template,
-            aos.create_index_template.__name__,
-            index_template=index_template,
-        )
-
-    else:
-        logger.info(f"Unknown log type: {the_log_type}")
 
 
 def advanced_security_enabled() -> bool:

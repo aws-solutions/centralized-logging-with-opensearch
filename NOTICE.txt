@@ -1,6 +1,6 @@
 Centralized Logging with OpenSearch
 Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-Licensed under the Apache License Version 2.0 (the "License"). You may not use this file except
+Licensed under the Apache License, Version 2.0 (the "License"). You may not use this file except
 in compliance with the License. A copy of the License is located at http://www.apache.org/licenses/
 or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, express or implied. See the License for the
@@ -11,116 +11,144 @@ THIRD PARTY COMPONENTS
 **********************
 This software includes third party software subject to the following copyrights:
 
-awscli under the Apache License Version 2.0
-boto3 under the Apache License Version 2.0
-botocore under the Apache License Version 2.0
+boolean.py under BSD-2-Clause
+aws-sam-translator under the Apache License, Version 2.0
+aws-xray-sdk under the Apache License, Version 2.0
+cfn-lint under MIT No Attribution License
+ecdsa under The MIT License
+graphql-core under The MIT License
+jschema-to-python under The MIT License
+jsondiff under The MIT License
+jsonpatch under BSD License
+jsonpickle under BSD License
+jsonpointer under BSD License
+jsonschema-specifications under The MIT License
+junit-xml under Freely Distributable, MIT License
+license-expression under the Apache License, Version 2.0
+mpmath under BSD License
+networkx under BSD License
+openapi-spec-validator under the Apache License, Version 2.0
+py-partiql-parser under The MIT License
+python-jose under The MIT License
+referencing under The MIT License
+regex under Apache Software License
+rpds-py under The MIT License
+sarif-om under The MIT License
+sshpubkeys under BSD License
+sympy under BSD License
+wrapt under BSD License
+awscli under the Apache License, Version 2.0
+boto3 under the  Apache License, Version 2.0
+botocore under the Apache License, Version 2.0
 defusedxml under the Python Software Foundation License
-py-serializable under the Apache License Version 2.0
-pathable under the Apache License Version 2.0 (details in this link: https://github.com/p1c2u/pathable/blob/master/LICENSE)
-Jinja2 under the BSD-3-Clause
-MarkupSafe under the BSD-3-Clause
-Werkzeug under the BSD-3-Clause
-attrs under the MIT License
-cffi under the MIT License
-colorama under the BSD License
-coverage under the Apache License Version 2.0
-cryptography under the Apache License Version 2.0 or OR BSD-3-Clause
-docker under the Apache License Version 2.0
+junit-xml under the Python Software Foundation License
+py-serializable under the Apache License, Version 2.0
+pathable under the Apache License, Version 2.0 (details in this link: https://github.com/p1c2u/pathable/blob/master/LICENSE)
+Jinja2 under The 3-Clause BSD License
+MarkupSafe under The 3-Clause BSD License
+Werkzeug under The 3-Clause BSD License
+attrs under The MIT License
+cffi under The MIT License
+colorama under BSD License
+coverage under the Apache License, Version 2.0
+cryptography under the Apache License, Version 2.0 OR The 3-Clause BSD License
+docker under the Apache License, Version 2.0
 docutils under BSD License, GNU General Public License (GPL), Python Software Foundation License, Public Domain (public domain, Python, BSD-2-Clause, GPL 3(see https://docutils.sourceforge.io/COPYING.txt))
-flake8 under the MIT License
-iniconfig under the MIT License
-ipaddr under the Apache License Version 2.0
-jmespath under the MIT License
-jsonschema-spec under the Apache License Version 2.0
+flake8 under The MIT License
+iniconfig under The MIT License
+ipaddr under the Apache License, Version 2.0
+jmespath under The MIT License
+jsonschema-spec under the Apache License, Version 2.0
 lazy-object-proxy under the BSD-2-Clause
-maxminddb under the Apache License Version 2.0
-mccabe under the MIT License
-moto under the Apache License Version 2.0 
-openapi-schema-validator under the BSD-3-Clause
-pluggy under the MIT License
-pyOpenSSL under the Apache License Version 2.0
+maxminddb under the Apache License, Version 2.0
+mccabe under The MIT License
+moto under the Apache License, Version 2.0 
+openapi-schema-validator under The 3-Clause BSD License
+pluggy under The MIT License
+pyOpenSSL under the Apache License, Version 2.0
 pyasn1 under the BSD-2-Clause
-pycodestyle under the MIT License
-pycparser under the BSD License
-pydantic under the MIT License
-pyflakes under the MIT License
-pyrsistent under the MIT License
-pytest under the MIT License
-pytest-cov under the MIT License 
-pytest-mock under the MIT License
+pycodestyle under The MIT License
+pycparser under BSD License
+pydantic under The MIT License
+pyflakes under The MIT License
+pyrsistent under The MIT License
+pytest under The MIT License
+pytest-cov under The MIT License 
+pytest-mock under The MIT License
 python-dateutil under Apache Software License, BSD License (Dual License)
-requests-aws4auth under the MIT License
-requests-mock under the Apache License Version 2.0 
-responses under the Apache License Version 2.0
-rfc3339-validator under the MIT License
-rsa under the Apache License Version 2.0
-s3transfer under the Apache License Version 2.0 
-types-PyYAML under the Apache License Version 2.0
+requests-aws4auth under The MIT License
+requests-mock under the Apache License, Version 2.0 
+responses under the Apache License, Version 2.0
+rfc3339-validator under The MIT License
+rsa under the Apache License, Version 2.0
+s3transfer under the Apache License, Version 2.0 
+types-PyYAML under the Apache License, Version 2.0
 typing_extensions under Python Software Foundation License
-ua-parser under the Apache License Version 2.0
-user-agents under the MIT License
-websocket-client under the Apache License Version 2.0 
-xmltodict under the MIT License
-@aws-cdk/aws-appsync-alpha under the Apache License Version 2.0
-@aws-cdk/aws-kinesisfirehose-alpha under the Apache License Version 2.0
-@aws-cdk/aws-kinesisfirehose-destinations-alpha under the Apache License Version 2.0
-@aws-solutions-constructs/aws-cloudfront-s3 under the Apache License Version 2.0 
-@typescript-eslint/eslint-plugin under the MIT License
+ua-parser under the Apache License, Version 2.0
+user-agents under The MIT License
+websocket-client under the Apache License, Version 2.0 
+xmltodict under The MIT License
+@aws-cdk/aws-appsync-alpha under the Apache License, Version 2.0
+@aws-cdk/aws-kinesisfirehose-alpha under the Apache License, Version 2.0
+@aws-cdk/aws-kinesisfirehose-destinations-alpha under the Apache License, Version 2.0
+@aws-solutions-constructs/aws-cloudfront-s3 under the Apache License, Version 2.0 
+@typescript-eslint/eslint-plugin under The MIT License
 @typescript-eslint/parser under the BSD-2-Clause
-eslint under the MIT License
-eslint-config-prettier under the MIT License
-eslint-import-resolver-node under the MIT License
+eslint under The MIT License
+eslint-config-prettier under The MIT License
+eslint-import-resolver-node under The MIT License
 eslint-import-resolver-typescript under the ISC License
-eslint-plugin-import under the MIT License
-eslint-plugin-prettier under the MIT License 
-aws-cdk under the Apache License Version 2.0 
-aws-cdk-lib under the Apache License Version 2.0
-cdk-nag under the Apache License Version 2.0 
-source-map-support under the MIT License
-fs under the MIT License
-exceptiongroup under the MIT License
+eslint-plugin-import under The MIT License
+eslint-plugin-prettier under The MIT License 
+aws-cdk under the Apache License, Version 2.0 
+aws-cdk-lib under the Apache License, Version 2.0
+cdk-nag under the Apache License, Version 2.0 
+source-map-support under The MIT License
+fs under The MIT License
+exceptiongroup under The MIT License
 tomli under MIT License
-@apollo/client under the MIT License
-@aws-amplify/ui-components under the Apache License Version 2.0
-@aws-amplify/ui-react under the Apache License Version 2.0
-@material-ui/core under the MIT License
+@apollo/client under The MIT License
+@aws-amplify/ui-components under the Apache License, Version 2.0
+@aws-amplify/ui-react under the Apache License, Version 2.0
+@material-ui/core under The MIT License
 @material-ui/icons under the MIT license
-@material-ui/lab under the MIT License
-@testing-library/jest-dom under the MIT License
-@testing-library/react under the MIT License
-@testing-library/user-event under the MIT License
-@types/jest under the MIT License
-@types/node under the MIT License
-@types/react under the MIT License
-@types/react-dom under the MIT License
-amplify under the MIT License
-apexcharts under the MIT License
-apollo-link under the MIT License
-aws-amplify under the Apache License Version 2.0
-aws-appsync-auth-link under the Apache License Version 2.0
-aws-appsync-subscription-link under the Apache License Version 2.0
-axios under the MIT License
-classnames under the MIT License
-date-fns under the MIT License
-graphql-tag under the MIT License
-i18next under the MIT License
-i18next-browser-languagedetector under the MIT License
-i18next-http-backend under the MIT License
-lodash.clonedeep under the MIT License
-moment under the MIT License
-node-sass under the Apache License Version 2.0
-oidc-client-ts under the Apache License Version 2.0
-react under the MIT License
-react-apexcharts under the MIT License 
-react-copy-to-clipboard under the MIT License
-react-dom under the MIT License
-react-i18next under the MIT License 
-react-minimal-datetime-range under the MIT License
-react-oidc-context under the MIT License
-react-redux under the MIT License
-react-router-dom under the MIT License
-redux under the MIT License
-sweetalert2 under the MIT License
-typescript under the Apache License Version 2.0
-web-vitals under the Apache License Version 2.0
-notice-js under the MIT-0
+@material-ui/lab under The MIT License
+@testing-library/jest-dom under The MIT License
+@testing-library/react under The MIT License
+@testing-library/user-event under The MIT License
+@types/jest under The MIT License
+@types/node under The MIT License
+@types/react under The MIT License
+@types/react-dom under The MIT License
+amplify under The MIT License
+apexcharts under The MIT License
+apollo-link under The MIT License
+aws-amplify under the Apache License, Version 2.0
+aws-appsync-auth-link under the Apache License, Version 2.0
+aws-appsync-subscription-link under the Apache License, Version 2.0
+axios under The MIT License
+classnames under The MIT License
+date-fns under The MIT License
+graphql-tag under The MIT License
+i18next under The MIT License
+i18next-browser-languagedetector under The MIT License
+i18next-http-backend under The MIT License
+lodash.clonedeep under The MIT License
+moment under The MIT License
+node-sass under the Apache License, Version 2.0
+oidc-client-ts under the Apache License, Version 2.0
+react under The MIT License
+react-apexcharts under The MIT License 
+react-copy-to-clipboard under The MIT License
+react-dom under The MIT License
+react-i18next under The MIT License 
+react-minimal-datetime-range under The MIT License
+react-oidc-context under The MIT License
+react-redux under The MIT License
+react-router-dom under The MIT License
+redux under The MIT License
+sweetalert2 under The MIT License
+typescript under the Apache License, Version 2.0
+web-vitals under the Apache License, Version 2.0
+notice-js under MIT-0
+js-json-schema-inferrer under ISC License

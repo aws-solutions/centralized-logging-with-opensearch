@@ -48,15 +48,13 @@ nav:
           - AWS Config: implementation-guide/aws-services/config.md     
       - Applications logs:
           - Overview: implementation-guide/applications/index.md
-          - Prerequisites:
-              - Create a log source: implementation-guide/applications/create-log-source.md
-              - Create an application pipeline: implementation-guide/applications/create-applog-pipeline.md
-          - Apache HTTP Server: implementation-guide/applications/apache.md
-          - Nginx: implementation-guide/applications/nginx.md
-          - Single-line text: implementation-guide/applications/single-line-text.md
-          - Multi-line text: implementation-guide/applications/multi-line-text.md
-          - JSON: implementation-guide/applications/json.md
-          - Syslog: implementation-guide/applications/syslog.md
+          - EC2 instance group: implementation-guide/applications/ec2-pipeline.md
+          - EKS cluster: implementation-guide/applications/eks-pipeline.md
+          - S3: implementation-guide/applications/s3-pipeline.md
+          - Syslog: implementation-guide/applications/syslog-pipeline.md
+          - Pipeline resources:
+              - Log source: implementation-guide/applications/create-log-source.md
+              - Log Config: implementation-guide/applications/create-log-config.md
       - Cross-account ingestion: implementation-guide/link-account/index.md
       - Log pipeline monitoring: 
           - Log alarms: implementation-guide/alarm.md

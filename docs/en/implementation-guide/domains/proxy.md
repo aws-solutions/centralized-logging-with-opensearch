@@ -71,15 +71,20 @@ This automated AWS CloudFormation template deploys the *Centralized Logging with
     | ---------- | ---------------- | ------------------------------------------------------------ |
     | VPCId | `<Requires input>` | The VPC to deploy the Nginx proxy resources, for example, `vpc-bef13dc7`. |
     | PublicSubnetIds | `<Requires input>` | The public subnets where ELB are deployed. You need to select at least two public subnets, for example, `subnet-12345abc, subnet-54321cba`. |
+    | PrivateSubnetIds | `<Requires input>` | The private subnets where Nginx instances are deployed. You need to select at least two private subnets, for example, `subnet-12345abc, subnet-54321cba`. |
+    | KeyName | `<Requires input>` | The PEM key name of the Nginx instances. |
+    | NginxSecurityGroupId | `<Requires input>` | The Security group associated with the Nginx instances. The security group must allow access from ELB security group. |
+    | ProxyInstanceType | t3.large | OpenSearch proxy instance type. e.g. t3.micro |
+    | ProxyInstanceNumber | 2 | OpenSearch proxy instance number. e.g. 1 to 4 |
+    | Endpoint | `<Requires input>` | The OpenSearch endpoint, for example, `vpc-your_opensearch_domain_name-xcvgw6uu2o6zafsiefxubwuohe.us-east-1.es.amazonaws.com`. |
+    | EngineType | OpenSearch | The engine type of the OpenSearch. Select OpenSearch or Elasticsearch. |
+    | CognitoEndpoint | `<Optional>` | The Cognito User Pool endpoint URL of the OpenSearch domain, for example, `mydomain.auth.us-east-1.amazoncognito.com`. Leave empty if your OpenSearch domain is not authenticated through Cognito User Pool. |
     | ELBSecurityGroupId | `<Requires input>` | The Security group being associated with the ELB, for example, `sg-123456`. |
     | ELBDomain | `<Requires input>` | The custom domain name of the ELB, for example, `dashboard.example.com`. |
     | ELBDomainCertificateArn | `<Requires input>` | The SSL certificate ARN associated with the ELBDomain. The certificate must be created from [Amazon Certificate Manager (ACM)][acm]. |
-    | PrivateSubnetIds | `<Requires input>` | The private subnets where Nginx instances are deployed. You need to select at least two private subnets, for example, `subnet-12345abc, subnet-54321cba`. |
-    | NginxSecurityGroupId | `<Requires input>` | The Security group associated with the Nginx instances. The security group must allow access from ELB security group. |
-    | KeyName | `<Requires input>` | The PEM key name of the Nginx instances. |
-    | EngineType | OpenSearch | The engine type of the OpenSearch. Select OpenSearch or Elasticsearch. |
-    | Endpoint | `<Requires input>` | The OpenSearch endpoint, for example, `vpc-your_opensearch_domain_name-xcvgw6uu2o6zafsiefxubwuohe.us-east-1.es.amazonaws.com`. |
-    | CognitoEndpoint | `<Optional>` | The Cognito User Pool endpoint URL of the OpenSearch domain, for example, `mydomain.auth.us-east-1.amazoncognito.com`. Leave empty if your OpenSearch domain is not authenticated through Cognito User Pool. |
+    | ELBAccessLogBucketName | `<Requires input>` | The Access Log Bucket Name for Proxy ELB |
+    | SsmParameterValueawsserviceamiamazonlinuxlatestamzn2amihvmx8664gp2C96584B6F00A464EAD1953AFF4B05118Parameter | /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2 | The SSM parameter of the proxy instance AMI. You can use the default value in most cases. |
+
 
 6. Choose **Next**.
 

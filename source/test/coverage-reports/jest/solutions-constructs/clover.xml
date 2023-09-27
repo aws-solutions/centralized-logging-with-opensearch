@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1692582783101" clover="3.2.0">
-  <project timestamp="1692582783101" name="All files">
-    <metrics statements="1945" coveredstatements="1935" conditionals="237" coveredconditionals="208" methods="110" coveredmethods="104" elements="2292" coveredelements="2247" complexity="0" loc="1945" ncloc="1945" packages="11" files="46" classes="46"/>
+<coverage generated="1695720195822" clover="3.2.0">
+  <project timestamp="1695720195822" name="All files">
+    <metrics statements="1950" coveredstatements="1940" conditionals="238" coveredconditionals="209" methods="111" coveredmethods="105" elements="2299" coveredelements="2254" complexity="0" loc="1950" ncloc="1950" packages="11" files="46" classes="46"/>
     <package name="lib">
       <metrics statements="96" coveredstatements="96" conditionals="20" coveredconditionals="18" methods="4" coveredmethods="4"/>
-      <file name="main-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/main-stack.ts">
+      <file name="main-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/main-stack.ts">
         <metrics statements="96" coveredstatements="96" conditionals="20" coveredconditionals="18" methods="4" coveredmethods="4"/>
         <line num="17" count="1" type="stmt"/>
         <line num="32" count="1" type="stmt"/>
@@ -106,7 +106,7 @@
     </package>
     <package name="lib.api">
       <metrics statements="558" coveredstatements="558" conditionals="44" coveredconditionals="43" methods="22" coveredmethods="22"/>
-      <file name="api-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/api/api-stack.ts">
+      <file name="api-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/api/api-stack.ts">
         <metrics statements="50" coveredstatements="50" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="1"/>
         <line num="16" count="1" type="stmt"/>
         <line num="18" count="1" type="stmt"/>
@@ -159,7 +159,7 @@
         <line num="382" count="4" type="stmt"/>
         <line num="387" count="4" type="stmt"/>
       </file>
-      <file name="app-log-ingestion-flow.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/api/app-log-ingestion-flow.ts">
+      <file name="app-log-ingestion-flow.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/api/app-log-ingestion-flow.ts">
         <metrics statements="24" coveredstatements="24" conditionals="2" coveredconditionals="2" methods="1" coveredmethods="1"/>
         <line num="16" count="1" type="stmt"/>
         <line num="19" count="1" type="stmt"/>
@@ -186,7 +186,7 @@
         <line num="165" count="4" type="stmt"/>
         <line num="167" count="4" type="stmt"/>
       </file>
-      <file name="app-log-ingestion-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/api/app-log-ingestion-stack.ts">
+      <file name="app-log-ingestion-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/api/app-log-ingestion-stack.ts">
         <metrics statements="79" coveredstatements="79" conditionals="8" coveredconditionals="8" methods="1" coveredmethods="1"/>
         <line num="16" count="1" type="stmt"/>
         <line num="17" count="1" type="stmt"/>
@@ -268,7 +268,7 @@
         <line num="722" count="4" type="stmt"/>
         <line num="730" count="4" type="stmt"/>
       </file>
-      <file name="app-pipeline-flow.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/api/app-pipeline-flow.ts">
+      <file name="app-pipeline-flow.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/api/app-pipeline-flow.ts">
         <metrics statements="35" coveredstatements="35" conditionals="4" coveredconditionals="4" methods="1" coveredmethods="1"/>
         <line num="16" count="1" type="stmt"/>
         <line num="17" count="1" type="stmt"/>
@@ -306,7 +306,7 @@
         <line num="273" count="4" type="stmt"/>
         <line num="275" count="4" type="stmt"/>
       </file>
-      <file name="app-pipeline-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/api/app-pipeline-stack.ts">
+      <file name="app-pipeline-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/api/app-pipeline-stack.ts">
         <metrics statements="23" coveredstatements="23" conditionals="2" coveredconditionals="2" methods="1" coveredmethods="1"/>
         <line num="16" count="1" type="stmt"/>
         <line num="17" count="1" type="stmt"/>
@@ -332,7 +332,7 @@
         <line num="165" count="4" type="stmt"/>
         <line num="172" count="4" type="stmt"/>
       </file>
-      <file name="app-table-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/api/app-table-stack.ts">
+      <file name="app-table-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/api/app-table-stack.ts">
         <metrics statements="21" coveredstatements="21" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="1"/>
         <line num="17" count="1" type="stmt"/>
         <line num="18" count="1" type="stmt"/>
@@ -356,7 +356,7 @@
         <line num="126" count="4" type="stmt"/>
         <line num="128" count="4" type="stmt"/>
       </file>
-      <file name="appsync-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/api/appsync-stack.ts">
+      <file name="appsync-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/api/appsync-stack.ts">
         <metrics statements="25" coveredstatements="25" conditionals="2" coveredconditionals="2" methods="1" coveredmethods="1"/>
         <line num="16" count="1" type="stmt"/>
         <line num="17" count="1" type="stmt"/>
@@ -384,7 +384,7 @@
         <line num="205" count="4" type="stmt"/>
         <line num="208" count="4" type="stmt"/>
       </file>
-      <file name="cluster-flow.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/api/cluster-flow.ts">
+      <file name="cluster-flow.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/api/cluster-flow.ts">
         <metrics statements="30" coveredstatements="30" conditionals="0" coveredconditionals="0" methods="4" coveredmethods="4"/>
         <line num="16" count="1" type="stmt"/>
         <line num="19" count="1" type="stmt"/>
@@ -417,7 +417,7 @@
         <line num="194" count="4" type="stmt"/>
         <line num="196" count="4" type="stmt"/>
       </file>
-      <file name="cluster-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/api/cluster-stack.ts">
+      <file name="cluster-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/api/cluster-stack.ts">
         <metrics statements="36" coveredstatements="36" conditionals="2" coveredconditionals="2" methods="1" coveredmethods="1"/>
         <line num="16" count="1" type="stmt"/>
         <line num="17" count="1" type="stmt"/>
@@ -456,7 +456,7 @@
         <line num="355" count="4" type="stmt"/>
         <line num="362" count="4" type="stmt"/>
       </file>
-      <file name="common-resource-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/api/common-resource-stack.ts">
+      <file name="common-resource-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/api/common-resource-stack.ts">
         <metrics statements="20" coveredstatements="20" conditionals="2" coveredconditionals="2" methods="1" coveredmethods="1"/>
         <line num="16" count="1" type="stmt"/>
         <line num="17" count="1" type="stmt"/>
@@ -479,7 +479,7 @@
         <line num="227" count="4" type="stmt"/>
         <line num="239" count="4" type="stmt"/>
       </file>
-      <file name="cross-account-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/api/cross-account-stack.ts">
+      <file name="cross-account-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/api/cross-account-stack.ts">
         <metrics statements="24" coveredstatements="24" conditionals="6" coveredconditionals="5" methods="1" coveredmethods="1"/>
         <line num="16" count="1" type="stmt"/>
         <line num="17" count="1" type="stmt"/>
@@ -506,7 +506,7 @@
         <line num="218" count="4" type="stmt"/>
         <line num="229" count="4" type="stmt"/>
       </file>
-      <file name="cwl-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/api/cwl-stack.ts">
+      <file name="cwl-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/api/cwl-stack.ts">
         <metrics statements="30" coveredstatements="30" conditionals="2" coveredconditionals="2" methods="1" coveredmethods="1"/>
         <line num="16" count="1" type="stmt"/>
         <line num="17" count="1" type="stmt"/>
@@ -539,7 +539,7 @@
         <line num="164" count="4" type="stmt"/>
         <line num="171" count="4" type="stmt"/>
       </file>
-      <file name="ec2-iam-instance-profile.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/api/ec2-iam-instance-profile.ts">
+      <file name="ec2-iam-instance-profile.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/api/ec2-iam-instance-profile.ts">
         <metrics statements="20" coveredstatements="20" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="1"/>
         <line num="16" count="2" type="stmt"/>
         <line num="22" count="2" type="stmt"/>
@@ -562,7 +562,7 @@
         <line num="127" count="5" type="stmt"/>
         <line num="130" count="5" type="stmt"/>
       </file>
-      <file name="instance-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/api/instance-stack.ts">
+      <file name="instance-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/api/instance-stack.ts">
         <metrics statements="21" coveredstatements="21" conditionals="2" coveredconditionals="2" methods="1" coveredmethods="1"/>
         <line num="16" count="1" type="stmt"/>
         <line num="17" count="1" type="stmt"/>
@@ -586,7 +586,7 @@
         <line num="201" count="4" type="stmt"/>
         <line num="213" count="4" type="stmt"/>
       </file>
-      <file name="log-conf-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/api/log-conf-stack.ts">
+      <file name="log-conf-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/api/log-conf-stack.ts">
         <metrics statements="16" coveredstatements="16" conditionals="2" coveredconditionals="2" methods="1" coveredmethods="1"/>
         <line num="17" count="1" type="stmt"/>
         <line num="18" count="1" type="stmt"/>
@@ -605,7 +605,7 @@
         <line num="110" count="4" type="stmt"/>
         <line num="124" count="4" type="stmt"/>
       </file>
-      <file name="log-source-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/api/log-source-stack.ts">
+      <file name="log-source-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/api/log-source-stack.ts">
         <metrics statements="23" coveredstatements="23" conditionals="2" coveredconditionals="2" methods="1" coveredmethods="1"/>
         <line num="16" count="1" type="stmt"/>
         <line num="17" count="1" type="stmt"/>
@@ -631,7 +631,7 @@
         <line num="178" count="4" type="stmt"/>
         <line num="186" count="4" type="stmt"/>
       </file>
-      <file name="pipeline-alarm-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/api/pipeline-alarm-stack.ts">
+      <file name="pipeline-alarm-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/api/pipeline-alarm-stack.ts">
         <metrics statements="23" coveredstatements="23" conditionals="2" coveredconditionals="2" methods="1" coveredmethods="1"/>
         <line num="16" count="1" type="stmt"/>
         <line num="17" count="1" type="stmt"/>
@@ -657,7 +657,7 @@
         <line num="157" count="4" type="stmt"/>
         <line num="164" count="4" type="stmt"/>
       </file>
-      <file name="svc-pipeline-flow.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/api/svc-pipeline-flow.ts">
+      <file name="svc-pipeline-flow.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/api/svc-pipeline-flow.ts">
         <metrics statements="33" coveredstatements="33" conditionals="4" coveredconditionals="4" methods="1" coveredmethods="1"/>
         <line num="16" count="1" type="stmt"/>
         <line num="19" count="1" type="stmt"/>
@@ -693,7 +693,7 @@
         <line num="242" count="4" type="stmt"/>
         <line num="244" count="4" type="stmt"/>
       </file>
-      <file name="svc-pipeline-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/api/svc-pipeline-stack.ts">
+      <file name="svc-pipeline-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/api/svc-pipeline-stack.ts">
         <metrics statements="25" coveredstatements="25" conditionals="2" coveredconditionals="2" methods="1" coveredmethods="1"/>
         <line num="16" count="1" type="stmt"/>
         <line num="17" count="1" type="stmt"/>
@@ -724,7 +724,7 @@
     </package>
     <package name="lib.kinesis">
       <metrics statements="58" coveredstatements="55" conditionals="6" coveredconditionals="4" methods="3" coveredmethods="1"/>
-      <file name="kds-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/kinesis/kds-stack.ts">
+      <file name="kds-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/kinesis/kds-stack.ts">
         <metrics statements="58" coveredstatements="55" conditionals="6" coveredconditionals="4" methods="3" coveredmethods="1"/>
         <line num="16" count="2" type="stmt"/>
         <line num="17" count="2" type="stmt"/>
@@ -788,24 +788,24 @@
     </package>
     <package name="lib.layer">
       <metrics statements="11" coveredstatements="11" conditionals="1" coveredconditionals="1" methods="2" coveredmethods="2"/>
-      <file name="layer.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/layer/layer.ts">
+      <file name="layer.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/layer/layer.ts">
         <metrics statements="11" coveredstatements="11" conditionals="1" coveredconditionals="1" methods="2" coveredmethods="2"/>
-        <line num="1" count="3" type="stmt"/>
-        <line num="2" count="3" type="stmt"/>
-        <line num="5" count="3" type="stmt"/>
-        <line num="7" count="112" type="stmt"/>
-        <line num="8" count="112" type="stmt"/>
-        <line num="9" count="112" type="cond" truecount="1" falsecount="0"/>
-        <line num="10" count="20" type="stmt"/>
-        <line num="11" count="20" type="stmt"/>
-        <line num="13" count="112" type="stmt"/>
-        <line num="16" count="3" type="stmt"/>
-        <line num="19" count="20" type="stmt"/>
+        <line num="17" count="3" type="stmt"/>
+        <line num="18" count="3" type="stmt"/>
+        <line num="21" count="3" type="stmt"/>
+        <line num="23" count="112" type="stmt"/>
+        <line num="24" count="112" type="stmt"/>
+        <line num="25" count="112" type="cond" truecount="1" falsecount="0"/>
+        <line num="26" count="20" type="stmt"/>
+        <line num="27" count="20" type="stmt"/>
+        <line num="29" count="112" type="stmt"/>
+        <line num="32" count="3" type="stmt"/>
+        <line num="35" count="20" type="stmt"/>
       </file>
     </package>
     <package name="lib.main">
       <metrics statements="158" coveredstatements="157" conditionals="26" coveredconditionals="24" methods="14" coveredmethods="14"/>
-      <file name="auth-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/main/auth-stack.ts">
+      <file name="auth-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/main/auth-stack.ts">
         <metrics statements="15" coveredstatements="15" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="1"/>
         <line num="16" count="1" type="stmt"/>
         <line num="17" count="1" type="stmt"/>
@@ -823,7 +823,7 @@
         <line num="98" count="3" type="stmt"/>
         <line num="99" count="3" type="stmt"/>
       </file>
-      <file name="cfn-flow-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/main/cfn-flow-stack.ts">
+      <file name="cfn-flow-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/main/cfn-flow-stack.ts">
         <metrics statements="35" coveredstatements="35" conditionals="8" coveredconditionals="8" methods="1" coveredmethods="1"/>
         <line num="17" count="1" type="stmt"/>
         <line num="18" count="1" type="stmt"/>
@@ -861,7 +861,7 @@
         <line num="584" count="4" type="stmt"/>
         <line num="588" count="4" type="stmt"/>
       </file>
-      <file name="cr-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/main/cr-stack.ts">
+      <file name="cr-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/main/cr-stack.ts">
         <metrics statements="17" coveredstatements="16" conditionals="9" coveredconditionals="7" methods="3" coveredmethods="3"/>
         <line num="17" count="1" type="stmt"/>
         <line num="18" count="1" type="stmt"/>
@@ -881,7 +881,7 @@
         <line num="212" count="72" type="cond" truecount="1" falsecount="2"/>
         <line num="213" count="0" type="stmt"/>
       </file>
-      <file name="ecs-cluster-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/main/ecs-cluster-stack.ts">
+      <file name="ecs-cluster-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/main/ecs-cluster-stack.ts">
         <metrics statements="6" coveredstatements="6" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="1"/>
         <line num="17" count="1" type="stmt"/>
         <line num="18" count="1" type="stmt"/>
@@ -890,7 +890,7 @@
         <line num="41" count="4" type="stmt"/>
         <line num="43" count="4" type="stmt"/>
       </file>
-      <file name="portal-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/main/portal-stack.ts">
+      <file name="portal-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/main/portal-stack.ts">
         <metrics statements="35" coveredstatements="35" conditionals="3" coveredconditionals="3" methods="2" coveredmethods="2"/>
         <line num="17" count="1" type="stmt"/>
         <line num="18" count="1" type="stmt"/>
@@ -928,7 +928,7 @@
         <line num="286" count="4" type="stmt"/>
         <line num="290" count="4" type="stmt"/>
       </file>
-      <file name="vpc-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/main/vpc-stack.ts">
+      <file name="vpc-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/main/vpc-stack.ts">
         <metrics statements="50" coveredstatements="50" conditionals="6" coveredconditionals="6" methods="6" coveredmethods="6"/>
         <line num="16" count="1" type="stmt"/>
         <line num="17" count="1" type="stmt"/>
@@ -984,7 +984,7 @@
     </package>
     <package name="lib.opensearch">
       <metrics statements="174" coveredstatements="174" conditionals="11" coveredconditionals="11" methods="10" coveredmethods="10"/>
-      <file name="alarm-for-opensearch-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/opensearch/alarm-for-opensearch-stack.ts">
+      <file name="alarm-for-opensearch-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/opensearch/alarm-for-opensearch-stack.ts">
         <metrics statements="88" coveredstatements="88" conditionals="4" coveredconditionals="4" methods="5" coveredmethods="5"/>
         <line num="17" count="1" type="stmt"/>
         <line num="32" count="1" type="stmt"/>
@@ -1075,7 +1075,7 @@
         <line num="765" count="1" type="stmt"/>
         <line num="775" count="1" type="stmt"/>
       </file>
-      <file name="nginx-for-opensearch-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/opensearch/nginx-for-opensearch-stack.ts">
+      <file name="nginx-for-opensearch-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/opensearch/nginx-for-opensearch-stack.ts">
         <metrics statements="86" coveredstatements="86" conditionals="7" coveredconditionals="7" methods="5" coveredmethods="5"/>
         <line num="18" count="1" type="stmt"/>
         <line num="35" count="1" type="stmt"/>
@@ -1166,8 +1166,8 @@
       </file>
     </package>
     <package name="lib.pipeline.application">
-      <metrics statements="291" coveredstatements="286" conditionals="40" coveredconditionals="35" methods="18" coveredmethods="15"/>
-      <file name="app-log-pipeline-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/pipeline/application/app-log-pipeline-stack.ts">
+      <metrics statements="292" coveredstatements="287" conditionals="40" coveredconditionals="35" methods="18" coveredmethods="15"/>
+      <file name="app-log-pipeline-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/pipeline/application/app-log-pipeline-stack.ts">
         <metrics statements="127" coveredstatements="126" conditionals="15" coveredconditionals="12" methods="1" coveredmethods="1"/>
         <line num="17" count="1" type="stmt"/>
         <line num="18" count="1" type="stmt"/>
@@ -1242,63 +1242,63 @@
         <line num="288" count="1" type="stmt"/>
         <line num="298" count="1" type="stmt"/>
         <line num="301" count="1" type="stmt"/>
-        <line num="318" count="1" type="stmt"/>
-        <line num="324" count="1" type="stmt"/>
+        <line num="319" count="1" type="stmt"/>
         <line num="325" count="1" type="stmt"/>
-        <line num="328" count="1" type="stmt"/>
-        <line num="340" count="1" type="stmt"/>
-        <line num="344" count="1" type="stmt"/>
+        <line num="326" count="1" type="stmt"/>
+        <line num="329" count="1" type="stmt"/>
+        <line num="341" count="1" type="stmt"/>
         <line num="345" count="1" type="stmt"/>
         <line num="346" count="1" type="stmt"/>
         <line num="347" count="1" type="stmt"/>
         <line num="348" count="1" type="stmt"/>
-        <line num="349" count="4" type="cond" truecount="2" falsecount="0"/>
-        <line num="350" count="3" type="stmt"/>
-        <line num="356" count="3" type="stmt"/>
-        <line num="362" count="3" type="stmt"/>
-        <line num="368" count="3" type="stmt"/>
-        <line num="376" count="3" type="stmt"/>
-        <line num="384" count="3" type="stmt"/>
-        <line num="395" count="3" type="stmt"/>
-        <line num="397" count="3" type="stmt"/>
+        <line num="349" count="1" type="stmt"/>
+        <line num="350" count="4" type="cond" truecount="2" falsecount="0"/>
+        <line num="351" count="3" type="stmt"/>
+        <line num="357" count="3" type="stmt"/>
+        <line num="363" count="3" type="stmt"/>
+        <line num="369" count="3" type="stmt"/>
+        <line num="377" count="3" type="stmt"/>
+        <line num="385" count="3" type="stmt"/>
+        <line num="396" count="3" type="stmt"/>
         <line num="398" count="3" type="stmt"/>
-        <line num="400" count="3" type="stmt"/>
-        <line num="410" count="3" type="stmt"/>
+        <line num="399" count="3" type="stmt"/>
+        <line num="401" count="3" type="stmt"/>
         <line num="411" count="3" type="stmt"/>
         <line num="412" count="3" type="stmt"/>
-        <line num="413" count="1" type="cond" truecount="1" falsecount="1"/>
-        <line num="414" count="1" type="stmt"/>
-        <line num="422" count="1" type="stmt"/>
-        <line num="427" count="1" type="stmt"/>
-        <line num="429" count="1" type="stmt"/>
-        <line num="434" count="1" type="stmt"/>
-        <line num="436" count="1" type="stmt"/>
-        <line num="441" count="1" type="stmt"/>
-        <line num="446" count="1" type="stmt"/>
-        <line num="453" count="1" type="stmt"/>
-        <line num="463" count="1" type="stmt"/>
-        <line num="465" count="1" type="stmt"/>
+        <line num="413" count="3" type="stmt"/>
+        <line num="414" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="415" count="1" type="stmt"/>
+        <line num="423" count="1" type="stmt"/>
+        <line num="428" count="1" type="stmt"/>
+        <line num="430" count="1" type="stmt"/>
+        <line num="435" count="1" type="stmt"/>
+        <line num="437" count="1" type="stmt"/>
+        <line num="442" count="1" type="stmt"/>
+        <line num="447" count="1" type="stmt"/>
+        <line num="454" count="1" type="stmt"/>
+        <line num="464" count="1" type="stmt"/>
         <line num="466" count="1" type="stmt"/>
-        <line num="468" count="1" type="stmt"/>
+        <line num="467" count="1" type="stmt"/>
         <line num="469" count="1" type="stmt"/>
         <line num="470" count="1" type="stmt"/>
-        <line num="473" count="0" type="stmt"/>
-        <line num="496" count="5" type="cond" truecount="1" falsecount="0"/>
-        <line num="497" count="4" type="stmt"/>
-        <line num="503" count="4" type="stmt"/>
-        <line num="505" count="4" type="stmt"/>
+        <line num="471" count="1" type="stmt"/>
+        <line num="474" count="0" type="stmt"/>
+        <line num="497" count="5" type="cond" truecount="1" falsecount="0"/>
+        <line num="498" count="4" type="stmt"/>
+        <line num="504" count="4" type="stmt"/>
         <line num="506" count="4" type="stmt"/>
-        <line num="511" count="5" type="stmt"/>
-        <line num="533" count="5" type="stmt"/>
-        <line num="539" count="5" type="stmt"/>
+        <line num="507" count="4" type="stmt"/>
+        <line num="512" count="5" type="stmt"/>
+        <line num="534" count="5" type="stmt"/>
         <line num="540" count="5" type="stmt"/>
-        <line num="545" count="5" type="stmt"/>
-        <line num="553" count="5" type="stmt"/>
-        <line num="560" count="5" type="stmt"/>
-        <line num="573" count="5" type="stmt"/>
+        <line num="541" count="5" type="stmt"/>
+        <line num="546" count="5" type="stmt"/>
+        <line num="554" count="5" type="stmt"/>
+        <line num="561" count="5" type="stmt"/>
+        <line num="574" count="5" type="stmt"/>
       </file>
-      <file name="app-log-processor.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/pipeline/application/app-log-processor.ts">
-        <metrics statements="18" coveredstatements="18" conditionals="6" coveredconditionals="5" methods="1" coveredmethods="1"/>
+      <file name="app-log-processor.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/pipeline/application/app-log-processor.ts">
+        <metrics statements="19" coveredstatements="19" conditionals="6" coveredconditionals="5" methods="1" coveredmethods="1"/>
         <line num="16" count="2" type="stmt"/>
         <line num="17" count="2" type="stmt"/>
         <line num="28" count="2" type="stmt"/>
@@ -1312,13 +1312,14 @@
         <line num="101" count="6" type="stmt"/>
         <line num="106" count="6" type="stmt"/>
         <line num="113" count="6" type="stmt"/>
-        <line num="141" count="6" type="stmt"/>
-        <line num="151" count="6" type="stmt"/>
-        <line num="166" count="6" type="stmt"/>
-        <line num="173" count="6" type="stmt"/>
-        <line num="178" count="6" type="stmt"/>
+        <line num="143" count="6" type="stmt"/>
+        <line num="155" count="6" type="stmt"/>
+        <line num="165" count="6" type="stmt"/>
+        <line num="180" count="6" type="stmt"/>
+        <line num="187" count="6" type="stmt"/>
+        <line num="192" count="6" type="stmt"/>
       </file>
-      <file name="msk-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/pipeline/application/msk-stack.ts">
+      <file name="msk-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/pipeline/application/msk-stack.ts">
         <metrics statements="12" coveredstatements="12" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="1"/>
         <line num="17" count="1" type="stmt"/>
         <line num="18" count="1" type="stmt"/>
@@ -1333,7 +1334,7 @@
         <line num="123" count="1" type="stmt"/>
         <line num="124" count="1" type="stmt"/>
       </file>
-      <file name="s3-source-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/pipeline/application/s3-source-stack.ts">
+      <file name="s3-source-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/pipeline/application/s3-source-stack.ts">
         <metrics statements="69" coveredstatements="69" conditionals="11" coveredconditionals="11" methods="9" coveredmethods="9"/>
         <line num="17" count="1" type="stmt"/>
         <line num="18" count="1" type="stmt"/>
@@ -1405,78 +1406,78 @@
         <line num="443" count="98" type="cond" truecount="3" falsecount="0"/>
         <line num="444" count="1" type="stmt"/>
       </file>
-      <file name="syslog-to-ecs-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/pipeline/application/syslog-to-ecs-stack.ts">
+      <file name="syslog-to-ecs-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/pipeline/application/syslog-to-ecs-stack.ts">
         <metrics statements="65" coveredstatements="61" conditionals="8" coveredconditionals="7" methods="6" coveredmethods="3"/>
-        <line num="1" count="1" type="stmt"/>
-        <line num="19" count="1" type="stmt"/>
-        <line num="20" count="1" type="stmt"/>
-        <line num="21" count="1" type="stmt"/>
-        <line num="28" count="1" type="stmt"/>
-        <line num="29" count="1" type="stmt"/>
-        <line num="30" count="1" type="stmt"/>
-        <line num="31" count="1" type="stmt"/>
-        <line num="32" count="1" type="stmt"/>
-        <line num="40" count="1" type="stmt"/>
-        <line num="42" count="1" type="stmt"/>
-        <line num="45" count="1" type="cond" truecount="2" falsecount="0"/>
-        <line num="46" count="1" type="cond" truecount="2" falsecount="0"/>
+        <line num="17" count="1" type="stmt"/>
+        <line num="35" count="1" type="stmt"/>
+        <line num="36" count="1" type="stmt"/>
+        <line num="37" count="1" type="stmt"/>
+        <line num="44" count="1" type="stmt"/>
+        <line num="45" count="1" type="stmt"/>
+        <line num="46" count="1" type="stmt"/>
         <line num="47" count="1" type="stmt"/>
-        <line num="49" count="1" type="stmt"/>
-        <line num="53" count="1" type="stmt"/>
-        <line num="59" count="1" type="stmt"/>
+        <line num="48" count="1" type="stmt"/>
+        <line num="56" count="1" type="stmt"/>
+        <line num="58" count="1" type="stmt"/>
+        <line num="61" count="1" type="cond" truecount="2" falsecount="0"/>
+        <line num="62" count="1" type="cond" truecount="2" falsecount="0"/>
+        <line num="63" count="1" type="stmt"/>
         <line num="65" count="1" type="stmt"/>
-        <line num="71" count="1" type="stmt"/>
-        <line num="77" count="1" type="stmt"/>
-        <line num="83" count="1" type="stmt"/>
-        <line num="88" count="1" type="stmt"/>
-        <line num="97" count="1" type="stmt"/>
-        <line num="103" count="1" type="stmt"/>
-        <line num="110" count="1" type="stmt"/>
-        <line num="116" count="1" type="stmt"/>
-        <line num="124" count="1" type="stmt"/>
-        <line num="135" count="1" type="stmt"/>
+        <line num="69" count="1" type="stmt"/>
+        <line num="75" count="1" type="stmt"/>
+        <line num="81" count="1" type="stmt"/>
+        <line num="87" count="1" type="stmt"/>
+        <line num="93" count="1" type="stmt"/>
+        <line num="99" count="1" type="stmt"/>
+        <line num="104" count="1" type="stmt"/>
+        <line num="113" count="1" type="stmt"/>
+        <line num="119" count="1" type="stmt"/>
+        <line num="126" count="1" type="stmt"/>
+        <line num="132" count="1" type="stmt"/>
         <line num="140" count="1" type="stmt"/>
-        <line num="142" count="1" type="stmt"/>
-        <line num="152" count="1" type="stmt"/>
+        <line num="151" count="1" type="stmt"/>
+        <line num="156" count="1" type="stmt"/>
         <line num="158" count="1" type="stmt"/>
-        <line num="163" count="1" type="stmt"/>
         <line num="168" count="1" type="stmt"/>
-        <line num="173" count="1" type="stmt"/>
-        <line num="178" count="1" type="stmt"/>
-        <line num="183" count="1" type="stmt"/>
-        <line num="190" count="1" type="stmt"/>
-        <line num="191" count="1" type="stmt"/>
-        <line num="192" count="1" type="stmt"/>
-        <line num="214" count="1" type="stmt"/>
-        <line num="223" count="1" type="stmt"/>
+        <line num="174" count="1" type="stmt"/>
+        <line num="179" count="1" type="stmt"/>
+        <line num="184" count="1" type="stmt"/>
+        <line num="189" count="1" type="stmt"/>
+        <line num="194" count="1" type="stmt"/>
+        <line num="199" count="1" type="stmt"/>
+        <line num="206" count="1" type="stmt"/>
+        <line num="207" count="1" type="stmt"/>
+        <line num="208" count="1" type="stmt"/>
         <line num="230" count="1" type="stmt"/>
-        <line num="235" count="1" type="stmt"/>
-        <line num="242" count="1" type="stmt"/>
+        <line num="239" count="1" type="stmt"/>
+        <line num="246" count="1" type="stmt"/>
+        <line num="251" count="1" type="stmt"/>
         <line num="258" count="1" type="stmt"/>
-        <line num="268" count="1" type="stmt"/>
+        <line num="274" count="1" type="stmt"/>
         <line num="284" count="1" type="stmt"/>
-        <line num="295" count="1" type="stmt"/>
-        <line num="298" count="1" type="stmt"/>
-        <line num="299" count="1" type="stmt"/>
-        <line num="301" count="1" type="stmt"/>
-        <line num="309" count="1" type="stmt"/>
+        <line num="300" count="1" type="stmt"/>
         <line num="311" count="1" type="stmt"/>
+        <line num="314" count="1" type="stmt"/>
+        <line num="315" count="1" type="stmt"/>
         <line num="317" count="1" type="stmt"/>
-        <line num="331" count="1" type="stmt"/>
-        <line num="354" count="1" type="stmt"/>
-        <line num="356" count="1" type="stmt"/>
-        <line num="358" count="1" type="stmt"/>
-        <line num="362" count="0" type="stmt"/>
-        <line num="367" count="0" type="stmt"/>
-        <line num="370" count="0" type="cond" truecount="0" falsecount="1"/>
-        <line num="371" count="0" type="stmt"/>
-        <line num="378" count="45" type="cond" truecount="1" falsecount="0"/>
-        <line num="382" count="1" type="stmt"/>
+        <line num="325" count="1" type="stmt"/>
+        <line num="327" count="1" type="stmt"/>
+        <line num="333" count="1" type="stmt"/>
+        <line num="347" count="1" type="stmt"/>
+        <line num="370" count="1" type="stmt"/>
+        <line num="372" count="1" type="stmt"/>
+        <line num="374" count="1" type="stmt"/>
+        <line num="378" count="0" type="stmt"/>
+        <line num="383" count="0" type="stmt"/>
+        <line num="386" count="0" type="cond" truecount="0" falsecount="1"/>
+        <line num="387" count="0" type="stmt"/>
+        <line num="394" count="45" type="cond" truecount="1" falsecount="0"/>
+        <line num="398" count="1" type="stmt"/>
       </file>
     </package>
     <package name="lib.pipeline.common">
       <metrics statements="68" coveredstatements="68" conditionals="41" coveredconditionals="28" methods="12" coveredmethods="12"/>
-      <file name="cwl-metric-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/pipeline/common/cwl-metric-stack.ts">
+      <file name="cwl-metric-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/pipeline/common/cwl-metric-stack.ts">
         <metrics statements="30" coveredstatements="30" conditionals="7" coveredconditionals="7" methods="1" coveredmethods="1"/>
         <line num="17" count="3" type="stmt"/>
         <line num="18" count="3" type="stmt"/>
@@ -1509,7 +1510,7 @@
         <line num="220" count="4" type="stmt"/>
         <line num="232" count="4" type="stmt"/>
       </file>
-      <file name="opensearch-init-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/pipeline/common/opensearch-init-stack.ts">
+      <file name="opensearch-init-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/pipeline/common/opensearch-init-stack.ts">
         <metrics statements="25" coveredstatements="25" conditionals="33" coveredconditionals="20" methods="3" coveredmethods="3"/>
         <line num="17" count="2" type="stmt"/>
         <line num="18" count="2" type="stmt"/>
@@ -1537,7 +1538,7 @@
         <line num="267" count="336" type="cond" truecount="3" falsecount="0"/>
         <line num="268" count="5" type="stmt"/>
       </file>
-      <file name="solution-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/pipeline/common/solution-stack.ts">
+      <file name="solution-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/pipeline/common/solution-stack.ts">
         <metrics statements="13" coveredstatements="13" conditionals="1" coveredconditionals="1" methods="8" coveredmethods="8"/>
         <line num="17" count="4" type="stmt"/>
         <line num="32" count="4" type="stmt"/>
@@ -1555,39 +1556,142 @@
       </file>
     </package>
     <package name="lib.pipeline.service">
-      <metrics statements="478" coveredstatements="477" conditionals="44" coveredconditionals="40" methods="20" coveredmethods="19"/>
-      <file name="cloudfront-realtime-log-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/pipeline/service/cloudfront-realtime-log-stack.ts">
+      <metrics statements="482" coveredstatements="481" conditionals="45" coveredconditionals="41" methods="21" coveredmethods="20"/>
+      <file name="cloudfront-realtime-log-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/pipeline/service/cloudfront-realtime-log-stack.ts">
         <metrics statements="104" coveredstatements="104" conditionals="8" coveredconditionals="7" methods="4" coveredmethods="4"/>
-        <line num="1" count="1" type="stmt"/>
-        <line num="2" count="1" type="stmt"/>
-        <line num="3" count="1" type="stmt"/>
-        <line num="4" count="1" type="stmt"/>
-        <line num="8" count="1" type="stmt"/>
-        <line num="9" count="1" type="stmt"/>
+        <line num="17" count="1" type="stmt"/>
+        <line num="18" count="1" type="stmt"/>
+        <line num="19" count="1" type="stmt"/>
         <line num="20" count="1" type="stmt"/>
-        <line num="21" count="1" type="stmt"/>
-        <line num="22" count="1" type="stmt"/>
-        <line num="23" count="1" type="stmt"/>
+        <line num="24" count="1" type="stmt"/>
         <line num="25" count="1" type="stmt"/>
-        <line num="33" count="1" type="stmt"/>
-        <line num="35" count="1" type="stmt"/>
-        <line num="38" count="1" type="cond" truecount="2" falsecount="0"/>
-        <line num="39" count="1" type="cond" truecount="2" falsecount="0"/>
-        <line num="40" count="1" type="stmt"/>
-        <line num="42" count="1" type="stmt"/>
-        <line num="46" count="1" type="stmt"/>
+        <line num="36" count="1" type="stmt"/>
+        <line num="37" count="1" type="stmt"/>
+        <line num="38" count="1" type="stmt"/>
+        <line num="39" count="1" type="stmt"/>
+        <line num="41" count="1" type="stmt"/>
+        <line num="49" count="1" type="stmt"/>
         <line num="51" count="1" type="stmt"/>
+        <line num="54" count="1" type="cond" truecount="2" falsecount="0"/>
+        <line num="55" count="1" type="cond" truecount="2" falsecount="0"/>
         <line num="56" count="1" type="stmt"/>
-        <line num="64" count="1" type="stmt"/>
+        <line num="58" count="1" type="stmt"/>
+        <line num="62" count="1" type="stmt"/>
+        <line num="67" count="1" type="stmt"/>
+        <line num="72" count="1" type="stmt"/>
+        <line num="80" count="1" type="stmt"/>
+        <line num="82" count="1" type="stmt"/>
+        <line num="87" count="1" type="stmt"/>
+        <line num="92" count="1" type="stmt"/>
+        <line num="99" count="1" type="stmt"/>
+        <line num="101" count="1" type="stmt"/>
+        <line num="107" count="1" type="stmt"/>
+        <line num="109" count="1" type="stmt"/>
+        <line num="114" count="1" type="stmt"/>
+        <line num="116" count="1" type="stmt"/>
+        <line num="122" count="1" type="stmt"/>
+        <line num="124" count="1" type="stmt"/>
+        <line num="130" count="1" type="stmt"/>
+        <line num="132" count="1" type="stmt"/>
+        <line num="138" count="1" type="stmt"/>
+        <line num="140" count="1" type="stmt"/>
+        <line num="146" count="1" type="stmt"/>
+        <line num="148" count="1" type="stmt"/>
+        <line num="154" count="1" type="stmt"/>
+        <line num="156" count="1" type="stmt"/>
+        <line num="162" count="1" type="stmt"/>
+        <line num="164" count="1" type="stmt"/>
+        <line num="170" count="1" type="stmt"/>
+        <line num="172" count="1" type="stmt"/>
+        <line num="179" count="1" type="stmt"/>
+        <line num="181" count="1" type="stmt"/>
+        <line num="188" count="1" type="stmt"/>
+        <line num="190" count="1" type="stmt"/>
+        <line num="196" count="1" type="stmt"/>
+        <line num="198" count="1" type="stmt"/>
+        <line num="203" count="1" type="stmt"/>
+        <line num="205" count="1" type="stmt"/>
+        <line num="211" count="1" type="stmt"/>
+        <line num="213" count="1" type="stmt"/>
+        <line num="218" count="1" type="stmt"/>
+        <line num="220" count="1" type="stmt"/>
+        <line num="226" count="1" type="stmt"/>
+        <line num="228" count="1" type="stmt"/>
+        <line num="232" count="1" type="stmt"/>
+        <line num="237" count="1" type="stmt"/>
+        <line num="244" count="1" type="stmt"/>
+        <line num="249" count="1" type="stmt"/>
+        <line num="255" count="1" type="stmt"/>
+        <line num="261" count="1" type="stmt"/>
+        <line num="269" count="1" type="stmt"/>
+        <line num="275" count="1" type="stmt"/>
+        <line num="281" count="1" type="stmt"/>
+        <line num="287" count="1" type="stmt"/>
+        <line num="295" count="1" type="stmt"/>
+        <line num="303" count="1" type="stmt"/>
+        <line num="318" count="1" type="stmt"/>
+        <line num="320" count="1" type="stmt"/>
+        <line num="321" count="1" type="stmt"/>
+        <line num="323" count="1" type="stmt"/>
+        <line num="333" count="1" type="stmt"/>
+        <line num="334" count="1" type="stmt"/>
+        <line num="335" count="1" type="stmt"/>
+        <line num="337" count="1" type="stmt"/>
+        <line num="343" count="1" type="stmt"/>
+        <line num="351" count="1" type="stmt"/>
+        <line num="353" count="1" type="stmt"/>
+        <line num="354" count="1" type="stmt"/>
+        <line num="356" count="1" type="stmt"/>
+        <line num="377" count="1" type="stmt"/>
+        <line num="384" count="1" type="stmt"/>
+        <line num="390" count="1" type="stmt"/>
+        <line num="391" count="1" type="stmt"/>
+        <line num="393" count="1" type="stmt"/>
+        <line num="400" count="1" type="stmt"/>
+        <line num="408" count="1" type="stmt"/>
+        <line num="415" count="1" type="stmt"/>
+        <line num="428" count="1" type="stmt"/>
+        <line num="439" count="1" type="stmt"/>
+        <line num="441" count="1" type="stmt"/>
+        <line num="443" count="1" type="stmt"/>
+        <line num="446" count="1" type="stmt"/>
+        <line num="471" count="1" type="stmt"/>
+        <line num="490" count="1" type="stmt"/>
+        <line num="506" count="1" type="stmt"/>
+        <line num="507" count="1" type="stmt"/>
+        <line num="509" count="1" type="cond" truecount="2" falsecount="0"/>
+        <line num="511" count="1" type="stmt"/>
+        <line num="517" count="1" type="stmt"/>
+        <line num="519" count="1" type="stmt"/>
+      </file>
+      <file name="cloudwatch-log-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/pipeline/service/cloudwatch-log-stack.ts">
+        <metrics statements="110" coveredstatements="110" conditionals="8" coveredconditionals="6" methods="1" coveredmethods="1"/>
+        <line num="18" count="1" type="stmt"/>
+        <line num="19" count="1" type="stmt"/>
+        <line num="20" count="1" type="stmt"/>
+        <line num="24" count="1" type="stmt"/>
+        <line num="25" count="1" type="stmt"/>
+        <line num="35" count="1" type="stmt"/>
+        <line num="36" count="1" type="stmt"/>
+        <line num="37" count="1" type="stmt"/>
+        <line num="39" count="1" type="stmt"/>
+        <line num="47" count="1" type="stmt"/>
+        <line num="49" count="1" type="stmt"/>
+        <line num="52" count="1" type="cond" truecount="2" falsecount="0"/>
+        <line num="53" count="1" type="cond" truecount="2" falsecount="0"/>
+        <line num="54" count="1" type="stmt"/>
+        <line num="56" count="1" type="stmt"/>
+        <line num="60" count="1" type="stmt"/>
         <line num="66" count="1" type="stmt"/>
-        <line num="71" count="1" type="stmt"/>
+        <line num="68" count="1" type="stmt"/>
+        <line num="74" count="1" type="stmt"/>
         <line num="76" count="1" type="stmt"/>
-        <line num="83" count="1" type="stmt"/>
-        <line num="85" count="1" type="stmt"/>
+        <line num="82" count="1" type="stmt"/>
+        <line num="84" count="1" type="stmt"/>
         <line num="91" count="1" type="stmt"/>
         <line num="93" count="1" type="stmt"/>
-        <line num="98" count="1" type="stmt"/>
-        <line num="100" count="1" type="stmt"/>
+        <line num="99" count="1" type="stmt"/>
+        <line num="101" count="1" type="stmt"/>
         <line num="106" count="1" type="stmt"/>
         <line num="108" count="1" type="stmt"/>
         <line num="114" count="1" type="stmt"/>
@@ -1602,181 +1706,78 @@
         <line num="148" count="1" type="stmt"/>
         <line num="154" count="1" type="stmt"/>
         <line num="156" count="1" type="stmt"/>
-        <line num="163" count="1" type="stmt"/>
-        <line num="165" count="1" type="stmt"/>
-        <line num="172" count="1" type="stmt"/>
-        <line num="174" count="1" type="stmt"/>
+        <line num="162" count="1" type="stmt"/>
+        <line num="164" count="1" type="stmt"/>
+        <line num="171" count="1" type="stmt"/>
+        <line num="173" count="1" type="stmt"/>
         <line num="180" count="1" type="stmt"/>
         <line num="182" count="1" type="stmt"/>
-        <line num="187" count="1" type="stmt"/>
-        <line num="189" count="1" type="stmt"/>
+        <line num="188" count="1" type="stmt"/>
+        <line num="190" count="1" type="stmt"/>
         <line num="195" count="1" type="stmt"/>
         <line num="197" count="1" type="stmt"/>
-        <line num="202" count="1" type="stmt"/>
-        <line num="204" count="1" type="stmt"/>
+        <line num="203" count="1" type="stmt"/>
+        <line num="205" count="1" type="stmt"/>
         <line num="210" count="1" type="stmt"/>
         <line num="212" count="1" type="stmt"/>
-        <line num="216" count="1" type="stmt"/>
-        <line num="221" count="1" type="stmt"/>
+        <line num="218" count="1" type="stmt"/>
+        <line num="220" count="1" type="stmt"/>
+        <line num="224" count="1" type="stmt"/>
         <line num="228" count="1" type="stmt"/>
+        <line num="232" count="1" type="stmt"/>
         <line num="233" count="1" type="stmt"/>
-        <line num="239" count="1" type="stmt"/>
+        <line num="240" count="1" type="stmt"/>
         <line num="245" count="1" type="stmt"/>
-        <line num="253" count="1" type="stmt"/>
-        <line num="259" count="1" type="stmt"/>
+        <line num="251" count="1" type="stmt"/>
+        <line num="257" count="1" type="stmt"/>
         <line num="265" count="1" type="stmt"/>
         <line num="271" count="1" type="stmt"/>
-        <line num="279" count="1" type="stmt"/>
-        <line num="287" count="1" type="stmt"/>
-        <line num="302" count="1" type="stmt"/>
-        <line num="304" count="1" type="stmt"/>
-        <line num="305" count="1" type="stmt"/>
-        <line num="307" count="1" type="stmt"/>
-        <line num="317" count="1" type="stmt"/>
-        <line num="318" count="1" type="stmt"/>
-        <line num="319" count="1" type="stmt"/>
-        <line num="321" count="1" type="stmt"/>
-        <line num="327" count="1" type="stmt"/>
-        <line num="335" count="1" type="stmt"/>
-        <line num="337" count="1" type="stmt"/>
-        <line num="338" count="1" type="stmt"/>
-        <line num="340" count="1" type="stmt"/>
-        <line num="361" count="1" type="stmt"/>
-        <line num="368" count="1" type="stmt"/>
-        <line num="374" count="1" type="stmt"/>
-        <line num="375" count="1" type="stmt"/>
-        <line num="377" count="1" type="stmt"/>
-        <line num="384" count="1" type="stmt"/>
-        <line num="392" count="1" type="stmt"/>
-        <line num="399" count="1" type="stmt"/>
-        <line num="412" count="1" type="stmt"/>
-        <line num="423" count="1" type="stmt"/>
-        <line num="425" count="1" type="stmt"/>
-        <line num="427" count="1" type="stmt"/>
-        <line num="430" count="1" type="stmt"/>
-        <line num="455" count="1" type="stmt"/>
-        <line num="474" count="1" type="stmt"/>
-        <line num="490" count="1" type="stmt"/>
-        <line num="491" count="1" type="stmt"/>
-        <line num="493" count="1" type="cond" truecount="2" falsecount="0"/>
-        <line num="495" count="1" type="stmt"/>
-        <line num="501" count="1" type="stmt"/>
-        <line num="503" count="1" type="stmt"/>
-      </file>
-      <file name="cloudwatch-log-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/pipeline/service/cloudwatch-log-stack.ts">
-        <metrics statements="110" coveredstatements="110" conditionals="8" coveredconditionals="6" methods="1" coveredmethods="1"/>
-        <line num="2" count="1" type="stmt"/>
-        <line num="3" count="1" type="stmt"/>
-        <line num="4" count="1" type="stmt"/>
-        <line num="8" count="1" type="stmt"/>
-        <line num="9" count="1" type="stmt"/>
-        <line num="19" count="1" type="stmt"/>
-        <line num="20" count="1" type="stmt"/>
-        <line num="21" count="1" type="stmt"/>
-        <line num="23" count="1" type="stmt"/>
-        <line num="31" count="1" type="stmt"/>
-        <line num="33" count="1" type="stmt"/>
-        <line num="36" count="1" type="cond" truecount="2" falsecount="0"/>
-        <line num="37" count="1" type="cond" truecount="2" falsecount="0"/>
-        <line num="38" count="1" type="stmt"/>
-        <line num="40" count="1" type="stmt"/>
-        <line num="44" count="1" type="stmt"/>
-        <line num="50" count="1" type="stmt"/>
-        <line num="52" count="1" type="stmt"/>
-        <line num="58" count="1" type="stmt"/>
-        <line num="60" count="1" type="stmt"/>
-        <line num="66" count="1" type="stmt"/>
-        <line num="68" count="1" type="stmt"/>
-        <line num="75" count="1" type="stmt"/>
-        <line num="77" count="1" type="stmt"/>
-        <line num="83" count="1" type="stmt"/>
-        <line num="85" count="1" type="stmt"/>
-        <line num="90" count="1" type="stmt"/>
-        <line num="92" count="1" type="stmt"/>
-        <line num="98" count="1" type="stmt"/>
-        <line num="100" count="1" type="stmt"/>
-        <line num="106" count="1" type="stmt"/>
-        <line num="108" count="1" type="stmt"/>
-        <line num="114" count="1" type="stmt"/>
-        <line num="116" count="1" type="stmt"/>
-        <line num="122" count="1" type="stmt"/>
-        <line num="124" count="1" type="stmt"/>
-        <line num="130" count="1" type="stmt"/>
-        <line num="132" count="1" type="stmt"/>
-        <line num="138" count="1" type="stmt"/>
-        <line num="140" count="1" type="stmt"/>
-        <line num="146" count="1" type="stmt"/>
-        <line num="148" count="1" type="stmt"/>
-        <line num="155" count="1" type="stmt"/>
-        <line num="157" count="1" type="stmt"/>
-        <line num="164" count="1" type="stmt"/>
-        <line num="166" count="1" type="stmt"/>
-        <line num="172" count="1" type="stmt"/>
-        <line num="174" count="1" type="stmt"/>
-        <line num="179" count="1" type="stmt"/>
-        <line num="181" count="1" type="stmt"/>
-        <line num="187" count="1" type="stmt"/>
-        <line num="189" count="1" type="stmt"/>
-        <line num="194" count="1" type="stmt"/>
-        <line num="196" count="1" type="stmt"/>
-        <line num="202" count="1" type="stmt"/>
-        <line num="204" count="1" type="stmt"/>
-        <line num="208" count="1" type="stmt"/>
-        <line num="212" count="1" type="stmt"/>
-        <line num="216" count="1" type="stmt"/>
-        <line num="217" count="1" type="stmt"/>
-        <line num="224" count="1" type="stmt"/>
-        <line num="229" count="1" type="stmt"/>
-        <line num="235" count="1" type="stmt"/>
-        <line num="241" count="1" type="stmt"/>
-        <line num="249" count="1" type="stmt"/>
-        <line num="255" count="1" type="stmt"/>
-        <line num="261" count="1" type="stmt"/>
-        <line num="267" count="1" type="stmt"/>
-        <line num="275" count="1" type="stmt"/>
+        <line num="277" count="1" type="stmt"/>
         <line num="283" count="1" type="stmt"/>
-        <line num="298" count="1" type="stmt"/>
-        <line num="300" count="1" type="stmt"/>
-        <line num="301" count="1" type="stmt"/>
-        <line num="303" count="1" type="stmt"/>
-        <line num="313" count="1" type="stmt"/>
+        <line num="291" count="1" type="stmt"/>
+        <line num="299" count="1" type="stmt"/>
         <line num="314" count="1" type="stmt"/>
-        <line num="315" count="1" type="stmt"/>
+        <line num="316" count="1" type="stmt"/>
         <line num="317" count="1" type="stmt"/>
-        <line num="323" count="1" type="stmt"/>
+        <line num="319" count="1" type="stmt"/>
+        <line num="329" count="1" type="stmt"/>
+        <line num="330" count="1" type="stmt"/>
         <line num="331" count="1" type="stmt"/>
         <line num="333" count="1" type="stmt"/>
-        <line num="334" count="1" type="stmt"/>
-        <line num="336" count="1" type="stmt"/>
-        <line num="357" count="1" type="stmt"/>
-        <line num="363" count="1" type="stmt"/>
-        <line num="364" count="1" type="stmt"/>
-        <line num="366" count="1" type="stmt"/>
+        <line num="339" count="1" type="stmt"/>
+        <line num="347" count="1" type="stmt"/>
+        <line num="349" count="1" type="stmt"/>
+        <line num="350" count="1" type="stmt"/>
+        <line num="352" count="1" type="stmt"/>
         <line num="373" count="1" type="stmt"/>
-        <line num="381" count="1" type="stmt"/>
-        <line num="388" count="1" type="stmt"/>
-        <line num="401" count="1" type="stmt"/>
-        <line num="405" count="1" type="stmt"/>
-        <line num="416" count="1" type="stmt"/>
-        <line num="440" count="1" type="stmt"/>
-        <line num="445" count="1" type="stmt"/>
-        <line num="455" count="1" type="stmt"/>
-        <line num="483" count="1" type="stmt"/>
-        <line num="486" count="1" type="stmt"/>
-        <line num="487" count="1" type="stmt"/>
-        <line num="498" count="1" type="stmt"/>
-        <line num="524" count="1" type="stmt"/>
-        <line num="539" count="1" type="stmt"/>
-        <line num="547" count="1" type="stmt"/>
-        <line num="550" count="1" type="stmt"/>
-        <line num="556" count="1" type="stmt"/>
+        <line num="379" count="1" type="stmt"/>
+        <line num="380" count="1" type="stmt"/>
+        <line num="382" count="1" type="stmt"/>
+        <line num="389" count="1" type="stmt"/>
+        <line num="397" count="1" type="stmt"/>
+        <line num="404" count="1" type="stmt"/>
+        <line num="417" count="1" type="stmt"/>
+        <line num="421" count="1" type="stmt"/>
+        <line num="432" count="1" type="stmt"/>
+        <line num="456" count="1" type="stmt"/>
+        <line num="461" count="1" type="stmt"/>
+        <line num="471" count="1" type="stmt"/>
+        <line num="499" count="1" type="stmt"/>
+        <line num="502" count="1" type="stmt"/>
+        <line num="503" count="1" type="stmt"/>
+        <line num="514" count="1" type="stmt"/>
+        <line num="540" count="1" type="stmt"/>
+        <line num="555" count="1" type="stmt"/>
+        <line num="563" count="1" type="stmt"/>
         <line num="566" count="1" type="stmt"/>
-        <line num="580" count="1" type="stmt"/>
+        <line num="572" count="1" type="stmt"/>
         <line num="582" count="1" type="stmt"/>
-        <line num="590" count="1" type="stmt"/>
-        <line num="591" count="1" type="stmt"/>
+        <line num="596" count="1" type="stmt"/>
+        <line num="598" count="1" type="stmt"/>
+        <line num="606" count="1" type="stmt"/>
+        <line num="607" count="1" type="stmt"/>
       </file>
-      <file name="cw-to-firehose-to-s3-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/pipeline/service/cw-to-firehose-to-s3-stack.ts">
+      <file name="cw-to-firehose-to-s3-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/pipeline/service/cw-to-firehose-to-s3-stack.ts">
         <metrics statements="37" coveredstatements="36" conditionals="2" coveredconditionals="2" methods="2" coveredmethods="1"/>
         <line num="17" count="1" type="stmt"/>
         <line num="19" count="1" type="stmt"/>
@@ -1816,8 +1817,8 @@
         <line num="304" count="2" type="stmt"/>
         <line num="309" count="2" type="stmt"/>
       </file>
-      <file name="s3-to-opensearch-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/pipeline/service/s3-to-opensearch-stack.ts">
-        <metrics statements="89" coveredstatements="89" conditionals="12" coveredconditionals="12" methods="11" coveredmethods="11"/>
+      <file name="s3-to-opensearch-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/pipeline/service/s3-to-opensearch-stack.ts">
+        <metrics statements="93" coveredstatements="93" conditionals="13" coveredconditionals="13" methods="12" coveredmethods="12"/>
         <line num="17" count="2" type="stmt"/>
         <line num="18" count="2" type="stmt"/>
         <line num="42" count="2" type="stmt"/>
@@ -1829,86 +1830,90 @@
         <line num="48" count="2" type="stmt"/>
         <line num="58" count="2" type="stmt"/>
         <line num="62" count="9" type="stmt"/>
-        <line num="148" count="2" type="stmt"/>
-        <line num="154" count="9" type="stmt"/>
-        <line num="212" count="9" type="stmt"/>
-        <line num="215" count="9" type="stmt"/>
-        <line num="221" count="9" type="stmt"/>
-        <line num="224" count="9" type="stmt"/>
-        <line num="227" count="9" type="stmt"/>
-        <line num="259" count="9" type="stmt"/>
-        <line num="267" count="9" type="stmt"/>
-        <line num="271" count="9" type="stmt"/>
-        <line num="273" count="9" type="stmt"/>
-        <line num="279" count="9" type="stmt"/>
-        <line num="283" count="9" type="stmt"/>
-        <line num="285" count="9" type="stmt"/>
+        <line num="149" count="2" type="stmt"/>
+        <line num="155" count="9" type="stmt"/>
+        <line num="213" count="9" type="stmt"/>
+        <line num="216" count="9" type="stmt"/>
+        <line num="222" count="9" type="stmt"/>
+        <line num="225" count="9" type="stmt"/>
+        <line num="228" count="9" type="stmt"/>
+        <line num="260" count="9" type="stmt"/>
+        <line num="268" count="9" type="stmt"/>
+        <line num="272" count="9" type="stmt"/>
+        <line num="274" count="9" type="stmt"/>
+        <line num="282" count="9" type="stmt"/>
+        <line num="291" count="9" type="stmt"/>
         <line num="293" count="9" type="stmt"/>
-        <line num="295" count="9" type="stmt"/>
-        <line num="305" count="9" type="stmt"/>
-        <line num="310" count="9" type="stmt"/>
-        <line num="312" count="9" type="stmt"/>
-        <line num="322" count="9" type="stmt"/>
-        <line num="341" count="9" type="stmt"/>
-        <line num="373" count="9" type="stmt"/>
-        <line num="375" count="9" type="stmt"/>
-        <line num="377" count="9" type="stmt"/>
-        <line num="390" count="9" type="stmt"/>
-        <line num="398" count="9" type="stmt"/>
-        <line num="409" count="9" type="stmt"/>
-        <line num="429" count="9" type="stmt"/>
-        <line num="443" count="9" type="stmt"/>
-        <line num="454" count="9" type="stmt"/>
-        <line num="457" count="9" type="stmt"/>
-        <line num="462" count="9" type="stmt"/>
-        <line num="475" count="9" type="stmt"/>
-        <line num="479" count="9" type="stmt"/>
+        <line num="303" count="9" type="stmt"/>
+        <line num="313" count="9" type="stmt"/>
+        <line num="315" count="9" type="stmt"/>
+        <line num="325" count="9" type="stmt"/>
+        <line num="344" count="9" type="stmt"/>
+        <line num="372" count="9" type="cond" truecount="1" falsecount="0"/>
+        <line num="373" count="1" type="stmt"/>
+        <line num="378" count="1" type="stmt"/>
+        <line num="379" count="1" type="stmt"/>
+        <line num="381" count="8" type="stmt"/>
+        <line num="388" count="9" type="stmt"/>
+        <line num="399" count="9" type="stmt"/>
+        <line num="401" count="9" type="stmt"/>
+        <line num="403" count="9" type="stmt"/>
+        <line num="416" count="9" type="stmt"/>
+        <line num="424" count="9" type="stmt"/>
+        <line num="435" count="9" type="stmt"/>
+        <line num="455" count="9" type="stmt"/>
+        <line num="469" count="9" type="stmt"/>
         <line num="480" count="9" type="stmt"/>
         <line num="483" count="9" type="stmt"/>
         <line num="488" count="9" type="stmt"/>
-        <line num="494" count="9" type="stmt"/>
-        <line num="498" count="9" type="stmt"/>
-        <line num="500" count="9" type="stmt"/>
+        <line num="501" count="9" type="stmt"/>
+        <line num="505" count="9" type="stmt"/>
         <line num="506" count="9" type="stmt"/>
-        <line num="517" count="9" type="stmt"/>
-        <line num="518" count="9" type="stmt"/>
+        <line num="509" count="9" type="stmt"/>
+        <line num="514" count="9" type="stmt"/>
         <line num="520" count="9" type="stmt"/>
-        <line num="532" count="9" type="stmt"/>
+        <line num="525" count="9" type="stmt"/>
+        <line num="527" count="9" type="stmt"/>
         <line num="533" count="9" type="stmt"/>
-        <line num="534" count="9" type="stmt"/>
-        <line num="541" count="9" type="stmt"/>
-        <line num="548" count="9" type="stmt"/>
+        <line num="544" count="9" type="stmt"/>
+        <line num="545" count="9" type="stmt"/>
+        <line num="547" count="9" type="stmt"/>
         <line num="559" count="9" type="stmt"/>
-        <line num="564" count="9" type="stmt"/>
-        <line num="569" count="9" type="stmt"/>
-        <line num="571" count="9" type="stmt"/>
-        <line num="589" count="9" type="stmt"/>
-        <line num="604" count="9" type="stmt"/>
-        <line num="638" count="9" type="stmt"/>
-        <line num="652" count="9" type="stmt"/>
-        <line num="663" count="9" type="stmt"/>
-        <line num="670" count="9" type="stmt"/>
-        <line num="681" count="9" type="stmt"/>
-        <line num="685" count="9" type="stmt"/>
-        <line num="693" count="9" type="stmt"/>
+        <line num="560" count="9" type="stmt"/>
+        <line num="561" count="9" type="stmt"/>
+        <line num="568" count="9" type="stmt"/>
+        <line num="575" count="9" type="stmt"/>
+        <line num="586" count="9" type="stmt"/>
+        <line num="591" count="9" type="stmt"/>
+        <line num="596" count="9" type="stmt"/>
+        <line num="598" count="9" type="stmt"/>
+        <line num="616" count="9" type="stmt"/>
+        <line num="631" count="9" type="stmt"/>
+        <line num="665" count="9" type="stmt"/>
+        <line num="679" count="9" type="stmt"/>
+        <line num="690" count="9" type="stmt"/>
         <line num="697" count="9" type="stmt"/>
-        <line num="698" count="9" type="stmt"/>
-        <line num="702" count="9" type="stmt"/>
-        <line num="709" count="36" type="stmt"/>
-        <line num="714" count="36" type="stmt"/>
-        <line num="717" count="225" type="cond" truecount="1" falsecount="0"/>
-        <line num="718" count="16" type="stmt"/>
+        <line num="708" count="9" type="stmt"/>
+        <line num="712" count="9" type="stmt"/>
+        <line num="720" count="9" type="stmt"/>
         <line num="724" count="9" type="stmt"/>
-        <line num="727" count="718" type="cond" truecount="1" falsecount="0"/>
-        <line num="731" count="1" type="stmt"/>
-        <line num="737" count="9" type="stmt"/>
-        <line num="740" count="36" type="cond" truecount="1" falsecount="0"/>
-        <line num="741" count="1" type="stmt"/>
-        <line num="747" count="9" type="stmt"/>
-        <line num="750" count="45" type="cond" truecount="1" falsecount="0"/>
-        <line num="751" count="1" type="stmt"/>
+        <line num="725" count="9" type="stmt"/>
+        <line num="729" count="9" type="stmt"/>
+        <line num="736" count="36" type="stmt"/>
+        <line num="741" count="36" type="stmt"/>
+        <line num="744" count="225" type="cond" truecount="1" falsecount="0"/>
+        <line num="745" count="16" type="stmt"/>
+        <line num="751" count="9" type="stmt"/>
+        <line num="754" count="710" type="cond" truecount="1" falsecount="0"/>
+        <line num="758" count="1" type="stmt"/>
+        <line num="764" count="9" type="stmt"/>
+        <line num="767" count="36" type="cond" truecount="1" falsecount="0"/>
+        <line num="768" count="1" type="stmt"/>
+        <line num="774" count="9" type="stmt"/>
+        <line num="777" count="45" type="cond" truecount="1" falsecount="0"/>
+        <line num="778" count="1" type="stmt"/>
       </file>
-      <file name="service-log-pipeline-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/pipeline/service/service-log-pipeline-stack.ts">
+      <file name="service-log-pipeline-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/pipeline/service/service-log-pipeline-stack.ts">
         <metrics statements="114" coveredstatements="114" conditionals="12" coveredconditionals="11" methods="1" coveredmethods="1"/>
         <line num="17" count="1" type="stmt"/>
         <line num="18" count="1" type="stmt"/>
@@ -2025,7 +2030,7 @@
         <line num="526" count="9" type="stmt"/>
         <line num="528" count="9" type="stmt"/>
       </file>
-      <file name="waf-sampled-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/pipeline/service/waf-sampled-stack.ts">
+      <file name="waf-sampled-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/pipeline/service/waf-sampled-stack.ts">
         <metrics statements="24" coveredstatements="24" conditionals="2" coveredconditionals="2" methods="1" coveredmethods="1"/>
         <line num="17" count="1" type="stmt"/>
         <line num="18" count="1" type="stmt"/>
@@ -2055,7 +2060,7 @@
     </package>
     <package name="lib.subaccount">
       <metrics statements="49" coveredstatements="49" conditionals="4" coveredconditionals="4" methods="3" coveredmethods="3"/>
-      <file name="cross-account-stack.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/subaccount/cross-account-stack.ts">
+      <file name="cross-account-stack.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/subaccount/cross-account-stack.ts">
         <metrics statements="49" coveredstatements="49" conditionals="4" coveredconditionals="4" methods="3" coveredmethods="3"/>
         <line num="16" count="1" type="stmt"/>
         <line num="32" count="1" type="stmt"/>
@@ -2110,7 +2115,7 @@
     </package>
     <package name="lib.util">
       <metrics statements="4" coveredstatements="4" conditionals="0" coveredconditionals="0" methods="2" coveredmethods="2"/>
-      <file name="stack-helper.ts" path="/codebuild/output/src1475077946/src/source/constructs/lib/util/stack-helper.ts">
+      <file name="stack-helper.ts" path="/codebuild/output/src3848397192/src/source/constructs/lib/util/stack-helper.ts">
         <metrics statements="4" coveredstatements="4" conditionals="0" coveredconditionals="0" methods="2" coveredmethods="2"/>
         <line num="28" count="4" type="stmt"/>
         <line num="29" count="4" type="stmt"/>

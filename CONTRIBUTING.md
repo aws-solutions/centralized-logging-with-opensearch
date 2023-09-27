@@ -57,6 +57,5 @@ If you discover a potential security issue in this project we ask that you notif
 
 ## Licensing
 
-See the [LICENSE](https://github.com/aws-solutions/centralized-logging-with-opensearch/blob/master/LICENSE) file for our project's licensing. We will ask you to confirm the licensing of your contribution.
+See the [LICENSE](https://github.com/aws-solutions/centralized-logging-with-opensearch/blob/main/LICENSE.txt) file for our project's licensing. We will ask you to confirm the licensing of your contribution.
 
-We may ask you to sign a [Contributor License Agreement (CLA)](http://en.wikipedia.org/wiki/Contributor_License_Agreement) for larger changes.

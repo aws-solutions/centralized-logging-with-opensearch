@@ -1,29 +1,22 @@
 # Application Log Analytics Pipelines
 
-Centralized Logging with OpenSearch supports ingesting application logs from EC2 instances, EKS clusters, and Syslog.
+Centralized Logging with OpenSearch supports ingesting application logs from the following log sources:
 
-- For EC2 instances, Centralized Logging with OpenSearch will automatically install [log agent](#log-agent) ([Fluent Bit 1.9][fluent-bit]), collect application logs on EC2 instances and then send logs into Amazon OpenSearch.
-- For EKS clusters, Centralized Logging with OpenSearch will generate all-in-one configuration file for customers to deploy the [log agent](#log-agent) ([Fluent Bit 1.9][fluent-bit]) as a DaemonSet or Sidecar. After log agent is deployed, Centralized Logging with OpenSearch will start collecting pod logs and send to Amazon OpenSearch.
-- For Syslog, Centralized Logging with OpenSearch will collect syslog logs through UDP or TCP protocol.
+- [Amazon EC2 instance group](./ec2-pipeline.md): the solution automatically installs [log agent](#log-agent) (Fluent Bit 1.9), collects application logs on EC2 instances and then sends logs into Amazon OpenSearch.
+- [Amazon EKS cluster](./eks-pipeline.md): the solution generates all-in-one configuration file for customers to deploy the [log agent](#log-agent) (Fluent Bit 1.9) as a DaemonSet or Sidecar. After log agent is deployed, the solution starts collecting pod logs and sends them to Amazon OpenSearch Service.
+- [Amazon S3](./s3-pipeline.md): the solution either ingests logs in the specified Amazon S3 location continuously or performs one-time ingestion. You can also filter logs based on Amazon S3 prefix or parse logs with custom Log Config.
+- [Syslog](./syslog-pipeline.md): the solution collects syslog logs through UDP or TCP protocol.
 
-## Supported Log Formats and Sources
+After creating a log analytics pipeline, you can add more log sources to the log analytics pipeline. For more information, see [add a new log source](./create-log-source.md#add-a-new-log-source).
+
+!!! Important "Important"
+
+    If you are using Centralized Logging with OpenSearch to create an application log pipeline for the first time, you are recommended to learn the [concepts](#concepts) and [supported log formats and log sources](#supported-log-formats-and-log-sources).
+
+## Supported Log Formats and Log Sources
 {%
 include-markdown "include-supported-app-logs.md"
 %}
-
-In this chapter, you will learn how to create log ingestion for the following log formats:
-
-- [Apache HTTP server logs](./apache.md)
-- [Nginx logs](./nginx.md)
-- [Single-line Text logs](./single-line-text.md)
-- [Multi-line Text logs](./multi-line-text.md)
-- [JSON logs](./json.md)
-- [Syslog logs](./syslog.md)
-
-Before creating log ingestion, you need to:
-
-- [Create a log source](./create-log-source.md) (not applicable for Syslog)
-- [Create an application log pipeline](./create-applog-pipeline.md)
 
 ## Concepts
 
@@ -33,7 +26,7 @@ The following introduce concepts that help you to understand how the application
 To collect application logs, a data pipeline is needed. The pipeline not only buffers the data in transmit but also cleans or pre-processes data. For example, transforming IP to Geo location. Currently, Kinesis Data Stream is used as data buffering for EC2 log source.
 
 ### Log Ingestion
-A log ingestion configures the Log Source, Log Type and the Application Log Analytics Pipeline for the log agent used by Centralized Logging with OpenSearch.
+A log ingestion configures the Log Source, Log Config and the Application Log Analytics Pipeline for the log agent used by Centralized Logging with OpenSearch.
 After that, Centralized Logging with OpenSearch will start collecting certain type of logs from the log source and sending them to Amazon OpenSearch.
 
 ### Log Agent
@@ -60,8 +53,9 @@ small log volume, and you are confident that the logs will not exceed the thresh
 ### Log Source
 A Log Source refers to a location where you want Centralized Logging with OpenSearch to collect application logs from. Supported log sources includes:
 
-* [Instance Group](#instance-group)
-* [EKS Cluster](#eks-cluster)
+* [Amazon EC2 Instance Group](#instance-group)
+* [Amazon EKS Cluster](#eks-cluster)
+* [Amazon S3](#amazon-s3)
 * [Syslog](#syslog)
 
 #### Instance Group
@@ -73,11 +67,14 @@ user interface, or choose an [EC2 Auto Scaling Group][asg].
 The EKS Cluster in Centralized Logging with OpenSearch refers to the Amazon EKS from which you want to collect pod logs. Centralized Logging with OpenSearch
 will guide you to deploy the log agent as a DaemonSet or Sidecar in the EKS Cluster.
 
+#### Amazon S3
+Centralized Logging with OpenSearch supports collectings logs stored in an Amazon S3 bucket.
+
 #### Syslog
 Centralized Logging with OpenSearch supports collecting syslog logs through UDP or TCP protocol.
 
 ### Log Config
-A Log Config is a configuration that is telling Centralized Logging with OpenSearch where the logs had been stored on Log Source, which types of logs you want to collect, what fields a line of log contains, and types of each field.
+A Log Config is a configuration that defines the format of logs (that is, what fields each log line includes, and the data type of each field), based on which the Log Analytics Pipeline parses the logs before ingesting them into log storage. Log Config also allows you to define filters of the logs based on the fields in the logs.
 
 
 [fluent-bit]: https://docs.fluentbit.io/manual/

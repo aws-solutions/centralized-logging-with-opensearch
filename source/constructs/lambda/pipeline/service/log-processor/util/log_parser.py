@@ -1060,8 +1060,12 @@ def parse_by_regex(
 
 
 def batch_iter(iterable, batch_size=10):
+    size = 2000
+    if batch_size > size:
+        size = batch_size
+    
     iterator = iter(iterable)
-    while b := list(islice(iterator, batch_size)):
+    while b := list(islice(iterator, size)):
         yield b
 
 

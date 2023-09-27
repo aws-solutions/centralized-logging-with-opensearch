@@ -1,8 +1,8 @@
 /*
 Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
+Licensed under the Apache License, Version 2.0 (the "License").
+You may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
@@ -133,11 +133,25 @@ export class AppLogProcessor extends Construct {
           BACKUP_BUCKET_NAME: props.backupBucketName,
           SOLUTION_VERSION: process.env.VERSION || 'v1.0.0',
           LOG_TYPE: props.logType,
+          BULK_BATCH_SIZE: '20000',
+          FUNCTION_NAME: `${Aws.STACK_NAME}-LogProcessorFn`,
         },
         props.env
       ),
       layers: [SharedPythonLayer.getInstance(this), osLayer],
     });
+    this.logProcessorFn.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: [
+          'lambda:UpdateFunctionConfiguration',
+          'lambda:GetFunctionConfiguration',
+        ],
+        resources: [
+          `arn:${Aws.PARTITION}:lambda:${Aws.REGION}:${Aws.ACCOUNT_ID}:function:${Aws.STACK_NAME}-LogProcessorFn`,
+        ],
+      })
+    );
+
     this.logProcessorFn.addToRolePolicy(
       new iam.PolicyStatement({
         actions: [

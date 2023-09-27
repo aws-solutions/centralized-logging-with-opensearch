@@ -1,8 +1,8 @@
 /*
 Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
+Licensed under the Apache License, Version 2.0 (the "License").
+You may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
@@ -19,6 +19,7 @@ import { ApexOptions } from "apexcharts";
 import { appSyncRequestQuery } from "assets/js/request";
 import LoadingText from "components/LoadingText";
 import { getMetricHistoryData } from "graphql/queries";
+import moment from "moment";
 import React, { useEffect, useState } from "react";
 import Chart from "react-apexcharts";
 import { useTranslation } from "react-i18next";
@@ -41,6 +42,31 @@ const FailedColorMetrics = [
   MetricName.ProcessorFnError,
   MetricName.FluentBitOutputRetriesFailed,
 ];
+
+const formatLabel = (timestamp: number, timeSpan: string): string => {
+  /*
+  //   year: "yyyy",
+  //   month: "yyyy-MM",
+  //   day: "MM/DD",
+  //   hour: "HH:mm",
+  //   minute: "HH:mm",
+  */
+  if (timeSpan === "year") {
+    return moment(timestamp).format("yyyy");
+  } else if (timeSpan === "month") {
+    return moment(timestamp).format("yyyy-MM");
+  } else if (timeSpan === "day") {
+    return moment(timestamp).format("MM/DD");
+  } else if (timeSpan === "hour" || timeSpan === "minute") {
+    return moment(timestamp).format("HH:mm");
+  } else {
+    return new Date(timestamp).toLocaleTimeString();
+  }
+};
+
+const formatTooltip = (timestamp: number) => {
+  return moment(timestamp).format("yyyy-MM-DD HH:mm");
+};
 
 const NORMAL_COLOR = [
   "#0073bb",
@@ -77,6 +103,9 @@ const ERROR_COLOR = [
   "#ff8a65",
 ];
 
+const ENLARGE_DATA_COUNT = 5;
+const ENLARGE_MARKER_SIZE = 3;
+
 const LineChart: React.FC<LinChartProps> = (props: LinChartProps) => {
   const {
     type,
@@ -89,6 +118,7 @@ const LineChart: React.FC<LinChartProps> = (props: LinChartProps) => {
     refreshCount,
   } = props;
   const { t } = useTranslation();
+
   const chartDefaultOptions: ApexOptions = {
     chart: {
       id: graphName,
@@ -126,15 +156,6 @@ const LineChart: React.FC<LinChartProps> = (props: LinChartProps) => {
       labels: {
         show: true,
         align: "right",
-        // formatter: (value) => {
-        //   if (graphName === GraphName.Network) {
-        //     return humanFileSize(value, true);
-        //   }
-        //   if (graphName === GraphName.DesiredInServiceInstances) {
-        //     return value.toFixed(1);
-        //   }
-        //   return value.toFixed(0);
-        // },
       },
       axisBorder: {
         show: false,
@@ -165,6 +186,8 @@ const LineChart: React.FC<LinChartProps> = (props: LinChartProps) => {
     },
 
     noData: {
+      offsetX: 0,
+      offsetY: 15,
       text: `No data available.`,
       align: "center",
       verticalAlign: "middle",
@@ -184,7 +207,10 @@ const LineChart: React.FC<LinChartProps> = (props: LinChartProps) => {
     },
     tooltip: {
       x: {
-        format: "yyyy-MM-dd HH:mm",
+        // format: "yyyy-MM-dd HH:mm",
+        formatter: function (value: number) {
+          return formatTooltip(value);
+        },
       },
       y: {
         formatter(value: any) {
@@ -194,25 +220,20 @@ const LineChart: React.FC<LinChartProps> = (props: LinChartProps) => {
     },
     xaxis: {
       type: "datetime",
-      tickAmount: 10,
+      // tickAmount: 5,
       categories: [startTime * 1000, endTime * 1000],
       labels: {
+        show: false,
         datetimeUTC: false,
-        datetimeFormatter: {
-          year: "yyyy",
-          month: "yyyy-MM",
-          day: "MM/dd",
-          hour: "HH:mm",
-          minute: "HH:mm",
-        },
       },
     },
   };
 
-  const [chartModalOptions, setchartModalOptions] =
+  const [chartModalOptions, setChartModalOptions] =
     useState(chartDefaultOptions);
   const [chartModalSeries, setChartModalSeries] = useState<any[]>([]);
   const [loadingData, setLoadingData] = useState(false);
+  const [timeSpan, setTimeSpan] = useState<string>("");
 
   const getMetricsData = async () => {
     setLoadingData(true);
@@ -228,11 +249,24 @@ const LineChart: React.FC<LinChartProps> = (props: LinChartProps) => {
         endTime: endTime,
         // period: 60,
       });
-      if (resData?.data?.getMetricHistoryData?.xaxis?.categories?.length > 0) {
-        setchartModalOptions({
+      const categoryData =
+        resData?.data?.getMetricHistoryData?.xaxis?.categories ?? [];
+      if (categoryData.length > 0) {
+        const tmpMarkerSize =
+          categoryData.length > ENLARGE_DATA_COUNT
+            ? undefined
+            : ENLARGE_MARKER_SIZE;
+        setChartModalOptions({
           ...chartDefaultOptions,
+          markers: {
+            size: tmpMarkerSize,
+          },
           xaxis: {
             ...chartDefaultOptions.xaxis,
+            labels: {
+              ...chartDefaultOptions.xaxis?.labels,
+              show: true,
+            },
             categories: [
               startTime * 1000,
               ...resData.data.getMetricHistoryData.xaxis.categories.map(
@@ -254,7 +288,7 @@ const LineChart: React.FC<LinChartProps> = (props: LinChartProps) => {
           })
         );
       } else {
-        setchartModalOptions({
+        setChartModalOptions({
           ...chartDefaultOptions,
           legend: {
             ...chartDefaultOptions.legend,
@@ -262,6 +296,9 @@ const LineChart: React.FC<LinChartProps> = (props: LinChartProps) => {
           },
           xaxis: {
             ...chartDefaultOptions.xaxis,
+            labels: {
+              show: false,
+            },
             categories: [startTime, endTime],
           },
         });
@@ -275,12 +312,47 @@ const LineChart: React.FC<LinChartProps> = (props: LinChartProps) => {
   };
 
   useEffect(() => {
-    console.info("taskId:", taskId);
-    console.info("startTime|endTime:", startTime, endTime);
     if (taskId) {
       getMetricsData();
     }
   }, [taskId, startTime, endTime, refreshCount]);
+
+  useEffect(() => {
+    if (timeSpan) {
+      setChartModalOptions({
+        ...chartDefaultOptions,
+        xaxis: {
+          ...chartDefaultOptions.xaxis,
+          labels: {
+            ...chartDefaultOptions.xaxis?.labels,
+            formatter: function (value, timestamp) {
+              return formatLabel(timestamp ?? 0, timeSpan);
+            },
+          },
+        },
+      });
+    }
+  }, [timeSpan]);
+
+  useEffect(() => {
+    const timeDifference = endTime - startTime;
+    const oneMinute = 60;
+    const oneHour = oneMinute * 60;
+    const oneDay = oneHour * 24;
+    const oneMonth = oneDay * 30;
+    const oneYear = oneDay * 365;
+    if (timeDifference >= oneYear) {
+      setTimeSpan("year");
+    } else if (timeDifference >= oneMonth) {
+      setTimeSpan("month");
+    } else if (timeDifference >= oneDay) {
+      setTimeSpan("day");
+    } else if (timeDifference >= oneHour) {
+      setTimeSpan("hour");
+    } else if (timeDifference >= oneMinute) {
+      setTimeSpan("minute");
+    }
+  }, [startTime, endTime]);
 
   return (
     <div className="pr">

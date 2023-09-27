@@ -169,3 +169,40 @@ def test_lambda_handler_with_aos_error(mocker, status, client, expected):
 
     result = lambda_function.lambda_handler(None, None)
     assert result == expected
+
+
+def test_add_master_role(test_aos):    
+    import lambda_function
+    role_arn = "arn:aws:lambda:us-west-2:111111111111:function:testlambda"
+    lambda_function.add_master_role(role_arn)
+
+@pytest.mark.parametrize(
+    "format",
+    [
+        "yyyy",
+        "yyyy-MM",
+        "yyyy-MM-dd",
+        "yyyy-MM-dd-HH",
+    ],
+)
+def test_get_rollover_age_by_format(format):
+    import lambda_function
+    result = lambda_function.get_rollover_age_by_format(format)
+    if format == "yyyy-MM":
+        assert "30d" == result
+    elif format == "yyyy-MM-dd-HH":
+        assert "1h" == result
+    elif format == "yyyy":
+        assert "365d" == result
+    else:
+        assert "24h" == result
+
+def test_decode_gzip_base64_json_safe():
+    import lambda_function
+    import gzip
+    import base64
+    import json
+    d={"a":1}
+    compress_str=base64.b64encode(gzip.compress(json.dumps(d).encode())).decode("utf8")
+    assert d == lambda_function.decode_gzip_base64_json_safe(compress_str)
+    assert None == lambda_function.decode_gzip_base64_json_safe(None)
