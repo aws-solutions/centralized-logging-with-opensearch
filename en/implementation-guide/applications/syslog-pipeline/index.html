@@ -8,14 +8,14 @@
       
       
       
-        <link rel="canonical" href="https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/applications/apache/">
+        <link rel="canonical" href="https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/applications/syslog-pipeline/">
       
       <link rel="icon" href="../../../images/aws-solutions.png">
       <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.5.3">
     
     
       
-        <title>Apache HTTP Server - Centralized Logging with OpenSearch</title>
+        <title>Syslog - Centralized Logging with OpenSearch</title>
       
     
     
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#apache-http-server-logs" class="md-skip">
+        <a href="#syslog-as-log-source" class="md-skip">
           Skip to content
         </a>
       
@@ -102,7 +102,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Apache HTTP Server
+              Syslog
             
           </span>
         </div>
@@ -1078,35 +1078,9 @@
   
   
   
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9_2" type="checkbox" id="__nav_1_9_2" >
-      
-      
-      
-      
-        <label class="md-nav__link" for="__nav_1_9_2">
-          Prerequisites
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" aria-label="Prerequisites" data-md-level="3">
-        <label class="md-nav__title" for="__nav_1_9_2">
-          <span class="md-nav__icon md-icon"></span>
-          Prerequisites
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-              
-  
-  
-  
     <li class="md-nav__item">
-      <a href="../create-log-source/" class="md-nav__link">
-        Create a log source
+      <a href="../ec2-pipeline/" class="md-nav__link">
+        EC2 instance group
       </a>
     </li>
   
@@ -1119,16 +1093,23 @@
   
   
     <li class="md-nav__item">
-      <a href="../create-applog-pipeline/" class="md-nav__link">
-        Create an application pipeline
+      <a href="../eks-pipeline/" class="md-nav__link">
+        EKS cluster
       </a>
     </li>
   
 
             
           
-        </ul>
-      </nav>
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../s3-pipeline/" class="md-nav__link">
+        S3
+      </a>
     </li>
   
 
@@ -1150,12 +1131,12 @@
       
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
-          Apache HTTP Server
+          Syslog
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
-        Apache HTTP Server
+        Syslog
       </a>
       
         
@@ -1181,63 +1162,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-1-create-an-apache-http-server-log-config" class="md-nav__link">
-    Step 1: Create an Apache HTTP server log config
+  <a href="#create-log-analytics-pipeline" class="md-nav__link">
+    Create log analytics pipeline
   </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-2-create-an-application-log-ingestion" class="md-nav__link">
-    Step 2: Create an application log ingestion
-  </a>
-  
-    <nav class="md-nav" aria-label="Step 2: Create an application log ingestion">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#instance-group-as-log-source" class="md-nav__link">
-    Instance Group as Log Source
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#amazon-eks-cluster-as-log-source" class="md-nav__link">
-    Amazon EKS Cluster as Log Source
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-3-check-built-in-apache-http-server-dashboard-in-opensearch" class="md-nav__link">
-    Step 3: Check built-in Apache HTTP server dashboard in OpenSearch
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#view-dashboard" class="md-nav__link">
-    View dashboard
-  </a>
-  
-    <nav class="md-nav" aria-label="View dashboard">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#sample-dashboard" class="md-nav__link">
-    Sample Dashboard
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -1255,9 +1182,35 @@
   
   
   
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9_6" type="checkbox" id="__nav_1_9_6" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1_9_6">
+          Pipeline resources
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Pipeline resources" data-md-level="3">
+        <label class="md-nav__title" for="__nav_1_9_6">
+          <span class="md-nav__icon md-icon"></span>
+          Pipeline resources
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
     <li class="md-nav__item">
-      <a href="../nginx/" class="md-nav__link">
-        Nginx
+      <a href="../create-log-source/" class="md-nav__link">
+        Log source
       </a>
     </li>
   
@@ -1270,51 +1223,16 @@
   
   
     <li class="md-nav__item">
-      <a href="../single-line-text/" class="md-nav__link">
-        Single-line text
+      <a href="../create-log-config/" class="md-nav__link">
+        Log Config
       </a>
     </li>
   
 
             
           
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../multi-line-text/" class="md-nav__link">
-        Multi-line text
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../json/" class="md-nav__link">
-        JSON
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../syslog/" class="md-nav__link">
-        Syslog
-      </a>
+        </ul>
+      </nav>
     </li>
   
 
@@ -1603,63 +1521,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-1-create-an-apache-http-server-log-config" class="md-nav__link">
-    Step 1: Create an Apache HTTP server log config
+  <a href="#create-log-analytics-pipeline" class="md-nav__link">
+    Create log analytics pipeline
   </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-2-create-an-application-log-ingestion" class="md-nav__link">
-    Step 2: Create an application log ingestion
-  </a>
-  
-    <nav class="md-nav" aria-label="Step 2: Create an application log ingestion">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#instance-group-as-log-source" class="md-nav__link">
-    Instance Group as Log Source
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#amazon-eks-cluster-as-log-source" class="md-nav__link">
-    Amazon EKS Cluster as Log Source
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-3-check-built-in-apache-http-server-dashboard-in-opensearch" class="md-nav__link">
-    Step 3: Check built-in Apache HTTP server dashboard in OpenSearch
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#view-dashboard" class="md-nav__link">
-    View dashboard
-  </a>
-  
-    <nav class="md-nav" aria-label="View dashboard">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#sample-dashboard" class="md-nav__link">
-    Sample Dashboard
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -1677,51 +1541,20 @@
                 
                   
 
-  <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch/edit/master/docs/implementation-guide/applications/apache.md" title="Edit this page" class="md-content__button md-icon">
+  <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch/edit/master/docs/implementation-guide/applications/syslog-pipeline.md" title="Edit this page" class="md-content__button md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
   </a>
 
 
-<h1 id="apache-http-server-logs">Apache HTTP server logs</h1>
-<p>Apache HTTP Server (httpd) is capable of writing <a href="https://httpd.apache.org/docs/2.4/logs.html">error and access log</a> files to a local directory. You can configure Centralized Logging with OpenSearch to ingest Apache HTTP server logs.</p>
+<h1 id="syslog-as-log-source">Syslog as log source</h1>
+<p>Centralized Logging with OpenSearch will collect syslog logs through UDP or TCP protocol.</p>
+<p>This article guides you to create a log pipeline that ingests logs from a syslog endpoint.</p>
 <h2 id="prerequisites">Prerequisites</h2>
-<!-- BEGIN INCLUDE include-prerequisites.md -->
-<p>Make sure you have done the following:</p>
 <ol>
 <li><a href="../../domains/import/">Import an Amazon OpenSearch Service domain</a>.</li>
-<li><a href="../create-log-source/">Create a log source</a>.</li>
-<li><a href="../create-applog-pipeline/">Create an application log pipeline</a>.</li>
 </ol>
-<!-- END INCLUDE -->
-<h2 id="step-1-create-an-apache-http-server-log-config">Step 1: Create an Apache HTTP server log config</h2>
-<ol>
-<li>Sign in to the Centralized Logging with OpenSearch Console.</li>
-<li>In the left sidebar, under <strong>Resources</strong>, choose <strong>Log Config</strong>.</li>
-<li>Click the <strong>Create a log config</strong> button.</li>
-<li>Specify <strong>Config Name</strong>.</li>
-<li>Specify <strong>Log Path</strong>. You can use <code>,</code> to separate multiple paths.</li>
-<li>Choose <strong>Apache HTTP server</strong> in the log type dropdown menu.</li>
-<li>
-<p>In the <strong>Apache Log Format</strong> section, paste your Apache HTTP server log format configuration. It is in the format of <code>/etc/httpd/conf/httpd.conf</code> and starts with <code>LogFormat</code>.</p>
-<p>For example:
-<div class="highlight"><pre><span></span><code>LogFormat &quot;%h %l %u %t \&quot;%r\&quot; %&gt;s %b \&quot;%{Referer}i\&quot; \&quot;%{User-Agent}i\&quot;&quot; combined
-</code></pre></div></p>
-</li>
-<li>
-<p>(Optional) In the <strong>Sample log parsing</strong> section, paste a sample Apache HTTP server log to verify if the log parsing is successful.</p>
-<p>For example:
-<div class="highlight"><pre><span></span><code>127.0.0.1 - - [22/Dec/2021:06:48:57 +0000] &quot;GET /xxx HTTP/1.1&quot; 404 196 &quot;-&quot; &quot;curl/7.79.1&quot;
-</code></pre></div></p>
-</li>
-<li>
-<p>Choose <strong>Create</strong>.</p>
-</li>
-</ol>
-<h2 id="step-2-create-an-application-log-ingestion">Step 2: Create an application log ingestion</h2>
-<!-- BEGIN INCLUDE create-log-ingestion.md '&lt;!--ig-start--&gt;' '&lt;!--eks-end--&gt;' -->
-
-<h3 id="instance-group-as-log-source">Instance Group as Log Source</h3>
+<h2 id="create-log-analytics-pipeline">Create log analytics pipeline</h2>
 <ol>
 <li>
 <p>Sign in to the Centralized Logging with OpenSearch Console.</p>
@@ -1730,188 +1563,127 @@
 <p>In the left sidebar, under <strong>Log Analytics Pipelines</strong>, choose <strong>Application Log</strong>.</p>
 </li>
 <li>
-<p>Choose the application pipeline that has been created during the <strong>Prerequisites</strong>.</p>
+<p>Choose <strong>Create a pipeline</strong>.</p>
 </li>
 <li>
-<p>Choose the <strong>Permission grant method</strong>. If you choose <strong>I will manually add the below required permissions after pipeline creation</strong>, you have to click <strong>Expand to view required permissions</strong> and copy the provided JSON policy.</p>
+<p>Choose <strong>Syslog Endpoint</strong> as Log Source.</p>
 </li>
 <li>
-<p>Go to <strong>AWS Console &gt; IAM &gt; Policies</strong> on the left column, and</p>
+<p>Select <strong>UDP</strong> or <strong>TCP</strong> with custom port number. Choose <strong>Next</strong>.</p>
+</li>
+</ol>
+<p>You have created a log source for the log analytics pipeline. Now you are ready to make further configurations for the log analytics pipeline with syslog as log source.</p>
 <ol>
 <li>
-<p>Choose <strong>Create Policy</strong>, choose <strong>JSON</strong> and replace all the content inside the text block. Remember to substitute <code>&lt;YOUR ACCOUNT ID&gt;</code> with your account id.</p>
+<p>Select a log config. If you do not find the desired log config from the drop-down list, choose <strong>Create New</strong>. Refer to <a href="../create-log-config/">Log Config</a> for more information.</p>
 </li>
 <li>
-<p>Choose <strong>Next</strong>, <strong>Next</strong>, then enter the name for this policy.</p>
+<p>Choose <strong>Next</strong>.</p>
 </li>
 <li>
-<p>Attach the policy to your EC2 instance profile to grant the log agent permissions to send logs to the application log pipeline. If you are using Auto Scaling group, you need to update the IAM instance profile associated with the Auto Scaling Group. If needed, you can follow the documentation to update your <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/create-launch-template.html#advanced-settings-for-your-launch-template">launch template</a> or <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/change-launch-config.html">launch configuration</a>.</p>
-</li>
-</ol>
+<p>Specify <strong>Index name</strong> in lowercase.</p>
 </li>
 <li>
-<p>Click the <strong>Create an Ingestion</strong> dropdown menu, and select <strong>From Instance Group</strong>.</p>
-</li>
-<li>
-<p>Select <strong>Choose exists</strong> and choose <strong>Next</strong>.</p>
-</li>
-<li>
-<p>Select the instance group you have created during the <strong>Prerequisites</strong> and choose <strong>Next</strong>.</p>
-</li>
-<li>
-<p>(Auto Scaling Group only) If your instance group is created based on an Auto Scaling Group, after ingestion status become "Created", then you can find the generated Shell Script in the instance group's detail page. Copy the shell script and update the User Data of the Auto Scaling <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/launch-configurations.html">Launch configurations</a> or <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html">Launch template</a>.</p>
-</li>
-<li>
-<p>Select <strong>Choose exists</strong> and select the log config created in previous setup.</p>
-</li>
-<li>
-<p>Choose <strong>Create</strong> to finish creating an ingestion.</p>
-</li>
-</ol>
-<!--ig-end-->
-
-<!--eks-start-->
-<h3 id="amazon-eks-cluster-as-log-source">Amazon EKS Cluster as Log Source</h3>
-<ol>
-<li>
-<p>Sign in to the Centralized Logging with OpenSearch Console.</p>
-</li>
-<li>
-<p>In the left sidebar, under <strong>Log Source</strong>, choose <strong>EKS Clusters</strong>.</p>
-</li>
-<li>
-<p>Choose the EKS Cluster that has been imported as Log Source during the <strong>Prerequisites</strong>.</p>
-</li>
-<li>
-<p>Go to <strong>App Log Ingestion</strong> tab and choose <strong>Create an Ingestion</strong>.</p>
-<ol>
-<li>
-<p>Select <strong>Choose exists</strong> and choose the application pipeline created during the <strong>Prerequisites</strong>. Choose <strong>Next</strong>.</p>
-</li>
-<li>
-<p>Select the log config created in previous setup.</p>
-</li>
-<li>
-<p>Choose <strong>Create</strong> to finish creating an ingestion.</p>
-</li>
-</ol>
-</li>
-<li>
-<p>Deploy Fluent-bit log agent following the guide generated by Centralized Logging with OpenSearch.</p>
-<ol>
-<li>
-<p>Select the App Log Ingestion just created.</p>
-</li>
-<li>
-<p>Follow <strong>DaemonSet</strong> or <strong>Sidecar</strong> Guide to deploy the log agent.</p>
-</li>
-</ol>
-</li>
-</ol>
-<!-- END INCLUDE -->
-
-<h2 id="step-3-check-built-in-apache-http-server-dashboard-in-opensearch">Step 3: Check built-in Apache HTTP server dashboard in OpenSearch</h2>
-<p>For Apache HTTP server logs, Centralized Logging with OpenSearch will create a built-in sample dashboard.</p>
-<ol>
-<li>Open OpenSearch dashboard in your browser.</li>
-<li>Go to <strong>Dashboard</strong> section in the left sidebar.</li>
-<li>Find the dashboard whose name starts with <code>&lt;the application pipeline&gt;</code>.</li>
-</ol>
-<h2 id="view-dashboard">View dashboard</h2>
-<p>The dashboard includes the following visualizations.</p>
+<p>In the <strong>Buffer</strong> section, choose <strong>S3</strong> or <strong>Kinesis Data Streams</strong>. If you don't want the buffer layer, choose <strong>None</strong>. Refer to the <a href="../#log-buffer">Log Buffer</a> for more information about choosing the appropriate buffer layer.</p>
+<ul>
+<li>S3 buffer parameters</li>
+</ul>
 <table>
 <thead>
 <tr>
-<th>Visualization Name</th>
-<th>Source Field</th>
+<th>Parameter</th>
+<th>Default</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Total Request</td>
-<td>log event</td>
-<td>Displays aggregated events within a specified time interval.</td>
+<td>S3 Bucket</td>
+<td><em>A log bucket will be created by the solution.</em></td>
+<td>You can also select a bucket to store the log data.</td>
 </tr>
 <tr>
-<td>Status Codes</td>
-<td>status</td>
-<td>Displays the distribution of HTTP response codes served by the Apache web server over a selected time period.</td>
+<td>S3 Bucket Prefix</td>
+<td><code>AppLogs/&lt;index-prefix&gt;/year=%Y/month=%m/day=%d</code></td>
+<td>The log agent appends the prefix when delivering the log files to the S3 bucket.</td>
 </tr>
 <tr>
-<td>Access History</td>
-<td>log event</td>
-<td>Shows a historical log of all requests handled by the Apache web server, visualized using a bar chart. This allows administrators to analyze traffic volumes and patterns over time.</td>
+<td>Buffer size</td>
+<td>50 MiB</td>
+<td>The maximum size of log data cached at the log agent side before delivering to S3. For more information, see <a href="https://docs.aws.amazon.com/firehose/latest/dev/basic-deliver.html#frequency">Data Delivery Frequency</a>.</td>
 </tr>
 <tr>
-<td>Unique Visitors</td>
-<td>remote_addr</td>
-<td>Provides an estimation of the total number of users or devices accessing the Apache server for repeated visits from the same IP.</td>
+<td>Buffer interval</td>
+<td>60 seconds</td>
+<td>The maximum interval of the log agent to deliver logs to S3. For more information, see <a href="https://docs.aws.amazon.com/firehose/latest/dev/basic-deliver.html#frequency">Data Delivery Frequency</a>.</td>
 </tr>
 <tr>
-<td>Status Code Metric</td>
-<td>status</td>
-<td>Displays the distribution of HTTP response codes served by the Apache server over a period of time.</td>
-</tr>
-<tr>
-<td>Top Access Paths</td>
-<td>request_uri</td>
-<td>Shows the most frequently requested URLs on the Apache server over a selected time period.</td>
-</tr>
-<tr>
-<td>Top Client IPs</td>
-<td><ul><li>response_size_bytes</li><li>remote_addr</li></ul></td>
-<td>Displays the 10 source IP addresses generating the highest number of requests received by the Apache server during a selected time period.</td>
-</tr>
-<tr>
-<td>Bandwidth</td>
-<td>response_size_bytes</td>
-<td>Tracks the volume of data transferred from the Apache server to clients over a selected time period.</td>
-</tr>
-<tr>
-<td>Top Agents</td>
-<td>http_user_agent</td>
-<td>Provides a snapshot of the visitor profile. The data guides decisions to better serve core audiences.</td>
-</tr>
-<tr>
-<td>Http Methods</td>
-<td>request_method</td>
-<td>Presents a pie chart that shows the distribution of request methods handled by the Apache server during a selected time period.</td>
-</tr>
-<tr>
-<td>Top Access URIs</td>
-<td>request_uri</td>
-<td>Shows the most frequently hit URI paths handled by Apache during a selected period.</td>
-</tr>
-<tr>
-<td>Top Referers</td>
-<td>http_referer</td>
-<td>Referers are the URLs of pages that link to requests for the application. Tracking referers reveals the primary external sources of visits and engagement.</td>
-</tr>
-<tr>
-<td>Bandwidth History</td>
-<td>response_size_bytes</td>
-<td>Shows the historical trend of the data transfer activities by the Apache server to clients.</td>
-</tr>
-<tr>
-<td>Apache Error Log</td>
-<td><ul><li> status</li><li>request_uri</li><li>request_method</li><li>http_referer</li><li>response_size_bytes</li><li>http_user_agent</li><li>remote_addr</li></ul></td>
-<td>Provides a detailed record of errors encountered by the web server.</td>
-</tr>
-<tr>
-<td>Apache Log Examples</td>
-<td><ul><li> @timestamp</li><li>_index</li><li>http_user_agent</li><li>remote_addr</li><li> status</li><li>request_method</li><li>request_uri</li><li>response_size_bytes</li><li>request_protocol</li><li>file_name</li><li>http_referer</li><li>remote_user</li></ul></td>
-<td>A quick entry for interpreting Apache access and error logs.</td>
+<td>Compression for data records</td>
+<td><code>Gzip</code></td>
+<td>The log agent compresses records before delivering them to the S3 bucket.</td>
 </tr>
 </tbody>
 </table>
-<h3 id="sample-dashboard">Sample Dashboard</h3>
-<!-- BEGIN INCLUDE ../include-dashboard.md -->
-<p>You can access the built-in dashboard in Amazon OpenSearch to view log data. For more information, see <a href="../../getting-started/4.view-dashboard/">Access Dashboard</a>.</p>
-<p>You can click the below image to view the high-resolution sample dashboard.</p>
-<!-- END INCLUDE -->
-
-<p><a href="../../../images/dashboards/apache.png"><img alt="apache" src="../../../images/dashboards/apache.png" /></a></p>
+<ul>
+<li>Kinesis Data Streams buffer parameters</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Shard number</td>
+<td><code>&lt;Requires input&gt;</code></td>
+<td>The number of shards of the Kinesis Data Streams. Each shard can have up to 1,000 records per second and total data write rate of 1MB per second.</td>
+</tr>
+<tr>
+<td>Enable auto scaling</td>
+<td><code>No</code></td>
+<td>This solution monitors the utilization of Kinesis Data Streams every 5 minutes, and scale in/out the number of shards automatically. The solution will scale in/out for a maximum of 8 times within 24 hours.</td>
+</tr>
+<tr>
+<td>Maximum Shard number</td>
+<td><code>&lt;Requires input&gt;</code></td>
+<td>Required if auto scaling is enabled. The maximum number of shards.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>You may observe duplicate logs in OpenSearch if threshold error occurs in Kinesis Data Streams (KDS). This is because the Fluent Bit log agent uploads logs in <a href="https://docs.fluentbit.io/manual/administration/buffering-and-storage#chunks-memory-filesystem-and-backpressure">chunk</a> (contains multiple records), and will retry the chunk if upload failed. Each
+KDS shard can support up to 1,000 records per second for writes, up to a maximum total data write rate of 1 MB per second. Please estimate your log volume and choose an appropriate shard number.</p>
+</div>
+</li>
+<li>
+<p>Choose <strong>Next</strong>.</p>
+</li>
+<li>
+<p>In the <strong>Specify OpenSearch domain</strong> section, select an imported domain for <strong>Amazon OpenSearch domain</strong>.</p>
+</li>
+<li>
+<p>In the <strong>Log Lifecycle</strong> section, enter the number of days to manage the Amazon OpenSearch Service index lifecycle. The Centralized Logging with OpenSearch will create the associated <a href="https://opensearch.org/docs/latest/im-plugin/ism/index/">Index State Management (ISM)</a> policy automatically for this pipeline.</p>
+</li>
+<li>
+<p>Choose <strong>Next</strong>.</p>
+</li>
+<li>
+<p>Enable <strong>Alarms</strong> if needed and select an exiting SNS topic. If you choose <strong>Create a new SNS topic</strong>, please provide a name and an email address for the new SNS topic.</p>
+</li>
+<li>
+<p>Add tags if needed.</p>
+</li>
+<li>
+<p>Choose <strong>Create</strong>.</p>
+</li>
+<li>
+<p>Wait for the application pipeline turning to "Active" state.</p>
+</li>
+</ol>
 
 
 
@@ -1932,7 +1704,7 @@
     <nav class="md-footer__inner md-grid" aria-label="Footer" >
       
         
-        <a href="../create-applog-pipeline/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Create an application pipeline" rel="prev">
+        <a href="../s3-pipeline/" class="md-footer__link md-footer__link--prev" aria-label="Previous: S3" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
           </div>
@@ -1941,20 +1713,20 @@
               <span class="md-footer__direction">
                 Previous
               </span>
-              Create an application pipeline
+              S3
             </div>
           </div>
         </a>
       
       
         
-        <a href="../nginx/" class="md-footer__link md-footer__link--next" aria-label="Next: Nginx" rel="next">
+        <a href="../create-log-source/" class="md-footer__link md-footer__link--next" aria-label="Next: Log source" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Nginx
+              Log source
             </div>
           </div>
           <div class="md-footer__button md-icon">

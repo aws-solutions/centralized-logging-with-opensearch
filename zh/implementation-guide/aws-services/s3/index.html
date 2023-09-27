@@ -1159,24 +1159,80 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../applications/ec2-pipeline/" class="md-nav__link">
+        EC2 实例组
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../applications/eks-pipeline/" class="md-nav__link">
+        EKS 集群
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../applications/s3-pipeline/" class="md-nav__link">
+        S3
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../applications/syslog-pipeline/" class="md-nav__link">
+        Syslog
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
     
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9_2" type="checkbox" id="__nav_1_9_2" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9_6" type="checkbox" id="__nav_1_9_6" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_9_2">
-          前提条件
+        <label class="md-nav__link" for="__nav_1_9_6">
+          管道资源
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="前提条件" data-md-level="3">
-        <label class="md-nav__title" for="__nav_1_9_2">
+      <nav class="md-nav" aria-label="管道资源" data-md-level="3">
+        <label class="md-nav__title" for="__nav_1_9_6">
           <span class="md-nav__icon md-icon"></span>
-          前提条件
+          管道资源
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -1187,7 +1243,7 @@
   
     <li class="md-nav__item">
       <a href="../../applications/create-log-source/" class="md-nav__link">
-        创建日志源
+        日志源
       </a>
     </li>
   
@@ -1200,8 +1256,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../applications/create-applog-pipeline/" class="md-nav__link">
-        创建应用日志管道
+      <a href="../../applications/create-log-config/" class="md-nav__link">
+        日志配置
       </a>
     </li>
   
@@ -1210,90 +1266,6 @@
           
         </ul>
       </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../applications/apache/" class="md-nav__link">
-        Apache HTTP 服务器
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../applications/nginx/" class="md-nav__link">
-        Nginx
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../applications/single-line-text/" class="md-nav__link">
-        单行文本
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../applications/multi-line-text/" class="md-nav__link">
-        多行文本
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../applications/json/" class="md-nav__link">
-        JSON
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../applications/syslog/" class="md-nav__link">
-        Syslog
-      </a>
     </li>
   
 
@@ -1841,6 +1813,21 @@
 <td>Refresh Interval</td>
 <td>1s</td>
 <td>索引多久刷新，即刷新索引最近的更改数据并使它们可用于搜索。 可以设置为 -1 以禁用刷新。 默认为 1秒。</td>
+</tr>
+<tr>
+<td>EnableS3Notification</td>
+<td>True</td>
+<td>一个二进制选项，用于启用或禁用针对Amazon S3存储桶的通知。大多数情况下，建议使用默认选项。</td>
+</tr>
+<tr>
+<td>LogProcessorRoleName</td>
+<td><code>&lt;可选&gt;</code></td>
+<td>为日志处理器指定一个角色名称。该名称不能与现有角色名称重复。如果没有指定名称，将生成一个随机名称。可选参数，不是必填项。</td>
+</tr>
+<tr>
+<td>QueueName</td>
+<td><code>&lt;可选&gt;</code></td>
+<td>为SQS指定一个队列名称。该名称不能与现有角色名称重复。如果没有指定名称，将生成一个随机名称。可选参数，不是必填项。</td>
 </tr>
 </tbody>
 </table>

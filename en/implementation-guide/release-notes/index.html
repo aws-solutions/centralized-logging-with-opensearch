@@ -1071,24 +1071,80 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../applications/ec2-pipeline/" class="md-nav__link">
+        EC2 instance group
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../applications/eks-pipeline/" class="md-nav__link">
+        EKS cluster
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../applications/s3-pipeline/" class="md-nav__link">
+        S3
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../applications/syslog-pipeline/" class="md-nav__link">
+        Syslog
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
     
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9_2" type="checkbox" id="__nav_1_9_2" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9_6" type="checkbox" id="__nav_1_9_6" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_9_2">
-          Prerequisites
+        <label class="md-nav__link" for="__nav_1_9_6">
+          Pipeline resources
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Prerequisites" data-md-level="3">
-        <label class="md-nav__title" for="__nav_1_9_2">
+      <nav class="md-nav" aria-label="Pipeline resources" data-md-level="3">
+        <label class="md-nav__title" for="__nav_1_9_6">
           <span class="md-nav__icon md-icon"></span>
-          Prerequisites
+          Pipeline resources
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -1099,7 +1155,7 @@
   
     <li class="md-nav__item">
       <a href="../applications/create-log-source/" class="md-nav__link">
-        Create a log source
+        Log source
       </a>
     </li>
   
@@ -1112,8 +1168,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../applications/create-applog-pipeline/" class="md-nav__link">
-        Create an application pipeline
+      <a href="../applications/create-log-config/" class="md-nav__link">
+        Log Config
       </a>
     </li>
   
@@ -1122,90 +1178,6 @@
           
         </ul>
       </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../applications/apache/" class="md-nav__link">
-        Apache HTTP Server
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../applications/nginx/" class="md-nav__link">
-        Nginx
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../applications/single-line-text/" class="md-nav__link">
-        Single-line text
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../applications/multi-line-text/" class="md-nav__link">
-        Multi-line text
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../applications/json/" class="md-nav__link">
-        JSON
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../applications/syslog/" class="md-nav__link">
-        Syslog
-      </a>
     </li>
   
 
@@ -1529,6 +1501,10 @@
 <tr>
 <td>Aug 2023</td>
 <td>Released version 2.0.0</br> <li> Added feature of ingesting log from S3 bucket continuously or on-demand</br> <li> Added log pipeline monitoring dashboard into the solution console</br> <li>Supported one-click enablement of pipeline alarms</br>  <li> Added an option to automatically attach required IAM policies when creating an Instance Group</br> <li> Displayed an error message on the console when the installation of log agent fails</br> <li> Updated Application log pipeline creation process by allowing customer to specify a log source</br> <li> Added validations to OpenSearch domain when importing a domain or selecting a domain to create log pipeline</br> <li> Supported installing log agent on AL2023 instances</br> <li>Supported ingesting WAF (associated with CloudFront) sampled logs to OpenSearch in other regions except us-east-1</br> <li> Allowed the same index name in different OpenSearch domains</td>
+</tr>
+<tr>
+<td>September 2023</td>
+<td>Released version 2.0.1</br>Fixed the following issues: <li> Automatically adjust log processor Lambda request's body size based on AOS instance type    </br><li>When you create an application log pipeline and select Nginx as log format, the default sample dashboard option is set to "Yes" </br>  <li>Monitoring page cannot show metrics when there is only one dot</br> <li>  The time of the data point of the monitoring metrics does not match the time of the abscissa</td>
 </tr>
 </tbody>
 </table>

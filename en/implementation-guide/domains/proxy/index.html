@@ -1170,24 +1170,80 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../applications/ec2-pipeline/" class="md-nav__link">
+        EC2 instance group
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../applications/eks-pipeline/" class="md-nav__link">
+        EKS cluster
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../applications/s3-pipeline/" class="md-nav__link">
+        S3
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../applications/syslog-pipeline/" class="md-nav__link">
+        Syslog
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
     
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9_2" type="checkbox" id="__nav_1_9_2" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9_6" type="checkbox" id="__nav_1_9_6" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_9_2">
-          Prerequisites
+        <label class="md-nav__link" for="__nav_1_9_6">
+          Pipeline resources
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Prerequisites" data-md-level="3">
-        <label class="md-nav__title" for="__nav_1_9_2">
+      <nav class="md-nav" aria-label="Pipeline resources" data-md-level="3">
+        <label class="md-nav__title" for="__nav_1_9_6">
           <span class="md-nav__icon md-icon"></span>
-          Prerequisites
+          Pipeline resources
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -1198,7 +1254,7 @@
   
     <li class="md-nav__item">
       <a href="../../applications/create-log-source/" class="md-nav__link">
-        Create a log source
+        Log source
       </a>
     </li>
   
@@ -1211,8 +1267,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../applications/create-applog-pipeline/" class="md-nav__link">
-        Create an application pipeline
+      <a href="../../applications/create-log-config/" class="md-nav__link">
+        Log Config
       </a>
     </li>
   
@@ -1221,90 +1277,6 @@
           
         </ul>
       </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../applications/apache/" class="md-nav__link">
-        Apache HTTP Server
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../applications/nginx/" class="md-nav__link">
-        Nginx
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../applications/single-line-text/" class="md-nav__link">
-        Single-line text
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../applications/multi-line-text/" class="md-nav__link">
-        Multi-line text
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../applications/json/" class="md-nav__link">
-        JSON
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../applications/syslog/" class="md-nav__link">
-        Syslog
-      </a>
     </li>
   
 
@@ -1764,6 +1736,46 @@
 <td>The public subnets where ELB are deployed. You need to select at least two public subnets, for example, <code>subnet-12345abc, subnet-54321cba</code>.</td>
 </tr>
 <tr>
+<td>PrivateSubnetIds</td>
+<td><code>&lt;Requires input&gt;</code></td>
+<td>The private subnets where Nginx instances are deployed. You need to select at least two private subnets, for example, <code>subnet-12345abc, subnet-54321cba</code>.</td>
+</tr>
+<tr>
+<td>KeyName</td>
+<td><code>&lt;Requires input&gt;</code></td>
+<td>The PEM key name of the Nginx instances.</td>
+</tr>
+<tr>
+<td>NginxSecurityGroupId</td>
+<td><code>&lt;Requires input&gt;</code></td>
+<td>The Security group associated with the Nginx instances. The security group must allow access from ELB security group.</td>
+</tr>
+<tr>
+<td>ProxyInstanceType</td>
+<td>t3.large</td>
+<td>OpenSearch proxy instance type. e.g. t3.micro</td>
+</tr>
+<tr>
+<td>ProxyInstanceNumber</td>
+<td>2</td>
+<td>OpenSearch proxy instance number. e.g. 1 to 4</td>
+</tr>
+<tr>
+<td>Endpoint</td>
+<td><code>&lt;Requires input&gt;</code></td>
+<td>The OpenSearch endpoint, for example, <code>vpc-your_opensearch_domain_name-xcvgw6uu2o6zafsiefxubwuohe.us-east-1.es.amazonaws.com</code>.</td>
+</tr>
+<tr>
+<td>EngineType</td>
+<td>OpenSearch</td>
+<td>The engine type of the OpenSearch. Select OpenSearch or Elasticsearch.</td>
+</tr>
+<tr>
+<td>CognitoEndpoint</td>
+<td><code>&lt;Optional&gt;</code></td>
+<td>The Cognito User Pool endpoint URL of the OpenSearch domain, for example, <code>mydomain.auth.us-east-1.amazoncognito.com</code>. Leave empty if your OpenSearch domain is not authenticated through Cognito User Pool.</td>
+</tr>
+<tr>
 <td>ELBSecurityGroupId</td>
 <td><code>&lt;Requires input&gt;</code></td>
 <td>The Security group being associated with the ELB, for example, <code>sg-123456</code>.</td>
@@ -1779,34 +1791,14 @@
 <td>The SSL certificate ARN associated with the ELBDomain. The certificate must be created from <a href="https://aws.amazon.com/certificate-manager/">Amazon Certificate Manager (ACM)</a>.</td>
 </tr>
 <tr>
-<td>PrivateSubnetIds</td>
+<td>ELBAccessLogBucketName</td>
 <td><code>&lt;Requires input&gt;</code></td>
-<td>The private subnets where Nginx instances are deployed. You need to select at least two private subnets, for example, <code>subnet-12345abc, subnet-54321cba</code>.</td>
+<td>The Access Log Bucket Name for Proxy ELB</td>
 </tr>
 <tr>
-<td>NginxSecurityGroupId</td>
-<td><code>&lt;Requires input&gt;</code></td>
-<td>The Security group associated with the Nginx instances. The security group must allow access from ELB security group.</td>
-</tr>
-<tr>
-<td>KeyName</td>
-<td><code>&lt;Requires input&gt;</code></td>
-<td>The PEM key name of the Nginx instances.</td>
-</tr>
-<tr>
-<td>EngineType</td>
-<td>OpenSearch</td>
-<td>The engine type of the OpenSearch. Select OpenSearch or Elasticsearch.</td>
-</tr>
-<tr>
-<td>Endpoint</td>
-<td><code>&lt;Requires input&gt;</code></td>
-<td>The OpenSearch endpoint, for example, <code>vpc-your_opensearch_domain_name-xcvgw6uu2o6zafsiefxubwuohe.us-east-1.es.amazonaws.com</code>.</td>
-</tr>
-<tr>
-<td>CognitoEndpoint</td>
-<td><code>&lt;Optional&gt;</code></td>
-<td>The Cognito User Pool endpoint URL of the OpenSearch domain, for example, <code>mydomain.auth.us-east-1.amazoncognito.com</code>. Leave empty if your OpenSearch domain is not authenticated through Cognito User Pool.</td>
+<td>SsmParameterValueawsserviceamiamazonlinuxlatestamzn2amihvmx8664gp2C96584B6F00A464EAD1953AFF4B05118Parameter</td>
+<td>/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2</td>
+<td>The SSM parameter of the proxy instance AMI. You can use the default value in most cases.</td>
 </tr>
 </tbody>
 </table>

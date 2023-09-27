@@ -1,6 +1,6 @@
 
 <!doctype html>
-<html lang="en" class="no-js">
+<html lang="zh" class="no-js">
   <head>
     
       <meta charset="utf-8">
@@ -8,7 +8,7 @@
       
       
       
-        <link rel="canonical" href="https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/applications/syslog/">
+        <link rel="canonical" href="https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/applications/syslog-pipeline/">
       
       <link rel="icon" href="../../../images/aws-solutions.png">
       <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.5.3">
@@ -67,7 +67,7 @@
       
         
         <a href="#syslog" class="md-skip">
-          Skip to content
+          跳转至
         </a>
       
     </div>
@@ -83,7 +83,7 @@
       
 
 <header class="md-header" data-md-component="header">
-  <nav class="md-header__inner md-grid" aria-label="Header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
     <a href="../../.." title="Centralized Logging with OpenSearch" class="md-header__button md-logo" aria-label="Centralized Logging with OpenSearch" data-md-component="logo">
       
   <img src="../../../images/aws-solutions.png" alt="logo">
@@ -113,7 +113,7 @@
       <div class="md-header__option">
         <div class="md-select">
           
-          <button class="md-header__button md-icon" aria-label="Select language">
+          <button class="md-header__button md-icon" aria-label="选择当前语言">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.52 17.52 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04M18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12m-2.62 7 1.62-4.33L19.12 17h-3.24Z"/></svg>
           </button>
           <div class="md-select__inner">
@@ -144,14 +144,14 @@
   <label class="md-search__overlay" for="__search"></label>
   <div class="md-search__inner" role="search">
     <form class="md-search__form" name="search">
-      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
       <label class="md-search__icon md-icon" for="__search">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
       </label>
-      <nav class="md-search__options" aria-label="Search">
+      <nav class="md-search__options" aria-label="查找">
         
-        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
         </button>
       </nav>
@@ -161,7 +161,7 @@
       <div class="md-search__scrollwrap" data-md-scrollfix>
         <div class="md-search-result" data-md-component="search-result">
           <div class="md-search-result__meta">
-            Initializing search
+            正在初始化搜索引擎
           </div>
           <ol class="md-search-result__list"></ol>
         </div>
@@ -172,7 +172,7 @@
     
     
       <div class="md-header__source">
-        <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch" title="前往仓库" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
@@ -193,7 +193,7 @@
         
           
             
-<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+<nav class="md-tabs" aria-label="标签" data-md-component="tabs">
   <div class="md-tabs__inner md-grid">
     <ul class="md-tabs__list">
       
@@ -214,7 +214,7 @@
   
     <li class="md-tabs__item">
       <a href="../../.." class="md-tabs__link md-tabs__link--active">
-        Implementation Guide
+        实施指南
       </a>
     </li>
   
@@ -229,7 +229,7 @@
 
   <li class="md-tabs__item">
     <a href="https://github.com/orgs/aws-solutions/projects/17/" class="md-tabs__link">
-      Roadmap
+      路线图
     </a>
   </li>
 
@@ -241,7 +241,7 @@
 
   <li class="md-tabs__item">
     <a href="https://catalog.workshops.aws/centralized-logging-with-opensearch/" class="md-tabs__link">
-      Workshop
+      动手实验
     </a>
   </li>
 
@@ -265,7 +265,7 @@
   
 
 
-<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="导航栏" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
     <a href="../../.." title="Centralized Logging with OpenSearch" class="md-nav__button md-logo" aria-label="Centralized Logging with OpenSearch" data-md-component="logo">
       
@@ -276,7 +276,7 @@
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch" title="前往仓库" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
@@ -308,14 +308,14 @@
       
       
         <label class="md-nav__link" for="__nav_1">
-          Implementation Guide
+          实施指南
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Implementation Guide" data-md-level="1">
+      <nav class="md-nav" aria-label="实施指南" data-md-level="1">
         <label class="md-nav__title" for="__nav_1">
           <span class="md-nav__icon md-icon"></span>
-          Implementation Guide
+          实施指南
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -334,14 +334,14 @@
       
       
         <label class="md-nav__link" for="__nav_1_1">
-          Solution overview
+          解决方案概览
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Solution overview" data-md-level="2">
+      <nav class="md-nav" aria-label="解决方案概览" data-md-level="2">
         <label class="md-nav__title" for="__nav_1_1">
           <span class="md-nav__icon md-icon"></span>
-          Solution overview
+          解决方案概览
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -352,7 +352,7 @@
   
     <li class="md-nav__item">
       <a href="../../.." class="md-nav__link">
-        Overview
+        概览
       </a>
     </li>
   
@@ -366,7 +366,7 @@
   
     <li class="md-nav__item">
       <a href="../../solution-overview/features/" class="md-nav__link">
-        Features and benefits
+        特性和收益
       </a>
     </li>
   
@@ -380,7 +380,7 @@
   
     <li class="md-nav__item">
       <a href="../../solution-overview/use-cases/" class="md-nav__link">
-        Use cases
+        应用场景
       </a>
     </li>
   
@@ -409,14 +409,14 @@
       
       
         <label class="md-nav__link" for="__nav_1_2">
-          Architecture overview
+          架构概览
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Architecture overview" data-md-level="2">
+      <nav class="md-nav" aria-label="架构概览" data-md-level="2">
         <label class="md-nav__title" for="__nav_1_2">
           <span class="md-nav__icon md-icon"></span>
-          Architecture overview
+          架构概览
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -427,7 +427,7 @@
   
     <li class="md-nav__item">
       <a href="../../architecture/" class="md-nav__link">
-        Architecture diagram
+        架构图
       </a>
     </li>
   
@@ -441,7 +441,7 @@
   
     <li class="md-nav__item">
       <a href="../../architecture-overview/well-architected-pillars/" class="md-nav__link">
-        AWS Well-Architected pillars
+        AWS Well-Architected 支柱
       </a>
     </li>
   
@@ -470,14 +470,14 @@
       
       
         <label class="md-nav__link" for="__nav_1_3">
-          Architecture details
+          架构细节
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Architecture details" data-md-level="2">
+      <nav class="md-nav" aria-label="架构细节" data-md-level="2">
         <label class="md-nav__title" for="__nav_1_3">
           <span class="md-nav__icon md-icon"></span>
-          Architecture details
+          架构细节
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -488,7 +488,7 @@
   
     <li class="md-nav__item">
       <a href="../../architecture-details/solution-components/" class="md-nav__link">
-        Solution components
+        解决方案组件
       </a>
     </li>
   
@@ -502,7 +502,7 @@
   
     <li class="md-nav__item">
       <a href="../../architecture-details/services-in-this-solution/" class="md-nav__link">
-        AWS services in this solution
+        AWS 服务
       </a>
     </li>
   
@@ -531,14 +531,14 @@
       
       
         <label class="md-nav__link" for="__nav_1_4">
-          Plan your deployment
+          计划部署
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Plan your deployment" data-md-level="2">
+      <nav class="md-nav" aria-label="计划部署" data-md-level="2">
         <label class="md-nav__title" for="__nav_1_4">
           <span class="md-nav__icon md-icon"></span>
-          Plan your deployment
+          计划部署
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -549,7 +549,7 @@
   
     <li class="md-nav__item">
       <a href="../../plan-deployment/cost/" class="md-nav__link">
-        Cost
+        价格
       </a>
     </li>
   
@@ -563,7 +563,7 @@
   
     <li class="md-nav__item">
       <a href="../../plan-deployment/security/" class="md-nav__link">
-        Security
+        安全
       </a>
     </li>
   
@@ -577,7 +577,7 @@
   
     <li class="md-nav__item">
       <a href="../../plan-deployment/considerations/" class="md-nav__link">
-        Supported AWS Regions
+        支持的区域
       </a>
     </li>
   
@@ -606,14 +606,14 @@
       
       
         <label class="md-nav__link" for="__nav_1_5">
-          Deployment
+          开始部署
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Deployment" data-md-level="2">
+      <nav class="md-nav" aria-label="开始部署" data-md-level="2">
         <label class="md-nav__title" for="__nav_1_5">
           <span class="md-nav__icon md-icon"></span>
-          Deployment
+          开始部署
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -624,7 +624,7 @@
   
     <li class="md-nav__item">
       <a href="../../deployment/" class="md-nav__link">
-        Overview
+        概览
       </a>
     </li>
   
@@ -638,7 +638,7 @@
   
     <li class="md-nav__item">
       <a href="../../deployment/with-cognito/" class="md-nav__link">
-        Launch with Cognito User Pool
+        使用 Cognito User Pool
       </a>
     </li>
   
@@ -652,7 +652,7 @@
   
     <li class="md-nav__item">
       <a href="../../deployment/with-oidc/" class="md-nav__link">
-        Launch with OpenID Connect
+        使用 OpenID Connect
       </a>
     </li>
   
@@ -681,14 +681,14 @@
       
       
         <label class="md-nav__link" for="__nav_1_6">
-          Getting started
+          快速入门
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Getting started" data-md-level="2">
+      <nav class="md-nav" aria-label="快速入门" data-md-level="2">
         <label class="md-nav__title" for="__nav_1_6">
           <span class="md-nav__icon md-icon"></span>
-          Getting started
+          快速入门
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -699,7 +699,7 @@
   
     <li class="md-nav__item">
       <a href="../../getting-started/" class="md-nav__link">
-        Overview
+        概览
       </a>
     </li>
   
@@ -713,7 +713,7 @@
   
     <li class="md-nav__item">
       <a href="../../getting-started/1.import-domain/" class="md-nav__link">
-        Step 1. Import domain
+        步骤 1. 导入 AOS 域
       </a>
     </li>
   
@@ -727,7 +727,7 @@
   
     <li class="md-nav__item">
       <a href="../../getting-started/2.create-proxy/" class="md-nav__link">
-        Step 2. Create proxy
+        步骤 2. 创建访问代理
       </a>
     </li>
   
@@ -741,7 +741,7 @@
   
     <li class="md-nav__item">
       <a href="../../getting-started/3.build-cloudtrail-pipeline/" class="md-nav__link">
-        Step 3. Ingest CloudTrail logs
+        步骤 3. 摄取 CloudTrail 日志
       </a>
     </li>
   
@@ -755,7 +755,7 @@
   
     <li class="md-nav__item">
       <a href="../../getting-started/4.view-dashboard/" class="md-nav__link">
-        Step 4. Access dashboard
+        步骤 4. 查看仪表板
       </a>
     </li>
   
@@ -784,14 +784,14 @@
       
       
         <label class="md-nav__link" for="__nav_1_7">
-          Domain management
+          AOS 集群管理
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Domain management" data-md-level="2">
+      <nav class="md-nav" aria-label="AOS 集群管理" data-md-level="2">
         <label class="md-nav__title" for="__nav_1_7">
           <span class="md-nav__icon md-icon"></span>
-          Domain management
+          AOS 集群管理
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -802,7 +802,7 @@
   
     <li class="md-nav__item">
       <a href="../../domains/" class="md-nav__link">
-        Overview
+        概览
       </a>
     </li>
   
@@ -816,7 +816,7 @@
   
     <li class="md-nav__item">
       <a href="../../domains/import/" class="md-nav__link">
-        Domain operations
+        集群操作
       </a>
     </li>
   
@@ -830,7 +830,7 @@
   
     <li class="md-nav__item">
       <a href="../../domains/proxy/" class="md-nav__link">
-        Access proxy
+        访问代理
       </a>
     </li>
   
@@ -844,7 +844,7 @@
   
     <li class="md-nav__item">
       <a href="../../domains/alarms/" class="md-nav__link">
-        Domain alarms
+        告警
       </a>
     </li>
   
@@ -873,14 +873,14 @@
       
       
         <label class="md-nav__link" for="__nav_1_8">
-          AWS Services logs
+          AWS 服务日志
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="AWS Services logs" data-md-level="2">
+      <nav class="md-nav" aria-label="AWS 服务日志" data-md-level="2">
         <label class="md-nav__title" for="__nav_1_8">
           <span class="md-nav__icon md-icon"></span>
-          AWS Services logs
+          AWS 服务日志
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -891,7 +891,7 @@
   
     <li class="md-nav__item">
       <a href="../../aws-services/" class="md-nav__link">
-        Overview
+        概览
       </a>
     </li>
   
@@ -1048,14 +1048,14 @@
       
       
         <label class="md-nav__link" for="__nav_1_9">
-          Applications logs
+          应用日志
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Applications logs" data-md-level="2">
+      <nav class="md-nav" aria-label="应用日志" data-md-level="2">
         <label class="md-nav__title" for="__nav_1_9">
           <span class="md-nav__icon md-icon"></span>
-          Applications logs
+          应用日志
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -1066,47 +1066,7 @@
   
     <li class="md-nav__item">
       <a href="../" class="md-nav__link">
-        Overview
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9_2" type="checkbox" id="__nav_1_9_2" >
-      
-      
-      
-      
-        <label class="md-nav__link" for="__nav_1_9_2">
-          Prerequisites
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" aria-label="Prerequisites" data-md-level="3">
-        <label class="md-nav__title" for="__nav_1_9_2">
-          <span class="md-nav__icon md-icon"></span>
-          Prerequisites
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../create-log-source/" class="md-nav__link">
-        Create a log source
+        概览
       </a>
     </li>
   
@@ -1119,29 +1079,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../create-applog-pipeline/" class="md-nav__link">
-        Create an application pipeline
-      </a>
-    </li>
-  
-
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../apache/" class="md-nav__link">
-        Apache HTTP Server
+      <a href="../ec2-pipeline/" class="md-nav__link">
+        EC2 实例组
       </a>
     </li>
   
@@ -1154,8 +1093,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../nginx/" class="md-nav__link">
-        Nginx
+      <a href="../eks-pipeline/" class="md-nav__link">
+        EKS 集群
       </a>
     </li>
   
@@ -1168,36 +1107,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../single-line-text/" class="md-nav__link">
-        Single-line text
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../multi-line-text/" class="md-nav__link">
-        Multi-line text
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../json/" class="md-nav__link">
-        JSON
+      <a href="../s3-pipeline/" class="md-nav__link">
+        S3
       </a>
     </li>
   
@@ -1230,7 +1141,7 @@
       
         
 
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+<nav class="md-nav md-nav--secondary" aria-label="目录">
   
   
   
@@ -1239,81 +1150,20 @@
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
-      Table of contents
+      目录
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#prerequisites" class="md-nav__link">
-    Prerequisites
+  <a href="#_1" class="md-nav__link">
+    请确认您已经完成
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-1-create-a-syslog-config" class="md-nav__link">
-    Step 1: Create a Syslog config
-  </a>
-  
-    <nav class="md-nav" aria-label="Step 1: Create a Syslog config">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#rfc5424" class="md-nav__link">
-    RFC5424
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#rfc3164" class="md-nav__link">
-    RFC3164
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#custom" class="md-nav__link">
-    Custom
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-2-create-an-application-log-ingestion" class="md-nav__link">
-    Step 2: Create an application log ingestion
-  </a>
-  
-    <nav class="md-nav" aria-label="Step 2: Create an application log ingestion">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#syslog-as-log-source" class="md-nav__link">
-    Syslog as Log Source
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-3-configure-the-syslog-generator-to-send-the-logs-to-centralized-logging-with-opensearch" class="md-nav__link">
-    Step 3: Configure the Syslog generator to send the logs to Centralized Logging with OpenSearch
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-4-view-logs-in-opensearch" class="md-nav__link">
-    Step 4: View logs in OpenSearch
+  <a href="#_2" class="md-nav__link">
+    创建日志分析管道
   </a>
   
 </li>
@@ -1322,6 +1172,67 @@
   
 </nav>
       
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9_6" type="checkbox" id="__nav_1_9_6" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1_9_6">
+          管道资源
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="管道资源" data-md-level="3">
+        <label class="md-nav__title" for="__nav_1_9_6">
+          <span class="md-nav__icon md-icon"></span>
+          管道资源
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../create-log-source/" class="md-nav__link">
+        日志源
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../create-log-config/" class="md-nav__link">
+        日志配置
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
     </li>
   
 
@@ -1341,7 +1252,7 @@
   
     <li class="md-nav__item">
       <a href="../../link-account/" class="md-nav__link">
-        Cross-account ingestion
+        跨账户日志摄取
       </a>
     </li>
   
@@ -1363,14 +1274,14 @@
       
       
         <label class="md-nav__link" for="__nav_1_11">
-          Log pipeline monitoring
+          日志管道监控
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Log pipeline monitoring" data-md-level="2">
+      <nav class="md-nav" aria-label="日志管道监控" data-md-level="2">
         <label class="md-nav__title" for="__nav_1_11">
           <span class="md-nav__icon md-icon"></span>
-          Log pipeline monitoring
+          日志管道监控
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -1381,7 +1292,7 @@
   
     <li class="md-nav__item">
       <a href="../../alarm/" class="md-nav__link">
-        Log alarms
+        告警
       </a>
     </li>
   
@@ -1395,7 +1306,7 @@
   
     <li class="md-nav__item">
       <a href="../../monitoring/" class="md-nav__link">
-        Monitoring
+        监控
       </a>
     </li>
   
@@ -1416,7 +1327,7 @@
   
     <li class="md-nav__item">
       <a href="../../faq/" class="md-nav__link">
-        FAQ
+        常见问题
       </a>
     </li>
   
@@ -1430,7 +1341,7 @@
   
     <li class="md-nav__item">
       <a href="../../trouble-shooting/" class="md-nav__link">
-        Troubleshooting
+        故障排查
       </a>
     </li>
   
@@ -1444,7 +1355,7 @@
   
     <li class="md-nav__item">
       <a href="../../uninstall/" class="md-nav__link">
-        Uninstall the solution
+        卸载解决方案
       </a>
     </li>
   
@@ -1466,14 +1377,14 @@
       
       
         <label class="md-nav__link" for="__nav_1_15">
-          Additional resources
+          额外资源
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Additional resources" data-md-level="2">
+      <nav class="md-nav" aria-label="额外资源" data-md-level="2">
         <label class="md-nav__title" for="__nav_1_15">
           <span class="md-nav__icon md-icon"></span>
-          Additional resources
+          额外资源
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -1484,7 +1395,7 @@
   
     <li class="md-nav__item">
       <a href="../../resources/open-ssl/" class="md-nav__link">
-        OpenSSL installation
+        OpenSSL 安装
       </a>
     </li>
   
@@ -1498,7 +1409,7 @@
   
     <li class="md-nav__item">
       <a href="../../resources/upload-ssl-certificate/" class="md-nav__link">
-        Upload certificate
+        上传证书
       </a>
     </li>
   
@@ -1519,7 +1430,7 @@
   
     <li class="md-nav__item">
       <a href="../../source/" class="md-nav__link">
-        Developer guide
+        开发者资源
       </a>
     </li>
   
@@ -1533,7 +1444,7 @@
   
     <li class="md-nav__item">
       <a href="../../release-notes/" class="md-nav__link">
-        Revisions
+        更新记录
       </a>
     </li>
   
@@ -1555,7 +1466,7 @@
   
     <li class="md-nav__item">
       <a href="https://github.com/orgs/aws-solutions/projects/17/" class="md-nav__link">
-        Roadmap
+        路线图
       </a>
     </li>
   
@@ -1570,7 +1481,7 @@
   
     <li class="md-nav__item">
       <a href="https://catalog.workshops.aws/centralized-logging-with-opensearch/" class="md-nav__link">
-        Workshop
+        动手实验
       </a>
     </li>
   
@@ -1589,7 +1500,7 @@
                   <div class="md-sidebar__inner">
                     
 
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+<nav class="md-nav md-nav--secondary" aria-label="目录">
   
   
   
@@ -1598,81 +1509,20 @@
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
-      Table of contents
+      目录
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#prerequisites" class="md-nav__link">
-    Prerequisites
+  <a href="#_1" class="md-nav__link">
+    请确认您已经完成
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-1-create-a-syslog-config" class="md-nav__link">
-    Step 1: Create a Syslog config
-  </a>
-  
-    <nav class="md-nav" aria-label="Step 1: Create a Syslog config">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#rfc5424" class="md-nav__link">
-    RFC5424
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#rfc3164" class="md-nav__link">
-    RFC3164
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#custom" class="md-nav__link">
-    Custom
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-2-create-an-application-log-ingestion" class="md-nav__link">
-    Step 2: Create an application log ingestion
-  </a>
-  
-    <nav class="md-nav" aria-label="Step 2: Create an application log ingestion">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#syslog-as-log-source" class="md-nav__link">
-    Syslog as Log Source
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-3-configure-the-syslog-generator-to-send-the-logs-to-centralized-logging-with-opensearch" class="md-nav__link">
-    Step 3: Configure the Syslog generator to send the logs to Centralized Logging with OpenSearch
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-4-view-logs-in-opensearch" class="md-nav__link">
-    Step 4: View logs in OpenSearch
+  <a href="#_2" class="md-nav__link">
+    创建日志分析管道
   </a>
   
 </li>
@@ -1691,171 +1541,147 @@
                 
                   
 
-  <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch/edit/master/docs/implementation-guide/applications/syslog.md" title="Edit this page" class="md-content__button md-icon">
+  <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch/edit/master/docs/implementation-guide/applications/syslog-pipeline.md" title="编辑此页" class="md-content__button md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
   </a>
 
 
-<h1 id="syslog">Syslog</h1>
-<p>Syslog is a standard for message logging, and is widely used to generate, forward and collect logs produced on a Linux instance, routers or network equipment. You can configure Centralized Logging with OpenSearch to ingest syslog logs.</p>
-<div class="admonition important">
-<p class="admonition-title">Important</p>
-<p>Make sure your Syslog generator/sender's subnet is connected to Centralized Logging with OpenSearch' <strong>two</strong> private subnets so that logs can be ingested. You need to use VPC <a href="https://docs.aws.amazon.com/vpc/latest/peering/working-with-vpc-peering.html">Peering Connection</a> or <a href="https://docs.aws.amazon.com/vpc/latest/tgw/what-is-transit-gateway.html">Transit Gateway</a> to connect these VPCs.</p>
-</div>
-<h2 id="prerequisites">Prerequisites</h2>
-<!-- BEGIN INCLUDE include-prerequisites.md -->
-<p>Make sure you have done the following:</p>
+<h1 id="syslog">Syslog 作为日志源</h1>
+<p>日志通将通过 UDP 或 TCP 协议收集系统日志日志。</p>
+<p>本文将指导您如何从 Syslog 提取日志，并创建日志管道。</p>
+<h2 id="_1">请确认您已经完成</h2>
 <ol>
-<li><a href="../../domains/import/">Import an Amazon OpenSearch Service domain</a>.</li>
-<li><a href="../create-log-source/">Create a log source</a>.</li>
-<li><a href="../create-applog-pipeline/">Create an application log pipeline</a>.</li>
+<li><a href="../../domains/import/">导入 Amazon OpenSearch Service 域</a>。</li>
 </ol>
-<!-- END INCLUDE -->
-
-<h2 id="step-1-create-a-syslog-config">Step 1: Create a Syslog config</h2>
-<ol>
-<li>Sign in to the Centralized Logging with OpenSearch Console.</li>
-<li>In the left sidebar, under <strong>Resources</strong>, choose <strong>Log Config</strong>.</li>
-<li>Click the <strong>Create a log config</strong> button.</li>
-<li>Specify <strong>Config Name</strong>.</li>
-<li>Choose <strong>Syslog</strong> in the log type dropdown menu. Note that Centralized Logging with OpenSearch also supports Syslog with <a href="../json/">JSON</a> format and <a href="../single-line-text/">single-line text</a> format.</li>
-</ol>
-<h3 id="rfc5424">RFC5424</h3>
+<h2 id="_2">创建日志分析管道</h2>
 <ol>
 <li>
-<p>Paste a sample RFC5424 log. For example:</p>
-<div class="highlight"><pre><span></span><code>&lt;35&gt;1 2013-10-11T22:14:15Z client_machine su - - - &#39;su root&#39; failed for joe on /dev/pts/2
-</code></pre></div>
+<p>登录日志通控制台。</p>
 </li>
 <li>
-<p>Choose <strong>Parse Log</strong>.</p>
+<p>在左侧边栏中的 <strong>日志分析管道</strong> 下，选择<strong>应用日志</strong>。</p>
 </li>
 <li>
-<p>Check if each fields type mapping is correct. You can change the type by selecting the dropdown menu in the second column. For all supported types, see <a href="https://opensearch.org/docs/latest/search-plugins/sql/datatypes/">Data Types</a>.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>You must specify the datetime of the log using key “time”. If not specified, system time will be added.</p>
-</div>
+<p>单击 <strong>创建日志管道</strong>。</p>
 </li>
 <li>
-<p>Specify the <strong>Time format</strong>. The format syntax follows <a href="https://linux.die.net/man/3/strptime">strptime</a>. Check <a href="https://docs.fluentbit.io/manual/pipeline/parsers/configuring-parser#time-resolution-and-fractional-seconds">this manual</a> for details. For example:</p>
-<div class="highlight"><pre><span></span><code>%Y-%m-%dT%H:%M:%SZ
-</code></pre></div>
+<p>单击 <strong>Syslog endpoint</strong> 作为日志源, 并选择 <strong>下一步</strong>。</p>
 </li>
 <li>
-<p>(Optional) In the <strong>Filter</strong> section, you add some conditions to filter logs at the log agent side. The solution will ingest logs that match ALL the specified conditions only.</p>
-</li>
-<li>
-<p>Select <strong>Create</strong>.</p>
+<p>您可以使用 UDP 或 TCP 并带有自定义端口号。选择 <strong>下一步</strong>。</p>
 </li>
 </ol>
-<h3 id="rfc3164">RFC3164</h3>
+<p>您已为日志分析管道创建日志源。 现在您可以使用 Amazon EC2 实例组作为日志源对日志分析管道进行进一步配置。</p>
 <ol>
 <li>
-<p>Paste a sample RFC3164 log. For example:</p>
-<div class="highlight"><pre><span></span><code>&lt;35&gt;Oct 12 22:14:15 client_machine su: &#39;su root&#39; failed for joe on /dev/pts/2
-</code></pre></div>
+<p>输入 <strong>日志路径</strong> 指定要收集的日志的位置。</p>
 </li>
 <li>
-<p>Choose <strong>Parse Log</strong>.</p>
+<p>选择之前设置中创建的日志配置，点击 <strong>下一步</strong>  I如果您没有从下拉列表中找到所需的日志配置，请选择 <strong>创建新的</strong>, 并参考 <a href="../create-log-config/">日志配置</a>。</p>
 </li>
 <li>
-<p>Check if each fields type mapping is correct. You can change the type by selecting the dropdown menu in the second column. For all supported types, see <a href="https://opensearch.org/docs/latest/search-plugins/sql/datatypes/">Data Types</a>.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>You must specify the datetime of the log using key “time”. If not specified, system time will be added.</p>
-<p>Since there is no year in the timestamp of RFC3164, it cannot be displayed as a time histogram in the Discover interface of Amazon OpenSearch.</p>
-</div>
+<p>在 <strong>索引名称</strong> 中小写指定。</p>
 </li>
 <li>
-<p>Specify the <strong>Time format</strong>. The format syntax follows <a href="https://linux.die.net/man/3/strptime">strptime</a>. Check <a href="https://docs.fluentbit.io/manual/pipeline/parsers/configuring-parser#time-resolution-and-fractional-seconds">this</a> for details. For example:</p>
-<div class="highlight"><pre><span></span><code>%b %m %H:%M:%S
-</code></pre></div>
-</li>
-<li>
-<p>(Optional) In the <strong>Filter</strong> section, you add some conditions to filter logs at the log agent side. The solution will ingest logs that match ALL the specified conditions only.</p>
-</li>
-<li>
-<p>Select <strong>Create</strong>.</p>
-</li>
-</ol>
-<h3 id="custom">Custom</h3>
-<ol>
-<li>
-<p>In the <strong>Syslog Format</strong> section, paste your Syslog log format configuration. It is in the format of <code>/etc/rsyslog.conf</code> and starts with <code>template</code> or <code>$template</code>. The format syntax follows <a href="https://www.rfc-editor.org/rfc/rfc5424?spm=a2c4g.11186623.0.0.21324a0fUixMd5#:~:text=2009%0A%0A%0A6.-,Syslog%20Message%20Format,-The%20syslog%20message">Syslog Message Format</a>.  For example:</p>
-<div class="highlight"><pre><span></span><code>&lt;%pri%&gt;1 %timestamp:::date-rfc3339% %HOSTNAME% %app-name% %procid% %msgid% %msg%\n
-</code></pre></div>
-</li>
-<li>
-<p>In the <strong>Sample log parsing</strong> section, paste a sample Nginx log to verify if the log parsing is successful. For example:
-    <div class="highlight"><pre><span></span><code>&lt;35&gt;1 2013-10-11T22:14:15.003Z client_machine su - - &#39;su root&#39; failed for joe on /dev/pts/2
-</code></pre></div></p>
-</li>
-<li>
-<p>Check if each fields type mapping is correct. Change the type by selecting the dropdown menu in the second column. For all supported types, see <a href="https://opensearch.org/docs/latest/search-plugins/sql/datatypes/">Data Types</a>.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>You must specify the datetime of the log using key “time”. If not specified, system time will be added.</p>
-</div>
-</li>
-<li>
-<p>Specify the <strong>Time format</strong>. The format syntax follows <a href="https://linux.die.net/man/3/strptime">strptime</a>. Check <a href="https://docs.fluentbit.io/manual/pipeline/parsers/configuring-parser#time-resolution-and-fractional-seconds">this manual</a> for details.</p>
-</li>
-<li>
-<p>(Optional) In the <strong>Filter</strong> section, you add some conditions to filter logs at the log agent side. The solution will ingest logs that match ALL the specified conditions only.</p>
-</li>
-<li>
-<p>Select <strong>Create</strong>.</p>
-</li>
-</ol>
-<h2 id="step-2-create-an-application-log-ingestion">Step 2: Create an application log ingestion</h2>
-<!-- BEGIN INCLUDE create-log-ingestion.md '&lt;!--syslog-start--&gt;' '&lt;!--syslog-end--&gt;' -->
-
-<h3 id="syslog-as-log-source">Syslog as Log Source</h3>
-<ol>
-<li>
-<p>Sign in to the Centralized Logging with OpenSearch Console.</p>
-</li>
-<li>
-<p>In the left sidebar, under <strong>Log Analytics Pipelines</strong>, choose <strong>Application Log</strong>.</p>
-</li>
-<li>
-<p>Choose the application pipeline that has been created during the <strong>Prerequisites</strong>.</p>
-</li>
-<li>
-<p>Choose the <strong>Create an Ingestion</strong> dropdown menu, and select <strong>From Syslog</strong>.</p>
-</li>
-<li>
-<p>You can use UDP or TCP with custom port number. Choose <strong>Next</strong>.</p>
-</li>
-<li>
-<p>Select the log config created in the previous setup.</p>
-</li>
-<li>
-<p>Choose <strong>Create</strong> to finish creating an ingestion.</p>
-</li>
-</ol>
-<!-- END INCLUDE -->
-
-<h2 id="step-3-configure-the-syslog-generator-to-send-the-logs-to-centralized-logging-with-opensearch">Step 3: Configure the Syslog generator to send the logs to Centralized Logging with OpenSearch</h2>
-<ol>
-<li>Choose the Ingestion ID that has been created during <strong>Step 2</strong>.</li>
-<li>For <a href="https://www.rsyslog.com/">Rsyslog</a> user, follow the Syslog Configuration Guide to configure the Rsyslog agent. You can also get the NLB DNS Name on this page.</li>
-</ol>
-<h2 id="step-4-view-logs-in-opensearch">Step 4: View logs in OpenSearch</h2>
-<ol>
-<li>Open OpenSearch console in your browser.</li>
-<li>Create an Index Pattern.
-    <!-- BEGIN INCLUDE ../aws-services/include-index-pattern.md --><ul>
-<li>Choose the <strong>Stack Management</strong> in the left sidebar, and select <strong>Index Patterns</strong>.</li>
-<li>Choose <strong>Create index pattern</strong>, and enter the index pattern name. Choose <strong>Next step</strong>.</li>
-<li>Specify <strong>time</strong> field, and choose <strong>Create index pattern</strong>.
-<!-- END INCLUDE --></li>
+<p>在 <strong>缓冲区</strong> 部分中，选择 <strong>S3</strong> 或 <strong>Kinesis Data Streams</strong>。如果您不希望有缓冲层，请选择 <strong>无</strong>。请参阅 <a href="../#log-buffer">日志缓冲</a> 获取关于选择适当缓冲层的更多信息。</p>
+<ul>
+<li>S3缓冲参数</li>
 </ul>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S3 Bucket</td>
+<td><em>解决方案将创建一个日志桶。</em></td>
+<td>您也可以选择一个桶来存储日志数据。</td>
+</tr>
+<tr>
+<td>S3 Bucket前缀</td>
+<td><code>AppLogs/&lt;index-prefix&gt;/year=%Y/month=%m/day=%d</code></td>
+<td>日志代理在将日志文件交付给S3桶时添加前缀。</td>
+</tr>
+<tr>
+<td>缓冲大小</td>
+<td>50 MiB</td>
+<td>日志代理在将日志交付给S3之前在日志代理端缓存的日志数据的最大大小。有关更多信息，请查看 <a href="https://docs.aws.amazon.com/firehose/latest/dev/basic-deliver.html#frequency">数据交付频率</a>。</td>
+</tr>
+<tr>
+<td>缓冲间隔</td>
+<td>60秒</td>
+<td>日志代理将日志交付给S3的最大间隔。有关更多信息，请查看 <a href="https://docs.aws.amazon.com/firehose/latest/dev/basic-deliver.html#frequency">数据交付频率</a>。</td>
+</tr>
+<tr>
+<td>数据记录的压缩</td>
+<td><code>Gzip</code></td>
+<td>日志代理在将它们交付给S3桶之前会压缩记录。</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Kinesis Data Streams缓冲参数</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>分片数量</td>
+<td><code>&lt;需要输入&gt;</code></td>
+<td>Kinesis Data Streams的分片数量。每个分片每秒最多可容纳1,000个记录，并且总数据写入速率为每秒1MB。</td>
+</tr>
+<tr>
+<td>启用自动缩放</td>
+<td><code>否</code></td>
+<td>该解决方案每5分钟监视一次Kinesis Data Streams的利用率，并自动缩放分片的数量。解决方案在24小时内最多缩放8次。</td>
+</tr>
+<tr>
+<td>最大分片数量</td>
+<td><code>&lt;需要输入&gt;</code></td>
+<td>如果启用了自动缩放，则需要。最大的分片数量。</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition 重要">
+<p class="admonition-title">重要</p>
+<p>如果在Kinesis Data Streams（KDS）中发生阈值错误，您可能会在OpenSearch中观察到重复的日志。这是因为Fluent Bit日志代理以<a href="https://docs.fluentbit.io/manual/administration/buffering-and-storage#chunks-memory-filesystem-and-backpressure">块</a> (包含多个记录)上传日志，并在上传失败时重试该块。每个KDS分片每秒最多可支持写入1,000条记录，最大总数据写入速率为每秒1MB。请估算您的日志量并选择合适的分片数量。</p>
+</div>
 </li>
-<li>Go to <strong>Discover</strong> section in the left sidebar.</li>
-<li>Change active index pattern to <code>&lt;the application pipeline&gt;-*</code>.</li>
+<li>
+<p>选择 <strong>下一步</strong>。</p>
+</li>
+<li>
+<p>在 <strong>指定OpenSearch域</strong> 部分，为 <strong>Amazon OpenSearch域</strong> 选择一个已导入的域。</p>
+</li>
+<li>
+<p>在 <strong>日志生命周期</strong> 部分，输入天数以管理Amazon OpenSearch Service索引生命周期。与OpenSearch一起的中央化日志将为这个管道自动创建关联的 <a href="https://opensearch.org/docs/latest/im-plugin/ism/index/">索引状态管理(ISM)</a> 政策。</p>
+</li>
+<li>
+<p>选择 <strong>下一步</strong>。</p>
+</li>
+<li>
+<p>如果需要，请启用 <strong>警报</strong> 并选择一个现有的SNS主题。如果您选择 <strong>创建一个新的SNS主题</strong>，请为新的SNS主题提供一个名称和电子邮件地址。</p>
+</li>
+<li>
+<p>如果需要，请添加标签。</p>
+</li>
+<li>
+<p>选择 <strong>创建</strong>。</p>
+</li>
+<li>
+<p>等待应用程序管道转变为“活动”状态。</p>
+</li>
 </ol>
 
 
@@ -1874,32 +1700,32 @@
         <footer class="md-footer">
   
     
-    <nav class="md-footer__inner md-grid" aria-label="Footer" >
+    <nav class="md-footer__inner md-grid" aria-label="页脚" >
       
         
-        <a href="../json/" class="md-footer__link md-footer__link--prev" aria-label="Previous: JSON" rel="prev">
+        <a href="../s3-pipeline/" class="md-footer__link md-footer__link--prev" aria-label="上一页: S3" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
           </div>
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
-                Previous
+                上一页
               </span>
-              JSON
+              S3
             </div>
           </div>
         </a>
       
       
         
-        <a href="../../link-account/" class="md-footer__link md-footer__link--next" aria-label="Next: Cross-account ingestion" rel="next">
+        <a href="../create-log-source/" class="md-footer__link md-footer__link--next" aria-label="下一页: 日志源" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
-                Next
+                下一页
               </span>
-              Cross-account ingestion
+              日志源
             </div>
           </div>
           <div class="md-footer__button md-icon">
@@ -1925,7 +1751,7 @@
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": "latest"}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.config.lang": "ja", "search.config.pipeline": "trimmer, stemmer", "search.config.separator": "[\\s\\-\uff0c\u3002]+", "search.placeholder": "\u641c\u7d22", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version.title": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": "latest"}</script>
     
     
       <script src="../../../assets/javascripts/bundle.37e9125f.min.js"></script>

@@ -1174,24 +1174,80 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../applications/ec2-pipeline/" class="md-nav__link">
+        EC2 实例组
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../applications/eks-pipeline/" class="md-nav__link">
+        EKS 集群
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../applications/s3-pipeline/" class="md-nav__link">
+        S3
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../applications/syslog-pipeline/" class="md-nav__link">
+        Syslog
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
     
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9_2" type="checkbox" id="__nav_1_9_2" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9_6" type="checkbox" id="__nav_1_9_6" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_9_2">
-          前提条件
+        <label class="md-nav__link" for="__nav_1_9_6">
+          管道资源
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="前提条件" data-md-level="3">
-        <label class="md-nav__title" for="__nav_1_9_2">
+      <nav class="md-nav" aria-label="管道资源" data-md-level="3">
+        <label class="md-nav__title" for="__nav_1_9_6">
           <span class="md-nav__icon md-icon"></span>
-          前提条件
+          管道资源
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -1202,7 +1258,7 @@
   
     <li class="md-nav__item">
       <a href="../../applications/create-log-source/" class="md-nav__link">
-        创建日志源
+        日志源
       </a>
     </li>
   
@@ -1215,8 +1271,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../applications/create-applog-pipeline/" class="md-nav__link">
-        创建应用日志管道
+      <a href="../../applications/create-log-config/" class="md-nav__link">
+        日志配置
       </a>
     </li>
   
@@ -1225,90 +1281,6 @@
           
         </ul>
       </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../applications/apache/" class="md-nav__link">
-        Apache HTTP 服务器
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../applications/nginx/" class="md-nav__link">
-        Nginx
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../applications/single-line-text/" class="md-nav__link">
-        单行文本
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../applications/multi-line-text/" class="md-nav__link">
-        多行文本
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../applications/json/" class="md-nav__link">
-        JSON
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../applications/syslog/" class="md-nav__link">
-        Syslog
-      </a>
     </li>
   
 
@@ -1769,6 +1741,46 @@
 <td>部署 ELB 的公共子网。您需要至少选择两个公有子网，例如，<code>subnet-12345abc，subnet-54321cba</code>。</td>
 </tr>
 <tr>
+<td>PrivateSubnetIds</td>
+<td><code>&lt;需要输入&gt;</code></td>
+<td>部署 Nginx 实例的私有子网。您需要至少选择两个私有子网，例如，<code>subnet-12345abc，subnet-54321cba</code>。</td>
+</tr>
+<tr>
+<td>KeyName</td>
+<td><code>&lt;需要输入&gt;</code></td>
+<td>Nginx 实例的 PEM 密钥名称。</td>
+</tr>
+<tr>
+<td>NginxSecurityGroupId</td>
+<td><code>&lt;需要输入&gt;</code></td>
+<td>与 Nginx 实例关联的安全组。安全组必须允许来自 ELB 安全组的访问。</td>
+</tr>
+<tr>
+<td>ProxyInstanceType</td>
+<td>t3.large</td>
+<td>OpenSearch代理实例的类型。例如t3.micro</td>
+</tr>
+<tr>
+<td>ProxyInstanceNumber</td>
+<td>2</td>
+<td>OpenSearch代理实例的数量。例如1到4</td>
+</tr>
+<tr>
+<td>Endpoint</td>
+<td><code>&lt;需要输入&gt;</code></td>
+<td>OpenSearch 端点，例如，<code>vpc-your_opensearch_domain_name-xcvgw6uu2o6zafsiefxubwuohe.us-east-1.es.amazonaws.com</code>。</td>
+</tr>
+<tr>
+<td>EngineType</td>
+<td>OpenSearch</td>
+<td>OpenSearch 的引擎类型。选择 OpenSearch 或 Elasticsearch。</td>
+</tr>
+<tr>
+<td>CognitoEndpoint</td>
+<td><code>&lt;可选&gt;</code></td>
+<td>OpenSearch 域的 Cognito 用户池端点 URL，例如，<code>mydomain.auth.us-east-1.amazoncognito.com</code>。如果您的 OpenSearch 域不是通过 Cognito 用户池认证，请留空。</td>
+</tr>
+<tr>
 <td>ELBSecurityGroupId</td>
 <td><code>&lt;需要输入&gt;</code></td>
 <td>与 ELB 关联的安全组，例如，<code>sg-123456</code>。</td>
@@ -1784,34 +1796,14 @@
 <td>与 ELBDomain 关联的 SSL 证书 ARN。证书必须从 <a href="https://aws.amazon.com/certificate-manager/">Amazon Certificate Manager (ACM)</a> 创建。</td>
 </tr>
 <tr>
-<td>PrivateSubnetIds</td>
+<td>ELBAccessLogBucketName</td>
 <td><code>&lt;需要输入&gt;</code></td>
-<td>部署 Nginx 实例的私有子网。您需要至少选择两个私有子网，例如，<code>subnet-12345abc，subnet-54321cba</code>。</td>
+<td>代理ELB的访问日志存储桶的名称。</td>
 </tr>
 <tr>
-<td>NginxSecurityGroupId</td>
-<td><code>&lt;需要输入&gt;</code></td>
-<td>与 Nginx 实例关联的安全组。安全组必须允许来自 ELB 安全组的访问。</td>
-</tr>
-<tr>
-<td>KeyName</td>
-<td><code>&lt;需要输入&gt;</code></td>
-<td>Nginx 实例的 PEM 密钥名称。</td>
-</tr>
-<tr>
-<td>EngineType</td>
-<td>OpenSearch</td>
-<td>OpenSearch 的引擎类型。选择 OpenSearch 或 Elasticsearch。</td>
-</tr>
-<tr>
-<td>Endpoint</td>
-<td><code>&lt;需要输入&gt;</code></td>
-<td>OpenSearch 端点，例如，<code>vpc-your_opensearch_domain_name-xcvgw6uu2o6zafsiefxubwuohe.us-east-1.es.amazonaws.com</code>。</td>
-</tr>
-<tr>
-<td>CognitoEndpoint</td>
-<td><code>&lt;可选&gt;</code></td>
-<td>OpenSearch 域的 Cognito 用户池端点 URL，例如，<code>mydomain.auth.us-east-1.amazoncognito.com</code>。如果您的 OpenSearch 域不是通过 Cognito 用户池认证，请留空。</td>
+<td>SsmParameterValueawsserviceamiamazonlinuxlatestamzn2amihvmx8664gp2C96584B6F00A464EAD1953AFF4B05118Parameter</td>
+<td>/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2</td>
+<td>代理实例AMI的SSM参数。大多数情况下可以使用默认值。</td>
 </tr>
 </tbody>
 </table>

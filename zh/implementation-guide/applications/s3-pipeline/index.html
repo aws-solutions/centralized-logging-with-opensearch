@@ -8,14 +8,14 @@
       
       
       
-        <link rel="canonical" href="https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/applications/create-applog-pipeline/">
+        <link rel="canonical" href="https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/applications/s3-pipeline/">
       
       <link rel="icon" href="../../../images/aws-solutions.png">
       <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.5.3">
     
     
       
-        <title>创建应用日志管道 - Centralized Logging with OpenSearch</title>
+        <title>S3 - Centralized Logging with OpenSearch</title>
       
     
     
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#_1" class="md-skip">
+        <a href="#amazon-s3" class="md-skip">
           跳转至
         </a>
       
@@ -102,7 +102,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              创建应用日志管道
+              S3
             
           </span>
         </div>
@@ -1077,29 +1077,15 @@
               
   
   
-    
   
+    <li class="md-nav__item">
+      <a href="../ec2-pipeline/" class="md-nav__link">
+        EC2 实例组
+      </a>
+    </li>
   
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
-      
-      
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9_2" type="checkbox" id="__nav_1_9_2" checked>
-      
-      
-      
-      
-        <label class="md-nav__link" for="__nav_1_9_2">
-          前提条件
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" aria-label="前提条件" data-md-level="3">
-        <label class="md-nav__title" for="__nav_1_9_2">
-          <span class="md-nav__icon md-icon"></span>
-          前提条件
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
+
+            
           
             
               
@@ -1107,8 +1093,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../create-log-source/" class="md-nav__link">
-        创建日志源
+      <a href="../eks-pipeline/" class="md-nav__link">
+        EKS 集群
       </a>
     </li>
   
@@ -1127,14 +1113,16 @@
       <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
       
       
+        
+      
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
-          创建应用日志管道
+          S3
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
-        创建应用日志管道
+        S3
       </a>
       
         
@@ -1142,6 +1130,8 @@
 <nav class="md-nav md-nav--secondary" aria-label="目录">
   
   
+  
+    
   
   
     <label class="md-nav__title" for="__toc">
@@ -1152,28 +1142,14 @@
       
         <li class="md-nav__item">
   <a href="#_1" class="md-nav__link">
-    实例组作为日志源
+    请确认您已经完成
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#amazon-eks" class="md-nav__link">
-    Amazon EKS集群作为日志来源
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#amazon-s3" class="md-nav__link">
-    Amazon S3 作为日志源
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#syslog" class="md-nav__link">
-    Syslog 作为 日志源
+  <a href="#_2" class="md-nav__link">
+    创建日志分析管道
   </a>
   
 </li>
@@ -1187,92 +1163,76 @@
 
             
           
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
             
               
   
   
   
     <li class="md-nav__item">
-      <a href="../apache/" class="md-nav__link">
-        Apache HTTP 服务器
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../nginx/" class="md-nav__link">
-        Nginx
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../single-line-text/" class="md-nav__link">
-        单行文本
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../multi-line-text/" class="md-nav__link">
-        多行文本
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../json/" class="md-nav__link">
-        JSON
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../syslog/" class="md-nav__link">
+      <a href="../syslog-pipeline/" class="md-nav__link">
         Syslog
       </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9_6" type="checkbox" id="__nav_1_9_6" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1_9_6">
+          管道资源
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="管道资源" data-md-level="3">
+        <label class="md-nav__title" for="__nav_1_9_6">
+          <span class="md-nav__icon md-icon"></span>
+          管道资源
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../create-log-source/" class="md-nav__link">
+        日志源
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../create-log-config/" class="md-nav__link">
+        日志配置
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
     </li>
   
 
@@ -1544,6 +1504,8 @@
   
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -1553,28 +1515,14 @@
       
         <li class="md-nav__item">
   <a href="#_1" class="md-nav__link">
-    实例组作为日志源
+    请确认您已经完成
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#amazon-eks" class="md-nav__link">
-    Amazon EKS集群作为日志来源
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#amazon-s3" class="md-nav__link">
-    Amazon S3 作为日志源
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#syslog" class="md-nav__link">
-    Syslog 作为 日志源
+  <a href="#_2" class="md-nav__link">
+    创建日志分析管道
   </a>
   
 </li>
@@ -1593,51 +1541,50 @@
                 
                   
 
-  <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch/edit/master/docs/implementation-guide/applications/create-applog-pipeline.md" title="编辑此页" class="md-content__button md-icon">
+  <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch/edit/master/docs/implementation-guide/applications/s3-pipeline.md" title="编辑此页" class="md-content__button md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
   </a>
 
 
-  <h1>创建应用日志管道</h1>
-
-<!--ig-start-->
-<h4 id="_1">实例组作为日志源</h4>
+<h1 id="amazon-s3">Amazon S3 作为 日志源</h1>
+<p>对于 Amazon S3，日志通既可以连续提取指定 S3 位置中的日志或执行一次性提取。您还可以根据 S3 前缀过滤日志或使用自定义日志配置解析日志。</p>
+<p>本文将指导您如何从 S3桶提取日志，并创建日志管道。</p>
+<h2 id="_1">请确认您已经完成</h2>
+<ol>
+<li><a href="../../domains/import/">导入 Amazon OpenSearch Service 域</a>。</li>
+</ol>
+<h2 id="_2">创建日志分析管道</h2>
 <ol>
 <li>
-<p>登录至使用OpenSearch的中央化日志控制台。</p>
+<p>登录日志通控制台。</p>
 </li>
 <li>
-<p>在左侧边栏中，点击 <strong>日志分析管道</strong> 下的 <strong>应用日志</strong>。</p>
+<p>在左侧边栏中的 <strong>日志分析管道</strong> 下，选择<strong>应用日志</strong>。</p>
 </li>
 <li>
-<p>选择 <strong>日志源</strong> 为实例组。</p>
+<p>单击 <strong>创建日志管道</strong>。</p>
 </li>
 <li>
-<p>选择您已创建的实例组，</p>
+<p>单击 <strong>S3桶</strong> 作为日志源, 并选择 <strong>下一步</strong>。</p>
 </li>
 <li>
-<p>(仅限于自动扩展组) 如果您的实例组是基于自动扩展组创建的，在摄取状态变为“已创建”后，您可以在实例组的详细页面中找到生成的Shell脚本。复制该shell脚本并更新自动扩展的 <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/launch-configurations.html">启动配置</a> 或 <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html">启动模板</a> 中的用户数据。</p>
+<p>选择存储日志的 S3 桶，并按照你的实际需求输入 <strong>前缀过滤器</strong>（可选）。</p>
 </li>
 <li>
-<p>选择 <strong>权限授予方法</strong>。如果您选择 <strong>我会在管道创建后手动添加以下所需的权限</strong>，您需要点击 <strong>展开查看所需的权限</strong> 并复制提供的JSON策略。</p>
+<p>根据您的需求选择 <strong>导入模式</strong>。如果您想持续地摄取日志，请选择 <strong>持续加载</strong>；如果您只需要摄取日志一次，请选择 <strong>一次性加载</strong>。</p>
 </li>
 <li>
-<p>转到 <strong>AWS控制台 &gt; IAM &gt; 策略</strong> 在左侧列，并</p>
-<ol>
-<li>
-<p>选择 <strong>创建策略</strong>，选择 <strong>JSON</strong> 并替换文本块内的所有内容。请记住将 <code>&lt;YOUR ACCOUNT ID&gt;</code> 替换为您的账户ID。</p>
-</li>
-<li>
-<p>选择 <strong>下一步</strong>，<strong>下一步</strong>，然后为此策略输入名称。</p>
-</li>
-<li>
-<p>将策略附加到您的EC2实例配置文件，以授予日志代理发送日志到应用日志管道的权限。如果您使用的是自动扩展组，则需要更新与自动扩展组关联的IAM实例配置文件。如有需要，您可以按照文档来更新您的<a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/create-launch-template.html#advanced-settings-for-your-launch-template">启动模板</a>或<a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/change-launch-config.html">启动配置</a>。</p>
+<p>如果您的日志文件已压缩，请指定 <strong>压缩格式</strong>。</p>
 </li>
 </ol>
+<p>您已为日志分析管道创建日志源。 现在您可以使用 Amazon EC2 实例组作为日志源对日志分析管道进行进一步配置。</p>
+<ol>
+<li>
+<p>输入 <strong>日志路径</strong> 指定要收集的日志的位置。</p>
 </li>
 <li>
-<p>输入 <strong>日志路径</strong> 并选择之前设置中创建的日志配置，然后选择 <strong>下一步</strong>。</p>
+<p>选择之前设置中创建的日志配置，点击 <strong>下一步</strong>  I如果您没有从下拉列表中找到所需的日志配置，请选择 <strong>创建新的</strong>, 并参考 <a href="../create-log-config/">日志配置</a>。</p>
 </li>
 <li>
 <p>在 <strong>索引名称</strong> 中小写指定。</p>
@@ -1742,368 +1689,6 @@
 <p>等待应用程序管道转变为“活动”状态。</p>
 </li>
 </ol>
-<!--ig-start-->
-
-<!--eks-start-->
-<h3 id="amazon-eks">Amazon EKS集群作为日志来源</h3>
-<ol>
-<li>
-<p>登录到<strong>日志通控制台</strong>。</p>
-</li>
-<li>
-<p>在左侧边栏下，点击 <strong>日志分析管道</strong>，选择 <strong>应用日志</strong>。</p>
-</li>
-<li>
-<p>选择存储日志的AWS帐户和在<strong>先决条件</strong>期间导入作为日志来源的EKS集群。</p>
-</li>
-<li>
-<p>输入日志文件的位置。</p>
-</li>
-<li>
-<p>选择在之前设置中创建的日志配置，并选择 <strong>下一步</strong>。</p>
-</li>
-<li>
-<p>以小写指定<strong>索引名称</strong>。</p>
-</li>
-<li>
-<p>在<strong>缓冲</strong>部分，选择<strong>S3</strong>或<strong>Kinesis Data Streams</strong>。如果您不希望使用缓冲层，选择<strong>无</strong>。有关选择适当的缓冲层的更多信息，请参阅<a href="../#log-buffer">日志缓冲</a>。</p>
-<ul>
-<li>S3缓冲参数</li>
-</ul>
-<table>
-<thead>
-<tr>
-<th>参数</th>
-<th>默认值</th>
-<th>描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>S3 Bucket</td>
-<td><em>此解决方案将创建一个日志桶。</em></td>
-<td>你也可以选择一个桶来存储日志数据。</td>
-</tr>
-<tr>
-<td>S3 Bucket Prefix</td>
-<td><code>AppLogs/&lt;index-prefix&gt;/year=%Y/month=%m/day=%d</code></td>
-<td>日志代理在将日志文件交付给S3桶时添加前缀。</td>
-</tr>
-<tr>
-<td>Buffer size</td>
-<td>50 MiB</td>
-<td>在将日志交付给S3之前，日志代理端缓存的日志数据的最大大小。关于更多信息，请查看<a href="https://docs.aws.amazon.com/firehose/latest/dev/basic-deliver.html#frequency">数据交付频率</a>。</td>
-</tr>
-<tr>
-<td>Buffer interval</td>
-<td>60 秒</td>
-<td>日志代理交付日志到S3的最大间隔。关于更多信息，请查看<a href="https://docs.aws.amazon.com/firehose/latest/dev/basic-deliver.html#frequency">数据交付频率</a>。</td>
-</tr>
-<tr>
-<td>Compression for data records</td>
-<td><code>Gzip</code></td>
-<td>日志代理在将记录交付给S3桶之前压缩它们。</td>
-</tr>
-</tbody>
-</table>
-<ul>
-<li>Kinesis Data Streams缓冲参数</li>
-</ul>
-<table>
-<thead>
-<tr>
-<th>参数</th>
-<th>默认值</th>
-<th>描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Shard number</td>
-<td><code>&lt;需要输入&gt;</code></td>
-<td>Kinesis Data Streams的分片数。每个分片每秒最多可以有1,000条记录，并且总数据写入速率为每秒1MB。</td>
-</tr>
-<tr>
-<td>Enable auto scaling</td>
-<td><code>否</code></td>
-<td>此解决方案每5分钟监控一次Kinesis Data Streams的使用情况，并自动放大/缩小分片数量。此解决方案在24小时内最多会放大/缩小8次。</td>
-</tr>
-<tr>
-<td>Maximum Shard number</td>
-<td><code>&lt;需要输入&gt;</code></td>
-<td>如果启用了自动缩放，则需要。分片的最大数量。</td>
-</tr>
-</tbody>
-</table>
-<div class="admonition important">
-<p class="admonition-title">重要</p>
-<p>如果在Kinesis Data Streams（KDS）中发生阈值错误，您可能会在OpenSearch中观察到重复的日志。这是因为Fluent Bit日志代理以<a href="https://docs.fluentbit.io/manual/administration/buffering-and-storage#chunks-memory-filesystem-and-backpressure">块</a>（包含多个记录）上传日志，并在上传失败时重试该块。每个KDS分片每秒最多可支持写入1,000条记录，最大总数据写入速率为每秒1MB。请估算您的日志量并选择合适的分片数量。</p>
-</div>
-</li>
-<li>
-<p>选择<strong>下一步</strong>。</p>
-</li>
-<li>
-<p>在<strong>指定OpenSearch域</strong>部分，为<strong>Amazon OpenSearch域</strong>选择一个导入的域。</p>
-</li>
-<li>
-<p>在<strong>日志生命周期</strong>部分，输入管理 Amazon OpenSearch Service 索引生命周期的天数。日志通与 OpenSearch 将自动为此管道创建相关的<a href="https://opensearch.org/docs/latest/im-plugin/ism/index/">Index State Management (ISM)</a>策略。</p>
-</li>
-<li>
-<p>选择<strong>下一步</strong>。</p>
-</li>
-<li>
-<p>如果需要，请启用<strong>警报</strong>并选择现有的SNS主题。如果您选择<strong>创建新的SNS主题</strong>，请为新的SNS主题提供一个名称和电子邮件地址。</p>
-</li>
-<li>
-<p>如有需要，请添加标签。</p>
-</li>
-<li>
-<p>选择<strong>创建</strong>以完成摄取的创建。</p>
-</li>
-<li>
-<p>等待应用程序管道转变为“活动”状态。</p>
-</li>
-<li>
-<p>按照日志通生成的指南部署 Fluent Bit 日志代理。</p>
-<ol>
-<li>
-<p>选择在之前设置中创建的应用程序管道</p>
-</li>
-<li>
-<p>选择刚刚创建的应用日志摄取。</p>
-</li>
-<li>
-<p>按照<strong>DaemonSet</strong>或<strong>Sidecar</strong>指南部署日志代理。</p>
-</li>
-</ol>
-</li>
-</ol>
-<!--eks-end-->
-
-<!--s3-start-->
-<h3 id="amazon-s3">Amazon S3 作为日志源</h3>
-<ol>
-<li>登录到 日志通 控制台。</li>
-<li>在左侧边栏下，选择 <strong>日志分析管道</strong>，然后选择 <strong>应用日志</strong>。</li>
-<li>选择 Amazon S3 作为 <strong>日志源</strong>。</li>
-<li>选择存储日志的 S3 桶并输入 <strong>前缀过滤器</strong>（请注意，<strong>前缀过滤器</strong> 是可选的）。</li>
-<li>根据您的需要选择 <strong>导入模式</strong>。如果您想持续地摄取日志，请选择 <strong>持续加载</strong>；如果您只需要摄取一次日志，请选择 <strong>一次性加载</strong>。</li>
-<li>如果您的日志文件已经被压缩，指定 <strong>压缩格式</strong>。</li>
-<li>选择在之前设置中创建的日志配置，然后选择 <strong>下一步</strong>。</li>
-<li>
-<p>用小写字母指定 <strong>索引名称</strong>。</p>
-</li>
-<li>
-<p>在 <strong>Buffer</strong> 部分中，选择 <strong>S3</strong> 或 <strong>Kinesis Data Streams</strong>。如果您不需要缓冲层，请选择 <strong>None</strong>。有关选择合适的缓冲层的更多信息，请参考 <a href="../#log-buffer">Log Buffer</a>。</p>
-<ul>
-<li>S3 缓冲参数</li>
-</ul>
-<table>
-<thead>
-<tr>
-<th>Parameter</th>
-<th>Default</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>S3 Bucket</td>
-<td><em>该解决方案会创建一个日志桶。</em></td>
-<td>您也可以选择一个桶来存储日志数据。</td>
-</tr>
-<tr>
-<td>S3 Bucket Prefix</td>
-<td><code>AppLogs/&lt;index-prefix&gt;/year=%Y/month=%m/day=%d</code></td>
-<td>日志代理在将日志文件传送到 S3 桶时会追加前缀。</td>
-</tr>
-<tr>
-<td>Buffer size</td>
-<td>50 MiB</td>
-<td>在日志代理端缓存的日志数据的最大大小，传送到 S3 之前。关于这点的更多信息，请查看 <a href="https://docs.aws.amazon.com/firehose/latest/dev/basic-deliver.html#frequency">Data Delivery Frequency</a>。</td>
-</tr>
-<tr>
-<td>Buffer interval</td>
-<td>60 seconds</td>
-<td>日志代理传送日志到 S3 的最大间隔。关于这点的更多信息，请查看 <a href="https://docs.aws.amazon.com/firehose/latest/dev/basic-deliver.html#frequency">Data Delivery Frequency</a>。</td>
-</tr>
-<tr>
-<td>Compression for data records</td>
-<td><code>Gzip</code></td>
-<td>日志代理在将它们传送到 S3 桶之前会压缩记录。</td>
-</tr>
-</tbody>
-</table>
-<ul>
-<li>Kinesis Data Streams 缓冲参数</li>
-</ul>
-<table>
-<thead>
-<tr>
-<th>Parameter</th>
-<th>Default</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Shard number</td>
-<td><code>&lt;需要输入&gt;</code></td>
-<td>Kinesis Data Streams 的 shard 数量。每个 shard 最多可以每秒有 1,000 条记录，并且总的数据写入速率为每秒 1MB。</td>
-</tr>
-<tr>
-<td>Enable auto scaling</td>
-<td><code>No</code></td>
-<td>此解决方案每 5 分钟监视一次 Kinesis Data Streams 的使用情况，并自动调整 shard 的数量。该解决方案将在 24 小时内最多调整 8 次。</td>
-</tr>
-<tr>
-<td>Maximum Shard number</td>
-<td><code>&lt;需要输入&gt;</code></td>
-<td>如果启用了自动缩放，则需要。shard 的最大数量。</td>
-</tr>
-</tbody>
-</table>
-<div class="admonition important">
-<p class="admonition-title">重要</p>
-<p>如果在 Kinesis Data Streams (KDS) 中出现阈值错误，您可能会在 OpenSearch 中观察到重复的日志。这是因为 Fluent Bit 日志代理在 <a href="https://docs.fluentbit.io/manual/administration/buffering-and-storage#chunks-memory-filesystem-and-backpressure">chunk</a>（包含多个记录）中上传日志，如果上传失败会重试该 chunk。每个 KDS shard 最多可以每秒支持 1,000 条记录的写入，最大总数据写入速率为每秒 1MB。请估计您的日志量，并选择合适的 shard 数量。</p>
-</div>
-</li>
-<li>
-<p>选择 <strong>下一步</strong>。</p>
-</li>
-<li>在 <strong>Specify OpenSearch domain</strong> 部分，为 <strong>Amazon OpenSearch domain</strong> 选择一个导入的域。</li>
-<li>在 <strong>Log Lifecycle</strong> 部分，输入管理 Amazon OpenSearch Service 索引生命周期的天数。日志通 将为此管道自动创建相关的 <a href="https://opensearch.org/docs/latest/im-plugin/ism/index/">Index State Management (ISM)</a> 策略。</li>
-<li>选择 <strong>下一步</strong>。</li>
-<li>如有需要，请启用 <strong>Alarms</strong> 并选择一个现有的 SNS 主题。如果您选择 <strong>Create a new SNS topic</strong>，请为新的 SNS 主题提供一个名称和电子邮件地址。</li>
-<li>如有需要，添加标签。</li>
-<li>选择 <strong>Create</strong>。</li>
-<li>等待应用程序管道转变为“Active”状态。</li>
-</ol>
-<!--s3-end-->
-
-<!--syslog-start-->
-<h3 id="syslog">Syslog 作为 日志源</h3>
-<ol>
-<li>
-<p>登录到 日志通 控制台。</p>
-</li>
-<li>
-<p>在左侧边栏中，在 <strong>日志分析管道</strong> 下，选择 <strong>应用日志</strong>。</p>
-</li>
-<li>
-<p>选择 Syslog Endpoint 作为 <strong>日志源</strong>。</p>
-</li>
-<li>
-<p>您可以使用 UDP 或 TCP 并带有自定义端口号。选择 <strong>下一步</strong>。</p>
-</li>
-<li>
-<p>选择在之前设置中创建的日志配置，然后选择 <strong>下一步</strong>。</p>
-</li>
-<li>
-<p>以小写形式指定 <strong>索引名称</strong>。</p>
-</li>
-<li>
-<p>在 <strong>Buffer</strong> 部分中，选择 <strong>S3</strong> 或 <strong>Kinesis Data Streams</strong>。如果您不希望有缓冲层，请选择 <strong>None</strong>。请参阅 <a href="../#log-buffer">Log Buffer</a> 以获取有关选择合适的缓冲层的更多信息。</p>
-<ul>
-<li>S3 缓冲参数</li>
-</ul>
-<table>
-<thead>
-<tr>
-<th>参数</th>
-<th>默认值</th>
-<th>描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>S3 Bucket</td>
-<td><em>解决方案将创建一个日志存储桶。</em></td>
-<td>您还可以选择一个存储日志数据的存储桶。</td>
-</tr>
-<tr>
-<td>S3 Bucket Prefix</td>
-<td><code>AppLogs/&lt;index-prefix&gt;/year=%Y/month=%m/day=%d</code></td>
-<td>日志代理在将日志文件传送到 S3 存储桶时会附加前缀。</td>
-</tr>
-<tr>
-<td>Buffer size</td>
-<td>50 MiB</td>
-<td>在将数据传送到 S3 之前，日志代理侧缓存的日志数据的最大大小。有关更多信息，请参见 <a href="https://docs.aws.amazon.com/firehose/latest/dev/basic-deliver.html#frequency">Data Delivery Frequency</a>。</td>
-</tr>
-<tr>
-<td>Buffer interval</td>
-<td>60 seconds</td>
-<td>日志代理传送日志到 S3 的最大间隔。有关更多信息，请参见 <a href="https://docs.aws.amazon.com/firehose/latest/dev/basic-deliver.html#frequency">Data Delivery Frequency</a>。</td>
-</tr>
-<tr>
-<td>Compression for data records</td>
-<td><code>Gzip</code></td>
-<td>日志代理在将其传送到 S3 存储桶之前会压缩记录。</td>
-</tr>
-</tbody>
-</table>
-<ul>
-<li>Kinesis Data Streams 缓冲参数</li>
-</ul>
-<table>
-<thead>
-<tr>
-<th>参数</th>
-<th>默认值</th>
-<th>描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Shard number</td>
-<td><code>&lt;Requires input&gt;</code></td>
-<td>Kinesis Data Streams 的碎片数量。每个碎片每秒最多可以有 1,000 个记录，数据写入速率最大为 1MB。</td>
-</tr>
-<tr>
-<td>Enable auto scaling</td>
-<td><code>No</code></td>
-<td>该解决方案每5分钟监视 Kinesis Data Streams 的利用情况，并自动增加/减少碎片数量。此解决方案每24小时最多可以增加/减少8次。</td>
-</tr>
-<tr>
-<td>Maximum Shard number</td>
-<td><code>&lt;Requires input&gt;</code></td>
-<td>如果启用了 auto scaling，则需要。碎片的最大数量。</td>
-</tr>
-</tbody>
-</table>
-<div class="admonition important">
-<p class="admonition-title">重要</p>
-<p>如果在 Kinesis Data Streams (KDS) 中发生阈值错误，您可能会在 OpenSearch 中观察到重复的日志。这是因为 Fluent Bit 日志代理以 <a href="https://docs.fluentbit.io/manual/administration/buffering-and-storage#chunks-memory-filesystem-and-backpressure">chunk</a> （包含多个记录）上传日志，并且如果上传失败会重试该块。每个 KDS 碎片最多可以支持每秒1,000条记录的写入，最大总数据写入速率为1 MB。请估计您的日志量并选择合适的碎片数量。</p>
-</div>
-</li>
-<li>
-<p>选择 <strong>下一步</strong>。</p>
-</li>
-<li>
-<p>在 <strong>Specify OpenSearch domain</strong> 部分中，为 <strong>Amazon OpenSearch domain</strong> 选择一个已导入的域。</p>
-</li>
-<li>
-<p>在 <strong>Log Lifecycle</strong> 部分中，输入管理 Amazon OpenSearch Service 索引生命周期的天数。日志通 将为此管道自动创建关联的 <a href="https://opensearch.org/docs/latest/im-plugin/ism/index/">Index State Management (ISM)</a> 策略。</p>
-</li>
-<li>
-<p>选择 <strong>下一步</strong>。</p>
-</li>
-<li>
-<p>如果需要，请启用 <strong>Alarms</strong> 并选择一个现有的 SNS 主题。如果您选择 <strong>Create a new SNS topic</strong>，请为新的 SNS 主题提供名称和电子邮件地址。</p>
-</li>
-<li>
-<p>如果需要，请添加标签。</p>
-</li>
-<li>
-<p>选择 <strong>Create</strong>。</p>
-</li>
-<li>
-<p>等待应用管道转到 "Active" 状态。</p>
-</li>
-</ol>
-<!--syslog-end-->
 
 
 
@@ -2124,7 +1709,7 @@
     <nav class="md-footer__inner md-grid" aria-label="页脚" >
       
         
-        <a href="../create-log-source/" class="md-footer__link md-footer__link--prev" aria-label="上一页: 创建日志源" rel="prev">
+        <a href="../eks-pipeline/" class="md-footer__link md-footer__link--prev" aria-label="上一页: EKS 集群" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
           </div>
@@ -2133,20 +1718,20 @@
               <span class="md-footer__direction">
                 上一页
               </span>
-              创建日志源
+              EKS 集群
             </div>
           </div>
         </a>
       
       
         
-        <a href="../apache/" class="md-footer__link md-footer__link--next" aria-label="下一页: Apache HTTP 服务器" rel="next">
+        <a href="../syslog-pipeline/" class="md-footer__link md-footer__link--next" aria-label="下一页: Syslog" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 下一页
               </span>
-              Apache HTTP 服务器
+              Syslog
             </div>
           </div>
           <div class="md-footer__button md-icon">

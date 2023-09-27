@@ -8,14 +8,14 @@
       
       
       
-        <link rel="canonical" href="https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/applications/nginx/">
+        <link rel="canonical" href="https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/applications/eks-pipeline/">
       
       <link rel="icon" href="../../../images/aws-solutions.png">
       <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.5.3">
     
     
       
-        <title>Nginx - Centralized Logging with OpenSearch</title>
+        <title>EKS 集群 - Centralized Logging with OpenSearch</title>
       
     
     
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#nginx" class="md-skip">
+        <a href="#amazon-eks" class="md-skip">
           跳转至
         </a>
       
@@ -102,7 +102,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Nginx
+              EKS 集群
             
           </span>
         </div>
@@ -1078,70 +1078,9 @@
   
   
   
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9_2" type="checkbox" id="__nav_1_9_2" >
-      
-      
-      
-      
-        <label class="md-nav__link" for="__nav_1_9_2">
-          前提条件
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" aria-label="前提条件" data-md-level="3">
-        <label class="md-nav__title" for="__nav_1_9_2">
-          <span class="md-nav__icon md-icon"></span>
-          前提条件
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-              
-  
-  
-  
     <li class="md-nav__item">
-      <a href="../create-log-source/" class="md-nav__link">
-        创建日志源
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../create-applog-pipeline/" class="md-nav__link">
-        创建应用日志管道
-      </a>
-    </li>
-  
-
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../apache/" class="md-nav__link">
-        Apache HTTP 服务器
+      <a href="../ec2-pipeline/" class="md-nav__link">
+        EC2 实例组
       </a>
     </li>
   
@@ -1164,12 +1103,12 @@
       
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
-          Nginx
+          EKS 集群
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
-        Nginx
+        EKS 集群
       </a>
       
         
@@ -1188,70 +1127,16 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#prerequisites" class="md-nav__link">
-    Prerequisites
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#1-nginx" class="md-nav__link">
-    步骤 1: 创建一个 Nginx 日志配置
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#2" class="md-nav__link">
-    步骤 2: 创建一个日志摄入
-  </a>
-  
-    <nav class="md-nav" aria-label="步骤 2: 创建一个日志摄入">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
   <a href="#_1" class="md-nav__link">
-    实例组作为日志源
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#amazon-eks" class="md-nav__link">
-    Amazon EKS 集群作为日志源
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#3-nginx" class="md-nav__link">
-    步骤 3: 查看 Nginx 服务器日志仪表板
+    请确认您已经完成
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#_2" class="md-nav__link">
-    查看仪表板
+    创建日志分析管道
   </a>
-  
-    <nav class="md-nav" aria-label="查看仪表板">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
-    样本仪表板
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -1270,8 +1155,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../single-line-text/" class="md-nav__link">
-        单行文本
+      <a href="../s3-pipeline/" class="md-nav__link">
+        S3
       </a>
     </li>
   
@@ -1284,37 +1169,70 @@
   
   
     <li class="md-nav__item">
-      <a href="../multi-line-text/" class="md-nav__link">
-        多行文本
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../json/" class="md-nav__link">
-        JSON
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../syslog/" class="md-nav__link">
+      <a href="../syslog-pipeline/" class="md-nav__link">
         Syslog
       </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9_6" type="checkbox" id="__nav_1_9_6" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1_9_6">
+          管道资源
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="管道资源" data-md-level="3">
+        <label class="md-nav__title" for="__nav_1_9_6">
+          <span class="md-nav__icon md-icon"></span>
+          管道资源
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../create-log-source/" class="md-nav__link">
+        日志源
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../create-log-config/" class="md-nav__link">
+        日志配置
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
     </li>
   
 
@@ -1596,70 +1514,16 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#prerequisites" class="md-nav__link">
-    Prerequisites
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#1-nginx" class="md-nav__link">
-    步骤 1: 创建一个 Nginx 日志配置
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#2" class="md-nav__link">
-    步骤 2: 创建一个日志摄入
-  </a>
-  
-    <nav class="md-nav" aria-label="步骤 2: 创建一个日志摄入">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
   <a href="#_1" class="md-nav__link">
-    实例组作为日志源
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#amazon-eks" class="md-nav__link">
-    Amazon EKS 集群作为日志源
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#3-nginx" class="md-nav__link">
-    步骤 3: 查看 Nginx 服务器日志仪表板
+    请确认您已经完成
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#_2" class="md-nav__link">
-    查看仪表板
+    创建日志分析管道
   </a>
-  
-    <nav class="md-nav" aria-label="查看仪表板">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
-    样本仪表板
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -1677,209 +1541,154 @@
                 
                   
 
-  <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch/edit/master/docs/implementation-guide/applications/nginx.md" title="编辑此页" class="md-content__button md-icon">
+  <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch/edit/master/docs/implementation-guide/applications/eks-pipeline.md" title="编辑此页" class="md-content__button md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
   </a>
 
 
-<h1 id="nginx">Nginx</h1>
-<p>Nginx 能够将 <a href="https://docs.nginx.com/nginx/admin-guide/monitoring/logging/">错误和访问日志</a> 文件写入本地目录。 您可以配置日志通以摄取 Nginx 日志。</p>
-<h2 id="prerequisites">Prerequisites</h2>
-<!-- BEGIN INCLUDE include-prerequisites.md -->
-<p>请确认您已经完成:</p>
+<h1 id="amazon-eks">Amazon EKS集群作为日志源</h1>
+<p>日志通中的 <a href="https://docs.aws.amazon.com/eks/latest/userguide/what-is-eks.html">EKS Cluster</a> 是指您要从中收集 pod 日志的 Amazon Elastic Kubernetes Service (Amazon EKS)。日志通将指导您将日志记录代理部署为 EKS 集群中的 <a href="https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/">DaemonSet</a> 或 <a href="https://kubernetes.io/docs/concepts/workloads/pods/#workload-resources-for-managing-pods">Sidecar</a>。</p>
+<p>本文将指导您如何从 EKS集群提取日志，并创建日志管道。</p>
+<h2 id="_1">请确认您已经完成</h2>
 <ol>
-<li><a href="../../domains/import/">导入 Amazon OpenSearch Service 域</a>.</li>
-<li><a href="../create-log-source/">创建一个日志源</a>.</li>
-<li><a href="../create-applog-pipeline/">创建一个应用日志分析管道</a>.</li>
+<li><a href="../../domains/import/">导入 Amazon OpenSearch Service 域</a>。</li>
 </ol>
-<!-- END INCLUDE -->
-
-<h2 id="1-nginx">步骤 1: 创建一个 Nginx 日志配置</h2>
+<h2 id="_2">创建日志分析管道</h2>
 <ol>
-<li>登录日志通控制台。</li>
-<li>在左侧边栏中的 <strong>资源</strong> 下，选择 <strong>日志配置</strong>。</li>
-<li>单击<strong>创建日志配置</strong>按钮。</li>
-<li>指定<strong>配置名称</strong>。</li>
-<li>指定<strong>日志路径</strong>。 您可以使用 <code>,</code> 分隔多个路径。</li>
-<li>在日志类型下拉菜单中选择<strong>Nginx</strong>。</li>
 <li>
-<p>在<strong>Nginx Log Format</strong>部分，粘贴你的Nginx日志格式配置，格式为<code>/etc/nginx/nginx.conf</code>，以<code>log_format</code>开头。</p>
-<p>如:
-   <div class="highlight"><pre><span></span><code>log_format  main  &#39;$remote_addr - $remote_user [$time_local] &quot;$request&quot; &#39;
-&#39;$status $body_bytes_sent &quot;$http_referer&quot; &#39;
-&#39;&quot;$http_user_agent&quot; &quot;$http_x_forwarded_for&quot;&#39;;
-</code></pre></div></p>
+<p>登录日志通控制台。</p>
 </li>
 <li>
-<p>（可选）在<strong>示例日志解析</strong>部分，粘贴一个Nginx示例日志以验证日志解析是否成功。</p>
-<p>如:
-<div class="highlight"><pre><span></span><code>127.0.0.1 - - [24/Dec/2021:01:27:11 +0000] &quot;GET / HTTP/1.1&quot; 200 3520 &quot;-&quot; &quot;curl/7.79.1&quot; &quot;-&quot;
-</code></pre></div></p>
+<p>在左侧边栏中的 <strong>日志分析管道</strong> 下，选择<strong>应用日志</strong>。</p>
 </li>
 <li>
-<p>（可选）在<strong>过滤器</strong>部分，您可以在日志代理端启用并添加一些条件来过滤日志。日志通解决方案将仅收集符合所有指定条件的日志。</p>
+<p>单击 <strong>创建日志管道</strong>。</p>
 </li>
 <li>
-<p>点击 <strong>创建</strong>.</p>
+<p>单击 <strong>EKS集群</strong> 作为日志源, 并选择 <strong>下一步</strong>。</p>
+</li>
+<li>
+<p>选择存储日志的 AWS 账户。</p>
+</li>
+<li>
+<p>选择EKS集群，如果你还有没有导入集群，选择 <strong>导入集群</strong> , 参考 <a href="../create-log-source/#amazon-eks-cluster">EKS 集群</a> 操作文档来导入EKS集群。然后，从下拉列表中选择新导入的EKS集群。</p>
+</li>
+<li>
+<p>单击 <strong>下一步</strong>。</p>
 </li>
 </ol>
-<h2 id="2">步骤 2: 创建一个日志摄入</h2>
-<!-- BEGIN INCLUDE create-log-ingestion.md '&lt;!--ig-start--&gt;' '&lt;!--eks-end--&gt;' -->
-
-<h3 id="_1">实例组作为日志源</h3>
-<ol>
-<li>登录日志通控制台。</li>
-<li>在左侧边栏中的 <strong>日志分析管道</strong> 下，选择<strong>应用日志</strong>。</li>
-<li>单击在<strong>前提条件</strong>期间创建的应用程序管道。</li>
-<li>选择 <strong>Permission grant method</strong>。如果您选择 <strong>I will manually add the below required permissions after pipeline creation</strong>，您需要点击 <strong>Expand to view required permissions</strong> 并复制提供的 JSON policy。</li>
-<li>
-<p>转到 <strong>AWS Console &gt; IAM &gt; Policies</strong> 在左侧列，并</p>
+<p>您已为日志分析管道创建日志源。 现在，您可以使用 Amazon EKS 集群作为日志源对日志分析管道进行进一步配置。</p>
 <ol>
 <li>
-<p>选择 <strong>Create Policy</strong>，选择 <strong>JSON</strong> 并替换文本块内的所有内容。记得用您的账户ID替换 <code>&lt;YOUR ACCOUNT ID&gt;</code>。</p>
+<p>输入 <strong>日志路径</strong> 指定要收集的日志的位置。</p>
 </li>
 <li>
-<p>选择 <strong>Next</strong>，<strong>Next</strong>，然后为此策略输入名称。</p>
+<p>选择之前设置中创建的日志配置，点击 <strong>下一步</strong>。如果您没有从下拉列表中找到所需的日志配置，请选择 <strong>创建新的</strong>, 并参考 <a href="../create-log-config/">日志配置</a>。</p>
 </li>
 <li>
-<p>将策略附加到您的 EC2 实例配置文件，以授予日志代理将日志发送到应用日志 管道的权限。如果您使用的是弹性伸缩组，您需要更新与弹性伸缩组关联的 IAM 实例配置文件。如有需要，您可以按照文档来更新您的 <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/create-launch-template.html#advanced-settings-for-your-launch-template">launch template</a> 或 <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/change-launch-config.html">launch configuration</a>。</p>
-</li>
-</ol>
+<p>在 <strong>索引名称</strong> 中小写指定。</p>
 </li>
 <li>
-<p>单击<strong>创建日志摄取</strong>下拉菜单，然后选择<strong>从实例组</strong>。</p>
-</li>
-<li>选择<strong>选择存在</strong>，然后选择<strong>下一步</strong>。</li>
-<li>选择您在<strong>前提条件</strong>中创建的实例组，然后选择<strong>下一步</strong>。</li>
-<li>（仅限Auto Scaling Group）如果您的实例组是基于Auto Scaling Group创建的，当摄取状态变为“已创建”后，您可以在实例组的详细信息页面中找到生成的Shell 脚本。复制 shell 脚本并更新 Auto Scaling <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/launch-configurations.html">启动配置</a> 或  <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html">启动模版</a>。</li>
-<li>选择<strong>选择已存在</strong>，并选择在先前设置中创建的日志配置。</li>
-</ol>
-<!--ig-end-->
-
-<!--eks-start-->
-<h3 id="amazon-eks">Amazon EKS 集群作为日志源</h3>
-<ol>
-<li>登录日志通控制台。</li>
-<li>在左侧边栏中的 <strong>日志源</strong> 下，选择 <strong>EKS 集群</strong>。</li>
-<li>单击已导入为日志源的 EKS 集群。</li>
-<li>
-<p>转到 <strong>App Log Ingestion</strong> 标签并选择 <strong>Create an Ingestion</strong>。</p>
-<ol>
-<li>
-<p>选择 <strong>Choose exists</strong> 并选择在 <strong>Prerequisites</strong> 中创建的应用日志 管道。选择 <strong>Next</strong>。</p>
-</li>
-<li>
-<p>选择在之前设置中创建的日志配置。</p>
-</li>
-<li>
-<p>选择 <strong>Create</strong> 以完成创建一个导入。</p>
-</li>
-</ol>
-</li>
-<li>
-<p>按照日志通 生成的指南部署 Fluent-bit 日志代理。</p>
+<p>在 <strong>缓冲区</strong> 部分中，选择 <strong>S3</strong> 或 <strong>Kinesis Data Streams</strong>。如果您不希望有缓冲层，请选择 <strong>无</strong>。请参阅 <a href="../#log-buffer">日志缓冲</a> 获取关于选择适当缓冲层的更多信息。</p>
 <ul>
-<li>选择刚刚创建的应用日志摄取。</li>
-<li>按照 <strong>DaemonSet</strong> 或 <strong>Sidecar</strong> 指南部署日志代理。</li>
+<li>S3缓冲参数</li>
 </ul>
-</li>
-</ol>
-<!-- END INCLUDE -->
-
-<h2 id="3-nginx">步骤 3: 查看 Nginx 服务器日志仪表板</h2>
-<p>对于 Nginx 日志，日志通会创建一个内置的示例仪表板。</p>
-<ol>
-<li>在浏览器中打开 OpenSearch 仪表板。</li>
-<li>转到左侧边栏中的<strong>仪表板</strong>部分。</li>
-<li>找到名称以<code>&lt;the-application-pipeline&gt;</code>开头的仪表板。</li>
-</ol>
-<h2 id="_2">查看仪表板</h2>
-<p>仪表板包括以下可视化内容。</p>
 <table>
 <thead>
 <tr>
-<th>图表名称</th>
-<th>源字段</th>
+<th>参数</th>
+<th>默认值</th>
 <th>描述</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Total Requests</td>
-<td><ul><li> log event </li></ul></td>
-<td>基于指定的时间间隔显示聚合事件。</td>
+<td>S3 Bucket</td>
+<td><em>解决方案将创建一个日志桶。</em></td>
+<td>您也可以选择一个桶来存储日志数据。</td>
 </tr>
 <tr>
-<td>Http Method</td>
-<td><ul><li> request_method </li></ul></td>
-<td>使用管道图显示 Nginx 在选定时间段内处理的请求方法的分布。</td>
+<td>S3 Bucket前缀</td>
+<td><code>AppLogs/&lt;index-prefix&gt;/year=%Y/month=%m/day=%d</code></td>
+<td>日志代理在将日志文件交付给S3桶时添加前缀。</td>
 </tr>
 <tr>
-<td>Request History</td>
-<td><ul><li> log event</li></ul></td>
-<td>使用条形图显示 Nginx 处理的所有请求的历史日志。这允许管理员分析流量量和模式。</td>
+<td>缓冲大小</td>
+<td>50 MiB</td>
+<td>日志代理在将日志交付给S3之前在日志代理端缓存的日志数据的最大大小。有关更多信息，请查看 <a href="https://docs.aws.amazon.com/firehose/latest/dev/basic-deliver.html#frequency">数据交付频率</a>。</td>
 </tr>
 <tr>
-<td>Unique Visitors</td>
-<td><ul><li> remote_addr</li></ul></td>
-<td>显示在给定时间段内对应用程序进行请求的不同 IP 地址的数量。</td>
+<td>缓冲间隔</td>
+<td>60秒</td>
+<td>日志代理将日志交付给S3的最大间隔。有关更多信息，请查看 <a href="https://docs.aws.amazon.com/firehose/latest/dev/basic-deliver.html#frequency">数据交付频率</a>。</td>
 </tr>
 <tr>
-<td>Bandwidth</td>
-<td><ul><li> body_bytes_sent</li></ul></td>
-<td>带宽指标跟踪 Nginx 服务器在一段时间内向客户端传输的数据总量。</td>
-</tr>
-<tr>
-<td>Status Code Metric</td>
-<td><ul><li> status</li></ul></td>
-<td>显示 Nginx 服务器在一段时间内提供的 HTTP 响应代码的分布。</td>
-</tr>
-<tr>
-<td>Status Code</td>
-<td><ul><li>status</li></ul></td>
-<td>与总响应数量相对的每个状态代码的比例也显示为百分比。这使得容易识别主导的响应类型。</td>
-</tr>
-<tr>
-<td>Bandwidth History</td>
-<td><ul><li> body_bytes_sent</li></ul></td>
-<td>显示 Nginx 服务器到客户端的数据传输活动的历史趋势。</td>
-</tr>
-<tr>
-<td>Top IPs</td>
-<td><ul><li>body_bytes_sent</li><li>remote_addr</li></ul></td>
-<td>显示在指定时间段内向应用程序生成最多请求的前10个客户端 IP 地址。</td>
-</tr>
-<tr>
-<td>Top Referers</td>
-<td><ul><li> http_referer</li></ul></td>
-<td>引荐者是链接到应用程序请求的页面的 URL。跟踪引荐者揭示了主要的外部访问和参与来源。</td>
-</tr>
-<tr>
-<td>Top User Agents</td>
-<td><ul><li> http_user_agent</li></ul></td>
-<td>显示产生流量的客户端浏览器和设备类型的分解。</td>
-</tr>
-<tr>
-<td>Top Access URL</td>
-<td><ul><li> remote</li><li> method </li></ul></td>
-<td>显示在指定时间段内应用程序上最常请求的 URL。</td>
-</tr>
-<tr>
-<td>Nginx Error Log</td>
-<td><ul><li> @timestamp</li><li> status </li><li> remote_addr </li><li> request_uri </li><li> request_method </li><li> http_referer </li><li> body_bytes_sent </li><li> http_user_agent </li></ul></td>
-<td>提供 web 服务器遇到的错误的详细记录。</td>
+<td>数据记录的压缩</td>
+<td><code>Gzip</code></td>
+<td>日志代理在将它们交付给S3桶之前会压缩记录。</td>
 </tr>
 </tbody>
 </table>
-<h3 id="_3">样本仪表板</h3>
-<!-- BEGIN INCLUDE ../include-dashboard.md -->
-<p>您可以访问Amazon OpenSearch中的内置仪表板来查看日志数据。更多信息请参阅<a href="../../getting-started/4.view-dashboard/">访问仪表板</a>。</p>
-<p>您可以点击下面的图像查看高分辨率的示例仪表板。</p>
-<!-- END INCLUDE -->
-
-<p><a href="../../../images/dashboards/nginx-1.png"><img alt="nginx-1" src="../../../images/dashboards/nginx-1.png" /></a></p>
-<p><a href="../../../images/dashboards/nginx-2.png"><img alt="nginx-2" src="../../../images/dashboards/nginx-2.png" /></a></p>
+<ul>
+<li>Kinesis Data Streams缓冲参数</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>分片数量</td>
+<td><code>&lt;需要输入&gt;</code></td>
+<td>Kinesis Data Streams的分片数量。每个分片每秒最多可容纳1,000个记录，并且总数据写入速率为每秒1MB。</td>
+</tr>
+<tr>
+<td>启用自动缩放</td>
+<td><code>否</code></td>
+<td>该解决方案每5分钟监视一次Kinesis Data Streams的利用率，并自动缩放分片的数量。解决方案在24小时内最多缩放8次。</td>
+</tr>
+<tr>
+<td>最大分片数量</td>
+<td><code>&lt;需要输入&gt;</code></td>
+<td>如果启用了自动缩放，则需要。最大的分片数量。</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition 重要">
+<p class="admonition-title">重要</p>
+<p>如果在Kinesis Data Streams（KDS）中发生阈值错误，您可能会在OpenSearch中观察到重复的日志。这是因为Fluent Bit日志代理以<a href="https://docs.fluentbit.io/manual/administration/buffering-and-storage#chunks-memory-filesystem-and-backpressure">块</a> (包含多个记录)上传日志，并在上传失败时重试该块。每个KDS分片每秒最多可支持写入1,000条记录，最大总数据写入速率为每秒1MB。请估算您的日志量并选择合适的分片数量。</p>
+</div>
+</li>
+<li>
+<p>选择 <strong>下一步</strong>。</p>
+</li>
+<li>
+<p>在 <strong>指定OpenSearch域</strong> 部分，为 <strong>Amazon OpenSearch域</strong> 选择一个已导入的域。</p>
+</li>
+<li>
+<p>在 <strong>日志生命周期</strong> 部分，输入天数以管理Amazon OpenSearch Service索引生命周期。与OpenSearch一起的中央化日志将为这个管道自动创建关联的 <a href="https://opensearch.org/docs/latest/im-plugin/ism/index/">索引状态管理(ISM)</a> 政策。</p>
+</li>
+<li>
+<p>选择 <strong>下一步</strong>。</p>
+</li>
+<li>
+<p>如果需要，请启用 <strong>警报</strong> 并选择一个现有的SNS主题。如果您选择 <strong>创建一个新的SNS主题</strong>，请为新的SNS主题提供一个名称和电子邮件地址。</p>
+</li>
+<li>
+<p>如果需要，请添加标签。</p>
+</li>
+<li>
+<p>选择 <strong>创建</strong>。</p>
+</li>
+<li>
+<p>等待应用程序管道转变为“活动”状态。</p>
+</li>
+</ol>
 
 
 
@@ -1900,7 +1709,7 @@
     <nav class="md-footer__inner md-grid" aria-label="页脚" >
       
         
-        <a href="../apache/" class="md-footer__link md-footer__link--prev" aria-label="上一页: Apache HTTP 服务器" rel="prev">
+        <a href="../ec2-pipeline/" class="md-footer__link md-footer__link--prev" aria-label="上一页: EC2 实例组" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
           </div>
@@ -1909,20 +1718,20 @@
               <span class="md-footer__direction">
                 上一页
               </span>
-              Apache HTTP 服务器
+              EC2 实例组
             </div>
           </div>
         </a>
       
       
         
-        <a href="../single-line-text/" class="md-footer__link md-footer__link--next" aria-label="下一页: 单行文本" rel="next">
+        <a href="../s3-pipeline/" class="md-footer__link md-footer__link--next" aria-label="下一页: S3" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 下一页
               </span>
-              单行文本
+              S3
             </div>
           </div>
           <div class="md-footer__button md-icon">

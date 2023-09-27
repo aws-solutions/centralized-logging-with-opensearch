@@ -15,7 +15,7 @@
     
     
       
-        <title>Create a log source - Centralized Logging with OpenSearch</title>
+        <title>Log source - Centralized Logging with OpenSearch</title>
       
     
     
@@ -102,7 +102,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Create a log source
+              Log source
             
           </span>
         </div>
@@ -1077,6 +1077,62 @@
               
   
   
+  
+    <li class="md-nav__item">
+      <a href="../ec2-pipeline/" class="md-nav__link">
+        EC2 instance group
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../eks-pipeline/" class="md-nav__link">
+        EKS cluster
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../s3-pipeline/" class="md-nav__link">
+        S3
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../syslog-pipeline/" class="md-nav__link">
+        Syslog
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
     
   
   
@@ -1084,20 +1140,20 @@
     <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9_2" type="checkbox" id="__nav_1_9_2" checked>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9_6" type="checkbox" id="__nav_1_9_6" checked>
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_9_2">
-          Prerequisites
+        <label class="md-nav__link" for="__nav_1_9_6">
+          Pipeline resources
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Prerequisites" data-md-level="3">
-        <label class="md-nav__title" for="__nav_1_9_2">
+      <nav class="md-nav" aria-label="Pipeline resources" data-md-level="3">
+        <label class="md-nav__title" for="__nav_1_9_6">
           <span class="md-nav__icon md-icon"></span>
-          Prerequisites
+          Pipeline resources
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -1115,12 +1171,12 @@
       
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
-          Create a log source
+          Log source
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
-        Create a log source
+        Log source
       </a>
       
         
@@ -1191,6 +1247,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#add-a-new-log-source" class="md-nav__link">
+    Add a new log source
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1206,8 +1269,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../create-applog-pipeline/" class="md-nav__link">
-        Create an application pipeline
+      <a href="../create-log-config/" class="md-nav__link">
+        Log Config
       </a>
     </li>
   
@@ -1216,90 +1279,6 @@
           
         </ul>
       </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../apache/" class="md-nav__link">
-        Apache HTTP Server
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../nginx/" class="md-nav__link">
-        Nginx
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../single-line-text/" class="md-nav__link">
-        Single-line text
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../multi-line-text/" class="md-nav__link">
-        Multi-line text
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../json/" class="md-nav__link">
-        JSON
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../syslog/" class="md-nav__link">
-        Syslog
-      </a>
     </li>
   
 
@@ -1633,6 +1612,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#add-a-new-log-source" class="md-nav__link">
+    Add a new log source
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1653,7 +1639,7 @@
   </a>
 
 
-  <h1>Create a log source</h1>
+  <h1>Log source</h1>
 
 <p>You need to create a log source first before collecting application logs. Centralized Logging with OpenSearch supports the following log sources:</p>
 <ul>
@@ -1680,9 +1666,9 @@
 <ol>
 <li>Sign in to the Centralized Logging with OpenSearch Console.</li>
 <li>In the left sidebar, under <strong>Log Source</strong>, choose <strong>Instance Group</strong>.</li>
-<li>Click the <strong>Create an instance group</strong> button.</li>
-<li>In the <strong>Settings</strong> section, specify a group name.</li>
-<li>In the <strong>Configuration</strong> section, select <strong>Instances</strong>. You can use up to 5 tags to filter the instances.</li>
+<li>Choose <strong>Create an instance group</strong>.</li>
+<li>In the <strong>Instance Group Settings</strong> section, specify a group name.</li>
+<li>Select <strong>Instances</strong>. You can use up to 5 tags to filter the instances.</li>
 <li>Verify that all the selected instances "Pending Status" is <strong>Online</strong>.</li>
 <li>(Optional) If the selected instances "Pending Status" are empty, click the <strong>Install log agent</strong> button and wait for "Pending Status" to become <strong>Online</strong>.</li>
 <li>(Optional) If you want to ingest logs from another account, select a <a href="../../link-account/">linked account</a> in the <strong>Account Settings</strong> section to create an instance group log source from another account.</li>
@@ -1690,7 +1676,7 @@
 </ol>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
-<p>Use the Centralized Logging with OpenSearch console to install Fluent Bit agent on Ubuntu instances in <strong>Beijing (cn-north-1) and Ningxia (cn-northwest-1)</strong> Region will cause installation error. The Fluent Bit assets cannot
+<p>An installation error may occur if you use the Centralized Logging with OpenSearch console to install Fluent Bit agent on Ubuntu instances in <strong>China (Beijing) Region Operated by Sinnet (cn-north-1)</strong> and <strong>China (Ningxia) Region Operated by NWCD (cn-northwest-1)</strong> Region. This is because the Fluent Bit assets cannot
 be downloaded successfully. You need to install the Fluent Bit agent by yourself.</p>
 </div>
 <h3 id="option-2-select-an-auto-scaling-group-to-create-an-instance-group">(Option 2) Select an Auto Scaling group to create an Instance Group</h3>
@@ -1699,10 +1685,10 @@ should include in the <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGui
 <ol>
 <li>Sign in to the Centralized Logging with OpenSearch Console.</li>
 <li>In the left sidebar, under <strong>Log Source</strong>, choose <strong>Instance Group</strong>.</li>
-<li>Click the <strong>Create an instance group</strong> button.</li>
-<li>In the <strong>Settings</strong> section, specify a group name.</li>
-<li>In the <strong>Configuration</strong> section, select <strong>Auto Scaling Groups</strong>.</li>
-<li>In the <strong>Auto Scaling groups</strong> section, select the autoscaling group from which you want to collect logs.</li>
+<li>Choose <strong>Create an instance group</strong>.</li>
+<li>In the <strong>Instance Group Settings</strong> section, specify a group name.</li>
+<li>Select <strong>Auto Scaling Groups</strong>.</li>
+<li>Select the autoscaling group from which you want to collect logs.</li>
 <li>(Optional) If you want to ingest logs from another account, select a <a href="../../link-account/">linked account</a> in the <strong>Account Settings</strong> section to create an instance group log source from another account.</li>
 <li>Choose <strong>Create</strong>. After you created a Log Ingestion using the Instance Group, you can find the generated Shell Script in the details page.</li>
 <li>Copy the shell script and update the User Data of the Auto Scaling Group's <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/launch-configurations.html">launch configurations</a> or <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html">launch template</a>.
@@ -1722,9 +1708,9 @@ The newly launched instances will ingest logs to the OpenSearch cluster or the <
 <ol>
 <li>Sign in to the Centralized Logging with OpenSearch Console.</li>
 <li>In the left sidebar, under <strong>Log Source</strong>, choose <strong>EKS Cluster</strong>.</li>
-<li>Click the <strong>Import a Cluster</strong> button.</li>
-<li>Choose the <strong>EKS Cluster</strong> where Centralized Logging with OpenSearch collects logs from.
-(Optional) If you want to ingest logs from another account, select a <a href="../../link-account/">linked account</a> from the <strong>Account</strong> dropdown to import an EKS log source from another account.</li>
+<li>Choose <strong>Import a Cluster</strong>.</li>
+<li>Choose the <strong>EKS Cluster</strong> where Centralized Logging with OpenSearch collects logs from.</li>
+<li>(Optional) If you want to ingest logs from another account, select a <a href="../../link-account/">linked account</a> from the <strong>Account</strong> dropdown to import an EKS log source from another account.</li>
 <li>Select <strong>DaemonSet</strong> or <strong>Sidecar</strong> as log agent's deployment pattern.</li>
 <li>Choose <strong>Next</strong>.</li>
 <li>Specify the <strong>Amazon OpenSearch</strong> where Centralized Logging with OpenSearch sends the logs to.</li>
@@ -1753,6 +1739,25 @@ The newly launched instances will ingest logs to the OpenSearch cluster or the <
 <p>To ingest logs, make sure your Syslog generator/sender’s subnet is connected to Centralized Logging with OpenSearch’s <strong>two</strong> private subnets. Refer to <a href="https://docs.aws.amazon.com/whitepapers/latest/building-scalable-secure-multi-vpc-network-infrastructure/vpc-to-vpc-connectivity.html">VPC Connectivity</a> for more details about how to connect VPCs.</p>
 </div>
 <p>You can use UDP or TCP custom port number to collect syslog in Centralized Logging with OpenSearch. Syslog refers to logs generated by Linux instance, routers or network equipment. For more information, see <a href="https://en.wikipedia.org/wiki/Syslog">Syslog</a> in Wikipedia.</p>
+<h2 id="add-a-new-log-source">Add a new log source</h2>
+<p>After log analytics pipeline is created, it has one log source. You can choose to add more log sources into the log pipeline by following below steps:</p>
+<ol>
+<li>
+<p>Sign in to the Centralized Logging with OpenSearch Console.</p>
+</li>
+<li>
+<p>In the left sidebar, under <strong>Log Analytics Pipelines</strong>, choose <strong>Application Log</strong>.</p>
+</li>
+<li>
+<p>Choose the log pipeline by clicking its <strong>ID</strong>。</p>
+</li>
+<li>
+<p>Choose <strong>Create a source</strong>. </p>
+</li>
+<li>
+<p>Follow the instructions in <a href="#amazon-ec2-instance-group">Amazon EC2 instance group</a>, <a href="#amazon-eks-cluster">Amazon EKS cluster</a>, <a href="#amazon-s3">Amazon S3</a>, or <a href="#syslog">Syslog</a> to create a log source according to your need. </p>
+</li>
+</ol>
 
 
 
@@ -1773,7 +1778,7 @@ The newly launched instances will ingest logs to the OpenSearch cluster or the <
     <nav class="md-footer__inner md-grid" aria-label="Footer" >
       
         
-        <a href="../" class="md-footer__link md-footer__link--prev" aria-label="Previous: Overview" rel="prev">
+        <a href="../syslog-pipeline/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Syslog" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
           </div>
@@ -1782,20 +1787,20 @@ The newly launched instances will ingest logs to the OpenSearch cluster or the <
               <span class="md-footer__direction">
                 Previous
               </span>
-              Overview
+              Syslog
             </div>
           </div>
         </a>
       
       
         
-        <a href="../create-applog-pipeline/" class="md-footer__link md-footer__link--next" aria-label="Next: Create an application pipeline" rel="next">
+        <a href="../create-log-config/" class="md-footer__link md-footer__link--next" aria-label="Next: Log Config" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Create an application pipeline
+              Log Config
             </div>
           </div>
           <div class="md-footer__button md-icon">

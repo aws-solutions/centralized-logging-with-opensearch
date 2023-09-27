@@ -15,7 +15,7 @@
     
     
       
-        <title>创建日志源 - Centralized Logging with OpenSearch</title>
+        <title>日志源 - Centralized Logging with OpenSearch</title>
       
     
     
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#_1" class="md-skip">
+        <a href="#amazon-ec2" class="md-skip">
           跳转至
         </a>
       
@@ -102,7 +102,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              创建日志源
+              日志源
             
           </span>
         </div>
@@ -1077,6 +1077,62 @@
               
   
   
+  
+    <li class="md-nav__item">
+      <a href="../ec2-pipeline/" class="md-nav__link">
+        EC2 实例组
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../eks-pipeline/" class="md-nav__link">
+        EKS 集群
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../s3-pipeline/" class="md-nav__link">
+        S3
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../syslog-pipeline/" class="md-nav__link">
+        Syslog
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
     
   
   
@@ -1084,20 +1140,20 @@
     <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9_2" type="checkbox" id="__nav_1_9_2" checked>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9_6" type="checkbox" id="__nav_1_9_6" checked>
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_9_2">
-          前提条件
+        <label class="md-nav__link" for="__nav_1_9_6">
+          管道资源
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="前提条件" data-md-level="3">
-        <label class="md-nav__title" for="__nav_1_9_2">
+      <nav class="md-nav" aria-label="管道资源" data-md-level="3">
+        <label class="md-nav__title" for="__nav_1_9_6">
           <span class="md-nav__icon md-icon"></span>
-          前提条件
+          管道资源
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -1113,16 +1169,14 @@
       <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
       
       
-        
-      
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
-          创建日志源
+          日志源
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
-        创建日志源
+        日志源
       </a>
       
         
@@ -1130,8 +1184,6 @@
 <nav class="md-nav md-nav--secondary" aria-label="目录">
   
   
-  
-    
   
   
     <label class="md-nav__title" for="__toc">
@@ -1149,7 +1201,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#_1" class="md-nav__link">
     前提条件
   </a>
   
@@ -1175,8 +1227,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#amazon-eks" class="md-nav__link">
-    Amazon EKS 集群
+  <a href="#amazon-eks-cluster" class="md-nav__link">
+    Amazon EKS cluster
   </a>
   
 </li>
@@ -1191,6 +1243,13 @@
         <li class="md-nav__item">
   <a href="#syslog" class="md-nav__link">
     Syslog
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    添加新的日志源
   </a>
   
 </li>
@@ -1210,8 +1269,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../create-applog-pipeline/" class="md-nav__link">
-        创建应用日志管道
+      <a href="../create-log-config/" class="md-nav__link">
+        日志配置
       </a>
     </li>
   
@@ -1220,90 +1279,6 @@
           
         </ul>
       </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../apache/" class="md-nav__link">
-        Apache HTTP 服务器
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../nginx/" class="md-nav__link">
-        Nginx
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../single-line-text/" class="md-nav__link">
-        单行文本
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../multi-line-text/" class="md-nav__link">
-        多行文本
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../json/" class="md-nav__link">
-        JSON
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../syslog/" class="md-nav__link">
-        Syslog
-      </a>
     </li>
   
 
@@ -1575,8 +1550,6 @@
   
   
   
-    
-  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -1593,7 +1566,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#_1" class="md-nav__link">
     前提条件
   </a>
   
@@ -1619,8 +1592,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#amazon-eks" class="md-nav__link">
-    Amazon EKS 集群
+  <a href="#amazon-eks-cluster" class="md-nav__link">
+    Amazon EKS cluster
   </a>
   
 </li>
@@ -1635,6 +1608,13 @@
         <li class="md-nav__item">
   <a href="#syslog" class="md-nav__link">
     Syslog
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    添加新的日志源
   </a>
   
 </li>
@@ -1659,19 +1639,20 @@
   </a>
 
 
-<h1 id="_1">日志源</h1>
+  <h1>日志源</h1>
+
 <p>在收集应用程序日志之前，您需要先创建日志源。 日志通支持以下日志源：</p>
 <ul>
-<li>Amazon EC2 实例组</li>
-<li>EKS 集群</li>
-<li>Amazon S3</li>
-<li>Syslog</li>
+<li><a href="#amazon-ec2-instance-group">Amazon EC2 实例组</a></li>
+<li><a href="#amazon-eks-cluster">Amazon EKS 集群</a></li>
+<li><a href="#amazon-s3">Amazon S3</a></li>
+<li><a href="#syslog">Syslog</a></li>
 </ul>
 <p>有关详细信息，请参阅 <a href="../#concepts">概念</a>。</p>
 <h2 id="amazon-ec2">Amazon EC2 实例组</h2>
 <p>一个实例组代表了一组 EC2 Linux 实例，这使得解决方案能够快速地将 <a href="../#log-config">Log Config</a> 与多个 EC2 实例关联。日志通 使用 <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/ssm-agent.html" target="_blank">Systems Manager Agent(SSM Agent)</a> 来安装/配置 Fluent Bit agent，并将日志数据发送到 <a href="https://aws.amazon.com/kinesis/data-streams/" target="_blank">Kinesis Data Streams</a>。</p>
-<h3 id="_2">前提条件</h3>
-<p>确保实例满足以下要求：</p>
+<h3 id="_1">前提条件</h3>
+<p>Make sure the instances meet the following requirements:</p>
 <ul>
 <li>SSM Agent 安装在实例上。详情请参阅 <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-manual-agent-install.html">在 Linux 的 EC2 实例上安装 SSM Agent</a></li>
 <li><code>AmazonSSMManagedInstanceCore</code> 策略与实例相关联。</li>
@@ -1693,8 +1674,8 @@
 <li>（可选步骤）如果需要跨账户摄取日志，在 <strong>账户设置</strong> 部分，选择一个<a href="../../link-account/">链接的 AWS 账户</a>，就可以创建一个跨账户的实例组。</li>
 <li>选择<strong>创建</strong>。</li>
 </ol>
-<div class="admonition warning">
-<p class="admonition-title">警告</p>
+<div class="admonition important">
+<p class="admonition-title">重要</p>
 <p>在 <strong>由光环新网运营的亚马逊云科技中国（北京）区域 (cn-north-1)和由西云数据运营的亚马逊云科技中国（宁夏）区域 (cn-northwest-1)</strong> 区域的 Ubuntu 实例上使用日志通 控制台安装 Fluent Bit 代理会导致安装错误。 Fluent Bit 安装包不能
 下载成功。 您需要自己安装 Fluent Bit 代理。</p>
 </div>
@@ -1706,20 +1687,20 @@
 <li>单击<strong>创建实例组</strong>按钮。</li>
 <li>在 <strong>设置</strong> 部分，指定组名。</li>
 <li>在 <strong>配置</strong> 部分，选择 <strong>Auto Scaling 组</strong> 选项。</li>
-<li>在 <strong>Auto Scaling 组</strong> 部分, 选择要从中收集日志的Auto Scaling组.</li>
+<li>在 <strong>Auto Scaling 组</strong> 部分, 选择要从中收集日志的Auto Scaling组。</li>
 <li>（可选步骤）如果需要跨账户摄取日志，在 <strong>账户设置</strong> 部分，选择一个<a href="../../link-account/">链接的 AWS 账户</a>，就可以创建一个跨账户的实例组。</li>
 <li>选择<strong>创建</strong>。 使用 Instance Group 创建 Log Ingestion 后，您可以在详细信息页面中找到生成的 Shell Script。</li>
 <li>复制 shell 脚本并更新 Auto Scaling 组的 <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/launch-configurations.html">启动配置</a> 或 <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html">启动模板</a>。如果需要，shell 脚本将自动安装 Fluent Bit、SSM 代理，并下载 Fluent Bit 配置。</li>
 <li>一旦您更新了启动配置或启动模板，您需要启动 <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/asg-instance-refresh.html">instance refresh</a> 来更新 Auto Scaling 组中的实例。
 新启动的实例会将日志提取到 OpenSearch 集群或 <a href="../#日志缓冲区log-buffer">Log Buffer</a> 层。</li>
 </ol>
-<h2 id="amazon-eks">Amazon EKS 集群</h2>
+<h2 id="amazon-eks-cluster">Amazon EKS cluster</h2>
 <p>日志通中的 <a href="https://docs.aws.amazon.com/eks/latest/userguide/what-is-eks.html">EKS Cluster</a> 是指您要从中收集 pod 日志的 Amazon Elastic Kubernetes Service (Amazon EKS)。日志通将指导您将日志记录代理部署为 EKS 集群中的 <a href="https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/">DaemonSet</a> 或 <a href="https://kubernetes.io/docs/concepts/workloads/pods/#workload-resources-for-managing-pods">Sidecar</a>。</p>
 <div class="admonition important">
 <p class="admonition-title">重要</p>
 <ul>
 <li>日志通不支持将一个 EKS 集群中的日志同时发送到多个 Amazon OpenSearch 域。</li>
-<li>确保 EKS 集群的 VPC 已连接到 Amazon OpenSearch Service 集群的 VPC，以进行日志摄取。有关连接 VPC 的方法的详细信息，请参考 <a href="https://docs.aws.amazon.com/whitepapers/latestbuilding-scalable-secure-multi-vpc-network-infrastructure/vpc-to-vpc-connectivity.html">VPC Connectivity</a>.</li>
+<li>确保 EKS 集群的 VPC 已连接到 Amazon OpenSearch Service 集群的 VPC，以进行日志摄取。有关连接 VPC 的方法的详细信息，请参考 <a href="https://docs.aws.amazon.com/whitepapers/latest/building-scalable-secure-multi-vpc-network-infrastructure/vpc-to-vpc-connectivity.html">VPC Connectivity</a>。 </li>
 </ul>
 </div>
 <ol>
@@ -1755,6 +1736,25 @@
 <p>请确保您的 Syslog 生成器/发送者的子网连接到日志通 的<strong>两个</strong>私有子网，以便可以提取日志。 有关连接 VPC 的方法的更多详细信息，请参阅 <a href="https://docs.aws.amazon.com/whitepapers/latest/building-scalable-secure-multi-vpc-network-infrastructure/vpc-to-vpc-connectivity.html">VPC Connectivity</a>。</p>
 </div>
 <p>您可以使用自定义端口号的 UDP 或 TCP 协议在日志通中收集syslog。Syslog 是指Linux实例、路由器或网络设备产生的日志。了解更多信息，请参阅 Wikipedia 的 <a href="https://en.wikipedia.org/wiki/Syslog">Syslog</a>。</p>
+<h2 id="_2">添加新的日志源</h2>
+<p>日志分析管道创建后，就有一个日志源。 您可以按照以下步骤选择将更多日志源添加到日志管道中：</p>
+<ol>
+<li>
+<p>登录到日志通控制台。</p>
+</li>
+<li>
+<p>左侧边栏中， 在 <strong>Log Analytics Pipelines</strong>, 选择 <strong>Application Log</strong>。</p>
+</li>
+<li>
+<p>通过单击其来选择日志管道的 <strong>ID</strong>。</p>
+</li>
+<li>
+<p>选择 <strong>Create a source</strong>。</p>
+</li>
+<li>
+<p>按照 <a href="#amazon-ec2-instance-group">Amazon EC2 instance group</a>, <a href="#amazon-eks-cluster">Amazon EKS cluster</a>, <a href="#amazon-s3">Amazon S3</a>, or <a href="#syslog">Syslog</a> 的操作指南，根据您的需要创建日志源。 </p>
+</li>
+</ol>
 
 
 
@@ -1775,7 +1775,7 @@
     <nav class="md-footer__inner md-grid" aria-label="页脚" >
       
         
-        <a href="../" class="md-footer__link md-footer__link--prev" aria-label="上一页: 概览" rel="prev">
+        <a href="../syslog-pipeline/" class="md-footer__link md-footer__link--prev" aria-label="上一页: Syslog" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
           </div>
@@ -1784,20 +1784,20 @@
               <span class="md-footer__direction">
                 上一页
               </span>
-              概览
+              Syslog
             </div>
           </div>
         </a>
       
       
         
-        <a href="../create-applog-pipeline/" class="md-footer__link md-footer__link--next" aria-label="下一页: 创建应用日志管道" rel="next">
+        <a href="../create-log-config/" class="md-footer__link md-footer__link--next" aria-label="下一页: 日志配置" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 下一页
               </span>
-              创建应用日志管道
+              日志配置
             </div>
           </div>
           <div class="md-footer__button md-icon">

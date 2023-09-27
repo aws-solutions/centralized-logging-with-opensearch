@@ -8,14 +8,14 @@
       
       
       
-        <link rel="canonical" href="https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/applications/create-log-ingestion/">
+        <link rel="canonical" href="https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/applications/create-log-config/">
       
       <link rel="icon" href="../../../images/aws-solutions.png">
       <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.5.3">
     
     
       
-        <title>Create log ingestion - Centralized Logging with OpenSearch</title>
+        <title>Log Config - Centralized Logging with OpenSearch</title>
       
     
     
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#instance-group-as-log-source" class="md-skip">
+        <a href="#log-config" class="md-skip">
           Skip to content
         </a>
       
@@ -102,7 +102,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Create log ingestion
+              Log Config
             
           </span>
         </div>
@@ -200,6 +200,8 @@
         
   
   
+    
+  
 
 
   
@@ -211,7 +213,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../.." class="md-tabs__link">
+      <a href="../../.." class="md-tabs__link md-tabs__link--active">
         Implementation Guide
       </a>
     </li>
@@ -293,12 +295,14 @@
 
   
   
+    
+  
   
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1" type="checkbox" id="__nav_1" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1" type="checkbox" id="__nav_1" checked>
       
       
       
@@ -1031,12 +1035,14 @@
               
   
   
+    
+  
   
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9" type="checkbox" id="__nav_1_9" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9" type="checkbox" id="__nav_1_9" checked>
       
       
       
@@ -1072,24 +1078,82 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../ec2-pipeline/" class="md-nav__link">
+        EC2 instance group
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../eks-pipeline/" class="md-nav__link">
+        EKS cluster
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../s3-pipeline/" class="md-nav__link">
+        S3
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../syslog-pipeline/" class="md-nav__link">
+        Syslog
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
     
-    <li class="md-nav__item md-nav__item--nested">
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9_2" type="checkbox" id="__nav_1_9_2" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9_6" type="checkbox" id="__nav_1_9_6" checked>
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_9_2">
-          Prerequisites
+        <label class="md-nav__link" for="__nav_1_9_6">
+          Pipeline resources
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Prerequisites" data-md-level="3">
-        <label class="md-nav__title" for="__nav_1_9_2">
+      <nav class="md-nav" aria-label="Pipeline resources" data-md-level="3">
+        <label class="md-nav__title" for="__nav_1_9_6">
           <span class="md-nav__icon md-icon"></span>
-          Prerequisites
+          Pipeline resources
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -1100,7 +1164,7 @@
   
     <li class="md-nav__item">
       <a href="../create-log-source/" class="md-nav__link">
-        Create a log source
+        Log source
       </a>
     </li>
   
@@ -1111,11 +1175,134 @@
               
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../create-applog-pipeline/" class="md-nav__link">
-        Create an application pipeline
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Log Config
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Log Config
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#create-a-json-config" class="md-nav__link">
+    Create a JSON config
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-an-apache-http-server-log-config" class="md-nav__link">
+    Create an Apache HTTP server log config
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-an-nginx-log-config" class="md-nav__link">
+    Create an Nginx log config
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-a-syslog-config" class="md-nav__link">
+    Create a Syslog config
+  </a>
+  
+    <nav class="md-nav" aria-label="Create a Syslog config">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rfc5424" class="md-nav__link">
+    RFC5424
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rfc3164" class="md-nav__link">
+    RFC3164
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom" class="md-nav__link">
+    Custom
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-a-single-line-text-config" class="md-nav__link">
+    Create a single-line text config
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-a-multi-line-text-config" class="md-nav__link">
+    Create a multi-line text config
+  </a>
+  
+    <nav class="md-nav" aria-label="Create a multi-line text config">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#java-spring-boot" class="md-nav__link">
+    Java - Spring Boot
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom_1" class="md-nav__link">
+    Custom
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1123,90 +1310,6 @@
           
         </ul>
       </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../apache/" class="md-nav__link">
-        Apache HTTP Server
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../nginx/" class="md-nav__link">
-        Nginx
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../single-line-text/" class="md-nav__link">
-        Single-line text
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../multi-line-text/" class="md-nav__link">
-        Multi-line text
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../json/" class="md-nav__link">
-        JSON
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../syslog/" class="md-nav__link">
-        Syslog
-      </a>
     </li>
   
 
@@ -1478,6 +1581,8 @@
   
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -1486,30 +1591,91 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#instance-group-as-log-source" class="md-nav__link">
-    Instance Group as Log Source
+  <a href="#create-a-json-config" class="md-nav__link">
+    Create a JSON config
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#amazon-eks-cluster-as-log-source" class="md-nav__link">
-    Amazon EKS Cluster as Log Source
+  <a href="#create-an-apache-http-server-log-config" class="md-nav__link">
+    Create an Apache HTTP server log config
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#amazon-s3-as-log-source" class="md-nav__link">
-    Amazon S3 as Log Source
+  <a href="#create-an-nginx-log-config" class="md-nav__link">
+    Create an Nginx log config
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#syslog-as-log-source" class="md-nav__link">
-    Syslog as Log Source
+  <a href="#create-a-syslog-config" class="md-nav__link">
+    Create a Syslog config
   </a>
+  
+    <nav class="md-nav" aria-label="Create a Syslog config">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rfc5424" class="md-nav__link">
+    RFC5424
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rfc3164" class="md-nav__link">
+    RFC3164
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom" class="md-nav__link">
+    Custom
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-a-single-line-text-config" class="md-nav__link">
+    Create a single-line text config
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-a-multi-line-text-config" class="md-nav__link">
+    Create a multi-line text config
+  </a>
+  
+    <nav class="md-nav" aria-label="Create a multi-line text config">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#java-spring-boot" class="md-nav__link">
+    Java - Spring Boot
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom_1" class="md-nav__link">
+    Custom
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1527,163 +1693,328 @@
                 
                   
 
-  <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch/edit/master/docs/implementation-guide/applications/create-log-ingestion.md" title="Edit this page" class="md-content__button md-icon">
+  <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch/edit/master/docs/implementation-guide/applications/create-log-config.md" title="Edit this page" class="md-content__button md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
   </a>
 
 
-  <h1>Create log ingestion</h1>
-
-<!--ig-start-->
-<h3 id="instance-group-as-log-source">Instance Group as Log Source</h3>
+<h1 id="log-config">Log Config</h1>
+<p>Centralized Logging with OpenSearch solution supports creating log configs for the following log formats:</p>
+<ul>
+<li><a href="#create-a-json-config">JSON</a></li>
+<li><a href="#create-an-apache-http-server-log-config">Apache</a></li>
+<li><a href="#create-an-nginx-log-config">Nginx</a></li>
+<li><a href="#create-a-syslog-config">Syslog</a></li>
+<li><a href="#create-a-single-line-text-config">Single-ine text</a></li>
+<li><a href="#create-a-multi-line-text-config">Multi-line text</a></li>
+</ul>
+<p>For more information, refer to <a href="../#supported-log-formats-and-log-sources">supported log formats and log sources</a>.</p>
+<p>The following describes how to create log config for each log format.</p>
+<h2 id="create-a-json-config">Create a JSON config</h2>
 <ol>
+<li>Sign in to the Centralized Logging with OpenSearch Console.</li>
+<li>In the left sidebar, under <strong>Resources</strong>, choose <strong>Log Config</strong>.</li>
+<li>Choose <strong>Create a log config</strong>.</li>
+<li>Specify <strong>Config Name</strong>.</li>
+<li>Specify <strong>Log Path</strong>. You can use <code>,</code> to separate multiple paths.</li>
+<li>Choose <strong>JSON</strong> in the log type dropdown list.</li>
 <li>
-<p>Sign in to the Centralized Logging with OpenSearch Console.</p>
+<p>In the <strong>Sample log parsing</strong> section, paste a sample JSON log and click <strong>Parse log</strong> to verify if the log parsing is successful.</p>
+<p>For example:
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="nt">&quot;host&quot;</span><span class="p">:</span><span class="s2">&quot;81.95.250.9&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;user-identifier&quot;</span><span class="p">:</span><span class="s2">&quot;-&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;time&quot;</span><span class="p">:</span><span class="s2">&quot;08/Mar/2022:06:28:03 +0000&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;method&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;PATCH&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;request&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/clicks-and-mortar/24%2f7&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;protocol&quot;</span><span class="p">:</span><span class="s2">&quot;HTTP/2.0&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="mi">502</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;bytes&quot;</span><span class="p">:</span><span class="mi">24337</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;referer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://www.investorturn-key.net/functionalities/innovative/integrated&quot;</span><span class="p">}</span>
+</code></pre></div></p>
 </li>
 <li>
-<p>In the left sidebar, under <strong>Log Analytics Pipelines</strong>, choose <strong>Application Log</strong>.</p>
+<p>Check if each fields type mapping is correct. You can change the type by selecting the dropdown menu in the second column. For all supported types, see <a href="https://opensearch.org/docs/latest/search-plugins/sql/datatypes/">Data Types</a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You must specify the datetime of the log using key “time”. If not specified, system time will be added.</p>
+</div>
 </li>
 <li>
-<p>Choose the application pipeline that has been created during the <strong>Prerequisites</strong>.</p>
+<p>Specify the <strong>Time format</strong>. The format syntax follows <a href="https://linux.die.net/man/3/strptime">strptime</a>. Check <a href="https://docs.fluentbit.io/manual/pipeline/parsers/configuring-parser#time-resolution-and-fractional-seconds">this</a> for details.</p>
 </li>
 <li>
-<p>Choose the <strong>Permission grant method</strong>. If you choose <strong>I will manually add the below required permissions after pipeline creation</strong>, you have to click <strong>Expand to view required permissions</strong> and copy the provided JSON policy.</p>
+<p>(Optional) In the <strong>Filter</strong> section, you add some conditions to filter logs at the log agent side. The solution will ingest logs that match ALL the specified conditions only.</p>
 </li>
 <li>
-<p>Go to <strong>AWS Console &gt; IAM &gt; Policies</strong> on the left column, and</p>
-<ol>
-<li>
-<p>Choose <strong>Create Policy</strong>, choose <strong>JSON</strong> and replace all the content inside the text block. Remember to substitute <code>&lt;YOUR ACCOUNT ID&gt;</code> with your account id.</p>
-</li>
-<li>
-<p>Choose <strong>Next</strong>, <strong>Next</strong>, then enter the name for this policy.</p>
-</li>
-<li>
-<p>Attach the policy to your EC2 instance profile to grant the log agent permissions to send logs to the application log pipeline. If you are using Auto Scaling group, you need to update the IAM instance profile associated with the Auto Scaling Group. If needed, you can follow the documentation to update your <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/create-launch-template.html#advanced-settings-for-your-launch-template">launch template</a> or <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/change-launch-config.html">launch configuration</a>.</p>
+<p>Select <strong>Create</strong>.</p>
 </li>
 </ol>
+<h2 id="create-an-apache-http-server-log-config">Create an Apache HTTP server log config</h2>
+<p>Apache HTTP Server (httpd) is capable of writing error and access log files to a local directory. You can configure Centralized Logging with OpenSearch to ingest Apache HTTP server logs. </p>
+<ol>
+<li>Sign in to the Centralized Logging with OpenSearch Console.</li>
+<li>In the left sidebar, under <strong>Resources</strong>, choose <strong>Log Config</strong>.</li>
+<li>Click the <strong>Create a log config</strong> button.</li>
+<li>Specify <strong>Config Name</strong>.</li>
+<li>Specify <strong>Log Path</strong>. You can use <code>,</code> to separate multiple paths.</li>
+<li>Choose <strong>Apache HTTP server</strong> in the log type dropdown menu.</li>
+<li>
+<p>In the <strong>Apache Log Format</strong> section, paste your Apache HTTP server log format configuration. It is in the format of <code>/etc/httpd/conf/httpd.conf</code> and starts with <code>LogFormat</code>.</p>
+<p>For example:
+<div class="highlight"><pre><span></span><code>LogFormat &quot;%h %l %u %t \&quot;%r\&quot; %&gt;s %b \&quot;%{Referer}i\&quot; \&quot;%{User-Agent}i\&quot;&quot; combined
+</code></pre></div></p>
 </li>
 <li>
-<p>Click the <strong>Create an Ingestion</strong> dropdown menu, and select <strong>From Instance Group</strong>.</p>
+<p>(Optional) In the <strong>Sample log parsing</strong> section, paste a sample Apache HTTP server log to verify if the log parsing is successful.</p>
+<p>For example:
+<div class="highlight"><pre><span></span><code>127.0.0.1 - - [22/Dec/2021:06:48:57 +0000] &quot;GET /xxx HTTP/1.1&quot; 404 196 &quot;-&quot; &quot;curl/7.79.1&quot;
+</code></pre></div></p>
 </li>
 <li>
-<p>Select <strong>Choose exists</strong> and choose <strong>Next</strong>.</p>
-</li>
-<li>
-<p>Select the instance group you have created during the <strong>Prerequisites</strong> and choose <strong>Next</strong>.</p>
-</li>
-<li>
-<p>(Auto Scaling Group only) If your instance group is created based on an Auto Scaling Group, after ingestion status become "Created", then you can find the generated Shell Script in the instance group's detail page. Copy the shell script and update the User Data of the Auto Scaling <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/launch-configurations.html">Launch configurations</a> or <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html">Launch template</a>.</p>
-</li>
-<li>
-<p>Select <strong>Choose exists</strong> and select the log config created in previous setup.</p>
-</li>
-<li>
-<p>Choose <strong>Create</strong> to finish creating an ingestion.</p>
+<p>Choose <strong>Create</strong>.</p>
 </li>
 </ol>
-<!--ig-end-->
-
-<!--eks-start-->
-<h3 id="amazon-eks-cluster-as-log-source">Amazon EKS Cluster as Log Source</h3>
+<h2 id="create-an-nginx-log-config">Create an Nginx log config</h2>
+<ol>
+<li>Sign in to the Centralized Logging with OpenSearch Console.</li>
+<li>In the left sidebar, under <strong>Resources</strong>, choose <strong>Log Config</strong>.</li>
+<li>Click the <strong>Create a log config</strong> button.</li>
+<li>Specify <strong>Config Name</strong>.</li>
+<li>Specify <strong>Log Path</strong>. You can use <code>,</code> to separate multiple paths.</li>
+<li>Choose <strong>Nginx</strong> in the log type dropdown menu.</li>
+<li>
+<p>In the <strong>Nginx Log Format</strong> section, paste your Nginx log format configuration. It is in the format of <code>/etc/nginx/nginx.conf</code> and starts with <code>log_format</code>.</p>
+<p>For example:
+   <div class="highlight"><pre><span></span><code>log_format  main  &#39;$remote_addr - $remote_user [$time_local] &quot;$request&quot; &#39;
+&#39;$status $body_bytes_sent &quot;$http_referer&quot; &#39;
+&#39;&quot;$http_user_agent&quot; &quot;$http_x_forwarded_for&quot;&#39;;
+</code></pre></div></p>
+</li>
+<li>
+<p>(Optional) In the <strong>Sample log parsing</strong> section, paste a sample Nginx log to verify if the log parsing is successful.</p>
+<p>For example:
+   <div class="highlight"><pre><span></span><code>127.0.0.1 - - [24/Dec/2021:01:27:11 +0000] &quot;GET / HTTP/1.1&quot; 200 3520 &quot;-&quot; &quot;curl/7.79.1&quot; &quot;-&quot;
+</code></pre></div></p>
+</li>
+<li>
+<p>(Optional) In the <strong>Filter</strong> section, you add some conditions to filter logs at the log agent side. The solution will ingest logs that match ALL the specified conditions only. </p>
+</li>
+<li>
+<p>Select <strong>Create</strong>.</p>
+</li>
+</ol>
+<h2 id="create-a-syslog-config">Create a Syslog config</h2>
+<ol>
+<li>Sign in to the Centralized Logging with OpenSearch Console.</li>
+<li>In the left sidebar, under <strong>Resources</strong>, choose <strong>Log Config</strong>.</li>
+<li>Click the <strong>Create a log config</strong> button.</li>
+<li>Specify <strong>Config Name</strong>.</li>
+<li>Choose <strong>Syslog</strong> in the log type dropdown menu. Note that Centralized Logging with OpenSearch also supports Syslog with JSON format and single-line text format.</li>
+</ol>
+<h3 id="rfc5424">RFC5424</h3>
 <ol>
 <li>
-<p>Sign in to the Centralized Logging with OpenSearch Console.</p>
+<p>Paste a sample RFC5424 log. For example:</p>
+<div class="highlight"><pre><span></span><code>&lt;35&gt;1 2013-10-11T22:14:15Z client_machine su - - - &#39;su root&#39; failed for joe on /dev/pts/2
+</code></pre></div>
 </li>
 <li>
-<p>In the left sidebar, under <strong>Log Source</strong>, choose <strong>EKS Clusters</strong>.</p>
+<p>Choose <strong>Parse Log</strong>.</p>
 </li>
 <li>
-<p>Choose the EKS Cluster that has been imported as Log Source during the <strong>Prerequisites</strong>.</p>
+<p>Check if each fields type mapping is correct. You can change the type by selecting the dropdown menu in the second column. For all supported types, see <a href="https://opensearch.org/docs/latest/search-plugins/sql/datatypes/">Data Types</a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You must specify the datetime of the log using key “time”. If not specified, system time will be added.</p>
+</div>
 </li>
 <li>
-<p>Go to <strong>App Log Ingestion</strong> tab and choose <strong>Create an Ingestion</strong>.</p>
+<p>Specify the <strong>Time format</strong>. The format syntax follows <a href="https://linux.die.net/man/3/strptime">strptime</a>. Check <a href="https://docs.fluentbit.io/manual/pipeline/parsers/configuring-parser#time-resolution-and-fractional-seconds">this manual</a> for details. For example:</p>
+<div class="highlight"><pre><span></span><code>%Y-%m-%dT%H:%M:%SZ
+</code></pre></div>
+</li>
+<li>
+<p>(Optional) In the <strong>Filter</strong> section, you add some conditions to filter logs at the log agent side. The solution will ingest logs that match ALL the specified conditions only.</p>
+</li>
+<li>
+<p>Select <strong>Create</strong>.</p>
+</li>
+</ol>
+<h3 id="rfc3164">RFC3164</h3>
 <ol>
 <li>
-<p>Select <strong>Choose exists</strong> and choose the application pipeline created during the <strong>Prerequisites</strong>. Choose <strong>Next</strong>.</p>
+<p>Paste a sample RFC3164 log. For example:</p>
+<div class="highlight"><pre><span></span><code>&lt;35&gt;Oct 12 22:14:15 client_machine su: &#39;su root&#39; failed for joe on /dev/pts/2
+</code></pre></div>
 </li>
 <li>
-<p>Select the log config created in previous setup.</p>
+<p>Choose <strong>Parse Log</strong>.</p>
 </li>
 <li>
-<p>Choose <strong>Create</strong> to finish creating an ingestion.</p>
+<p>Check if each fields type mapping is correct. You can change the type by selecting the dropdown menu in the second column. For all supported types, see <a href="https://opensearch.org/docs/latest/search-plugins/sql/datatypes/">Data Types</a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You must specify the datetime of the log using key “time”. If not specified, system time will be added.</p>
+<p>Since there is no year in the timestamp of RFC3164, it cannot be displayed as a time histogram in the Discover interface of Amazon OpenSearch.</p>
+</div>
+</li>
+<li>
+<p>Specify the <strong>Time format</strong>. The format syntax follows <a href="https://linux.die.net/man/3/strptime">strptime</a>. Check <a href="https://docs.fluentbit.io/manual/pipeline/parsers/configuring-parser#time-resolution-and-fractional-seconds">this</a> for details. For example:</p>
+<div class="highlight"><pre><span></span><code>%b %m %H:%M:%S
+</code></pre></div>
+</li>
+<li>
+<p>(Optional) In the <strong>Filter</strong> section, you add some conditions to filter logs at the log agent side. The solution will ingest logs that match ALL the specified conditions only.</p>
+</li>
+<li>
+<p>Select <strong>Create</strong>.</p>
 </li>
 </ol>
-</li>
-<li>
-<p>Deploy Fluent-bit log agent following the guide generated by Centralized Logging with OpenSearch.</p>
+<h3 id="custom">Custom</h3>
 <ol>
 <li>
-<p>Select the App Log Ingestion just created.</p>
+<p>In the <strong>Syslog Format</strong> section, paste your Syslog log format configuration. It is in the format of <code>/etc/rsyslog.conf</code> and starts with <code>template</code> or <code>$template</code>. The format syntax follows <a href="https://www.rfc-editor.org/rfc/rfc5424?spm=a2c4g.11186623.0.0.21324a0fUixMd5#:~:text=2009%0A%0A%0A6.-,Syslog%20Message%20Format,-The%20syslog%20message">Syslog Message Format</a>.  For example:</p>
+<div class="highlight"><pre><span></span><code>&lt;%pri%&gt;1 %timestamp:::date-rfc3339% %HOSTNAME% %app-name% %procid% %msgid% %msg%\n
+</code></pre></div>
 </li>
 <li>
-<p>Follow <strong>DaemonSet</strong> or <strong>Sidecar</strong> Guide to deploy the log agent.</p>
+<p>In the <strong>Sample log parsing</strong> section, paste a sample Nginx log to verify if the log parsing is successful. For example:
+    <div class="highlight"><pre><span></span><code>&lt;35&gt;1 2013-10-11T22:14:15.003Z client_machine su - - &#39;su root&#39; failed for joe on /dev/pts/2
+</code></pre></div></p>
+</li>
+<li>
+<p>Check if each fields type mapping is correct. Change the type by selecting the dropdown menu in the second column. For all supported types, see <a href="https://opensearch.org/docs/latest/search-plugins/sql/datatypes/">Data Types</a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You must specify the datetime of the log using key “time”. If not specified, system time will be added.</p>
+</div>
+</li>
+<li>
+<p>Specify the <strong>Time format</strong>. The format syntax follows <a href="https://linux.die.net/man/3/strptime">strptime</a>. Check <a href="https://docs.fluentbit.io/manual/pipeline/parsers/configuring-parser#time-resolution-and-fractional-seconds">this manual</a> for details.</p>
+</li>
+<li>
+<p>(Optional) In the <strong>Filter</strong> section, you add some conditions to filter logs at the log agent side. The solution will ingest logs that match ALL the specified conditions only.</p>
+</li>
+<li>
+<p>Select <strong>Create</strong>.</p>
 </li>
 </ol>
+<h2 id="create-a-single-line-text-config">Create a single-line text config</h2>
+<ol>
+<li>Sign in to the Centralized Logging with OpenSearch Console.</li>
+<li>In the left sidebar, under <strong>Resources</strong>, choose <strong>Log Config</strong>.</li>
+<li>Click the <strong>Create a log config</strong> button.</li>
+<li>Specify <strong>Config Name</strong>.</li>
+<li>Specify <strong>Log Path</strong>. You can use <code>,</code> to separate multiple paths.</li>
+<li>Choose <strong>Single-line Text</strong> in the log type dropdown menu.</li>
+<li>
+<p>Write the regular expression in <a href="https://rubular.com/">Rubular</a> to validate first and enter the value. For example:</p>
+<div class="highlight"><pre><span></span><code>(?&lt;remote_addr&gt;\S+)\s*-\s*(?&lt;remote_user&gt;\S+)\s*\[(?&lt;time_local&gt;\d+/\S+/\d+:\d+:\d+:\d+)\s+\S+\]\s*&quot;(?&lt;request_method&gt;\S+)\s+(?&lt;request_uri&gt;\S+)\s+\S+&quot;\s*(?&lt;status&gt;\S+)\s*(?&lt;body_bytes_sent&gt;\S+)\s*&quot;(?&lt;http_referer&gt;[^&quot;]*)&quot;\s*&quot;(?&lt;http_user_agent&gt;[^&quot;]*)&quot;\s*&quot;(?&lt;http_x_forwarded_for&gt;[^&quot;]*)&quot;.*
+</code></pre></div>
+</li>
+<li>
+<p>In the <strong>Sample log parsing</strong> section, paste a sample Single-line text log and click <strong>Parse log</strong> to verify if the log parsing is successful. For example:</p>
+<div class="highlight"><pre><span></span><code>127.0.0.1 - - [24/Dec/2021:01:27:11 +0000] &quot;GET / HTTP/1.1&quot; 200 3520 &quot;-&quot; &quot;curl/7.79.1&quot; &quot;-&quot;
+</code></pre></div>
+</li>
+<li>
+<p>Check if each fields type mapping is correct. Change the type by selecting the dropdown menu in the second column. For all supported types, see <a href="https://opensearch.org/docs/latest/search-plugins/sql/datatypes/">Data Types</a>. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You must specify the datetime of the log using key “time”. If not specified, system time will be added.</p>
+</div>
+</li>
+<li>
+<p>Specify the <strong>Time format</strong>. The format syntax follows <a href="https://linux.die.net/man/3/strptime">strptime</a>. Check <a href="https://docs.fluentbit.io/manual/pipeline/parsers/configuring-parser#time-resolution-and-fractional-seconds">this manual</a> for details.</p>
+</li>
+<li>
+<p>(Optional) In the <strong>Filter</strong> section, you add some conditions to filter logs at the log agent side. The solution will ingest logs that match ALL the specified conditions only.</p>
+</li>
+<li>
+<p>Select <strong>Create</strong>.</p>
 </li>
 </ol>
-<!--eks-end-->
-
-<!--S3-start-->
-<h3 id="amazon-s3-as-log-source">Amazon S3 as Log Source</h3>
+<h2 id="create-a-multi-line-text-config">Create a multi-line text config</h2>
+<ol>
+<li>Sign in to the Centralized Logging with OpenSearch Console.</li>
+<li>In the left sidebar, under <strong>Resources</strong>, choose <strong>Log Config</strong>.</li>
+<li>Click the <strong>Create a log config</strong> button.</li>
+<li>Specify <strong>Config Name</strong>.</li>
+<li>Specify <strong>Log Path</strong>. You can use <code>,</code> to separate multiple paths.</li>
+<li>Choose <strong>Multi-line Text</strong> in the log type dropdown menu.</li>
+</ol>
+<h3 id="java-spring-boot">Java - Spring Boot</h3>
 <ol>
 <li>
-<p>Sign in to the Centralized Logging with OpenSearch Console.</p>
+<p>For Java Spring Boot logs, you could provide a simple log format. For example:</p>
+<div class="highlight"><pre><span></span><code>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger : %msg%n
+</code></pre></div>
 </li>
 <li>
-<p>In the left sidebar, under <strong>Log Analytics Pipelines</strong>, choose <strong>Application Log</strong>.</p>
+<p>Paste a sample multi-line log. For example:</p>
+<div class="highlight"><pre><span></span><code>2022-02-18 10:32:26.400 ERROR [http-nio-8080-exec-1] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/].[dispatcherServlet] : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed; nested exception is java.lang.ArithmeticException: / by zero] with root cause
+java.lang.ArithmeticException: / by zero
+   at com.springexamples.demo.web.LoggerController.logs(LoggerController.java:22)
+   at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+   at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke
+</code></pre></div>
 </li>
 <li>
-<p>Choose the application pipeline that has been created during the <strong>Prerequisites</strong>.</p>
+<p>Choose <strong>Parse Log</strong>.</p>
 </li>
 <li>
-<p>Choose the <strong>Create an Ingestion</strong> dropdown menu, and select <strong>From S3 bucket</strong>.</p>
+<p>Check if each fields type mapping is correct. You can change the type by selecting the dropdown menu in the second column. For all supported types, see <a href="https://opensearch.org/docs/latest/search-plugins/sql/datatypes/">Data Types</a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You must specify the datetime of the log using key “time”. If not specified, system time will be added.</p>
+</div>
 </li>
 <li>
-<p>Choose the S3 bucket where your logs are stored and enter <strong>Prefix filter</strong></p>
+<p>Specify the <strong>Time format</strong>. The format syntax follows <a href="https://linux.die.net/man/3/strptime">strptime</a>. Check <a href="https://docs.fluentbit.io/manual/pipeline/parsers/configuring-parser#time-resolution-and-fractional-seconds">this</a> for details.</p>
 </li>
 <li>
-<p>Choose <strong>Ingestion mode</strong> based on your need. If you want to ingest the log continuously, select <strong>On-going</strong>; If you only need to ingest the log once, select <strong>One-time</strong>.</p>
+<p>(Optional) In the <strong>Filter</strong> section, you add some conditions to filter logs at the log agent side. The solution will ingest logs that match ALL the specified conditions only.</p>
 </li>
 <li>
-<p>Specify <strong>Compression format</strong> if your log files are compressed.</p>
-</li>
-<li>
-<p>Select the log config created in the previous setup.</p>
-</li>
-<li>
-<p>Choose <strong>Create</strong> to finish creating an ingestion.</p>
+<p>Select <strong>Create</strong>.</p>
 </li>
 </ol>
-<!--S3-end-->
-
-<!--syslog-start-->
-<h3 id="syslog-as-log-source">Syslog as Log Source</h3>
+<h3 id="custom_1">Custom</h3>
 <ol>
 <li>
-<p>Sign in to the Centralized Logging with OpenSearch Console.</p>
+<p>For other kinds of logs, you could specify the first line regex pattern. For example:</p>
+<div class="highlight"><pre><span></span><code>(?&lt;time&gt;\d{4}-\d{2}-\d{2}\s*\d{2}:\d{2}:\d{2}.\d{3})\s*(?&lt;message&gt;goroutine\s*\d\s*\[.+\]:)
+</code></pre></div>
 </li>
 <li>
-<p>In the left sidebar, under <strong>Log Analytics Pipelines</strong>, choose <strong>Application Log</strong>.</p>
+<p>Paste a sample multi-line log. For example:</p>
+<div class="highlight"><pre><span></span><code>2023-07-12 10:32:26.400 goroutine 1 [chan receive]:
+runtime.gopark(0x4739b8, 0xc420024178, 0x46fcd7, 0xc, 0xc420028e17, 0x3)
+  /usr/local/go/src/runtime/proc.go:280 +0x12c fp=0xc420053e30 sp=0xc420053e00 pc=0x42503c
+runtime.goparkunlock(0xc420024178, 0x46fcd7, 0xc, 0x1000f010040c217, 0x3)
+  /usr/local/go/src/runtime/proc.go:286 +0x5e fp=0xc420053e70 sp=0xc420053e30 pc=0x42512e
+runtime.chanrecv(0xc420024120, 0x0, 0xc420053f01, 0x4512d8)
+  /usr/local/go/src/runtime/chan.go:506 +0x304 fp=0xc420053f20 sp=0xc420053e70 pc=0x4046b4
+runtime.chanrecv1(0xc420024120, 0x0)
+  /usr/local/go/src/runtime/chan.go:388 +0x2b fp=0xc420053f50 sp=0xc420053f20 pc=0x40439b
+main.main()
+  foo.go:9 +0x6f fp=0xc420053f80 sp=0xc420053f50 pc=0x4512ef
+runtime.main()
+  /usr/local/go/src/runtime/proc.go:185 +0x20d fp=0xc420053fe0 sp=0xc420053f80 pc=0x424bad
+runtime.goexit()
+  /usr/local/go/src/runtime/asm_amd64.s:2337 +0x1 fp=0xc420053fe8 sp=0xc420053fe0 pc=0x44b4d1
+</code></pre></div>
 </li>
 <li>
-<p>Choose the application pipeline that has been created during the <strong>Prerequisites</strong>.</p>
+<p>Choose <strong>Parse Log</strong>.</p>
 </li>
 <li>
-<p>Choose the <strong>Create an Ingestion</strong> dropdown menu, and select <strong>From Syslog</strong>.</p>
+<p>Check if each field type mapping is correct. You can change the type by selecting the dropdown menu in the second column. For all supported types, see <a href="https://opensearch.org/docs/latest/search-plugins/sql/datatypes/">Data Types</a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You must specify the datetime of the log using key “time”. If not specified, system time will be added.</p>
+</div>
 </li>
 <li>
-<p>You can use UDP or TCP with custom port number. Choose <strong>Next</strong>.</p>
+<p>(Optional) In the <strong>Filter</strong> section, you add some conditions to filter logs at the log agent side. The solution will ingest logs that match ALL the specified conditions only.</p>
 </li>
 <li>
-<p>Select the log config created in the previous setup.</p>
-</li>
-<li>
-<p>Choose <strong>Create</strong> to finish creating an ingestion.</p>
+<p>Select <strong>Create</strong>.</p>
 </li>
 </ol>
-<!--syslog-end-->
 
 
 
@@ -1699,6 +2030,42 @@
       </main>
       
         <footer class="md-footer">
+  
+    
+    <nav class="md-footer__inner md-grid" aria-label="Footer" >
+      
+        
+        <a href="../create-log-source/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Log source" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Log source
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../../link-account/" class="md-footer__link md-footer__link--next" aria-label="Next: Cross-account ingestion" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Cross-account ingestion
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">

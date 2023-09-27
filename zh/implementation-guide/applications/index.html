@@ -1100,7 +1100,7 @@
       
         <li class="md-nav__item">
   <a href="#_2" class="md-nav__link">
-    支持的日志格式和数据源
+    支持的日志格式和日志源
   </a>
   
 </li>
@@ -1164,6 +1164,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#amazon-s3" class="md-nav__link">
+    Amazon S3
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#syslog" class="md-nav__link">
     Syslog
   </a>
@@ -1201,24 +1208,80 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="ec2-pipeline/" class="md-nav__link">
+        EC2 实例组
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="eks-pipeline/" class="md-nav__link">
+        EKS 集群
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="s3-pipeline/" class="md-nav__link">
+        S3
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="syslog-pipeline/" class="md-nav__link">
+        Syslog
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
     
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9_2" type="checkbox" id="__nav_1_9_2" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9_6" type="checkbox" id="__nav_1_9_6" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_9_2">
-          前提条件
+        <label class="md-nav__link" for="__nav_1_9_6">
+          管道资源
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="前提条件" data-md-level="3">
-        <label class="md-nav__title" for="__nav_1_9_2">
+      <nav class="md-nav" aria-label="管道资源" data-md-level="3">
+        <label class="md-nav__title" for="__nav_1_9_6">
           <span class="md-nav__icon md-icon"></span>
-          前提条件
+          管道资源
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -1229,7 +1292,7 @@
   
     <li class="md-nav__item">
       <a href="create-log-source/" class="md-nav__link">
-        创建日志源
+        日志源
       </a>
     </li>
   
@@ -1242,8 +1305,8 @@
   
   
     <li class="md-nav__item">
-      <a href="create-applog-pipeline/" class="md-nav__link">
-        创建应用日志管道
+      <a href="create-log-config/" class="md-nav__link">
+        日志配置
       </a>
     </li>
   
@@ -1252,90 +1315,6 @@
           
         </ul>
       </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="apache/" class="md-nav__link">
-        Apache HTTP 服务器
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="nginx/" class="md-nav__link">
-        Nginx
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="single-line-text/" class="md-nav__link">
-        单行文本
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="multi-line-text/" class="md-nav__link">
-        多行文本
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="json/" class="md-nav__link">
-        JSON
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="syslog/" class="md-nav__link">
-        Syslog
-      </a>
     </li>
   
 
@@ -1618,7 +1597,7 @@
       
         <li class="md-nav__item">
   <a href="#_2" class="md-nav__link">
-    支持的日志格式和数据源
+    支持的日志格式和日志源
   </a>
   
 </li>
@@ -1682,6 +1661,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#amazon-s3" class="md-nav__link">
+    Amazon S3
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#syslog" class="md-nav__link">
     Syslog
   </a>
@@ -1726,22 +1712,28 @@
 
 
 <h1 id="_1">应用程序日志分析管道</h1>
-<p>日志通支持从 EC2 实例、EKS 集群、 和Syslog中摄取应用程序日志。</p>
+<p>日志通支持从以下日志源摄取应用程序日志：</p>
 <ul>
-<li>对于 EC2 实例，日志通会自动安装 <a href="#logging-agent">log agent</a> (<a href="https://docs.fluentbit.io/manual/">Fluent Bit 1.9</a>)，收集 EC2 实例上的应用程序日志，然后将日志发送到 Amazon OpenSearch。</li>
-<li>对于 EKS 集群，日志通将生成一体化配置文件供客户将 <a href="#logging-agent">log agent</a> (<a href="https://docs.fluentbit.io/manual/">Fluent Bit 1.9</a>) 部署为 DaemonSet 或 Sidecar。 部署日志代理后，日志通将开始收集 pod 日志并发送到 Amazon OpenSearch。</li>
-<li>对于 Syslog，日志通将通过 UDP 或 TCP 协议收集 Syslog 日志。</li>
+<li><a href="ec2-pipeline/">EC2实例</a>: 日志通会自动安装 <a href="#log-agent">log agent</a> (Fluent Bit 1.9), 收集 EC2 实例上的应用程序日志，然后将日志发送到 Amazon OpenSearch。</li>
+<li><a href="eks-pipeline/">EKS集群</a>: 日志通将生成一体化配置文件供客户将<a href="#log-agent">log agent</a> (Fluent Bit 1.9) 部署为 DaemonSet 或 Sidecar。 部署日志代理后，日志通将开始收集 pod 日志并发送到 Amazon OpenSearch。</li>
+<li><a href="s3-pipeline/">Amazon S3</a>: 日志通既可以连续提取指定 Amazon S3 位置中的日志，也可以执行一次性提取。 您还可以根据 Amazon S3 前缀过滤日志或使用自定义日志配置来解析日志。</li>
+<li><a href="syslog-pipeline/">Syslog</a>: 对于 Syslog，日志通将通过 UDP 或 TCP 协议收集 Syslog 日志。</li>
 </ul>
-<h2 id="_2">支持的日志格式和数据源</h2>
+<p>创建日志分析管道后，您可以向日志分析管道添加更多日志源。 有关更多信息，请参阅 <a href="create-log-source/#add-a-new-log-source">添加新的日志源</a>。</p>
+<div class="admonition important">
+<p class="admonition-title">重要</p>
+<p>如果您是第一次使用日志通创建应用程序日志管道，建议您先了解概念以及支持的日志格式和日志源。</p>
+</div>
+<h2 id="_2">支持的日志格式和日志源</h2>
 <!-- BEGIN INCLUDE include-supported-app-logs.md -->
-
+<p>下表列出了每个日志源支持的日志格式。 有关如何为每种日志格式创建日志摄取的更多信息，请参阅<a href="create-log-config/">Log Config</a>.</p>
 <table>
 <thead>
 <tr>
 <th>Log 格式</th>
-<th>EC2 机器组</th>
+<th>EC2 实例组</th>
 <th>EKS 集群</th>
-<th>S3 桶</th>
+<th>Amazon S3 桶</th>
 <th>Syslog</th>
 </tr>
 </thead>
@@ -1750,14 +1742,14 @@
 <td>Nginx</td>
 <td>是</td>
 <td>是</td>
-<td>否</td>
+<td>是</td>
 <td>否</td>
 </tr>
 <tr>
 <td>Apache HTTP Server</td>
 <td>是</td>
 <td>是</td>
-<td>否</td>
+<td>是</td>
 <td>否</td>
 </tr>
 <tr>
@@ -1778,14 +1770,14 @@
 <td>多行文本</td>
 <td>是</td>
 <td>是</td>
-<td>否</td>
+<td>是</td>
 <td>否</td>
 </tr>
 <tr>
-<td>多张文本 (Spring Boot)</td>
+<td>多行文本 (Spring Boot)</td>
 <td>是</td>
 <td>是</td>
-<td>否</td>
+<td>是</td>
 <td>否</td>
 </tr>
 <tr>
@@ -1806,20 +1798,6 @@
 </table>
 <!-- END INCLUDE -->
 
-<p>在本章中，您将学习如何为以下日志格式创建日志摄取：</p>
-<ul>
-<li><a href="apache/">Apache HTTP server 日志</a></li>
-<li><a href="nginx/">Nginx 日志</a></li>
-<li><a href="single-line-text/">单行文本日志</a></li>
-<li><a href="multi-line-text/">多行文本日志</a></li>
-<li><a href="json/">JSON 日志</a></li>
-<li><a href="syslog/">Syslog 日志</a></li>
-</ul>
-<p>在创建日志摄取之前，您需要：</p>
-<ul>
-<li><a href="create-log-source/">创建日志源</a>（不适用于S3存储桶和Syslog）</li>
-<li><a href="create-applog-pipeline/">创建应用程序日志管道</a></li>
-</ul>
 <h2 id="_3">概念</h2>
 <p>下面介绍的概念可帮助您了解应用程序日志摄取的工作原理。</p>
 <h3 id="_4">应用程序日志分析管道</h3>
@@ -1843,17 +1821,19 @@
 </ul>
 <p>创建应用程序日志分析管道时，日志缓冲区是可选的。对于所有类型的应用程序日志，日志通解决方案还提供了一种没有任何缓冲层的摄取日志方式。但是，我们仅推荐您在日志量小情况时才使用此选项，并且您有足够的信心，认为不会触发 OpenSearch 端阈值。</p>
 <h3 id="log-source">日志源 (Log Source)</h3>
-<p>日志源是指您希望日志通从中收集应用程序日志的 Amazon 服务。</p>
-<p>支持的日志源有：</p>
+<p>日志源是指您希望日志通从中收集应用程序日志的 Amazon 服务。支持的日志源有：</p>
 <ul>
-<li><a href="#实例组-instance-group">实例组 (Instance Group)</a></li>
-<li><a href="#eks-集群-eks-cluster">EKS 集群 (EKS Cluster)</a></li>
+<li><a href="#instance-group">实例组（Instance Group）</a></li>
+<li><a href="#eks-cluster">EKS集群（EKS Cluster）</a></li>
+<li><a href="#amazon-s3">Amazon S3</a></li>
 <li><a href="#syslog">Syslog</a></li>
 </ul>
 <h4 id="instance-group">实例组 (Instance Group)</h4>
-<p>实例组是您要从中收集应用程序日志的 EC2 实例的集合。日志通 将帮助您在组内的每个实例中安装日志记录代理。你可以通过界面选择任意 EC2 实例或者选择一个<a href="https://aws.amazon.com/ec2/autoscaling/">EC2 Auto Scaling 组</a>。</p>
+<p>实例组是您要从中收集应用程序日志的 EC2 实例的集合。日志通 将帮助您在组内的每个实例中安装日志记录代理。你可以通过界面选择任意 EC2 实例或者选择一个<a href="https://aws.amazon.com/ec2/autoscaling/">EC2 Auto Scaling 组</a>。 </p>
 <h4 id="eks-eks-cluster">EKS 集群 (EKS Cluster)</h4>
 <p>日志通中的 EKS 集群是指您要从中收集 pod 日志的 Amazon EKS。日志通 将指导您将日志记录代理部署为 EKS 集群中的 DaemonSet 或 Sidecar。</p>
+<h4 id="amazon-s3">Amazon S3</h4>
+<p>日志通支持收集存储在 Amazon S3 存储桶中的日志。</p>
 <h4 id="syslog">Syslog</h4>
 <p>日志通将通过 UDP 或 TCP 协议收集 syslog 日志。</p>
 <h3 id="log-config">日志配置 (Log Config)</h3>
@@ -1894,13 +1874,13 @@
       
       
         
-        <a href="create-log-source/" class="md-footer__link md-footer__link--next" aria-label="下一页: 创建日志源" rel="next">
+        <a href="ec2-pipeline/" class="md-footer__link md-footer__link--next" aria-label="下一页: EC2 实例组" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 下一页
               </span>
-              创建日志源
+              EC2 实例组
             </div>
           </div>
           <div class="md-footer__button md-icon">

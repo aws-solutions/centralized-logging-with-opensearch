@@ -1099,8 +1099,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#supported-log-formats-and-sources" class="md-nav__link">
-    Supported Log Formats and Sources
+  <a href="#supported-log-formats-and-log-sources" class="md-nav__link">
+    Supported Log Formats and Log Sources
   </a>
   
 </li>
@@ -1164,6 +1164,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#amazon-s3" class="md-nav__link">
+    Amazon S3
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#syslog" class="md-nav__link">
     Syslog
   </a>
@@ -1201,24 +1208,80 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="ec2-pipeline/" class="md-nav__link">
+        EC2 instance group
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="eks-pipeline/" class="md-nav__link">
+        EKS cluster
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="s3-pipeline/" class="md-nav__link">
+        S3
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="syslog-pipeline/" class="md-nav__link">
+        Syslog
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
     
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9_2" type="checkbox" id="__nav_1_9_2" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_9_6" type="checkbox" id="__nav_1_9_6" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_9_2">
-          Prerequisites
+        <label class="md-nav__link" for="__nav_1_9_6">
+          Pipeline resources
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Prerequisites" data-md-level="3">
-        <label class="md-nav__title" for="__nav_1_9_2">
+      <nav class="md-nav" aria-label="Pipeline resources" data-md-level="3">
+        <label class="md-nav__title" for="__nav_1_9_6">
           <span class="md-nav__icon md-icon"></span>
-          Prerequisites
+          Pipeline resources
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -1229,7 +1292,7 @@
   
     <li class="md-nav__item">
       <a href="create-log-source/" class="md-nav__link">
-        Create a log source
+        Log source
       </a>
     </li>
   
@@ -1242,8 +1305,8 @@
   
   
     <li class="md-nav__item">
-      <a href="create-applog-pipeline/" class="md-nav__link">
-        Create an application pipeline
+      <a href="create-log-config/" class="md-nav__link">
+        Log Config
       </a>
     </li>
   
@@ -1252,90 +1315,6 @@
           
         </ul>
       </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="apache/" class="md-nav__link">
-        Apache HTTP Server
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="nginx/" class="md-nav__link">
-        Nginx
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="single-line-text/" class="md-nav__link">
-        Single-line text
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="multi-line-text/" class="md-nav__link">
-        Multi-line text
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="json/" class="md-nav__link">
-        JSON
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="syslog/" class="md-nav__link">
-        Syslog
-      </a>
     </li>
   
 
@@ -1617,8 +1596,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#supported-log-formats-and-sources" class="md-nav__link">
-    Supported Log Formats and Sources
+  <a href="#supported-log-formats-and-log-sources" class="md-nav__link">
+    Supported Log Formats and Log Sources
   </a>
   
 </li>
@@ -1682,6 +1661,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#amazon-s3" class="md-nav__link">
+    Amazon S3
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#syslog" class="md-nav__link">
     Syslog
   </a>
@@ -1726,21 +1712,28 @@
 
 
 <h1 id="application-log-analytics-pipelines">Application Log Analytics Pipelines</h1>
-<p>Centralized Logging with OpenSearch supports ingesting application logs from EC2 instances, EKS clusters, and Syslog.</p>
+<p>Centralized Logging with OpenSearch supports ingesting application logs from the following log sources:</p>
 <ul>
-<li>For EC2 instances, Centralized Logging with OpenSearch will automatically install <a href="#log-agent">log agent</a> (<a href="https://docs.fluentbit.io/manual/">Fluent Bit 1.9</a>), collect application logs on EC2 instances and then send logs into Amazon OpenSearch.</li>
-<li>For EKS clusters, Centralized Logging with OpenSearch will generate all-in-one configuration file for customers to deploy the <a href="#log-agent">log agent</a> (<a href="https://docs.fluentbit.io/manual/">Fluent Bit 1.9</a>) as a DaemonSet or Sidecar. After log agent is deployed, Centralized Logging with OpenSearch will start collecting pod logs and send to Amazon OpenSearch.</li>
-<li>For Syslog, Centralized Logging with OpenSearch will collect syslog logs through UDP or TCP protocol.</li>
+<li><a href="ec2-pipeline/">Amazon EC2 instance group</a>: the solution automatically installs <a href="#log-agent">log agent</a> (Fluent Bit 1.9), collects application logs on EC2 instances and then sends logs into Amazon OpenSearch.</li>
+<li><a href="eks-pipeline/">Amazon EKS cluster</a>: the solution generates all-in-one configuration file for customers to deploy the <a href="#log-agent">log agent</a> (Fluent Bit 1.9) as a DaemonSet or Sidecar. After log agent is deployed, the solution starts collecting pod logs and sends them to Amazon OpenSearch Service.</li>
+<li><a href="s3-pipeline/">Amazon S3</a>: the solution either ingests logs in the specified Amazon S3 location continuously or performs one-time ingestion. You can also filter logs based on Amazon S3 prefix or parse logs with custom Log Config.</li>
+<li><a href="syslog-pipeline/">Syslog</a>: the solution collects syslog logs through UDP or TCP protocol.</li>
 </ul>
-<h2 id="supported-log-formats-and-sources">Supported Log Formats and Sources</h2>
+<p>After creating a log analytics pipeline, you can add more log sources to the log analytics pipeline. For more information, see <a href="create-log-source/#add-a-new-log-source">add a new log source</a>.</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>If you are using Centralized Logging with OpenSearch to create an application log pipeline for the first time, you are recommended to learn the <a href="#concepts">concepts</a> and <a href="#supported-log-formats-and-log-sources">supported log formats and log sources</a>.</p>
+</div>
+<h2 id="supported-log-formats-and-log-sources">Supported Log Formats and Log Sources</h2>
 <!-- BEGIN INCLUDE include-supported-app-logs.md -->
-
+<p>The table lists the log formats supported by each log source. For more information about how to create log ingestion for each log format, refer to <a href="create-log-config/">Log Config</a>.</p>
 <table>
 <thead>
 <tr>
 <th>Log Format</th>
 <th>EC2 Instance Group</th>
 <th>EKS Cluster</th>
+<th>Amazon S3</th>
 <th>Syslog</th>
 </tr>
 </thead>
@@ -1749,10 +1742,12 @@
 <td>Nginx</td>
 <td>Yes</td>
 <td>Yes</td>
+<td>Yes</td>
 <td>No</td>
 </tr>
 <tr>
 <td>Apache HTTP Server</td>
+<td>Yes</td>
 <td>Yes</td>
 <td>Yes</td>
 <td>No</td>
@@ -1762,9 +1757,11 @@
 <td>Yes</td>
 <td>Yes</td>
 <td>Yes</td>
+<td>Yes</td>
 </tr>
 <tr>
 <td>Single-line Text</td>
+<td>Yes</td>
 <td>Yes</td>
 <td>Yes</td>
 <td>Yes</td>
@@ -1773,10 +1770,12 @@
 <td>Multi-line Text</td>
 <td>Yes</td>
 <td>Yes</td>
+<td>Yes</td>
 <td>No</td>
 </tr>
 <tr>
 <td>Multi-line Text (Spring Boot)</td>
+<td>Yes</td>
 <td>Yes</td>
 <td>Yes</td>
 <td>No</td>
@@ -1785,10 +1784,12 @@
 <td>Syslog RFC5424/RFC3164</td>
 <td>No</td>
 <td>No</td>
+<td>No</td>
 <td>Yes</td>
 </tr>
 <tr>
 <td>Syslog Custom</td>
+<td>No</td>
 <td>No</td>
 <td>No</td>
 <td>Yes</td>
@@ -1797,26 +1798,12 @@
 </table>
 <!-- END INCLUDE -->
 
-<p>In this chapter, you will learn how to create log ingestion for the following log formats:</p>
-<ul>
-<li><a href="apache/">Apache HTTP server logs</a></li>
-<li><a href="nginx/">Nginx logs</a></li>
-<li><a href="single-line-text/">Single-line Text logs</a></li>
-<li><a href="multi-line-text/">Multi-line Text logs</a></li>
-<li><a href="json/">JSON logs</a></li>
-<li><a href="syslog/">Syslog logs</a></li>
-</ul>
-<p>Before creating log ingestion, you need to:</p>
-<ul>
-<li><a href="create-log-source/">Create a log source</a> (not applicable for Syslog)</li>
-<li><a href="create-applog-pipeline/">Create an application log pipeline</a></li>
-</ul>
 <h2 id="concepts">Concepts</h2>
 <p>The following introduce concepts that help you to understand how the application log ingestion works.</p>
 <h3 id="application-log-analytics-pipeline">Application Log Analytics Pipeline</h3>
 <p>To collect application logs, a data pipeline is needed. The pipeline not only buffers the data in transmit but also cleans or pre-processes data. For example, transforming IP to Geo location. Currently, Kinesis Data Stream is used as data buffering for EC2 log source.</p>
 <h3 id="log-ingestion">Log Ingestion</h3>
-<p>A log ingestion configures the Log Source, Log Type and the Application Log Analytics Pipeline for the log agent used by Centralized Logging with OpenSearch.
+<p>A log ingestion configures the Log Source, Log Config and the Application Log Analytics Pipeline for the log agent used by Centralized Logging with OpenSearch.
 After that, Centralized Logging with OpenSearch will start collecting certain type of logs from the log source and sending them to Amazon OpenSearch.</p>
 <h3 id="log-agent">Log Agent</h3>
 <p>A log agent is a program that reads logs from one location and sends them to another location (for example, OpenSearch).
@@ -1843,8 +1830,9 @@ small log volume, and you are confident that the logs will not exceed the thresh
 <h3 id="log-source">Log Source</h3>
 <p>A Log Source refers to a location where you want Centralized Logging with OpenSearch to collect application logs from. Supported log sources includes:</p>
 <ul>
-<li><a href="#instance-group">Instance Group</a></li>
-<li><a href="#eks-cluster">EKS Cluster</a></li>
+<li><a href="#instance-group">Amazon EC2 Instance Group</a></li>
+<li><a href="#eks-cluster">Amazon EKS Cluster</a></li>
+<li><a href="#amazon-s3">Amazon S3</a></li>
 <li><a href="#syslog">Syslog</a></li>
 </ul>
 <h4 id="instance-group">Instance Group</h4>
@@ -1854,10 +1842,12 @@ user interface, or choose an <a href="https://aws.amazon.com/ec2/autoscaling/">E
 <h4 id="eks-cluster">EKS Cluster</h4>
 <p>The EKS Cluster in Centralized Logging with OpenSearch refers to the Amazon EKS from which you want to collect pod logs. Centralized Logging with OpenSearch
 will guide you to deploy the log agent as a DaemonSet or Sidecar in the EKS Cluster.</p>
+<h4 id="amazon-s3">Amazon S3</h4>
+<p>Centralized Logging with OpenSearch supports collectings logs stored in an Amazon S3 bucket.</p>
 <h4 id="syslog">Syslog</h4>
 <p>Centralized Logging with OpenSearch supports collecting syslog logs through UDP or TCP protocol.</p>
 <h3 id="log-config">Log Config</h3>
-<p>A Log Config is a configuration that is telling Centralized Logging with OpenSearch where the logs had been stored on Log Source, which types of logs you want to collect, what fields a line of log contains, and types of each field.</p>
+<p>A Log Config is a configuration that defines the format of logs (that is, what fields each log line includes, and the data type of each field), based on which the Log Analytics Pipeline parses the logs before ingesting them into log storage. Log Config also allows you to define filters of the logs based on the fields in the logs.</p>
 
 
 
@@ -1894,13 +1884,13 @@ will guide you to deploy the log agent as a DaemonSet or Sidecar in the EKS Clus
       
       
         
-        <a href="create-log-source/" class="md-footer__link md-footer__link--next" aria-label="Next: Create a log source" rel="next">
+        <a href="ec2-pipeline/" class="md-footer__link md-footer__link--next" aria-label="Next: EC2 instance group" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Create a log source
+              EC2 instance group
             </div>
           </div>
           <div class="md-footer__button md-icon">
