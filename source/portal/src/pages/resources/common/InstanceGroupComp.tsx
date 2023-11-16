@@ -19,7 +19,7 @@ import PagePanel from "components/PagePanel";
 import HeaderPanel from "components/HeaderPanel";
 import FormItem from "components/FormItem";
 import TextInput from "components/TextInput";
-import { EC2GroupType, LogSourceType } from "API";
+import { EC2GroupType, LogSourceType, SubAccountLink } from "API";
 import { InstanceGroupType } from "../instanceGroup/create/CreateInstanceGroup";
 import { useTranslation } from "react-i18next";
 import CrossAccountSelect from "pages/comps/account/CrossAccountSelect";
@@ -36,7 +36,10 @@ interface InstanceGroupCompProps {
   changeInstanceSet: (sets: InstanceWithStatusType[]) => void;
   showNameEmptyError: boolean;
   setCreateDisabled: (disable: boolean) => void;
-  changeCurAccount: (accountId: string) => void;
+  changeCurAccount: (
+    accountId: string,
+    accountInfo: SubAccountLink | null
+  ) => void;
   changeASG: (asg: OptionType | null) => void;
   hideAccountSetting?: boolean;
 }
@@ -81,9 +84,8 @@ const InstanceGroupComp: React.FC<InstanceGroupCompProps> = (
               <CrossAccountSelect
                 disabled={instanceIsLoading}
                 accountId={accountId || ""}
-                changeAccount={(id) => {
-                  console.info(id);
-                  changeCurAccount(id);
+                changeAccount={(id, account) => {
+                  changeCurAccount(id, account);
                 }}
               />
             </HeaderPanel>

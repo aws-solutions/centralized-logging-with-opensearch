@@ -62,6 +62,7 @@ class MetricData:
         self._data_series = []
         self._xaxis = []
         self._metric_resource_infos = {}
+        self._osi_metric_prefix = ""
 
     def get_data(self, start_time, end_time):
         """returned the history data
@@ -96,8 +97,8 @@ class MetricData:
 
         Args:
             data (dict): A dictionary containing the data to be processed.
-            period_in_sec (int): The period used to get the data point from cloudwatch in second. 
-                We need to apply this parameter to eliminate the issue of difference amplification caused by the SUM operation. 
+            period_in_sec (int): The period used to get the data point from cloudwatch in second.
+                We need to apply this parameter to eliminate the issue of difference amplification caused by the SUM operation.
 
         Returns:
             dict: The modified data dictionary with the differences in values and updated 'xaxis'.
@@ -136,7 +137,7 @@ class MetricData:
             diff_values = [
                 int(int(values[i] - values[i - 1]) / period_in_minute)
                 if values[i] - values[i - 1] >= 0
-                # We must discard the first data point recovered from outliers, i.e., we cannot use int(values[i] / period_in_minute) for calculation. 
+                # We must discard the first data point recovered from outliers, i.e., we cannot use int(values[i] / period_in_minute) for calculation.
                 # Because we cannot determine whether FLB restarted at this data point or it was a sporadic error in FLB's metrics
                 else 0
                 for i in range(1, len(values))
@@ -305,6 +306,8 @@ class MetricData:
         kdf_namespace = "AWS/Firehose"
         kds_namespace = "AWS/Kinesis"
         elb_namespace = "AWS/NetworkELB"
+        osi_namespace = "AWS/OSIS"
+        osi_pipeline_name = "cl-" + self._pipeline_id[:23]
         metric_info = {
             # Log Processor Custom Metrics
             "TotalLogs": {
@@ -442,6 +445,62 @@ class MetricData:
                 ],
             },
             "ProcessorFnInvocations": {
+                "cwl_metric_name": "Invocations",
+                "namespace": lambda_namespace,
+                "statistics": ["Sum"],
+                "dimensions": [
+                    {
+                        "Name": "FunctionName",
+                        "Value": self._metric_resource_infos.get("processorFnName"),
+                    },
+                ],
+            },
+            # For light-engine
+            "ReplicationFnError": {
+                "cwl_metric_name": "Errors",
+                "namespace": lambda_namespace,
+                "statistics": ["Sum"],
+                "dimensions": [
+                    {
+                        "Name": "FunctionName",
+                        "Value": self._metric_resource_infos.get("processorFnName"),
+                    },
+                ],
+            },
+            "ReplicationFnConcurrentExecutions": {
+                "cwl_metric_name": "ConcurrentExecutions",
+                "namespace": lambda_namespace,
+                "statistics": ["Sum"],
+                "dimensions": [
+                    {
+                        "Name": "FunctionName",
+                        "Value": self._metric_resource_infos.get("processorFnName"),
+                    },
+                ],
+            },
+            "ReplicationFnDuration": {
+                "cwl_metric_name": "Duration",
+                "namespace": lambda_namespace,
+                "statistics": ["Maximum"],
+                "dimensions": [
+                    {
+                        "Name": "FunctionName",
+                        "Value": self._metric_resource_infos.get("processorFnName"),
+                    },
+                ],
+            },
+            "ReplicationFnThrottles": {
+                "cwl_metric_name": "Throttles",
+                "namespace": lambda_namespace,
+                "statistics": ["Sum"],
+                "dimensions": [
+                    {
+                        "Name": "FunctionName",
+                        "Value": self._metric_resource_infos.get("processorFnName"),
+                    },
+                ],
+            },
+            "ReplicationFnInvocations": {
                 "cwl_metric_name": "Invocations",
                 "namespace": lambda_namespace,
                 "statistics": ["Sum"],
@@ -669,11 +728,228 @@ class MetricData:
                     },
                 ],
             },
+            # OSI Pipeline Metrics
+            "OSICPUUsage": {
+                "cwl_metric_name": "system.cpu.usage.value",
+                "namespace": osi_namespace,
+                "statistics": ["Average"],
+                "dimensions": [
+                    {
+                        "Name": "PipelineName",
+                        "Value": osi_pipeline_name,
+                    },
+                ],
+            },
+            "OSIComputeUnits": {
+                "cwl_metric_name": "computeUnits",
+                "namespace": osi_namespace,
+                "statistics": ["SampleCount"],
+                "dimensions": [
+                    {
+                        "Name": "PipelineName",
+                        "Value": osi_pipeline_name,
+                    },
+                ],
+            },
+            "OSIMemoryUsage": {
+                "cwl_metric_name": "jvm.memory.used.value",
+                "namespace": osi_namespace,
+                "statistics": ["Maximum"],
+                "dimensions": [
+                    {
+                        "Name": "PipelineName",
+                        "Value": osi_pipeline_name,
+                    },
+                    {
+                        "Name": "area",
+                        "Value": "heap",
+                    },
+                ],
+            },
+            "OSIBufferUsage": {
+                "cwl_metric_name": f"{self._osi_metric_prefix}.BlockingBuffer.bufferUsage.value",
+                "namespace": osi_namespace,
+                "statistics": ["Average"],
+                "dimensions": [
+                    {
+                        "Name": "PipelineName",
+                        "Value": osi_pipeline_name,
+                    },
+                ],
+            },
+            "OSIBufferOverflowDrops": {
+                "cwl_metric_name": f"{self._osi_metric_prefix}.BlockingBuffer.writeTimeouts.count",
+                "namespace": osi_namespace,
+                "statistics": ["Sum"],
+                "dimensions": [
+                    {
+                        "Name": "PipelineName",
+                        "Value": osi_pipeline_name,
+                    },
+                ],
+            },
+            "OSIObjectsSucceeded": {
+                "cwl_metric_name": f"{self._osi_metric_prefix}.s3.s3ObjectsSucceeded.count",
+                "namespace": osi_namespace,
+                "statistics": ["Sum"],
+                "dimensions": [
+                    {
+                        "Name": "PipelineName",
+                        "Value": osi_pipeline_name,
+                    },
+                ],
+            },
+            "OSIS3ObjectsEvents": {
+                "cwl_metric_name": f"{self._osi_metric_prefix}.s3.s3ObjectsFailed.count",
+                "namespace": osi_namespace,
+                "statistics": ["Sum"],
+                "dimensions": [
+                    {
+                        "Name": "PipelineName",
+                        "Value": osi_pipeline_name,
+                    },
+                ],
+            },
+            "OSIS3ObjectsEventsSum": {
+                "cwl_metric_name": f"{self._osi_metric_prefix}.s3.s3ObjectsEvents.sum",
+                "namespace": osi_namespace,
+                "statistics": ["Sum"],
+                "dimensions": [
+                    {
+                        "Name": "PipelineName",
+                        "Value": osi_pipeline_name,
+                    },
+                ],
+            },
+            "OSISqsMessagesReceived": {
+                "cwl_metric_name": f"{self._osi_metric_prefix}.s3.sqsMessagesReceived.count",
+                "namespace": osi_namespace,
+                "statistics": ["Sum"],
+                "dimensions": [
+                    {
+                        "Name": "PipelineName",
+                        "Value": osi_pipeline_name,
+                    },
+                ],
+            },
+            "OSISqsMessagesDeleted": {
+                "cwl_metric_name": f"{self._osi_metric_prefix}.s3.sqsMessagesDeleted.count",
+                "namespace": osi_namespace,
+                "statistics": ["Sum"],
+                "dimensions": [
+                    {
+                        "Name": "PipelineName",
+                        "Value": osi_pipeline_name,
+                    },
+                ],
+            },
+            "OSISqsMessagesFailed": {
+                "cwl_metric_name": f"{self._osi_metric_prefix}.s3.sqsMessagesFailed.count",
+                "namespace": osi_namespace,
+                "statistics": ["Sum"],
+                "dimensions": [
+                    {
+                        "Name": "PipelineName",
+                        "Value": osi_pipeline_name,
+                    },
+                ],
+            },
+            "OSISqsMessageDelayCount": {
+                "cwl_metric_name": f"{self._osi_metric_prefix}.s3.sqsMessageDelay.count",
+                "namespace": osi_namespace,
+                "statistics": ["Sum"],
+                "dimensions": [
+                    {
+                        "Name": "PipelineName",
+                        "Value": osi_pipeline_name,
+                    },
+                ],
+            },
+            "OSISqsMessageDelaySum": {
+                "cwl_metric_name": f"{self._osi_metric_prefix}.s3.sqsMessageDelay.sum",
+                "namespace": osi_namespace,
+                "statistics": ["Sum"],
+                "dimensions": [
+                    {
+                        "Name": "PipelineName",
+                        "Value": osi_pipeline_name,
+                    },
+                ],
+            },
+            "OSIBytesTransmitted": {
+                "cwl_metric_name": f"{self._osi_metric_prefix}.opensearch.bulkRequestSizeBytes.sum",
+                "namespace": osi_namespace,
+                "statistics": ["Sum"],
+                "dimensions": [
+                    {
+                        "Name": "PipelineName",
+                        "Value": osi_pipeline_name,
+                    },
+                ],
+            },
+            "OSIDocumentsWritten": {
+                "cwl_metric_name": f"{self._osi_metric_prefix}.opensearch.documentsSuccess.count",
+                "namespace": osi_namespace,
+                "statistics": ["Sum"],
+                "dimensions": [
+                    {
+                        "Name": "PipelineName",
+                        "Value": osi_pipeline_name,
+                    },
+                ],
+            },
+            "OSIDocumentsFailedWrite": {
+                "cwl_metric_name": f"{self._osi_metric_prefix}.opensearch.documentErrors.count",
+                "namespace": osi_namespace,
+                "statistics": ["Sum"],
+                "dimensions": [
+                    {
+                        "Name": "PipelineName",
+                        "Value": osi_pipeline_name,
+                    },
+                ],
+            },
+            # SuccessFirstAttempt is an intermediate value used to calculate the number of OSIDocumentsRetriedWrite.
+            "OSIDocumentsSuccessFirstAttempt": {
+                "cwl_metric_name": f"{self._osi_metric_prefix}.opensearch.documentsSuccessFirstAttempt.count",
+                "namespace": osi_namespace,
+                "statistics": ["Sum"],
+                "dimensions": [
+                    {
+                        "Name": "PipelineName",
+                        "Value": osi_pipeline_name,
+                    },
+                ],
+            },
+            "OSIDLQS3RecordsSuccess": {
+                "cwl_metric_name": f"{self._osi_metric_prefix}.opensearch.s3.dlqS3RecordsSuccess.count",
+                "namespace": osi_namespace,
+                "statistics": ["Sum"],
+                "dimensions": [
+                    {
+                        "Name": "PipelineName",
+                        "Value": osi_pipeline_name,
+                    },
+                ],
+            },
+            "OSIDLQS3RecordsFailed": {
+                "cwl_metric_name": f"{self._osi_metric_prefix}.opensearch.s3.dlqS3RecordsFailed.count",
+                "namespace": osi_namespace,
+                "statistics": ["Sum"],
+                "dimensions": [
+                    {
+                        "Name": "PipelineName",
+                        "Value": osi_pipeline_name,
+                    },
+                ],
+            },
         }
 
         metric_data = metric_info.get(metric_name)
-        if metric_data is not None:
-            try:
+        try:
+            if metric_data is not None and metric_name not in [
+                "OSIDocumentsRetriedWrite"
+            ]:
                 response = get_metric_data(
                     metric_data["namespace"],
                     metric_data["cwl_metric_name"],
@@ -683,7 +959,6 @@ class MetricData:
                     metric_data["statistics"],
                     metric_data["dimensions"],
                 )
-
                 data_points = response.get("Datapoints")
                 for data_point in data_points:
                     tmp_xaixs.append(data_point.get("Timestamp").strftime("%s"))
@@ -694,10 +969,89 @@ class MetricData:
                             )
                         }
                     )
-            except Exception as err:
-                logger.error(err)
+            elif metric_name == "OSIDocumentsRetriedWrite":
+                response_iterator = self.calculate_osi_documents_retried_write(
+                    start_time, end_time, period
+                )
+                for response in response_iterator:
+                    tmp_xaixs.extend(
+                        [
+                            timestamp.strftime("%s")
+                            for timestamp in response["MetricDataResults"][0][
+                                "Timestamps"
+                            ]
+                        ]
+                    )
+                    tmp_data_points_map.update(
+                        {
+                            timestamp.strftime("%s"): value
+                            for timestamp, value in zip(
+                                response["MetricDataResults"][0]["Timestamps"],
+                                response["MetricDataResults"][0]["Values"],
+                            )
+                        }
+                    )
+
+        except Exception as err:
+            logger.error(err)
 
         return tmp_data_points_map, tmp_xaixs
+
+    def calculate_osi_documents_retried_write(self, start_time, end_time, period):
+        """This function will calculate the number of documents retried write."""
+        osi_pipeline_name = "cl-" + self._pipeline_id[:23]
+        metric_queries = [
+            {
+                "Id": "e1",
+                "Expression": "m2 - m1",
+                "Label": "OSIDocumentsDiff",
+            },
+            {
+                "Id": "m1",
+                "MetricStat": {
+                    "Metric": {
+                        "Namespace": "AWS/OSIS",
+                        "MetricName": f"{self._osi_metric_prefix}.opensearch.documentsSuccess.count",
+                        "Dimensions": [
+                            {
+                                "Name": "PipelineName",
+                                "Value": osi_pipeline_name,
+                            },
+                        ],
+                    },
+                    "Period": period,
+                    "Stat": "Sum",
+                },
+                "ReturnData": False,
+            },
+            {
+                "Id": "m2",
+                "MetricStat": {
+                    "Metric": {
+                        "Namespace": "AWS/OSIS",
+                        "MetricName": f"{self._osi_metric_prefix}.opensearch.documentsSuccessFirstAttempt.count",
+                        "Dimensions": [
+                            {
+                                "Name": "PipelineName",
+                                "Value": osi_pipeline_name,
+                            },
+                        ],
+                    },
+                    "Period": period,
+                    "Stat": "Sum",
+                },
+                "ReturnData": False,
+            },
+        ]
+
+        response_iterator = cwl_client.get_paginator("get_metric_data").paginate(
+            MetricDataQueries=metric_queries,
+            StartTime=start_time,
+            EndTime=end_time,
+            ScanBy="TimestampAscending",
+        )
+
+        return response_iterator
 
 
 class SERVICE(MetricData):
@@ -709,6 +1063,9 @@ class SERVICE(MetricData):
         super().__init__(pipeline_id, metric_names)
         self._tmp_series = []
         self._metric_resource_infos = self.get_metric_resource_infos()
+        self._osi_metric_prefix = self.get_osi_metric_prefix(
+            self._metric_resource_infos.get("type")
+        )
 
     def get_data(self, start_time, end_time):
         xaixs_array = []
@@ -739,18 +1096,37 @@ class SERVICE(MetricData):
         metric_resource_infos["processorLogGroupName"] = response.get(
             "processorLogGroupName"
         )
-        processor_fn_name = re.findall(
-            r"/aws/lambda/(.*)", response.get("processorLogGroupName")
-        )[0]
-        metric_resource_infos["processorFnName"] = processor_fn_name
+        if response.get("processorLogGroupName"):
+            processor_fn_names = re.findall(
+                r"/aws/lambda/(.*)", response.get("processorLogGroupName")
+            )
+            processor_fn_name = processor_fn_names[0] if processor_fn_names else None
+            metric_resource_infos["processorFnName"] = processor_fn_name
 
         metric_resource_infos["stackName"] = response.get("stackName")
         metric_resource_infos["helperLogGroupName"] = response.get("helperLogGroupName")
         metric_resource_infos["logEventQueueName"] = response.get("logEventQueueName")
         metric_resource_infos["bufferResourceName"] = response.get("bufferResourceName")
         metric_resource_infos["deliveryStreamName"] = response.get("deliveryStreamName")
+        metric_resource_infos["osiPipelineName"] = response.get("osiPipelineName")
+        metric_resource_infos["type"] = response.get("type")
 
         return metric_resource_infos
+
+    def get_osi_metric_prefix(self, pipeline_typ: str):
+        """
+        This function will get the osi metric prefix based on the pipeline type
+        """
+        if pipeline_typ.lower() == "vpc":
+            return "vpc-flow-log-pipeline"
+        elif pipeline_typ.lower() == "cloudtrail":
+            return "cloudtrail-log-pipeline"
+        elif pipeline_typ.lower() == "elb":
+            return "alb-access-log-pipeline"
+        elif pipeline_typ.lower() == "waf":
+            return "waf-access-log-pipeline"
+        else:
+            return "cloudtrail-log-pipeline"
 
 
 class APP(MetricData):
@@ -774,6 +1150,7 @@ class APP(MetricData):
         self._tmp_series = []
         self._metric_resource_infos = self.get_metric_resource_infos()
         self._ingestion_ids = self.get_ingestion_ids()
+        self._osi_metric_prefix = "s3-log-pipeline"
 
     def get_data(self, start_time, end_time):
         """
@@ -837,6 +1214,7 @@ class APP(MetricData):
         metric_resource_infos["logEventQueueName"] = response.logEventQueueName
         metric_resource_infos["bufferResourceName"] = response.bufferResourceName
         metric_resource_infos["bufferResourceArn"] = response.bufferResourceArn
+        metric_resource_infos["osiPipelineName"] = response.osiPipelineName
 
         # Get the syslog resource info
         _, syslog_nlb_metric_name = self.get_syslog_nlb_info()

@@ -1,0 +1,170 @@
+{
+    "%a": {
+        "client_addr": {
+            "type": "text"
+        }
+    },
+    "%{c}a": {
+        "connect_addr": {
+            "type": "text"
+        }
+    },
+    "%A": {
+        "local_addr": {
+            "type": "text"
+        }
+    },
+    "%B": {
+        "response_bytes": {
+            "type": "integer"
+        }
+    },
+    "%b": {
+        "response_size_bytes": {
+            "type": "long"
+        }
+    },
+    "%D": {
+        "request_time_msec": {
+            "type": "integer"
+        }
+    },
+    "%f": {
+        "filename": {
+            "type": "text"
+        }
+    },
+    "%h": {
+        "remote_addr": {
+            "type": "ip"
+        }
+    },
+    "%H": {
+        "request_protocol_supple": {
+            "type": "text"
+        }
+    },
+    "%k": {
+        "keep_alive": {
+            "type": "integer"
+        }
+    },
+    "%l": {
+        "remote_ident": {
+            "type": "text"
+        }
+    },
+    "%L": {
+        "error_log": {
+            "type": "integer"
+        }
+    },
+    "%m": {
+        "request_method_supple": {
+            "type": "text"
+        }
+    },
+    "%p": {
+        "remote_port": {
+            "type": "integer"
+        }
+    },
+    "%P": {
+        "child_process": {
+            "type": "integer"
+        }
+    },
+    "%q": {
+        "request_query": {
+            "type": "text"
+        }
+    },
+    "%r": {
+        "request_method": {
+            "type": "keyword"
+        },
+        "request_uri": {
+            "type": "text"
+        },
+        "request_protocol": {
+            "type": "text"
+        }
+    },
+    "%R": {
+        "response_handler": {
+            "type": "text"
+        }
+    },
+    "%s": {
+        "status": {
+            "type": "integer"
+        }
+    },
+    "%>s": {
+        "status": {
+            "type": "integer"
+        }
+    },
+    "%t": {
+        "time_local": {
+            "type": "date",
+            "timeKey": true,
+            "format": "%d/%b/%Y:%H:%M:%S %z"
+        }
+    },
+    "%T": {
+        "request_time_sec": {
+            "type": "double"
+        }
+    },
+    "%u": {
+        "remote_user": {
+            "type": "text"
+        }
+    },
+    "%U": {
+        "request_uri_supple": {
+            "type": "text"
+        }
+    },
+    "%v": {
+        "server_name": {
+            "type": "text"
+        }
+    },
+    "%V": {
+        "server_name_canonical": {
+            "type": "text"
+        }
+    },
+    "%X": {
+        "status_completed": {
+            "type": "text"
+        }
+    },
+    "%I": {
+        "bytes_received": {
+            "type": "integer"
+        }
+    },
+    "%O": {
+        "bytes_sent": {
+            "type": "integer"
+        }
+    },
+    "%S": {
+        "bytes_combination": {
+            "type": "text"
+        }
+    },
+    "%{User-Agent}i": {
+        "http_user_agent": {
+            "type": "text"
+        }
+    },
+    "%{Referer}i": {
+        "http_referer": {
+            "type": "text"
+        }
+    }
+}

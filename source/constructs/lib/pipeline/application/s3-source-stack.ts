@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import * as path from 'path';
+import * as path from "path";
 import {
   StackProps,
   aws_sqs as sqs,
@@ -34,16 +34,16 @@ import {
   CfnCondition,
   Fn,
   RemovalPolicy,
-} from 'aws-cdk-lib';
-import * as logs from 'aws-cdk-lib/aws-logs';
-import { Construct, IConstruct } from 'constructs';
+} from "aws-cdk-lib";
+import * as logs from "aws-cdk-lib/aws-logs";
+import { Construct, IConstruct } from "constructs";
 import {
   AddCfnNagSuppressRules,
   SolutionStack,
-} from '../common/solution-stack';
+} from "../common/solution-stack";
 
 const GB = 1024;
-const DOCKER_IMAGE_VERSION = '20230606';
+const DOCKER_IMAGE_VERSION = "20230606";
 const { VERSION } = process.env;
 export interface S3SourceStackProps extends StackProps {
   readonly tag?: string;
@@ -52,55 +52,55 @@ export interface S3SourceStackProps extends StackProps {
 }
 
 export class S3SourceStack extends SolutionStack {
-  public sourceBucketArnParam = this.newParam('SourceBucketArn', {
-    type: 'String',
-    allowedPattern: '^arn:aws.*$',
+  public sourceBucketArnParam = this.newParam("SourceBucketArn", {
+    type: "String",
+    allowedPattern: "^arn:aws.*$",
   });
 
-  public destinationQueueArnParam = this.newParam('DestinationQueueArn', {
-    type: 'String',
-    allowedPattern: '^arn:aws.*$',
+  public destinationQueueArnParam = this.newParam("DestinationQueueArn", {
+    type: "String",
+    allowedPattern: "^arn:aws.*$",
   });
 
-  public processorRoleArnParam = this.newParam('ProcessorRoleArn', {
-    type: 'String',
-    allowedPattern: '^arn:aws.*$',
+  public processorRoleArnParam = this.newParam("ProcessorRoleArn", {
+    type: "String",
+    allowedPattern: "^arn:aws.*$",
   });
 
-  public prefixParam = this.newParam('SourceBucketKeyPrefix', {
-    type: 'String',
-    default: '',
+  public prefixParam = this.newParam("SourceBucketKeyPrefix", {
+    type: "String",
+    default: "",
   });
 
-  public suffixParam = this.newParam('SourceBucketKeySuffix', {
-    type: 'String',
-    default: '',
+  public suffixParam = this.newParam("SourceBucketKeySuffix", {
+    type: "String",
+    default: "",
   });
 
   public ecsClusterNameParam = this.newParam(`ECSClusterName`, {
-    type: 'String',
+    type: "String",
     description:
-      'ECS Cluster Name to run ECS task (Please make sure the cluster exists)',
-    default: '',
+      "ECS Cluster Name to run ECS task (Please make sure the cluster exists)",
+    default: "",
   });
 
-  public ecsVpcIdParam = this.newParam('ECSVpcId', {
-    type: 'String',
-    description: 'VPC ID to run ECS task, e.g. vpc-bef13dc7',
-    default: '',
+  public ecsVpcIdParam = this.newParam("ECSVpcId", {
+    type: "String",
+    description: "VPC ID to run ECS task, e.g. vpc-bef13dc7",
+    default: "",
   });
 
-  public ecsSubnetsParam = this.newParam('ECSSubnets', {
+  public ecsSubnetsParam = this.newParam("ECSSubnets", {
     description:
-      'Subnet IDs to run ECS task. Please provide two private subnets at least delimited by comma, e.g. subnet-97bfc4cd,subnet-7ad7de32',
-    type: 'CommaDelimitedList',
-    default: '',
+      "Subnet IDs to run ECS task. Please provide two private subnets at least delimited by comma, e.g. subnet-97bfc4cd,subnet-7ad7de32",
+    type: "CommaDelimitedList",
+    default: "",
   });
 
-  public shouldAttachPolicyParam = this.newParam('ShouldAttachPolicy', {
-    type: 'String',
-    default: 'True',
-    allowedValues: ['True', 'False'],
+  public shouldAttachPolicyParam = this.newParam("ShouldAttachPolicy", {
+    type: "String",
+    default: "True",
+    allowedValues: ["True", "False"],
   });
 
   constructor(scope: Construct, id: string, props: S3SourceStackProps) {
@@ -121,9 +121,9 @@ export class S3SourceStack extends SolutionStack {
     );
 
     let solutionDesc =
-      props.solutionDesc || 'Centralized Logging with OpenSearch';
-    let solutionId = props.solutionId || 'SO8025';
-    const stackPrefix = 'CL';
+      props.solutionDesc || "Centralized Logging with OpenSearch";
+    let solutionId = props.solutionId || "SO8025";
+    const stackPrefix = "CL";
 
     this.setDescription(
       `(${solutionId}-${props.tag}) - ${solutionDesc} - S3 Source Ingestion Stack Template - Version ${VERSION}`
@@ -131,35 +131,35 @@ export class S3SourceStack extends SolutionStack {
 
     const srcBucket = s3.Bucket.fromBucketArn(
       this,
-      'SrcBucket',
+      "SrcBucket",
       this.sourceBucketArnParam.valueAsString
     );
 
     const destQueue = sqs.Queue.fromQueueArn(
       this,
-      'DestQueue',
+      "DestQueue",
       this.destinationQueueArnParam.valueAsString
     );
 
     const processorRole = iam.Role.fromRoleArn(
       this,
-      'ProcessorRole',
+      "ProcessorRole",
       this.processorRoleArnParam.valueAsString
     );
 
-    const shouldAttachPolicy = new CfnCondition(this, 'AttachPolicyCondition', {
-      expression: Fn.conditionEquals(this.shouldAttachPolicyParam, 'True'),
+    const shouldAttachPolicy = new CfnCondition(this, "AttachPolicyCondition", {
+      expression: Fn.conditionEquals(this.shouldAttachPolicyParam, "True"),
     });
 
-    const policy = new iam.CfnPolicy(this, 'AllowReadBucketPolicy', {
+    const policy = new iam.CfnPolicy(this, "AllowReadBucketPolicy", {
       policyName: `${Aws.STACK_NAME}-AllowReadBucketPolicy`,
       policyDocument: {
-        Version: '2012-10-17',
+        Version: "2012-10-17",
         Statement: [
           {
-            Effect: 'Allow',
-            Action: ['s3:GetObject*', 's3:GetBucket*', 's3:List*'],
-            Resource: [srcBucket.bucketArn, srcBucket.bucketArn + '/*'],
+            Effect: "Allow",
+            Action: ["s3:GetObject*", "s3:GetBucket*", "s3:List*"],
+            Resource: [srcBucket.bucketArn, srcBucket.bucketArn + "/*"],
           },
         ],
       },
@@ -173,14 +173,14 @@ export class S3SourceStack extends SolutionStack {
 
     const sqsAllowS3ToPutEvent = new CustomResource(
       this,
-      'SqsAllowS3ToPutEventCR',
+      "SqsAllowS3ToPutEventCR",
       {
         serviceToken: new SqsAllowS3ToPutEvent(
           this,
-          'SqsAllowS3ToPutEvent',
+          "SqsAllowS3ToPutEvent",
           destQueue.queueArn
         ).provider.serviceToken,
-        resourceType: 'Custom::SqsAllowS3ToPutEvent',
+        resourceType: "Custom::SqsAllowS3ToPutEvent",
         properties: {
           bucketArn: srcBucket.bucketArn,
           queueArn: destQueue.queueArn,
@@ -188,17 +188,17 @@ export class S3SourceStack extends SolutionStack {
       }
     );
 
-    const isOneTimeMode = new CfnCondition(this, 'IsOneTimeMode', {
+    const isOneTimeMode = new CfnCondition(this, "IsOneTimeMode", {
       expression: Fn.conditionAnd(
-        Fn.conditionNot(Fn.conditionEquals(this.ecsClusterNameParam, '')),
-        Fn.conditionNot(Fn.conditionEquals(this.ecsVpcIdParam, ''))
+        Fn.conditionNot(Fn.conditionEquals(this.ecsClusterNameParam, "")),
+        Fn.conditionNot(Fn.conditionEquals(this.ecsVpcIdParam, ""))
       ),
     });
 
-    const isOnGoingMode = new CfnCondition(this, 'IsOnGoingMode', {
+    const isOnGoingMode = new CfnCondition(this, "IsOnGoingMode", {
       expression: Fn.conditionOr(
-        Fn.conditionEquals(this.ecsClusterNameParam, ''),
-        Fn.conditionEquals(this.ecsVpcIdParam, '')
+        Fn.conditionEquals(this.ecsClusterNameParam, ""),
+        Fn.conditionEquals(this.ecsVpcIdParam, "")
       ),
     });
 
@@ -210,7 +210,7 @@ export class S3SourceStack extends SolutionStack {
     );
     this.enable({ construct: sqsAllowS3ToPutEvent, if: isOnGoingMode });
 
-    const vpc = ec2.Vpc.fromVpcAttributes(this, 'EC2Vpc', {
+    const vpc = ec2.Vpc.fromVpcAttributes(this, "EC2Vpc", {
       vpcId: this.ecsVpcIdParam.valueAsString,
       availabilityZones: Fn.getAzs(),
       privateSubnetIds: this.ecsSubnetsParam.valueAsList,
@@ -226,29 +226,29 @@ export class S3SourceStack extends SolutionStack {
       }
     );
 
-    const ecsTaskSG = new ec2.SecurityGroup(this, 'ECSTaskSG', {
+    const ecsTaskSG = new ec2.SecurityGroup(this, "ECSTaskSG", {
       vpc,
       allowAllOutbound: true,
-      description: 'security group for ECS Task',
+      description: "security group for ECS Task",
     });
 
     Aspects.of(ecsTaskSG).add(
       new AddCfnNagSuppressRules([
         {
-          id: 'W5',
-          reason: 'This security group is needs to access public s3 api',
+          id: "W5",
+          reason: "This security group is needs to access public s3 api",
         },
       ])
     );
 
-    const taskRole = new iam.Role(this, 'ECSTaskRole', {
-      assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
+    const taskRole = new iam.Role(this, "ECSTaskRole", {
+      assumedBy: new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
     });
 
     // Add the role to
     taskRole.addToPrincipalPolicy(
       new iam.PolicyStatement({
-        actions: ['sts:AssumeRole'],
+        actions: ["sts:AssumeRole"],
         resources: [`*`],
       })
     );
@@ -256,20 +256,20 @@ export class S3SourceStack extends SolutionStack {
     taskRole.addToPrincipalPolicy(
       new iam.PolicyStatement({
         actions: [
-          's3:GetObject*',
-          's3:GetBucket*',
-          's3:List*',
-          's3:PutObject*',
+          "s3:GetObject*",
+          "s3:GetBucket*",
+          "s3:List*",
+          "s3:PutObject*",
         ],
-        resources: [srcBucket.bucketArn, srcBucket.arnForObjects('*')],
+        resources: [srcBucket.bucketArn, srcBucket.arnForObjects("*")],
       })
     );
     taskRole.addToPrincipalPolicy(
       new iam.PolicyStatement({
         actions: [
-          'sqs:SendMessage',
-          'sqs:GetQueueAttributes',
-          'sqs:GetQueueUrl',
+          "sqs:SendMessage",
+          "sqs:GetQueueAttributes",
+          "sqs:GetQueueUrl",
         ],
         resources: [destQueue.queueArn],
       })
@@ -277,13 +277,13 @@ export class S3SourceStack extends SolutionStack {
     taskRole.addToPrincipalPolicy(
       new iam.PolicyStatement({
         actions: [
-          'kms:Decrypt',
-          'kms:Encrypt',
-          'kms:ReEncrypt*',
-          'kms:GenerateDataKey*',
-          'kms:DescribeKey',
+          "kms:Decrypt",
+          "kms:Encrypt",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey",
         ],
-        resources: ['*'],
+        resources: ["*"],
       })
     );
 
@@ -297,7 +297,7 @@ export class S3SourceStack extends SolutionStack {
       }
     );
     taskDefinition.applyRemovalPolicy(RemovalPolicy.RETAIN);
-    taskDefinition.addContainer('TheContainer', {
+    taskDefinition.addContainer("TheContainer", {
       image: ecs.ContainerImage.fromRegistry(
         `public.ecr.aws/aws-gcr-solutions/centralized-logging-with-opensearch/s3-list-objects:${DOCKER_IMAGE_VERSION}`
       ),
@@ -316,33 +316,33 @@ export class S3SourceStack extends SolutionStack {
     });
 
     const onCreateOrUpdate = {
-      service: 'ECS',
-      action: 'runTask',
+      service: "ECS",
+      action: "runTask",
       parameters: {
         cluster: ecsCluster.clusterArn,
         taskDefinition: taskDefinition.taskDefinitionArn,
-        launchType: 'FARGATE',
+        launchType: "FARGATE",
         networkConfiguration: {
           awsvpcConfiguration: {
             subnets: this.ecsSubnetsParam.valueAsList,
-            assignPublicIp: 'ENABLED',
+            assignPublicIp: "ENABLED",
             securityGroups: [ecsTaskSG.securityGroupId],
           },
         },
-        propagateTags: 'TASK_DEFINITION',
+        propagateTags: "TASK_DEFINITION",
       },
       physicalResourceId: cr.PhysicalResourceId.of(Date.now().toString()),
     };
 
-    const runECSTask = new cr.AwsCustomResource(this, 'RunECSTask', {
+    const runECSTask = new cr.AwsCustomResource(this, "RunECSTask", {
       policy: cr.AwsCustomResourcePolicy.fromStatements([
         new iam.PolicyStatement({
-          actions: ['ecs:RunTask'],
+          actions: ["ecs:RunTask"],
           effect: iam.Effect.ALLOW,
-          resources: [taskDefinition.taskDefinitionArn + '*'],
+          resources: [taskDefinition.taskDefinitionArn + "*"],
         }),
         new iam.PolicyStatement({
-          actions: ['iam:PassRole'],
+          actions: ["iam:PassRole"],
           effect: iam.Effect.ALLOW,
           resources: [
             taskDefinition.executionRole!.roleArn,
@@ -377,7 +377,7 @@ export class S3SourceStack extends SolutionStack {
 }
 
 class InjectCondition implements IAspect {
-  public constructor(private condition: CfnCondition) {}
+  public constructor(private condition: CfnCondition) { }
 
   public visit(node: IConstruct): void {
     if (node instanceof CfnResource) {
@@ -390,12 +390,12 @@ class AddS3BucketNotificationsDependencyAndCondition implements IAspect {
   public constructor(
     private deps: IConstruct,
     private condition: CfnCondition
-  ) {}
+  ) { }
 
   public visit(node: IConstruct): void {
     if (
       node instanceof CfnResource &&
-      node.cfnResourceType === 'Custom::S3BucketNotifications'
+      node.cfnResourceType === "Custom::S3BucketNotifications"
     ) {
       node.cfnOptions.condition = this.condition;
       node.addDependency(this.deps.node.defaultChild as CfnResource);
@@ -409,25 +409,25 @@ class SqsAllowS3ToPutEvent extends Construct {
   constructor(scope: Construct, id: string, queueArn: string) {
     super(scope, id);
 
-    this.provider = new cr.Provider(this, 'SqsAllowS3ToPutEventProvider', {
-      onEventHandler: new lambda.Function(this, 'SqsAllowS3ToPutEventOnEvent', {
+    this.provider = new cr.Provider(this, "SqsAllowS3ToPutEventProvider", {
+      onEventHandler: new lambda.Function(this, "SqsAllowS3ToPutEventOnEvent", {
         code: lambda.Code.fromAsset(
           path.join(
             __dirname,
-            '../../../lambda/pipeline/common/custom-resource'
+            "../../../lambda/pipeline/common/custom-resource"
           )
         ),
-        runtime: lambda.Runtime.PYTHON_3_9,
+        runtime: lambda.Runtime.PYTHON_3_11,
         timeout: Duration.seconds(60),
         logRetention: logs.RetentionDays.ONE_MONTH,
-        handler: 'sqs_allow_s3_to_put_event.on_event',
+        handler: "sqs_allow_s3_to_put_event.on_event",
         initialPolicy: [
           new iam.PolicyStatement({
             resources: [queueArn],
             actions: [
-              'sqs:GetQueueAttributes',
-              'sqs:SetQueueAttributes',
-              'sqs:GetQueueUrl',
+              "sqs:GetQueueAttributes",
+              "sqs:SetQueueAttributes",
+              "sqs:GetQueueUrl",
             ],
           }),
         ],

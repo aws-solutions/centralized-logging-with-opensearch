@@ -2,11 +2,12 @@
 # SPDX-License-Identifier: Apache-2.0
 import re
 import boto3
+import json
 import urllib.parse
 
 from fnmatch import fnmatchcase
 from typing import List, Optional
-from boto3.dynamodb.conditions import Attr, ConditionBase
+from boto3.dynamodb.conditions import Attr, ConditionBase, Key
 from commonlib import DynamoDBUtil, AWSConnection, ErrorCode, APIException
 from commonlib.model import (
     EC2Instances,
@@ -16,9 +17,13 @@ from commonlib.model import (
     Instance,
     AppPipeline,
     AppLogIngestion,
+    SvcPipeline,
     BufferParam,
     BufferTypeEnum,
     StatusEnum,
+    EngineType,
+    InstanceIngestionDetail,
+    ExecutionStatus,
 )
 
 
@@ -187,7 +192,7 @@ def _get_buffer_params(buffer_type, buffer_params: List[BufferParam]):
             "logBucketSuffix",
             "defaultCmkArn",
             "createDashboard",
-            "EnableS3Notification",
+            "enableS3Notification",
         ]
     else:
         keys = ["logProcessorRoleArn"]
@@ -207,6 +212,8 @@ class AppPipelineDao:
         self._ddb_table = DynamoDBUtil(table_name)
 
     def get_stack_name(self, app_pipeline: AppPipeline):
+        if app_pipeline.engineType == EngineType.LIGHT_ENGINE:
+            return "MicroBatchApplicationFluentBitPipeline"
         buffer_type = app_pipeline.bufferType
         enable_auto_scaling_values = [
             param.paramValue
@@ -220,6 +227,12 @@ class AppPipelineDao:
         )
 
         if buffer_type == "S3":
+            if (
+                app_pipeline.osiParams != None
+                and app_pipeline.osiParams.maxCapacity != 0
+                and app_pipeline.osiParams.minCapacity != 0
+            ):
+                return "AppLogS3BufferOSIProcessor"
             return "AppLogS3Buffer"
         elif buffer_type == "MSK":
             return "AppLogMSKBuffer"
@@ -264,6 +277,30 @@ class AppPipelineDao:
         buffer_params_map.pop("enableAutoScaling", "false")
         return _create_stack_params(base_params_map | buffer_params_map)
 
+    def get_light_engine_stack_parameters(
+        self, app_pipeline: AppPipeline, log_config: LogConfig, grafana=None
+    ):
+        params = {
+            "stagingBucketPrefix": app_pipeline.lightEngineParams.stagingBucketPrefix,
+            "centralizedBucketName": app_pipeline.lightEngineParams.centralizedBucketName,
+            "centralizedBucketPrefix": app_pipeline.lightEngineParams.centralizedBucketPrefix,
+            "centralizedTableName": app_pipeline.lightEngineParams.centralizedTableName,
+            "centralizedMetricsTableName": app_pipeline.lightEngineParams.centralizedMetricsTableName,
+            "logProcessorSchedule": app_pipeline.lightEngineParams.logProcessorSchedule,
+            "logMergerSchedule": app_pipeline.lightEngineParams.logMergerSchedule,
+            "logArchiveSchedule": app_pipeline.lightEngineParams.logArchiveSchedule,
+            "logMergerAge": app_pipeline.lightEngineParams.logMergerAge,
+            "logArchiveAge": app_pipeline.lightEngineParams.logArchiveAge,
+            "importDashboards": app_pipeline.lightEngineParams.importDashboards,
+            "recipients": app_pipeline.lightEngineParams.recipients,
+            "sourceSchema": json.dumps(log_config.jsonSchema),
+            "pipelineId": app_pipeline.pipelineId,
+        }
+        if grafana is not None:
+            params["grafanaUrl"] = grafana["url"]
+            params["grafanaToken"] = grafana["token"]
+        return _create_stack_params(params)
+
     def validate_duplicated_index_prefix(self, app_pipeline: AppPipeline, force: bool):
         pipelines = self.list_app_pipelines(
             Attr("status").is_in(["INACTIVE", "ACTIVE", "CREATING", "DELETING"])
@@ -281,7 +318,8 @@ class AppPipelineDao:
                         ErrorCode.DUPLICATED_WITH_INACTIVE_INDEX_PREFIX, msg
                     )
             else:
-                raise APIException(ErrorCode.DUPLICATED_INDEX_PREFIX, msg)
+                if not force:
+                    raise APIException(ErrorCode.DUPLICATED_INDEX_PREFIX, msg)
 
     def validate_index_prefix_overlap(self, app_pipeline: AppPipeline, force: bool):
         index_prefix = app_pipeline.indexPrefix or app_pipeline.aosParams.indexPrefix
@@ -293,15 +331,15 @@ class AppPipelineDao:
         for p in pipelines:
             the_index_prefix = p.indexPrefix or p.aosParams.indexPrefix
             status = p.status
-            if fnmatchcase(index_prefix, the_index_prefix + "*") or fnmatchcase(
-                the_index_prefix, index_prefix + "*"
+            if index_prefix != the_index_prefix and (
+                fnmatchcase(index_prefix, the_index_prefix + "*")
+                or fnmatchcase(the_index_prefix, index_prefix + "*")
             ):
                 msg = f'Index prefix "{index_prefix}" overlaps "{the_index_prefix}" of app pipeline {p.pipelineId}'
                 if status == "INACTIVE":
-                    if not force:
-                        raise APIException(
-                            ErrorCode.OVERLAP_WITH_INACTIVE_INDEX_PREFIX, msg
-                        )
+                    raise APIException(
+                        ErrorCode.OVERLAP_WITH_INACTIVE_INDEX_PREFIX, msg
+                    )
                 else:
                     raise APIException(ErrorCode.OVERLAP_INDEX_PREFIX, msg)
 
@@ -573,6 +611,8 @@ class PipelineAlarmDao:
         if item.get("bufferType"):
             alarm_info["bufferType"] = item.get("bufferType")
 
+        alarm_info["engineType"] = item.get("engineType", EngineType.OPEN_SEARCH)
+
         return alarm_info
 
 
@@ -731,3 +771,132 @@ class AppLogIngestionDao:
 
         items = self._ddb_table.list_items(filter_expression)
         return [AppLogIngestion.parse_obj(each) for each in items]
+
+
+class InstanceIngestionDetailDao:
+    def __init__(self, table_name) -> None:
+        self._ddb_table = DynamoDBUtil(table_name)
+
+    def batch_put_items(self, items: List[InstanceIngestionDetail]):
+        self._ddb_table.batch_put_items(
+            [InstanceIngestionDetail.dict(each) for each in items]
+        )
+
+    def get_instance_ingestion_details(
+        self, instance_id: str, ingestion_id: str, source_id: str
+    ) -> List[InstanceIngestionDetail]:
+        return self.list_instance_ingestion_details(
+            Attr("instanceId")
+            .eq(instance_id)
+            .__and__(Attr("ingestionId").eq(ingestion_id))
+            .__and__(Attr("sourceId").eq(source_id))
+        )
+
+    def list_instance_ingestion_details(
+        self, filter_expression: Optional[ConditionBase] = None
+    ) -> List[InstanceIngestionDetail]:
+        if not filter_expression:
+            filter_expression = Attr("status").eq(StatusEnum.INACTIVE)
+
+        items = self._ddb_table.list_items(filter_expression)
+        return [InstanceIngestionDetail.parse_obj(each) for each in items]
+
+
+class SvcPipelineDao:
+    def __init__(self, table_name) -> None:
+        self._ddb_table = DynamoDBUtil(table_name)
+
+    def get_light_engine_stack_parameters(
+        self, service_pipeline: SvcPipeline, grafana=None
+    ):
+        params = {
+            "stagingBucketPrefix": service_pipeline.lightEngineParams.stagingBucketPrefix,
+            "centralizedBucketName": service_pipeline.lightEngineParams.centralizedBucketName,
+            "centralizedBucketPrefix": service_pipeline.lightEngineParams.centralizedBucketPrefix,
+            "centralizedTableName": service_pipeline.lightEngineParams.centralizedTableName,
+            "logProcessorSchedule": service_pipeline.lightEngineParams.logProcessorSchedule,
+            "logMergerSchedule": service_pipeline.lightEngineParams.logMergerSchedule,
+            "logArchiveSchedule": service_pipeline.lightEngineParams.logArchiveSchedule,
+            "logMergerAge": service_pipeline.lightEngineParams.logMergerAge,
+            "logArchiveAge": service_pipeline.lightEngineParams.logArchiveAge,
+            "importDashboards": service_pipeline.lightEngineParams.importDashboards,
+            "recipients": service_pipeline.lightEngineParams.recipients,
+            "pipelineId": service_pipeline.id,
+            "notificationService": service_pipeline.lightEngineParams.notificationService,
+        }
+        if grafana is not None:
+            params["grafanaUrl"] = grafana["url"]
+            params["grafanaToken"] = grafana["token"]
+
+        if service_pipeline.type.lower() in ("elb", "cloudfront"):
+            params[
+                "enrichmentPlugins"
+            ] = service_pipeline.lightEngineParams.enrichmentPlugins
+        return _create_stack_params(params)
+
+    def save(self, service_pipeline: SvcPipeline) -> SvcPipeline:
+        self._ddb_table.put_item(service_pipeline.dict())
+        return service_pipeline
+
+    def update_svc_pipeline(self, id: str, **attributes) -> None:
+        if not attributes.get("updatedAt"):
+            attributes["updatedAt"] = now_iso8601()
+
+        self._ddb_table.update_item({"id": id}, attributes)
+
+    def get_svc_pipeline(self, id: str):
+        item = self._ddb_table.get_item({"id": id}, raise_if_not_found=True)
+        return SvcPipeline.parse_obj(item)
+
+    def list_svc_pipelines(
+        self,
+        filter_expression: Optional[ConditionBase] = None,
+    ) -> List[SvcPipeline]:
+        if not filter_expression:
+            filter_expression = Attr("status").ne(StatusEnum.INACTIVE)
+
+        items = self._ddb_table.list_items(filter_expression)
+        return [SvcPipeline.parse_obj(each) for each in items]
+
+
+class ETLLogDao:
+    def __init__(self, table_name) -> None:
+        self._ddb_table = DynamoDBUtil(table_name)
+
+    def query_execution_logs(
+        self,
+        pipeline_index_key: str,
+        start_time: Optional[str] = None,
+        end_time: Optional[str] = "",
+        status: Optional[ExecutionStatus] = None,
+        limit: Optional[int] = 10,
+        last_evaluated_key: Optional[str] = None,
+    ):
+        key_condition_expression = Key("pipelineIndexKey").eq(pipeline_index_key)
+        if start_time and end_time:
+            key_condition_expression = key_condition_expression & Key(
+                "startTime"
+            ).between(start_time, end_time)
+        elif start_time and not end_time:
+            key_condition_expression = key_condition_expression & Key("startTime").gt(
+                start_time
+            )
+        elif not start_time and end_time:
+            key_condition_expression = key_condition_expression & Key("startTime").lt(
+                end_time
+            )
+
+        query_parameters = {
+            "IndexName": "IDX_PIPELINE",
+            "KeyConditionExpression": (key_condition_expression),
+            "ScanIndexForward": False,
+            "Limit": limit,
+        }
+
+        if last_evaluated_key:
+            query_parameters["ExclusiveStartKey"] = last_evaluated_key
+
+        if status:
+            query_parameters["FilterExpression"] = Attr("status").eq(status)
+
+        return self._ddb_table._table.query(**query_parameters)

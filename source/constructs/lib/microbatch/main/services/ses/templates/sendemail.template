@@ -1,0 +1,46 @@
+<p>Hello</p>
+<p>You are receiving this follow-up notification because you have one or more {{stateMachine.name}} 
+tasks {{stateMachine.status}} to execute.</p>
+<table style="border-collapse: collapse; width: 100%;">
+    <tr>
+        <th style="border: 1px solid #ddd; padding: 8px; padding-top: 12px; padding-bottom: 12px; text-align: left;">App Pipeline Id</th>
+        <th style="border: 1px solid #ddd; padding: 8px; padding-top: 12px; padding-bottom: 12px; text-align: left;">Table Name</th>
+        <th style="border: 1px solid #ddd; padding: 8px; padding-top: 12px; padding-bottom: 12px; text-align: left;">Schedule Type</th>
+        <th style="border: 1px solid #ddd; padding: 8px; padding-top: 12px; padding-bottom: 12px; text-align: left;">Source Type</th>
+        <th style="border: 1px solid #ddd; padding: 8px; padding-top: 12px; padding-bottom: 12px; text-align: left;">State Machines</th>
+        <th style="border: 1px solid #ddd; padding: 8px; padding-top: 12px; padding-bottom: 12px; text-align: left;">Execution Name</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #ddd; padding: 8px;">{{pipeline.id}}</td>
+        <td style="border: 1px solid #ddd; padding: 8px;">{{pipeline.tableName}}</td>
+        <td style="border: 1px solid #ddd; padding: 8px;">{{pipeline.scheduleType}}</td>
+        <td style="border: 1px solid #ddd; padding: 8px;">{{pipeline.type}}</td>
+        <td style="border: 1px solid #ddd; padding: 8px;"><a href={{stateMachine.url}}>{{stateMachine.name}}</a></td>
+        <td style="border: 1px solid #ddd; padding: 8px;"><a href={{execution.url}}>{{execution.name}}</a></td>
+    </tr>
+</table>
+{{#if logs}}
+    <p>The execution log of task {{stateMachine.name}} is as follows:</p>
+    <table style="border-collapse: collapse; width: 100%;">
+        <tr>
+            <th style="border: 1px solid #ddd; padding: 8px; padding-top: 12px; padding-bottom: 12px; text-align: left;">stateName</th>
+            <th style="border: 1px solid #ddd; padding: 8px; padding-top: 12px; padding-bottom: 12px; text-align: left;">API</th>
+            <th style="border: 1px solid #ddd; padding: 8px; padding-top: 12px; padding-bottom: 12px; text-align: left;">startTime</th>
+            <th style="border: 1px solid #ddd; padding: 8px; padding-top: 12px; padding-bottom: 12px; text-align: left;">endTime</th>
+            <th style="border: 1px solid #ddd; padding: 8px; padding-top: 12px; padding-bottom: 12px; text-align: left;">status</th>
+        </tr>
+        {{#each logs}}
+            <tr>
+                <td style="border: 1px solid #ddd; padding: 8px;">{{stateName}}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">{{API}}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">{{startTime}}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">{{endTime}}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">{{status}}</td>
+            </tr>
+        {{/each}}
+    </table>
+{{/if}}
+{{#if archivePath}}
+    <p><font color="#FF0000">Objects will be deleted after a few days, so please check these logs as soon as possible, you can find them in the following buckets.</font></p>
+    <p><b>S3 Bucket URL: </b><i>{{archivePath}}</i></p>
+{{/if}}

@@ -33,7 +33,8 @@
     "instanceGroup": "Instance Groups",
     "logConfig": "Log Configs",
     "crossAccount": "Member Accounts",
-    "doc": "Documentation"
+    "doc": "Documentation",
+    "grafana": "Grafana"
   },
   "bottom": {
     "copy": "Amazon Web Services, Inc. or its affiliates. All rights reserved.",
@@ -104,7 +105,9 @@
     "confirm": "Confirm",
     "createNew": " Create New",
     "viewDetails": "View Details",
-    "viewDomain": "View Domain"
+    "viewDomain": "View Domain",
+    "addNewItem": "Add New Item",
+    "saveAndValidate": "Save and Validate"
   },
   "status": {
     "unknown": "Unknown",
@@ -131,7 +134,11 @@
     "alarm": "In-alarm",
     "ok": "OK",
     "loading": "Loading...",
-    "distributing": "Distributing"
+    "distributing": "Distributing",
+    "running": "Running",
+    "succeeded": "Succeeded",
+    "timed_out": "Timed Out",
+    "aborted": "Aborted"
   },
   "monitoring": {
     "title": "Monitoring",
@@ -139,6 +146,10 @@
     "buffer": "Buffer",
     "logProcessor": "Log Processor",
     "lambdaProcessor": "Lambda Processor",
+    "osiProcessor": "OpenSearch Ingestion Processor",
+    "lambda": "Lambda",
+    "lightEngineSvcLambdaDesc": "Retrieve log files from the log bucket configured by {{service}}, and copy these files to the Staging bucket",
+    "lightEngineAppLambdaDesc": "Retrieve log files from the log buffer layer and copy these files to the Staging bucket",
     "failedBucket": "Failed record S3 bucket",
     "deliveryKDS": "Log delivery KDS",
     "deliveryKDF": "Log delivery KDF",
@@ -157,6 +168,11 @@
       "ProcessorFnDuration": "Duration (millisecond)",
       "ProcessorFnThrottles": "Throttles",
       "ProcessorFnInvocations": "Invocations",
+      "ReplicationFnError": "Error count",
+      "ReplicationFnConcurrentExecutions": "Total concurrent executions",
+      "ReplicationFnDuration": "Duration (millisecond)",
+      "ReplicationFnThrottles": "Throttles",
+      "ReplicationFnInvocations": "Invocations",
       "SyslogNLBActiveFlowCount": "Syslog NLB Active Flow Count",
       "SyslogNLBProcessedBytes": "Syslog NLB Processed Bytes",
       "KDSIncomingBytes": "KDS Incoming Bytes",
@@ -176,7 +192,13 @@
       "FluentBitOutputProcBytes": "Fluent Bit Output Process Bytes",
       "KDFIncomingBytes": "KDF Incoming Bytes",
       "KDFIncomingRecords": "KDF Incoming Records",
-      "KDFDeliveryToS3Bytes": "KDF Delivery To S3Bytes"
+      "KDFDeliveryToS3Bytes": "KDF Delivery To S3Bytes",
+      "OSIBytesTransmitted": "Bytes transmitted",
+      "OSIDocumentsWritten": "Documents written",
+      "OSIDocumentsFailedWrite": "Documents failed to write",
+      "OSIDocumentsRetriedWrite": "Documents retried to write",
+      "OSIDLQS3RecordsSuccess": "DLQ S3 records success",
+      "OSIDLQS3RecordsFailed": "DLQ S3 records failed"
     }
   },
   "logging": {
@@ -184,6 +206,7 @@
     "desc": "This tab provides you quick access to the logs of the two lambdas in the pipeline that loads logs into the OpenSearch domain, making it easy for you to troubleshoot log ingestion failures.",
     "logEvent": "Log Events",
     "processorLamdaLog": "Log of processor lambda",
+    "processorOSILog": "Log of processor OSI",
     "logGroupName": "Log Group Name",
     "creationTime": "Creation Time",
     "logStreams": "Log Streams",
@@ -222,6 +245,7 @@
     "learnMore": "Learn more about SNS",
     "snsTopic": "SNS topic",
     "logProcessorAlarms": "Log processor alarms",
+    "logReplicationAlarms": "Log replication alarms",
     "bufferLayerAlarms": "Buffer layer alarms",
     "sourceAlarms": "Source alarms",
     "ingestionId": "Ingestion ID",
@@ -245,6 +269,23 @@
       "emailInvalid": "Email must be a validate format"
     }
   },
+  "processor": {
+    "selectLogProcessor": "Select log processor",
+    "logProcessorSettings": "Log processor settings",
+    "serviceUnavailable": "OpenSearch Ingestion Service is not supported in the current region, the log processor will use Lambda functions.",
+    "onlySupportLambda": "Log Processor using Lambda functions when pipeline is light engine.",
+    "logProcessorType": "Log processor type",
+    "lambdaDesc": "Logs will be processed and ingested using Lambda function. Pay as you go, charged by lambda processing compute and memory based on usage. Use this if you have small and burst log volume or no need of further processing on logs.",
+    "osiDesc": "Logs will be processed and ingested by OpenSearch Ingestion Service. You pay by the provisioned Ingestion Capacity Unit. Use this if you expect advanced processing (e.g., sampling, multi-route) on logs before ingestion into OpenSearch.",
+    "pipelineCapacity": "Pipeline capacity",
+    "pipelineCapacityDesc": "A single Ingestion OpenSearch Compute Unit (OCU) represents billable compute and memory units. You are charged an hourly rate based on the number of OCUs used to run your data pipelines.",
+    "min": "Minimum",
+    "minError": "Minimum value invalid",
+    "maxError": "Maximum value invalid",
+    "max": "Maximum",
+    "minMaxTips": "Minimum and maximum capacity must be positive numbers between 1 and 96. The maximum capacity limit for stateful pipelines(for example, those that use the service_map or aggregate processor) is 48.",
+    "disabledEnrich": "Enriched fields are not applicable in OSI model."
+  },
   "seconds": "Seconds",
   "yes": "Yes",
   "no": "No",
@@ -263,7 +304,9 @@
   "pendingCreation": "Pending Creation",
   "learnMore": "Learn more",
   "intoDomain": "into OpenSearch domain.",
+  "intoLightEngine": "into Light Engine.",
   "archDesc": "The architecture diagram to ingest log data into OpenSearch domain.",
+  "lightEngineArchDesc": "The architecture diagram to ingest log data into Light Engine.",
   "startTime": "Start Time",
   "endTime": "End Time",
   "other": "Other",
@@ -297,5 +340,6 @@
   "page": "page",
   "pageNotFound": "Page Not Found",
   "home": "Home",
-  "clear": "Clear"
+  "clear": "Clear",
+  "alert": "Need upgrade"
 }

@@ -1,18 +1,3 @@
-/*
-Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License").
-You may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
 /* tslint:disable */
 /* eslint-disable */
 // this is an auto generated file. This will be overwritten
@@ -35,7 +20,9 @@ export const importDomain = /* GraphQL */ `
         name
         values
         status
+        __typename
       }
+      __typename
     }
   }
 `;
@@ -48,7 +35,9 @@ export const removeDomain = /* GraphQL */ `
         name
         values
         status
+        __typename
       }
+      __typename
     }
   }
 `;
@@ -62,6 +51,7 @@ export const createServicePipeline = /* GraphQL */ `
     $logSourceAccountId: String
     $logSourceRegion: String
     $destinationType: DestinationType!
+    $osiParams: OpenSearchIngestionInput
     $monitor: MonitorInput
   ) {
     createServicePipeline(
@@ -73,6 +63,30 @@ export const createServicePipeline = /* GraphQL */ `
       logSourceAccountId: $logSourceAccountId
       logSourceRegion: $logSourceRegion
       destinationType: $destinationType
+      osiParams: $osiParams
+      monitor: $monitor
+    )
+  }
+`;
+export const createLightEngineServicePipeline = /* GraphQL */ `
+  mutation CreateLightEngineServicePipeline(
+    $type: ServiceType!
+    $parameters: [ParameterInput]
+    $ingestion: LightEngineIngestion!
+    $tags: [TagInput]
+    $source: String
+    $logSourceAccountId: String
+    $logSourceRegion: String
+    $monitor: MonitorInput
+  ) {
+    createLightEngineServicePipeline(
+      type: $type
+      parameters: $parameters
+      ingestion: $ingestion
+      tags: $tags
+      source: $source
+      logSourceAccountId: $logSourceAccountId
+      logSourceRegion: $logSourceRegion
       monitor: $monitor
     )
   }
@@ -124,6 +138,7 @@ export const putResourceLoggingBucket = /* GraphQL */ `
       bucket
       prefix
       source
+      __typename
     }
   }
 `;
@@ -151,6 +166,7 @@ export const putResourceLogConfig = /* GraphQL */ `
       name
       logFormat
       region
+      __typename
     }
   }
 `;
@@ -162,6 +178,7 @@ export const createLogConfig = /* GraphQL */ `
     $multilineLogParser: MultiLineLogParser
     $filterConfigMap: ProcessorFilterRegexInput
     $regex: String
+    $jsonSchema: AWSJSON
     $regexFieldSpecs: [RegularSpecInput]
     $timeKey: String
     $timeOffset: String
@@ -176,6 +193,7 @@ export const createLogConfig = /* GraphQL */ `
       multilineLogParser: $multilineLogParser
       filterConfigMap: $filterConfigMap
       regex: $regex
+      jsonSchema: $jsonSchema
       regexFieldSpecs: $regexFieldSpecs
       timeKey: $timeKey
       timeOffset: $timeOffset
@@ -200,6 +218,7 @@ export const updateLogConfig = /* GraphQL */ `
     $multilineLogParser: MultiLineLogParser
     $filterConfigMap: ProcessorFilterRegexInput
     $regex: String
+    $jsonSchema: AWSJSON
     $regexFieldSpecs: [RegularSpecInput]
     $timeKey: String
     $timeOffset: String
@@ -216,6 +235,7 @@ export const updateLogConfig = /* GraphQL */ `
       multilineLogParser: $multilineLogParser
       filterConfigMap: $filterConfigMap
       regex: $regex
+      jsonSchema: $jsonSchema
       regexFieldSpecs: $regexFieldSpecs
       timeKey: $timeKey
       timeOffset: $timeOffset
@@ -234,12 +254,35 @@ export const createAppPipeline = /* GraphQL */ `
     $logConfigVersionNumber: Int!
     $monitor: MonitorInput
     $force: Boolean
+    $osiParams: OpenSearchIngestionInput
     $tags: [TagInput]
   ) {
     createAppPipeline(
       bufferType: $bufferType
       bufferParams: $bufferParams
       aosParams: $aosParams
+      logConfigId: $logConfigId
+      logConfigVersionNumber: $logConfigVersionNumber
+      monitor: $monitor
+      force: $force
+      osiParams: $osiParams
+      tags: $tags
+    )
+  }
+`;
+export const createLightEngineAppPipeline = /* GraphQL */ `
+  mutation CreateLightEngineAppPipeline(
+    $params: LightEngineParameterInput!
+    $bufferParams: [BufferInput]
+    $logConfigId: ID!
+    $logConfigVersionNumber: Int!
+    $monitor: MonitorInput
+    $force: Boolean
+    $tags: [TagInput]
+  ) {
+    createLightEngineAppPipeline(
+      params: $params
+      bufferParams: $bufferParams
       logConfigId: $logConfigId
       logConfigVersionNumber: $logConfigVersionNumber
       monitor: $monitor
@@ -348,6 +391,7 @@ export const createSubAccountLink = /* GraphQL */ `
     $subAccountStackId: String!
     $subAccountKMSKeyArn: String!
     $subAccountIamInstanceProfileArn: String!
+    $subAccountFlbConfUploadingEventTopicArn: String!
     $tags: [TagInput]
   ) {
     createSubAccountLink(
@@ -361,7 +405,21 @@ export const createSubAccountLink = /* GraphQL */ `
       subAccountStackId: $subAccountStackId
       subAccountKMSKeyArn: $subAccountKMSKeyArn
       subAccountIamInstanceProfileArn: $subAccountIamInstanceProfileArn
+      subAccountFlbConfUploadingEventTopicArn: $subAccountFlbConfUploadingEventTopicArn
       tags: $tags
+    )
+  }
+`;
+export const updateSubAccountLink = /* GraphQL */ `
+  mutation UpdateSubAccountLink(
+    $subAccountId: String!
+    $region: String
+    $subAccountFlbConfUploadingEventTopicArn: String!
+  ) {
+    updateSubAccountLink(
+      subAccountId: $subAccountId
+      region: $region
+      subAccountFlbConfUploadingEventTopicArn: $subAccountFlbConfUploadingEventTopicArn
     )
   }
 `;
@@ -408,5 +466,25 @@ export const deletePipelineAlarm = /* GraphQL */ `
     $pipelineType: PipelineType!
   ) {
     deletePipelineAlarm(pipelineId: $pipelineId, pipelineType: $pipelineType)
+  }
+`;
+export const createGrafana = /* GraphQL */ `
+  mutation CreateGrafana(
+    $name: String!
+    $url: String!
+    $token: String!
+    $tags: [TagInput]
+  ) {
+    createGrafana(name: $name, url: $url, token: $token, tags: $tags)
+  }
+`;
+export const updateGrafana = /* GraphQL */ `
+  mutation UpdateGrafana($id: String!, $url: String, $token: String) {
+    updateGrafana(id: $id, url: $url, token: $token)
+  }
+`;
+export const deleteGrafana = /* GraphQL */ `
+  mutation DeleteGrafana($id: String!) {
+    deleteGrafana(id: $id)
   }
 `;

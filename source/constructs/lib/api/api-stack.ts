@@ -13,7 +13,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import { CfnOutput, Aws, aws_s3 as s3, aws_ecs as ecs } from 'aws-cdk-lib';
+
+import { CfnOutput, Aws, aws_s3 as s3, aws_ecs as ecs, aws_sqs as sqs, } from 'aws-cdk-lib';
 import { IVpc } from 'aws-cdk-lib/aws-ec2';
 import { NagSuppressions } from 'cdk-nag';
 import { Construct } from 'constructs';
@@ -34,6 +35,9 @@ import { LogConfStack } from './log-conf-stack';
 import { LogSourceStack } from './log-source-stack';
 
 import { PipelineAlarmStack } from './pipeline-alarm-stack';
+import { GrafanaStack } from './grafana-stack';
+
+import { MicroBatchStack } from '../../lib/microbatch/main/services/amazon-services-stack';
 import { SvcPipelineStack } from './svc-pipeline-stack';
 import { CfnFlowStack } from '../main/cfn-flow-stack';
 
@@ -97,6 +101,11 @@ export interface APIProps {
   readonly solutionId: string;
 
   readonly stackPrefix: string;
+
+  readonly microBatchStack: MicroBatchStack;
+
+  readonly flbConfUploadingEventQueue: sqs.Queue;
+
 }
 
 /**
@@ -123,11 +132,14 @@ export class APIStack extends Construct {
       solutionId: props.solutionId,
     });
 
+    crossAccountStack.centralAssumeRolePolicy.attachToRole(props.microBatchStack.microBatchLambdaStack.PipelineResourcesBuilderStack.PipelineResourcesBuilderRole);
+
     // Create a common orchestration flow for CloudFormation deployment
     const cfnFlow = new CfnFlowStack(this, 'CfnFlow', {
       subAccountLinkTable: crossAccountStack.subAccountLinkTable,
       stackPrefix: props.stackPrefix,
       solutionId: props.solutionId,
+      microBatchStack: props.microBatchStack,
     });
     NagSuppressions.addResourceSuppressions(
       cfnFlow,
@@ -162,14 +174,24 @@ export class APIStack extends Construct {
       true
     );
 
+    // Create grafana stack
+    const grafanaStack = new GrafanaStack(this, 'GrafanaAPI', {
+      graphqlApi: apiStack.graphqlApi,
+      solutionId: props.solutionId,
+      stackPrefix: props.stackPrefix,
+      microBatchStack: props.microBatchStack,
+    });
+
     // Create the Service Pipeline APIs stack
     const svcPipelineStack = new SvcPipelineStack(this, 'SvcPipelineAPI', {
       graphqlApi: apiStack.graphqlApi,
       cfnFlowSMArn: cfnFlowSMArn,
       subAccountLinkTable: crossAccountStack.subAccountLinkTable,
+      grafanaTable: grafanaStack.grafanaTable,
       centralAssumeRolePolicy: crossAccountStack.centralAssumeRolePolicy,
       solutionId: props.solutionId,
       stackPrefix: props.stackPrefix,
+      microBatchStack: props.microBatchStack
     });
     NagSuppressions.addResourceSuppressions(
       svcPipelineStack,
@@ -223,6 +245,8 @@ export class APIStack extends Construct {
       logConfigTable: appTableStack.logConfTable,
       appPipelineTable: appTableStack.appPipelineTable,
       appLogIngestionTable: appTableStack.appLogIngestionTable,
+      grafanaTable: grafanaStack.grafanaTable,
+      microBatchStack: props.microBatchStack,
     });
     NagSuppressions.addResourceSuppressions(
       appPipelineStack,
@@ -288,6 +312,8 @@ export class APIStack extends Construct {
       }
     );
 
+    props.microBatchStack.microBatchIAMStack.AthenaPublicAccessRole.grantAssumeRole(Ec2IamInstanceProfile.Ec2IamInstanceProfileRole);
+
     // Create the CloudWatch API stack
     const cloudWatchStack = new CloudWatchStack(this, 'CloudWatchAPI', {
       graphqlApi: apiStack.graphqlApi,
@@ -323,6 +349,7 @@ export class APIStack extends Construct {
         logConfTable: appTableStack.logConfTable,
         appPipelineTable: appTableStack.appPipelineTable,
         appLogIngestionTable: appTableStack.appLogIngestionTable,
+        instanceIngestionDetailTable: appTableStack.instanceIngestionDetailTable,
         logSourceTable: appTableStack.logSourceTable,
         instanceTable: appTableStack.instanceTable,
         configFileBucket: props.defaultLoggingBucket,
@@ -334,6 +361,8 @@ export class APIStack extends Construct {
         stackPrefix: props.stackPrefix,
         cwlAccessRole: crossAccountStack.cwlAccessRole,
         fluentBitLogGroupName: cloudWatchStack.fluentBitLogGroup,
+        flbConfUploadingEventQueue: props.flbConfUploadingEventQueue,
+
       }
     );
     appLogIngestionStack.node.addDependency(
@@ -365,6 +394,7 @@ export class APIStack extends Construct {
         appPipelineTableArn: appTableStack.appPipelineTable.tableArn,
         svcPipelineTableArn: svcPipelineStack.svcPipelineTable.tableArn,
         appLogIngestionTableArn: appTableStack.appLogIngestionTable.tableArn,
+        microBatchStack: props.microBatchStack,
       }
     );
     NagSuppressions.addResourceSuppressions(

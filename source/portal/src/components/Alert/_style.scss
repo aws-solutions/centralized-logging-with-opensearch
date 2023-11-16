@@ -10,8 +10,8 @@
     margin: 0 0 15px 0;
   }
   &.warning {
-    border: 1px solid #aab7b8;
-    background-color: #ffffff;
+    border: 1px solid #8d6605;
+    background-color: #fffce9;
   }
   &.error {
     border: 1px solid #d13212;
@@ -44,6 +44,9 @@
     width: 30px;
     .error-text {
       color: $error;
+    }
+    .warning-text {
+      color: #906806;
     }
   }
   .text {

@@ -1,6 +1,6 @@
 /*
 Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-
+  
 Licensed under the Apache License, Version 2.0 (the "License").
 You may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -13,7 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
 import * as path from 'path';
 import { Aws, aws_lambda as lambda, Stack } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
@@ -46,7 +45,8 @@ export class SharedPythonLayer extends lambda.LayerVersion {
             '.coverage*',
           ],
           bundling: {
-            image: lambda.Runtime.PYTHON_3_9.bundlingImage,
+            image: lambda.Runtime.PYTHON_3_11.bundlingImage,
+            platform: "linux/amd64",
             command: [
               'bash',
               '-xc',
@@ -66,7 +66,8 @@ export class SharedPythonLayer extends lambda.LayerVersion {
           },
         }
       ),
-      compatibleRuntimes: [lambda.Runtime.PYTHON_3_9],
+      compatibleRuntimes: [lambda.Runtime.PYTHON_3_11],
+      compatibleArchitectures: [lambda.Architecture.X86_64],
       description: `${Aws.STACK_NAME} - Shared python layer`,
     });
   }

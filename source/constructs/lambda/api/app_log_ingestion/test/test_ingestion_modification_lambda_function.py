@@ -5,11 +5,7 @@ import os
 import json
 import boto3
 import pytest
-from moto import (
-    mock_s3,
-    mock_iam,
-    mock_sts
-)
+from moto import mock_s3, mock_iam, mock_sts
 from commonlib.model import (
     LogSource,
     Ec2Source,
@@ -105,27 +101,28 @@ simple_definition = """
 
 @pytest.fixture
 def add_instances_to_instance_group_event():
-    with open("./test/event/apply_app_log_ingestion_for_single_instance.json", "r") as f:
+    with open(
+        "./test/event/apply_app_log_ingestion_for_single_instance.json", "r"
+    ) as f:
         return json.load(f)
 
 
 @pytest.fixture
 def refresh_app_log_ingestion_for_single_instance_event():
-    with open("./test/event/refresh_app_log_ingestion_for_single_instance.json", "r") as f:
+    with open(
+        "./test/event/refresh_app_log_ingestion_for_single_instance.json", "r"
+    ) as f:
         return json.load(f)
 
 
 def test_apply_app_log_ingestion_for_single_instance(
-    add_instances_to_instance_group_event,
-    s3_client,
-    sts_client,
-    iam_client,
-    mocker
+    add_instances_to_instance_group_event, s3_client, sts_client, iam_client, mocker
 ):
     # Can only import here, as the environment variables need to be set first.
     mocker.patch("commonlib.dao.AppLogIngestionDao")
     mocker.patch("commonlib.LinkAccountHelper")
     import ingestion_modification_event_lambda_function
+
     ingestion_args = dict()
     ingestion_args["appPipelineId"] = "appPipelineId1"
     ingestion_args["sourceId"] = "sourceId1"
@@ -148,17 +145,13 @@ def test_apply_app_log_ingestion_for_single_instance(
     # start with empty list
     mock_ingestion_value = list(ingestion_object)
     mocker.patch(
-        "ingestion_modification_event_lambda_function.ingestion_dao.get_app_log_ingestions_by_source_id", mock_ingestion_value=mock_ingestion_value
+        "ingestion_modification_event_lambda_function.ingestion_dao.get_app_log_ingestions_by_source_id",
+        mock_ingestion_value=mock_ingestion_value,
     )
     mock_source_value = ec2_log_source
     mocker.patch(
-        "ingestion_modification_event_lambda_function.log_source_dao.get_log_source", return_value=mock_source_value
-    )
-    link_account = dict()
-    link_account["agentConfDoc"] = "test_doc"
-    link_account["subAccountRoleArn"] = "arn:aws:iam::123456789012:role/CL-AppPipe-s3-BufferAccessRole-name"
-    mocker.patch(
-        "ingestion_modification_event_lambda_function.account_helper.get_link_account", return_value=link_account
+        "ingestion_modification_event_lambda_function.log_source_dao.get_log_source",
+        return_value=mock_source_value,
     )
 
     # Test add instance to instance group with ingestion
@@ -173,12 +166,13 @@ def test_refresh_app_log_ingestion_for_single_instance(
     s3_client,
     sts_client,
     iam_client,
-    mocker
+    mocker,
 ):
     # Can only import here, as the environment variables need to be set first.
     mocker.patch("commonlib.dao.AppLogIngestionDao")
     mocker.patch("commonlib.LinkAccountHelper")
     import ingestion_modification_event_lambda_function
+
     ingestion_args = dict()
     ingestion_args["appPipelineId"] = "appPipelineId1"
     ingestion_args["sourceId"] = "sourceId1"
@@ -201,25 +195,21 @@ def test_refresh_app_log_ingestion_for_single_instance(
     # start with empty list
     mock_ingestion_value = list(ingestion_object)
     mocker.patch(
-        "ingestion_modification_event_lambda_function.ingestion_dao.get_app_log_ingestions_by_source_id", mock_ingestion_value=mock_ingestion_value
+        "ingestion_modification_event_lambda_function.ingestion_dao.get_app_log_ingestions_by_source_id",
+        mock_ingestion_value=mock_ingestion_value,
     )
     mock_source_value = ec2_log_source
     mocker.patch(
-        "ingestion_modification_event_lambda_function.log_source_dao.get_log_source", return_value=mock_source_value
+        "ingestion_modification_event_lambda_function.log_source_dao.get_log_source",
+        return_value=mock_source_value,
     )
     mock_instance_table_value = None
     mocker.patch(
-        "ingestion_modification_event_lambda_function.instance_dao.get_instance_by_instance_id", mock_ingestion_value=mock_instance_table_value
-    )
-    link_account = dict()
-    link_account["agentConfDoc"] = "test_doc"
-    link_account["subAccountRoleArn"] = "arn:aws:iam::123456789012:role/CL-AppPipe-s3-BufferAccessRole-name"
-    mocker.patch(
-        "ingestion_modification_event_lambda_function.account_helper.get_link_account", return_value=link_account
+        "ingestion_modification_event_lambda_function.instance_dao.get_instance_by_instance_id",
+        mock_ingestion_value=mock_instance_table_value,
     )
 
     # Test delete instance from instance group with ingestion
     ingestion_modification_event_lambda_function.lambda_handler(
-        refresh_app_log_ingestion_for_single_instance_event,
-        None
+        refresh_app_log_ingestion_for_single_instance_event, None
     )

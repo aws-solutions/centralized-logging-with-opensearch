@@ -13,9 +13,11 @@ You will be responsible for the cost of the AWS services used when running the s
 - Location of logs
 - Additional features
 
-As of this revision, the following examples demonstrate the cost estimation of 10/100/1000 GB daily log ingestion for running this solution with default settings in the US East (N. Virginia) Region. The total cost is composed of [**Amazon OpenSearch Cost**](#amazon-opensearch-cost), [**Processing Cost**](#processing-cost), [**Solution Console Cost**](#solution-console-cost) and [**Additional Features Cost**](#additional-features-cost).
+As of this revision, the following examples demonstrate the cost estimation of 10/100/1000 GB daily log ingestion for running this solution with default settings in the US East (N. Virginia) Region. The total cost is composed of [**Amazon OpenSearch Cost**](#amazon-opensearch-cost) Or [**Light Engine Cost**](#use-light-engine-as-log-process-engine), [**Solution Console Cost**](#solution-console-cost) and [**Additional Features Cost**](#additional-features-cost).
 
-## Amazon OpenSearch Cost
+## Use OpenSearch as log process engine
+
+### Amazon OpenSearch Cost
 
 - **OD**: On Demand
 - **AURI_1**: All Upfront Reserved Instance 1 Year
@@ -39,9 +41,9 @@ As of this revision, the following examples demonstrate the cost estimation of 1
 | 1000                  | 180              | 7H + 23W + 150C | 0       | 9701.15          | 9089.48               | m6g.large[3]     | r6g.xlarge[6]  | 8856     | medium[15]      | 173000                         | 0.0539               | 0.0505                 |
 | 1000                  | 180              | 7H + 23W + 150C | 1       | 12644.19         | 11420.86              | m6g.large[3]     | r6g.2xlarge[6] | 17712    | medium[15]      | 173000                         | 0.07025              | 0.06345                |
 
-## Processing Cost
+### Processing Cost
 
-### Log ingestion through Amazon S3
+#### Log ingestion through Amazon S3
 
 This section is applicable to:
 
@@ -58,18 +60,36 @@ Assumptions:
 
 You have `N` GB raw log per day, and the daily cost estimation is as follows:
 
+**When you use Lambda as log processor:**
+
 - Lambda Cost = 260 ms per MB x 1024 MB x `N` GB/day x $0.0000000167 per ms
 - S3 Storage Cost = $0.023 per GB x `N `GB/day x 4% (compression)
 
+**When you use OSI as log processor:**
+
+- OSI Pipeline Cost = $0.24 per OCU per hour
+- The maximum amount of S3 data 1 OCU can handle is around 20MB/s
+
+
 The total monthly cost for ingesting AWS service logs is:
 
-**Total Monthly Cost** = (Lambda Cost + S3 Storage Cost) x 30 days
+**Total Monthly Cost (Lambda as processor)** = (Lambda Cost + S3 Storage Cost) x 30 days
 
 | Daily Log Volume | Daily Lambda Cost (USD) | Daily S3 Storage Cost (USD) | Monthly Cost (USD) |
 | ---------------- | ----------------------- | --------------------------- | ------------------ |
 | 10               | 0.044                   | 0.009                       | 1.610              |
 | 100              | 0.445                   | 0.092                       | 16.099             |
 | 1000             | 4.446                   | 0.920                       | 160.986            |
+| 5000             | 22.23                   | 4.600                       | 804.900            |
+
+**Total Monthly Cost (OSI as processor)** = (OSI Cost + S3 Storage Cost) x 30 days
+
+| Daily Log Volume | Daily OSI Cost (USD) | Daily S3 Storage Cost (USD) | Monthly Cost (USD) |
+| ---------------- | ----------------------- | --------------------------- | ------------------ |
+| 10               | 5.760                   | 0.001                       | 173.1              |
+| 100              | 5.760                   | 0.009                       | 175.5              |
+| 1000             | 11.52                   | 0.920                       | 373.2              |
+| 5000             | 34.56                   | 4.600                       | 1174.8             |
 
 
 For Amazon RDS/Aurora logs and AWS Lambda Logs that deliver to CloudWatch Logs, apart from the S3 and Lambda costs listed above, there is additional cost of using Kinesis Data Firehose (KDF) to subscribe to the CloudWatch Logs Stream and put them into an Amazon S3 bucket, and KDF is charging for a 5KB increments (less than 5KB per record is billed as 5KB).
@@ -85,7 +105,7 @@ For example, for 1GB logs per day, the extra monthly cost of KDF is $21.75.
     If you want to save cost charged by Kinesis Data Firehose, make sure you activate logs only when needed. For example, you can choose not to activate RDS general logs unless required.
 
 
-### Logs ingestion through Amazon Kinesis Data Streams
+#### Logs ingestion through Amazon Kinesis Data Streams
 
 This section is applicable to:
 
@@ -124,6 +144,53 @@ Based on the above assumptions, here is the daily cost estimation formula:
 | 100                   | 2      | 0.72                              | 1.4                                     | 0.835                 | 88.65            |
 | 1000                  | 17     | 6.12                              | 14                                      | 8.35                  | 854.1            |
 
+
+
+
+## Use Light Engine as log process engine
+
+**Sample1 -- Raw log size: 10GB/day and Query size: 50GB/day**
+
+| Services             | Monthly cost (USD) |
+|----------------------|--------------------|
+| Amazon S3            | $1.49              |
+| Amazon Lambda        | $0.37              |
+| Amazon SQS           | $0.00              |
+| Amazon DynamoDB      | $3.79              |
+| Amazon Step Function | $8.07              |
+| Amazon SNS           | $0.18              |
+| Amazon Athena        | $7.25              |
+| Amazon EC2*          | $29.20             |
+| **Total**                | **$50.35**             |
+
+**Sample2 --Raw log size: 100GB/day and Query size: 300GB/day**
+
+| Services             | Monthly cost (USD) |
+|----------------------|--------------------|
+| Amazon S3            | $19.98.00          |
+| Amazon Lambda        | $0.73              |
+| Amazon SQS           | $0.00              |
+| Amazon DynamoDB      | $3.79              |
+| Amazon Step Function | $16.14             |
+| Amazon SNS           | $0.18              |
+| Amazon Athena        | $43.51             |
+| Amazon EC2*          | $29.20             |
+| **Total**                | **$113.53**            |
+
+**Sample3 --Raw log size: 1TB/day and Query size: 1TB/day**
+
+| Services             | Monthly cost (USD) |
+|----------------------|--------------------|
+| Amazon S3            | $148.99            |
+| Amazon Lambda        | $1.10              |
+| Amazon SQS           | $0.00              |
+| Amazon DynamoDB      | $3.79              |
+| Amazon Step Function | $26.90             |
+| Amazon SNS           | $0.18              |
+| Amazon Athena        | $148.54            |
+| Amazon EC2*          | $29.20             |
+| **Total**               | **$358.70**            |
+
 ## Solution Console Cost
 A web console is created automatically when you deploy the solution. Assume the visits to the console are 3,000 times in a month (30 days), it will incur the following cost:
 
@@ -148,11 +215,11 @@ A web console is created automatically when you deploy the solution. Assume the 
 
     You will not be charged if you do not use the additional features in the Centralized Logging with OpenSearch console.
 
-### Access Proxy
+#### Access Proxy
 
 If you deploy the [Access Proxy](../domains/proxy.md) through Centralized Logging with OpenSearch, additional charges will apply. The total cost varies depending on the instance type and number of instances. As of this revision, the following are two examples for the cost estimation in the US East (N. Virginia) Region.
 
-#### Example 1: Instance Type - t3.nano, Instance Number - 2
+**Example 1: Instance Type - t3.nano, Instance Number - 2**
 - EC2 cost = t3.nano 1Y RI All Upfront price $26.28 x 2 / 12 months = $4.38/month
 - EBS Cost = EBS $0.1 GB/month x 8 GB x 2 = $1.6/month (The EBS attached to the EC2 instance is 8 GB)
 - Elastic Load Balancer Cost = $0.0225 per ALB-hour x 720 hours/month = $16.2/month
@@ -160,27 +227,27 @@ If you deploy the [Access Proxy](../domains/proxy.md) through Centralized Loggin
 **Total Monthly Cost** = $4.38 EC2 Cost + $1.6 EBS Cost + $16.2 Elastic Load Balancer Cost = **$22.18**
 
 
-#### Example 2: Instance Type - t3.large, Instance Number - 2
+**Example 2: Instance Type - t3.large, Instance Number - 2**
 - EC2 Cost = t3.large 1Y RI All Upfront $426.612 x 2  / 12 months  = $71.1/month
 - EBS Cost = $0.1 GB/month x 8 GB x 2 = $1.6/month (The EBS attached to the EC2 instance is 8 GB)
 - Elastic Load Balancer Cost = $0.0225 per ALB-hour x 720 hours/month = $16.2/month
 
 **Total Monthly Cost** = $71.1 EC2 Cost + $1.6 EBS Cost + $16.2 Elastic Load Balancer Cost = **$88.9**
 
-### Amazon OpenSearch Alarms
+#### Amazon OpenSearch Alarms
 
 If you deploy the [alarms](../domains/alarms.md) through Centralized Logging with OpenSearch, the [Amazon CloudWatch Pricing](https://aws.amazon.com/cloudwatch/pricing/) will apply.
 
-### Pipeline Alarms
+#### Pipeline Alarms
 
 | Log Type    | Alarm Count | Number of Standard Resolution Alarm Metrics | Monthly Cost per Ingestion per Pipeline |
 | ----------- | ----------- | ------------------------------------------- | ----------------------------------------------- |
 | AWS Service logs     | 4           | 0.1 USD                                     | 0.4 USD                                         |
 | Application logs | 5           | 0.1 USD                                     | 0.5 USD                                         |
 
-### Pipeline Monitoring
+#### Pipeline Monitoring
 
-#### Log processor 
+**Log processor**
 
 Assumptions:
 
@@ -196,7 +263,7 @@ Assumptions:
 | AWS Service logs    | 43,200                            | 4                 | 1.728 USD | 1.2 USD    | 2.928 USD                                       |
 | Application logs | 43,200                            | 3                 | 1.296 USD | 0.9 USD    | 2.196 USD                                       |
 
-#### Fluent Bit
+**Fluent Bit**
 
 Assumptions:
 
@@ -212,4 +279,3 @@ Assumptions:
  | 1                         | 3.024 USD | 0.04 USD                                                        | 2.1 USD    | 5.164 USD                                       |
  | 10                        | 30.24 USD | 0.35 USD                                                        | 2.1 USD    | 32.69 USD                                       |
  | 100                       | 302.4 USD | 3.53 USD                                                        | 2.1 USD    | 308.03 USD                                      |
-

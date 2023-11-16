@@ -56,13 +56,14 @@ nav:
               - 日志源: implementation-guide/applications/create-log-source.md
               - 日志配置: implementation-guide/applications/create-log-config.md
       - 跨账户日志摄取: implementation-guide/link-account/index.md
-      - 日志管道监控: 
+      - 日志管道洞察: 
           - 告警: implementation-guide/alarm.md
           - 监控: implementation-guide/monitoring.md
       - 常见问题: implementation-guide/faq.md
       - 故障排查: implementation-guide/trouble-shooting.md
       - 卸载解决方案: implementation-guide/uninstall.md
       - 额外资源:
+          - Grafana: implementation-guide/resources/grafana.md
           - OpenSSL 安装: implementation-guide/resources/open-ssl.md
           - 上传证书: implementation-guide/resources/upload-ssl-certificate.md
       - 开发者资源: implementation-guide/source.md

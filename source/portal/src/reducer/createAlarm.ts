@@ -18,7 +18,7 @@ import { MonitorInput, PipelineAlarmStatus, PipelineMonitorStatus } from "API";
 import { emailIsValid } from "assets/js/utils";
 import { SelectItem } from "components/Select/select";
 
-interface AlarmStateType {
+export interface AlarmStateType {
   isConfirmed: boolean;
   snsObj: SelectItem | null;
   topicCheckOption: string;

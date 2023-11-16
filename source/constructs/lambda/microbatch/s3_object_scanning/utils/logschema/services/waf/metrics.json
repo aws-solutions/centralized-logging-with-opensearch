@@ -1,0 +1,72 @@
+{
+	"type": "object",
+	"properties": {
+		"time": {
+			"type": "big_int",
+			"expression": "FLOOR(\"time\" / 60000) * 60000"
+		},
+		"timestamp": {
+			"type": "timestamp",
+			"expression": "DATE_TRUNC('minute', \"timestamp\")"
+		},
+		"action": {
+			"type": "string"
+		},
+		"webaclid": {
+			"type": "string"
+		},
+		"webaclname": {
+			"type": "string"
+		},
+		"terminatingruleid": {
+			"type": "string"
+		},
+		"terminatingruletype": {
+			"type": "string"
+		},
+		"httpsourceid": {
+			"type": "string"
+		},
+		"httpmethod": {
+			"type": "string",
+			"expression": "\"httprequest\".\"httpmethod\""
+		},
+		"country": {
+			"type": "string",
+			"expression": "\"httprequest\".\"country\""
+		},
+		"clientip": {
+			"type": "string",
+			"expression": "\"httprequest\".\"clientip\""
+		},
+		"uri": {
+			"type": "string",
+			"expression": "\"httprequest\".\"uri\""
+		},
+		"first_label": {
+			"type": "string",
+			"expression": "CASE WHEN labels = ARRAY[] THEN '' ELSE labels[1].name END"
+		},
+		"requests": {
+			"type": "big_int",
+			"measure": true,
+			"expression": "CAST(COUNT(1) AS bigint)"
+		},
+		"account_id": {
+			"type": "string",
+			"partition": true
+		},
+		"region": {
+			"type": "string",
+			"partition": true
+		},
+		"event_hour": {
+			"type": "string",
+			"partition": true
+		},
+		"__execution_name__": {
+			"type": "string",
+			"partition": true
+		}
+	}
+}

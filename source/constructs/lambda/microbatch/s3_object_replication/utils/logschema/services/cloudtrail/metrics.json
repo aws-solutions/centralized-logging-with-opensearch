@@ -1,0 +1,61 @@
+{
+	"type": "object",
+	"properties": {
+		"time": {
+			"type": "big_int",
+			"expression": "FLOOR(\"time\" / 60000) * 60000"
+		},
+		"timestamp": {
+			"type": "timestamp",
+			"expression": "DATE_TRUNC('minute', \"timestamp\")"
+		},
+		"useridentitytype": {
+			"type": "string",
+			"expression": "useridentity.type"
+		},
+		"accountid": {
+			"type": "string",
+			"expression": "COALESCE(useridentity.accountid, useridentity.sessioncontext.sessionissuer.accountid)"
+		},
+		"username": {
+			"type": "string",
+			"expression": "COALESCE(useridentity.username, useridentity.sessioncontext.sessionissuer.username)"
+		},
+		"eventtype": {
+			"type": "string"
+		},
+		"eventsource": {
+			"type": "string"
+		},
+		"eventname": {
+			"type": "string"
+		},
+		"sourceipaddress": {
+			"type": "string"
+		},
+		"errorCode": {
+			"type": "string"
+		},
+		"requests": {
+			"type": "big_int",
+			"measure": true,
+			"expression": "CAST(COUNT(1) AS bigint)"
+		},
+		"event_hour": {
+			"type": "string",
+			"partition": true
+		},
+		"account_id": {
+			"type": "string",
+			"partition": true
+		},
+		"region": {
+			"type": "string",
+			"partition": true
+		},
+		"__execution_name__": {
+			"type": "string",
+			"partition": true
+		}
+	}
+}

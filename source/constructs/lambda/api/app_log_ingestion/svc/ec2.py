@@ -3,12 +3,11 @@
 
 import os
 import logging
-import time
+
 
 from boto3.dynamodb.conditions import Attr
-from commonlib.dao import InstanceDao
-from commonlib.exception import APIException, ErrorCode
 from typing import Set, List
+from commonlib.dao import InstanceDao, InstanceIngestionDetailDao
 from commonlib import AWSConnection, LinkAccountHelper
 from flb.distribution import FlbHandler
 from commonlib.model import (
@@ -17,6 +16,7 @@ from commonlib.model import (
     GroupTypeEnum,
     StatusEnum,
     AppLogIngestion,
+    InstanceIngestionDetail,
 )
 from svc.ec2_attach_iam_instance_profile import attach_permission_to_instance
 
@@ -37,6 +37,13 @@ ssm_log_config_document_name = os.environ.get("SSM_LOG_CONFIG_DOCUMENT_NAME")
 sub_account_link_table_name = os.environ.get("SUB_ACCOUNT_LINK_TABLE_NAME")
 account_helper = LinkAccountHelper(sub_account_link_table_name)
 
+instance_ingestion_detail_table_name = os.environ.get(
+    "INSTANCE_INGESTION_DETAIL_TABLE_NAME"
+)
+instance_ingestion_detail_dao = InstanceIngestionDetailDao(
+    table_name=instance_ingestion_detail_table_name
+)
+
 
 class SSMSendCommandStatus:
     def __init__(self, status, status_details):
@@ -45,7 +52,6 @@ class SSMSendCommandStatus:
 
 
 class EC2SourceHandler(FlbHandler):
-    
     def create_ingestion(
         self, log_source: LogSource, app_log_ingestion: AppLogIngestion
     ):
@@ -120,8 +126,6 @@ class EC2SourceHandler(FlbHandler):
         link_account = account_helper.get_link_account(
             log_source.accountId, log_source.region
         )
-        self.generate_flb_conf(instance_with_ingestion_list, link_account)
-
         if (
             log_source.type == LogSourceTypeEnum.EC2
             and log_source.ec2.groupType == GroupTypeEnum.EC2
@@ -131,10 +135,37 @@ class EC2SourceHandler(FlbHandler):
                 os.environ["EC2_IAM_INSTANCE_PROFILE_ARN"],
             )
             sts_role_arn = link_account.get("subAccountRoleArn", "")
+            app_log_ingestion_id = ""
             if app_log_ingestion and app_log_ingestion.autoAddPermission:
                 attach_permission_to_instance(
                     list(instance_id_set), associate_instance_profile_arn, sts_role_arn
                 )
+                app_log_ingestion_id = app_log_ingestion.id
+
+            self.save_instance_ingestion_details(
+                app_log_ingestion_id, instance_id_set, log_source
+            )
+        self.generate_flb_conf(instance_with_ingestion_list, link_account)
+
+    def save_instance_ingestion_details(
+        self, app_log_ingestion_id, instance_id_set: Set[str], log_source: LogSource
+    ):
+        if len(instance_id_set) > 0:
+            instance_ingestion_details = []
+            for instance_id in instance_id_set:
+                instance_ingestion_detail_dict = {
+                    "ingestionId": app_log_ingestion_id,
+                    "instanceId": instance_id,
+                    "sourceId": log_source.sourceId,
+                    "accountId": log_source.accountId,
+                    "region": log_source.region,
+                    "status": StatusEnum.DISTRIBUTING,
+                }
+                instance_ingestion_detail: InstanceIngestionDetail = (
+                    InstanceIngestionDetail(**instance_ingestion_detail_dict)
+                )
+                instance_ingestion_details.append(instance_ingestion_detail)
+            instance_ingestion_detail_dao.batch_put_items(instance_ingestion_details)
 
     def delete_ingestion(
         self, log_source: LogSource, app_log_ingestion: AppLogIngestion
@@ -153,6 +184,9 @@ class EC2SourceHandler(FlbHandler):
             instance_with_ingestion_list[instance_id] = self.get_instance_ingestion(
                 instance_id
             )
+        self.save_instance_ingestion_details(
+            app_log_ingestion.id, instance_id_set, log_source
+        )
         # ASG & EC2:1.generate flb config 2.upload flb config to s3
         link_account = account_helper.get_link_account(
             log_source.accountId, log_source.region
@@ -161,153 +195,3 @@ class EC2SourceHandler(FlbHandler):
         self._ingestion_dao.update_app_log_ingestion(
             app_log_ingestion.id, status=StatusEnum.INACTIVE
         )
-
-
-    def upload_config_to_ec2(self, ssm, group_id, ssm_config_document_name: str, link_account):
-        """Upload the config file to EC2 by SSM"""
-
-        res = dict()
-        instance_ids = instance_dao.get_instance_set_by_source_id(group_id)
-        return self.send_ssm_command_to_instances(
-            ssm, instance_ids, ssm_config_document_name, res, link_account
-        )
-
-
-    def refresh_config_to_single_ec2(
-        self, ssm, instance_id_set, ssm_config_document_name: str, link_account
-    ):
-        """Refresh the config file to EC2 by SSM"""
-
-        res = dict()
-        return self.send_ssm_command_to_instances(
-            ssm, instance_id_set, ssm_config_document_name, res, link_account
-        )
-    
-    def get_instance_arch(self, instance_id: str, link_account) -> str:
-        ec2 = conn.get_client(
-            service_name="ec2",
-            region_name=link_account.get("region"),
-            sts_role_arn=link_account.get("subAccountRoleArn"),
-        )
-    
-        # Get EC2 resource
-        describe_instance_response = ec2.describe_instances(InstanceIds=[instance_id])
-        reservations = describe_instance_response["Reservations"][0]
-        instances = reservations["Instances"][0]
-        architecture = instances["Architecture"]
-        
-        arch_append = ""
-        if architecture == "arm64":
-            arch_append = "-arm64"
-        return arch_append
-
-
-    def send_ssm_command_to_instances(
-        self, ssm, instance_ids, ssm_config_document_name: str, res_dict, link_account
-    ):
-        for instance_id in instance_ids:
-            # send the run command to ec2
-            invocation_response = ""
-            try:
-                ssm_response = self.ssm_send_command(
-                    ssm, instance_id, ssm_config_document_name, self.get_instance_arch(instance_id=instance_id, link_account=link_account)
-                )
-                time.sleep(20)
-                ssm_command_id = ssm_response["Command"]["CommandId"]
-                invocation_response = ssm.list_command_invocations(
-                    CommandId=ssm_command_id, Details=True
-                )
-                logger.info("Distribution triggered for instance: %s, command: %s", instance_id, ssm_command_id)
-            except Exception as e:
-                logger.error("Error: %s", e)
-                logger.info("Instance: %s might have been terminated.", instance_id)
-            send_command_status = SSMSendCommandStatus(
-                "",
-                "",
-            )
-            if invocation_response != "":
-                command_status = invocation_response.get("CommandInvocations")[0].get(
-                    "Status"
-                )
-                command_status_detail = invocation_response.get("CommandInvocations")[
-                    0
-                ].get("StatusDetails")
-                send_command_status = SSMSendCommandStatus(
-                    command_status,
-                    command_status_detail,
-                )
-                logger.info(
-                    "send_command_status.status: %s", send_command_status._status
-                )
-                logger.info(
-                    "send_command_status.status_details: %s",
-                    send_command_status._status_details,
-                )
-            if send_command_status._status == "Failed":
-                self.retry_failed_attach_policy_command(
-                    ssm, instance_id, ssm_config_document_name, link_account
-                )
-            res_dict[str(instance_id)] = send_command_status
-        return res_dict
-
-    def retry_failed_attach_policy_command(
-        self, ssm, instance_id, ssm_config_document_name: str, link_account
-    ):
-        for i in range(10):
-            invocation_response = ""
-            logger.info(
-                "Retry sending ssm command: %s, the %d time",
-                ssm_config_document_name,
-                i + 1,
-            )
-            try:
-                ssm_response = self.retry_ssm_command(
-                    ssm, instance_id, ssm_config_document_name, link_account
-                )
-                time.sleep(2)
-                ssm_command_id = ssm_response["Command"]["CommandId"]
-                invocation_response = ssm.list_command_invocations(
-                    CommandId=ssm_command_id, Details=True
-                )
-            except Exception:
-                logger.info("Instance: %s might have been terminated.", instance_id)
-                continue
-            if invocation_response != "":
-                command_status = invocation_response.get("CommandInvocations")[0].get(
-                    "Status"
-                )
-                command_status_detail = invocation_response.get("CommandInvocations")[
-                    0
-                ].get("StatusDetails")
-                logger.info("Command status: %s", command_status)
-                send_command_status = SSMSendCommandStatus(
-                    command_status,
-                    command_status_detail,
-                )
-            if send_command_status._status == "Success":
-                continue
-            logger.info(
-                "Retry finished, the status is still %s", send_command_status._status
-            )
-
-    def retry_ssm_command(self, ssm, instance_id, ssm_config_document_name: str, link_account):
-        """Retry ssm command"""
-        ssm_response = ""
-        ssm_response = self.ssm_send_command(ssm, instance_id, ssm_config_document_name, self.get_instance_arch(instance_id=instance_id, link_account=link_account))
-        return ssm_response
-
-    def ssm_send_command(self, ssm, instance_id, document_name: str, arch: str) -> str:
-        """
-        Run the document in SSM to download the log config file in EC2
-        :param instance_id:
-        :return:
-        """
-        logger.info("Run SSM documentation on instance %s" % instance_id)
-        
-        response = ssm.send_command(
-            InstanceIds=[instance_id],
-            DocumentName=document_name,
-            Parameters={"INSTANCEID": [instance_id], "ARCHITECTURE": [arch],},
-        )
-        logger.info("Triggered log config downloading to EC2 successfully")
-        return response

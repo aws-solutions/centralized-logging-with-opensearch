@@ -1,18 +1,3 @@
-/*
-Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License").
-You may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
 /* tslint:disable */
 /* eslint-disable */
 // this is an auto generated file. This will be overwritten
@@ -23,7 +8,9 @@ export const listDomainNames = /* GraphQL */ `
       domainNames {
         domainName
         status
+        __typename
       }
+      __typename
     }
   }
 `;
@@ -34,6 +21,7 @@ export const getDomainVpc = /* GraphQL */ `
       subnetIds
       availabilityZones
       securityGroupIds
+      __typename
     }
   }
 `;
@@ -49,7 +37,9 @@ export const listImportedDomains = /* GraphQL */ `
         searchableDocs
         freeStorageSpace
         health
+        __typename
       }
+      __typename
     }
   }
 `;
@@ -69,12 +59,14 @@ export const getDomainDetails = /* GraphQL */ `
         privateSubnetIds
         publicSubnetIds
         securityGroupId
+        __typename
       }
       esVpc {
         vpcId
         subnetIds
         availabilityZones
         securityGroupIds
+        __typename
       }
       nodes {
         instanceType
@@ -87,11 +79,13 @@ export const getDomainDetails = /* GraphQL */ `
         warmType
         warmCount
         coldEnabled
+        __typename
       }
       storageType
       volume {
         type
         size
+        __typename
       }
       cognito {
         enabled
@@ -99,10 +93,12 @@ export const getDomainDetails = /* GraphQL */ `
         domain
         identityPoolId
         roleArn
+        __typename
       }
       tags {
         key
         value
+        __typename
       }
       proxyStatus
       proxyALB
@@ -113,11 +109,13 @@ export const getDomainDetails = /* GraphQL */ `
           privateSubnetIds
           publicSubnetIds
           securityGroupId
+          __typename
         }
         certificateArn
         keyName
         customEndpoint
         cognitoEndpoint
+        __typename
       }
       alarmStatus
       alarmError
@@ -125,21 +123,26 @@ export const getDomainDetails = /* GraphQL */ `
         alarms {
           type
           value
+          __typename
         }
         email
         phone
+        __typename
       }
       metrics {
         searchableDocs
         freeStorageSpace
         health
+        __typename
       }
       status
       resources {
         name
         values
         status
+        __typename
       }
+      __typename
     }
   }
 `;
@@ -155,12 +158,14 @@ export const listServicePipelines = /* GraphQL */ `
         parameters {
           parameterKey
           parameterValue
+          __typename
         }
         createdAt
         status
         tags {
           key
           value
+          __typename
         }
         error
         monitor {
@@ -171,15 +176,44 @@ export const listServicePipelines = /* GraphQL */ `
           snsTopicName
           snsTopicArn
           emails
+          __typename
         }
+        osiParams {
+          minCapacity
+          maxCapacity
+          __typename
+        }
+        osiPipelineName
         processorLogGroupName
         helperLogGroupName
         logEventQueueName
         deliveryStreamName
         bufferResourceName
         stackId
+        logSourceAccountId
+        logSourceRegion
+        engineType
+        lightEngineParams {
+          stagingBucketPrefix
+          centralizedBucketName
+          centralizedBucketPrefix
+          centralizedTableName
+          logProcessorSchedule
+          logMergerSchedule
+          logArchiveSchedule
+          logMergerAge
+          logArchiveAge
+          importDashboards
+          grafanaId
+          recipients
+          notificationService
+          enrichmentPlugins
+          __typename
+        }
+        __typename
       }
       total
+      __typename
     }
   }
 `;
@@ -194,12 +228,14 @@ export const getServicePipeline = /* GraphQL */ `
       parameters {
         parameterKey
         parameterValue
+        __typename
       }
       createdAt
       status
       tags {
         key
         value
+        __typename
       }
       error
       monitor {
@@ -210,13 +246,41 @@ export const getServicePipeline = /* GraphQL */ `
         snsTopicName
         snsTopicArn
         emails
+        __typename
       }
+      osiParams {
+        minCapacity
+        maxCapacity
+        __typename
+      }
+      osiPipelineName
       processorLogGroupName
       helperLogGroupName
       logEventQueueName
       deliveryStreamName
       bufferResourceName
       stackId
+      logSourceAccountId
+      logSourceRegion
+      engineType
+      lightEngineParams {
+        stagingBucketPrefix
+        centralizedBucketName
+        centralizedBucketPrefix
+        centralizedTableName
+        logProcessorSchedule
+        logMergerSchedule
+        logArchiveSchedule
+        logMergerAge
+        logArchiveAge
+        importDashboards
+        grafanaId
+        recipients
+        notificationService
+        enrichmentPlugins
+        __typename
+      }
+      __typename
     }
   }
 `;
@@ -237,6 +301,7 @@ export const listResources = /* GraphQL */ `
       name
       parentId
       description
+      __typename
     }
   }
 `;
@@ -257,6 +322,7 @@ export const getResourceLoggingBucket = /* GraphQL */ `
       bucket
       prefix
       source
+      __typename
     }
   }
 `;
@@ -278,6 +344,7 @@ export const getResourceLogConfigs = /* GraphQL */ `
       name
       logFormat
       region
+      __typename
     }
   }
 `;
@@ -298,21 +365,27 @@ export const listLogConfigs = /* GraphQL */ `
             key
             condition
             value
+            __typename
           }
+          __typename
         }
         regex
+        jsonSchema
         regexFieldSpecs {
           key
           type
           format
+          __typename
         }
         timeKey
         timeOffset
         timeKeyRegex
         userLogFormat
         userSampleLog
+        __typename
       }
       total
+      __typename
     }
   }
 `;
@@ -332,19 +405,24 @@ export const getLogConfig = /* GraphQL */ `
           key
           condition
           value
+          __typename
         }
+        __typename
       }
       regex
+      jsonSchema
       regexFieldSpecs {
         key
         type
         format
+        __typename
       }
       timeKey
       timeOffset
       timeKeyRegex
       userLogFormat
       userSampleLog
+      __typename
     }
   }
 `;
@@ -357,6 +435,7 @@ export const listAppPipelines = /* GraphQL */ `
         bufferParams {
           paramKey
           paramValue
+          __typename
         }
         aosParams {
           opensearchArn
@@ -372,6 +451,30 @@ export const listAppPipelines = /* GraphQL */ `
           shardNumbers
           replicaNumbers
           engine
+          __typename
+        }
+        osiPipelineName
+        osiParams {
+          minCapacity
+          maxCapacity
+          __typename
+        }
+        lightEngineParams {
+          stagingBucketPrefix
+          centralizedBucketName
+          centralizedBucketPrefix
+          centralizedTableName
+          logProcessorSchedule
+          logMergerSchedule
+          logArchiveSchedule
+          logMergerAge
+          logArchiveAge
+          importDashboards
+          grafanaId
+          recipients
+          notificationService
+          enrichmentPlugins
+          __typename
         }
         createdAt
         status
@@ -391,19 +494,24 @@ export const listAppPipelines = /* GraphQL */ `
               key
               condition
               value
+              __typename
             }
+            __typename
           }
           regex
+          jsonSchema
           regexFieldSpecs {
             key
             type
             format
+            __typename
           }
           timeKey
           timeOffset
           timeKeyRegex
           userLogFormat
           userSampleLog
+          __typename
         }
         bufferAccessRoleArn
         bufferAccessRoleName
@@ -420,15 +528,22 @@ export const listAppPipelines = /* GraphQL */ `
           snsTopicName
           snsTopicArn
           emails
+          __typename
         }
+        minCapacity
+        maxCapacity
         stackId
         error
+        engineType
         tags {
           key
           value
+          __typename
         }
+        __typename
       }
       total
+      __typename
     }
   }
 `;
@@ -440,6 +555,7 @@ export const getAppPipeline = /* GraphQL */ `
       bufferParams {
         paramKey
         paramValue
+        __typename
       }
       aosParams {
         opensearchArn
@@ -455,6 +571,30 @@ export const getAppPipeline = /* GraphQL */ `
         shardNumbers
         replicaNumbers
         engine
+        __typename
+      }
+      osiPipelineName
+      osiParams {
+        minCapacity
+        maxCapacity
+        __typename
+      }
+      lightEngineParams {
+        stagingBucketPrefix
+        centralizedBucketName
+        centralizedBucketPrefix
+        centralizedTableName
+        logProcessorSchedule
+        logMergerSchedule
+        logArchiveSchedule
+        logMergerAge
+        logArchiveAge
+        importDashboards
+        grafanaId
+        recipients
+        notificationService
+        enrichmentPlugins
+        __typename
       }
       createdAt
       status
@@ -474,19 +614,24 @@ export const getAppPipeline = /* GraphQL */ `
             key
             condition
             value
+            __typename
           }
+          __typename
         }
         regex
+        jsonSchema
         regexFieldSpecs {
           key
           type
           format
+          __typename
         }
         timeKey
         timeOffset
         timeKeyRegex
         userLogFormat
         userSampleLog
+        __typename
       }
       bufferAccessRoleArn
       bufferAccessRoleName
@@ -503,13 +648,19 @@ export const getAppPipeline = /* GraphQL */ `
         snsTopicName
         snsTopicArn
         emails
+        __typename
       }
+      minCapacity
+      maxCapacity
       stackId
       error
+      engineType
       tags {
         key
         value
+        __typename
       }
+      __typename
     }
   }
 `;
@@ -543,11 +694,39 @@ export const listAppLogIngestions = /* GraphQL */ `
         tags {
           key
           value
+          __typename
         }
         accountId
         region
+        __typename
       }
       total
+      __typename
+    }
+  }
+`;
+export const listInstanceIngestionDetails = /* GraphQL */ `
+  query ListInstanceIngestionDetails(
+    $page: Int
+    $count: Int
+    $ingestionId: String
+    $instanceId: String
+  ) {
+    listInstanceIngestionDetails(
+      page: $page
+      count: $count
+      ingestionId: $ingestionId
+      instanceId: $instanceId
+    ) {
+      instanceIngestionDetail {
+        instanceId
+        ssmCommandId
+        ssmCommandStatus
+        details
+        __typename
+      }
+      total
+      __typename
     }
   }
 `;
@@ -566,9 +745,11 @@ export const getAppLogIngestion = /* GraphQL */ `
       tags {
         key
         value
+        __typename
       }
       accountId
       region
+      __typename
     }
   }
 `;
@@ -605,8 +786,10 @@ export const listInstances = /* GraphQL */ `
         ipAddress
         computerName
         name
+        __typename
       }
       nextToken
+      __typename
     }
   }
 `;
@@ -642,7 +825,9 @@ export const getInstanceAgentStatus = /* GraphQL */ `
         status
         invocationOutput
         curlOutput
+        __typename
       }
+      __typename
     }
   }
 `;
@@ -669,6 +854,7 @@ export const getLogSource = /* GraphQL */ `
         endpoint
         logAgentRoleArn
         deploymentKind
+        __typename
       }
       s3 {
         mode
@@ -676,6 +862,7 @@ export const getLogSource = /* GraphQL */ `
         keyPrefix
         keySuffix
         compressionType
+        __typename
       }
       ec2 {
         groupName
@@ -684,13 +871,16 @@ export const getLogSource = /* GraphQL */ `
         asgName
         instances {
           instanceId
+          __typename
         }
+        __typename
       }
       syslog {
         protocol
         port
         nlbArn
         nlbDNSName
+        __typename
       }
       createdAt
       updatedAt
@@ -698,7 +888,9 @@ export const getLogSource = /* GraphQL */ `
       tags {
         key
         value
+        __typename
       }
+      __typename
     }
   }
 `;
@@ -726,6 +918,7 @@ export const listLogSources = /* GraphQL */ `
           endpoint
           logAgentRoleArn
           deploymentKind
+          __typename
         }
         s3 {
           mode
@@ -733,6 +926,7 @@ export const listLogSources = /* GraphQL */ `
           keyPrefix
           keySuffix
           compressionType
+          __typename
         }
         ec2 {
           groupName
@@ -741,13 +935,16 @@ export const listLogSources = /* GraphQL */ `
           asgName
           instances {
             instanceId
+            __typename
           }
+          __typename
         }
         syslog {
           protocol
           port
           nlbArn
           nlbDNSName
+          __typename
         }
         createdAt
         updatedAt
@@ -755,9 +952,12 @@ export const listLogSources = /* GraphQL */ `
         tags {
           key
           value
+          __typename
         }
+        __typename
       }
       total
+      __typename
     }
   }
 `;
@@ -765,6 +965,7 @@ export const checkTimeFormat = /* GraphQL */ `
   query CheckTimeFormat($timeStr: String!, $formatStr: String!) {
     checkTimeFormat(timeStr: $timeStr, formatStr: $formatStr) {
       isMatch
+      __typename
     }
   }
 `;
@@ -785,14 +986,18 @@ export const listSubAccountLinks = /* GraphQL */ `
         subAccountVpcId
         subAccountPublicSubnetIds
         subAccountIamInstanceProfileArn
+        subAccountFlbConfUploadingEventTopicArn
         createdAt
         status
         tags {
           key
           value
+          __typename
         }
+        __typename
       }
       total
+      __typename
     }
   }
 `;
@@ -812,12 +1017,15 @@ export const getSubAccountLink = /* GraphQL */ `
       subAccountVpcId
       subAccountPublicSubnetIds
       subAccountIamInstanceProfileArn
+      subAccountFlbConfUploadingEventTopicArn
       createdAt
       status
       tags {
         key
         value
+        __typename
       }
+      __typename
     }
   }
 `;
@@ -835,6 +1043,7 @@ export const checkCustomPort = /* GraphQL */ `
       isAllowedPort
       msg
       recommendedPort
+      __typename
     }
   }
 `;
@@ -860,8 +1069,10 @@ export const listLogStreams = /* GraphQL */ `
         uploadSequenceToken
         arn
         storedBytes
+        __typename
       }
       total
+      __typename
     }
   }
 `;
@@ -888,9 +1099,11 @@ export const getLogEvents = /* GraphQL */ `
         timestamp
         message
         ingestionTime
+        __typename
       }
       nextForwardToken
       nextBackwardToken
+      __typename
     }
   }
 `;
@@ -912,10 +1125,13 @@ export const getMetricHistoryData = /* GraphQL */ `
       series {
         name
         data
+        __typename
       }
       xaxis {
         categories
+        __typename
       }
+      __typename
     }
   }
 `;
@@ -934,7 +1150,9 @@ export const getPipelineAlarm = /* GraphQL */ `
         name
         status
         resourceId
+        __typename
       }
+      __typename
     }
   }
 `;
@@ -947,8 +1165,228 @@ export const domainStatusCheck = /* GraphQL */ `
         values
         errorCode
         status
+        __typename
       }
       multiAZWithStandbyEnabled
+      __typename
+    }
+  }
+`;
+export const checkOSIAvailability = /* GraphQL */ `
+  query CheckOSIAvailability {
+    checkOSIAvailability
+  }
+`;
+export const listGrafanas = /* GraphQL */ `
+  query ListGrafanas($page: Int, $count: Int) {
+    listGrafanas(page: $page, count: $count) {
+      grafanas {
+        id
+        name
+        url
+        createdAt
+        tags {
+          key
+          value
+          __typename
+        }
+        __typename
+      }
+      total
+      __typename
+    }
+  }
+`;
+export const getGrafana = /* GraphQL */ `
+  query GetGrafana($id: String!) {
+    getGrafana(id: $id) {
+      id
+      name
+      url
+      createdAt
+      tags {
+        key
+        value
+        __typename
+      }
+      __typename
+    }
+  }
+`;
+export const checkGrafana = /* GraphQL */ `
+  query CheckGrafana($id: String, $url: String, $token: String) {
+    checkGrafana(id: $id, url: $url, token: $token) {
+      status
+      details {
+        name
+        values
+        errorCode
+        status
+        __typename
+      }
+      __typename
+    }
+  }
+`;
+export const getLightEngineAppPipelineExecutionLogs = /* GraphQL */ `
+  query GetLightEngineAppPipelineExecutionLogs(
+    $pipelineId: String!
+    $stateMachineName: String!
+    $type: ScheduleType!
+    $status: ExecutionStatus
+    $startTime: String
+    $endTime: String
+    $lastEvaluatedKey: AWSJSON
+    $limit: Int
+  ) {
+    getLightEngineAppPipelineExecutionLogs(
+      pipelineId: $pipelineId
+      stateMachineName: $stateMachineName
+      type: $type
+      status: $status
+      startTime: $startTime
+      endTime: $endTime
+      lastEvaluatedKey: $lastEvaluatedKey
+      limit: $limit
+    ) {
+      items {
+        executionName
+        executionArn
+        taskId
+        startTime
+        endTime
+        status
+        __typename
+      }
+      lastEvaluatedKey
+      __typename
+    }
+  }
+`;
+export const getLightEngineAppPipelineDetail = /* GraphQL */ `
+  query GetLightEngineAppPipelineDetail($pipelineId: String!) {
+    getLightEngineAppPipelineDetail(pipelineId: $pipelineId) {
+      analyticsEngine {
+        engineType
+        table {
+          databaseName
+          tableName
+          location
+          classification
+          dashboardName
+          dashboardLink
+          __typename
+        }
+        metric {
+          databaseName
+          tableName
+          location
+          classification
+          dashboardName
+          dashboardLink
+          __typename
+        }
+        __typename
+      }
+      schedules {
+        type
+        stateMachine {
+          arn
+          name
+          __typename
+        }
+        scheduler {
+          type
+          group
+          name
+          expression
+          age
+          __typename
+        }
+        __typename
+      }
+      __typename
+    }
+  }
+`;
+export const getLightEngineServicePipelineExecutionLogs = /* GraphQL */ `
+  query GetLightEngineServicePipelineExecutionLogs(
+    $pipelineId: String!
+    $stateMachineName: String!
+    $type: ScheduleType!
+    $status: ExecutionStatus
+    $startTime: String
+    $endTime: String
+    $lastEvaluatedKey: AWSJSON
+    $limit: Int
+  ) {
+    getLightEngineServicePipelineExecutionLogs(
+      pipelineId: $pipelineId
+      stateMachineName: $stateMachineName
+      type: $type
+      status: $status
+      startTime: $startTime
+      endTime: $endTime
+      lastEvaluatedKey: $lastEvaluatedKey
+      limit: $limit
+    ) {
+      items {
+        executionName
+        executionArn
+        taskId
+        startTime
+        endTime
+        status
+        __typename
+      }
+      lastEvaluatedKey
+      __typename
+    }
+  }
+`;
+export const getLightEngineServicePipelineDetail = /* GraphQL */ `
+  query GetLightEngineServicePipelineDetail($pipelineId: String!) {
+    getLightEngineServicePipelineDetail(pipelineId: $pipelineId) {
+      analyticsEngine {
+        engineType
+        table {
+          databaseName
+          tableName
+          location
+          classification
+          dashboardName
+          dashboardLink
+          __typename
+        }
+        metric {
+          databaseName
+          tableName
+          location
+          classification
+          dashboardName
+          dashboardLink
+          __typename
+        }
+        __typename
+      }
+      schedules {
+        type
+        stateMachine {
+          arn
+          name
+          __typename
+        }
+        scheduler {
+          type
+          group
+          name
+          expression
+          age
+          __typename
+        }
+        __typename
+      }
+      __typename
     }
   }
 `;

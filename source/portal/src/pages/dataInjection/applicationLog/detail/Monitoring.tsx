@@ -16,9 +16,15 @@ limitations under the License.
 
 import { AmplifyConfigType } from "types";
 import { useSelector } from "react-redux";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import RefreshIcon from "@material-ui/icons/Refresh";
-import { AppPipeline, LogSourceType, PipelineStatus } from "API";
+import {
+  AnalyticEngineType,
+  AppPipeline,
+  LogSourceType,
+  PipelineStatus,
+  PipelineType,
+} from "API";
 import { useTranslation } from "react-i18next";
 import HeaderPanel from "components/HeaderPanel";
 import ExtLink from "components/ExtLink";
@@ -31,10 +37,18 @@ import AppLogKDSBufferMetrics from "./monitor/AppLogKDSBufferMetrics";
 import AppLogFlbAgentMetrics from "./monitor/AppLogFlbAgentSourceMetrics";
 import AppLogSyslogSourceMetrics from "./monitor/AppLogSyslogSourceMetrics";
 
-import { buildSQSLink, buildKDSLink, buildLambdaLink } from "assets/js/utils";
+import {
+  buildSQSLink,
+  buildKDSLink,
+  buildLambdaLink,
+  defaultStr,
+  buildOSIPipelineNameByPipelineId,
+} from "assets/js/utils";
 import Button from "components/Button";
 import { RootState } from "reducer/reducers";
 import { PIPLINE_MONITORING_COST_LINK } from "assets/js/const";
+import Alert from "components/Alert";
+import OSIProcessorMetric from "pages/dataInjection/common/OSIProcessorMetrics";
 
 interface MonitoringProps {
   pipelineInfo: AppPipeline | undefined;
@@ -53,6 +67,10 @@ const Monitoring: React.FC<MonitoringProps> = (props: MonitoringProps) => {
   const [endDate, setEndDate] = useState(0);
 
   const [refreshCount, setRefreshCount] = useState(0);
+  const isLightEngine = useMemo(
+    () => pipelineInfo?.engineType === AnalyticEngineType.LightEngine,
+    [pipelineInfo]
+  );
 
   return (
     <div>
@@ -69,7 +87,7 @@ const Monitoring: React.FC<MonitoringProps> = (props: MonitoringProps) => {
         }
       >
         <>
-          {pipelineInfo?.status === PipelineStatus.ACTIVE && (
+          {pipelineInfo?.status === PipelineStatus.ACTIVE ? (
             <div>
               <div
                 style={{
@@ -196,38 +214,70 @@ const Monitoring: React.FC<MonitoringProps> = (props: MonitoringProps) => {
                 </ExpandableSection>
               )}
               {pipelineInfo?.bufferType !== "None" && (
-                <ExpandableSection
-                  headerText={t("common:monitoring.logProcessor")}
-                >
-                  <div>
-                    <div className="flex">
-                      <ValueWithLabel
-                        label={t("common:monitoring.lambdaProcessor")}
-                      >
-                        <ExtLink
-                          to={buildLambdaLink(
-                            amplifyConfig.aws_project_region,
-                            pipelineInfo?.processorLogGroupName?.split(
-                              "/"
-                            )[3] as string
-                          )}
-                        >
-                          {pipelineInfo?.processorLogGroupName as string}
-                        </ExtLink>
-                      </ValueWithLabel>
-                    </div>
-                    <div>
-                      <AppLogProcessorMetric
-                        pipelineInfo={pipelineInfo}
+                <>
+                  {pipelineInfo?.osiParams?.minCapacity ? (
+                    <ExpandableSection
+                      headerText={t("monitoring.osiProcessor")}
+                    >
+                      <OSIProcessorMetric
+                        amplifyConfig={amplifyConfig}
+                        osiPipelineName={buildOSIPipelineNameByPipelineId(
+                          defaultStr(pipelineInfo.pipelineId)
+                        )}
+                        type={PipelineType.APP}
+                        pipelineId={defaultStr(pipelineInfo?.pipelineId)}
                         startDate={startDate}
                         endDate={endDate}
                         refreshCount={refreshCount}
                       />
-                    </div>
-                  </div>
-                </ExpandableSection>
+                    </ExpandableSection>
+                  ) : (
+                    <ExpandableSection
+                      headerText={
+                        isLightEngine
+                          ? t("common:monitoring.lambda")
+                          : t("common:monitoring.logProcessor")
+                      }
+                    >
+                      <div>
+                        <div className="flex">
+                          <ValueWithLabel
+                            label={
+                              isLightEngine
+                                ? t(
+                                    "common:monitoring.lightEngineAppLambdaDesc"
+                                  )
+                                : t("common:monitoring.lambdaProcessor")
+                            }
+                          >
+                            <ExtLink
+                              to={buildLambdaLink(
+                                amplifyConfig.aws_project_region,
+                                pipelineInfo?.processorLogGroupName?.split(
+                                  "/"
+                                )[3] as string
+                              )}
+                            >
+                              {pipelineInfo?.processorLogGroupName as string}
+                            </ExtLink>
+                          </ValueWithLabel>
+                        </div>
+                        <div>
+                          <AppLogProcessorMetric
+                            pipelineInfo={pipelineInfo}
+                            startDate={startDate}
+                            endDate={endDate}
+                            refreshCount={refreshCount}
+                          />
+                        </div>
+                      </div>
+                    </ExpandableSection>
+                  )}
+                </>
               )}
             </div>
+          ) : (
+            <Alert content={t("alarm.notActive")} />
           )}
         </>
       </HeaderPanel>

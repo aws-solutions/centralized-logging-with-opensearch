@@ -21,18 +21,50 @@ The following describes how to create log config for each log format.
 4. Specify **Config Name**.
 5. Specify **Log Path**. You can use `,` to separate multiple paths.
 6. Choose **JSON** in the log type dropdown list.
-7. In the **Sample log parsing** section, paste a sample JSON log and click **Parse log** to verify if the log parsing is successful.
+7. In the **Sample log parsing** section, paste a sample JSON log and click **Parse log** to verify if the log parsing is successful.JSON type  support nested Json with a maximum nesting depth of X. 
 
-    For example:
-    ```json
-    {"host":"81.95.250.9", "user-identifier":"-", "time":"08/Mar/2022:06:28:03 +0000", "method": "PATCH", "request": "/clicks-and-mortar/24%2f7", "protocol":"HTTP/2.0", "status":502, "bytes":24337, "referer": "https://www.investorturn-key.net/functionalities/innovative/integrated"}
+    - If your JSON log sample is nested JSON, choose Pase Log and it displays a list of field type options for each layer. If needed, you can set the corresponding field type for each layer of fields. If you choose Remove to delete a field. The field type will be automatically inferred by OpenSearch.
+    For Example:
     ```
-
+        {"timestamp": "2023-11-06T08:29:55.266Z",
+       "correlationId": "566829027325526589",
+       "processInfo": {
+        "startTime": "2023-11-06T08:29:55.266Z",
+        "hostname": "ltvtix0apidev01",
+        "domainId": "e6826d97-a60f-45cb-93e1-b4bb5a7add29",
+        "groupId": "group-2",
+        "groupName": "grp_dev_bba",
+        "serviceId": "instance-1",
+        "serviceName": "ins_dev_bba",
+        "version": "7.7.20210130"
+        },
+        "transactionSummary": {
+            "path": "https://www.leadmission-critical.info/relationships",
+            "protocol": "https",
+            "protocolSrc": "97",
+            "status": "exception",
+            "serviceContexts": [
+                {
+                    "service": "NSC_APP-117127_DCTM_Get Documentum Token",
+                    "monitor": true,
+                    "client": "Pass Through",
+                    "org": null,
+                    "app": null,
+                    "method": "getTokenUsingPOST",
+                    "status": "exception",
+                    "duration": 25270
+                }
+                    ]
+            }
+        }
+    ```
 8. Check if each fields type mapping is correct. You can change the type by selecting the dropdown menu in the second column. For all supported types, see [Data Types](https://opensearch.org/docs/latest/search-plugins/sql/datatypes/).
 
     !!! Note "Note"
 
         You must specify the datetime of the log using key “time”. If not specified, system time will be added.
+
+        For nested JSON, the Time Key must be on the first level.
 
 9. Specify the **Time format**. The format syntax follows [strptime](https://linux.die.net/man/3/strptime). Check [this](https://docs.fluentbit.io/manual/pipeline/parsers/configuring-parser#time-resolution-and-fractional-seconds) for details.
 

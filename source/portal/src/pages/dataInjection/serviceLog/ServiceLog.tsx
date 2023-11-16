@@ -23,7 +23,12 @@ import Breadcrumb from "components/Breadcrumb";
 import { SelectType } from "components/TablePanel/tablePanel";
 import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
 import { listServicePipelines } from "graphql/queries";
-import { Parameter, PipelineStatus, ServicePipeline } from "API";
+import {
+  AnalyticEngineType,
+  Parameter,
+  PipelineStatus,
+  ServicePipeline,
+} from "API";
 import Modal from "components/Modal";
 import { deleteServicePipeline } from "graphql/mutations";
 import { AUTO_REFRESH_INT, ServiceTypeMap } from "assets/js/const";
@@ -161,7 +166,11 @@ const ServiceLog: React.FC = () => {
 
   const renderPipelineId = (data: ServicePipeline) => {
     return (
-      <Link to={`/log-pipeline/service-log/detail/${data.id}`}>{data.id}</Link>
+      <Link
+      to={`/log-pipeline/service-log/detail/${data.id}`}
+    >
+      {data.id}
+    </Link>
     );
   };
 
@@ -212,9 +221,9 @@ const ServiceLog: React.FC = () => {
                     id: "account",
                     header: t("servicelog:list.account"),
                     cell: (e: ServicePipeline) => {
-                      return getParamValueByKey(
-                        e.parameters,
-                        "logSourceAccountId"
+                      return (
+                        e.logSourceAccountId ??
+                        getParamValueByKey(e.parameters, "logSourceAccountId")
                       );
                     },
                   },
@@ -227,9 +236,13 @@ const ServiceLog: React.FC = () => {
                   },
                   {
                     id: "cluster",
-                    header: t("servicelog:list.domain"),
-                    cell: (e: ServicePipeline) => {
-                      return e.target;
+                    header: t("applog:list.engineType"),
+                    cell: ({ target, engineType }: ServicePipeline) => {
+                      return (
+                        (engineType === AnalyticEngineType.LightEngine
+                          ? t("applog:list.lightEngine")
+                          : `${t("applog:list.os")}(${target})`) || "-"
+                      );
                     },
                   },
                   {

@@ -7,6 +7,7 @@ import logging
 import json
 from string import Template
 from datetime import datetime
+from typing import Union
 
 from .aws import DynamoDBUtil, AWSConnection
 from .utils import paginate
@@ -86,6 +87,40 @@ class LinkAccountHelper:
         if not account:
             raise APIException(ErrorCode.ACCOUNT_NOT_FOUND)
         return account
+
+    def update_link_account(
+        self,
+        account_id: str = "",
+        region: str = "",
+        uploading_event_topic_arn: str = "",
+    ) -> Union[dict, str]:
+        """Get a sub account link
+
+        If it's current account and region, return {}
+
+        Args:
+            account_id (str, optional): account id. Defaults to "" (current account).
+            region (str, optional): AWS region. Defaults to "" (current region).
+
+        Raises:
+            APIException: when account is not found
+
+        Returns:
+            dict: account details in dict.
+        """
+        key = self._get_ddb_key(
+            account_id or self._default_account_id, region or self._default_region
+        )
+        if not key:
+            # return empty dict for current account and region
+            return {}
+        account = self._ddb_util.get_item(key)
+        if not account:
+            raise APIException(ErrorCode.ACCOUNT_NOT_FOUND)
+        account["subAccountFlbConfUploadingEventTopicArn"] = uploading_event_topic_arn
+        account["updatedAt"] = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+        self._ddb_util.put_item(account)
+        return "OK"
 
     def create_sub_account_link(
         self, account_id: str = "", region: str = "", **extra_info

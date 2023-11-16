@@ -377,6 +377,7 @@ def get_app_log_ingestion():
 
 def test_create_app_log_ingestion(mocker):
     mocker.patch("commonlib.dao.InstanceDao")
+    mocker.patch("commonlib.dao.InstanceIngestionDetailDao")
     mocker.patch("commonlib.LinkAccountHelper")
     from svc.service import AppLogIngestionService
 
@@ -491,6 +492,7 @@ def test_create_app_log_ingestion(mocker):
 
 def test_delete_app_log_ingestion(mocker):
     mocker.patch("commonlib.dao.InstanceDao")
+    mocker.patch("commonlib.dao.InstanceIngestionDetailDao")
     mocker.patch("commonlib.LinkAccountHelper")
     from svc.service import AppLogIngestionService
 
@@ -549,6 +551,7 @@ def test_get_k8s_deployment_content_with_daemon_set(mocker):
     ingestion_args["accountId"] = get_eks_source().accountId
     ingestion_args["region"] = get_eks_source().region
     mocker.patch("commonlib.dao.InstanceDao")
+    mocker.patch("commonlib.dao.InstanceIngestionDetailDao")
     mocker.patch("commonlib.LinkAccountHelper")
     from svc.service import AppLogIngestionService
 
@@ -579,6 +582,7 @@ def test_get_k8s_deployment_content_with_sidecar(mocker):
     ingestion_args["region"] = get_eks_source().region
     mocker.patch("commonlib.dao.InstanceDao")
     mocker.patch("commonlib.LinkAccountHelper")
+    mocker.patch("commonlib.dao.InstanceIngestionDetailDao")
     from svc.service import AppLogIngestionService
 
     ingestion_svc = AppLogIngestionService()
@@ -606,6 +610,7 @@ def test_list_app_log_ingestions(mocker):
     ingestion_args["accountId"] = get_eks_source().accountId
     ingestion_args["region"] = get_eks_source().region
     mocker.patch("commonlib.dao.InstanceDao")
+    mocker.patch("commonlib.dao.InstanceIngestionDetailDao")
     mocker.patch("commonlib.LinkAccountHelper")
     from svc.service import AppLogIngestionService
 
@@ -622,3 +627,7 @@ def test_list_app_log_ingestions(mocker):
         accountId="accountId",
     )
     assert result["total"] == 1
+
+    args = {"ingestionId": "1"}
+    result = ingestion_svc.list_instance_ingestion_details(**args)
+    assert result["total"] == 0

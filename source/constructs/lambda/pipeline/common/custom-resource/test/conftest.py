@@ -39,3 +39,4 @@ def default_environment_variables():
 
     os.environ["QUEUE_NAME"] = "test-queue"
     os.environ["QUEUE_URL"] = "http://queue.amazonaws.com"
+    os.environ["STATE_MACHINE_ARN"] = "arn:aws:states:us-east-1:123456789012:stateMachine:S3BufferosiPipelineFlowSM2351C82D-hqyPwW58xfvI"

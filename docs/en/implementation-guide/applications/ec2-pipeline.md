@@ -3,10 +3,12 @@ An instance group represents a group of EC2 Linux instances, which enables the s
 
 This article guides you to create a log pipeline that ingests logs from an EC2 instance group.
 
-## Prerequisites
+## Create a log analytics pipeline (Amazon OpenSearch)
+
+### Prerequisites
 1. [Import an Amazon OpenSearch Service domain](../domains/import.md).
 
-## Create a log analytics pipeline
+### Create a log analytics pipeline
 
 1. Sign in to the Centralized Logging with OpenSearch Console.
 
@@ -14,7 +16,7 @@ This article guides you to create a log pipeline that ingests logs from an EC2 i
    
 3. Choose **Create a pipeline**
 
-4. Choose **Instance Group** as Log Source, and choose **Next**.
+4. Choose **Instance Group** as Log Source, choose **Amazon OpenSearch**, and choose **Next**.
 
 5. Select an instance group. If you have no instance group yet, choose **Create Instance Group** at the top right corner, and follow the [Instance Group](./create-log-source.md#amazon-ec2-instance-group) guide to create an instance group. After that, choose **Refresh** and then select the newly created instance group.
 
@@ -82,7 +84,76 @@ You have created a log source for the log analytics pipeline. Now you are ready 
 12. Wait for the application pipeline turning to "Active" state.
 
 
+## Create a log analytics pipeline (Light Engine)
 
+### Create a log analytics pipeline
+
+1. Sign in to the Centralized Logging with OpenSearch Console.
+
+2. In the left sidebar, under **Log Analytics Pipelines**, choose **Application Log**.
+   
+3. Choose **Create a pipeline**
+
+4. Choose **Instance Group** as Log Source, Choose **Light Engine**, and choose **Next**.
+
+5. Select an instance group. If you have no instance group yet, choose **Create Instance Group** at the top right corner, and follow the [Instance Group](./create-log-source.md#amazon-ec2-instance-group) guide to create an instance group. After that, choose **Refresh** and then select the newly created instance group.
+
+6. (Auto Scaling Group only) If your instance group is created based on an Auto Scaling Group, after ingestion status become "Created", then you can find the generated Shell Script in the instance group's detail page. Copy the shell script and update the User Data of the Auto Scaling [Launch configurations](https://docs.aws.amazon.com/autoscaling/ec2/userguide/launch-configurations.html) or [Launch template](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html).
+
+7. Keep the default **Permission grant method**.
+
+8. (Optional) If you choose **I will manually add the below required permissions after pipeline creation**, continue to do the following:
+
+    1. Choose **Expand to view required permissions** and copy the provided JSON policy.
+    2. Go to **AWS Management Console**.
+    3. On the left navigation pane, choose **IAM**, and select **Policies** under **Access management**.
+    4. Choose **Create Policy**, choose **JSON** and replace all the content inside the text block. Make sure to substitute `<YOUR ACCOUNT ID>` with your account id.
+    5. Choose **Next**, and then enter a name for this policy.
+    6. Attach the policy to your EC2 instance profile to grant the log agent permissions to send logs to the application log pipeline. If you are using Auto Scaling group, you need to update the IAM instance profile associated with the Auto Scaling Group. If needed, you can follow the documentation to update your [launch template][launch-template] or [launch configuration][launch-configuration].
+
+9. Choose **Next**.
+
+You have created a log source for the log analytics pipeline. Now you are ready to make further configurations for the log analytics pipeline with Amazon EC2 instance group as log source.
+
+1. Enter a **Log Path** to specify the location of logs you want to collect.
+   
+2. Select a log config and then choose **Next**. If you do not find desired log config from the drop-down list, choose **Create New**, and follow instructions in [Log Cong](./create-log-config.md).
+
+
+4. In the **Buffer** section, 
+
+    * S3 buffer parameters
+
+    | Parameter                    | Default                                          | Description                                                  |
+    | ---------------------------- | ------------------------------------------------ | ------------------------------------------------------------ |
+    | S3 Bucket                    | *A log bucket will be created by the solution.*           | You can also select a bucket to store the log data.                       |
+    | Buffer size                  | 50 MiB                                           | The maximum size of log data cached at the log agent side before delivering to S3. For more information, see [Data Delivery Frequency](https://docs.aws.amazon.com/firehose/latest/dev/basic-deliver.html#frequency). |
+    | Buffer interval              | 60 seconds                                       | The maximum interval of the log agent to deliver logs to S3. For more information, see [Data Delivery Frequency](https://docs.aws.amazon.com/firehose/latest/dev/basic-deliver.html#frequency). |
+    | Compression for data records | `Gzip`                                           | The log agent compresses records before delivering them to the S3 bucket. |
+
+    
+
+5. Choose **Next**.
+
+9. In the **Specify Light Engine Configuration** section, if you want to ingest associated templated Grafana dashboards, select **Yes** for the sample dashboard.
+
+10. You can choose an existing Grafana, or if you need to import a new one, you can go to Grafana for configuration.
+
+12. Select an S3 bucket to store partitioned logs and define a name for the log table. We have provided a predefined table name, but you can modify it according to your business needs.
+
+13. The log processing frequency is set to **5** minutes by default, with a minimum processing frequency of **1** minute.
+
+14. In the **Log Lifecycle** section, enter the log merge time and log archive time. We have provided default values, but you can adjust them based on your business requirements.
+
+15. Select **Next**.
+
+9. Enable **Alarms** if needed and select an exiting SNS topic. If you choose **Create a new SNS topic**, please provide a name and an email address for the new SNS topic.
+
+16. If desired, add tags.
+
+17. Select **Create**.
+
+12. Wait for the application pipeline turning to "Active" state.
 
 [kds]: https://aws.amazon.com/kinesis/data-streams/
 [ssm-agent]: https://docs.aws.amazon.com/systems-manager/latest/userguide/ssm-agent.html

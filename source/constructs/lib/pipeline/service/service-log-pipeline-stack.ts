@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { CfnParameter, Fn, StackProps } from "aws-cdk-lib";
+import { CfnParameter, Fn, StackProps, aws_iam as iam } from "aws-cdk-lib";
 import { SecurityGroup, Vpc } from "aws-cdk-lib/aws-ec2";
 import { Construct } from "constructs";
 import {
@@ -28,8 +28,14 @@ import {
 } from "./cw-to-firehose-to-s3-stack";
 import {
   S3toOpenSearchStack,
-  S3toOpenSearchStackProps,
 } from "./s3-to-opensearch-stack";
+import {
+  S3toOpenSearchOSIStack,
+  S3toOpenSearchOSIStackProps
+} from "./s3-to-opensearch-osi-stack";
+import {
+  S3toOpenSearchStackProps,
+} from "./s3-to-opensearch-common-stack";
 import { WAFSampledStack, WAFSampledStackProps } from "./waf-sampled-stack";
 
 const { VERSION } = process.env;
@@ -40,6 +46,7 @@ export interface PipelineStackProps extends StackProps {
   readonly solutionName?: string;
   readonly solutionDesc?: string;
   readonly solutionId?: string;
+  readonly enableOSIProcessor?: string;
 }
 
 export class ServiceLogPipelineStack extends SolutionStack {
@@ -59,7 +66,7 @@ export class ServiceLogPipelineStack extends SolutionStack {
         "The engine type of the OpenSearch. Select OpenSearch or Elasticsearch.",
       type: "String",
       default: "OpenSearch",
-      allowedValues: ["OpenSearch", "Elasticsearch"],
+      allowedValues: ["OpenSearch"],
     });
     this.addToParamLabels("Engine Type", engineType.logicalId);
 
@@ -242,16 +249,7 @@ export class ServiceLogPipelineStack extends SolutionStack {
       securityGroupId.valueAsString
     );
 
-    const baseProps = {
-      vpc: processVpc,
-      securityGroup: processSg,
-      endpoint: endpoint.valueAsString,
-      logType: props.logType,
-      indexPrefix: indexPrefix.valueAsString,
-      engineType: engineType.valueAsString,
-      version: VERSION,
-      solutionId: solutionId,
-    };
+
 
     if (
       [
@@ -298,6 +296,14 @@ export class ServiceLogPipelineStack extends SolutionStack {
       });
       this.addToParamLabels("KMS-CMK ARN", defaultCmkArnParam.logicalId);
 
+      const pipelineTableArn = new CfnParameter(this, "pipelineTableArn", {
+        type: "String",
+        default: "",
+        description:
+          "Ingestion table Arn. Leave empty if you do not use OSI as Processor.",
+      });
+      this.addToParamLabels("Enable OpenSearch Ingestion as processor", pipelineTableArn.logicalId);
+
       this.addToParamGroups(
         "Source Information",
         logBucketName.logicalId,
@@ -305,41 +311,32 @@ export class ServiceLogPipelineStack extends SolutionStack {
         logSourceAccountId.logicalId,
         logSourceRegion.logicalId,
         logSourceAccountAssumeRole.logicalId,
-        defaultCmkArnParam.logicalId
+        defaultCmkArnParam.logicalId,
+        pipelineTableArn.logicalId
       );
+      const baseProps = {
 
-      // Create S3 to OpenSearch Stack for service log pipeline
-      const pipelineProps: S3toOpenSearchStackProps = {
-        ...baseProps,
-        defaultCmkArn: defaultCmkArnParam.valueAsString,
-        logBucketName: logBucketName.valueAsString,
-        logBucketPrefix: logBucketPrefix.valueAsString,
-        backupBucketName: backupBucketName.valueAsString,
-        plugins: pluginList,
+        version: VERSION,
+        solutionId: solutionId,
+        logType: props.logType,
         logSourceAccountId: logSourceAccountId.valueAsString,
         logSourceRegion: logSourceRegion.valueAsString,
+        logBucketName: logBucketName.valueAsString,
         logSourceAccountAssumeRole: logSourceAccountAssumeRole.valueAsString,
-        stackPrefix: stackPrefix,
       };
-
-      const pipelineStack = new S3toOpenSearchStack(
-        this,
-        `LogPipeline`,
-        pipelineProps
-      );
-      this.cfnOutput(
-        "ProcessorLogGroupName",
-        pipelineStack.logProcessorLogGroupName
-      );
-      this.cfnOutput("LogEventQueueArn", pipelineStack.logEventQueueArn);
-      this.cfnOutput("LogEventQueueName", pipelineStack.logEventQueueName);
 
       // Create S3 to OpenSearch Stack
       const osProps: OpenSearchInitProps = {
         ...baseProps,
+        engineType: engineType.valueAsString,
+        vpc: processVpc,
+        securityGroup: processSg,
+        endpoint: endpoint.valueAsString,
         domainName: domainName.valueAsString,
+        indexPrefix: indexPrefix.valueAsString,
         createDashboard: createDashboard.valueAsString,
-        logProcessorRoleArn: pipelineStack.logProcessorRoleArn,
+        backupBucketName: backupBucketName.valueAsString,
+        plugins: pluginList,
         shardNumbers: shardNumbers.valueAsString,
         replicaNumbers: replicaNumbers.valueAsString,
         warmAge: warmAge.valueAsString,
@@ -349,17 +346,114 @@ export class ServiceLogPipelineStack extends SolutionStack {
         indexSuffix: indexSuffix.valueAsString,
         codec: codec.valueAsString,
         refreshInterval: refreshInterval.valueAsString,
+        source: "SQS",
+        subCategory: "S3",
       };
 
-      const openSearchInitStack = new OpenSearchInitStack(
-        this,
-        "InitStack",
-        osProps
-      );
-      this.cfnOutput(
-        "HelperLogGroupName",
-        openSearchInitStack.helperFn.logGroup.logGroupName
-      );
+      if (props.enableOSIProcessor == "true") {
+
+        const osiPipelineName = this.newParam("osiPipelineName", {
+          type: "String",
+          default: "",
+          description: "OSI Pipeline Name.",
+        });
+
+        const minCapacity = this.newParam("minCapacity", {
+          type: "String",
+          default: "1",
+          description: "Minimum OCU capacity for OSI pipeline.",
+        });
+
+        const maxCapacity = this.newParam("maxCapacity", {
+          type: "String",
+          default: "4",
+          description: "Maximum OCU capacity for OSI pipeline.",
+        });
+
+        this.addToParamGroups(
+          "OSI Processor Information",
+          osiPipelineName.logicalId,
+          pipelineTableArn.logicalId,
+          minCapacity.logicalId,
+          maxCapacity.logicalId
+        );
+
+        // Role for osi pipeline processor
+        const osiProcessorRole = new iam.Role(this, "OSIProcessorRole", {
+          assumedBy: new iam.ServicePrincipal("osis-pipelines.amazonaws.com"),
+        });
+
+        const osPropsForOSI = {
+          ...osProps,
+          noBufferAccessRoleArn: osiProcessorRole.roleArn,
+          writeIdxData: "False"
+        }
+        const osInitStack = new OpenSearchInitStack(
+          this,
+          "OpenSearchInit",
+          osPropsForOSI
+        );
+
+        const pipelineProps: S3toOpenSearchOSIStackProps = {
+          ...baseProps,
+          backupBucketName: backupBucketName.valueAsString,
+          defaultCmkArn: defaultCmkArnParam.valueAsString,
+          logBucketPrefix: logBucketPrefix.valueAsString,
+          logProcessorFn: osInitStack.logProcessorFn,
+          solutionId: solutionId,
+          stackPrefix: stackPrefix,
+          enableConfigJsonParam: false,
+          domainName: domainName.valueAsString,
+          osiProcessorRole: osiProcessorRole,
+          osiPipelineName: osiPipelineName.valueAsString,
+          pipelineTableArn: pipelineTableArn.valueAsString,
+          minCapacity: minCapacity.valueAsString,
+          maxCapacity: maxCapacity.valueAsString,
+          endpoint: endpoint.valueAsString,
+          indexPrefix: indexPrefix.valueAsString,
+        };
+
+        const s3BufferStack = new S3toOpenSearchOSIStack(  // NOSONAR
+          this,
+          `S3Buffer`,
+          pipelineProps
+        );
+
+        this.cfnOutput(
+          "ProcessorLogGroupName",
+          s3BufferStack.logProcessorLogGroupName
+        );
+        this.cfnOutput("LogEventQueueArn", s3BufferStack.logEventQueueArn);
+        this.cfnOutput("LogEventQueueName", s3BufferStack.logEventQueueName);
+      } else {
+        const openSearchInitStack = new OpenSearchInitStack(
+          this,
+          "InitStack",
+          osProps
+        );
+
+        // Create S3 to OpenSearch Stack for service log pipeline
+        const pipelineProps: S3toOpenSearchStackProps = {
+          ...baseProps,
+          logProcessorFn: openSearchInitStack.logProcessorFn,
+          defaultCmkArn: defaultCmkArnParam.valueAsString,
+          logBucketPrefix: logBucketPrefix.valueAsString,
+          stackPrefix: stackPrefix,
+        };
+
+        const pipelineStack = new S3toOpenSearchStack(
+          this,
+          `LogPipeline`,
+          pipelineProps
+        );
+        this.cfnOutput(
+          "ProcessorLogGroupName",
+          pipelineStack.logProcessorLogGroupName
+        );
+        this.cfnOutput("LogEventQueueArn", pipelineStack.logEventQueueArn);
+        this.cfnOutput("LogEventQueueName", pipelineStack.logEventQueueName);
+      }
+
 
       if (["RDS", "Lambda"].includes(props.logType)) {
         const logGroupNames = new CfnParameter(this, "logGroupNames", {
@@ -441,18 +535,55 @@ export class ServiceLogPipelineStack extends SolutionStack {
         logSourceAccountAssumeRole.logicalId
       );
 
+      const baseProps = {
+        version: VERSION,
+        solutionId: solutionId,
+        backupBucketName: backupBucketName.valueAsString,
+        logSourceAccountId: logSourceAccountId.valueAsString,
+        logSourceRegion: logSourceRegion.valueAsString,
+        interval: interval,
+        webACLNames: webACLNames.valueAsString,
+        webACLScope: webACLScope.valueAsString,
+
+        logSourceAccountAssumeRole: logSourceAccountAssumeRole.valueAsString,
+      };
+
+      // Create S3 to OpenSearch Stack
+      const osProps: OpenSearchInitProps = {
+        ...baseProps,
+        indexPrefix: indexPrefix.valueAsString,
+        engineType: engineType.valueAsString,
+        logType: props.logType,
+        vpc: processVpc,
+        securityGroup: processSg,
+        endpoint: endpoint.valueAsString,
+        domainName: domainName.valueAsString,
+        plugins: pluginList,
+        createDashboard: createDashboard.valueAsString,
+        shardNumbers: shardNumbers.valueAsString,
+        replicaNumbers: replicaNumbers.valueAsString,
+        warmAge: warmAge.valueAsString,
+        coldAge: coldAge.valueAsString,
+        retainAge: retainAge.valueAsString,
+        rolloverSize: rolloverSize.valueAsString,
+        indexSuffix: indexSuffix.valueAsString,
+        codec: codec.valueAsString,
+        refreshInterval: refreshInterval.valueAsString,
+        source: "EVENT_BRIDGE",
+
+      };
+
+      const openSearchInitStack = new OpenSearchInitStack(
+        this,
+        "InitStack",
+        osProps
+      );
+
       // Create S3 to OpenSearch Stack for service log pipeline
       const pipelineProps: WAFSampledStackProps = {
         ...baseProps,
-        plugins: pluginList,
-        interval: interval,
-        logSourceRegion: logSourceRegion.valueAsString,
-        logSourceAccountId: logSourceAccountId.valueAsString,
-        logSourceAccountAssumeRole: logSourceAccountAssumeRole.valueAsString,
-        webACLNames: webACLNames.valueAsString,
-        webACLScope: webACLScope.valueAsString,
+        logProcessorFn: openSearchInitStack.logProcessorFn,
         stackPrefix: stackPrefix,
-        backupBucketName: backupBucketName.valueAsString,
       };
 
       const pipelineStack = new WAFSampledStack(
@@ -465,32 +596,7 @@ export class ServiceLogPipelineStack extends SolutionStack {
         pipelineStack.logProcessorLogGroupName
       );
 
-      // Create S3 to OpenSearch Stack
-      const osProps: OpenSearchInitProps = {
-        ...baseProps,
-        domainName: domainName.valueAsString,
-        createDashboard: createDashboard.valueAsString,
-        logProcessorRoleArn: pipelineStack.logProcessorRoleArn,
-        shardNumbers: shardNumbers.valueAsString,
-        replicaNumbers: replicaNumbers.valueAsString,
-        warmAge: warmAge.valueAsString,
-        coldAge: coldAge.valueAsString,
-        retainAge: retainAge.valueAsString,
-        rolloverSize: rolloverSize.valueAsString,
-        indexSuffix: indexSuffix.valueAsString,
-        codec: codec.valueAsString,
-        refreshInterval: refreshInterval.valueAsString,
-      };
 
-      const openSearchInitStack = new OpenSearchInitStack(
-        this,
-        "InitStack",
-        osProps
-      );
-      this.cfnOutput(
-        "HelperLogGroupName",
-        openSearchInitStack.helperFn.logGroup.logGroupName
-      );
     }
 
     this.addToParamGroups(

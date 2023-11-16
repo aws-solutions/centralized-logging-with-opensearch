@@ -25,22 +25,16 @@ import {
 } from "assets/js/const";
 
 import Button from "components/Button";
-import S3Desc from "./common/desc/S3Desc";
-import RDSDesc from "./common/desc/RDSDesc";
-import CloudTrailDesc from "./common/desc/CloudTrailDesc";
-import CloudFrontDesc from "./common/desc/CloudFrontDesc";
-import LambdaDesc from "./common/desc/LambdaDesc";
-import ELBDesc from "./common/desc/ELBDesc";
-import WAFDesc from "./common/desc/WAFDesc";
-import ConfigDesc from "./common/desc/ConfigDesc";
 import Breadcrumb from "components/Breadcrumb";
 import { useDispatch } from "react-redux";
 import { ActionType } from "reducer/appReducer";
 import HelpPanel from "components/HelpPanel";
 import SideMenu from "components/SideMenu";
 import { useTranslation } from "react-i18next";
-import VPCDesc from "./common/desc/VPCDesc";
+import { AnalyticEngineTypes } from "./common/SpecifyAnalyticsEngine";
 import { identity } from "lodash";
+import { SelectAnalyticsEngine } from "pages/dataInjection/common/SelectAnalyticsEngine";
+import { PipelineType } from "API";
 
 const CreateChooseType: React.FC = () => {
   const { t } = useTranslation();
@@ -56,11 +50,13 @@ const CreateChooseType: React.FC = () => {
   const dispatch = useDispatch();
 
   const [logType, setLogType] = useState(ServiceLogType.Amazon_S3);
-
+  const [engineType, setEngineType] = useState(AnalyticEngineTypes.OPENSEARCH);
   const goToCreatePage = () => {
     console.info("ServiceLogTypeMap:", ServiceLogTypeMap);
     console.info("logType:", logType);
-    navigate(`/log-pipeline/service-log/create/${ServiceLogTypeMap[logType]}`);
+    navigate(
+      `/log-pipeline/service-log/create/${ServiceLogTypeMap[logType]}?engineType=${engineType}`
+    );
   };
 
   useEffect(() => {
@@ -96,6 +92,9 @@ const CreateChooseType: React.FC = () => {
                                   }}
                                   onClick={() => {
                                     setLogType(element.value);
+                                    setEngineType(
+                                      AnalyticEngineTypes.OPENSEARCH
+                                    );
                                   }}
                                   checked={element.value === logType}
                                   name="service"
@@ -115,21 +114,14 @@ const CreateChooseType: React.FC = () => {
                         );
                       })}
                     </div>
-                    {logType === ServiceLogType.Amazon_S3 && <S3Desc />}
-                    {logType === ServiceLogType.Amazon_RDS && <RDSDesc />}
-                    {logType === ServiceLogType.Amazon_CloudTrail && (
-                      <CloudTrailDesc />
-                    )}
-                    {logType === ServiceLogType.Amazon_CloudFront && (
-                      <CloudFrontDesc />
-                    )}
-                    {logType === ServiceLogType.Amazon_Lambda && <LambdaDesc />}
-                    {logType === ServiceLogType.Amazon_ELB && <ELBDesc />}
-                    {logType === ServiceLogType.Amazon_WAF && <WAFDesc />}
-                    {logType === ServiceLogType.Amazon_VPCLogs && <VPCDesc />}
-                    {logType === ServiceLogType.Amazon_Config && <ConfigDesc />}
                   </div>
                 </HeaderPanel>
+                <SelectAnalyticsEngine
+                  pipelineType={PipelineType.SERVICE}
+                  svcLogType={logType}
+                  engineType={engineType}
+                  setEngineType={setEngineType}
+                />
               </PagePanel>
               <div className="button-action text-right">
                 <Button

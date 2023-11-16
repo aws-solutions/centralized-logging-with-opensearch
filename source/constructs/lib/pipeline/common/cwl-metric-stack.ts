@@ -26,7 +26,7 @@ export const enum MetricSourceType {
   FLUENT_BIT = "FLUENT_BIT",
   LOG_PROCESSOR_SVC = "LOG_PROCESSOR_SVC",
   LOG_PROCESSOR_WAF_SAMPLE = "LOG_PROCESSOR_WAF_SAMPLE",
-  LOG_PROCESSOR_APP = "LOG_PROCESSOR_APP"
+  LOG_PROCESSOR_APP = "LOG_PROCESSOR_APP",
 }
 
 /**
@@ -46,7 +46,7 @@ export class CWLMetricStack extends Construct {
         metricName: "TotalLogs",
         metricValue: "$Total",
         dimensions: { StackName: "$StackName" },
-        filterPattern: logs.FilterPattern.literal(filterPattern)
+        filterPattern: logs.FilterPattern.literal(filterPattern),
       });
 
       props.logGroup.addMetricFilter("ExcludedLogs", {
@@ -54,7 +54,7 @@ export class CWLMetricStack extends Construct {
         metricName: "ExcludedLogs",
         metricValue: "$Excluded",
         dimensions: { StackName: "$StackName" },
-        filterPattern: logs.FilterPattern.literal(filterPattern)
+        filterPattern: logs.FilterPattern.literal(filterPattern),
       });
 
       props.logGroup.addMetricFilter("LoadedLogs", {
@@ -62,7 +62,7 @@ export class CWLMetricStack extends Construct {
         metricName: "LoadedLogs",
         metricValue: "$Loaded",
         dimensions: { StackName: "$StackName" },
-        filterPattern: logs.FilterPattern.literal(filterPattern)
+        filterPattern: logs.FilterPattern.literal(filterPattern),
       });
 
       props.logGroup.addMetricFilter("FailedLogs", {
@@ -70,7 +70,7 @@ export class CWLMetricStack extends Construct {
         metricName: "FailedLogs",
         metricValue: "$Failed",
         dimensions: { StackName: "$StackName" },
-        filterPattern: logs.FilterPattern.literal(filterPattern)
+        filterPattern: logs.FilterPattern.literal(filterPattern),
       });
     } else if (
       props.metricSourceType == MetricSourceType.LOG_PROCESSOR_WAF_SAMPLE
@@ -84,7 +84,7 @@ export class CWLMetricStack extends Construct {
         metricName: "TotalLogs",
         metricValue: "$Total",
         dimensions: { StackName: "$StackName" },
-        filterPattern: logs.FilterPattern.literal(filterPattern)
+        filterPattern: logs.FilterPattern.literal(filterPattern),
       });
 
       props.logGroup.addMetricFilter("LoadedLogs", {
@@ -92,7 +92,7 @@ export class CWLMetricStack extends Construct {
         metricName: "LoadedLogs",
         metricValue: "$Loaded",
         dimensions: { StackName: "$StackName" },
-        filterPattern: logs.FilterPattern.literal(filterPattern)
+        filterPattern: logs.FilterPattern.literal(filterPattern),
       });
 
       props.logGroup.addMetricFilter("FailedLogs", {
@@ -100,7 +100,7 @@ export class CWLMetricStack extends Construct {
         metricName: "FailedLogs",
         metricValue: "$Failed",
         dimensions: { StackName: "$StackName" },
-        filterPattern: logs.FilterPattern.literal(filterPattern)
+        filterPattern: logs.FilterPattern.literal(filterPattern),
       });
     } else if (props.metricSourceType == MetricSourceType.LOG_PROCESSOR_APP) {
       // Create the CloudWatch Metrics for Application Log Processor
@@ -113,7 +113,7 @@ export class CWLMetricStack extends Construct {
         metricName: "TotalLogs",
         metricValue: "$Total",
         dimensions: { StackName: "$StackName" },
-        filterPattern: logs.FilterPattern.literal(filterPattern)
+        filterPattern: logs.FilterPattern.literal(filterPattern),
       });
 
       props.logGroup.addMetricFilter("LoadedLogs", {
@@ -121,7 +121,7 @@ export class CWLMetricStack extends Construct {
         metricName: "LoadedLogs",
         metricValue: "$Loaded",
         dimensions: { StackName: "$StackName" },
-        filterPattern: logs.FilterPattern.literal(filterPattern)
+        filterPattern: logs.FilterPattern.literal(filterPattern),
       });
 
       props.logGroup.addMetricFilter("FailedLogs", {
@@ -129,7 +129,7 @@ export class CWLMetricStack extends Construct {
         metricName: "FailedLogs",
         metricValue: "$Failed",
         dimensions: { StackName: "$StackName" },
-        filterPattern: logs.FilterPattern.literal(filterPattern)
+        filterPattern: logs.FilterPattern.literal(filterPattern),
       });
     } else if (props.metricSourceType == MetricSourceType.FLUENT_BIT) {
       // Create the CloudWatch Metrics for Fluent-bit Agent

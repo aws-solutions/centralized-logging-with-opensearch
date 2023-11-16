@@ -23,9 +23,9 @@ This solution deploys the AWS CloudFormation template in your AWS Cloud account 
 
 9. [Amazon EC2](https://aws.amazon.com/ec2/) or [Amazon EKS](https://aws.amazon.com/eks/) installs Fluent Bit agents, and uploads log data to application log pipeline.
 
-10. Application log pipelines read, parse, process application logs and ingest them into Amazon OpenSearch domains.
+10. Application log pipelines read, parse, process application logs and ingest them into Amazon OpenSearch domains or Light Engine.
 
-11. Service log pipelines read, parse, process AWS service logs and ingest them into Amazon OpenSearch domains.
+11. Service log pipelines read, parse, process AWS service logs and ingest them into Amazon OpenSearch domains or Light Engine.
 
 After deploying the solution, you can use [AWS WAF](https://aws.amazon.com/waf/) to protect CloudFront or AppSync. Moreover, you can follow this [guide](https://docs.aws.amazon.com/appsync/latest/devguide/WAF-Integration.html) to configure your WAF settings to prevent GraphQL schema introspection.
 
@@ -45,7 +45,7 @@ This section is applicable to Amazon S3 access logs, CloudFront standard logs, C
 
 The workflow supports two scenarios:
 
-- **Logs to Amazon S3 directly**
+- **Logs to Amazon S3 directly（OpenSearch as log processor）**
 
 
     In this scenario, the service directly sends logs to Amazon S3.
@@ -53,7 +53,7 @@ The workflow supports two scenarios:
     [![arch-service-pipeline-s3]][arch-service-pipeline-s3]
     **_Amazon S3 based service log pipeline architecture_**
 
-- **Logs to Amazon S3 via Kinesis Data Firehose**
+- **Logs to Amazon S3 via Kinesis Data Firehose（OpenSearch as log processor）**
 
     In this scenario, the service cannot directly put their logs to Amazon S3. The logs are sent to Amazon CloudWatch, and Kinesis Data Firehose ([KDF]) is used to subscribe the logs from CloudWatch Log Group and then put logs into Amazon S3.
 
@@ -76,6 +76,21 @@ The log pipeline runs the following workflow:
 
 For cross-account ingestion, the AWS Services store logs in Amazon S3 bucket in the member account, and other resources remain in central logging account.
 
+- **Logs to Amazon S3 directly（Light Engine as log processor）**
+
+
+    In this scenario, the service directly sends logs to Amazon S3.
+
+    [![arch-service-pipeline-s3-lightengine]][arch-service-pipeline-s3-lightengine]
+    **_Amazon S3 based service log pipeline architecture_**
+
+The log pipeline runs the following workflow:
+
+1. AWS service logs are stored in an Amazon S3 bucket (Log Bucket).
+2. An event notification is sent to Amazon SQS using S3 Event Notifications when a new log file is created.
+3. Amazon SQS initiates AWS Lambda.
+4. AWS Lambda copies objects from the log bucket to the staging bucket.
+5. The Log Processor, AWS Step Functions, processes raw log files stored in the staging bucket in batches. It converts them into Apache Parquet format and automatically partitions all incoming data based on criteria including time and region.
 
 ### Logs through Amazon Kinesis Data Streams
 
@@ -124,6 +139,7 @@ Centralized Logging with OpenSearch supports log analysis for application logs, 
 
 ### Logs from Amazon EC2 / Amazon EKS
 
+- **Logs from Amazon EC2/ Amazon EKS(OpenSearch as log processor)**
 [![arch-app-log-pipeline]][arch-app-log-pipeline]
 **_Application log pipeline architecture for EC2/EKS_**
 
@@ -136,6 +152,20 @@ The log pipeline runs the following workflow:
 3. The log processor reads and processes the log records and ingests the logs into the OpenSearch domain.
 
 4. Logs that fail to be processed are exported to an Amazon S3 bucket (Backup Bucket).
+
+<br/>
+
+- **Logs from Amazon EC2/ Amazon EKS(Light Engine as log processor)**
+
+[![arch-app-log-pipeline-lighengine]][arch-app-log-pipeline-lighengine]
+**_Application log pipeline architecture for EC2/EKS_**
+
+The log pipeline runs the following workflow:
+
+1. Fluent Bit works as the underlying log agent to collect logs from application servers and send them to an optional Log Buffer.
+2. The Log Buffer triggers the Lambda to copy objects from log bucket to staging bucket.
+3. Log Processor, AWS Step Functions, processes raw log files stored in the staging bucket in batches, converts them to Apache Parquet, and automatically partitions all incoming data by criteria including time and region.
+
 
 ### Logs from Syslog Client
 
@@ -170,13 +200,15 @@ The log pipeline runs the following workflow:
 [stepfunction]: https://aws.amazon.com/stepfunctions/
 [kds]: https://aws.amazon.com/kinesis/data-streams/
 [kdf]: https://aws.amazon.com/kinesis/data-firehose/
-[arch]: ../images/architecture/arch.svg
+[arch]: ../images/architecture/arch.png
 [arch-service-pipeline-s3]: ../images/architecture/service-pipeline-s3.svg
+[arch-service-pipeline-s3-lightengine]: ../images/architecture/logs-in-s3-light-engine.drawio.png
 [arch-service-pipeline-kdf-to-s3]: ../images/architecture/service-pipeline-kdf-to-s3.svg
 [arch-service-pipeline-cw]: ../images/architecture/service-pipeline-cw.svg
 [arch-service-pipeline-kds]: ../images/architecture/service-pipeline-kds.svg
 [arch-service-pipeline-cwl-to-kds]: ../images/architecture/service-pipeline-cwl-to-kds.svg
 [arch-app-log-pipeline]: ../images/architecture/app-log-pipeline-ec2-eks.svg
+[arch-app-log-pipeline-lighengine]: ../images/architecture/logs-from-amazon-ec2-eks-light-engine.drawio.png
 [arch-syslog-pipeline]: ../images/architecture/app-log-pipeline-syslog.svg
 [peering-connection]: https://docs.aws.amazon.com/vpc/latest/peering/working-with-vpc-peering.html
 [tgw]: https://docs.aws.amazon.com/vpc/latest/tgw/what-is-transit-gateway.html

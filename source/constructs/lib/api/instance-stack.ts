@@ -139,7 +139,7 @@ export class InstanceStack extends Construct {
           path.join(__dirname, '../../lambda/api/log_agent_status')
         ),
         layers: [SharedPythonLayer.getInstance(this)],
-        runtime: lambda.Runtime.PYTHON_3_9,
+        runtime: lambda.Runtime.PYTHON_3_11,
         handler: 'lambda_function.lambda_handler',
         timeout: Duration.minutes(5),
         memorySize: 1024,

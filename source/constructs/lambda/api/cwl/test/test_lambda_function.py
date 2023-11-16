@@ -68,6 +68,69 @@ svc_pipeline_info_1 = {
     "type": "WAF",
 }
 
+# OSI pipeline as log processor
+svc_pipeline_info_2 = {
+    "id": "ee776174-5492-4d36-97b7-589845388002",
+    "createdAt": "2023-04-03T09:02:36Z",
+    "destinationType": "S3",
+    "error": "",
+    "helperLogGroupName": "/aws/lambda/CL-pipe-ee776174-OpenSearchHelperFn-CQZg6RqIGSIc",
+    "parameters": [
+        {"parameterKey": "engineType", "parameterValue": "OpenSearch"},
+        {
+            "parameterKey": "logBucketName",
+            "parameterValue": "centralizedlogging-solutionloggingbucket0fa53b76-1ff3q5fgfg7un",
+        },
+        {
+            "parameterKey": "logBucketPrefix",
+            "parameterValue": "AWSLogs/111111111111/WAFLogs/us-west-2/solution-dev-us-west-2-01/",
+        },
+        {
+            "parameterKey": "endpoint",
+            "parameterValue": "vpc-solution-os-yhb4z4uzd544pna27wlqqumk2y.us-west-2.es.amazonaws.com",
+        },
+        {"parameterKey": "domainName", "parameterValue": "solution-os"},
+        {"parameterKey": "indexPrefix", "parameterValue": "solution-dev-us-west-2-01"},
+        {"parameterKey": "createDashboard", "parameterValue": "Yes"},
+        {"parameterKey": "vpcId", "parameterValue": "vpc-0737368a3ba456453"},
+        {
+            "parameterKey": "subnetIds",
+            "parameterValue": "subnet-0b99add032f87385b,subnet-0194f25ad3526e8b5",
+        },
+        {"parameterKey": "securityGroupId", "parameterValue": "sg-0a8deb49daed73ecf"},
+        {"parameterKey": "shardNumbers", "parameterValue": "1"},
+        {"parameterKey": "replicaNumbers", "parameterValue": "1"},
+        {"parameterKey": "warmAge", "parameterValue": ""},
+        {"parameterKey": "coldAge", "parameterValue": ""},
+        {"parameterKey": "retainAge", "parameterValue": "3d"},
+        {"parameterKey": "rolloverSize", "parameterValue": "30gb"},
+        {"parameterKey": "indexSuffix", "parameterValue": "yyyy-MM-dd"},
+        {"parameterKey": "codec", "parameterValue": "best_compression"},
+        {"parameterKey": "refreshInterval", "parameterValue": "1s"},
+        {
+            "parameterKey": "backupBucketName",
+            "parameterValue": "centralizedlogging-solutionloggingbucket0fa53b76-1ff3q5fgfg7un",
+        },
+        {
+            "parameterKey": "defaultCmkArnParam",
+            "parameterValue": "arn:aws:kms:us-west-2:111111111111:key/dbf10ef9-adc5-45fe-90b7-c7cda74130c9",
+        },
+        {"parameterKey": "logSourceAccountId", "parameterValue": "111111111111"},
+        {"parameterKey": "logSourceRegion", "parameterValue": "us-west-2"},
+        {"parameterKey": "logSourceAccountAssumeRole", "parameterValue": ""},
+    ],
+    "processorLogGroupName": "/aws/lambda/CL-pipe-ee776174-LogProcessorFn",
+    "osiPipelineName": "mocK_osi_pipeline",
+    "source": "solution-dev-us-west-2-01",
+    "stackId": "arn:aws:cloudformation:us-west-2:111111111111:stack/CL-pipe-ee776174/47d47e00-d1fe-11ed-87a3-0274021fa06b",
+    "stackName": "CL-pipe-ee776174",
+    "status": "ACTIVE",
+    "tags": [],
+    "target": "solution-os",
+    "type": "WAF",
+}
+
+
 app_pipeline_info_1 = {
     "pipelineId": "d619185d-2626-4cd5-8b23-58127008a2d0",
     "aosParams": {
@@ -188,7 +251,7 @@ def ddb_client():
             AttributeDefinitions=[{"AttributeName": "id", "AttributeType": "S"}],
             ProvisionedThroughput={"ReadCapacityUnits": 10, "WriteCapacityUnits": 10},
         )
-        data_list = [svc_pipeline_info_1]
+        data_list = [svc_pipeline_info_1, svc_pipeline_info_2]
         with svc_table.batch_writer() as batch:
             for data in data_list:
                 batch.put_item(Item=data)
@@ -546,3 +609,35 @@ def test_get_ingestion_ids(ddb_client):
     metric_data_helper = APP("d619185d-2626-4cd5-8b23-58127008a2d0", ["TotalLogs"])
     result = metric_data_helper.get_ingestion_ids()
     assert len(result) == 1
+
+
+def test_osi_pipeline_metrics(ddb_client):
+    from util.cwl_metric_data_helper import MetricDataHelper
+
+    metric_data_helper = MetricDataHelper(
+        "ee776174-5492-4d36-97b7-589845388002",
+        "SERVICE",
+        ["OSICPUUsage"],
+    )
+
+    result = metric_data_helper.get_data(1614843400, 1614850000)
+    assert result == {
+        "series": [
+            {"data": [], "name": "OSICPUUsage"},
+        ],
+        "xaxis": {"categories": []},
+    }
+
+    metric_data_helper = MetricDataHelper(
+        "ee776174-5492-4d36-97b7-589845388002",
+        "SERVICE",
+        ["OSIDocumentsRetriedWrite"],
+    )
+
+    result = metric_data_helper.get_data(1614843400, 1614850000)
+    assert result == {
+        "series": [
+            {"data": [], "name": "OSIDocumentsRetriedWrite"},
+        ],
+        "xaxis": {"categories": []},
+    }

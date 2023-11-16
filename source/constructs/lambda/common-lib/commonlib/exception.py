@@ -52,6 +52,13 @@ class ErrorCode(Enum):
     ASSUME_ROLE_CHECK_FAILED = "EKS assume role check failed"
     UNSUPPORTED_ACTION_HAS_INGESTION = "UNSUPPORTED_ACTION_HAS_INGESTION"
     UNSUPPORTED_ACTION_SOURCE_HAS_INGESTION = "UNSUPPORTED_ACTION_SOURCE_HAS_INGESTION"
+    # Grafana Exception
+    GRAFANA_URL_CONNECTIVITY_FAILED = "Grafana URL connectivity check failed"
+    GRAFANA_TOKEN_VALIDATION_FAILED = "Grafana token validation failed"
+    GRAFANA_HAS_INSTALLED_ATHENA_PLUGIN_FAILED = "Grafana does not have installed Athena plugin"
+    GRAFANA_DATA_SOURCE_PERMISSION_CHECK_FAILED = "Grafana data source permission check failed"
+    GRAFANA_FOLDER_PERMISSION_CHECK_FAILED = "Grafana folder permission check failed"
+    GRAFANA_DASHBOARDS_PERMISSION_CHECK_FAILED = "Grafana dashboards permission check failed"
 
 
 class APIException(Exception):

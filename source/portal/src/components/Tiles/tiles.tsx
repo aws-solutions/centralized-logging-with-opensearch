@@ -14,13 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import classNames from "classnames";
+import InfoSpan from "components/InfoSpan";
 import React, { ReactElement } from "react";
+import { InfoBarTypes } from "reducer/appReducer";
 
 type TilesItemProps = {
   disabled?: boolean;
   label: string | null;
   description: string | ReactElement | null;
   value: string;
+  infoSpanType?: InfoBarTypes;
 };
 
 interface TilesProps {
@@ -54,6 +57,7 @@ const Tiles: React.FC<TilesProps> = (props: TilesProps) => {
                 type="radio"
               />
               <span>{item.label}</span>
+              {item.infoSpanType && <InfoSpan spanType={item.infoSpanType} />}
             </div>
             <div className="desc">{item.description}</div>
           </label>

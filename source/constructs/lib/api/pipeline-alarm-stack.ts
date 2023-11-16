@@ -26,6 +26,7 @@ import { Construct } from 'constructs';
 
 import { SharedPythonLayer } from '../layer/layer';
 import { addCfnNagSuppressRules } from '../main-stack';
+import { MicroBatchStack } from '../microbatch/main/services/amazon-services-stack';
 
 export interface PipelineAlarmStackProps {
   /**
@@ -35,6 +36,7 @@ export interface PipelineAlarmStackProps {
    */
   readonly graphqlApi: appsync.GraphqlApi;
   readonly centralAssumeRolePolicy: iam.ManagedPolicy;
+  readonly microBatchStack: MicroBatchStack;
 
   readonly solutionId: string;
   readonly stackPrefix: string;
@@ -70,7 +72,7 @@ export class PipelineAlarmStack extends Construct {
         code: lambda.AssetCode.fromAsset(
           path.join(__dirname, '../../lambda/api/alarm')
         ),
-        runtime: lambda.Runtime.PYTHON_3_9,
+        runtime: lambda.Runtime.PYTHON_3_11,
         handler: 'lambda_function.lambda_handler',
         timeout: Duration.seconds(60),
         memorySize: 1024,
@@ -82,6 +84,7 @@ export class PipelineAlarmStack extends Construct {
           APP_PIPELINE_TABLE_NAME: appPipelineTable.tableName,
           PIPELINE_TABLE_NAME: svcPipelineTable.tableName,
           APP_LOG_INGESTION_TABLE_NAME: appLogIngestionTable.tableName,
+          METADATA_TABLE_NAME: props.microBatchStack.microBatchDDBStack.MetaTable.tableName,
         },
         description: `${Aws.STACK_NAME} - Central Alarm System APIs Resolver`,
       }
@@ -89,6 +92,8 @@ export class PipelineAlarmStack extends Construct {
     appPipelineTable.grantReadWriteData(centralAlarmHandler);
     svcPipelineTable.grantReadWriteData(centralAlarmHandler);
     appLogIngestionTable.grantReadData(centralAlarmHandler);
+    props.microBatchStack.microBatchDDBStack.MetaTable.grantReadWriteData(centralAlarmHandler);
+    props.microBatchStack.microBatchKMSStack.encryptionKey.grantDecrypt(centralAlarmHandler);
 
     const centralAlarmHandlerPolicy = new iam.Policy(
       this,
@@ -113,6 +118,23 @@ export class PipelineAlarmStack extends Construct {
               'cloudwatch:PutMetricAlarm',
               'cloudwatch:DeleteAlarms',
               'cloudwatch:DescribeAlarms',
+            ],
+          }),
+          new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            resources: [props.microBatchStack.microBatchKMSStack.encryptionKey.keyArn],
+            actions: [
+              "kms:GenerateDataKey*",
+              "kms:Decrypt",
+              "kms:Encrypt"
+            ],
+          }),
+          new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            resources: [props.microBatchStack.microBatchDDBStack.MetaTable.tableArn],
+            actions: [
+              "dynamodb:GetItem",
+              "dynamodb:UpdateItem"
             ],
           }),
         ],

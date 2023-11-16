@@ -13,11 +13,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import CreateStep from "components/CreateStep";
 import SpecifySettings from "./steps/SpecifySettings";
-import SpecifyOpenSearchCluster, {
+import {
   AOSInputValidRes,
   checkOpenSearchInput,
   covertParametersByKeyAndConditions,
@@ -26,7 +26,10 @@ import Button from "components/Button";
 
 import Breadcrumb from "components/Breadcrumb";
 import { appSyncRequestMutation } from "assets/js/request";
-import { createServicePipeline } from "graphql/mutations";
+import {
+  createLightEngineServicePipeline,
+  createServicePipeline,
+} from "graphql/mutations";
 import {
   Codec,
   DestinationType,
@@ -53,12 +56,22 @@ import { Alert } from "assets/js/alert";
 import LogProcessing from "../common/LogProcessing";
 import {
   bucketNameIsValid,
+  buildOSIParamsValue,
   splitStringToBucketAndPrefix,
 } from "assets/js/utils";
 import { MONITOR_ALARM_INIT_DATA } from "assets/js/init";
 import AlarmAndTags from "../../../../pipelineAlarm/AlarmAndTags";
+import { covertSvcTaskToLightEngine } from "../common/ConfigLightEngine";
 import { Actions, RootState } from "reducer/reducers";
 import { useTags } from "assets/js/hooks/useTags";
+import SpecifyAnalyticsEngine, {
+  AnalyticEngineTypes,
+} from "../common/SpecifyAnalyticsEngine";
+import {
+  CreateLightEngineActionTypes,
+  validateLightEngine,
+} from "reducer/createLightEngine";
+import { useLightEngine } from "assets/js/hooks/useLightEngine";
 import { Dispatch } from "redux";
 import { useAlarm } from "assets/js/hooks/useAlarm";
 import { ActionType } from "reducer/appReducer";
@@ -66,6 +79,13 @@ import {
   CreateAlarmActionTypes,
   validateAalrmInput,
 } from "reducer/createAlarm";
+import { useGrafana } from "assets/js/hooks/useGrafana";
+import { useSelectProcessor } from "assets/js/hooks/useSelectProcessor";
+import SelectLogProcessor from "pages/comps/processor/SelectLogProcessor";
+import {
+  SelectProcessorActionTypes,
+  validateOCUInput,
+} from "reducer/selectProcessor";
 
 const EXCLUDE_PARAMS = [
   "esDomainId",
@@ -195,7 +215,11 @@ const CreateELB: React.FC = () => {
   const amplifyConfig: AmplifyConfigType = useSelector(
     (state: RootState) => state.app.amplifyConfig
   );
-  const dispatch = useDispatch<Dispatch<Actions>>();
+  const [searchParams] = useSearchParams();
+  const engineType =
+    (searchParams.get("engineType") as AnalyticEngineTypes | null) ??
+    AnalyticEngineTypes.OPENSEARCH;
+
   const [curStep, setCurStep] = useState(0);
   const navigate = useNavigate();
   const [loadingCreate, setLoadingCreate] = useState(false);
@@ -226,6 +250,50 @@ const CreateELB: React.FC = () => {
     useState<DomainStatusCheckResponse>();
   const tags = useTags();
   const monitor = useAlarm();
+  const osiParams = useSelectProcessor();
+  const lightEngine = useLightEngine();
+  const grafana = useGrafana();
+  const dispatch = useDispatch<Dispatch<Actions>>();
+
+  const confirmCreateLightEnginePipeline = useCallback(async () => {
+    const params = covertSvcTaskToLightEngine(elbPipelineTask, lightEngine);
+    // Add Plugin in parameters
+    const pluginList = [];
+    if (elbPipelineTask.params.geoPlugin) {
+      pluginList.push(SupportPlugin.Geo);
+    }
+    if (elbPipelineTask.params.userAgentPlugin) {
+      pluginList.push(SupportPlugin.UserAgent);
+    }
+    if (pluginList.length > 0) {
+      params.parameters.push({
+        parameterKey: "enrichmentPlugins",
+        parameterValue: pluginList.join(","),
+      });
+    }
+    const createPipelineParams = {
+      ...params,
+      type: ServiceType.ELB,
+      tags,
+      logSourceRegion: amplifyConfig.aws_project_region,
+      logSourceAccountId: elbPipelineTask.logSourceAccountId,
+      source: elbPipelineTask.source,
+      monitor: monitor.monitor,
+    };
+    try {
+      setLoadingCreate(true);
+      const createRes = await appSyncRequestMutation(
+        createLightEngineServicePipeline,
+        createPipelineParams
+      );
+      console.info("createRes:", createRes);
+      setLoadingCreate(false);
+      navigate("/log-pipeline/service-log");
+    } catch (error) {
+      setLoadingCreate(false);
+      console.error(error);
+    }
+  }, [lightEngine, elbPipelineTask, tags, monitor]);
 
   const confirmCreatePipeline = async () => {
     console.info("elbPipelineTask:", elbPipelineTask);
@@ -240,6 +308,7 @@ const CreateELB: React.FC = () => {
     createPipelineParams.destinationType = elbPipelineTask.destinationType;
 
     createPipelineParams.monitor = monitor.monitor;
+    createPipelineParams.osiParams = buildOSIParamsValue(osiParams);
 
     const tmpParamList: any = covertParametersByKeyAndConditions(
       elbPipelineTask,
@@ -325,12 +394,56 @@ const CreateELB: React.FC = () => {
     return true;
   };
 
+  const validateStep2 = () => {
+    if (engineType === AnalyticEngineTypes.LIGHT_ENGINE) {
+      // validate light engine and display error message
+      if (!isLightEngineValid) {
+        dispatch({
+          type: CreateLightEngineActionTypes.VALIDATE_LIGHT_ENGINE,
+        });
+        return false;
+      }
+    } else {
+      if (!elbPipelineTask.params.domainName) {
+        setEsDomainEmptyError(true);
+        return false;
+      } else {
+        setEsDomainEmptyError(false);
+      }
+      const validRes = checkOpenSearchInput(elbPipelineTask);
+      setAosInputValidRes(validRes);
+      if (Object.values(validRes).indexOf(true) >= 0) {
+        return false;
+      }
+      // Check domain connection status
+      if (domainCheckStatus?.status !== DomainStatusCheckType.PASSED) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  useEffect(() => {
+    dispatch({
+      type: CreateLightEngineActionTypes.CENTRALIZED_TABLE_NAME_CHANGED,
+      value: `elb_${elbPipelineTask.source}`,
+    });
+  }, [elbPipelineTask.source]);
+
+  const isLightEngineValid = useMemo(
+    () => validateLightEngine(lightEngine, grafana),
+    [lightEngine]
+  );
   const isNextDisabled = () => {
+    if (curStep === 2 && engineType === AnalyticEngineTypes.LIGHT_ENGINE) {
+      return false;
+    }
     return (
       elbISChanging ||
       domainListIsLoading ||
       (curStep === 2 &&
-        domainCheckStatus?.status !== DomainStatusCheckType.PASSED)
+        domainCheckStatus?.status !== DomainStatusCheckType.PASSED) ||
+      osiParams.serviceAvailableCheckedLoading
     );
   };
 
@@ -352,7 +465,13 @@ const CreateELB: React.FC = () => {
                       name: t("servicelog:create.step.logProcessing"),
                     },
                     {
-                      name: t("servicelog:create.step.specifyDomain"),
+                      name:
+                        engineType === AnalyticEngineTypes.OPENSEARCH
+                          ? t("servicelog:create.step.specifyDomain")
+                          : t("servicelog:create.step.specifyLightEngine"),
+                    },
+                    {
+                      name: t("processor.logProcessorSettings"),
                     },
                     {
                       name: t("servicelog:create.step.createTags"),
@@ -514,7 +633,8 @@ const CreateELB: React.FC = () => {
                   />
                 )}
                 {curStep === 2 && (
-                  <SpecifyOpenSearchCluster
+                  <SpecifyAnalyticsEngine
+                    engineType={engineType}
                     taskType={ServiceLogType.Amazon_ELB}
                     pipelineTask={elbPipelineTask}
                     esDomainEmptyError={esDomainEmptyError}
@@ -753,7 +873,25 @@ const CreateELB: React.FC = () => {
                 )}
                 {curStep === 3 && (
                   <div>
-                    <AlarmAndTags pipelineTask={elbPipelineTask} />
+                    <SelectLogProcessor
+                      supportOSI={
+                        !elbPipelineTask.logSourceAccountId &&
+                        engineType === AnalyticEngineTypes.OPENSEARCH
+                      }
+                      enablePlugins={
+                        elbPipelineTask.params.geoPlugin ||
+                        elbPipelineTask.params.userAgentPlugin
+                      }
+                    />
+                  </div>
+                )}
+                {curStep === 4 && (
+                  <div>
+                    <AlarmAndTags
+                      engineType={engineType}
+                      pipelineTask={elbPipelineTask}
+                      osiParams={osiParams}
+                    />
                   </div>
                 )}
                 <div className="button-action text-right">
@@ -777,7 +915,7 @@ const CreateELB: React.FC = () => {
                     </Button>
                   )}
 
-                  {curStep < 3 && (
+                  {curStep < 4 && (
                     <Button
                       // loading={autoCreating}
                       disabled={isNextDisabled()}
@@ -789,35 +927,27 @@ const CreateELB: React.FC = () => {
                           }
                         }
                         if (curStep === 2) {
-                          if (!elbPipelineTask.params.domainName) {
-                            setEsDomainEmptyError(true);
-                            return;
-                          } else {
-                            setEsDomainEmptyError(false);
-                          }
-                          const validRes =
-                            checkOpenSearchInput(elbPipelineTask);
-                          setAosInputValidRes(validRes);
-                          if (Object.values(validRes).indexOf(true) >= 0) {
+                          if (!validateStep2()) {
                             return;
                           }
-                          // Check domain connection status
-                          if (
-                            domainCheckStatus?.status !==
-                            DomainStatusCheckType.PASSED
-                          ) {
+                        }
+                        if (curStep === 3) {
+                          dispatch({
+                            type: SelectProcessorActionTypes.VALIDATE_OCU_INPUT,
+                          });
+                          if (!validateOCUInput(osiParams)) {
                             return;
                           }
                         }
                         setCurStep((curStep) => {
-                          return curStep + 1 > 3 ? 3 : curStep + 1;
+                          return curStep + 1 > 4 ? 4 : curStep + 1;
                         });
                       }}
                     >
                       {t("button.next")}
                     </Button>
                   )}
-                  {curStep === 3 && (
+                  {curStep === 4 && (
                     <Button
                       loading={loadingCreate}
                       btnType="primary"
@@ -828,7 +958,9 @@ const CreateELB: React.FC = () => {
                           });
                           return;
                         }
-                        confirmCreatePipeline();
+                        engineType === AnalyticEngineTypes.OPENSEARCH
+                          ? confirmCreatePipeline()
+                          : confirmCreateLightEnginePipeline();
                       }}
                     >
                       {t("button.create")}

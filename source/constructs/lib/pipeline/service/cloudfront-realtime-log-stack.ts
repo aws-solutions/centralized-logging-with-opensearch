@@ -13,14 +13,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
 import { Construct } from "constructs";
 import { SolutionStack } from "../common/solution-stack";
 import { SecurityGroup, Vpc } from "aws-cdk-lib/aws-ec2";
-import {
-  OpenSearchInitStack,
-  OpenSearchInitProps,
-} from "../common/opensearch-init-stack";
 import { KDSStack, KDSStackProps } from "../../kinesis/kds-stack";
 import {
   Aws,
@@ -300,24 +295,41 @@ export class CloudFrontRealtimeLogStack extends SolutionStack {
       backupBucketName.logicalId
     );
 
-    const pipelineProps: KDSStackProps = {
+    const osProps = {
       ...baseProps,
+      domainName: domainName.valueAsString,
+      createDashboard: createDashboard.valueAsString,
+
+      shardNumbers: shardNumbers.valueAsString,
+      replicaNumbers: replicaNumbers.valueAsString,
+      warmAge: warmAge.valueAsString,
+      coldAge: coldAge.valueAsString,
+      retainAge: retainAge.valueAsString,
+      rolloverSize: rolloverSize.valueAsString,
+      indexSuffix: indexSuffix.valueAsString,
+      codec: codec.valueAsString,
+      refreshInterval: refreshInterval.valueAsString,
+      logType: "CloudFront-RT",
+      solutionId: solutionId,
+    };
+
+    const pipelineProps: KDSStackProps = {
+      ...osProps,
       backupBucketName: backupBucketName.valueAsString,
       shardCount: shardCount.valueAsNumber,
       maxCapacity: maxCapacity.valueAsNumber,
       minCapacity: minCapacity.valueAsNumber,
       enableAutoScaling: props.enableAutoScaling!,
+      subCategory: 'RT',
       env: {
         FIELD_NAMES: Fn.join(",", fieldNames.valueAsList),
-        LOG_TYPE: "cloudfront-rt",
       },
-      logType: "CloudFront Realtime",
       stackPrefix: stackPrefix,
     };
 
     const kdsBufferStack = new KDSStack(this, "KDSBuffer", pipelineProps);
 
-    const logProcessorRoleArn = kdsBufferStack.logProcessorRoleArn;
+
     const logProcessorLogGroupName = kdsBufferStack.logProcessorLogGroupName;
 
     const bufferAccessPolicy = new iam.Policy(this, "BufferAccessPolicy", {
@@ -353,26 +365,7 @@ export class CloudFrontRealtimeLogStack extends SolutionStack {
     this.cfnOutput("BufferAccessRoleArn", bufferAccessRole.roleArn);
     this.cfnOutput("BufferAccessRoleName", bufferAccessRole.roleName);
 
-    const osProps: OpenSearchInitProps = {
-      ...baseProps,
-      domainName: domainName.valueAsString,
-      createDashboard: createDashboard.valueAsString,
-      logProcessorRoleArn:
-        logProcessorRoleArn == ""
-          ? bufferAccessRole.roleArn
-          : logProcessorRoleArn,
-      shardNumbers: shardNumbers.valueAsString,
-      replicaNumbers: replicaNumbers.valueAsString,
-      warmAge: warmAge.valueAsString,
-      coldAge: coldAge.valueAsString,
-      retainAge: retainAge.valueAsString,
-      rolloverSize: rolloverSize.valueAsString,
-      indexSuffix: indexSuffix.valueAsString,
-      codec: codec.valueAsString,
-      refreshInterval: refreshInterval.valueAsString,
-      logType: "cloudfront-rt",
-      solutionId: solutionId,
-    };
+
 
     constructFactory(CloudFrontRealTimeLog)(this, "CloudFrontRealTimeLog", {
       samplingRate: samplingRate.valueAsNumber,
@@ -380,15 +373,6 @@ export class CloudFrontRealtimeLogStack extends SolutionStack {
       fields: fieldNames.valueAsList,
       distribution: cloudFrontDistributionId.valueAsString,
     });
-
-    const osInitStack = new OpenSearchInitStack(
-      this,
-      "OpenSearchInit",
-      osProps
-    );
-
-    this.cfnOutput("OSInitHelperFn", osInitStack.helperFn.functionArn);
-    this.cfnOutput("HelperLogGroupName", osInitStack.helperFn.logGroup.logGroupName);
 
     this.addToParamGroups(
       "Source Information",
@@ -527,7 +511,7 @@ class CloudFrontRealTimeLogConfigUpdater extends Construct {
               "../../../lambda/pipeline/common/custom-resource"
             )
           ),
-          runtime: lambda.Runtime.PYTHON_3_9,
+          runtime: lambda.Runtime.PYTHON_3_11,
           timeout: Duration.seconds(60),
           logRetention: logs.RetentionDays.ONE_MONTH,
           handler: "cloudfront_realtime_log_config_updater.on_event",

@@ -178,3 +178,5 @@ export const appSyncRequestMutation = (mutation: any, params?: any): any => {
     }
   });
 };
+
+export type ApiResponse<K extends string, V> = Record<"data", Record<K, V>>;

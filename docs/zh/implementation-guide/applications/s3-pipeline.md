@@ -29,30 +29,6 @@
 
 3. 在 **索引名称** 中小写指定。
 
-4. 在 **缓冲区** 部分中，选择 **S3** 或 **Kinesis Data Streams**。如果您不希望有缓冲层，请选择 **无**。请参阅 [日志缓冲](./index.md#log-buffer) 获取关于选择适当缓冲层的更多信息。
-
-    * S3缓冲参数
-
-    | 参数                        | 默认值                                          | 描述                                                          |
-    | ---------------------------- | ------------------------------------------------ | ------------------------------------------------------------ |
-    | S3 Bucket                    | *解决方案将创建一个日志桶。*                           | 您也可以选择一个桶来存储日志数据。                                       |
-    | S3 Bucket前缀                | `AppLogs/<index-prefix>/year=%Y/month=%m/day=%d` | 日志代理在将日志文件交付给S3桶时添加前缀。                                 |
-    | 缓冲大小                      | 50 MiB                                           | 日志代理在将日志交付给S3之前在日志代理端缓存的日志数据的最大大小。有关更多信息，请查看 [数据交付频率](https://docs.aws.amazon.com/firehose/latest/dev/basic-deliver.html#frequency)。 |
-    | 缓冲间隔                      | 60秒                                              | 日志代理将日志交付给S3的最大间隔。有关更多信息，请查看 [数据交付频率](https://docs.aws.amazon.com/firehose/latest/dev/basic-deliver.html#frequency)。 |
-    | 数据记录的压缩                  | `Gzip`                                           | 日志代理在将它们交付给S3桶之前会压缩记录。                                   |
-
-    * Kinesis Data Streams缓冲参数
-
-    | 参数                     | 默认值                 | 描述                                                          |
-    | ------------------------- | ---------------------- | ------------------------------------------------------------ |
-    | 分片数量                   | `<需要输入>`              | Kinesis Data Streams的分片数量。每个分片每秒最多可容纳1,000个记录，并且总数据写入速率为每秒1MB。 |
-    | 启用自动缩放               | `否`                   | 该解决方案每5分钟监视一次Kinesis Data Streams的利用率，并自动缩放分片的数量。解决方案在24小时内最多缩放8次。 |
-    | 最大分片数量                | `<需要输入>`              | 如果启用了自动缩放，则需要。最大的分片数量。                             |
-
-    !!! 重要 "重要"
-        如果在Kinesis Data Streams（KDS）中发生阈值错误，您可能会在OpenSearch中观察到重复的日志。这是因为Fluent Bit日志代理以[块](https://docs.fluentbit.io/manual/administration/buffering-and-storage#chunks-memory-filesystem-and-backpressure) (包含多个记录)上传日志，并在上传失败时重试该块。每个KDS分片每秒最多可支持写入1,000条记录，最大总数据写入速率为每秒1MB。请估算您的日志量并选择合适的分片数量。
-
-
 5. 选择 **下一步**。
 
 6. 在 **指定OpenSearch域** 部分，为 **Amazon OpenSearch域** 选择一个已导入的域。

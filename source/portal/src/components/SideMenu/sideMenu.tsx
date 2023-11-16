@@ -97,6 +97,10 @@ const SIDE_MENU_LIST = [
         name: "menu.crossAccount",
         link: "/resources/cross-account",
       },
+      {
+        name: "menu.grafana",
+        link: "/grafana/list",
+      },
     ],
     open: true,
   },
@@ -104,7 +108,9 @@ const SIDE_MENU_LIST = [
 
 export const SideMenu: React.FC<SideMenuProps> = (props: SideMenuProps) => {
   const { className } = props;
-  const openMenu = useSelector((state: RootState) => state.app.openSideMenu);
+  const openMenu = useSelector(
+    (state: RootState) => state.app.openSideMenu
+  );
   const { t } = useTranslation();
   const [sideMenuList, setSideMenuList] = useState(SIDE_MENU_LIST);
   const dispatch = useDispatch();

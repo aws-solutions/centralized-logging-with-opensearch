@@ -23,6 +23,7 @@ import {
   Aspects,
   IAspect,
   CfnResource,
+  CustomResource,
   aws_iam as iam,
   aws_lambda as lambda,
   custom_resources as cr,
@@ -142,7 +143,7 @@ export class CustomResourceStack extends Construct {
     // This Lambda is to perform necessary actions during stack creation or update
     // Including export the aws-exports.json to web portal bucket etc.
     this.initConfigFn = new lambda.Function(this, "InitConfig", {
-      runtime: lambda.Runtime.PYTHON_3_9,
+      runtime: lambda.Runtime.PYTHON_3_11,
       code: lambda.Code.fromAsset(
         path.join(__dirname, "../../lambda/custom-resource")
       ),
@@ -182,16 +183,13 @@ export class CustomResourceStack extends Construct {
       })
     );
 
-    const crLambda = new cr.AwsCustomResource(this, "CRLambda", {
-      policy: cr.AwsCustomResourcePolicy.fromStatements([
-        new iam.PolicyStatement({
-          actions: ["lambda:InvokeFunction"],
-          effect: iam.Effect.ALLOW,
-          resources: [this.initConfigFn.functionArn],
-        }),
-      ]),
-      timeout: Duration.minutes(15),
-      onUpdate: {
+    const CRLambdaProvider = new cr.Provider(this, "CRLambdaProvider", {
+      onEventHandler: this.initConfigFn,
+    });
+
+    const crLambda = new CustomResource(this, "CRLambda", {
+      serviceToken: CRLambdaProvider.serviceToken,
+      properties: {
         service: "Lambda",
         action: "invoke",
         parameters: {
@@ -201,6 +199,7 @@ export class CustomResourceStack extends Construct {
         physicalResourceId: cr.PhysicalResourceId.of(Date.now().toString()),
       },
     });
+
     crLambda.node.addDependency(this.initConfigFn);
   }
 }

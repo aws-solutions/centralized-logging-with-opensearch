@@ -53,6 +53,7 @@ interface SpecifySettingsProps {
   samplingRateError: boolean;
   shardNumError: boolean;
   maxShardNumError: boolean;
+  standardOnly?: boolean;
   setNextStepDisableStatus: (status: boolean) => void;
   setISChanging: (changing: boolean) => void;
   changeCrossAccount: (id: string) => void;
@@ -101,6 +102,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     samplingRateError,
     shardNumError,
     maxShardNumError,
+    standardOnly,
   } = props;
 
   const amplifyConfig: AmplifyConfigType = useSelector(
@@ -251,6 +253,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                     />
                   </FormItem>
                   <SourceType
+                    standardOnly={standardOnly}
                     cloudFrontTask={cloudFrontTask}
                     showConfirmError={showConfirmError}
                     logTypeEmptyError={logTypeEmptyError}

@@ -35,7 +35,6 @@ def test_error_event():
 @pytest.fixture
 def test_invalid_id():
     with open("./test/event/svc_pipe_test_event.json", "r") as f:
-
         event = json.load(f)
         event["id"] = "1234"
         return event
@@ -136,7 +135,7 @@ def test_lambda_function_create_event(
     item = response["Item"]
 
     assert "processorLogGroupName" in item
-    assert "helperLogGroupName" in item
+
     assert "logEventQueueName" in item
     assert "stackId" in item
 

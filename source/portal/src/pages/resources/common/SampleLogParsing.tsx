@@ -35,14 +35,16 @@ import { ExLogConf, PageType } from "./LogConfigComp";
 import {
   getLogFormatByUserLogConfig,
   IsJsonString,
-  JsonToDotNotate,
   replaceSpringbootTimeFormat,
   ternary,
+  transformSchemaType,
 } from "assets/js/utils";
 import { appSyncRequestQuery } from "assets/js/request";
 import { checkTimeFormat } from "graphql/queries";
 import { OptionType } from "components/AutoComplete/autoComplete";
 import { defaultTo, identity } from "lodash";
+import { JsonSchemaInferrer } from "js-json-schema-inferrer";
+import JSONInputRenderer from "./JSONInputRenderer";
 
 export interface RegexListType {
   key: string;
@@ -67,6 +69,7 @@ interface SampleLogParsingProps {
   changeRegExpList?: (list: RegexListType[]) => void;
   changeSelectKeyList?: (list: OptionType[]) => void;
   changeTimeOffset?: (offset: string) => void;
+  changeJSONSchema?: (schema: any) => void;
 }
 
 export interface SampleLogParsingRefType {
@@ -90,6 +93,7 @@ function SampleLogParsing(
     changeRegExpList,
     changeSelectKeyList,
     changeTimeOffset,
+    changeJSONSchema,
   } = props;
   const { t } = useTranslation();
   const [logResMap, setLogResMap] = useState<any>({});
@@ -150,19 +154,28 @@ function SampleLogParsing(
       AlertInfo(t("resource:config.parsing.notJSONFormat"));
       return;
     }
-    const tmpJsonObj = JsonToDotNotate(
-      JSON.parse(logConfig.userSampleLog || "")
-    );
-    const initArr: any = [];
-    Object.keys(tmpJsonObj).forEach((key) => {
-      initArr.push({
-        key: key,
-        type: getDefaultType(key, tmpJsonObj[key]),
-        format: "",
-        value: tmpJsonObj[key],
-      });
-    });
-    changeRegExpList && changeRegExpList(initArr);
+    try {
+      const defaultConfig = {
+        type: true,
+        string: {
+          detectFormat: false,
+        },
+        object: {},
+        array: {
+          arrayInferMode: "first", // "tuple",
+        },
+        common: {},
+      };
+      const schema = JsonSchemaInferrer(
+        JSON.parse(logConfig.userSampleLog),
+        defaultConfig
+      );
+      if (schema) {
+        changeJSONSchema?.(transformSchemaType(schema));
+      }
+    } catch (error) {
+      console.error("Invalid JSON");
+    }
   };
 
   const parseLog = () => {
@@ -182,7 +195,7 @@ function SampleLogParsing(
     }
     const found: any = logConfig?.userSampleLog?.match(regex);
     if (logType === LogType.Nginx || logType === LogType.Apache) {
-      if (found && found.groups) {
+      if (found?.groups) {
         setShowValidInfo(true);
         changeSampleLogInvalid(false);
       } else {
@@ -190,13 +203,12 @@ function SampleLogParsing(
         changeSampleLogInvalid(true);
       }
       setLogResMap(found?.groups || {});
-      if (found && found.groups) {
-        changeRegExpList &&
-          changeRegExpList(
-            Object.entries(found.groups).map((key) => {
-              return { key: key[0] } as any;
-            })
-          );
+      if (found?.groups) {
+        changeRegExpList?.(
+          Object.entries(found.groups).map((key) => {
+            return { key: key[0] } as any;
+          })
+        );
       }
     }
     if (
@@ -205,7 +217,7 @@ function SampleLogParsing(
       logType === LogType.MultiLineText
     ) {
       const initArr: RegexListType[] = [];
-      if (found && found.groups) {
+      if (found?.groups) {
         setShowValidInfo(true);
         changeSampleLogInvalid(false);
         const foundObjectList = Object.entries(found.groups);
@@ -236,7 +248,7 @@ function SampleLogParsing(
         setShowValidInfo(false);
         changeSampleLogInvalid(true);
       }
-      changeRegExpList && changeRegExpList(initArr);
+      changeRegExpList?.(initArr);
     }
   };
 
@@ -250,7 +262,7 @@ function SampleLogParsing(
         JSON.stringify(logConfig.regexKeyList)
       );
       tmpDataLoading[index].loadingCheck = true;
-      changeRegExpList && changeRegExpList(tmpDataLoading);
+      changeRegExpList?.(tmpDataLoading);
       const resData: any = await appSyncRequestQuery(checkTimeFormat, {
         timeStr: timeStr,
         formatStr: formatStr,
@@ -262,7 +274,7 @@ function SampleLogParsing(
       tmpDataRes[index].showSuccess =
         resData?.data?.checkTimeFormat?.isMatch || false;
       tmpDataRes[index].showError = !resData?.data?.checkTimeFormat?.isMatch;
-      changeRegExpList && changeRegExpList(tmpDataRes);
+      changeRegExpList?.(tmpDataRes);
     }
   };
 
@@ -290,7 +302,7 @@ function SampleLogParsing(
   useEffect(() => {
     if (pageType === PageType.New) {
       setShowValidInfo(false);
-      changeRegExpList && changeRegExpList([]);
+      changeRegExpList?.([]);
       setLogResMap({});
       setTimeFormatForSpringBoot("");
     }
@@ -353,7 +365,7 @@ function SampleLogParsing(
         });
       }
     });
-    changeSelectKeyList && changeSelectKeyList(tmpTimeKeyList);
+    changeSelectKeyList?.(tmpTimeKeyList);
     setTimeKeyFormatInvalid(false);
     setTimeKeyFormatValid(false);
   }, [logConfig.regexKeyList, timeFormatForSpringBoot]);
@@ -380,7 +392,7 @@ function SampleLogParsing(
           }
         }
       }
-      changeRegExpList && changeRegExpList(list);
+      changeRegExpList?.(list);
       return ret;
     },
   }));
@@ -422,7 +434,11 @@ function SampleLogParsing(
             t("resource:config.parsing.sampleRequired"),
             undefined
           ),
-          ternary(sampleLogInvalid, t("resource:config.parsing.invalid"), "")
+          ternary(
+            sampleLogInvalid,
+            t("resource:config.parsing.invalid"),
+            undefined
+          )
         )}
       >
         <div className="flex m-w-75p">
@@ -462,21 +478,23 @@ function SampleLogParsing(
         optionDesc={t("resource:config.parsing.parseLogDesc")}
       >
         <div>
-          <div className="flex show-tag-list">
-            <div className="tag-key log">
-              <b>{t("resource:config.parsing.key")}</b>
-            </div>
-            {(logType === LogType.JSON ||
-              logType === LogType.SingleLineText ||
-              logType === LogType.MultiLineText) && (
+          {logType !== LogType.JSON && (
+            <div className="flex show-tag-list">
               <div className="tag-key log">
-                <b>{t("resource:config.parsing.type")}</b>
+                <b>{t("resource:config.parsing.key")}</b>
               </div>
-            )}
-            <div className="tag-value flex-1">
-              <b>{t("resource:config.parsing.value")}</b>
+              {(logType === LogType.SingleLineText ||
+                logType === LogType.MultiLineText) && (
+                <div className="tag-key log">
+                  <b>{t("resource:config.parsing.type")}</b>
+                </div>
+              )}
+              <div className="tag-value flex-1">
+                <b>{t("resource:config.parsing.value")}</b>
+              </div>
             </div>
-          </div>
+          )}
+
           {(logType === LogType.Nginx || logType === LogType.Apache) &&
             Object.keys(logResMap).map((item: any, index: number) => {
               return (
@@ -492,8 +510,7 @@ function SampleLogParsing(
               );
             })}
 
-          {(logType === LogType.JSON ||
-            logType === LogType.Syslog ||
+          {(logType === LogType.Syslog ||
             logType === LogType.SingleLineText ||
             logType === LogType.MultiLineText) &&
             logConfig?.regexKeyList?.map((item: any, index: number) => {
@@ -512,7 +529,7 @@ function SampleLogParsing(
                             JSON.stringify(logConfig.regexKeyList)
                           );
                           tmpArr[index].key = event.target.value;
-                          changeRegExpList && changeRegExpList(tmpArr);
+                          changeRegExpList?.(tmpArr);
                         }}
                       />
                     </div>
@@ -534,7 +551,7 @@ function SampleLogParsing(
                             // set format to empty when change type
                             tmpArr[index].format = "";
                             tmpArr[index].type = event.target.value;
-                            changeRegExpList && changeRegExpList(tmpArr);
+                            changeRegExpList?.(tmpArr);
                           }}
                           placeholder="type"
                         />
@@ -561,8 +578,7 @@ function SampleLogParsing(
                             errorText={
                               item.showError
                                 ? t("resource:config.parsing.formatError")
-                                : logConfig.regexKeyList &&
-                                  logConfig.regexKeyList[index].error
+                                : logConfig.regexKeyList?.[index]?.error
                             }
                           >
                             <div className="flex">
@@ -578,8 +594,7 @@ function SampleLogParsing(
                                     tmpArr[index].showError = false;
                                     tmpArr[index].format =
                                       event.target.value || undefined;
-                                    changeRegExpList &&
-                                      changeRegExpList(tmpArr);
+                                    changeRegExpList?.(tmpArr);
                                   }}
                                 />
                               </div>
@@ -611,6 +626,17 @@ function SampleLogParsing(
             })}
         </div>
       </FormItem>
+
+      {/* JSON Schema Render */}
+      {logConfig.jsonSchema && logConfig.logType === LogType.JSON && (
+        <JSONInputRenderer
+          schema={logConfig.jsonSchema}
+          data={logConfig.userSampleLog}
+          changeSchema={(schema) => {
+            changeJSONSchema?.(schema);
+          }}
+        />
+      )}
 
       {logConfig.regexKeyList &&
         logConfig.regexKeyList.length > 0 &&
@@ -647,8 +673,8 @@ function SampleLogParsing(
                         element.format =
                           element.type !== "date" ? undefined : element.format;
                       });
-                      changeRegExpList && changeRegExpList(tmpArr);
-                      changeTimeKey && changeTimeKey(event.target.value);
+                      changeRegExpList?.(tmpArr);
+                      changeTimeKey?.(event.target.value);
                     }}
                   />
                 </div>
@@ -677,7 +703,7 @@ function SampleLogParsing(
                                 event.target.value || undefined;
                               setTimeKeyFormatInvalid(false);
                               setTimeKeyFormatValid(false);
-                              changeRegExpList && changeRegExpList(tmpArr);
+                              changeRegExpList?.(tmpArr);
                             }
                           }}
                         />
@@ -722,7 +748,7 @@ function SampleLogParsing(
             optionList={generateTimeZoneList()}
             value={logConfig.timeOffset || ""}
             onChange={(event) => {
-              changeTimeOffset && changeTimeOffset(event.target.value);
+              changeTimeOffset?.(event.target.value);
             }}
           ></Select>
         </FormItem>

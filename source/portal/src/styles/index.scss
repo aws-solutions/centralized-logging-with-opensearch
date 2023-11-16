@@ -244,12 +244,22 @@
   display: flex;
 }
 
+.inline-flex {
+  display: inline-flex;
+}
+
 .align-center {
   align-items: center;
 }
 
 .border-left-c {
   border-left: 1px solid #eaeded;
+}
+
+.no-padding-left {
+  .gsui-value-label {
+    padding-left: 0;
+  }
 }
 
 .pd-10 {
@@ -1046,4 +1056,43 @@
     cursor: pointer;
     color: #0073bb;
   }
+}
+
+.log-config-display-text {
+  color: #879596;
+  background-color: #eaeded;
+  border: 1px solid #eaeded;
+  border-radius: 4px;
+  padding: 5px 10px;
+  line-height: 1.8em;
+  margin-bottom: 5px;
+}
+
+.json-format-header {
+  color: #666;
+  font-weight: bold;
+  border-top: 1px solid #eaeded;
+  border-bottom: 1px solid #eaeded;
+  > div {
+    padding: 5px 0;
+  }
+  .json-name {
+    padding-left: 55px;
+    // flex: 1;
+    width: calc(100% - 490px);
+  }
+  .json-type {
+    width: 180px;
+  }
+  .json-time-format {
+    width: 180px;
+  }
+  .json-time-key {
+    width: 120px;
+  }
+}
+
+.json-border-bottom {
+  border-bottom: 1px solid #eaeded;
+  padding-top: 8px;
 }

@@ -4,6 +4,10 @@
 
 日志通读取数据源、解析、清理或丰富、和摄取日志到 Amazon OpenSearch Service 域进行分析。此外，该解决方案提供模板化的仪表板便于日志可视化。
 
+Amazon OpenSearch Service 服务适用于实时日志分析和频繁查询，并具有全文搜索功能。
+
+从2.1.0版本开始，该解决方案开始支持将日志摄取到 Light Engine，适用于非实时日志分析和非频繁的查询，并具有类似SQL的搜索功能。Amazon CloudFront日志、ALB 日志和AWS WAF日志目前支持 Light Engine。
+
 !!! Important "重要"
     - AWS 托管服务必须与日志通位于同一区域。
     - 默认情况下，该解决方案将每天轮换索引。您可以在**额外设置**中进行调整。

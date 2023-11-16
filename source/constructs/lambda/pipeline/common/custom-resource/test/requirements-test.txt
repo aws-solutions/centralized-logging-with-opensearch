@@ -2,3 +2,6 @@ boto3
 moto
 pytest
 pytest-cov
+pytest-cov
+pytest-mock
+requests-mock

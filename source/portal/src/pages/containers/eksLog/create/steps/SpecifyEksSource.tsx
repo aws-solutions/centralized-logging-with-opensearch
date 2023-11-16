@@ -20,6 +20,7 @@ import {
   ResourceType,
   LogSourceType,
   LogSource,
+  SubAccountLink,
 } from "API";
 import { appSyncRequestQuery } from "assets/js/request";
 import { buildEKSLink } from "assets/js/utils";
@@ -46,7 +47,7 @@ interface SpecifyEksSourceProps {
   eksEmptyError: boolean;
   changeEksClusterSource: (EksClusterName: string) => void;
   changeEksLogAgentPattern: (pattern: EKSDeployKind) => void;
-  changeCurAccount: (id: string) => void;
+  changeCurAccount: (id: string, accountInfo: SubAccountLink | null) => void;
 }
 
 const SpecifyEksSource: React.FC<SpecifyEksSourceProps> = (
@@ -123,8 +124,8 @@ const SpecifyEksSource: React.FC<SpecifyEksSourceProps> = (
           <CrossAccountSelect
             disabled={loadingEksList}
             accountId={eksClusterLogSource.accountId as string}
-            changeAccount={(id) => {
-              changeCurAccount(id);
+            changeAccount={(id, accountInfo) => {
+              changeCurAccount(id, accountInfo);
             }}
             loadingAccount={(loading) => {
               setLoadingAccount(loading);
@@ -149,7 +150,7 @@ const SpecifyEksSource: React.FC<SpecifyEksSourceProps> = (
               hasStatus
               disabled={loadingEksList || loadingAccount}
               className="m-w-75p"
-              placeholder={t("cluster:import.selectDomain.selectDomain")}
+              placeholder={t("ekslog:create.eksSource.chooseEksCluster")}
               loading={loadingEksList}
               optionList={eksOptionList}
               value={curEks}

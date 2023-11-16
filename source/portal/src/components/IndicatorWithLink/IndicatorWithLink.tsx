@@ -21,7 +21,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "reducer/reducers";
 import { AmplifyConfigType } from "types";
 
-enum HeaderPanelStatus {
+export enum HeaderPanelStatus {
   Loading = "loading",
   Success = "success",
   Error = "error",

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
 /*
 Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 
@@ -13,16 +14,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-/* eslint-disable @typescript-eslint/no-empty-function */
 import React, { Suspense } from "react";
 import ReactDOM from "react-dom/client";
 import "./styles/index.scss";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
-import { legacy_createStore as createStore } from "redux";
 import { Provider } from "react-redux";
 import "./i18n";
-import { reducer } from "reducer/reducers";
+import { getStore } from "reducer/store";
 
 if (process.env.NODE_ENV === "production") {
   console.log = () => {};
@@ -30,13 +29,11 @@ if (process.env.NODE_ENV === "production") {
   console.debug = () => {};
 }
 
-const store = createStore(reducer);
-
 const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement
 );
 root.render(
-  <Provider store={store}>
+  <Provider store={getStore()}>
     <Suspense fallback={<div className="page-loading"></div>}>
       <App />
     </Suspense>

@@ -64,7 +64,10 @@ const FormItem: React.FC<FormItemProps> = (props: FormItemProps) => {
       {errorText && (
         <div className="form-text error-text">
           <i className="icon">
-            <ReportProblemOutlinedIcon fontSize="small" />
+            <ReportProblemOutlinedIcon
+              data-testid="error-icon"
+              fontSize="small"
+            />
           </i>
           {errorText}
         </div>
@@ -72,7 +75,11 @@ const FormItem: React.FC<FormItemProps> = (props: FormItemProps) => {
       {warningText && (
         <div className="form-text warning-text">
           <i className="icon">
-            <ErrorOutlineIcon fontSize="small" className="reverse" />
+            <ErrorOutlineIcon
+              data-testid="warning-icon"
+              fontSize="small"
+              className="reverse"
+            />
           </i>
           {warningText}
         </div>
@@ -80,7 +87,11 @@ const FormItem: React.FC<FormItemProps> = (props: FormItemProps) => {
       {infoText && (
         <div className="form-text info-text">
           <i className="icon">
-            <ErrorOutlineIcon fontSize="small" className="reverse" />
+            <ErrorOutlineIcon
+              data-testid="info-icon"
+              fontSize="small"
+              className="reverse"
+            />
           </i>
           {infoText}
         </div>
@@ -88,7 +99,10 @@ const FormItem: React.FC<FormItemProps> = (props: FormItemProps) => {
       {successText && (
         <div className="form-text success-text">
           <i className="icon">
-            <CheckCircleOutlineIcon fontSize="small" />
+            <CheckCircleOutlineIcon
+              data-testid="success-icon"
+              fontSize="small"
+            />
           </i>
           {successText}
         </div>

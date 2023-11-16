@@ -2,34 +2,41 @@
 # SPDX-License-Identifier: Apache-2.0
 import os
 import json
-from typing import List
 import pytest
 import boto3
-from moto import mock_ssm, mock_sts, mock_iam
+from moto import mock_ssm, mock_sts, mock_iam, mock_sns
 
-from commonlib.dao import AppLogIngestionDao
+
 from commonlib.model import (
     LogSource,
     Ec2Source,
     LogSourceTypeEnum,
-    AppLogIngestion,
-    Output,
     Instance,
 )
 
-@pytest.fixture
-def generate_and_upload_flb_config_event():
-    with open("./test/event/generate_and_upload_flb_config_event.json", "r") as f:
-        return json.load(f)
-    
-@pytest.fixture
-def delete_ingestion_and_refresh_flb_config_event():
-    with open("./test/event/delete_ingestion_and_refresh_flb_config_event.json", "r") as f:
-        return json.load(f)
-    
 
-def get_app_log_ingestion_table_name():
-    return os.environ.get("APP_LOG_INGESTION_TABLE_NAME")
+@pytest.fixture
+def s3_object_upload_with_cross_acct_event():
+    with open("./test/event/s3_object_upload_with_cross_acct_event.json", "r") as f:
+        return json.load(f)
+
+
+@pytest.fixture
+def s3_object_upload_with_current_acct_event():
+    with open("./test/event/s3_object_upload_with_current_acct_event.json", "r") as f:
+        return json.load(f)
+
+
+@pytest.fixture
+def subscription_confirmation_event():
+    with open("./test/event/subscription_confirmation_event.json", "r") as f:
+        return json.load(f)
+
+
+@pytest.fixture
+def unsubscribe_confirmation():
+    with open("./test/event/unsubscribe_confirmation.json", "r") as f:
+        return json.load(f)
 
 
 def get_ec2_source():
@@ -45,37 +52,6 @@ def get_ec2_source():
         subAccountPublicSubnetIds="sub-001,sub-002",
     )
     return mock_ec2_log_source
-
-
-def get_app_log_ingestion():
-    ingestion_args = dict()
-    ingestion_args["appPipelineId"] = "appPipelineId1"
-    ingestion_args["accountId"] = get_ec2_source().accountId
-    ingestion_args["region"] = get_ec2_source().region
-    ingestion_args["sourceId"] = get_ec2_source().sourceId
-    ingestion_args["stackId"] = "111"
-
-    app_log_ingestion = AppLogIngestion(**ingestion_args)
-    output = Output(
-        **{
-            "name": "syslog",
-            "roleArn": "arn:aws:iam::111111111111:role/CL-AppPipe-s3-BufferAccessRole-name",
-            "roleName": "CL-AppPipe-s3-BufferAccessRole-name",
-            "params": [
-                {"paramKey": "logBucketPrefix", "paramValue": "logBucketPrefix_value"},
-                {"paramKey": "max_file_size", "paramValue": "logBucketPrefix_value"},
-                {"paramKey": "bucket_name", "paramValue": "logBucketPrefix_value"},
-                {"paramKey": "upload_timeout", "paramValue": "logBucketPrefix_value"},
-                {
-                    "paramKey": "compression_type",
-                    "paramValue": "compression_type_value",
-                },
-                {"paramKey": "storage_class", "paramValue": "storage_class_value"},
-            ],
-        }
-    )
-    app_log_ingestion.output = output
-    return app_log_ingestion
 
 
 @pytest.fixture
@@ -119,112 +95,78 @@ def iam_client():
         yield
 
 
+def test_process_s3_event(
+    mocker,
+    ssm_client,
+    iam_client,
+    s3_object_upload_with_cross_acct_event,
+    s3_object_upload_with_current_acct_event,
+    subscription_confirmation_event,
+    unsubscribe_confirmation,
+):
+    event_handler(
+        mocker, s3_object_upload_with_cross_acct_event, ssm_client, iam_client
+    )
+    event_handler(
+        mocker, s3_object_upload_with_current_acct_event, ssm_client, iam_client
+    )
+    event_handler(mocker, subscription_confirmation_event, ssm_client, iam_client)
+    event_handler(mocker, unsubscribe_confirmation, ssm_client, iam_client)
+
+
 @mock_sts
-def test_generate_and_upload_flb_config(mocker, generate_and_upload_flb_config_event, ssm_client, iam_client):
+@mock_sns
+def event_handler(mocker, sqs_event, ssm_client, iam_client):
     mocker.patch("commonlib.LinkAccountHelper")
-    mocker.patch("commonlib.dao.InstanceDao")
+    mocker.patch("commonlib.dao.InstanceIngestionDetailDao")
     mocker.patch("commonlib.dao.DynamoDBUtil", return_value=None)
 
     import ec2_ingestion_distribution_event_lambda_function
 
-    from svc.ec2 import EC2SourceHandler
+    from commonlib.model import InstanceIngestionDetail, StatusEnum
 
-    # start with empty list
-    ingestion_args = dict()
-    ingestion_args["appPipelineId"] = "daa44adb-d48b-4bb3-990b-e91d45bb0ff5"
-    ingestion_args["sourceId"] = "e6521c5c-cf73-4f6b-86af-4bac56f5d5d1"
-    ingestion_object = AppLogIngestion(**ingestion_args)
-    ec2_log_source = LogSource(
-        sourceId="e6521c5c-cf73-4f6b-86af-4bac56f5d5d1",
-        type=LogSourceTypeEnum.EC2,
-        ec2=Ec2Source(
-            groupName="ec2-groupname",
-            groupType="EC2",
-            groupPlatform="Linux",
-        ),
-        accountId="accountI1",
+    mocked_instance_ingestion_details = []
+
+    instance_ingestion_detail = InstanceIngestionDetail(
+        instanceId="instance-1",
+        sourceId="test_source_id",
+        accountId="123456789012",
         region="us-east-1",
-        archiveFormat="json",
-        subAccountLinkId="4512fd67-5bbf-4170-8aea-03107a500c72",
-        subAccountVpcId="vpc-1001",
-        subAccountPublicSubnetIds="sub-001,sub-002",
+        ingestionId="app_log_ingestion.id",
+        status=StatusEnum.DISTRIBUTING,
     )
-    mock_ingestion_value = list(ingestion_object)
+    mocked_instance_ingestion_details.append(instance_ingestion_detail)
     mocker.patch(
-        "ec2_ingestion_distribution_event_lambda_function.get_app_log_ingestion_from_ingestion_table", mock_ingestion_value=mock_ingestion_value
+        "ec2_ingestion_distribution_event_lambda_function.instance_ingestion_detail_dao.list_instance_ingestion_details",
+        mock_ingestion_value=mocked_instance_ingestion_details,
     )
-    mock_instance_table_value = None
     mocker.patch(
-        "ec2_ingestion_distribution_event_lambda_function.instance_dao.get_instance_by_instance_id", mock_ingestion_value=mock_instance_table_value
+        "ec2_ingestion_distribution_event_lambda_function.instance_ingestion_detail_dao.batch_put_items"
     )
-    mock_source_value = ec2_log_source
-    mocker.patch(
-        "ec2_ingestion_distribution_event_lambda_function.log_source_dao.get_log_source", return_value=mock_source_value
-    )
+
     link_account = dict()
     link_account["agentConfDoc"] = "test_doc"
-    link_account["subAccountRoleArn"] = "arn:aws:iam::123456789012:role/CL-AppPipe-s3-BufferAccessRole-name"
+    link_account["accountId"] = instance_ingestion_detail.accountId
+    link_account["region"] = instance_ingestion_detail.region
+    link_account[
+        "subAccountRoleArn"
+    ] = "arn:aws:iam::123456789012:role/CL-AppPipe-s3-BufferAccessRole-name"
     mocker.patch(
-        "ec2_ingestion_distribution_event_lambda_function.account_helper.get_link_account", return_value=link_account
+        "ec2_ingestion_distribution_event_lambda_function.account_helper.get_link_account",
+        return_value=link_account,
     )
 
     # test upload_ingestion
     ec2_ingestion_distribution_event_lambda_function.lambda_handler(
-        generate_and_upload_flb_config_event,
+        sqs_event,
         None,
     )
-
-@mock_sts
-def test_delete_ingestion_and_refresh_flb_config(mocker, delete_ingestion_and_refresh_flb_config_event, ssm_client, iam_client):
-    mocker.patch("commonlib.LinkAccountHelper")
-    mocker.patch("commonlib.dao.InstanceDao")
-    mocker.patch("commonlib.dao.DynamoDBUtil", return_value=None)
-
-    import ec2_ingestion_distribution_event_lambda_function
-
-    from svc.ec2 import EC2SourceHandler
-
-    # start with empty list
-    ingestion_args = dict()
-    ingestion_args["appPipelineId"] = "daa44adb-d48b-4bb3-990b-e91d45bb0ff5"
-    ingestion_args["sourceId"] = "e6521c5c-cf73-4f6b-86af-4bac56f5d5d1"
-    ingestion_object = AppLogIngestion(**ingestion_args)
-    ec2_log_source = LogSource(
-        sourceId="e6521c5c-cf73-4f6b-86af-4bac56f5d5d1",
-        type=LogSourceTypeEnum.EC2,
-        ec2=Ec2Source(
-            groupName="ec2-groupname",
-            groupType="EC2",
-            groupPlatform="Linux",
-        ),
-        accountId="accountI1",
-        region="us-east-1",
-        archiveFormat="json",
-        subAccountLinkId="4512fd67-5bbf-4170-8aea-03107a500c72",
-        subAccountVpcId="vpc-1001",
-        subAccountPublicSubnetIds="sub-001,sub-002",
+    ec2_ingestion_distribution_event_lambda_function.get_link_account(
+        mocked_instance_ingestion_details
     )
-    mock_ingestion_value = list(ingestion_object)
-    mocker.patch(
-        "ec2_ingestion_distribution_event_lambda_function.get_app_log_ingestion_from_ingestion_table", mock_ingestion_value=mock_ingestion_value
+    ec2_ingestion_distribution_event_lambda_function.send_ssm_command_to_instances(
+        ssm_client, ["instance-1"], "test_doc", mocked_instance_ingestion_details
     )
-    mock_instance_table_value = None
-    mocker.patch(
-        "ec2_ingestion_distribution_event_lambda_function.instance_dao.get_instance_by_instance_id", mock_ingestion_value=mock_instance_table_value
-    )
-    mock_source_value = ec2_log_source
-    mocker.patch(
-        "ec2_ingestion_distribution_event_lambda_function.log_source_dao.get_log_source", return_value=mock_source_value
-    )
-    link_account = dict()
-    link_account["agentConfDoc"] = "test_doc"
-    link_account["subAccountRoleArn"] = "arn:aws:iam::123456789012:role/CL-AppPipe-s3-BufferAccessRole-name"
-    mocker.patch(
-        "ec2_ingestion_distribution_event_lambda_function.account_helper.get_link_account", return_value=link_account
-    )
-
-    # test upload_ingestion
-    ec2_ingestion_distribution_event_lambda_function.lambda_handler(
-        delete_ingestion_and_refresh_flb_config_event,
-        None,
+    ec2_ingestion_distribution_event_lambda_function.retry_failed_attach_policy_command(
+        ssm_client, "instance-1", "test_doc", mocked_instance_ingestion_details
     )

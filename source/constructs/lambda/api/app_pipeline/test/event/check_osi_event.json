@@ -1,0 +1,16 @@
+{
+  "arguments": {},
+  "environmentVariables": {},
+  "source": null,
+  "result": null,
+  "info": {
+      "fieldName": "checkOSIAvailability",
+      "parentTypeName": "Query",
+      "variables": {}
+  },
+  "error": null,
+  "prev": null,
+  "stash": {},
+  "outErrors": [],
+  "env": {}
+}

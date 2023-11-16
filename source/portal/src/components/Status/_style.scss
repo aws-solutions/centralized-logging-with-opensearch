@@ -26,6 +26,12 @@
     &.ok {
       color: green;
     }
+    &.succeeded {
+      color: green;
+    }
+    &.running {
+      color: #0073bb;
+    }
     &.installing {
       color: #666;
     }
@@ -47,6 +53,9 @@
     &.insufficient_data {
       color: #666;
     }
+    &.aborted {
+      color: #666;
+    }
     &.error {
       color: red;
     }
@@ -59,7 +68,13 @@
     &.alarm {
       color: red;
     }
+    &.failed {
+      color: red;
+    }
     &.yellow {
+      color: #ff9900;
+    }
+    &.timed_out {
       color: #ff9900;
     }
   }

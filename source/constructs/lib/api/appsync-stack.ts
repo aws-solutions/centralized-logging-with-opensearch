@@ -13,15 +13,20 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import { Construct } from "constructs";
+import { Construct, IConstruct } from "constructs";
 import {
     Duration,
     Aws,
-    CustomResource,
+    Aspects,
+    IAspect,
     custom_resources as cr,
+    CustomResource,
     aws_iam as iam,
     aws_lambda as lambda,
     aws_cognito as cognito,
+    CfnResource,
+    CfnCondition,
+    Fn,
 } from "aws-cdk-lib";
 
 import * as appsync from "@aws-cdk/aws-appsync-alpha";
@@ -78,6 +83,20 @@ export class AppSyncStack extends Construct {
         super(scope, id);
 
         let authDefaultConfig;
+
+        // If in China Region, disable install latest aws-sdk
+        const isCN = new CfnCondition(this, "isCN", {
+            expression: Fn.conditionEquals(Aws.PARTITION, "aws-cn"),
+        });
+        const isInstallLatestAwsSdk = Fn.conditionIf(
+            isCN.logicalId,
+            "false",
+            "true"
+        ).toString();
+
+        Aspects.of(this).add(
+            new InjectCustomerResourceConfig(isInstallLatestAwsSdk)
+        );
 
         // AWSAppSyncPushToCloudWatchLogs managed policy is not available in China regions.
         // Create the policy manually
@@ -163,7 +182,7 @@ export class AppSyncStack extends Construct {
             this,
             "AppSyncServiceLinkRoleFn",
             {
-                runtime: lambda.Runtime.PYTHON_3_9,
+                runtime: lambda.Runtime.PYTHON_3_11,
                 code: lambda.Code.fromAsset(
                     path.join(__dirname, "../../lambda/custom-resource")
                 ),
@@ -182,30 +201,39 @@ export class AppSyncStack extends Construct {
         });
         appSyncServiceLinkRoleFn.addToRolePolicy(iamPolicy);
 
-        const appSyncServiceLinkRoleFnProvider = new cr.Provider(
-            this,
-            "appSyncServiceLinkRoleFnProvider",
-            {
-                onEventHandler: appSyncServiceLinkRoleFn,
-            }
-        );
+        const appSyncServiceLinkRoleFnProvider = new cr.Provider(this, "AppSyncServiceLinkRoleProvider", {
+            onEventHandler: appSyncServiceLinkRoleFn,
+        });
+      
+        const appSyncServiceLinkRoleFnCR = new CustomResource(this, "AppSyncServiceLinkRoleFnCR", {
+            serviceToken: appSyncServiceLinkRoleFnProvider.serviceToken,
+            properties: {
+                service: "Lambda",
+                action: "invoke",
+                parameters: {
+                    FunctionName: appSyncServiceLinkRoleFn.functionName,
+                    InvocationType: "Event",
+                },
+                physicalResourceId: cr.PhysicalResourceId.of(Date.now().toString()),
+            },
+        });
+      
+        appSyncServiceLinkRoleFnCR.node.addDependency(appSyncServiceLinkRoleFn);
 
-        appSyncServiceLinkRoleFnProvider.node.addDependency(
-            appSyncServiceLinkRoleFn
-        );
+        this.graphqlApi.node.addDependency(appSyncServiceLinkRoleFnCR);
 
-        const appSyncServiceLinkRoleFnTrigger = new CustomResource(
-            this,
-            "appSyncServiceLinkRoleFnTrigger",
-            {
-                serviceToken: appSyncServiceLinkRoleFnProvider.serviceToken,
-            }
-        );
+    }
+}
 
-        appSyncServiceLinkRoleFnTrigger.node.addDependency(
-            appSyncServiceLinkRoleFnProvider
-        );
-        this.graphqlApi.node.addDependency(appSyncServiceLinkRoleFnTrigger);
+class InjectCustomerResourceConfig implements IAspect {
+    public constructor(private isInstallLatestAwsSdk: string) { }
 
+    public visit(node: IConstruct): void {
+        if (node instanceof CfnResource && node.cfnResourceType === "Custom::AWS") {
+            node.addPropertyOverride(
+                "InstallLatestAwsSdk",
+                this.isInstallLatestAwsSdk
+            );
+        }
     }
 }

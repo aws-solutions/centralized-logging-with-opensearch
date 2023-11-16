@@ -96,7 +96,7 @@ export class CloudWatchStack extends Construct {
       code: lambda.AssetCode.fromAsset(
         path.join(__dirname, '../../lambda/api/cwl')
       ),
-      runtime: lambda.Runtime.PYTHON_3_9,
+      runtime: lambda.Runtime.PYTHON_3_11,
       handler: 'lambda_function.lambda_handler',
       timeout: Duration.seconds(60),
       memorySize: 1024,
@@ -125,6 +125,7 @@ export class CloudWatchStack extends Construct {
           'logs:GetLogEvents',
           'logs:FilterLogEvents',
           'cloudwatch:GetMetricStatistics',
+          'cloudwatch:GetMetricData',
           'logs:CreateLogGroup',
           'logs:CreateLogStream',
           'logs:PutLogEvents',

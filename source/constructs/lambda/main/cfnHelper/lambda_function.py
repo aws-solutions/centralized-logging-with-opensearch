@@ -249,12 +249,17 @@ def get_template_url(pattern):
         "WAFSampled": f"{template_prefix}/WAFSampledLog.template",
         "VPC": f"{template_prefix}/VPCFlowLog.template",
         "Config": f"{template_prefix}/ConfigLog.template",
+        "CloudTrailLogOSIProcessor": f"{template_prefix}/CloudTrailLogOSIProcessor.template",
+        "ELBLogOSIProcessor": f"{template_prefix}/ELBLogOSIProcessor.template",
+        "VPCFlowLogOSIProcessor": f"{template_prefix}/VPCFlowLogOSIProcessor.template",
+        "WAFLogOSIProcessor": f"{template_prefix}/WAFLogOSIProcessor.template",
         "ProxyForOpenSearch": f"{template_prefix}/NginxForOpenSearch.template",
         "AlarmForOpenSearch": f"{template_prefix}/AlarmForOpenSearch.template",
         "S3toKDSStack": f"{template_prefix}/S3toKDSStack.template",
         "S3SourceStack": f"{template_prefix}/S3SourceStack.template",
         "AppLogKDSBuffer": f"{template_prefix}/AppLogKDSBuffer.template",
         "AppLogKDSBufferNoAutoScaling": f"{template_prefix}/AppLogKDSBufferNoAutoScaling.template",
+        "AppLogS3BufferOSIProcessor": f"{template_prefix}/AppLogS3BufferOSIProcessor.template",
         "AppLogMSKBuffer": f"{template_prefix}/AppLogMSKBuffer.template",
         "AppLogS3Buffer": f"{template_prefix}/AppLogS3Buffer.template",
         "AppLog": f"{template_prefix}/AppLog.template",
@@ -263,6 +268,10 @@ def get_template_url(pattern):
         "CloudFrontRealtimeLogKDSBuffer": f"{template_prefix}/CloudFrontRealtimeLogKDSBuffer.template",
         "CloudWatchLogKDSBuffer": f"{template_prefix}/CloudWatchLogKDSBuffer.template",
         "CloudWatchLogKDSBufferNoAutoScaling": f"{template_prefix}/CloudWatchLogKDSBufferNoAutoScaling.template",
+        "MicroBatchAwsServicesWafPipeline": f"{template_prefix}/MicroBatchAwsServicesWafPipeline.template",
+        "MicroBatchAwsServicesCloudFrontPipeline": f"{template_prefix}/MicroBatchAwsServicesCloudFrontPipeline.template",
+        "MicroBatchAwsServicesAlbPipeline": f"{template_prefix}/MicroBatchAwsServicesAlbPipeline.template",
+        "MicroBatchApplicationFluentBitPipeline": f"{template_prefix}/MicroBatchApplicationFluentBitPipeline.template",
     }
 
     if pattern not in tpl_list:

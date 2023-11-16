@@ -13,11 +13,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import CreateStep from "components/CreateStep";
 import SpecifySettings from "./steps/SpecifySettings";
-import SpecifyOpenSearchCluster, {
+import {
   AOSInputValidRes,
   checkOpenSearchInput,
   covertParametersByKeyAndConditions,
@@ -26,7 +26,10 @@ import Button from "components/Button";
 
 import Breadcrumb from "components/Breadcrumb";
 import { appSyncRequestMutation } from "assets/js/request";
-import { createServicePipeline } from "graphql/mutations";
+import {
+  createLightEngineServicePipeline,
+  createServicePipeline,
+} from "graphql/mutations";
 import {
   Codec,
   DestinationType,
@@ -51,13 +54,23 @@ import { useTranslation } from "react-i18next";
 import { Alert } from "assets/js/alert";
 import {
   bucketNameIsValid,
+  buildOSIParamsValue,
   splitStringToBucketAndPrefix,
 } from "assets/js/utils";
 import { IngestOption } from "./steps/IngestOptionSelect";
-import { MONITOR_ALARM_INIT_DATA } from "assets/js/init";
-import AlarmAndTags from "../../../../pipelineAlarm/AlarmAndTags";
+import SpecifyAnalyticsEngine, {
+  AnalyticEngineTypes,
+} from "../common/SpecifyAnalyticsEngine";
+import { covertSvcTaskToLightEngine } from "../common/ConfigLightEngine";
+import AlarmAndTags from "pages/pipelineAlarm/AlarmAndTags";
 import { Actions, RootState } from "reducer/reducers";
 import { useTags } from "assets/js/hooks/useTags";
+import { MONITOR_ALARM_INIT_DATA } from "assets/js/init";
+import { useLightEngine } from "assets/js/hooks/useLightEngine";
+import {
+  CreateLightEngineActionTypes,
+  validateLightEngine,
+} from "reducer/createLightEngine";
 import { Dispatch } from "redux";
 import { useAlarm } from "assets/js/hooks/useAlarm";
 import { ActionType } from "reducer/appReducer";
@@ -65,6 +78,13 @@ import {
   CreateAlarmActionTypes,
   validateAalrmInput,
 } from "reducer/createAlarm";
+import { useGrafana } from "assets/js/hooks/useGrafana";
+import { useSelectProcessor } from "assets/js/hooks/useSelectProcessor";
+import SelectLogProcessor from "pages/comps/processor/SelectLogProcessor";
+import {
+  SelectProcessorActionTypes,
+  validateOCUInput,
+} from "reducer/selectProcessor";
 
 const EXCLUDE_PARAMS_COMMON = [
   "esDomainId",
@@ -249,6 +269,28 @@ const CreateWAF: React.FC = () => {
   });
   const [domainCheckStatus, setDomainCheckStatus] =
     useState<DomainStatusCheckResponse>();
+  const [searchParams] = useSearchParams();
+  const engineType =
+    (searchParams.get("engineType") as AnalyticEngineTypes | null) ??
+    AnalyticEngineTypes.OPENSEARCH;
+  useEffect(() => {
+    if (engineType === AnalyticEngineTypes.LIGHT_ENGINE) {
+      setWAFPipelineTask({
+        ...wafPipelineTask,
+        params: {
+          ...wafPipelineTask.params,
+          ingestOption: IngestOption.FullRequest,
+        },
+      });
+    }
+  }, [engineType]);
+  const defaultIngestionOption = useMemo(
+    () =>
+      engineType === AnalyticEngineTypes.OPENSEARCH
+        ? IngestOption.SampledRequest
+        : IngestOption.FullRequest,
+    [engineType]
+  );
 
   const checkSampleScheduleValue = () => {
     // Check Sample Schedule Interval
@@ -264,8 +306,45 @@ const CreateWAF: React.FC = () => {
     }
     return true;
   };
+
+  const lightEngine = useLightEngine();
+  const grafana = useGrafana();
   const tags = useTags();
   const monitor = useAlarm();
+  const osiParams = useSelectProcessor();
+
+  const confirmCreateLightEnginePipeline = useCallback(async () => {
+    console.info("wafPipelineTask:", wafPipelineTask);
+    const params = covertSvcTaskToLightEngine(wafPipelineTask, lightEngine);
+    if (wafPipelineTask.params.wafObj?.description) {
+      params.parameters.push({
+        parameterKey: "webACLScope",
+        parameterValue: wafPipelineTask.params.wafObj.description,
+      });
+    }
+    const createPipelineParams = {
+      ...params,
+      type: ServiceType.WAF,
+      tags,
+      logSourceRegion: amplifyConfig.aws_project_region,
+      logSourceAccountId: wafPipelineTask.logSourceAccountId,
+      source: wafPipelineTask.source,
+      monitor: monitor.monitor,
+    };
+    try {
+      setLoadingCreate(true);
+      const createRes = await appSyncRequestMutation(
+        createLightEngineServicePipeline,
+        createPipelineParams
+      );
+      console.info("createRes:", createRes);
+      setLoadingCreate(false);
+      navigate("/log-pipeline/service-log");
+    } catch (error) {
+      setLoadingCreate(false);
+      console.error(error);
+    }
+  }, [lightEngine, wafPipelineTask, tags, monitor]);
 
   const confirmCreatePipeline = async () => {
     console.info("wafPipelineTask:", wafPipelineTask);
@@ -283,6 +362,7 @@ const CreateWAF: React.FC = () => {
     createPipelineParams.destinationType = wafPipelineTask.destinationType;
 
     createPipelineParams.monitor = monitor.monitor;
+    createPipelineParams.osiParams = buildOSIParamsValue(osiParams);
 
     let tmpParamList: any = [];
     if (wafPipelineTask.params.ingestOption === IngestOption.SampledRequest) {
@@ -326,17 +406,31 @@ const CreateWAF: React.FC = () => {
       console.error(error);
     }
   };
-
   useEffect(() => {
     dispatch({ type: ActionType.CLOSE_SIDE_MENU });
   }, []);
 
+  useEffect(() => {
+    dispatch({
+      type: CreateLightEngineActionTypes.CENTRALIZED_TABLE_NAME_CHANGED,
+      value: `waf_${wafPipelineTask.source}`,
+    });
+  }, [wafPipelineTask.source]);
+
+  const isLightEngineValid = useMemo(
+    () => validateLightEngine(lightEngine, grafana),
+    [lightEngine]
+  );
   const isNextDisabled = () => {
+    if (curStep === 1 && engineType === AnalyticEngineTypes.LIGHT_ENGINE) {
+      return false;
+    }
     return (
       wafISChanging ||
       domainListIsLoading ||
       (curStep === 1 &&
-        domainCheckStatus?.status !== DomainStatusCheckType.PASSED)
+        domainCheckStatus?.status !== DomainStatusCheckType.PASSED) ||
+      osiParams.serviceAvailableCheckedLoading
     );
   };
 
@@ -355,7 +449,13 @@ const CreateWAF: React.FC = () => {
                       name: t("servicelog:create.step.specifySetting"),
                     },
                     {
-                      name: t("servicelog:create.step.specifyDomain"),
+                      name:
+                        engineType === AnalyticEngineTypes.OPENSEARCH
+                          ? t("servicelog:create.step.specifyDomain")
+                          : t("servicelog:create.step.specifyLightEngine"),
+                    },
+                    {
+                      name: t("processor.logProcessorSettings"),
                     },
                     {
                       name: t("servicelog:create.step.createTags"),
@@ -367,6 +467,7 @@ const CreateWAF: React.FC = () => {
               <div className="create-content m-w-800">
                 {curStep === 0 && (
                   <SpecifySettings
+                    engineType={engineType}
                     wafTask={wafPipelineTask}
                     setISChanging={(status) => {
                       setWAFISChanging(status);
@@ -452,6 +553,7 @@ const CreateWAF: React.FC = () => {
                         params: {
                           ...DEFAULT_TASK_VALUE.params,
                           taskType: taskType,
+                          ingestOption: defaultIngestionOption,
                         },
                       });
                     }}
@@ -475,7 +577,7 @@ const CreateWAF: React.FC = () => {
                             indexPrefix: wafObj?.name?.toLowerCase() || "",
                             wafObj: wafObj,
                             webACLScope: wafObj?.description || "",
-                            ingestOption: IngestOption.SampledRequest,
+                            ingestOption: defaultIngestionOption,
                           },
                         };
                       });
@@ -529,7 +631,8 @@ const CreateWAF: React.FC = () => {
                   />
                 )}
                 {curStep === 1 && (
-                  <SpecifyOpenSearchCluster
+                  <SpecifyAnalyticsEngine
+                    engineType={engineType}
                     taskType={ServiceLogType.Amazon_WAF}
                     pipelineTask={wafPipelineTask}
                     esDomainEmptyError={esDomainEmptyError}
@@ -768,7 +871,23 @@ const CreateWAF: React.FC = () => {
                 )}
                 {curStep === 2 && (
                   <div>
-                    <AlarmAndTags pipelineTask={wafPipelineTask} />
+                    <SelectLogProcessor
+                      supportOSI={
+                        !wafPipelineTask.logSourceAccountId &&
+                        engineType === AnalyticEngineTypes.OPENSEARCH &&
+                        wafPipelineTask.params.ingestOption !==
+                          IngestOption.SampledRequest
+                      }
+                    />
+                  </div>
+                )}
+                {curStep === 3 && (
+                  <div>
+                    <AlarmAndTags
+                      engineType={engineType}
+                      pipelineTask={wafPipelineTask}
+                      osiParams={osiParams}
+                    />
                   </div>
                 )}
                 <div className="button-action text-right">
@@ -792,7 +911,7 @@ const CreateWAF: React.FC = () => {
                     </Button>
                   )}
 
-                  {curStep < 2 && (
+                  {curStep < 3 && (
                     <Button
                       // loading={autoCreating}
                       disabled={isNextDisabled()}
@@ -850,35 +969,53 @@ const CreateWAF: React.FC = () => {
                           }
                         }
                         if (curStep === 1) {
-                          if (!wafPipelineTask.params.domainName) {
-                            setEsDomainEmptyError(true);
-                            return;
+                          if (engineType === AnalyticEngineTypes.LIGHT_ENGINE) {
+                            // validate light engine and display error message
+                            if (!isLightEngineValid) {
+                              dispatch({
+                                type: CreateLightEngineActionTypes.VALIDATE_LIGHT_ENGINE,
+                              });
+                              return;
+                            }
                           } else {
-                            setEsDomainEmptyError(false);
+                            if (!wafPipelineTask.params.domainName) {
+                              setEsDomainEmptyError(true);
+                              return;
+                            } else {
+                              setEsDomainEmptyError(false);
+                            }
+                            const validRes =
+                              checkOpenSearchInput(wafPipelineTask);
+                            setAosInputValidRes(validRes);
+                            if (Object.values(validRes).indexOf(true) >= 0) {
+                              return;
+                            }
+                            // Check domain connection status
+                            if (
+                              domainCheckStatus?.status !==
+                              DomainStatusCheckType.PASSED
+                            ) {
+                              return;
+                            }
                           }
-                          const validRes =
-                            checkOpenSearchInput(wafPipelineTask);
-                          setAosInputValidRes(validRes);
-                          if (Object.values(validRes).indexOf(true) >= 0) {
-                            return;
-                          }
-                          // Check domain connection status
-                          if (
-                            domainCheckStatus?.status !==
-                            DomainStatusCheckType.PASSED
-                          ) {
+                        }
+                        if (curStep === 2) {
+                          dispatch({
+                            type: SelectProcessorActionTypes.VALIDATE_OCU_INPUT,
+                          });
+                          if (!validateOCUInput(osiParams)) {
                             return;
                           }
                         }
                         setCurStep((curStep) => {
-                          return curStep + 1 > 2 ? 2 : curStep + 1;
+                          return curStep + 1 > 3 ? 3 : curStep + 1;
                         });
                       }}
                     >
                       {t("button.next")}
                     </Button>
                   )}
-                  {curStep === 2 && (
+                  {curStep === 3 && (
                     <Button
                       loading={loadingCreate}
                       btnType="primary"
@@ -889,7 +1026,9 @@ const CreateWAF: React.FC = () => {
                           });
                           return;
                         }
-                        confirmCreatePipeline();
+                        engineType === AnalyticEngineTypes.OPENSEARCH
+                          ? confirmCreatePipeline()
+                          : confirmCreateLightEnginePipeline();
                       }}
                     >
                       {t("button.create")}

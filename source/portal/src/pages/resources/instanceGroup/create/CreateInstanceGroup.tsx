@@ -28,10 +28,12 @@ import {
   EC2GroupType,
   LogAgentStatus,
   LogSourceType,
+  SubAccountLink,
 } from "API";
 import { useTranslation } from "react-i18next";
 import { OptionType } from "components/AutoComplete/autoComplete";
 import { InstanceWithStatusType } from "pages/resources/common/InstanceTable";
+import UpdateSubAccountModal from "pages/comps/account/UpdateSubAccountModal";
 
 export interface InstanceGroupType {
   groupName: string;
@@ -67,8 +69,23 @@ const CreateInstanceGroup: React.FC = () => {
     useState(false);
   const [createButtonDisabled, setCreateButtonDisabled] = useState(false);
   const [curAccountId, setCurAccountId] = useState("");
+  const [subAccountInfo, setSubAccountInfo] = useState<SubAccountLink | null>(
+    null
+  );
+  const [needUpdateSubAccount, setNeedUpdateSubAccount] = useState(false);
 
   const createLogInstanceGroupByEC2 = async () => {
+    // check sub account has upload event sns
+    if (
+      curAccountId &&
+      !subAccountInfo?.subAccountFlbConfUploadingEventTopicArn
+    ) {
+      setNeedUpdateSubAccount(true);
+      return false;
+    } else {
+      setNeedUpdateSubAccount(false);
+    }
+
     // Check Instance Selected
     if (checkedInstanceList.length <= 0) {
       Swal.fire(
@@ -189,8 +206,9 @@ const CreateInstanceGroup: React.FC = () => {
                 instanceGroup={curCreateInstanceGroup}
                 showNameEmptyError={createShowNameEmptyError}
                 accountId={curAccountId}
-                changeCurAccount={(id) => {
+                changeCurAccount={(id, account) => {
                   setCurAccountId(id);
+                  setSubAccountInfo(account);
                 }}
                 setCreateDisabled={(disable) => {
                   setCreateButtonDisabled(disable);
@@ -239,6 +257,13 @@ const CreateInstanceGroup: React.FC = () => {
           </div>
         </div>
       </div>
+      <UpdateSubAccountModal
+        accountInfo={subAccountInfo}
+        showModal={needUpdateSubAccount}
+        closeModal={() => {
+          setNeedUpdateSubAccount(false);
+        }}
+      />
     </div>
   );
 };

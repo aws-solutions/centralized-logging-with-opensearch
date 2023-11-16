@@ -56,7 +56,11 @@ def lambda_handler(event, _):
                         "emails": item["monitor"].get("emails"),
                     },
                 }
-            elif result["stackStatus"] == "DELETE_COMPLETE":
+            elif (
+                item["monitor"].get("pipelineAlarmStatus")
+                == PipelineAlarmStatus.ENABLED
+                and result["stackStatus"] == "DELETE_COMPLETE"
+            ):
                 logger.info("Triggering Delete Pipeline Alarm")
                 # Flow to alarm deletion step in cfn-flow sfn
                 return {
@@ -99,7 +103,6 @@ def update_status(pipeline_id: str, args, result, item):
     parameters_mapping = {"backupBucketName": ""}
     outputs_mapping = {
         "ProcessorLogGroupName": "",
-        "HelperLogGroupName": "",
         "LogEventQueueName": "",
         "LogEventQueueArn": "",
         "BufferResourceName": "",
@@ -164,7 +167,7 @@ def construct_update_expr_attr_values(
 ):
     update_expr = (
         "SET #status = :s, stackId = :sid, #error = :err, monitor = :m"
-        ", processorLogGroupName = :processorGroup, helperLogGroupName = :helperGroup"
+        ", processorLogGroupName = :processorGroup"
         ", logEventQueueName = :logEventQueueName, logEventQueueArn = :logEventQueueArn"
         ", bufferResourceName = :bufferResourceName, bufferResourceArn = :bufferResourceArn"
         ", deliveryStreamName = :deliveryStreamName, deliveryStreamArn = :deliveryStreamArn"
@@ -176,7 +179,6 @@ def construct_update_expr_attr_values(
         ":err": error,
         ":m": monitor,
         ":processorGroup": outputs_mapping["ProcessorLogGroupName"],
-        ":helperGroup": outputs_mapping["HelperLogGroupName"],
         ":logEventQueueName": outputs_mapping["LogEventQueueName"],
         ":logEventQueueArn": outputs_mapping["LogEventQueueArn"],
         ":bufferResourceName": outputs_mapping["BufferResourceName"],

@@ -30,6 +30,7 @@ import {
 import { Table } from 'aws-cdk-lib/aws-dynamodb';
 import { SharedPythonLayer } from '../layer/layer';
 import { addCfnNagSuppressRules } from "../main-stack";
+import { MicroBatchStack } from '../microbatch/main/services/amazon-services-stack';
 
 import * as path from "path";
 
@@ -56,6 +57,15 @@ export interface SvcPipelineFlowProps {
      */
     readonly tableName: string
 
+    /**
+     * Pipeline resources builder for building light engine ingestion
+     *
+     * @default - None.
+     */
+    readonly pipelineResourcesBuilder: lambda.Function
+
+    readonly microBatchStack: MicroBatchStack;
+
 }
 
 /**
@@ -80,7 +90,7 @@ export class SvcPipelineFlowStack extends Construct {
             code: lambda.AssetCode.fromAsset(
                 path.join(__dirname, "../../lambda/api/pipeline_ingestion_flow")
             ),
-            runtime: lambda.Runtime.PYTHON_3_9,
+            runtime: lambda.Runtime.PYTHON_3_11,
             handler: "svc_pipe_flow.lambda_handler",
             timeout: Duration.seconds(60),
             memorySize: 128,
@@ -93,13 +103,15 @@ export class SvcPipelineFlowStack extends Construct {
             description: `${Aws.STACK_NAME} - Helper function to update pipeline status`,
         });
         table.grantReadWriteData(servicePipeFlowFn);
+        props.microBatchStack.microBatchDDBStack.MetaTable.grantReadWriteData(servicePipeFlowFn);
+        props.microBatchStack.microBatchKMSStack.encryptionKey.grantDecrypt(servicePipeFlowFn);
 
         servicePipeFlowFn.addToRolePolicy(new iam.PolicyStatement({
             effect: iam.Effect.ALLOW,
             resources: [`arn:${Aws.PARTITION}:cloudformation:${Aws.REGION}:${Aws.ACCOUNT_ID}:stack/*`],
             actions: [
-              'cloudformation:DescribeStacks',
-              'cloudformation:DescribeStackEvents'
+                'cloudformation:DescribeStacks',
+                'cloudformation:DescribeStackEvents'
             ]
         }))
 
@@ -150,7 +162,19 @@ export class SvcPipelineFlowStack extends Construct {
                 effect: iam.Effect.ALLOW,
                 resources: [logGroup.logGroupArn],
             }),
-        )
+        );
+        pipelineFlowSMRole.addToPolicy(
+            new iam.PolicyStatement({
+                actions: [
+                    "lambda:InvokeFunction"
+                ],
+                effect: iam.Effect.ALLOW,
+                resources: [
+                    props.pipelineResourcesBuilder.functionArn,
+                    `${props.pipelineResourcesBuilder.functionArn}:*`
+                ],
+            }),
+        );
 
         // Create a Lambda to handle the automated alarm creation and deletion.
         // This Lambda will only be triggered by the Step Functions Task.
@@ -158,7 +182,7 @@ export class SvcPipelineFlowStack extends Construct {
             code: lambda.AssetCode.fromAsset(
                 path.join(__dirname, "../../lambda/api/alarm")
             ),
-            runtime: lambda.Runtime.PYTHON_3_9,
+            runtime: lambda.Runtime.PYTHON_3_11,
             handler: "lambda_function.lambda_handler",
             timeout: Duration.seconds(60),
             memorySize: 128,
@@ -170,50 +194,53 @@ export class SvcPipelineFlowStack extends Construct {
                 APP_PIPELINE_TABLE_NAME: "",
                 PIPELINE_TABLE_NAME: table.tableName,
                 APP_LOG_INGESTION_TABLE_NAME: "",
+                METADATA_TABLE_NAME: props.microBatchStack.microBatchDDBStack.MetaTable.tableName,
             },
             description: `${Aws.STACK_NAME} - Helper function to automated create and delete svc pipeline alarm`,
         });
         table.grantReadWriteData(svcFlowAlarmFn);
+        props.microBatchStack.microBatchDDBStack.MetaTable.grantReadWriteData(svcFlowAlarmFn);
+        props.microBatchStack.microBatchKMSStack.encryptionKey.grantDecrypt(svcFlowAlarmFn);
 
         const svcFlowAlarmFnPolicy = new iam.Policy(
             this,
             "SvcFlowAlarmFnPolicy",
             {
-              statements: [
-                new iam.PolicyStatement({
-                  effect: iam.Effect.ALLOW,
-                  resources: ["*"],
-                  actions: [
-                    "sns:ListTopics",
-                    "sns:CreateTopic",
-                    "sns:Subscribe",
-                    "sns:Unsubscribe",
-                    "sns:ListSubscriptionsByTopic"
-                  ]
-                }),
-                new iam.PolicyStatement({
-                  effect: iam.Effect.ALLOW,
-                  resources: ["*"],
-                  actions: [
-                    "cloudwatch:PutMetricAlarm",
-                    "cloudwatch:DeleteAlarms",
-                  ]
-                }),
-              ]
+                statements: [
+                    new iam.PolicyStatement({
+                        effect: iam.Effect.ALLOW,
+                        resources: ["*"],
+                        actions: [
+                            "sns:ListTopics",
+                            "sns:CreateTopic",
+                            "sns:Subscribe",
+                            "sns:Unsubscribe",
+                            "sns:ListSubscriptionsByTopic"
+                        ]
+                    }),
+                    new iam.PolicyStatement({
+                        effect: iam.Effect.ALLOW,
+                        resources: ["*"],
+                        actions: [
+                            "cloudwatch:PutMetricAlarm",
+                            "cloudwatch:DeleteAlarms",
+                        ]
+                    }),
+                ]
             }
-          );
-      
-          svcFlowAlarmFn.role!.attachInlinePolicy(svcFlowAlarmFnPolicy);
-          addCfnNagSuppressRules(
+        );
+
+        svcFlowAlarmFn.role!.attachInlinePolicy(svcFlowAlarmFnPolicy);
+        addCfnNagSuppressRules(
             svcFlowAlarmFnPolicy.node.defaultChild as iam.CfnPolicy,
             [
-              {
-                id: "W12",
-                reason:
-                  "This policy needs to be able to control un-predicable sns topics"
-              }
+                {
+                    id: "W12",
+                    reason:
+                        "This policy needs to be able to control un-predicable sns topics"
+                }
             ]
-          );
+        );
 
         const pipelineAlarmTask = new tasks.LambdaInvoke(this, 'SVC Pipeline Alarm Task', {
             lambdaFunction: svcFlowAlarmFn,
@@ -221,13 +248,48 @@ export class SvcPipelineFlowStack extends Construct {
             inputPath: "$",
         })
 
+        const pipelineResourcesBuilderTask = new tasks.LambdaInvoke(this, 'SVC Pipeline ingestion Task', {
+            lambdaFunction: props.pipelineResourcesBuilder,
+            outputPath: '$.Payload',
+            payload: sfn.TaskInput.fromObject({
+                RequestType: "Create",
+                ResourceProperties: {
+                    Resource: "ingestion",
+                    Id: sfn.JsonPath.stringAt('$$.Execution.Input.args.ingestion.id'),
+                    Item: {
+                        metaName: sfn.JsonPath.stringAt('$$.Execution.Input.args.ingestion.id'),
+                        data: {
+                            role: {
+                                sts: sfn.JsonPath.stringAt('$$.Execution.Input.args.ingestion.role'),
+                            },
+                            source: {
+                                bucket: sfn.JsonPath.stringAt('$$.Execution.Input.args.ingestion.bucket'),
+                                prefix: sfn.JsonPath.stringAt('$$.Execution.Input.args.ingestion.prefix'),
+                            },
+                        },
+                        pipelineId: sfn.JsonPath.stringAt('$$.Execution.Input.args.ingestion.pipelineId'),
+                    },
+                },
+            }),
+        });
+
+
         const svcPipelineFlowComplete = new sfn.Succeed(this, 'SVC Pipeline Flow Complete')
-        pipelineAlarmTask.next(svcPipelineFlowComplete)
+
+        const createIngestionChoice = new sfn.Choice(this, 'Engine type is LightEngine or not?')
+            .when(sfn.Condition.and(sfn.Condition.stringEquals('$$.Execution.Input.action', 'START'),
+                sfn.Condition.stringEquals('$$.Execution.Input.args.engineType', 'LightEngine')), pipelineResourcesBuilderTask)
+            .otherwise(svcPipelineFlowComplete);
+
+        pipelineAlarmTask.next(createIngestionChoice)
 
         const enableAlarmChoice = new sfn.Choice(this, 'Enable Alarm or not?')
             .when(sfn.Condition.stringEquals('$.alarmAction', 'createPipelineAlarm'), pipelineAlarmTask)
             .when(sfn.Condition.stringEquals('$.alarmAction', 'deletePipelineAlarm'), pipelineAlarmTask)
-            .otherwise(svcPipelineFlowComplete)
+            .otherwise(createIngestionChoice)
+
+        pipelineResourcesBuilderTask.next(svcPipelineFlowComplete)
+
 
         const pipeSM = new sfn.StateMachine(this, 'PipelineFlowSM', {
             definitionBody: sfn.DefinitionBody.fromChainable(cfnTask.next(servicePipeFlowFnTask).next(enableAlarmChoice)),

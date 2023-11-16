@@ -21,7 +21,7 @@ import HeaderPanel from "components/HeaderPanel";
 import ExpandableSection from "components/ExpandableSection";
 import ExtLink from "components/ExtLink";
 import FormItem from "components/FormItem";
-import { buildS3Link } from "assets/js/utils";
+import { buildS3Link, isOSIPipeline, ternary } from "assets/js/utils";
 import { AppPipeline, BufferType, PipelineStatus, PipelineType } from "API";
 import LoggingTable from "./logging/LoggingTable";
 import LoggingHeader from "./logging/LoggingHeader";
@@ -47,12 +47,16 @@ const Logging: React.FC<LoggingProps> = (props: LoggingProps) => {
         desc={t("common:logging.desc")}
       >
         <div>
-          {(pipelineInfo?.status === PipelineStatus.ACTIVE ||
-            servicePipeline?.status === PipelineStatus.ACTIVE) && (
+          {pipelineInfo?.status === PipelineStatus.ACTIVE ||
+          servicePipeline?.status === PipelineStatus.ACTIVE ? (
             <>
               {pipelineInfo?.bufferType !== BufferType.None && (
                 <ExpandableSection
-                  headerText={t("common:logging.processorLamdaLog")}
+                  headerText={ternary(
+                    isOSIPipeline(pipelineInfo ?? servicePipeline),
+                    t("common:logging.processorOSILog"),
+                    t("common:logging.processorLamdaLog")
+                  )}
                 >
                   <div>
                     <LoggingHeader
@@ -111,35 +115,9 @@ const Logging: React.FC<LoggingProps> = (props: LoggingProps) => {
               {pipelineInfo?.bufferType === BufferType.None && (
                 <Alert content={t("applog:detail.noLogging")} />
               )}
-
-              <ExpandableSection
-                defaultExpanded={false}
-                headerText={t("common:logging.helperLamdaLog")}
-              >
-                <div>
-                  <LoggingHeader
-                    pipelineInfo={pipelineInfo}
-                    servicePipeline={servicePipeline}
-                    type={type}
-                    processorLambdaName={
-                      type === PipelineType.APP
-                        ? pipelineInfo?.helperLogGroupName
-                        : servicePipeline?.helperLambda
-                    }
-                  />
-                  <LoggingTable
-                    pipelineInfo={pipelineInfo}
-                    servicePipeline={servicePipeline}
-                    type={type}
-                    lambdaFunName={
-                      type === PipelineType.APP
-                        ? pipelineInfo?.helperLogGroupName
-                        : servicePipeline?.helperLambda
-                    }
-                  />
-                </div>
-              </ExpandableSection>
             </>
+          ) : (
+            <Alert content={t("alarm.notActive")} />
           )}
         </div>
       </HeaderPanel>

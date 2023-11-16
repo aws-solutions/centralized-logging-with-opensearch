@@ -15,14 +15,14 @@ limitations under the License.
 */
 import React from "react";
 import { PageType } from "../common/LogConfigComp";
-import LogConfitEditor from "./ConfigEditor";
+import LogConfigEditor from "./ConfigEditor";
 
-const EidtLogConfig: React.FC = () => {
+const EditLogConfig: React.FC = () => {
   return (
     <div>
-      <LogConfitEditor breadCrumbList={[]} pageType={PageType.Edit} />
+      <LogConfigEditor breadCrumbList={[]} pageType={PageType.Edit} />
     </div>
   );
 };
 
-export default EidtLogConfig;
+export default EditLogConfig;

@@ -73,6 +73,7 @@ def test_lambda_function(
     mocker,
 ):
     mocker.patch("commonlib.dao.AppLogIngestionDao")
+    mocker.patch("commonlib.dao.InstanceIngestionDetailDao")
     import lambda_function
 
     # start with empty list

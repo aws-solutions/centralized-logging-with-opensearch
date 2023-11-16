@@ -1,0 +1,85 @@
+{
+  "grafana": {
+    "name": "Grafana",
+    "deleteTips": "您确定要删除 Grafana 服务器",
+    "delete": "删除 Grafana 服务器",
+    "serverName": "服务器名称",
+    "dateImported": "导入时间",
+    "url": "URL 地址",
+    "noNameError": "请输入名称",
+    "noTokenError": "请输入Token",
+    "noUrlError": "请输入 URL 地址",
+    "InvalidUrlError": "请输入有效的 URL 地址",
+    "import": "导入 Grafana",
+    "create": {
+      "server": "Grafana 服务器",
+      "name": "名称",
+      "nameDesc": "请输入 Grafana 服务器的名称。",
+      "url": "URL 地址",
+      "urlDesc": "请输入 Grafana 服务器的 URL 地址。",
+      "token": "令牌",
+      "tokenDesc": "请提供令牌以使解决方案可以访问 Grafana 服务器。",
+      "checkUrlConnectivity": "检查 Grafana URL 连接",
+      "checkTokenValidity": "检查 Grafana 令牌验证",
+      "hasInstalledAthenaPlugin": "检查 Grafana 安装 Athena 插件",
+      "dataSourcePermission": "检查 Grafana 数据源创建权限",
+      "folderPermission": "检查 Grafana 文件夹权限",
+      "dashboardsPermission": "检查更新仪表板权限",
+      "detail": "详情",
+      "step": {
+        "serverInfo": "服务器信息",
+        "createTags": "创建标签"
+      }
+    },
+    "edit": "编辑"
+  },
+  "engine": {
+    "selectEnginePageTitle": "选择分析引擎",
+    "selectEngineSectionTitle": "分析引擎",
+    "optionOpenSearch": "Amazon OpenSearch 服务",
+    "descOpenSearch": "一个 AWS 管理的 OpenSearch 集群， 提供日志文件的快速访问和查询。",
+    "optionLightEngine": "Light Engine",
+    "descLightEngine": "一个交互式的查询服务，可以轻松使用标准的 SQL 直接分析 S3 中的数据。",
+    "create": {
+      "specifyLightEngine": "指定 Light Engine 配置",
+      "configTitle": "配置 Light Engine",
+      "sampleDashboardTitle": "样例看板",
+      "sampleDashboardDesc": "在 Grafana 看板中创建预定义的样例看板。",
+      "grafanaPlaceholder": "选择一个 Grafana 服务器",
+      "centralBucketTitle": "存放日志的 S3 桶",
+      "centralBucketDesc": "该存储桶用于长期存储和管理准备好的数据，以供进行分析、报告和可视化。",
+      "centralBucketPlaceholder": "请选择一个 Amazon S3 桶",
+      "centralTableTitle": "日志表名称",
+      "centralTableDesc": "用于存放日志的表名称。",
+      "logProcessorExpTitle": "日志处理频率",
+      "logProcessorExpDesc": "输入日志处理的时间以及单位。更多信息和示例请查阅<0>基于速率的计划</0>",
+      "logMergerExpTitle": "日志合并时间表",
+      "logMergerExpDesc": "定义日志合并时间表的表达式。更多信息和示例请查阅<0>基于 Cron 的日程安排</0>",
+      "logArchiveExpTitle": "日志归档时间表",
+      "logArchiveExpDesc": "定义日志归档时间表的表达式。更多信息和示例请查阅<0>基于 Cron 的日程安排</0>",
+      "logMergerAgeTitle": "日志合并时间 (天)",
+      "logMergerAgeDesc": "小文件保留天数，默认值为7，表示会对存放了7天以上的日志进行小文件合并，可按需调整。",
+      "logArchiveAgeTitle": "日志归档时间 (天)",
+      "logArchiveAgeDesc": "日志保留天数，默认值为30，表示会对存放了30天以上的日志进行归档删除，可按需调整.",
+      "errorGrafanaIdMissing": "请选择 Grafana ID.",
+      "errorCentralBucketMissing": "请选择日志桶",
+      "errorLogArchiveScheduleMissing": "请输入日志归档时间表",
+      "errorLogMergerScheduleMissing": "请输入日志合并时间表",
+      "errorCentralizedTableNameMissing": "请输入日志表名称",
+      "errorLogArchiveAgeGteOne": "日志归档时间须大于等于 1 天",
+      "errorLogArchiveAgeGteLogMergerAge": "日志合并时间须小于日志归档时间",
+      "errorLogMergerAgeGteOne": "日志合并时间须大于等于 1 天",
+      "errorLogProcessorScheduleExp": "日志处理频率的设定须大于 1 分钟",
+      "errorCronExpression": "请填写有效的正则表达式"
+    }
+  },
+  "logging": {
+    "name": "名称",
+    "status": "状态",
+    "started": "开始时间",
+    "endTime": "结束时间",
+    "executionStatus": {
+      "all": "所有状态"
+    }
+  }
+}

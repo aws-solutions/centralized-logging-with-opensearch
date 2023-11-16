@@ -6,6 +6,7 @@
     "account": "Account",
     "source": "Source",
     "domain": "OpenSearch domain",
+    "engineType": "Engine Type",
     "created": "Created time",
     "status": "Status"
   },
@@ -33,11 +34,33 @@
     "kdsShardNum": "Kinesis Data Streams shard number",
     "enableAS": "Enable auto scaling?",
     "kdsMaxShard": "Maximum Shard number",
-    "fields": "Fields"
+    "fields": "Fields",
+    "createdAt": "Created at",
+    "cfnStack": "CloudFormation stack",
+    "analyticsEngine": "Analytics engine",
+    "indexSettings": "Index settings",
+    "lifecycleSettings": "Lifecycle settings",
+    "processor": {
+      "type": "Processor Type",
+      "resource": "Resource",
+      "lambda": "AWS Lambda",
+      "osi": "OpenSearch Ingestion Service",
+      "pipelineCapacity": "Pipeline capacity",
+      "ingestionOCU": "Ingestion-OCU"
+    },
+    "lightEngine": {
+      "table": "Glue table",
+      "tableName": "Table Name",
+      "database": "Database",
+      "classification": "Classification"
+    }
   },
   "tab": {
     "overview": "Overview",
     "lifecycle": "Lifecycle",
+    "logSource": "Log Source",
+    "analyticsEngine": "Analytics Engine",
+    "logProcessor": "Log Processor",
     "monitoring": "Monitoring",
     "logging": "Logs",
     "alarm": "Alarm",
@@ -45,8 +68,8 @@
   },
   "overview": {
     "name": "Overview",
-    "logLocation": "Log Location",
-    "logGroup": "Log Group",
+    "logLocation": "Log location",
+    "logGroup": "Log group",
     "createSample": "Create sample dashboard",
     "created": "Created"
   },
@@ -74,8 +97,10 @@
     "step": {
       "specifySetting": "Specify settings",
       "logProcessing": "Log Processing",
-      "specifyDomain": "Specify OpenSearch domain settings",
-      "createTags": "Alarms and Tags"
+      "specifyLightEngine": "Specify Light Engine configuration",
+      "selectLogEngine": "Select log analytics engine",
+      "createTags": "Alarms and Tags",
+      "specifyDomain": "Specify OpenSearch domain settings"
     }
   },
   "cluster": {
@@ -155,11 +180,16 @@
     }
   },
   "trail": {
+    "logEnable": "Amazon CloudTrail log enabling",
+    "autoDesc": "The Amazon CloudTrail log is not enabled yet. The system will enable the log and output to a system-managed Amazon S3 location.",
+    "manualDesc": "The Amazon CloudTrail log has been enabled before. You need to select the log from a Amazon S3 location.",
     "alert": "The Log Processing Layer must have access to the Amazon S3.",
     "trail": "Trail",
     "select": "Select an existing trail from ",
+    "manual": "Enter an existing trail from ",
     "curAccount": "current AWS account",
     "trailError": "Please select a CloudTrail",
+    "trailManualError": "Please enter a CloudTrail",
     "selectTrail": "Select a CloudTrail",
     "savedTips": "The trail is saved at ",
     "logSource": "Log source",
@@ -174,6 +204,13 @@
     "needEnableLogging": "Please enable the CloudTrail Flow Log",
     "needSameRegion": "Only supports CloudTrail Logs from Amazon S3 in same region, please manually change the s3 bucket and retry again.",
     "diffRegion": "The trail is saved at {{bucket}} that is in a different region ({{logRegion}}) than the solution' home region ({{homeRegion}}). To proceed, please update the selected CloudTrail's logging configuration to deliver trails to a Amazon S3 bucket at {{homeRegion}} region.",
+    "cloudtrailLogLocation": "CloudTrail log location",
+    "cloudtrailLogLocationDesc": "Specify the location of the CloudTrail.",
+    "cloudtrailCWLLocationDesc": "Specify the CloudWatch Logs log group name where the flow log stores.",
+    "error": {
+      "s3Empty": "Please enter the log location of the CloudTrail",
+      "cwlEmpty": "Please enter CloudWatch Logs log group name"
+    },
     "desc": {
       "ingest": "Ingest ",
       "trailLog": "Amazon CloudTrail Server Access Logs",
@@ -276,7 +313,7 @@
     "diffRegion": "The Standard logs is saved at {{bucket}} that is in a different region ({{logRegion}}) than the solution' home region ({{homeRegion}}). To proceed, please update the selected CloudFront's logging configuration to deliver standard logs to a Amazon S3 bucket at {{homeRegion}} region.",
     "desc": {
       "ingest": "Ingest ",
-      "cloudfrontLog": "Amazon RDS Server Access Logs",
+      "cloudfrontLog": "Amazon CloudFront Access Logs",
       "archName": "Architecture Diagram"
     }
   },

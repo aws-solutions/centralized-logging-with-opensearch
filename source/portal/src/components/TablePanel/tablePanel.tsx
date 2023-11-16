@@ -42,7 +42,7 @@ interface TablePanelProps {
   isReload?: boolean;
   defaultSelectItem?: any[];
   defaultDisabledIds?: (string | null)[];
-  title: string | ReactElement;
+  title?: string | ReactElement;
   desc?: string;
   className?: string;
   actions: ReactElement;
@@ -57,6 +57,7 @@ interface TablePanelProps {
   emptyText?: string;
   errorText?: string;
   hideFilterAndPagination?: boolean;
+  hideTitle?: boolean;
   noPadding?: boolean;
 }
 
@@ -79,6 +80,7 @@ const TablePanel: React.FC<TablePanelProps> = (props: TablePanelProps) => {
     loading,
     emptyText,
     hideFilterAndPagination,
+    hideTitle,
     noPadding,
   } = props;
   const { t } = useTranslation();
@@ -165,9 +167,9 @@ const TablePanel: React.FC<TablePanelProps> = (props: TablePanelProps) => {
         noPadding ? "no-padding gsui-table-pannel" : "gsui-table-pannel"
       }
     >
-      {!hideFilterAndPagination && (
+      {!hideFilterAndPagination && !hideTitle && (
         <div className="table-header">
-          <div className="title">{title}</div>
+          {title && <div className="title">{title}</div>}
           <div className="action">{actions}</div>
         </div>
       )}

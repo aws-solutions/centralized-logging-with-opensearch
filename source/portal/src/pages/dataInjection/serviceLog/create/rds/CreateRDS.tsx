@@ -66,6 +66,13 @@ import {
   CreateAlarmActionTypes,
   validateAalrmInput,
 } from "reducer/createAlarm";
+import SelectLogProcessor from "pages/comps/processor/SelectLogProcessor";
+import { useSelectProcessor } from "assets/js/hooks/useSelectProcessor";
+import { buildOSIParamsValue } from "assets/js/utils";
+import {
+  SelectProcessorActionTypes,
+  validateOCUInput,
+} from "reducer/selectProcessor";
 
 const EXCLUDE_PARAMS = [
   "esDomainId",
@@ -249,6 +256,7 @@ const CreateRDS: React.FC = () => {
 
   const tags = useTags();
   const monitor = useAlarm();
+  const osiParams = useSelectProcessor();
 
   const getGroupNamesForAutomatic = () => {
     // Add logGroupNames by User Select
@@ -309,7 +317,7 @@ const CreateRDS: React.FC = () => {
     createPipelineParams.destinationType = rdsPipelineTask.destinationType;
 
     createPipelineParams.monitor = monitor.monitor;
-
+    createPipelineParams.osiParams = buildOSIParamsValue(osiParams);
     const tmpParamList: any = covertParametersByKeyAndConditions(
       rdsPipelineTask,
       EXCLUDE_PARAMS
@@ -409,7 +417,8 @@ const CreateRDS: React.FC = () => {
       rdsIsChanging ||
       domainListIsLoading ||
       (curStep === 1 &&
-        domainCheckStatus?.status !== DomainStatusCheckType.PASSED)
+        domainCheckStatus?.status !== DomainStatusCheckType.PASSED) ||
+      osiParams.serviceAvailableCheckedLoading
     );
   };
 
@@ -429,6 +438,9 @@ const CreateRDS: React.FC = () => {
                     },
                     {
                       name: t("servicelog:create.step.specifyDomain"),
+                    },
+                    {
+                      name: t("processor.logProcessorSettings"),
                     },
                     {
                       name: t("servicelog:create.step.createTags"),
@@ -897,7 +909,15 @@ const CreateRDS: React.FC = () => {
                 )}
                 {curStep === 2 && (
                   <div>
-                    <AlarmAndTags pipelineTask={rdsPipelineTask} />
+                    <SelectLogProcessor supportOSI={false} />
+                  </div>
+                )}
+                {curStep === 3 && (
+                  <div>
+                    <AlarmAndTags
+                      pipelineTask={rdsPipelineTask}
+                      osiParams={osiParams}
+                    />
                   </div>
                 )}
                 <div className="button-action text-right">
@@ -921,7 +941,7 @@ const CreateRDS: React.FC = () => {
                     </Button>
                   )}
 
-                  {curStep < 2 && (
+                  {curStep < 3 && (
                     <Button
                       disabled={isNextDisabled()}
                       btnType="primary"
@@ -936,15 +956,23 @@ const CreateRDS: React.FC = () => {
                             return;
                           }
                         }
+                        if (curStep === 2) {
+                          dispatch({
+                            type: SelectProcessorActionTypes.VALIDATE_OCU_INPUT,
+                          });
+                          if (!validateOCUInput(osiParams)) {
+                            return;
+                          }
+                        }
                         setCurStep((curStep) => {
-                          return curStep + 1 > 2 ? 2 : curStep + 1;
+                          return curStep + 1 > 3 ? 3 : curStep + 1;
                         });
                       }}
                     >
                       {t("button.next")}
                     </Button>
                   )}
-                  {curStep === 2 && (
+                  {curStep === 3 && (
                     <Button
                       loading={loadingCreate}
                       btnType="primary"

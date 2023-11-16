@@ -4,6 +4,10 @@ Centralized Logging with OpenSearch supports ingesting AWS service logs into Ama
 
 Centralized Logging with OpenSearch reads the data source, parse, cleanup/enrich and ingest logs into Amazon OpenSearch Service domains for analysis. Moreover, the solution provides templated dashboards to facilitate log visualization.
 
+Amazon OpenSearch Service is suitable for real-time log analytics and frequent queries and has full-text search capability.
+
+As of release 2.1.0, the solution starts to support log ingestion into Light Engine, which is suitable for non real-time log analytics and infrequent queries and has SQL-like search capability. The feature is supported by Amazon CloudFront logs, Application Load Balancing logs, and AWS WAF logs.
+
 !!! Important "Important"
     - AWS managed services must be in the same region as Centralized Logging with OpenSearch. To ingest logs from different AWS regions, we recommend using [S3 cross-region replication](https://docs.aws.amazon.com/AmazonS3/latest/userguide/replication.html#crr-scenario).
     - The solution will rotate the index on a daily basis, and cannot be adjusted.

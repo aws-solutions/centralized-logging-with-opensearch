@@ -13,18 +13,28 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import ExtLink from "components/ExtLink";
 import cloudFrontSArch from "assets/images/desc/cloudFrontArch.png";
 import cloudFrontSArchRealtime from "assets/images/desc/cloudFrontArch_Realtime.png";
+import cloudfrontLightEngineArch from "assets/images/desc/cloudfrontLightEngineArch.png";
 
 import { CLOUDFRONT_LOG_LINK } from "assets/js/const";
 import { useTranslation } from "react-i18next";
 import { AntTab, AntTabs, TabPanel } from "components/Tab";
+import { AnalyticEngineTypes } from "../SpecifyAnalyticsEngine";
 
-const CloudFrontDesc: React.FC = () => {
+export interface CloudFrontDescProps {
+  engineType: AnalyticEngineTypes;
+}
+
+const CloudFrontDesc = ({ engineType }: CloudFrontDescProps) => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState(0);
+  const isLightEngine = useMemo(
+    () => engineType === AnalyticEngineTypes.LIGHT_ENGINE,
+    [engineType]
+  );
   return (
     <div>
       <div className="ingest-desc-title">
@@ -35,41 +45,56 @@ const CloudFrontDesc: React.FC = () => {
         <ExtLink to={CLOUDFRONT_LOG_LINK}>
           {t("servicelog:cloudfront.desc.cloudfrontLog")}
         </ExtLink>
-        {t("intoDomain")}
+        {isLightEngine ? t("intoLightEngine") : t("intoDomain")}
       </div>
       <div className="ingest-desc-title">
         {t("servicelog:cloudfront.desc.archName")}
       </div>
-      <div className="ingest-desc-desc">{t("archDesc")}</div>
-      <AntTabs
-        value={activeTab}
-        onChange={(event, newTab) => {
-          setActiveTab(newTab);
-        }}
-      >
-        <AntTab label={t("servicelog:cloudfront.standardLogs")} />
-        <AntTab label={t("servicelog:cloudfront.realtimeLogs")} />
-      </AntTabs>
-      <TabPanel value={activeTab} index={0}>
+      <div className="ingest-desc-desc">
+        {isLightEngine ? t("lightEngineArchDesc") : t("archDesc")}
+      </div>
+      {!isLightEngine ? (
+        <>
+          <AntTabs
+            value={activeTab}
+            onChange={(event, newTab) => {
+              setActiveTab(newTab);
+            }}
+          >
+            <AntTab label={t("servicelog:cloudfront.standardLogs")} />
+            <AntTab label={t("servicelog:cloudfront.realtimeLogs")} />
+          </AntTabs>
+          <TabPanel value={activeTab} index={0}>
+            <div className="mt-10">
+              <img
+                className="img-border"
+                alt="architecture"
+                width="80%"
+                src={cloudFrontSArch}
+              />
+            </div>
+          </TabPanel>
+          <TabPanel value={activeTab} index={1}>
+            <div className="mt-10">
+              <img
+                className="img-border"
+                alt="architecture"
+                width="80%"
+                src={cloudFrontSArchRealtime}
+              />
+            </div>
+          </TabPanel>
+        </>
+      ) : (
         <div className="mt-10">
           <img
             className="img-border"
             alt="architecture"
             width="80%"
-            src={cloudFrontSArch}
+            src={cloudfrontLightEngineArch}
           />
         </div>
-      </TabPanel>
-      <TabPanel value={activeTab} index={1}>
-        <div className="mt-10">
-          <img
-            className="img-border"
-            alt="architecture"
-            width="80%"
-            src={cloudFrontSArchRealtime}
-          />
-        </div>
-      </TabPanel>
+      )}
     </div>
   );
 };

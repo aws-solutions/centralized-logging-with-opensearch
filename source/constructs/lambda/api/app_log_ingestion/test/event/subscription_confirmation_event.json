@@ -1,0 +1,18 @@
+{
+  "Records": [
+      {
+          "messageId": "4ae393ab-379d-4c64-8b75-23aff21f49cd",
+          "receiptHandle": "AQEBXqUh3l+OfNdgjYfVrHt5o+ByBOLIb+tjynMWkkmtEHDMqpm5UvhPQddUaFjAPMKS+DASH0CjSQmep2gemnUEr+DQhrnd5/LJXJT5fKk8o+snazcBPVHtS26JmIWhx4TdrAtF9aYnxmZb132+POis70YXxaA5cGZhLvB5cPbsTqE2Bq0lc04D24xIpbqCSI6oIWV6RGOPe8WoFWffiFjZtoDa23j1lDgd2ZJHB3Fu6cAL15HpaNYJ4utVUqzyQ1Hz53U7JoBMZqfgi4EKDJQcQxKhFZWL65zwJ5jqRmt4R/VpcAm041tMydbNWDvilG5KahbLQiSh/bjCThvZP7940x4vu+FajuQ7z0Wna4IlLlN1llRhBEwypt8WLWWt16gw9t79J/I7KVaaNh+UpEXv7DBnObjVqRi4ymeK5Gfk7/yJ80IerhM4S5NZwgInuSUOINBz+cP4u8/7c1auX1Pq0A==",
+          "body": "{\n  \"Type\" : \"SubscriptionConfirmation\",\n  \"MessageId\" : \"7a6768d4-c934-4428-9802-d540df0c507a\",\n  \"Token\" : \"2336412f37fb687f5d51e6e2425c464dede3c3755d88454b9c4b0ef3a788468e3fa5241116a2d6bd50656989921c283a58987f6d3ee28b593b1fb84a5f58fa7f8cda58b37481b13c534fd3ecd9b86239665956104fa1969e6bc2869a6def422cc2baedb558cc4bb183c62f934f0d1bf674cdbc8c7ae3b8579231eec31f24950af9a3097321c43b0eb7a3d087a1cbe063aca6f7655dc3a863be7cedaadbf5999f5c2e39231a05c06dff14255b187e678e\",\n  \"TopicArn\" : \"arn:aws:sns:us-west-2:123456789012:test-james-acct-FlbUploadingEventSubscriptionTopic822D837F-3U3cn75wViTy\",\n  \"Message\" : \"You have chosen to subscribe to the topic arn:aws:sns:us-west-2:123456789012:test-james-acct-FlbUploadingEventSubscriptionTopic822D837F-3U3cn75wViTy.\\nTo confirm the subscription, visit the SubscribeURL included in this message.\",\n  \"SubscribeURL\" : \"https://sns.us-west-2.amazonaws.com/?Action=ConfirmSubscription&TopicArn=arn:aws:sns:us-west-2:123456789012:test-james-acct-FlbUploadingEventSubscriptionTopic822D837F-3U3cn75wViTy&Token=2336412f37fb687f5d51e6e2425c464dede3c3755d88454b9c4b0ef3a788468e3fa5241116a2d6bd50656989921c283a58987f6d3ee28b593b1fb84a5f58fa7f8cda58b37481b13c534fd3ecd9b86239665956104fa1969e6bc2869a6def422cc2baedb558cc4bb183c62f934f0d1bf674cdbc8c7ae3b8579231eec31f24950af9a3097321c43b0eb7a3d087a1cbe063aca6f7655dc3a863be7cedaadbf5999f5c2e39231a05c06dff14255b187e678e\",\n  \"Timestamp\" : \"2023-08-25T04:46:14.948Z\",\n  \"SignatureVersion\" : \"1\",\n  \"Signature\" : \"kLH8tnDUt7/EslfpTY1dnLZhKDMynaHhpMeYFGWi8+7y5AmlnVokjDjyw3uUuNmXFuNoe6hXvCMwtDqZ0TgE4nSuGFvnJ+g1yVzvM7rPNGQfEO5B2gnZyonYJqqg1XtHnOI+ee55/qOfkKIfMfQghH4hZj+StAA3EcAx8nDzEz8v/hqTVjXY5T0YDezAPoaQXP+fpUEQVY5zn3xzF2GW3mmW/zl/rIzwZPeGXzW1IGNVgGMfXib3z2cI9q3Iv99sqJfwWiIWm2CG+dpOIuvaHY8SVonEF6X/b8EB7ID01e4d8xkVbZMmYke2TwmVuH5WQ0I8YTpT9tGNpkFVquFJTA==\",\n  \"SigningCertURL\" : \"https://sns.us-west-2.amazonaws.com/SimpleNotificationService-01d088a6f77103d0fe307c0069e40ed6.pem\"\n}",
+          "attributes": {
+              "ApproximateReceiveCount": "1",
+              "SentTimestamp": "1692938774974",
+              "SenderId": "AIDAIYLAVTDLUXBIEIX46",
+              "ApproximateFirstReceiveTimestamp": "1692948034041"
+          },
+          "messageAttributes": {},
+          "md5OfBody": "e716037b84310ab9e3671b1dda572b2b"
+          
+      }
+  ]
+}

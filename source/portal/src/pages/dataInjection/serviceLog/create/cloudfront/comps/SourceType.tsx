@@ -65,6 +65,7 @@ interface LogTypeProps {
   samplingRateError?: boolean;
   shardNumError?: boolean;
   maxShardNumError?: boolean;
+  standardOnly?: boolean;
 }
 
 const SourceType: React.FC<LogTypeProps> = (props: LogTypeProps) => {
@@ -90,6 +91,7 @@ const SourceType: React.FC<LogTypeProps> = (props: LogTypeProps) => {
     changeMinCapacity,
     changeEnableAS,
     changeMaxCapacity,
+    standardOnly,
   } = props;
   const { t } = useTranslation();
 
@@ -246,7 +248,7 @@ const SourceType: React.FC<LogTypeProps> = (props: LogTypeProps) => {
           placeholder={t("servicelog:cloudfront.selectLogType")}
           className="m-w-45p"
           optionList={
-            cloudFrontTask.logSourceAccountId || region.startsWith("cn")
+            cloudFrontTask.logSourceAccountId || region.startsWith("cn") || standardOnly
               ? CLOUDFRONT_LOG_STANDARD
               : CLOUDFRONT_LOG_TYPE
           }

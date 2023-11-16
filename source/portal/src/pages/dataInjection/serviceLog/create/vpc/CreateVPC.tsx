@@ -50,6 +50,7 @@ import { appSyncRequestMutation } from "assets/js/request";
 import { createServicePipeline } from "graphql/mutations";
 import {
   bucketNameIsValid,
+  buildOSIParamsValue,
   splitStringToBucketAndPrefix,
 } from "assets/js/utils";
 import { SelectItem } from "components/Select/select";
@@ -64,6 +65,13 @@ import {
   CreateAlarmActionTypes,
   validateAalrmInput,
 } from "reducer/createAlarm";
+import { useSelectProcessor } from "assets/js/hooks/useSelectProcessor";
+import SelectLogProcessor from "pages/comps/processor/SelectLogProcessor";
+import {
+  LogProcessorType,
+  SelectProcessorActionTypes,
+  validateOCUInput,
+} from "reducer/selectProcessor";
 
 const BASE_EXCLUDE_PARAMS = [
   "esDomainId",
@@ -268,6 +276,7 @@ const CreateVPCLog: React.FC = () => {
 
   const tags = useTags();
   const monitor = useAlarm();
+  const osiParams = useSelectProcessor();
 
   const confirmCreatePipeline = async () => {
     const createPipelineParams: any = {};
@@ -281,6 +290,7 @@ const CreateVPCLog: React.FC = () => {
     createPipelineParams.destinationType = vpcLogPipelineTask.destinationType;
 
     createPipelineParams.monitor = monitor.monitor;
+    createPipelineParams.osiParams = buildOSIParamsValue(osiParams);
 
     let tmpParamList: any = [];
 
@@ -466,7 +476,8 @@ const CreateVPCLog: React.FC = () => {
       vpcLogIsChanging ||
       domainListIsLoading ||
       (curStep === 1 &&
-        domainCheckStatus?.status !== DomainStatusCheckType.PASSED)
+        domainCheckStatus?.status !== DomainStatusCheckType.PASSED) ||
+      osiParams.serviceAvailableCheckedLoading
     );
   };
 
@@ -486,6 +497,9 @@ const CreateVPCLog: React.FC = () => {
                     },
                     {
                       name: t("servicelog:create.step.specifyDomain"),
+                    },
+                    {
+                      name: t("processor.logProcessorSettings"),
                     },
                     {
                       name: t("servicelog:create.step.createTags"),
@@ -599,6 +613,11 @@ const CreateVPCLog: React.FC = () => {
                     changeSourceType={(type) => {
                       setVpcFlowLogEmptyError(false);
                       setSourceTypeEmptyError(false);
+                      // Update processor type to lambda when change buffer type
+                      dispatch({
+                        type: SelectProcessorActionTypes.CHANGE_PROCESSOR_TYPE,
+                        processorType: LogProcessorType.LAMBDA,
+                      });
                       setVpcLogPipelineTask((prev) => {
                         return {
                           ...prev,
@@ -970,7 +989,21 @@ const CreateVPCLog: React.FC = () => {
                 )}
                 {curStep === 2 && (
                   <div>
-                    <AlarmAndTags pipelineTask={vpcLogPipelineTask} />
+                    <SelectLogProcessor
+                      supportOSI={
+                        !vpcLogPipelineTask.logSourceAccountId &&
+                        vpcLogPipelineTask.destinationType ===
+                          DestinationType.S3
+                      }
+                    />
+                  </div>
+                )}
+                {curStep === 3 && (
+                  <div>
+                    <AlarmAndTags
+                      pipelineTask={vpcLogPipelineTask}
+                      osiParams={osiParams}
+                    />
                   </div>
                 )}
                 <div className="button-action text-right">
@@ -994,7 +1027,7 @@ const CreateVPCLog: React.FC = () => {
                     </Button>
                   )}
 
-                  {curStep < 2 && (
+                  {curStep < 3 && (
                     <Button
                       disabled={isNextDisabled()}
                       btnType="primary"
@@ -1013,15 +1046,23 @@ const CreateVPCLog: React.FC = () => {
                         ) {
                           return;
                         }
+                        if (curStep === 2) {
+                          dispatch({
+                            type: SelectProcessorActionTypes.VALIDATE_OCU_INPUT,
+                          });
+                          if (!validateOCUInput(osiParams)) {
+                            return;
+                          }
+                        }
                         setCurStep((curStep) => {
-                          return curStep + 1 > 2 ? 2 : curStep + 1;
+                          return curStep + 1 > 3 ? 3 : curStep + 1;
                         });
                       }}
                     >
                       {t("button.next")}
                     </Button>
                   )}
-                  {curStep === 2 && (
+                  {curStep === 3 && (
                     <Button
                       loading={loadingCreate}
                       btnType="primary"

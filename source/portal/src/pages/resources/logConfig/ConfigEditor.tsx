@@ -44,12 +44,14 @@ import { BreadcrumbType } from "components/Breadcrumb/breadcrumb";
 import { getLogConfig } from "graphql/queries";
 import LoadingText from "components/LoadingText";
 
+export const DEFAULT_MULTILINE_REGEX = "(?<log>.+)";
+
 interface BreadCrumbListProps {
   pageType: PageType;
   breadCrumbList: BreadcrumbType[];
 }
 
-const LogConfitEditor: React.FC<BreadCrumbListProps> = (
+const LogConfigEditor: React.FC<BreadCrumbListProps> = (
   props: BreadCrumbListProps
 ) => {
   const { id } = useParams();
@@ -92,7 +94,7 @@ const LogConfitEditor: React.FC<BreadCrumbListProps> = (
   const [loadingData, setLoadingData] = useState(false);
   const [loadingUpdate, setLoadingUpdate] = useState(false);
   const [showNameRequiredError, setShowNameRequiredError] = useState(false);
-  const [showTypeRequiedError, setShowTypeRequiedError] = useState(false);
+  const [showTypeRequiredError, setShowTypeRequiredError] = useState(false);
   const [showUserLogFormatError, setShowUserLogFormatError] = useState(false);
   const [showSampleLogRequiredError, setShowSampleLogRequiredError] =
     useState(false);
@@ -102,17 +104,30 @@ const LogConfitEditor: React.FC<BreadCrumbListProps> = (
 
   const sampleLogParsingRef = useRef<SampleLogParsingRefType>(null);
 
+  const isSpringBoot = () => {
+    return (
+      curConfig.logType === LogType.MultiLineText &&
+      curConfig.multilineLogParser === MultiLineLogParser.JAVA_SPRING_BOOT
+    );
+  };
+
+  const isNeedCustomFormatType = () => {
+    return (
+      curConfig.logType === LogType.Apache ||
+      curConfig.logType === LogType.Nginx ||
+      isSpringBoot()
+    );
+  };
+
   const userLogFormatValidator = new Validator(() => {
-    if (
-      (curConfig.logType === LogType.Apache ||
-        curConfig.logType === LogType.Nginx ||
-        curConfig.logType === LogType.MultiLineText) &&
-      curConfig.userLogFormat === ""
-    ) {
+    if (isNeedCustomFormatType() && curConfig.userLogFormat === "") {
       throw new Error(t("resource:config.parsing.userLogFormatNotEmpty") || "");
     }
 
-    if (containsNonLatinCodepoints(curConfig.userLogFormat ?? "")) {
+    if (
+      isSpringBoot() &&
+      containsNonLatinCodepoints(curConfig.userLogFormat ?? "")
+    ) {
       throw new Error(t("resource:config.parsing.userLogFormatError") || "");
     }
   });
@@ -129,7 +144,7 @@ const LogConfitEditor: React.FC<BreadCrumbListProps> = (
         setShowSampleLogRequiredError(true);
         return false;
       }
-      if (!curConfig.regexFieldSpecs || curConfig.regexFieldSpecs.length <= 0) {
+      if (!curConfig.jsonSchema) {
         Swal.fire(
           t("oops") || "",
           t("resource:config.parsing.regexLogParseError") || "",
@@ -189,25 +204,33 @@ const LogConfitEditor: React.FC<BreadCrumbListProps> = (
     return true;
   };
 
-  const mutationLogConfig = async () => {
+  const checkParamInput = () => {
     if (
       sampleLogParsingRef.current &&
       !sampleLogParsingRef.current.validate()
     ) {
-      return;
+      return false;
     }
 
     if (!curConfig.name?.trim()) {
       setShowNameRequiredError(true);
-      return;
+      return false;
     }
 
     if (!curConfig.logType) {
-      setShowTypeRequiedError(true);
-      return;
+      setShowTypeRequiredError(true);
+      return false;
     }
 
     if (!validateParameters()) {
+      return false;
+    }
+
+    return true;
+  };
+
+  const mutationLogConfig = async () => {
+    if (!checkParamInput()) {
       return;
     }
 
@@ -233,6 +256,14 @@ const LogConfitEditor: React.FC<BreadCrumbListProps> = (
       createLogConfigParam.userLogFormat = curConfig.userLogFormat
         ?.trim()
         .replace(/[\n\t\r]/g, "");
+    }
+
+    if (curConfig.logType === LogType.JSON) {
+      if (curConfig.jsonSchema) {
+        createLogConfigParam.jsonSchema = JSON.stringify(curConfig.jsonSchema);
+      }
+    } else {
+      createLogConfigParam.jsonSchema = undefined;
     }
 
     try {
@@ -274,12 +305,49 @@ const LogConfitEditor: React.FC<BreadCrumbListProps> = (
         };
       }
       dataLogConfig.regexKeyList = dataLogConfig.regexFieldSpecs as any;
+      if (dataLogConfig.logType === LogType.JSON && dataLogConfig.jsonSchema) {
+        dataLogConfig.jsonSchema = JSON.parse(dataLogConfig?.jsonSchema);
+      }
       setCurConfig(dataLogConfig);
       setLoadingData(false);
     } catch (error: any) {
       setLoadingData(false);
       handleErrorMessage(error.message);
       console.error(error);
+    }
+  };
+
+  const convertJsonToRegexList = (json: any) => {
+    const result: any = [];
+    Object.keys(json).forEach((key) => {
+      const item = {
+        key: key,
+        type: json[key].type,
+        format: json[key].format,
+        value: "",
+        loadingCheck: false,
+        showError: false,
+        showSuccess: false,
+        error: "",
+      };
+      result.push(item);
+    });
+    return result;
+  };
+
+  const updateJsonTimeKey = (json: any, keyName: string) => {
+    Object.keys(json).forEach((key) => {
+      if (Object.hasOwnProperty.call(json[key], "timeKey")) {
+        // 将所有的 timeKey 设置为 false
+        json[key].timeKey = false;
+      }
+    });
+    // 如果找到了 keyName，就设置对应的 timeKey 为 true
+    if (
+      Object.hasOwnProperty.call(json, keyName) &&
+      Object.hasOwnProperty.call(json[keyName], "timeKey")
+    ) {
+      json[keyName].timeKey = true;
     }
   };
 
@@ -312,7 +380,7 @@ const LogConfitEditor: React.FC<BreadCrumbListProps> = (
                   headerTitle={t("resource:config.name")}
                   curConfig={curConfig}
                   showNameRequiredError={showNameRequiredError}
-                  showTypeRequiedError={showTypeRequiedError}
+                  showTypeRequiedError={showTypeRequiredError}
                   userLogFormatError={showUserLogFormatError}
                   sampleLogRequiredError={showSampleLogRequiredError}
                   sampleLogInvalid={showSampleLogInvalidError}
@@ -329,7 +397,7 @@ const LogConfitEditor: React.FC<BreadCrumbListProps> = (
                     });
                   }}
                   changeLogType={(type: LogType) => {
-                    setShowTypeRequiedError(false);
+                    setShowTypeRequiredError(false);
                     setShowUserLogFormatError(false);
                     setShowSampleLogRequiredError(false);
                     setCurConfig((prev: ExLogConf) => {
@@ -337,12 +405,16 @@ const LogConfitEditor: React.FC<BreadCrumbListProps> = (
                         ...prev,
                         userLogFormat: "",
                         regex:
-                          type === LogType.SingleLineText ? "(?<log>.+)" : "",
+                          type === LogType.SingleLineText
+                            ? DEFAULT_MULTILINE_REGEX
+                            : "",
                         multilineLogParser: undefined,
                         syslogParser: undefined,
                         userSampleLog: "",
                         regexFieldSpecs: [],
                         logType: type,
+                        timeKey: "",
+                        jsonSchema: "",
                       };
                     });
                   }}
@@ -354,7 +426,7 @@ const LogConfitEditor: React.FC<BreadCrumbListProps> = (
                         userLogFormat: "",
                         regex:
                           parser === MultiLineLogParser.CUSTOM
-                            ? "(?<log>.+)"
+                            ? DEFAULT_MULTILINE_REGEX
                             : "",
                         userSampleLog: "",
                         regexFieldSpecs: [],
@@ -416,10 +488,42 @@ const LogConfitEditor: React.FC<BreadCrumbListProps> = (
                       };
                     });
                   }}
-                  changeTimeKey={(key) => {
+                  changeJSONSchema={(schema) => {
+                    const tmpRegexList = convertJsonToRegexList(
+                      schema.properties
+                    );
                     setCurConfig((prev: ExLogConf) => {
-                      return { ...prev, timeKey: key };
+                      return {
+                        ...prev,
+                        jsonSchema: schema,
+                        regexKeyList: tmpRegexList,
+                      };
                     });
+                  }}
+                  changeTimeKey={(key) => {
+                    if (
+                      curConfig.logType === LogType.JSON &&
+                      curConfig.jsonSchema
+                    ) {
+                      //updateJsonTimeKey
+                      if (typeof curConfig.jsonSchema === "string") {
+                        curConfig.jsonSchema = JSON.parse(curConfig.jsonSchema);
+                      }
+                      const tmpSchemaProperty = (curConfig.jsonSchema as any)
+                        .properties;
+                      updateJsonTimeKey(tmpSchemaProperty, key);
+                      setCurConfig((prev: ExLogConf) => {
+                        return {
+                          ...prev,
+                          timeKey: key,
+                          jsonSchema: curConfig.jsonSchema,
+                        };
+                      });
+                    } else {
+                      setCurConfig((prev: ExLogConf) => {
+                        return { ...prev, timeKey: key };
+                      });
+                    }
                   }}
                   changeTimeOffset={(offset) => {
                     setCurConfig((prev: ExLogConf) => {
@@ -427,6 +531,7 @@ const LogConfitEditor: React.FC<BreadCrumbListProps> = (
                     });
                   }}
                   changeUserLogFormat={(format) => {
+                    setShowUserLogFormatError(false);
                     const { tmpExp, tmpTimeExp } =
                       getRegexAndTimeByConfigAndFormat(curConfig, format);
                     if (
@@ -491,4 +596,4 @@ const LogConfitEditor: React.FC<BreadCrumbListProps> = (
   );
 };
 
-export default LogConfitEditor;
+export default LogConfigEditor;

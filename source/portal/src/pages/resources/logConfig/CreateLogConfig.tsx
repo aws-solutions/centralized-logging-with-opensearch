@@ -16,7 +16,7 @@ limitations under the License.
 import React from "react";
 import { PageType } from "../common/LogConfigComp";
 import { useTranslation } from "react-i18next";
-import LogConfitEditor from "./ConfigEditor";
+import LogConfigEditor from "./ConfigEditor";
 
 const CreateLogConfig: React.FC = () => {
   const { t } = useTranslation();
@@ -31,7 +31,7 @@ const CreateLogConfig: React.FC = () => {
 
   return (
     <div>
-      <LogConfitEditor
+      <LogConfigEditor
         breadCrumbList={breadCrumbList}
         pageType={PageType.New}
       />

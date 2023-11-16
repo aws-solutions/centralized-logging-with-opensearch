@@ -200,6 +200,10 @@ export const S3_STORAGE_CLASS_OPTIONS = [
   },
 ];
 
+export type TagType = {
+  key: string;
+  value: string;
+};
 export interface ApplicationLogType {
   openSearchId: string;
   warmEnable: boolean;

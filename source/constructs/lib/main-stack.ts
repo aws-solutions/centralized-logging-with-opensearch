@@ -28,6 +28,9 @@ import {
   aws_kms as kms,
   aws_iam as iam,
   aws_s3 as s3,
+  aws_ec2 as ec2,
+  aws_sqs as sqs,
+  aws_s3_notifications as s3n,
 } from 'aws-cdk-lib';
 import { Vpc } from 'aws-cdk-lib/aws-ec2';
 import { NagSuppressions } from 'cdk-nag';
@@ -39,6 +42,7 @@ import { CustomResourceStack } from './main/cr-stack';
 import { EcsClusterStack } from './main/ecs-cluster-stack';
 import { PortalStack } from './main/portal-stack';
 import { VpcStack } from './main/vpc-stack';
+import { MicroBatchStack } from './microbatch/main/services/amazon-services-stack';
 
 const { VERSION } = process.env;
 
@@ -97,6 +101,8 @@ export class MainStack extends Stack {
   private oidcCustomerDomain = '';
   private iamCertificateId = '';
   private acmCertificateArn = '';
+  private flbConfUploadingEventQueueArn = '';
+
 
   constructor(scope: Construct, id: string, props: MainProps) {
     super(scope, id, props);
@@ -117,6 +123,17 @@ export class MainStack extends Stack {
     let oidcClientId: CfnParameter | null = null;
     let oidcCustomerDomain: CfnParameter | null = null;
     let iamCertificateId: CfnParameter | null = null;
+    let microBatchStack: MicroBatchStack;
+
+    const username = new CfnParameter(this, 'adminEmail', {
+      type: 'String',
+      description: 'The email address of Admin user',
+      allowedPattern:
+        '\\w[-\\w.+]*@([A-Za-z0-9][-A-Za-z0-9]+\\.)+[A-Za-z]{2,14}',
+    });
+    this.addToParamLabels('Admin User Email', username.logicalId);
+    this.addToParamGroups('Authentication', username.logicalId);
+
 
     if (this.authType === AuthType.OIDC) {
       oidcProvider = new CfnParameter(this, 'OidcProvider', {
@@ -179,15 +196,6 @@ export class MainStack extends Stack {
         acmCertificateArn.logicalId
       );
     } else {
-      const username = new CfnParameter(this, 'adminEmail', {
-        type: 'String',
-        description: 'The email address of Admin user',
-        allowedPattern:
-          '\\w[-\\w.+]*@([A-Za-z0-9][-A-Za-z0-9]+\\.)+[A-Za-z]{2,14}',
-      });
-      this.addToParamLabels('Admin User Email', username.logicalId);
-      this.addToParamGroups('Authentication', username.logicalId);
-
       // Create an Auth Stack (Default Cognito)
       const authStack = new AuthStack(this, `${stackPrefix}Auth`, {
         username: username.valueAsString,
@@ -298,11 +306,16 @@ export class MainStack extends Stack {
             actions: ['kms:GenerateDataKey*', 'kms:Decrypt', 'kms:Encrypt'],
             resources: ['*'], // support app log from s3 by not limiting the resource
             principals: [
-              new iam.ServicePrincipal('s3.amazonaws.com'),
-              new iam.ServicePrincipal('lambda.amazonaws.com'),
-              new iam.ServicePrincipal('ec2.amazonaws.com'),
-              new iam.ServicePrincipal('sqs.amazonaws.com'),
-              new iam.ServicePrincipal('cloudwatch.amazonaws.com'),
+              new iam.ServicePrincipal("s3.amazonaws.com"),
+              new iam.ServicePrincipal("lambda.amazonaws.com"),
+              new iam.ServicePrincipal("sqs.amazonaws.com"),
+              new iam.ServicePrincipal("sns.amazonaws.com"),
+              new iam.ServicePrincipal("ec2.amazonaws.com"),
+              new iam.ServicePrincipal("athena.amazonaws.com"),
+              new iam.ServicePrincipal("dynamodb.amazonaws.com"),
+              new iam.ServicePrincipal("cloudwatch.amazonaws.com"),
+              new iam.ServicePrincipal("glue.amazonaws.com"),
+              new iam.ServicePrincipal("delivery.logs.amazonaws.com"),
             ],
           }),
         ],
@@ -313,6 +326,66 @@ export class MainStack extends Stack {
     const ecsClusterStack = new EcsClusterStack(this, 'ECSClusterStack', {
       vpc: vpcStack.vpc,
     });
+
+    // Setup Fluent Bit uploading event SQS and DLQ
+    const flbConfUploadingEventDLQ = new sqs.Queue(
+      this,
+      `${stackPrefix}-FlbConfUploadingEventDLQ`,
+      {
+        visibilityTimeout: Duration.minutes(15),
+        retentionPeriod: Duration.days(7),
+        encryption: sqs.QueueEncryption.KMS_MANAGED,
+      }
+    );
+    flbConfUploadingEventDLQ.addToResourcePolicy(
+      new iam.PolicyStatement({
+        actions: ['sqs:*'],
+        effect: iam.Effect.DENY,
+        resources: [flbConfUploadingEventDLQ.queueArn],
+        conditions: {
+          ['Bool']: {
+            'aws:SecureTransport': 'false',
+          },
+        },
+        principals: [new iam.AnyPrincipal()],
+      })
+    );
+    NagSuppressions.addResourceSuppressions(flbConfUploadingEventDLQ, [
+      { id: 'AwsSolutions-SQS3', reason: 'it is a DLQ' },
+    ]);
+
+    const flbConfUploadingEventQueue = new sqs.Queue(
+      this,
+      `${stackPrefix}-FlbConfUploadingEventQueue`,
+      {
+        visibilityTimeout: Duration.seconds(910),
+        retentionPeriod: Duration.days(14),
+        deadLetterQueue: {
+          queue: flbConfUploadingEventDLQ,
+          maxReceiveCount: 30,
+        },
+        encryption: sqs.QueueEncryption.KMS,
+        dataKeyReuse: Duration.minutes(5),
+        encryptionMasterKey: sqsCMKKey,
+        enforceSSL: true,
+      }
+    );
+    this.flbConfUploadingEventQueueArn = flbConfUploadingEventQueue.queueArn;
+
+    //allows the Amazon SNS topic in the member account to send a message to the Amazon SQS queue in the parent account.
+    flbConfUploadingEventQueue.addToResourcePolicy(
+      new iam.PolicyStatement({
+        actions: ['sqs:SendMessage'],
+        effect: iam.Effect.ALLOW,
+        resources: [this.flbConfUploadingEventQueueArn],
+        conditions: {
+          ['ArnLike']: {
+            'aws:SourceArn': `arn:${Aws.PARTITION}:sns:${Aws.REGION}:*:*FlbUploadingEventSubscriptionTopic*`,
+          },
+        },
+        principals: [new iam.ServicePrincipal('sns.amazonaws.com')],
+      })
+    );
 
     // Create a default logging bucket
     const loggingBucket = new s3.Bucket(
@@ -335,6 +408,15 @@ export class MainStack extends Stack {
             ],
           },
         ],
+      }
+    );
+    // Add the S3 event on the log bucket with the target is sqs queue
+    loggingBucket.addEventNotification(
+      s3.EventType.OBJECT_CREATED,
+      new s3n.SqsDestination(flbConfUploadingEventQueue),
+      {
+        prefix: 'app_log_config/',
+        suffix: 'applog_parsers.conf',
       }
     );
     const elbRootAccountArnTable = new CfnMapping(
@@ -442,6 +524,20 @@ export class MainStack extends Stack {
       },
     ]);
 
+    // init MicroBatch Stack
+    microBatchStack = new MicroBatchStack(this, 'MicroBatchStack', {
+      solutionId: solutionId,
+      solutionName: solutionName,
+      stackPrefix: stackPrefix,
+      emailAddress: username.valueAsString,
+      vpc: vpcStack.vpc.vpcId,
+      privateSubnets: vpcStack.vpc.privateSubnets.map((value) => { return value.subnetId }),
+      CMKArn: sqsCMKKey.keyArn,
+      SESState: "DISABLED",
+    });
+
+    microBatchStack.microBatchLambdaStack.MetadataWriterStack.MetadataWriter.node.addDependency(vpcStack.vpc.selectSubnets({ subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }).internetConnectivityEstablished);
+
     // Create the Appsync API stack
     const apiStack = new APIStack(this, 'API', {
       oidcClientId: this.oidcClientId,
@@ -457,6 +553,8 @@ export class MainStack extends Stack {
       cmkKeyArn: sqsCMKKey.keyArn,
       solutionId: solutionId,
       stackPrefix: stackPrefix,
+      microBatchStack: microBatchStack,
+      flbConfUploadingEventQueue: flbConfUploadingEventQueue,
     });
     NagSuppressions.addResourceSuppressions(
       apiStack,
@@ -515,6 +613,13 @@ export class MainStack extends Stack {
       description: 'Web Console URL (front-end)',
       value: portalStack.portalUrl,
     }).overrideLogicalId('WebConsoleUrl');
+
+    new CfnOutput(this, 'DefaultFlbConfUploadingEventQueueArn', {
+      description: 'Queue for config file upload events for Fluent Bit',
+      value: this.flbConfUploadingEventQueueArn,
+    }).overrideLogicalId('DefaultFlbConfUploadingEventQueueArn');
+
+
   }
 
   private addToParamGroups(label: string, ...param: string[]) {
@@ -528,5 +633,5 @@ export class MainStack extends Stack {
     this.paramLabels[param] = {
       default: label,
     };
-  }
+  };
 }

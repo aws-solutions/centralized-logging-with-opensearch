@@ -5,13 +5,14 @@ import os
 import logging
 
 from commonlib import AWSConnection
-from commonlib.dao import PipelineAlarmDao
+from commonlib.dao import PipelineAlarmDao, DynamoDBUtil
 from commonlib.model import (
     PipelineType,
     BufferTypeEnum,
     PipelineAlarmType,
     PipelineAlarmStatus,
     LogSourceTypeEnum,
+    EngineType,
 )
 
 from boto3.dynamodb.conditions import Attr
@@ -27,6 +28,7 @@ stack_prefix = os.environ.get("STACK_PREFIX", "CL")
 app_pipeline_table_name = os.environ.get("APP_PIPELINE_TABLE_NAME")
 svc_pipeline_table_name = os.environ.get("PIPELINE_TABLE_NAME")
 app_log_ingestion_table_name = os.environ.get("APP_LOG_INGESTION_TABLE_NAME")
+metadata_table_name = os.environ["METADATA_TABLE_NAME"]
 
 SQS_OLDEST_MESSAGE_AGE_THRESHOLD_SECONDS = 1800
 SQS_OLDEST_MESSAGE_AGE_PERIOD = 60
@@ -79,6 +81,7 @@ class AlarmHelper:
         self._alarm_info = self._alarm_dao.get_alarm_metric_info_by_pipeline_id(
             pipeline_id, id_key=self._id_key
         )
+        self._metadata_table = DynamoDBUtil(table_name=metadata_table_name)
 
     def _get_sns_topic_arn(self, custom_sns_topic_name: str = ""):
         """This function will determine to generate a new sns topic or use existed one.
@@ -216,6 +219,8 @@ class AlarmHelper:
             self._emails,
             id_key=self._id_key,
         )
+        
+        self.update_light_engine_notification(recipients=self._sns_topic_arn, service="SNS")
 
     def delete_alarms(self) -> None:
         """Delete all alarms"""
@@ -228,6 +233,8 @@ class AlarmHelper:
             status=PipelineAlarmStatus.DISABLED,
             id_key=self._id_key,
         )
+        
+        self.update_light_engine_notification(recipients=self._sns_topic_arn, service="SNS")
 
     def update_alarms(self) -> None:
         """Update alarms
@@ -283,6 +290,8 @@ class AlarmHelper:
             self._emails,
             id_key=self._id_key,
         )
+        
+        self.update_light_engine_notification(recipients=self._sns_topic_arn, service="SNS")
 
     def get_alarms(self, alarm_name: str) -> dict:
         """Get all alarms for a specific pipeline"""
@@ -525,3 +534,21 @@ class AlarmHelper:
         return (
             stack_prefix + "-pipe-" + self._pipeline_id[:8] + "-" + alarm_type + suffix
         )
+        
+    def update_light_engine_notification(self, recipients: str, service: str = 'SNS'):
+        if self._alarm_info['engineType'] == EngineType.OPEN_SEARCH:
+            return 
+
+        pipeline_info = self._metadata_table.get_item(key={'metaName': self._pipeline_id})
+        if pipeline_info:
+            data = pipeline_info.get('data', {})
+            if data:
+                data['notification'] = {
+                    'recipients': recipients,
+                    'service': service
+                }
+                self._metadata_table.update_item(key={'metaName': self._pipeline_id}, attributes_map={'data': data})
+                
+
+
+

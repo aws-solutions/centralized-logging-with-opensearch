@@ -15,7 +15,8 @@ limitations under the License.
 */
 import FormItem from "components/FormItem";
 import Tiles from "components/Tiles";
-import React from "react";
+import { AnalyticEngineTypes } from "pages/dataInjection/serviceLog/create/common/SpecifyAnalyticsEngine";
+import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 export enum BufferType {
@@ -27,24 +28,25 @@ export enum BufferType {
 interface SelectBufferProps {
   currentBufferLayer: string;
   changeActiveLayer: (layer: string) => void;
+  engineType?: AnalyticEngineTypes;
 }
 
 const SelectBuffer: React.FC<SelectBufferProps> = (
   props: SelectBufferProps
 ) => {
   const { t } = useTranslation();
-  const { currentBufferLayer, changeActiveLayer } = props;
-
-  return (
-    <div className="mb-10">
-      <FormItem optionTitle="" optionDesc="">
-        <Tiles
-          displayInRow
-          value={currentBufferLayer}
-          onChange={(event) => {
-            changeActiveLayer(event.target.value);
-          }}
-          items={[
+  const { currentBufferLayer, changeActiveLayer, engineType = AnalyticEngineTypes.OPENSEARCH } = props;
+  const selectionItems = useMemo(
+    () =>
+      engineType === AnalyticEngineTypes.LIGHT_ENGINE
+        ? [
+            {
+              value: BufferType.S3,
+              label: t("applog:create.ingestSetting.bufferS3"),
+              description: t("applog:create.ingestSetting.bufferS3LightEngineDesc"),
+            },
+          ]
+        : [
             {
               value: BufferType.S3,
               label: t("applog:create.ingestSetting.bufferS3"),
@@ -60,7 +62,20 @@ const SelectBuffer: React.FC<SelectBufferProps> = (
               label: t("applog:create.ingestSetting.bufferNone"),
               description: t("applog:create.ingestSetting.bufferNoneDesc"),
             },
-          ]}
+          ],
+    [engineType]
+  );
+
+  return (
+    <div className="mb-10">
+      <FormItem optionTitle="" optionDesc="">
+        <Tiles
+          displayInRow
+          value={currentBufferLayer}
+          onChange={(event) => {
+            changeActiveLayer(event.target.value);
+          }}
+          items={selectionItems}
         />
       </FormItem>
     </div>

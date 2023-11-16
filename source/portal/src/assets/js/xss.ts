@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 // No UpdateInstanceGroup, UpdateSubAccountLink function in UI
 const NEED_ENCODE_PARAM_KEYS: string[] = [
   "CreateAlarmForOpenSearch:value",
@@ -143,7 +144,6 @@ export const encodeParams = (statement: any, params: any) => {
     const res: any = r.exec(statement);
     if (res) {
       const mutationName = res[1];
-      console.info("mutationName:", mutationName);
       if (mutationName === "SPECIAL_MUTATION_NAME") {
         // For Special Mutation Handeler
       } else {
@@ -175,7 +175,6 @@ export const decodeResData = (statement: any, resData: any) => {
     const res: any = r.exec(statement);
     if (res) {
       const queryName = res[1];
-      console.info("queryName:", queryName);
       if (queryName === "SPECIAL_QUERY_NAME") {
         // For Special Query Handeler
       } else {

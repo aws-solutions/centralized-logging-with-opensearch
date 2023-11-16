@@ -22,6 +22,7 @@
       "eksCluster": "EKS Cluster",
       "eksClusterDesc": "Select an existing EKS cluster from ",
       "eksClusterError": "Please select an EKS Cluster",
+      "chooseEksCluster": "Select an EKS Cluster",
       "curAccount": "current AWS account",
       "agent": "Agent",
       "eksAgentPattern": "Pattern",

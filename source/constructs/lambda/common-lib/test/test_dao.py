@@ -21,6 +21,8 @@ from commonlib.model import (
     GroupPlatformEnum,
     GroupTypeEnum,
     RegularSpec,
+    StatusEnum,
+    ETLLog,
 )
 
 
@@ -566,6 +568,214 @@ def ddb_client():
             }
         ]
         init_table(app_log_ingestion_table, data_list)
+
+        # Mock InstanceIngestionDetail Table
+        instance_ingestion_detail_table_name = os.environ.get(
+            "INSTANCE_INGESTION_DETAIL_TABLE_NAME"
+        )
+        ddb.create_table(
+            TableName=instance_ingestion_detail_table_name,
+            KeySchema=[{"AttributeName": "id", "KeyType": "HASH"}],
+            AttributeDefinitions=[{"AttributeName": "id", "AttributeType": "S"}],
+            ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
+        )
+        
+        # Mock ETLLog Table
+        etl_log_table_name = os.environ.get("ETL_LOG_TABLE_NAME")
+        etl_log_table = ddb.create_table(
+            TableName=etl_log_table_name,
+            KeySchema=[
+                {
+                    "AttributeName": "executionName", 
+                    "KeyType": "HASH"
+                    },
+                {
+                    "AttributeName": "taskId", 
+                    "KeyType": "RANGE"
+                    },
+                ],
+            AttributeDefinitions=[
+                {"AttributeName": "executionName", "AttributeType": "S"},
+                {"AttributeName": "taskId", "AttributeType": "S"},
+                {"AttributeName": "pipelineIndexKey", "AttributeType": "S"},
+                {"AttributeName": "startTime", "AttributeType": "S"},
+            ],
+            GlobalSecondaryIndexes=[
+                {
+                    'IndexName': 'IDX_PIPELINE',
+                    'KeySchema': [
+                        {
+                            'AttributeName': 'pipelineIndexKey',
+                            'KeyType': 'HASH'
+                        },
+                        {
+                            'AttributeName': 'startTime',
+                            'KeyType': 'RANGE'
+                        },
+                    ],
+                    'Projection': {
+                        'ProjectionType': 'INCLUDE',
+                        'NonKeyAttributes': [
+                            'endTime', 'status'
+                        ]
+                    },
+                },
+            ],
+            ProvisionedThroughput={"ReadCapacityUnits": 10, "WriteCapacityUnits": 10},
+        )
+        data_list = [
+            {
+                "executionName": "88652cb2-812f-4574-af3e-0094fda842d2",
+                "taskId": "00000000-0000-0000-0000-000000000000",
+                "API": "Step Functions: StartExecution",
+                "data": "",
+                "endTime": "2023-10-16T03:48:36.340Z",
+                "functionName": "",
+                "parentTaskId": "",
+                "pipelineId": "3d37e69e-7129-461e-b4b8-4a8e72eb5b80",
+                "pipelineIndexKey": "3d37e69e-7129-461e-b4b8-4a8e72eb5b80:LogProcessor:00000000-0000-0000-0000-000000000000",
+                "startTime": "2023-10-16T03:48:34.852Z",
+                "stateMachineName": "LogProcessor-u5TUghpQChw4",
+                "stateName": "Put task info of Step Function to DynamoDB",
+                "status": "Succeeded"
+            },
+            {
+                "executionName": "88652cb2-812f-4574-af3e-0094fda842d2",
+                "taskId": "301ae590-6365-44cc-acc4-6ae479094672",
+                "API": "Lambda: Invoke",
+                "data": "{\"totalSubTask\": 0}",
+                "endTime": "2023-10-16T03:48:36.263Z",
+                "functionName": "S3ObjectScanning-WKIDdnbP5O3l",
+                "parentTaskId": "00000000-0000-0000-0000-000000000000",
+                "pipelineId": "3d37e69e-7129-461e-b4b8-4a8e72eb5b80",
+                "pipelineIndexKey": "3d37e69e-7129-461e-b4b8-4a8e72eb5b80:LogProcessor:301ae590-6365-44cc-acc4-6ae479094672",
+                "startTime": "2023-10-16T03:48:35.263Z",
+                "stateMachineName": "LogProcessor-u5TUghpQChw4",
+                "stateName": "Step 1: Migration S3 Objects from Staging to Archive",
+                "status": "Succeeded"
+            },
+            {
+                "executionName": "775b1764-c0cf-481e-9561-873841507ebc",
+                "taskId": "00000000-0000-0000-0000-000000000000",
+                "API": "Step Functions: StartExecution",
+                "data": "",
+                "endTime": "2023-10-16T03:53:36.230Z",
+                "functionName": "",
+                "parentTaskId": "",
+                "pipelineId": "3d37e69e-7129-461e-b4b8-4a8e72eb5b80",
+                "pipelineIndexKey": "3d37e69e-7129-461e-b4b8-4a8e72eb5b80:LogProcessor:00000000-0000-0000-0000-000000000000",
+                "startTime": "2023-10-16T03:53:34.152Z",
+                "stateMachineName": "LogProcessor-u5TUghpQChw4",
+                "stateName": "Put task info of Step Function to DynamoDB",
+                "status": "Succeeded"
+            },
+            {
+                "executionName": "0f0a0643-748d-4bbf-a673-4aca6dc6838a",
+                "taskId": "00000000-0000-0000-0000-000000000000",
+                "API": "Step Functions: StartExecution",
+                "data": "",
+                "endTime": "2023-10-16T03:58:36.150Z",
+                "functionName": "",
+                "parentTaskId": "",
+                "pipelineId": "3d37e69e-7129-461e-b4b8-4a8e72eb5b80",
+                "pipelineIndexKey": "3d37e69e-7129-461e-b4b8-4a8e72eb5b80:LogProcessor:00000000-0000-0000-0000-000000000000",
+                "startTime": "2023-10-16T03:58:34.272Z",
+                "stateMachineName": "LogProcessor-u5TUghpQChw4",
+                "stateName": "Put task info of Step Function to DynamoDB",
+                "status": "Timed_out"
+            },
+            {
+                "executionName": "70fa7767-82e9-469c-97ee-4fb071339ad9",
+                "taskId": "00000000-0000-0000-0000-000000000000",
+                "API": "Step Functions: StartExecution",
+                "data": "",
+                "endTime": "2023-10-16T04:03:37.150Z",
+                "functionName": "",
+                "parentTaskId": "",
+                "pipelineId": "3d37e69e-7129-461e-b4b8-4a8e72eb5b80",
+                "pipelineIndexKey": "3d37e69e-7129-461e-b4b8-4a8e72eb5b80:LogProcessor:00000000-0000-0000-0000-000000000000",
+                "startTime": "2023-10-16T04:03:38.272Z",
+                "stateMachineName": "LogProcessor-u5TUghpQChw4",
+                "stateName": "Put task info of Step Function to DynamoDB",
+                "status": "Aborted"
+            },
+            {
+                "executionName": "47eae851-54c1-447d-a394-330469b95966",
+                "taskId": "00000000-0000-0000-0000-000000000000",
+                "API": "Step Functions: StartExecution",
+                "data": "",
+                "endTime": "2023-10-16T04:08:37.150Z",
+                "functionName": "",
+                "parentTaskId": "",
+                "pipelineId": "3d37e69e-7129-461e-b4b8-4a8e72eb5b80",
+                "pipelineIndexKey": "3d37e69e-7129-461e-b4b8-4a8e72eb5b80:LogProcessor:00000000-0000-0000-0000-000000000000",
+                "startTime": "2023-10-16T04:08:38.272Z",
+                "stateMachineName": "LogProcessor-u5TUghpQChw4",
+                "stateName": "Put task info of Step Function to DynamoDB",
+                "status": "Failed"
+            },
+            {
+                "executionName": "3c38d333-a3a5-46f3-8791-36f203b5b98e",
+                "taskId": "00000000-0000-0000-0000-000000000000",
+                "API": "Step Functions: StartExecution",
+                "data": "",
+                "endTime": "2023-10-16T04:13:37.150Z",
+                "functionName": "",
+                "parentTaskId": "",
+                "pipelineId": "3d37e69e-7129-461e-b4b8-4a8e72eb5b80",
+                "pipelineIndexKey": "3d37e69e-7129-461e-b4b8-4a8e72eb5b80:LogProcessor:00000000-0000-0000-0000-000000000000",
+                "startTime": "2023-10-16T04:13:38.272Z",
+                "stateMachineName": "LogProcessor-u5TUghpQChw4",
+                "stateName": "Put task info of Step Function to DynamoDB",
+                "status": "Running"
+            },
+            {
+                "executionName": "3ad531f6-e158-4f2b-afa4-ee6292e0434d",
+                "taskId": "00000000-0000-0000-0000-000000000000",
+                "API": "Step Functions: StartExecution",
+                "data": "",
+                "endTime": "2023-10-16T04:18:37.150Z",
+                "functionName": "",
+                "parentTaskId": "",
+                "pipelineId": "3d37e69e-7129-461e-b4b8-4a8e72eb5b80",
+                "pipelineIndexKey": "3d37e69e-7129-461e-b4b8-4a8e72eb5b80:LogProcessor:00000000-0000-0000-0000-000000000000",
+                "startTime": "2023-10-16T04:18:38.272Z",
+                "stateMachineName": "LogProcessor-u5TUghpQChw4",
+                "stateName": "Put task info of Step Function to DynamoDB",
+                "status": "Running"
+            },
+            {
+                "executionName": "721858f5-5c3a-4c53-aebd-5087c445af49",
+                "taskId": "00000000-0000-0000-0000-000000000000",
+                "API": "Step Functions: StartExecution",
+                "data": "",
+                "endTime": "2023-10-16T03:48:36.340Z",
+                "functionName": "",
+                "parentTaskId": "",
+                "pipelineId": "019cc550-ed39-48e4-997b-d476030754ec",
+                "pipelineIndexKey": "019cc550-ed39-48e4-997b-d476030754ec:LogProcessor:00000000-0000-0000-0000-000000000000",
+                "startTime": "2023-10-16T03:48:34.852Z",
+                "stateMachineName": "LogProcessor-u5TUghpQChw4",
+                "stateName": "Put task info of Step Function to DynamoDB",
+                "status": "Succeeded"
+            },
+            {
+                "executionName": "721858f5-5c3a-4c53-aebd-5087c445af49",
+                "taskId": "29b62380-b5c9-4ffa-8625-2b381f58735b",
+                "API": "Lambda: Invoke",
+                "data": "{\"totalSubTask\": 0}",
+                "endTime": "2023-10-16T03:48:36.263Z",
+                "functionName": "S3ObjectScanning-WKIDdnbP5O3l",
+                "parentTaskId": "00000000-0000-0000-0000-000000000000",
+                "pipelineId": "019cc550-ed39-48e4-997b-d476030754ec",
+                "pipelineIndexKey": "019cc550-ed39-48e4-997b-d476030754ec:LogProcessor:29b62380-b5c9-4ffa-8625-2b381f58735b",
+                "startTime": "2023-10-16T03:48:35.263Z",
+                "stateMachineName": "LogProcessor-u5TUghpQChw4",
+                "stateName": "Step 1: Migration S3 Objects from Staging to Archive",
+                "status": "Succeeded"
+            },
+        ]
+        init_table(etl_log_table, data_list)
         yield
 
 
@@ -818,8 +1028,7 @@ def test_validate_duplicated_index_prefix(ddb_client):
     with pytest.raises(APIException, match=r"DUPLICATED_INDEX_PREFIX"):
         dao.validate_duplicated_index_prefix(p, False)
 
-    with pytest.raises(APIException, match=r"DUPLICATED_INDEX_PREFIX"):
-        dao.validate_duplicated_index_prefix(p, True)
+    dao.validate_duplicated_index_prefix(p, True)
 
     p.indexPrefix = "syslog-dev-04"
     p.aosParams.indexPrefix = "syslog-dev-04"
@@ -874,12 +1083,20 @@ def test_validate_index_prefix_overlap(ddb_client):
     with pytest.raises(APIException, match=r"OVERLAP_INDEX_PREFIX"):
         dao.validate_index_prefix_overlap(p, True)
 
-    p.indexPrefix = "syslog-dev-04"
-    p.aosParams.indexPrefix = "syslog-dev-04"
+    p.indexPrefix = "syslog-dev-04-overlap"
+    p.aosParams.indexPrefix = "syslog-dev-04-overlap"
 
     with pytest.raises(APIException, match=r"OVERLAP_WITH_INACTIVE_INDEX_PREFIX"):
         dao.validate_index_prefix_overlap(p, False)
 
+    with pytest.raises(APIException, match=r"OVERLAP_WITH_INACTIVE_INDEX_PREFIX"):
+        dao.validate_index_prefix_overlap(p, True)
+
+    p.indexPrefix = "syslog-dev-04"
+    p.aosParams.indexPrefix = "syslog-dev-04"
+
+    # duplicate is not overlap
+    dao.validate_index_prefix_overlap(p, False)
     dao.validate_index_prefix_overlap(p, True)
 
 
@@ -1370,3 +1587,197 @@ def test_s3_notification_prefix():
     assert "AppLogs/my-debug-0728/year%3D" == s3_notification_prefix(
         "AppLogs/my-debug-0728/year="
     )
+
+
+def test_save_instance_ingestion_detail(ddb_client):
+    from commonlib.dao import InstanceIngestionDetailDao
+    from commonlib.model import (
+        InstanceIngestionDetail,
+    )
+
+    dao = InstanceIngestionDetailDao(
+        os.environ.get("INSTANCE_INGESTION_DETAIL_TABLE_NAME")
+    )
+
+    instance_ingestion_detail_args = dict()
+    instance_ingestion_detail_args["instanceId"] = "instanceId"
+    instance_ingestion_detail_args["sourceId"] = "84c6c37e-03db-4846-bb90-93e85bb1b27b"
+    instance_ingestion_detail_args["ingestionId"] = "ingestionId"
+    instance_ingestion_detail_args["accountId"] = "111111111111"
+    instance_ingestion_detail_args["region"] = "us-east-1"
+    instance_ingestion_detail_args["status"] = StatusEnum.DISTRIBUTING
+    instance_ingestion_detail = InstanceIngestionDetail(
+        **instance_ingestion_detail_args
+    )
+    instance_ingestion_details = []
+    instance_ingestion_details.append(instance_ingestion_detail)
+    dao.batch_put_items(instance_ingestion_details)
+
+    instance_ingestion_details_result = dao.get_instance_ingestion_details(
+        instance_ingestion_detail_args["instanceId"],
+        instance_ingestion_detail_args["ingestionId"],
+        instance_ingestion_detail_args["sourceId"],
+    )
+    assert (
+        instance_ingestion_details_result[0].instanceId
+        == instance_ingestion_detail.instanceId
+        and instance_ingestion_details[0].status == StatusEnum.DISTRIBUTING
+    )
+
+
+class TestETLLog:
+    def init(self, ddb_client):
+        from commonlib.dao import ETLLogDao
+        self.etl_log_table = ETLLogDao(table_name=os.environ.get("ETL_LOG_TABLE_NAME"))
+    
+    def test_query_execution_logs(self, ddb_client):
+        from commonlib.model import ExecutionStatus
+        
+        self.init(ddb_client=ddb_client)
+        
+        response = self.etl_log_table.query_execution_logs(pipeline_index_key='3d37e69e-7129-461e-b4b8-4a8e72eb5b80:LogProcessor:00000000-0000-0000-0000-000000000000')
+        assert response['Items'] == [
+            {
+                "executionName": "3ad531f6-e158-4f2b-afa4-ee6292e0434d",
+                "taskId": "00000000-0000-0000-0000-000000000000",
+                "endTime": "2023-10-16T04:18:37.150Z",
+                "pipelineIndexKey": "3d37e69e-7129-461e-b4b8-4a8e72eb5b80:LogProcessor:00000000-0000-0000-0000-000000000000",
+                "startTime": "2023-10-16T04:18:38.272Z",
+                "status": "Running"
+            },
+            {
+                'executionName': '3c38d333-a3a5-46f3-8791-36f203b5b98e', 
+                'taskId': '00000000-0000-0000-0000-000000000000', 
+                'pipelineIndexKey': '3d37e69e-7129-461e-b4b8-4a8e72eb5b80:LogProcessor:00000000-0000-0000-0000-000000000000', 
+                'startTime': '2023-10-16T04:13:38.272Z', 
+                'endTime': '2023-10-16T04:13:37.150Z', 
+                'status': 'Running'
+                }, 
+            {
+                "executionName": "47eae851-54c1-447d-a394-330469b95966",
+                "taskId": "00000000-0000-0000-0000-000000000000",
+                "endTime": "2023-10-16T04:08:37.150Z",
+                "pipelineIndexKey": "3d37e69e-7129-461e-b4b8-4a8e72eb5b80:LogProcessor:00000000-0000-0000-0000-000000000000",
+                'startTime': '2023-10-16T04:08:38.272Z',
+                "status": "Failed"
+            },
+            {
+                'executionName': '70fa7767-82e9-469c-97ee-4fb071339ad9', 
+                'taskId': '00000000-0000-0000-0000-000000000000', 
+                'pipelineIndexKey': '3d37e69e-7129-461e-b4b8-4a8e72eb5b80:LogProcessor:00000000-0000-0000-0000-000000000000', 
+                'startTime': '2023-10-16T04:03:38.272Z', 
+                'endTime': '2023-10-16T04:03:37.150Z', 
+                'status': 'Aborted'
+                }, 
+            {
+                'executionName': '0f0a0643-748d-4bbf-a673-4aca6dc6838a', 
+                'taskId': '00000000-0000-0000-0000-000000000000', 
+                'pipelineIndexKey': '3d37e69e-7129-461e-b4b8-4a8e72eb5b80:LogProcessor:00000000-0000-0000-0000-000000000000', 
+                'startTime': '2023-10-16T03:58:34.272Z', 
+                'endTime': '2023-10-16T03:58:36.150Z', 
+                'status': 'Timed_out'
+                }, 
+            {
+                'executionName': '775b1764-c0cf-481e-9561-873841507ebc', 
+                'taskId': '00000000-0000-0000-0000-000000000000', 
+                'pipelineIndexKey': '3d37e69e-7129-461e-b4b8-4a8e72eb5b80:LogProcessor:00000000-0000-0000-0000-000000000000', 
+                'startTime': '2023-10-16T03:53:34.152Z', 
+                'endTime': '2023-10-16T03:53:36.230Z', 
+                'status': 'Succeeded'
+                }, 
+            {
+                'executionName': '88652cb2-812f-4574-af3e-0094fda842d2', 
+                'taskId': '00000000-0000-0000-0000-000000000000', 
+                'pipelineIndexKey': '3d37e69e-7129-461e-b4b8-4a8e72eb5b80:LogProcessor:00000000-0000-0000-0000-000000000000', 
+                'startTime': '2023-10-16T03:48:34.852Z', 
+                'endTime': '2023-10-16T03:48:36.340Z', 
+                'status': 'Succeeded'
+                },
+            ]
+
+        response = self.etl_log_table.query_execution_logs(pipeline_index_key='3d37e69e-7129-461e-b4b8-4a8e72eb5b80:LogProcessor:00000000-0000-0000-0000-000000000000', 
+                                                           start_time='2023-10-16T03:48:33.000Z', 
+                                                           status=ExecutionStatus.RUNNING, 
+                                                           limit=1)
+        assert response['Items'] == [
+            {
+                'executionName': '3ad531f6-e158-4f2b-afa4-ee6292e0434d', 
+                'taskId': '00000000-0000-0000-0000-000000000000', 
+                'pipelineIndexKey': '3d37e69e-7129-461e-b4b8-4a8e72eb5b80:LogProcessor:00000000-0000-0000-0000-000000000000', 
+                'startTime': '2023-10-16T04:18:38.272Z', 'endTime': '2023-10-16T04:18:37.150Z', 
+                'status': 'Running'
+                }
+            ]
+        response = self.etl_log_table.query_execution_logs(pipeline_index_key='3d37e69e-7129-461e-b4b8-4a8e72eb5b80:LogProcessor:00000000-0000-0000-0000-000000000000', 
+                                                           start_time='2023-10-16T03:48:33.000Z', 
+                                                           status=ExecutionStatus.RUNNING, 
+                                                           limit=1,
+                                                           last_evaluated_key=response['LastEvaluatedKey'])
+        assert response['Items'] == [
+            {
+                'executionName': '3c38d333-a3a5-46f3-8791-36f203b5b98e', 
+                'taskId': '00000000-0000-0000-0000-000000000000', 
+                'pipelineIndexKey': '3d37e69e-7129-461e-b4b8-4a8e72eb5b80:LogProcessor:00000000-0000-0000-0000-000000000000', 
+                'startTime': '2023-10-16T04:13:38.272Z', 
+                'endTime': '2023-10-16T04:13:37.150Z', 
+                'status': 'Running'
+                }, 
+            ]
+        response = self.etl_log_table.query_execution_logs(pipeline_index_key='3d37e69e-7129-461e-b4b8-4a8e72eb5b80:LogProcessor:00000000-0000-0000-0000-000000000000', 
+                                                           start_time='2023-10-16T03:48:33.000Z', 
+                                                           status=ExecutionStatus.RUNNING, 
+                                                           limit=1,
+                                                           last_evaluated_key=response['LastEvaluatedKey'])
+        assert response['Items'] == []
+        
+        response = self.etl_log_table.query_execution_logs(pipeline_index_key='3d37e69e-7129-461e-b4b8-4a8e72eb5b80:LogProcessor:00000000-0000-0000-0000-000000000000', 
+                                                           start_time='2023-10-16T03:48:33.000Z',
+                                                           end_time='2023-10-16T03:53:34.152Z')
+        assert response['Items'] == [
+            {
+                'executionName': '775b1764-c0cf-481e-9561-873841507ebc', 
+                'taskId': '00000000-0000-0000-0000-000000000000', 
+                'pipelineIndexKey': '3d37e69e-7129-461e-b4b8-4a8e72eb5b80:LogProcessor:00000000-0000-0000-0000-000000000000', 
+                'startTime': '2023-10-16T03:53:34.152Z', 
+                'endTime': '2023-10-16T03:53:36.230Z', 
+                'status': 'Succeeded'
+                }, 
+            {
+                'executionName': '88652cb2-812f-4574-af3e-0094fda842d2', 
+                'taskId': '00000000-0000-0000-0000-000000000000', 
+                'pipelineIndexKey': '3d37e69e-7129-461e-b4b8-4a8e72eb5b80:LogProcessor:00000000-0000-0000-0000-000000000000', 
+                'startTime': '2023-10-16T03:48:34.852Z', 
+                'endTime': '2023-10-16T03:48:36.340Z', 
+                'status': 'Succeeded'
+                },
+            ]
+        
+        response = self.etl_log_table.query_execution_logs(pipeline_index_key='3d37e69e-7129-461e-b4b8-4a8e72eb5b80:LogProcessor:00000000-0000-0000-0000-000000000000', 
+                                                           end_time='2023-10-16T04:00:34.272Z')
+        assert response['Items'] == [
+            {
+                'executionName': '0f0a0643-748d-4bbf-a673-4aca6dc6838a', 
+                'taskId': '00000000-0000-0000-0000-000000000000', 
+                'pipelineIndexKey': '3d37e69e-7129-461e-b4b8-4a8e72eb5b80:LogProcessor:00000000-0000-0000-0000-000000000000', 
+                'startTime': '2023-10-16T03:58:34.272Z', 
+                'endTime': '2023-10-16T03:58:36.150Z', 
+                'status': 'Timed_out'
+                }, 
+            {
+                'executionName': '775b1764-c0cf-481e-9561-873841507ebc', 
+                'taskId': '00000000-0000-0000-0000-000000000000', 
+                'pipelineIndexKey': '3d37e69e-7129-461e-b4b8-4a8e72eb5b80:LogProcessor:00000000-0000-0000-0000-000000000000', 
+                'startTime': '2023-10-16T03:53:34.152Z', 
+                'endTime': '2023-10-16T03:53:36.230Z', 
+                'status': 'Succeeded'
+                }, 
+            {
+                'executionName': '88652cb2-812f-4574-af3e-0094fda842d2', 
+                'taskId': '00000000-0000-0000-0000-000000000000', 
+                'pipelineIndexKey': '3d37e69e-7129-461e-b4b8-4a8e72eb5b80:LogProcessor:00000000-0000-0000-0000-000000000000', 
+                'startTime': '2023-10-16T03:48:34.852Z', 
+                'endTime': '2023-10-16T03:48:36.340Z', 
+                'status': 'Succeeded'
+                },
+            ]
+        

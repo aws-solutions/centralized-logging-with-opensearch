@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React, { ReactElement } from "react";
+import React, { useMemo, ReactElement } from "react";
 import FormItem from "components/FormItem";
 import Select from "components/Select";
 import { useTranslation } from "react-i18next";
@@ -30,6 +30,13 @@ export const IngestOptionSampledList = [
   },
 ];
 
+export const IngestOptionFullRequestList = [
+  {
+    name: "servicelog:waf.fullRequest",
+    value: IngestOption.FullRequest,
+  },
+];
+
 export const IngestOptionList = [
   ...IngestOptionSampledList,
   {
@@ -41,6 +48,7 @@ export const IngestOptionList = [
 interface IngestOptionSelectProps {
   disabled?: boolean;
   onlySampled?: boolean;
+  onlyFullRequest?: boolean;
   ingestOption: string;
   changeIngestOption: (option: string) => void;
   errorText?: string | null;
@@ -54,6 +62,7 @@ const IngestOptionSelect: React.FC<IngestOptionSelectProps> = (
   const {
     disabled,
     onlySampled,
+    onlyFullRequest,
     ingestOption,
     changeIngestOption,
     errorText,
@@ -61,6 +70,16 @@ const IngestOptionSelect: React.FC<IngestOptionSelectProps> = (
     warningText,
   } = props;
   const { t } = useTranslation();
+
+  const optionList = useMemo(() => {
+    if (onlySampled) {
+      return IngestOptionSampledList;
+    }
+    if (onlyFullRequest) {
+      return IngestOptionFullRequestList;
+    }
+    return IngestOptionList;
+  }, [onlySampled, onlyFullRequest]);
 
   return (
     <>
@@ -75,7 +94,7 @@ const IngestOptionSelect: React.FC<IngestOptionSelectProps> = (
           disabled={disabled}
           isI18N
           className="m-w-75p"
-          optionList={onlySampled ? IngestOptionSampledList : IngestOptionList}
+          optionList={optionList}
           value={ingestOption}
           onChange={(event) => {
             changeIngestOption(event.target.value);

@@ -682,7 +682,7 @@ const AppLogCreateS3: React.FC = () => {
             }),
             isS3Source: true,
             compressionType: compressionFormat,
-            EnableS3Notification:
+            enableS3Notification:
               ingestionMode === IngestionMode.ONE_TIME ? "False" : "True",
           }),
           tags,
@@ -742,7 +742,7 @@ const AppLogCreateS3: React.FC = () => {
       }
       if (
         errorCode === ErrorCode.DUPLICATED_WITH_INACTIVE_INDEX_PREFIX ||
-        errorCode === ErrorCode.OVERLAP_WITH_INACTIVE_INDEX_PREFIX
+        errorCode === ErrorCode.DUPLICATED_INDEX_PREFIX
       ) {
         Swal.fire({
           icon: "error",
@@ -754,10 +754,9 @@ const AppLogCreateS3: React.FC = () => {
           denyButtonText: t("button.forceCreate") || "",
           cancelButtonText: t("button.changeIndex") || "",
           text:
-            (errorCode === ErrorCode.DUPLICATED_WITH_INACTIVE_INDEX_PREFIX
+            errorCode === ErrorCode.DUPLICATED_WITH_INACTIVE_INDEX_PREFIX
               ? t("applog:create.ingestSetting.duplicatedWithInvalidPrefix")
-              : t("applog:create.ingestSetting.overlapWithInvalidPrefix")) +
-            `(${message})`,
+              : t("applog:create.ingestSetting.duplicatedWithPrefix"),
         }).then((result) => {
           if (result.isDismissed) {
             setCurrentStep(2);

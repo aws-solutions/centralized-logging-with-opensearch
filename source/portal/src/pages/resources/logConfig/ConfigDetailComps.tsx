@@ -17,11 +17,12 @@ import React from "react";
 import { LogType, MultiLineLogParser, SyslogParser } from "API";
 import { ExLogConf } from "pages/resources/common/LogConfigComp";
 import ValueWithLabel from "components/ValueWithLabel";
-import TextArea from "components/TextArea";
 import { useTranslation } from "react-i18next";
-import { formatLocalTime } from "assets/js/utils";
+import { defaultStr, formatLocalTime, isEmpty, ternary } from "assets/js/utils";
 import { FILTER_CONDITION_LIST } from "assets/js/const";
 import { identity } from "lodash";
+import FieldDisplay from "./FieldDisplay";
+import JSONSpecView from "./JSONSpecView";
 
 interface ConfDetailProps {
   curLogConfig: ExLogConf | undefined;
@@ -29,6 +30,18 @@ interface ConfDetailProps {
   hideLogPath?: boolean;
   hideBasicInfo?: boolean;
 }
+
+const buildSampleLogDisplay = (sampleLog: string, logType?: LogType | null) => {
+  if (logType === LogType.JSON) {
+    return (
+      <div className="log-config-display-text">
+        <pre>{JSON.stringify(JSON.parse(sampleLog), null, 2)}</pre>
+      </div>
+    );
+  } else {
+    return <FieldDisplay text={sampleLog} />;
+  }
+};
 
 const ConfigDetailComps: React.FC<ConfDetailProps> = (
   props: ConfDetailProps
@@ -46,12 +59,12 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
           </div>
           <div className="flex-1 border-left-c">
             <ValueWithLabel label={t("ekslog:ingest.detail.configTab.type")}>
-              {curLogConfig?.logType || "-"}
+              {defaultStr(curLogConfig?.logType, "-")}
             </ValueWithLabel>
           </div>
           <div className="flex-1 border-left-c">
             <ValueWithLabel label={t("ekslog:ingest.detail.configTab.created")}>
-              {formatLocalTime(curLogConfig?.createdAt || "")}
+              {formatLocalTime(defaultStr(curLogConfig?.createdAt))}
             </ValueWithLabel>
           </div>
         </div>
@@ -59,19 +72,19 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
       <div className="flex value-label-span">
         <div className="flex-1">
           <ValueWithLabel label={t("resource:config.detail.sampleLog")}>
-            {curLogConfig?.userSampleLog || "-"}
+            <div className="m-w-75p">
+              {buildSampleLogDisplay(
+                defaultStr(curLogConfig?.userSampleLog),
+                curLogConfig?.logType
+              )}
+            </div>
           </ValueWithLabel>
 
           {curLogConfig?.logType === LogType.Nginx && (
             <ValueWithLabel label={t("resource:config.detail.nginxFormat")}>
               <div className="m-w-75p">
-                <TextArea
-                  rows={5}
-                  disabled
-                  value={curLogConfig.userLogFormat || "-"}
-                  onChange={(event) => {
-                    console.info(event);
-                  }}
+                <FieldDisplay
+                  text={defaultStr(curLogConfig.userLogFormat, "-")}
                 />
               </div>
             </ValueWithLabel>
@@ -80,13 +93,8 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
           {curLogConfig?.logType === LogType.Apache && (
             <ValueWithLabel label={t("resource:config.detail.apacheFormat")}>
               <div className="m-w-75p">
-                <TextArea
-                  rows={5}
-                  disabled
-                  value={curLogConfig.userLogFormat || "-"}
-                  onChange={(event) => {
-                    console.info(event);
-                  }}
+                <FieldDisplay
+                  text={defaultStr(curLogConfig.userLogFormat, "-")}
                 />
               </div>
             </ValueWithLabel>
@@ -99,13 +107,8 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
                 label={t("resource:config.detail.springbootFormat")}
               >
                 <div className="m-w-75p">
-                  <TextArea
-                    rows={5}
-                    disabled
-                    value={curLogConfig.userLogFormat || "-"}
-                    onChange={(event) => {
-                      console.info(event);
-                    }}
+                  <FieldDisplay
+                    text={defaultStr(curLogConfig.userLogFormat, "-")}
                   />
                 </div>
               </ValueWithLabel>
@@ -115,7 +118,7 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
             curLogConfig.syslogParser !== SyslogParser.CUSTOM && (
               <ValueWithLabel label={t("resource:config.detail.syslogFormat")}>
                 <div className="m-w-75p">
-                  {curLogConfig.syslogParser || "-"}
+                  {defaultStr(curLogConfig.syslogParser, "-")}
                 </div>
               </ValueWithLabel>
             )}
@@ -124,13 +127,8 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
             curLogConfig.syslogParser === SyslogParser.CUSTOM && (
               <ValueWithLabel label={t("resource:config.detail.syslogFormat")}>
                 <div className="m-w-75p">
-                  <TextArea
-                    rows={2}
-                    disabled
-                    value={curLogConfig.userLogFormat || "-"}
-                    onChange={(event) => {
-                      console.info(event);
-                    }}
+                  <FieldDisplay
+                    text={defaultStr(curLogConfig.userLogFormat, "-")}
                   />
                 </div>
               </ValueWithLabel>
@@ -142,11 +140,30 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
             curLogConfig?.logType === LogType.SingleLineText ||
             curLogConfig?.logType === LogType.MultiLineText) && (
             <ValueWithLabel label={t("resource:config.detail.regExp")}>
-              {curLogConfig.regex || "-"}
+              <div className="m-w-75p">
+                <FieldDisplay text={defaultStr(curLogConfig.regex, "-")} />
+              </div>
             </ValueWithLabel>
           )}
 
-          {(curLogConfig?.logType === LogType.JSON ||
+          {curLogConfig?.logType === LogType.JSON &&
+            !isEmpty(curLogConfig.jsonSchema) && (
+              <div className="mt-10">
+                <ValueWithLabel label={t("resource:config.detail.logSpecs")}>
+                  {curLogConfig.jsonSchema ? (
+                    <JSONSpecView
+                      schema={JSON.parse(defaultStr(curLogConfig.jsonSchema))}
+                      data={curLogConfig.userSampleLog}
+                    />
+                  ) : (
+                    <></>
+                  )}
+                </ValueWithLabel>
+              </div>
+            )}
+
+          {((curLogConfig?.logType === LogType.JSON &&
+            isEmpty(curLogConfig.jsonSchema)) ||
             curLogConfig?.logType === LogType.Nginx ||
             curLogConfig?.logType === LogType.Apache ||
             curLogConfig?.logType === LogType.Syslog ||
@@ -164,15 +181,12 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
                           {t("resource:config.detail.specName")}
                         </th>
                         <th className="type">
-                          {" "}
                           {t("resource:config.detail.specType")}
                         </th>
                         <th className="time format">
-                          {" "}
                           {t("resource:config.detail.timeFormat")}
                         </th>
                         <th className="time key">
-                          {" "}
                           {t("resource:config.parsing.timeKey")}
                         </th>
                       </tr>
@@ -184,7 +198,11 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
                             <td className="flex-1">{element?.key}</td>
                             <td className="flex-1">{element?.type}</td>
                             <td className="flex-1">
-                              {element?.type === "date" ? element?.format : "-"}
+                              {ternary(
+                                element?.type === "date",
+                                element?.format,
+                                "-"
+                              )}
                             </td>
                             <td className="flex-1">
                               {element?.key === curLogConfig.timeKey
@@ -259,7 +277,7 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
             <>
               <div className="mt-10">
                 <ValueWithLabel label={t("resource:config.parsing.timezone")}>
-                  {curLogConfig.timeOffset || "-"}
+                  {defaultStr(curLogConfig.timeOffset, "-")}
                 </ValueWithLabel>
               </div>
             </>

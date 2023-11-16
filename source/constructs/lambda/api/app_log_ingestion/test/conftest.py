@@ -70,7 +70,6 @@ def default_environment_variables():
     os.environ["AWS_SESSION_TOKEN"] = "mocked-aws-session-token"
     os.environ["AWS_REGION"] = "us-east-1"
     os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
-
     os.environ["STATE_MACHINE_ARN"] = "mocked-sfn-machine-arn"
     os.environ["SOLUTION_VERSION"] = "v2.0.0"
     os.environ["SSM_LOG_CONFIG_DOCUMENT_NAME"] = "v1.0.0"
@@ -85,6 +84,9 @@ def default_environment_variables():
     os.environ["S3_LOG_SOURCE_TABLE_NAME"] = "mocked-s3-log-source-table-name"
     os.environ["LOG_SOURCE_TABLE_NAME"] = "mocked-log-source-table-name"
     os.environ["EKS_CLUSTER_SOURCE_TABLE_NAME"] = "mocked-eks-log-source-table-name"
+    os.environ[
+        "INSTANCE_INGESTION_DETAIL_TABLE_NAME"
+    ] = "mocked-instance-ingestion-detail-table-name"
     os.environ[
         "INSTANCE_GROUP_MODIFICATION_EVENT_QUEUE_NAME"
     ] = "mocked-instance-modification-event-queue-name"
@@ -104,3 +106,6 @@ def default_environment_variables():
     os.environ["EC2_IAM_INSTANCE_PROFILE_ARN"] = "EC2_IAM_INSTANCE_PROFILE_ARN"
     os.environ["FLB_S3_ADDR"] = "aws-gcr-solutions-assets.s3.amazonaws.com"
     os.environ["FLUENT_BIT_LOG_GROUP_NAME"] = "fluent-bit-log-group"
+    os.environ[
+        "FLUENT_BIT_CONF_UPLOADING_EVENT_QUEUE_ARN"
+    ] = "arn:aws:sqs:us-east-1:123456789012:mocked-CentralizedLogging-CLFlbConfUploadingEventQueue"
