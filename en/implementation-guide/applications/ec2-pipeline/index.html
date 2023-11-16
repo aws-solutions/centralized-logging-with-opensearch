@@ -1113,16 +1113,49 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#create-a-log-analytics-pipeline-amazon-opensearch" class="md-nav__link">
+    Create a log analytics pipeline (Amazon OpenSearch)
+  </a>
+  
+    <nav class="md-nav" aria-label="Create a log analytics pipeline (Amazon OpenSearch)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#prerequisites" class="md-nav__link">
     Prerequisites
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#create-a-log-analytics-pipeline" class="md-nav__link">
     Create a log analytics pipeline
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-a-log-analytics-pipeline-light-engine" class="md-nav__link">
+    Create a log analytics pipeline (Light Engine)
+  </a>
+  
+    <nav class="md-nav" aria-label="Create a log analytics pipeline (Light Engine)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#create-a-log-analytics-pipeline_1" class="md-nav__link">
+    Create a log analytics pipeline
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1274,14 +1307,14 @@
       
       
         <label class="md-nav__link" for="__nav_1_11">
-          Log pipeline monitoring
+          Log pipeline insight
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Log pipeline monitoring" data-md-level="2">
+      <nav class="md-nav" aria-label="Log pipeline insight" data-md-level="2">
         <label class="md-nav__title" for="__nav_1_11">
           <span class="md-nav__icon md-icon"></span>
-          Log pipeline monitoring
+          Log pipeline insight
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -1387,6 +1420,20 @@
           Additional resources
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../resources/grafana/" class="md-nav__link">
+        Grafana
+      </a>
+    </li>
+  
+
+            
           
             
               
@@ -1514,16 +1561,49 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#create-a-log-analytics-pipeline-amazon-opensearch" class="md-nav__link">
+    Create a log analytics pipeline (Amazon OpenSearch)
+  </a>
+  
+    <nav class="md-nav" aria-label="Create a log analytics pipeline (Amazon OpenSearch)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#prerequisites" class="md-nav__link">
     Prerequisites
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#create-a-log-analytics-pipeline" class="md-nav__link">
     Create a log analytics pipeline
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-a-log-analytics-pipeline-light-engine" class="md-nav__link">
+    Create a log analytics pipeline (Light Engine)
+  </a>
+  
+    <nav class="md-nav" aria-label="Create a log analytics pipeline (Light Engine)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#create-a-log-analytics-pipeline_1" class="md-nav__link">
+    Create a log analytics pipeline
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1550,11 +1630,12 @@
 <h1 id="amazon-ec2-instance-group-as-log-source">Amazon EC2 instance group as log source</h1>
 <p>An instance group represents a group of EC2 Linux instances, which enables the solution to associate a Log Config with multiple EC2 instances quickly. Centralized Logging with OpenSearch uses Systems Manager Agent (SSM Agent) to install/configure Fluent Bit agent, and sends log data to Kinesis Data Streams.</p>
 <p>This article guides you to create a log pipeline that ingests logs from an EC2 instance group.</p>
-<h2 id="prerequisites">Prerequisites</h2>
+<h2 id="create-a-log-analytics-pipeline-amazon-opensearch">Create a log analytics pipeline (Amazon OpenSearch)</h2>
+<h3 id="prerequisites">Prerequisites</h3>
 <ol>
 <li><a href="../../domains/import/">Import an Amazon OpenSearch Service domain</a>.</li>
 </ol>
-<h2 id="create-a-log-analytics-pipeline">Create a log analytics pipeline</h2>
+<h3 id="create-a-log-analytics-pipeline">Create a log analytics pipeline</h3>
 <ol>
 <li>
 <p>Sign in to the Centralized Logging with OpenSearch Console.</p>
@@ -1566,7 +1647,7 @@
 <p>Choose <strong>Create a pipeline</strong></p>
 </li>
 <li>
-<p>Choose <strong>Instance Group</strong> as Log Source, and choose <strong>Next</strong>.</p>
+<p>Choose <strong>Instance Group</strong> as Log Source, choose <strong>Amazon OpenSearch</strong>, and choose <strong>Next</strong>.</p>
 </li>
 <li>
 <p>Select an instance group. If you have no instance group yet, choose <strong>Create Instance Group</strong> at the top right corner, and follow the <a href="../create-log-source/#amazon-ec2-instance-group">Instance Group</a> guide to create an instance group. After that, choose <strong>Refresh</strong> and then select the newly created instance group.</p>
@@ -1699,6 +1780,124 @@ KDS shard can support up to 1,000 records per second for writes, up to a maximum
 </li>
 <li>
 <p>Choose <strong>Create</strong>.</p>
+</li>
+<li>
+<p>Wait for the application pipeline turning to "Active" state.</p>
+</li>
+</ol>
+<h2 id="create-a-log-analytics-pipeline-light-engine">Create a log analytics pipeline (Light Engine)</h2>
+<h3 id="create-a-log-analytics-pipeline_1">Create a log analytics pipeline</h3>
+<ol>
+<li>
+<p>Sign in to the Centralized Logging with OpenSearch Console.</p>
+</li>
+<li>
+<p>In the left sidebar, under <strong>Log Analytics Pipelines</strong>, choose <strong>Application Log</strong>.</p>
+</li>
+<li>
+<p>Choose <strong>Create a pipeline</strong></p>
+</li>
+<li>
+<p>Choose <strong>Instance Group</strong> as Log Source, Choose <strong>Light Engine</strong>, and choose <strong>Next</strong>.</p>
+</li>
+<li>
+<p>Select an instance group. If you have no instance group yet, choose <strong>Create Instance Group</strong> at the top right corner, and follow the <a href="../create-log-source/#amazon-ec2-instance-group">Instance Group</a> guide to create an instance group. After that, choose <strong>Refresh</strong> and then select the newly created instance group.</p>
+</li>
+<li>
+<p>(Auto Scaling Group only) If your instance group is created based on an Auto Scaling Group, after ingestion status become "Created", then you can find the generated Shell Script in the instance group's detail page. Copy the shell script and update the User Data of the Auto Scaling <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/launch-configurations.html">Launch configurations</a> or <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html">Launch template</a>.</p>
+</li>
+<li>
+<p>Keep the default <strong>Permission grant method</strong>.</p>
+</li>
+<li>
+<p>(Optional) If you choose <strong>I will manually add the below required permissions after pipeline creation</strong>, continue to do the following:</p>
+<ol>
+<li>Choose <strong>Expand to view required permissions</strong> and copy the provided JSON policy.</li>
+<li>Go to <strong>AWS Management Console</strong>.</li>
+<li>On the left navigation pane, choose <strong>IAM</strong>, and select <strong>Policies</strong> under <strong>Access management</strong>.</li>
+<li>Choose <strong>Create Policy</strong>, choose <strong>JSON</strong> and replace all the content inside the text block. Make sure to substitute <code>&lt;YOUR ACCOUNT ID&gt;</code> with your account id.</li>
+<li>Choose <strong>Next</strong>, and then enter a name for this policy.</li>
+<li>Attach the policy to your EC2 instance profile to grant the log agent permissions to send logs to the application log pipeline. If you are using Auto Scaling group, you need to update the IAM instance profile associated with the Auto Scaling Group. If needed, you can follow the documentation to update your [launch template][launch-template] or [launch configuration][launch-configuration].</li>
+</ol>
+</li>
+<li>
+<p>Choose <strong>Next</strong>.</p>
+</li>
+</ol>
+<p>You have created a log source for the log analytics pipeline. Now you are ready to make further configurations for the log analytics pipeline with Amazon EC2 instance group as log source.</p>
+<ol>
+<li>
+<p>Enter a <strong>Log Path</strong> to specify the location of logs you want to collect.</p>
+</li>
+<li>
+<p>Select a log config and then choose <strong>Next</strong>. If you do not find desired log config from the drop-down list, choose <strong>Create New</strong>, and follow instructions in <a href="../create-log-config/">Log Cong</a>.</p>
+</li>
+<li>
+<p>In the <strong>Buffer</strong> section, </p>
+<ul>
+<li>S3 buffer parameters</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S3 Bucket</td>
+<td><em>A log bucket will be created by the solution.</em></td>
+<td>You can also select a bucket to store the log data.</td>
+</tr>
+<tr>
+<td>Buffer size</td>
+<td>50 MiB</td>
+<td>The maximum size of log data cached at the log agent side before delivering to S3. For more information, see <a href="https://docs.aws.amazon.com/firehose/latest/dev/basic-deliver.html#frequency">Data Delivery Frequency</a>.</td>
+</tr>
+<tr>
+<td>Buffer interval</td>
+<td>60 seconds</td>
+<td>The maximum interval of the log agent to deliver logs to S3. For more information, see <a href="https://docs.aws.amazon.com/firehose/latest/dev/basic-deliver.html#frequency">Data Delivery Frequency</a>.</td>
+</tr>
+<tr>
+<td>Compression for data records</td>
+<td><code>Gzip</code></td>
+<td>The log agent compresses records before delivering them to the S3 bucket.</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li>
+<p>Choose <strong>Next</strong>.</p>
+</li>
+<li>
+<p>In the <strong>Specify Light Engine Configuration</strong> section, if you want to ingest associated templated Grafana dashboards, select <strong>Yes</strong> for the sample dashboard.</p>
+</li>
+<li>
+<p>You can choose an existing Grafana, or if you need to import a new one, you can go to Grafana for configuration.</p>
+</li>
+<li>
+<p>Select an S3 bucket to store partitioned logs and define a name for the log table. We have provided a predefined table name, but you can modify it according to your business needs.</p>
+</li>
+<li>
+<p>The log processing frequency is set to <strong>5</strong> minutes by default, with a minimum processing frequency of <strong>1</strong> minute.</p>
+</li>
+<li>
+<p>In the <strong>Log Lifecycle</strong> section, enter the log merge time and log archive time. We have provided default values, but you can adjust them based on your business requirements.</p>
+</li>
+<li>
+<p>Select <strong>Next</strong>.</p>
+</li>
+<li>
+<p>Enable <strong>Alarms</strong> if needed and select an exiting SNS topic. If you choose <strong>Create a new SNS topic</strong>, please provide a name and an email address for the new SNS topic.</p>
+</li>
+<li>
+<p>If desired, add tags.</p>
+</li>
+<li>
+<p>Select <strong>Create</strong>.</p>
 </li>
 <li>
 <p>Wait for the application pipeline turning to "Active" state.</p>

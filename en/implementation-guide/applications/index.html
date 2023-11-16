@@ -1356,14 +1356,14 @@
       
       
         <label class="md-nav__link" for="__nav_1_11">
-          Log pipeline monitoring
+          Log pipeline insight
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Log pipeline monitoring" data-md-level="2">
+      <nav class="md-nav" aria-label="Log pipeline insight" data-md-level="2">
         <label class="md-nav__title" for="__nav_1_11">
           <span class="md-nav__icon md-icon"></span>
-          Log pipeline monitoring
+          Log pipeline insight
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -1469,6 +1469,20 @@
           Additional resources
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../resources/grafana/" class="md-nav__link">
+        Grafana
+      </a>
+    </li>
+  
+
+            
           
             
               
@@ -1719,6 +1733,8 @@
 <li><a href="s3-pipeline/">Amazon S3</a>: the solution either ingests logs in the specified Amazon S3 location continuously or performs one-time ingestion. You can also filter logs based on Amazon S3 prefix or parse logs with custom Log Config.</li>
 <li><a href="syslog-pipeline/">Syslog</a>: the solution collects syslog logs through UDP or TCP protocol.</li>
 </ul>
+<p>Amazon OpenSearch Service is suitable for real-time log analytics and frequent queries and has full-text search capability.</p>
+<p>As of release 2.1.0, the solution starts to support log ingestion into Light Engine, which is suitable for non real-time log analytics and infrequent queries and has SQL-like search capability. The feature is supported when you choose Amazon EC2 instance group or Amazon EKS cluster as log source. </p>
 <p>After creating a log analytics pipeline, you can add more log sources to the log analytics pipeline. For more information, see <a href="create-log-source/#add-a-new-log-source">add a new log source</a>.</p>
 <div class="admonition important">
 <p class="admonition-title">Important</p>

@@ -1274,14 +1274,14 @@
       
       
         <label class="md-nav__link" for="__nav_1_11">
-          日志管道监控
+          日志管道洞察
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="日志管道监控" data-md-level="2">
+      <nav class="md-nav" aria-label="日志管道洞察" data-md-level="2">
         <label class="md-nav__title" for="__nav_1_11">
           <span class="md-nav__icon md-icon"></span>
-          日志管道监控
+          日志管道洞察
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -1387,6 +1387,20 @@
           额外资源
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../resources/grafana/" class="md-nav__link">
+        Grafana
+      </a>
+    </li>
+  
+
+            
           
             
               
@@ -1550,6 +1564,8 @@
 <h1 id="aws">构建 AWS 服务日志分析管道</h1>
 <p>日志通支持通过日志分析管道将 AWS 服务日志摄取到 Amazon OpenSearch Service。您可以使用 <strong>日志通网页控制台</strong> 或通过 <strong>独立 CloudFormation 模板</strong>构建日志分析管道。</p>
 <p>日志通读取数据源、解析、清理或丰富、和摄取日志到 Amazon OpenSearch Service 域进行分析。此外，该解决方案提供模板化的仪表板便于日志可视化。</p>
+<p>Amazon OpenSearch Service 服务适用于实时日志分析和频繁查询，并具有全文搜索功能。</p>
+<p>从2.1.0版本开始，该解决方案开始支持将日志摄取到 Light Engine，适用于非实时日志分析和非频繁的查询，并具有类似SQL的搜索功能。Amazon CloudFront日志、ALB 日志和AWS WAF日志目前支持 Light Engine。</p>
 <div class="admonition important">
 <p class="admonition-title">重要</p>
 <ul>

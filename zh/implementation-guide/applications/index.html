@@ -1356,14 +1356,14 @@
       
       
         <label class="md-nav__link" for="__nav_1_11">
-          日志管道监控
+          日志管道洞察
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="日志管道监控" data-md-level="2">
+      <nav class="md-nav" aria-label="日志管道洞察" data-md-level="2">
         <label class="md-nav__title" for="__nav_1_11">
           <span class="md-nav__icon md-icon"></span>
-          日志管道监控
+          日志管道洞察
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -1469,6 +1469,20 @@
           额外资源
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../resources/grafana/" class="md-nav__link">
+        Grafana
+      </a>
+    </li>
+  
+
+            
           
             
               
@@ -1719,6 +1733,8 @@
 <li><a href="s3-pipeline/">Amazon S3</a>: 日志通既可以连续提取指定 Amazon S3 位置中的日志，也可以执行一次性提取。 您还可以根据 Amazon S3 前缀过滤日志或使用自定义日志配置来解析日志。</li>
 <li><a href="syslog-pipeline/">Syslog</a>: 对于 Syslog，日志通将通过 UDP 或 TCP 协议收集 Syslog 日志。</li>
 </ul>
+<p>Amazon OpenSearch Service 服务适用于实时日志分析和频繁查询，并具有全文搜索功能。</p>
+<p>从2.1.0版本开始，该解决方案开始支持将日志摄取到 Light Engine，适用于非实时日志分析和非频繁的查询，并具有类似SQL的搜索功能。当您选择Amazon EC2实例组或Amazon EKS集群作为日志源时可使用 Light Engine。</p>
 <p>创建日志分析管道后，您可以向日志分析管道添加更多日志源。 有关更多信息，请参阅 <a href="create-log-source/#add-a-new-log-source">添加新的日志源</a>。</p>
 <div class="admonition important">
 <p class="admonition-title">重要</p>

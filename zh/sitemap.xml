@@ -2,292 +2,297 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/alarm/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/architecture/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/faq/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/include-dashboard/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/monitoring/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/release-notes/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/solution-components/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/source/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/trouble-shooting/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/uninstall/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/applications/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/applications/create-log-config/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/applications/create-log-source/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/applications/ec2-pipeline/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/applications/eks-pipeline/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/applications/include-supported-app-logs/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/applications/s3-pipeline/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/applications/syslog-pipeline/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/architecture-details/services-in-this-solution/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/architecture-details/solution-components/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/architecture-overview/well-architected-pillars/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/aws-services/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/aws-services/cloudfront/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/aws-services/cloudtrail/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/aws-services/config/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/aws-services/elb/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/aws-services/include-cfn-common/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/aws-services/include-cfn-plugins-common/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/aws-services/include-cw-cfn-common/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/aws-services/include-dashboard/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/aws-services/include-index-pattern/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/aws-services/include-supported-service-logs/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/aws-services/lambda/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/aws-services/rds/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/aws-services/s3/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/aws-services/vpc/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/aws-services/waf/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/deployment/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/deployment/with-cognito/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/deployment/with-oidc/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/domains/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/domains/alarms/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/domains/import/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/domains/proxy/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/getting-started/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/getting-started/1.import-domain/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/getting-started/2.create-proxy/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/getting-started/3.build-cloudtrail-pipeline/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/getting-started/4.view-dashboard/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/link-account/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/plan-deployment/considerations/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/plan-deployment/cost/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/plan-deployment/security/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/resources/grafana/</loc>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/resources/open-ssl/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/resources/upload-ssl-certificate/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/solution-overview/features/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/solution-overview/use-cases/</loc>
-         <lastmod>2023-09-27</lastmod>
+         <lastmod>2023-11-16</lastmod>
          <changefreq>daily</changefreq>
     </url>
 </urlset>

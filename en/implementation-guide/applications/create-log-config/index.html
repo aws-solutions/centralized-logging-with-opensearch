@@ -1351,14 +1351,14 @@
       
       
         <label class="md-nav__link" for="__nav_1_11">
-          Log pipeline monitoring
+          Log pipeline insight
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Log pipeline monitoring" data-md-level="2">
+      <nav class="md-nav" aria-label="Log pipeline insight" data-md-level="2">
         <label class="md-nav__title" for="__nav_1_11">
           <span class="md-nav__icon md-icon"></span>
-          Log pipeline monitoring
+          Log pipeline insight
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -1464,6 +1464,20 @@
           Additional resources
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../resources/grafana/" class="md-nav__link">
+        Grafana
+      </a>
+    </li>
+  
+
+            
           
             
               
@@ -1720,16 +1734,48 @@
 <li>Specify <strong>Log Path</strong>. You can use <code>,</code> to separate multiple paths.</li>
 <li>Choose <strong>JSON</strong> in the log type dropdown list.</li>
 <li>
-<p>In the <strong>Sample log parsing</strong> section, paste a sample JSON log and click <strong>Parse log</strong> to verify if the log parsing is successful.</p>
-<p>For example:
-<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="nt">&quot;host&quot;</span><span class="p">:</span><span class="s2">&quot;81.95.250.9&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;user-identifier&quot;</span><span class="p">:</span><span class="s2">&quot;-&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;time&quot;</span><span class="p">:</span><span class="s2">&quot;08/Mar/2022:06:28:03 +0000&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;method&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;PATCH&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;request&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/clicks-and-mortar/24%2f7&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;protocol&quot;</span><span class="p">:</span><span class="s2">&quot;HTTP/2.0&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="mi">502</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;bytes&quot;</span><span class="p">:</span><span class="mi">24337</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;referer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://www.investorturn-key.net/functionalities/innovative/integrated&quot;</span><span class="p">}</span>
-</code></pre></div></p>
-</li>
-<li>
-<p>Check if each fields type mapping is correct. You can change the type by selecting the dropdown menu in the second column. For all supported types, see <a href="https://opensearch.org/docs/latest/search-plugins/sql/datatypes/">Data Types</a>.</p>
+<p>In the <strong>Sample log parsing</strong> section, paste a sample JSON log and click <strong>Parse log</strong> to verify if the log parsing is successful.JSON type  support nested Json with a maximum nesting depth of X. </p>
+<ul>
+<li>If your JSON log sample is nested JSON, choose Pase Log and it displays a list of field type options for each layer. If needed, you can set the corresponding field type for each layer of fields. If you choose Remove to delete a field. The field type will be automatically inferred by OpenSearch.
+For Example:
+<div class="highlight"><pre><span></span><code>    {&quot;timestamp&quot;: &quot;2023-11-06T08:29:55.266Z&quot;,
+   &quot;correlationId&quot;: &quot;566829027325526589&quot;,
+   &quot;processInfo&quot;: {
+    &quot;startTime&quot;: &quot;2023-11-06T08:29:55.266Z&quot;,
+    &quot;hostname&quot;: &quot;ltvtix0apidev01&quot;,
+    &quot;domainId&quot;: &quot;e6826d97-a60f-45cb-93e1-b4bb5a7add29&quot;,
+    &quot;groupId&quot;: &quot;group-2&quot;,
+    &quot;groupName&quot;: &quot;grp_dev_bba&quot;,
+    &quot;serviceId&quot;: &quot;instance-1&quot;,
+    &quot;serviceName&quot;: &quot;ins_dev_bba&quot;,
+    &quot;version&quot;: &quot;7.7.20210130&quot;
+    },
+    &quot;transactionSummary&quot;: {
+        &quot;path&quot;: &quot;https://www.leadmission-critical.info/relationships&quot;,
+        &quot;protocol&quot;: &quot;https&quot;,
+        &quot;protocolSrc&quot;: &quot;97&quot;,
+        &quot;status&quot;: &quot;exception&quot;,
+        &quot;serviceContexts&quot;: [
+            {
+                &quot;service&quot;: &quot;NSC_APP-117127_DCTM_Get Documentum Token&quot;,
+                &quot;monitor&quot;: true,
+                &quot;client&quot;: &quot;Pass Through&quot;,
+                &quot;org&quot;: null,
+                &quot;app&quot;: null,
+                &quot;method&quot;: &quot;getTokenUsingPOST&quot;,
+                &quot;status&quot;: &quot;exception&quot;,
+                &quot;duration&quot;: 25270
+            }
+                ]
+        }
+    }
+</code></pre></div></li>
+<li>Check if each fields type mapping is correct. You can change the type by selecting the dropdown menu in the second column. For all supported types, see <a href="https://opensearch.org/docs/latest/search-plugins/sql/datatypes/">Data Types</a>.</li>
+</ul>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>You must specify the datetime of the log using key “time”. If not specified, system time will be added.</p>
+<p>For nested JSON, the Time Key must be on the first level.</p>
 </div>
 </li>
 <li>

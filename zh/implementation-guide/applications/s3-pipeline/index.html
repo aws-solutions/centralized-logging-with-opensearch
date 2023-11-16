@@ -1274,14 +1274,14 @@
       
       
         <label class="md-nav__link" for="__nav_1_11">
-          日志管道监控
+          日志管道洞察
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="日志管道监控" data-md-level="2">
+      <nav class="md-nav" aria-label="日志管道洞察" data-md-level="2">
         <label class="md-nav__title" for="__nav_1_11">
           <span class="md-nav__icon md-icon"></span>
-          日志管道监控
+          日志管道洞察
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -1387,6 +1387,20 @@
           额外资源
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../resources/grafana/" class="md-nav__link">
+        Grafana
+      </a>
+    </li>
+  
+
+            
           
             
               
@@ -1588,81 +1602,6 @@
 </li>
 <li>
 <p>在 <strong>索引名称</strong> 中小写指定。</p>
-</li>
-<li>
-<p>在 <strong>缓冲区</strong> 部分中，选择 <strong>S3</strong> 或 <strong>Kinesis Data Streams</strong>。如果您不希望有缓冲层，请选择 <strong>无</strong>。请参阅 <a href="../#log-buffer">日志缓冲</a> 获取关于选择适当缓冲层的更多信息。</p>
-<ul>
-<li>S3缓冲参数</li>
-</ul>
-<table>
-<thead>
-<tr>
-<th>参数</th>
-<th>默认值</th>
-<th>描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>S3 Bucket</td>
-<td><em>解决方案将创建一个日志桶。</em></td>
-<td>您也可以选择一个桶来存储日志数据。</td>
-</tr>
-<tr>
-<td>S3 Bucket前缀</td>
-<td><code>AppLogs/&lt;index-prefix&gt;/year=%Y/month=%m/day=%d</code></td>
-<td>日志代理在将日志文件交付给S3桶时添加前缀。</td>
-</tr>
-<tr>
-<td>缓冲大小</td>
-<td>50 MiB</td>
-<td>日志代理在将日志交付给S3之前在日志代理端缓存的日志数据的最大大小。有关更多信息，请查看 <a href="https://docs.aws.amazon.com/firehose/latest/dev/basic-deliver.html#frequency">数据交付频率</a>。</td>
-</tr>
-<tr>
-<td>缓冲间隔</td>
-<td>60秒</td>
-<td>日志代理将日志交付给S3的最大间隔。有关更多信息，请查看 <a href="https://docs.aws.amazon.com/firehose/latest/dev/basic-deliver.html#frequency">数据交付频率</a>。</td>
-</tr>
-<tr>
-<td>数据记录的压缩</td>
-<td><code>Gzip</code></td>
-<td>日志代理在将它们交付给S3桶之前会压缩记录。</td>
-</tr>
-</tbody>
-</table>
-<ul>
-<li>Kinesis Data Streams缓冲参数</li>
-</ul>
-<table>
-<thead>
-<tr>
-<th>参数</th>
-<th>默认值</th>
-<th>描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>分片数量</td>
-<td><code>&lt;需要输入&gt;</code></td>
-<td>Kinesis Data Streams的分片数量。每个分片每秒最多可容纳1,000个记录，并且总数据写入速率为每秒1MB。</td>
-</tr>
-<tr>
-<td>启用自动缩放</td>
-<td><code>否</code></td>
-<td>该解决方案每5分钟监视一次Kinesis Data Streams的利用率，并自动缩放分片的数量。解决方案在24小时内最多缩放8次。</td>
-</tr>
-<tr>
-<td>最大分片数量</td>
-<td><code>&lt;需要输入&gt;</code></td>
-<td>如果启用了自动缩放，则需要。最大的分片数量。</td>
-</tr>
-</tbody>
-</table>
-<div class="admonition 重要">
-<p class="admonition-title">重要</p>
-<p>如果在Kinesis Data Streams（KDS）中发生阈值错误，您可能会在OpenSearch中观察到重复的日志。这是因为Fluent Bit日志代理以<a href="https://docs.fluentbit.io/manual/administration/buffering-and-storage#chunks-memory-filesystem-and-backpressure">块</a> (包含多个记录)上传日志，并在上传失败时重试该块。每个KDS分片每秒最多可支持写入1,000条记录，最大总数据写入速率为每秒1MB。请估算您的日志量并选择合适的分片数量。</p>
-</div>
 </li>
 <li>
 <p>选择 <strong>下一步</strong>。</p>

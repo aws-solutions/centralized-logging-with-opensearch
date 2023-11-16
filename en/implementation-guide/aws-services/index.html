@@ -1274,14 +1274,14 @@
       
       
         <label class="md-nav__link" for="__nav_1_11">
-          Log pipeline monitoring
+          Log pipeline insight
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Log pipeline monitoring" data-md-level="2">
+      <nav class="md-nav" aria-label="Log pipeline insight" data-md-level="2">
         <label class="md-nav__title" for="__nav_1_11">
           <span class="md-nav__icon md-icon"></span>
-          Log pipeline monitoring
+          Log pipeline insight
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -1387,6 +1387,20 @@
           Additional resources
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../resources/grafana/" class="md-nav__link">
+        Grafana
+      </a>
+    </li>
+  
+
+            
           
             
               
@@ -1550,6 +1564,8 @@
 <h1 id="build-aws-service-log-analytics-pipelines">Build AWS Service Log Analytics Pipelines</h1>
 <p>Centralized Logging with OpenSearch supports ingesting AWS service logs into Amazon OpenSearch Service through log analytics pipelines, which you can build using the <strong>Centralized Logging with OpenSearch web console</strong> or via a <strong>standalone CloudFormation template</strong>. </p>
 <p>Centralized Logging with OpenSearch reads the data source, parse, cleanup/enrich and ingest logs into Amazon OpenSearch Service domains for analysis. Moreover, the solution provides templated dashboards to facilitate log visualization.</p>
+<p>Amazon OpenSearch Service is suitable for real-time log analytics and frequent queries and has full-text search capability.</p>
+<p>As of release 2.1.0, the solution starts to support log ingestion into Light Engine, which is suitable for non real-time log analytics and infrequent queries and has SQL-like search capability. The feature is supported by Amazon CloudFront logs, Application Load Balancing logs, and AWS WAF logs.</p>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
 <ul>

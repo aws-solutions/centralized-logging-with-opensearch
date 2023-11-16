@@ -8,21 +8,21 @@
       
       
       
-        <link rel="canonical" href="https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/include-dashboard/">
+        <link rel="canonical" href="https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/resources/grafana/">
       
-      <link rel="icon" href="../../images/aws-solutions.png">
+      <link rel="icon" href="../../../images/aws-solutions.png">
       <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.5.3">
     
     
       
-        <title>Include dashboard - Centralized Logging with OpenSearch</title>
+        <title>Grafana - Centralized Logging with OpenSearch</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.7a952b86.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.7a952b86.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.cbb835fc.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.cbb835fc.min.css">
         
       
       
@@ -39,9 +39,9 @@
       
     
     
-      <link rel="stylesheet" href="../../stylesheets/extra.css">
+      <link rel="stylesheet" href="../../../stylesheets/extra.css">
     
-    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -65,6 +65,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#setting-up-grafana-environment-optional" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -79,9 +84,9 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="Centralized Logging with OpenSearch" class="md-header__button md-logo" aria-label="Centralized Logging with OpenSearch" data-md-component="logo">
+    <a href="../../.." title="Centralized Logging with OpenSearch" class="md-header__button md-logo" aria-label="Centralized Logging with OpenSearch" data-md-component="logo">
       
-  <img src="../../images/aws-solutions.png" alt="logo">
+  <img src="../../../images/aws-solutions.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -97,7 +102,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Include dashboard
+              Grafana
             
           </span>
         </div>
@@ -195,6 +200,8 @@
         
   
   
+    
+  
 
 
   
@@ -206,7 +213,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../.." class="md-tabs__link">
+      <a href="../../.." class="md-tabs__link md-tabs__link--active">
         Implementation Guide
       </a>
     </li>
@@ -260,9 +267,9 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="Centralized Logging with OpenSearch" class="md-nav__button md-logo" aria-label="Centralized Logging with OpenSearch" data-md-component="logo">
+    <a href="../../.." title="Centralized Logging with OpenSearch" class="md-nav__button md-logo" aria-label="Centralized Logging with OpenSearch" data-md-component="logo">
       
-  <img src="../../images/aws-solutions.png" alt="logo">
+  <img src="../../../images/aws-solutions.png" alt="logo">
 
     </a>
     Centralized Logging with OpenSearch
@@ -288,12 +295,14 @@
 
   
   
+    
+  
   
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1" type="checkbox" id="__nav_1" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1" type="checkbox" id="__nav_1" checked>
       
       
       
@@ -342,7 +351,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../.." class="md-nav__link">
+      <a href="../../.." class="md-nav__link">
         Overview
       </a>
     </li>
@@ -356,7 +365,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../solution-overview/features/" class="md-nav__link">
+      <a href="../../solution-overview/features/" class="md-nav__link">
         Features and benefits
       </a>
     </li>
@@ -370,7 +379,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../solution-overview/use-cases/" class="md-nav__link">
+      <a href="../../solution-overview/use-cases/" class="md-nav__link">
         Use cases
       </a>
     </li>
@@ -417,7 +426,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/" class="md-nav__link">
+      <a href="../../architecture/" class="md-nav__link">
         Architecture diagram
       </a>
     </li>
@@ -431,7 +440,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture-overview/well-architected-pillars/" class="md-nav__link">
+      <a href="../../architecture-overview/well-architected-pillars/" class="md-nav__link">
         AWS Well-Architected pillars
       </a>
     </li>
@@ -478,7 +487,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture-details/solution-components/" class="md-nav__link">
+      <a href="../../architecture-details/solution-components/" class="md-nav__link">
         Solution components
       </a>
     </li>
@@ -492,7 +501,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture-details/services-in-this-solution/" class="md-nav__link">
+      <a href="../../architecture-details/services-in-this-solution/" class="md-nav__link">
         AWS services in this solution
       </a>
     </li>
@@ -539,7 +548,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../plan-deployment/cost/" class="md-nav__link">
+      <a href="../../plan-deployment/cost/" class="md-nav__link">
         Cost
       </a>
     </li>
@@ -553,7 +562,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../plan-deployment/security/" class="md-nav__link">
+      <a href="../../plan-deployment/security/" class="md-nav__link">
         Security
       </a>
     </li>
@@ -567,7 +576,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../plan-deployment/considerations/" class="md-nav__link">
+      <a href="../../plan-deployment/considerations/" class="md-nav__link">
         Supported AWS Regions
       </a>
     </li>
@@ -614,7 +623,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../deployment/" class="md-nav__link">
+      <a href="../../deployment/" class="md-nav__link">
         Overview
       </a>
     </li>
@@ -628,7 +637,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../deployment/with-cognito/" class="md-nav__link">
+      <a href="../../deployment/with-cognito/" class="md-nav__link">
         Launch with Cognito User Pool
       </a>
     </li>
@@ -642,7 +651,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../deployment/with-oidc/" class="md-nav__link">
+      <a href="../../deployment/with-oidc/" class="md-nav__link">
         Launch with OpenID Connect
       </a>
     </li>
@@ -689,7 +698,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/" class="md-nav__link">
+      <a href="../../getting-started/" class="md-nav__link">
         Overview
       </a>
     </li>
@@ -703,7 +712,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/1.import-domain/" class="md-nav__link">
+      <a href="../../getting-started/1.import-domain/" class="md-nav__link">
         Step 1. Import domain
       </a>
     </li>
@@ -717,7 +726,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/2.create-proxy/" class="md-nav__link">
+      <a href="../../getting-started/2.create-proxy/" class="md-nav__link">
         Step 2. Create proxy
       </a>
     </li>
@@ -731,7 +740,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/3.build-cloudtrail-pipeline/" class="md-nav__link">
+      <a href="../../getting-started/3.build-cloudtrail-pipeline/" class="md-nav__link">
         Step 3. Ingest CloudTrail logs
       </a>
     </li>
@@ -745,7 +754,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/4.view-dashboard/" class="md-nav__link">
+      <a href="../../getting-started/4.view-dashboard/" class="md-nav__link">
         Step 4. Access dashboard
       </a>
     </li>
@@ -792,7 +801,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../domains/" class="md-nav__link">
+      <a href="../../domains/" class="md-nav__link">
         Overview
       </a>
     </li>
@@ -806,7 +815,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../domains/import/" class="md-nav__link">
+      <a href="../../domains/import/" class="md-nav__link">
         Domain operations
       </a>
     </li>
@@ -820,7 +829,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../domains/proxy/" class="md-nav__link">
+      <a href="../../domains/proxy/" class="md-nav__link">
         Access proxy
       </a>
     </li>
@@ -834,7 +843,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../domains/alarms/" class="md-nav__link">
+      <a href="../../domains/alarms/" class="md-nav__link">
         Domain alarms
       </a>
     </li>
@@ -881,7 +890,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aws-services/" class="md-nav__link">
+      <a href="../../aws-services/" class="md-nav__link">
         Overview
       </a>
     </li>
@@ -895,7 +904,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aws-services/cloudtrail/" class="md-nav__link">
+      <a href="../../aws-services/cloudtrail/" class="md-nav__link">
         Amazon CloudTrail
       </a>
     </li>
@@ -909,7 +918,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aws-services/s3/" class="md-nav__link">
+      <a href="../../aws-services/s3/" class="md-nav__link">
         Amazon S3
       </a>
     </li>
@@ -923,7 +932,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aws-services/rds/" class="md-nav__link">
+      <a href="../../aws-services/rds/" class="md-nav__link">
         Amazon RDS/Aurora
       </a>
     </li>
@@ -937,7 +946,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aws-services/cloudfront/" class="md-nav__link">
+      <a href="../../aws-services/cloudfront/" class="md-nav__link">
         Amazon CloudFront
       </a>
     </li>
@@ -951,7 +960,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aws-services/lambda/" class="md-nav__link">
+      <a href="../../aws-services/lambda/" class="md-nav__link">
         AWS Lambda
       </a>
     </li>
@@ -965,7 +974,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aws-services/elb/" class="md-nav__link">
+      <a href="../../aws-services/elb/" class="md-nav__link">
         Elastic Load Balancing
       </a>
     </li>
@@ -979,7 +988,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aws-services/waf/" class="md-nav__link">
+      <a href="../../aws-services/waf/" class="md-nav__link">
         AWS WAF
       </a>
     </li>
@@ -993,7 +1002,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aws-services/vpc/" class="md-nav__link">
+      <a href="../../aws-services/vpc/" class="md-nav__link">
         VPC Flow Log
       </a>
     </li>
@@ -1007,7 +1016,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aws-services/config/" class="md-nav__link">
+      <a href="../../aws-services/config/" class="md-nav__link">
         AWS Config
       </a>
     </li>
@@ -1054,7 +1063,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../applications/" class="md-nav__link">
+      <a href="../../applications/" class="md-nav__link">
         Overview
       </a>
     </li>
@@ -1068,7 +1077,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../applications/ec2-pipeline/" class="md-nav__link">
+      <a href="../../applications/ec2-pipeline/" class="md-nav__link">
         EC2 instance group
       </a>
     </li>
@@ -1082,7 +1091,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../applications/eks-pipeline/" class="md-nav__link">
+      <a href="../../applications/eks-pipeline/" class="md-nav__link">
         EKS cluster
       </a>
     </li>
@@ -1096,7 +1105,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../applications/s3-pipeline/" class="md-nav__link">
+      <a href="../../applications/s3-pipeline/" class="md-nav__link">
         S3
       </a>
     </li>
@@ -1110,7 +1119,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../applications/syslog-pipeline/" class="md-nav__link">
+      <a href="../../applications/syslog-pipeline/" class="md-nav__link">
         Syslog
       </a>
     </li>
@@ -1150,7 +1159,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../applications/create-log-source/" class="md-nav__link">
+      <a href="../../applications/create-log-source/" class="md-nav__link">
         Log source
       </a>
     </li>
@@ -1164,7 +1173,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../applications/create-log-config/" class="md-nav__link">
+      <a href="../../applications/create-log-config/" class="md-nav__link">
         Log Config
       </a>
     </li>
@@ -1192,7 +1201,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../link-account/" class="md-nav__link">
+      <a href="../../link-account/" class="md-nav__link">
         Cross-account ingestion
       </a>
     </li>
@@ -1232,7 +1241,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../alarm/" class="md-nav__link">
+      <a href="../../alarm/" class="md-nav__link">
         Log alarms
       </a>
     </li>
@@ -1246,7 +1255,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../monitoring/" class="md-nav__link">
+      <a href="../../monitoring/" class="md-nav__link">
         Monitoring
       </a>
     </li>
@@ -1267,7 +1276,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../faq/" class="md-nav__link">
+      <a href="../../faq/" class="md-nav__link">
         FAQ
       </a>
     </li>
@@ -1281,7 +1290,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../trouble-shooting/" class="md-nav__link">
+      <a href="../../trouble-shooting/" class="md-nav__link">
         Troubleshooting
       </a>
     </li>
@@ -1295,7 +1304,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../uninstall/" class="md-nav__link">
+      <a href="../../uninstall/" class="md-nav__link">
         Uninstall the solution
       </a>
     </li>
@@ -1307,12 +1316,14 @@
               
   
   
+    
+  
   
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_15" type="checkbox" id="__nav_1_15" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_15" type="checkbox" id="__nav_1_15" checked>
       
       
       
@@ -1333,11 +1344,73 @@
               
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../resources/grafana/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Grafana
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         Grafana
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#step-1-install-grafana" class="md-nav__link">
+    Step 1: Install Grafana
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-2-authorize-the-ec2-where-grafana-is-located-to-access-athena" class="md-nav__link">
+    Step 2: Authorize the EC2 where Grafana is located to access Athena
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-3-install-amazon-athena-plugins" class="md-nav__link">
+    Step 3: Install Amazon Athena Plugins
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-4-create-service-accounts" class="md-nav__link">
+    Step 4: Create Service Accounts
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1349,7 +1422,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../resources/open-ssl/" class="md-nav__link">
+      <a href="../open-ssl/" class="md-nav__link">
         OpenSSL installation
       </a>
     </li>
@@ -1363,7 +1436,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../resources/upload-ssl-certificate/" class="md-nav__link">
+      <a href="../upload-ssl-certificate/" class="md-nav__link">
         Upload certificate
       </a>
     </li>
@@ -1384,7 +1457,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../source/" class="md-nav__link">
+      <a href="../../source/" class="md-nav__link">
         Developer guide
       </a>
     </li>
@@ -1398,7 +1471,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../release-notes/" class="md-nav__link">
+      <a href="../../release-notes/" class="md-nav__link">
         Revisions
       </a>
     </li>
@@ -1459,6 +1532,44 @@
   
   
   
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#step-1-install-grafana" class="md-nav__link">
+    Step 1: Install Grafana
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-2-authorize-the-ec2-where-grafana-is-located-to-access-athena" class="md-nav__link">
+    Step 2: Authorize the EC2 where Grafana is located to access Athena
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-3-install-amazon-athena-plugins" class="md-nav__link">
+    Step 3: Install Amazon Athena Plugins
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-4-create-service-accounts" class="md-nav__link">
+    Step 4: Create Service Accounts
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -1472,16 +1583,103 @@
                 
                   
 
-  <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch/edit/master/docs/implementation-guide/include-dashboard.md" title="Edit this page" class="md-content__button md-icon">
+  <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch/edit/master/docs/implementation-guide/resources/grafana.md" title="Edit this page" class="md-content__button md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
   </a>
 
 
-  <h1>Include dashboard</h1>
+<h1 id="setting-up-grafana-environment-optional">Setting up Grafana Environment - Optional</h1>
+<p>This section introduces how to set up Grafana environment. If you want the solution to generate dashboards in Grafana automatically, you need to perform the following deployment. If you only want to store the data in Amazon S3 without creating dashboards, you can skip this section.</p>
+<h2 id="step-1-install-grafana">Step 1: Install Grafana</h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Skip this step if you already have a Grafana environment.</p>
+</div>
+<p>Prerequisites:</p>
+<ol>
+<li>An EC2 instance has been launched, supporting both x86 and ARM architectures.</li>
+</ol>
+<p>The following steps provide an example using m6g.medium instance type, ARM architecture, and Amazon 2023. For details, refer to <a href="https://grafana.com/docs/grafana/latest/setup-grafana/installation/" target="_blank">Install Grafana</a>. </p>
+<p>Follow below steps:
+<div class="highlight"><pre><span></span><code><span class="c1"># Edit/etc/yum.repos.d/grafana.repo file，input below content</span>
+<span class="o">[</span>grafana<span class="o">]</span>
+<span class="nv">name</span><span class="o">=</span>grafana
+<span class="nv">baseurl</span><span class="o">=</span>https://rpm.grafana.com
+<span class="nv">repo_gpgcheck</span><span class="o">=</span><span class="m">1</span>
+<span class="nv">enabled</span><span class="o">=</span><span class="m">1</span>
+<span class="nv">gpgcheck</span><span class="o">=</span><span class="m">1</span>
+<span class="nv">gpgkey</span><span class="o">=</span>https://rpm.grafana.com/gpg.key
+<span class="nv">sslverify</span><span class="o">=</span><span class="m">1</span>
+<span class="nv">sslcacert</span><span class="o">=</span>/etc/pki/tls/certs/ca-bundle.crt
 
-<p>You can access the built-in dashboard in Amazon OpenSearch to view log data. For more information, see <a href="../getting-started/4.view-dashboard/">Access Dashboard</a>.</p>
-<p>You can click the below image to view the high-resolution sample dashboard.</p>
+<span class="c1"># install grafana</span>
+yum<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>grafana
+
+<span class="c1"># Start grafana，and check its running status</span>
+systemctl<span class="w"> </span>start<span class="w"> </span>grafana-server
+systemctl<span class="w"> </span>status<span class="w"> </span>grafana-server
+
+
+<span class="c1"># grafana listens on port 3000 by default, Users can edit /etc/grafana/grafana.ini to modify the configuration</span>
+
+<span class="c1"># Access grafana，using the default credentials admin / admin，you will be promoted to change the password on the first login.</span>
+http://<span class="o">{</span>instance-ip<span class="o">}</span>:3000/
+
+<span class="c1"># If you need public access, please configure an Application Load Balancer (ALB) on your own.</span>
+<span class="c1"># When configuring the ALB, modify the Idle timeout to 1800 to avoid the following error during large data queries (when a single API call exceeds 60 seconds)：</span>
+<span class="c1"># “a padding to disable MSIE and Chrome friendly error page”</span>
+</code></pre></div></p>
+<h2 id="step-2-authorize-the-ec2-where-grafana-is-located-to-access-athena">Step 2: Authorize the EC2 where Grafana is located to access Athena</h2>
+<p>Prerequisites:</p>
+<ol>
+<li>
+<p>You have deployed Grafana on EC2.</p>
+</li>
+<li>
+<p>EC2 has been configured with an IAM Instance Profile. The corresponding Role Arn of the Instance Profile should be recorded. All the following content will be referred to as "EC2 IAM Instance Profile."</p>
+</li>
+</ol>
+<p>Follow below steps:</p>
+<ol>
+<li>Access <a href="https://console.aws.amazon.com/iam/home" target="_blank">IAM ManagementConsole</a>.</li>
+<li>Search for the role including "AthenaPublicAccessRole" and click on it to access the details page. Record the Role Arn, which will be used later.</li>
+<li>Click on "Trust relationships."</li>
+<li>Click on "Edit trust policy."</li>
+<li>Click on "Add a principal."</li>
+<li>Select "IAM Roles."</li>
+<li>Enter the "EC2 IAM Instance Profile."</li>
+<li>Click on "Add principal."</li>
+<li>Click on "Update Policy."</li>
+</ol>
+<h2 id="step-3-install-amazon-athena-plugins">Step 3: Install Amazon Athena Plugins</h2>
+<p>Prerequisites:</p>
+<ol>
+<li>Grafana is installed.</li>
+<li>Grafana is accessible over the public network.</li>
+</ol>
+<p>Follow below steps:</p>
+<ol>
+<li>Open the Grafana console page.</li>
+<li>Select "Administration" from the left menu bar, then choose "Plugins."</li>
+<li>On the right side, select "All" in the "State" section.</li>
+<li>In the search box, enter "Athena" and click on the "Amazon Athena" result to access the details page.</li>
+<li>Click the "Install" button on the page and wait for the plugin installation to complete.</li>
+</ol>
+<h2 id="step-4-create-service-accounts">Step 4: Create Service Accounts</h2>
+<p>Follow below steps:</p>
+<ol>
+<li>Open the Grafana console page.</li>
+<li>Select "Administration" from the left menu bar, then choose "Service accounts."</li>
+<li>Select "Add service account."</li>
+<li>Enter the Display name, for example, "test".</li>
+<li>Select the Role as "Admin."</li>
+<li>Click "Create."</li>
+<li>Click "Add service account token" on the page.</li>
+<li>Click "Generate token."</li>
+<li>Click "Copy to clipboard and close."</li>
+<li>Save and record this token, which will be used when you need to create a pipeline.</li>
+</ol>
 
 
 
@@ -1497,6 +1695,42 @@
       </main>
       
         <footer class="md-footer">
+  
+    
+    <nav class="md-footer__inner md-grid" aria-label="Footer" >
+      
+        
+        <a href="../../uninstall/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Uninstall the solution" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Uninstall the solution
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../open-ssl/" class="md-footer__link md-footer__link--next" aria-label="Next: OpenSSL installation" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              OpenSSL installation
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
@@ -1514,10 +1748,10 @@
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs"], "search": "../../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": "latest"}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": "latest"}</script>
     
     
-      <script src="../../assets/javascripts/bundle.37e9125f.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.37e9125f.min.js"></script>
       
     
   </body>

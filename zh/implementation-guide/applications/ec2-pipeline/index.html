@@ -1113,16 +1113,49 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#amazon-opensearch" class="md-nav__link">
+    创建日志管道（Amazon OpenSearch）
+  </a>
+  
+    <nav class="md-nav" aria-label="创建日志管道（Amazon OpenSearch）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#_1" class="md-nav__link">
     请确认您已经完成
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#_2" class="md-nav__link">
     创建日志分析管道
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#light-engine" class="md-nav__link">
+    创建日志管道（Light Engine）
+  </a>
+  
+    <nav class="md-nav" aria-label="创建日志管道（Light Engine）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    创建日志分析管道
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1274,14 +1307,14 @@
       
       
         <label class="md-nav__link" for="__nav_1_11">
-          日志管道监控
+          日志管道洞察
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="日志管道监控" data-md-level="2">
+      <nav class="md-nav" aria-label="日志管道洞察" data-md-level="2">
         <label class="md-nav__title" for="__nav_1_11">
           <span class="md-nav__icon md-icon"></span>
-          日志管道监控
+          日志管道洞察
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -1387,6 +1420,20 @@
           额外资源
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../resources/grafana/" class="md-nav__link">
+        Grafana
+      </a>
+    </li>
+  
+
+            
           
             
               
@@ -1514,16 +1561,49 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#amazon-opensearch" class="md-nav__link">
+    创建日志管道（Amazon OpenSearch）
+  </a>
+  
+    <nav class="md-nav" aria-label="创建日志管道（Amazon OpenSearch）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#_1" class="md-nav__link">
     请确认您已经完成
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#_2" class="md-nav__link">
     创建日志分析管道
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#light-engine" class="md-nav__link">
+    创建日志管道（Light Engine）
+  </a>
+  
+    <nav class="md-nav" aria-label="创建日志管道（Light Engine）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    创建日志分析管道
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1550,11 +1630,12 @@
 <h1 id="amazon-ec2">Amazon EC2 实例组作为日志源</h1>
 <p>实例组代表一组 EC2 Linux 实例，这使得解决方案能够快速将日志配置与多个 EC2 实例关联。 日志通使用 Systems Manager 代理（SSM 代理）来安装/配置 Fluent Bit 代理，并将日志数据发送到 Kinesis Data Streams。</p>
 <p>本文将指导您如何从 EC2 实例组提取日志，并创建日志管道。</p>
-<h2 id="_1">请确认您已经完成</h2>
+<h2 id="amazon-opensearch">创建日志管道（Amazon OpenSearch）</h2>
+<h3 id="_1">请确认您已经完成</h3>
 <ol>
 <li><a href="../../domains/import/">导入 Amazon OpenSearch Service 域</a>。</li>
 </ol>
-<h2 id="_2">创建日志分析管道</h2>
+<h3 id="_2">创建日志分析管道</h3>
 <ol>
 <li>
 <p>登录日志通控制台。</p>
@@ -1566,7 +1647,7 @@
 <p>单击 <strong>创建日志管道</strong>。</p>
 </li>
 <li>
-<p>单击 <strong>实例组</strong> 作为日志源, 并选择 <strong>下一步</strong>.</p>
+<p>单击 <strong>实例组</strong> 作为日志源, 选择<strong>Amazon OpenSearch</strong>，并选择 <strong>下一步</strong>.</p>
 </li>
 <li>
 <p>选择您已创建的实例组，如果你还没有闯将实例组， 在右上角选择选择 <strong>创建实例组</strong> , 然后根据 <a href="../create-log-source/#amazon-ec2-instance-group">创建实例组</a> 的文档来创建实例组。 完成后, 选择 <strong>刷新</strong> 并选择最新创建的实例组.</p>
@@ -1698,6 +1779,121 @@
 </li>
 <li>
 <p>选择 <strong>创建</strong>。</p>
+</li>
+<li>
+<p>等待应用程序管道转变为“活动”状态。</p>
+</li>
+</ol>
+<h2 id="light-engine">创建日志管道（Light Engine）</h2>
+<h3 id="_3">创建日志分析管道</h3>
+<ol>
+<li>
+<p>登录日志通控制台。</p>
+</li>
+<li>
+<p>在左侧边栏中的 <strong>日志分析管道</strong> 下，选择<strong>应用日志</strong>。</p>
+</li>
+<li>
+<p>单击 <strong>创建日志管道</strong>。</p>
+</li>
+<li>
+<p>单击 <strong>实例组</strong> 作为日志源, 选择<strong>Light Engine</strong>，并选择 <strong>下一步</strong>.</p>
+</li>
+<li>
+<p>选择您已创建的实例组，如果你还没有闯将实例组， 在右上角选择选择 <strong>创建实例组</strong> , 然后根据 <a href="../create-log-source/#amazon-ec2-instance-group">创建实例组</a> 的文档来创建实例组。 完成后, 选择 <strong>刷新</strong> 并选择最新创建的实例组.</p>
+</li>
+<li>
+<p>(仅限于自动扩展组) 如果您的实例组是基于自动扩展组创建的，在摄取状态变为“已创建”后，您可以在实例组的详细页面中找到生成的Shell脚本。复制该shell脚本并更新自动扩展的 <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/launch-configurations.html">启动配置</a> 或 <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html">启动模板</a> 中的用户数据。</p>
+</li>
+<li>
+<p>保持默认的 <strong>权限授予方法</strong>。</p>
+</li>
+<li>
+<p>(可选) 如果您选择 <strong>我会在管道创建后手动添加以下所需的权限</strong>, 继续如下操作：</p>
+<ol>
+<li>点击 <strong>展开查看所需的权限</strong> 并复制提供的JSON策略。</li>
+<li>转到 <strong>AWS Management Console</strong>。</li>
+<li>在左侧栏，选择 <strong>IAM</strong>, 并从 <strong>Access management</strong> 下面选择 <strong>策略</strong>。</li>
+<li>选择 <strong>创建策略</strong>，选择 <strong>JSON</strong> 并替换文本块内的所有内容。请记住将 <code>&lt;YOUR ACCOUNT ID&gt;</code> 替换为您的账户ID。</li>
+<li>选择 <strong>下一步</strong>, 然后为此策略输入名称。</li>
+<li>将策略附加到您的EC2实例配置文件，以授予日志代理发送日志到应用日志管道的权限。如果您使用的是自动扩展组，则需要更新与自动扩展组关联的IAM实例配置文件。如有需要，您可以按照文档来更新您的[启动模板][launch-template]或[启动配置][launch-configuration]。</li>
+</ol>
+</li>
+<li>
+<p>选择 <strong>下一步</strong>。</p>
+</li>
+</ol>
+<p>您已为日志分析管道创建日志源。 现在您可以使用 Amazon EC2 实例组作为日志源对日志分析管道进行进一步配置。</p>
+<ol>
+<li>
+<p>输入 <strong>日志路径</strong> 指定要收集的日志的位置。</p>
+</li>
+<li>
+<p>选择之前设置中创建的日志配置，点击 <strong>下一步</strong>。如果您没有从下拉列表中找到所需的日志配置，请选择 <strong>创建新的</strong>, 并参考 <a href="../create-log-config/">日志配置</a>.</p>
+</li>
+<li>
+<p>在 <strong>缓冲区</strong> 部分中，选择 <strong>S3</strong>。</p>
+<ul>
+<li>S3缓冲参数</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S3 Bucket</td>
+<td><em>解决方案将创建一个日志桶。</em></td>
+<td>您也可以选择一个桶来存储日志数据。</td>
+</tr>
+<tr>
+<td>缓冲大小</td>
+<td>50 MiB</td>
+<td>日志代理在将日志交付给S3之前在日志代理端缓存的日志数据的最大大小。有关更多信息，请查看 <a href="https://docs.aws.amazon.com/firehose/latest/dev/basic-deliver.html#frequency">数据交付频率</a>。</td>
+</tr>
+<tr>
+<td>缓冲间隔</td>
+<td>60秒</td>
+<td>日志代理将日志交付给S3的最大间隔。有关更多信息，请查看 <a href="https://docs.aws.amazon.com/firehose/latest/dev/basic-deliver.html#frequency">数据交付频率</a>。</td>
+</tr>
+<tr>
+<td>数据记录的压缩</td>
+<td><code>Gzip</code></td>
+<td>日志代理在将它们交付给S3桶之前会压缩记录。</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li>
+<p>选择 <strong>下一步</strong>。</p>
+</li>
+<li>
+<p>在 <strong>指定 Light Engine 配置</strong> 部分，如果您要摄取关联的模板化 Grafana 仪表板，请为 <strong>样例看板</strong> 选择 <strong>是</strong>。</p>
+</li>
+<li>
+<p>你可以选择一个Grafana，如果需要<strong>导入</strong>一个新的Grafana，可以跳转到<a href="../../resources/grafana/">Grafana</a>进行配置。</p>
+</li>
+<li>
+<p>选择一个S3桶存放分区后的日志。并且定义一个用于存放日志表的名称。</p>
+</li>
+<li>
+<p>日志处理频率，默认为<strong>5</strong>分钟，最小时间处理频率为<strong>1</strong>分钟。</p>
+</li>
+<li>
+<p>在 <strong>日志生命周期</strong> 部分，输入管理 日志合并时间 和 日志归档时间。我们为你提供了默认值，你可以根据你的业务需求来进行调整。</p>
+</li>
+<li>
+<p>Lambda会作为Light Engine的默认日志处理器，选择<strong>下一步</strong>。</p>
+</li>
+<li>
+<p>如果需要，开启应用告警，并按需添加标签。</p>
+</li>
+<li>
+<p>选择<strong>创建</strong>。</p>
 </li>
 <li>
 <p>等待应用程序管道转变为“活动”状态。</p>

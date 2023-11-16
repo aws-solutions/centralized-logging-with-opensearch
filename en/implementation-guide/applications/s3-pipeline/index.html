@@ -1274,14 +1274,14 @@
       
       
         <label class="md-nav__link" for="__nav_1_11">
-          Log pipeline monitoring
+          Log pipeline insight
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Log pipeline monitoring" data-md-level="2">
+      <nav class="md-nav" aria-label="Log pipeline insight" data-md-level="2">
         <label class="md-nav__title" for="__nav_1_11">
           <span class="md-nav__icon md-icon"></span>
-          Log pipeline monitoring
+          Log pipeline insight
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -1387,6 +1387,20 @@
           Additional resources
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../resources/grafana/" class="md-nav__link">
+        Grafana
+      </a>
+    </li>
+  
+
+            
           
             
               
@@ -1588,85 +1602,6 @@
 </li>
 <li>
 <p>Specify <strong>Index name</strong> in lowercase.</p>
-</li>
-<li>
-<p>In the <strong>Buffer</strong> section, choose <strong>S3</strong> or <strong>Kinesis Data Streams</strong>. If you don't want the buffer layer, choose <strong>None</strong>. Refer to the <a href="../#log-buffer">Log Buffer</a> for more information about choosing the appropriate buffer layer.</p>
-<ul>
-<li>S3 buffer parameters</li>
-</ul>
-<table>
-<thead>
-<tr>
-<th>Parameter</th>
-<th>Default</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>S3 Bucket</td>
-<td><em>A log bucket will be created by the solution.</em></td>
-<td>You can also select a bucket to store the log data.</td>
-</tr>
-<tr>
-<td>S3 Bucket Prefix</td>
-<td><code>AppLogs/&lt;index-prefix&gt;/year=%Y/month=%m/day=%d</code></td>
-<td>The log agent appends the prefix when delivering the log files to the S3 bucket.</td>
-</tr>
-<tr>
-<td>Buffer size</td>
-<td>50 MiB</td>
-<td>The maximum size of log data cached at the log agent side before delivering to S3. For more information, see <a href="https://docs.aws.amazon.com/firehose/latest/dev/basic-deliver.html#frequency">Data Delivery Frequency</a>.</td>
-</tr>
-<tr>
-<td>Buffer interval</td>
-<td>60 seconds</td>
-<td>The maximum interval of the log agent to deliver logs to S3. For more information, see <a href="https://docs.aws.amazon.com/firehose/latest/dev/basic-deliver.html#frequency">Data Delivery Frequency</a>.</td>
-</tr>
-<tr>
-<td>Compression for data records</td>
-<td><code>Gzip</code></td>
-<td>The log agent compresses records before delivering them to the S3 bucket.</td>
-</tr>
-</tbody>
-</table>
-<ul>
-<li>Kinesis Data Streams buffer parameters</li>
-</ul>
-<table>
-<thead>
-<tr>
-<th>Parameter</th>
-<th>Default</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Shard number</td>
-<td><code>&lt;Requires input&gt;</code></td>
-<td>The number of shards of the Kinesis Data Streams. Each shard can have up to 1,000 records per second and total data write rate of 1MB per second.</td>
-</tr>
-<tr>
-<td>Enable auto scaling</td>
-<td><code>No</code></td>
-<td>This solution monitors the utilization of Kinesis Data Streams every 5 minutes, and scale in/out the number of shards automatically. The solution will scale in/out for a maximum of 8 times within 24 hours.</td>
-</tr>
-<tr>
-<td>Maximum Shard number</td>
-<td><code>&lt;Requires input&gt;</code></td>
-<td>Required if auto scaling is enabled. The maximum number of shards.</td>
-</tr>
-</tbody>
-</table>
-<div class="admonition important">
-<p class="admonition-title">Important</p>
-<p>You may observe duplicate logs in OpenSearch if threshold error occurs in Kinesis Data Streams (KDS). This is because the Fluent Bit log agent uploads logs in <a href="https://docs.fluentbit.io/manual/administration/buffering-and-storage#chunks-memory-filesystem-and-backpressure">chunk</a> (contains multiple records), and will retry the chunk if upload failed. Each
-KDS shard can support up to 1,000 records per second for writes, up to a maximum total data write rate of 1 MB per second. Please estimate your log volume and choose an appropriate shard number.</p>
-</div>
-</li>
-<li>
-<p>Choose <strong>Next</strong>.</p>
 </li>
 <li>
 <p>In the <strong>Specify OpenSearch domain</strong> section, select an imported domain for <strong>Amazon OpenSearch domain</strong>.</p>

@@ -1,6 +1,6 @@
 
 <!doctype html>
-<html lang="en" class="no-js">
+<html lang="zh" class="no-js">
   <head>
     
       <meta charset="utf-8">
@@ -8,21 +8,21 @@
       
       
       
-        <link rel="canonical" href="https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/include-dashboard/">
+        <link rel="canonical" href="https://aws-solutions.github.io/centralized-logging-with-opensearch/implementation-guide/resources/grafana/">
       
-      <link rel="icon" href="../../images/aws-solutions.png">
+      <link rel="icon" href="../../../images/aws-solutions.png">
       <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.5.3">
     
     
       
-        <title>Include dashboard - Centralized Logging with OpenSearch</title>
+        <title>Grafana - Centralized Logging with OpenSearch</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.7a952b86.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.7a952b86.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.cbb835fc.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.cbb835fc.min.css">
         
       
       
@@ -39,9 +39,9 @@
       
     
     
-      <link rel="stylesheet" href="../../stylesheets/extra.css">
+      <link rel="stylesheet" href="../../../stylesheets/extra.css">
     
-    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -65,6 +65,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#grafana-" class="md-skip">
+          跳转至
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -78,10 +83,10 @@
       
 
 <header class="md-header" data-md-component="header">
-  <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="Centralized Logging with OpenSearch" class="md-header__button md-logo" aria-label="Centralized Logging with OpenSearch" data-md-component="logo">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../../.." title="Centralized Logging with OpenSearch" class="md-header__button md-logo" aria-label="Centralized Logging with OpenSearch" data-md-component="logo">
       
-  <img src="../../images/aws-solutions.png" alt="logo">
+  <img src="../../../images/aws-solutions.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -97,7 +102,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Include dashboard
+              Grafana
             
           </span>
         </div>
@@ -108,7 +113,7 @@
       <div class="md-header__option">
         <div class="md-select">
           
-          <button class="md-header__button md-icon" aria-label="Select language">
+          <button class="md-header__button md-icon" aria-label="选择当前语言">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.52 17.52 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04M18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12m-2.62 7 1.62-4.33L19.12 17h-3.24Z"/></svg>
           </button>
           <div class="md-select__inner">
@@ -139,14 +144,14 @@
   <label class="md-search__overlay" for="__search"></label>
   <div class="md-search__inner" role="search">
     <form class="md-search__form" name="search">
-      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
       <label class="md-search__icon md-icon" for="__search">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
       </label>
-      <nav class="md-search__options" aria-label="Search">
+      <nav class="md-search__options" aria-label="查找">
         
-        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
         </button>
       </nav>
@@ -156,7 +161,7 @@
       <div class="md-search__scrollwrap" data-md-scrollfix>
         <div class="md-search-result" data-md-component="search-result">
           <div class="md-search-result__meta">
-            Initializing search
+            正在初始化搜索引擎
           </div>
           <ol class="md-search-result__list"></ol>
         </div>
@@ -167,7 +172,7 @@
     
     
       <div class="md-header__source">
-        <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch" title="前往仓库" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
@@ -188,12 +193,14 @@
         
           
             
-<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+<nav class="md-tabs" aria-label="标签" data-md-component="tabs">
   <div class="md-tabs__inner md-grid">
     <ul class="md-tabs__list">
       
         
   
+  
+    
   
 
 
@@ -206,8 +213,8 @@
   
   
     <li class="md-tabs__item">
-      <a href="../.." class="md-tabs__link">
-        Implementation Guide
+      <a href="../../.." class="md-tabs__link md-tabs__link--active">
+        实施指南
       </a>
     </li>
   
@@ -222,7 +229,7 @@
 
   <li class="md-tabs__item">
     <a href="https://github.com/orgs/aws-solutions/projects/17/" class="md-tabs__link">
-      Roadmap
+      路线图
     </a>
   </li>
 
@@ -234,7 +241,7 @@
 
   <li class="md-tabs__item">
     <a href="https://catalog.workshops.aws/centralized-logging-with-opensearch/" class="md-tabs__link">
-      Workshop
+      动手实验
     </a>
   </li>
 
@@ -258,18 +265,18 @@
   
 
 
-<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="导航栏" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="Centralized Logging with OpenSearch" class="md-nav__button md-logo" aria-label="Centralized Logging with OpenSearch" data-md-component="logo">
+    <a href="../../.." title="Centralized Logging with OpenSearch" class="md-nav__button md-logo" aria-label="Centralized Logging with OpenSearch" data-md-component="logo">
       
-  <img src="../../images/aws-solutions.png" alt="logo">
+  <img src="../../../images/aws-solutions.png" alt="logo">
 
     </a>
     Centralized Logging with OpenSearch
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch" title="前往仓库" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
@@ -288,25 +295,27 @@
 
   
   
+    
+  
   
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1" type="checkbox" id="__nav_1" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1" type="checkbox" id="__nav_1" checked>
       
       
       
       
         <label class="md-nav__link" for="__nav_1">
-          Implementation Guide
+          实施指南
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Implementation Guide" data-md-level="1">
+      <nav class="md-nav" aria-label="实施指南" data-md-level="1">
         <label class="md-nav__title" for="__nav_1">
           <span class="md-nav__icon md-icon"></span>
-          Implementation Guide
+          实施指南
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -325,14 +334,14 @@
       
       
         <label class="md-nav__link" for="__nav_1_1">
-          Solution overview
+          解决方案概览
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Solution overview" data-md-level="2">
+      <nav class="md-nav" aria-label="解决方案概览" data-md-level="2">
         <label class="md-nav__title" for="__nav_1_1">
           <span class="md-nav__icon md-icon"></span>
-          Solution overview
+          解决方案概览
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -342,8 +351,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../.." class="md-nav__link">
-        Overview
+      <a href="../../.." class="md-nav__link">
+        概览
       </a>
     </li>
   
@@ -356,8 +365,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../solution-overview/features/" class="md-nav__link">
-        Features and benefits
+      <a href="../../solution-overview/features/" class="md-nav__link">
+        特性和收益
       </a>
     </li>
   
@@ -370,8 +379,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../solution-overview/use-cases/" class="md-nav__link">
-        Use cases
+      <a href="../../solution-overview/use-cases/" class="md-nav__link">
+        应用场景
       </a>
     </li>
   
@@ -400,14 +409,14 @@
       
       
         <label class="md-nav__link" for="__nav_1_2">
-          Architecture overview
+          架构概览
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Architecture overview" data-md-level="2">
+      <nav class="md-nav" aria-label="架构概览" data-md-level="2">
         <label class="md-nav__title" for="__nav_1_2">
           <span class="md-nav__icon md-icon"></span>
-          Architecture overview
+          架构概览
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -417,8 +426,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/" class="md-nav__link">
-        Architecture diagram
+      <a href="../../architecture/" class="md-nav__link">
+        架构图
       </a>
     </li>
   
@@ -431,8 +440,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture-overview/well-architected-pillars/" class="md-nav__link">
-        AWS Well-Architected pillars
+      <a href="../../architecture-overview/well-architected-pillars/" class="md-nav__link">
+        AWS Well-Architected 支柱
       </a>
     </li>
   
@@ -461,14 +470,14 @@
       
       
         <label class="md-nav__link" for="__nav_1_3">
-          Architecture details
+          架构细节
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Architecture details" data-md-level="2">
+      <nav class="md-nav" aria-label="架构细节" data-md-level="2">
         <label class="md-nav__title" for="__nav_1_3">
           <span class="md-nav__icon md-icon"></span>
-          Architecture details
+          架构细节
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -478,8 +487,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture-details/solution-components/" class="md-nav__link">
-        Solution components
+      <a href="../../architecture-details/solution-components/" class="md-nav__link">
+        解决方案组件
       </a>
     </li>
   
@@ -492,8 +501,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture-details/services-in-this-solution/" class="md-nav__link">
-        AWS services in this solution
+      <a href="../../architecture-details/services-in-this-solution/" class="md-nav__link">
+        AWS 服务
       </a>
     </li>
   
@@ -522,14 +531,14 @@
       
       
         <label class="md-nav__link" for="__nav_1_4">
-          Plan your deployment
+          计划部署
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Plan your deployment" data-md-level="2">
+      <nav class="md-nav" aria-label="计划部署" data-md-level="2">
         <label class="md-nav__title" for="__nav_1_4">
           <span class="md-nav__icon md-icon"></span>
-          Plan your deployment
+          计划部署
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -539,8 +548,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../plan-deployment/cost/" class="md-nav__link">
-        Cost
+      <a href="../../plan-deployment/cost/" class="md-nav__link">
+        价格
       </a>
     </li>
   
@@ -553,8 +562,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../plan-deployment/security/" class="md-nav__link">
-        Security
+      <a href="../../plan-deployment/security/" class="md-nav__link">
+        安全
       </a>
     </li>
   
@@ -567,8 +576,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../plan-deployment/considerations/" class="md-nav__link">
-        Supported AWS Regions
+      <a href="../../plan-deployment/considerations/" class="md-nav__link">
+        支持的区域
       </a>
     </li>
   
@@ -597,14 +606,14 @@
       
       
         <label class="md-nav__link" for="__nav_1_5">
-          Deployment
+          开始部署
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Deployment" data-md-level="2">
+      <nav class="md-nav" aria-label="开始部署" data-md-level="2">
         <label class="md-nav__title" for="__nav_1_5">
           <span class="md-nav__icon md-icon"></span>
-          Deployment
+          开始部署
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -614,8 +623,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../deployment/" class="md-nav__link">
-        Overview
+      <a href="../../deployment/" class="md-nav__link">
+        概览
       </a>
     </li>
   
@@ -628,8 +637,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../deployment/with-cognito/" class="md-nav__link">
-        Launch with Cognito User Pool
+      <a href="../../deployment/with-cognito/" class="md-nav__link">
+        使用 Cognito User Pool
       </a>
     </li>
   
@@ -642,8 +651,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../deployment/with-oidc/" class="md-nav__link">
-        Launch with OpenID Connect
+      <a href="../../deployment/with-oidc/" class="md-nav__link">
+        使用 OpenID Connect
       </a>
     </li>
   
@@ -672,14 +681,14 @@
       
       
         <label class="md-nav__link" for="__nav_1_6">
-          Getting started
+          快速入门
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Getting started" data-md-level="2">
+      <nav class="md-nav" aria-label="快速入门" data-md-level="2">
         <label class="md-nav__title" for="__nav_1_6">
           <span class="md-nav__icon md-icon"></span>
-          Getting started
+          快速入门
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -689,8 +698,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/" class="md-nav__link">
-        Overview
+      <a href="../../getting-started/" class="md-nav__link">
+        概览
       </a>
     </li>
   
@@ -703,8 +712,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/1.import-domain/" class="md-nav__link">
-        Step 1. Import domain
+      <a href="../../getting-started/1.import-domain/" class="md-nav__link">
+        步骤 1. 导入 AOS 域
       </a>
     </li>
   
@@ -717,8 +726,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/2.create-proxy/" class="md-nav__link">
-        Step 2. Create proxy
+      <a href="../../getting-started/2.create-proxy/" class="md-nav__link">
+        步骤 2. 创建访问代理
       </a>
     </li>
   
@@ -731,8 +740,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/3.build-cloudtrail-pipeline/" class="md-nav__link">
-        Step 3. Ingest CloudTrail logs
+      <a href="../../getting-started/3.build-cloudtrail-pipeline/" class="md-nav__link">
+        步骤 3. 摄取 CloudTrail 日志
       </a>
     </li>
   
@@ -745,8 +754,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/4.view-dashboard/" class="md-nav__link">
-        Step 4. Access dashboard
+      <a href="../../getting-started/4.view-dashboard/" class="md-nav__link">
+        步骤 4. 查看仪表板
       </a>
     </li>
   
@@ -775,14 +784,14 @@
       
       
         <label class="md-nav__link" for="__nav_1_7">
-          Domain management
+          AOS 集群管理
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Domain management" data-md-level="2">
+      <nav class="md-nav" aria-label="AOS 集群管理" data-md-level="2">
         <label class="md-nav__title" for="__nav_1_7">
           <span class="md-nav__icon md-icon"></span>
-          Domain management
+          AOS 集群管理
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -792,8 +801,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../domains/" class="md-nav__link">
-        Overview
+      <a href="../../domains/" class="md-nav__link">
+        概览
       </a>
     </li>
   
@@ -806,8 +815,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../domains/import/" class="md-nav__link">
-        Domain operations
+      <a href="../../domains/import/" class="md-nav__link">
+        集群操作
       </a>
     </li>
   
@@ -820,8 +829,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../domains/proxy/" class="md-nav__link">
-        Access proxy
+      <a href="../../domains/proxy/" class="md-nav__link">
+        访问代理
       </a>
     </li>
   
@@ -834,8 +843,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../domains/alarms/" class="md-nav__link">
-        Domain alarms
+      <a href="../../domains/alarms/" class="md-nav__link">
+        告警
       </a>
     </li>
   
@@ -864,14 +873,14 @@
       
       
         <label class="md-nav__link" for="__nav_1_8">
-          AWS Services logs
+          AWS 服务日志
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="AWS Services logs" data-md-level="2">
+      <nav class="md-nav" aria-label="AWS 服务日志" data-md-level="2">
         <label class="md-nav__title" for="__nav_1_8">
           <span class="md-nav__icon md-icon"></span>
-          AWS Services logs
+          AWS 服务日志
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -881,8 +890,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../aws-services/" class="md-nav__link">
-        Overview
+      <a href="../../aws-services/" class="md-nav__link">
+        概览
       </a>
     </li>
   
@@ -895,7 +904,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aws-services/cloudtrail/" class="md-nav__link">
+      <a href="../../aws-services/cloudtrail/" class="md-nav__link">
         Amazon CloudTrail
       </a>
     </li>
@@ -909,7 +918,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aws-services/s3/" class="md-nav__link">
+      <a href="../../aws-services/s3/" class="md-nav__link">
         Amazon S3
       </a>
     </li>
@@ -923,7 +932,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aws-services/rds/" class="md-nav__link">
+      <a href="../../aws-services/rds/" class="md-nav__link">
         Amazon RDS/Aurora
       </a>
     </li>
@@ -937,7 +946,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aws-services/cloudfront/" class="md-nav__link">
+      <a href="../../aws-services/cloudfront/" class="md-nav__link">
         Amazon CloudFront
       </a>
     </li>
@@ -951,7 +960,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aws-services/lambda/" class="md-nav__link">
+      <a href="../../aws-services/lambda/" class="md-nav__link">
         AWS Lambda
       </a>
     </li>
@@ -965,7 +974,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aws-services/elb/" class="md-nav__link">
+      <a href="../../aws-services/elb/" class="md-nav__link">
         Elastic Load Balancing
       </a>
     </li>
@@ -979,7 +988,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aws-services/waf/" class="md-nav__link">
+      <a href="../../aws-services/waf/" class="md-nav__link">
         AWS WAF
       </a>
     </li>
@@ -993,7 +1002,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aws-services/vpc/" class="md-nav__link">
+      <a href="../../aws-services/vpc/" class="md-nav__link">
         VPC Flow Log
       </a>
     </li>
@@ -1007,7 +1016,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aws-services/config/" class="md-nav__link">
+      <a href="../../aws-services/config/" class="md-nav__link">
         AWS Config
       </a>
     </li>
@@ -1037,14 +1046,14 @@
       
       
         <label class="md-nav__link" for="__nav_1_9">
-          Applications logs
+          应用日志
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Applications logs" data-md-level="2">
+      <nav class="md-nav" aria-label="应用日志" data-md-level="2">
         <label class="md-nav__title" for="__nav_1_9">
           <span class="md-nav__icon md-icon"></span>
-          Applications logs
+          应用日志
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -1054,8 +1063,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../applications/" class="md-nav__link">
-        Overview
+      <a href="../../applications/" class="md-nav__link">
+        概览
       </a>
     </li>
   
@@ -1068,8 +1077,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../applications/ec2-pipeline/" class="md-nav__link">
-        EC2 instance group
+      <a href="../../applications/ec2-pipeline/" class="md-nav__link">
+        EC2 实例组
       </a>
     </li>
   
@@ -1082,8 +1091,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../applications/eks-pipeline/" class="md-nav__link">
-        EKS cluster
+      <a href="../../applications/eks-pipeline/" class="md-nav__link">
+        EKS 集群
       </a>
     </li>
   
@@ -1096,7 +1105,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../applications/s3-pipeline/" class="md-nav__link">
+      <a href="../../applications/s3-pipeline/" class="md-nav__link">
         S3
       </a>
     </li>
@@ -1110,7 +1119,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../applications/syslog-pipeline/" class="md-nav__link">
+      <a href="../../applications/syslog-pipeline/" class="md-nav__link">
         Syslog
       </a>
     </li>
@@ -1133,14 +1142,14 @@
       
       
         <label class="md-nav__link" for="__nav_1_9_6">
-          Pipeline resources
+          管道资源
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Pipeline resources" data-md-level="3">
+      <nav class="md-nav" aria-label="管道资源" data-md-level="3">
         <label class="md-nav__title" for="__nav_1_9_6">
           <span class="md-nav__icon md-icon"></span>
-          Pipeline resources
+          管道资源
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -1150,8 +1159,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../applications/create-log-source/" class="md-nav__link">
-        Log source
+      <a href="../../applications/create-log-source/" class="md-nav__link">
+        日志源
       </a>
     </li>
   
@@ -1164,8 +1173,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../applications/create-log-config/" class="md-nav__link">
-        Log Config
+      <a href="../../applications/create-log-config/" class="md-nav__link">
+        日志配置
       </a>
     </li>
   
@@ -1192,8 +1201,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../link-account/" class="md-nav__link">
-        Cross-account ingestion
+      <a href="../../link-account/" class="md-nav__link">
+        跨账户日志摄取
       </a>
     </li>
   
@@ -1215,14 +1224,14 @@
       
       
         <label class="md-nav__link" for="__nav_1_11">
-          Log pipeline insight
+          日志管道洞察
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Log pipeline insight" data-md-level="2">
+      <nav class="md-nav" aria-label="日志管道洞察" data-md-level="2">
         <label class="md-nav__title" for="__nav_1_11">
           <span class="md-nav__icon md-icon"></span>
-          Log pipeline insight
+          日志管道洞察
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -1232,8 +1241,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../alarm/" class="md-nav__link">
-        Log alarms
+      <a href="../../alarm/" class="md-nav__link">
+        告警
       </a>
     </li>
   
@@ -1246,8 +1255,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../monitoring/" class="md-nav__link">
-        Monitoring
+      <a href="../../monitoring/" class="md-nav__link">
+        监控
       </a>
     </li>
   
@@ -1267,8 +1276,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../faq/" class="md-nav__link">
-        FAQ
+      <a href="../../faq/" class="md-nav__link">
+        常见问题
       </a>
     </li>
   
@@ -1281,8 +1290,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../trouble-shooting/" class="md-nav__link">
-        Troubleshooting
+      <a href="../../trouble-shooting/" class="md-nav__link">
+        故障排查
       </a>
     </li>
   
@@ -1295,8 +1304,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../uninstall/" class="md-nav__link">
-        Uninstall the solution
+      <a href="../../uninstall/" class="md-nav__link">
+        卸载解决方案
       </a>
     </li>
   
@@ -1305,27 +1314,29 @@
           
             
               
-  
   
   
     
-    <li class="md-nav__item md-nav__item--nested">
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_15" type="checkbox" id="__nav_1_15" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_15" type="checkbox" id="__nav_1_15" checked>
       
       
       
       
         <label class="md-nav__link" for="__nav_1_15">
-          Additional resources
+          额外资源
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Additional resources" data-md-level="2">
+      <nav class="md-nav" aria-label="额外资源" data-md-level="2">
         <label class="md-nav__title" for="__nav_1_15">
           <span class="md-nav__icon md-icon"></span>
-          Additional resources
+          额外资源
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -1333,11 +1344,73 @@
               
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../resources/grafana/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Grafana
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         Grafana
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-grafana-" class="md-nav__link">
+    步骤 1: 安装Grafana - 可选
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-grafanaec2-athena" class="md-nav__link">
+    步骤 2:  授权Grafana所在EC2 访问Athena权限
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-amazon-athena-plugins" class="md-nav__link">
+    步骤 3: 安装Amazon Athena Plugins
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-service-accounts" class="md-nav__link">
+    步骤 4: 创建 Service Accounts
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1349,8 +1422,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../resources/open-ssl/" class="md-nav__link">
-        OpenSSL installation
+      <a href="../open-ssl/" class="md-nav__link">
+        OpenSSL 安装
       </a>
     </li>
   
@@ -1363,8 +1436,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../resources/upload-ssl-certificate/" class="md-nav__link">
-        Upload certificate
+      <a href="../upload-ssl-certificate/" class="md-nav__link">
+        上传证书
       </a>
     </li>
   
@@ -1384,8 +1457,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../source/" class="md-nav__link">
-        Developer guide
+      <a href="../../source/" class="md-nav__link">
+        开发者资源
       </a>
     </li>
   
@@ -1398,8 +1471,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../release-notes/" class="md-nav__link">
-        Revisions
+      <a href="../../release-notes/" class="md-nav__link">
+        更新记录
       </a>
     </li>
   
@@ -1421,7 +1494,7 @@
   
     <li class="md-nav__item">
       <a href="https://github.com/orgs/aws-solutions/projects/17/" class="md-nav__link">
-        Roadmap
+        路线图
       </a>
     </li>
   
@@ -1436,7 +1509,7 @@
   
     <li class="md-nav__item">
       <a href="https://catalog.workshops.aws/centralized-logging-with-opensearch/" class="md-nav__link">
-        Workshop
+        动手实验
       </a>
     </li>
   
@@ -1455,10 +1528,48 @@
                   <div class="md-sidebar__inner">
                     
 
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+<nav class="md-nav md-nav--secondary" aria-label="目录">
   
   
   
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-grafana-" class="md-nav__link">
+    步骤 1: 安装Grafana - 可选
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-grafanaec2-athena" class="md-nav__link">
+    步骤 2:  授权Grafana所在EC2 访问Athena权限
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-amazon-athena-plugins" class="md-nav__link">
+    步骤 3: 安装Amazon Athena Plugins
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-service-accounts" class="md-nav__link">
+    步骤 4: 创建 Service Accounts
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -1472,16 +1583,97 @@
                 
                   
 
-  <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch/edit/master/docs/implementation-guide/include-dashboard.md" title="Edit this page" class="md-content__button md-icon">
+  <a href="https://github.com/aws-solutions/centralized-logging-with-opensearch/edit/master/docs/implementation-guide/resources/grafana.md" title="编辑此页" class="md-content__button md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
   </a>
 
 
-  <h1>Include dashboard</h1>
+<h1 id="grafana-">准备Grafana环境 - 可选</h1>
+<p>此步骤非必需操作，如果您希望解决方案自动生成Dashboards到Grafana中，那么您需要执行以下部署，如果您只希望数据存储到S3中，并不需要创建Dashboards，那么可以忽略此步骤。</p>
+<h2 id="1-grafana-">步骤 1: 安装Grafana - 可选</h2>
+<p>前提条件:</p>
+<ol>
+<li>如您已有Grafana环境，可跳过此步骤</li>
+<li>已启动EC2实例，x86 / ARM架构均可</li>
+<li>操作步骤以m6g.medium、Arm架构、Amazon 2023为例，安装步骤可参考 <a href="https://grafana.com/docs/grafana/latest/setup-grafana/installation/" target="_blank">此处</a>. </li>
+</ol>
+<p>操作步骤:
+<div class="highlight"><pre><span></span><code><span class="c1"># 编辑/etc/yum.repos.d/grafana.repo文件，填入以下内容</span>
+<span class="o">[</span>grafana<span class="o">]</span>
+<span class="nv">name</span><span class="o">=</span>grafana
+<span class="nv">baseurl</span><span class="o">=</span>https://rpm.grafana.com
+<span class="nv">repo_gpgcheck</span><span class="o">=</span><span class="m">1</span>
+<span class="nv">enabled</span><span class="o">=</span><span class="m">1</span>
+<span class="nv">gpgcheck</span><span class="o">=</span><span class="m">1</span>
+<span class="nv">gpgkey</span><span class="o">=</span>https://rpm.grafana.com/gpg.key
+<span class="nv">sslverify</span><span class="o">=</span><span class="m">1</span>
+<span class="nv">sslcacert</span><span class="o">=</span>/etc/pki/tls/certs/ca-bundle.crt
 
-<p>You can access the built-in dashboard in Amazon OpenSearch to view log data. For more information, see <a href="../getting-started/4.view-dashboard/">Access Dashboard</a>.</p>
-<p>You can click the below image to view the high-resolution sample dashboard.</p>
+<span class="c1"># 安装grafana</span>
+yum<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>grafana
+
+<span class="c1"># 启动grafana，并查看运行状态</span>
+systemctl<span class="w"> </span>start<span class="w"> </span>grafana-server
+systemctl<span class="w"> </span>status<span class="w"> </span>grafana-server
+
+
+<span class="c1"># grafana默认监听3000端口，用户可以编辑/etc/grafana/grafana.ini进行修改</span>
+
+<span class="c1"># 访问grafana，默认账号密码为admin / admin，第一次登录需要修改密码</span>
+http://<span class="o">{</span>instance-ip<span class="o">}</span>:3000/
+
+<span class="c1"># 如果需要公网访问，请自行配置ALB</span>
+<span class="c1"># 配置ALB时需要修改Idle timeout为1800，避免大数据量查询时（单次API调用超过60秒）出现以下错误：</span>
+<span class="c1"># “a padding to disable MSIE and Chrome friendly error page”</span>
+</code></pre></div></p>
+<h2 id="2-grafanaec2-athena">步骤 2:  授权Grafana所在EC2 访问Athena权限</h2>
+<p>前提条件:</p>
+<ol>
+<li>用户在EC2部署Grafana</li>
+<li>EC2已配置IAM Instance Profile，需记录对应Instance profile的Role Arn，以下内容统一称为“EC2 IAM Instance Profile”</li>
+</ol>
+<p>Follow below steps:</p>
+<ol>
+<li>打开IAM <a href="https://console.aws.amazon.com/iam/home" target="_blank">控制台</a></li>
+<li>菜单条中选择“Roles”</li>
+<li>搜索“AthenaPublicAccessRole”，点击进入详情页面，并记录Role Arn，之后内容统一称为“AthenaPublicAccessRole”</li>
+<li>点击“Trust relationships”</li>
+<li>点击 “Edit trust policy”</li>
+<li>点击 “Add a principal”</li>
+<li>选择 “IAM Roles”</li>
+<li>输入 “EC2 IAM Instance Profile”</li>
+<li>点击 “Add principal”</li>
+<li>点击 “Update Policy”</li>
+</ol>
+<h2 id="3-amazon-athena-plugins">步骤 3: 安装Amazon Athena Plugins</h2>
+<p>前提条件:</p>
+<ol>
+<li>已安装Grafana</li>
+<li>Grafana可访问公网</li>
+</ol>
+<p>操作步骤:</p>
+<ol>
+<li>打开Grafana控制台页面</li>
+<li>左侧菜单条选择Administration → Plugins</li>
+<li>右侧的“State”选择All</li>
+<li>在搜索框中输入“Athena”，点击搜索结果中的“Amazon Athena”，进入详情页面</li>
+<li>点击页面上的“Install”按钮，等待插件安装完成即可</li>
+</ol>
+<h2 id="4-service-accounts">步骤 4: 创建 Service Accounts</h2>
+<p>操作步骤:</p>
+<ol>
+<li>打开Grafana控制台页面</li>
+<li>左侧菜单条选择Administration → Service accounts</li>
+<li>选择“Add service account”</li>
+<li>输入Display name，例如“albertxu”</li>
+<li>Role选择“Admin”</li>
+<li>点击Create</li>
+<li>点击页面中的“Add service account token”</li>
+<li>点击“Generate token”</li>
+<li>点击“Copy to clipboard and close”</li>
+<li><strong>请保存并记录此token，后续创建Pipeline时会用到</strong></li>
+</ol>
 
 
 
@@ -1497,6 +1689,42 @@
       </main>
       
         <footer class="md-footer">
+  
+    
+    <nav class="md-footer__inner md-grid" aria-label="页脚" >
+      
+        
+        <a href="../../uninstall/" class="md-footer__link md-footer__link--prev" aria-label="上一页: 卸载解决方案" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                上一页
+              </span>
+              卸载解决方案
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../open-ssl/" class="md-footer__link md-footer__link--next" aria-label="下一页: OpenSSL 安装" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                下一页
+              </span>
+              OpenSSL 安装
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
@@ -1514,10 +1742,10 @@
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs"], "search": "../../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": "latest"}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs"], "search": "../../../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.config.lang": "ja", "search.config.pipeline": "trimmer, stemmer", "search.config.separator": "[\\s\\-\uff0c\u3002]+", "search.placeholder": "\u641c\u7d22", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version.title": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": "latest"}</script>
     
     
-      <script src="../../assets/javascripts/bundle.37e9125f.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.37e9125f.min.js"></script>
       
     
   </body>
