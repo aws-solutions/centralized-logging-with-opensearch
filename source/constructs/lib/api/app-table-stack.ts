@@ -23,6 +23,7 @@ export class AppTableStack extends Construct {
   readonly logSourceTable: ddb.Table;
   readonly appPipelineTable: ddb.Table;
   readonly appLogIngestionTable: ddb.Table;
+  readonly instanceIngestionDetailTable: ddb.Table;
 
   constructor(scope: Construct, id: string) {
     super(scope, id);
@@ -114,7 +115,6 @@ export class AppTableStack extends Construct {
       removalPolicy: RemovalPolicy.DESTROY,
       encryption: ddb.TableEncryption.DEFAULT,
       pointInTimeRecovery: true,
-      stream: ddb.StreamViewType.NEW_IMAGE,
     });
 
     this.appLogIngestionTable.addGlobalSecondaryIndex({
@@ -126,5 +126,21 @@ export class AppTableStack extends Construct {
     const cfnAppLogIngestionTable = this.appLogIngestionTable.node
       .defaultChild as ddb.CfnTable;
     cfnAppLogIngestionTable.overrideLogicalId('AppLogIngestion');
+
+    // Create a table to store logging instanceIngestionDetail info
+    this.instanceIngestionDetailTable = new ddb.Table(this, 'InstanceIngestionDetail', {
+      partitionKey: {
+        name: 'id',
+        type: ddb.AttributeType.STRING,
+      },
+      billingMode: ddb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: RemovalPolicy.DESTROY,
+      encryption: ddb.TableEncryption.DEFAULT,
+      pointInTimeRecovery: true,
+    });
+
+    const cfnInstanceIngestionDetailTable = this.instanceIngestionDetailTable.node
+      .defaultChild as ddb.CfnTable;
+    cfnInstanceIngestionDetailTable.overrideLogicalId('InstanceIngestionDetail');
   }
 }

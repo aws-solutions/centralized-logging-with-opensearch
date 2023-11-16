@@ -33,27 +33,27 @@ const StatusIndicator: React.FC<StatusIndicatorProps> = (
     <div className="gsui-status-indicator">
       <span className={"flex status-text " + type}>
         {type === "success" && (
-          <i>
+          <i data-testid="success-icon">
             <CheckCircleOutlineIcon fontSize="small" />
           </i>
         )}
         {type === "normal" && (
-          <i>
+          <i data-testid="normal-icon">
             <AccessTimeIcon fontSize="small" />
           </i>
         )}
         {type === "pending" && (
-          <i>
+          <i data-testid="pending-icon">
             <RemoveCircleOutlineIcon fontSize="small" />
           </i>
         )}
         {type === "error" && (
-          <i>
+          <i data-testid="error-icon">
             <HighlightOffIcon fontSize="small" />
           </i>
         )}
         {type === "loading" && (
-          <i>
+          <i data-testid="loading-icon">
             <LoadingText />
           </i>
         )}

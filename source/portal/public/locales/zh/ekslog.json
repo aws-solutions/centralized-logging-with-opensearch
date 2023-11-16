@@ -22,6 +22,7 @@
       "eksCluster": "EKS 集群",
       "eksClusterDesc": "选择现有的 EKS 集群",
       "eksClusterError": "请选择一个 EKS 集群",
+      "chooseEksCluster": "选择 EKS 集群",
       "curAccount": "当前 AWS 账户",
       "agent": "代理",
       "eksAgentPattern": "采集方式",

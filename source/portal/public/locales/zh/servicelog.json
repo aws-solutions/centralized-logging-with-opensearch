@@ -6,6 +6,7 @@
     "source": "日志源",
     "account": "账户",
     "domain": "OpenSearch 域",
+    "engineType": "引擎类型",
     "created": "创建时间",
     "status": "状态"
   },
@@ -33,11 +34,33 @@
     "kdsShardNum": "Kinesis Data Streams 分片数量",
     "enableAS": "启用 Auto Scaling?",
     "kdsMaxShard": "最大分片数",
-    "fields": "字段"
+    "fields": "字段",
+    "createdAt": "创建时间",
+    "cfnStack": "CloudFormation 堆栈",
+    "analyticsEngine": "分析引擎",
+    "indexSettings": "索引设置",
+    "lifecycleSettings": "生命周期设置",
+    "processor": {
+      "type": "处理器类型",
+      "resource": "资源",
+      "lambda": "AWS Lambda",
+      "osi": "OpenSearch 摄取管道",
+      "pipelineCapacity": "管道容量",
+      "ingestionOCU": "Ingestion-OCU"
+    },
+    "lightEngine": {
+      "table": "Glue 表",
+      "tableName": "表名称",
+      "database": "数据库",
+      "classification": "日志文件分类"
+    }
   },
   "tab": {
     "overview": "总览",
     "lifecycle": "生命周期",
+    "logSource": "日志来源",
+    "analyticsEngine": "分析引擎",
+    "logProcessor": "日志处理器",
     "monitoring": "监控",
     "logging": "日志",
     "alarm": "告警",
@@ -74,7 +97,9 @@
     "step": {
       "specifySetting": "指定设置",
       "logProcessing": "日志处理",
+      "specifyLightEngine": "指定 Light Engine 配置",
       "specifyDomain": "指定 OpenSearch 域",
+      "selectLogEngine": "选择日志分析引擎",
       "createTags": "创建告警和标签"
     }
   },
@@ -155,11 +180,16 @@
     }
   },
   "trail": {
+    "logEnable": "启用 Amazon CloudTrail 日志",
+    "autoDesc": "Amazon CloudTrail 日志尚未启用。系统将启用该日志并将其输出到由系统管理的 Amazon S3 位置。",
+    "manualDesc": "Amazon CloudTrail 日志已启用。您需要从 Amazon S3 位置选择日志。",
     "alert": "日志处理层必须有权访问 Amazon S3。",
     "trail": "Trail",
     "select": "选择存在的 Trail 在",
+    "manual": "输入已存在的 Trail 在",
     "curAccount": "当前账户",
     "trailError": "请选择一个 CloudTrail",
+    "trailManualError": "请输入一个 CloudTrail",
     "selectTrail": "选择一个 CloudTrail",
     "savedTips": "Trail 保存在",
     "logSource": "日志来源",
@@ -174,6 +204,13 @@
     "needEnableLogging": "请启用 CloudTrail 流日志",
     "needSameRegion": "仅支持来自同一区域的 Amazon S3 的 CloudTrail 日志，请手动更改 s3 存储桶并重试",
     "diffRegion": "Trail 保存在 {{bucket}} 中，该区域 ({{logRegion}}) 与解决方案的主区域 ({{homeRegion}}) 不同。 要继续，请更新所选 CloudTrail 的日志记录配置以将 Trail 传送到 {{homeRegion}} 区域的 Amazon S3 存储桶。",
+    "cloudtrailLogLocation": "CloudTrail 日志位置",
+    "cloudtrailLogLocationDesc": "指定 CloudTrail 的位置。",
+    "cloudtrailCWLLocationDesc": "指定 CloudWatch Logs 日志组名，其中存储流日志。",
+    "error": {
+      "s3Empty": "请输入 CloudTrail 的日志位置。",
+      "cwlEmpty": "请输入 CloudWatch Logs 日志组名。"
+    },
     "desc": {
       "ingest": "摄取",
       "trailLog": "Amazon CloudTrail 服务访问日志",

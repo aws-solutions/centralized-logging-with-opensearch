@@ -3,6 +3,9 @@
   "title": "应用日志管道",
   "list": {
     "os": "OpenSearch",
+    "lightEngine": "Light Engine",
+    "engineType": "引擎类型",
+    "indexTable": "索引 / 表名称",
     "indexName": "索引名称",
     "streamName": "数据流名称",
     "bufferLayer": "缓冲层",
@@ -19,6 +22,7 @@
   "detail": {
     "config": "基础配置",
     "osIndex": "OpenSearch 索引",
+    "logTable": "日志表",
     "indexSuffix": "索引后缀",
     "rolloverSize": "索引滚动容量",
     "compressionType": "压缩类型",
@@ -37,7 +41,11 @@
     "kds": "Kinesis Data Streams",
     "noneBuffer": "无缓冲层",
     "analyticsEngine": "分析引擎",
+    "grafanaDashboard": "Grafana 看板",
+    "grafanaDashboardDetail": "Grafana 看板 - 详细",
     "indexSettings": "索引设置",
+    "tableSettings": "表设置",
+    "metricTableSettings": "表设置 - 指标",
     "cfnStack": "CloudFormation 堆栈",
     "tip1": "如果您从实例组创建摄取，请确保您已将这些",
     "tip2": "权限",
@@ -99,6 +107,18 @@
       "warmLog": "暖日志转换（天）",
       "coldLog": "冷日志转换（天）",
       "logRetention": "日志保留（天）"
+    },
+    "logProcessor": {
+      "logProcessorTitle": "日志处理",
+      "mergerTitle": "日志合并",
+      "archiverTitle": "日志归档",
+      "metricMergerTitle": "日志合并 - 指标",
+      "metricArchiverTitle": "日志归档 - 指标",
+      "stepFunction": "Step Function",
+      "scheduler": "时间表",
+      "scheduleExpression": "时间表 - 表达式",
+      "lifecycle": "生命周期",
+      "days": "天"
     }
   },
   "create": {
@@ -123,6 +143,7 @@
       "bufferKDSDesc": "秒级摄取需要额外费用。如果您需要实时摄取并且您的日志吞吐量高于您的 OpenSearch 集群摄取容量，请使用此选项。",
       "bufferS3": "Amazon S3",
       "bufferS3Desc": "分钟级摄取需要额外费用。如果您可以接受日志摄取的分钟级延迟并且您的日志吞吐量高于 OpenSearch 集群摄取容量，请使用此选项。",
+      "bufferS3LightEngineDesc": "该存储桶以原始格式存储日志数据，以确保数据的完整性和可追溯性。",
       "bufferNoneNetworkTitle": "网络连接",
       "bufferNoneNetworkDesc": "当未选择缓冲区时，日志源将直接发送日志到 OpenSearch，您需要确保日志源（例如实例组、EKS 集群、syslog 代理）可以连接到所选的 OpenSearch 域。",
       "bufferNoneConfirm": "我确认知晓网络连接的要求。",
@@ -132,6 +153,7 @@
       "s3BucketPrefix": "Amazon S3 存储桶前缀",
       "selectS3Bucket": "请选择 Amazon S3 存储桶",
       "s3PrefixInvalid": "Amazon S3 存储桶前缀不能是 “/” 并且必须以 “/” 结尾。",
+      "s3BucketPrefixLightEngineDesc": "选择一个存储桶来存储日志数据。默认情况下，解决方案将在日志数据前添加 'LightEngine/AppLogs/<table-name>' 的前缀",
       "s3BucketPrefixDesc1": "默认情况下，解决方案将前缀 '",
       "s3BucketPrefixDesc2": "'（以 UTC 表示）附加到它传送到 Amazon S3 的数据中。 您可以通过指定包含在运行时计算的表达式的自定义前缀来覆盖此默认值。如果要摄取的文件都在 log/ 文件夹中，则可以将前缀指定为 log/",
       "bufferSize": "缓冲区大小",
@@ -327,7 +349,8 @@
       "li3": "使用内置或自定义的日志配置，在摄入OpenSearch之前解析日志。",
       "arch": {
         "title": "架构图",
-        "desc": "将日志数据导入Amazon OpenSearch域的架构图。"
+        "desc": "将日志数据摄入 Amazon OpenSearch 域的架构图。",
+        "descLightEngine": "将日志数据导入 Light Engine 的架构图。"
       },
       "step1": {
         "naviTitle": "实例组",
@@ -360,7 +383,8 @@
       "li3": "在不同的AWS账户中从EKS摄取日志。",
       "arch": {
         "title": "架构图",
-        "desc": "将日志数据摄入Amazon OpenSearch域的架构图。"
+        "desc": "将日志数据摄入 Amazon OpenSearch 域的架构图。",
+        "descLightEngine": "将日志数据摄入 Light Engine 的架构图。"
       },
       "step1": {
         "naviTitle": "选择EKS集群",
@@ -399,7 +423,8 @@
       },
       "step4": {
         "naviTitle": "AOS设置",
-        "title": "指定AOS设置"
+        "title": "指定AOS设置",
+        "lightEngineTitle": "指定 Light Engine 配置"
       },
       "step5": {
         "naviTitle": "管道告警和标签",
@@ -416,7 +441,8 @@
       "li3": "通过UDP和TCP协议摄取系统日志。",
       "arch": {
         "title": "架构图",
-        "desc": "用于将日志数据导入Amazon OpenSearch领域的架构图。"
+        "desc": "用于将日志数据导入Amazon OpenSearch领域的架构图。",
+        "descLightEngine": "将日志数据摄入 Light Engine 的架构图。"
       },
       "step1": {
         "naviTitle": "导入端点",
@@ -475,12 +501,13 @@
       "li3": "用自定义日志配置解析日志。",
       "arch": {
         "title": "架构图",
-        "desc": "将日志数据导入Amazon OpenSearch域的架构图。"
+        "desc": "将日志数据导入Amazon OpenSearch域的架构图。",
+        "descLightEngine": "将日志数据摄入 Light Engine 的架构图。"
       },
       "step1": {
-        "alertCompressionType": "注意在向现有管道添加新的源时，你不能改变压缩类型，请确保新的日志源是相同的压缩格式。",
         "naviTitle": "源设置",
         "title": "指定源设置",
+        "alertCompressionType": "注意在向现有管道添加新的源时，你不能改变压缩类型，请确保新的日志源是相同的压缩格式。",
         "titleDesc": "指定日志来源的设置。",
         "panelName": "从S3存储桶导入",
         "desc": "选择存储你的日志的S3桶。注意，只有同一地区的S3桶可以被选中。",

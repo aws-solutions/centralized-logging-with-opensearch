@@ -23,15 +23,17 @@ import {
   CreateAlarmActionTypes,
   CreateAlarmActions,
 } from "reducer/createAlarm";
+import { AnalyticEngineTypes } from "pages/dataInjection/serviceLog/create/common/SpecifyAnalyticsEngine";
 
 interface CreateAlarmsProps {
   type: PipelineType;
+  engineType?: AnalyticEngineTypes;
 }
 
 const CreateAlarms: React.FC<CreateAlarmsProps> = (
   props: CreateAlarmsProps
 ) => {
-  const { type } = props;
+  const { type, engineType } = props;
   const monitor = useSelector((state: RootState) => state.createAlarm.monitor);
   const dispatch = useDispatch<Dispatch<CreateAlarmActions>>();
 
@@ -51,6 +53,7 @@ const CreateAlarms: React.FC<CreateAlarmsProps> = (
       <Alarm
         pageType="create"
         type={type}
+        engineType={engineType}
         changeTopicName={(name) => {
           updateMonitorFields({ snsTopicName: name });
         }}

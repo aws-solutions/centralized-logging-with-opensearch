@@ -1,0 +1,107 @@
+{
+	"type": "object",
+	"properties": {
+		"date": {
+			"type": "date"
+		},
+		"time": {
+			"type": "string"
+		},
+		"x-edge-location": {
+			"type": "string"
+		},
+		"sc-bytes": {
+			"type": "big_int"
+		},
+		"c-ip": {
+			"type": "string"
+		},
+		"cs-method": {
+			"type": "string"
+		},
+		"cs-host": {
+			"type": "string"
+		},
+		"cs-uri-stem": {
+			"type": "string"
+		},
+		"sc-status": {
+			"type": "integer"
+		},
+		"cs-referer": {
+			"type": "string"
+		},
+		"cs-user-agent": {
+			"type": "string"
+		},
+		"cs-uri-query": {
+			"type": "string"
+		},
+		"cs-cookie": {
+			"type": "string"
+		},
+		"x-edge-result-type": {
+			"type": "string"
+		},
+		"x-edge-request-id": {
+			"type": "string"
+		},
+		"x-host-header": {
+			"type": "string"
+		},
+		"cs-protocol": {
+			"type": "string"
+		},
+		"cs-bytes": {
+			"type": "big_int"
+		},
+		"time-taken": {
+			"type": "double"
+		},
+		"x-forwarded-for": {
+			"type": "string"
+		},
+		"ssl-protocol": {
+			"type": "string"
+		},
+		"ssl-cipher": {
+			"type": "string"
+		},
+		"x-edge-response-result-type": {
+			"type": "string"
+		},
+		"cs-protocol-version": {
+			"type": "string"
+		},
+		"fle-status": {
+			"type": "string"
+		},
+		"fle-encrypted-fields": {
+			"type": "integer"
+		},
+		"c-port": {
+			"type": "integer"
+		},
+		"time-to-first-byte": {
+			"type": "double"
+		},
+		"x-edge-detailed-result-type": {
+			"type": "string"
+		},
+		"sc-content-type": {
+			"type": "string"
+		},
+		"sc-content-len": {
+			"type": "big_int"
+		},
+		"sc-range-start": {
+			"type": "big_int"
+		},
+		"sc-range-end": {
+			"type": "big_int"
+		},
+		"enrichment": {
+			"type": "string"
+		}
+	}
+}

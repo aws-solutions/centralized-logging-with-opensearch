@@ -55,7 +55,8 @@ export class LogSourceStack extends Construct {
         path.join(__dirname, "../../lambda/api/log_source/"),
         {
           bundling: {
-            image: lambda.Runtime.PYTHON_3_9.bundlingImage,
+            image: lambda.Runtime.PYTHON_3_11.bundlingImage,
+            platform: "linux/amd64",
             command: [
               "bash",
               "-c",
@@ -64,7 +65,8 @@ export class LogSourceStack extends Construct {
           },
         }
       ),
-      compatibleRuntimes: [lambda.Runtime.PYTHON_3_9],
+      compatibleRuntimes: [lambda.Runtime.PYTHON_3_11],
+      compatibleArchitectures: [lambda.Architecture.X86_64],
       description: "Default Lambda layer for EKS Cluster",
     });
 
@@ -73,7 +75,7 @@ export class LogSourceStack extends Construct {
       code: lambda.AssetCode.fromAsset(
         path.join(__dirname, '../../lambda/api/log_source/')
       ),
-      runtime: lambda.Runtime.PYTHON_3_9,
+      runtime: lambda.Runtime.PYTHON_3_11,
       handler: 'lambda_function.lambda_handler',
       timeout: Duration.seconds(60),
       layers: [SharedPythonLayer.getInstance(this), eksLayer],

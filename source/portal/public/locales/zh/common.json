@@ -33,7 +33,8 @@
     "instanceGroup": "实例组",
     "logConfig": "日志配置",
     "crossAccount": "成员账户",
-    "doc": "文档"
+    "doc": "文档",
+    "grafana": "Grafana"
   },
   "bottom": {
     "copy": "Amazon Web Services, Inc. 或其子公司.保留所有权利.",
@@ -104,7 +105,9 @@
     "confirm": "确认",
     "createNew": "创建新的",
     "viewDetails": "查看细节",
-    "viewDomain": "查看域"
+    "viewDomain": "查看域",
+    "addNewItem": "添加新属性",
+    "saveAndValidate": "保存并验证"
   },
   "status": {
     "unknown": "未知",
@@ -131,14 +134,22 @@
     "alarm": "告警中",
     "ok": "确定",
     "loading": "加载中...",
-    "distributing": "下发中"
+    "distributing": "下发中",
+    "running": "执行中",
+    "succeeded": "成功",
+    "timed_out": "超时",
+    "aborted": "终止"
   },
   "monitoring": {
     "title": "监控",
     "logSource": "日志源",
     "buffer": "缓冲层",
     "logProcessor": "日志摄取",
-    "lambdaProcessor": "日志摄取Lambda",
+    "lambdaProcessor": "日志摄取 Lambda",
+    "osiProcessor": "OpenSearch 摄取处理器",
+    "lambda": "Lambda",
+    "lightEngineSvcLambdaDesc": "从 {{service}} 配置的日志存储桶中获取日志文件，并将这些文件复制到 Staging 存储桶中",
+    "lightEngineAppLambdaDesc": "从日志缓冲层中获取日志文件，并将这些文件复制到Staging存储桶中",
     "failedBucket": "失败日志桶",
     "deliveryKDS": "日志传输 KDS",
     "deliveryKDF": "日志传输 KDF",
@@ -157,6 +168,11 @@
       "ProcessorFnDuration": "Duration (millisecond)",
       "ProcessorFnThrottles": "Throttles",
       "ProcessorFnInvocations": "Invocations",
+      "ReplicationFnError": "Error count",
+      "ReplicationFnConcurrentExecutions": "Total concurrent executions",
+      "ReplicationFnDuration": "Duration (millisecond)",
+      "ReplicationFnThrottles": "Throttles",
+      "ReplicationFnInvocations": "Invocations",
       "SyslogNLBActiveFlowCount": "Syslog NLB Active Flow Count",
       "SyslogNLBProcessedBytes": "Syslog NLB Processed Bytes",
       "KDSIncomingBytes": "KDS Incoming Bytes",
@@ -176,7 +192,13 @@
       "FluentBitOutputProcBytes": "Fluent Bit Output Process Bytes",
       "KDFIncomingBytes": "KDF Incoming Bytes",
       "KDFIncomingRecords": "KDF Incoming Records",
-      "KDFDeliveryToS3Bytes": "KDF Delivery To S3Bytes"
+      "KDFDeliveryToS3Bytes": "KDF Delivery To S3Bytes",
+      "OSIBytesTransmitted": "Bytes transmitted",
+      "OSIDocumentsWritten": "Documents written",
+      "OSIDocumentsFailedWrite": "Documents failed to write",
+      "OSIDocumentsRetriedWrite": "Documents retried to write",
+      "OSIDLQS3RecordsSuccess": "DLQ S3 records success",
+      "OSIDLQS3RecordsFailed": "DLQ S3 records failed"
     }
   },
   "logging": {
@@ -184,6 +206,7 @@
     "desc": "这个标签页能帮您快速访问日志管道中的两个用于传输业务日志的lambda的日志，帮助您快速定位日志摄取链路中的问题。",
     "logEvent": "日志事件",
     "processorLamdaLog": "Processor lambda 日志",
+    "processorOSILog": "Processor OSI 日志",
     "logGroupName": "日志组名称",
     "creationTime": "创建时间",
     "logStreams": "日志流",
@@ -222,6 +245,7 @@
     "learnMore": "了解更多关于SNS的信息",
     "snsTopic": "SNS 主题",
     "logProcessorAlarms": "日志摄取层告警",
+    "logReplicationAlarms": "日志复制告警",
     "bufferLayerAlarms": "缓冲层告警",
     "sourceAlarms": "日志源告警",
     "ingestionId": "日志摄取 ID",
@@ -245,6 +269,23 @@
       "emailInvalid": "邮箱地址格式不正确"
     }
   },
+  "processor": {
+    "selectLogProcessor": "选择日志处理器",
+    "logProcessorSettings": "日志处理器设置",
+    "serviceUnavailable": "当前区域不支持 OpenSearch Ingestion Service，日志处理器将使用 Lambda 函数。",
+    "onlySupportLambda": "当管道为 light engine 时，日志处理器使用 Lambda 函数。",
+    "logProcessorType": "日志处理器类型",
+    "lambdaDesc": "日志将通过 Lambda 函数进行处理和摄取。按使用付费，根据使用情况按 Lambda 处理计算和内存收费。如果您的日志量小而且突发，或不需要进一步处理日志，请使用此选项。",
+    "osiDesc": "日志将由 OpenSearch Ingestion Service 处理和摄取。您按预置摄取容量单位支付。如果您希望在摄取到 OpenSearch 之前对日志进行高级处理（例如，采样，多路径），请使用此选项。",
+    "pipelineCapacity": "管道容量",
+    "pipelineCapacityDesc": "单个摄取 OpenSearch 计算单位（OCU）代表应计的计算和内存单位。您将根据用于运行数据管道的 OCU 数量按小时费率收费。",
+    "min": "最小值",
+    "minError": "最小值无效",
+    "maxError": "最大值无效",
+    "max": "最大值",
+    "minMaxTips": "最小和最大容量必须是1到96之间的正数。对于有状态的管道（例如，使用 service_map 或 aggregate 处理器的管道）的最大容量限制为48。",
+    "disabledEnrich": "丰富的字段不适用于 OSI 类型"
+  },
   "seconds": "秒",
   "yes": "是",
   "no": "否",
@@ -263,6 +304,7 @@
   "pendingCreation": "创建中",
   "learnMore": "了解更多",
   "intoDomain": "到 OpenSearch 域。",
+  "intoLightEngine": "到 Light Engine。",
   "startTime": "开始时间",
   "endTime": "结束时间",
   "other": "其它",
@@ -275,6 +317,7 @@
   "instanceSelection": "实例选择",
   "sourceAccount": "源账户",
   "archDesc": "将日志数据摄取到 OpenSearch 域的架构图。",
+  "lightEngineArchDesc": "将日志数据摄取到 Light Engine 的架构图。",
   "accountSettings": "账户设置",
   "error": {
     "ingestionAlreadyExists": "此日志摄入已经存在",
@@ -297,5 +340,6 @@
   "page": "页面",
   "pageNotFound": "没找到页面",
   "home": "首页",
-  "clear": "清除"
+  "clear": "清除",
+  "alert": "更新提醒"
 }

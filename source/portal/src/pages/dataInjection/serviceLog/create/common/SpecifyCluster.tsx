@@ -19,7 +19,7 @@ import HeaderPanel from "components/HeaderPanel";
 import FormItem from "components/FormItem";
 import TextInput from "components/TextInput";
 import ExtLink from "components/ExtLink";
-import { DomainDetails, DomainStatusCheckResponse } from "API";
+import { DomainDetails, DomainStatusCheckResponse, EngineType } from "API";
 import Select from "components/Select";
 
 import {
@@ -40,14 +40,15 @@ import { InfoBarTypes } from "reducer/appReducer";
 import { useTranslation } from "react-i18next";
 import Switch from "components/Switch";
 import { checkIndexNameValidate, ternary } from "assets/js/utils";
-import { ParticalServiceType } from "pages/pipelineAlarm/AlarmAndTags";
+import { PartialServiceType } from "pages/pipelineAlarm/AlarmAndTags";
 import { identity, defaultTo } from "lodash";
 import SelectOpenSearchDomain from "pages/dataInjection/common/SelectOpenSearchDomain";
 import ExpandableSection from "components/ExpandableSection";
 
-interface SpecifyOpenSearchClusterProps {
+export interface SpecifyOpenSearchClusterProps {
   taskType: ServiceLogType;
-  pipelineTask: ParticalServiceType;
+  hidePageTitle?: boolean;
+  pipelineTask: PartialServiceType;
   changeBucketIndex: (prefix: string) => void;
   changeOpenSearchCluster: (domain: DomainDetails | undefined) => void;
   changeSampleDashboard: (yesNo: string) => void;
@@ -80,7 +81,7 @@ export interface AOSInputValidRes {
   indexNameFormatError: boolean;
 }
 
-export const checkOpenSearchInput = (pipelineTask: ParticalServiceType) => {
+export const checkOpenSearchInput = (pipelineTask: PartialServiceType) => {
   const validRes: AOSInputValidRes = {
     shardsInvalidError: false,
     warmLogInvalidError: false,
@@ -182,7 +183,7 @@ export const checkOpenSearchInput = (pipelineTask: ParticalServiceType) => {
 
 const AOS_EXCLUDE_PARAMS = ["enableRolloverByCapacity", "warmTransitionType"];
 export const covertParametersByKeyAndConditions = (
-  pipelineTask: ParticalServiceType,
+  pipelineTask: PartialServiceType,
   taskExcludeParams: string[]
 ) => {
   const resParamList: any[] = [];
@@ -256,6 +257,7 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
   props: SpecifyOpenSearchClusterProps
 ) => {
   const {
+    hidePageTitle,
     taskType,
     pipelineTask,
     changeOpenSearchCluster,
@@ -281,7 +283,9 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
 
   return (
     <div>
-      <PagePanel title={t("servicelog:cluster.specifyDomain")}>
+      <PagePanel
+        title={hidePageTitle ? null : t("servicelog:cluster.specifyDomain")}
+      >
         <div>
           <HeaderPanel title={t("servicelog:cluster.aosDomain")}>
             <SelectOpenSearchDomain
@@ -338,12 +342,12 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
                       ternary(
                         aosInputValidRes.indexEmptyError,
                         t("applog:create.ingestSetting.indexNameError"),
-                        ""
+                        undefined
                       ),
                       ternary(
                         aosInputValidRes.indexNameFormatError,
                         t("applog:create.ingestSetting.indexNameFormatError"),
-                        ""
+                        undefined
                       )
                     )}
                   >
@@ -613,3 +617,255 @@ const SpecifyOpenSearchCluster: React.FC<SpecifyOpenSearchClusterProps> = (
 };
 
 export default SpecifyOpenSearchCluster;
+
+export interface SpecifyOSClusterProps<ST extends PartialServiceType> {
+  taskType: ServiceLogType;
+  hidePageTitle?: boolean;
+  pipelineTask: ST;
+  setPipelineTask: React.Dispatch<React.SetStateAction<ST>>;
+  aosInputValidRes: AOSInputValidRes;
+  setAosInputValidRes: React.Dispatch<React.SetStateAction<AOSInputValidRes>>;
+  esDomainEmptyError: boolean;
+  setEsDomainEmptyError: React.Dispatch<React.SetStateAction<boolean>>;
+  setDomainListIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  domainCheckStatus?: DomainStatusCheckResponse;
+  setDomainCheckStatus: React.Dispatch<
+    React.SetStateAction<DomainStatusCheckResponse | undefined>
+  >;
+}
+
+export function SpecifyOSCluster<ST extends PartialServiceType>(
+  props: SpecifyOSClusterProps<ST>
+) {
+  return (
+    <SpecifyOpenSearchCluster
+      {...props}
+      changeLoadingDomain={(loading) => {
+        props.setDomainListIsLoading(loading);
+      }}
+      changeShards={(shards) => {
+        props.setAosInputValidRes((prev) => {
+          return {
+            ...prev,
+            shardsInvalidError: false,
+          };
+        });
+        props.setPipelineTask((prev: ST) => {
+          return {
+            ...prev,
+            params: {
+              ...prev.params,
+              shardNumbers: shards,
+            },
+          };
+        });
+      }}
+      changeReplicas={(replicas) => {
+        props.setPipelineTask((prev: ST) => {
+          return {
+            ...prev,
+            params: {
+              ...prev.params,
+              replicaNumbers: replicas,
+            },
+          };
+        });
+      }}
+      changeBucketIndex={(indexPrefix) => {
+        props.setAosInputValidRes((prev) => {
+          return {
+            ...prev,
+            indexEmptyError: false,
+            indexNameFormatError: false,
+          };
+        });
+        props.setPipelineTask((prev: ST) => {
+          return {
+            ...prev,
+            params: {
+              ...prev.params,
+              indexPrefix: indexPrefix,
+            },
+          };
+        });
+      }}
+      changeOpenSearchCluster={(cluster) => {
+        const NOT_SUPPORT_VERSION =
+          cluster?.engine === EngineType.Elasticsearch ||
+          parseFloat(cluster?.version || "") < 1.3;
+        props.setEsDomainEmptyError(false);
+        props.setPipelineTask((prev: ST) => {
+          return {
+            ...prev,
+            target: cluster?.domainName || "",
+            engine: cluster?.engine || "",
+            params: {
+              ...prev.params,
+              engineType: cluster?.engine || "",
+              domainName: cluster?.domainName || "",
+              esDomainId: cluster?.id || "",
+              endpoint: cluster?.endpoint || "",
+              securityGroupId: cluster?.vpc?.securityGroupId || "",
+              subnetIds: cluster?.vpc?.privateSubnetIds || "",
+              vpcId: cluster?.vpc?.vpcId || "",
+              warmEnable: cluster?.nodes?.warmEnabled || false,
+              coldEnable: cluster?.nodes?.coldEnabled || false,
+              rolloverSizeNotSupport: NOT_SUPPORT_VERSION,
+              enableRolloverByCapacity: !NOT_SUPPORT_VERSION,
+              rolloverSize: NOT_SUPPORT_VERSION ? "" : "30",
+            },
+          };
+        });
+      }}
+      changeSampleDashboard={(yesNo) => {
+        props.setPipelineTask((prev: ST) => {
+          return {
+            ...prev,
+            params: {
+              ...prev.params,
+              createDashboard: yesNo,
+            },
+          };
+        });
+      }}
+      changeWarnLogTransition={(value: string) => {
+        props.setAosInputValidRes((prev) => {
+          return {
+            ...prev,
+            warmLogInvalidError: false,
+          };
+        });
+        props.setPipelineTask((prev: ST) => {
+          return {
+            ...prev,
+            params: {
+              ...prev.params,
+              warmAge: value,
+            },
+          };
+        });
+      }}
+      changeColdLogTransition={(value: string) => {
+        props.setAosInputValidRes((prev) => {
+          return {
+            ...prev,
+            coldLogInvalidError: false,
+            coldMustLargeThanWarm: false,
+          };
+        });
+        props.setPipelineTask((prev: ST) => {
+          return {
+            ...prev,
+            params: {
+              ...prev.params,
+              coldAge: value,
+            },
+          };
+        });
+      }}
+      changeLogRetention={(value: string) => {
+        props.setAosInputValidRes((prev) => {
+          return {
+            ...prev,
+            logRetentionInvalidError: false,
+            logRetentionMustThanColdAndWarm: false,
+          };
+        });
+        props.setPipelineTask((prev: ST) => {
+          return {
+            ...prev,
+            params: {
+              ...prev.params,
+              retainAge: value,
+            },
+          };
+        });
+      }}
+      changeIndexSuffix={(suffix: string) => {
+        props.setPipelineTask((prev: ST) => {
+          return {
+            ...prev,
+            params: {
+              ...prev.params,
+              indexSuffix: suffix,
+            },
+          };
+        });
+      }}
+      changeEnableRollover={(enable: boolean) => {
+        props.setAosInputValidRes((prev) => {
+          return {
+            ...prev,
+            capacityInvalidError: false,
+          };
+        });
+        props.setPipelineTask((prev: ST) => {
+          return {
+            ...prev,
+            params: {
+              ...prev.params,
+              enableRolloverByCapacity: enable,
+            },
+          };
+        });
+      }}
+      changeRolloverSize={(size: string) => {
+        props.setAosInputValidRes((prev) => {
+          return {
+            ...prev,
+            capacityInvalidError: false,
+          };
+        });
+        props.setPipelineTask((prev: ST) => {
+          return {
+            ...prev,
+            params: {
+              ...prev.params,
+              rolloverSize: size,
+            },
+          };
+        });
+      }}
+      changeCompressionType={(codec: string) => {
+        props.setPipelineTask((prev: ST) => {
+          return {
+            ...prev,
+            params: {
+              ...prev.params,
+              codec: codec,
+            },
+          };
+        });
+      }}
+      changeWarmSettings={(type: string) => {
+        props.setAosInputValidRes((prev) => {
+          return {
+            ...prev,
+            coldMustLargeThanWarm: false,
+          };
+        });
+        props.setPipelineTask((prev: ST) => {
+          return {
+            ...prev,
+            params: {
+              ...prev.params,
+              warmTransitionType: type,
+            },
+          };
+        });
+      }}
+      changeOSDomainCheckStatus={(status) => {
+        props.setPipelineTask((prev: ST) => {
+          return {
+            ...prev,
+            params: {
+              ...prev.params,
+              replicaNumbers: status.multiAZWithStandbyEnabled ? "2" : "1",
+            },
+          };
+        });
+        props.setDomainCheckStatus(status);
+      }}
+    />
+  );
+}

@@ -14,6 +14,16 @@
 set -e
 
 
+recreate_symbolic_link() {
+	source=$1
+	target=$2
+
+	if [ -e $target ]; then
+		unlink $target
+	fi
+	ln -s $source $target
+}
+
 build_common_lib() {
 
 	echo "Build Common Lib"
@@ -43,8 +53,8 @@ setup_python_env() {
 
     echo "Installing python packages"
     # install test dependencies in the python virtual environment
-	pip install --upgrade pip
-	pip3 install -r test/requirements-test.txt
+	pip install --upgrade pip pytest-xdist
+	pip3 install --no-cache-dir -r test/requirements-test.txt
 	pip3 install -e $source_dir/constructs/lambda/common-lib
 	# pip3 install -r requirements.txt --target .
 
@@ -77,6 +87,49 @@ run_python_test() {
 
 	# Use -vv for debugging
 	python3 -m pytest --cov --cov-report=term-missing --cov-report "xml:$coverage_report_path"
+
+    # The pytest --cov with its parameters and .coveragerc generates a xml cov-report with `coverage/sources` list
+    # with absolute path for the source directories. To avoid dependencies of tools (such as SonarQube) on different
+    # absolute paths for source directories, this substitution is used to convert each absolute source directory
+    # path to the corresponding project relative path. The $source_dir holds the absolute path for source directory.
+    sed -i -e "s,<source>$source_dir,<source>source,g" $coverage_report_path
+
+	echo "deactivate virtual environment"
+	deactivate
+
+	if [ "${CLEAN:-true}" = "true" ]; then
+		rm -fr .venv-test
+		rm .coverage
+		rm -fr .pytest_cache
+		rm -fr __pycache__ test/__pycache__
+	fi
+}
+
+run_python_test_concurrently() {
+	local component_path=$1
+	local component_name=$2
+
+	echo "------------------------------------------------------------------------------"
+	echo "[Test] Run python unit test with coverage for $component_path $component_name"
+	echo "------------------------------------------------------------------------------"
+	cd $component_path
+
+	if [ "${CLEAN:-true}" = "true" ]; then
+        rm -fr .venv-test
+    fi
+
+	setup_python_env
+
+	echo "Initiating virtual environment"
+	source .venv-test/bin/activate
+
+	# setup coverage report path
+	mkdir -p $source_dir/tests/coverage-reports
+	coverage_report_path=$source_dir/tests/coverage-reports/$component_name.coverage.xml
+	echo "coverage report path set to $coverage_report_path"
+
+	# Use -vv for debugging
+	python3 -m pytest -n 8 --cov --cov-report=term-missing --cov-report "xml:$coverage_report_path"
 
     # The pytest --cov with its parameters and .coveragerc generates a xml cov-report with `coverage/sources` list
     # with absolute path for the source directories. To avoid dependencies of tools (such as SonarQube) on different
@@ -153,6 +206,25 @@ run_cdk_project_test() {
 	prepare_jest_coverage_report $component_name
 }
 
+run_frontend_project_test() {
+	local component_path=$1
+  	local component_name=solutions-portal
+
+	echo "------------------------------------------------------------------------------"
+	echo "[Test] $component_name"
+	echo "------------------------------------------------------------------------------"
+    cd $component_path
+
+	# install and build for unit testing
+	npm install --legacy-peer-deps
+
+	# run unit tests
+	npm run test:coverage -- -u
+
+    # prepare coverage reports
+	prepare_jest_coverage_report $component_name
+}
+
 # Get reference for source folder
 source_dir="$(cd $PWD; pwd -P)"
 echo $source_dir
@@ -161,6 +233,12 @@ echo $source_dir
 if [ ! -e $source_dir/constructs/lambda/plugin/standard/assets/GeoLite2-City.mmdb ]; then
   echo "Download MaxMind database file"
   curl --create-dirs -o $source_dir/constructs/lambda/plugin/standard/assets/GeoLite2-City.mmdb https://aws-gcr-solutions-assets.s3.amazonaws.com/maxmind/GeoLite2-City.mmdb
+fi
+
+if [ ! -e $source_dir/constructs/lambda/microbatch/utils/enrichment/maxminddb/GeoLite2-City.mmdb ]; then
+  echo "Copy MaxMind database file"
+  mkdir -p $source_dir/constructs/lambda/microbatch/utils/enrichment/maxminddb/
+  cp $source_dir/constructs/lambda/plugin/standard/assets/GeoLite2-City.mmdb $source_dir/constructs/lambda/microbatch/utils/enrichment/maxminddb/GeoLite2-City.mmdb
 fi
 
 # Run unit tests
@@ -175,15 +253,29 @@ npm run build
 
 construct_dir=$source_dir/constructs
 
-cd $construct_dir
+# re-create symbolink
+recreate_symbolic_link ../../../microbatch/utils/grafana $construct_dir/lambda/api/grafana/util/grafana
+recreate_symbolic_link ../utils $construct_dir/lambda/microbatch/batch_update_partition/utils
+recreate_symbolic_link ../utils $construct_dir/lambda/microbatch/etl_helper/utils
+recreate_symbolic_link ../utils $construct_dir/lambda/microbatch/metadata_writer/utils
+recreate_symbolic_link ../utils $construct_dir/lambda/microbatch/pipeline_resources_builder/utils
+recreate_symbolic_link ../utils $construct_dir/lambda/microbatch/s3_object_migration/utils
+recreate_symbolic_link ../utils $construct_dir/lambda/microbatch/s3_object_replication/utils
+recreate_symbolic_link ../utils $construct_dir/lambda/microbatch/s3_object_scanning/utils
+recreate_symbolic_link ../utils $construct_dir/lambda/microbatch/send_email/utils
 
-# Test the CDK project
-run_cdk_project_test $construct_dir
-
-# Test the attached Lambda function
 # Create a process pool
 tests_to_run=()
 
+#Test the CDK project
+run_cdk_project_test $construct_dir
+tests_to_run+=($!)
+
+#Test the Frontend
+run_frontend_project_test $portal_dir
+tests_to_run+=($!)
+
+# Test the attached Lambda function
 run_python_test $construct_dir/lambda/common-lib common-lib &
 tests_to_run+=($!)
 run_python_test $construct_dir/lambda/custom-resource custom-resource &
@@ -192,17 +284,12 @@ run_python_test $construct_dir/lambda/main/cfnHelper cfnHelper &
 tests_to_run+=($!)
 run_python_test $construct_dir/lambda/main/sfnHelper sfnHelper &
 tests_to_run+=($!)
-run_python_test $construct_dir/lambda/pipeline/service/log-processor svc-log-processor &
-tests_to_run+=($!)
-run_python_test $construct_dir/lambda/pipeline/app/log-processor app-log-processor &
-tests_to_run+=($!)
-run_python_test $construct_dir/lambda/pipeline/common/opensearch-helper opensearch-helper &
-tests_to_run+=($!)
 run_python_test $construct_dir/lambda/pipeline/common/custom-resource custom-resource2 &
+tests_to_run+=($!)
+run_python_test $construct_dir/lambda/pipeline/log-processor log-processor &
 tests_to_run+=($!)
 run_python_test $construct_dir/lambda/plugin/standard plugin &
 tests_to_run+=($!)
-
 run_python_test $construct_dir/lambda/api/resource resource-api &
 tests_to_run+=($!)
 run_python_test $construct_dir/lambda/api/pipeline svc-pipeline-api &
@@ -227,9 +314,13 @@ run_python_test $construct_dir/lambda/api/cwl cloudwatch_api &
 tests_to_run+=($!)
 run_python_test $construct_dir/lambda/api/alarm alarm_api &
 tests_to_run+=($!)
+run_python_test_concurrently $construct_dir/lambda/microbatch microbatch &
+tests_to_run+=($!)
 run_python_test $construct_dir/ecr/s3-list-objects s3-list-objects &
 tests_to_run+=($!)
 run_python_test $construct_dir/lib/kinesis/lambda lambda &
+tests_to_run+=($!)
+run_python_test $construct_dir/lambda/api/grafana grafana &
 tests_to_run+=($!)
 
 for i in "${!tests_to_run[@]}"; do

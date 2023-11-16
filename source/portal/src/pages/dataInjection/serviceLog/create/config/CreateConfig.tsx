@@ -49,6 +49,7 @@ import SpecifyOpenSearchCluster, {
 import SpecifySettings from "./steps/SpecifySettings";
 import {
   bucketNameIsValid,
+  buildOSIParamsValue,
   splitStringToBucketAndPrefix,
 } from "assets/js/utils";
 import { MONITOR_ALARM_INIT_DATA } from "assets/js/init";
@@ -62,6 +63,12 @@ import {
   CreateAlarmActionTypes,
   validateAalrmInput,
 } from "reducer/createAlarm";
+import { useSelectProcessor } from "assets/js/hooks/useSelectProcessor";
+import SelectLogProcessor from "pages/comps/processor/SelectLogProcessor";
+import {
+  SelectProcessorActionTypes,
+  validateOCUInput,
+} from "reducer/selectProcessor";
 
 const EXCLUDE_PARAMS = [
   "esDomainId",
@@ -206,6 +213,7 @@ const CreateConfig: React.FC = () => {
     useState<DomainStatusCheckResponse>();
   const tags = useTags();
   const monitor = useAlarm();
+  const osiParams = useSelectProcessor();
 
   const confirmCreatePipeline = async () => {
     console.info("configPipelineTask:", configPipelineTask);
@@ -220,6 +228,7 @@ const CreateConfig: React.FC = () => {
     createPipelineParams.destinationType = configPipelineTask.destinationType;
 
     createPipelineParams.monitor = monitor.monitor;
+    createPipelineParams.osiParams = buildOSIParamsValue(osiParams);
 
     const tmpParamList: any = covertParametersByKeyAndConditions(
       configPipelineTask,
@@ -304,7 +313,8 @@ const CreateConfig: React.FC = () => {
       domainListIsLoading ||
       nextStepDisable ||
       (curStep === 1 &&
-        domainCheckStatus?.status !== DomainStatusCheckType.PASSED)
+        domainCheckStatus?.status !== DomainStatusCheckType.PASSED) ||
+      osiParams.serviceAvailableCheckedLoading
     );
   };
 
@@ -328,6 +338,9 @@ const CreateConfig: React.FC = () => {
                     },
                     {
                       name: t("servicelog:create.step.specifyDomain"),
+                    },
+                    {
+                      name: t("processor.logProcessorSettings"),
                     },
                     {
                       name: t("servicelog:create.step.createTags"),
@@ -667,7 +680,15 @@ const CreateConfig: React.FC = () => {
                 )}
                 {curStep === 2 && (
                   <div>
-                    <AlarmAndTags pipelineTask={configPipelineTask} />
+                    <SelectLogProcessor supportOSI={false} />
+                  </div>
+                )}
+                {curStep === 3 && (
+                  <div>
+                    <AlarmAndTags
+                      pipelineTask={configPipelineTask}
+                      osiParams={osiParams}
+                    />
                   </div>
                 )}
                 <div className="button-action text-right">
@@ -691,7 +712,7 @@ const CreateConfig: React.FC = () => {
                     </Button>
                   )}
 
-                  {curStep < 2 && (
+                  {curStep < 3 && (
                     <Button
                       disabled={isNextDisabled()}
                       btnType="primary"
@@ -710,15 +731,23 @@ const CreateConfig: React.FC = () => {
                         ) {
                           return;
                         }
+                        if (curStep === 2) {
+                          dispatch({
+                            type: SelectProcessorActionTypes.VALIDATE_OCU_INPUT,
+                          });
+                          if (!validateOCUInput(osiParams)) {
+                            return;
+                          }
+                        }
                         setCurStep((curStep) => {
-                          return curStep + 1 > 2 ? 2 : curStep + 1;
+                          return curStep + 1 > 3 ? 3 : curStep + 1;
                         });
                       }}
                     >
                       {t("button.next")}
                     </Button>
                   )}
-                  {curStep === 2 && (
+                  {curStep === 3 && (
                     <Button
                       loading={loadingCreate}
                       btnType="primary"

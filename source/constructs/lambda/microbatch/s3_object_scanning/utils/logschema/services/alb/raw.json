@@ -1,0 +1,107 @@
+{
+	"type": "object",
+	"properties": {
+		"type": {
+			"type": "string"
+		},
+		"time": {
+			"type": "string"
+		},
+		"elb": {
+			"type": "string"
+		},
+		"client_ip": {
+			"type": "string"
+		},
+		"client_port": {
+			"type": "integer"
+		},
+		"target_ip": {
+			"type": "string"
+		},
+		"target_port": {
+			"type": "integer"
+		},
+		"request_processing_time": {
+			"type": "double"
+		},
+		"target_processing_time": {
+			"type": "double"
+		},
+		"response_processing_time": {
+			"type": "double"
+		},
+		"elb_status_code": {
+			"type": "integer"
+		},
+		"target_status_code": {
+			"type": "string"
+		},
+		"received_bytes": {
+			"type": "double"
+		},
+		"sent_bytes": {
+			"type": "double"
+		},
+		"request_verb": {
+			"type": "string"
+		},
+		"request_url": {
+			"type": "string"
+		},
+		"request_proto": {
+			"type": "string"
+		},
+		"user_agent": {
+			"type": "string"
+		},
+		"ssl_cipher": {
+			"type": "string"
+		},
+		"ssl_protocol": {
+			"type": "string"
+		},
+		"target_group_arn": {
+			"type": "string"
+		},
+		"trace_id": {
+			"type": "string"
+		},
+		"domain_name": {
+			"type": "string"
+		},
+		"chosen_cert_arn": {
+			"type": "string"
+		},
+		"matched_rule_priority": {
+			"type": "string"
+		},
+		"request_creation_time": {
+			"type": "string"
+		},
+		"actions_executed": {
+			"type": "string"
+		},
+		"redirect_url": {
+			"type": "string"
+		},
+		"lambda_error_reason": {
+			"type": "string"
+		},
+		"target_port_list": {
+			"type": "string"
+		},
+		"target_status_code_list": {
+			"type": "string"
+		},
+		"classification": {
+			"type": "string"
+		},
+		"classification_reason": {
+			"type": "string"
+		},
+		"enrichment": {
+			"type": "string"
+		}
+	}
+}

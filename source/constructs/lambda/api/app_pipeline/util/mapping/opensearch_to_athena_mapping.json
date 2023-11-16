@@ -1,0 +1,19 @@
+{
+    "boolean": "boolean",
+    "byte": "tiny_int",
+    "short": "small_int",
+    "integer": "integer",
+    "long": "big_int",
+    "float": "float",
+    "half_float": "float",
+    "scaled_float": "double",
+    "double": "double",
+    "keyword": "string",
+    "text": "string",
+    "date": "timestamp",
+    "ip": "string",
+    "binary": "binary",
+    "map": "map",
+    "object": "object",
+    "array": "array"
+}

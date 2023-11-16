@@ -52,7 +52,7 @@ export class CommonResourceStack extends Construct {
             code: lambda.AssetCode.fromAsset(
                 path.join(__dirname, '../../lambda/api/resource')
             ),
-            runtime: lambda.Runtime.PYTHON_3_9,
+            runtime: lambda.Runtime.PYTHON_3_11,
             handler: 'lambda_function.lambda_handler',
             timeout: Duration.seconds(60),
             memorySize: 1024,

@@ -1,5 +1,6 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
+
 import os
 import json
 from typing import List
@@ -113,6 +114,7 @@ def iam_client():
 def test_create_ingestion(mocker, ssm_client, iam_client):
     mocker.patch("commonlib.LinkAccountHelper")
     mocker.patch("commonlib.dao.InstanceDao")
+    mocker.patch("commonlib.dao.InstanceIngestionDetailDao")
     mocker.patch("commonlib.dao.DynamoDBUtil", return_value=None)
     mocker.patch(
         "svc.ec2_attach_iam_instance_profile.attach_permission_to_instance",

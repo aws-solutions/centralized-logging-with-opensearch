@@ -123,7 +123,8 @@ export class ClusterStack extends Construct {
         path.join(__dirname, '../../lambda/api/cluster'),
         {
           bundling: {
-            image: lambda.Runtime.PYTHON_3_9.bundlingImage,
+            image: lambda.Runtime.PYTHON_3_11.bundlingImage,
+            platform: "linux/amd64",
             command: [
               'bash',
               '-c',
@@ -132,7 +133,7 @@ export class ClusterStack extends Construct {
           },
         }
       ),
-      compatibleRuntimes: [lambda.Runtime.PYTHON_3_9],
+      compatibleRuntimes: [lambda.Runtime.PYTHON_3_11],
       description: `${Aws.STACK_NAME} - Lambda layer for OpenSearch Cluster`,
     });
 
@@ -141,7 +142,7 @@ export class ClusterStack extends Construct {
       code: lambda.AssetCode.fromAsset(
         path.join(__dirname, '../../lambda/api/cluster')
       ),
-      runtime: lambda.Runtime.PYTHON_3_9,
+      runtime: lambda.Runtime.PYTHON_3_11,
       handler: 'lambda_function.lambda_handler',
       timeout: Duration.seconds(60),
       memorySize: 1024,

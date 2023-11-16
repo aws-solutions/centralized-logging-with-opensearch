@@ -61,6 +61,13 @@ import {
   CreateAlarmActionTypes,
   validateAalrmInput,
 } from "reducer/createAlarm";
+import { useSelectProcessor } from "assets/js/hooks/useSelectProcessor";
+import { buildOSIParamsValue } from "assets/js/utils";
+import SelectLogProcessor from "pages/comps/processor/SelectLogProcessor";
+import {
+  SelectProcessorActionTypes,
+  validateOCUInput,
+} from "reducer/selectProcessor";
 
 const EXCLUDE_PARAMS = [
   "esDomainId",
@@ -208,6 +215,7 @@ const CreateLambda: React.FC = () => {
 
   const tags = useTags();
   const monitor = useAlarm();
+  const osiParams = useSelectProcessor();
 
   const confirmCreatePipeline = async () => {
     console.info("lambdaPipelineTask:", lambdaPipelineTask);
@@ -222,6 +230,7 @@ const CreateLambda: React.FC = () => {
     createPipelineParams.destinationType = lambdaPipelineTask.destinationType;
 
     createPipelineParams.monitor = monitor.monitor;
+    createPipelineParams.osiParams = buildOSIParamsValue(osiParams);
 
     const tmpParamList: any = covertParametersByKeyAndConditions(
       lambdaPipelineTask,
@@ -265,8 +274,28 @@ const CreateLambda: React.FC = () => {
       lambdaIsChanging ||
       domainListIsLoading ||
       (curStep === 1 &&
-        domainCheckStatus?.status !== DomainStatusCheckType.PASSED)
+        domainCheckStatus?.status !== DomainStatusCheckType.PASSED) ||
+      osiParams.serviceAvailableCheckedLoading
     );
+  };
+
+  const validateStep1 = () => {
+    if (!lambdaPipelineTask.params.domainName) {
+      setEsDomainEmptyError(true);
+      return false;
+    } else {
+      setEsDomainEmptyError(false);
+    }
+    const validRes = checkOpenSearchInput(lambdaPipelineTask);
+    setAosInputValidRes(validRes);
+    if (Object.values(validRes).indexOf(true) >= 0) {
+      return false;
+    }
+    // Check domain connection status
+    if (domainCheckStatus?.status !== DomainStatusCheckType.PASSED) {
+      return false;
+    }
+    return true;
   };
 
   return (
@@ -285,6 +314,9 @@ const CreateLambda: React.FC = () => {
                     },
                     {
                       name: t("servicelog:create.step.specifyDomain"),
+                    },
+                    {
+                      name: t("processor.logProcessorSettings"),
                     },
                     {
                       name: t("servicelog:create.step.createTags"),
@@ -605,7 +637,15 @@ const CreateLambda: React.FC = () => {
                 )}
                 {curStep === 2 && (
                   <div>
-                    <AlarmAndTags pipelineTask={lambdaPipelineTask} />
+                    <SelectLogProcessor supportOSI={false} />
+                  </div>
+                )}
+                {curStep === 3 && (
+                  <div>
+                    <AlarmAndTags
+                      pipelineTask={lambdaPipelineTask}
+                      osiParams={osiParams}
+                    />
                   </div>
                 )}
                 <div className="button-action text-right">
@@ -631,7 +671,7 @@ const CreateLambda: React.FC = () => {
                     </Button>
                   )}
 
-                  {curStep < 2 && (
+                  {curStep < 3 && (
                     <Button
                       disabled={isNextDisabled()}
                       btnType="primary"
@@ -643,35 +683,27 @@ const CreateLambda: React.FC = () => {
                           }
                         }
                         if (curStep === 1) {
-                          if (!lambdaPipelineTask.params.domainName) {
-                            setEsDomainEmptyError(true);
-                            return;
-                          } else {
-                            setEsDomainEmptyError(false);
-                          }
-                          const validRes =
-                            checkOpenSearchInput(lambdaPipelineTask);
-                          setAosInputValidRes(validRes);
-                          if (Object.values(validRes).indexOf(true) >= 0) {
+                          if (!validateStep1()) {
                             return;
                           }
-                          // Check domain connection status
-                          if (
-                            domainCheckStatus?.status !==
-                            DomainStatusCheckType.PASSED
-                          ) {
+                        }
+                        if (curStep === 2) {
+                          dispatch({
+                            type: SelectProcessorActionTypes.VALIDATE_OCU_INPUT,
+                          });
+                          if (!validateOCUInput(osiParams)) {
                             return;
                           }
                         }
                         setCurStep((curStep) => {
-                          return curStep + 1 > 2 ? 2 : curStep + 1;
+                          return curStep + 1 > 3 ? 3 : curStep + 1;
                         });
                       }}
                     >
                       {t("button.next")}
                     </Button>
                   )}
-                  {curStep === 2 && (
+                  {curStep === 3 && (
                     <Button
                       loading={loadingCreate}
                       btnType="primary"

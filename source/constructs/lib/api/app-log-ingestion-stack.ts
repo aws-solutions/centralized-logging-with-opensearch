@@ -25,6 +25,8 @@ import {
   aws_s3 as s3,
   aws_lambda as lambda,
   aws_ecs as ecs,
+  aws_sqs as sqs,
+  aws_lambda_event_sources as eventsources,
 } from 'aws-cdk-lib';
 import { DynamoEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 import { CfnDocument } from 'aws-cdk-lib/aws-ssm';
@@ -74,6 +76,7 @@ export interface AppLogIngestionStackProps {
   readonly logConfTable: ddb.Table;
   readonly appPipelineTable: ddb.Table;
   readonly appLogIngestionTable: ddb.Table;
+  readonly instanceIngestionDetailTable: ddb.Table;
   readonly logSourceTable: ddb.Table;
   readonly instanceTable: ddb.Table;
   readonly configFileBucket: s3.Bucket;
@@ -88,6 +91,7 @@ export interface AppLogIngestionStackProps {
   readonly stackPrefix: string;
   readonly cwlAccessRole: iam.Role;
   readonly fluentBitLogGroupName: string;
+  readonly flbConfUploadingEventQueue: sqs.Queue;
 }
 export class AppLogIngestionStack extends Construct {
   constructor(scope: Construct, id: string, props: AppLogIngestionStackProps) {
@@ -185,7 +189,8 @@ export class AppLogIngestionStack extends Construct {
           path.join(__dirname, '../../lambda/api/app_log_ingestion'),
           {
             bundling: {
-              image: lambda.Runtime.PYTHON_3_9.bundlingImage,
+              image: lambda.Runtime.PYTHON_3_11.bundlingImage,
+              platform: "linux/amd64",
               command: [
                 'bash',
                 '-c',
@@ -194,7 +199,7 @@ export class AppLogIngestionStack extends Construct {
             },
           }
         ),
-        compatibleRuntimes: [lambda.Runtime.PYTHON_3_9],
+        compatibleRuntimes: [lambda.Runtime.PYTHON_3_11],
         //compatibleArchitectures: [lambda.Architecture.X86_64, lambda.Architecture.ARM_64],
         description: 'Default Lambda layer for AppLog Ingestion',
       }
@@ -208,7 +213,7 @@ export class AppLogIngestionStack extends Construct {
           path.join(__dirname, '../../lambda/api/app_log_ingestion')
         ),
         layers: [SharedPythonLayer.getInstance(this), appLogIngestionLayer],
-        runtime: lambda.Runtime.PYTHON_3_9,
+        runtime: lambda.Runtime.PYTHON_3_11,
         handler: 'ingestion_modification_event_lambda_function.lambda_handler',
         timeout: Duration.minutes(15),
         memorySize: 1024,
@@ -218,6 +223,7 @@ export class AppLogIngestionStack extends Construct {
           SSM_LOG_CONFIG_DOCUMENT_NAME: downloadLogConfigDocument.ref,
           CONFIG_FILE_S3_BUCKET_NAME: props.configFileBucket.bucketName,
           APP_PIPELINE_TABLE_NAME: props.appPipelineTable.tableName,
+          INSTANCE_INGESTION_DETAIL_TABLE_NAME: props.instanceIngestionDetailTable.tableName,
           APP_LOG_CONFIG_TABLE_NAME: props.logConfTable.tableName,
           LOG_SOURCE_TABLE_NAME: props.logSourceTable.tableName,
           SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
@@ -245,7 +251,7 @@ export class AppLogIngestionStack extends Construct {
     appLogIngestionModificationEventHandler.addEventSource(
       new DynamoEventSource(props.instanceTable, {
         batchSize: 1,
-        retryAttempts: 3,
+        retryAttempts: 5,
         startingPosition: lambda.StartingPosition.LATEST,
         filters: [
           lambda.FilterCriteria.filter({
@@ -259,6 +265,9 @@ export class AppLogIngestionStack extends Construct {
     );
 
     props.appLogIngestionTable.grantReadWriteData(
+      appLogIngestionModificationEventHandler
+    );
+    props.instanceIngestionDetailTable.grantReadWriteData(
       appLogIngestionModificationEventHandler
     );
 
@@ -428,7 +437,7 @@ export class AppLogIngestionStack extends Construct {
           path.join(__dirname, '../../lambda/api/app_log_ingestion')
         ),
         layers: [SharedPythonLayer.getInstance(this), appLogIngestionLayer],
-        runtime: lambda.Runtime.PYTHON_3_9,
+        runtime: lambda.Runtime.PYTHON_3_11,
         handler: 'lambda_function.lambda_handler',
         timeout: Duration.seconds(120),
         memorySize: 1024,
@@ -444,6 +453,7 @@ export class AppLogIngestionStack extends Construct {
           APP_PIPELINE_TABLE_NAME: props.appPipelineTable.tableName,
           APP_LOG_CONFIG_TABLE_NAME: props.logConfTable.tableName,
           LOG_SOURCE_TABLE_NAME: props.logSourceTable.tableName,
+          INSTANCE_INGESTION_DETAIL_TABLE_NAME: props.instanceIngestionDetailTable.tableName,
           STATE_MACHINE_ARN: appIngestionFlow.stateMachineArn,
           EC2_IAM_INSTANCE_PROFILE_ARN:
             props.Ec2IamInstanceProfile.cfnEc2IamInstanceProfile.attrArn,
@@ -473,6 +483,7 @@ export class AppLogIngestionStack extends Construct {
     props.configFileBucket.grantReadWrite(appLogIngestionHandler);
     props.logSourceTable.grantReadWriteData(appLogIngestionHandler);
     props.subAccountLinkTable.grantReadData(appLogIngestionHandler);
+    props.instanceIngestionDetailTable.grantReadWriteData(appLogIngestionHandler);
 
     appLogIngestionHandler.role!.attachInlinePolicy(sourceCommonPolicy);
 
@@ -585,6 +596,13 @@ export class AppLogIngestionStack extends Construct {
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
+    appLogIngestionLambdaDS.createResolver('listInstanceIngestionDetails', {
+      typeName: 'Query',
+      fieldName: 'listInstanceIngestionDetails',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
     const ec2IngestionDistributionEventHandler = new lambda.Function(
       this,
       'EC2IngestionDistributionEventHandler',
@@ -593,54 +611,25 @@ export class AppLogIngestionStack extends Construct {
           path.join(__dirname, '../../lambda/api/app_log_ingestion')
         ),
         layers: [SharedPythonLayer.getInstance(this), appLogIngestionLayer],
-        runtime: lambda.Runtime.PYTHON_3_9,
+        runtime: lambda.Runtime.PYTHON_3_11,
         handler:
           'ec2_ingestion_distribution_event_lambda_function.lambda_handler',
         timeout: Duration.minutes(15),
         memorySize: 1024,
         environment: {
-          APP_LOG_INGESTION_TABLE_NAME: props.appLogIngestionTable.tableName,
-          INSTANCE_TABLE_NAME: props.instanceTable.tableName,
           SSM_LOG_CONFIG_DOCUMENT_NAME: downloadLogConfigDocument.ref,
-          CONFIG_FILE_S3_BUCKET_NAME: props.configFileBucket.bucketName,
-          APP_PIPELINE_TABLE_NAME: props.appPipelineTable.tableName,
-          APP_LOG_CONFIG_TABLE_NAME: props.logConfTable.tableName,
-          LOG_SOURCE_TABLE_NAME: props.logSourceTable.tableName,
+          INSTANCE_INGESTION_DETAIL_TABLE_NAME: props.instanceIngestionDetailTable.tableName,
           SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
           SOLUTION_VERSION: process.env.VERSION || 'v1.0.0',
           SOLUTION_ID: props.solutionId,
-          FLUENT_BIT_LOG_GROUP_NAME: props.fluentBitLogGroupName,
-          FLUENT_BIT_IMAGE:
-            'public.ecr.aws/aws-observability/aws-for-fluent-bit:2.31.12',
-          FLUENT_BIT_EKS_CLUSTER_NAME_SPACE: 'logging',
-          FLUENT_BIT_MEM_BUF_LIMIT: '30M',
-          EC2_IAM_INSTANCE_PROFILE_ARN:
-            props.Ec2IamInstanceProfile.cfnEc2IamInstanceProfile.attrArn,
-          CWL_MONITOR_ROLE_ARN: props.cwlAccessRole.roleArn,
-          DEFAULT_OPEN_EXTRA_METADATA_FLAG: 'true',
-          LOG_AGENT_VPC_ID: props.defaultVPC,
-          LOG_AGENT_SUBNETS_IDS: Fn.join(',', props.defaultPublicSubnets),
-          DEFAULT_CMK_ARN: props.cmkKeyArn,
-          ECS_CLUSTER_NAME: props.ecsCluster.clusterName,
-          FLB_S3_ADDR: flb_s3_addr,
         },
         description: `${Aws.STACK_NAME} - Async AppLogIngestion Resolver for instance ingestion distribution event`,
       }
     );
 
     ec2IngestionDistributionEventHandler.addEventSource(
-      new DynamoEventSource(props.appLogIngestionTable, {
+      new eventsources.SqsEventSource(props.flbConfUploadingEventQueue, {
         batchSize: 1,
-        retryAttempts: 3,
-        startingPosition: lambda.StartingPosition.LATEST,
-        filters: [
-          lambda.FilterCriteria.filter({
-            eventName: lambda.FilterRule.isEqual('INSERT'),
-          }),
-          lambda.FilterCriteria.filter({
-            eventName: lambda.FilterRule.isEqual('MODIFY'),
-          }),
-        ],
       })
     );
 
@@ -649,30 +638,15 @@ export class AppLogIngestionStack extends Construct {
     );
     ec2IngestionDistributionEventHandler.role!.attachInlinePolicy(ssmPolicy);
 
-    props.appLogIngestionTable.grantReadWriteData(
-      ec2IngestionDistributionEventHandler
-    );
-
-    props.appPipelineTable.grantReadWriteData(
-      ec2IngestionDistributionEventHandler
-    );
-    props.logConfTable.grantReadWriteData(ec2IngestionDistributionEventHandler);
-
     props.configFileBucket.grantReadWrite(ec2IngestionDistributionEventHandler);
-
-    props.logSourceTable.grantReadWriteData(
-      ec2IngestionDistributionEventHandler
-    );
 
     props.subAccountLinkTable.grantReadData(
       ec2IngestionDistributionEventHandler
     );
 
-    props.instanceTable.grantReadWriteData(
+    props.instanceIngestionDetailTable.grantReadWriteData(
       ec2IngestionDistributionEventHandler
     );
-
-    props.instanceTable.grantStreamRead(ec2IngestionDistributionEventHandler);
 
     ec2IngestionDistributionEventHandler.node.addDependency(
       downloadLogConfigDocument
@@ -691,7 +665,7 @@ export class AppLogIngestionStack extends Construct {
           path.join(__dirname, '../../lambda/api/app_log_ingestion')
         ),
         layers: [SharedPythonLayer.getInstance(this)],
-        runtime: lambda.Runtime.PYTHON_3_9,
+        runtime: lambda.Runtime.PYTHON_3_11,
         handler: 'auto_scaling_group_config_lambda_function.lambda_handler',
         timeout: Duration.seconds(60),
         memorySize: 1024,
@@ -717,6 +691,57 @@ export class AppLogIngestionStack extends Construct {
     props.subAccountLinkTable.grantReadData(asgConfigGenerateFn);
 
     props.centralAssumeRolePolicy.attachToRole(asgConfigGenerateFn.role!);
+
+    const subscribeMemberAcctSNSHandler = new lambda.Function(
+      this,
+      'SubscribeMemberAcctSNSHandler',
+      {
+        code: lambda.AssetCode.fromAsset(
+          path.join(
+            __dirname,
+            '../../lambda/api/app_log_ingestion/member_account'
+          )
+        ),
+        layers: [SharedPythonLayer.getInstance(this)],
+        runtime: lambda.Runtime.PYTHON_3_11,
+        handler: 'lambda_function.lambda_handler',
+        timeout: Duration.seconds(120),
+        memorySize: 512,
+        environment: {
+          FLUENT_BIT_CONF_UPLOADING_EVENT_QUEUE_ARN:
+            props.flbConfUploadingEventQueue.queueArn,
+          SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
+          SOLUTION_VERSION: process.env.VERSION || 'v2.0.0',
+          SOLUTION_ID: props.solutionId,
+          STACK_PREFIX: props.stackPrefix,
+        },
+        description: `${Aws.STACK_NAME} - Using the SQS in CLO account to subscribe the SNS in Member Account`,
+      }
+    );
+    props.subAccountLinkTable.grantReadWriteData(subscribeMemberAcctSNSHandler);
+    subscribeMemberAcctSNSHandler.addEventSource(
+      new DynamoEventSource(props.subAccountLinkTable, {
+        batchSize: 1,
+        retryAttempts: 30,
+        startingPosition: lambda.StartingPosition.LATEST,
+        filters: [
+          lambda.FilterCriteria.filter({
+            eventName: lambda.FilterRule.isEqual('INSERT'),
+          }),
+          lambda.FilterCriteria.filter({
+            eventName: lambda.FilterRule.isEqual('MODIFY'),
+          }),
+          lambda.FilterCriteria.filter({
+            eventName: lambda.FilterRule.isEqual('REMOVE'),
+          }),
+        ],
+      })
+    );
+
+    props.centralAssumeRolePolicy.attachToRole(
+      subscribeMemberAcctSNSHandler.role!
+    );
+
 
     // Add ASG Ingestion lambda as a Datasource
     const asgConfigGeneratorDS = props.graphqlApi.addLambdaDataSource(

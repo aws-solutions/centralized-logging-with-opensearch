@@ -13,8 +13,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import React, { useState, useEffect, useMemo } from "react";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import CreateStep from "components/CreateStep";
 import Breadcrumb from "components/Breadcrumb";
 import {
@@ -58,12 +58,14 @@ import SideMenu from "components/SideMenu";
 import { ActionType, InfoBarTypes } from "reducer/appReducer";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { checkIndexNameValidate, hasSamePrefix } from "assets/js/utils";
+import {
+  buildOSIParamsValue,
+  checkIndexNameValidate,
+  defaultStr,
+  hasSamePrefix,
+} from "assets/js/utils";
 import Button from "components/Button";
 import HeaderPanel from "components/HeaderPanel";
-import Tiles from "components/Tiles";
-import ExtLink from "components/ExtLink";
-import InfoSpan from "components/InfoSpan";
 import SpecifyDomain from "../steps/SpecifyDomain";
 import PagePanel from "components/PagePanel";
 import {
@@ -93,6 +95,21 @@ import {
   validateAalrmInput,
 } from "reducer/createAlarm";
 import { Dispatch } from "redux";
+import { useLightEngine } from "assets/js/hooks/useLightEngine";
+import { AnalyticEngineTypes } from "pages/dataInjection/serviceLog/create/common/SpecifyAnalyticsEngine";
+import ConfigLightEngine from "pages/dataInjection/serviceLog/create/common/ConfigLightEngine";
+import {
+  CreateLightEngineActionTypes,
+  validateLightEngine,
+} from "reducer/createLightEngine";
+import { createLightEngineApplicationPipeline } from "assets/js/helpers/lightEngineHelper";
+import { useGrafana } from "assets/js/hooks/useGrafana";
+import { useSelectProcessor } from "assets/js/hooks/useSelectProcessor";
+import {
+  SelectProcessorActionTypes,
+  validateOCUInput,
+} from "reducer/selectProcessor";
+import SelectLogProcessor from "pages/comps/processor/SelectLogProcessor";
 
 export interface IngestionFromEKSPropsType {
   eksObject: SelectItem | null;
@@ -164,6 +181,17 @@ const AppLogCreateEks: React.FC = () => {
   );
   const tags = useTags();
   const monitor = useAlarm();
+  const osiParams = useSelectProcessor();
+  const lightEngine = useLightEngine();
+  const grafana = useGrafana();
+  const [searchParams] = useSearchParams();
+  const engineType =
+    (searchParams.get("engineType") as AnalyticEngineTypes | null) ??
+    AnalyticEngineTypes.OPENSEARCH;
+  const isLightEngine = useMemo(
+    () => engineType === AnalyticEngineTypes.LIGHT_ENGINE,
+    [engineType]
+  );
 
   const [ingestionInfo, setIngestionInfo] = useState<IngestionFromEKSPropsType>(
     {
@@ -323,6 +351,24 @@ const AppLogCreateEks: React.FC = () => {
     return true;
   });
 
+  const lightEngineValidator = new Validator(() => {
+    if (!validateLightEngine(lightEngine, grafana)) {
+      dispatch({
+        type: CreateLightEngineActionTypes.VALIDATE_LIGHT_ENGINE,
+      });
+      throw new Error();
+    }
+  });
+
+  const selectProcessorValidator = new Validator(() => {
+    if (!validateOCUInput(osiParams)) {
+      dispatch({
+        type: SelectProcessorActionTypes.VALIDATE_OCU_INPUT,
+      });
+      throw new Error();
+    }
+  });
+
   useEffect(() => {
     dispatch({ type: ActionType.CLOSE_SIDE_MENU });
   }, []);
@@ -479,13 +525,19 @@ const AppLogCreateEks: React.FC = () => {
               createNewLink="/resources/log-config/create"
               validator={logConfigValidator}
             />
-            <CreateSampleDashboard
-              createDashboard={shouldCreateDashboard}
-              logType={logConfigJSON ? JSON.parse(logConfigJSON).logType : ""}
-              changeSampleDashboard={(yesNo: string) => {
-                setShouldCreateDashboard(yesNo);
-              }}
-            />
+            <>
+              {!isLightEngine && (
+                <CreateSampleDashboard
+                  createDashboard={shouldCreateDashboard}
+                  logType={
+                    logConfigJSON ? JSON.parse(logConfigJSON).logType : ""
+                  }
+                  changeSampleDashboard={(yesNo: string) => {
+                    setShouldCreateDashboard(yesNo);
+                  }}
+                />
+              )}
+            </>
           </HeaderPanel>
         </PagePanel>
       ),
@@ -541,72 +593,42 @@ const AppLogCreateEks: React.FC = () => {
       validators: [logPathValidator],
     },
     {
-      name: t("applog:logSourceDesc.eks.step3_1.title"),
-      disabled: true,
-      validators: [],
-      element: (
-        <HeaderPanel title={t("applog:logSourceDesc.eks.step3_1.title")}>
-          <>
-            <p>
-              {t("applog:logSourceDesc.eks.step3_1.desc")}{" "}
-              <InfoSpan spanType={InfoBarTypes.PROCESSOR_TYPE} />
-            </p>
-            <Tiles
-              value={""}
-              items={[
-                {
-                  label: t("applog:logSourceDesc.eks.step3_1.lambda"),
-                  description: t("applog:logSourceDesc.eks.step3_1.lambdaDesc"),
-                  value: "lambda",
-                },
-                {
-                  label: t("applog:logSourceDesc.eks.step3_1.osis"),
-                  description: (
-                    <>
-                      {t("applog:logSourceDesc.eks.step3_1.osisDesc")}{" "}
-                      <ExtLink to="">{t("learnMore")}</ExtLink>
-                    </>
-                  ),
-                  value: "opensearch-ingestion-service",
-                },
-              ]}
-            />
-          </>
-        </HeaderPanel>
-      ),
-    },
-    {
       name: t("applog:logSourceDesc.eks.step3.naviTitle"),
       disabled: !!state,
       element: (
         <PagePanel title={t("applog:logSourceDesc.ec2.step3.panelTitle")}>
-          <HeaderPanel title={t("applog:create.ingestSetting.indexName")}>
-            <IndexName
-              value={curApplicationLog.aosParams.indexPrefix}
-              setValue={(value) => {
-                setCurApplicationLog((prev) => {
-                  return {
-                    ...prev,
-                    aosParams: {
-                      ...prev.aosParams,
-                      indexPrefix: value as string,
-                    },
-                    s3BufferParams: {
-                      ...prev.s3BufferParams,
-                      logBucketPrefix: `AppLogs/${value}/year=%Y/month=%m/day=%d/`,
-                    },
-                  };
-                });
-              }}
-              validator={indexNameValidator}
-            />
-          </HeaderPanel>
+          {isLightEngine ? (
+            <></>
+          ) : (
+            <HeaderPanel title={t("applog:create.ingestSetting.indexName")}>
+              <IndexName
+                value={curApplicationLog.aosParams.indexPrefix}
+                setValue={(value) => {
+                  setCurApplicationLog((prev) => {
+                    return {
+                      ...prev,
+                      aosParams: {
+                        ...prev.aosParams,
+                        indexPrefix: value as string,
+                      },
+                      s3BufferParams: {
+                        ...prev.s3BufferParams,
+                        logBucketPrefix: `AppLogs/${value}/year=%Y/month=%m/day=%d/`,
+                      },
+                    };
+                  });
+                }}
+                validator={indexNameValidator}
+              />
+            </HeaderPanel>
+          )}
           <HeaderPanel
             title={t("applog:logSourceDesc.eks.step3.title")}
             desc={t("applog:logSourceDesc.eks.step3.desc")}
             infoType={InfoBarTypes.BUFFER_LAYER}
           >
             <ChooseBufferLayer
+              engineType={engineType}
               maxShardNumInvalidError={maxShardInvalidError}
               s3BucketEmptyError={s3BucketEmptyError}
               s3PrefixError={s3PrefixError}
@@ -620,12 +642,18 @@ const AppLogCreateEks: React.FC = () => {
           </HeaderPanel>
         </PagePanel>
       ),
-      validators: [bufferLayerValidator, indexNameValidator],
+      validators: [bufferLayerValidator].concat(
+        isLightEngine ? [] : [indexNameValidator]
+      ),
     },
     {
-      name: t("applog:logSourceDesc.eks.step4.naviTitle"),
+      name: isLightEngine
+        ? t("applog:logSourceDesc.eks.step4.lightEngineTitle")
+        : t("applog:logSourceDesc.eks.step4.naviTitle"),
       disabled: !!state,
-      element: (
+      element: isLightEngine ? (
+        <ConfigLightEngine />
+      ) : (
         <SpecifyDomain
           applicationLog={curApplicationLog}
           changeOpenSearchCluster={(cluster: DomainDetails | undefined) => {
@@ -635,7 +663,7 @@ const AppLogCreateEks: React.FC = () => {
             setCurApplicationLog((prev) => {
               return {
                 ...prev,
-                openSearchId: cluster?.id || "",
+                openSearchId: defaultStr(cluster?.id),
                 warmEnable: cluster?.nodes?.warmEnabled || false,
                 coldEnable: cluster?.nodes?.coldEnabled || false,
                 rolloverSizeNotSupport: NOT_SUPPORT_VERSION,
@@ -643,15 +671,17 @@ const AppLogCreateEks: React.FC = () => {
                 aosParams: {
                   ...prev.aosParams,
                   rolloverSize: NOT_SUPPORT_VERSION ? "" : "30",
-                  domainName: cluster?.domainName || "",
-                  opensearchArn: cluster?.domainArn || "",
-                  opensearchEndpoint: cluster?.endpoint || "",
-                  engine: cluster?.engine || "",
+                  domainName: defaultStr(cluster?.domainName),
+                  opensearchArn: defaultStr(cluster?.domainArn),
+                  opensearchEndpoint: defaultStr(cluster?.endpoint),
+                  engine: defaultStr(cluster?.engine),
                   vpc: {
-                    privateSubnetIds: cluster?.vpc?.privateSubnetIds || "",
-                    publicSubnetIds: cluster?.vpc?.publicSubnetIds || "",
-                    securityGroupId: cluster?.vpc?.securityGroupId || "",
-                    vpcId: cluster?.vpc?.vpcId || "",
+                    privateSubnetIds: defaultStr(
+                      cluster?.vpc?.privateSubnetIds
+                    ),
+                    publicSubnetIds: defaultStr(cluster?.vpc?.publicSubnetIds),
+                    securityGroupId: defaultStr(cluster?.vpc?.securityGroupId),
+                    vpcId: defaultStr(cluster?.vpc?.vpcId),
                   },
                 },
               };
@@ -796,12 +826,33 @@ const AppLogCreateEks: React.FC = () => {
           rolloverSizeError={rolloverSizeError}
         />
       ),
-      validators: [openSearchInputValidator],
+      validators: [
+        isLightEngine ? lightEngineValidator : openSearchInputValidator,
+      ],
+    },
+    {
+      name: t("processor.logProcessorSettings"),
+      disabled: !!state,
+      element: (
+        <SelectLogProcessor
+          supportOSI={
+            curApplicationLog.bufferType === BufferType.S3 &&
+            engineType === AnalyticEngineTypes.OPENSEARCH
+          }
+        />
+      ),
+      validators: [selectProcessorValidator],
     },
     {
       name: t("applog:logSourceDesc.eks.step5.naviTitle"),
       disabled: !!state,
-      element: <AlarmAndTags applicationPipeline={curApplicationLog} />,
+      element: (
+        <AlarmAndTags
+          applicationPipeline={curApplicationLog}
+          engineType={engineType}
+          osiParams={osiParams}
+        />
+      ),
       validators: [],
     },
   ].filter((each) => !each.disabled);
@@ -900,65 +951,79 @@ const AppLogCreateEks: React.FC = () => {
         const logConfigId = logConfigObj.id;
         const logConfigVersionNumber = logConfigObj.version;
 
-        const createPipelineParams: CreateAppPipelineMutationVariables = {
-          bufferType: curApplicationLog.bufferType as BufferType,
-          aosParams: {
-            ...(curApplicationLog.aosParams as any),
-            ...p,
-          },
-          logConfigId: logConfigId,
-          logConfigVersionNumber: parseInt(logConfigVersionNumber, 10),
-          bufferParams: CovertObjToParameterKeyValue(
-            (() => {
-              if (curApplicationLog.bufferType === BufferType.S3) {
-                return Object.assign(
-                  cloneDeep(curApplicationLog.s3BufferParams),
-                  {
-                    compressionType:
-                      curApplicationLog.s3BufferParams.compressionType ===
-                      CompressionType.NONE
-                        ? undefined
-                        : curApplicationLog.s3BufferParams.compressionType,
-                    createDashboard: [LogType.Nginx, LogType.Apache].includes(
-                      logConfigObj.logType
-                    )
-                      ? shouldCreateDashboard
-                      : YesNo.No,
-                  }
-                );
-              } else if (curApplicationLog.bufferType === BufferType.KDS) {
-                return Object.assign(
-                  cloneDeep(curApplicationLog.kdsBufferParams),
-                  {
-                    createDashboard: [LogType.Nginx, LogType.Apache].includes(
-                      logConfigObj.logType
-                    )
-                      ? shouldCreateDashboard
-                      : YesNo.No,
-                  }
-                );
-              }
-              return {};
-            })()
-          ),
-          monitor: monitor.monitor,
-          tags,
-          force: isForce,
-        };
+        let appPipelineId: string;
+        if (engineType === AnalyticEngineTypes.LIGHT_ENGINE) {
+          appPipelineId = await createLightEngineApplicationPipeline(
+            lightEngine,
+            curApplicationLog,
+            logConfigObj,
+            monitor,
+            tags,
+            isForce
+          );
+        } else {
+          const createPipelineParams: CreateAppPipelineMutationVariables = {
+            bufferType: curApplicationLog.bufferType as BufferType,
+            aosParams: {
+              ...(curApplicationLog.aosParams as any),
+              ...p,
+            },
+            logConfigId: logConfigId,
+            logConfigVersionNumber: parseInt(logConfigVersionNumber, 10),
+            bufferParams: CovertObjToParameterKeyValue(
+              (() => {
+                if (curApplicationLog.bufferType === BufferType.S3) {
+                  return Object.assign(
+                    cloneDeep(curApplicationLog.s3BufferParams),
+                    {
+                      compressionType:
+                        curApplicationLog.s3BufferParams.compressionType ===
+                        CompressionType.NONE
+                          ? undefined
+                          : curApplicationLog.s3BufferParams.compressionType,
+                      createDashboard: [LogType.Nginx, LogType.Apache].includes(
+                        logConfigObj.logType
+                      )
+                        ? shouldCreateDashboard
+                        : YesNo.No,
+                    }
+                  );
+                } else if (curApplicationLog.bufferType === BufferType.KDS) {
+                  return Object.assign(
+                    cloneDeep(curApplicationLog.kdsBufferParams),
+                    {
+                      createDashboard: [LogType.Nginx, LogType.Apache].includes(
+                        logConfigObj.logType
+                      )
+                        ? shouldCreateDashboard
+                        : YesNo.No,
+                    }
+                  );
+                }
+                return {};
+              })()
+            ),
+            monitor: monitor.monitor,
+            osiParams: buildOSIParamsValue(osiParams),
+            tags,
+            force: isForce,
+          };
 
-        createPipelineParams.monitor = curApplicationLog.monitor;
+          createPipelineParams.monitor = curApplicationLog.monitor;
 
-        console.info("createPipelineParams", createPipelineParams);
+          console.info("createPipelineParams", createPipelineParams);
 
-        const createRes = await appSyncRequestMutation(
-          createAppPipeline,
-          createPipelineParams
-        );
-        console.info("createAppPipeline:", createRes);
+          const createRes = await appSyncRequestMutation(
+            createAppPipeline,
+            createPipelineParams
+          );
+          console.info("createAppPipeline:", createRes);
+          appPipelineId = createRes.data.createAppPipeline;
+        }
 
         const ingestionParams: CreateAppLogIngestionMutationVariables = {
           sourceId: ingestionInfo.logSourceId,
-          appPipelineId: createRes.data.createAppPipeline,
+          appPipelineId,
           tags: ingestionInfo.tags,
           logPath: ingestionInfo.logPath,
           autoAddPermission: false,
@@ -970,22 +1035,19 @@ const AppLogCreateEks: React.FC = () => {
           ingestionParams
         );
         console.log("ingestionRes", ingestionRes);
-        navigate(
-          `/log-pipeline/application-log/detail/${createRes.data.createAppPipeline}`,
-          {
-            state: {
-              showEKSDaemonSetModal: isShowEKSDaemonSetModal,
-              eksSourceId: ingestionInfo.logSourceId,
-            },
-          }
-        );
+        navigate(`/log-pipeline/application-log/detail/${appPipelineId}`, {
+          state: {
+            showEKSDaemonSetModal: isShowEKSDaemonSetModal,
+            eksSourceId: ingestionInfo.logSourceId,
+          },
+        });
       }
 
       setLoadingCreate(false);
     } catch (error: any) {
       const { errorCode, message } = refineErrorMessage(error.message);
       if (
-        errorCode === ErrorCode.DUPLICATED_INDEX_PREFIX ||
+        errorCode === ErrorCode.OVERLAP_WITH_INACTIVE_INDEX_PREFIX ||
         errorCode === ErrorCode.OVERLAP_INDEX_PREFIX
       ) {
         Swal.fire({
@@ -996,8 +1058,8 @@ const AppLogCreateEks: React.FC = () => {
           confirmButtonText: t("button.cancel") || "",
           cancelButtonText: t("button.changeIndex") || "",
           text:
-            (errorCode === ErrorCode.DUPLICATED_INDEX_PREFIX
-              ? t("applog:create.ingestSetting.duplicatedWithPrefix")
+            (errorCode === ErrorCode.OVERLAP_WITH_INACTIVE_INDEX_PREFIX
+              ? t("applog:create.ingestSetting.overlapWithInvalidPrefix")
               : t("applog:create.ingestSetting.overlapWithPrefix")) +
             `(${message})`,
         }).then((result) => {
@@ -1008,7 +1070,7 @@ const AppLogCreateEks: React.FC = () => {
       }
       if (
         errorCode === ErrorCode.DUPLICATED_WITH_INACTIVE_INDEX_PREFIX ||
-        errorCode === ErrorCode.OVERLAP_WITH_INACTIVE_INDEX_PREFIX
+        errorCode === ErrorCode.DUPLICATED_INDEX_PREFIX
       ) {
         Swal.fire({
           icon: "error",
@@ -1020,10 +1082,9 @@ const AppLogCreateEks: React.FC = () => {
           denyButtonText: t("button.forceCreate") || "",
           cancelButtonText: t("button.changeIndex") || "",
           text:
-            (errorCode === ErrorCode.DUPLICATED_WITH_INACTIVE_INDEX_PREFIX
+            errorCode === ErrorCode.DUPLICATED_WITH_INACTIVE_INDEX_PREFIX
               ? t("applog:create.ingestSetting.duplicatedWithInvalidPrefix")
-              : t("applog:create.ingestSetting.overlapWithInvalidPrefix")) +
-            `(${message})`,
+              : t("applog:create.ingestSetting.duplicatedWithPrefix"),
         }).then((result) => {
           if (result.isDismissed) {
             setCurrentStep(2);
@@ -1041,7 +1102,9 @@ const AppLogCreateEks: React.FC = () => {
     return (
       domainListIsLoading ||
       (currentStep === 3 &&
-        domainCheckStatus?.status !== DomainStatusCheckType.PASSED)
+        !isLightEngine &&
+        domainCheckStatus?.status !== DomainStatusCheckType.PASSED) ||
+      osiParams.serviceAvailableCheckedLoading
     );
   };
 

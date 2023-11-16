@@ -19,8 +19,8 @@ import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { AppSyncAuthType } from "types";
 import { AMPLIFY_CONFIG_JSON } from "assets/js/const";
-import { SignedInAppProps } from "App";
 import { RootState } from "reducer/reducers";
+import { SignedInAppProps } from "router/SignedInApp";
 
 const LHeader: React.FC<SignedInAppProps> = (props: SignedInAppProps) => {
   const { t } = useTranslation();
@@ -45,6 +45,7 @@ const LHeader: React.FC<SignedInAppProps> = (props: SignedInAppProps) => {
           {amplifyConfig.aws_appsync_authenticationType ===
             AppSyncAuthType.OPEN_ID && (
             <span
+              data-testid="signout"
               className="cp sign-out"
               onClick={() => {
                 oidcSignOUt();

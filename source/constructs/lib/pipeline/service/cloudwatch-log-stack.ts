@@ -13,14 +13,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
 import { Construct } from "constructs";
 import { SolutionStack } from "../common/solution-stack";
 import { SecurityGroup, Vpc } from "aws-cdk-lib/aws-ec2";
-import {
-  OpenSearchInitStack,
-  OpenSearchInitProps,
-} from "../common/opensearch-init-stack";
 import { KDSStack, KDSStackProps } from "../../kinesis/kds-stack";
 import {
   Aws,
@@ -296,15 +291,32 @@ export class CloudWatchLogStack extends SolutionStack {
       backupBucketName.logicalId
     );
 
-    const pipelineProps: KDSStackProps = {
+    const osProps = {
       ...baseProps,
+      domainName: domainName.valueAsString,
+      createDashboard: createDashboard.valueAsString,
+      shardNumbers: shardNumbers.valueAsString,
+      replicaNumbers: replicaNumbers.valueAsString,
+      warmAge: warmAge.valueAsString,
+      coldAge: coldAge.valueAsString,
+      retainAge: retainAge.valueAsString,
+      rolloverSize: rolloverSize.valueAsString,
+      indexSuffix: indexSuffix.valueAsString,
+      codec: codec.valueAsString,
+      refreshInterval: refreshInterval.valueAsString,
+      logType: logType.valueAsString,
+      solutionId: solutionId,
+    };
+
+    const pipelineProps: KDSStackProps = {
+      ...osProps,
       backupBucketName: backupBucketName.valueAsString,
       shardCount: shardCount.valueAsNumber,
       maxCapacity: maxCapacity.valueAsNumber,
       minCapacity: minCapacity.valueAsNumber,
       enableAutoScaling: props.enableAutoScaling!,
+      subCategory: "CWL",
       env: {
-        LOG_TYPE: logType.valueAsString,
         LOG_FORMAT: logFormat.valueAsString,
       },
       logType: logType.valueAsString,
@@ -313,7 +325,6 @@ export class CloudWatchLogStack extends SolutionStack {
 
     const kdsBufferStack = new KDSStack(this, "KDSBuffer", pipelineProps);
 
-    const logProcessorRoleArn = kdsBufferStack.logProcessorRoleArn;
     const logProcessorLogGroupName = kdsBufferStack.logProcessorLogGroupName
 
     const bufferAccessPolicy = new iam.Policy(this, "BufferAccessPolicy", {
@@ -348,36 +359,6 @@ export class CloudWatchLogStack extends SolutionStack {
 
     this.cfnOutput("BufferAccessRoleArn", bufferAccessRole.roleArn);
     this.cfnOutput("BufferAccessRoleName", bufferAccessRole.roleName);
-
-    const osProps: OpenSearchInitProps = {
-      ...baseProps,
-      domainName: domainName.valueAsString,
-      createDashboard: createDashboard.valueAsString,
-      logProcessorRoleArn:
-        logProcessorRoleArn == ""
-          ? bufferAccessRole.roleArn
-          : logProcessorRoleArn,
-      shardNumbers: shardNumbers.valueAsString,
-      replicaNumbers: replicaNumbers.valueAsString,
-      warmAge: warmAge.valueAsString,
-      coldAge: coldAge.valueAsString,
-      retainAge: retainAge.valueAsString,
-      rolloverSize: rolloverSize.valueAsString,
-      indexSuffix: indexSuffix.valueAsString,
-      codec: codec.valueAsString,
-      refreshInterval: refreshInterval.valueAsString,
-      logType: logType.valueAsString,
-      solutionId: solutionId,
-    };
-
-    const osInitStack = new OpenSearchInitStack(
-      this,
-      "OpenSearchInit",
-      osProps
-    );
-
-    this.cfnOutput("OSInitHelperFn", osInitStack.helperFn.functionArn);
-    this.cfnOutput("HelperLogGroupName", osInitStack.helperFn.logGroup.logGroupName);
 
     this.addToParamGroups(
       "Source Information",
@@ -513,7 +494,7 @@ export class CloudWatchLogStack extends SolutionStack {
     // Lambda to create CloudWatch Log Group Subscription Filter
     const cwSubFilterFn = new lambda.Function(this, "cwSubFilterFn", {
       description: `${Aws.STACK_NAME} - Create CloudWatch Log Group Subscription Filter`,
-      runtime: lambda.Runtime.PYTHON_3_9,
+      runtime: lambda.Runtime.PYTHON_3_11,
       handler: "cw_subscription_filter.lambda_handler",
       code: lambda.Code.fromAsset(
         path.join(__dirname, "../../../lambda/pipeline/common/custom-resource/")

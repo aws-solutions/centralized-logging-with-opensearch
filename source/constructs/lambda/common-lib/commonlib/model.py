@@ -27,6 +27,11 @@ class CommonEnum(str, Enum):
         return self.value
 
 
+class AgentTypeEnum(CommonEnum):
+    FLUENT_BIT = "fluent-bit"
+    NONE = None
+
+
 class LogTypeEnum(CommonEnum):
     JSON = "JSON"
     REGEX = "Regex"
@@ -96,6 +101,15 @@ class DomainStatusCheckItem(CommonEnum):
     DOMAIN_NETWORK_TYPE = "OpenSearchDomainNetworkType"
 
 
+class GrafanaStatusCheckItem(CommonEnum):
+    URL_CONNECTIVITY = "GrafanaURLConnectivity"
+    TOKEN_VALIDITY = "GrafanaTokenValidity"
+    HAS_INSTALLED_ATHENA_PLUGIN = "GrafanaHasInstalledAthenaPlugin"
+    DATA_SOURCE_PERMISSION = "GrafanaDataSourcePermission"
+    FOLDER_PERMISSION = "GrafanaFolderPermission"
+    DASHBOARDS_PERMISSION = "GrafanaDashboardsPermission"
+
+
 class ResourceStatus(CommonEnum):
     CREATED = "CREATED"
     UPDATED = "UPDATED"
@@ -161,6 +175,16 @@ class IndexSuffix(CommonEnum):
     yyyy = "yyyy"
 
 
+class EngineType(CommonEnum):
+    OPEN_SEARCH = "OpenSearch"
+    LIGHT_ENGINE = "LightEngine"
+
+
+class NotificationService(CommonEnum):
+    SNS = "SNS"
+    SES = "SES"
+    
+    
 class Tag(BaseModel):
     key: str
     value: str
@@ -169,6 +193,11 @@ class Tag(BaseModel):
 class BufferParam(BaseModel):
     paramKey: str
     paramValue: str
+
+
+class Parameter(BaseModel):
+    parameterKey: str
+    parameterValue: str
 
 
 class CommonModel(BaseModel):
@@ -212,6 +241,24 @@ class AOSParams(BaseModel):
     failedLogBucket: str
 
 
+class LightEngineParams(BaseModel):
+    stagingBucketPrefix: str
+    centralizedBucketName: str
+    centralizedBucketPrefix: str
+    centralizedTableName: str
+    centralizedMetricsTableName: Optional[str] = ""
+    logProcessorSchedule: str
+    logMergerSchedule: str
+    logArchiveSchedule: str
+    logMergerAge: str
+    logArchiveAge: str
+    importDashboards: str
+    grafanaId: Optional[str] = ""
+    recipients: str = ""
+    enrichmentPlugins: Optional[str] = ""
+    notificationService: Optional[NotificationService] = NotificationService.SNS
+
+
 class MonitorDetail(BaseModel):
     status: PipelineMonitorStatus
     backupBucketName: str = ""
@@ -221,6 +268,9 @@ class MonitorDetail(BaseModel):
     snsTopicArn: str = ""
     emails: str = ""
 
+class OpenSearchIngestionInput(BaseModel):
+    minCapacity: Optional[int]
+    maxCapacity: Optional[int]
 
 class AppPipeline(CommonModel):
     pipelineId: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -231,7 +281,8 @@ class AppPipeline(CommonModel):
     bufferResourceArn: str = ""
     bufferResourceName: str = ""
     bufferParams: List[BufferParam] = []
-    aosParams: AOSParams
+    aosParams: Optional[AOSParams] = None
+    lightEngineParams: Optional[LightEngineParams] = None
     logConfigId: str
     logConfigVersionNumber: int
     stackId: str = ""
@@ -240,9 +291,12 @@ class AppPipeline(CommonModel):
     logProcessorRoleArn: str = ""
     error: str = ""
     monitor: MonitorDetail
+    osiParams: Optional[OpenSearchIngestionInput] = None
     processorLogGroupName: str = ""
     helperLogGroupName: str = ""
     logEventQueueName: str = ""
+    osiPipelineName: Optional[str] = None
+    engineType: EngineType = EngineType.OPEN_SEARCH
 
 
 class RegularSpec(BaseModel):
@@ -282,6 +336,7 @@ class LogConfig(CommonModel):
     multilineLogParser: Optional[MultiLineLogParserEnum] = None
     filterConfigMap: FilterConfigMap = FilterConfigMap(enabled=False, filters=[])
     regex: str = ""
+    jsonSchema: Optional[dict] = None
     regexFieldSpecs: List[RegularSpec]
     timeKey: str = ""
     timeOffset: str = ""
@@ -488,3 +543,64 @@ class Instance(CommonModel):
     accountId: str = ""
     region: str = ""
     ingestionIds: List[str] = []
+
+
+class InstanceIngestionDetail(CommonModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    instanceId: str
+    sourceId: str
+    accountId: str = ""
+    region: str = ""
+    ingestionId: str = ""
+    ssmCommandId: str = ""
+    ssmCommandStatus: str = ""
+    details: str = ""
+
+
+
+class SvcPipeline(CommonModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    bufferResourceArn: str = ""
+    bufferResourceName: str = ""
+    deliveryStreamArn: str = ""
+    deliveryStreamName: str = ""
+    destinationType: BufferTypeEnum = BufferTypeEnum.NONE
+    engineType: EngineType = EngineType.OPEN_SEARCH
+    error: str = ""
+    helperLogGroupName: str = ""
+    logEventQueueArn: str = ""
+    logEventQueueName: str = ""
+    logSourceAccountId: str = ""
+    logSourceRegion: str = ""
+    monitor: MonitorDetail
+    parameters: List[Parameter] = []
+    processorLogGroupName: str = ""
+    lightEngineParams: Optional[LightEngineParams] = None
+    source: str = ""
+    stackId: str = ""
+    stackName: str = ""
+    target: str = ""
+    type: str = ""
+
+
+class ExecutionStatus(CommonEnum):
+    RUNNING = "Running"
+    SUCCEEDED = "Succeeded"
+    FAILED = "Failed"
+    TIMED_OUT = "Timed_out"
+    ABORTED = "Aborted"
+
+class ETLLog(CommonModel):
+    executionName: str
+    taskId: str
+    API: str
+    data: Optional[str] = None
+    startTime: str
+    endTime: Optional[str] = None
+    functionName: Optional[str] = None
+    parentTaskId: str
+    pipelineId: str
+    pipelineIndexKey: str
+    stateMachineName: str
+    stateName: str
+    status: ExecutionStatus

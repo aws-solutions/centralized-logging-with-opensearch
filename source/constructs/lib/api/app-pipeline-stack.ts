@@ -17,7 +17,10 @@ import * as path from 'path';
 import * as appsync from '@aws-cdk/aws-appsync-alpha';
 import {
   Aws,
+  Fn,
+  CfnCondition,
   Duration,
+  SymlinkFollowMode,
   aws_dynamodb as ddb,
   aws_iam as iam,
   aws_lambda as lambda,
@@ -26,6 +29,7 @@ import { Construct } from 'constructs';
 
 import { AppPipelineFlowStack } from './app-pipeline-flow';
 import { SharedPythonLayer } from '../layer/layer';
+import { MicroBatchStack } from '../microbatch/main/services/amazon-services-stack';
 
 export interface AppPipelineStackProps {
   /**
@@ -42,6 +46,8 @@ export interface AppPipelineStackProps {
    */
   readonly graphqlApi: appsync.GraphqlApi;
 
+  readonly microBatchStack: MicroBatchStack;
+
   readonly centralAssumeRolePolicy: iam.ManagedPolicy;
 
   readonly solutionId: string;
@@ -50,6 +56,7 @@ export interface AppPipelineStackProps {
   readonly logConfigTable: ddb.Table;
   readonly appPipelineTable: ddb.Table;
   readonly appLogIngestionTable: ddb.Table;
+  readonly grafanaTable: ddb.Table;
 }
 export class AppPipelineStack extends Construct {
   constructor(scope: Construct, id: string, props: AppPipelineStackProps) {
@@ -62,14 +69,16 @@ export class AppPipelineStack extends Construct {
       ingestionTableArn: props.appLogIngestionTable.tableArn,
       ingestionTableName: props.appLogIngestionTable.tableName,
       cfnFlowSMArn: props.cfnFlowSMArn,
+      microBatchStack: props.microBatchStack,
     });
 
     // Create a lambda to handle all appPipeline related APIs.
     const appPipelineHandler = new lambda.Function(this, 'AppPipelineHandler', {
       code: lambda.AssetCode.fromAsset(
-        path.join(__dirname, '../../lambda/api/app_pipeline/')
+        path.join(__dirname, '../../lambda/api/app_pipeline/'),
+        { followSymlinks: SymlinkFollowMode.ALWAYS },
       ),
-      runtime: lambda.Runtime.PYTHON_3_9,
+      runtime: lambda.Runtime.PYTHON_3_11,
       handler: 'lambda_function.lambda_handler',
       timeout: Duration.seconds(60),
       memorySize: 1024,
@@ -82,15 +91,23 @@ export class AppPipelineStack extends Construct {
         SOLUTION_VERSION: process.env.VERSION || 'v1.0.0',
         SOLUTION_ID: props.solutionId,
         STACK_PREFIX: props.stackPrefix,
+        GRAFANA_TABLE: props.grafanaTable.tableName,
+        METADATA_TABLE: props.microBatchStack.microBatchDDBStack.MetaTable.tableName,
+        ETLLOG_TABLE: props.microBatchStack.microBatchDDBStack.ETLLogTable.tableName,
+        ACCOUNT_ID: Aws.ACCOUNT_ID,
+        REGION: Aws.REGION,
+        PARTITION: Aws.PARTITION,
       },
       description: `${Aws.STACK_NAME} - AppPipeline APIs Resolver`,
     });
     props.centralAssumeRolePolicy.attachToRole(appPipelineHandler.role!);
-
+    props.grafanaTable.grantReadData(appPipelineHandler);
     // Grant permissions to the appPipeline lambda
     props.appPipelineTable.grantReadWriteData(appPipelineHandler);
     props.appLogIngestionTable.grantReadWriteData(appPipelineHandler);
     props.logConfigTable.grantReadData(appPipelineHandler);
+    props.microBatchStack.microBatchDDBStack.ETLLogTable.grantReadData(appPipelineHandler);
+
     appPipelineHandler.addToRolePolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
@@ -123,7 +140,76 @@ export class AppPipelineStack extends Construct {
           'iam:CreateRole',
           'iam:DeleteRole',
           'iam:ListRolePolicies',
+          'iam:ListAttachedRolePolicies',
+          'iam:DetachRolePolicy',
           'iam:DeleteRolePolicy',
+          'iam:PutRolePolicy',
+        ],
+      })
+    );
+
+    appPipelineHandler.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        resources: [`arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/aws-service-role/osis.amazonaws.com/AWSServiceRoleForAmazonOpenSearchIngestionService`],
+        actions: [
+          'iam:GetRole',
+        ],
+      })
+    );
+
+    appPipelineHandler.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        resources: [props.microBatchStack.microBatchDDBStack.MetaTable.tableArn],
+        actions: [
+          "dynamodb:GetItem",
+          "dynamodb:UpdateItem",
+        ],
+      })
+    );
+
+    appPipelineHandler.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        resources: [props.microBatchStack.microBatchKMSStack.encryptionKey.keyArn],
+        actions: [
+          "kms:GenerateDataKey*",
+          "kms:Decrypt",
+          "kms:Encrypt"
+        ],
+      })
+    );
+
+    appPipelineHandler.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        resources: [
+          props.microBatchStack.microBatchGlueStack.microBatchCentralizedDatabase.databaseArn,
+          `arn:${Aws.PARTITION}:glue:${Aws.REGION}:${Aws.ACCOUNT_ID}:table/${props.microBatchStack.microBatchGlueStack.microBatchCentralizedDatabase.databaseName}/*`,
+          `arn:${Aws.PARTITION}:glue:${Aws.REGION}:${Aws.ACCOUNT_ID}:catalog`,
+        ],
+        actions: [
+          "glue:GetTable"
+        ],
+      })
+    );
+
+    const isCNRegion = new CfnCondition(this, 'isCNRegion', {
+      expression: Fn.conditionEquals(Aws.PARTITION, 'aws-cn'),
+    });
+
+    appPipelineHandler.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        resources: [
+          Fn.conditionIf(isCNRegion.logicalId,
+            `arn:${Aws.PARTITION}:events:${Aws.REGION}:${Aws.ACCOUNT_ID}:rule/*`,
+            `arn:${Aws.PARTITION}:scheduler:${Aws.REGION}:${Aws.ACCOUNT_ID}:schedule/*`
+          ).toString()
+        ],
+        actions: [
+          Fn.conditionIf(isCNRegion.logicalId, "events:DescribeRule", "scheduler:GetSchedule").toString()
         ],
       })
     );
@@ -162,6 +248,13 @@ export class AppPipelineStack extends Construct {
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
+    appPipeLambdaDS.createResolver('createLightEngineAppPipeline', {
+      typeName: 'Mutation',
+      fieldName: 'createLightEngineAppPipeline',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
     appPipeLambdaDS.createResolver('deleteAppPipeline', {
       typeName: 'Mutation',
       fieldName: 'deleteAppPipeline',
@@ -180,5 +273,37 @@ export class AppPipelineStack extends Construct {
         )
       ),
     });
+
+    appPipeLambdaDS.createResolver('getLightEngineAppPipelineDetail', {
+      typeName: 'Query',
+      fieldName: 'getLightEngineAppPipelineDetail',
+      requestMappingTemplate: appsync.MappingTemplate.fromFile(
+        path.join(
+          __dirname,
+          '../../graphql/vtl/app_log_pipeline/GetLightEngineAppPipelineDetail.vtl'
+        )
+      ),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    appPipeLambdaDS.createResolver('getLightEngineAppPipelineExecutionLogs', {
+      typeName: 'Query',
+      fieldName: 'getLightEngineAppPipelineExecutionLogs',
+      requestMappingTemplate: appsync.MappingTemplate.fromFile(
+        path.join(
+          __dirname,
+          '../../graphql/vtl/app_log_pipeline/GetLightEngineAppPipelineExecutionLogs.vtl'
+        )
+      ),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    appPipeLambdaDS.createResolver('checkOSIAvailability', {
+      typeName: 'Query',
+      fieldName: 'checkOSIAvailability',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
   }
 }

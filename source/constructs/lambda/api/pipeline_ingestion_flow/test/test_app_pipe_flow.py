@@ -139,8 +139,6 @@ def test_lambda_function_create_event(
     item = response["Item"]
 
     assert "bufferResourceArn" in item
-    assert "bufferAccessRoleArn" in item
-    assert "osHelperFnArn" in item
     assert "stackId" in item
 
     assert item["status"] == "ACTIVE"

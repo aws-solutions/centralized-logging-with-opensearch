@@ -61,7 +61,7 @@ const Alert: React.FC<AlertProps> = (props: AlertProps) => {
         <div className="icon">
           {type === AlertType.Warning && (
             <ReportProblemOutlinedIcon
-              className="error-text"
+              className="warning-text"
               fontSize="medium"
             />
           )}

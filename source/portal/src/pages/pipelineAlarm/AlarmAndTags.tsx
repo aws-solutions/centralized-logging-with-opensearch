@@ -30,8 +30,10 @@ import { useTranslation } from "react-i18next";
 import { ApplicationLogType } from "types";
 import { CreateTags } from "pages/dataInjection/common/CreateTags";
 import CreateAlarms from "./alarm/CreateAlarms";
+import { AnalyticEngineTypes } from "pages/dataInjection/serviceLog/create/common/SpecifyAnalyticsEngine";
+import { LogProcessorType, SelectProcessorType } from "reducer/selectProcessor";
 
-export type ParticalServiceType =
+export type PartialServiceType =
   | S3TaskProps
   | CloudFrontTaskProps
   | CloudTrailTaskProps
@@ -43,27 +45,36 @@ export type ParticalServiceType =
   | ConfigTaskProps;
 
 interface AlarmAndTagsProps {
-  pipelineTask?: ParticalServiceType;
+  pipelineTask?: PartialServiceType;
   applicationPipeline?: ApplicationLogType;
+  engineType?: AnalyticEngineTypes;
+  osiParams?: SelectProcessorType;
 }
 
 const AlarmAndTags: React.FC<AlarmAndTagsProps> = (
   props: AlarmAndTagsProps
 ) => {
-  const { pipelineTask, applicationPipeline } = props;
+  const { pipelineTask, osiParams, applicationPipeline, engineType } = props;
   const { t } = useTranslation();
   return (
     <PagePanel title={t("servicelog:create.step.createTags")}>
       <>
         {pipelineTask && (
           <>
-            <CreateAlarms type={PipelineType.SERVICE} />
+            {osiParams?.logProcessorType !== LogProcessorType.OSI && (
+              <CreateAlarms
+                type={PipelineType.SERVICE}
+                engineType={engineType}
+              />
+            )}
             <CreateTags />
           </>
         )}
         {applicationPipeline && (
           <>
-            <CreateAlarms type={PipelineType.APP} />
+            {osiParams?.logProcessorType !== LogProcessorType.OSI && (
+              <CreateAlarms type={PipelineType.APP} engineType={engineType} />
+            )}
             <CreateTags />
           </>
         )}

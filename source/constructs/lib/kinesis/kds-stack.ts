@@ -77,6 +77,20 @@ export interface KDSStackProps {
   readonly indexPrefix: string;
 
   /**
+ * OpenSearch Domain Name
+ *
+ * @default - None.
+ */
+  readonly domainName: string;
+
+  /**
+ * Wheather to create Sample Dashboard
+ *
+ * @default - Yes.
+ */
+  readonly createDashboard?: string;
+
+  /**
    * S3 bucket name for failed logs
    */
   readonly backupBucketName: string;
@@ -95,6 +109,29 @@ export interface KDSStackProps {
   readonly env?: { [key: string]: string };
 
   readonly logType: string;
+
+  /**
+   * A list of plugins
+   *
+   * @default - None.
+   */
+  readonly plugins?: string;
+
+  readonly warmAge?: string;
+  readonly coldAge?: string;
+  readonly retainAge?: string;
+  readonly rolloverSize?: string;
+  readonly indexSuffix?: string;
+  readonly refreshInterval?: string;
+  readonly codec?: string;
+  readonly shardNumbers?: string;
+  readonly replicaNumbers?: string;
+  readonly solutionId: string;
+  readonly subCategory: 'RT' | 'S3' | 'FLB' | 'CWL'
+  readonly indexTemplateGzipBase64?: string,
+  /**
+   * A gzip base64 encoded string of OpenSearch index template.
+   */
 }
 
 export class KDSStack extends Construct {
@@ -103,17 +140,18 @@ export class KDSStack extends Construct {
   // readonly kdsRoleName: string;
   // readonly kdsRoleArn: string;
 
-  readonly logProcessorRoleArn: string;
+  // readonly logProcessorRoleArn: string;
   readonly logProcessorLogGroupName: string;
-
+  public logProcessorFn: lambda.Function;
+  public logProcessorRoleArn: string;
   constructor(scope: Construct, id: string, props: KDSStackProps) {
     super(scope, id);
 
-    const streamName = new CfnParameter(this, 'StreamName', {
+    const streamName = new CfnParameter(this, 'streamName', {
       type: 'String',
       default: '',
     });
-    streamName.overrideLogicalId('StreamName');
+    streamName.overrideLogicalId('streamName');
 
     const hasStreamName = new CfnCondition(this, 'hasStreamName', {
       expression: Fn.conditionNot(
@@ -136,16 +174,32 @@ export class KDSStack extends Construct {
     this.kinesisStreamName = kinesisStream.streamName;
 
     const logProcessor = new AppLogProcessor(this, 'LogProcessor', {
-      source: 'KDS',
-      indexPrefix: props.indexPrefix,
       vpc: props.vpc,
       securityGroup: props.securityGroup,
       endpoint: props.endpoint,
+      indexPrefix: props.indexPrefix,
       engineType: props.engineType,
+      domainName: props.domainName,
+      createDashboard: props.createDashboard,
       backupBucketName: props.backupBucketName,
+      source: "KDS",
+      subCategory: props.subCategory,
+      shardNumbers: props.shardNumbers,
+      replicaNumbers: props.replicaNumbers,
+      warmAge: props.warmAge,
+      coldAge: props.coldAge,
+      retainAge: props.retainAge,
+      rolloverSize: props.rolloverSize,
+      indexSuffix: props.indexSuffix,
+      codec: props.codec,
+      refreshInterval: props.refreshInterval,
+      solutionId: props.solutionId,
+      logType: props.logType,
       env: props.env,
       stackPrefix: props.stackPrefix,
-      logType: props.logType,
+      enableConfigJsonParam: false,
+      indexTemplateGzipBase64: props.indexTemplateGzipBase64,
+
     });
     NagSuppressions.addResourceSuppressions(logProcessor, [
       {
@@ -153,11 +207,11 @@ export class KDSStack extends Construct {
         reason: 'Code of CDK custom resource, can not be modified',
       },
     ]);
-
+    // this.logProcessorFn = logProcessor.logProcessorFn
     logProcessor.logProcessorFn.addEventSource(
       new KinesisEventSource(kinesisStream, {
         batchSize: 10000, // default
-        maxBatchingWindow: Duration.seconds(3),
+        maxBatchingWindow: Duration.seconds(10),
         startingPosition: lambda.StartingPosition.TRIM_HORIZON,
       })
     );
@@ -218,7 +272,7 @@ export class KDSStack extends Construct {
       const scaler = new lambda.Function(this, 'LambdaScaler', {
         code: lambda.Code.fromAsset(path.join(__dirname, 'lambda')),
         handler: 'index.lambda_handler',
-        runtime: lambda.Runtime.PYTHON_3_9,
+        runtime: lambda.Runtime.PYTHON_3_11,
         functionName: scalerFnName,
         environment: {
           CloudWatchAlarmNameIn: cwAlarmInName,

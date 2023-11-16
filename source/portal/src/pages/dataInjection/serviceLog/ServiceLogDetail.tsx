@@ -13,18 +13,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import Breadcrumb from "components/Breadcrumb";
 import LoadingText from "components/LoadingText";
-import HeaderPanel from "components/HeaderPanel";
-import ValueWithLabel from "components/ValueWithLabel";
 import ExtLink from "components/ExtLink";
 import { AntTabs, AntTab, TabPanel } from "components/Tab";
-import Overview from "./detail/Overview";
-import Lifecycle from "./detail/Lifecycle";
-import { appSyncRequestQuery } from "assets/js/request";
-import { getServicePipeline } from "graphql/queries";
+import { ApiResponse, appSyncRequestQuery } from "assets/js/request";
+import {
+  getLightEngineServicePipelineDetail,
+  getServicePipeline,
+} from "graphql/queries";
 import {
   DestinationType,
   Parameter,
@@ -34,38 +33,68 @@ import {
   PipelineStatus,
   PipelineAlarmStatus,
   PipelineMonitorStatus,
+  AnalyticEngineType,
+  LightEnginePipelineDetailResponse,
+  AnalyticsEngine as AnalyticsEngineType,
+  Schedule,
+  PipelineType,
 } from "API";
 import {
-  buildCloudFrontLink,
-  buildConfigLink,
-  buildELBLink,
+  buildCfnLink,
   buildESLink,
-  buildLambdaLink,
-  buildRDSLink,
-  buildS3Link,
-  buildTrailLink,
-  buildVPCLink,
-  buildWAFLink,
+  buildGlueTableLink,
+  buildOSIPipelineNameByPipelineId,
+  defaultStr,
   formatLocalTime,
+  isOSIPipeline,
+  ternary,
 } from "assets/js/utils";
-import { AmplifyConfigType, CWLSourceType } from "types";
+import { AmplifyConfigType } from "types";
 import { useSelector } from "react-redux";
-import { ServiceTypeMap, ServiceTypeMapMidSuffix } from "assets/js/const";
+import { ServiceTypeMapMidSuffix } from "assets/js/const";
 import HelpPanel from "components/HelpPanel";
 import SideMenu from "components/SideMenu";
 import { useTranslation } from "react-i18next";
-import AccountName from "pages/comps/account/AccountName";
 import Monitoring from "./detail/Monitoring";
 import Logging from "./detail/Logging";
 import Alarm from "./detail/Alarm";
 import { RootState } from "reducer/reducers";
 import Tags from "../common/Tags";
+import HeaderWithValueLabel, {
+  LabelValueDataItem,
+} from "pages/comps/HeaderWithValueLabel";
+import LogSource from "./detail/LogSource";
+import AnalyticsEngine from "./detail/AnalyticsEngine";
+import LogProcessor from "./detail/LogProcessor";
+import Status from "components/Status/Status";
+import { LightEngineAnalyticsEngineDetails } from "../common/LightEngineAnalyticsEngineDetails";
+import { LightEngineLogProcessor } from "../common/LightEngineLogProcessor";
+import { LightEngineLoggingList } from "../common/LightEngineLoggingList";
+
+export const getParamValueByKey = (
+  dataList: (Parameter | null)[] | null | undefined,
+  key: string
+) => {
+  if (dataList) {
+    return (
+      dataList.find((element) => element?.parameterKey === key)
+        ?.parameterValue || ""
+    );
+  }
+  return "-";
+};
+
+export interface SvcDetailProps {
+  pipelineInfo: ServiceLogDetailProps | undefined;
+  amplifyConfig?: AmplifyConfigType;
+}
 
 export interface ServiceLogDetailProps {
   id: string;
   type: string;
   status: PipelineStatus;
   // bucketName: string;
+  engineType?: AnalyticEngineType;
   source: string;
   esName: string;
   esIndex: string;
@@ -99,6 +128,7 @@ export interface ServiceLogDetailProps {
   helperLambda?: string | null;
   failedS3Bucket: string;
   webACLScope: string;
+  stackId: string;
   monitor: {
     status?: PipelineMonitorStatus | null;
     backupBucketName?: string | null;
@@ -108,6 +138,11 @@ export interface ServiceLogDetailProps {
     snsTopicArn?: string | null;
     emails?: string | null;
   };
+  osiParams: {
+    minCapacity?: number | string | null;
+    maxCapacity?: number | string | null;
+  };
+  osiPipelineName?: string | null;
 }
 
 const ServiceLogDetail: React.FC = () => {
@@ -131,150 +166,27 @@ const ServiceLogDetail: React.FC = () => {
   const [curPipeline, setCurPipeline] = useState<
     ServiceLogDetailProps | undefined
   >();
+  const [svcPipeline, setSvcPipeline] = useState<ServicePipeline | undefined>();
   const [activeTab, setActiveTab] = useState(0);
+  const [analyticsEngine, setAnalyticsEngine] = useState<
+    AnalyticsEngineType | undefined
+  >();
+  const [schedules, setSchedules] = useState<Schedule[] | undefined>();
+  console.log(analyticsEngine, schedules);
 
   const changeTab = (event: any, newTab: number) => {
-    console.info("newTab:", newTab);
     setActiveTab(newTab);
   };
 
-  const getParamValueByKey = (
-    dataList: (Parameter | null)[] | null | undefined,
-    key: string
-  ) => {
-    if (dataList) {
-      return (
-        dataList.find((element) => element?.parameterKey === key)
-          ?.parameterValue || ""
-      );
-    }
-    return "-";
-  };
-
-  const renderCloudTrailType = () => {
+  const isS3BucketLogs = (pipelineData: ServicePipeline) => {
     return (
-      <ValueWithLabel label={t("servicelog:detail.logType")}>
-        {curPipeline?.destinationType === DestinationType.CloudWatch
-          ? CWLSourceType.CWL
-          : CWLSourceType.S3}
-      </ValueWithLabel>
-    );
-  };
-
-  const renderLambdaFunction = () => {
-    return (
-      <ValueWithLabel label={t("servicelog:detail.functionName")}>
-        <ExtLink
-          to={buildLambdaLink(
-            amplifyConfig.aws_project_region,
-            curPipeline?.source || ""
-          )}
-        >
-          {curPipeline?.source}
-        </ExtLink>
-      </ValueWithLabel>
-    );
-  };
-
-  const renderS3Bucket = () => {
-    return (
-      <ValueWithLabel label={t("servicelog:detail.bucketName")}>
-        <ExtLink
-          to={buildS3Link(
-            amplifyConfig.aws_project_region,
-            curPipeline?.source || ""
-          )}
-        >
-          {curPipeline?.source}
-        </ExtLink>
-      </ValueWithLabel>
-    );
-  };
-
-  const renderELBName = () => {
-    return (
-      <ValueWithLabel label={t("servicelog:detail.albName")}>
-        <ExtLink to={buildELBLink(amplifyConfig.aws_project_region)}>
-          {curPipeline?.source}
-        </ExtLink>
-      </ValueWithLabel>
-    );
-  };
-
-  const renderWafName = () => {
-    return (
-      <ValueWithLabel label={t("servicelog:detail.wafName")}>
-        <ExtLink
-          to={buildWAFLink(
-            amplifyConfig.aws_project_region,
-            curPipeline?.webACLScope
-          )}
-        >
-          {curPipeline?.source}
-        </ExtLink>
-      </ValueWithLabel>
-    );
-  };
-
-  const renderVPCName = () => {
-    return (
-      <ValueWithLabel label={t("servicelog:detail.vpcId")}>
-        <ExtLink
-          to={buildVPCLink(
-            amplifyConfig.aws_project_region,
-            curPipeline?.source ?? ""
-          )}
-        >
-          {curPipeline?.source}
-        </ExtLink>
-      </ValueWithLabel>
-    );
-  };
-
-  const renderCloudTrail = () => {
-    return (
-      <ValueWithLabel label={t("servicelog:detail.trailName")}>
-        <ExtLink to={buildTrailLink(amplifyConfig.aws_project_region)}>
-          {curPipeline?.source}
-        </ExtLink>
-      </ValueWithLabel>
-    );
-  };
-
-  const renderConfig = () => {
-    return (
-      <ValueWithLabel label={t("servicelog:detail.config")}>
-        <ExtLink to={buildConfigLink(amplifyConfig.aws_project_region)}>
-          {curPipeline?.source}
-        </ExtLink>
-      </ValueWithLabel>
-    );
-  };
-
-  const renderRDS = () => {
-    return (
-      <ValueWithLabel label={t("servicelog:detail.dbID")}>
-        <ExtLink to={buildRDSLink(amplifyConfig.aws_project_region)}>
-          {curPipeline?.source}
-        </ExtLink>
-      </ValueWithLabel>
-    );
-  };
-
-  const renderCloudFront = () => {
-    return (
-      <>
-        <ValueWithLabel label={t("servicelog:detail.logType")}>
-          {curPipeline?.destinationType === DestinationType.KDS
-            ? t("servicelog:cloudfront.realtimeLogs")
-            : t("servicelog:cloudfront.standardLogs")}
-        </ValueWithLabel>
-        {curPipeline?.destinationType === DestinationType.KDS && (
-          <ValueWithLabel label={t("servicelog:detail.samplingRate")}>
-            {curPipeline?.samplingRate ? curPipeline?.samplingRate + "%" : "-"}
-          </ValueWithLabel>
-        )}
-      </>
+      pipelineData.type === ServiceType.S3 ||
+      pipelineData.type === ServiceType.CloudTrail ||
+      pipelineData.type === ServiceType.CloudFront ||
+      pipelineData.type === ServiceType.ELB ||
+      pipelineData.type === ServiceType.WAF ||
+      pipelineData.type === ServiceType.VPC ||
+      pipelineData.type === ServiceType.Config
     );
   };
 
@@ -284,111 +196,119 @@ const ServiceLogDetail: React.FC = () => {
       const resData: any = await appSyncRequestQuery(getServicePipeline, {
         id: id,
       });
-      const dataPipelne: ServicePipeline = resData.data.getServicePipeline;
+      const dataPipeline: ServicePipeline = resData.data.getServicePipeline;
       let tmpLogLocation = "";
-      if (
-        dataPipelne.type === ServiceType.S3 ||
-        dataPipelne.type === ServiceType.CloudTrail ||
-        dataPipelne.type === ServiceType.CloudFront ||
-        dataPipelne.type === ServiceType.ELB ||
-        dataPipelne.type === ServiceType.WAF ||
-        dataPipelne.type === ServiceType.VPC ||
-        dataPipelne.type === ServiceType.Config
-      ) {
+      if (isS3BucketLogs(dataPipeline)) {
         tmpLogLocation = `s3://${getParamValueByKey(
-          dataPipelne.parameters,
+          dataPipeline.parameters,
           "logBucketName"
-        )}/${getParamValueByKey(dataPipelne.parameters, "logBucketPrefix")}`;
+        )}/${getParamValueByKey(dataPipeline.parameters, "logBucketPrefix")}`;
       }
 
       if (
-        dataPipelne.type === ServiceType.Lambda ||
-        dataPipelne.type === ServiceType.RDS
+        dataPipeline.type === ServiceType.Lambda ||
+        dataPipeline.type === ServiceType.RDS
       ) {
         tmpLogLocation = `${getParamValueByKey(
-          dataPipelne.parameters,
+          dataPipeline.parameters,
           "logGroupNames"
         )}`;
       }
 
-      if (dataPipelne.destinationType === DestinationType.CloudWatch) {
+      if (dataPipeline.destinationType === DestinationType.CloudWatch) {
         tmpLogLocation = `${getParamValueByKey(
-          dataPipelne.parameters,
+          dataPipeline.parameters,
           "logSource"
         )}`;
       }
 
       setCurPipeline({
-        id: id || "",
-        type: dataPipelne.type,
-        status: dataPipelne.status || PipelineStatus.ERROR,
-        source: dataPipelne.source || "",
-        esName: getParamValueByKey(dataPipelne.parameters, "domainName"),
-        esIndex: getParamValueByKey(dataPipelne.parameters, "indexPrefix"),
+        id: defaultStr(id),
+        engineType: dataPipeline.engineType ?? AnalyticEngineType.OpenSearch,
+        type: dataPipeline.type,
+        status: dataPipeline.status || PipelineStatus.ERROR,
+        source: defaultStr(dataPipeline.source),
+        esName: getParamValueByKey(dataPipeline.parameters, "domainName"),
+        esIndex: getParamValueByKey(dataPipeline.parameters, "indexPrefix"),
         logLocation: tmpLogLocation,
         createSampleData: getParamValueByKey(
-          dataPipelne.parameters,
+          dataPipeline.parameters,
           "createDashboard"
         ),
-        createTime: formatLocalTime(dataPipelne?.createdAt || ""),
-        warnRetention: getParamValueByKey(dataPipelne.parameters, "daysToWarm"),
-        coldRetention: getParamValueByKey(dataPipelne.parameters, "daysToCold"),
+        createTime: formatLocalTime(dataPipeline?.createdAt || ""),
+        warnRetention: getParamValueByKey(
+          dataPipeline.parameters,
+          "daysToWarm"
+        ),
+        coldRetention: getParamValueByKey(
+          dataPipeline.parameters,
+          "daysToCold"
+        ),
         logRetention: getParamValueByKey(
-          dataPipelne.parameters,
+          dataPipeline.parameters,
           "daysToRetain"
         ),
-        warmAge: getParamValueByKey(dataPipelne.parameters, "warmAge"),
-        coldAge: getParamValueByKey(dataPipelne.parameters, "coldAge"),
-        retainAge: getParamValueByKey(dataPipelne.parameters, "retainAge"),
+        warmAge: getParamValueByKey(dataPipeline.parameters, "warmAge"),
+        coldAge: getParamValueByKey(dataPipeline.parameters, "coldAge"),
+        retainAge: getParamValueByKey(dataPipeline.parameters, "retainAge"),
         shardNumbers: getParamValueByKey(
-          dataPipelne.parameters,
+          dataPipeline.parameters,
           "shardNumbers"
         ),
         replicaNumbers: getParamValueByKey(
-          dataPipelne.parameters,
+          dataPipeline.parameters,
           "replicaNumbers"
         ),
-        logSourceAccountId: getParamValueByKey(
-          dataPipelne.parameters,
-          "logSourceAccountId"
-        ),
-        destinationType: dataPipelne.destinationType || "",
+        logSourceAccountId:
+          getParamValueByKey(dataPipeline.parameters, "logSourceAccountId") ||
+          dataPipeline.logSourceAccountId ||
+          "",
+        destinationType: dataPipeline.destinationType || "",
         samplingRate: getParamValueByKey(
-          dataPipelne.parameters,
+          dataPipeline.parameters,
           "samplingRate"
         ),
-        minCapacity: getParamValueByKey(dataPipelne.parameters, "minCapacity"),
-        maxCapacity: getParamValueByKey(dataPipelne.parameters, "maxCapacity"),
+        minCapacity: getParamValueByKey(dataPipeline.parameters, "minCapacity"),
+        maxCapacity: getParamValueByKey(dataPipeline.parameters, "maxCapacity"),
         enableAutoScaling: getParamValueByKey(
-          dataPipelne.parameters,
+          dataPipeline.parameters,
           "enableAutoScaling"
         ),
         rolloverSize: getParamValueByKey(
-          dataPipelne.parameters,
+          dataPipeline.parameters,
           "rolloverSize"
         ),
-        indexSuffix: getParamValueByKey(dataPipelne.parameters, "indexSuffix"),
-        codec: getParamValueByKey(dataPipelne.parameters, "codec"),
-        fieldNames: getParamValueByKey(dataPipelne.parameters, "fieldNames"),
-        tags: dataPipelne.tags,
+        indexSuffix: getParamValueByKey(dataPipeline.parameters, "indexSuffix"),
+        codec: getParamValueByKey(dataPipeline.parameters, "codec"),
+        fieldNames: getParamValueByKey(dataPipeline.parameters, "fieldNames"),
+        tags: dataPipeline.tags,
 
-        sourceKDS: dataPipelne.bufferResourceName,
-        sourceSQS: dataPipelne.logEventQueueName,
-        sourceKDF: dataPipelne.deliveryStreamName,
-        processorLambda: dataPipelne.processorLogGroupName,
-        helperLambda: dataPipelne.helperLogGroupName,
-        failedS3Bucket: `${dataPipelne.monitor?.backupBucketName}/${dataPipelne.monitor?.errorLogPrefix}`,
-        webACLScope: getParamValueByKey(dataPipelne.parameters, "webACLScope"),
+        sourceKDS: dataPipeline.bufferResourceName,
+        sourceSQS: dataPipeline.logEventQueueName,
+        sourceKDF: dataPipeline.deliveryStreamName,
+        processorLambda: dataPipeline.processorLogGroupName,
+        helperLambda: dataPipeline.helperLogGroupName,
+        failedS3Bucket: `${dataPipeline.monitor?.backupBucketName}/${dataPipeline.monitor?.errorLogPrefix}`,
+        webACLScope: getParamValueByKey(dataPipeline.parameters, "webACLScope"),
+        stackId: defaultStr(dataPipeline.stackId),
         monitor: {
-          status: dataPipelne?.monitor?.status,
+          status: dataPipeline?.monitor?.status,
           backupBucketName: "",
           errorLogPrefix: "",
-          pipelineAlarmStatus: dataPipelne.monitor?.pipelineAlarmStatus,
-          snsTopicName: dataPipelne.monitor?.snsTopicName || "",
-          snsTopicArn: dataPipelne.monitor?.snsTopicArn || "",
-          emails: dataPipelne.monitor?.emails || "",
+          pipelineAlarmStatus: dataPipeline.monitor?.pipelineAlarmStatus,
+          snsTopicName: defaultStr(dataPipeline.monitor?.snsTopicName),
+          snsTopicArn: defaultStr(dataPipeline.monitor?.snsTopicArn),
+          emails: defaultStr(dataPipeline.monitor?.emails),
         },
+        osiParams: {
+          minCapacity: dataPipeline.osiParams?.minCapacity,
+          maxCapacity: dataPipeline.osiParams?.maxCapacity,
+        },
+        osiPipelineName: buildOSIPipelineNameByPipelineId(
+          defaultStr(dataPipeline?.id)
+        ),
       });
+      setSvcPipeline(dataPipeline);
       setLoadingData(false);
     } catch (error) {
       setLoadingData(false);
@@ -400,6 +320,152 @@ const ServiceLogDetail: React.FC = () => {
     getPipelineById();
   }, []);
 
+  const isLightEngine = useMemo(
+    () => svcPipeline?.engineType === AnalyticEngineType.LightEngine,
+    [svcPipeline]
+  );
+
+  useEffect(() => {
+    (async () => {
+      if (svcPipeline?.engineType !== AnalyticEngineType.LightEngine) {
+        return;
+      }
+      const lightEngineAppPipelineDetail: ApiResponse<
+        "getLightEngineServicePipelineDetail",
+        LightEnginePipelineDetailResponse
+      > = await appSyncRequestQuery(getLightEngineServicePipelineDetail, {
+        pipelineId: svcPipeline?.id,
+      });
+      setAnalyticsEngine(
+        lightEngineAppPipelineDetail.data.getLightEngineServicePipelineDetail
+          .analyticsEngine ?? undefined
+      );
+      setSchedules(
+        (lightEngineAppPipelineDetail.data.getLightEngineServicePipelineDetail
+          .schedules as Schedule[]) ?? []
+      );
+    })();
+  }, [svcPipeline?.engineType]);
+
+  // New Detail Logic
+  const buildCloudFrontFields = (): LabelValueDataItem | undefined => {
+    if (
+      curPipeline?.type === ServiceType.CloudFront &&
+      curPipeline.destinationType === DestinationType.KDS
+    ) {
+      return {
+        label: t("servicelog:detail.fields"),
+        data: curPipeline?.fieldNames,
+      };
+    }
+  };
+
+  const buildOpenSearchIndexInfo = () => {
+    const openSearchIndexInfo: LabelValueDataItem[] = [
+      {
+        label: t("servicelog:detail.index"),
+        data: `${curPipeline?.esIndex}${
+          ServiceTypeMapMidSuffix[curPipeline?.type || ""]
+        }`,
+      },
+    ];
+    return [...openSearchIndexInfo];
+  };
+
+  const buildLightEngineTableInfo = () => [
+    {
+      label: t("applog:detail.logTable"),
+      data: (
+        <ExtLink
+          to={buildGlueTableLink(
+            amplifyConfig.aws_project_region,
+            analyticsEngine?.table?.databaseName,
+            analyticsEngine?.table?.tableName
+          )}
+        >
+          {analyticsEngine?.table?.tableName}
+        </ExtLink>
+      ),
+    },
+  ];
+
+  const buildGrafanaDashboardInfo = () => [
+    {
+      label: t("applog:detail.grafanaDashboard"),
+      data: (
+        <>
+          <div>
+            {analyticsEngine?.metric?.dashboardLink && (
+              <ExtLink to={analyticsEngine?.metric.dashboardLink ?? ""}>
+                {analyticsEngine?.metric.dashboardName ?? "-"}
+              </ExtLink>
+            )}
+          </div>
+          <div>
+            <ExtLink to={analyticsEngine?.table?.dashboardLink ?? ""}>
+              {analyticsEngine?.table?.dashboardName ?? "-"}
+            </ExtLink>
+          </div>
+        </>
+      ),
+    },
+  ];
+
+  const buildCFNStackInfo = () => {
+    return [
+      {
+        label: t("servicelog:detail.cfnStack"),
+        data: (
+          <ExtLink
+            to={buildCfnLink(
+              amplifyConfig.aws_project_region,
+              curPipeline?.stackId ?? ""
+            )}
+          >
+            {curPipeline?.stackId?.match(/:stack\/(.*?)\//)?.[1]}
+          </ExtLink>
+        ),
+      },
+    ];
+  };
+
+  const buildOpenSearchInfo = () => {
+    const openSearchInfo: LabelValueDataItem[] = [
+      {
+        label: t("servicelog:detail.aos"),
+        data: (
+          <ExtLink
+            to={buildESLink(
+              amplifyConfig.aws_project_region,
+              curPipeline?.esName || ""
+            )}
+          >
+            {curPipeline?.esName}
+          </ExtLink>
+        ),
+      },
+    ];
+    return [...openSearchInfo];
+  };
+
+  const buildPipelineStatusInfo = (): LabelValueDataItem[] => {
+    return [
+      {
+        label: t("applog:list.status"),
+        data: <Status status={curPipeline?.status || "-"} />,
+      },
+    ];
+  };
+
+  const buildCreateTimeInfo = (): LabelValueDataItem[] => {
+    return [
+      {
+        label: t("servicelog:detail.createdAt"),
+        data: formatLocalTime(curPipeline?.createTime || ""),
+      },
+    ];
+  };
+
   return (
     <div className="lh-main-content">
       <SideMenu />
@@ -410,149 +476,23 @@ const ServiceLogDetail: React.FC = () => {
             <LoadingText text="" />
           ) : (
             <div className="service-log">
-              <div>
-                <HeaderPanel title={t("servicelog:detail.generalConfig")}>
-                  <>
-                    <div className="flex value-label-span">
-                      <div className="flex-1">
-                        <ValueWithLabel label={t("servicelog:detail.type")}>
-                          <div>{ServiceTypeMap[curPipeline?.type || ""]}</div>
-                        </ValueWithLabel>
-                        {curPipeline?.logSourceAccountId && (
-                          <ValueWithLabel
-                            label={t("resource:crossAccount.account")}
-                          >
-                            <AccountName
-                              accountId={curPipeline?.logSourceAccountId}
-                              region={amplifyConfig.aws_project_region}
-                            />
-                          </ValueWithLabel>
-                        )}
-                        {curPipeline?.type === ServiceType.CloudFront &&
-                          renderCloudFront()}
-                        {curPipeline?.type === ServiceType.CloudTrail &&
-                          renderCloudTrailType()}
-                      </div>
-                      <div className="flex-1 border-left-c">
-                        {curPipeline?.type === ServiceType.Lambda &&
-                          renderLambdaFunction()}
-                        {curPipeline?.type === ServiceType.S3 &&
-                          renderS3Bucket()}
-                        {curPipeline?.type === ServiceType.CloudFront && (
-                          <>
-                            <ValueWithLabel
-                              label={t("servicelog:detail.distributionId")}
-                            >
-                              <ExtLink
-                                to={buildCloudFrontLink(
-                                  amplifyConfig.aws_project_region,
-                                  curPipeline?.source || ""
-                                )}
-                              >
-                                {curPipeline?.source}
-                              </ExtLink>
-                            </ValueWithLabel>
+              <HeaderWithValueLabel
+                numberOfColumns={5}
+                headerTitle={t("servicelog:detail.generalConfig")}
+                fixedDataList={[
+                  isLightEngine
+                    ? buildLightEngineTableInfo()
+                    : buildOpenSearchIndexInfo(),
+                  buildCFNStackInfo(),
+                  isLightEngine
+                    ? buildGrafanaDashboardInfo()
+                    : buildOpenSearchInfo(),
+                  buildPipelineStatusInfo(),
+                  buildCreateTimeInfo(),
+                ]}
+                additionalData={buildCloudFrontFields()}
+              />
 
-                            {curPipeline.destinationType ===
-                              DestinationType.KDS && (
-                              <>
-                                <ValueWithLabel
-                                  label={t("servicelog:detail.kdsShardNum")}
-                                >
-                                  {curPipeline?.minCapacity
-                                    ? curPipeline?.minCapacity
-                                    : "-"}
-                                </ValueWithLabel>
-
-                                <ValueWithLabel
-                                  label={t("servicelog:detail.enableAS")}
-                                >
-                                  {curPipeline?.enableAutoScaling
-                                    ? curPipeline?.enableAutoScaling
-                                    : "-"}
-                                </ValueWithLabel>
-
-                                <ValueWithLabel
-                                  label={t("servicelog:detail.kdsMaxShard")}
-                                >
-                                  {curPipeline?.maxCapacity
-                                    ? curPipeline?.maxCapacity
-                                    : "-"}
-                                </ValueWithLabel>
-                              </>
-                            )}
-                          </>
-                        )}
-                        {curPipeline?.type === ServiceType.ELB &&
-                          renderELBName()}
-                        {(curPipeline?.type === ServiceType.WAF ||
-                          curPipeline?.type === ServiceType.WAFSampled) &&
-                          renderWafName()}
-                        {curPipeline?.type === ServiceType.VPC &&
-                          renderVPCName()}
-                        {curPipeline?.type === ServiceType.CloudTrail &&
-                          renderCloudTrail()}
-                        {curPipeline?.type === ServiceType.Config &&
-                          renderConfig()}
-                        {curPipeline?.type === ServiceType.RDS && renderRDS()}
-                      </div>
-                      <div className="flex-1 border-left-c">
-                        <ValueWithLabel label={t("servicelog:detail.aos")}>
-                          <ExtLink
-                            to={buildESLink(
-                              amplifyConfig.aws_project_region,
-                              curPipeline?.esName || ""
-                            )}
-                          >
-                            {curPipeline?.esName}
-                          </ExtLink>
-                        </ValueWithLabel>
-                        {curPipeline?.rolloverSize && (
-                          <ValueWithLabel
-                            label={t("servicelog:detail.rolloverSize")}
-                          >
-                            {curPipeline?.rolloverSize?.toUpperCase()}
-                          </ValueWithLabel>
-                        )}
-
-                        {curPipeline?.codec && (
-                          <ValueWithLabel
-                            label={t("servicelog:detail.compressionType")}
-                          >
-                            {curPipeline?.codec}
-                          </ValueWithLabel>
-                        )}
-                      </div>
-                      <div className="flex-1 border-left-c">
-                        <ValueWithLabel label={t("servicelog:detail.index")}>
-                          <div>{`${curPipeline?.esIndex}${
-                            ServiceTypeMapMidSuffix[curPipeline?.type || ""]
-                          }`}</div>
-                        </ValueWithLabel>
-                        {curPipeline?.indexSuffix && (
-                          <ValueWithLabel
-                            label={t("servicelog:detail.indexSuffix")}
-                          >
-                            {curPipeline?.indexSuffix}
-                          </ValueWithLabel>
-                        )}
-                      </div>
-                    </div>
-                    {curPipeline?.type === ServiceType.CloudFront &&
-                      curPipeline.destinationType === DestinationType.KDS && (
-                        <div className="flex value-label-span">
-                          <div className="flex-1">
-                            <ValueWithLabel
-                              label={t("servicelog:detail.fields")}
-                            >
-                              {curPipeline?.fieldNames}
-                            </ValueWithLabel>
-                          </div>
-                        </div>
-                      )}
-                  </>
-                </HeaderPanel>
-              </div>
               <div>
                 <AntTabs
                   value={activeTab}
@@ -560,39 +500,75 @@ const ServiceLogDetail: React.FC = () => {
                     changeTab(event, newTab);
                   }}
                 >
-                  <AntTab label={t("servicelog:tab.overview")} />
-                  <AntTab label={t("servicelog:tab.lifecycle")} />
+                  <AntTab label={t("servicelog:tab.logSource")} />
+                  <AntTab label={t("servicelog:tab.analyticsEngine")} />
+                  <AntTab label={t("servicelog:tab.logProcessor")} />
                   <AntTab label={t("servicelog:tab.monitoring")} />
                   <AntTab label={t("servicelog:tab.logging")} />
-                  <AntTab label={t("servicelog:tab.alarm")} />
+                  {!isOSIPipeline(curPipeline) && (
+                    <AntTab label={t("servicelog:tab.alarm")} />
+                  )}
                   <AntTab label={t("servicelog:tab.tags")} />
                 </AntTabs>
                 <TabPanel value={activeTab} index={0}>
-                  <Overview pipelineInfo={curPipeline} />
+                  <LogSource pipelineInfo={curPipeline} />
                 </TabPanel>
                 <TabPanel value={activeTab} index={1}>
-                  <Lifecycle pipelineInfo={curPipeline} />
+                  {isLightEngine ? (
+                    <LightEngineAnalyticsEngineDetails
+                      pipelineInfo={svcPipeline}
+                      analyticsEngine={analyticsEngine}
+                    />
+                  ) : (
+                    <AnalyticsEngine
+                      pipelineInfo={curPipeline}
+                      amplifyConfig={amplifyConfig}
+                    />
+                  )}
                 </TabPanel>
                 <TabPanel value={activeTab} index={2}>
-                  <Monitoring pipelineInfo={curPipeline} />
+                  {isLightEngine ? (
+                    <LightEngineLogProcessor schedules={schedules} />
+                  ) : (
+                    <LogProcessor
+                      amplifyConfig={amplifyConfig}
+                      pipelineInfo={curPipeline}
+                    />
+                  )}
                 </TabPanel>
                 <TabPanel value={activeTab} index={3}>
-                  <Logging pipelineInfo={curPipeline} />
+                  <Monitoring pipelineInfo={curPipeline} />
                 </TabPanel>
                 <TabPanel value={activeTab} index={4}>
-                  <Alarm
-                    pipelineInfo={curPipeline}
-                    changePipelineMonitor={(monitor) => {
-                      setCurPipeline((prev: any) => {
-                        return {
-                          ...prev,
-                          monitor: monitor,
-                        };
-                      });
-                    }}
-                  />
+                  {isLightEngine ? (
+                    <LightEngineLoggingList
+                      schedules={schedules ?? []}
+                      pipelineId={curPipeline?.id ?? ""}
+                      pipelineType={PipelineType.SERVICE}
+                    />
+                  ) : (
+                    <Logging pipelineInfo={curPipeline} />
+                  )}
                 </TabPanel>
-                <TabPanel value={activeTab} index={5}>
+                {!isOSIPipeline(curPipeline) && (
+                  <TabPanel value={activeTab} index={5}>
+                    <Alarm
+                      pipelineInfo={curPipeline}
+                      changePipelineMonitor={(monitor) => {
+                        setCurPipeline((prev: any) => {
+                          return {
+                            ...prev,
+                            monitor: monitor,
+                          };
+                        });
+                      }}
+                    />
+                  </TabPanel>
+                )}
+                <TabPanel
+                  value={activeTab}
+                  index={ternary(isOSIPipeline(curPipeline), 5, 6)}
+                >
                   <Tags tags={curPipeline?.tags} />
                 </TabPanel>
               </div>

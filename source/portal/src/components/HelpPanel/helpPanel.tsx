@@ -43,10 +43,41 @@ import ConfigFilter from "help/ConfigFilter";
 import ProxyInstance from "help/ProxyInstance";
 import PipelineAlarms from "help/PipelineAlarms";
 import { RootState } from "reducer/reducers";
+import OSIPipeline from "help/OSIPipeline";
+import { LightEngineSampleDashboard } from "help/LightEngineSampleDashboard";
+import { LightEngineTableName } from "help/LightEngineTableName";
+import { GeneralHelp, GeneralHelpProps } from "help/GeneralHelp";
 
 interface HelpPanelProps {
   className?: string;
 }
+
+const GeneralHelpTypes: Record<string, GeneralHelpProps> = {
+  [InfoBarTypes.LIGHT_ENGINE_LOG_PROCESS]: {
+    tips: [
+      "info:lightEngineLogProcess.tip1",
+      "info:lightEngineLogProcess.tip2",
+    ],
+  },
+  [InfoBarTypes.LIGHT_ENGINE_LOG_MERGE]: {
+    tips: ["info:lightEngineLogMerge.tip1", "info:lightEngineLogMerge.tip2"],
+  },
+  [InfoBarTypes.LIGHT_ENGINE_LOG_ARCHIVE]: {
+    tips: [
+      "info:lightEngineLogArchive.tip1",
+      "info:lightEngineLogArchive.tip2",
+    ],
+  },
+  [InfoBarTypes.LIGHT_ENGINE_LOG_PROCESS_DETAIL]: {
+    tips: ["info:lightEngineLogProcess.tip2"],
+  },
+  [InfoBarTypes.LIGHT_ENGINE_LOG_MERGE_DETAIL]: {
+    tips: ["info:lightEngineLogMerge.tip2"],
+  },
+  [InfoBarTypes.LIGHT_ENGINE_LOG_ARCHIVE_DETAIL]: {
+    tips: ["info:lightEngineLogArchive.tip2"],
+  },
+};
 
 export const HelpPanel: React.FC<HelpPanelProps> = (props: HelpPanelProps) => {
   const { className } = props;
@@ -101,6 +132,9 @@ export const HelpPanel: React.FC<HelpPanelProps> = (props: HelpPanelProps) => {
             <InstanceGroupCreationMethod />
           )}
           {infoBarType === InfoBarTypes.SAMPLE_DASHBAORD && <SampleDashboard />}
+          {infoBarType === InfoBarTypes.LIGHT_ENGINE_SAMPLE_DASHBOARD && (
+            <LightEngineSampleDashboard />
+          )}
           {infoBarType === InfoBarTypes.APACHE_SAMPLE_DASHBOARD && (
             <SampleDashboard
               content={
@@ -146,7 +180,21 @@ export const HelpPanel: React.FC<HelpPanelProps> = (props: HelpPanelProps) => {
               </div>
             </div>
           )}
+          {infoBarType === InfoBarTypes.BUFFER_LAYER && (
+            <div className="gsui-help-container">
+              <div className="gsui-help-content">
+                <p>{t("info:bufferLayer.desc")}</p>
+              </div>
+            </div>
+          )}
           {infoBarType === InfoBarTypes.PIPELINE_ALARM && <PipelineAlarms />}
+          {infoBarType === InfoBarTypes.OSI_PIPELINE && <OSIPipeline />}
+          {infoBarType === InfoBarTypes.LIGHT_ENGINE_TABLE_NAME && (
+            <LightEngineTableName />
+          )}
+          {Object.keys(GeneralHelpTypes).includes(infoBarType as string) && (
+            <GeneralHelp {...GeneralHelpTypes[infoBarType as string]} />
+          )}
         </div>
       )}
     </div>

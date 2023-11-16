@@ -131,6 +131,8 @@ interface SelectProps {
   hasStatus?: boolean;
   createNewLink?: string;
   viewDetailsLink?: string;
+  width?: number;
+  onBlur?: (event: any) => void;
 }
 
 const GSSelect: React.FC<SelectProps> = (props: SelectProps) => {
@@ -147,18 +149,22 @@ const GSSelect: React.FC<SelectProps> = (props: SelectProps) => {
     isI18N,
     allowEmpty,
     hasStatus,
+    width,
+    onBlur,
   } = props;
   const { t } = useTranslation();
   return (
     <div className={`flex gsui-select-wrap ${className}`}>
       <div className="flex-1">
         <Select
+          style={{ width: width }}
           disabled={disabled}
           MenuProps={MenuProps}
           displayEmpty
           className="gsui-select"
           value={value}
           onChange={onChange}
+          onBlur={onBlur}
           placeholder={placeholder || ""}
           input={<BootstrapInput />}
           renderValue={

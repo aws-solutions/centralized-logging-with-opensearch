@@ -16,14 +16,13 @@ limitations under the License.
 import { AppPipeline } from "API";
 import { buildESLink } from "assets/js/utils";
 import ExtLink from "components/ExtLink";
-import HeaderPanel from "components/HeaderPanel";
-import ValueWithLabel from "components/ValueWithLabel";
 import React from "react";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { AmplifyConfigType } from "types";
 import { getParamValueByKey } from "assets/js/applog";
 import { RootState } from "reducer/reducers";
+import HeaderWithValueLabel from "pages/comps/HeaderWithValueLabel";
 interface OverviewProps {
   pipelineInfo: AppPipeline | undefined;
 }
@@ -39,15 +38,17 @@ const AnalyticsEngineDetails: React.FC<OverviewProps> = (
   );
   return (
     <div>
-      <HeaderPanel title={t("applog:detail.analyticsEngine")}>
-        <div className="flex value-label-span">
-          <div className="flex-1">
-            <ValueWithLabel label={t("resource:config.detail.type")}>
-              <div>{curPipeline?.aosParams?.engine}</div>
-            </ValueWithLabel>
-          </div>
-          <div className="flex-1 border-left-c">
-            <ValueWithLabel label={t("applog:detail.domain")}>
+      <HeaderWithValueLabel
+        numberOfColumns={3}
+        headerTitle={t("applog:detail.analyticsEngine")}
+        dataList={[
+          {
+            label: t("servicelog:detail.type"),
+            data: curPipeline?.aosParams?.engine ?? "-",
+          },
+          {
+            label: t("applog:detail.domain"),
+            data: (
               <ExtLink
                 to={buildESLink(
                   amplifyConfig.aws_project_region,
@@ -56,89 +57,73 @@ const AnalyticsEngineDetails: React.FC<OverviewProps> = (
               >
                 {curPipeline?.aosParams?.domainName || "-"}
               </ExtLink>
-            </ValueWithLabel>
-          </div>
-          <div className="flex-1 border-left-c">
-            <ValueWithLabel label={t("applog:detail.sampleDashboard")}>
-              {getParamValueByKey(
+            ),
+          },
+          {
+            label: t("applog:detail.sampleDashboard"),
+            data:
+              getParamValueByKey(
                 "createDashboard",
                 curPipeline?.bufferParams
-              ) || "-"}
-            </ValueWithLabel>
-          </div>
-        </div>
-      </HeaderPanel>
-      <HeaderPanel title={t("applog:detail.indexSettings")}>
-        <div className="flex value-label-span">
-          <div className="flex-1">
-            <ValueWithLabel label={t("resource:config.detail.indexName")}>
-              <div>{curPipeline?.aosParams?.indexPrefix || "-"}</div>
-            </ValueWithLabel>
-          </div>
-          <div className="flex-1 border-left-c">
-            <ValueWithLabel label={t("applog:detail.indexSuffix")}>
-              <div>
-                {curPipeline?.aosParams?.indexSuffix?.replaceAll("_", "-") ||
-                  "-"}
-              </div>
-            </ValueWithLabel>
-          </div>
-          <div className="flex-1 border-left-c">
-            <ValueWithLabel label={t("servicelog:cluster.replicaNum")}>
-              <div>{curPipeline?.aosParams?.replicaNumbers}</div>
-            </ValueWithLabel>
-          </div>
-        </div>
-        <div className="flex value-label-span">
-          <div className="flex-1">
-            <ValueWithLabel label={t("servicelog:cluster.shardNum")}>
-              <div>{curPipeline?.aosParams?.shardNumbers || "-"}</div>
-            </ValueWithLabel>
-          </div>
-          <div className="flex-1 border-left-c">
-            <ValueWithLabel label={t("applog:detail.rolloverSize")}>
-              <div>
-                {curPipeline?.aosParams?.rolloverSize?.toUpperCase() || "-"}
-              </div>
-            </ValueWithLabel>
-          </div>
-          <div className="flex-1 border-left-c"></div>
-        </div>
-      </HeaderPanel>
-      <HeaderPanel title={t("applog:detail.tab.lifecycle")}>
-        <div className="flex value-label-span">
-          <div className="flex-1">
-            <ValueWithLabel label={t("applog:detail.lifecycle.warmLog")}>
-              <div>
-                {(pipelineInfo?.aosParams?.warmLogTransition === "1s"
-                  ? t("servicelog:cluster.warmImmediately")
-                  : "") ||
-                  (pipelineInfo?.aosParams?.warmLogTransition
-                    ? pipelineInfo?.aosParams?.warmLogTransition?.replace(
-                        "d",
-                        ""
-                      )
-                    : "")}
-              </div>
-            </ValueWithLabel>
-          </div>
-          <div className="flex-1 border-left-c">
-            <ValueWithLabel label={t("applog:detail.lifecycle.coldLog")}>
-              <div>
-                {pipelineInfo?.aosParams?.coldLogTransition?.replace("d", "") ||
-                  "-"}
-              </div>
-            </ValueWithLabel>
-          </div>
-          <div className="flex-1 border-left-c">
-            <ValueWithLabel label={t("applog:detail.lifecycle.logRetention")}>
-              <div>
-                {pipelineInfo?.aosParams?.logRetention?.replace("d", "") || "-"}
-              </div>
-            </ValueWithLabel>
-          </div>
-        </div>
-      </HeaderPanel>
+              ) || "-",
+          },
+        ]}
+      />
+      <HeaderWithValueLabel
+        numberOfColumns={3}
+        headerTitle={t("applog:detail.indexSettings")}
+        dataList={[
+          {
+            label: t("servicelog:detail.index"),
+            data: curPipeline?.aosParams?.indexPrefix ?? "-",
+          },
+          {
+            label: t("applog:detail.indexSuffix"),
+            data:
+              curPipeline?.aosParams?.indexSuffix?.replaceAll("_", "-") ?? "-",
+          },
+          {
+            label: t("servicelog:cluster.replicaNum"),
+            data: curPipeline?.aosParams?.replicaNumbers ?? "-",
+          },
+          {
+            label: t("servicelog:cluster.shardNum"),
+            data: curPipeline?.aosParams?.shardNumbers ?? "-",
+          },
+          {
+            label: t("applog:detail.rolloverSize"),
+            data: curPipeline?.aosParams?.rolloverSize?.toUpperCase() ?? "-",
+          },
+        ]}
+      />
+
+      <HeaderWithValueLabel
+        numberOfColumns={3}
+        headerTitle={t("applog:detail.tab.lifecycle")}
+        dataList={[
+          {
+            label: t("applog:detail.lifecycle.warmLog"),
+            data:
+              (pipelineInfo?.aosParams?.warmLogTransition === "1s"
+                ? t("servicelog:cluster.warmImmediately")
+                : "") ||
+              (pipelineInfo?.aosParams?.warmLogTransition
+                ? pipelineInfo?.aosParams?.warmLogTransition?.replace("d", "")
+                : "-"),
+          },
+          {
+            label: t("applog:detail.lifecycle.coldLog"),
+            data:
+              pipelineInfo?.aosParams?.coldLogTransition?.replace("d", "") ||
+              "-",
+          },
+          {
+            label: t("applog:detail.lifecycle.logRetention"),
+            data:
+              pipelineInfo?.aosParams?.logRetention?.replace("d", "") || "-",
+          },
+        ]}
+      />
     </div>
   );
 };

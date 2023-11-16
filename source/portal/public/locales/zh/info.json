@@ -131,6 +131,30 @@
     "tip1": "如果",
     "tip2": "被选中。日志通将在 OpenSearch 域中插入一个预配置的仪表板，仪表板名称将与您的索引名称一致。"
   },
+  "lightEngineSampleDashboard": {
+    "name": "示例数据仪表板",
+    "tip1": "如果",
+    "tip2": "被选中。日志通将在 Grafana 服务器中插入一个预配置的仪表板，仪表板名称将与您的表名称一致。"
+  },
+  "lightEngineTableName": {
+    "name": "日志表名称",
+    "tip": "表名称建议使用小写字母、数字、不支持下划线 (_) 除外的其他特殊字符，长度必须少于或等于 255 个字符。超过此限制会生成错误。详细规范请<0>参考文档</0>"
+  },
+  "lightEngineLogProcess": {
+    "name": "日志处理器",
+    "tip1": "设置触发日志处理器任务执行的频率，例如 rate(5 minutes) 表示每5分钟执行一次。",
+    "tip2": "日志处理器（用 Amazon Step Functions 实现）的主要目的是高效处理存储在 Amazon S3 上的原始日志文件，并批量处理它们，将其转换为 Apache Parquet 格式，并根据时间和区域等因素自动对数据进行分区 。"
+  },
+  "lightEngineLogMerge": {
+    "name": "日志合并器",
+    "tip1": "设置触发日志合并任务的执行时间表，可以每天执行一次，例如 cron(0 1 * * ? *) 表示每天凌晨 1 点 (UTC) 执行。",
+    "tip2": "日志合并器（用 Amazon Step Functions 实现）的主要目的是合并 Apache Parquet 小文件和数据分区，以减少文件数量、降低 S3 API 操作成本、降低S3存储费用，并在查询数据量增加时提高性能。"
+  },
+  "lightEngineLogArchive": {
+    "name": "日志归档器",
+    "tip1": "设置执行计划以触发日志归档任务，可以每天执行一次，例如 cron(0 2 * * ? *) 表示每天在凌晨2点（UTC时间）执行。",
+    "tip2": "日志归档器（用Amazon Step Functions实现）的主要目的是将过期数据从集中式存储转移到归档中，直到生命周期规则删除文件，并更新 Glue 数据目录并删除过期的表分区。"
+  },
   "s3FileType": {
     "name": "文件格式",
     "tips": "您可以为存储在 Amazon S3 中的日志选择特定的文件类型。其中 Gzip 仅支持单个文件的压缩。"
@@ -181,5 +205,15 @@
     "desc": "如果任何关键指标超过阈值，就会触发管道告警，这会将通知发送到 SNS 主题。 这些告警是根据日志管道监控和故障排除的最佳实践创建的，您可以自定义这些告警或在 CloudWatch 中创建新告警",
     "link1": "管道告警",
     "link2": "Amazon CloudWatch 告警"
+  },
+  "osi": {
+    "name": "Amazon OpenSearch 采集",
+    "desc": "Amazon OpenSearch 采集是一个完全托管的，无服务器的数据收集器，能实时传输日志，度量和追踪数据到 Amazon OpenSearch Service 域和 OpenSearch 无服务器集合。",
+    "link1": "了解更多",
+    "link2": "费用详情"
+  },
+  "bufferLayer": {
+    "name": "缓冲层",
+    "desc": "缓冲层旨在实现日志源和日志目标之间的稳健系统。该层能够解耦源和目标，并接受更多的日志摄取请求，同时还可以在日志分析引擎出现服务器问题或性能问题时对日志进行重试缓冲。"
   }
 }

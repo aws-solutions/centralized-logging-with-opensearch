@@ -50,7 +50,11 @@ import SideMenu from "components/SideMenu";
 import { ActionType, InfoBarTypes } from "reducer/appReducer";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { checkIndexNameValidate, ternary } from "assets/js/utils";
+import {
+  buildOSIParamsValue,
+  checkIndexNameValidate,
+  ternary,
+} from "assets/js/utils";
 import Button from "components/Button";
 import HeaderPanel from "components/HeaderPanel";
 import Tiles from "components/Tiles";
@@ -82,6 +86,12 @@ import {
   validateAalrmInput,
 } from "reducer/createAlarm";
 import { Dispatch } from "redux";
+import SelectLogProcessor from "pages/comps/processor/SelectLogProcessor";
+import {
+  SelectProcessorActionTypes,
+  validateOCUInput,
+} from "reducer/selectProcessor";
+import { useSelectProcessor } from "assets/js/hooks/useSelectProcessor";
 
 export interface IngestionFromSysLogPropsType {
   syslogProtocol: ProtocolType | string;
@@ -155,6 +165,7 @@ const AppLogCreateSyslog: React.FC = () => {
   const [portChanged, setPortChanged] = useState(false);
   const tags = useTags();
   const monitor = useAlarm();
+  const osiParams = useSelectProcessor();
 
   const [ingestionInfo, setIngestionInfo] =
     useState<IngestionFromSysLogPropsType>({
@@ -351,6 +362,15 @@ const AppLogCreateSyslog: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const selectProcessorValidator = new Validator(() => {
+    if (!validateOCUInput(osiParams)) {
+      dispatch({
+        type: SelectProcessorActionTypes.VALIDATE_OCU_INPUT,
+      });
+      throw new Error();
+    }
+  });
 
   useEffect(() => {
     if (ingestionInfo.syslogProtocol) {
@@ -802,8 +822,22 @@ const AppLogCreateSyslog: React.FC = () => {
       validators: [openSearchInputValidator],
     },
     {
+      name: t("processor.logProcessorSettings"),
+      element: (
+        <SelectLogProcessor
+          supportOSI={curApplicationLog.bufferType === BufferType.S3}
+        />
+      ),
+      validators: [selectProcessorValidator],
+    },
+    {
       name: t("applog:logSourceDesc.syslog.step5.naviTitle"),
-      element: <AlarmAndTags applicationPipeline={curApplicationLog} />,
+      element: (
+        <AlarmAndTags
+          applicationPipeline={curApplicationLog}
+          osiParams={osiParams}
+        />
+      ),
       validators: [],
     },
   ].filter((each) => !each.disabled);
@@ -876,6 +910,7 @@ const AppLogCreateSyslog: React.FC = () => {
         })()
       ),
       monitor: monitor.monitor,
+      osiParams: buildOSIParamsValue(osiParams),
       tags,
       force: isForce,
     };
@@ -912,7 +947,7 @@ const AppLogCreateSyslog: React.FC = () => {
     } catch (error: any) {
       const { errorCode, message } = refineErrorMessage(error.message);
       if (
-        errorCode === ErrorCode.DUPLICATED_INDEX_PREFIX ||
+        errorCode === ErrorCode.OVERLAP_WITH_INACTIVE_INDEX_PREFIX ||
         errorCode === ErrorCode.OVERLAP_INDEX_PREFIX
       ) {
         Swal.fire({
@@ -923,8 +958,8 @@ const AppLogCreateSyslog: React.FC = () => {
           confirmButtonText: t("button.cancel") || "",
           cancelButtonText: t("button.changeIndex") || "",
           text:
-            (errorCode === ErrorCode.DUPLICATED_INDEX_PREFIX
-              ? t("applog:create.ingestSetting.duplicatedWithPrefix")
+            (errorCode === ErrorCode.OVERLAP_WITH_INACTIVE_INDEX_PREFIX
+              ? t("applog:create.ingestSetting.overlapWithInvalidPrefix")
               : t("applog:create.ingestSetting.overlapWithPrefix")) +
             `(${message})`,
         }).then((result) => {
@@ -935,7 +970,7 @@ const AppLogCreateSyslog: React.FC = () => {
       }
       if (
         errorCode === ErrorCode.DUPLICATED_WITH_INACTIVE_INDEX_PREFIX ||
-        errorCode === ErrorCode.OVERLAP_WITH_INACTIVE_INDEX_PREFIX
+        errorCode === ErrorCode.DUPLICATED_INDEX_PREFIX
       ) {
         Swal.fire({
           icon: "error",
@@ -947,10 +982,9 @@ const AppLogCreateSyslog: React.FC = () => {
           denyButtonText: t("button.forceCreate") || "",
           cancelButtonText: t("button.changeIndex") || "",
           text:
-            (errorCode === ErrorCode.DUPLICATED_WITH_INACTIVE_INDEX_PREFIX
+            errorCode === ErrorCode.DUPLICATED_WITH_INACTIVE_INDEX_PREFIX
               ? t("applog:create.ingestSetting.duplicatedWithInvalidPrefix")
-              : t("applog:create.ingestSetting.overlapWithInvalidPrefix")) +
-            `(${message})`,
+              : t("applog:create.ingestSetting.duplicatedWithPrefix"),
         }).then((result) => {
           if (result.isDismissed) {
             setCurrentStep(2);

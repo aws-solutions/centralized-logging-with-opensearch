@@ -41,6 +41,7 @@ i18n
       "ekslog",
       "resource",
       "info",
+      "lightengine",
     ],
     defaultNS: "common",
     fallbackLng: "en",

@@ -13,7 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
 import React, { useState, useEffect } from "react";
 import LoadingText from "components/LoadingText";
 import { Link } from "react-router-dom";

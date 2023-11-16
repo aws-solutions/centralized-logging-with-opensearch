@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import CreateStep from "components/CreateStep";
 import SpecifySettings from "./steps/SpecifySettings";
@@ -51,6 +51,7 @@ import { useTranslation } from "react-i18next";
 import { Alert } from "assets/js/alert";
 import {
   bucketNameIsValid,
+  buildOSIParamsValue,
   splitStringToBucketAndPrefix,
 } from "assets/js/utils";
 import { MONITOR_ALARM_INIT_DATA } from "assets/js/init";
@@ -63,6 +64,12 @@ import {
   CreateAlarmActionTypes,
   validateAalrmInput,
 } from "reducer/createAlarm";
+import SelectLogProcessor from "pages/comps/processor/SelectLogProcessor";
+import {
+  SelectProcessorActionTypes,
+  validateOCUInput,
+} from "reducer/selectProcessor";
+import { useSelectProcessor } from "assets/js/hooks/useSelectProcessor";
 
 const EXCLUDE_PARAMS = [
   "esDomainId",
@@ -192,7 +199,7 @@ const CreateS3: React.FC = () => {
     useState<S3TaskProps>(DEFAULT_TASK_VALUE);
 
   const [autoS3EmptyError, setAutoS3EmptyError] = useState(false);
-  const [manualS3EmpryError, setManualS3EmpryError] = useState(false);
+  const [manualS3EmptyError, setManualS3EmpryError] = useState(false);
   const [manualS3PathInvalid, setManualS3PathInvalid] = useState(false);
   const [esDomainEmptyError, setEsDomainEmptyError] = useState(false);
 
@@ -216,6 +223,7 @@ const CreateS3: React.FC = () => {
     useState<DomainStatusCheckResponse>();
   const tags = useTags();
   const monitor = useAlarm();
+  const osiParams = useSelectProcessor();
 
   const confirmCreatePipeline = async () => {
     console.info("s3PipelineTask:", s3PipelineTask);
@@ -229,6 +237,7 @@ const CreateS3: React.FC = () => {
     createPipelineParams.destinationType = s3PipelineTask.destinationType;
 
     createPipelineParams.monitor = monitor.monitor;
+    createPipelineParams.osiParams = buildOSIParamsValue(osiParams);
 
     const tmpParamList: any = covertParametersByKeyAndConditions(
       s3PipelineTask,
@@ -304,8 +313,28 @@ const CreateS3: React.FC = () => {
       bucketISChanging ||
       domainListIsLoading ||
       (curStep === 1 &&
-        domainCheckStatus?.status !== DomainStatusCheckType.PASSED)
+        domainCheckStatus?.status !== DomainStatusCheckType.PASSED) ||
+      osiParams.serviceAvailableCheckedLoading
     );
+  };
+
+  const validateStep1 = () => {
+    if (!s3PipelineTask.params.domainName) {
+      setEsDomainEmptyError(true);
+      return false;
+    } else {
+      setEsDomainEmptyError(false);
+    }
+    const validRes = checkOpenSearchInput(s3PipelineTask);
+    setAosInputValidRes(validRes);
+    if (Object.values(validRes).indexOf(true) >= 0) {
+      return false;
+    }
+    // Check domain connection status
+    if (domainCheckStatus?.status !== DomainStatusCheckType.PASSED) {
+      return false;
+    }
+    return true;
   };
 
   return (
@@ -326,6 +355,9 @@ const CreateS3: React.FC = () => {
                       name: t("servicelog:create.step.specifyDomain"),
                     },
                     {
+                      name: t("processor.logProcessorSettings"),
+                    },
+                    {
                       name: t("servicelog:create.step.createTags"),
                     },
                   ]}
@@ -339,7 +371,7 @@ const CreateS3: React.FC = () => {
                     setISChanging={(status) => {
                       setBucketISChanging(status);
                     }}
-                    manualS3EmptyError={manualS3EmpryError}
+                    manualS3EmptyError={manualS3EmptyError}
                     manualS3PathInvalid={manualS3PathInvalid}
                     autoS3EmptyError={autoS3EmptyError}
                     changeNeedEnableLogging={(need: boolean) => {
@@ -698,7 +730,15 @@ const CreateS3: React.FC = () => {
                 )}
                 {curStep === 2 && (
                   <div>
-                    <AlarmAndTags pipelineTask={s3PipelineTask} />
+                    <SelectLogProcessor supportOSI={false} />
+                  </div>
+                )}
+                {curStep === 3 && (
+                  <div>
+                    <AlarmAndTags
+                      pipelineTask={s3PipelineTask}
+                      osiParams={osiParams}
+                    />
                   </div>
                 )}
                 <div className="button-action text-right">
@@ -722,7 +762,7 @@ const CreateS3: React.FC = () => {
                     </Button>
                   )}
 
-                  {curStep < 2 && (
+                  {curStep < 3 && (
                     <Button
                       disabled={isNextDisabled()}
                       btnType="primary"
@@ -733,34 +773,27 @@ const CreateS3: React.FC = () => {
                           }
                         }
                         if (curStep === 1) {
-                          if (!s3PipelineTask.params.domainName) {
-                            setEsDomainEmptyError(true);
-                            return;
-                          } else {
-                            setEsDomainEmptyError(false);
-                          }
-                          const validRes = checkOpenSearchInput(s3PipelineTask);
-                          setAosInputValidRes(validRes);
-                          if (Object.values(validRes).indexOf(true) >= 0) {
+                          if (!validateStep1()) {
                             return;
                           }
-                          // Check domain connection status
-                          if (
-                            domainCheckStatus?.status !==
-                            DomainStatusCheckType.PASSED
-                          ) {
+                        }
+                        if (curStep === 2) {
+                          dispatch({
+                            type: SelectProcessorActionTypes.VALIDATE_OCU_INPUT,
+                          });
+                          if (!validateOCUInput(osiParams)) {
                             return;
                           }
                         }
                         setCurStep((curStep) => {
-                          return curStep + 1 > 2 ? 2 : curStep + 1;
+                          return curStep + 1 > 3 ? 3 : curStep + 1;
                         });
                       }}
                     >
                       {t("button.next")}
                     </Button>
                   )}
-                  {curStep === 2 && (
+                  {curStep === 3 && (
                     <Button
                       loading={loadingCreate}
                       btnType="primary"

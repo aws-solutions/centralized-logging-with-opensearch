@@ -13,8 +13,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React, { useEffect, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  useLocation,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 import CreateStep from "components/CreateStep";
 import Breadcrumb from "components/Breadcrumb";
 import {
@@ -43,6 +48,7 @@ import {
   DomainStatusCheckType,
   DomainStatusCheckResponse,
   CompressionType,
+  SubAccountLink,
 } from "API";
 import {
   WarmTransitionType,
@@ -55,7 +61,11 @@ import SideMenu from "components/SideMenu";
 import { ActionType, InfoBarTypes } from "reducer/appReducer";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { checkIndexNameValidate } from "assets/js/utils";
+import {
+  buildOSIParamsValue,
+  checkIndexNameValidate,
+  defaultStr,
+} from "assets/js/utils";
 import Button from "components/Button";
 import HeaderPanel from "components/HeaderPanel";
 import SpecifyDomain from "../steps/SpecifyDomain";
@@ -88,6 +98,22 @@ import {
 } from "reducer/createAlarm";
 import { useAlarm } from "assets/js/hooks/useAlarm";
 import { Dispatch } from "redux";
+import { useLightEngine } from "assets/js/hooks/useLightEngine";
+import { AnalyticEngineTypes } from "pages/dataInjection/serviceLog/create/common/SpecifyAnalyticsEngine";
+import ConfigLightEngine from "pages/dataInjection/serviceLog/create/common/ConfigLightEngine";
+import {
+  CreateLightEngineActionTypes,
+  validateLightEngine,
+} from "reducer/createLightEngine";
+import { createLightEngineApplicationPipeline } from "assets/js/helpers/lightEngineHelper";
+import SelectLogProcessor from "pages/comps/processor/SelectLogProcessor";
+import {
+  SelectProcessorActionTypes,
+  validateOCUInput,
+} from "reducer/selectProcessor";
+import { useSelectProcessor } from "assets/js/hooks/useSelectProcessor";
+import { useGrafana } from "assets/js/hooks/useGrafana";
+import UpdateSubAccountModal from "pages/comps/account/UpdateSubAccountModal";
 
 const AppLogCreateEC2: React.FC = () => {
   const { t } = useTranslation();
@@ -150,11 +176,44 @@ const AppLogCreateEC2: React.FC = () => {
   );
   const [domainCheckStatus, setDomainCheckStatus] =
     useState<DomainStatusCheckResponse>();
+  const [subAccountInfo, setSubAccountInfo] = useState<SubAccountLink | null>(
+    null
+  );
+  const [subAccountList, setSubAccountList] = useState<SubAccountLink[]>([]);
+  const [needUpdateSubAccount, setNeedUpdateSubAccount] = useState(false);
 
   const tags = useTags();
   const monitor = useAlarm();
+  const lightEngine = useLightEngine();
+  const osiParams = useSelectProcessor();
+  const grafana = useGrafana();
+  console.log(lightEngine);
+  const [searchParams] = useSearchParams();
+  const engineType =
+    (searchParams.get("engineType") as AnalyticEngineTypes | null) ??
+    AnalyticEngineTypes.OPENSEARCH;
+  const isLightEngine = useMemo(
+    () => engineType === AnalyticEngineTypes.LIGHT_ENGINE,
+    [engineType]
+  );
 
   const instanceGroupValidator = new Validator(() => {
+    // check sub account has upload event sns
+    const curInstanceGroupAccountId = currentInstanceGroups[0].accountId;
+    const curInstanceGroupAccountInfo = subAccountList.find(
+      (element) => element.subAccountId === curInstanceGroupAccountId
+    );
+    if (
+      subAccountList.length > 0 &&
+      curInstanceGroupAccountInfo &&
+      !curInstanceGroupAccountInfo.subAccountFlbConfUploadingEventTopicArn
+    ) {
+      setSubAccountInfo(curInstanceGroupAccountInfo);
+      setNeedUpdateSubAccount(true);
+      throw new Error("");
+    } else {
+      setNeedUpdateSubAccount(false);
+    }
     if (currentInstanceGroups.length === 0) {
       throw new Error("Instance groups cannot be empty");
     }
@@ -343,6 +402,24 @@ const AppLogCreateEC2: React.FC = () => {
     }
   });
 
+  const lightEngineValidator = new Validator(() => {
+    if (!validateLightEngine(lightEngine, grafana)) {
+      dispatch({
+        type: CreateLightEngineActionTypes.VALIDATE_LIGHT_ENGINE,
+      });
+      throw new Error();
+    }
+  });
+
+  const selectProcessorValidator = new Validator(() => {
+    if (!validateOCUInput(osiParams)) {
+      dispatch({
+        type: SelectProcessorActionTypes.VALIDATE_OCU_INPUT,
+      });
+      throw new Error();
+    }
+  });
+
   useEffect(() => {
     if (
       currentInstanceGroups.length > 0 &&
@@ -380,7 +457,11 @@ const AppLogCreateEC2: React.FC = () => {
               defaultExpanded={false}
               headerText={t("applog:logSourceDesc.ec2.step1.permissionExpand")}
             >
-              <Permission />
+              <Permission
+                onUpdateAccountList={(accountList) => {
+                  setSubAccountList(accountList);
+                }}
+              />
             </ExpandableSection>
           </HeaderPanel>
         </PagePanel>
@@ -423,7 +504,7 @@ const AppLogCreateEC2: React.FC = () => {
               />
             )}
             <>
-              {!state && (
+              {!state && !isLightEngine && (
                 <CreateSampleDashboard
                   createDashboard={shouldCreateDashboard}
                   logType={
@@ -445,33 +526,38 @@ const AppLogCreateEC2: React.FC = () => {
       disabled: !!state,
       element: (
         <PagePanel title={t("applog:logSourceDesc.ec2.step3.panelTitle")}>
-          <HeaderPanel title={t("applog:create.ingestSetting.indexName")}>
-            <IndexName
-              value={curApplicationLog.aosParams.indexPrefix}
-              setValue={(value) => {
-                setCurApplicationLog((prev) => {
-                  return {
-                    ...prev,
-                    aosParams: {
-                      ...prev.aosParams,
-                      indexPrefix: value as string,
-                    },
-                    s3BufferParams: {
-                      ...prev.s3BufferParams,
-                      logBucketPrefix: `AppLogs/${value}/year=%Y/month=%m/day=%d/`,
-                    },
-                  };
-                });
-              }}
-              validator={indexNameValidator}
-            />
-          </HeaderPanel>
+          {isLightEngine ? (
+            <></>
+          ) : (
+            <HeaderPanel title={t("applog:create.ingestSetting.indexName")}>
+              <IndexName
+                value={curApplicationLog.aosParams.indexPrefix}
+                setValue={(value) => {
+                  setCurApplicationLog((prev) => {
+                    return {
+                      ...prev,
+                      aosParams: {
+                        ...prev.aosParams,
+                        indexPrefix: value as string,
+                      },
+                      s3BufferParams: {
+                        ...prev.s3BufferParams,
+                        logBucketPrefix: `AppLogs/${value}/year=%Y/month=%m/day=%d/`,
+                      },
+                    };
+                  });
+                }}
+                validator={indexNameValidator}
+              />
+            </HeaderPanel>
+          )}
           <HeaderPanel
             title={t("applog:logSourceDesc.ec2.step3.title")}
             desc={t("applog:logSourceDesc.ec2.step3.desc")}
             infoType={InfoBarTypes.BUFFER_LAYER}
           >
             <ChooseBufferLayer
+              engineType={engineType}
               maxShardNumInvalidError={maxShardInvalidError}
               s3BucketEmptyError={s3BucketEmptyError}
               s3PrefixError={s3PrefixError}
@@ -485,12 +571,18 @@ const AppLogCreateEC2: React.FC = () => {
           </HeaderPanel>
         </PagePanel>
       ),
-      validators: [bufferLayerValidator, indexNameValidator],
+      validators: [bufferLayerValidator].concat(
+        isLightEngine ? [] : [indexNameValidator]
+      ),
     },
     {
-      name: t("applog:logSourceDesc.s3.step4.naviTitle"),
+      name: isLightEngine
+        ? t("applog:logSourceDesc.eks.step4.lightEngineTitle")
+        : t("applog:logSourceDesc.eks.step4.naviTitle"),
       disabled: !!state,
-      element: (
+      element: isLightEngine ? (
+        <ConfigLightEngine />
+      ) : (
         <SpecifyDomain
           applicationLog={curApplicationLog}
           changeOpenSearchCluster={(cluster: DomainDetails | undefined) => {
@@ -500,7 +592,7 @@ const AppLogCreateEC2: React.FC = () => {
             setCurApplicationLog((prev) => {
               return {
                 ...prev,
-                openSearchId: cluster?.id || "",
+                openSearchId: defaultStr(cluster?.id),
                 warmEnable: cluster?.nodes?.warmEnabled || false,
                 coldEnable: cluster?.nodes?.coldEnabled || false,
                 rolloverSizeNotSupport: NOT_SUPPORT_VERSION,
@@ -508,15 +600,17 @@ const AppLogCreateEC2: React.FC = () => {
                 aosParams: {
                   ...prev.aosParams,
                   rolloverSize: NOT_SUPPORT_VERSION ? "" : "30",
-                  domainName: cluster?.domainName || "",
-                  opensearchArn: cluster?.domainArn || "",
-                  opensearchEndpoint: cluster?.endpoint || "",
-                  engine: cluster?.engine || "",
+                  domainName: defaultStr(cluster?.domainName),
+                  opensearchArn: defaultStr(cluster?.domainArn),
+                  opensearchEndpoint: defaultStr(cluster?.endpoint),
+                  engine: defaultStr(cluster?.engine),
                   vpc: {
-                    privateSubnetIds: cluster?.vpc?.privateSubnetIds || "",
-                    publicSubnetIds: cluster?.vpc?.publicSubnetIds || "",
-                    securityGroupId: cluster?.vpc?.securityGroupId || "",
-                    vpcId: cluster?.vpc?.vpcId || "",
+                    privateSubnetIds: defaultStr(
+                      cluster?.vpc?.privateSubnetIds
+                    ),
+                    publicSubnetIds: defaultStr(cluster?.vpc?.publicSubnetIds),
+                    securityGroupId: defaultStr(cluster?.vpc?.securityGroupId),
+                    vpcId: defaultStr(cluster?.vpc?.vpcId),
                   },
                 },
               };
@@ -661,12 +755,33 @@ const AppLogCreateEC2: React.FC = () => {
           rolloverSizeError={rolloverSizeError}
         />
       ),
-      validators: [openSearchInputValidator],
+      validators: [
+        isLightEngine ? lightEngineValidator : openSearchInputValidator,
+      ],
+    },
+    {
+      name: t("processor.logProcessorSettings"),
+      disabled: !!state,
+      element: (
+        <SelectLogProcessor
+          supportOSI={
+            curApplicationLog.bufferType === BufferType.S3 &&
+            engineType === AnalyticEngineTypes.OPENSEARCH
+          }
+        />
+      ),
+      validators: [selectProcessorValidator],
     },
     {
       name: t("applog:logSourceDesc.s3.step5.naviTitle"),
       disabled: !!state,
-      element: <AlarmAndTags applicationPipeline={curApplicationLog} />,
+      element: (
+        <AlarmAndTags
+          applicationPipeline={curApplicationLog}
+          engineType={engineType}
+          osiParams={osiParams}
+        />
+      ),
       validators: [],
     },
   ].filter((each) => !each.disabled);
@@ -755,6 +870,7 @@ const AppLogCreateEC2: React.FC = () => {
         })()
       ),
       monitor: monitor.monitor,
+      osiParams: buildOSIParamsValue(osiParams),
       tags,
       force: isForce,
     };
@@ -796,16 +912,29 @@ const AppLogCreateEC2: React.FC = () => {
         setLoadingCreate(false);
         navigate("/log-pipeline/application-log/detail/" + state?.pipelineId);
       } else {
-        const createRes = await appSyncRequestMutation(
-          createAppPipeline,
-          createPipelineParams
-        );
+        let appPipelineId: string;
+        if (engineType === AnalyticEngineTypes.LIGHT_ENGINE) {
+          appPipelineId = await createLightEngineApplicationPipeline(
+            lightEngine,
+            curApplicationLog,
+            logConfigObj,
+            monitor,
+            tags,
+            isForce
+          );
+        } else {
+          const createRes = await appSyncRequestMutation(
+            createAppPipeline,
+            createPipelineParams
+          );
 
-        console.info("createRes:", createRes);
+          console.info("createRes:", createRes);
+          appPipelineId = createRes.data.createAppPipeline;
+        }
 
         await appSyncRequestMutation(createAppLogIngestion, {
           sourceId: currentInstanceGroups[0].sourceId,
-          appPipelineId: createRes.data.createAppPipeline,
+          appPipelineId,
           tags,
           logPath: logPath,
           autoAddPermission: permissionsMode === AUTO,
@@ -816,7 +945,7 @@ const AppLogCreateEC2: React.FC = () => {
     } catch (error: any) {
       const { errorCode, message } = refineErrorMessage(error.message);
       if (
-        errorCode === ErrorCode.DUPLICATED_INDEX_PREFIX ||
+        errorCode === ErrorCode.OVERLAP_WITH_INACTIVE_INDEX_PREFIX ||
         errorCode === ErrorCode.OVERLAP_INDEX_PREFIX
       ) {
         Swal.fire({
@@ -827,8 +956,8 @@ const AppLogCreateEC2: React.FC = () => {
           confirmButtonText: t("button.cancel") || "",
           cancelButtonText: t("button.changeIndex") || "",
           text:
-            (errorCode === ErrorCode.DUPLICATED_INDEX_PREFIX
-              ? t("applog:create.ingestSetting.duplicatedWithPrefix")
+            (errorCode === ErrorCode.OVERLAP_WITH_INACTIVE_INDEX_PREFIX
+              ? t("applog:create.ingestSetting.overlapWithInvalidPrefix")
               : t("applog:create.ingestSetting.overlapWithPrefix")) +
             `(${message})`,
         }).then((result) => {
@@ -839,7 +968,7 @@ const AppLogCreateEC2: React.FC = () => {
       }
       if (
         errorCode === ErrorCode.DUPLICATED_WITH_INACTIVE_INDEX_PREFIX ||
-        errorCode === ErrorCode.OVERLAP_WITH_INACTIVE_INDEX_PREFIX
+        errorCode === ErrorCode.DUPLICATED_INDEX_PREFIX
       ) {
         Swal.fire({
           icon: "error",
@@ -851,10 +980,9 @@ const AppLogCreateEC2: React.FC = () => {
           denyButtonText: t("button.forceCreate") || "",
           cancelButtonText: t("button.changeIndex") || "",
           text:
-            (errorCode === ErrorCode.DUPLICATED_WITH_INACTIVE_INDEX_PREFIX
+            errorCode === ErrorCode.DUPLICATED_WITH_INACTIVE_INDEX_PREFIX
               ? t("applog:create.ingestSetting.duplicatedWithInvalidPrefix")
-              : t("applog:create.ingestSetting.overlapWithInvalidPrefix")) +
-            `(${message})`,
+              : t("applog:create.ingestSetting.duplicatedWithPrefix"),
         }).then((result) => {
           if (result.isDismissed) {
             setCurrentStep(2);
@@ -872,7 +1000,9 @@ const AppLogCreateEC2: React.FC = () => {
     return (
       domainListIsLoading ||
       (currentStep === 3 &&
-        domainCheckStatus?.status !== DomainStatusCheckType.PASSED)
+        !isLightEngine &&
+        domainCheckStatus?.status !== DomainStatusCheckType.PASSED) ||
+      osiParams.serviceAvailableCheckedLoading
     );
   };
 
@@ -949,6 +1079,13 @@ const AppLogCreateEC2: React.FC = () => {
           </div>
         </div>
       </div>
+      <UpdateSubAccountModal
+        accountInfo={subAccountInfo}
+        showModal={needUpdateSubAccount}
+        closeModal={() => {
+          setNeedUpdateSubAccount(false);
+        }}
+      />
       <HelpPanel />
     </div>
   );

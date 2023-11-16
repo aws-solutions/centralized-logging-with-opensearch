@@ -26,7 +26,11 @@ import { RootState } from "reducer/reducers";
 
 const PAGE_SIZE = 999;
 
-const Permission: React.FC = () => {
+interface PermissionProps {
+  onUpdateAccountList?: (list: SubAccountLink[]) => void;
+}
+
+const Permission: React.FC<PermissionProps> = (props: PermissionProps) => {
   const amplifyConfig: AmplifyConfigType = useSelector(
     (state: RootState) => state.app.amplifyConfig
   );
@@ -62,6 +66,7 @@ const Permission: React.FC = () => {
           );
         });
       }
+      props.onUpdateAccountList?.(accountList);
       const tmpPermissionJSON = generateEc2Permissions(
         awsPartition,
         accountId,

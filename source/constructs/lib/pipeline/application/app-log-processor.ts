@@ -13,24 +13,22 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import * as path from 'path';
+
 import {
   Aws,
-  Duration,
   RemovalPolicy,
-  aws_iam as iam,
   aws_s3 as s3,
   aws_lambda as lambda,
-  aws_ec2 as ec2,
   aws_logs as logs,
-} from 'aws-cdk-lib';
-import { ISecurityGroup, IVpc } from 'aws-cdk-lib/aws-ec2';
-import { NagSuppressions } from 'cdk-nag';
-import { Construct } from 'constructs';
-import { SharedPythonLayer } from '../../layer/layer';
-import { constructFactory } from '../../util/stack-helper';
-import { CWLMetricStack, MetricSourceType } from '../common/cwl-metric-stack';
-
+} from "aws-cdk-lib";
+import { ISecurityGroup, IVpc } from "aws-cdk-lib/aws-ec2";
+import { Construct } from "constructs";
+import { constructFactory } from "../../util/stack-helper";
+import { CWLMetricStack, MetricSourceType } from "../common/cwl-metric-stack";
+import {
+  OpenSearchInitStack,
+  OpenSearchInitProps,
+} from "../common/opensearch-init-stack";
 export interface LogProcessorProps {
   /**
    * Default VPC for OpenSearch REST API Handler
@@ -52,7 +50,12 @@ export interface LogProcessorProps {
    * @default - None.
    */
   readonly endpoint: string;
-
+  /**
+ * OpenSearch Domain Name
+ *
+ * @default - None.
+ */
+  readonly domainName: string;
   /**
    * OpenSearch or Elasticsearch
    *
@@ -61,14 +64,45 @@ export interface LogProcessorProps {
   readonly engineType: string;
 
   readonly indexPrefix: string;
+  /**
+ * Wheather to create Sample Dashboard
+ *
+ * @default - Yes.
+ */
+  readonly createDashboard?: string;
 
+  /**
+   * A list of plugins
+   *
+   * @default - None.
+   */
+  readonly plugins?: string;
+
+  readonly logBucketName?: string;
   readonly backupBucketName: string;
   readonly stackPrefix: string;
 
-  readonly source: 'MSK' | 'KDS';
+  readonly source: "MSK" | "KDS" | "SQS" | "EVENT_BRIDGE";
+  readonly subCategory: 'RT' | 'S3' | 'FLB' | 'CWL'
   readonly env?: { [key: string]: string };
 
   readonly logType: string;
+  readonly warmAge?: string;
+  readonly coldAge?: string;
+  readonly retainAge?: string;
+  readonly rolloverSize?: string;
+  readonly indexSuffix?: string;
+  readonly refreshInterval?: string;
+  readonly codec?: string;
+  readonly shardNumbers?: string;
+  readonly replicaNumbers?: string;
+  readonly solutionId: string;
+
+  /**
+   * A gzip base64 encoded string of OpenSearch index template.
+   */
+  readonly indexTemplateGzipBase64?: string;
+  readonly enableConfigJsonParam?: boolean;
 }
 
 export class AppLogProcessor extends Construct {
@@ -78,115 +112,61 @@ export class AppLogProcessor extends Construct {
   constructor(scope: Construct, id: string, props: LogProcessorProps) {
     super(scope, id);
 
-    // Create a lambda layer with required python packages.
-    const osLayer = new lambda.LayerVersion(this, 'OpenSearchLayer', {
-      code: lambda.Code.fromAsset(
-        path.join(__dirname, '../../../lambda/pipeline/common/layer'),
-        {
-          bundling: {
-            image: lambda.Runtime.PYTHON_3_9.bundlingImage,
-            command: [
-              'bash',
-              '-c',
-              'pip install -r requirements.txt -t /asset-output/python',
-            ],
-          },
-        }
-      ),
-      compatibleRuntimes: [lambda.Runtime.PYTHON_3_9],
-      description: `${Aws.STACK_NAME} - Lambda layer for OpenSearch`,
-    });
-
     // Create the Log Group for the Lambda function
-    const logGroup = new logs.LogGroup(this, 'LogProcessorFnLogGroup', {
+    const logGroup = new logs.LogGroup(this, "LogProcessorFnLogGroup", {
       logGroupName: `/aws/lambda/${Aws.STACK_NAME}-LogProcessorFn`,
       removalPolicy: RemovalPolicy.DESTROY,
     });
 
-    constructFactory(CWLMetricStack)(this, 'cwlMetricStack', {
+    constructFactory(CWLMetricStack)(this, "cwlMetricStack", {
       metricSourceType: MetricSourceType.LOG_PROCESSOR_APP,
       logGroup: logGroup,
       stackPrefix: props.stackPrefix,
     });
 
-    // Create the Log Sender Lambda
-    this.logProcessorFn = new lambda.Function(this, 'LogProcessorFn', {
-      description: `${Aws.STACK_NAME} - Function to process and load ${props.logType} logs through ${props.source} into OpenSearch`,
-      functionName: `${Aws.STACK_NAME}-LogProcessorFn`,
-      runtime: lambda.Runtime.PYTHON_3_9,
-      handler: 'lambda_function.lambda_handler',
-      code: lambda.Code.fromAsset(
-        path.join(__dirname, '../../../lambda/pipeline/app/log-processor')
-      ),
-      memorySize: 1024,
-      timeout: Duration.seconds(300),
-      vpc: props.vpc,
-      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
-      securityGroups: [props.securityGroup],
-      environment: Object.assign(
-        {
-          STACK_NAME: Aws.STACK_NAME,
-          SOURCE: props.source,
-          ENDPOINT: props.endpoint,
-          ENGINE: props.engineType ?? 'OpenSearch',
-          INDEX_PREFIX: props.indexPrefix,
-          BACKUP_BUCKET_NAME: props.backupBucketName,
-          SOLUTION_VERSION: process.env.VERSION || 'v1.0.0',
-          LOG_TYPE: props.logType,
-          BULK_BATCH_SIZE: '20000',
-          FUNCTION_NAME: `${Aws.STACK_NAME}-LogProcessorFn`,
-        },
-        props.env
-      ),
-      layers: [SharedPythonLayer.getInstance(this), osLayer],
-    });
-    this.logProcessorFn.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: [
-          'lambda:UpdateFunctionConfiguration',
-          'lambda:GetFunctionConfiguration',
-        ],
-        resources: [
-          `arn:${Aws.PARTITION}:lambda:${Aws.REGION}:${Aws.ACCOUNT_ID}:function:${Aws.STACK_NAME}-LogProcessorFn`,
-        ],
-      })
-    );
 
-    this.logProcessorFn.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: [
-          'ec2:CreateNetworkInterface',
-          'ec2:DeleteNetworkInterface',
-          'ec2:DescribeNetworkInterfaces',
-        ],
-        resources: [`*`],
-      })
+
+
+    const osProps: OpenSearchInitProps = {
+      vpc: props.vpc,
+      securityGroup: props.securityGroup,
+      endpoint: props.endpoint,
+      indexPrefix: props.indexPrefix,
+      engineType: props.engineType,
+      domainName: props.domainName,
+      createDashboard: props.createDashboard,
+      backupBucketName: props.backupBucketName,
+      logSourceAccountId: "",
+      logSourceRegion: Aws.REGION,
+      logSourceAccountAssumeRole: "",
+      source: props.source,
+      subCategory: props.subCategory,
+      shardNumbers: props.shardNumbers,
+      replicaNumbers: props.replicaNumbers,
+      warmAge: props.warmAge,
+      coldAge: props.coldAge,
+      retainAge: props.retainAge,
+      rolloverSize: props.rolloverSize,
+      indexSuffix: props.indexSuffix,
+      codec: props.codec,
+      refreshInterval: props.refreshInterval,
+      solutionId: props.solutionId,
+      indexTemplateGzipBase64: props.indexTemplateGzipBase64,
+      logType: props.logType,
+      env: props.env,
+      enableConfigJsonParam: props.enableConfigJsonParam,
+    };
+
+    const osInitStack = new OpenSearchInitStack(
+      this,
+      "OpenSearchInit",
+      osProps
     );
-    this.logProcessorFn.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: [
-          'es:ESHttpGet',
-          'es:ESHttpDelete',
-          'es:ESHttpPut',
-          'es:ESHttpPost',
-          'es:ESHttpHead',
-          'es:ESHttpPatch',
-        ],
-        resources: [
-          `arn:${Aws.PARTITION}:es:${Aws.REGION}:${Aws.ACCOUNT_ID}:*`,
-        ],
-      })
-    );
-    NagSuppressions.addResourceSuppressions(this.logProcessorFn, [
-      {
-        id: 'AwsSolutions-IAM5',
-        reason: 'The managed policy needs to use any resources.',
-      },
-    ]);
+    this.logProcessorFn = osInitStack.logProcessorFn
 
     const backupBucket = s3.Bucket.fromBucketName(
       this,
-      'backupBucket',
+      "backupBucket",
       props.backupBucketName
     );
     backupBucket.grantWrite(this.logProcessorFn);

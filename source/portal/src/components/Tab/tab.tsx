@@ -21,6 +21,7 @@ import Typography from "@material-ui/core/Typography";
 
 interface StyledTabProps {
   label: string;
+  className?: string;
 }
 
 const AntTabs = withStyles({

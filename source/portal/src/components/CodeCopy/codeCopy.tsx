@@ -28,7 +28,9 @@ interface CodeCopyProps {
 const CodeCopy: React.FC<CodeCopyProps> = (props: CodeCopyProps) => {
   const { loading, code } = props;
   const { t } = useTranslation();
-  const openMenu = useSelector((state: RootState) => state.app.openSideMenu);
+  const openMenu = useSelector(
+    (state: RootState) => state.app.openSideMenu,
+  );
   const [width, setWidth] = useState(0);
   const [menuWidth] = useState(openMenu ? 100 : 300);
 

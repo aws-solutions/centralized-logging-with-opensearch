@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import FormItem from "components/FormItem";
 import TextInput from "components/TextInput";
 import { useTranslation } from "react-i18next";
@@ -40,6 +40,7 @@ import { useSelector } from "react-redux";
 import { buildCreateS3Link } from "assets/js/utils";
 import { RootState } from "reducer/reducers";
 import ExpandableSection from "components/ExpandableSection";
+import { AnalyticEngineTypes } from "pages/dataInjection/serviceLog/create/common/SpecifyAnalyticsEngine";
 
 interface BufferS3Props {
   applicationLog: ApplicationLogType;
@@ -47,6 +48,7 @@ interface BufferS3Props {
   s3PrefixError: boolean;
   bufferSizeError: boolean;
   bufferIntervalError: boolean;
+  engineType?: AnalyticEngineTypes;
   changeS3BufferBucket: (bucket: OptionType | null) => void;
   changeS3BufferPrefix: (prefix: string) => void;
   changeS3BufferBufferSize: (size: string) => void;
@@ -69,6 +71,7 @@ const BufferS3: React.FC<BufferS3Props> = (props: BufferS3Props) => {
     changeS3BufferTimeout,
     changeS3CompressionType,
     changeS3StorageClass,
+    engineType = AnalyticEngineTypes.OPENSEARCH,
   } = props;
   const [loadingS3List, setLoadingS3List] = useState(false);
   const [s3BucketOptionList, setS3BucketOptionList] = useState<SelectItem[]>(
@@ -101,6 +104,11 @@ const BufferS3: React.FC<BufferS3Props> = (props: BufferS3Props) => {
     getS3List();
   }, []);
 
+  const isLightEngine = useMemo(
+    () => engineType === AnalyticEngineTypes.LIGHT_ENGINE,
+    [engineType]
+  );
+
   const amplifyConfig: AmplifyConfigType = useSelector(
     (state: RootState) => state.app.amplifyConfig
   );
@@ -109,7 +117,11 @@ const BufferS3: React.FC<BufferS3Props> = (props: BufferS3Props) => {
     <div>
       <FormItem
         optionTitle={t("applog:create.ingestSetting.s3Bucket")}
-        optionDesc={t("applog:create.ingestSetting.s3BucketDesc")}
+        optionDesc={
+          isLightEngine
+            ? t("applog:create.ingestSetting.s3BucketPrefixLightEngineDesc")
+            : t("applog:create.ingestSetting.s3BucketDesc")
+        }
         errorText={
           s3BucketEmptyError
             ? t("applog:create.ingestSetting.selectS3Bucket")
@@ -144,28 +156,30 @@ const BufferS3: React.FC<BufferS3Props> = (props: BufferS3Props) => {
           headerText={t("servicelog:cluster.additionalSetting")}
         >
           <div>
-            <FormItem
-              optionTitle={t("applog:create.ingestSetting.s3BucketPrefix")}
-              optionDesc={
-                t("applog:create.ingestSetting.s3BucketPrefixDesc1") +
-                S3_BUFFER_PREFIX +
-                t("applog:create.ingestSetting.s3BucketPrefixDesc2")
-              }
-              errorText={
-                s3PrefixError
-                  ? t("applog:create.ingestSetting.s3PrefixInvalid")
-                  : ""
-              }
-            >
-              <TextInput
-                placeholder={S3_BUFFER_PREFIX}
-                className="m-w-75p"
-                value={applicationLog.s3BufferParams.logBucketPrefix}
-                onChange={(event) => {
-                  changeS3BufferPrefix(event.target.value);
-                }}
-              />
-            </FormItem>
+            {!isLightEngine && (
+              <FormItem
+                optionTitle={t("applog:create.ingestSetting.s3BucketPrefix")}
+                optionDesc={
+                  t("applog:create.ingestSetting.s3BucketPrefixDesc1") +
+                  S3_BUFFER_PREFIX +
+                  t("applog:create.ingestSetting.s3BucketPrefixDesc2")
+                }
+                errorText={
+                  s3PrefixError
+                    ? t("applog:create.ingestSetting.s3PrefixInvalid")
+                    : ""
+                }
+              >
+                <TextInput
+                  placeholder={S3_BUFFER_PREFIX}
+                  className="m-w-75p"
+                  value={applicationLog.s3BufferParams.logBucketPrefix}
+                  onChange={(event) => {
+                    changeS3BufferPrefix(event.target.value);
+                  }}
+                />
+              </FormItem>
+            )}
 
             <FormItem
               optionTitle={t("applog:create.ingestSetting.bufferSize")}

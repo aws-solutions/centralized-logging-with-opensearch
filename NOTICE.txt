@@ -1,6 +1,7 @@
 Centralized Logging with OpenSearch
+
 Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-Licensed under the Apache License, Version 2.0 (the "License"). You may not use this file except
+Licensed under the Apache License Version 2.0 (the "License"). You may not use this file except
 in compliance with the License. A copy of the License is located at http://www.apache.org/licenses/
 or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, express or implied. See the License for the
@@ -11,6 +12,12 @@ THIRD PARTY COMPONENTS
 **********************
 This software includes third party software subject to the following copyrights:
 
+binaryornot under BSD License
+chardet under GNU Lesser General Public License v2 or later (LGPLv2+) (LGPL)
+func-timeout under GNU Lesser General Public License v2 (LGPLv2) (LGPLv2)
+numpy under The 3-Clause BSD License
+pyarrow under Apache License, Version 2.0
+pytest-httpserver under The MIT License
 boolean.py under BSD-2-Clause
 aws-sam-translator under the Apache License, Version 2.0
 aws-xray-sdk under the Apache License, Version 2.0
@@ -152,3 +159,8 @@ typescript under the Apache License, Version 2.0
 web-vitals under the Apache License, Version 2.0
 notice-js under MIT-0
 js-json-schema-inferrer under ISC License
+@aws-cdk/aws-glue-alpha under the Apache License, Version 2.0
+@reduxjs/toolkit under The MIT License
+redux-mock-store under The MIT License
+@types/redux-mock-store under The MIT License
+jsonschema-path under the Apache License, Version 2.0

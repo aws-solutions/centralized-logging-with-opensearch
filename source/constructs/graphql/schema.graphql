@@ -1,4 +1,5 @@
 scalar AWSDateTime
+scalar AWSJSON
 
 schema {
   query: Query
@@ -72,6 +73,14 @@ type Query {
     region: String
     accountId: String
   ): ListAppLogIngestionResponse
+
+  # List instance ingestion ssm detail
+  listInstanceIngestionDetails(
+    page: Int
+    count: Int
+    ingestionId: String
+    instanceId: String
+  ): ListInstanceIngestionDetailsResponse
 
   # Get app logging ingestion info by ID
   getAppLogIngestion(id: ID!): AppLogIngestion
@@ -176,6 +185,53 @@ type Query {
     domainName: String!
     region: String
   ): DomainStatusCheckResponse
+
+  # Check if OSI is available in the current region
+  checkOSIAvailability: Boolean
+
+  listGrafanas(page: Int, count: Int): ListGrafanasResponse
+
+  getGrafana(id: String!): Grafana
+
+  checkGrafana(
+    id: String
+    url: String
+    token: String
+  ): GrafanaStatusCheckResponse
+
+  # Get Light Engine Application pipeline execution.
+  getLightEngineAppPipelineExecutionLogs(
+    pipelineId: String!
+    stateMachineName: String!
+    type: ScheduleType!
+    status: ExecutionStatus
+    startTime: String
+    endTime: String
+    lastEvaluatedKey: AWSJSON
+    limit: Int
+  ): LightEnginePipelineExecutionLogsResponse
+
+  # Get Light Engine Application pipeline details.
+  getLightEngineAppPipelineDetail(
+    pipelineId: String!
+  ): LightEnginePipelineDetailResponse
+
+  # Get Light Engine Service pipeline execution.
+  getLightEngineServicePipelineExecutionLogs(
+    pipelineId: String!
+    stateMachineName: String!
+    type: ScheduleType!
+    status: ExecutionStatus
+    startTime: String
+    endTime: String
+    lastEvaluatedKey: AWSJSON
+    limit: Int
+  ): LightEnginePipelineExecutionLogsResponse
+
+  # Get Light Engine Service pipeline details.
+  getLightEngineServicePipelineDetail(
+    pipelineId: String!
+  ): LightEnginePipelineDetailResponse
 }
 
 type Mutation {
@@ -200,6 +256,19 @@ type Mutation {
     logSourceAccountId: String
     logSourceRegion: String
     destinationType: DestinationType!
+    osiParams: OpenSearchIngestionInput
+    monitor: MonitorInput
+  ): String
+
+  # Create a new service pipeline with light engine
+  createLightEngineServicePipeline(
+    type: ServiceType!
+    parameters: [ParameterInput]
+    ingestion: LightEngineIngestion!
+    tags: [TagInput]
+    source: String
+    logSourceAccountId: String
+    logSourceRegion: String
     monitor: MonitorInput
   ): String
 
@@ -251,6 +320,7 @@ type Mutation {
     multilineLogParser: MultiLineLogParser
     filterConfigMap: ProcessorFilterRegexInput
     regex: String
+    jsonSchema: AWSJSON
     regexFieldSpecs: [RegularSpecInput]
     timeKey: String
     timeOffset: String
@@ -272,6 +342,7 @@ type Mutation {
     multilineLogParser: MultiLineLogParser
     filterConfigMap: ProcessorFilterRegexInput
     regex: String
+    jsonSchema: AWSJSON
     regexFieldSpecs: [RegularSpecInput]
     timeKey: String
     timeOffset: String
@@ -284,6 +355,17 @@ type Mutation {
     bufferType: BufferType!
     bufferParams: [BufferInput]
     aosParams: AOSParameterInput!
+    logConfigId: ID!
+    logConfigVersionNumber: Int!
+    monitor: MonitorInput
+    force: Boolean
+    osiParams: OpenSearchIngestionInput
+    tags: [TagInput]
+  ): ID
+
+  createLightEngineAppPipeline(
+    params: LightEngineParameterInput!
+    bufferParams: [BufferInput]
     logConfigId: ID!
     logConfigVersionNumber: Int!
     monitor: MonitorInput
@@ -349,9 +431,16 @@ type Mutation {
     subAccountStackId: String!
     subAccountKMSKeyArn: String!
     subAccountIamInstanceProfileArn: String!
+    subAccountFlbConfUploadingEventTopicArn: String!
     tags: [TagInput]
   ): String
 
+  # update a  cross account link
+  updateSubAccountLink(
+    subAccountId: String!
+    region: String
+    subAccountFlbConfUploadingEventTopicArn: String!
+  ): String
   # Remove a cross account link
   deleteSubAccountLink(subAccountId: String!, region: String): String
 
@@ -374,6 +463,17 @@ type Mutation {
 
   # Delete the alarm config of a specific Pipeline, including App and Service
   deletePipelineAlarm(pipelineId: String!, pipelineType: PipelineType!): String
+
+  createGrafana(
+    name: String!
+    url: String!
+    token: String!
+    tags: [TagInput]
+  ): String
+
+  updateGrafana(id: String!, url: String, token: String): String
+
+  deleteGrafana(id: String!): String
 }
 
 enum DomainImportStatus {
@@ -405,6 +505,11 @@ enum DomainHealth {
 enum EngineType {
   Elasticsearch
   OpenSearch
+}
+
+enum AnalyticEngineType {
+  OpenSearch
+  LightEngine
 }
 
 type DomainMetrics {
@@ -572,12 +677,23 @@ type ServicePipeline {
   tags: [Tag]
   error: String
   monitor: MonitorDetail
+  osiParams: OpenSearchIngestionParams
+  osiPipelineName: String
   processorLogGroupName: String
   helperLogGroupName: String
   logEventQueueName: String
   deliveryStreamName: String
   bufferResourceName: String
   stackId: String
+  logSourceAccountId: String
+  logSourceRegion: String
+  engineType: AnalyticEngineType
+  lightEngineParams: LightEngineParameter
+}
+
+type LightEngineIngestionResp {
+  bucket: String!
+  prefix: String!
 }
 
 type ListServicePipelineResponse {
@@ -603,6 +719,11 @@ type Parameter {
 input ParameterInput {
   parameterKey: String
   parameterValue: String
+}
+
+input LightEngineIngestion {
+  bucket: String!
+  prefix: String!
 }
 
 type Resource {
@@ -796,6 +917,12 @@ enum ErrorCode {
   ACCOUNT_ALREADY_EXISTS
   ITEM_NOT_FOUND
   UNKNOWN_ERROR
+  GRAFANA_URL_CONNECTIVITY_FAILED
+  GRAFANA_TOKEN_VALIDATION_FAILED
+  GRAFANA_HAS_INSTALLED_ATHENA_PLUGIN_FAILED
+  GRAFANA_DATA_SOURCE_PERMISSION_CHECK_FAILED
+  GRAFANA_FOLDER_PERMISSION_CHECK_FAILED
+  GRAFANA_DASHBOARDS_PERMISSION_CHECK_FAILED
 }
 
 type LogConfig {
@@ -808,6 +935,7 @@ type LogConfig {
   multilineLogParser: MultiLineLogParser
   filterConfigMap: ProcessorFilterRegex
   regex: String
+  jsonSchema: AWSJSON
   regexFieldSpecs: [RegularSpec]
   timeKey: String
   timeOffset: String
@@ -886,6 +1014,20 @@ input AOSParameterInput {
   engine: EngineType!
   failedLogBucket: String!
 }
+
+input LightEngineParameterInput {
+  centralizedBucketName: String!
+  centralizedBucketPrefix: String!
+  centralizedTableName: String!
+  logProcessorSchedule: String!
+  logMergerSchedule: String!
+  logArchiveSchedule: String!
+  logMergerAge: String!
+  logArchiveAge: String!
+  importDashboards: String!
+  grafanaId: String
+  recipients: String
+}
 enum IndexSuffix {
   yyyy_MM_dd
   yyyy_MM_dd_HH
@@ -913,11 +1055,107 @@ type AOSParameter {
   engine: EngineType
 }
 
+enum NotificationService {
+  SNS
+  SES
+}
+
+type LightEngineParameter {
+  stagingBucketPrefix: String!
+  centralizedBucketName: String!
+  centralizedBucketPrefix: String!
+  centralizedTableName: String!
+  logProcessorSchedule: String!
+  logMergerSchedule: String!
+  logArchiveSchedule: String!
+  logMergerAge: String!
+  logArchiveAge: String!
+  importDashboards: String!
+  grafanaId: String
+  recipients: String
+  notificationService: NotificationService
+  enrichmentPlugins: String
+}
+
+type LightEngineTableMetadata {
+  databaseName: String!
+  tableName: String!
+  location: String!
+  classification: String!
+  dashboardName: String
+  dashboardLink: String
+}
+
+type AnalyticsEngine {
+  engineType: AnalyticEngineType!
+  table: LightEngineTableMetadata
+  metric: LightEngineTableMetadata
+}
+
+enum SchedulerType {
+  EventBridgeScheduler
+  EventBridgeEvents
+}
+
+type Scheduler {
+  type: SchedulerType!
+  group: String!
+  name: String!
+  expression: String!
+  age: Int
+}
+
+type StateMachine {
+  arn: String!
+  name: String!
+}
+
+enum ScheduleType {
+  LogProcessor
+  LogMerger
+  LogArchive
+  LogMergerForMetrics
+  LogArchiveForMetrics
+}
+
+type Schedule {
+  type: ScheduleType!
+  stateMachine: StateMachine!
+  scheduler: Scheduler!
+}
+
+type LightEnginePipelineDetailResponse {
+  analyticsEngine: AnalyticsEngine
+  schedules: [Schedule]
+}
+
+enum ExecutionStatus {
+  Running
+  Succeeded
+  Failed
+  Timed_out
+  Aborted
+}
+
+type LightEnginePipelineExecutionLog {
+  executionName: String
+  executionArn: String
+  taskId: String
+  startTime: String
+  endTime: String
+  status: ExecutionStatus
+}
+type LightEnginePipelineExecutionLogsResponse {
+  items: [LightEnginePipelineExecutionLog]
+  lastEvaluatedKey: AWSJSON
+}
+
 type AppPipeline {
   pipelineId: ID!
   bufferType: BufferType
   bufferParams: [BufferParameter]
   aosParams: AOSParameter
+  lightEngineParams: LightEngineParameter
   createdAt: String
   status: PipelineStatus
   logConfigId: String
@@ -931,8 +1169,13 @@ type AppPipeline {
   helperLogGroupName: String
   logEventQueueName: String
   monitor: MonitorDetail
+  osiParams: OpenSearchIngestionParams
+  osiPipelineName: String
+  minCapacity: Int
+  maxCapacity: Int
   stackId: String
   error: String
+  engineType: AnalyticEngineType
   tags: [Tag]
 }
 
@@ -956,8 +1199,19 @@ type AppLogIngestion {
   region: String
 }
 
+type InstanceIngestionDetail {
+  instanceId: String
+  ssmCommandId: String
+  ssmCommandStatus: String
+  details: String
+}
+
 type ListAppLogIngestionResponse {
   appLogIngestions: [AppLogIngestion]
+  total: Int
+}
+type ListInstanceIngestionDetailsResponse {
+  instanceIngestionDetail: [InstanceIngestionDetail]
   total: Int
 }
 
@@ -991,13 +1245,6 @@ type LogAgentParameter {
   agentName: String
   version: String
 }
-
-# InstanceMeta
-# type InstanceMeta {
-#   id: ID!
-#   logAgent: [LogAgentParameter]
-#   status: LogAgentStatus
-# }
 
 # Instance info
 type Instance {
@@ -1154,6 +1401,7 @@ type SubAccountLink {
   subAccountVpcId: String
   subAccountPublicSubnetIds: String
   subAccountIamInstanceProfileArn: String
+  subAccountFlbConfUploadingEventTopicArn: String
   createdAt: String
   status: String
   tags: [Tag]
@@ -1256,6 +1504,7 @@ enum DomainStatusCheckType {
   FAILED
   PASSED
   CHECKING
+  NOT_STARTED
 }
 
 type DomainStatusCheckDetail {
@@ -1269,6 +1518,11 @@ type DomainStatusCheckResponse {
   status: DomainStatusCheckType
   details: [DomainStatusCheckDetail]
   multiAZWithStandbyEnabled: Boolean
+}
+
+type GrafanaStatusCheckResponse {
+  status: DomainStatusCheckType
+  details: [DomainStatusCheckDetail]
 }
 
 enum ResourceStatus {
@@ -1310,6 +1564,16 @@ type MonitorDetail {
   emails: String
 }
 
+type OpenSearchIngestionParams {
+  minCapacity: Int
+  maxCapacity: Int
+}
+
+input OpenSearchIngestionInput {
+  minCapacity: Int
+  maxCapacity: Int
+}
+
 type ImportDomainResponse {
   id: String
   resources: [DomainRelevantResource]
@@ -1329,6 +1593,11 @@ enum MetricName {
   ProcessorFnDuration
   ProcessorFnThrottles
   ProcessorFnInvocations
+  ReplicationFnError
+  ReplicationFnConcurrentExecutions
+  ReplicationFnDuration
+  ReplicationFnThrottles
+  ReplicationFnInvocations
   KDFIncomingBytes
   KDFIncomingRecords
   KDFDeliveryToS3Bytes
@@ -1348,4 +1617,36 @@ enum MetricName {
   FluentBitOutputRetries
   FluentBitOutputProcBytes
   FluentBitOutputProcRecords
+  OSICPUUsage
+  OSIComputeUnits
+  OSIMemoryUsage
+  OSIBufferUsage
+  OSIBufferOverflowDrops
+  OSIObjectsSucceeded
+  OSIS3ObjectsEvents
+  OSIS3ObjectsEventsSum
+  OSISqsMessagesReceived
+  OSISqsMessagesDeleted
+  OSISqsMessagesFailed
+  OSISqsMessageDelayCount
+  OSISqsMessageDelaySum
+  OSIBytesTransmitted
+  OSIDocumentsWritten
+  OSIDocumentsFailedWrite
+  OSIDocumentsRetriedWrite
+  OSIDLQS3RecordsSuccess
+  OSIDLQS3RecordsFailed
+}
+
+type Grafana {
+  id: ID!
+  name: String!
+  url: String!
+  createdAt: String
+  tags: [Tag]
+}
+
+type ListGrafanasResponse {
+  grafanas: [Grafana]
+  total: Int
 }

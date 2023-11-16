@@ -125,7 +125,65 @@ def ddb_client():
                 "tags": [],
                 "target": "workshop-os",
                 "type": "CloudTrail",
-            }
+            },
+            {
+                "id": "3befc52a-de61-42c0-9972-d43196e737f0",
+                "bufferResourceArn": "",
+                "bufferResourceName": "",
+                "createdAt": "2023-04-28T02:43:51Z",
+                "deliveryStreamArn": "",
+                "deliveryStreamName": "",
+                "destinationType": "S3",
+                "engineType": "LightEngine",
+                "error": "",
+                "helperLogGroupName": "",
+                "lightEngineParams": {
+                    "centralizedBucketName": "centralized-logging-bucket",
+                    "centralizedBucketPrefix": "datalake",
+                    "centralizedMetricsTableName": "",
+                    "notificationService": "SNS",
+                    "recipients": "arn:aws:sns:us-west-2:123456789012:CL_c34f2159",
+                },
+                "logEventQueueArn": "",
+                "logEventQueueName": "",
+                "monitor": {
+                    "emails": ["your_email@example.com"],
+                    "pipelineAlarmStatus": "DISABLED",
+                    "snsTopicArn": "",
+                    "snsTopicName": "",
+                    "status": "ENABLED",
+                },
+                "parameters": [
+                    {
+                        "parameterKey": "centralizedBucketName", 
+                        "parameterValue": "centralized-logging-bucket"
+                        },
+                    {
+                        "parameterKey": "centralizedBucketPrefix",
+                        "parameterValue": "datalake",
+                    },
+                    {
+                        "parameterKey": "centralizedMetricsTableName",
+                        "parameterValue": "",
+                    },
+                    {
+                        "parameterKey": "notificationService",
+                        "parameterValue": "SNS",
+                    },
+                    {
+                        "parameterKey": "recipients", 
+                        "parameterValue": "arn:aws:sns:us-west-2:123456789012:CL_c34f2159"
+                        },
+                ],
+                "processorLogGroupName": "",
+                "source": "solution-us-west-2",
+                "stackId": "arn:aws:cloudformation:us-west-2:123456789012:stack/CL-pipe-c34f2159/83608ee0-e56e-11ed-950c-0a8d5b048915",
+                "stackName": "CL-pipe-c34f2159",
+                "status": "ACTIVE",
+                "tags": [],
+                "target": "workshop-os",
+                "type": "CloudTrail",
+            },
         ]
         init_table(service_pipeline_table, data_list)
 
@@ -189,6 +247,66 @@ def ddb_client():
                 "processorLogGroupName": "/aws/lambda/CL-pipe-c34f2159-LogProcessorFn",
                 "tags": [],
             },
+            {
+                "pipelineId": "91da81a7-c691-4720-bfa8-ae660fe73b86",
+                "bufferAccessRoleArn": "",
+                "bufferAccessRoleName": "",
+                "bufferParams": [
+                    {
+                        "paramKey": "centralizedBucketName", 
+                        "paramValue": "centralized-logging-bucket"
+                        },
+                    {
+                        "paramKey": "centralizedBucketPrefix",
+                        "paramValue": "datalake",
+                    },
+                    {
+                        "paramKey": "centralizedMetricsTableName",
+                        "paramValue": "",
+                    },
+                    {
+                        "paramKey": "notificationService",
+                        "paramValue": "SNS",
+                    },
+                    {
+                        "paramKey": "recipients", 
+                        "paramValue": "arn:aws:sns:us-west-2:123456789012:CL_c34f2159"
+                        },
+                ],
+                "bufferResourceArn": "",
+                "bufferResourceName": "",
+                "bufferType": "S3",
+                "createdAt": "2023-04-28T02:43:51Z",
+                "engineType": "LightEngine",
+                "error": "",
+                "helperLogGroupName": "",
+                "indexPrefix": "",
+                "lightEngineParams": {
+                    "centralizedBucketName": "centralized-logging-bucket",
+                    "centralizedBucketPrefix": "datalake",
+                    "centralizedMetricsTableName": "",
+                    "notificationService": "SNS",
+                    "recipients": "arn:aws:sns:us-west-2:123456789012:CL_c34f2159",
+                },
+                "logConfigId": "c850f69f-bd61-4d4d-bad4-e8f3b9b6f385",
+                "logConfigVersionNumber": "1",
+                "logEventQueueName": "",
+                "logProcessorRoleArn": "",
+                "monitor": {
+                    "emails": ["your_email@example.com"],
+                    "pipelineAlarmStatus": "DISABLED",
+                    "snsTopicArn": "",
+                    "snsTopicName": "",
+                    "status": "ENABLED",
+                },
+                "osHelperFnArn": "",
+                "processorLogGroupName": "",
+                "queueArn": "",
+                "stackId": "arn:aws:cloudformation:us-west-2:123456789012:stack/CL-pipe-c34f2159/83608ee0-e56e-11ed-950c-0a8d5b048915",
+                "status": "ACTIVE",
+                "tags": [],
+                "type": "CloudTrail"
+            },
         ]
         init_table(app_pipeline_table, data_list)
 
@@ -230,6 +348,156 @@ def ddb_client():
             },
         ]
         init_table(app_ingestion_table, data_list)
+        
+        # Mock Metadata Table
+        metadata_table_name = os.environ.get("METADATA_TABLE_NAME")
+        metadata_table = ddb.create_table(
+            TableName=metadata_table_name,
+            KeySchema=[{"AttributeName": "metaName", "KeyType": "HASH"}],
+            AttributeDefinitions=[{"AttributeName": "metaName", "AttributeType": "S"}],
+            ProvisionedThroughput={"ReadCapacityUnits": 10, "WriteCapacityUnits": 10},
+        )
+        data_list = [
+            {
+                'metaName': "3befc52a-de61-42c0-9972-d43196e737f0",
+                'data': {
+                    'source': {
+                        'type': 'WAF',
+                        'table': {
+                            'schema': '{}',
+                            'dataFormat': '', 
+                            'tableProperties': '{}', 
+                            'serializationProperties': '{}', 
+                        },
+                    },
+                    'destination': {
+                        'location': {
+                            'bucket': "centralized-logging-bucket",
+                            'prefix': "datalake",
+                        },
+                        'database': {
+                            'name': "centralized_database",
+                        },
+                        'table': {
+                            'name': 'waf',
+                            'schema': '{}',
+                        },
+                        'metrics': {
+                            'name': '',
+                            'schema': '{}',
+                        },
+                    },
+                    'notification': {
+                        'service': 'SNS',
+                        'recipients': 'arn:aws:sns:us-west-2:123456789012:CL_c34f2159'
+                    },
+                    'grafana': {
+                        'importDashboards': 'false',
+                        'url': '',
+                        'token': '',
+                    },
+                    'scheduler': {
+                        'service': 'scheduler',
+                        'LogProcessor': {
+                            'schedule': 'rate(5 minutes)',
+                        },
+                        'LogMerger': {
+                            'schedule': 'cron(0 1 * * ? *)',
+                            'age': 3,
+                        },
+                        'LogArchive': {
+                            'schedule': 'cron(0 2 * * ? *)',
+                            'age': 7,
+                        },
+                    },
+                    'staging': {
+                        'prefix': 'AWSLogs/WAFLogs'
+                    }
+                },
+                'stack': {
+                    'lambda': {
+                        'replicate': "arn:aws:lambda:us-east-1:12345678912:function:CL-AppPipe-S3ObjectReplication"
+                    },
+                    'queue':{
+                        'logEventQueue': "arn:aws:sqs:us-east-1:12345678912:CL-AppPipe-LogEventDLQ",
+                        'logEventDLQ': "arn:aws:sqs:us-east-1:12345678912:CL-AppPipe-LogEventQueue",
+                    },
+                    'role': {
+                        'replicate': "arn:aws:iam::12345678912:role/CL-AppPipe-S3ObjectReplicationRole"
+                    }
+                }
+            },
+            {
+                'metaName': "91da81a7-c691-4720-bfa8-ae660fe73b86",
+                'data': {
+                    'source': {
+                        'type': 'fluent-bit',
+                        'table': {
+                            'schema': '{"type":"object","properties":{"timestamp":{"type":"string","timeKey":true,"format":"YYYY-MM-dd\'\'T\'\'HH:mm:ss.SSSSSSSSSZ"},"correlationId":{"type":"string"},"processInfo":{"type":"object","properties":{"hostname":{"type":"string"},"domainId":{"type":"string"},"groupId":{"type":"string"},"groupName":{"type":"string"},"serviceId":{"type":"string","partition":true},"serviceName":{"type":"string"},"version":{"type":"string"}}},"transactionSummary":{"type":"object","properties":{"path":{"type":"string"},"protocol":{"type":"string"},"protocolSrc":{"type":"string"},"status":{"type":"string"},"serviceContexts":{"type":"array","items":{"type":"object","properties":{"service":{"type":"string"},"monitor":{"type":"boolean"},"client":{"type":"string"},"org":{},"app":{},"method":{"type":"string"},"status":{"type":"string"},"duration":{"type":"number"}}}}}}}}',
+                            'dataFormat': 'json', 
+                            'tableProperties': '{}', 
+                            'serializationProperties': '{}', 
+                        },
+                    },
+                    'destination': {
+                        'location': {
+                            'bucket': "centralized-logging-bucket",
+                            'prefix': "datalake",
+                        },
+                        'database': {
+                            'name': "centralized_database",
+                        },
+                        'table': {
+                            'name': 'waf',
+                            'schema': '{}',
+                        },
+                        'metrics': {
+                            'name': '',
+                            'schema': '{}',
+                        },
+                    },
+                    'notification': {
+                        'service': 'SNS',
+                        'recipients': 'arn:aws:sns:us-east-1:123456789012:CL_c34f2159'
+                    },
+                    'grafana': {
+                        'importDashboards': 'false',
+                        'url': '',
+                        'token': '',
+                    },
+                    'scheduler': {
+                        'service': 'scheduler',
+                        'LogProcessor': {
+                            'schedule': 'rate(5 minutes)',
+                        },
+                        'LogMerger': {
+                            'schedule': 'cron(0 1 * * ? *)',
+                            'age': 3,
+                        },
+                        'LogArchive': {
+                            'schedule': 'cron(0 2 * * ? *)',
+                            'age': 7,
+                        },
+                    },
+                    'staging': {
+                        'prefix': 'AWSLogs/WAFLogs'
+                    }
+                },
+                'stack': {
+                    'lambda': {
+                        'replicate': "arn:aws:lambda:us-east-1:12345678912:function:CL-AppPipe-S3ObjectReplication"
+                    },
+                    'queue':{
+                        'logEventQueue': "arn:aws:sqs:us-east-1:12345678912:CL-AppPipe-LogEventDLQ",
+                        'logEventDLQ': "arn:aws:sqs:us-east-1:12345678912:CL-AppPipe-LogEventQueue",
+                    },
+                    'role': {
+                        'replicate': "arn:aws:iam::12345678912:role/CL-AppPipe-S3ObjectReplicationRole"
+                    }
+                }
+            },
+        ]
+        init_table(metadata_table, data_list)
         yield
 
 
@@ -239,6 +507,10 @@ def ddb_client():
 @mock_sns
 def test_service_pipeline_alarm_api(ddb_client):
     import lambda_function
+    
+    aws_ddb_client = boto3.resource('dynamodb')
+    metadata_table_name = os.environ['METADATA_TABLE_NAME']
+    metadata_table = aws_ddb_client.Table(metadata_table_name)
 
     # Test create the alarm for service pipeline
     result = lambda_function.lambda_handler(
@@ -369,7 +641,208 @@ def test_service_pipeline_alarm_api(ddb_client):
         None,
     )
     assert result == "OK"
+    
+    # Test about Light Engine
+    light_engine_svc_pipeline_id = "3befc52a-de61-42c0-9972-d43196e737f0"
+    
+    # Test create the alarm for app pipeline
+    result = lambda_function.lambda_handler(
+        make_graphql_lambda_event(
+            "createPipelineAlarm",
+            {
+                "pipelineId": light_engine_svc_pipeline_id,
+                "pipelineType": PipelineType.SERVICE,
+                "emails": "your_email@example.com",
+            },
+        ),
+        None,
+    )
+    assert result == "OK"
+    
+    response = metadata_table.get_item(Key={'metaName': light_engine_svc_pipeline_id})
+    assert response['Item']['data']['notification']['recipients'] != ''
+    assert response['Item']['data']['notification']['service'] == 'SNS'
+    
+    # Test update alarm sns topic arn for app pipeline
+    # Create a new sns topic first
+    sns = boto3.client("sns", region_name=os.environ.get("AWS_REGION"))
+    response = sns.create_topic(
+        Name="new-sns-topic-for-light-engine",
+    )
+    new_topic_arn = response["TopicArn"]
 
+    result = lambda_function.lambda_handler(
+        make_graphql_lambda_event(
+            "updatePipelineAlarm",
+            {
+                "pipelineId": light_engine_svc_pipeline_id,
+                "pipelineType": PipelineType.SERVICE,
+                "snsTopicArn": new_topic_arn,
+            },
+        ),
+        None,
+    )
+    assert result == "OK"
+    
+    response = metadata_table.get_item(Key={'metaName': light_engine_svc_pipeline_id})
+    assert response['Item']['data']['notification']['recipients'] == new_topic_arn
+    assert response['Item']['data']['notification']['service'] == 'SNS'
+    assert response['Item'] == {
+        "metaName": "3befc52a-de61-42c0-9972-d43196e737f0",
+        "data": {
+            "source": {
+                "type": "WAF",
+                "table": {
+                    "schema": "{}",
+                    "dataFormat": "",
+                    "tableProperties": "{}",
+                    "serializationProperties": "{}"
+                }
+            },
+            "destination": {
+                "location": {
+                    "bucket": "centralized-logging-bucket",
+                    "prefix": "datalake"
+                },
+                "database": {
+                    "name": "centralized_database"
+                },
+                "table": {
+                    "name": "waf",
+                    "schema": "{}"
+                },
+                "metrics": {
+                    "name": "",
+                    "schema": "{}"
+                }
+            },
+            "notification": {
+                "recipients": new_topic_arn,
+                "service": "SNS"
+            },
+            "grafana": {
+                "importDashboards": "false",
+                "url": "",
+                "token": ""
+            },
+            "scheduler": {
+                "service": "scheduler",
+                "LogProcessor": {
+                    "schedule": "rate(5 minutes)"
+                },
+                "LogMerger": {
+                    "schedule": "cron(0 1 * * ? *)",
+                    "age": 3
+                },
+                "LogArchive": {
+                    "schedule": "cron(0 2 * * ? *)",
+                    "age": 7
+                }
+            },
+            "staging": {
+                "prefix": "AWSLogs/WAFLogs"
+            }
+        },
+        "stack": {
+            "lambda": {
+                "replicate": "arn:aws:lambda:us-east-1:12345678912:function:CL-AppPipe-S3ObjectReplication"
+            },
+            "queue": {
+                "logEventQueue": "arn:aws:sqs:us-east-1:12345678912:CL-AppPipe-LogEventDLQ",
+                "logEventDLQ": "arn:aws:sqs:us-east-1:12345678912:CL-AppPipe-LogEventQueue"
+            },
+            "role": {
+                "replicate": "arn:aws:iam::12345678912:role/CL-AppPipe-S3ObjectReplicationRole"
+            }
+        }
+    }
+    
+    # Test delete the alarm for app pipeline
+    result = lambda_function.lambda_handler(
+        make_graphql_lambda_event(
+            "deletePipelineAlarm",
+            {
+                "pipelineId": light_engine_svc_pipeline_id,
+                "pipelineType": PipelineType.SERVICE,
+            },
+        ),
+        None,
+    )
+    assert result == "OK"
+    
+    response = metadata_table.get_item(Key={'metaName': light_engine_svc_pipeline_id})
+    assert response['Item']['data']['notification']['recipients'] == ''
+    assert response['Item']['data']['notification']['service'] == 'SNS'
+    assert response['Item'] == {
+        "metaName": "3befc52a-de61-42c0-9972-d43196e737f0",
+        "data": {
+            "source": {
+                "type": "WAF",
+                "table": {
+                    "schema": "{}",
+                    "dataFormat": "",
+                    "tableProperties": "{}",
+                    "serializationProperties": "{}"
+                }
+            },
+            "destination": {
+                "location": {
+                    "bucket": "centralized-logging-bucket",
+                    "prefix": "datalake"
+                },
+                "database": {
+                    "name": "centralized_database"
+                },
+                "table": {
+                    "name": "waf",
+                    "schema": "{}"
+                },
+                "metrics": {
+                    "name": "",
+                    "schema": "{}"
+                }
+            },
+            "notification": {
+                "recipients": "",
+                "service": "SNS"
+            },
+            "grafana": {
+                "importDashboards": "false",
+                "url": "",
+                "token": ""
+            },
+            "scheduler": {
+                "service": "scheduler",
+                "LogProcessor": {
+                    "schedule": "rate(5 minutes)"
+                },
+                "LogMerger": {
+                    "schedule": "cron(0 1 * * ? *)",
+                    "age": 3
+                },
+                "LogArchive": {
+                    "schedule": "cron(0 2 * * ? *)",
+                    "age": 7
+                }
+            },
+            "staging": {
+                "prefix": "AWSLogs/WAFLogs"
+            }
+        },
+        "stack": {
+            "lambda": {
+                "replicate": "arn:aws:lambda:us-east-1:12345678912:function:CL-AppPipe-S3ObjectReplication"
+            },
+            "queue": {
+                "logEventQueue": "arn:aws:sqs:us-east-1:12345678912:CL-AppPipe-LogEventDLQ",
+                "logEventDLQ": "arn:aws:sqs:us-east-1:12345678912:CL-AppPipe-LogEventQueue"
+            },
+            "role": {
+                "replicate": "arn:aws:iam::12345678912:role/CL-AppPipe-S3ObjectReplicationRole"
+            }
+        }
+    }
+    
 
 @mock_sts
 @mock_cloudwatch
@@ -377,6 +850,10 @@ def test_service_pipeline_alarm_api(ddb_client):
 @mock_sns
 def test_app_pipeline_alarm_api(ddb_client):
     import lambda_function
+    
+    aws_ddb_client = boto3.resource('dynamodb')
+    metadata_table_name = os.environ['METADATA_TABLE_NAME']
+    metadata_table = aws_ddb_client.Table(metadata_table_name)
 
     # Test create the alarm for app pipeline
     result = lambda_function.lambda_handler(
@@ -475,3 +952,67 @@ def test_app_pipeline_alarm_api(ddb_client):
         None,
     )
     assert result == "OK"
+    
+    # Test about Light Engine
+    light_engine_app_pipeline_id = "91da81a7-c691-4720-bfa8-ae660fe73b86"
+    
+    # Test create the alarm for app pipeline
+    result = lambda_function.lambda_handler(
+        make_graphql_lambda_event(
+            "createPipelineAlarm",
+            {
+                "pipelineId": light_engine_app_pipeline_id,
+                "pipelineType": PipelineType.APP,
+                "emails": "your_email@example.com",
+            },
+        ),
+        None,
+    )
+    assert result == "OK"
+    
+    response = metadata_table.get_item(Key={'metaName': light_engine_app_pipeline_id})
+    assert response['Item']['data']['notification']['recipients'] != ''
+    assert response['Item']['data']['notification']['service'] == 'SNS'
+    
+    # Test update alarm sns topic arn for app pipeline
+    # Create a new sns topic first
+    sns = boto3.client("sns", region_name=os.environ.get("AWS_REGION"))
+    response = sns.create_topic(
+        Name="new-sns-topic-for-light-engine",
+    )
+    new_topic_arn = response["TopicArn"]
+
+    result = lambda_function.lambda_handler(
+        make_graphql_lambda_event(
+            "updatePipelineAlarm",
+            {
+                "pipelineId": light_engine_app_pipeline_id,
+                "pipelineType": PipelineType.APP,
+                "snsTopicArn": new_topic_arn,
+            },
+        ),
+        None,
+    )
+    assert result == "OK"
+    
+    response = metadata_table.get_item(Key={'metaName': light_engine_app_pipeline_id})
+    assert response['Item']['data']['notification']['recipients'] == new_topic_arn
+    assert response['Item']['data']['notification']['service'] == 'SNS'
+    
+    # Test delete the alarm for app pipeline
+    result = lambda_function.lambda_handler(
+        make_graphql_lambda_event(
+            "deletePipelineAlarm",
+            {
+                "pipelineId": light_engine_app_pipeline_id,
+                "pipelineType": PipelineType.APP,
+            },
+        ),
+        None,
+    )
+    assert result == "OK"
+    
+    response = metadata_table.get_item(Key={'metaName': light_engine_app_pipeline_id})
+    assert response['Item']['data']['notification']['recipients'] == ''
+    assert response['Item']['data']['notification']['service'] == 'SNS'
+    

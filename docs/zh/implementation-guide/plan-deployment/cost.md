@@ -13,9 +13,11 @@
 - 日志的位置
 - 额外的特性
 
-以下示例将演示截至最新发布的版本，基于亚马逊云科技美国东部（弗吉尼亚北部）区域 (us-east-1) 10/100/1000 GB 每日日志摄取的成本估算。 总成本包括 [**Amazon OpenSearch 费用**](#amazon-opensearch)、[**处理费用**](#_1) 和 [**额外特性费用**](#_4)。
+以下示例将演示截至最新发布的版本，基于亚马逊云科技美国东部（弗吉尼亚北部）区域 (us-east-1) 10/100/1000 GB 每日日志摄取的成本估算。 总成本包括 [**Amazon OpenSearch 费用**](#amazon-opensearch)或[**Light Engine费用**](#light-engine)、[**处理费用**](#_1) 和 [**额外特性费用**](#_4)。
 
-## Amazon OpenSearch 费用
+## 使用Amazon OpenSearch 作为日志分析引擎时的费用
+
+### Amazon OpenSearch 费用
 
 - **OD**: 按需实例价格模型
 - **AURI_1**: 全额预付1年预留实例
@@ -39,9 +41,9 @@
 | 1000	       | 180	    | 7H + 23W + 150C	 | 0	  | 9701.15	   | 9089.48	        | m6g.large[3]	 | r6g.xlarge[6]	  | 8856	     | medium[15]	   | 173000	                    | 0.0539	       | 0.0505	           |
 | 1000	       | 180	    | 7H + 23W + 150C	 | 1	  | 12644.19	  | 11420.86	       | m6g.large[3]	 | r6g.2xlarge[6]	 | 17712	    | medium[15]	   | 173000	                    | 0.07025	      | 0.06345	          |
 
-## 处理费用
+### 处理费用
 
-### 通过 Amazon S3 提取日志
+#### 通过 Amazon S3 提取日志
 
 !!! note "信息"
 
@@ -61,19 +63,35 @@
 
 您每天有 `N` GB 原始日志，每日成本估算如下：
 
+**当您使用 Lambda 作为日志处理器时:**
+
 - Lambda 成本 = 每 MB 260 毫秒 x 1024 MB x `N` GB/天 x 每毫秒 0.0000000167 美元
 - S3 存储成本 = 每 GB 0.023 美元 x `N` GB/天 x 4%（压缩）
 
+**当您使用 OSI 作为日志处理器时:**
+
+- OSI Pipeline 成本 = $0.24 每 OCU 每 hour
+- 1个OCU可处理的最大S3数据量约为20MB/s
+
 处理 AWS 服务日志的每月总成本为：
 
-**每月总成本** =（Lambda 成本 + S3 存储成本）x 30 天
+**每月总成本（Lambda作为日志处理器）** =（Lambda 成本 + S3 存储成本）x 30 天
 
 | 每日的日志量 | 每日的 Lambda 费用 ($) | 每次的 S3 存储费用 ($) | 每月的费用 ($) |
 |-------|------------------|----------------|----------|
 | 10    | 0.044            | 0.009          | 1.610    |
 | 100   | 0.445            | 0.092          | 16.099   |
 | 1000  | 4.446            | 0.920          | 160.986  |
+| 5000             | 22.23                   | 4.600                       | 804.900            |
 
+**Total 每月的总费用 (OSI 作为日志处理器)** = (OSI 成本 + S3 Storage 成本) x 30 天
+
+| 每日的日志量 | 每日的 OSI 费用 ( $) | 每次的 S3 存储费用 ( $) | 每月的费用 ( $) |
+| ---------------- | ----------------------- | --------------------------- | ------------------ |
+| 10               | 5.760                   | 0.001                       | 173.1              |
+| 100              | 5.760                   | 0.009                       | 175.5              |
+| 1000             | 11.52                   | 0.920                       | 373.2              |
+| 5000             | 34.56                   | 4.600                       | 1174.8             |
 
 对于记录到Amazon CloudWatch 的 Amazon RDS/Aurora 日志和 AWS Lambda 日志，除了上面列出的 S3 和 Lambda 成本外，还有使用Kinesis Data Firehose (KDF) 来订阅 CloudWatch 日志流并将它们放入Amazon S3桶的额外成本，KDF 以 5KB 为增量收费（每条记录小于 5KB 按 5KB 计费）。 假设日志大小为每条记录 0.2 KB，则每天的 KDF 成本估算如下：
 
@@ -86,7 +104,7 @@
     为了节约 KDF 的成本，请确保您只记录需要的日志。 例如，除非需要，否则不要打开 RDS 常规日志(General Log)。
 
 
-### 通过 Amazon Kinesis Data Streams (KDS) 提取日志
+#### 通过 Amazon Kinesis Data Streams (KDS) 提取日志
 
 !!! note "信息"
 
@@ -126,6 +144,66 @@
 | 100        | 2   | 0.72             | 1.4                   | 0.835        | 88.65     |
 | 1000       | 17  | 6.12             | 14                    | 8.35         | 854.1     |
 
+## 使用 Light Engine 作为日志分析引擎费用
+
+**示例1 -- 原始日志大小: 10GB/天，查询大小: 50GB/天**
+
+| 服务             | 每月的总费用 (USD) |
+|----------------------|--------------------|
+| Amazon S3            | $1.49              |
+| Amazon Lambda        | $0.37              |
+| Amazon SQS           | $0.00              |
+| Amazon DynamoDB      | $3.79              |
+| Amazon Step Function | $8.07              |
+| Amazon SNS           | $0.18              |
+| Amazon Athena        | $7.25              |
+| Amazon EC2*          | $29.20             |
+| **Total**                | **$50.35**             |
+
+**示例2 --原始日志大小: 100GB/天，查询大小: 300GB/天**
+
+| 服务             | 每月的总费用 (USD) |
+|----------------------|--------------------|
+| Amazon S3            | $19.98.00          |
+| Amazon Lambda        | $0.73              |
+| Amazon SQS           | $0.00              |
+| Amazon DynamoDB      | $3.79              |
+| Amazon Step Function | $16.14             |
+| Amazon SNS           | $0.18              |
+| Amazon Athena        | $43.51             |
+| Amazon EC2*          | $29.20             |
+| **Total**                | **$113.53**            |
+
+**示例3 --原始日志大小: 1TB/天，查询大小: 1TB/天**
+
+| 服务             | 每月的总费用 (USD) |
+|----------------------|--------------------|
+| Amazon S3            | $148.99            |
+| Amazon Lambda        | $1.10              |
+| Amazon SQS           | $0.00              |
+| Amazon DynamoDB      | $3.79              |
+| Amazon Step Function | $26.90             |
+| Amazon SNS           | $0.18              |
+| Amazon Athena        | $148.54            |
+| Amazon EC2*          | $29.20             |
+| **Total**               | **$358.70**            |
+
+## 解决方案控制台成本
+部署解决方案时会自动创建 Web 控制台。 假设一个月（30天）控制台访问次数为3000次，则将产生以下费用：
+
+!!! Note "注意"
+    
+    AWS Step Functions, Amazon CloudWatch, AWS Systems Manager, 和 Amazon EventBridge 均属于免费套餐。
+
+| 服务 | 每月的总费用 (USD) | 
+| --------------------- | ------ |
+| Amazon CloudFront (1GB Data Transfer Out to Internet and 1GB Data Transfer Out to Origin) | 0.25 | 
+| Amazon S3 | 0.027 |
+| Amazon Cognito | 0.05 |
+| AWS AppSync | 0.01 |
+| Amazon DynamoDB | 1.00 |
+| AWS Lambda | 0.132 |
+| Total | 1.469 |
 
 ## 额外特性费用
 
@@ -135,9 +213,9 @@
 
 ### 访问代理
 
-如果通过日志通部署并创建了[访问代理](./domains/proxy.md)，将收取以下费用。根据您选择的实例类型和实例数量，总成本会有所不同。 以下是两个示例供您参考（基于截至最新发布版本的 us-east-1 价格）。
+如果通过日志通部署并创建了[访问代理](../domains/proxy.md)，将收取以下费用。根据您选择的实例类型和实例数量，总成本会有所不同。 以下是两个示例供您参考（基于截至最新发布版本的 us-east-1 价格）。
 
-#### 示例 1: 实例类型 - t3.nano, 2台
+**示例 1: 实例类型 - t3.nano, 2台**
 
 - EC2 成本 = t3.nano 1Y 全部预付预留实例 $26.28 x 2 / 12 个月 = $4.38/月
 - EBS 成本 = 0.1 GB/月 x 8 GB x 2 = $1.6/月
@@ -145,7 +223,7 @@
 
 **每月总费用** = 4.38 美元 EC2 成本 + 1.6 美元 EBS 成本 + 16.2 美元弹性负载均衡器成本 = **22.18 美元**
 
-#### 示例 2: 实例类型 - t3.large, 2台
+**示例 2: 实例类型 - t3.large, 2台**
 
 - EC2 成本 = t3.large 1Y 全部预付预留实例 $426.612 x 2 / 12 个月 = $71.1/月
 - EBS 成本 = 0.1 GB/月 x 8 GB x 2 = $1.6/月
@@ -155,4 +233,4 @@
 
 ### 告警
 
-如果通过日志通部署并创建了[告警](./domains/alarms.md)，可参考[CloudWatch 价格](https://aws.amazon.com/cloudwatch/pricing/)。
+如果通过日志通部署并创建了[告警](../domains/alarms.md)，可参考[CloudWatch 价格](https://aws.amazon.com/cloudwatch/pricing/)。

@@ -124,6 +124,14 @@ const RichTooltip = ({
   const [arrowRef, setArrowRef] = React.useState<HTMLElement | null>(null);
   const [childNode, setChildNode] = React.useState<HTMLElement | null>(null);
 
+  if (!open || !childNode) {
+    return (
+      <div>
+        {React.cloneElement(children, { ...children.props, ref: setChildNode })}
+      </div>
+    );
+  }
+
   return (
     <div>
       {React.cloneElement(children, { ...children.props, ref: setChildNode })}
@@ -148,7 +156,11 @@ const RichTooltip = ({
           <ClickAwayListener onClickAway={onClose}>
             <Paper className={classes.popoverRoot}>
               {arrow ? (
-                <span className={classes.arrow} ref={setArrowRef} />
+                <span
+                  data-testid="arrow"
+                  className={classes.arrow}
+                  ref={setArrowRef}
+                />
               ) : null}
               <Box className={classes.content}>{content}</Box>
             </Paper>

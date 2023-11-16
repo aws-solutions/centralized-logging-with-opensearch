@@ -9,11 +9,6 @@ def test_lambda_function():
     import create_service_linked_role
 
     # Create a service linked role in a brand new account
-    result = create_service_linked_role.lambda_handler(
-        {
-            "RequestType": "Create",
-        },
-        None,
-    )
+    result = create_service_linked_role.lambda_handler({}, None)
     # Expect Execute successfully.
     assert result == "OK"

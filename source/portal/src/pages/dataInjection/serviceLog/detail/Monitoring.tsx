@@ -19,7 +19,12 @@ import { useSelector } from "react-redux";
 import React, { useState } from "react";
 import RefreshIcon from "@material-ui/icons/Refresh";
 import { ServiceLogDetailProps } from "../ServiceLogDetail";
-import { DestinationType, PipelineStatus } from "API";
+import {
+  AnalyticEngineType,
+  DestinationType,
+  PipelineStatus,
+  PipelineType,
+} from "API";
 import { useTranslation } from "react-i18next";
 import HeaderPanel from "components/HeaderPanel";
 import ExtLink from "components/ExtLink";
@@ -40,9 +45,14 @@ import {
   buildKDSLink,
   buildKDFLink,
   buildLambdaLink,
+  defaultStr,
+  ternary,
+  buildOSIPipelineNameByPipelineId,
 } from "assets/js/utils";
 import { RootState } from "reducer/reducers";
 import { PIPLINE_MONITORING_COST_LINK } from "assets/js/const";
+import Alert from "components/Alert";
+import OSIProcessorMetric from "pages/dataInjection/common/OSIProcessorMetrics";
 
 interface MonitoringProps {
   pipelineInfo: ServiceLogDetailProps | undefined;
@@ -116,7 +126,15 @@ const Monitoring: React.FC<MonitoringProps> = (props: MonitoringProps) => {
     return (
       <div>
         <div className="flex">
-          <ValueWithLabel label={t("common:monitoring.lambdaProcessor")}>
+          <ValueWithLabel
+            label={
+              pipelineInfo?.engineType === AnalyticEngineType.LightEngine
+                ? t("common:monitoring.lightEngineSvcLambdaDesc", {
+                    service: pipelineInfo?.type,
+                  })
+                : t("common:monitoring.lambdaProcessor")
+            }
+          >
             <ExtLink
               to={buildLambdaLink(
                 amplifyConfig.aws_project_region,
@@ -174,7 +192,7 @@ const Monitoring: React.FC<MonitoringProps> = (props: MonitoringProps) => {
         }
       >
         <>
-          {pipelineInfo?.status === PipelineStatus.ACTIVE && (
+          {pipelineInfo?.status === PipelineStatus.ACTIVE ? (
             <>
               <div
                 style={{
@@ -325,12 +343,34 @@ const Monitoring: React.FC<MonitoringProps> = (props: MonitoringProps) => {
                 </div>
               </ExpandableSection>
 
-              <ExpandableSection
-                headerText={t("common:monitoring.lambdaProcessor")}
-              >
-                <div>{renderLambdaProcessor()}</div>
-              </ExpandableSection>
+              {pipelineInfo.osiParams.minCapacity ? (
+                <ExpandableSection headerText={t("monitoring.osiProcessor")}>
+                  <OSIProcessorMetric
+                    amplifyConfig={amplifyConfig}
+                    osiPipelineName={buildOSIPipelineNameByPipelineId(
+                      defaultStr(pipelineInfo?.id)
+                    )}
+                    type={PipelineType.SERVICE}
+                    pipelineId={defaultStr(pipelineInfo?.id)}
+                    startDate={startDate}
+                    endDate={endDate}
+                    refreshCount={refreshCount}
+                  />
+                </ExpandableSection>
+              ) : (
+                <ExpandableSection
+                  headerText={ternary(
+                    pipelineInfo.engineType === AnalyticEngineType.LightEngine,
+                    t("common:monitoring.lambda"),
+                    t("common:monitoring.lambdaProcessor")
+                  )}
+                >
+                  <div>{renderLambdaProcessor()}</div>
+                </ExpandableSection>
+              )}
             </>
+          ) : (
+            <Alert content={t("alarm.notActive")} />
           )}
         </>
       </HeaderPanel>

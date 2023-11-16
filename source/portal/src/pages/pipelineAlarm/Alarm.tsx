@@ -15,6 +15,7 @@ limitations under the License.
 */
 import {
   AlarmMetricName,
+  AnalyticEngineType,
   AppPipeline,
   BufferType,
   DestinationType,
@@ -70,6 +71,8 @@ import {
 import { Dispatch } from "redux";
 import { identity } from "lodash";
 import { TOPIC_NAME_REGEX } from "assets/js/const";
+import { LogReplicationAlarm } from "./alarm/LogReplicationAlarm";
+import { AnalyticEngineTypes } from "pages/dataInjection/serviceLog/create/common/SpecifyAnalyticsEngine";
 
 export interface LogSourceAlarmType {
   name: string;
@@ -87,6 +90,7 @@ export interface AlarmItemProps {
 interface MonitoringProps {
   pageType: "create" | "detail";
   type: PipelineType;
+  engineType?: AnalyticEngineTypes;
   servicePipeline?: ServiceLogDetailProps;
   pipelineInfo?: AppPipeline;
   changeTopicName?: (topicName: string) => void;
@@ -117,6 +121,7 @@ const Alarm: React.FC<MonitoringProps> = (props: MonitoringProps) => {
     changeTopicName,
     changeEmails,
     changePipelineMonitor,
+    engineType,
   } = props;
 
   const CreateAlarmOptionList = [
@@ -160,6 +165,24 @@ const Alarm: React.FC<MonitoringProps> = (props: MonitoringProps) => {
     LogSourceAlarmType[]
   >([]);
   const [refreshCount, setRefreshCount] = useState(0);
+  const isLightEngine = useMemo(() => {
+    if (pageType === "create") {
+      return engineType === AnalyticEngineTypes.LIGHT_ENGINE;
+    }
+    return (
+      pipelineInfo?.engineType === AnalyticEngineType.LightEngine ||
+      servicePipeline?.engineType === AnalyticEngineType.LightEngine
+    );
+  }, [
+    pipelineInfo?.engineType,
+    servicePipeline?.engineType,
+    pageType,
+    engineType,
+  ]);
+  const LogAlarm = useMemo(
+    () => (isLightEngine ? LogReplicationAlarm : LogProcessorAlarm),
+    [isLightEngine]
+  );
 
   const getSNSList = async () => {
     try {
@@ -404,10 +427,14 @@ const Alarm: React.FC<MonitoringProps> = (props: MonitoringProps) => {
                 >
                   <div className="preset-alarm-list">
                     <p>{t("alarm.list.PROCESSOR_ERROR_INVOCATION_ALARM")}</p>
-                    <p>{t("alarm.list.PROCESSOR_ERROR_RECORD_ALARM")}</p>
+                    {!isLightEngine && (
+                      <p>{t("alarm.list.PROCESSOR_ERROR_RECORD_ALARM")}</p>
+                    )}
                     <p>{t("alarm.list.PROCESSOR_DURATION_ALARM")}</p>
                     <p>{t("alarm.list.OLDEST_MESSAGE_AGE_ALARM")}</p>
-                    <p>{t("alarm.list.KDS_THROTTLED_RECORDS_ALARM")}</p>
+                    {!isLightEngine && (
+                      <p>{t("alarm.list.KDS_THROTTLED_RECORDS_ALARM")}</p>
+                    )}
                     {type === PipelineType.APP && (
                       <p>
                         {t("alarm.list.FLUENTBIT_OUTPUT_RETRIED_RECORDS_ALARM")}
@@ -536,7 +563,7 @@ const Alarm: React.FC<MonitoringProps> = (props: MonitoringProps) => {
               pageType === "detail" && (
                 <>
                   {pipelineInfo?.bufferType !== BufferType.None && (
-                    <LogProcessorAlarm
+                    <LogAlarm
                       type={PipelineType.APP}
                       pipelineId={pipelineInfo?.pipelineId || ""}
                       refreshCount={refreshCount}
@@ -567,7 +594,7 @@ const Alarm: React.FC<MonitoringProps> = (props: MonitoringProps) => {
               type === PipelineType.SERVICE &&
               pageType === "detail" && (
                 <>
-                  <LogProcessorAlarm
+                  <LogAlarm
                     type={PipelineType.SERVICE}
                     pipelineId={servicePipeline?.id || ""}
                     refreshCount={refreshCount}

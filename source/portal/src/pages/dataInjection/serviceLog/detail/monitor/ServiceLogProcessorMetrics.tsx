@@ -15,9 +15,10 @@ limitations under the License.
 */
 
 import React from "react";
-import { MetricName, PipelineType } from "API";
+import { AnalyticEngineType, MetricName, PipelineType } from "API";
 import { ServiceMetricProps } from "../Monitoring";
 import MonitorMetrics from "pages/comps/monitor/MonitorMetrics";
+import { LightEngineLambdaMetrics } from "pages/dataInjection/common/LightEngineMonitor";
 
 export const ServiceLogLambdaBufferCommonMetrics = [
   {
@@ -78,12 +79,16 @@ const ServiceLogProcessorMetric: React.FC<ServiceMetricProps> = (
   props: ServiceMetricProps
 ) => {
   const { pipelineInfo, startDate, endDate, refreshCount } = props;
+  const metrics =
+    pipelineInfo?.engineType === AnalyticEngineType.LightEngine
+      ? LightEngineLambdaMetrics
+      : ServiceLogLambdaBufferCommonMetrics;
 
   return (
     <MonitorMetrics
       type={PipelineType.SERVICE}
       taskId={pipelineInfo?.id || ""}
-      metrics={ServiceLogLambdaBufferCommonMetrics}
+      metrics={metrics}
       startTime={startDate}
       endTime={endDate}
       refreshCount={refreshCount}

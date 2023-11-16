@@ -208,7 +208,7 @@ export class CWtoFirehosetoS3Stack extends Construct {
     // Lambda to create CloudWatch Log Group Subscription Filter
     const cwSubFilterFn = new lambda.Function(this, "cwSubFilterFn", {
       description: `${Aws.STACK_NAME} - Create CloudWatch Log Group Subscription Filter`,
-      runtime: lambda.Runtime.PYTHON_3_9,
+      runtime: lambda.Runtime.PYTHON_3_11,
       handler: "cw_subscription_filter.lambda_handler",
       code: lambda.Code.fromAsset(
         path.join(__dirname, "../../../lambda/pipeline/common/custom-resource/")

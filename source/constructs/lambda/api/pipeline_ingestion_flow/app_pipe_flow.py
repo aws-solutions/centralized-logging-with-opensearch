@@ -5,7 +5,12 @@ import json
 import logging
 
 from commonlib import AWSConnection
-from commonlib.model import PipelineAlarmStatus, PipelineType, PipelineMonitorStatus
+from commonlib.model import (
+    PipelineAlarmStatus,
+    PipelineType,
+    PipelineMonitorStatus,
+    EngineType,
+)
 from util.pipeline_helper import StackErrorHelper
 
 logger = logging.getLogger()
@@ -42,7 +47,6 @@ def lambda_handler(event, _):
                 "pipelineId": pipeline_id,
             }
         )
-        print(resp)
         if "Item" not in resp:
             raise RuntimeError("Pipeline Not Found")
 
@@ -69,7 +73,11 @@ def lambda_handler(event, _):
                         "emails": item["monitor"].get("emails"),
                     },
                 }
-            elif result["stackStatus"] == "DELETE_COMPLETE":
+            elif (
+                item["monitor"].get("pipelineAlarmStatus")
+                == PipelineAlarmStatus.ENABLED
+                and result["stackStatus"] == "DELETE_COMPLETE"
+            ):
                 logger.info("Triggering Delete Pipeline Alarm")
                 # Flow to alarm deletion step in cfn-flow sfn
                 return {
@@ -109,10 +117,11 @@ def update_status(pipeline_id: str, args, result, item):
     monitor = item.get("monitor", {})
     monitor["status"] = PipelineMonitorStatus.ENABLED
 
+    engine_type = item.get("engineType", EngineType.OPEN_SEARCH)
+
     # Define key-value mappings for parameters and outputs
     parameters_mapping = {"backupBucketName": ""}
     outputs_mapping = {
-        "OSInitHelperFn": "",
         "BufferResourceArn": "",
         "BufferResourceName": "",
         "BufferAccessRoleArn": "",
@@ -121,7 +130,6 @@ def update_status(pipeline_id: str, args, result, item):
         "LogEventQueueName": "",
         "LogProcessorRoleArn": "",
         "ProcessorLogGroupName": "",
-        "HelperLogGroupName": "",
     }
 
     # Helper function to update values from parameters or outputs
@@ -143,6 +151,13 @@ def update_status(pipeline_id: str, args, result, item):
     # Update values from parameters and outputs
     parameters_mapping = update_values(parameters, parameters_mapping)
     outputs_mapping = update_values(outputs, outputs_mapping)
+
+    # App pipelines of LightEngine type do not have those keys in output of CFN
+    if engine_type == EngineType.LIGHT_ENGINE:
+        outputs_mapping["BufferResourceArn"] = item.get("bufferResourceArn", "")
+        outputs_mapping["BufferResourceName"] = item.get("bufferResourceName", "")
+        outputs_mapping["BufferAccessRoleArn"] = item.get("bufferAccessRoleArn", "")
+        outputs_mapping["BufferAccessRoleName"] = item.get("bufferAccessRoleName", "")
 
     # Update monitor
     monitor["backupBucketName"] = parameters_mapping["backupBucketName"]
@@ -180,10 +195,9 @@ def construct_update_expr_attr_values(
     outputs_mapping, monitor, stack_id, status, error
 ):
     update_expr = (
-        "SET #status = :s, stackId = :sid, #error = :err, monitor = :m, osHelperFnArn = :helper"
+        "SET #status = :s, stackId = :sid, #error = :err, monitor = :m"
         ", bufferResourceArn = :bufferArn, bufferResourceName = :bufferName"
-        ", bufferAccessRoleArn = :roleArn, bufferAccessRoleName = :roleName"
-        ", processorLogGroupName = :processorGroup, helperLogGroupName = :helperGroup"
+        ", processorLogGroupName = :processorGroup "
         ", queueArn = :queueArn, logProcessorRoleArn = :logProcessorRoleArn"
         ", logEventQueueName = :logEventQueueName"
     )
@@ -193,13 +207,9 @@ def construct_update_expr_attr_values(
         ":sid": stack_id,
         ":err": error,
         ":m": monitor,
-        ":helper": outputs_mapping["OSInitHelperFn"],
         ":bufferArn": outputs_mapping["BufferResourceArn"],
         ":bufferName": outputs_mapping["BufferResourceName"],
-        ":roleArn": outputs_mapping["BufferAccessRoleArn"],
-        ":roleName": outputs_mapping["BufferAccessRoleName"],
         ":processorGroup": outputs_mapping["ProcessorLogGroupName"],
-        ":helperGroup": outputs_mapping["HelperLogGroupName"],
         ":queueArn": outputs_mapping["QueueArn"],
         ":logEventQueueName": outputs_mapping["LogEventQueueName"],
         ":logProcessorRoleArn": outputs_mapping["LogProcessorRoleArn"],

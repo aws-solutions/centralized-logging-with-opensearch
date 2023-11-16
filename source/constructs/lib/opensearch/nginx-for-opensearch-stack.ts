@@ -375,9 +375,12 @@ export class NginxForOpenSearchStack extends Stack {
     ]);
 
     // enable proxy stack ELB access log
-    lb.setAttribute("access_logs.s3.enabled", "true")
-    lb.setAttribute("access_logs.s3.bucket", elbAccessLogBucketName.valueAsString)
-    lb.setAttribute("access_logs.s3.prefix", `ELBLogs/opensearchproxy`)
+    lb.setAttribute("access_logs.s3.enabled", "true");
+    lb.setAttribute(
+      "access_logs.s3.bucket",
+      elbAccessLogBucketName.valueAsString
+    );
+    lb.setAttribute("access_logs.s3.prefix", `ELBLogs/opensearchproxy`);
 
     // lb listener, 443
     const listener = lb.addListener("Listener", {
@@ -498,7 +501,7 @@ export class NginxForOpenSearchStack extends Stack {
 }
 
 class InjectEC2LaunchTemplateNetWorkInterfaceSetting implements IAspect {
-  public constructor(private ec2LaunchTemplateNetworkInterfaceSetting: any) { }
+  public constructor(private ec2LaunchTemplateNetworkInterfaceSetting: any) {}
 
   public visit(node: IConstruct): void {
     if (

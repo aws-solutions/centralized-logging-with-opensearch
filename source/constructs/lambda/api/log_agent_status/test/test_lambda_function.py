@@ -358,7 +358,6 @@ def test_single_agent_installation(mocker, sts_client, ssm_client, ec2_client):
                     'CpuOptions': {
                         'CoreCount': 123,
                         'ThreadsPerCore': 123,
-                        'AmdSevSnp': 'enabled'
                     },
                     'CapacityReservationId': 'string',
                     'CapacityReservationSpecification': {

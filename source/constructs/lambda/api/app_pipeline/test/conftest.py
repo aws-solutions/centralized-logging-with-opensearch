@@ -22,10 +22,10 @@ def _process_lambda(func_str):
 
 def get_test_zip_file1():
     pfunc = """
-def lambda_handler(event, context):
-    print("custom log event")
-    return event
-"""
+            def lambda_handler(event, context):
+                print("custom log event")
+                return "Ok"
+            """
     return _process_lambda(pfunc)
 
 
@@ -77,6 +77,12 @@ def init_ddb(config):
     return ddb
 
 
+def init_table(table, rows):
+    with table.batch_writer() as batch:
+        for data in rows:
+            batch.put_item(Item=data)
+            
+            
 @pytest.fixture(autouse=True)
 def default_environment_variables():
     """Mocked AWS evivronment variables such as AWS credentials and region"""
@@ -104,3 +110,10 @@ def default_environment_variables():
     os.environ[
         "LOG_AGENT_EKS_DEPLOYMENT_KIND_TABLE"
     ] = "mocked-log-agent-eks-deployment-kind-table"
+    os.environ["GRAFANA_TABLE"] = "mocked-grafana-table-name"
+    os.environ["METADATA_TABLE"] = "mocked-metadata-table-name"
+    os.environ["ETLLOG_TABLE"] = "mocked-ec2-etl-log-table-name"
+    os.environ["LIGHT_ENGINE_APP_PIPELINE_ID"] = "c5840c23-79c2-4bf5-b35d-025dad5ba254"
+    os.environ["ACCOUNT_ID"] = "12345678"
+    os.environ["REGION"] = "us-east-1"
+    os.environ["PARTITION"] = "aws"

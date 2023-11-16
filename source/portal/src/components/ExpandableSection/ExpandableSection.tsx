@@ -47,7 +47,9 @@ const ExpandableSection: React.FC<ExpandableSectionProps> = (
         </span>
       </div>
 
-      <div className={showAdvanceSetting ? "" : "hide"}>{children}</div>
+      <div data-testid="content" className={showAdvanceSetting ? "" : "hide"}>
+        {children}
+      </div>
     </div>
   );
 };

@@ -50,6 +50,7 @@ let validateS3Bucket: FieldValidator<string>;
 let validateStackId: FieldValidator<string>;
 let validateKMSArn: FieldValidator<string>;
 let validateInstanceProfileArn: FieldValidator<string>;
+let validateFBUploadSNSTopicArn: FieldValidator<string>;
 
 export const validateLinedAccount = (
   state: CreateSubAccountLinkMutationVariables
@@ -62,7 +63,9 @@ export const validateLinedAccount = (
   validateS3Bucket(state.subAccountBucketName) === "" &&
   validateStackId(state.subAccountStackId) === "" &&
   validateKMSArn(state.subAccountKMSKeyArn) === "" &&
-  validateInstanceProfileArn(state.subAccountIamInstanceProfileArn) === "";
+  validateInstanceProfileArn(state.subAccountIamInstanceProfileArn) === "" &&
+  validateFBUploadSNSTopicArn(state.subAccountFlbConfUploadingEventTopicArn) ===
+    "";
 
 const LinkAnAccount: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -102,6 +105,7 @@ const LinkAnAccount: React.FC = () => {
       subAccountKMSKeyArn: "",
       region: amplifyConfig.aws_project_region,
       subAccountIamInstanceProfileArn: "", // New
+      subAccountFlbConfUploadingEventTopicArn: "",
       tags: [],
     });
 
@@ -114,6 +118,8 @@ const LinkAnAccount: React.FC = () => {
   const [accountStackIdError, setAccountStackIdError] = useState("");
   const [accountKMSArnError, setAccountKMSArnError] = useState("");
   const [accountInstanceProfileError, setAccountInstanceProfileError] =
+    useState("");
+  const [accountFBUploadSNSArnError, setAccountFBUploadSNSArnError] =
     useState("");
 
   validateAccountName = useCallback(
@@ -220,6 +226,22 @@ const LinkAnAccount: React.FC = () => {
     [i18n.language]
   );
 
+  validateFBUploadSNSTopicArn = useCallback(
+    pipFieldValidator(
+      validateRequiredText(
+        t("resource:crossAccount.link.inputFBConfigUploadSNSTopicArn")
+      ),
+      validateWithRegex(
+        new RegExp(
+          `^arn:(aws-cn|aws):sns:\\w+-\\w+-\\d:${
+            linkAccountInfo.subAccountId || "\\d{12}"
+          }:.+`
+        )
+      )(t("resource:crossAccount.link.fbConfigUploadSNSTopicArnFormatError"))
+    ),
+    [i18n.language]
+  );
+
   const [loadingCreate, setLoadingCreate] = useState(false);
 
   const createCrossAccountLink = async () => {
@@ -241,6 +263,11 @@ const LinkAnAccount: React.FC = () => {
     setAccountInstanceProfileError(
       validateInstanceProfileArn(
         linkAccountInfo.subAccountIamInstanceProfileArn
+      )
+    );
+    setAccountFBUploadSNSArnError(
+      validateFBUploadSNSTopicArn(
+        linkAccountInfo.subAccountFlbConfUploadingEventTopicArn
       )
     );
     if (!isLinkedAccountValid) {
@@ -508,6 +535,35 @@ const LinkAnAccount: React.FC = () => {
                       });
                       setAccountInstanceProfileError(
                         validateInstanceProfileArn(event.target.value)
+                      );
+                    }}
+                  />
+                </FormItem>
+
+                <FormItem
+                  optionTitle={t(
+                    "resource:crossAccount.link.fbConfigUploadSNSTopicArn"
+                  )}
+                  optionDesc={t(
+                    "resource:crossAccount.link.fbConfigUploadSNSTopicArnDesc"
+                  )}
+                  errorText={accountFBUploadSNSArnError}
+                >
+                  <TextInput
+                    value={
+                      linkAccountInfo.subAccountFlbConfUploadingEventTopicArn ||
+                      ""
+                    }
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                      setLinkAccountInfo((prev) => {
+                        return {
+                          ...prev,
+                          subAccountFlbConfUploadingEventTopicArn:
+                            event.target.value,
+                        };
+                      });
+                      setAccountFBUploadSNSArnError(
+                        validateFBUploadSNSTopicArn(event.target.value)
                       );
                     }}
                   />

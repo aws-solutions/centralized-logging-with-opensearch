@@ -10,7 +10,13 @@ from svc.ec2 import EC2SourceHandler
 from svc.k8s import EKSSourceHandler
 from svc.syslog import SyslogSourceHandler
 from commonlib import ErrorCode, APIException
-from commonlib.dao import AppPipelineDao, LogConfigDao, LogSourceDao, AppLogIngestionDao
+from commonlib.dao import (
+    AppPipelineDao,
+    LogConfigDao,
+    LogSourceDao,
+    AppLogIngestionDao,
+    InstanceIngestionDetailDao,
+)
 from commonlib.utils import paginate
 from commonlib.model import (
     AppPipeline,
@@ -34,12 +40,18 @@ app_pipeline_table_name = os.environ.get("APP_PIPELINE_TABLE_NAME")
 app_log_ingestion_table_name = os.environ.get("APP_LOG_INGESTION_TABLE_NAME")
 log_config_table_name = os.environ.get("APP_LOG_CONFIG_TABLE_NAME")
 log_source_table_name = os.environ.get("LOG_SOURCE_TABLE_NAME")
-
+instance_ingestion_detail_table_name = os.environ.get(
+    "INSTANCE_INGESTION_DETAIL_TABLE_NAME"
+)
 
 app_pipeline_dao = AppPipelineDao(table_name=app_pipeline_table_name)
 ingestion_dao = AppLogIngestionDao(table_name=app_log_ingestion_table_name)
 log_config_dao = LogConfigDao(table_name=log_config_table_name)
 log_source_dao = LogSourceDao(table_name=log_source_table_name)
+
+instance_ingestion_detail_dao = InstanceIngestionDetailDao(
+    table_name=instance_ingestion_detail_table_name
+)
 
 
 class AppLogIngestionService:
@@ -251,3 +263,34 @@ class AppLogIngestionService:
             "appLogIngestions": results,
             "total": total,
         }
+
+    def list_instance_ingestion_details(self, **args) -> dict:
+        self.check_list_instance_ingestion_details_params(**args)
+        conditions = Attr("status").ne(StatusEnum.ACTIVE)
+        if args.get("ingestionId"):
+            conditions = conditions.__and__(
+                Attr("ingestionId").eq(args.get("ingestionId"))
+            )
+        if args.get("instanceId"):
+            conditions = conditions.__and__(
+                Attr("instanceId").eq(args.get("instanceId"))
+            )
+
+        results = instance_ingestion_detail_dao.list_instance_ingestion_details(
+            conditions
+        )
+        page: int = args.get("page") or 1
+        count: int = args.get("count") or 100
+
+        total, results = paginate([s.dict() for s in results], page, count)
+        return {
+            "instanceIngestionDetail": results,
+            "total": total,
+        }
+
+    def check_list_instance_ingestion_details_params(self, **args):
+        if "ingestionId" not in args and "instanceId" not in args:
+            raise APIException(
+                ErrorCode.UNSUPPORTED_ACTION,
+                "'ingestionId' or 'instanceId', please at least one must be selected as parameter",
+            )

@@ -13,31 +13,33 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
 import React from "react";
 import Button from "components/Button";
 import OpenInNewIcon from "@material-ui/icons/OpenInNew";
+import { ButtonProps } from "./Button/button";
 
 function openLinkInNewTab(url: string) {
   const newTab = window.open(url, "_blank", "noopener,noreferrer");
   if (newTab) newTab.opener = null;
 }
 
-interface ExtButtonProps {
+type ExtButtonProps = {
   to: string;
   children: any;
-}
+} & ButtonProps
 
 export default function ExtButton(props: ExtButtonProps) {
+  const {to, children, ...restProps} = props
   return (
     <Button
+      {...restProps}
       btnType="icon"
       onClick={() => {
-        openLinkInNewTab(props.to);
+        openLinkInNewTab(to);
       }}
     >
       <OpenInNewIcon fontSize="small" />
-      {props.children}
+      {children}
     </Button>
   );
 }

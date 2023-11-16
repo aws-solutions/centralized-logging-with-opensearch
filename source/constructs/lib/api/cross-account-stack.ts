@@ -79,6 +79,7 @@ export class CrossAccountStack extends Construct {
       removalPolicy: RemovalPolicy.DESTROY,
       encryption: ddb.TableEncryption.DEFAULT,
       pointInTimeRecovery: true,
+      stream: ddb.StreamViewType.NEW_AND_OLD_IMAGES,
     });
 
     const cfnSubAccountLinkTable = this.subAccountLinkTable.node
@@ -130,7 +131,7 @@ export class CrossAccountStack extends Construct {
         code: lambda.AssetCode.fromAsset(
           path.join(__dirname, '../../lambda/api/cross_account')
         ),
-        runtime: lambda.Runtime.PYTHON_3_9,
+        runtime: lambda.Runtime.PYTHON_3_11,
         handler: 'lambda_function.lambda_handler',
         timeout: Duration.minutes(15),
         memorySize: 2048,
@@ -213,6 +214,18 @@ export class CrossAccountStack extends Construct {
           '../../graphql/vtl/cross_account/GetSubAccountLinkResp.vtl'
         )
       ),
+    });
+
+    crossAccountLambdaDS.createResolver('updateSubAccountLink', {
+      typeName: 'Mutation',
+      fieldName: 'updateSubAccountLink',
+      requestMappingTemplate: appsync.MappingTemplate.fromFile(
+        path.join(
+          __dirname,
+          '../../graphql/vtl/cross_account/UpdateSubAccountLink.vtl'
+        )
+      ),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
     crossAccountLambdaDS.createResolver('createSubAccountLink', {

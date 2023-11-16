@@ -15,18 +15,13 @@ limitations under the License.
 */
 
 import { Construct } from "constructs";
-import {
-  Duration,
-  aws_lambda as lambda,
-  aws_ec2 as ec2,
-} from "aws-cdk-lib";
+import { Duration, aws_lambda as lambda, aws_ec2 as ec2 } from "aws-cdk-lib";
 
 import { ManagedKafkaEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 
 import { AppLogProcessor } from "./app-log-processor";
 
 export interface MSKStackProps {
-
   /**
    * Default VPC for OpenSearch REST API Handler
    *
@@ -54,6 +49,18 @@ export interface MSKStackProps {
    * @default - OpenSearch.
    */
   readonly engineType: string;
+  /**
+ * OpenSearch Domain Name
+ *
+ * @default - None.
+ */
+  readonly domainName: string;
+  /**
+* Wheather to create Sample Dashboard
+*
+* @default - Yes.
+*/
+  readonly createDashboard?: string;
 
   /**
    * Index Prefix
@@ -64,7 +71,6 @@ export interface MSKStackProps {
    * S3 bucket name for failed logs
    */
   readonly backupBucketName: string;
-
 
   /**
    * MSK Cluster Arn
@@ -82,8 +88,25 @@ export interface MSKStackProps {
   readonly stackPrefix: string;
 
   readonly logType: string;
-}
+  /**
+  * A list of plugins
+  *
+  * @default - None.
+  */
+  readonly plugins?: string;
 
+  readonly warmAge?: string;
+  readonly coldAge?: string;
+  readonly retainAge?: string;
+  readonly rolloverSize?: string;
+  readonly indexSuffix?: string;
+  readonly refreshInterval?: string;
+  readonly codec?: string;
+  readonly shardNumbers?: string;
+  readonly replicaNumbers?: string;
+  readonly solutionId: string;
+  readonly indexTemplateGzipBase64: string;
+}
 
 export class MSKStack extends Construct {
   readonly logProcessorRoleArn: string;
@@ -92,23 +115,38 @@ export class MSKStack extends Construct {
   constructor(scope: Construct, id: string, props: MSKStackProps) {
     super(scope, id);
 
-
-    const logProcessor = new AppLogProcessor(this, "LogProcessor", {
-      source: "MSK",
-      indexPrefix: props.indexPrefix,
+    const logProcessor = new AppLogProcessor(this, 'LogProcessor', {
       vpc: props.vpc,
       securityGroup: props.securityGroup,
       endpoint: props.endpoint,
+      indexPrefix: props.indexPrefix,
       engineType: props.engineType,
+      domainName: props.domainName,
+      createDashboard: props.createDashboard,
       backupBucketName: props.backupBucketName,
-      stackPrefix: props.stackPrefix,
+      source: "MSK",
+      subCategory: "FLB",
+      shardNumbers: props.shardNumbers,
+      replicaNumbers: props.replicaNumbers,
+      warmAge: props.warmAge,
+      coldAge: props.coldAge,
+      retainAge: props.retainAge,
+      rolloverSize: props.rolloverSize,
+      indexSuffix: props.indexSuffix,
+      codec: props.codec,
+      refreshInterval: props.refreshInterval,
+      solutionId: props.solutionId,
       logType: props.logType,
+      stackPrefix: props.stackPrefix,
+      enableConfigJsonParam: false,
+      indexTemplateGzipBase64: props.indexTemplateGzipBase64,
     });
+
 
     // The Kafka topic you want to subscribe to
     // Currently, this can only be hardcoded, will replace the value in build scripts
     // The topic must exist before adding that as source.
-    const topic = 'test';
+    const topic = "test";
 
     const mskSource = new ManagedKafkaEventSource({
       clusterArn: props.mskClusterArn,
@@ -120,10 +158,8 @@ export class MSKStack extends Construct {
 
     logProcessor.logProcessorFn.addEventSource(mskSource);
 
-    this.logProcessorRoleArn = logProcessor.logProcessorFn.role!.roleArn
-    this.logProcessorLogGroupName = logProcessor.logProcessorFn.logGroup.logGroupName
-
+    this.logProcessorRoleArn = logProcessor.logProcessorFn.role!.roleArn;
+    this.logProcessorLogGroupName =
+      logProcessor.logProcessorFn.logGroup.logGroupName;
   }
-
 }
-

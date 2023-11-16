@@ -91,6 +91,7 @@ interface LogConfigProps {
   changeSelectKeyList: (list: OptionType[]) => void;
   changeTimeOffset: (offset: string) => void;
   sampleLogParsingRef?: Ref<SampleLogParsingRefType>;
+  changeJSONSchema?: (schema: any) => void;
 }
 
 const LogConfigComp: React.FC<LogConfigProps> = (props: LogConfigProps) => {
@@ -119,6 +120,7 @@ const LogConfigComp: React.FC<LogConfigProps> = (props: LogConfigProps) => {
     changeFilterRegex,
     changeSelectKeyList,
     changeTimeOffset,
+    changeJSONSchema,
   } = props;
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -437,6 +439,9 @@ const LogConfigComp: React.FC<LogConfigProps> = (props: LogConfigProps) => {
             }}
             changeTimeOffset={(offset) => {
               changeTimeOffset && changeTimeOffset(offset);
+            }}
+            changeJSONSchema={(schema) => {
+              changeJSONSchema && changeJSONSchema(schema);
             }}
             logConfig={curConfig}
             logType={curConfig.logType}

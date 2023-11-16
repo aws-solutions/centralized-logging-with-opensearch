@@ -1,0 +1,18 @@
+$util.validate($util.matches("^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$", $ctx.args.pipelineId), "Invalid pipelineId")   
+$util.validate($util.matches("^(LogProcessor|LogMerger|LogArchive)-\w+$", $ctx.args.stateMachineName), "Invalid stateMachineName")   
+
+#if($util.isNullOrEmpty($ctx.args.startTime)==false)
+    $util.validate($util.matches("^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$", $ctx.args.startTime), "Invalid startTime format")   
+#end
+
+#if($util.isNullOrEmpty($ctx.args.endTime)==false)
+    $util.validate($util.matches("^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$", $ctx.args.endTime), "Invalid endTime format")   
+#end
+
+#if($util.isNullOrEmpty($ctx.args.limit)==false)
+    #if($ctx.args.limit<1 or $ctx.args.count>1000)
+        $util.error("Count (per page) must between 1 and 1000")
+    #end 
+#end
+
+{"version": "2017-02-28", "operation": "Invoke", "payload": $util.toJson($ctx)}

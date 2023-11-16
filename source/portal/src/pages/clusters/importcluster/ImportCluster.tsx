@@ -101,6 +101,7 @@ const ImportOpenSearchCluster: React.FC = () => {
   const [domainRelatedResources, setDomainRelatedResources] = useState<
     DomainRelevantResource[]
   >([]);
+  const [disableViewButton, setDisableViewButton] = useState(false);
 
   const confirmImportDomain = async () => {
     try {
@@ -122,8 +123,10 @@ const ImportOpenSearchCluster: React.FC = () => {
       setLoadingCreate(false);
       setDomainId(importRes.data.importDomain.id);
       setDomainRelatedResources(importRes.data.importDomain.resources);
+      setDisableViewButton(false);
     } catch (error) {
       setLoadingCreate(false);
+      setDisableViewButton(true);
       console.error(error);
     }
   };
@@ -385,6 +388,7 @@ const ImportOpenSearchCluster: React.FC = () => {
                   )}
                   {curStep === 3 && (
                     <Button
+                      disabled={disableViewButton}
                       loading={loadingCreate}
                       btnType="primary"
                       onClick={() => {

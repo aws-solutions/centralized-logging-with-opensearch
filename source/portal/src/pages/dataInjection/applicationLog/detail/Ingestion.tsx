@@ -16,6 +16,7 @@ limitations under the License.
 /* eslint-disable react/display-name */
 import { Pagination } from "@material-ui/lab";
 import {
+  AnalyticEngineType,
   AppLogIngestion,
   AppPipeline,
   GetLogSourceQueryVariables,
@@ -36,7 +37,6 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
-import { AUTO_REFRESH_INT } from "assets/js/const";
 import Alert from "components/Alert";
 import { AlertType } from "components/Alert/alert";
 import { useSelector } from "react-redux";
@@ -48,6 +48,7 @@ import ButtonRefresh from "components/ButtonRefresh";
 
 const PAGE_SIZE = 20;
 interface OverviewProps {
+  isRefreshing: boolean;
   pipelineInfo: AppPipeline | undefined;
   changeTab: (index: number) => void;
 }
@@ -66,7 +67,7 @@ interface AppIngestionItem {
 }
 
 const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
-  const { pipelineInfo } = props;
+  const { isRefreshing, pipelineInfo } = props;
   const { t } = useTranslation();
 
   const amplifyConfig: AmplifyConfigType = useSelector(
@@ -121,9 +122,9 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
     }
   };
 
-  const getIngestionByAppPipelineId = async (hideLoading = false) => {
+  const getIngestionByAppPipelineId = async () => {
     try {
-      if (!hideLoading) {
+      if (!isRefreshing) {
         setLoadingData(true);
         setIngestionList([]);
         setSelectedIngestion([]);
@@ -250,14 +251,6 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
   const goToInstanceGroup = () => {
     navigate(instanceGroupLink);
   };
-
-  // Auto Refresh List
-  useEffect(() => {
-    const refreshInterval = setInterval(() => {
-      getIngestionByAppPipelineId(true);
-    }, AUTO_REFRESH_INT);
-    return () => clearInterval(refreshInterval);
-  }, [curPage]);
 
   useEffect(() => {
     console.info("hasRecentASG:", hasRecentASG);
@@ -454,14 +447,18 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
                   {
                     id: INGESTION_TYPE.SYSLOG,
                     text: "button.fromSysLog",
-                    disabled: pipelineInfo && isS3SourcePipeline(pipelineInfo),
+                    disabled:
+                      (pipelineInfo && isS3SourcePipeline(pipelineInfo)) ||
+                      pipelineInfo?.engineType ===
+                        AnalyticEngineType.LightEngine,
                   },
                   {
                     id: INGESTION_TYPE.S3,
                     text: "button.fromOtherSourceS3",
-                    disabled: !(
-                      pipelineInfo && isS3SourcePipeline(pipelineInfo)
-                    ),
+                    disabled:
+                      !(pipelineInfo && isS3SourcePipeline(pipelineInfo)) ||
+                      pipelineInfo?.engineType ===
+                        AnalyticEngineType.LightEngine,
                   },
                 ];
                 return list.filter((each) => !each.disabled);

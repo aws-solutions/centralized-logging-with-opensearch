@@ -53,6 +53,16 @@ def create_sub_account_link(**args):
     return acc_helper.create_sub_account_link(account_id, region, **args)
 
 
+@router.route(field_name="updateSubAccountLink")
+def update_sub_account_link(**args):
+    """update a sub account link"""
+
+    account_id = args.pop("subAccountId", "")
+    region = args.pop("region", "")
+    uploading_event_topic_arn = args.pop("subAccountFlbConfUploadingEventTopicArn")
+    return acc_helper.update_link_account(account_id, region, uploading_event_topic_arn)
+
+
 @router.route(field_name="listSubAccountLinks")
 def list_sub_account_links(page=1, count=20):
     """List sub account links"""

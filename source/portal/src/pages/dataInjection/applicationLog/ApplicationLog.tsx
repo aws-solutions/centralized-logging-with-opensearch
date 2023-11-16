@@ -21,7 +21,12 @@ import Button from "components/Button";
 import { TablePanel } from "components/TablePanel";
 import Breadcrumb from "components/Breadcrumb";
 import { SelectType } from "components/TablePanel/tablePanel";
-import { AppPipeline, BufferType, PipelineStatus } from "API";
+import {
+  AnalyticEngineType,
+  AppPipeline,
+  BufferType,
+  PipelineStatus,
+} from "API";
 import Modal from "components/Modal";
 import HelpPanel from "components/HelpPanel";
 import SideMenu from "components/SideMenu";
@@ -226,17 +231,25 @@ const ApplicationLog: React.FC = () => {
                   },
                   {
                     // width: 110,
-                    id: "OpenSearch",
-                    header: t("applog:list.os"),
-                    cell: (e: AppPipeline) => {
-                      return e.aosParams?.domainName || "-";
+                    id: "EngineType",
+                    header: t("applog:list.engineType"),
+                    cell: ({ aosParams, engineType }: AppPipeline) => {
+                      return (
+                        (engineType === AnalyticEngineType.LightEngine
+                          ? t("applog:list.lightEngine")
+                          : `${t("applog:list.os")}(${aosParams?.domainName})`) || "-"
+                      );
                     },
                   },
                   {
                     id: "Indexname",
-                    header: t("applog:list.indexName"),
+                    header: t("applog:list.indexTable"),
                     cell: (e: AppPipeline) => {
-                      return e.aosParams?.indexPrefix || "-";
+                      return (
+                        e.aosParams?.indexPrefix ??
+                        e.lightEngineParams?.centralizedTableName ??
+                        "-"
+                      );
                     },
                   },
                   {

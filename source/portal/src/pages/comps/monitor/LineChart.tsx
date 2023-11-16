@@ -40,7 +40,10 @@ const FailedColorMetrics = [
   MetricName.FluentBitOutputErrors,
   MetricName.FailedLogs,
   MetricName.ProcessorFnError,
+  MetricName.ReplicationFnError,
   MetricName.FluentBitOutputRetriesFailed,
+  MetricName.OSIDocumentsFailedWrite,
+  MetricName.OSIDLQS3RecordsFailed,
 ];
 
 const formatLabel = (timestamp: number, timeSpan: string): string => {

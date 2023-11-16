@@ -101,6 +101,15 @@ class TestLinkAccountHelper:
         assert account1 is not None
         assert account1["subAccountName"] == "sub-account-01"
 
+        self.acc_helper.update_link_account(
+            account_id="111122223333", uploading_event_topic_arn="arn:topic"
+        )
+        account1 = self.acc_helper.get_link_account(account_id="111122223333")
+        assert "subAccountFlbConfUploadingEventTopicArn" in account1
+        assert (
+            account1.get("subAccountFlbConfUploadingEventTopicArn", "") == "arn:topic"
+        )
+
         account2 = self.acc_helper.get_link_account()
         assert account2 == {}
 

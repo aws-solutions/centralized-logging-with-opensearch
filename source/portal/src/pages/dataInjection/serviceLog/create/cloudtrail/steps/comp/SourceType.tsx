@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import { DestinationType, ResourceLogConf, ResourceType } from "API";
-import { CLOUDWATCH_PRICING_LINK } from "assets/js/const";
+import { CLOUDWATCH_PRICING_LINK, CreateLogMethod } from "assets/js/const";
 import { appSyncRequestQuery } from "assets/js/request";
 import { splitStringToBucketAndPrefix } from "assets/js/utils";
 import Alert from "components/Alert";
@@ -32,17 +32,21 @@ import AutoEnableLogging from "../../../common/AutoEnableLogging";
 import KDSSettings from "../../../common/KDSSettings";
 import { CloudTrailTaskProps } from "../../CreateCloudTrail";
 import { RootState } from "reducer/reducers";
+import TextInput from "components/TextInput";
 
 interface SourceTypeProps {
   cloudTrailTask: CloudTrailTaskProps;
   changeSourceType: (type: string) => void;
   changeBucket: (bucket: string) => void;
+  changeManualS3: (s3: string) => void;
   changeLogPath: (logPath: string) => void;
   setISChanging: (change: boolean) => void;
   changeTmpFlowList: (list: SelectItem[]) => void;
   changeS3SourceType: (type: string) => void;
   changeSuccessTextType: (type: string) => void;
   changeLogSource: (source: string) => void;
+  manualS3EmptyError: boolean;
+  manualCwlArnEmptyError: boolean;
   sourceTypeEmptyError?: boolean;
   shardNumError?: boolean;
   maxShardNumError?: boolean;
@@ -67,6 +71,7 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
     cloudTrailTask,
     changeSourceType,
     changeBucket,
+    changeManualS3,
     changeLogPath,
     setISChanging,
     changeTmpFlowList,
@@ -74,6 +79,8 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
     changeSuccessTextType,
     changeLogSource,
     sourceTypeEmptyError,
+    manualS3EmptyError,
+    manualCwlArnEmptyError,
     shardNumError,
     maxShardNumError,
     changeMinCapacity,
@@ -204,7 +211,7 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
         }
       >
         <Select
-          disabled={loadingBucket || cloudTrailTask.params.curTrailObj === null}
+          disabled={cloudTrailTask.params.taskType === CreateLogMethod.Automatic && (loadingBucket || cloudTrailTask.params.curTrailObj === null)}
           placeholder={t("servicelog:trail.chooseLogSource")}
           className="m-w-45p"
           optionList={CWL_SOURCE_LIST}
@@ -219,6 +226,7 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
       ) : (
         <>
           {cloudTrailTask.destinationType === DestinationType.CloudWatch &&
+            cloudTrailTask.params.taskType === CreateLogMethod.Automatic &&
             cloudTrailTask.params.tmpFlowList.length <= 0 && (
               <AutoEnableLogging
                 alertType={AlertType.Warning}
@@ -252,6 +260,7 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
               />
             )}
           {cloudTrailTask.destinationType === DestinationType.S3 &&
+            cloudTrailTask.params.taskType === CreateLogMethod.Automatic &&
             cloudTrailTask.params.s3SourceType === S3SourceType.DIFFREGION && (
               <Alert
                 type={AlertType.Error}
@@ -262,6 +271,48 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
                 })}
               />
             )}
+
+            {cloudTrailTask.params.taskType === CreateLogMethod.Manual && (
+            <>
+              {cloudTrailTask.destinationType === DestinationType.S3 && (
+                <FormItem
+                  optionTitle={t("servicelog:trail.cloudtrailLogLocation")}
+                  optionDesc={t("servicelog:trail.cloudtrailLogLocationDesc")}
+                  errorText={manualS3EmptyError ? t("servicelog:trail.error.s3Empty") : ""}
+                >
+                  <TextInput
+                    className="m-w-75p"
+                    value={cloudTrailTask.params.manualBucketS3Path}
+                    placeholder="s3://bucket/prefix"
+                    onChange={(event) => {
+                      const { bucket, prefix } = splitStringToBucketAndPrefix(
+                        event.target.value
+                      );
+                      changeLogPath(prefix);
+                      changeBucket(bucket);
+                      changeManualS3(event.target.value);
+                    }}
+                  />
+                </FormItem>
+              )}
+
+              {cloudTrailTask.destinationType === DestinationType.CloudWatch && (
+                <FormItem
+                  optionTitle={t("servicelog:trail.cloudtrailLogLocation")}
+                  optionDesc={t("servicelog:trail.cloudtrailCWLLocationDesc")}
+                  errorText={manualCwlArnEmptyError ? t("servicelog:trail.error.cwlEmpty") : ""}
+                >
+                  <TextInput
+                    placeholder={`log-group-name`}
+                    value={cloudTrailTask.params.logSource}
+                    onChange={(event) => {
+                      changeLogSource(event.target.value);
+                    }}
+                  />
+                </FormItem>
+              )}
+            </>
+          )}
 
           {cloudTrailTask.destinationType === DestinationType.CloudWatch && (
             <KDSSettings

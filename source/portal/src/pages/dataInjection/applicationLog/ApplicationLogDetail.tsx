@@ -13,20 +13,39 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import Breadcrumb from "components/Breadcrumb";
 import LoadingText from "components/LoadingText";
-import HeaderPanel from "components/HeaderPanel";
-import ValueWithLabel from "components/ValueWithLabel";
 import ExtLink from "components/ExtLink";
 import { AntTabs, AntTab, TabPanel } from "components/Tab";
 import Ingestion from "./detail/Ingestion";
 import AnalyticsEngineDetails from "./detail/AnalyticsEngineDetails";
-import { appSyncRequestQuery } from "assets/js/request";
-import { getAppPipeline, listAppLogIngestions } from "graphql/queries";
-import { AppPipeline, AppLogIngestion } from "API";
-import { buildCfnLink, buildESLink, formatLocalTime } from "assets/js/utils";
+import { ApiResponse, appSyncRequestQuery } from "assets/js/request";
+import {
+  getAppPipeline,
+  getLightEngineAppPipelineDetail,
+  listAppLogIngestions,
+} from "graphql/queries";
+import {
+  AppPipeline,
+  AppLogIngestion,
+  AnalyticEngineType,
+  LightEnginePipelineDetailResponse,
+  AnalyticsEngine,
+  Schedule,
+  PipelineType,
+  PipelineStatus,
+} from "API";
+import {
+  buildCfnLink,
+  buildESLink,
+  buildGlueTableLink,
+  defaultStr,
+  formatLocalTime,
+  isOSIPipeline,
+  ternary,
+} from "assets/js/utils";
 import { AmplifyConfigType } from "types";
 import { useSelector } from "react-redux";
 import HelpPanel from "components/HelpPanel";
@@ -40,7 +59,13 @@ import Monitoring from "../applicationLog/detail/Monitoring";
 import Logging from "../applicationLog/detail/Logging";
 import { RootState } from "reducer/reducers";
 import Tags from "../common/Tags";
+import HeaderWithValueLabel from "pages/comps/HeaderWithValueLabel";
+import { LightEngineAnalyticsEngineDetails } from "../common/LightEngineAnalyticsEngineDetails";
+import { LightEngineLogProcessor } from "../common/LightEngineLogProcessor";
+import { LightEngineLoggingList } from "../common/LightEngineLoggingList";
+import LogProcessor from "./detail/LogProcessor";
 
+let intervalId: any = 0;
 const ApplicationLogDetail: React.FC = () => {
   const { id } = useParams();
   const tmpSourceSet = new Set<string>();
@@ -52,32 +77,45 @@ const ApplicationLogDetail: React.FC = () => {
       link: "/log-pipeline/application-log",
     },
     {
-      name: id || "",
+      name: defaultStr(id),
     },
   ];
 
   const amplifyConfig: AmplifyConfigType = useSelector(
     (state: RootState) => state.app.amplifyConfig
   );
-  console.info("amplifyConfig:", amplifyConfig);
   const [loadingData, setLoadingData] = useState(true);
   const [curPipeline, setCurPipeline] = useState<AppPipeline | undefined>();
   const [activeTab, setActiveTab] = useState(0);
   const [sourceSet, setSourceSet] = useState<Set<string>>(new Set<string>());
+  const [analyticsEngine, setAnalyticsEngine] = useState<
+    AnalyticsEngine | undefined
+  >();
+  const [schedules, setSchedules] = useState<Schedule[] | undefined>();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const changeTab = (event: any, newTab: number) => {
     console.info("newTab:", newTab);
     setActiveTab(newTab);
   };
 
-  const getPipelineById = async () => {
+  const getPipelineById = async (hideLoading = false) => {
     try {
-      setLoadingData(true);
+      if (!hideLoading) {
+        setLoadingData(true);
+      }
       const resData: any = await appSyncRequestQuery(getAppPipeline, {
         id: id,
       });
       console.info("resData:", resData);
       const dataPipelne: AppPipeline = resData.data.getAppPipeline;
+      if (
+        dataPipelne.status === PipelineStatus.ACTIVE ||
+        dataPipelne.status === PipelineStatus.ERROR
+      ) {
+        setIsRefreshing(false);
+        clearInterval(intervalId);
+      }
       setCurPipeline(dataPipelne);
       setLoadingData(false);
     } catch (error) {
@@ -85,6 +123,11 @@ const ApplicationLogDetail: React.FC = () => {
       console.error(error);
     }
   };
+
+  const isLightEngine = useMemo(
+    () => curPipeline?.engineType === AnalyticEngineType.LightEngine,
+    [curPipeline]
+  );
 
   const getPipelineSourceSet = async () => {
     try {
@@ -100,7 +143,7 @@ const ApplicationLogDetail: React.FC = () => {
       const dataIngestion: AppLogIngestion[] =
         ingestionResData.data.listAppLogIngestions.appLogIngestions;
       dataIngestion.forEach((element) =>
-        tmpSourceSet.add(element?.sourceType || "")
+        tmpSourceSet.add(defaultStr(element?.sourceType))
       );
       setSourceSet(tmpSourceSet);
     } catch (error) {
@@ -108,8 +151,17 @@ const ApplicationLogDetail: React.FC = () => {
     }
   };
 
+  // Auto refresh pipeline detail
   useEffect(() => {
     getPipelineById();
+    intervalId = setInterval(() => {
+      setIsRefreshing(true);
+      getPipelineById(true);
+    }, 10000);
+    return () => {
+      setIsRefreshing(false);
+      clearInterval(intervalId);
+    };
   }, []);
 
   useEffect(() => {
@@ -120,6 +172,28 @@ const ApplicationLogDetail: React.FC = () => {
       console.log("End getting source list");
     }
   }, [curPipeline]);
+
+  useEffect(() => {
+    (async () => {
+      if (curPipeline?.engineType !== AnalyticEngineType.LightEngine) {
+        return;
+      }
+      const lightEngineAppPipelineDetail: ApiResponse<
+        "getLightEngineAppPipelineDetail",
+        LightEnginePipelineDetailResponse
+      > = await appSyncRequestQuery(getLightEngineAppPipelineDetail, {
+        pipelineId: curPipeline?.pipelineId,
+      });
+      setAnalyticsEngine(
+        lightEngineAppPipelineDetail.data.getLightEngineAppPipelineDetail
+          .analyticsEngine ?? undefined
+      );
+      setSchedules(
+        (lightEngineAppPipelineDetail.data.getLightEngineAppPipelineDetail
+          .schedules as Schedule[]) ?? []
+      );
+    })();
+  }, [curPipeline?.engineType]);
 
   return (
     <div className="lh-main-content">
@@ -132,60 +206,101 @@ const ApplicationLogDetail: React.FC = () => {
           ) : (
             <div className="service-log">
               <div>
-                <HeaderPanel title={t("applog:detail.config")}>
-                  <div className="flex value-label-span">
-                    <div className="flex-1">
-                      <ValueWithLabel label={t("applog:detail.osIndex")}>
-                        <div>{curPipeline?.aosParams?.indexPrefix || "-"}</div>
-                      </ValueWithLabel>
-                    </div>
-                    <div className="flex-1 border-left-c">
-                      <ValueWithLabel label={t("applog:detail.cfnStack")}>
+                <HeaderWithValueLabel
+                  numberOfColumns={5}
+                  headerTitle={t("applog:detail.config")}
+                  dataList={[
+                    {
+                      label: ternary(
+                        isLightEngine,
+                        t("applog:detail.logTable"),
+                        t("applog:detail.osIndex")
+                      ),
+                      data: isLightEngine ? (
+                        <ExtLink
+                          to={buildGlueTableLink(
+                            amplifyConfig.aws_project_region,
+                            analyticsEngine?.table?.databaseName,
+                            analyticsEngine?.table?.tableName
+                          )}
+                        >
+                          {analyticsEngine?.table?.tableName}
+                        </ExtLink>
+                      ) : (
+                        defaultStr(curPipeline?.aosParams?.indexPrefix, "-")
+                      ),
+                    },
+                    {
+                      label: t("applog:detail.cfnStack"),
+                      data: (
                         <ExtLink
                           to={buildCfnLink(
                             amplifyConfig.aws_project_region,
-                            curPipeline?.stackId || ""
+                            defaultStr(curPipeline?.stackId, "")
                           )}
                         >
                           {curPipeline?.stackId?.split("/")[1] || "-"}
                         </ExtLink>
-                      </ValueWithLabel>
-                    </div>
-
-                    <div className="flex-1 border-left-c">
-                      <ValueWithLabel
-                        label={t("applog:detail.analyticsEngine")}
-                      >
+                      ),
+                    },
+                    {
+                      label: ternary(
+                        isLightEngine,
+                        t("applog:detail.grafanaDashboard"),
+                        t("applog:detail.analyticsEngine")
+                      ),
+                      data: isLightEngine ? (
+                        <>
+                          <div>
+                            {analyticsEngine?.metric?.dashboardLink && (
+                              <ExtLink
+                                to={analyticsEngine?.metric.dashboardLink ?? ""}
+                              >
+                                {defaultStr(
+                                  analyticsEngine?.metric.dashboardName,
+                                  "-"
+                                )}
+                              </ExtLink>
+                            )}
+                          </div>
+                          <div>
+                            <ExtLink
+                              to={analyticsEngine?.table?.dashboardLink ?? ""}
+                            >
+                              {defaultStr(
+                                analyticsEngine?.table?.dashboardName,
+                                "-"
+                              )}
+                            </ExtLink>
+                          </div>
+                        </>
+                      ) : (
                         <ExtLink
                           to={buildESLink(
                             amplifyConfig.aws_project_region,
                             curPipeline?.aosParams?.domainName || ""
                           )}
                         >
-                          {curPipeline?.aosParams?.domainName || "-"}
+                          {defaultStr(curPipeline?.aosParams?.domainName, "-")}
                         </ExtLink>
-                      </ValueWithLabel>
-                    </div>
-                    <div className="flex-1 border-left-c">
-                      <ValueWithLabel label={t("applog:list.status")}>
-                        <div>
-                          <Status status={curPipeline?.status || "-"} />
-                        </div>
-                      </ValueWithLabel>
-                    </div>
-                    <div className="flex-1 border-left-c">
-                      <ValueWithLabel label={t("applog:detail.created")}>
-                        <div>
-                          {formatLocalTime(curPipeline?.createdAt || "")}
-                        </div>
-                      </ValueWithLabel>
-                    </div>
-                  </div>
-                </HeaderPanel>
+                      ),
+                    },
+                    {
+                      label: t("applog:list.status"),
+                      data: <Status status={curPipeline?.status || "-"} />,
+                    },
+                    {
+                      label: t("applog:detail.created"),
+                      data: formatLocalTime(curPipeline?.createdAt || ""),
+                    },
+                  ]}
+                />
               </div>
               {curPipeline && (
                 <div>
                   <AntTabs
+                    variant="scrollable"
+                    scrollButtons="auto"
                     value={activeTab}
                     onChange={(event, newTab) => {
                       changeTab(event, newTab);
@@ -195,13 +310,17 @@ const ApplicationLogDetail: React.FC = () => {
                     <AntTab label={t("applog:detail.tab.logConfig")} />
                     <AntTab label={t("applog:detail.tab.bufferLayer")} />
                     <AntTab label={t("applog:detail.tab.analyticsEngine")} />
+                    <AntTab label={t("servicelog:tab.logProcessor")} />
                     <AntTab label={t("applog:detail.tab.monitoring")} />
                     <AntTab label={t("applog:detail.tab.logging")} />
-                    <AntTab label={t("applog:detail.tab.alarm")} />
+                    {!isOSIPipeline(curPipeline) && (
+                      <AntTab label={t("applog:detail.tab.alarm")} />
+                    )}
                     <AntTab label={t("applog:detail.tab.tags")} />
                   </AntTabs>
                   <TabPanel value={activeTab} index={0}>
                     <Ingestion
+                      isRefreshing={isRefreshing}
                       changeTab={(id) => {
                         setActiveTab(id);
                       }}
@@ -210,7 +329,7 @@ const ApplicationLogDetail: React.FC = () => {
                   </TabPanel>
                   <TabPanel value={activeTab} index={1}>
                     <LogConfigDetails
-                      logConfigId={curPipeline.logConfigId ?? ""}
+                      logConfigId={defaultStr(curPipeline.logConfigId)}
                       logConfigVersion={
                         curPipeline.logConfigVersionNumber ?? -1
                       }
@@ -220,31 +339,62 @@ const ApplicationLogDetail: React.FC = () => {
                     <BufferLayerDetails pipelineInfo={curPipeline} />
                   </TabPanel>
                   <TabPanel value={activeTab} index={3}>
-                    <AnalyticsEngineDetails pipelineInfo={curPipeline} />
+                    {isLightEngine ? (
+                      <LightEngineAnalyticsEngineDetails
+                        pipelineInfo={curPipeline}
+                        analyticsEngine={analyticsEngine}
+                      />
+                    ) : (
+                      <AnalyticsEngineDetails pipelineInfo={curPipeline} />
+                    )}
                   </TabPanel>
                   <TabPanel value={activeTab} index={4}>
+                    {isLightEngine ? (
+                      <LightEngineLogProcessor schedules={schedules} />
+                    ) : (
+                      <LogProcessor
+                        amplifyConfig={amplifyConfig}
+                        pipelineInfo={curPipeline}
+                      />
+                    )}
+                  </TabPanel>
+                  <TabPanel value={activeTab} index={5}>
                     <Monitoring
                       pipelineInfo={curPipeline}
                       sourceSet={sourceSet}
                     />
                   </TabPanel>
-                  <TabPanel value={activeTab} index={5}>
-                    <Logging pipelineInfo={curPipeline} />
-                  </TabPanel>
+
                   <TabPanel value={activeTab} index={6}>
-                    <Alarm
-                      pipelineInfo={curPipeline}
-                      changePipelineMonitor={(monitor) => {
-                        setCurPipeline((prev: any) => {
-                          return {
-                            ...prev,
-                            monitor: monitor,
-                          };
-                        });
-                      }}
-                    />
+                    {isLightEngine ? (
+                      <LightEngineLoggingList
+                        schedules={schedules ?? []}
+                        pipelineId={curPipeline.pipelineId}
+                        pipelineType={PipelineType.APP}
+                      />
+                    ) : (
+                      <Logging pipelineInfo={curPipeline} />
+                    )}
                   </TabPanel>
-                  <TabPanel value={activeTab} index={7}>
+                  {!isOSIPipeline(curPipeline) && (
+                    <TabPanel value={activeTab} index={7}>
+                      <Alarm
+                        pipelineInfo={curPipeline}
+                        changePipelineMonitor={(monitor) => {
+                          setCurPipeline((prev: any) => {
+                            return {
+                              ...prev,
+                              monitor: monitor,
+                            };
+                          });
+                        }}
+                      />
+                    </TabPanel>
+                  )}
+                  <TabPanel
+                    value={activeTab}
+                    index={ternary(isOSIPipeline(curPipeline), 7, 8)}
+                  >
                     <Tags tags={curPipeline?.tags} />
                   </TabPanel>
                 </div>

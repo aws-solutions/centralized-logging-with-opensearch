@@ -30,6 +30,7 @@ import { NagSuppressions } from 'cdk-nag';
 import { Construct } from 'constructs';
 import { SharedPythonLayer } from '../layer/layer';
 import { addCfnNagSuppressRules } from '../main-stack';
+import { MicroBatchStack } from '../../lib/microbatch/main/services/amazon-services-stack';
 
 export interface CfnFlowProps {
   /**
@@ -47,6 +48,8 @@ export interface CfnFlowProps {
   readonly subAccountLinkTable: ddb.Table;
 
   readonly solutionId: string;
+
+  readonly microBatchStack: MicroBatchStack;
 }
 
 /**
@@ -71,7 +74,7 @@ export class CfnFlowStack extends Construct {
       code: lambda.AssetCode.fromAsset(
         path.join(__dirname, '../../lambda/main/cfnHelper')
       ),
-      runtime: lambda.Runtime.PYTHON_3_9,
+      runtime: lambda.Runtime.PYTHON_3_11,
       handler: 'lambda_function.lambda_handler',
       timeout: Duration.seconds(60),
       memorySize: 128,
@@ -286,7 +289,7 @@ export class CfnFlowStack extends Construct {
             'ec2:CreateLaunchTemplateVersion',
             'ec2:GetLaunchTemplateData',
             'ec2:RunInstances',
-            'e2:TerminateInstances',
+            'ec2:TerminateInstances',
             'ec2:DeleteLaunchTemplate',
             'ec2:DeleteLaunchTemplateVersions',
             'ecs:Update*',
@@ -321,6 +324,11 @@ export class CfnFlowStack extends Construct {
             'cloudfront:CreateRealtimeLogConfig',
             'cloudfront:ListRealtimeLogConfigs',
             'cloudfront:UpdateRealtimeLogConfig',
+            'states:CreateStateMachine',
+            'states:DeleteStateMachine',
+            'states:DescribeStateMachine',
+            'states:TagResource',
+            'states:UntagResource'
           ],
           resources: [`*`],
         }),
@@ -339,6 +347,7 @@ export class CfnFlowStack extends Construct {
             'sqs:GetQueueAttributes',
             'sqs:SetQueueAttributes',
             'sqs:DeleteQueue',
+            'sqs:TagQueue',
           ],
           resources: [
             `arn:${Aws.PARTITION}:sqs:${Aws.REGION}:${Aws.ACCOUNT_ID}:*`,
@@ -413,6 +422,7 @@ export class CfnFlowStack extends Construct {
             `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling`,
             `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/aws-service-role/elasticloadbalancing.amazonaws.com/AWSServiceRoleForElasticLoadBalancing`,
             `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService`,
+            props.microBatchStack.microBatchLambdaStack.PipelineResourcesBuilderStack.PipelineResourcesBuilderRole.roleArn,
           ],
         }),
       ],
@@ -452,7 +462,7 @@ export class CfnFlowStack extends Construct {
       code: lambda.AssetCode.fromAsset(
         path.join(__dirname, '../../lambda/main/sfnHelper')
       ),
-      runtime: lambda.Runtime.PYTHON_3_9,
+      runtime: lambda.Runtime.PYTHON_3_11,
       handler: 'lambda_function.lambda_handler',
       timeout: Duration.seconds(30),
       memorySize: 128,

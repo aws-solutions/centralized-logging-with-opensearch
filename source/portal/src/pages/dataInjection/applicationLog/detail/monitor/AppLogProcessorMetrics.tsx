@@ -15,8 +15,9 @@ limitations under the License.
 */
 
 import React from "react";
-import { AppPipeline, PipelineType, MetricName } from "API";
+import { AppPipeline, PipelineType, MetricName, AnalyticEngineType } from "API";
 import MonitorMetrics from "pages/comps/monitor/MonitorMetrics";
+import { LightEngineLambdaMetrics } from "pages/dataInjection/common/LightEngineMonitor";
 
 interface AppLogProcessorMetricsProps {
   pipelineInfo?: AppPipeline;
@@ -29,48 +30,51 @@ const AppLogProcessorMetric: React.FC<AppLogProcessorMetricsProps> = (
   props: AppLogProcessorMetricsProps
 ) => {
   const { pipelineInfo, startDate, endDate, refreshCount } = props;
-  const processorMetricsChartList = [
-    {
-      title: MetricName.TotalLogs,
-      graphTitle: MetricName.TotalLogs,
-      yUnit: "Count",
-    },
-    {
-      title: MetricName.FailedLogs,
-      graphTitle: MetricName.FailedLogs,
-      yUnit: "Count",
-    },
-    {
-      title: MetricName.LoadedLogs,
-      graphTitle: MetricName.LoadedLogs,
-      yUnit: "Count",
-    },
-    {
-      title: MetricName.ProcessorFnError,
-      graphTitle: MetricName.ProcessorFnError,
-      yUnit: "Count",
-    },
-    {
-      title: MetricName.ProcessorFnConcurrentExecutions,
-      graphTitle: MetricName.ProcessorFnConcurrentExecutions,
-      yUnit: "Count",
-    },
-    {
-      title: MetricName.ProcessorFnDuration,
-      graphTitle: MetricName.ProcessorFnDuration,
-      yUnit: "Millisecond",
-    },
-    {
-      title: MetricName.ProcessorFnThrottles,
-      graphTitle: MetricName.ProcessorFnThrottles,
-      yUnit: "Count",
-    },
-    {
-      title: MetricName.ProcessorFnInvocations,
-      graphTitle: MetricName.ProcessorFnInvocations,
-      yUnit: "Count",
-    },
-  ];
+  const processorMetricsChartList =
+    pipelineInfo?.engineType === AnalyticEngineType.LightEngine
+      ? LightEngineLambdaMetrics
+      : [
+          {
+            title: MetricName.TotalLogs,
+            graphTitle: MetricName.TotalLogs,
+            yUnit: "Count",
+          },
+          {
+            title: MetricName.FailedLogs,
+            graphTitle: MetricName.FailedLogs,
+            yUnit: "Count",
+          },
+          {
+            title: MetricName.LoadedLogs,
+            graphTitle: MetricName.LoadedLogs,
+            yUnit: "Count",
+          },
+          {
+            title: MetricName.ProcessorFnError,
+            graphTitle: MetricName.ProcessorFnError,
+            yUnit: "Count",
+          },
+          {
+            title: MetricName.ProcessorFnConcurrentExecutions,
+            graphTitle: MetricName.ProcessorFnConcurrentExecutions,
+            yUnit: "Count",
+          },
+          {
+            title: MetricName.ProcessorFnDuration,
+            graphTitle: MetricName.ProcessorFnDuration,
+            yUnit: "Millisecond",
+          },
+          {
+            title: MetricName.ProcessorFnThrottles,
+            graphTitle: MetricName.ProcessorFnThrottles,
+            yUnit: "Count",
+          },
+          {
+            title: MetricName.ProcessorFnInvocations,
+            graphTitle: MetricName.ProcessorFnInvocations,
+            yUnit: "Count",
+          },
+        ];
   return (
     <MonitorMetrics
       type={PipelineType.APP}

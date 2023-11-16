@@ -3,6 +3,9 @@
   "title": "Application Log Pipelines",
   "list": {
     "os": "OpenSearch",
+    "lightEngine": "Light Engine",
+    "engineType": "Engine Type",
+    "indexTable": "Index / Table Name",
     "indexName": "Index name",
     "streamName": "Stream Name",
     "bufferLayer": "Buffer Layer",
@@ -19,6 +22,7 @@
   "detail": {
     "config": "General configuration",
     "osIndex": "OpenSearch Index",
+    "logTable": "Log Table",
     "indexSuffix": "Index Suffix",
     "rolloverSize": "Rollover Size",
     "compressionType": "Compression Type",
@@ -37,7 +41,11 @@
     "kds": "Kinesis Data Streams",
     "noneBuffer": "None buffer layer",
     "analyticsEngine": "Analytics Engine",
+    "grafanaDashboard": "Grafana Dashboard",
+    "grafanaDashboardDetail": "Grafana Dashboard - Detail",
     "indexSettings": "Index Settings",
+    "tableSettings": "Table Settings",
+    "metricTableSettings": "Table Settings - Metric",
     "cfnStack": "CloudFormation Stack",
     "tip1": "If you create an log source from an instance group, make sure you have attached these ",
     "tip2": "permissions",
@@ -99,6 +107,18 @@
       "warmLog": "Warm log transition(days)",
       "coldLog": "Cold log transition(days)",
       "logRetention": "Log retention(days)"
+    },
+    "logProcessor": {
+      "logProcessorTitle": "Processor",
+      "mergerTitle": "Merger",
+      "archiverTitle": "Archiver",
+      "metricMergerTitle": "Merger - Metric",
+      "metricArchiverTitle": "Archiver - Metric",
+      "stepFunction": "Step Function",
+      "scheduler": "Scheduler",
+      "scheduleExpression": "Schedule - expression",
+      "lifecycle": "Lifecycle",
+      "days": "days"
     }
   },
   "create": {
@@ -123,6 +143,7 @@
       "bufferKDSDesc": "Second-level ingestion with additional cost. Use this option if you need real-time ingestion and your log throughput is higher than your OpenSearch domain ingestion capacity.",
       "bufferS3": "Amazon S3",
       "bufferS3Desc": "Minute-level ingestion with additional cost. Use this option if you can accept minute-level latency for your log ingestion and your log throughput is higher than your OpenSearch domain ingestion capacity.",
+      "bufferS3LightEngineDesc": "The bucket stores log data in its original format to ensure data integrity and traceability.",
       "bufferNoneNetworkTitle": "Network connectivity",
       "bufferNoneNetworkDesc": "When no buffer is selected, the log source will send logs to OpenSearch directly, you need to ensure the log sources (i.e., Instance group, EKS cluster, syslog agents) can connect to selected OpenSearch domain.",
       "bufferNoneConfirm": "I acknowledge the requirement of network connectivity.",
@@ -132,6 +153,7 @@
       "s3BucketPrefix": "Amazon S3 Bucket Prefix",
       "selectS3Bucket": "Please select Amazon S3 Bucket",
       "s3PrefixInvalid": "Amazon S3 Bucket Prefix should not be '/' and must be end with '/'.",
+      "s3BucketPrefixLightEngineDesc": "Select a bucket to store the log data. By default. The solution will add prefix of 'LightEngine/AppLogs/<table-name>' to log data.",
       "s3BucketPrefixDesc1": "By default, Solution appends the prefix '",
       "s3BucketPrefixDesc2": "' (in UTC) to the data it delivers to Amazon S3. You can override this default by specifying a custom prefix that includes expressions that are evaluated at runtime. If the files to be ingested are all in the log/ folder, you can specify the prefix as log/",
       "bufferSize": "Buffer size",
@@ -327,7 +349,8 @@
       "li3": "Use built-in or custom Log Config to parse logs before ingesting into OpenSearch.",
       "arch": {
         "title": "Architecture Diagram",
-        "desc": "The architecture diagram to ingest log data into Amazon OpenSearch domain."
+        "desc": "The architecture diagram to ingest log data into Amazon OpenSearch domain.",
+        "descLightEngine": "The architecture diagram to ingest log data into Light Engine."
       },
       "step1": {
         "naviTitle": "Instance group",
@@ -360,7 +383,8 @@
       "li3": "Ingest logs from EKS in different AWS accounts.",
       "arch": {
         "title": "Architecture Diagram",
-        "desc": "The architecture diagram to ingest log data into Amazon OpenSearch domain."
+        "desc": "The architecture diagram to ingest log data into Amazon OpenSearch domain.",
+        "descLightEngine": "The architecture diagram to ingest log data into Light Engine."
       },
       "step1": {
         "naviTitle": "Choose EKS cluster",
@@ -399,7 +423,8 @@
       },
       "step4": {
         "naviTitle": "OpenSearch domain settings",
-        "title": "Specify OpenSearch domain settings"
+        "title": "Specify OpenSearch domain settings",
+        "lightEngineTitle": "Specify Light Engine configuration"
       },
       "step5": {
         "naviTitle": "Pipeline alarms and tags",

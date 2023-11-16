@@ -60,3 +60,8 @@ def get_k8s_deployment_content_with_daemon_set(**args) -> str:
 @router.route(field_name="getK8sDeploymentContentWithSidecar")
 def get_k8s_deployment_content_with_sidecar(id: str) -> str:
     return ingestion_svc.get_k8s_deployment_content_with_sidecar(id)
+
+
+@router.route(field_name="listInstanceIngestionDetails")
+def list_instance_ingestion_details(**args):
+    return ingestion_svc.list_instance_ingestion_details(**args)

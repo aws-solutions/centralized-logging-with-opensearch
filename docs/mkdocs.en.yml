@@ -56,13 +56,14 @@ nav:
               - Log source: implementation-guide/applications/create-log-source.md
               - Log Config: implementation-guide/applications/create-log-config.md
       - Cross-account ingestion: implementation-guide/link-account/index.md
-      - Log pipeline monitoring: 
+      - Log pipeline insight: 
           - Log alarms: implementation-guide/alarm.md
           - Monitoring: implementation-guide/monitoring.md
       - FAQ: implementation-guide/faq.md
       - Troubleshooting: implementation-guide/trouble-shooting.md
       - Uninstall the solution: implementation-guide/uninstall.md
       - Additional resources:
+          - Grafana: implementation-guide/resources/grafana.md
           - OpenSSL installation: implementation-guide/resources/open-ssl.md
           - Upload certificate: implementation-guide/resources/upload-ssl-certificate.md
       - Developer guide: implementation-guide/source.md

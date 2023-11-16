@@ -1,0 +1,109 @@
+{
+    "body_bytes_sent": {
+        "body_bytes_sent": {
+            "type": "long"
+        }
+    },
+    "bytes_sent": {
+        "bytes_sent": {
+            "type": "long"
+        }
+    },
+    "connection": {
+        "connection": {
+            "type": "long"
+        }
+    },
+    "connection_requests": {
+        "connection_requests": {
+            "type": "long"
+        }
+    },
+    "http_referer": {
+        "http_referer": {
+            "type": "text"
+        }
+    },
+    "http_user_agent": {
+        "http_user_agent": {
+            "type": "text"
+        }
+    },
+    "http_x_forwarded_for": {
+        "http_x_forwarded_for": {
+            "type": "text"
+        }
+    },
+    "host": {
+        "host": {
+            "type": "text"
+        }
+    },
+    "msec": {
+        "msec": {
+            "type": "double"
+        }
+    },
+    "pipe": {
+        "pipe": {
+            "type": "text"
+        }
+    },
+    "remote_addr": {
+        "remote_addr": {
+            "type": "text"
+        }
+    },
+    "remote_user": {
+        "remote_user": {
+            "type": "text"
+        }
+    },
+    "request": {
+        "request_method": {
+            "type": "keyword"
+        },
+        "request_uri": {
+            "type": "text"
+        }
+    },
+    "request_method": {
+        "request_method": {
+            "type": "keyword"
+        }
+    },
+    "request_uri": {
+        "request_uri": {
+            "type": "text"
+        }
+    },
+    "request_length": {
+        "request_length": {
+            "type": "long"
+        }
+    },
+    "request_time": {
+        "request_time": {
+            "type": "float"
+        }
+    },
+    "status": {
+        "status": {
+            "type": "integer"
+        }
+    },
+    "time_iso8601": {
+        "time_iso8601": {
+            "type": "date",
+            "timeKey": true,
+            "format": "%Y-%m-%dT%H:%M:%S%z"
+        }
+    },
+    "time_local": {
+        "time_local": {
+            "type": "date",
+            "timeKey": true,
+            "format": "%d/%b/%Y:%H:%M:%S %z"
+        }
+    }
+}

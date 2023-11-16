@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2023-11-15
+
+### Added
+
+- Added Light Engine to provide an Athena-based serverless and cost-effective log analytics engine to analyze infrequent access logs
+- Added OpenSearch Ingestion to provide more log processing capabilities, with which OSI can provision compute resource OpenSearch Compute Units (OCU) and pay per ingestion capacity
+- Supported parsing logs in nested JSON format
+- Supported CloudTrail logs ingestion from the specified bucket manually
+
+### Fixed
+
+- Fixed the issue that the solution cannot list instances when creating instance groups #214
+- Fixed the issue that EC2 instances launched by the Auto Scaling group failed to pass the health check #202
+
 ## [2.0.1] - 2023-09-27
 
 ### Fixed

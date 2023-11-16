@@ -12,8 +12,8 @@ Use this navigation table to quickly find answers to these questions:
 | Walk through the processes of building log analytics pipelines | [AWS Services logs](./implementation-guide/aws-services/index.md) and [Applications logs](./implementation-guide/applications/index.md) |
 
 
-这份实施指南描述了在AWS云中部署Centralized Logging with OpenSearch解决方案的架构考虑和配置步骤。它包括了链接到[CloudFormation][cloudformation]模板，通过使用AWS安全性和可用性的最佳实践，启动并配置了部署此解决方案所需的AWS服务。
+This implementation guide describes architectural considerations and configuration steps for deploying the Centralized Logging with OpenSearch solution in the AWS cloud. It includes links to [CloudFormation][cloudformation] templates that launches and configures the AWS services required to deploy this solution using AWS best practices for security and availability.
 
-该指南面向具有在AWS云上进行架构设计实践经验的IT架构师、开发人员、DevOps以及数据工程师。
+The guide is intended for IT architects, developers, DevOps, data engineers with practical experience architecting on the AWS Cloud.
 
 [cloudformation]: https://aws.amazon.com/zh/cloudformation/

@@ -18,6 +18,8 @@ import * as appsync from '@aws-cdk/aws-appsync-alpha';
 import {
     Aws,
     Duration,
+    Fn,
+    CfnCondition,
     RemovalPolicy,
     aws_dynamodb as ddb,
     aws_iam as iam,
@@ -28,6 +30,7 @@ import { Construct } from 'constructs';
 import { SharedPythonLayer } from '../layer/layer';
 import { addCfnNagSuppressRules } from '../main-stack';
 import { SvcPipelineFlowStack } from './svc-pipeline-flow';
+import { MicroBatchStack } from '../microbatch/main/services/amazon-services-stack';
 
 export interface SvcPipelineStackProps {
     /**
@@ -44,8 +47,12 @@ export interface SvcPipelineStackProps {
      */
     readonly graphqlApi: appsync.GraphqlApi;
 
+    readonly microBatchStack: MicroBatchStack;
+
+
     readonly centralAssumeRolePolicy: iam.ManagedPolicy;
     readonly subAccountLinkTable: ddb.Table;
+    readonly grafanaTable: ddb.Table;
 
     readonly solutionId: string;
     readonly stackPrefix: string;
@@ -88,6 +95,8 @@ export class SvcPipelineStack extends Construct {
             tableArn: this.svcPipelineTable.tableArn,
             tableName: this.svcPipelineTable.tableName,
             cfnFlowSMArn: props.cfnFlowSMArn,
+            pipelineResourcesBuilder: props.microBatchStack.microBatchLambdaStack.PipelineResourcesBuilderStack.PipelineResourcesBuilder,
+            microBatchStack: props.microBatchStack,
         });
 
         // Create a lambda to handle all pipeline related APIs.
@@ -95,7 +104,7 @@ export class SvcPipelineStack extends Construct {
             code: lambda.AssetCode.fromAsset(
                 path.join(__dirname, '../../lambda/api/pipeline')
             ),
-            runtime: lambda.Runtime.PYTHON_3_9,
+            runtime: lambda.Runtime.PYTHON_3_11,
             handler: 'lambda_function.lambda_handler',
             timeout: Duration.seconds(60),
             memorySize: 1024,
@@ -103,10 +112,17 @@ export class SvcPipelineStack extends Construct {
             environment: {
                 STATE_MACHINE_ARN: pipeFlow.stateMachineArn,
                 PIPELINE_TABLE: this.svcPipelineTable.tableName,
+                PIPELINR_TABLE_ARN: this.svcPipelineTable.tableArn,
+                GRAFANA_TABLE: props.grafanaTable.tableName,
+                META_TABLE: props.microBatchStack.microBatchDDBStack.MetaTable.tableName,
+                ETLLOG_TABLE: props.microBatchStack.microBatchDDBStack.ETLLogTable.tableName,
                 STACK_PREFIX: props.stackPrefix,
                 SOLUTION_VERSION: process.env.VERSION || 'v1.0.0',
                 SOLUTION_ID: props.solutionId,
                 SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
+                ACCOUNT_ID: Aws.ACCOUNT_ID,
+                REGION: Aws.REGION,
+                PARTITION: Aws.PARTITION,
             },
             description: `${Aws.STACK_NAME} - Pipeline APIs Resolver`,
         });
@@ -114,6 +130,9 @@ export class SvcPipelineStack extends Construct {
         // Grant permissions to the pipeline lambda
         this.svcPipelineTable.grantReadWriteData(pipelineHandler);
         props.subAccountLinkTable.grantReadData(pipelineHandler);
+        props.grafanaTable.grantReadData(pipelineHandler);
+        props.microBatchStack.microBatchDDBStack.ETLLogTable.grantReadData(pipelineHandler);
+
         pipelineHandler.addToRolePolicy(
             new iam.PolicyStatement({
                 effect: iam.Effect.ALLOW,
@@ -126,6 +145,62 @@ export class SvcPipelineStack extends Construct {
                 effect: iam.Effect.ALLOW,
                 resources: ['*'],
                 actions: ['es:DescribeElasticsearchDomain', 'es:DescribeDomain'],
+            })
+        );
+
+        pipelineHandler.addToRolePolicy(
+            new iam.PolicyStatement({
+                effect: iam.Effect.ALLOW,
+                resources: [props.microBatchStack.microBatchDDBStack.MetaTable.tableArn],
+                actions: [
+                    "dynamodb:GetItem",
+                    "dynamodb:UpdateItem",
+                ],
+            })
+        );
+
+        pipelineHandler.addToRolePolicy(
+            new iam.PolicyStatement({
+                effect: iam.Effect.ALLOW,
+                resources: [props.microBatchStack.microBatchKMSStack.encryptionKey.keyArn],
+                actions: [
+                    "kms:GenerateDataKey*",
+                    "kms:Decrypt",
+                    "kms:Encrypt"
+                ],
+            })
+        );
+
+        pipelineHandler.addToRolePolicy(
+            new iam.PolicyStatement({
+                effect: iam.Effect.ALLOW,
+                resources: [
+                    props.microBatchStack.microBatchGlueStack.microBatchCentralizedDatabase.databaseArn,
+                    `arn:${Aws.PARTITION}:glue:${Aws.REGION}:${Aws.ACCOUNT_ID}:table/${props.microBatchStack.microBatchGlueStack.microBatchCentralizedDatabase.databaseName}/*`,
+                    `arn:${Aws.PARTITION}:glue:${Aws.REGION}:${Aws.ACCOUNT_ID}:catalog`,
+                ],
+                actions: [
+                    "glue:GetTable"
+                ],
+            })
+        );
+
+        const isCNRegion = new CfnCondition(this, 'isCNRegion', {
+            expression: Fn.conditionEquals(Aws.PARTITION, 'aws-cn'),
+        });
+
+        pipelineHandler.addToRolePolicy(
+            new iam.PolicyStatement({
+                effect: iam.Effect.ALLOW,
+                resources: [
+                    Fn.conditionIf(isCNRegion.logicalId,
+                        `arn:${Aws.PARTITION}:events:${Aws.REGION}:${Aws.ACCOUNT_ID}:rule/*`,
+                        `arn:${Aws.PARTITION}:scheduler:${Aws.REGION}:${Aws.ACCOUNT_ID}:schedule/*`
+                    ).toString()
+                ],
+                actions: [
+                    Fn.conditionIf(isCNRegion.logicalId, "events:DescribeRule", "scheduler:GetSchedule").toString()
+                ],
             })
         );
 
@@ -182,10 +257,46 @@ export class SvcPipelineStack extends Construct {
             responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
         });
 
+        pipeLambdaDS.createResolver('createLightEngineServicePipeline', {
+            typeName: 'Mutation',
+            fieldName: 'createLightEngineServicePipeline',
+            requestMappingTemplate: appsync.MappingTemplate.fromFile(
+                path.join(
+                    __dirname,
+                    '../../graphql/vtl/pipeline/CreateLightEngineServicePipeline.vtl'
+                )
+            ),
+            responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+        });
+
         pipeLambdaDS.createResolver('deleteServicePipeline', {
             typeName: 'Mutation',
             fieldName: 'deleteServicePipeline',
             requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+            responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+        });
+
+        pipeLambdaDS.createResolver('getLightEngineServicePipelineDetail', {
+            typeName: 'Query',
+            fieldName: 'getLightEngineServicePipelineDetail',
+            requestMappingTemplate: appsync.MappingTemplate.fromFile(
+                path.join(
+                    __dirname,
+                    '../../graphql/vtl/pipeline/GetLightEngineServicePipelineDetail.vtl'
+                )
+            ),
+            responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+        });
+
+        pipeLambdaDS.createResolver('getLightEngineServicePipelineExecutionLogs', {
+            typeName: 'Query',
+            fieldName: 'getLightEngineServicePipelineExecutionLogs',
+            requestMappingTemplate: appsync.MappingTemplate.fromFile(
+                path.join(
+                    __dirname,
+                    '../../graphql/vtl/pipeline/GetLightEngineServicePipelineExecutionLogs.vtl'
+                )
+            ),
             responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
         });
     }

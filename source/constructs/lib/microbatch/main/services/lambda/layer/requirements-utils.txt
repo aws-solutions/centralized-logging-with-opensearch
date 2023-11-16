@@ -1,0 +1,9 @@
+binaryornot
+certifi
+chardet
+charset_normalizer
+idna
+prettytable
+requests
+urllib3<1.27,>=1.25.4
+wcwidth

@@ -112,7 +112,7 @@ class FluentBitDataPipelineBuilder(object):
         s3 = dict()
         for param in self._ingestion.output.params:
             if param.paramKey == "logBucketPrefix":
-                s3["prefix"] = param.paramValue
+                s3["prefix"] = param.paramValue.strip('/')
             elif param.paramKey == "maxFileSize":
                 s3["max_file_size"] = param.paramValue
             elif param.paramKey == "logBucketName":

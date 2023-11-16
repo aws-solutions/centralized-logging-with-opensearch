@@ -1,0 +1,872 @@
+{
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": {
+            "type": "grafana",
+            "uid": "-- Grafana --"
+          },
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "target": {
+            "limit": 100,
+            "matchAny": false,
+            "tags": [],
+            "type": "dashboard"
+          },
+          "type": "dashboard"
+        }
+      ]
+    },
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 0,
+    "id": 200,
+    "links": [],
+    "liveNow": false,
+    "panels": [
+      {
+        "datasource": {
+          "type": "grafana-athena-datasource",
+          "uid": "Bn93a3_Vk"
+        },
+        "description": "",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "fixedColor": "green",
+              "mode": "fixed"
+            },
+            "custom": {
+              "align": "center",
+              "cellOptions": {
+                "type": "color-text"
+              },
+              "filterable": true,
+              "inspect": true
+            },
+            "mappings": [],
+            "min": -3,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            },
+            "unit": "none"
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "time"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Time"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "timestamp"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Timestamp"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "type"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Request Type"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "elb"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "ELB ID"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "client_ip"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Client IP"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "client_port"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Client Port"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "target_ip"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Target Ip"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "target_port"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Target Port"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "request_processing_time"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Request Processing time"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "target_processing_time"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Target Processing time"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "response_processing_time"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Response Processing time"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "elb_status_code"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "ELB status code"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "target_status_code"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Target status code"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "received_bytes"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Received Bytes"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "sent_bytes"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Sent Bytes"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "request_verb"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "HTTP Method"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "request_url"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Request URL"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "request_host"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Request Host"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "request_path"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Request Path"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "request_proto"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Request protocol"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "user_agent"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "User Agent"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "ssl_cipher"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "SSL cipher"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "ssl_protocol"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "SSL protocol"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "target_group_arn"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Target Group Arn"
+                }
+              ]
+            }
+          ]
+        },
+        "gridPos": {
+          "h": 33,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "id": 14,
+        "options": {
+          "cellHeight": "sm",
+          "footer": {
+            "countRows": false,
+            "enablePagination": false,
+            "fields": [
+              "response_latency",
+              "response_length"
+            ],
+            "reducer": [
+              "sum"
+            ],
+            "show": false
+          },
+          "showHeader": true,
+          "sortBy": []
+        },
+        "pluginVersion": "10.0.0",
+        "targets": [
+          {
+            "connectionArgs": {
+              "catalog": "__default",
+              "database": "__default",
+              "region": "__default",
+              "resultReuseEnabled": true,
+              "resultReuseMaxAgeInMinutes": 5
+            },
+            "datasource": {
+              "type": "grafana-athena-datasource",
+              "uid": "Bn93a3_Vk"
+            },
+            "format": 1,
+            "rawSQL": "SELECT t.rn as No, t.time, t.timestamp, t.elb, t.type, t.client_ip, t.client_port, t.target_ip, t.target_port, t.request_processing_time, t.target_processing_time, t.response_processing_time, t.elb_status_code, t.target_status_code, t.received_bytes, t.sent_bytes, t.request_verb, t.request_url, t.request_host, t.request_path, t.request_proto, t.user_agent, t.ssl_cipher, t.ssl_protocol, t.target_group_arn, t.trace_id, t.domain_name, t.chosen_cert_arn, t.matched_rule_priority, t.request_creation_time, t.actions_executed, t.redirect_url, t.lambda_error_reason, t.target_port_list, t.target_status_code_list, t.classification, t.classification_reason, t.enrichment\nFROM (SELECT time, timestamp, elb, type, client_ip, client_port, target_ip, target_port, request_processing_time, target_processing_time, response_processing_time, elb_status_code, target_status_code, received_bytes, sent_bytes, request_verb, request_url, request_host, request_path, request_proto, user_agent, ssl_cipher, ssl_protocol, target_group_arn, trace_id, domain_name, chosen_cert_arn, matched_rule_priority, request_creation_time, actions_executed, redirect_url, lambda_error_reason, target_port_list, target_status_code_list, classification, classification_reason, enrichment,\n    row_number() over (order by time ${sort_by}) as rn\n  FROM \"$__table\"\n  WHERE elb IN (${elb:sqlstring}) \n\t\tAND type IN (${type:sqlstring}) \n\t\tAND elb_status_code_group IN (${elb_status_code_group:sqlstring}) \n\t\tAND target_group_arn IN (${target_group_arn:sqlstring}) \n\t\tAND request_verb IN (${http_method:sqlstring})\n\t\tAND client_ip LIKE '${client_ip}%'\n\t\tAND $__unixEpochFilter(time / 1000)\n\t\tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n  ) t \n  WHERE t.rn BETWEEN (${page_no:int} - 1) * ${page_size:int} + 1 AND ${page_no:int} * ${page_size:int};",
+            "refId": "A",
+            "table": "alb"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {
+                "authorize_status": true,
+                "authorizer_request_id": false,
+                "domain_prefix": true,
+                "identity": true,
+                "request_time_epoch": true,
+                "resource_id": true,
+                "resource_path": true,
+                "user_arn": true
+              },
+              "indexByName": {
+                "No": 0,
+                "actions_executed": 30,
+                "chosen_cert_arn": 27,
+                "classification": 35,
+                "classification_reason": 36,
+                "client_ip": 5,
+                "client_port": 6,
+                "domain_name": 26,
+                "elb": 4,
+                "elb_status_code": 12,
+                "lambda_error_reason": 32,
+                "matched_rule_priority": 28,
+                "received_bytes": 14,
+                "redirect_url": 31,
+                "request_creation_time": 29,
+                "request_host": 18,
+                "request_path": 19,
+                "request_processing_time": 9,
+                "request_proto": 20,
+                "request_url": 17,
+                "request_verb": 16,
+                "response_processing_time": 11,
+                "sent_bytes": 15,
+                "ssl_cipher": 22,
+                "ssl_protocol": 23,
+                "target_group_arn": 24,
+                "target_ip": 7,
+                "target_port": 8,
+                "target_port_list": 33,
+                "target_processing_time": 10,
+                "target_status_code": 13,
+                "target_status_code_list": 34,
+                "time": 1,
+                "timestamp": 2,
+                "trace_id": 25,
+                "type": 3,
+                "user_agent": 21
+              },
+              "renameByName": {
+                "actions_executed": "Actions executed",
+                "chosen_cert_arn": "Chosen cert Arn",
+                "classification": "Classification",
+                "classification_reason": "Classification reason",
+                "domain_name": "Domain Name",
+                "elb_status_code": "",
+                "lambda_error_reason": "Lambda error reason",
+                "matched_rule_priority": "Matched rule priority",
+                "redirect_url": "Redirect url",
+                "request_creation_time": "Request Creation time",
+                "target_port_list": "Target port list",
+                "target_status_code_list": "Target status code list",
+                "trace_id": "Trace Id"
+              }
+            }
+          }
+        ],
+        "type": "table"
+      }
+    ],
+    "refresh": "",
+    "revision": 1,
+    "schemaVersion": 38,
+    "style": "dark",
+    "tags": [],
+    "templating": {
+      "list": [
+        {
+          "allValue": "SELECT elb FROM \"$__table_metrics\" WHERE  event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH') \tOR event_hour = $__rawTimeFrom('yyyyMMdd00') GROUP BY elb",
+          "current": {
+            "selected": false,
+            "text": "All",
+            "value": "$__all"
+          },
+          "datasource": {
+            "type": "grafana-athena-datasource",
+            "uid": "Bn93a3_Vk"
+          },
+          "definition": "",
+          "hide": 0,
+          "includeAll": true,
+          "label": "ELB ID",
+          "multi": true,
+          "name": "elb",
+          "options": [],
+          "query": {
+            "connectionArgs": {
+              "catalog": "__default",
+              "database": "__default",
+              "region": "__default",
+              "resultReuseEnabled": true,
+              "resultReuseMaxAgeInMinutes": 5
+            },
+            "format": 1,
+            "rawSQL": "SELECT elb\nFROM \"$__table\"\nWHERE  event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\tOR event_hour = $__rawTimeFrom('yyyyMMdd00')\nGROUP BY elb\n",
+            "table": "alb_metrics"
+          },
+          "refresh": 2,
+          "regex": "",
+          "skipUrlSync": false,
+          "sort": 0,
+          "type": "query"
+        },
+        {
+          "current": {
+            "selected": false,
+            "text": "All",
+            "value": "$__all"
+          },
+          "description": "",
+          "hide": 0,
+          "includeAll": true,
+          "label": "Request Type",
+          "multi": true,
+          "name": "type",
+          "options": [
+            {
+              "selected": true,
+              "text": "All",
+              "value": "$__all"
+            },
+            {
+              "selected": false,
+              "text": "http",
+              "value": "http"
+            },
+            {
+              "selected": false,
+              "text": "https",
+              "value": "https"
+            },
+            {
+              "selected": false,
+              "text": "h2",
+              "value": "h2"
+            },
+            {
+              "selected": false,
+              "text": "grpcs",
+              "value": "grpcs"
+            },
+            {
+              "selected": false,
+              "text": "ws",
+              "value": "ws"
+            },
+            {
+              "selected": false,
+              "text": "wss",
+              "value": "wss"
+            }
+          ],
+          "query": "http, https, h2, grpcs, ws, wss",
+          "queryValue": "",
+          "skipUrlSync": false,
+          "type": "custom"
+        },
+        {
+          "current": {
+            "selected": true,
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "hide": 0,
+          "includeAll": true,
+          "label": "HTTP Method",
+          "multi": true,
+          "name": "http_method",
+          "options": [
+            {
+              "selected": true,
+              "text": "All",
+              "value": "$__all"
+            },
+            {
+              "selected": false,
+              "text": "GET",
+              "value": "GET"
+            },
+            {
+              "selected": false,
+              "text": "PUT",
+              "value": "PUT"
+            },
+            {
+              "selected": false,
+              "text": "POST",
+              "value": "POST"
+            },
+            {
+              "selected": false,
+              "text": "DELETE",
+              "value": "DELETE"
+            },
+            {
+              "selected": false,
+              "text": "HEAD",
+              "value": "HEAD"
+            },
+            {
+              "selected": false,
+              "text": "PATCH",
+              "value": "PATCH"
+            },
+            {
+              "selected": false,
+              "text": "OPTIONS",
+              "value": "OPTIONS"
+            }
+          ],
+          "query": "GET, PUT, POST, DELETE, HEAD, PATCH, OPTIONS",
+          "queryValue": "",
+          "skipUrlSync": false,
+          "type": "custom"
+        },
+        {
+          "current": {
+            "selected": true,
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "hide": 0,
+          "includeAll": true,
+          "label": "HTTP Status Code",
+          "multi": true,
+          "name": "elb_status_code_group",
+          "options": [
+            {
+              "selected": true,
+              "text": "All",
+              "value": "$__all"
+            },
+            {
+              "selected": false,
+              "text": "1xx",
+              "value": "1xx"
+            },
+            {
+              "selected": false,
+              "text": "2xx",
+              "value": "2xx"
+            },
+            {
+              "selected": false,
+              "text": "3xx",
+              "value": "3xx"
+            },
+            {
+              "selected": false,
+              "text": "4xx",
+              "value": "4xx"
+            },
+            {
+              "selected": false,
+              "text": "5xx",
+              "value": "5xx"
+            },
+            {
+              "selected": false,
+              "text": "-",
+              "value": "-"
+            }
+          ],
+          "query": "1xx, 2xx, 3xx, 4xx, 5xx, -",
+          "queryValue": "",
+          "skipUrlSync": false,
+          "type": "custom"
+        },
+        {
+          "allValue": "SELECT target_group_arn FROM \"$__table_metrics\" WHERE  event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH') \tOR event_hour = $__rawTimeFrom('yyyyMMdd00') GROUP BY target_group_arn",
+          "current": {
+            "selected": false,
+            "text": "All",
+            "value": "$__all"
+          },
+          "datasource": {
+            "type": "grafana-athena-datasource",
+            "uid": "Bn93a3_Vk"
+          },
+          "definition": "",
+          "description": "",
+          "hide": 0,
+          "includeAll": true,
+          "label": "Target Group ARN",
+          "multi": true,
+          "name": "target_group_arn",
+          "options": [],
+          "query": {
+            "connectionArgs": {
+              "catalog": "__default",
+              "database": "__default",
+              "region": "__default",
+              "resultReuseEnabled": true,
+              "resultReuseMaxAgeInMinutes": 5
+            },
+            "format": 1,
+            "rawSQL": "SELECT target_group_arn\nFROM \"$__table\"\nWHERE  event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\tOR event_hour = $__rawTimeFrom('yyyyMMdd00')\nGROUP BY target_group_arn\n",
+            "table": "alb_metrics"
+          },
+          "refresh": 1,
+          "regex": "",
+          "skipUrlSync": false,
+          "sort": 0,
+          "type": "query"
+        },
+        {
+          "current": {
+            "selected": false,
+            "text": "",
+            "value": ""
+          },
+          "hide": 0,
+          "label": "Client Ip",
+          "name": "client_ip",
+          "options": [
+            {
+              "selected": true,
+              "text": "",
+              "value": ""
+            }
+          ],
+          "query": "",
+          "skipUrlSync": false,
+          "type": "textbox"
+        },
+        {
+          "current": {
+            "selected": false,
+            "text": "1",
+            "value": "1"
+          },
+          "datasource": {
+            "type": "grafana-athena-datasource",
+            "uid": "Bn93a3_Vk"
+          },
+          "definition": "",
+          "hide": 0,
+          "includeAll": false,
+          "label": "Page No",
+          "multi": false,
+          "name": "page_no",
+          "options": [],
+          "query": {
+            "connectionArgs": {
+              "catalog": "__default",
+              "database": "__default",
+              "region": "__default",
+              "resultReuseEnabled": true,
+              "resultReuseMaxAgeInMinutes": 5
+            },
+            "format": 1,
+            "rawSQL": "SELECT cast(page_no as varchar) as page_no\nFROM (\n\tSELECT sequence(1, count(1) / ${page_size:int} + 1, 1)\n  FROM \"$__table\"\n  WHERE elb IN (${elb:sqlstring}) \n\t\tAND type IN (${type:sqlstring}) \n\t\tAND elb_status_code_group IN (${elb_status_code_group:sqlstring}) \n\t\tAND target_group_arn IN (${target_group_arn:sqlstring}) \n\t\tAND request_verb IN (${http_method:sqlstring})\n\t\tAND client_ip LIKE '${client_ip}%'\n\t\tAND $__unixEpochFilter(time / 1000)\n\t\tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n\t) AS x (no)\nCROSS JOIN UNNEST(no) AS t (page_no)\n;",
+            "table": "alb"
+          },
+          "refresh": 2,
+          "regex": "",
+          "skipUrlSync": false,
+          "sort": 0,
+          "type": "query"
+        },
+        {
+          "current": {
+            "selected": true,
+            "text": "1000",
+            "value": "1000"
+          },
+          "hide": 0,
+          "includeAll": false,
+          "label": "Page Size",
+          "multi": false,
+          "name": "page_size",
+          "options": [
+            {
+              "selected": false,
+              "text": "100",
+              "value": "100"
+            },
+            {
+              "selected": true,
+              "text": "1000",
+              "value": "1000"
+            },
+            {
+              "selected": false,
+              "text": "10000",
+              "value": "10000"
+            },
+            {
+              "selected": false,
+              "text": "50000",
+              "value": "50000"
+            }
+          ],
+          "query": "100, 1000, 10000, 50000",
+          "queryValue": "",
+          "skipUrlSync": false,
+          "type": "custom"
+        },
+        {
+          "current": {
+            "selected": false,
+            "text": "Asc",
+            "value": "Asc"
+          },
+          "hide": 0,
+          "includeAll": false,
+          "label": "Sort  by",
+          "multi": false,
+          "name": "sort_by",
+          "options": [
+            {
+              "selected": true,
+              "text": "Asc",
+              "value": "Asc"
+            },
+            {
+              "selected": false,
+              "text": "Desc",
+              "value": "Desc"
+            }
+          ],
+          "query": "Asc, Desc",
+          "queryValue": "",
+          "skipUrlSync": false,
+          "type": "custom"
+        }
+      ]
+    },
+    "time": {
+      "from": "now-30m",
+      "to": "now"
+    },
+    "timepicker": {
+      "refresh_intervals": [
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ]
+    },
+    "timezone": "",
+    "title": "alb-details",
+    "uid": "2b3c5732-e267-418e-83c9-1c6095e8818c-00",
+    "version": 7,
+    "weekStart": ""
+  }

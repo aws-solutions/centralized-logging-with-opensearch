@@ -131,6 +131,30 @@
     "tip1": "The solution will insert a pre-configured dashboard into the OpenSearch domain if ",
     "tip2": " being selected. The dashboard name will be consistent with your index name."
   },
+  "lightEngineSampleDashboard": {
+    "name": "Sample dashboard",
+    "tip1": "The solution will insert a pre-configured dashboard into the Grafana server if ",
+    "tip2": " being selected. The dashboard name will be consistent with your table name."
+  },
+  "lightEngineTableName": {
+    "name": "Log table name",
+    "tip": "Table names are recommended to use lowercase letters, numbers, and other special characters except underscore (_). The length must be less than or equal to 255 characters. Exceeding this limit generates an error. For detailed specifications, please refer to the <0>Document</0>"
+  },
+  "lightEngineLogProcess": {
+    "name": "Log Processor",
+    "tip1": "Set the frequency for triggering the Log Processor task execution, for example, rate(5 minutes) indicates executing it every 5 minutes.",
+    "tip2": "The primary purpose of the Log Processor (implemented as an Amazon Step Functions) is to efficiently handle raw log files stored on Amazon S3, processing them in batches, converting them into Apache Parquet format, and autonomously partitioning the data according to factors like time and region."
+  },
+  "lightEngineLogMerge": {
+    "name": "Log Merger",
+    "tip1": "Set the execution schedule for triggering the Log Merger task, and it can be executed once a day, for example, cron(0 1 * * ? *) indicates execution at 1 AM (UTC )daily.",
+    "tip2": "The primary purpose of the Log Merger (implemented as an Amazon Step Functions) is to consolidate Parquet small files and data partitions, thereby reducing the number of files, minimizing S3 API operation costs, lowering S3 storage expenses, and enhancing performance as the volume of query data grows."
+  },
+  "lightEngineLogArchive": {
+    "name": "Log Archiver",
+    "tip1": "Set the execution schedule for triggering the Log Archive task, and it can be executed once a day, for example, cron(0 2 * * ? *) indicates execution at 2 AM (UTC) daily.",
+    "tip2": "The primary purpose of the Log Archiver (implemented as an Amazon Step Functions) is to transfer expired data from Centralized storage to an archive until the lifecycle rule deletes the files, as well as to update the Glue data catalog and remove expired table partitions."
+  },
   "s3FileType": {
     "name": "File Type",
     "tips": "You can choose a specific file type for logs stored in Amazon S3. Gzip only supports the compression of a single file."
@@ -181,5 +205,15 @@
     "desc": "Pipeline alarms will be triggered if any critical metric cross the threshold, which will send notifications to a SNS topic. Those alarms are created based on the best practices for log pipeline monitoring and troubleshooting, you can custom those alarms or create new alarms in CloudWatch",
     "link1": "Pipeline alarms",
     "link2": "Amazon CloudWatch Alarms"
+  },
+  "osi": {
+    "name": "Amazon OpenSearch Ingestion",
+    "desc": "Amazon OpenSearch Ingestion is a fully managed, serverless data collector that delivers real-time log, metric, and trace data to Amazon OpenSearch Service domains and OpenSearch Serverless collections.",
+    "link1": "Learn more",
+    "link2": "Cost details"
+  },
+  "bufferLayer": {
+    "name": "Buffer layer",
+    "desc": "Buffer layer is designed for a robust system between the log source and log destination. This layer can decouple the source and destination and accept more log ingestion requests, and also can buffer the logs for retry when log analytics engine has server issue or performance issue."
   }
 }

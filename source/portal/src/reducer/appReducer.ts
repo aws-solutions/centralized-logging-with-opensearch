@@ -38,6 +38,14 @@ export enum InfoBarTypes {
   INGESTION_CREATION_METHOD = "INGESTION_CREATION_METHOD",
   SAMPLE_DASHBAORD = "SAMPLE_DASHBAORD",
   APACHE_SAMPLE_DASHBOARD = "APACHE_SAMPLE_DASHBOARD",
+  LIGHT_ENGINE_SAMPLE_DASHBOARD = "LIGHT_ENGINE_SAMPLE_DASHBOARD",
+  LIGHT_ENGINE_TABLE_NAME = "LIGHT_ENGINE_TABLE_NAME",
+  LIGHT_ENGINE_LOG_PROCESS = "LIGHT_ENGINE_LOG_PROCESS",
+  LIGHT_ENGINE_LOG_MERGE = "LIGHT_ENGINE_LOG_MERGE",
+  LIGHT_ENGINE_LOG_ARCHIVE = "LIGHT_ENGINE_LOG_ARCHIVE",
+  LIGHT_ENGINE_LOG_PROCESS_DETAIL = "LIGHT_ENGINE_LOG_PROCESS_DETAIL",
+  LIGHT_ENGINE_LOG_MERGE_DETAIL = "LIGHT_ENGINE_LOG_MERGE_DETAIL",
+  LIGHT_ENGINE_LOG_ARCHIVE_DETAIL = "LIGHT_ENGINE_LOG_ARCHIVE_DETAIL",
   LOG_LIFECYCLE = "LOG_LIFECYCLE",
   NGINX_LOG_FORMAT = "NGINX_LOG_FORMAT",
   NGINX_SAMPLE_LOG_PARSING = "NGINX_SAMPLE_LOG_PARSING",
@@ -59,6 +67,7 @@ export enum InfoBarTypes {
   BUFFER_LAYER = "BUFFER_LAYER",
   S3_PREFIX_FILTER = "S3_PREFIX_FILTER",
   PIPELINE_ALARM = "PIPELINE_ALARM",
+  OSI_PIPELINE = "OSI_PIPELINE",
 }
 
 export const InfoBarTitleMap: any = {
@@ -71,6 +80,14 @@ export const InfoBarTitleMap: any = {
   INSTANCE_GROUP_CREATION_METHOD: "info:instanceGroupCreationMethod.name",
   SAMPLE_DASHBAORD: "info:sampleDashboard.name",
   APACHE_SAMPLE_DASHBOARD: "info:sampleDashboard.name",
+  LIGHT_ENGINE_SAMPLE_DASHBOARD: "info:sampleDashboard.name",
+  LIGHT_ENGINE_TABLE_NAME: "info:lightEngineTableName.name",
+  LIGHT_ENGINE_LOG_PROCESS: "info:lightEngineLogProcess.name",
+  LIGHT_ENGINE_LOG_MERGE: "info:lightEngineLogMerge.name",
+  LIGHT_ENGINE_LOG_ARCHIVE: "info:lightEngineLogArchive.name",
+  LIGHT_ENGINE_LOG_PROCESS_DETAIL: "info:lightEngineLogProcess.name",
+  LIGHT_ENGINE_LOG_MERGE_DETAIL: "info:lightEngineLogMerge.name",
+  LIGHT_ENGINE_LOG_ARCHIVE_DETAIL: "info:lightEngineLogArchive.name",
   LOG_LIFECYCLE: "info:logLifecycle.name",
   NGINX_LOG_FORMAT: "info:nginxLogFormat.name",
   NGINX_SAMPLE_LOG_PARSING: "info:nginxLogParsing.name",
@@ -87,6 +104,8 @@ export const InfoBarTitleMap: any = {
   PROXY_INSTANCE: "info:proxyInstance.name",
   S3_PREFIX_FILTER: "info:s3PrefixFilter.name",
   PIPELINE_ALARM: "info:pipelineAlarm.name",
+  OSI_PIPELINE: "info:osi.name",
+  BUFFER_LAYER: "info:bufferLayer.name",
 };
 
 export interface AppStateProps {

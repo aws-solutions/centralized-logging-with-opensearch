@@ -1,0 +1,71 @@
+{
+  "aliases": {},
+  "mappings": {
+      "properties": {
+          "@timestamp": {
+              "type": "alias",
+              "path": "eventTime"
+          },
+          "eventVersion": {
+              "type": "keyword"
+          },
+          "eventName": {
+              "type": "keyword"
+          },
+          "eventSource": {
+              "type": "keyword"
+          },
+          "eventTime": {
+              "type": "date"
+          },
+          "eventType": {
+              "type": "keyword"
+          },
+          "eventCategory": {
+              "type": "keyword"
+          },
+          "sourceIPAddress": {
+              "type": "keyword"
+          },
+          "apiVersion": {
+              "type": "keyword"
+          },
+          "awsRegion": {
+              "type": "keyword"
+          },
+          "requestParameters": {"type": "keyword"},
+          
+          "responseElements": {"type": "keyword"},
+          
+          "serviceEventDetails.eventRequestDetails": {"type": "keyword", "fields": {"text": {"type": "text"}}},
+          "errorCode": {"type": "keyword"},
+          "eventID": {"type": "keyword"}, 
+          "additionalEventData.bytesTransferredIn": {"type": "float"},
+          "additionalEventData.bytesTransferredOut": {"type": "float"},
+          "additionalEventData.vpcEndpointId": {"type": "keyword"},
+          "userIdentity": {
+              "properties": {
+                  "sessionContext": {
+                      "properties": {
+                          "attributes": {
+                              "properties": {
+                                  "creationDate": {
+                                      "type": "date"
+                                  }
+                              }
+                          }
+                      }
+                  }
+              }
+          }
+      }
+  },
+  "settings": {
+      "index": {
+          "mapping.total_fields.limit": 4000,
+          "mapping.ignore_malformed": "true",
+          "number_of_shards": "5",
+          "number_of_replicas": "1"
+      }
+  }
+}

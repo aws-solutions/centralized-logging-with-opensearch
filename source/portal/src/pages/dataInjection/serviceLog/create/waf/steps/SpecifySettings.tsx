@@ -37,6 +37,7 @@ import { useSelector } from "react-redux";
 import CrossAccountSelect from "pages/comps/account/CrossAccountSelect";
 import IngestOptionSelect, { IngestOption } from "./IngestOptionSelect";
 import SampleSchedule from "./SampleSchedule";
+import { AnalyticEngineTypes } from "../../common/SpecifyAnalyticsEngine";
 import { RootState } from "reducer/reducers";
 
 export enum WAF_TYPE {
@@ -63,6 +64,7 @@ interface SpecifySettingsProps {
   changeIngestionOption: (option: string) => void;
   changeScheduleInterval: (interval: string) => void;
   changeLogSource: (source: string) => void;
+  engineType: AnalyticEngineTypes;
 }
 
 const SpecifySettings: React.FC<SpecifySettingsProps> = (
@@ -87,6 +89,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     changeIngestionOption,
     changeScheduleInterval,
     changeLogSource,
+    engineType,
   } = props;
   const { t } = useTranslation();
 
@@ -260,6 +263,9 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                   </FormItem>
                   <IngestOptionSelect
                     ingestOption={wafTask.params.ingestOption}
+                    onlyFullRequest={
+                      engineType === AnalyticEngineTypes.LIGHT_ENGINE
+                    }
                     changeIngestOption={(option) => {
                       changeIngestionOption(option);
                     }}
@@ -356,6 +362,9 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                     />
                   </FormItem>
                   <IngestOptionSelect
+                    onlyFullRequest={
+                      engineType === AnalyticEngineTypes.LIGHT_ENGINE
+                    }
                     ingestOption={wafTask.params.ingestOption}
                     changeIngestOption={(option) => {
                       changeIngestionOption(option);

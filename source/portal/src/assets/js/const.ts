@@ -203,6 +203,9 @@ export const PIPLINE_MONITORING_COST_LINK =
 export const CLOUDWATCH_ALARM_LINK =
   "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/AlarmThatSendsEmail.html";
 
+export const OSI_PIPELINE_LINK =
+  "https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ingestion.html";
+
 export enum ServiceLogType {
   Amazon_S3 = "Amazon_S3",
   Amazon_RDS = "Amazon_RDS",
@@ -417,6 +420,7 @@ export const FB_TYPE_LIST = [
   { name: "binary", value: "binary" },
   { name: "date", value: "date" },
   { name: "ip", value: "ip" },
+  { name: "string", value: "string" },
 ];
 
 export const LOG_CONFIG_TYPE_LIST = [

@@ -16,8 +16,18 @@ limitations under the License.
 import { INVALID } from "./const";
 import { format, parseISO } from "date-fns";
 import { formatWithOptions } from "date-fns/fp";
-import { EngineType, LogType, MultiLineLogParser, SyslogParser } from "API";
+import {
+  AppPipeline,
+  EngineType,
+  LogType,
+  MultiLineLogParser,
+  SchedulerType,
+  SyslogParser,
+} from "API";
 import { ExLogConf } from "pages/resources/common/LogConfigComp";
+import i18n from "i18n";
+import { LogProcessorType, SelectProcessorType } from "reducer/selectProcessor";
+import { ServiceLogDetailProps } from "pages/dataInjection/serviceLog/ServiceLogDetail";
 
 const SPRINGBOOT_DEFAULT_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss,SSS";
 const stackPrefix = "CL";
@@ -85,18 +95,6 @@ export const bucketNameIsValid = (bucketName: string): boolean => {
     bucketName &&
     !/^(?:(?:^|\.)(?:2(?:5[0-5]|[0-4]\d)|1?\d?\d)){4}$/.test(bucketName);
   const REG7 = bucketName && bucketName.length >= 3 && bucketName.length <= 63;
-
-  console.info(
-    "REG1 && REG2 && REG3 && REG4 && REG5 && REG6 && REG7:",
-    REG1,
-    REG2,
-    REG3,
-    REG4,
-    REG5,
-    REG6,
-    REG7
-  );
-
   if (REG1 && REG2 && REG3 && REG4 && REG5 && REG6 && REG7) {
     return true;
   }
@@ -109,7 +107,7 @@ export const checkIndexNameValidate = (indexName: string): boolean => {
   return IndexRegEx.test(indexName);
 };
 
-// checkt string is json format
+// check string is json format
 export const IsJsonString = (str: string): boolean => {
   try {
     JSON.parse(str);
@@ -119,18 +117,24 @@ export const IsJsonString = (str: string): boolean => {
   return true;
 };
 
-// format json string to dot
-export const JsonToDotNotate = (obj: any, target?: any, prefix?: string) => {
-  target = target || {};
-  prefix = prefix || "";
-  Object.keys(obj).forEach(function (key) {
-    if (typeof obj[key] !== "object" && obj[key] !== null) {
-      const newKey = `${prefix}${key}`;
-      target[newKey] = obj[key];
-      return target;
-    }
-  });
-  return target;
+// Transform JSON Schema
+export const transformSchemaType = (schema: any) => {
+  // when 'type' is 'null', change to 'string'
+  if (schema.type === "null") {
+    schema.type = "string";
+  }
+
+  // if has child properties
+  if (schema.properties) {
+    Object.values(schema.properties).forEach(transformSchemaType);
+  }
+
+  // if is array and has items
+  if (schema.type === "array" && schema.items) {
+    transformSchemaType(schema.items);
+  }
+
+  return schema;
 };
 
 // format event timestamp
@@ -795,6 +799,20 @@ export const buildS3Link = (
   return `https://s3.console.aws.amazon.com/s3/buckets/${bucketName}`;
 };
 
+export const buildS3LinkFromS3URI = (region: string, uri?: string): string => {
+  if (!uri) {
+    return "";
+  }
+  const bucketAndPrefix = uri.startsWith("s3://") ? uri.split("s3://")[1] : uri;
+  const bucketName = bucketAndPrefix.split("/")[0];
+  const prefix = bucketAndPrefix.substring(bucketName.length + 1);
+  const postfix = prefix.endsWith("/") ? "" : "/";
+  if (region.startsWith("cn")) {
+    return `https://console.amazonaws.cn/s3/buckets/${bucketName}?region=${region}&prefix=${prefix}${postfix}`;
+  }
+  return `https://s3.console.aws.amazon.com/s3/buckets/${bucketName}?region=${region}&prefix=${prefix}${postfix}`;
+};
+
 export const buildTrailLink = (region: string): string => {
   if (region.startsWith("cn")) {
     return `https://${region}.console.amazonaws.cn/cloudtrail/home?region=${region}#/trails`;
@@ -955,6 +973,60 @@ export const buildLambdaCWLGroupLink = (
     `;
 };
 
+export const buildGlueTableLink = (
+  region: string,
+  database = "",
+  table = ""
+): string => {
+  return `https://${region}.${
+    region.startsWith("cn") ? "console.amazonaws.cn" : "console.aws.amazon.com"
+  }/glue/home?region=${region}#/v2/data-catalog/tables/view/${table}?database=${database}`;
+};
+
+export const buildGlueDatabaseLink = (
+  region: string,
+  database = ""
+): string => {
+  return `https://${region}.${
+    region.startsWith("cn") ? "console.amazonaws.cn" : "console.aws.amazon.com"
+  }/glue/home?region=${region}#/v2/data-catalog/databases/view/${database}`;
+};
+
+export const buildStepFunctionLink = (region: string, arn = ""): string => {
+  return `https://${region}.${
+    region.startsWith("cn") ? "console.amazonaws.cn" : "console.aws.amazon.com"
+  }/states/home?region=${region}#/statemachines/view/${arn}`;
+};
+
+export const buildSchedulerLink = (
+  region: string,
+  type?: SchedulerType,
+  group?: string,
+  name?: string
+): string => {
+  const host = region.startsWith("cn")
+    ? "console.amazonaws.cn"
+    : "console.aws.amazon.com";
+  return type === SchedulerType.EventBridgeScheduler
+    ? `https://${region}.${host}/scheduler/home?region=${region}#schedules/${group}/${name}`
+    : `https://${region}.${host}/events/home?region=${region}#/eventbus/${group}/rules/${name}`;
+};
+
+export const buildStepFunctionExecutionLink = (
+  region: string,
+  arn = ""
+): string => {
+  return `https://${region}.${
+    region.startsWith("cn") ? "console.amazonaws.cn" : "console.aws.amazon.com"
+  }/states/home?region=${region}#/v2/executions/details/${arn}`;
+};
+
+export const buildOSILink = (region: string, osiName: string) => {
+  return `https://${region}.${
+    region.startsWith("cn") ? "console.amazonaws.cn" : "console.aws.amazon.com"
+  }/aos/home?region=${region}#opensearch/ingestion-pipelines/${osiName}`;
+};
+
 export const getRegexAndTimeByConfigAndFormat = (
   curConfig: ExLogConf,
   format: string
@@ -1060,16 +1132,16 @@ export type FieldValidator<T> = (param: T) => string;
 
 export const createFieldValidator =
   <T extends any[]>(validator: (...params: T) => boolean) =>
-  (errorMessage: string) =>
+  (errorMessage: string | (() => string)) =>
   (...params: T) => {
     if (!validator(...params)) {
-      return errorMessage;
+      return typeof errorMessage === "string" ? errorMessage : errorMessage();
     }
     return "";
   };
 
 export const validateRequiredText = createFieldValidator(
-  (text: string) => !!text
+  (text?: string | null) => !!text
 );
 
 export const validateWithRegex = (reg: RegExp) =>
@@ -1094,6 +1166,13 @@ export const validateS3BucketName = createFieldValidator((text: string) =>
 export const validateContainNonLatin = createFieldValidator((text: string) =>
   containsNonLatinCodepoints(text)
 );
+
+export const withI18nErrorMessage =
+  <T>(validator: FieldValidator<T>) =>
+  (param: T) => {
+    const i18nKey = validator(param);
+    return i18nKey === "" ? "" : i18n.t(i18nKey);
+  };
 
 type Reducer<State, Action> = (state: State, action: Action) => State;
 
@@ -1127,6 +1206,53 @@ export const hasSamePrefix = (paths: string[]) => {
     return false;
   }
   const prefixes = paths.map((path) => path.slice(0, path.lastIndexOf("/")));
-  console.info("prefixes:", prefixes);
   return prefixes.every((prefix) => prefix === prefixes[0]);
+};
+
+export const buildOSIParamsValue = (osiObj: SelectProcessorType) => {
+  return {
+    minCapacity: ternary(
+      osiObj.logProcessorType === LogProcessorType.OSI,
+      parseInt(osiObj.minOCU),
+      0
+    ),
+    maxCapacity: ternary(
+      osiObj.logProcessorType === LogProcessorType.OSI,
+      parseInt(osiObj.maxOCU),
+      0
+    ),
+  };
+};
+
+export const buildOSIPipelineNameByPipelineId = (pipelineId: string) => {
+  return `cl-${pipelineId.substring(0, 23)}`;
+};
+
+export const isOSIPipeline = (
+  pipeline?: AppPipeline | ServiceLogDetailProps | null
+) => {
+  return !!(
+    pipeline?.osiParams?.minCapacity &&
+    parseInt(pipeline.osiParams.minCapacity.toString()) > 0
+  );
+};
+
+export const isEmpty = (value: any) => {
+  if (value === null || value === undefined || value === "{}") {
+    return true;
+  }
+  if (typeof value === "object") {
+    return Object.keys(value).length === 0;
+  }
+  if (typeof value === "string") {
+    return value.trim() === "";
+  }
+  return false;
+};
+
+export const defaultStr = (
+  expectStr: string | null | undefined,
+  defaultValue?: string
+) => {
+  return expectStr ?? defaultValue ?? "";
 };

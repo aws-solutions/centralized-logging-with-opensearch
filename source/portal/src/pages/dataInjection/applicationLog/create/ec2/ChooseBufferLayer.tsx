@@ -22,6 +22,14 @@ import Alert from "components/Alert";
 import { AlertType } from "components/Alert/alert";
 import FormItem from "components/FormItem";
 import { useTranslation } from "react-i18next";
+import { AnalyticEngineTypes } from "pages/dataInjection/serviceLog/create/common/SpecifyAnalyticsEngine";
+import { useDispatch } from "react-redux";
+import { Dispatch } from "redux";
+import { Actions } from "reducer/reducers";
+import {
+  LogProcessorType,
+  SelectProcessorActionTypes,
+} from "reducer/selectProcessor";
 
 interface ChooseBufferLayerProps {
   maxShardNumInvalidError: boolean;
@@ -31,19 +39,32 @@ interface ChooseBufferLayerProps {
   bufferIntervalError: boolean;
   shardNumInvalidError: boolean;
   notConfirmNetworkError: boolean;
+  engineType?: AnalyticEngineTypes;
 
   applicationLog: ApplicationLogType;
   setApplicationLog: React.Dispatch<React.SetStateAction<ApplicationLogType>>;
 }
 
 export default function ChooseBufferLayer(props: ChooseBufferLayerProps) {
-  const { applicationLog, setApplicationLog } = props;
+  const {
+    applicationLog,
+    setApplicationLog,
+    engineType = AnalyticEngineTypes.OPENSEARCH,
+  } = props;
   const { t } = useTranslation();
+  const dispatch = useDispatch<Dispatch<Actions>>();
+
   return (
     <>
       <SelectBuffer
+        engineType={engineType}
         currentBufferLayer={applicationLog.bufferType}
         changeActiveLayer={(type) => {
+          // Update processor type to lambda when change buffer type
+          dispatch({
+            type: SelectProcessorActionTypes.CHANGE_PROCESSOR_TYPE,
+            processorType: LogProcessorType.LAMBDA,
+          });
           setApplicationLog((prev) => {
             return {
               ...prev,
@@ -95,6 +116,7 @@ export default function ChooseBufferLayer(props: ChooseBufferLayerProps) {
       )}
       {applicationLog.bufferType === BufferType.S3 && (
         <BufferS3
+          engineType={engineType}
           applicationLog={applicationLog}
           s3BucketEmptyError={props.s3BucketEmptyError}
           s3PrefixError={props.s3PrefixError}

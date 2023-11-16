@@ -17,6 +17,11 @@ limitations under the License.
 import { combineReducers } from "redux";
 import appReducer, { Action, AppStateProps } from "./appReducer";
 import {
+  CreateLightEngineAction,
+  CreateLightEngineSate,
+  createLightEngineReducer,
+} from "./createLightEngine";
+import {
   CreateTagActions,
   CreateTagSate,
   createTagReducer,
@@ -27,19 +32,37 @@ import {
   CreateAlarmState,
   createAlarmReducer,
 } from "./createAlarm";
+import { grafana, GrafanaState } from "./grafana";
+
+import {
+  SelectProcessorActions,
+  SelectProcessorState,
+  selectProcessorReducer,
+} from "./selectProcessor";
 
 const reducers = {
   app: appReducer,
   createTag: createTagReducer,
+  createLightEngine: createLightEngineReducer,
   createAlarm: createAlarmReducer,
+  grafana: grafana.reducer,
+  selectProcessor: selectProcessorReducer,
 };
 
 export type RootState = {
   app: AppStateProps;
   createTag: CreateTagSate;
+  createLightEngine: CreateLightEngineSate;
   createAlarm: CreateAlarmState;
+  grafana: GrafanaState;
+  selectProcessor: SelectProcessorState;
 };
 
-export type Actions = CreateTagActions | Action | CreateAlarmActions;
+export type Actions =
+  | CreateTagActions
+  | Action
+  | CreateAlarmActions
+  | CreateLightEngineAction
+  | SelectProcessorActions;
 
 export const reducer = combineReducers(reducers);

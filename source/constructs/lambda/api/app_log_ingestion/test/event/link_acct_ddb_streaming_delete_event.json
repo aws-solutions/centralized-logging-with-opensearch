@@ -1,0 +1,70 @@
+{
+  "Records": [
+      {
+          "eventID": "f3f95953944e8398cafe8d97d81b11a1",
+          "eventName": "REMOVE",
+          "eventVersion": "1.1",
+          "eventSource": "aws:dynamodb",
+          "awsRegion": "us-east-1",
+          "dynamodb": {
+              "ApproximateCreationDateTime": 1694526606,
+              "Keys": {
+                  "subAccountId": {
+                      "S": "111111111111"
+                  },
+                  "region": {
+                      "S": "us-east-1"
+                  }
+              },
+              "OldImage": {
+                  "subAccountRoleArn": {
+                      "S": "arn:aws:iam::111111111111:role/james-test-CrossAccountRoleFACE29D1-TNWKF3DJAZ2D"
+                  },
+                  "subAccountKMSKeyArn": {
+                      "S": "arn:aws:kms:us-east-1:111111111111:key/e79fb933-7e97-4367-8cc9-d68858682557"
+                  },
+                  "subAccountFlbConfUploadingEventTopicArn": {
+                      "S": "arn:aws:sns:us-east-1:111111111111:james-test-FlbUploadingEventSubscriptionTopic"
+                  },
+                  "agentInstallDoc": {
+                      "S": "james-test-FluentBitDocumentInstallation-rjjRJMguwGfd"
+                  },
+                  "agentConfDoc": {
+                      "S": "james-test-FluentBitConfigDownloading-Y2OKlFdVe4lA"
+                  },
+                  "subAccountIamInstanceProfileArn": {
+                      "S": "arn:aws:iam::111111111111:instance-profile/james-test-Ec2IamInstanceProfile-cvjOmEAaTWNd"
+                  },
+                  "createdAt": {
+                      "S": "2023-09-05T09:08:37Z"
+                  },
+                  "subAccountId": {
+                      "S": "111111111111"
+                  },
+                  "subAccountName": {
+                      "S": "magic-us-east-1"
+                  },
+                  "subAccountBucketName": {
+                      "S": "james-test-clloggingbucket5f34e4eb-1rzm4xgmgduu1"
+                  },
+                  "subAccountStackId": {
+                      "S": "arn:aws:cloudformation:us-east-1:111111111111:stack/james-test/d90a6d40-4bbf-11ee-aef1-0a4a3e875f8d"
+                  },
+                  "region": {
+                      "S": "us-east-1"
+                  },
+                  "cwlMonitorRoleArn": {
+                      "S": "arn:aws:iam::123456789012:role/CL-cloudwatch-access-CentralizedLogging-us-east-1"
+                  },
+                  "status": {
+                      "S": "ACTIVE"
+                  }
+              },
+              "SequenceNumber": "229237900000000035909152995",
+              "SizeBytes": 1008,
+              "StreamViewType": "NEW_AND_OLD_IMAGES"
+          },
+          "eventSourceARN": "arn:aws:dynamodb:us-east-1:123456789012:table/CentralizedLogging-SubAccount-1L1YP4QO4L1IM/stream/2023-09-12T09:53:48.280"
+      }
+  ]
+}
