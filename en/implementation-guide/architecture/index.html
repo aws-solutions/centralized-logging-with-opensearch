@@ -1638,7 +1638,7 @@
   <h1>Architecture diagram</h1>
 
 <p>Deploying this solution with the default parameters builds the following environment in the AWS Cloud.</p>
-<p><a href="../images/architecture/arch.png"><img alt="arch" src="../images/architecture/arch.png" /></a>
+<p><a href="../../images/architecture/arch.png"><img alt="arch" src="../../images/architecture/arch.png" /></a>
 <strong><em>Centralized Logging with OpenSearch architecture</em></strong></p>
 <p>This solution deploys the AWS CloudFormation template in your AWS Cloud account and completes the following settings.</p>
 <ol>
@@ -1692,13 +1692,13 @@
 <li>
 <p><strong>Logs to Amazon S3 directly（OpenSearch as log processor）</strong></p>
 <p>In this scenario, the service directly sends logs to Amazon S3.</p>
-<p><a href="../images/architecture/service-pipeline-s3.svg"><img alt="arch-service-pipeline-s3" src="../images/architecture/service-pipeline-s3.svg" /></a>
+<p><a href="../../images/architecture/service-pipeline-s3.svg"><img alt="arch-service-pipeline-s3" src="../../images/architecture/service-pipeline-s3.svg" /></a>
 <strong><em>Amazon S3 based service log pipeline architecture</em></strong></p>
 </li>
 <li>
 <p><strong>Logs to Amazon S3 via Kinesis Data Firehose（OpenSearch as log processor）</strong></p>
 <p>In this scenario, the service cannot directly put their logs to Amazon S3. The logs are sent to Amazon CloudWatch, and Kinesis Data Firehose (<a href="https://aws.amazon.com/kinesis/data-firehose/">KDF</a>) is used to subscribe the logs from CloudWatch Log Group and then put logs into Amazon S3.</p>
-<p><a href="../images/architecture/service-pipeline-kdf-to-s3.svg"><img alt="arch-service-pipeline-kdf-to-s3" src="../images/architecture/service-pipeline-kdf-to-s3.svg" /></a>
+<p><a href="../../images/architecture/service-pipeline-kdf-to-s3.svg"><img alt="arch-service-pipeline-kdf-to-s3" src="../../images/architecture/service-pipeline-kdf-to-s3.svg" /></a>
 <strong><em>Amazon S3 (via KDF) based service log pipeline architecture</em></strong></p>
 </li>
 </ul>
@@ -1728,7 +1728,7 @@
 <li>
 <p><strong>Logs to Amazon S3 directly（Light Engine as log processor）</strong></p>
 <p>In this scenario, the service directly sends logs to Amazon S3.</p>
-<p><a href="../images/architecture/logs-in-s3-light-engine.drawio.png"><img alt="arch-service-pipeline-s3-lightengine" src="../images/architecture/logs-in-s3-light-engine.drawio.png" /></a>
+<p><a href="../../images/architecture/logs-in-s3-light-engine.drawio.png"><img alt="arch-service-pipeline-s3-lightengine" src="../../images/architecture/logs-in-s3-light-engine.drawio.png" /></a>
 <strong><em>Amazon S3 based service log pipeline architecture</em></strong></p>
 </li>
 </ul>
@@ -1747,13 +1747,13 @@
 <li>
 <p><strong>Logs to KDS directly</strong></p>
 <p>In this scenario, the service directly streams logs to Amazon Kinesis Data Streams (<a href="https://aws.amazon.com/kinesis/data-streams/">KDS</a>).</p>
-<p><a href="../images/architecture/service-pipeline-kds.svg"><img alt="arch-service-pipeline-kds" src="../images/architecture/service-pipeline-kds.svg" /></a>
+<p><a href="../../images/architecture/service-pipeline-kds.svg"><img alt="arch-service-pipeline-kds" src="../../images/architecture/service-pipeline-kds.svg" /></a>
 <strong><em>Amazon KDS based service log pipeline architecture</em></strong></p>
 </li>
 <li>
 <p><strong>Logs to KDS via subscription</strong></p>
 <p>In this scenario, the service delivers the logs to CloudWatch Log Group, and then CloudWatch Logs stream the logs in real-time to <a href="https://aws.amazon.com/kinesis/data-streams/">KDS</a> as the subscription destination.</p>
-<p><a href="../images/architecture/service-pipeline-cwl-to-kds.svg"><img alt="arch-service-pipeline-cwl-to-kds" src="../images/architecture/service-pipeline-cwl-to-kds.svg" /></a>
+<p><a href="../../images/architecture/service-pipeline-cwl-to-kds.svg"><img alt="arch-service-pipeline-cwl-to-kds" src="../../images/architecture/service-pipeline-cwl-to-kds.svg" /></a>
 <strong><em>Amazon KDS (via subscription) based service log pipeline architecture</em></strong></p>
 </li>
 </ul>
@@ -1787,7 +1787,7 @@ Otherwise, they will be in another AWS account.</p>
 <h3 id="logs-from-amazon-ec2-amazon-eks">Logs from Amazon EC2 / Amazon EKS</h3>
 <ul>
 <li><strong>Logs from Amazon EC2/ Amazon EKS(OpenSearch as log processor)</strong>
-<a href="../images/architecture/app-log-pipeline-ec2-eks.svg"><img alt="arch-app-log-pipeline" src="../images/architecture/app-log-pipeline-ec2-eks.svg" /></a>
+<a href="../../images/architecture/app-log-pipeline-ec2-eks.svg"><img alt="arch-app-log-pipeline" src="../../images/architecture/app-log-pipeline-ec2-eks.svg" /></a>
 <strong><em>Application log pipeline architecture for EC2/EKS</em></strong></li>
 </ul>
 <p>The log pipeline runs the following workflow:</p>
@@ -1809,7 +1809,7 @@ Otherwise, they will be in another AWS account.</p>
 <ul>
 <li><strong>Logs from Amazon EC2/ Amazon EKS(Light Engine as log processor)</strong></li>
 </ul>
-<p><a href="../images/architecture/logs-from-amazon-ec2-eks-light-engine.drawio.png"><img alt="arch-app-log-pipeline-lighengine" src="../images/architecture/logs-from-amazon-ec2-eks-light-engine.drawio.png" /></a>
+<p><a href="../../images/architecture/logs-from-amazon-ec2-eks-light-engine.drawio.png"><img alt="arch-app-log-pipeline-lighengine" src="../../images/architecture/logs-from-amazon-ec2-eks-light-engine.drawio.png" /></a>
 <strong><em>Application log pipeline architecture for EC2/EKS</em></strong></p>
 <p>The log pipeline runs the following workflow:</p>
 <ol>
@@ -1825,7 +1825,7 @@ Otherwise, they will be in another AWS account.</p>
 <li>The NLB together with the ECS containers in the architecture diagram will be provisioned only when you create a Syslog ingestion and be automated deleted when there is no Syslog ingestion.</li>
 </ol>
 </div>
-<p><a href="../images/architecture/app-log-pipeline-syslog.svg"><img alt="arch-syslog-pipeline" src="../images/architecture/app-log-pipeline-syslog.svg" /></a>
+<p><a href="../../images/architecture/app-log-pipeline-syslog.svg"><img alt="arch-syslog-pipeline" src="../../images/architecture/app-log-pipeline-syslog.svg" /></a>
 <strong><em>Application log pipeline architecture for Syslog</em></strong></p>
 <ol>
 <li>
