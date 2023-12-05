@@ -86,13 +86,10 @@ class AosIdxService:
         while True:
             response = func(**kwargs)
             if response.status_code < 300:
-                # logger.info("%s runs successfully", func_name)
+                logger.info("%s runs successfully", func_name)
                 break
             logger.error("%s failed: %s", func_name, response.text)
             if response.status_code == 403 or response.status_code == 409:
-                # logger.info(
-                #     "Please add access to OpenSearch for this Lambda and rerun this"
-                # )
                 if response.status_code == 403:
                     self.map_backend_role()
                 raise APIException(
@@ -101,22 +98,16 @@ class AosIdxService:
                 )
 
             if retry >= total_retry:
-                # logger.info(
-                #     "%s failed after %d retries, please manually create it",
-                #     func_name,
-                #     retry,
-                # )
-                # logger.info(
-                #     "the last response code is %d, the last response content is %s",
-                #     response.status_code,
-                #     response.content,
-                # )
+                logger.info(
+                    "the last response code is %d, the last response content is %s",
+                    response.status_code,
+                    response.content,
+                )
                 raise APIException(
                     ErrorCode.UNKNOWN_ERROR,
                     f"Lambda has called AOS {total_retry} times, the message will be re-consumed and then retried. ",
                 )
 
-            # logger.info(f"Sleep {sleep_interval} seconds and retry...")
             retry += 1
             time.sleep(sleep_interval)
 
@@ -145,7 +136,7 @@ class AosIdxService:
             opensearch_util.check_advanced_security_enabled()
         )
         if advanced_security_enabled_flag:
-            # logger.info("OpenSearch domain has Advanced Security enabled")
+            logger.info("OpenSearch domain has Advanced Security enabled")
             opensearch_util.add_master_role(current_role_arn)
             opensearch_util.add_master_role(no_buffer_access_role_arn)
 
@@ -200,19 +191,19 @@ class AosIdxService:
 
     def _get_index_template(self):
         if INDEX_TEMPLATE_GZIP_BASE64:
-            # logger.info("Using INDEX_TEMPLATE_GZIP_BASE64")
+            logger.info("Using INDEX_TEMPLATE_GZIP_BASE64")
             return self._decode_gzip_base64_json_safe(INDEX_TEMPLATE_GZIP_BASE64)
         else:
-            # logger.info("Using default index template")
+            logger.info("Using default index template")
             return opensearch_util.default_index_template(
                 number_of_shards, number_of_replicas, codec, refresh_interval
             )
 
     def _create_index_template(self, index_template):
         # no need to check whether log type is qualified
-        # logger.info(
-        #     "Create index template for type %s with prefix %s", log_type, index_prefix
-        # )
+        logger.info(
+            "Create index template for type %s with prefix %s", log_type, index_prefix
+        )
 
         kwargs = {"index_template": index_template}
         self.run_func_with_retry(
@@ -234,11 +225,11 @@ class AosIdxService:
         if create_dashboard.lower() == "yes" or (
             log_type in ["cloudfront", "cloudtrail", "s3", "elb", "nginx", "apache"]
         ):
-            # logger.info(
-            #     "Import saved objects for type %s with prefix %s",
-            #     log_type,
-            #     index_prefix,
-            # )
+            logger.info(
+                "Import saved objects for type %s with prefix %s",
+                log_type,
+                index_prefix,
+            )
             self.run_func_with_retry(
                 opensearch_util.import_saved_objects, "Import saved objects"
             )
@@ -259,7 +250,7 @@ class AosIdxService:
                 self.adjust_lambda_env_var(env_name="INIT_DASHBOARD_JOB", val=1)
 
     def _create_alias(self):
-        # logger.info("Create index with prefix %s", index_prefix)
+        logger.info("Create index with prefix %s", index_prefix)
 
         kwargs = {"format": index_suffix}
         self.run_func_with_retry(
@@ -350,7 +341,6 @@ class AosIdxService:
                 )
 
             logger.error("Bulk load failed: %s", response.text)
-            # logger.info("Sleep 10 seconds and retry...")
             retry += 1
             time.sleep(SLEEP_INTERVAL)
 
@@ -360,7 +350,6 @@ class AosIdxService:
         global batch_size
         if batch_size >= 4000:
             batch_size = batch_size - 2000
-        # logger.info(f"batch_size: {batch_size}")
         response = lambda_client.get_function_configuration(FunctionName=func_name)
         variables = response["Environment"]["Variables"]
 

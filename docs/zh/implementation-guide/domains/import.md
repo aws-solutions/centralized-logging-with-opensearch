@@ -4,7 +4,7 @@
 
 !!! note "注意"
 
-    目前，日志通支持 Amazon Elasticsearch 7.10 及更高版本，或 Amazon OpenSearch 1.0 及更高版本。
+    目前，日志通支持Amazon OpenSearch 1.3 及更高版本。
 
 ## 前提条件
 

@@ -157,10 +157,11 @@ class EC2LogSource(LogSource):
 
     def _batch_add_instances(self, source_id, instances):
         log_source = self._dao.get_log_source(id=source_id)
-
+        existed_instances = []
         new_add_instances = []
         for instance in instances:
             if instance in log_source.ec2.instances:
+                existed_instances.append(instance["instanceId"])
                 continue
 
             instance["id"] = instance["instanceId"]
@@ -169,6 +170,11 @@ class EC2LogSource(LogSource):
             instance["updatedAt"] = instance["createdAt"]
             del instance["instanceId"]
             new_add_instances.append(instance)
+        if len(existed_instances) > 0:
+            raise APIException(
+                ErrorCode.ITEM_ALREADY_EXISTS,
+                r"${common:error.instanceAlreadyExists}" + f"{existed_instances}",
+            )
         self._instance_ddb_util.batch_put_items(new_add_instances)
 
     def _batch_delete_instances(self, source_id, instances):

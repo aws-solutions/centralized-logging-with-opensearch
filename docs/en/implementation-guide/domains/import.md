@@ -4,7 +4,7 @@ Once logged into the Centralized Logging with OpenSearch console, you can import
 
 ## Prerequisite
 
-1. Centralized Logging with OpenSearch supports Amazon OpenSearch Service, engine version Elasticsearch 7.10 or later, and engine version OpenSearch 1.0 or later.
+1. Centralized Logging with OpenSearch supports Amazon OpenSearch Service, and engine version OpenSearch 1.3 or later.
 2. Centralized Logging with OpenSearch supports OpenSearch clusters within VPC. If you don't have an Amazon OpenSearch Service domain yet, you can create an Amazon OpenSearch Service domain within VPC. See [Launching your Amazon OpenSearch Service domains within a VPC][vpc].
 3. Centralized Logging with OpenSearch supports OpenSearch clusters with [fine-grained access control](https://docs.aws.amazon.com/opensearch-service/latest/developerguide/fgac.html) only. In the security configuration, the Access policy should look like the image below:
    ![](../../images/domain/policy.png)

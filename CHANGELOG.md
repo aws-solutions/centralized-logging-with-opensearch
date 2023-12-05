@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.1] - 2023-12-05
+
+### Fixed
+
+- Fixed the issue that Log ingestion error in light engine when not specified time key in the log config #220
+- Fixed the issue that cannot deploy the Centralized Logging with OpenSearch solution in UAE region #221
+- Fixed the issue that EC2 instances should not be added to the same Instance Group #228
+
 ## [2.1.0] - 2023-11-15
 
 ### Added

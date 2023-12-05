@@ -614,6 +614,12 @@ class TableMetaDataGenerator:
         """
         raw_log_schema = self.schema_transformer.convert_time_type_to_string(json_schema=schema)
         if source_type == 'fluent-bit':
+            if not self.find_time_key(schema=schema, source_type='s3'):
+                raw_log_schema['properties']['time'] = {
+                    'type': 'string', 
+                    'timeKey': True,
+                    'format': 'YYYY-MM-dd\'\'T\'\'HH:mm:ss.SSSSSSSSSZ'
+                    }
             raw_log_schema = self.add_fluent_bit_agent_info(schema=raw_log_schema, table_type='tmp')
         
         return TableMetaData(schema=raw_log_schema, data_format=data_format, table_properties=table_properties, serialization_properties=serialization_properties, ignore_partition=True)

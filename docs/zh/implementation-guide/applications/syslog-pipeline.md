@@ -55,7 +55,9 @@
 
 7. 在 **日志生命周期** 部分，输入天数以管理Amazon OpenSearch Service索引生命周期。与OpenSearch一起的中央化日志将为这个管道自动创建关联的 [索引状态管理(ISM)](https://opensearch.org/docs/latest/im-plugin/ism/index/) 政策。
 
-8. 选择 **下一步**。
+13. 在 **选择日志处理器** 部分中，请选择日志处理器。
+     - （可选）这些[区域](https://aws.amazon.com/about-aws/whats-new/2023/04/amazon-opensearch-service-ingestion/)现在支持 OSI 作为日志处理器。 当选择 OSI 时，请输入 OCU 的最小和最大数量。 请参阅[此处](https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ingestion.html#ingestion-scaling) 的更多信息。
+14. 选择**下一步**。
 
 9. 如果需要，请启用 **警报** 并选择一个现有的SNS主题。如果您选择 **创建一个新的SNS主题**，请为新的SNS主题提供一个名称和电子邮件地址。
 

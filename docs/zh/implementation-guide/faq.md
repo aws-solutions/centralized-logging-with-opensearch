@@ -53,7 +53,7 @@ S3 桶中的日志位置。对于 EC2 和 EKS 上的应用日志，你需要设�
 根据当地的规定，任何互联网信息服务都必须绑定一个带有[ICP备案](https://www.amazonaws.cn/en/support/icp/?nc2=h_l2_su)的域名。
 
 **问：该解决方案适用于哪些版本的 OpenSearch？**</br>
-日志通支持 Amazon OpenSearch Service，引擎版本为 Elasticsearch 7.10 及以上，Amazon OpenSearch 1.0及以上。
+日志通支持 Amazon OpenSearch Service，Amazon OpenSearch 1.3及以上。
 
 **问：日志分析管道创建的 OpenSearch 的索引名称规则是什么？**</br>
 

@@ -60,7 +60,7 @@ The Centralized Logging with OpenSearch console is served via CloudFront distrib
 to the local regulations, any Internet information service must bind to a domain name with [ICP recordal](https://www.amazonaws.cn/en/support/icp/?nc2=h_l2_su).
 
 **Q: What versions of OpenSearch does the solution work with?**</br>
-Centralized Logging with OpenSearch supports Amazon OpenSearch Service, with engine version Elasticsearch 7.10 and later, Amazon OpenSearch 1.0 and later.
+Centralized Logging with OpenSearch supports Amazon OpenSearch Service, with OpenSearch 1.3 or later.
 
 **Q: What are the index name rules for OpenSearch created by the Log Analytics Pipeline?**</br>
 
