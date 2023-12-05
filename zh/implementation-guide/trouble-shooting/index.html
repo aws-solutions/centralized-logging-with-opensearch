@@ -1762,7 +1762,7 @@
 <p>日志通仅支持启用了<a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/fgac.html">细粒度访问控制</a> 的 Amazon OpenSearch Service 域。</p>
 <p>您需要转到 Amazon OpenSearch Service 控制台，并编辑 Amazon OpenSearch Service 域的<strong>访问策略</strong>。</p>
 <h2 id="erroruser-xxx-is-not-authorized-to-perform-stsassumerole-on-resource">Error：User xxx is not authorized to perform sts:AssumeRole on resource</h2>
-<p><img alt="" src="../../images/faq/assume-role-latency.png" /></p>
+<p><img alt="" src="../images/faq/assume-role-latency.png" /></p>
 <p>如果您发现该错误，请先确保您在<a href="../link-account/">跨账户日志摄取设置</a>中正确填写了所有信息。然后请等待大约1分钟左右后再重试。</p>
 <p>日志通使用了 <a href="https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html">AssumeRole</a> 来列出或创建您成员账户中的 AWS 资源。
 这些 IAM 角色是在您<a href="../link-account/">设置跨账户日志摄取</a>时被创建的，他们需要几秒钟或者几分钟的时间才能生效。</p>
@@ -1783,7 +1783,7 @@
 </ol>
 <p>您可以前往 Amazon EKS <a href="https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts-technical-overview.html#iam-role-configuration">IAM role configuration</a> 获得更多信息。</p>
 <h2 id="cloudformation-awslambdafunction">我的 CloudFormation 堆栈在更新堆栈时被卡在删除 <code>AWS::Lambda::Function</code> 资源上。如何解决这个问题？</h2>
-<p><img alt="" src="../../images/faq/cloudformation-stuck.png" />
+<p><img alt="" src="../images/faq/cloudformation-stuck.png" />
 Lambda函数驻留在一个VPC中，你需要等待相关的ENI资源被删除。</p>
 <h2 id="ec2">重启 EC2 实例后，代理状态为离线，如何让它在实例重启时自动启动？</h2>
 <p>这种情况通常发生在你已经安装了日志代理，但是在你创建任何日志摄取之前实例发生重启。如果至少有一个日志摄取，日志代理将自动重新启动。如果你有一个日志摄取，但问题仍然存在，你可以使用 <code>systemctl status fluent-bit</code> 来检查实例内部的状态来检查它在实例中的状态。</p>

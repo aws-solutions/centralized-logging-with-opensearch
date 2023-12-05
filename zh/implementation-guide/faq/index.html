@@ -1639,7 +1639,7 @@ S3 桶中的日志位置。对于 EC2 和 EKS 上的应用日志，你需要设�
 日志通控制台是通过 CloudFront 分发的，它被认为是一种互联网信息服务。根据
 根据当地的规定，任何互联网信息服务都必须绑定一个带有<a href="https://www.amazonaws.cn/en/support/icp/?nc2=h_l2_su">ICP备案</a>的域名。</p>
 <p><strong>问：该解决方案适用于哪些版本的 OpenSearch？</strong></br>
-日志通支持 Amazon OpenSearch Service，引擎版本为 Elasticsearch 7.10 及以上，Amazon OpenSearch 1.0及以上。</p>
+日志通支持 Amazon OpenSearch Service，Amazon OpenSearch 1.3及以上。</p>
 <p><strong>问：日志分析管道创建的 OpenSearch 的索引名称规则是什么？</strong></br></p>
 <p>如果需要，您可以在创建日志分析管道时修改索引名称。</p>
 <p>在我们的解决方案中，如果您创建的日志分析管道是属于服务日志，索引名称由<code>&lt;index prefix&gt;</code>-<code>&lt;service-type&gt;</code>-<code>&lt;index suffix&gt;</code>-&lt;00000x&gt; 组成。其中 index prefix 您可以定义一个名称。service-type 是根据您选择的服务类型，系统自动生成。关于 index suffix 您可以选择不同的后缀来调整索引滚动时间窗口，详细说明参考如下：</p>

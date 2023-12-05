@@ -1657,6 +1657,10 @@
 <li>如果要摄取关联的内置 Amazon OpenSearch Service 仪表板，请为 <strong>示例仪表板</strong> 选择 <strong>是</strong>。</li>
 <li>如果需要，您可以更改目标 Amazon OpenSearch Service 索引的 <strong>索引前缀</strong>。默认前缀是您的 VPC 名称。</li>
 <li>在 <strong>日志生命周期</strong> 部分，输入管理 Amazon OpenSearch Service 索引生命周期的天数。日志通 将为此管道自动创建关联的 <a href="https://opensearch.org/docs/latest/im-plugin/ism/index/">索引状态管理 (ISM)</a> 策略。</li>
+<li>在 <strong>选择日志处理器</strong> 部分，请选择日志处理器。<ul>
+<li>（可选）这些<a href="https://aws.amazon.com/about-aws/whats-new/2023/04/amazon-opensearch-service-ingestion/">区域</a>现在支持 OSI 作为日志处理器。 当选择 OSI 时，请输入 OCU 的最小和最大数量。 请参阅<a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ingestion.html#ingestion-scaling">此处</a> 的更多信息。</li>
+</ul>
+</li>
 <li>选择<strong>下一步</strong>。</li>
 <li>如果需要，添加标签。</li>
 <li>选择<strong>创建</strong>。</li>
@@ -1674,12 +1678,12 @@
 <tbody>
 <tr>
 <td>AWS 海外区域</td>
-<td><a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/VPCFlowLog.template" target="_blank"><img alt="Launch Stack" src="../../../images/launch-stack.png" /></a></td>
+<td><a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/VPCFlowLog.template" target="_blank"><img alt="Launch Stack" src="../../images/launch-stack.png" /></a></td>
 <td><a href="https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/VPCFlowLog.template">Template</a></td>
 </tr>
 <tr>
 <td>AWS 中国区域</td>
-<td><a href="https://console.amazonaws.cn/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/VPCFlowLog.template" target="_blank"><img alt="Launch Stack" src="../../../images/launch-stack.png" /></a></td>
+<td><a href="https://console.amazonaws.cn/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/VPCFlowLog.template" target="_blank"><img alt="Launch Stack" src="../../images/launch-stack.png" /></a></td>
 <td><a href="https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/VPCFlowLog.template">Template</a></td>
 </tr>
 </tbody>
@@ -1992,7 +1996,7 @@
 <p>您可以点击下面的图像查看高分辨率的示例仪表板。</p>
 <!-- END INCLUDE -->
 
-<p><a href="../../../images/dashboards/vpcflow-db.png"><img alt="vpcflow-db" src="../../../images/dashboards/vpcflow-db.png" /></a></p>
+<p><a href="../../images/dashboards/vpcflow-db.png"><img alt="vpcflow-db" src="../../images/dashboards/vpcflow-db.png" /></a></p>
 
 
 

@@ -1756,6 +1756,12 @@ KDS shard can support up to 1,000 records per second for writes, up to a maximum
 <p>In the <strong>Log Lifecycle</strong> section, enter the number of days to manage the Amazon OpenSearch Service index lifecycle. The Centralized Logging with OpenSearch will create the associated <a href="https://opensearch.org/docs/latest/im-plugin/ism/index/">Index State Management (ISM)</a> policy automatically for this pipeline.</p>
 </li>
 <li>
+<p>In the <strong>Select log processor</strong> section, please choose the log processor. </p>
+<ul>
+<li>(Optional) OSI as log processor is now supported in these <a href="https://aws.amazon.com/about-aws/whats-new/2023/04/amazon-opensearch-service-ingestion/">regions</a>. When OSI is selected, please type in the minimum and maximum number of OCU. See more information <a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ingestion.html#ingestion-scaling">here</a>. </li>
+</ul>
+</li>
+<li>
 <p>Choose <strong>Next</strong>.</p>
 </li>
 <li>

@@ -1762,7 +1762,7 @@
 <p>Centralized Logging with OpenSearch only supports Amazon OpenSearch Service domain with <a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/fgac.html">Fine-grained access control</a> enabled.
 You need to go to Amazon OpenSearch Service console, and edit the <strong>Access policy</strong> for the Amazon OpenSearch Service domain.</p>
 <h2 id="erroruser-xxx-is-not-authorized-to-perform-stsassumerole-on-resource">Error：User xxx is not authorized to perform sts:AssumeRole on resource</h2>
-<p><img alt="" src="../../images/faq/assume-role-latency.png" /></p>
+<p><img alt="" src="../images/faq/assume-role-latency.png" /></p>
 <p>If you see this error, please make sure you have entered the correct information during <a href="../link-account/">cross account setup</a>, and then please wait for several minutes.</p>
 <p>Centralized Logging with OpenSearch uses <a href="https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html">AssumeRole</a> for cross-account access.
 This is the best practice to temporary access the AWS resources in your member account.
@@ -1784,7 +1784,7 @@ the IAM role trust relations are correctly set. With the Centralized Logging wit
 </ol>
 <p>You can get more information from Amazon EKS <a href="https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts-technical-overview.html#iam-role-configuration">IAM role configuration</a></p>
 <h2 id="my-cloudformation-stack-is-stuck-on-deleting-an-awslambdafunction-resource-when-i-update-the-stack-how-to-resolve-it">My CloudFormation stack is stuck on deleting an <code>AWS::Lambda::Function</code> resource when I update the stack. How to resolve it?</h2>
-<p><img alt="" src="../../images/faq/cloudformation-stuck.png" />
+<p><img alt="" src="../images/faq/cloudformation-stuck.png" />
 The Lambda function resides in a VPC, and you need to wait for the associated ENI resource to be deleted.</p>
 <h2 id="the-agent-status-is-offline-after-i-restart-the-ec2-instance-how-can-i-make-it-auto-start-on-instance-restart">The agent status is offline after I restart the EC2 instance, how can I make it auto start on instance restart?</h2>
 <p>This usually happens if you have installed the log agent, but restart the instance before you create any Log Ingestion. The log agent will auto restart if there is at least one Log Ingestion. If you have a log ingestion, but the problem still exists, you can use <code>systemctl status fluent-bit</code>
