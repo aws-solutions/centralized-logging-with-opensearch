@@ -1721,10 +1721,10 @@ If you are deploying the solution in <strong>AWS China Regions</strong>, the dom
 <li>Set up the hosted UI with the Amazon Cognito console based on this <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools-app-integration.html#cognito-user-pools-create-an-app-integration">guide</a>.</li>
 <li>Choose <strong>Public client</strong> when selecting the <strong>App type</strong>.</li>
 <li>Enter the <strong>Callback URL</strong> and <strong>Sign out URL</strong> using your domain name for Centralized Logging with OpenSearch console. If your hosted UI is set up, you should be able to see something like below.
-       <a href="../../images/OIDC/cognito-hostUI-new.png"><img alt="" src="../../images/OIDC/cognito-hostUI-new.png" /></a></li>
+       <a href="../../../images/OIDC/cognito-hostUI-new.png"><img alt="" src="../../../images/OIDC/cognito-hostUI-new.png" /></a></li>
 <li>Save the App client ID, User pool ID and the AWS Region to a file, which will be used later.
-       <a href="../../images/OIDC/cognito-new-console-clientID.png"><img alt="" src="../../images/OIDC/cognito-new-console-clientID.png" /></a>
-       <a href="../../images/OIDC/cognito-new-console-userpoolID.png"><img alt="" src="../../images/OIDC/cognito-new-console-userpoolID.png" /></a></li>
+       <a href="../../../images/OIDC/cognito-new-console-clientID.png"><img alt="" src="../../../images/OIDC/cognito-new-console-clientID.png" /></a>
+       <a href="../../../images/OIDC/cognito-new-console-userpoolID.png"><img alt="" src="../../../images/OIDC/cognito-new-console-userpoolID.png" /></a></li>
 </ol>
 <p>In <a href="#step-2-launch-the-stack">Step 2. Launch the stack</a>, the OidcClientID is the <code>App client ID</code>, and OidcProvider is <code>https://cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}</code>.</p>
 <h3 id="option-2-authingcn-oidc-client">(Option 2) Authing.cn OIDC client</h3>
@@ -1737,14 +1737,14 @@ If you are deploying the solution in <strong>AWS China Regions</strong>, the dom
 <li>Enter the <strong>Application Name</strong>, and <strong>Subdomain</strong>.</li>
 <li>
 <p>Save the <code>App ID</code> (that is, <code>client_id</code>) and <code>Issuer</code> to a text file from Endpoint Information, which will be used later.
-    <a href="../../images/OIDC/endpoint-info.png"><img alt="" src="../../images/OIDC/endpoint-info.png" /></a></p>
+    <a href="../../../images/OIDC/endpoint-info.png"><img alt="" src="../../../images/OIDC/endpoint-info.png" /></a></p>
 </li>
 <li>
 <p>Update the <code>Login Callback URL</code> and <code>Logout Callback URL</code> to your IPC recorded domain name.</p>
 </li>
 <li>
 <p>Set the Authorization Configuration.
-    <a href="../../images/OIDC/authorization-configuration.png"><img alt="" src="../../images/OIDC/authorization-configuration.png" /></a></p>
+    <a href="../../../images/OIDC/authorization-configuration.png"><img alt="" src="../../../images/OIDC/authorization-configuration.png" /></a></p>
 </li>
 </ol>
 <p>You have successfully created an authing self-built application.</p>
@@ -1761,11 +1761,11 @@ If you are deploying the solution in <strong>AWS China Regions</strong>, the dom
 </li>
 <li>
 <p>Go to the realm setting page. Choose <strong>Endpoints</strong>, and then <strong>OpenID Endpoint Configuration</strong> from the list.</p>
-<p><a href="../../images/OIDC/keycloak-example-realm.jpg"><img alt="" src="../../images/OIDC/keycloak-example-realm.jpg" /></a></p>
+<p><a href="../../../images/OIDC/keycloak-example-realm.jpg"><img alt="" src="../../../images/OIDC/keycloak-example-realm.jpg" /></a></p>
 </li>
 <li>
 <p>In the JSON file that opens up in your browser, record the <strong>issuer</strong> value which will be used later.</p>
-<p><a href="../../images/OIDC/OIDC-config.jpg"><img alt="" src="../../images/OIDC/OIDC-config.jpg" /></a></p>
+<p><a href="../../../images/OIDC/OIDC-config.jpg"><img alt="" src="../../../images/OIDC/OIDC-config.jpg" /></a></p>
 </li>
 <li>
 <p>Go back to Keycloak console and select <strong>Clients</strong> on the left navigation bar, and choose <strong>Create</strong>.</p>
@@ -1815,7 +1815,7 @@ Set-AdfsResponseHeaders<span class="w"> </span>-CORSTrustedOrigins<span class="w
 <p>Under Windows PowerShell on ADFS server, run the following command to get the Issuer (<code>issuer</code>) of ADFS, which is similar to <code>https://adfs.domain.com/adfs</code>.</p>
 <div class="highlight"><pre><span></span><code>Get-ADFSProperties<span class="w"> </span><span class="p">|</span><span class="w"> </span>Select<span class="w"> </span>IdTokenIssuer
 </code></pre></div>
-<p><img alt="" src="../../images/OIDC/adfs-9.png" /></p>
+<p><img alt="" src="../../../images/OIDC/adfs-9.png" /></p>
 </li>
 </ol>
 <h2 id="step-2-launch-the-stack">Step 2. Launch the stack</h2>
@@ -1837,19 +1837,19 @@ If your deployment failed (for example, not meeting the requirements in <a href=
 <tbody>
 <tr>
 <td>Launch with a new VPC in AWS Regions</td>
-<td><a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/CentralizedLoggingWithOIDC.template" target="_blank"><img alt="Launch Stack" src="../../images/launch-stack.png" /></a></td>
+<td><a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/CentralizedLoggingWithOIDC.template" target="_blank"><img alt="Launch Stack" src="../../../images/launch-stack.png" /></a></td>
 </tr>
 <tr>
 <td>Launch with an existing VPC in AWS Regions</td>
-<td><a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/CentralizedLoggingFromExistingVPCWithOIDC.template" target="_blank"><img alt="Launch Stack" src="../../images/launch-stack.png" /></a></td>
+<td><a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/CentralizedLoggingFromExistingVPCWithOIDC.template" target="_blank"><img alt="Launch Stack" src="../../../images/launch-stack.png" /></a></td>
 </tr>
 <tr>
 <td>Launch with a new VPC in AWS China Regions</td>
-<td><a href="https://console.amazonaws.cn/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/CentralizedLoggingWithOIDC.template" target="_blank"><img alt="Launch Stack" src="../../images/launch-stack.png" /></a></td>
+<td><a href="https://console.amazonaws.cn/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/CentralizedLoggingWithOIDC.template" target="_blank"><img alt="Launch Stack" src="../../../images/launch-stack.png" /></a></td>
 </tr>
 <tr>
 <td>Launch with an existing VPC in AWS China Regions</td>
-<td><a href="https://console.amazonaws.cn/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/CentralizedLoggingFromExistingVPCWithOIDC.template" target="_blank"><img alt="Launch Stack" src="../../images/launch-stack.png" /></a></td>
+<td><a href="https://console.amazonaws.cn/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/CentralizedLoggingFromExistingVPCWithOIDC.template" target="_blank"><img alt="Launch Stack" src="../../../images/launch-stack.png" /></a></td>
 </tr>
 </tbody>
 </table>
