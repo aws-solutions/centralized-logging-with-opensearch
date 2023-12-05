@@ -22,7 +22,6 @@ import {
   aws_ec2 as ec2,
   aws_dynamodb as ddb,
   aws_lambda as lambda,
-  aws_iam as iam,
 } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import path = require("path");

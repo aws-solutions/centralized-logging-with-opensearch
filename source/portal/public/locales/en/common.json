@@ -334,7 +334,8 @@
     "bucketEmpty": "Bucket must not be empty",
     "filePathNotBegin": "File path must not begin with /(slash)",
     "filePathContainStar": "File path can only contain at most one *",
-    "syslogParserError": "Please select a syslog parser"
+    "syslogParserError": "Please select a syslog parser",
+    "instanceAlreadyExists": "These instances of your choice have been added: "
   },
   "moreDetailsGoToCloudformation": "More details, please go to Cloudformation event",
   "page": "page",

@@ -8,7 +8,6 @@ from typing import List
 import uuid
 import gzip
 import base64
-import boto3
 
 
 from boto3.dynamodb.conditions import Attr
@@ -672,11 +671,13 @@ def safe_delete_role(iam_client, role_name):
         iam_client.delete_role_policy(RoleName=role_name, PolicyName=policy_name)
 
     # List attached policies
-    attached_policies = iam_client.list_attached_role_policies(RoleName=role_name)['AttachedPolicies']
+    attached_policies = iam_client.list_attached_role_policies(RoleName=role_name)[
+        "AttachedPolicies"
+    ]
 
     # Detach all attached policies
     for policy in attached_policies:
-        policy_arn = policy['PolicyArn']
+        policy_arn = policy["PolicyArn"]
         iam_client.detach_role_policy(RoleName=role_name, PolicyArn=policy_arn)
 
     iam_client.delete_role(RoleName=role_name)
@@ -719,7 +720,9 @@ def check_osi_availability():
     logger.info("Check if OSI is available in the current region: %s.", current_region)
     try:
         # Try get OSI services linked role
-        resp = iam.get_role(RoleName="AWSServiceRoleForAmazonOpenSearchIngestionService")
+        resp = iam.get_role(
+            RoleName="AWSServiceRoleForAmazonOpenSearchIngestionService"
+        )
         logger.info(resp)
         return True
     except Exception as e:

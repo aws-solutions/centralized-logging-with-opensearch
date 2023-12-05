@@ -30,14 +30,13 @@ event_bridge_client = boto3.client("events")
 
 
 def lambda_handler(event, _):
-    # logger.info(f"event is {event}")
     try:
         idx_svc.init_idx_env()
         disable_event_bride_rule(event)
         if write_idx_data == str(True):
             func_name = "parse_" + source.lower() + "_event"
             getattr(sys.modules[__name__], func_name)(event)
-            # eval(func_name)(event)
+
     except Exception as e:
         if not (plugins or log_type in ("ELB", "CloudFront")) and "Records" in event:
             for event_record in event["Records"]:

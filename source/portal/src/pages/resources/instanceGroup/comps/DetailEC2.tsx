@@ -183,21 +183,28 @@ const DetailEC2: React.FC<DetailEC2Props> = (props: DetailEC2Props) => {
     }
 
     setLoadingAdd(true);
-    await appSyncRequestMutation(updateLogSource, {
-      type: LogSourceType.EC2,
-      sourceId: instanceGroup.sourceId,
-      action: LogSourceUpdateAction.ADD,
-      ec2: {
-        instances: checkedInstanceList.map((instance) => ({
-          instanceId: instance.id,
-        })),
-      },
-    });
-    setLoadingInstance(true);
-    setInstanceInfoList([]);
-    setLoadingAdd(false);
-    setOpenAddInstance(false);
-    refreshInstanceGroup();
+    try {
+      await appSyncRequestMutation(updateLogSource, {
+        type: LogSourceType.EC2,
+        sourceId: instanceGroup.sourceId,
+        action: LogSourceUpdateAction.ADD,
+        ec2: {
+          instances: checkedInstanceList.map((instance) => ({
+            instanceId: instance.id,
+          })),
+        },
+      });
+      setLoadingInstance(true);
+      setInstanceInfoList([]);
+      setLoadingAdd(false);
+      setOpenAddInstance(false);
+      refreshInstanceGroup();
+    } catch (error) {
+      console.error(error);
+      setLoadingAdd(false);
+      setLoadingInstance(false);
+      setOpenAddInstance(false);
+    }
   };
 
   useEffect(() => {

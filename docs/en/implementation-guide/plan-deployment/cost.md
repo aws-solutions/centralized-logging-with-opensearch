@@ -13,7 +13,7 @@ You will be responsible for the cost of the AWS services used when running the s
 - Location of logs
 - Additional features
 
-As of this revision, the following examples demonstrate the cost estimation of 10/100/1000 GB daily log ingestion for running this solution with default settings in the US East (N. Virginia) Region. The total cost is composed of [**Amazon OpenSearch Cost**](#amazon-opensearch-cost) Or [**Light Engine Cost**](#use-light-engine-as-log-process-engine), [**Solution Console Cost**](#solution-console-cost) and [**Additional Features Cost**](#additional-features-cost).
+As of this revision, the following examples demonstrate the cost estimation of 10/100/1000 GB daily log ingestion for running this solution with default settings in the US East (N. Virginia) Region. The total cost is composed of **Log Processor**: [**Amazon OpenSearch Cost**](#amazon-opensearch-cost) Or [**Light Engine Cost**](#use-light-engine-as-log-process-engine), [**Solution Console Cost**](#solution-console-cost) and [**Additional Features Cost**](#additional-features-cost).
 
 ## Use OpenSearch as log process engine
 

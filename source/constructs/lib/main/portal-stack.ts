@@ -84,7 +84,8 @@ export class PortalStack extends Construct {
         Fn.conditionEquals(Aws.REGION, 'ap-east-1'),
         Fn.conditionEquals(Aws.REGION, 'af-south-1'),
         Fn.conditionEquals(Aws.REGION, 'eu-south-1'),
-        Fn.conditionEquals(Aws.REGION, 'me-south-1')
+        Fn.conditionEquals(Aws.REGION, 'me-south-1'),
+        Fn.conditionEquals(Aws.REGION, 'me-central-1')
       ),
     });
 

@@ -334,7 +334,8 @@
     "bucketEmpty": "存储桶不能为空",
     "filePathNotBegin": "文件路径不能以 /(斜线) 开头",
     "filePathContainStar": "文件路径最多只能包含一个 *",
-    "syslogParserError": "请选择 syslog 解析器"
+    "syslogParserError": "请选择 syslog 解析器",
+    "instanceAlreadyExists":"您选择的这些实例已经添加过："
   },
   "moreDetailsGoToCloudformation": "请前往Cloudformation事件获取更多详细信息",
   "page": "页面",

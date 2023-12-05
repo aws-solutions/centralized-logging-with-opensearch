@@ -13,7 +13,7 @@
 - 日志的位置
 - 额外的特性
 
-以下示例将演示截至最新发布的版本，基于亚马逊云科技美国东部（弗吉尼亚北部）区域 (us-east-1) 10/100/1000 GB 每日日志摄取的成本估算。 总成本包括 [**Amazon OpenSearch 费用**](#amazon-opensearch)或[**Light Engine费用**](#light-engine)、[**处理费用**](#_1) 和 [**额外特性费用**](#_4)。
+以下示例将演示截至最新发布的版本，基于亚马逊云科技美国东部（弗吉尼亚北部）区域 (us-east-1) 10/100/1000 GB 每日日志摄取的成本估算。 总成本包括 **日志分析引擎**： [**Amazon OpenSearch 费用**](#amazon-opensearch)或[**Light Engine费用**](#light-engine)、[**处理费用**](#_1) 和 [**额外特性费用**](#_4)。
 
 ## 使用Amazon OpenSearch 作为日志分析引擎时的费用
 

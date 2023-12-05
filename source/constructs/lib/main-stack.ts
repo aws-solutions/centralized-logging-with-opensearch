@@ -19,6 +19,7 @@ import {
   CfnParameter,
   CfnResource,
   CfnOutput,
+  CfnCondition,
   Duration,
   Fn,
   CfnMapping,
@@ -468,24 +469,44 @@ export class MainStack extends Stack {
           'cn-northwest-1': {
             elbRootAccountArn: 'arn:aws-cn:iam::037604701340:root',
           },
+          'me-central-1': {
+            elbRootAccountArn: 'arn:aws-cn:iam::127311923021:root',
+          },
         },
       }
     );
 
+    const isNewRegion = new CfnCondition(this, 'IsNewRegion', {
+      expression: Fn.conditionEquals(Aws.REGION, 'me-central-1'),
+    });
     loggingBucket.addToResourcePolicy(
-      new iam.PolicyStatement({
-        resources: [
+      iam.PolicyStatement.fromJson({
+        "Action": "s3:PutObject",
+        "Effect": "Allow",
+        "Principal": {
+          "Fn::If": [
+            isNewRegion.logicalId,
+            {
+              "Service": "logdelivery.elasticloadbalancing.amazonaws.com"
+            },
+            {
+              "AWS": {
+                "Fn::FindInMap": [
+                  elbRootAccountArnTable.logicalId,
+                  {
+                    "Ref": "AWS::Region"
+                  },
+                  "elbRootAccountArn"
+                ]
+              }
+            }
+          ]
+        },
+        "Resource": [
           `arn:${Aws.PARTITION}:s3:::${loggingBucket.bucketName}/*`,
           `arn:${Aws.PARTITION}:s3:::${loggingBucket.bucketName}`,
         ],
-        actions: ['s3:PutObject'],
-        principals: [
-          new iam.ArnPrincipal(
-            elbRootAccountArnTable.findInMap(Aws.REGION, 'elbRootAccountArn')
-          ),
-        ],
-      })
-    );
+      }));
     loggingBucket.addToResourcePolicy(
       new iam.PolicyStatement({
         resources: [

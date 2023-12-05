@@ -321,7 +321,10 @@ class AppPipelineDao:
                 if not force:
                     raise APIException(ErrorCode.DUPLICATED_INDEX_PREFIX, msg)
 
-    def validate_index_prefix_overlap(self, app_pipeline: AppPipeline, force: bool):
+    def validate_index_prefix_overlap(
+        self,
+        app_pipeline: AppPipeline,
+    ):
         index_prefix = app_pipeline.indexPrefix or app_pipeline.aosParams.indexPrefix
         pipelines = self.list_app_pipelines(
             Attr("aosParams.domainName").eq(app_pipeline.aosParams.domainName)
@@ -387,7 +390,7 @@ class AppPipelineDao:
 
     def validate(self, app_pipeline: AppPipeline, force: bool = False):
         self.validate_duplicated_index_prefix(app_pipeline, force)
-        self.validate_index_prefix_overlap(app_pipeline, force)
+        self.validate_index_prefix_overlap(app_pipeline)
         self.validate_buffer_params(app_pipeline)
 
     def save(self, app_pipeline: AppPipeline) -> AppPipeline:

@@ -17,6 +17,7 @@
 | 美国东部 (俄亥俄)     | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
 | 美国西部 (加利福尼亚北部) | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
 | 美国西部 (俄勒冈)     | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
+| 加拿大 (中部)       | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
 | 非洲 (开普敦)       | :material-close-thick:{ .icon_cross } | :material-check-bold:{ .icon_check } |
 | 亚太地区 (香港)      | :material-close-thick:{ .icon_cross } | :material-check-bold:{ .icon_check } |
 | 亚太地区 (雅加达)     | :material-close-thick:{ .icon_cross } | :material-close-thick:{ .icon_cross } |
@@ -26,7 +27,7 @@
 | 亚太地区 (新加坡)     | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
 | 亚太地区 (悉尼)      | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
 | 亚太地区 (东京)      | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
-| 加拿大 (中部)       | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
+| 中东地区 (巴林)      | :material-check-bold:{ .icon_cross }  | :material-check-bold:{ .icon_check }  |
 | 欧洲 (法兰克福)      | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
 | 欧洲 (爱尔兰)       | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
 | 欧洲 (伦敦)        | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
