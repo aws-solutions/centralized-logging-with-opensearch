@@ -112,8 +112,8 @@ class GrafanaClient:
     
     def check_folder_permission(self):
         test_folder_uid = 'test-folder-permission'
-        response = self.folder.create_folder(title='TestFolderPermission', folder_uid=test_folder_uid)
-        if response['status'] in (200, 409):
+        self.folder.create_folder(title='TestFolderPermission', folder_uid=test_folder_uid)
+        if self.folder.get_folder(folder_uid=test_folder_uid)['status'] == 200:
             self.folder.delete_folder(folder_uid=test_folder_uid)
             return True
         return False

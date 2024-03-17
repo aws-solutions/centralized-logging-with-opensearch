@@ -1,7 +1,7 @@
 boto3>=1.26.109
 botocore
 s3transfer
-moto>=4.1.7
+moto>=4.1.7,<=4.2.13
 pyparsing
 pytest
 pytest-cov
@@ -22,4 +22,3 @@ urllib3<1.27,>=1.25.4
 wcwidth
 maxminddb
 user_agents
-func_timeout

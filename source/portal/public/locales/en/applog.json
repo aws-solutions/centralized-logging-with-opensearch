@@ -174,10 +174,8 @@
       "maxShardNum": "Maximum Shard number",
       "maxShardNumDesc": "Specify maximum number of shards.",
       "maxShardNumError": "Max Shard Number must be greater than Shard number",
-      "duplicatedWithPrefix": "You have a log pipeline that used this index prefix.",
-      "overlapWithPrefix": "The index prefix overlaps with the index prefix you created earlier.",
-      "duplicatedWithInvalidPrefix": "You have a deleted log pipeline that used this index prefix. If you keep creating this log pipeline, your logs will get mixed up.",
-      "overlapWithInvalidPrefix": "The index prefix overlaps with the index prefix you removed earlier. If you continue to create this pipeline, your logs will get mixed up.",
+      "overlapIndexError": "It looks like there is an active or deleted pipeline configured was overlap with the index you entered.  Please choose 'Edit' to update. ({{message}})",
+      "duplicatedIndexError": "It looks like there is an active or deleted pipeline configured with the index you entered. To proceed with creating this new pipeline and sending logs to the same index, please select 'Continue Create'. If you would like to use a different index prefix instead, please choose 'Edit' to update.",
       "s3StorageClass": "S3 storage class for prefix",
       "s3StorageClassDesc": "Select a storage class for the prefix that buffer your log data. "
     },

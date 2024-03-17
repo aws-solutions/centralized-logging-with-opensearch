@@ -1,1 +1,7 @@
-../../stylesheets/extra.css
+.icon_check {
+    color: green;
+}
+
+.icon_cross {
+    color: red;
+}

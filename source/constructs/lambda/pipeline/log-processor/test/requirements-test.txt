@@ -3,7 +3,7 @@ requests
 requests-aws4auth
 boto3
 botocore
-moto
+moto<=4.2.13
 pytest
 pytest-cov
 pytest-mock

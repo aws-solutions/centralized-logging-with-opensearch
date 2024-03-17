@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import React, { FC, useState } from "react";
+import React, { FC, useEffect, useState } from "react";
 import { IsJsonString } from "assets/js/utils";
 import { Alert } from "assets/js/alert";
 import ArrowDropDownIcon from "@material-ui/icons/ArrowDropDown";
@@ -140,6 +140,12 @@ const TreeComponent: React.FC<TreeComponentProps> = ({
   const { t } = useTranslation();
   // set isExpanded = true by default
   const [localNode, setLocalNode] = useState({ ...node, isExpanded: true });
+
+  useEffect(() => {
+    if (node) {
+      setLocalNode({ ...node, isExpanded: localNode.isExpanded });
+    }
+  }, [node]);
 
   const handleKeyChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newNode = { ...localNode, key: event.target.value };
@@ -360,14 +366,26 @@ const JSONInputRenderer: FC<{
   data: any;
   changeSchema: (schema: any) => void;
 }> = ({ schema, data, changeSchema }) => {
-  if (!schema || !data) {
-    return false;
+  const [schemaData, setSchemaData] = useState<any>();
+  const convertData = () => {
+    if (!schema || !data) {
+      return false;
+    }
+    if (!IsJsonString(data)) {
+      Alert("JSON Invalid");
+      return false;
+    }
+    const tmpData = schemaToTree(schema, JSON.parse(data));
+    setSchemaData(tmpData);
+  };
+  useEffect(() => {
+    convertData();
+  }, [schema, data]);
+
+  if (!schemaData) {
+    return <></>;
   }
-  if (!IsJsonString(data)) {
-    Alert("JSON Invalid");
-    return false;
-  }
-  const schemaData = schemaToTree(schema, JSON.parse(data));
+
   return (
     <div style={{ maxWidth: 960 }}>
       <TreeComponent

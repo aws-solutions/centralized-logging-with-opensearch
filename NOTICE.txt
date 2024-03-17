@@ -14,7 +14,6 @@ This software includes third party software subject to the following copyrights:
 
 binaryornot under BSD License
 chardet under GNU Lesser General Public License v2 or later (LGPLv2+) (LGPL)
-func-timeout under GNU Lesser General Public License v2 (LGPLv2) (LGPLv2)
 numpy under The 3-Clause BSD License
 pyarrow under Apache License, Version 2.0
 pytest-httpserver under The MIT License
@@ -164,3 +163,4 @@ js-json-schema-inferrer under ISC License
 redux-mock-store under The MIT License
 @types/redux-mock-store under The MIT License
 jsonschema-path under the Apache License, Version 2.0
+pytest_httpserver under The MIT License

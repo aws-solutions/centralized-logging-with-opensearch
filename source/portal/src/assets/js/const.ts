@@ -797,3 +797,9 @@ export const PROXY_INSTANCE_TYPE_AND_NUMBER_LIST = [
 ];
 
 export const TOPIC_NAME_REGEX = /^[a-zA-Z0-9-_]{1,128}$/;
+
+export const DUPLICATE_OVERLAP_COMMON_SETTING: any = {
+  icon: "warning",
+  cancelButtonColor: "#ec7211",
+  showCancelButton: true,
+};

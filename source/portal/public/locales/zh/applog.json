@@ -174,10 +174,8 @@
       "maxShardNum": "最大分片数",
       "maxShardNumDesc": "指定最大分片数。",
       "maxShardNumError": "最大分片数必须大于分片个数",
-      "duplicatedWithPrefix": "您有一个使用此索引前缀的日志管道。",
-      "overlapWithPrefix": "索引前缀与您之前创建的索引前缀重叠。",
-      "duplicatedWithInvalidPrefix": "你有一条已删除的日志管道曾使用这个索引前缀。如果继续创建此日志管道，您的日志将会混合在一起。",
-      "overlapWithInvalidPrefix": "索引前缀与您之前删除的索引前缀重叠。 如果您继续创建此日志管道，您的日志将会混合在一起。",
+      "overlapIndexError": "似乎配置了一个活动或已删除的管道与您输入的索引重叠。请选择“编辑”进行更新。({{message}})",
+      "duplicatedIndexError": "看起来有一个活动或已删除的管道配置了您输入的索引。要继续创建此新管道并将日志发送到同一索引，请选择“继续创建”。如果您想使用 而是使用不同的索引前缀，请选择“编辑”进行更新。",
       "s3StorageClass": "前缀的 S3 存储层",
       "s3StorageClassDesc": "为缓冲日志数据的前缀选择存储层。"
     },
@@ -430,7 +428,7 @@
         "naviTitle": "管道告警和标签",
         "title": "管道告警和标签"
       },
-      "deleteAlarm1": "请先删除该EKS集群的全部日志源",
+      "deleteAlarm1": "请先打开管道并删除所有日志源。",
       "roleCheckFailed": "用于将日志发送到缓冲层的角色激活时间过长。请再试一次。"
     },
     "syslog": {

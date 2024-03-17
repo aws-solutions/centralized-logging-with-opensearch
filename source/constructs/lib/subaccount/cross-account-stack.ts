@@ -609,6 +609,7 @@ export class CrossAccount extends Stack {
           ],
           resources: [
             `arn:${Aws.PARTITION}:logs:*:${Aws.ACCOUNT_ID}:log-group:*`,
+            `arn:${Aws.PARTITION}:logs:*:${parentAccountId.valueAsString}:destination:*`,
           ],
         }),
         new iam.PolicyStatement({

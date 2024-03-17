@@ -95,7 +95,7 @@
     "changeIndex": "Change Index Name",
     "linkAnAccount": "Link a Member Account",
     "link": "Link",
-    "forceCreate": "Force Create",
+    "continueCreate": "Continue Create",
     "createSameAccountIngestion": "Create same account ingestion",
     "upgrade": "Upgrade",
     "addCondition": "Add Condition",
@@ -342,5 +342,6 @@
   "pageNotFound": "Page Not Found",
   "home": "Home",
   "clear": "Clear",
-  "alert": "Need upgrade"
+  "alert": "Need upgrade",
+  "warning": "Warning"
 }

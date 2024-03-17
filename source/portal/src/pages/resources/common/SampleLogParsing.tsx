@@ -372,7 +372,9 @@ function SampleLogParsing(
 
   useEffect(() => {
     if (pageType === PageType.New) {
-      if (logConfig.logType !== LogType.JSON) {
+      if (logConfig.logType === LogType.JSON && logConfig.userSampleLog) {
+        convertJSONToKeyValueList();
+      } else {
         parseLog();
       }
     }

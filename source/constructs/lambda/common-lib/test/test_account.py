@@ -39,7 +39,7 @@ class TestLinkAccountHelper:
     mock_sts = mock_sts()
     mock_iam = mock_iam()
 
-    def setup(self):
+    def setup_method(self):
         default_region = os.environ.get("AWS_REGION")
         self.mock_dynamodb.start()
         self.mock_sts.start()
@@ -84,7 +84,7 @@ class TestLinkAccountHelper:
         self.acc_helper = LinkAccountHelper(self.account_table_name)
         write_data(account_table)
 
-    def tearDown(self):
+    def teardown_method(self):
         self.mock_dynamodb.stop()
         self.mock_sts.stop()
         self.mock_iam.stop()

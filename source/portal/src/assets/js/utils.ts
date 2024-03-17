@@ -938,7 +938,7 @@ export const buildCrossAccountTemplateLink = (
 };
 
 export const buildSQSLink = (region: string, queueName: string): string => {
-  const uri = `https://sqs.${region}.amazonaws.com//`;
+  const uri = `https://sqs.${region}.amazonaws.com.cn/`;
   if (region.startsWith("cn")) {
     return `https://${region}.console.amazonaws.cn/sqs/v2/home?region=${region}#/queues/${encodeURIComponent(
       uri

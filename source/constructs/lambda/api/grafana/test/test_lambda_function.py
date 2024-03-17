@@ -310,7 +310,10 @@ class TestGrafanaStatusCheck:
 
         httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 17, 'slug': 'TestDashboardsPermission', 'status': 'success', 'uid': '0HklGl_Vz', 'url': '/d/0HklGl_Vz/TestDashboardsPermission', 'version': 58}))
         httpserver.expect_oneshot_request(uri='/api/dashboards/uid/0HklGl_Vz', method='DELETE').respond_with_data(response_data=json.dumps({'id': 17, 'message': 'Dashboard Production Overview deleted', 'title': 'Production Overview'}))
-
+        
+        httpserver.expect_oneshot_request(uri='/api/folders/test-folder-permission', method='GET').respond_with_data(response_data=json.dumps({'id': 19, 'uid': 'test-folder-permission', 'title': 'clo', 'url': '/dashboards/f/test-folder-permission/clo', 'hasAcl': False, 'canSave': True, 'canEdit': True, 'canAdmin': True, 'canDelete': True, 'createdBy': 'Anonymous', 'updatedBy': 'Anonymous','version': 1}))
+        httpserver.expect_oneshot_request(uri='/api/folders/test-folder-permission', method='DELETE').respond_with_data(status=200)
+        
         check_grafana_event["arguments"]["url"] = self.grafana_url
         check_grafana_event["arguments"]["token"] = self.grafana_token
         response = lambda_function.lambda_handler(check_grafana_event, None)
@@ -339,6 +342,9 @@ class TestGrafanaStatusCheck:
         httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 17, 'slug': 'TestDashboardsPermission', 'status': 'success', 'uid': '0HklGl_Vz', 'url': '/d/0HklGl_Vz/TestDashboardsPermission', 'version': 58}))
         httpserver.expect_oneshot_request(uri='/api/dashboards/uid/0HklGl_Vz', method='DELETE').respond_with_data(response_data=json.dumps({'id': 17, 'message': 'Dashboard Production Overview deleted', 'title': 'Production Overview'}))
 
+        httpserver.expect_oneshot_request(uri='/api/folders/test-folder-permission', method='GET').respond_with_data(response_data=json.dumps({'id': 19, 'uid': 'test-folder-permission', 'title': 'clo', 'url': '/dashboards/f/test-folder-permission/clo', 'hasAcl': False, 'canSave': True, 'canEdit': True, 'canAdmin': True, 'canDelete': True, 'createdBy': 'Anonymous', 'updatedBy': 'Anonymous','version': 1}))
+        httpserver.expect_oneshot_request(uri='/api/folders/test-folder-permission', method='DELETE').respond_with_data(status=200)
+        
         response = lambda_function.lambda_handler(check_grafana_event, None)
         print(response)
         assert response["status"] == "FAILED"
@@ -364,6 +370,9 @@ class TestGrafanaStatusCheck:
         httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 17, 'slug': 'TestDashboardsPermission', 'status': 'success', 'uid': '0HklGl_Vz', 'url': '/d/0HklGl_Vz/TestDashboardsPermission', 'version': 58}))
         httpserver.expect_oneshot_request(uri='/api/dashboards/uid/0HklGl_Vz', method='DELETE').respond_with_data(response_data=json.dumps({'id': 17, 'message': 'Dashboard Production Overview deleted', 'title': 'Production Overview'}))
 
+        httpserver.expect_oneshot_request(uri='/api/folders/test-folder-permission', method='GET').respond_with_data(response_data=json.dumps({'id': 19, 'uid': 'test-folder-permission', 'title': 'clo', 'url': '/dashboards/f/test-folder-permission/clo', 'hasAcl': False, 'canSave': True, 'canEdit': True, 'canAdmin': True, 'canDelete': True, 'createdBy': 'Anonymous', 'updatedBy': 'Anonymous','version': 1}))
+        httpserver.expect_oneshot_request(uri='/api/folders/test-folder-permission', method='DELETE').respond_with_data(status=200)
+        
         check_grafana_event["arguments"]["url"] = "localhost:404"  # url connect failed
         check_grafana_event["arguments"]["token"] = self.grafana_token
         response = lambda_function.lambda_handler(check_grafana_event, None)
@@ -391,6 +400,9 @@ class TestGrafanaStatusCheck:
         httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 17, 'slug': 'TestDashboardsPermission', 'status': 'success', 'uid': '0HklGl_Vz', 'url': '/d/0HklGl_Vz/TestDashboardsPermission', 'version': 58}))
         httpserver.expect_oneshot_request(uri='/api/dashboards/uid/0HklGl_Vz', method='DELETE').respond_with_data(response_data=json.dumps({'id': 17, 'message': 'Dashboard Production Overview deleted', 'title': 'Production Overview'}))
 
+        httpserver.expect_oneshot_request(uri='/api/folders/test-folder-permission', method='GET').respond_with_data(response_data=json.dumps({'id': 19, 'uid': 'test-folder-permission', 'title': 'clo', 'url': '/dashboards/f/test-folder-permission/clo', 'hasAcl': False, 'canSave': True, 'canEdit': True, 'canAdmin': True, 'canDelete': True, 'createdBy': 'Anonymous', 'updatedBy': 'Anonymous','version': 1}))
+        httpserver.expect_oneshot_request(uri='/api/folders/test-folder-permission', method='DELETE').respond_with_data(status=200)
+        
         id = lambda_function.lambda_handler(create_event, None)
         check_grafana_event["arguments"]["id"] = id
         response = lambda_function.lambda_handler(check_grafana_event, None)

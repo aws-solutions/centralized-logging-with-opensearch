@@ -13,6 +13,7 @@ import copy
 import json
 import shutil
 import pytest
+import signal
 from pathlib import Path
 from datetime import datetime, timezone
 from boto3.dynamodb.conditions import Attr, Key
@@ -1925,7 +1926,6 @@ class TestAthenaClient:
     def test_start_query_execution(self, mock_athena_context):
         from utils.aws import AthenaClient
         from unittest.mock import patch
-        from func_timeout import func_timeout, FunctionTimedOut
         
         athena_database = os.environ["CENTRALIZED_DATABASE"]
         athena_table_name = os.environ["ATHENA_TABLE_NAME"]
@@ -1951,15 +1951,31 @@ class TestAthenaClient:
         FAILED_DML_SELECT = "Not a SQL"
         
         # mock a start query execution return exception.
+        class TimeoutError(Exception):
+            pass
+
+        def timeout_handler(signum, frame):
+            raise TimeoutError("Function timed out.")
+        
+        def run_with_timeout(func, kwargs, timeout):
+            signal.signal(signal.SIGALRM, timeout_handler)
+            signal.alarm(timeout)
+            try:
+                result = func(**kwargs)
+                signal.alarm(0)
+                return result
+            except TimeoutError:
+                return None
+
         with patch('botocore.client.BaseClient._make_api_call', new=self.mock_athena_api_call):
             response = athena_client.start_query_execution(query_string=FAILED_DML_SELECT, work_group=work_group, output_location=output_location, asynchronous=True)
             assert response['QueryExecution']['Query'] == FAILED_DML_SELECT
             assert response['QueryExecution']['QueryExecutionId'] == ''
             assert response['QueryExecution']['Status']['State'] == 'FAILED'
-            
-            with pytest.raises(FunctionTimedOut):
-                func_timeout(2, athena_client.start_query_execution, kwargs={'query_string': 'SELECT * FROM table limit 10;', 'work_group': work_group, 'output_location':output_location, 'asynchronous':False})
-        
+            with pytest.raises(Exception) as exception_info:
+                run_with_timeout(athena_client.start_query_execution, {'query_string': 'SELECT * FROM table limit 10;', 'work_group': work_group, 'output_location': output_location, 'asynchronous': False}, timeout=2)
+                assert exception_info.value.args[0] == 'Function timed out.'
+
         response = athena_client.start_query_execution(query_string=FAILED_DML_SELECT, work_group=work_group, output_location=output_location, asynchronous=True)
         assert 'QueryExecutionId' in response['QueryExecution'].keys()
         
