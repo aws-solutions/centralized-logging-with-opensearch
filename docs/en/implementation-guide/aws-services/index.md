@@ -24,7 +24,7 @@ Most of supported AWS services in Centralized Logging with OpenSearch offers bui
 
 In this chapter, you will learn how to create log ingestion and dashboards for the following AWS services:
 
-- [Amazon CloudTrail](cloudtrail.md)
+- [AWS CloudTrail](cloudtrail.md)
 - [Amazon S3](s3.md)
 - [Amazon RDS/Aurora](rds.md)
 - [Amazon CloudFront](cloudfront.md)
@@ -45,7 +45,7 @@ When you deploy Centralized Logging with OpenSearch in one Region, the solution 
 
      The Region where the service resides is referred to as “Source Region”, while the Region where the Centralized Logging with OpenSearch console is deployed as “Logging Region”.
 
-For Amazon CloudTrail, you can create a new trail which send logs into a S3 bucket in the Logging Region, and you can find the CloudTrail in the list. To learn how to create a new trail, please refer to [Creating a trail][cloudtrail]. 
+For AWS CloudTrail, you can create a new trail which send logs into a S3 bucket in the Logging Region, and you can find the CloudTrail in the list. To learn how to create a new trail, please refer to [Creating a trail][cloudtrail]. 
 
 For other services with logs located in S3 buckets, you can manually transfer logs (for example, using S3 Cross-Region Replication feature) to the Logging Region S3 bucket.
 

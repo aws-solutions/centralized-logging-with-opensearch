@@ -1,5 +1,5 @@
 # CloudTrail 日志
-Amazon CloudTrail 监控和记录您的 AWS 基础设施中的账户活动。它将所有数据输出到指定的 S3 存储桶或者 CloudWatch 日志组中。
+AWS CloudTrail 监控和记录您的 AWS 基础设施中的账户活动。它将所有数据输出到指定的 S3 存储桶或者 CloudWatch 日志组中。
 
 ## 创建日志摄取
 您可以使用日志通控制台或通过部署独立的 CloudFormation 堆栈来将日志摄取到 Amazon OpenSearch Service 中。
@@ -12,7 +12,7 @@ Amazon CloudTrail 监控和记录您的 AWS 基础设施中的账户活动。它
 1. 登录日志通控制台。
 2. 在导航窗格中的 **日志分析管道** 下，选择 **AWS 服务日志**。
 3. 单击 **创建日志摄取** 按钮。
-4. 在 **AWS 服务** 部分，选择 **Amazon CloudTrail**。
+4. 在 **AWS 服务** 部分，选择 **AWS CloudTrail**。
 5. 选择**下一步**。
 6. 在 **指定设置**，对于 **Trail**，从下拉列表中选择一项。（可选步骤）如果需要跨账户摄取日志，需要先在 **账户** 的下拉列表中选择一个[链接的 AWS 账户](../link-account/index.md)。
  7. 在 **日志来源**，选择 **S3** 或者 **CloudWatch** 作为日志源。

@@ -2,7 +2,7 @@ The following table lists the supported AWS services and the corresponding featu
 
 | AWS Service | Log Type | Log Location | Automatic Ingestion | Built-in Dashboard |
 | ----------- | -------- |------------------ |  ---------- |  ---------- |
-| Amazon CloudTrail | N/A | S3 | Yes | Yes |
+| AWS CloudTrail | N/A | S3 | Yes | Yes |
 | Amazon S3 | [Access logs](https://docs.aws.amazon.com/AmazonS3/latest/userguide/ServerLogs.html) | S3 | Yes | Yes |
 | Amazon RDS/Aurora | [MySQL Logs](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_LogAccess.MySQL.LogFileSize.html) | CloudWatch Logs | Yes | Yes |
 | Amazon CloudFront | [Standard access logs](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/AccessLogs.html) | S3 | Yes | Yes |

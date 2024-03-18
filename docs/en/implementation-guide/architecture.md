@@ -89,8 +89,10 @@ The log pipeline runs the following workflow:
 1. AWS service logs are stored in an Amazon S3 bucket (Log Bucket).
 2. An event notification is sent to Amazon SQS using S3 Event Notifications when a new log file is created.
 3. Amazon SQS initiates AWS Lambda.
-4. AWS Lambda copies objects from the log bucket to the staging bucket.
-5. The Log Processor, AWS Step Functions, processes raw log files stored in the staging bucket in batches. It converts them into Apache Parquet format and automatically partitions all incoming data based on criteria including time and region.
+4. AWS Lambda get objects from the Amazon S3 log bucket.
+5. AWS Lambda put objects to the staging bucket.
+6. The Log Processor, AWS Step Functions, processes raw log files stored in the staging bucket in batches. 
+7. The Log Processor, AWS Step Functions, converts log data into Apache Parquet format and automatically partitions all incoming data based on criteria including time and region.
 
 ### Logs through Amazon Kinesis Data Streams
 
@@ -146,12 +148,12 @@ Centralized Logging with OpenSearch supports log analysis for application logs, 
 The log pipeline runs the following workflow:
 
 1. [Fluent Bit](https://fluentbit.io/) works as the underlying log agent to collect logs from application servers and send them to an optional [Log Buffer](./applications/index.md#log-buffer), or ingest into OpenSearch domain directly.
-
-2. The Log Buffer triggers the Lambda (Log Processor) to run.
-
-3. The log processor reads and processes the log records and ingests the logs into the OpenSearch domain.
-
-4. Logs that fail to be processed are exported to an Amazon S3 bucket (Backup Bucket).
+2. An event notification is sent to Amazon SQS using S3 Event Notifications when a new log file is created.
+3. Amazon SQS initiates AWS Lambda.
+4. AWS Lambda get objects from the Amazon S3 log bucket.
+5. AWS Lambda put objects to the staging bucket.
+6. The Log Processor, AWS Step Functions, processes raw log files stored in the staging bucket in batches. 
+7. The Log Processor, AWS Step Functions, converts log data into Apache Parquet format and automatically partitions all incoming data based on criteria including time and region.
 
 <br/>
 

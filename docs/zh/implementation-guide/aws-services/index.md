@@ -24,7 +24,7 @@ include-markdown "include-supported-service-logs.md"
 
 在本章中，您将学习如何为以下 AWS 服务创建日志摄取并查看仪表板：
 
-- [Amazon CloudTrail](cloudtrail.md)
+- [AWS CloudTrail](cloudtrail.md)
 - [Amazon S3](s3.md)
 - [Amazon RDS/Aurora](rds.md)
 - [Amazon CloudFront](cloudfront.md)
@@ -45,7 +45,7 @@ include-markdown "include-supported-service-logs.md"
 
      服务所在的区域被称为“源区域”，而部署有 OpenSearch 集中式日志控制台的区域被称为“日志区域”。
 
-对于 Amazon CloudTrail，您可以创建一个新的日志跟踪，将日志发送到日志区域的 S3 存储桶中，并且您可以在列表中找到 CloudTrail。要了解如何创建新的跟踪，请参阅[创建跟踪][cloudtrail]。
+对于 AWS CloudTrail，您可以创建一个新的日志跟踪，将日志发送到日志区域的 S3 存储桶中，并且您可以在列表中找到 CloudTrail。要了解如何创建新的跟踪，请参阅[创建跟踪][cloudtrail]。
 
 对于其他将日志存储在 S3 存储桶中的服务，您可以手动将日志传输到日志区域的 S3 存储桶中（例如，使用 S3 跨区域复制功能）。
 

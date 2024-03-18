@@ -2,7 +2,7 @@
 
 | AWS Service | 日志类型 | 日志位置 | 自动摄取 | 内置仪表板 |
 | ----------- | -------- |------------------ |  ---------- |  ---------- |
-| Amazon CloudTrail | N/A | S3 | 是 | 是 |
+| AWS CloudTrail | N/A | S3 | 是 | 是 |
 | Amazon S3 | [Access logs](https://docs.aws.amazon.com/AmazonS3/latest/userguide/ServerLogs.html) | S3 | 是 | 是 |
 | Amazon RDS/Aurora | [MySQL Logs](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_LogAccess.MySQL.LogFileSize.html) | CloudWatch Logs | 是 | 是 |
 | Amazon CloudFront | [Standard access logs](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/AccessLogs.html) | S3 | 是 | 是 |
