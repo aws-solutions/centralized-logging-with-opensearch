@@ -177,8 +177,9 @@ class TestGrafanaClient:
  
         httpserver.clear()
         httpserver.expect_oneshot_request(uri='/api/folders', method='GET').respond_with_data(response_data=json.dumps([]))
-        httpserver.expect_oneshot_request(uri='/api/folders', method='POST').respond_with_data(response_data=json.dumps({'id': 19, 'uid': 'zypaSkX4k', 'title': 'clo', 'url': '/dashboards/f/zypaSkX4k/clo', 'hasAcl': False, 'canSave': True, 'canEdit': True, 'canAdmin': True, 'canDelete': True, 'createdBy': 'Anonymous', 'updatedBy': 'Anonymous','version': 1}))
-        httpserver.expect_oneshot_request(uri='/api/folders/zypaSkX4k', method='DELETE').respond_with_data(status=200)
+        httpserver.expect_oneshot_request(uri='/api/folders', method='POST').respond_with_data(response_data=json.dumps({'id': 19, 'uid': 'test-folder-permission', 'title': 'clo', 'url': '/dashboards/f/zypaSkX4k/clo', 'hasAcl': False, 'canSave': True, 'canEdit': True, 'canAdmin': True, 'canDelete': True, 'createdBy': 'Anonymous', 'updatedBy': 'Anonymous','version': 1}))
+        httpserver.expect_oneshot_request(uri='/api/folders/test-folder-permission', method='GET').respond_with_data(response_data=json.dumps({'id': 19, 'uid': 'test-folder-permission', 'title': 'clo', 'url': '/dashboards/f/test-folder-permission/clo', 'hasAcl': False, 'canSave': True, 'canEdit': True, 'canAdmin': True, 'canDelete': True, 'createdBy': 'Anonymous', 'updatedBy': 'Anonymous','version': 1}))
+        httpserver.expect_oneshot_request(uri='/api/folders/test-folder-permission', method='DELETE').respond_with_data(status=200)
         
         assert self.grafana_client.check_folder_permission() is True
         
@@ -238,13 +239,15 @@ class TestGrafanaClient:
         httpserver.expect_request(uri='/api/folders', method='POST').respond_with_data(response_data=json.dumps({'id': 19, 'uid': 'zypaSkX4k', 'title': 'clo', 'url': '/dashboards/f/zypaSkX4k/clo', 'hasAcl': False, 'canSave': True, 'canEdit': True, 'canAdmin': True, 'canDelete': True, 'createdBy': 'Anonymous', 'updatedBy': 'Anonymous','version': 1}))
         httpserver.expect_request(uri='/api/folders/zypaSkX4k', method='DELETE').respond_with_data(status=200)
         
+        httpserver.expect_oneshot_request(uri='/api/folders/test-folder-permission', method='GET').respond_with_data(response_data=json.dumps({'id': 19, 'uid': 'test-folder-permission', 'title': 'clo', 'url': '/dashboards/f/test-folder-permission/clo', 'hasAcl': False, 'canSave': True, 'canEdit': True, 'canAdmin': True, 'canDelete': True, 'createdBy': 'Anonymous', 'updatedBy': 'Anonymous','version': 1}))
+        httpserver.expect_oneshot_request(uri='/api/folders/test-folder-permission', method='DELETE').respond_with_data(status=200)
         httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(status=401)
         with pytest.raises(Exception) as exception_info:
             self.grafana_client.check_permission()
         assert exception_info.value.args[0] == 'Missing update dashboards permission.'
         httpserver.expect_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 17, 'slug': 'TestDashboardsPermission', 'status': 'success', 'uid': '0HklGl_Vz', 'url': '/d/0HklGl_Vz/TestDashboardsPermission', 'version': 58}))
         httpserver.expect_request(uri='/api/dashboards/uid/0HklGl_Vz', method='DELETE').respond_with_data(response_data=json.dumps({'id': 17, 'message': 'Dashboard Production Overview deleted', 'title': 'Production Overview'}))
-
+        
     def test_get_folder_by_title(self, httpserver: HTTPServer):
         self.init_default_parameters(httpserver=httpserver)
         

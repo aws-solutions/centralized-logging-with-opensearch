@@ -3108,7 +3108,9 @@ class TestPipelineResourceBuilder:
         httpserver.expect_request(uri='/api/folders/zypaSkX4k', method='GET').respond_with_data(response_data=json.dumps({'id': 19, 'uid': 'zypaSkX4k', 'title': 'clo', 'url': '/dashboards/f/zypaSkX4k/clo', 'hasAcl': False, 'canSave': True, 'canEdit': True, 'canAdmin': True, 'canDelete': True, 'version': 1}))
         httpserver.expect_request(uri=f'/api/dashboards/uid/{self.pipeline_id}-00', method='GET').respond_with_data(response_data=json.dumps({'message': 'Dashboard not found', 'traceID': ''}), status=404)
         httpserver.expect_request(uri=f'/api/dashboards/uid/{self.pipeline_id}-01', method='GET').respond_with_data(response_data=json.dumps({'message': 'Dashboard not found', 'traceID': ''}), status=404)
-    
+        httpserver.expect_request(uri='/api/folders/test-folder-permission', method='GET').respond_with_data(response_data=json.dumps({'id': 19, 'uid': 'test-folder-permission', 'title': 'clo', 'url': '/dashboards/f/test-folder-permission/clo', 'hasAcl': False, 'canSave': True, 'canEdit': True, 'canAdmin': True, 'canDelete': True, 'createdBy': 'Anonymous', 'updatedBy': 'Anonymous','version': 1}))
+        httpserver.expect_request(uri='/api/folders/test-folder-permission', method='DELETE').respond_with_data(status=200)
+        
         self.pipeline_parameters = Parameters(self.pipeline_event)
         self.pipeline_resource_builder = PipelineResourceBuilder(parameters=self.pipeline_parameters)
         

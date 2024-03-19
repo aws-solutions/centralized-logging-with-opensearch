@@ -92,8 +92,10 @@ AWS 服务将日志输出到不同的目的地，包括 Amazon S3 存储桶、Cl
 1. AWS服务的日志存储在Amazon S3存储桶（Log Bucket）中。
 2. 创建新日志文件时，将使用 S3 事件通知将事件通知发送到 Amazon SQS。
 3. Amazon SQS 触发 Amazon Lambda 执行。
-4. Amazon Lambda 将对象从日志存储桶复制到暂存存储桶。
-5. 日志处理器作为 Amazon StepFunction 实现，批量处理存储在暂存存储桶中的原始日志文件。 它将它们转换为 Apache Parquet 格式，并根据时间和区域等标准自动对所有传入数据进行分区。
+4. AWS Lambda 从 Amazon S3 日志存储桶获取对象。
+5. AWS Lambda 将对象放入暂存桶中。
+6. 日志处理器 AWS Step Functions 批量处理存储在暂存存储桶中的原始日志文件。
+7. 日志处理器 AWS Step Functions 将日志数据转换为 Apache Parquet 格式，并根据时间和区域等条件自动对所有传入数据进行分区。
 
 
 ### 通过 Amazon Kinesis Data Streams (KDS) 提取日志
@@ -171,7 +173,11 @@ _图 ：应用程序日志分析架构_
 
 1. Fluent Bit 作为底层日志代理，从应用程序服务器收集日志并将其发送到可选的日志缓冲区。
 2. Log Buffer 触发 Lambda 将日志存储桶中的对象复制到暂存存储桶。
-3. 日志处理器 (Amazon SteFunction) 批量处理存储在 staging bucekt 上的原始日志文件，转换为 Apache Parquet，并按时间和区域等自动对所有传入数据进行分区。
+3. Amazon SQS 启动 AWS Lambda。
+4. AWS Lambda 从 Amazon S3 日志存储桶获取对象。
+5. AWS Lambda 将对象放入暂存桶中。
+6. 日志处理器 AWS Step Functions 批量处理存储在暂存存储桶中的原始日志文件。
+7. 日志处理器 AWS Step Functions 将日志数据转换为 Apache Parquet 格式，并根据时间和区域等条件自动对所有传入数据进行分区。
 
 
 ### 来自 Syslog 客户端的日志

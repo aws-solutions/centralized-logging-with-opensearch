@@ -114,6 +114,7 @@ import {
 import { useSelectProcessor } from "assets/js/hooks/useSelectProcessor";
 import { useGrafana } from "assets/js/hooks/useGrafana";
 import UpdateSubAccountModal from "pages/comps/account/UpdateSubAccountModal";
+import { DUPLICATE_OVERLAP_COMMON_SETTING } from "assets/js/const";
 
 const AppLogCreateEC2: React.FC = () => {
   const { t } = useTranslation();
@@ -949,17 +950,13 @@ const AppLogCreateEC2: React.FC = () => {
         errorCode === ErrorCode.OVERLAP_INDEX_PREFIX
       ) {
         Swal.fire({
-          icon: "error",
-          title: "Oops...",
-          cancelButtonColor: "#ec7211",
-          showCancelButton: true,
-          confirmButtonText: t("button.cancel") || "",
-          cancelButtonText: t("button.changeIndex") || "",
-          text:
-            (errorCode === ErrorCode.OVERLAP_WITH_INACTIVE_INDEX_PREFIX
-              ? t("applog:create.ingestSetting.overlapWithInvalidPrefix")
-              : t("applog:create.ingestSetting.overlapWithPrefix")) +
-            `(${message})`,
+          ...DUPLICATE_OVERLAP_COMMON_SETTING,
+          title: defaultStr(t("warning")),
+          confirmButtonText: defaultStr(t("button.cancel")),
+          cancelButtonText: defaultStr(t("button.edit")),
+          text: t("applog:create.ingestSetting.overlapIndexError", {
+            message: message,
+          }),
         }).then((result) => {
           if (result.isDismissed) {
             setCurrentStep(2);
@@ -971,18 +968,13 @@ const AppLogCreateEC2: React.FC = () => {
         errorCode === ErrorCode.DUPLICATED_INDEX_PREFIX
       ) {
         Swal.fire({
-          icon: "error",
-          title: "Oops...",
-          cancelButtonColor: "#ec7211",
-          showCancelButton: true,
+          ...DUPLICATE_OVERLAP_COMMON_SETTING,
+          title: defaultStr(t("warning")),
+          confirmButtonText: defaultStr(t("button.cancel")),
+          cancelButtonText: defaultStr(t("button.edit")),
           showDenyButton: true,
-          confirmButtonText: t("button.cancel") || "",
-          denyButtonText: t("button.forceCreate") || "",
-          cancelButtonText: t("button.changeIndex") || "",
-          text:
-            errorCode === ErrorCode.DUPLICATED_WITH_INACTIVE_INDEX_PREFIX
-              ? t("applog:create.ingestSetting.duplicatedWithInvalidPrefix")
-              : t("applog:create.ingestSetting.duplicatedWithPrefix"),
+          denyButtonText: defaultStr(t("button.continueCreate")),
+          text: t("applog:create.ingestSetting.duplicatedIndexError"),
         }).then((result) => {
           if (result.isDismissed) {
             setCurrentStep(2);

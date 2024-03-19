@@ -4,4 +4,4 @@
 
 - **无代码日志处理**：支持 AWS 开发的日志处理器插件。您可以在网页控制台轻松对原始的日志数据进行处理。
 
-- **开箱即用的仪表板模板**：提供一系列的可视化模板的集合，既适用于 Nginx 和 Apache HTTP Server 等常用软件，也适用于 Amazon S3 和 Amazon CloudTrail 等 AWS 服务。
+- **开箱即用的仪表板模板**：提供一系列的可视化模板的集合，既适用于 Nginx 和 Apache HTTP Server 等常用软件，也适用于 Amazon S3 和 AWS CloudTrail 等 AWS 服务。

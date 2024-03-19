@@ -95,7 +95,7 @@
     "changeIndex": "修改索引名称",
     "linkAnAccount": "链接成员账户",
     "link": "链接",
-    "forceCreate": "继续创建",
+    "continueCreate": "继续创建",
     "createSameAccountIngestion": "创建同帐户摄取",
     "upgrade": "升级",
     "addCondition": "添加条件",
@@ -335,12 +335,13 @@
     "filePathNotBegin": "文件路径不能以 /(斜线) 开头",
     "filePathContainStar": "文件路径最多只能包含一个 *",
     "syslogParserError": "请选择 syslog 解析器",
-    "instanceAlreadyExists":"您选择的这些实例已经添加过："
+    "instanceAlreadyExists": "您选择的这些实例已经添加过："
   },
   "moreDetailsGoToCloudformation": "请前往Cloudformation事件获取更多详细信息",
   "page": "页面",
   "pageNotFound": "没找到页面",
   "home": "首页",
   "clear": "清除",
-  "alert": "更新提醒"
+  "alert": "更新提醒",
+  "warning": "警告"
 }

@@ -18,9 +18,25 @@ recreate_symbolic_link() {
 	source=$1
 	target=$2
 
+	echo "------------------------------------------------------------------------------"
+	echo "[Test] Create symbolic link, source: ${source}, target: ${target}"
+	echo "------------------------------------------------------------------------------"
+	
+	if [ ! -d $(dirname "$target") ]; then
+		echo 'Create target dir: '$(dirname "$target")'.'
+		mkdir -p $(dirname "$target")
+	fi
+
 	if [ -e $target ]; then
+		echo "Removing existing symlink: ${target}."
 		unlink $target
 	fi
+
+	if [ -e $source ]; then
+		echo "Check source: ${source} exists."
+	fi
+
+	echo "Creating symlink: source -> ${source}, target -> ${target}."
 	ln -s $source $target
 }
 

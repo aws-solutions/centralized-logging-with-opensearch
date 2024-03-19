@@ -22,6 +22,7 @@ default_region = os.environ.get("AWS_REGION")
 TOTAL_RETRIES = 2
 SLEEP_INTERVAL = 10
 DEFAULT_BULK_BATCH_SIZE = "10000"
+batch_size = int(os.environ.get("BULK_BATCH_SIZE", DEFAULT_BULK_BATCH_SIZE))
 BULK_ACTION = "index"
 
 log_type = os.environ.get("LOG_TYPE", "").lower()

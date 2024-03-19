@@ -188,6 +188,89 @@ TEST_ES_MAPPING = {
 }
 
 
+def test_make_index_template_contains_at_timestamp():
+    from util.utils import make_index_template
+
+    config = LogConfig(
+        version=0,
+        name="test-config",
+        logType=LogTypeEnum.JSON,
+        jsonSchema={
+            "type": "object",
+            "format": "",
+            "properties": {
+                "@timestamp": {
+                    "type": "date",
+                    "format": "%Y-%m-%dT%H:%M:%SZ",
+                    "timeKey": True,
+                },
+            },
+        },
+        regexFieldSpecs=[],
+    )
+
+    assert {
+        "index_patterns": ["test-json-*"],
+        "template": {
+            "settings": {
+                "index": {
+                    "number_of_shards": 5,
+                    "number_of_replicas": 1,
+                    "codec": "best_compression",
+                    "refresh_interval": "1s",
+                    "plugins": {
+                        "index_state_management": {"rollover_alias": "test-json"}
+                    },
+                }
+            },
+            "mappings": {"properties": {"@timestamp": {"type": "date"}}},
+        },
+    } == make_index_template(config, index_alias="test-json")
+
+    config = LogConfig(
+        version=0,
+        name="test-config",
+        logType=LogTypeEnum.JSON,
+        jsonSchema={
+            "type": "object",
+            "format": "",
+            "properties": {
+                "@timestamp": {
+                    "type": "date",
+                    "format": "%Y-%m-%dT%H:%M:%SZ",
+                    "timeKey": False,
+                },
+            },
+        },
+        regexFieldSpecs=[],
+    )
+
+    assert {
+        "index_patterns": ["test-json-*"],
+        "template": {
+            "settings": {
+                "index": {
+                    "number_of_shards": 5,
+                    "number_of_replicas": 1,
+                    "codec": "best_compression",
+                    "refresh_interval": "1s",
+                    "plugins": {
+                        "index_state_management": {"rollover_alias": "test-json"}
+                    },
+                }
+            },
+            "mappings": {
+                "properties": {
+                    "@timestamp": {
+                        "type": "date",
+                        "format": "yyyy-MM-dd'T'HH:mm:ss'Z' || yyyy-MM-dd'T'HH:mm:ss'Z' || yyyy-MM-dd'T'HH:mm:ss'Z'",
+                    }
+                }
+            },
+        },
+    } == make_index_template(config, index_alias="test-json")
+
+
 def test_make_index_template_json_schema():
     from util.utils import make_index_template
 
@@ -221,6 +304,42 @@ def test_make_index_template_json_schema():
 def test_make_index_template():
     from util.utils import make_index_template
 
+
+    config = LogConfig(
+        version=0,
+        name="test-config",
+        logType=LogTypeEnum.SINGLELINE_TEXT,
+        regex="(?<log>.*)",
+        timeKey="@timestamp",
+        regexFieldSpecs=[
+            RegularSpec(key="name", type="string"),
+            RegularSpec(key="@timestamp", type="date", format="yyyy-MM-dd"),
+        ],
+    )
+
+    assert {
+        "index_patterns": ["app-singleline-*"],
+        "template": {
+            "settings": {
+                "index": {
+                    "number_of_shards": 5,
+                    "number_of_replicas": 1,
+                    "codec": "best_compression",
+                    "refresh_interval": "1s",
+                    "plugins": {
+                        "index_state_management": {"rollover_alias": "app-singleline"}
+                    },
+                }
+            },
+            "mappings": {
+                "properties": {
+                    "name": {"type": "string"},
+                    "@timestamp": {"type": "date"},
+                }
+            },
+        },
+    } == make_index_template(config, index_alias="app-singleline")
+
     config = LogConfig(
         version=0,
         name="test-config",
@@ -250,7 +369,6 @@ def test_make_index_template():
                 "properties": {
                     "name": {"type": "string"},
                     "time": {"type": "date"},
-                    "@timestamp": {"type": "alias", "path": "time"},
                 }
             },
         },
@@ -274,7 +392,6 @@ def test_make_index_template():
                 "properties": {
                     "name": {"type": "string"},
                     "time": {"type": "date"},
-                    "@timestamp": {"type": "alias", "path": "time"},
                 }
             },
         },

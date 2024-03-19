@@ -32,10 +32,12 @@ import {
   aws_ec2 as ec2,
   aws_sqs as sqs,
   aws_s3_notifications as s3n,
+  IAspect,
+  Aspects,
 } from 'aws-cdk-lib';
 import { Vpc } from 'aws-cdk-lib/aws-ec2';
 import { NagSuppressions } from 'cdk-nag';
-import { Construct } from 'constructs';
+import { Construct, IConstruct } from 'constructs';
 import { APIStack } from './api/api-stack';
 import { AuthStack } from './main/auth-stack';
 
@@ -44,6 +46,7 @@ import { EcsClusterStack } from './main/ecs-cluster-stack';
 import { PortalStack } from './main/portal-stack';
 import { VpcStack } from './main/vpc-stack';
 import { MicroBatchStack } from './microbatch/main/services/amazon-services-stack';
+import { EnforceUnmanagedS3BucketNotificationsAspects, UseS3BucketNotificationsWithRetryAspects } from './util/stack-helper';
 
 const { VERSION } = process.env;
 
@@ -399,6 +402,28 @@ export class MainStack extends Stack {
         objectOwnership: s3.ObjectOwnership.OBJECT_WRITER,
         versioned: true,
         enforceSSL: true,
+        notificationsHandlerRole: new iam.Role(this, 'NotiRole', {
+          assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
+          description: 'A role for s3 bucket notification lambda',
+          managedPolicies: [
+            iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
+          ],
+          inlinePolicies: {
+            BucketNotification: iam.PolicyDocument.fromJson({
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:PutBucketNotification",
+                    "s3:GetBucketNotification"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }),
+          },
+        }),
         lifecycleRules: [
           {
             transitions: [
@@ -545,6 +570,18 @@ export class MainStack extends Stack {
       },
     ]);
 
+    if (loggingBucket.policy) {
+      Aspects.of(this).add(
+        new AddS3BucketNotificationsDependency(loggingBucket.policy.node.defaultChild as CfnResource)
+      );
+    }
+
+    const notificationHandler = Stack.of(this).node.tryFindChild('BucketNotificationsHandler050a0587b7544547bf325f094a3db834');
+    if (notificationHandler) {
+      Aspects.of(notificationHandler).add(new UseS3BucketNotificationsWithRetryAspects())
+    }
+    Aspects.of(this).add(new EnforceUnmanagedS3BucketNotificationsAspects());
+
     // init MicroBatch Stack
     microBatchStack = new MicroBatchStack(this, 'MicroBatchStack', {
       solutionId: solutionId,
@@ -655,4 +692,19 @@ export class MainStack extends Stack {
       default: label,
     };
   };
+}
+
+class AddS3BucketNotificationsDependency implements IAspect {
+  public constructor(
+    private deps: CfnResource
+  ) { }
+
+  public visit(node: IConstruct): void {
+    if (
+      node instanceof CfnResource &&
+      node.cfnResourceType === "Custom::S3BucketNotifications"
+    ) {
+      node.addDependency(this.deps);
+    }
+  }
 }

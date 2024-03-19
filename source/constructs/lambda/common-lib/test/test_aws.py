@@ -39,12 +39,14 @@ def ddb_client():
         with table.batch_writer() as batch:
             for data in data_list:
                 batch.put_item(Item=data)
+        
+        yield
 
 
 class TestAWSConnection:
     mock_s3 = mock_s3()
 
-    def setup(self):
+    def setup_method(self):
         self.conn = AWSConnection()
         self.region = os.environ.get("AWS_REGION")
         assert self.region == "us-east-1"
@@ -54,7 +56,7 @@ class TestAWSConnection:
         # Create the bucket
         boto_s3.create_bucket(Bucket=self.bucket_name)
 
-    def tearDown(self):
+    def teardown_method(self):
         print("Done")
         self.mock_s3.stop()
 

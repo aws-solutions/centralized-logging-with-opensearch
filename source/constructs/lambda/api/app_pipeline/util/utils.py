@@ -91,10 +91,11 @@ def json_schema_to_es_mapping(json_schema: dict, parent_key: str = ""):
             pk = parent_key + "." + key if parent_key else key
             if value.get("timeKey"):
                 es_mapping["properties"][key] = {"type": "date"}
-                es_mapping["properties"]["@timestamp"] = {
-                    "type": "alias",
-                    "path": pk,
-                }
+                if pk != "@timestamp":
+                    es_mapping["properties"]["@timestamp"] = {
+                        "type": "alias",
+                        "path": pk,
+                    }
             else:
                 es_mapping["properties"][key] = json_schema_to_es_mapping(value, pk)
 
@@ -142,7 +143,8 @@ def make_index_template(
             key = spec.key
             val = {"type": spec.type}
             if spec.format:
-                properties["@timestamp"] = {"type": "alias", "path": key}
+                if log_config.timeKey == key and key != "@timestamp":
+                    properties["@timestamp"] = {"type": "alias", "path": key}
             # NOTICE: We don't put format into index template.
             # Because the format in log config is strptime style("%Y-%m-%d %H:%M:%S"),
             # which is different from OpenSearch java style format(yyyy-MM-dd HH:mm:ss).

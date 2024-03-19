@@ -1,5 +1,5 @@
-# Amazon CloudTrail Logs
- Amazon CloudTrail monitors and records account activity across your AWS infrastructure. It outputs all the data to the specified S3 bucket or a CloudWatch log group.
+# AWS CloudTrail Logs
+ AWS CloudTrail monitors and records account activity across your AWS infrastructure. It outputs all the data to the specified S3 bucket or a CloudWatch log group.
 ## Create log ingestion
 You can create a log ingestion into Amazon OpenSearch Service either by using the Centralized Logging with OpenSearch console or by deploying a standalone CloudFormation stack.
 
@@ -10,7 +10,7 @@ You can create a log ingestion into Amazon OpenSearch Service either by using th
 1. Sign in to the Centralized Logging with OpenSearch console.
 2. In the navigation pane, under **Log Analytics Pipelines**, choose **Service Log**.
 3. Choose **Create a log ingestion**.
-4. In the **AWS Services** section, choose **Amazon CloudTrail**.
+4. In the **AWS Services** section, choose **AWS CloudTrail**.
 5. Choose **Next**.
 6. Under **Specify settings**, for **Trail**, select one from the dropdown list. (Optional) If you are ingesting CloudTrail logs from another account, select a [linked account](../link-account/index.md) from the **Account** dropdown list first.
 7. Under **Log Source**, Select **S3** or **CloudWatch** as the log source.
