@@ -1589,7 +1589,7 @@
 </thead>
 <tbody>
 <tr>
-<td>Amazon CloudTrail</td>
+<td>AWS CloudTrail</td>
 <td>N/A</td>
 <td>S3</td>
 <td>是</td>
@@ -1662,7 +1662,7 @@
 <p>日志通中大多数受支持的 AWS 服务在创建日志分析管道时都提供了内置仪表板。在供应管道后，您可以转到 OpenSearch 查看仪表板。</p>
 <p>在本章中，您将学习如何为以下 AWS 服务创建日志摄取并查看仪表板：</p>
 <ul>
-<li><a href="cloudtrail/">Amazon CloudTrail</a></li>
+<li><a href="cloudtrail/">AWS CloudTrail</a></li>
 <li><a href="s3/">Amazon S3</a></li>
 <li><a href="rds/">Amazon RDS/Aurora</a></li>
 <li><a href="cloudfront/">Amazon CloudFront</a></li>
@@ -1682,7 +1682,7 @@
 <p class="admonition-title">重要</p>
 <p>服务所在的区域被称为“源区域”，而部署有 OpenSearch 集中式日志控制台的区域被称为“日志区域”。</p>
 </div>
-<p>对于 Amazon CloudTrail，您可以创建一个新的日志跟踪，将日志发送到日志区域的 S3 存储桶中，并且您可以在列表中找到 CloudTrail。要了解如何创建新的跟踪，请参阅<a href="https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-create-a-trail-using-the-console-first-time.html?icmpid=docs_console_unmapped">创建跟踪</a>。</p>
+<p>对于 AWS CloudTrail，您可以创建一个新的日志跟踪，将日志发送到日志区域的 S3 存储桶中，并且您可以在列表中找到 CloudTrail。要了解如何创建新的跟踪，请参阅<a href="https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-create-a-trail-using-the-console-first-time.html?icmpid=docs_console_unmapped">创建跟踪</a>。</p>
 <p>对于其他将日志存储在 S3 存储桶中的服务，您可以手动将日志传输到日志区域的 S3 存储桶中（例如，使用 S3 跨区域复制功能）。</p>
 <p>您可以按照以下步骤实施跨区域日志记录：</p>
 <ol>

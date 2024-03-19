@@ -1589,7 +1589,7 @@
 </thead>
 <tbody>
 <tr>
-<td>Amazon CloudTrail</td>
+<td>AWS CloudTrail</td>
 <td>N/A</td>
 <td>S3</td>
 <td>Yes</td>
@@ -1662,7 +1662,7 @@
 <p>Most of supported AWS services in Centralized Logging with OpenSearch offers built-in dashboard when creating the log analytics pipelines. You go to the OpenSearch Dashboards to view the dashboards after the pipeline being provisioned.</p>
 <p>In this chapter, you will learn how to create log ingestion and dashboards for the following AWS services:</p>
 <ul>
-<li><a href="cloudtrail/">Amazon CloudTrail</a></li>
+<li><a href="cloudtrail/">AWS CloudTrail</a></li>
 <li><a href="s3/">Amazon S3</a></li>
 <li><a href="rds/">Amazon RDS/Aurora</a></li>
 <li><a href="cloudfront/">Amazon CloudFront</a></li>
@@ -1682,7 +1682,7 @@
 <p class="admonition-title">Important</p>
 <p>The Region where the service resides is referred to as “Source Region”, while the Region where the Centralized Logging with OpenSearch console is deployed as “Logging Region”.</p>
 </div>
-<p>For Amazon CloudTrail, you can create a new trail which send logs into a S3 bucket in the Logging Region, and you can find the CloudTrail in the list. To learn how to create a new trail, please refer to <a href="https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-create-a-trail-using-the-console-first-time.html?icmpid=docs_console_unmapped">Creating a trail</a>. </p>
+<p>For AWS CloudTrail, you can create a new trail which send logs into a S3 bucket in the Logging Region, and you can find the CloudTrail in the list. To learn how to create a new trail, please refer to <a href="https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-create-a-trail-using-the-console-first-time.html?icmpid=docs_console_unmapped">Creating a trail</a>. </p>
 <p>For other services with logs located in S3 buckets, you can manually transfer logs (for example, using S3 Cross-Region Replication feature) to the Logging Region S3 bucket.</p>
 <p>You can follow the steps below to implement Cross-Region Logging:</p>
 <ol>
