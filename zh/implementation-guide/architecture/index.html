@@ -1638,7 +1638,7 @@
   <h1>架构图</h1>
 
 <p>使用默认参数部署此解决方案会在 AWS 云中构建以下环境。</p>
-<p><a href="../images/architecture/arch.png"><img alt="arch" src="../images/architecture/arch.png" /></a>
+<p><a href="../../images/architecture/arch.png"><img alt="arch" src="../../images/architecture/arch.png" /></a>
 <em>图1: 解决方案架构图</em></p>
 <p>此解决方案在您的 AWS 云账户中部署 AWS CloudFormation 模板并完成以下设置。</p>
 <ol>
@@ -1694,13 +1694,13 @@
 <li>
 <p><strong>直接记录到Amazon S3桶的日志(OpenSearch作为日志分析引擎)</strong></p>
 <p>该AWS服务可以直接将日志记录到 Amazon S3 桶。</p>
-<p><a href="../images/architecture/service-pipeline-s3.svg"><img alt="arch-service-pipeline-s3" src="../images/architecture/service-pipeline-s3.svg" /></a>
+<p><a href="../../images/architecture/service-pipeline-s3.svg"><img alt="arch-service-pipeline-s3" src="../../images/architecture/service-pipeline-s3.svg" /></a>
 <em>图 2：用于分析通过Amazon S3中的 AWS 服务日志架构</em></p>
 </li>
 <li>
 <p><strong>通过Kinesis Data Firehose (KDF) 记录到Amazon S3桶的日志(OpenSearch作为日志分析引擎)</strong></p>
 <p>该AWS服务不能直接将日志放入 Amazon S3 桶，而是只能记录到 Amazon CloudWatch。 使用<a href="https://aws.amazon.com/kinesis/data-firehose/">KDF</a> 先从CloudWatch 日志组订阅日志，然后放入Amazon S3桶。</p>
-<p><a href="../images/architecture/service-pipeline-kdf-to-s3.svg"><img alt="arch-service-pipeline-kdf-to-s3" src="../images/architecture/service-pipeline-kdf-to-s3.svg" /></a>
+<p><a href="../../images/architecture/service-pipeline-kdf-to-s3.svg"><img alt="arch-service-pipeline-kdf-to-s3" src="../../images/architecture/service-pipeline-kdf-to-s3.svg" /></a>
 <em>图 3：用于分析通过 KDF 记录到 Amazon S3中的 AWS 服务日志架构</em></p>
 </li>
 </ul>
@@ -1730,7 +1730,7 @@
 <li>
 <p><strong>直接记录到Amazon S3桶的日志(Light Engine作为日志分析引擎)</strong></p>
 <p>该AWS服务可以直接将日志记录到 Amazon S3 桶。</p>
-<p><a href="../images/architecture/logs-in-s3-light-engine.drawio.png"><img alt="arch-service-pipeline-s3-lightengine" src="../images/architecture/logs-in-s3-light-engine.drawio.png" /></a>
+<p><a href="../../images/architecture/logs-in-s3-light-engine.drawio.png"><img alt="arch-service-pipeline-s3-lightengine" src="../../images/architecture/logs-in-s3-light-engine.drawio.png" /></a>
  <em>图：用于分析通过Amazon S3中的 AWS 服务日志架构</em></p>
 </li>
 </ul>
@@ -1754,13 +1754,13 @@
 <li>
 <p><strong>直接记录到Amazon KDS 的实时日志</strong></p>
 <p>该AWS服务可以直接将日志发送到 Amazon <a href="https://aws.amazon.com/kinesis/data-streams/">KDS</a>.</p>
-<p><a href="../images/architecture/service-pipeline-kds.svg"><img alt="arch-service-pipeline-kds" src="../images/architecture/service-pipeline-kds.svg" /></a>
+<p><a href="../../images/architecture/service-pipeline-kds.svg"><img alt="arch-service-pipeline-kds" src="../../images/architecture/service-pipeline-kds.svg" /></a>
 <em>图 4：用于分析 通过 KDS 的 AWS 服务日志架构</em></p>
 </li>
 <li>
 <p><strong>使用Amazon KDS 订阅的实时流日志</strong></p>
 <p>该AWS服务将日志记录到 Amazon CloudWatch。使用<a href="https://aws.amazon.com/kinesis/data-streams/">KDS</a> 从CloudWatch 日志组订阅实时流日志。</p>
-<p><a href="../images/architecture/service-pipeline-cwl-to-kds.svg"><img alt="arch-service-pipeline-cwl-to-kds" src="../images/architecture/service-pipeline-cwl-to-kds.svg" /></a>
+<p><a href="../../images/architecture/service-pipeline-cwl-to-kds.svg"><img alt="arch-service-pipeline-cwl-to-kds" src="../../images/architecture/service-pipeline-cwl-to-kds.svg" /></a>
 <em>图 5：用于分析 通过 KDS订阅 的 AWS 服务日志架构</em></p>
 </li>
 </ul>
@@ -1793,7 +1793,7 @@
 <h3 id="amazon-ec2-amazon-eks">来自 Amazon EC2 / Amazon EKS 的日志</h3>
 <ul>
 <li><strong>来自 Amazon EC2/ Amazon EKS的日志(OpenSearch作为日志分析引擎)</strong>
-<a href="../images/architecture/app-log-pipeline-ec2-eks.svg"><img alt="arch-app-log-pipeline" src="../images/architecture/app-log-pipeline-ec2-eks.svg" /></a>
+<a href="../../images/architecture/app-log-pipeline-ec2-eks.svg"><img alt="arch-app-log-pipeline" src="../../images/architecture/app-log-pipeline-ec2-eks.svg" /></a>
 <em>图 6：应用程序日志分析架构</em></li>
 </ul>
 <p>日志管道运行以下工作流：</p>
@@ -1815,7 +1815,7 @@
 <ul>
 <li><strong>自 Amazon EC2/ Amazon EKS的日志(Light Engine作为日志分析引擎)</strong></li>
 </ul>
-<p><a href="../images/architecture/logs-from-amazon-ec2-eks-light-engine.drawio.png"><img alt="arch-app-log-pipeline-lighengine" src="../images/architecture/logs-from-amazon-ec2-eks-light-engine.drawio.png" /></a>
+<p><a href="../../images/architecture/logs-from-amazon-ec2-eks-light-engine.drawio.png"><img alt="arch-app-log-pipeline-lighengine" src="../../images/architecture/logs-from-amazon-ec2-eks-light-engine.drawio.png" /></a>
 <em>图 ：应用程序日志分析架构</em></p>
 <p>日志管道运行以下工作流：</p>
 <ol>
@@ -1835,7 +1835,7 @@
 <li>架构图中的 NLB 和 ECS 容器只会在您创建 Syslog 摄取时提供，并在没有 Syslog 摄取时自动删除。</li>
 </ol>
 </div>
-<p><a href="../images/architecture/app-log-pipeline-syslog.svg"><img alt="arch-syslog-pipeline" src="../images/architecture/app-log-pipeline-syslog.svg" /></a>
+<p><a href="../../images/architecture/app-log-pipeline-syslog.svg"><img alt="arch-syslog-pipeline" src="../../images/architecture/app-log-pipeline-syslog.svg" /></a>
 <em>图 7：Syslog 的应用程序日志管道架构</em></p>
 <ol>
 <li>
