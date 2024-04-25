@@ -1,4 +1,4 @@
-pydantic==1.10.6 --no-binary=pydantic
+pydantic==1.10.13 --no-binary=pydantic
 urllib3
 requests
 requests-aws4auth
