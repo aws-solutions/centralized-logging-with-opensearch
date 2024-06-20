@@ -29,7 +29,7 @@ The solution has the following features:
 
 Deploying this solution with the default parameters builds the following environment in the AWS Cloud.
 
-![Architecture](arch.png)
+![Architecture](docs/images/architecture/arch.png)
 
 
 ## Deployment
