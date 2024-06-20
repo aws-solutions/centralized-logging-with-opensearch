@@ -35,6 +35,7 @@ import { S3Bucket } from "@aws-cdk/aws-kinesisfirehose-destinations-alpha";
 import * as firehose from "@aws-cdk/aws-kinesisfirehose-alpha";
 import * as path from "path";
 import { NagSuppressions } from "cdk-nag";
+import { SharedPythonLayer } from "../../layer/layer";
 /**
  * cfn-nag suppression rule interface
  */
@@ -151,7 +152,7 @@ export class CWtoFirehosetoS3Stack extends Construct {
       assumeBy
     );
 
-    // Create the IAM Policy for CloudWatch to put record on kinesis data stream
+    // Create the IAM Policy for CloudWatch to put record on kinesis
     const cwDestPolicy = new iam.Policy(this, "CWDestPolicy", {
       roles: [cwDestinationRole],
       statements: [
@@ -216,6 +217,7 @@ export class CWtoFirehosetoS3Stack extends Construct {
       memorySize: 256,
       timeout: Duration.seconds(60),
       role: cwSubFilterLambdaRole,
+      layers: [SharedPythonLayer.getInstance(this)],
       environment: {
         LOGGROUP_NAMES: props.logGroupNames,
         DESTINATION_NAME: logFirehose.deliveryStreamName,

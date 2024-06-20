@@ -3,10 +3,12 @@ Centralized Logging with OpenSearch will collect syslog logs through UDP or TCP 
 
 This article guides you to create a log pipeline that ingests logs from a syslog endpoint.
 
-## Prerequisites
+## Create a log analytics pipeline (OpenSearch Engine)
+
+### Prerequisites
 1. [Import an Amazon OpenSearch Service domain](../domains/import.md).
 
-## Create log analytics pipeline
+### Create log analytics pipeline
 
 1. Sign in to the Centralized Logging with OpenSearch Console.
 
@@ -14,7 +16,7 @@ This article guides you to create a log pipeline that ingests logs from a syslog
 
 3. Choose **Create a pipeline**.
 
-4. Choose **Syslog Endpoint** as Log Source.
+4. Choose **Syslog Endpoint** as Log Source, choose **Amazon OpenSearch**, and choose **Next**.
 
 5. Select **UDP** or **TCP** with custom port number. Choose **Next**.
 
@@ -56,19 +58,71 @@ You have created a log source for the log analytics pipeline. Now you are ready 
 
 7. In the **Log Lifecycle** section, enter the number of days to manage the Amazon OpenSearch Service index lifecycle. The Centralized Logging with OpenSearch will create the associated [Index State Management (ISM)](https://opensearch.org/docs/latest/im-plugin/ism/index/) policy automatically for this pipeline.
 
-13. In the **Select log processor** section, please choose the log processor. 
-    - (Optional) OSI as log processor is now supported in these [regions](https://aws.amazon.com/about-aws/whats-new/2023/04/amazon-opensearch-service-ingestion/). When OSI is selected, please type in the minimum and maximum number of OCU. See more information [here](https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ingestion.html#ingestion-scaling). 
-14. Choose **Next**.
+8. In the **Select log processor** section, please choose the log processor.
+    - When selecting Lambda as log processor, you can configure the Lambda concurrency if needed.
+    - (Optional) OSI as log processor is now supported in these [regions](https://aws.amazon.com/about-aws/whats-new/2023/04/amazon-opensearch-service-ingestion/). When OSI is selected, please type in the minimum and maximum number of OCU. See more information [here](https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ingestion.html#ingestion-scaling).
+9. Choose **Next**.
 
-9. Enable **Alarms** if needed and select an exiting SNS topic. If you choose **Create a new SNS topic**, please provide a name and an email address for the new SNS topic.
+10. Enable **Alarms** if needed and select an exiting SNS topic. If you choose **Create a new SNS topic**, please provide a name and an email address for the new SNS topic.
 
-10. Add tags if needed.
+11. Add tags if needed.
 
-11. Choose **Create**.
+12. Choose **Create**.
 
-12. Wait for the application pipeline turning to "Active" state.
+13. Wait for the application pipeline turning to "Active" state.
 
+## Create a log analytics pipeline (Light Engine)
 
+### Create a log analytics pipeline
+
+1. Sign in to the Centralized Logging with OpenSearch Console.
+
+2. In the left sidebar, under **Log Analytics Pipelines**, choose **Application Log**.
+
+3. Choose **Create a pipeline**.
+
+4. Choose **Syslog Endpoint** as Log Source, choose **Light Engine**, and choose **Next**.
+
+5. Select **UDP** or **TCP** with custom port number. Choose **Next**.
+
+You have created a log source for the log analytics pipeline. Now you are ready to make further configurations for the log analytics pipeline with syslog as log source.
+
+1. Select a log config. If you do not find the desired log config from the drop-down list, choose **Create New**. Refer to [Log Config](./create-log-config.md) for more information.
+
+2. Choose **Next**.
+
+3. In the **Buffer** section, choose **S3**.
+    * S3 buffer parameters
+
+    | Parameter                    | Default                                          | Description                                                  |
+    | ---------------------------- | ------------------------------------------------ | ------------------------------------------------------------ |
+    | S3 Bucket                    | *A log bucket will be created by the solution.*           | You can also select a bucket to store the log data.                       |
+    | S3 Bucket Prefix             | `AppLogs/<index-prefix>/year=%Y/month=%m/day=%d` | The log agent appends the prefix when delivering the log files to the S3 bucket. |
+    | Buffer size                  | 50 MiB                                           | The maximum size of log data cached at the log agent side before delivering to S3. For more information, see [Data Delivery Frequency](https://docs.aws.amazon.com/firehose/latest/dev/basic-deliver.html#frequency). |
+    | Buffer interval              | 60 seconds                                       | The maximum interval of the log agent to deliver logs to S3. For more information, see [Data Delivery Frequency](https://docs.aws.amazon.com/firehose/latest/dev/basic-deliver.html#frequency). |
+    | Compression for data records | `Gzip`                                           | The log agent compresses records before delivering them to the S3 bucket. |
+
+4. Choose **Next**.
+
+4. In the **Specify Light Engine Configuration** section, if you want to ingest associated templated Grafana dashboards, select **Yes** for the sample dashboard.
+
+5. You can choose an existing Grafana, or if you need to import a new one, you can go to Grafana for configuration.
+
+6. Select an S3 bucket to store partitioned logs and define a name for the log table. We have provided a predefined table name, but you can modify it according to your business needs.
+
+7. The log processing frequency is set to **5** minutes by default, with a minimum processing frequency of **1** minute.
+
+8. In the **Log Lifecycle** section, enter the log merge time and log archive time. We have provided default values, but you can adjust them based on your business requirements.
+
+9. Select **Next**.
+
+10. Enable **Alarms** if needed and select an exiting SNS topic. If you choose **Create a new SNS topic**, please provide a name and an email address for the new SNS topic.
+
+11. If desired, add tags.
+
+12. Select **Create**.
+
+13. Wait for the application pipeline turning to "Active" state.
 
 [kds]: https://aws.amazon.com/kinesis/data-streams/
 [ssm-agent]: https://docs.aws.amazon.com/systems-manager/latest/userguide/ssm-agent.html

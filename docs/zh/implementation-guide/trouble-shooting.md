@@ -165,6 +165,7 @@ sudo ln -s /usr/lib/x86_64-linux-gnu/libsasl2.so.2 /usr/lib/libsasl2.so.3
 
 #### Amazon Linux 2023
 
+
 ```
 sudo su -
 
@@ -182,4 +183,3 @@ echo /usr/local/openssl11/lib/ >> /etc/ld.so.conf
 ldconfig
 
 ```
-

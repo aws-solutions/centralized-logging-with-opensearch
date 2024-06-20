@@ -70,7 +70,8 @@
       "errorLogArchiveAgeGteLogMergerAge": "Log merge time should be less than log archive time",
       "errorLogMergerAgeGteOne": "Log merger age should be greater or equal to 1 day",
       "errorLogProcessorScheduleExp": "Log processor schedule should be more than 1 minute.",
-      "errorCronExpression": "Please provide a valid Cron expression."
+      "errorCronExpression": "Please provide a valid Cron expression.",
+      "errorTableName": "Table name must be a combination of letters, numbers, and underscores, and must be between 1 and 255 characters."
     }
   },
   "logging": {

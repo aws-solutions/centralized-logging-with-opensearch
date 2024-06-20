@@ -1,14 +1,13 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-import logging
+from commonlib.logging import get_logger
 import os
 
 from commonlib.utils import exec_sfn_flow
 from commonlib import AWSConnection, AppSyncRouter
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 state_machine_arn = os.environ["STATE_MACHINE_ARN"]
 

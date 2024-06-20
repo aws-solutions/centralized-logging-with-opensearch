@@ -1,0 +1,76 @@
+{
+	"type": "object",
+	"properties": {
+		"time": {
+			"type": "big_int",
+			"expression": "FLOOR(\"time\" / 60000) * 60000"
+		},
+		"timestamp": {
+			"type": "timestamp",
+			"expression": "DATE_TRUNC('minute', \"timestamp\")"
+		},
+		"db_cluster_identifier": {
+			"type": "string"
+		},
+		"db_instance_identifier": {
+			"type": "string"
+		},
+		"engine": {
+			"type": "string"
+		},
+		"engine_version": {
+			"type": "string"
+		},
+		"log_type": {
+			"type": "string",
+			"partition": true
+		},
+		"host": {
+			"type": "string"
+		},
+		"username": {
+			"type": "string"
+		},
+		"operation": {
+			"type": "string"
+		},
+		"database": {
+			"type": "string"
+		},
+		"connection_ids": {
+			"type": "array",
+			"items": {
+				"type": "string"
+			},
+			"measure": true,
+			"expression": "ARRAY_DISTINCT(ARRAY_AGG(connection_id) FILTER (WHERE connection_id IS NOT NULL))"
+		},
+		"return_code": {
+			"type": "string"
+		},
+		"priority": {
+			"type": "string"
+		},
+		"subsystem": {
+			"type": "string"
+		},
+		"avg_query_time": {
+			"type": "double",
+			"measure": true,
+			"expression": "AVG(query_time)"
+		},
+		"requests": {
+			"type": "big_int",
+			"measure": true,
+			"expression": "CAST(COUNT(1) AS bigint)"
+		},
+		"event_hour": {
+			"type": "string",
+			"partition": true
+		},
+		"__execution_name__": {
+			"type": "string",
+			"partition": true
+		}
+	}
+}

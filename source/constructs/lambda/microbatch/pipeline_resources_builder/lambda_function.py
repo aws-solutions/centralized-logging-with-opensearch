@@ -5,23 +5,20 @@ import os
 import re
 import json
 import copy
+import gzip
+import base64
 import collections
 from typing import Union
 from types import SimpleNamespace
 from functools import cached_property
 from boto3.dynamodb.conditions import Attr
-from utils import ValidateParameters, S3Client, SQSClient, IAMClient, SchedulerClient, GlueClient, EventsClient, logger
+from utils.aws import S3Client, SQSClient, IAMClient, SchedulerClient, GlueClient, EventsClient
+from utils.helpers import logger, ValidateParameters
 from utils.models.meta import MetaTable
-from utils.aws.glue.table import TableMetaData
+from utils.aws.glue.table import TableMetaData, JsonSchemaToGlueSchema
 from utils.aws.glue import dataformat
 from utils.grafana import GrafanaClient, AthenaConnection
-from utils.logschema import JsonSchemaToGlueSchema
-from utils.logschema.services import ALB_RAW, ALB_PARQUET, ALB_METRICS
-from utils.logschema.services import CLOUDFRONT_RAW, CLOUDFRONT_PARQUET, CLOUDFRONT_METRICS
-from utils.logschema.services import WAF_RAW, WAF_PARQUET, WAF_METRICS
-from utils.logschema.services import CLOUDTRAIL_RAW, CLOUDTRAIL_PARQUET, CLOUDTRAIL_METRICS
-from utils.logschema.services import VPCFLOW_RAW, VPCFLOW_PARQUET
-from dashboards import APPLICATION_GRAFANA_DETAILS, ALB_GRAFANA_DASHBOARD, ALB_GRAFANA_DETAILS, CLOUDFRONT_GRAFANA_DASHBOARD, CLOUDFRONT_GRAFANA_DETAILS, WAF_GRAFANA_DASHBOARD, WAF_GRAFANA_DETAILS, CLOUDTRAIL_GRAFANA_DASHBOARD, CLOUDTRAIL_GRAFANA_DETAILS
+from logschema import SOURCE_TYPE_RESOURCES
 
 
 class Parameters(ValidateParameters):
@@ -58,7 +55,9 @@ class Parameters(ValidateParameters):
         self.ddb_client_metadata = MetaTable()
 
         if parameters['ResourceProperties'].get('Item'):
-            self.ddb_client_metadata.put(meta_name=self.id, item=parameters['ResourceProperties']['Item'])
+            item = parameters['ResourceProperties']['Item']
+            item['type'] = self.resource.title()
+            self.ddb_client_metadata.put(meta_name=self.id, item=item)
         self.policy_sid = self.id.replace('-', '')
         
         if self.resource == 'pipeline':
@@ -193,14 +192,14 @@ class Parameters(ValidateParameters):
         
         table = info['table']
         destination.table = self._init_name_space({'name': table['name']})
-        destination.table.schema = json.loads(table.get('schema', '{}'))
+        destination.table.schema = json.loads(self._parse_table_schema(table.get('schema', '{}')))
         destination.table.location = self._get_bucket_object(bucket=location['bucket'], prefix=f"{location['prefix']}/{database['name']}/{table['name']}")
         
         metrics = info['metrics']
         metrics_table_name = metrics['name'] if metrics['name'] else f"{destination.table.name}_metrics"
         
         destination.metrics = self._init_name_space({'name': metrics_table_name})
-        destination.metrics.schema = json.loads(metrics.get('schema', '{}'))
+        destination.metrics.schema = json.loads(self._parse_table_schema(metrics.get('schema', '{}')))
         destination.metrics.location = self._get_bucket_object(bucket=location['bucket'], prefix=f"{location['prefix']}/{database['name']}/{metrics_table_name}")
         
         destination.enrichment_plugins = info['enrichmentPlugins'].split(',') if info.get('enrichmentPlugins') else []
@@ -219,8 +218,21 @@ class Parameters(ValidateParameters):
         except Exception as e:
             logger.warning(e)
             return False
+    
+    def _parse_table_schema(self, input_string) -> str:  # type: ignore
+        if self._is_json_string(input_string=input_string) is True:
+            return input_string
             
-    def _validate_source_table_attribute(self, source_type: str, table_info: dict) -> bool:
+        try:
+            new_input_string = gzip.decompress(base64.b64decode(input_string)).decode('utf-8')
+            if self._is_json_string(input_string=new_input_string) is True:
+                return new_input_string
+            else:
+                raise ValueError(f'Gzip decompress and base64 decode: {new_input_string} is not a valid JSON string.')
+        except Exception:
+            raise ValueError(f'{input_string} is not a valid JSON string.')
+            
+    def _validate_source_table_attribute(self, source_type: str, table_info: dict) -> None:
         """Verify whether the attribute information of the table is compliant. 
            If the verification is passed, return True, and if the verification is not passed, return False.
 
@@ -234,32 +246,21 @@ class Parameters(ValidateParameters):
                 serialization_properties (dict): The SERDEPROPERTIES of raw log table.
 
         Returns:
-            bool: _description_
+            None: _description_
         """
         if source_type in ('fluent-bit', 's3'):
-            schema = table_info.get('schema', '{}')
-            if self._is_json_string(input_string=schema) is False or not schema:
-                logger.info(f"When the source type is fluent bit or s3, the schema must be defined and a valid JSON string, "
-                            f"and the current value is {table_info.get('schema')}.")
-                return False
+            self._parse_table_schema(input_string=table_info.get('schema', '{}'))    
 
             data_format = table_info.get('dataFormat', '').lower()
             if data_format not in dataformat.DATA_FORMAT_MAPPING:
-                logger.info(f"Unsupported data format: {data_format}, "
-                            f"supported value: {dataformat.DATA_FORMAT_MAPPING.keys()}.")
-                return False
+                raise ValueError(f"Unsupported data format: {data_format}, "
+                            f"supported value: {list(dataformat.DATA_FORMAT_MAPPING.keys())}.")
             
             for required_key in ('tableProperties', 'serializationProperties'):
-                input_string = table_info.get(required_key, '{}')
-                if self._is_json_string(input_string=input_string) is False:
-                    logger.info(f"When the source type is fluent bit or s3, the {required_key} must be a valid JSON string, "
-                            f"and the current value is {table_info.get(required_key)}.")
-                    return False
-            
-            if data_format == 'regex' and not json.loads(table_info.get('serializationProperties', '{}')).get('input.regex'):
-                logger.info('The data format is Regex, but input.regex is not defined in serializationProperties.')
-                return False
-        return True
+                self._parse_table_schema(input_string=table_info.get(required_key, '{}'))
+
+            if data_format == 'regex' and not json.loads(self._parse_table_schema(input_string=table_info.get('serializationProperties', '{}'))).get('input.regex'):
+                raise ValueError('The data format is Regex, but input.regex is not defined in serializationProperties.')
     
     def _get_pipeline_source_info(self, info: dict) -> SimpleNamespace:
         """Get source info of the pipeline, return the following attributes:
@@ -276,7 +277,7 @@ class Parameters(ValidateParameters):
         Returns:
             SimpleNamespace: _description_
         """
-        supported_source_type = ('waf', 'cloudfront', 'alb', 'cloudtrail', 'vpcflow', 's3', 'fluent-bit')
+        supported_source_type = tuple(SOURCE_TYPE_RESOURCES.keys())
         
         source = self._init_name_space()
         source.type = info['type'].lower()
@@ -284,16 +285,15 @@ class Parameters(ValidateParameters):
             raise ValueError(f'Not supported source type: {source.type}, supported: {", ".join(supported_source_type)}.')
         
         source.database = self._init_name_space({'name': self.ddb_client_metadata.get(meta_name='TmpDatabase')['name']})
-        
-        if self._validate_source_table_attribute(source_type=source.type, table_info=info['table']) is False:
-            raise ValueError('The source table is missing required definition. Please check the configuration of the source table information.')
+
+        self._validate_source_table_attribute(source_type=source.type, table_info=info['table'])
         
         raw_table_info = {
             'name': info['table']['name'],
-            'schema': json.loads(info['table'].get('schema', '{}')),
+            'schema': json.loads(self._parse_table_schema(input_string=info['table'].get('schema'))),
             'data_format': dataformat.DATA_FORMAT_MAPPING.get(info['table'].get('dataFormat', '').lower(), ''),
-            'table_properties': json.loads(info['table'].get('tableProperties', '{}')),
-            'serialization_properties': json.loads(info['table'].get('serializationProperties', '{}')),
+            'table_properties': json.loads(self._parse_table_schema(input_string=info['table'].get('tableProperties'))),
+            'serialization_properties': json.loads(self._parse_table_schema(input_string=info['table'].get('serializationProperties', '{}'))),
         }
         source.table = self._init_name_space(raw_table_info)
         
@@ -348,6 +348,12 @@ class Parameters(ValidateParameters):
         ns.role = self._init_name_space()
         ns.role.s3_public_access = self.ddb_client_metadata.get(meta_name='S3PublicAccessPolicy')['arn']
         ns.role.replicate = ns.data['stack']['role']['replicate']
+        ns.role.connector = ns.data['stack']['role'].get('connector', '')
+        ns.role.invoke_connector = ns.data['stack']['role'].get('invokeConnector', '')
+        
+        ns.function = self._init_name_space()
+        ns.function.replicate = ns.data['stack']['lambda']['replicate']
+        ns.function.connector = ns.data['stack']['lambda'].get('connector', '')
         
         scheduler = ns.data['data']['scheduler']
         ns.scheduler = self._init_name_space()
@@ -385,6 +391,26 @@ class Parameters(ValidateParameters):
         ns.source = self._init_name_space()
         ingestion_source = ns.data['data']['source']
         ns.source.location = self._get_bucket_object(bucket=ingestion_source['bucket'], prefix=ingestion_source['prefix'], sts_role_arn=ns.role.sts)
+        
+        ns.context = {}
+        source_context = json.loads(self._parse_table_schema(input_string=ingestion_source.get('context', '{}')))
+        source_context['role'] = ns.role.sts
+        if source_context:
+            ns.context = {
+                "metaName": self.ingestion_id,
+                "source": {
+                    "type": self.pipeline_info.source.type,
+                    "context": source_context,
+                },
+                "sink": {
+                    "type": "s3",
+                    "context": {
+                        "bucket": ns.source.location.bucket,
+                        "prefix": ns.source.location.prefix,
+                        "role": ns.role.sts
+                    }
+                }
+            }
         
         return ns
 
@@ -510,7 +536,7 @@ class TableMetaDataGenerator:
 
         object_type_schema = []
         
-        for name, property in schema['properties'].items():
+        for _, property in schema['properties'].items():
             if property.get('timeKey') is True:
                 return {'time': property}
             elif property['type'] == 'object':
@@ -535,41 +561,45 @@ class TableMetaDataGenerator:
         """
         schema = self.schema_transformer.add_path(json_schema=schema)
         time_key = self.find_time_key(schema, source_type=source_type)
-        if time_key:
-            new_schema = copy.deepcopy(schema)
-            new_schema['properties'].pop('time', None)
-            new_schema['properties'].pop('timestamp', None)
-    
-            ordered_properties = collections.OrderedDict()
-            if time_key["time"]["type"] in ('integer', 'big_int'):
-                ordered_properties['time'] = {
-                    'type': 'big_int',
-                    'expression': time_key["time"].get("expression") or time_key["time"]["path"],
-                }
-                ordered_properties['timestamp'] = {
-                    'type': 'timestamp',
-                    'expression': f'CAST(FROM_UNIXTIME({time_key["time"].get("expression") or time_key["time"]["path"]}) AS timestamp)'
-                }
-            else:
-                ordered_properties['time'] = {
-                    'type': 'big_int',
-                    'expression': f'CAST(to_unixtime(parse_datetime({time_key["time"]["path"]}, \'{time_key["time"]["format"]}\')) * 1000 AS bigint)',
-                }
-                ordered_properties['timestamp'] = {
-                    'type': 'timestamp',
-                    'expression': f'parse_datetime({time_key["time"]["path"]}, \'{time_key["time"]["format"]}\')'
-                }
-            ordered_properties.update(new_schema['properties'])
-            new_schema['properties'] = ordered_properties
-            
-            return new_schema
         
-        return schema
+        if not time_key:
+            return schema
+        
+        new_schema = copy.deepcopy(schema)
+        new_schema['properties'].pop('time', None)
+        new_schema['properties'].pop('timestamp', None)
+
+        ordered_properties = collections.OrderedDict()
+        if time_key["time"]["type"] in ('integer', 'big_int'):
+            epoch_seconds_expression = time_key["time"].get("expression") or time_key["time"]["path"]
+            time_expression = f'{epoch_seconds_expression}{"" if time_key["time"].get("format") == "epoch_millis" else " * 1000"}' 
+            timestamp_expression = f'CAST(FROM_UNIXTIME({epoch_seconds_expression}{" / 1000" if time_key["time"].get("format") == "epoch_millis" else ""}) AS timestamp)' 
+            
+            ordered_properties['time'] = {
+                'type': 'big_int',
+                'expression': time_expression,
+            }
+            ordered_properties['timestamp'] = {
+                'type': 'timestamp',
+                'expression': timestamp_expression
+            }
+        else:
+            ordered_properties['time'] = {
+                'type': 'big_int',
+                'expression': f'CAST(to_unixtime(parse_datetime({time_key["time"]["path"]}, \'{time_key["time"]["format"]}\')) * 1000 AS bigint)',
+            }
+            ordered_properties['timestamp'] = {
+                'type': 'timestamp',
+                'expression': f'parse_datetime({time_key["time"]["path"]}, \'{time_key["time"]["format"]}\')'
+            }
+        ordered_properties.update(new_schema['properties'])
+        new_schema['properties'] = ordered_properties
+        
+        return new_schema
 
     def add_default_partition(self, schema: dict, source_type='fluent-bit') -> dict:
         """When data is converted to Parquet, it will be add __execution_name__ as a partition key, 
-           and add an event_hour as a time partition key when a timeKey is specified in the schema, 
-           and will not be added if not specified.
+           and add an event_hour as a time partition key whether or not the time key is specified.
 
         Args:
             schema (dict): JSON Schema is a structure of JSON data
@@ -587,9 +617,16 @@ class TableMetaDataGenerator:
                 'partition': True
             }
             if time_key["time"]["type"] in ('integer', 'big_int'):
-                new_schema['properties']['event_hour']['expression'] = f'date_format(CAST(FROM_UNIXTIME({time_key["time"].get("expression") or time_key["time"]["path"]}) AS timestamp), \'%Y%m%d%H\')'
+                time_expression = time_key["time"].get("expression") or f'{time_key["time"]["path"]}{" / 1000" if time_key["time"].get("format")=="epoch_millis" else ""}'
+                new_schema['properties']['event_hour']['expression'] = f'date_format(CAST(FROM_UNIXTIME({time_expression}) AS timestamp), \'%Y%m%d%H\')'
             else:
                 new_schema['properties']['event_hour']['expression'] = f'date_format(parse_datetime({time_key["time"]["path"]}, \'{time_key["time"]["format"]}\'), \'%Y%m%d%H\')'
+        else:
+            new_schema['properties']['event_hour'] = {
+                'type': 'string',
+                'partition': True,
+                'expression': 'date_format(now(), \'%Y%m%d%H\')'
+            }
         if not new_schema['properties'].get('__execution_name__'):
             new_schema['properties']['__execution_name__'] = {
                 'type': 'string',
@@ -665,35 +702,27 @@ class TableMetaDataGenerator:
             tuple[TableMetaData, TableMetaData, Union[TableMetaData, None]]: [raw, parquet, metrics (optional)]
         """
         raw, parquet, metrics = None, None, None
-
-        if self.source.type == 'waf':
-            raw, parquet, metrics  = WAF_RAW, WAF_PARQUET, WAF_METRICS
-        elif self.source.type == 'cloudfront':
-            raw, parquet, metrics  = CLOUDFRONT_RAW, CLOUDFRONT_PARQUET, CLOUDFRONT_METRICS
-        elif self.source.type == 'alb':
-            raw, parquet, metrics  = ALB_RAW, ALB_PARQUET, ALB_METRICS
-        elif self.source.type == 'cloudtrail':
-            raw, parquet, metrics  = CLOUDTRAIL_RAW, CLOUDTRAIL_PARQUET, CLOUDTRAIL_METRICS
-        elif self.source.type == 'vpcflow':
-            raw, parquet, metrics  = VPCFLOW_RAW, VPCFLOW_PARQUET, None
-        else:
-            raw = self.get_raw_table_metadata(schema=self.source.table.schema, data_format=self.source.table.data_format, 
-                                                table_properties=self.source.table.table_properties, 
-                                                serialization_properties=self.source.table.serialization_properties,
-                                                source_type=self.source.type)
-            parquet_schema = self.destination.table.schema
-            if parquet_schema:
-                if self.source.type == 'fluent-bit':
-                    parquet_schema = self.add_fluent_bit_agent_info(schema=parquet_schema, table_type='centralized')
-                parquet = TableMetaData(schema=self.destination.table.schema, data_format=dataformat.Parquet, ignore_partition=False)
-            else:
-                source_schema = self.source.table.schema
-                parquet = self.get_parquet_table_metadata_from_raw(schema=source_schema, source_type=self.source.type)
-            
-            if self.destination.metrics.schema:
-                metrics = TableMetaData(schema=self.destination.metrics.schema, data_format=dataformat.Parquet, ignore_partition=False)
         
-        return raw, parquet, metrics
+        if SOURCE_TYPE_RESOURCES.get(self.source.type, {}).get('schema'):
+            return SOURCE_TYPE_RESOURCES[self.source.type]['schema']
+
+        raw = self.get_raw_table_metadata(schema=self.source.table.schema, data_format=self.source.table.data_format, 
+                                            table_properties=self.source.table.table_properties, 
+                                            serialization_properties=self.source.table.serialization_properties,
+                                            source_type=self.source.type)
+        parquet_schema = self.destination.table.schema
+        if parquet_schema:
+            if self.source.type == 'fluent-bit':
+                parquet_schema = self.add_fluent_bit_agent_info(schema=parquet_schema, table_type='centralized')
+            parquet = TableMetaData(schema=self.destination.table.schema, data_format=dataformat.Parquet, ignore_partition=False)
+        else:
+            source_schema = self.source.table.schema
+            parquet = self.get_parquet_table_metadata_from_raw(schema=source_schema, source_type=self.source.type)
+        
+        if self.destination.metrics.schema:
+            metrics = TableMetaData(schema=self.destination.metrics.schema, data_format=dataformat.Parquet, ignore_partition=False)
+        
+        return raw, parquet, metrics # type: ignore
 
     def get_table_metadata_and_statements(self) -> tuple[TableMetaData, TableMetaData, Union[TableMetaData, None], SimpleNamespace]:
         """Returning or generating TableMetaData class information and SQL statements, statements contains the following.
@@ -751,31 +780,44 @@ class PipelineResourceBuilder:
         return ns
     
     def _init_grafana_info(self) -> None:
-        self.athena_connection = AthenaConnection(database=self.parameters.pipeline_info.grafana.datasource.database,
-                                                  account_id=self.parameters.pipeline_info.grafana.datasource.account_id, 
-                                                  region=self.parameters.pipeline_info.grafana.datasource.region, 
-                                                  work_group=self.parameters.pipeline_info.grafana.datasource.work_group, 
-                                                  assume_role_arn=self.parameters.pipeline_info.grafana.datasource.assume_role_arn,
-                                                  output_location=self.parameters.pipeline_info.grafana.datasource.output_location)
         self.grafana_client = GrafanaClient(url=self.parameters.pipeline_info.grafana.url, token=self.parameters.pipeline_info.grafana.token, verify=False)
         self.grafana_client.check_permission()
         self.grafana_folder_title = 'clo'
         self.grafana_details_uid = f'{self.parameters.pipeline_id}-00'
         self.grafana_dashboard_uid = f'{self.parameters.pipeline_id}-01'
+        
+        self.athena_connection_args = dict(
+            Details=self.grafana_client.update_athena_connection_uid(
+                athena_connection=AthenaConnection(database=self.parameters.pipeline_info.grafana.datasource.database,
+                                                   account_id=self.parameters.pipeline_info.grafana.datasource.account_id, 
+                                                   region=self.parameters.pipeline_info.grafana.datasource.region, 
+                                                   work_group=self.parameters.pipeline_info.grafana.datasource.work_group, 
+                                                   assume_role_arn=self.parameters.pipeline_info.grafana.datasource.assume_role_arn,
+                                                   output_location=self.parameters.pipeline_info.grafana.datasource.output_location,
+                                                   table=self.parameters.pipeline_info.destination.table.name,
+                                                   reuse=True,
+                                                   reuse_age=5,
+                                                   )
+                )
+            )
+        if self.parameters.pipeline_info.destination.metrics.name:
+            self.athena_connection_args['Metrics'] = self.grafana_client.update_athena_connection_uid(
+                athena_connection=AthenaConnection(database=self.parameters.pipeline_info.grafana.datasource.database,
+                                                   account_id=self.parameters.pipeline_info.grafana.datasource.account_id, 
+                                                   region=self.parameters.pipeline_info.grafana.datasource.region, 
+                                                   work_group=self.parameters.pipeline_info.grafana.datasource.work_group, 
+                                                   assume_role_arn=self.parameters.pipeline_info.grafana.datasource.assume_role_arn,
+                                                   output_location=self.parameters.pipeline_info.grafana.datasource.output_location,
+                                                   table=self.parameters.pipeline_info.destination.metrics.name,
+                                                   reuse=True,
+                                                   reuse_age=5,
+                                                   )
+                )
     
     def get_grafana_dashboard(self, source_type: str) -> tuple[dict, Union[dict, None]]:
-        if source_type == 'alb':
-            return ALB_GRAFANA_DETAILS, ALB_GRAFANA_DASHBOARD
-        elif source_type == 'waf':
-            return WAF_GRAFANA_DETAILS, WAF_GRAFANA_DASHBOARD
-        elif source_type == 'cloudfront':
-            return CLOUDFRONT_GRAFANA_DETAILS, CLOUDFRONT_GRAFANA_DASHBOARD
-        elif source_type == 'cloudtrail':
-            return CLOUDTRAIL_GRAFANA_DETAILS, CLOUDTRAIL_GRAFANA_DASHBOARD
-        elif source_type == 'vpcflow':
-            return APPLICATION_GRAFANA_DETAILS, None
-        else:
-            return APPLICATION_GRAFANA_DETAILS, None
+        if SOURCE_TYPE_RESOURCES.get(source_type, {}).get('dashboards'):
+            return SOURCE_TYPE_RESOURCES[source_type]['dashboards']                                   
+        return SOURCE_TYPE_RESOURCES['s3']['dashboards']
 
     def import_dashboards_into_grafana(self) -> None:
         self._init_grafana_info()
@@ -785,12 +827,12 @@ class PipelineResourceBuilder:
         if details:
             details['title'] = f'{self.parameters.pipeline_info.destination.table.name}-details'
             details['uid'] = self.grafana_details_uid
-            self.grafana_client.import_details_for_services(table=self.parameters.pipeline_info.destination.table.name, metrics_table=self.parameters.pipeline_info.destination.metrics.name, dashboard=details, athena_connection=self.athena_connection, overwrite=True, folder_title=self.grafana_folder_title)
+            self.grafana_client.import_dashboard(dashboard=details, athena_connection_args=self.athena_connection_args, overwrite=True, folder_title=self.grafana_folder_title)
         
         if dashboard:
             dashboard['title'] = f'{self.parameters.pipeline_info.destination.table.name}-dashboard'
             dashboard['uid'] = self.grafana_dashboard_uid
-            self.grafana_client.import_dashboard_for_services(table=self.parameters.pipeline_info.destination.metrics.name, dashboard=dashboard, athena_connection=self.athena_connection, overwrite=True, folder_title=self.grafana_folder_title)
+            self.grafana_client.import_dashboard(dashboard=dashboard, athena_connection_args=self.athena_connection_args, overwrite=True, folder_title=self.grafana_folder_title)
 
     def delete_dashboards_from_grafana(self) -> None:
         try:
@@ -816,55 +858,59 @@ class PipelineResourceBuilder:
             self.glue_client.delete_table(database=self.parameters.pipeline_info.destination.database.name, name=self.parameters.pipeline_info.destination.metrics.name)
     
     def create_rule(self) -> None:
-        logger.info(f'Start {self.parameters.action.lower()} the rule of Amazon EventBridge, rule name: LogProcessor-{self.parameters.pipeline_info.destination.table.name}, schedule: {self.parameters.pipeline_info.scheduler.log_processor.schedule}.')
+        logger.info(f'Start {self.parameters.action.lower()} the rule of Amazon EventBridge, rule name: LogProcessor-{self.parameters.pipeline_id}, schedule: {self.parameters.pipeline_info.scheduler.log_processor.schedule}.')
         self.events_client.create_processor_rule(pipeline_id=self.parameters.pipeline_id, source_type=self.parameters.pipeline_info.source.type, 
                                                 table_name=self.parameters.pipeline_info.destination.table.name, staging_location=self.parameters.pipeline_info.staging.uri, 
                                                 archive_location=self.parameters.pipeline_info.staging.archive_uri, statements=self.table_metadata_and_statements.statements,
                                                 service=self.parameters.pipeline_info.notification.service, recipients=self.parameters.pipeline_info.notification.recipients, 
                                                 sfn_arn=self.parameters.pipeline_info.scheduler.log_processor.arn, enrichment_plugins=self.parameters.pipeline_info.destination.enrichment_plugins,
-                                                role_arn=self.parameters.pipeline_info.scheduler.log_processor.execution_role, name=f'LogProcessor-{self.parameters.pipeline_info.destination.table.name}', 
+                                                role_arn=self.parameters.pipeline_info.scheduler.log_processor.execution_role, name=f'LogProcessor-{self.parameters.pipeline_id}', 
                                                 schedule=self.parameters.pipeline_info.scheduler.log_processor.schedule, event_bus_name='default')
         
-        logger.info(f'Start {self.parameters.action.lower()} the rule of Amazon EventBridge, rule name: LogMerger-{self.parameters.pipeline_info.destination.table.name}, schedule: {self.parameters.pipeline_info.scheduler.log_merger.schedule}.')
+        logger.info(f'Start {self.parameters.action.lower()} the rule of Amazon EventBridge, rule name: LogMerger-{self.parameters.pipeline_id}, schedule: {self.parameters.pipeline_info.scheduler.log_merger.schedule}.')
         self.events_client.create_merger_rule(pipeline_id=self.parameters.pipeline_id, source_type=self.parameters.pipeline_info.source.type, schedule_type='LogMerger', 
                                             table_name=self.parameters.pipeline_info.destination.table.name, table_location=self.parameters.pipeline_info.destination.table.location.uri, 
                                             archive_location=self.parameters.pipeline_info.destination.table.location.archive_uri, partition_info=self.table_metadata_and_statements.parquet.partition_info,
                                             age=self.parameters.pipeline_info.scheduler.log_merger.age, database=self.parameters.pipeline_info.destination.database.name,
                                             service=self.parameters.pipeline_info.notification.service, recipients=self.parameters.pipeline_info.notification.recipients,
-                                            sfn_arn=self.parameters.pipeline_info.scheduler.log_merger.arn, role_arn=self.parameters.pipeline_info.scheduler.log_merger.execution_role, name=f'LogMerger-{self.parameters.pipeline_info.destination.table.name}',
+                                            sfn_arn=self.parameters.pipeline_info.scheduler.log_merger.arn, role_arn=self.parameters.pipeline_info.scheduler.log_merger.execution_role, name=f'LogMerger-{self.parameters.pipeline_id}',
                                             schedule=self.parameters.pipeline_info.scheduler.log_merger.schedule, event_bus_name='default')
         
-        logger.info(f'Start {self.parameters.action.lower()} the rule of Amazon EventBridge, rule name: LogArchive-{self.parameters.pipeline_info.destination.table.name}, schedule: {self.parameters.pipeline_info.scheduler.log_archive.schedule}.')
+        logger.info(f'Start {self.parameters.action.lower()} the rule of Amazon EventBridge, rule name: LogArchive-{self.parameters.pipeline_id}, schedule: {self.parameters.pipeline_info.scheduler.log_archive.schedule}.')
         self.events_client.create_archive_rule(pipeline_id=self.parameters.pipeline_id, source_type=self.parameters.pipeline_info.source.type, schedule_type='LogArchive',
                                             table_name=self.parameters.pipeline_info.destination.table.name, table_location=self.parameters.pipeline_info.destination.table.location.uri,
                                             archive_location=self.parameters.pipeline_info.destination.table.location.archive_uri, 
                                             age=self.parameters.pipeline_info.scheduler.log_archive.age, database=self.parameters.pipeline_info.destination.database.name, 
                                             service=self.parameters.pipeline_info.notification.service, recipients=self.parameters.pipeline_info.notification.recipients,
-                                            sfn_arn=self.parameters.pipeline_info.scheduler.log_archive.arn, role_arn=self.parameters.pipeline_info.scheduler.log_archive.execution_role, name=f'LogArchive-{self.parameters.pipeline_info.destination.table.name}', 
+                                            sfn_arn=self.parameters.pipeline_info.scheduler.log_archive.arn, role_arn=self.parameters.pipeline_info.scheduler.log_archive.execution_role, name=f'LogArchive-{self.parameters.pipeline_id}', 
                                             schedule=self.parameters.pipeline_info.scheduler.log_archive.schedule, event_bus_name='default')
         
         if self.table_metadata_and_statements.metrics:
-            logger.info(f'Start {self.parameters.action.lower()} the rule of Amazon EventBridge, rule name: LogMergerForMetrics-{self.parameters.pipeline_info.destination.table.name}, schedule: {self.parameters.pipeline_info.scheduler.log_merger.schedule}.')
+            logger.info(f'Start {self.parameters.action.lower()} the rule of Amazon EventBridge, rule name: LogMergerForMetrics-{self.parameters.pipeline_id}, schedule: {self.parameters.pipeline_info.scheduler.log_merger.schedule}.')
             self.events_client.create_merger_rule(pipeline_id=self.parameters.pipeline_id, source_type=self.parameters.pipeline_info.source.type, schedule_type='LogMergerForMetrics',
                                                 table_name=self.parameters.pipeline_info.destination.metrics.name, table_location=self.parameters.pipeline_info.destination.metrics.location.uri, 
                                                 archive_location=self.parameters.pipeline_info.destination.metrics.location.archive_uri, partition_info=self.table_metadata_and_statements.metrics.partition_info,
                                                 age=self.parameters.pipeline_info.scheduler.log_merger.age, database=self.parameters.pipeline_info.destination.database.name, 
                                                 service=self.parameters.pipeline_info.notification.service, recipients=self.parameters.pipeline_info.notification.recipients,
-                                                sfn_arn=self.parameters.pipeline_info.scheduler.log_merger.arn, role_arn=self.parameters.pipeline_info.scheduler.log_merger.execution_role, name=f'LogMergerForMetrics-{self.parameters.pipeline_info.destination.table.name}',
+                                                sfn_arn=self.parameters.pipeline_info.scheduler.log_merger.arn, role_arn=self.parameters.pipeline_info.scheduler.log_merger.execution_role, name=f'LogMergerForMetrics-{self.parameters.pipeline_id}',
                                                 schedule=self.parameters.pipeline_info.scheduler.log_merger.schedule, event_bus_name='default')
-            logger.info(f'Start {self.parameters.action.lower()} the rule of Amazon EventBridge, rule name: LogArchiveForMetrics-{self.parameters.pipeline_info.destination.table.name}, schedule: {self.parameters.pipeline_info.scheduler.log_archive.schedule}.')
+            logger.info(f'Start {self.parameters.action.lower()} the rule of Amazon EventBridge, rule name: LogArchiveForMetrics-{self.parameters.pipeline_id}, schedule: {self.parameters.pipeline_info.scheduler.log_archive.schedule}.')
             self.events_client.create_archive_rule(pipeline_id=self.parameters.pipeline_id, source_type=self.parameters.pipeline_info.source.type, schedule_type='LogArchiveForMetrics',
                                                 table_name=self.parameters.pipeline_info.destination.metrics.name, table_location=self.parameters.pipeline_info.destination.metrics.location.uri,
                                                 archive_location=self.parameters.pipeline_info.destination.metrics.location.archive_uri, 
                                                 age=self.parameters.pipeline_info.scheduler.log_archive.age, database=self.parameters.pipeline_info.destination.database.name, 
                                                 service=self.parameters.pipeline_info.notification.service, recipients=self.parameters.pipeline_info.notification.recipients,
-                                                sfn_arn=self.parameters.pipeline_info.scheduler.log_archive.arn, role_arn=self.parameters.pipeline_info.scheduler.log_archive.execution_role, name=f'LogArchiveForMetrics-{self.parameters.pipeline_info.destination.table.name}', 
+                                                sfn_arn=self.parameters.pipeline_info.scheduler.log_archive.arn, role_arn=self.parameters.pipeline_info.scheduler.log_archive.execution_role, name=f'LogArchiveForMetrics-{self.parameters.pipeline_id}', 
                                                 schedule=self.parameters.pipeline_info.scheduler.log_archive.schedule, event_bus_name='default')
             
     def delete_rule(self) -> None:
         for name in ('LogProcessor', 'LogMerger', 'LogMergerForMetrics', 'LogArchive', 'LogArchiveForMetrics', ):
-            rule_name = f'{name}-{self.parameters.pipeline_info.destination.table.name}'
+            rule_name = f'{name}-{self.parameters.pipeline_id}'
             logger.info(f'Start delete rule of Amazon EventBridge, the rule name: {rule_name}.')
+            self.events_client.delete_rule(name=rule_name, event_bus_name='default', force=True)
+            
+            # Compatible with older versions
+            rule_name = f'{name}-{self.parameters.pipeline_info.destination.table.name}'
             self.events_client.delete_rule(name=rule_name, event_bus_name='default', force=True)
     
     def create_scheduler(self) -> None:
@@ -932,16 +978,60 @@ class PipelineResourceBuilder:
             self.scheduler_client.delete_schedule(name=schedule_name, group_name=self.parameters.pipeline_id)
         logger.info(f'Start delete scheduler group of Amazon EventBridge, scheduler group name: {self.parameters.pipeline_id}.')
         self.scheduler_client.delete_schedule_group(name=self.parameters.pipeline_id)
+    
+    def create_connector(self) -> None:
+        if self.parameters.ingestion_info.role.sts:
+            policy_document = {
+                'Version': '2012-10-17',
+                'Statement': [
+                    {
+                        'Effect': 'Allow',
+                        'Action': 'sts:AssumeRole',
+                        'Resource': [
+                            self.parameters.ingestion_info.role.sts
+                            ]
+                    }
+                ],
+            }
+            role_name = self.parameters.pipeline_info.role.connector.split('/')[-1]
+            logger.info(f'Grant AssumeRole permission to Connector, role name: {role_name}.')
+            self.iam_client.put_role_policy(role_name=role_name, policy_name=self.parameters.policy_sid, policy_document=policy_document)
+    
+        if self.parameters.pipeline_info.scheduler.service == 'scheduler':
+            self.scheduler_client.create_schedule(name=f'Connector-{self.parameters.ingestion_id}', 
+                                                  input=self.parameters.ingestion_info.context, 
+                                                  target_arn=self.parameters.pipeline_info.function.connector,
+                                                  target_role_arn=self.parameters.pipeline_info.role.invoke_connector, 
+                                                  group_name=self.parameters.pipeline_id, 
+                                                  schedule=self.parameters.pipeline_info.scheduler.log_processor.schedule)
+        else:
+            rule_name = f'Connector-{self.parameters.ingestion_id}'
+            self.events_client.put_rule(name=rule_name, schedule=self.parameters.pipeline_info.scheduler.log_processor.schedule, state='ENABLED', event_bus_name='default')
+            self.events_client.put_targets(id=self.parameters.ingestion_id, 
+                                            rule_name=rule_name,
+                                            input=self.parameters.ingestion_info.context, 
+                                            target_arn=self.parameters.pipeline_info.function.connector, 
+                                            event_bus_name='default')
+    
+    def delete_connector(self) -> None:
+        if self.parameters.pipeline_info.scheduler.service == 'scheduler':
+            self.scheduler_client.delete_schedule(name=f'Connector-{self.parameters.ingestion_id}', group_name=self.parameters.pipeline_id)
+        else:
+            rule_name = f'Connector-{self.parameters.ingestion_id}'
+            self.events_client.delete_rule(name=rule_name, event_bus_name='default')
         
     def _init_destination_policy_info(self) -> None:
-        self.destination_policy_resources = [
-                f'{self.parameters.pipeline_info.destination.table.location.arn}/{self.parameters.pipeline_info.destination.table.location.prefix}*'
-            ]
-        if self.table_metadata_and_statements.metrics:
-            self.destination_policy_resources.append(f'{self.parameters.pipeline_info.destination.metrics.location.arn}/{self.parameters.pipeline_info.destination.metrics.location.prefix}*')
-
+        self.destination_policy_resources = []
+            
         self.s3_public_access_policy_sid = 'S3AccessPolicyForDestination'
         self.s3_public_access_policy_document = self.iam_client.get_policy_document(arn=self.parameters.pipeline_info.role.s3_public_access, sid=self.s3_public_access_policy_sid)
+        
+        has_shared_database_location = self.ddb_client_metadata.check_shared_database_location_in_pipeline(meta_name=self.parameters.pipeline_id)
+        bucket_location_arn = f'{self.parameters.pipeline_info.destination.database.location.arn}/{self.parameters.pipeline_info.destination.database.location.prefix}*'
+        statement = self.s3_public_access_policy_document['Document']['Statement']
+        
+        if not statement or has_shared_database_location is False or bucket_location_arn not in statement[0]['Resource']:
+            self.destination_policy_resources.append(f'{self.parameters.pipeline_info.destination.database.location.arn}/{self.parameters.pipeline_info.destination.database.location.prefix}*')
     
     def grant_destination_bucket_access_permission(self) -> None:
         self._init_destination_policy_info()
@@ -1160,6 +1250,10 @@ class PipelineResourceBuilder:
             self.import_dashboards_into_grafana()
         
         self.execute_all_ingestion_operations_in_pipeline_in_bulk(pipeline_id=self.parameters.pipeline_id, action='create')
+        
+        if self.parameters.pipeline_info.role.invoke_connector and self.parameters.pipeline_info.scheduler.service == 'scheduler':
+            connector_role_name = self.parameters.pipeline_info.role.invoke_connector.split('/')[-1]
+            self.iam_client.add_service_principal_to_assume_role_policy(role_name=connector_role_name, service_principal='scheduler.amazonaws.com', tries=10) #NOSONAR
     
     def delete_pipeline(self) -> None:
         """Delete Pipeline-related resources and revoke permissions.
@@ -1181,7 +1275,9 @@ class PipelineResourceBuilder:
 
         self.execute_all_ingestion_operations_in_pipeline_in_bulk(pipeline_id=self.parameters.pipeline_id, action='delete')
         
-        self.delete_glue_table()
+        if self.ddb_client_metadata.check_shared_table_name_in_pipeline(meta_name=self.parameters.pipeline_id) is False:
+            self.delete_glue_table()
+            
         if self.parameters.pipeline_info.scheduler.service == 'scheduler':
             self.delete_scheduler()
         else:
@@ -1215,10 +1311,13 @@ class PipelineResourceBuilder:
         
         self.s3_client = S3Client(sts_role_arn=self.parameters.ingestion_info.role.sts)
         
-        if self.parameters.ingestion_info.source.location.bucket != self.parameters.pipeline_info.staging.bucket:
+        if not self.parameters.ingestion_info.source.location.uri.startswith(self.parameters.pipeline_info.staging.uri):
             self.grant_sqs_send_message_permission_to_source_bucket()
             self.grant_source_bucket_access_permission()
             self.put_event_notification_into_source_bucket()
+        
+        if self.parameters.pipeline_info.source.type == 'rds':
+            self.create_connector()
             
         if self.parameters.pipeline_info.source.type == 'alb':
             alb_policy_sid = f'{self.parameters.pipeline_info.source.type}{self.parameters.policy_sid}'
@@ -1242,10 +1341,13 @@ class PipelineResourceBuilder:
         
         self.s3_client = S3Client(sts_role_arn=self.parameters.ingestion_info.role.sts)
         
-        if self.parameters.ingestion_info.source.location.bucket != self.parameters.pipeline_info.staging.bucket:
+        if not self.parameters.ingestion_info.source.location.uri.startswith(self.parameters.pipeline_info.staging.uri):
             self.delete_event_notification_from_source_bucket()
             self.revoke_source_bucket_access_permission()
             self.revoke_sqs_send_message_permission()
+        
+        if self.parameters.pipeline_info.source.type == 'rds':
+            self.delete_connector()
             
         if self.parameters.pipeline_info.source.type == 'alb':
             alb_policy_sid = f'{self.parameters.pipeline_info.source.type}{self.parameters.policy_sid}'

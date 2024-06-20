@@ -4,16 +4,16 @@
 import hashlib
 import json
 import boto3
-import logging
+from commonlib.logging import get_logger
 import os
 
-logging.getLogger().setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 sqs = boto3.client("sqs", region_name=os.environ["AWS_REGION"])
 
 
 def on_event(event, _):
-    logging.info("On event %s", event)
+    logger.info("On event %s", event)
 
     request_type = event["RequestType"]
     if request_type == "Create" or request_type == "Update":
@@ -40,7 +40,7 @@ def on_create(event):
     )
 
     if is_already_exist:
-        logging.info("The statement already exists.")
+        logger.info("The statement already exists.")
     else:
         p = {
             "Sid": sid,
@@ -55,7 +55,7 @@ def on_create(event):
             "Condition": {"ArnLike": {"aws:SourceArn": bucket_arn}},
         }
 
-        logging.info(f"Inject policy: {p}")
+        logger.info(f"Inject policy: {p}")
 
         policy["Statement"].append(p)
 

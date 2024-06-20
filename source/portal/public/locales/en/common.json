@@ -2,13 +2,16 @@
   "name": "Centralized Logging with OpenSearch",
   "title": "Centralized Logging with OpenSearch",
   "version": "Version",
+  "newVersion": "A new version ({{latestVersionNumber}}) of Centralized Logging with OpenSearch is available. Please upgrade to the latest version.",
   "signin": {
     "signInToSolution": "Centralized Logging with OpenSearch",
     "email": "Email *",
     "inputEmail": "Enter your email",
     "password": "Password *",
     "inputPassword": "Enter your password",
-    "signIn": "Sign In"
+    "signIn": "Sign In",
+    "reSignIn": "Please sign in again",
+    "reSignInDesc": "You were signed out of your account. Please press Reload to sign in again."
   },
   "header": {
     "name": "AWS Solutions",
@@ -107,7 +110,8 @@
     "viewDetails": "View Details",
     "viewDomain": "View Domain",
     "addNewItem": "Add New Item",
-    "saveAndValidate": "Save and Validate"
+    "saveAndValidate": "Save and Validate",
+    "reload": "Reload"
   },
   "status": {
     "unknown": "Unknown",
@@ -284,7 +288,13 @@
     "maxError": "Maximum value invalid",
     "max": "Maximum",
     "minMaxTips": "Minimum and maximum capacity must be positive numbers between 1 and 96. The maximum capacity limit for stateful pipelines(for example, those that use the service_map or aggregate processor) is 48.",
-    "disabledEnrich": "Enriched fields are not applicable in OSI model."
+    "disabledEnrich": "Enriched fields are not applicable in OSI model.",
+    "lambdaConcurrency": "AWS Lambda concurrency",
+    "configConcurrency": "Lambda concurrency config",
+    "configConcurrencyDesc": "Edit concurrency which can not exceed unreserved account concurrency amount. <0>Configuring reserved concurrency</0>. By default 0 means no limitation of in-flight requests that your function is currently handling.",
+    "accountConcurrency": "Unreserved account concurrency: ",
+    "concurrencyRequiredError": "Please input concurrency",
+    "concurrencyMinError": "The unreserved account concurrency can't go below 100"
   },
   "seconds": "Seconds",
   "yes": "Yes",
@@ -335,7 +345,12 @@
     "filePathNotBegin": "File path must not begin with /(slash)",
     "filePathContainStar": "File path can only contain at most one *",
     "syslogParserError": "Please select a syslog parser",
-    "instanceAlreadyExists": "These instances of your choice have been added: "
+    "iisParserError": "Please select a IIS parser",
+    "multilineParserError": "Please select a multi-line parser",
+    "instanceAlreadyExists": "These instances of your choice have been added: ",
+    "inputTimeKeyFormat": "Please input time key format",
+    "overlappedPrefixWithS3Bucket": "The prefix entered must not overlap with the prefix in the event notification, please retype it",
+    "s3BucketCheckFailed": "Failed to detect S3 storage bucket, please check if it is correct"
   },
   "moreDetailsGoToCloudformation": "More details, please go to Cloudformation event",
   "page": "page",

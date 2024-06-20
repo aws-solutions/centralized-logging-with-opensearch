@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React from "react";
-import awsConfigArch from "assets/images/desc/awsConfigArch.png";
+import awsConfigArch from "assets/images/desc/awsConfigArch.webp";
 import ExtLink from "components/ExtLink";
 import { AWS_CONFIG_LOG_LINK } from "assets/js/const";
 import { useTranslation } from "react-i18next";

@@ -36,7 +36,13 @@ const OSIPipeline: React.FC = () => {
           </a>
         </div>
         <div className="gsui-help-link-item">
-          <a href={buildSolutionDocsLink("")} target="_blank" rel="noreferrer">
+          <a
+            href={buildSolutionDocsLink(
+              "/cost.html#log-processing-cost-amazon-opensearch"
+            )}
+            target="_blank"
+            rel="noreferrer"
+          >
             {t("info:osi.link2")}
           </a>
         </div>

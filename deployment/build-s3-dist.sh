@@ -79,6 +79,15 @@ sedi()
     sed -i $* 2>/dev/null || sed -i "" $*
 }
 
+t() {
+  # count elapsed time for a command
+  local start=$(date +%s)
+  $@
+  local exit_code=$?
+  echo >&2 "[$@] took ~$(($(date +%s)-${start})) seconds. exited with ${exit_code}"
+  return $exit_code
+}
+
 # use sed to perform token replacement
 # ex. do_replace myfile.json %%VERSION%% v1.1.1
 do_replace() 
@@ -91,7 +100,7 @@ do_replace()
 create_template_json() 
 {
     # Run 'cdk synth' to generate raw solution outputs
-    do_cmd npx cdk synth --output=$staging_dist_dir
+    t do_cmd npx cdk synth --output=$staging_dist_dir
 
     # Remove unnecessary output files
     do_cmd cd $staging_dist_dir
@@ -229,6 +238,8 @@ do_cmd mkdir -p $build_dist_dir
 do_cmd rm -rf $staging_dist_dir
 do_cmd mkdir -p $staging_dist_dir
 
+echo "{\"version\": \"$VERSION\"}" > $template_dist_dir/version
+
 echo "------------------------------------------------------------------------------"
 echo "${bold}[Init] Install dependencies for the cdk-solution-helper${normal}"
 echo "------------------------------------------------------------------------------"
@@ -261,11 +272,11 @@ echo "--------------------------------------------------------------------------
 # Note: do not install using global (-g) option. This makes build-s3-dist.sh difficult
 # for customers and developers to use, as it globally changes their environment.
 do_cmd cd $source_dir/constructs
-do_cmd npm install
+t do_cmd npm install
 
 # Add local install to PATH
 export PATH=$(npm bin):$PATH
-do_cmd npm run build       # build javascript from typescript to validate the code
+t do_cmd npm run build       # build javascript from typescript to validate the code
                            # cdk synth doesn't always detect issues in the typescript
                            # and may succeed using old build files. This ensures we
                            # have fresh javascript from a successful build
@@ -276,7 +287,7 @@ echo "${bold}[Create] Templates${normal}"
 echo "------------------------------------------------------------------------------"
 
 if fn_exists create_template_${template_format}; then
-    create_template_${template_format}
+    t create_template_${template_format}
 else
     echo "Invalid setting for \$template_format: $template_format"
     exit 255

@@ -364,14 +364,12 @@ const LineChart: React.FC<LinChartProps> = (props: LinChartProps) => {
           <LoadingText />
         </div>
       )}
-      <>
-        <div className="chart-unit">{yAxisUnit}</div>
-        <Chart
-          options={chartModalOptions}
-          height={250}
-          series={chartModalSeries}
-        />
-      </>
+      <div className="chart-unit">{yAxisUnit}</div>
+      <Chart
+        options={chartModalOptions}
+        height={250}
+        series={chartModalSeries}
+      />
     </div>
   );
 };

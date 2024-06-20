@@ -239,6 +239,8 @@ export enum LogType {
   Syslog = "Syslog",
   SingleLineText = "SingleLineText",
   MultiLineText = "MultiLineText",
+  WindowsEvent = "WindowsEvent",
+  IIS = "IIS",
 }
 
 
@@ -252,6 +254,13 @@ export enum SyslogParser {
 export enum MultiLineLogParser {
   JAVA_SPRING_BOOT = "JAVA_SPRING_BOOT",
   CUSTOM = "CUSTOM",
+}
+
+
+export enum IISlogParser {
+  W3C = "W3C",
+  IIS = "IIS",
+  NCSA = "NCSA",
 }
 
 
@@ -344,6 +353,12 @@ export type LightEngineParameterInput = {
   recipients?: string | null,
 };
 
+export enum LogStructure {
+  RAW = "RAW",
+  FLUENT_BIT_PARSED_JSON = "FLUENT_BIT_PARSED_JSON",
+}
+
+
 export enum LogSourceType {
   EC2 = "EC2",
   S3 = "S3",
@@ -368,6 +383,7 @@ export enum EC2GroupType {
 
 export enum EC2GroupPlatform {
   Linux = "Linux",
+  Windows = "Windows",
 }
 
 
@@ -725,6 +741,7 @@ export type LogConfig = {
   logType?: LogType | null,
   syslogParser?: SyslogParser | null,
   multilineLogParser?: MultiLineLogParser | null,
+  iisLogParser?: IISlogParser | null,
   filterConfigMap?: ProcessorFilterRegex | null,
   regex?: string | null,
   jsonSchema?: string | null,
@@ -767,9 +784,8 @@ export type AppPipeline = {
   pipelineId: string,
   bufferType?: BufferType | null,
   bufferParams?:  Array<BufferParameter | null > | null,
+  parameters?:  Array<Parameter | null > | null,
   aosParams?: AOSParameter | null,
-  osiPipelineName?: string | null,
-  osiParams?: OpenSearchIngestionParams | null,
   lightEngineParams?: LightEngineParameter | null,
   createdAt?: string | null,
   status?: PipelineStatus | null,
@@ -784,11 +800,14 @@ export type AppPipeline = {
   helperLogGroupName?: string | null,
   logEventQueueName?: string | null,
   monitor?: MonitorDetail | null,
+  osiParams?: OpenSearchIngestionParams | null,
+  osiPipelineName?: string | null,
   minCapacity?: number | null,
   maxCapacity?: number | null,
   stackId?: string | null,
   error?: string | null,
   engineType?: AnalyticEngineType | null,
+  logStructure?: LogStructure | null,
   tags?:  Array<Tag | null > | null,
 };
 
@@ -866,6 +885,7 @@ export type Instance = {
   __typename: "Instance",
   id: string,
   platformName?: string | null,
+  platformType?: string | null,
   ipAddress?: string | null,
   computerName?: string | null,
   name?: string | null,
@@ -982,6 +1002,9 @@ export type SubAccountLink = {
   subAccountRoleArn?: string | null,
   agentInstallDoc?: string | null,
   agentConfDoc?: string | null,
+  windowsAgentInstallDoc?: string | null,
+  windowsAgentConfDoc?: string | null,
+  agentStatusCheckDoc?: string | null,
   subAccountBucketName?: string | null,
   subAccountStackId?: string | null,
   subAccountKMSKeyArn?: string | null,
@@ -1150,6 +1173,7 @@ export type DomainStatusCheckResponse = {
 export enum DomainStatusCheckType {
   FAILED = "FAILED",
   PASSED = "PASSED",
+  WARNING = "WARNING",
   CHECKING = "CHECKING",
   NOT_STARTED = "NOT_STARTED",
 }
@@ -1321,6 +1345,7 @@ export type CreateServicePipelineMutationVariables = {
   destinationType: DestinationType,
   osiParams?: OpenSearchIngestionInput | null,
   monitor?: MonitorInput | null,
+  logProcessorConcurrency: string,
 };
 
 export type CreateServicePipelineMutation = {
@@ -1431,7 +1456,7 @@ export type PutResourceLogConfigMutationVariables = {
 
 export type PutResourceLogConfigMutation = {
   // Add logging configuration to resources.
-  // ### Log Format is only requried if the format can be customized.
+  // Log Format is only requried if the format can be customized.
   putResourceLogConfig?:  {
     __typename: "ResourceLogConf",
     destinationType: DestinationType,
@@ -1447,6 +1472,7 @@ export type CreateLogConfigMutationVariables = {
   logType: LogType,
   syslogParser?: SyslogParser | null,
   multilineLogParser?: MultiLineLogParser | null,
+  iisLogParser?: IISlogParser | null,
   filterConfigMap?: ProcessorFilterRegexInput | null,
   regex?: string | null,
   jsonSchema?: string | null,
@@ -1460,7 +1486,7 @@ export type CreateLogConfigMutationVariables = {
 
 export type CreateLogConfigMutation = {
   // *The following belongs to applog* #
-  // ### Create a logging conf v2
+  // Create a logging conf v2
   createLogConfig?: string | null,
 };
 
@@ -1480,6 +1506,7 @@ export type UpdateLogConfigMutationVariables = {
   logType: LogType,
   syslogParser?: SyslogParser | null,
   multilineLogParser?: MultiLineLogParser | null,
+  iisLogParser?: IISlogParser | null,
   filterConfigMap?: ProcessorFilterRegexInput | null,
   regex?: string | null,
   jsonSchema?: string | null,
@@ -1499,6 +1526,7 @@ export type UpdateLogConfigMutation = {
 export type CreateAppPipelineMutationVariables = {
   bufferType: BufferType,
   bufferParams?: Array< BufferInput | null > | null,
+  parameters?: Array< ParameterInput | null > | null,
   aosParams: AOSParameterInput,
   logConfigId: string,
   logConfigVersionNumber: number,
@@ -1506,6 +1534,7 @@ export type CreateAppPipelineMutationVariables = {
   force?: boolean | null,
   osiParams?: OpenSearchIngestionInput | null,
   tags?: Array< TagInput | null > | null,
+  logProcessorConcurrency: string,
 };
 
 export type CreateAppPipelineMutation = {
@@ -1520,6 +1549,7 @@ export type CreateLightEngineAppPipelineMutationVariables = {
   monitor?: MonitorInput | null,
   force?: boolean | null,
   tags?: Array< TagInput | null > | null,
+  logStructure?: LogStructure | null,
 };
 
 export type CreateLightEngineAppPipelineMutation = {
@@ -1620,6 +1650,9 @@ export type CreateSubAccountLinkMutationVariables = {
   subAccountRoleArn: string,
   agentInstallDoc: string,
   agentConfDoc: string,
+  windowsAgentInstallDoc: string,
+  windowsAgentConfDoc: string,
+  agentStatusCheckDoc: string,
   subAccountBucketName: string,
   subAccountStackId: string,
   subAccountKMSKeyArn: string,
@@ -1630,7 +1663,7 @@ export type CreateSubAccountLinkMutationVariables = {
 
 export type CreateSubAccountLinkMutation = {
   // *The following belongs to cross account* #
-  // ### Create a new cross account link
+  // Create a new cross account link
   createSubAccountLink?: string | null,
 };
 
@@ -1638,6 +1671,10 @@ export type UpdateSubAccountLinkMutationVariables = {
   subAccountId: string,
   region?: string | null,
   subAccountFlbConfUploadingEventTopicArn: string,
+  windowsAgentInstallDoc: string,
+  windowsAgentConfDoc: string,
+  agentStatusCheckDoc: string,
+  agentInstallDoc: string,
 };
 
 export type UpdateSubAccountLinkMutation = {
@@ -1717,6 +1754,10 @@ export type DeleteGrafanaMutationVariables = {
 
 export type DeleteGrafanaMutation = {
   deleteGrafana?: string | null,
+};
+
+export type LatestVersionQuery = {
+  latestVersion: string,
 };
 
 export type ListDomainNamesQueryVariables = {
@@ -2102,6 +2143,7 @@ export type ListLogConfigsQuery = {
       logType?: LogType | null,
       syslogParser?: SyslogParser | null,
       multilineLogParser?: MultiLineLogParser | null,
+      iisLogParser?: IISlogParser | null,
       filterConfigMap?:  {
         __typename: "ProcessorFilterRegex",
         enabled?: boolean | null,
@@ -2146,6 +2188,7 @@ export type GetLogConfigQuery = {
     logType?: LogType | null,
     syslogParser?: SyslogParser | null,
     multilineLogParser?: MultiLineLogParser | null,
+    iisLogParser?: IISlogParser | null,
     filterConfigMap?:  {
       __typename: "ProcessorFilterRegex",
       enabled?: boolean | null,
@@ -2190,6 +2233,11 @@ export type ListAppPipelinesQuery = {
         paramKey?: string | null,
         paramValue?: string | null,
       } | null > | null,
+      parameters?:  Array< {
+        __typename: "Parameter",
+        parameterKey?: string | null,
+        parameterValue?: string | null,
+      } | null > | null,
       aosParams?:  {
         __typename: "AOSParameter",
         opensearchArn?: string | null,
@@ -2205,12 +2253,6 @@ export type ListAppPipelinesQuery = {
         shardNumbers?: number | null,
         replicaNumbers?: number | null,
         engine?: EngineType | null,
-      } | null,
-      osiPipelineName?: string | null,
-      osiParams?:  {
-        __typename: "OpenSearchIngestionParams",
-        minCapacity?: number | null,
-        maxCapacity?: number | null,
       } | null,
       lightEngineParams?:  {
         __typename: "LightEngineParameter",
@@ -2242,6 +2284,7 @@ export type ListAppPipelinesQuery = {
         logType?: LogType | null,
         syslogParser?: SyslogParser | null,
         multilineLogParser?: MultiLineLogParser | null,
+        iisLogParser?: IISlogParser | null,
         filterConfigMap?:  {
           __typename: "ProcessorFilterRegex",
           enabled?: boolean | null,
@@ -2283,11 +2326,18 @@ export type ListAppPipelinesQuery = {
         snsTopicArn?: string | null,
         emails?: string | null,
       } | null,
+      osiParams?:  {
+        __typename: "OpenSearchIngestionParams",
+        minCapacity?: number | null,
+        maxCapacity?: number | null,
+      } | null,
+      osiPipelineName?: string | null,
       minCapacity?: number | null,
       maxCapacity?: number | null,
       stackId?: string | null,
       error?: string | null,
       engineType?: AnalyticEngineType | null,
+      logStructure?: LogStructure | null,
       tags?:  Array< {
         __typename: "Tag",
         key?: string | null,
@@ -2313,6 +2363,11 @@ export type GetAppPipelineQuery = {
       paramKey?: string | null,
       paramValue?: string | null,
     } | null > | null,
+    parameters?:  Array< {
+      __typename: "Parameter",
+      parameterKey?: string | null,
+      parameterValue?: string | null,
+    } | null > | null,
     aosParams?:  {
       __typename: "AOSParameter",
       opensearchArn?: string | null,
@@ -2328,12 +2383,6 @@ export type GetAppPipelineQuery = {
       shardNumbers?: number | null,
       replicaNumbers?: number | null,
       engine?: EngineType | null,
-    } | null,
-    osiPipelineName?: string | null,
-    osiParams?:  {
-      __typename: "OpenSearchIngestionParams",
-      minCapacity?: number | null,
-      maxCapacity?: number | null,
     } | null,
     lightEngineParams?:  {
       __typename: "LightEngineParameter",
@@ -2365,6 +2414,7 @@ export type GetAppPipelineQuery = {
       logType?: LogType | null,
       syslogParser?: SyslogParser | null,
       multilineLogParser?: MultiLineLogParser | null,
+      iisLogParser?: IISlogParser | null,
       filterConfigMap?:  {
         __typename: "ProcessorFilterRegex",
         enabled?: boolean | null,
@@ -2406,11 +2456,18 @@ export type GetAppPipelineQuery = {
       snsTopicArn?: string | null,
       emails?: string | null,
     } | null,
+    osiParams?:  {
+      __typename: "OpenSearchIngestionParams",
+      minCapacity?: number | null,
+      maxCapacity?: number | null,
+    } | null,
+    osiPipelineName?: string | null,
     minCapacity?: number | null,
     maxCapacity?: number | null,
     stackId?: string | null,
     error?: string | null,
     engineType?: AnalyticEngineType | null,
+    logStructure?: LogStructure | null,
     tags?:  Array< {
       __typename: "Tag",
       key?: string | null,
@@ -2529,6 +2586,7 @@ export type ListInstancesQueryVariables = {
   tags?: Array< TagFilterInput | null > | null,
   region?: string | null,
   accountId?: string | null,
+  platformType?: EC2GroupPlatform | null,
 };
 
 export type ListInstancesQuery = {
@@ -2539,6 +2597,7 @@ export type ListInstancesQuery = {
       __typename: "Instance",
       id: string,
       platformName?: string | null,
+      platformType?: string | null,
       ipAddress?: string | null,
       computerName?: string | null,
       name?: string | null,
@@ -2759,6 +2818,9 @@ export type ListSubAccountLinksQuery = {
       subAccountRoleArn?: string | null,
       agentInstallDoc?: string | null,
       agentConfDoc?: string | null,
+      windowsAgentInstallDoc?: string | null,
+      windowsAgentConfDoc?: string | null,
+      agentStatusCheckDoc?: string | null,
       subAccountBucketName?: string | null,
       subAccountStackId?: string | null,
       subAccountKMSKeyArn?: string | null,
@@ -2794,6 +2856,9 @@ export type GetSubAccountLinkQuery = {
     subAccountRoleArn?: string | null,
     agentInstallDoc?: string | null,
     agentConfDoc?: string | null,
+    windowsAgentInstallDoc?: string | null,
+    windowsAgentConfDoc?: string | null,
+    agentStatusCheckDoc?: string | null,
     subAccountBucketName?: string | null,
     subAccountStackId?: string | null,
     subAccountKMSKeyArn?: string | null,
@@ -2944,6 +3009,11 @@ export type DomainStatusCheckQuery = {
 export type CheckOSIAvailabilityQuery = {
   // Check if OSI is available in the current region
   checkOSIAvailability?: boolean | null,
+};
+
+export type GetAccountUnreservedConurrencyQuery = {
+  // Get account unreserved concurrency limit
+  getAccountUnreservedConurrency?: number | null,
 };
 
 export type ListGrafanasQueryVariables = {

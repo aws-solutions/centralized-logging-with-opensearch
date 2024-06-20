@@ -72,6 +72,7 @@ export class AuthStack extends Construct {
       accessTokenValidity: Duration.minutes(15),
       idTokenValidity: Duration.minutes(15),
       preventUserExistenceErrors: true,
+      refreshTokenValidity: Duration.days(1),
     });
 
     // Create an Admin User

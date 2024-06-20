@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import { EC2GroupType } from "API";
+import { defaultStr } from "assets/js/utils";
 import Tiles from "components/Tiles";
 import React from "react";
 import { useTranslation } from "react-i18next";
@@ -28,26 +29,24 @@ const SelectType: React.FC<SelectTypeProps> = (props: SelectTypeProps) => {
   const { t } = useTranslation();
   return (
     <div className="instance-group-select">
-      <>
-        <Tiles
-          value={groupType || ""}
-          onChange={(event) => {
-            changeGroupType(event.target.value);
-          }}
-          items={[
-            {
-              label: t("resource:group.instances"),
-              description: t("resource:group.instancesDesc"),
-              value: EC2GroupType.EC2,
-            },
-            {
-              label: t("resource:group.asgs"),
-              description: t("resource:group.asgsDesc"),
-              value: EC2GroupType.ASG,
-            },
-          ]}
-        />
-      </>
+      <Tiles
+        value={defaultStr(groupType)}
+        onChange={(event) => {
+          changeGroupType(event.target.value);
+        }}
+        items={[
+          {
+            label: t("resource:group.instances"),
+            description: t("resource:group.instancesDesc"),
+            value: EC2GroupType.EC2,
+          },
+          {
+            label: t("resource:group.asgs"),
+            description: t("resource:group.asgsDesc"),
+            value: EC2GroupType.ASG,
+          },
+        ]}
+      />
     </div>
   );
 };

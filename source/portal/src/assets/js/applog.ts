@@ -80,47 +80,6 @@ export interface ConfigValidateType {
   showSampleLogInvalidError: boolean;
 }
 
-export const checkConfigInput = (
-  curLogConfig: ExLogConf | undefined
-): ConfigValidateType => {
-  let logConfigNameError = false;
-  let logConfigTypeError = false;
-  let showSampleLogRequiredError = false;
-  let showRegexLogParseError = false;
-  const showUserLogFormatError = false;
-  const showSampleLogInvalidError = false;
-
-  if (!curLogConfig?.name?.trim()) {
-    logConfigNameError = true;
-  }
-
-  if (!curLogConfig?.logType) {
-    logConfigTypeError = true;
-  }
-
-  if (
-    curLogConfig?.logType === LogType.MultiLineText ||
-    curLogConfig?.logType === LogType.SingleLineText
-  ) {
-    if (!curLogConfig.userSampleLog?.trim()) {
-      showSampleLogRequiredError = true;
-    }
-
-    if (!curLogConfig?.regexKeyList || curLogConfig?.regexKeyList.length <= 0) {
-      showRegexLogParseError = true;
-    }
-  }
-
-  return {
-    logConfigNameError,
-    logConfigTypeError,
-    showSampleLogRequiredError,
-    showRegexLogParseError,
-    showUserLogFormatError,
-    showSampleLogInvalidError,
-  };
-};
-
 export const removeNewLineBreack = (curLogConfig: ExLogConf): ExLogConf => {
   if (
     curLogConfig?.logType === LogType.MultiLineText ||

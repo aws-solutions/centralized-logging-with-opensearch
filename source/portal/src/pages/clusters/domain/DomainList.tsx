@@ -20,15 +20,12 @@ import Pagination from "@material-ui/lab/Pagination";
 import Button from "components/Button";
 import { TablePanel } from "components/TablePanel";
 import Status from "components/Status/Status";
-import Breadcrumb from "components/Breadcrumb";
 import { SelectType } from "components/TablePanel/tablePanel";
 import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
 import { getDomainDetails, listImportedDomains } from "graphql/queries";
 import { removeDomain } from "graphql/mutations";
 import { DomainRelevantResource, ImportedDomain } from "API";
 import Modal from "components/Modal";
-import HelpPanel from "components/HelpPanel";
-import SideMenu from "components/SideMenu";
 import { useTranslation } from "react-i18next";
 import Alert from "components/Alert";
 import { AlertType } from "components/Alert/alert";
@@ -40,11 +37,13 @@ import {
   buildRouteTableLink,
   buildSGLink,
   buildVPCPeeringLink,
+  defaultStr,
   humanFileSize,
 } from "assets/js/utils";
 import { handleErrorMessage } from "assets/js/alert";
 import { RootState } from "reducer/reducers";
 import ButtonRefresh from "components/ButtonRefresh";
+import CommonLayout from "pages/layout/CommonLayout";
 
 interface ResourceListType {
   name: string;
@@ -173,7 +172,7 @@ const ESDomainList: React.FC = () => {
       setLoadingDelete(true);
       const resData = await appSyncRequestMutation(removeDomain, {
         id: curTipsDomain?.id,
-        isReverseConf: reverseOrKeep === "reverse" ? true : false,
+        isReverseConf: reverseOrKeep === "reverse",
       });
       console.info("removeRes:", resData);
       const _domainRelevantResources: DomainRelevantResource[] =
@@ -232,7 +231,7 @@ const ESDomainList: React.FC = () => {
   };
 
   const renderDomainStatus = (data: ImportedDomain) => {
-    return <Status status={data.metrics?.health || "-"} />;
+    return <Status status={defaultStr(data.metrics?.health)} />;
   };
 
   const renderResourceList = (data: ResourceListType) => {
@@ -261,216 +260,205 @@ const ESDomainList: React.FC = () => {
   };
 
   return (
-    <div className="lh-main-content">
-      <SideMenu />
-      <div className="lh-container">
-        <div className="lh-content">
-          <div className="service-log">
-            <Breadcrumb list={breadCrumbList} />
-            <div className="table-data">
-              <TablePanel
-                trackId="domainName"
-                title={t("cluster:domain.domains")}
-                selectType={SelectType.RADIO}
-                loading={loadingData}
-                changeSelected={(items: any) => {
-                  setSelectedDomains(items);
+    <CommonLayout breadCrumbList={breadCrumbList}>
+      <div className="table-data">
+        <TablePanel
+          trackId="domainName"
+          title={t("cluster:domain.domains")}
+          selectType={SelectType.RADIO}
+          loading={loadingData}
+          changeSelected={(items: any) => {
+            setSelectedDomains(items);
+          }}
+          columnDefinitions={[
+            {
+              id: "domainName",
+              header: t("cluster:domain.domainName"),
+              cell: (e: ImportedDomain) => renderDomainName(e),
+            },
+            {
+              id: "esVersion",
+              header: t("cluster:domain.version"),
+              cell: (e: ImportedDomain) => `${e.engine}_${e.version}`,
+            },
+            {
+              id: "searchableDocs",
+              header: t("cluster:domain.searchDocs"),
+              cell: (e: ImportedDomain) => e.metrics?.searchableDocs,
+            },
+            {
+              id: "freeSpace",
+              header: t("cluster:domain.freeSpace"),
+              cell: (e: ImportedDomain) =>
+                humanFileSize((e.metrics?.freeStorageSpace ?? 0) * 1024 * 1024),
+            },
+            {
+              id: "health",
+              header: t("cluster:domain.health"),
+              cell: (e: ImportedDomain) => renderDomainStatus(e),
+            },
+          ]}
+          items={domainList}
+          actions={
+            <div>
+              <Button
+                disabled={loadingData}
+                btnType="icon"
+                onClick={() => {
+                  getImportedESDomainList();
                 }}
-                columnDefinitions={[
-                  {
-                    id: "domainName",
-                    header: t("cluster:domain.domainName"),
-                    cell: (e: ImportedDomain) => renderDomainName(e),
-                  },
-                  {
-                    id: "esVersion",
-                    header: t("cluster:domain.version"),
-                    cell: (e: ImportedDomain) => `${e.engine}_${e.version}`,
-                  },
-                  {
-                    id: "searchableDocs",
-                    header: t("cluster:domain.searchDocs"),
-                    cell: (e: ImportedDomain) => e.metrics?.searchableDocs,
-                  },
-                  {
-                    id: "freeSpace",
-                    header: t("cluster:domain.freeSpace"),
-                    cell: (e: ImportedDomain) =>
-                      humanFileSize(
-                        (e.metrics?.freeStorageSpace || 0) * 1024 * 1024
-                      ),
-                  },
-                  {
-                    id: "health",
-                    header: t("cluster:domain.health"),
-                    cell: (e: ImportedDomain) => renderDomainStatus(e),
-                  },
-                ]}
-                items={domainList}
-                actions={
-                  <div>
-                    <Button
-                      disabled={loadingData}
-                      btnType="icon"
-                      onClick={() => {
-                        getImportedESDomainList();
-                      }}
-                    >
-                      <ButtonRefresh loading={loadingData} />
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        clickToReviewDetail();
-                      }}
-                      disabled={disabledDetail}
-                    >
-                      {t("button.viewDetail")}
-                    </Button>
-                    <Button
-                      disabled={disabledDelete}
-                      onClick={() => {
-                        removeImportDomain();
-                      }}
-                    >
-                      {t("button.remove")}
-                    </Button>
-                    <Button
-                      btnType="primary"
-                      onClick={() => {
-                        navigate("/clusters/import-opensearch-cluster");
-                      }}
-                    >
-                      {t("button.importDomain")}
-                    </Button>
-                  </div>
-                }
-                pagination={<Pagination count={1} size="small" />}
-              />
-            </div>
-          </div>
-          <Modal
-            title={t("cluster:domain.remove")}
-            width={600}
-            fullWidth={false}
-            isOpen={openDeleteModel}
-            closeModal={() => {
-              setOpenDeleteModel(false);
-            }}
-            actions={
-              <div className="button-action no-pb text-right">
-                {!removeCancel && (
-                  <Button
-                    disabled={loadingDelete}
-                    btnType="text"
-                    onClick={() => {
-                      setOpenDeleteModel(false);
-                    }}
-                  >
-                    {t("button.cancel")}
-                  </Button>
-                )}
-                <Button
-                  loading={loadingDelete}
-                  btnType="primary"
-                  disabled={
-                    selectedDomains.length === 1 && reverseOrKeep === "unset"
-                  }
-                  onClick={() => {
-                    if (!removeCancel) {
-                      confirmRemoveImportDomain();
-                    } else {
-                      setOpenDeleteModel(false);
-                    }
-                  }}
-                >
-                  {removeCancel ? t("button.close") : t("button.remove")}
-                </Button>
-              </div>
-            }
-          >
-            <div className="modal-content">
-              <Alert
-                type={AlertType.Warning}
-                content={t("cluster:domain.removeTips")}
-              />
-              <TablePanel
-                trackId="name"
-                hideFilterAndPagination
-                title=""
-                loading={loadingResources}
-                selectType={SelectType.NONE}
-                changeSelected={(items: any) => {
-                  console.info("items:", items);
+              >
+                <ButtonRefresh loading={loadingData} />
+              </Button>
+              <Button
+                onClick={() => {
+                  clickToReviewDetail();
                 }}
-                columnDefinitions={[
-                  {
-                    id: "resourceName",
-                    header: t("cluster:domain.resourceName"),
-                    cell: (e: ResourceListType) => {
-                      const mappedName = resourceNameMap[e.name] || e.name;
-                      return mappedName;
-                    },
-                  },
-                  {
-                    id: "resourceId",
-                    header: t("cluster:domain.resourceID"),
-                    cell: (e: ResourceListType) => renderResourceList(e),
-                  },
-                  {
-                    id: "status",
-                    header: t("cluster:domain.status"),
-                    cell: (e: ResourceListType) => renderResourceStatus(e),
-                  },
-                ]}
-                items={domainRelatedResources || []}
-                actions={<></>}
-                pagination={<></>}
-              />
-              {removeErrorMessage && (
-                <div className="mt-20 error-message">
-                  <Alert
-                    type={AlertType.Error}
-                    content={t("cluster:domain.removeErrorMessage", {
-                      removeErrorMessage: removeErrorMessage,
-                    })}
-                  ></Alert>
-                </div>
-              )}
-              <div className="mt-10">
-                {/* For old version (v1.x), not allow customer to choose reverse changes */}
-                {!removeCancel && domainRelatedResources && (
-                  <div key="reverse">
-                    <label>
-                      <input
-                        type="radio"
-                        value="reverse"
-                        checked={reverseOrKeep === "reverse"}
-                        onChange={handleReverseChange}
-                      />
-                      &nbsp;{t("cluster:domain.chooseReverse")}
-                    </label>
-                  </div>
-                )}
-                {!removeCancel && (
-                  <div key="keep">
-                    <label>
-                      <input
-                        type="radio"
-                        value="keep"
-                        checked={reverseOrKeep === "keep"}
-                        onChange={handleReverseChange}
-                      />
-                      &nbsp;{t("cluster:domain.chooseKeep")}
-                    </label>
-                  </div>
-                )}
-              </div>
+                disabled={disabledDetail}
+              >
+                {t("button.viewDetail")}
+              </Button>
+              <Button
+                disabled={disabledDelete}
+                onClick={() => {
+                  removeImportDomain();
+                }}
+              >
+                {t("button.remove")}
+              </Button>
+              <Button
+                btnType="primary"
+                onClick={() => {
+                  navigate("/clusters/import-opensearch-cluster");
+                }}
+              >
+                {t("button.importDomain")}
+              </Button>
             </div>
-          </Modal>
-        </div>
+          }
+          pagination={<Pagination count={1} size="small" />}
+        />
       </div>
-      <HelpPanel />
-    </div>
+      <Modal
+        title={t("cluster:domain.remove")}
+        width={600}
+        fullWidth={false}
+        isOpen={openDeleteModel}
+        closeModal={() => {
+          setOpenDeleteModel(false);
+        }}
+        actions={
+          <div className="button-action no-pb text-right">
+            {!removeCancel && (
+              <Button
+                disabled={loadingDelete}
+                btnType="text"
+                onClick={() => {
+                  setOpenDeleteModel(false);
+                }}
+              >
+                {t("button.cancel")}
+              </Button>
+            )}
+            <Button
+              loading={loadingDelete}
+              btnType="primary"
+              disabled={
+                selectedDomains.length === 1 && reverseOrKeep === "unset"
+              }
+              onClick={() => {
+                if (!removeCancel) {
+                  confirmRemoveImportDomain();
+                } else {
+                  setOpenDeleteModel(false);
+                }
+              }}
+            >
+              {removeCancel ? t("button.close") : t("button.remove")}
+            </Button>
+          </div>
+        }
+      >
+        <div className="modal-content">
+          <Alert
+            type={AlertType.Warning}
+            content={t("cluster:domain.removeTips")}
+          />
+          <TablePanel
+            trackId="name"
+            hideFilterAndPagination
+            title=""
+            loading={loadingResources}
+            selectType={SelectType.NONE}
+            changeSelected={(items: any) => {
+              console.info("items:", items);
+            }}
+            columnDefinitions={[
+              {
+                id: "resourceName",
+                header: t("cluster:domain.resourceName"),
+                cell: (e: ResourceListType) => {
+                  const mappedName = resourceNameMap[e.name] || e.name;
+                  return mappedName;
+                },
+              },
+              {
+                id: "resourceId",
+                header: t("cluster:domain.resourceID"),
+                cell: (e: ResourceListType) => renderResourceList(e),
+              },
+              {
+                id: "status",
+                header: t("cluster:domain.status"),
+                cell: (e: ResourceListType) => renderResourceStatus(e),
+              },
+            ]}
+            items={domainRelatedResources || []}
+            actions={<></>}
+            pagination={<></>}
+          />
+          {removeErrorMessage && (
+            <div className="mt-20 error-message">
+              <Alert
+                type={AlertType.Error}
+                content={t("cluster:domain.removeErrorMessage", {
+                  removeErrorMessage: removeErrorMessage,
+                })}
+              ></Alert>
+            </div>
+          )}
+          <div className="mt-10">
+            {/* For old version (v1.x), not allow customer to choose reverse changes */}
+            {!removeCancel && domainRelatedResources && (
+              <div key="reverse">
+                <label>
+                  <input
+                    type="radio"
+                    value="reverse"
+                    checked={reverseOrKeep === "reverse"}
+                    onChange={handleReverseChange}
+                  />
+                  &nbsp;{t("cluster:domain.chooseReverse")}
+                </label>
+              </div>
+            )}
+            {!removeCancel && (
+              <div key="keep">
+                <label>
+                  <input
+                    type="radio"
+                    value="keep"
+                    checked={reverseOrKeep === "keep"}
+                    onChange={handleReverseChange}
+                  />
+                  &nbsp;{t("cluster:domain.chooseKeep")}
+                </label>
+              </div>
+            )}
+          </div>
+        </div>
+      </Modal>
+    </CommonLayout>
   );
 };
 

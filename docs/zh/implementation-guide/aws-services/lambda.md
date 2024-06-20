@@ -21,7 +21,7 @@ AWS Lambda 会代表您自动监控 Lambda 函数并将函数指标发送到 Ama
 9. 如果您想要加载关联的模板 Amazon OpenSearch 服务仪表板，请选择 **是**。
 10. 如果需要，您可以更改目标 Amazon OpenSearch 服务索引的 **索引前缀**。默认前缀是 Lambda 函数名称。
 11. 在 **日志生命周期** 部分，输入用于管理 Amazon OpenSearch 服务索引生命周期的天数。集中式日志功能将为此管道自动创建关联的 [索引状态管理 (ISM)](https://opensearch.org/docs/latest/im-plugin/ism/index/) 策略。
-12. 选择 **下一步**。
+12. 在 **日志处理器设置** 中，选择 **日志处理器类型**，并根据需要配置 Lambda 并发数，然后 **下一步**。
 13. 如有需要，添加标签。
 14. 选择 **创建**。
 

@@ -6,9 +6,12 @@ import sys
 import copy
 import uuid
 import json
+import gzip
+import base64
 import types
 import collections
 import pytest
+from decimal import Decimal
 from pytest_httpserver import HTTPServer
 from test.mock import mock_s3_context, mock_iam_context, mock_ddb_context, mock_glue_context, mock_sqs_context, mock_iam_context, mock_scheduler_context, mock_events_context, mock_sns_context, mock_sts_context, default_environment_variables
 
@@ -23,8 +26,16 @@ class TestParameter:
         
         AWS_DDB_META = MetaTable()
         
+        centralized_bucket_name = os.environ["CENTRALIZED_BUCKET_NAME"]
+        centralized_bucket_prefix = os.environ["CENTRALIZED_BUCKET_PREFIX"]
+        centralized_database = os.environ["CENTRALIZED_DATABASE"]
+        replication_sqs_arn = os.environ['REPLICATION_SQS_ARN']
+        replication_dlq_arn = os.environ['REPLICATION_DLQ_ARN']
+        replication_function_arn = os.environ["S3_OBJECTS_REPLICATION_FUNCTION_ARN"]
+        replication_role_arn = os.environ["S3_OBJECTS_REPLICATION_ROLE_ARN"] 
         waf_pipeline_id = os.environ["WAF_PIPELINE_ID"]
         waf_ingestion_id = os.environ["WAF_INGESTION_ID"]
+        waf_pipeline_info = AWS_DDB_META.get(meta_name=waf_pipeline_id)
 
         create_waf_pipeline_event = {'RequestType': 'Create', 'ResourceProperties': {'Resource': 'pipeline', 'Id': waf_pipeline_id}}
         create_waf_ingestion_event = {'RequestType': 'Create', 'ResourceProperties': {'Resource': 'ingestion', 'Id': waf_ingestion_id}}
@@ -49,12 +60,88 @@ class TestParameter:
             Parameters(event)
         assert exception_info.value.args[0] == f'Not supported Resource: {event["ResourceProperties"]["Resource"]}, supported: pipeline, ingestion'
         
-        event = copy.deepcopy(create_waf_pipeline_event)
+        pipeline_id = str(uuid.uuid4())
+        pipeline_info = copy.deepcopy(waf_pipeline_info)
+        pipeline_info.pop('type')
+        create_pipeline_event = {'RequestType': 'Create', 'ResourceProperties': {'Resource': 'pipeline', 'Id': pipeline_id, 'Item': pipeline_info}}
+        event = copy.deepcopy(create_pipeline_event)
         param = Parameters(event)
         
         assert isinstance(param.ddb_client_metadata, MetaTable) is True
-        assert param.policy_sid == waf_pipeline_id.replace('-', '')
-        assert param.pipeline_id == waf_pipeline_id
+        assert param.policy_sid == pipeline_id.replace('-', '')
+        assert param.pipeline_id == pipeline_id
+        
+        response = AWS_DDB_META.get(meta_name=pipeline_id)
+        assert response == {
+            'metaName': pipeline_id,
+            'data': {
+                'source': {
+                    'type': 'WAF',
+                    'table': {
+                        'schema': '{}',
+                        'dataFormat': '', 
+                        'tableProperties': '{}', 
+                        'serializationProperties': '{}', 
+                    },
+                },
+                'destination': {
+                    'location': {
+                        'bucket': centralized_bucket_name,
+                        'prefix': centralized_bucket_prefix,
+                    },
+                    'database': {
+                        'name': centralized_database,
+                    },
+                    'table': {
+                        'name': 'waf',
+                        'schema': '{}',
+                    },
+                    'metrics': {
+                        'name': '',
+                        'schema': '{}',
+                    },
+                },
+                'notification': {
+                    'service': 'SES',
+                    'recipients': 'alejandro_rosalez@example.com,alejandro_rosalez@example.org'
+                },
+                'grafana': {
+                    'importDashboards': 'false',
+                    'url': '',
+                    'token': '',
+                },
+                'scheduler': {
+                    'service': 'scheduler',
+                    'LogProcessor': {
+                        'schedule': 'rate(5 minutes)',
+                    },
+                    'LogMerger': {
+                        'schedule': 'cron(0 1 * * ? *)',
+                        'age': Decimal('3'),
+                    },
+                    'LogArchive': {
+                        'schedule': 'cron(0 2 * * ? *)',
+                        'age': Decimal('7'),
+                    },
+                },
+                'staging': {
+                    'prefix': 'AWSLogs/WAFLogs'
+                }
+            },
+            'type': 'Pipeline',
+            'stack': {
+                'lambda': {
+                    'replicate': replication_function_arn
+                },
+                'queue':{
+                    'logEventQueue': replication_sqs_arn,
+                    'logEventDLQ': replication_dlq_arn,
+                },
+                'role': {
+                    'replicate': replication_role_arn
+                }
+            }
+        }
         
         event = copy.deepcopy(create_waf_ingestion_event)
         param = Parameters(event)
@@ -93,6 +180,7 @@ class TestParameter:
         assert response['data']['source']['bucket'] == 'logging-bucket'
         assert response['data']['source']['prefix'] == '/AWSLogs/WAFLogs'
         assert response['pipelineId'] == waf_pipeline_id
+        assert response['type'] == 'Ingestion'
         
         ingestion_id = str(uuid.uuid4())
         create_ingestion_event = {
@@ -439,6 +527,121 @@ class TestParameter:
         assert destination.metrics.location.archive_uri == f"s3://{staging_bucket_name}/archive/{waf_pipeline_info['data']['destination']['location']['prefix']}/{waf_pipeline_info['data']['destination']['database']['name']}/{destination.metrics.name}"
         assert destination.enrichment_plugins == ['geo_ip', 'user_agent']
         
+        table_schema = {
+            'type': 'object',
+            'properties': {
+                'time': {
+                    'type': 'big_int',
+                    'expression': '''CAST(to_unixtime(from_iso8601_timestamp("time")) * 1000 AS bigint)''',
+                },
+                'timestamp': {
+                    'type': 'timestamp',
+                    'expression': '''from_iso8601_timestamp("time")''',
+                },
+                'type': {
+                    'type': 'string'
+                },
+                'elb': {
+                    'type': 'string',
+                    'partition': True
+                },
+                'client_ip': {
+                    'type': 'string'
+                },
+                'client_port': {
+                    'type': 'integer'
+                },
+                'target_ip': {
+                    'type': 'string'
+                },
+                'target_port': {
+                    'type': 'integer'
+                },
+                'event_hour': {
+                    'type': 'string',
+                    'partition': True,
+                    'expression': '''date_format(from_iso8601_timestamp("time"), '%Y%m%d%H')''',
+                },
+                '__execution_name__': {
+                    'type': 'string',
+                    'partition': True,
+                    'expression': "'{{}}'"
+                }
+            }
+        }
+        
+        metrics_schema = {
+            'type': 'object',
+            'properties': {
+                'time': {
+                    'type': 'big_int',
+                    'expression': '''FLOOR("time" / 60000) * 60000''',
+                },
+                'timestamp': {
+                    'type': 'timestamp',
+                    'expression': '''DATE_TRUNC('minute', "timestamp")'''
+                },
+                'type': {
+                    'type': 'string'
+                },
+                'request_host': {
+                    'type': 'string',
+                    'expression': '''url_extract_host("request_url")''',
+                },
+                'requests': {
+                    'type': 'big_int',
+                    'measure': True,
+                    'expression': '''CAST(COUNT(1) AS bigint)''',
+                },
+                'event_hour': {
+                    'type': 'string',
+                    'partition': True,
+                },
+                '__execution_name__': {
+                    'type': 'string',
+                    'partition': True,
+                }
+            }
+        }
+        
+        waf_pipeline_info_copy = copy.deepcopy(waf_pipeline_info)
+        waf_pipeline_info_copy['data']['destination']['table']['schema'] = base64.b64encode(gzip.compress(bytes(json.dumps(table_schema), encoding='utf-8'))).decode('utf-8')
+        waf_pipeline_info_copy['data']['destination']['metrics']['name'] = 'aws_waf_logs_metrics'
+        waf_pipeline_info_copy['data']['destination']['metrics']['schema'] = base64.b64encode(gzip.compress(bytes(json.dumps(metrics_schema), encoding='utf-8'))).decode('utf-8')
+        waf_pipeline_info_copy['data']['destination']['enrichmentPlugins'] = 'geo_ip,user_agent'
+        AWS_DDB_META.update(meta_name=waf_pipeline_id, item=waf_pipeline_info_copy)
+        
+        event = copy.deepcopy(create_waf_pipeline_event)
+        param = Parameters(event)
+        
+        destination = param._get_destination_info(info=waf_pipeline_info_copy['data']['destination'])
+        
+        assert destination.location.prefix == waf_pipeline_info['data']['destination']['location']['prefix']
+        assert destination.location.arn == f"arn:aws:s3:::{waf_pipeline_info['data']['destination']['location']['bucket']}"
+        assert destination.location.uri == f"s3://{waf_pipeline_info['data']['destination']['location']['bucket']}/{waf_pipeline_info['data']['destination']['location']['prefix']}"
+        assert destination.location.archive_uri == f"s3://{staging_bucket_name}/archive/{waf_pipeline_info['data']['destination']['location']['prefix']}"
+        assert destination.database.name == waf_pipeline_info['data']['destination']['database']['name']
+        assert destination.database.location.bucket == waf_pipeline_info['data']['destination']['location']['bucket']
+        assert destination.database.location.prefix == f"{waf_pipeline_info['data']['destination']['location']['prefix']}/{waf_pipeline_info['data']['destination']['database']['name']}"
+        assert destination.database.location.arn == f"arn:aws:s3:::{waf_pipeline_info['data']['destination']['location']['bucket']}"
+        assert destination.database.location.uri == f"s3://{waf_pipeline_info['data']['destination']['location']['bucket']}/{waf_pipeline_info['data']['destination']['location']['prefix']}/{waf_pipeline_info['data']['destination']['database']['name']}"
+        assert destination.database.location.archive_uri == f"s3://{staging_bucket_name}/archive/{waf_pipeline_info['data']['destination']['location']['prefix']}/{waf_pipeline_info['data']['destination']['database']['name']}"
+        assert destination.table.name == waf_pipeline_info['data']['destination']['table']['name']
+        assert destination.table.schema == table_schema
+        assert destination.table.location.bucket == waf_pipeline_info['data']['destination']['location']['bucket']
+        assert destination.table.location.prefix == f"{waf_pipeline_info['data']['destination']['location']['prefix']}/{waf_pipeline_info['data']['destination']['database']['name']}/{waf_pipeline_info['data']['destination']['table']['name']}"
+        assert destination.table.location.arn == f"arn:aws:s3:::{waf_pipeline_info['data']['destination']['location']['bucket']}"
+        assert destination.table.location.uri == f"s3://{waf_pipeline_info['data']['destination']['location']['bucket']}/{waf_pipeline_info['data']['destination']['location']['prefix']}/{waf_pipeline_info['data']['destination']['database']['name']}/{waf_pipeline_info['data']['destination']['table']['name']}"
+        assert destination.table.location.archive_uri == f"s3://{staging_bucket_name}/archive/{waf_pipeline_info['data']['destination']['location']['prefix']}/{waf_pipeline_info['data']['destination']['database']['name']}/{waf_pipeline_info['data']['destination']['table']['name']}"
+        assert destination.metrics.name =='aws_waf_logs_metrics'
+        assert destination.metrics.schema == metrics_schema
+        assert destination.metrics.location.bucket == waf_pipeline_info['data']['destination']['location']['bucket']
+        assert destination.metrics.location.prefix == f"{waf_pipeline_info['data']['destination']['location']['prefix']}/{waf_pipeline_info['data']['destination']['database']['name']}/{destination.metrics.name}"
+        assert destination.metrics.location.arn == f"arn:aws:s3:::{waf_pipeline_info['data']['destination']['location']['bucket']}"
+        assert destination.metrics.location.uri == f"s3://{waf_pipeline_info['data']['destination']['location']['bucket']}/{waf_pipeline_info['data']['destination']['location']['prefix']}/{waf_pipeline_info['data']['destination']['database']['name']}/{destination.metrics.name}"
+        assert destination.metrics.location.archive_uri == f"s3://{staging_bucket_name}/archive/{waf_pipeline_info['data']['destination']['location']['prefix']}/{waf_pipeline_info['data']['destination']['database']['name']}/{destination.metrics.name}"
+        assert destination.enrichment_plugins == ['geo_ip', 'user_agent']
+        
     def test_is_json_string(self, mock_s3_context, mock_iam_context, mock_sqs_context, mock_ddb_context):
         from pipeline_resources_builder.lambda_function import Parameters
         
@@ -455,11 +658,51 @@ class TestParameter:
         input_string = ""
         assert param._is_json_string(input_string=input_string) is False
         
+        input_string = None
+        assert param._is_json_string(input_string=input_string) is False # type: ignore
+        
         input_string = "{}"
         assert param._is_json_string(input_string=input_string) is True
         
         input_string = '{"key": "value"}'
         assert param._is_json_string(input_string=input_string) is True
+    
+    def test_parse_table_schema(self, mock_s3_context, mock_iam_context, mock_sqs_context, mock_ddb_context):
+        from pipeline_resources_builder.lambda_function import Parameters
+        
+        waf_pipeline_id = os.environ["WAF_PIPELINE_ID"]
+        
+        create_waf_pipeline_event = {'RequestType': 'Create', 'ResourceProperties': {'Resource': 'pipeline', 'Id': waf_pipeline_id}}
+        
+        event = copy.deepcopy(create_waf_pipeline_event)
+        param = Parameters(event)
+        
+        input_string = '{"key": "value"}'
+        assert param._parse_table_schema(input_string=input_string) == input_string
+        
+        input_string = base64.b64encode(gzip.compress(bytes('{"key": "value"}', encoding='utf-8'))).decode('utf-8')
+        assert param._parse_table_schema(input_string=input_string) == '{"key": "value"}'
+        
+        input_string = "not a json string"
+        with pytest.raises(Exception) as exception_info:
+            param._parse_table_schema(input_string=input_string)
+        assert exception_info.value.args[0] == f'{input_string} is not a valid JSON string.'
+        
+        input_string = ''
+        with pytest.raises(Exception) as exception_info:
+            param._parse_table_schema(input_string=input_string)
+        assert exception_info.value.args[0] == f'{input_string} is not a valid JSON string.'
+        
+        input_string = None
+        with pytest.raises(Exception) as exception_info:
+            param._parse_table_schema(input_string=input_string)
+        assert exception_info.value.args[0] == f'{input_string} is not a valid JSON string.'
+        
+        input_string = 'abc'
+        new_input_string = base64.b64encode(gzip.compress(bytes(input_string, encoding='utf-8'))).decode('utf-8')
+        with pytest.raises(Exception) as exception_info:
+            param._parse_table_schema(input_string=new_input_string)
+        assert exception_info.value.args[0] == f'{new_input_string} is not a valid JSON string.'
         
     def test_validate_source_table_attribute(self, mock_s3_context, mock_iam_context, mock_sqs_context, mock_ddb_context):
         from pipeline_resources_builder.lambda_function import Parameters, dataformat, MetaTable
@@ -476,143 +719,134 @@ class TestParameter:
         event = copy.deepcopy(create_waf_pipeline_event)
         param = Parameters(event)
         
-        table_info = {}
         for source_type in ('fluent-bit', 's3'):
-            result = param._validate_source_table_attribute(source_type=source_type, table_info=table_info)
-            assert result is False
-        
-        table_info = {
-            'schema': '',
-        }
-        for source_type in ('fluent-bit', 's3'):
-            result = param._validate_source_table_attribute(source_type=source_type, table_info=table_info)
-            assert result is False
-        
-        table_info = {
-            'schema': "{'key': 'value'}",
-        }
-        for source_type in ('fluent-bit', 's3'):
-            result = param._validate_source_table_attribute(source_type=source_type, table_info=table_info)
-            assert result is False
-        
-        table_info = {
-            'schema': '{"type": "object", "properties": {"host": {"type": "string"}}}',
-        }
-        for source_type in ('fluent-bit', 's3'):
-            result = param._validate_source_table_attribute(source_type=source_type, table_info=table_info)
-            assert result is False
-        
-        table_info = {
-            'schema': '{"type": "object", "properties": {"host": {"type": "string"}}}',
-            'dataFormat': '',
-        }
-        for source_type in ('fluent-bit', 's3'):
-            result = param._validate_source_table_attribute(source_type=source_type, table_info=table_info)
-            assert result is False
+            table_info = {}
+            with pytest.raises(Exception) as exception_info:
+                param._validate_source_table_attribute(source_type=source_type, table_info=table_info)
+            assert exception_info.value.args[0] == f"Unsupported data format: , supported value: {list(dataformat.DATA_FORMAT_MAPPING.keys())}."
             
-        table_info = {
-            'schema': '{"type": "object", "properties": {"host": {"type": "string"}}}',
-            'dataFormat': 'do-not-supported-format',
-        }
-        for source_type in ('fluent-bit', 's3'):
-            result = param._validate_source_table_attribute(source_type=source_type, table_info=table_info)
-            assert result is False
+            table_info = {
+                'schema': '',
+            }
+            with pytest.raises(Exception):
+                param._validate_source_table_attribute(source_type=source_type, table_info=table_info)
+        
+            table_info = {
+                'schema': "{'key': 'value'}",
+            }
+            with pytest.raises(Exception):
+                param._validate_source_table_attribute(source_type=source_type, table_info=table_info)
+                
+            table_info = {
+                'schema': '{"type": "object", "properties": {"host": {"type": "string"}}}',
+            }
+            with pytest.raises(Exception):
+                param._validate_source_table_attribute(source_type=source_type, table_info=table_info)
+
+            table_info = {
+                'schema': '{"type": "object", "properties": {"host": {"type": "string"}}}',
+                'dataFormat': '',
+            }
+            with pytest.raises(Exception):
+                param._validate_source_table_attribute(source_type=source_type, table_info=table_info)
+
+            table_info = {
+                'schema': '{"type": "object", "properties": {"host": {"type": "string"}}}',
+                'dataFormat': 'do-not-supported-format',
+            }
+            with pytest.raises(Exception) as exception_info:
+                param._validate_source_table_attribute(source_type=source_type, table_info=table_info)
+            assert exception_info.value.args[0] == f"Unsupported data format: {table_info['dataFormat']}, supported value: {list(dataformat.DATA_FORMAT_MAPPING.keys())}."
             
-        table_info = {
-            'schema': '{"type": "object", "properties": {"host": {"type": "string"}}}',
-            'dataFormat': 'json',
-        }
-        for source_type in ('fluent-bit', 's3'):
-            result = param._validate_source_table_attribute(source_type=source_type, table_info=table_info)
-            assert result is True
+            table_info = {
+                'schema': '{"type": "object", "properties": {"host": {"type": "string"}}}',
+                'dataFormat': 'json',
+            }
+            assert param._validate_source_table_attribute(source_type=source_type, table_info=table_info) is None
         
-        table_info = {
-            'schema': '{"type": "object", "properties": {"host": {"type": "string"}}}',
-            'dataFormat': 'json',
-            'tableProperties': '',
-        }
-        for source_type in ('fluent-bit', 's3'):
-            result = param._validate_source_table_attribute(source_type=source_type, table_info=table_info)
-            assert result is False
+            table_info = {
+                'schema': '{"type": "object", "properties": {"host": {"type": "string"}}}',
+                'dataFormat': 'json',
+                'tableProperties': '',
+            }
+            with pytest.raises(Exception) as exception_info:
+                param._validate_source_table_attribute(source_type=source_type, table_info=table_info)
+            assert exception_info.value.args[0] == f'{table_info["tableProperties"]} is not a valid JSON string.'
             
-        table_info = {
-            'schema': '{"type": "object", "properties": {"host": {"type": "string"}}}',
-            'dataFormat': 'json',
-            'tableProperties': "not a dict",
-        }
-        for source_type in ('fluent-bit', 's3'):
-            result = param._validate_source_table_attribute(source_type=source_type, table_info=table_info)
-            assert result is False
-            
-        table_info = {
-            'name': 'application',
-            'schema': '{"type": "object", "properties": {"host": {"type": "string"}}}',
-            'dataFormat': 'json',
-            'tableProperties': "{'skip.header.line.count': '2'}",
-        }
-        for source_type in ('fluent-bit', 's3'):
-            result = param._validate_source_table_attribute(source_type=source_type, table_info=table_info)
-            assert result is False
+            table_info = {
+                'schema': '{"type": "object", "properties": {"host": {"type": "string"}}}',
+                'dataFormat': 'json',
+                'tableProperties': "not a dict",
+            }
+            with pytest.raises(Exception) as exception_info:
+                param._validate_source_table_attribute(source_type=source_type, table_info=table_info)
+            assert exception_info.value.args[0] == f'{table_info["tableProperties"]} is not a valid JSON string.'
+
+            table_info = {
+                'name': 'application',
+                'schema': '{"type": "object", "properties": {"host": {"type": "string"}}}',
+                'dataFormat': 'json',
+                'tableProperties': "{'skip.header.line.count': '2'}",
+            }
+            with pytest.raises(Exception) as exception_info:
+                param._validate_source_table_attribute(source_type=source_type, table_info=table_info)
+            assert exception_info.value.args[0] == f'{table_info["tableProperties"]} is not a valid JSON string.'
+
+            table_info = {
+                'schema': '{"type": "object", "properties": {"host": {"type": "string"}}}',
+                'dataFormat': 'json',
+                'tableProperties': '{"skip.header.line.count": "2"}',
+            }
+            assert param._validate_source_table_attribute(source_type=source_type, table_info=table_info) is None
         
-        table_info = {
-            'schema': '{"type": "object", "properties": {"host": {"type": "string"}}}',
-            'dataFormat': 'json',
-            'tableProperties': '{"skip.header.line.count": "2"}',
-        }
-        for source_type in ('fluent-bit', 's3'):
-            result = param._validate_source_table_attribute(source_type=source_type, table_info=table_info)
-            assert result is True
+            table_info = {
+                'name': 'application',
+                'schema': '{"type": "object", "properties": {"host": {"type": "string"}}}',
+                'dataFormat': 'json',
+                'tableProperties': '{"skip.header.line.count": "2"}',
+                'serializationProperties': '',
+            }
+            with pytest.raises(Exception) as exception_info:
+                param._validate_source_table_attribute(source_type=source_type, table_info=table_info)
+            assert exception_info.value.args[0] == f'{table_info["serializationProperties"]} is not a valid JSON string.'
         
-        table_info = {
-            'name': 'application',
-            'schema': '{"type": "object", "properties": {"host": {"type": "string"}}}',
-            'dataFormat': 'json',
-            'tableProperties': '{"skip.header.line.count": "2"}',
-            'serializationProperties': '',
-        }
-        for source_type in ('fluent-bit', 's3'):
-            result = param._validate_source_table_attribute(source_type=source_type, table_info=table_info)
-            assert result is False
+            table_info = {
+                'schema': '{"type": "object", "properties": {"host": {"type": "string"}}}',
+                'dataFormat': 'json',
+                'tableProperties': '{"skip.header.line.count": "2"}',
+                'serializationProperties': 'not a dict',
+            }
+            with pytest.raises(Exception) as exception_info:
+                param._validate_source_table_attribute(source_type=source_type, table_info=table_info)
+            assert exception_info.value.args[0] == f'{table_info["serializationProperties"]} is not a valid JSON string.'
+
+            table_info = {
+                'schema': '{"type": "object", "properties": {"host": {"type": "string"}}}',
+                'dataFormat': 'json',
+                'tableProperties': '{"skip.header.line.count": "2"}',
+                'serializationProperties': "{'input.regex': '([^ ]*) ([^ ]*)'}",
+            }
+            with pytest.raises(Exception) as exception_info:
+                param._validate_source_table_attribute(source_type=source_type, table_info=table_info)
+            assert exception_info.value.args[0] == f'{table_info["serializationProperties"]} is not a valid JSON string.'
+
+            table_info = {
+                'schema': '{"type": "object", "properties": {"host": {"type": "string"}}}',
+                'dataFormat': 'regex',
+                'tableProperties': '{"skip.header.line.count": "2"}',
+                'serializationProperties': '{"input.regex": "([^ ]*) ([^ ]*)"}',
+            }
+            assert param._validate_source_table_attribute(source_type=source_type, table_info=table_info) is None
         
-        table_info = {
-            'schema': '{"type": "object", "properties": {"host": {"type": "string"}}}',
-            'dataFormat': 'json',
-            'tableProperties': '{"skip.header.line.count": "2"}',
-            'serializationProperties': 'not a dict',
-        }
-        for source_type in ('fluent-bit', 's3'):
-            result = param._validate_source_table_attribute(source_type=source_type, table_info=table_info)
-            assert result is False
-            
-        table_info = {
-            'schema': '{"type": "object", "properties": {"host": {"type": "string"}}}',
-            'dataFormat': 'json',
-            'tableProperties': '{"skip.header.line.count": "2"}',
-            'serializationProperties': "{'input.regex': '([^ ]*) ([^ ]*)'}",
-        }
-        for source_type in ('fluent-bit', 's3'):
-            result = param._validate_source_table_attribute(source_type=source_type, table_info=table_info)
-            assert result is False
-        
-        table_info = {
-            'schema': '{"type": "object", "properties": {"host": {"type": "string"}}}',
-            'dataFormat': 'regex',
-            'tableProperties': '{"skip.header.line.count": "2"}',
-            'serializationProperties': '{"input.regex": "([^ ]*) ([^ ]*)"}',
-        }
-        for source_type in ('fluent-bit', 's3'):
-            result = param._validate_source_table_attribute(source_type=source_type, table_info=table_info)
-            assert result is True
-        
-        table_info = {
-            'schema': '{"type": "object", "properties": {"host": {"type": "string"}}}',
-            'dataFormat': 'regex',
-            'tableProperties': '{"skip.header.line.count": "2"}',
-            'serializationProperties': '{}',
-        }
-        for source_type in ('fluent-bit', 's3'):
-            result = param._validate_source_table_attribute(source_type=source_type, table_info=table_info)
-            assert result is False
+            table_info = {
+                'schema': '{"type": "object", "properties": {"host": {"type": "string"}}}',
+                'dataFormat': 'regex',
+                'tableProperties': '{"skip.header.line.count": "2"}',
+                'serializationProperties': '{}',
+            }
+            with pytest.raises(Exception) as exception_info:
+                param._validate_source_table_attribute(source_type=source_type, table_info=table_info)
+            assert exception_info.value.args[0] == 'The data format is Regex, but input.regex is not defined in serializationProperties.'
                     
     def test_get_pipeline_source_info(self, mock_s3_context, mock_iam_context, mock_sqs_context, mock_ddb_context):
         from pipeline_resources_builder.lambda_function import Parameters, dataformat, MetaTable
@@ -666,7 +900,7 @@ class TestParameter:
                 }
             with pytest.raises(Exception) as exception_info:
                 param._get_pipeline_source_info(info=source_info)
-            assert exception_info.value.args[0] == 'The source table is missing required definition. Please check the configuration of the source table information.'
+            assert exception_info.value.args[0] == f"Unsupported data format: , supported value: {list(dataformat.DATA_FORMAT_MAPPING.keys())}."
 
         raw_schema = {
             'type': 'object',
@@ -718,6 +952,57 @@ class TestParameter:
             assert source.table.data_format == dataformat.Regex
             assert source.table.table_properties == {"skip.header.line.count": "2"}
             assert source.table.serialization_properties == {"input.regex": "([^ ]*) ([^ ]*)"}
+        
+        raw_schema = {
+            'type': 'object',
+            'properties': {
+                'timestamp': {
+                    'type': 'timestamp',
+                    'timeKey': True,
+                    'format': '%Y-%m-%d %H:%M:%S',
+                },
+                'type': {
+                    'type': 'string'
+                },
+                'elb': {
+                    'type': 'string',
+                    'partition': True
+                },
+                'client_ip': {
+                    'type': 'string'
+                },
+                'client_port': {
+                    'type': 'integer'
+                },
+                'target_ip': {
+                    'type': 'string'
+                },
+                'target_port': {
+                    'type': 'integer'
+                },
+            }
+        }
+
+        for source_type in ('fluent-bit', 's3'):
+            source_info = {
+                'type': source_type,
+                'table': {
+                    'name': 'test{}',
+                    'schema': base64.b64encode(gzip.compress(bytes(json.dumps(raw_schema), encoding='utf-8'))).decode('utf-8'),
+                    'dataFormat': 'regex', 
+                    'tableProperties': base64.b64encode(gzip.compress(bytes(json.dumps(raw_schema), encoding='utf-8'))).decode('utf-8'), 
+                    'serializationProperties': json.dumps({'input.regex': base64.b64encode(gzip.compress(bytes(json.dumps(raw_schema), encoding='utf-8'))).decode('utf-8')}),
+                    },
+                }
+            source = param._get_pipeline_source_info(info=source_info)
+        
+            assert source.type == source_type.lower()
+            assert source.database.name == tmp_database_name
+            assert source.table.name == 'test{}'
+            assert source.table.schema == raw_schema
+            assert source.table.data_format == dataformat.Regex
+            assert source.table.table_properties == raw_schema
+            assert source.table.serialization_properties == {'input.regex': base64.b64encode(gzip.compress(bytes(json.dumps(raw_schema), encoding='utf-8'))).decode('utf-8')}
         
     def test_get_pipeline_grafana_info(self, mock_s3_context, mock_iam_context, mock_sqs_context, mock_ddb_context):
         from pipeline_resources_builder.lambda_function import Parameters, MetaTable
@@ -872,6 +1157,7 @@ class TestParameter:
         param = Parameters(event)
         
         assert param.pipeline_info.role.s3_public_access == s3_public_access_arn
+        assert param.pipeline_info.role.connector == ''
         assert param.pipeline_info.role.replicate == waf_pipeline_info['stack']['role']['replicate']
         assert param.pipeline_info.scheduler.service == 'scheduler'
         assert param.pipeline_info.scheduler.log_processor.arn == log_processor_arn
@@ -948,7 +1234,7 @@ class TestParameter:
         
         assert param.pipeline_info.scheduler.service == 'events'
     
-    def test_ingestion_info(self, mock_s3_context, mock_iam_context, mock_sqs_context, mock_ddb_context):
+    def test_ingestion_info(self, mock_s3_context, mock_iam_context, mock_sqs_context, mock_ddb_context, mock_sts_context):
         from pipeline_resources_builder.lambda_function import Parameters, dataformat, MetaTable
         
         AWS_DDB_META = MetaTable()
@@ -1036,6 +1322,91 @@ class TestParameter:
         assert param.ingestion_info.source.location.archive_uri == f"s3://{staging_bucket_name}/archive/"
         assert param.ingestion_info.role.sts == ingestion_info['data']['role']['sts']
         assert param.ingestion_info.data == ingestion_info
+        
+        ingestion_id = str(uuid.uuid4())
+        ingestion_info = copy.deepcopy(waf_ingestion_info)
+        ingestion_info['data']['source']['prefix'] = ''
+        ingestion_info['data']['source']['context'] = '{"DBIdentifiers":["aurora-mysql","aurora-postgres15","database-1","database-2"]}'
+        AWS_DDB_META.put(meta_name=ingestion_id, item=ingestion_info)
+
+        create_ingestion_event = {'RequestType': 'Create', 'ResourceProperties': {'Resource': 'ingestion', 'Id': ingestion_id}}
+        
+        event = copy.deepcopy(create_ingestion_event)
+        param = Parameters(event)
+       
+        assert param.ingestion_info.source.location.bucket == ingestion_info['data']['source']['bucket']
+        assert param.ingestion_info.source.location.prefix == ''
+        assert param.ingestion_info.source.location.arn == f"arn:aws:s3:::{ingestion_info['data']['source']['bucket']}"
+        assert param.ingestion_info.source.location.uri == f"s3://{ingestion_info['data']['source']['bucket']}/"
+        assert param.ingestion_info.source.location.archive_uri == f"s3://{staging_bucket_name}/archive/"
+        assert param.ingestion_info.role.sts == ingestion_info['data']['role']['sts']
+        assert param.ingestion_info.data == ingestion_info
+        assert param.ingestion_info.context == {
+                "metaName": ingestion_id,
+                "source": {
+                    "type": waf_pipeline_info['data']['source']['type'].lower(),
+                    "context": {
+                        "DBIdentifiers":[
+                            "aurora-mysql",
+                            "aurora-postgres15",
+                            "database-1",
+                            "database-2"
+                            ],
+                        "role": ""
+                    },
+                },
+                "sink": {
+                    "type": "s3",
+                    "context": {
+                        "bucket": ingestion_info['data']['source']['bucket'],
+                        "prefix": ingestion_info['data']['source']['prefix'],
+                        "role": ""
+                    }
+                }
+            }
+        
+        ingestion_id = str(uuid.uuid4())
+        ingestion_info = copy.deepcopy(waf_ingestion_info)
+        ingestion_info['data']['source']['prefix'] = ''
+        ingestion_info['data']['source']['context'] = '{"DBIdentifiers":["aurora-mysql","aurora-postgres15","database-1","database-2"]}'
+        ingestion_info['data']['role']['sts'] = os.environ["ATHENA_PUBLIC_ACCESS_ROLE"]
+        AWS_DDB_META.put(meta_name=ingestion_id, item=ingestion_info)
+
+        create_ingestion_event = {'RequestType': 'Create', 'ResourceProperties': {'Resource': 'ingestion', 'Id': ingestion_id}}
+        
+        event = copy.deepcopy(create_ingestion_event)
+        param = Parameters(event)
+       
+        assert param.ingestion_info.source.location.bucket == ingestion_info['data']['source']['bucket']
+        assert param.ingestion_info.source.location.prefix == ''
+        assert param.ingestion_info.source.location.arn == f"arn:aws:s3:::{ingestion_info['data']['source']['bucket']}"
+        assert param.ingestion_info.source.location.uri == f"s3://{ingestion_info['data']['source']['bucket']}/"
+        assert param.ingestion_info.source.location.archive_uri == f"s3://{staging_bucket_name}/archive/"
+        assert param.ingestion_info.role.sts == ingestion_info['data']['role']['sts']
+        assert param.ingestion_info.data == ingestion_info
+        assert param.ingestion_info.context == {
+                "metaName": ingestion_id,
+                "source": {
+                    "type": waf_pipeline_info['data']['source']['type'].lower(),
+                    "context": {
+                        "DBIdentifiers":[
+                            "aurora-mysql",
+                            "aurora-postgres15",
+                            "database-1",
+                            "database-2"
+                            ],
+                        "role": ingestion_info['data']['role']['sts']
+                    },
+                },
+                "sink": {
+                    "type": "s3",
+                    "context": {
+                        "bucket": ingestion_info['data']['source']['bucket'],
+                        "prefix": ingestion_info['data']['source']['prefix'],
+                        "role": ingestion_info['data']['role']['sts']
+                    }
+                }
+            }
 
 
 class TestTableMetaDataGenerator:
@@ -1256,34 +1627,132 @@ class TestTableMetaDataGenerator:
         assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'string', 'timeKey': True, 'format': 'YYYY-MM-dd\'\'T\'\'HH:mm:ss.SSSSSS', 'path': '"timestamp"'}), ('host', {'type': 'string', 'path': '"host"'})])}
         assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': 'CAST(to_unixtime(parse_datetime("timestamp", \'YYYY-MM-dd\'\'T\'\'HH:mm:ss.SSSSSS\')) * 1000 AS bigint)'}), ('timestamp', {'type': 'timestamp', 'expression': 'parse_datetime("timestamp", \'YYYY-MM-dd\'\'T\'\'HH:mm:ss.SSSSSS\')'}), ('host', {'type': 'string', 'path': '"host"'})])}
     
-        # Time key is big_int and have expression in json schema
+        # Time key is big_int, no expression and no format in json schema
         schema = {'type': 'object', 'properties': collections.OrderedDict()}
-        schema['properties']['timestamp'] = {'type': 'big_int', 'timeKey': True, 'expression': '"timestamp" / 1000'}
+        schema['properties']['timestamp'] = {'type': 'big_int', 'timeKey': True}
         schema['properties']['host'] = {'type': 'string'}
         new_schema = table_metadata_generator.add_time_key(schema=schema)
-        assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'big_int', 'timeKey': True, 'expression': '"timestamp" / 1000', 'path': '"timestamp"'}), ('host', {'type': 'string', 'path': '"host"'})])}
-        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': '"timestamp" / 1000'}), ('timestamp', {'type': 'timestamp', 'expression': 'CAST(FROM_UNIXTIME("timestamp" / 1000) AS timestamp)'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'big_int', 'timeKey': True, 'path': '"timestamp"'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': '"timestamp" * 1000'}), ('timestamp', {'type': 'timestamp', 'expression': 'CAST(FROM_UNIXTIME("timestamp") AS timestamp)'}), ('host', {'type': 'string', 'path': '"host"'})])}
         new_schema = table_metadata_generator.add_time_key(schema=schema, source_type='fluent-bit')
-        assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'big_int', 'timeKey': True, 'expression': '"timestamp" / 1000', 'path': '"timestamp"'}), ('host', {'type': 'string', 'path': '"host"'})])}
-        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': '"timestamp" / 1000'}), ('timestamp', {'type': 'timestamp', 'expression': 'CAST(FROM_UNIXTIME("timestamp" / 1000) AS timestamp)'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'big_int', 'timeKey': True, 'path': '"timestamp"'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': '"timestamp" * 1000'}), ('timestamp', {'type': 'timestamp', 'expression': 'CAST(FROM_UNIXTIME("timestamp") AS timestamp)'}), ('host', {'type': 'string', 'path': '"host"'})])}
         new_schema = table_metadata_generator.add_time_key(schema=schema, source_type='s3')
-        assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'big_int', 'timeKey': True, 'expression': '"timestamp" / 1000', 'path': '"timestamp"'}), ('host', {'type': 'string', 'path': '"host"'})])}
-        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': '"timestamp" / 1000'}), ('timestamp', {'type': 'timestamp', 'expression': 'CAST(FROM_UNIXTIME("timestamp" / 1000) AS timestamp)'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'big_int', 'timeKey': True, 'path': '"timestamp"'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': '"timestamp" * 1000'}), ('timestamp', {'type': 'timestamp', 'expression': 'CAST(FROM_UNIXTIME("timestamp") AS timestamp)'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        
+        # Time key is big_int, no expression and format is epoch_millis in json schema
+        schema = {'type': 'object', 'properties': collections.OrderedDict()}
+        schema['properties']['timestamp'] = {'type': 'big_int', 'timeKey': True, 'format': 'epoch_millis'}
+        schema['properties']['host'] = {'type': 'string'}
+        new_schema = table_metadata_generator.add_time_key(schema=schema)
+        assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'big_int', 'timeKey': True, 'format': 'epoch_millis', 'path': '"timestamp"'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': '"timestamp"'}), ('timestamp', {'type': 'timestamp', 'expression': 'CAST(FROM_UNIXTIME("timestamp" / 1000) AS timestamp)'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        new_schema = table_metadata_generator.add_time_key(schema=schema, source_type='fluent-bit')
+        assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'big_int', 'timeKey': True, 'format': 'epoch_millis', 'path': '"timestamp"'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': '"timestamp"'}), ('timestamp', {'type': 'timestamp', 'expression': 'CAST(FROM_UNIXTIME("timestamp" / 1000) AS timestamp)'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        new_schema = table_metadata_generator.add_time_key(schema=schema, source_type='s3')
+        assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'big_int', 'timeKey': True, 'format': 'epoch_millis', 'path': '"timestamp"'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': '"timestamp"'}), ('timestamp', {'type': 'timestamp', 'expression': 'CAST(FROM_UNIXTIME("timestamp" / 1000) AS timestamp)'}), ('host', {'type': 'string', 'path': '"host"'})])}
     
-        # Time key is integer and no expression in json schema
+        # Time key is big_int, have expression and no format in json schema
+        schema = {'type': 'object', 'properties': collections.OrderedDict()}
+        schema['properties']['timestamp'] = {'type': 'big_int', 'timeKey': True, 'expression': '"timestamp"/1000'}
+        schema['properties']['host'] = {'type': 'string'}
+        new_schema = table_metadata_generator.add_time_key(schema=schema)
+        assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'big_int', 'timeKey': True, 'expression': '"timestamp"/1000', 'path': '"timestamp"'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': '"timestamp"/1000 * 1000'}), ('timestamp', {'type': 'timestamp', 'expression': 'CAST(FROM_UNIXTIME("timestamp"/1000) AS timestamp)'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        new_schema = table_metadata_generator.add_time_key(schema=schema, source_type='fluent-bit')
+        assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'big_int', 'timeKey': True, 'expression': '"timestamp"/1000', 'path': '"timestamp"'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': '"timestamp"/1000 * 1000'}), ('timestamp', {'type': 'timestamp', 'expression': 'CAST(FROM_UNIXTIME("timestamp"/1000) AS timestamp)'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        new_schema = table_metadata_generator.add_time_key(schema=schema, source_type='s3')
+        assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'big_int', 'timeKey': True, 'expression': '"timestamp"/1000', 'path': '"timestamp"'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': '"timestamp"/1000 * 1000'}), ('timestamp', {'type': 'timestamp', 'expression': 'CAST(FROM_UNIXTIME("timestamp"/1000) AS timestamp)'}), ('host', {'type': 'string', 'path': '"host"'})])}
+    
+        # Time key is big_int, have expression and format is epoch_second in json schema
+        schema = {'type': 'object', 'properties': collections.OrderedDict()}
+        schema['properties']['timestamp'] = {'type': 'big_int', 'timeKey': True, 'format': 'epoch_second', 'expression': '"timestamp"/1000'}
+        schema['properties']['host'] = {'type': 'string'}
+        new_schema = table_metadata_generator.add_time_key(schema=schema)
+        assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'big_int', 'timeKey': True, 'format': 'epoch_second', 'expression': '"timestamp"/1000', 'path': '"timestamp"'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': '"timestamp"/1000 * 1000'}), ('timestamp', {'type': 'timestamp', 'expression': 'CAST(FROM_UNIXTIME("timestamp"/1000) AS timestamp)'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        new_schema = table_metadata_generator.add_time_key(schema=schema, source_type='fluent-bit')
+        assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'big_int', 'timeKey': True, 'format': 'epoch_second', 'expression': '"timestamp"/1000', 'path': '"timestamp"'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': '"timestamp"/1000 * 1000'}), ('timestamp', {'type': 'timestamp', 'expression': 'CAST(FROM_UNIXTIME("timestamp"/1000) AS timestamp)'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        new_schema = table_metadata_generator.add_time_key(schema=schema, source_type='s3')
+        assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'big_int', 'timeKey': True, 'format': 'epoch_second', 'expression': '"timestamp"/1000', 'path': '"timestamp"'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': '"timestamp"/1000 * 1000'}), ('timestamp', {'type': 'timestamp', 'expression': 'CAST(FROM_UNIXTIME("timestamp"/1000) AS timestamp)'}), ('host', {'type': 'string', 'path': '"host"'})])}
+    
+        # Time key is integer, no expression and no format in json schema
         schema = {'type': 'object', 'properties': collections.OrderedDict()}
         schema['properties']['timestamp'] = {'type': 'integer', 'timeKey': True}
         schema['properties']['host'] = {'type': 'string'}
         new_schema = table_metadata_generator.add_time_key(schema=schema)
         assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'integer', 'timeKey': True, 'path': '"timestamp"'}), ('host', {'type': 'string', 'path': '"host"'})])}
-        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': '"timestamp"'}), ('timestamp', {'type': 'timestamp', 'expression': 'CAST(FROM_UNIXTIME("timestamp") AS timestamp)'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': '"timestamp" * 1000'}), ('timestamp', {'type': 'timestamp', 'expression': 'CAST(FROM_UNIXTIME("timestamp") AS timestamp)'}), ('host', {'type': 'string', 'path': '"host"'})])}
         new_schema = table_metadata_generator.add_time_key(schema=schema, source_type='fluent-bit')
         assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'integer', 'timeKey': True, 'path': '"timestamp"'}), ('host', {'type': 'string', 'path': '"host"'})])}
-        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': '"timestamp"'}), ('timestamp', {'type': 'timestamp', 'expression': 'CAST(FROM_UNIXTIME("timestamp") AS timestamp)'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': '"timestamp" * 1000'}), ('timestamp', {'type': 'timestamp', 'expression': 'CAST(FROM_UNIXTIME("timestamp") AS timestamp)'}), ('host', {'type': 'string', 'path': '"host"'})])}
         new_schema = table_metadata_generator.add_time_key(schema=schema, source_type='s3')
         assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'integer', 'timeKey': True, 'path': '"timestamp"'}), ('host', {'type': 'string', 'path': '"host"'})])}
-        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': '"timestamp"'}), ('timestamp', {'type': 'timestamp', 'expression': 'CAST(FROM_UNIXTIME("timestamp") AS timestamp)'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': '"timestamp" * 1000'}), ('timestamp', {'type': 'timestamp', 'expression': 'CAST(FROM_UNIXTIME("timestamp") AS timestamp)'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        
+        # Time key is integer, no expression and format is epoch_millis in json schema
+        schema = {'type': 'object', 'properties': collections.OrderedDict()}
+        schema['properties']['timestamp'] = {'type': 'integer', 'timeKey': True, 'format': 'epoch_millis'}
+        schema['properties']['host'] = {'type': 'string'}
+        new_schema = table_metadata_generator.add_time_key(schema=schema)
+        assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'integer', 'timeKey': True, 'format': 'epoch_millis', 'path': '"timestamp"'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': '"timestamp"'}), ('timestamp', {'type': 'timestamp', 'expression': 'CAST(FROM_UNIXTIME("timestamp" / 1000) AS timestamp)'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        new_schema = table_metadata_generator.add_time_key(schema=schema, source_type='fluent-bit')
+        assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'integer', 'timeKey': True, 'format': 'epoch_millis', 'path': '"timestamp"'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': '"timestamp"'}), ('timestamp', {'type': 'timestamp', 'expression': 'CAST(FROM_UNIXTIME("timestamp" / 1000) AS timestamp)'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        new_schema = table_metadata_generator.add_time_key(schema=schema, source_type='s3')
+        assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'integer', 'timeKey': True, 'format': 'epoch_millis', 'path': '"timestamp"'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': '"timestamp"'}), ('timestamp', {'type': 'timestamp', 'expression': 'CAST(FROM_UNIXTIME("timestamp" / 1000) AS timestamp)'}), ('host', {'type': 'string', 'path': '"host"'})])}
     
+        # Time key is integer, have expression and no format in json schema
+        schema = {'type': 'object', 'properties': collections.OrderedDict()}
+        schema['properties']['timestamp'] = {'type': 'integer', 'timeKey': True, 'expression': '"timestamp"/1000'}
+        schema['properties']['host'] = {'type': 'string'}
+        new_schema = table_metadata_generator.add_time_key(schema=schema)
+        assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'integer', 'timeKey': True, 'expression': '"timestamp"/1000', 'path': '"timestamp"'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': '"timestamp"/1000 * 1000'}), ('timestamp', {'type': 'timestamp', 'expression': 'CAST(FROM_UNIXTIME("timestamp"/1000) AS timestamp)'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        new_schema = table_metadata_generator.add_time_key(schema=schema, source_type='fluent-bit')
+        assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'integer', 'timeKey': True, 'expression': '"timestamp"/1000', 'path': '"timestamp"'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': '"timestamp"/1000 * 1000'}), ('timestamp', {'type': 'timestamp', 'expression': 'CAST(FROM_UNIXTIME("timestamp"/1000) AS timestamp)'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        new_schema = table_metadata_generator.add_time_key(schema=schema, source_type='s3')
+        assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'integer', 'timeKey': True, 'expression': '"timestamp"/1000', 'path': '"timestamp"'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': '"timestamp"/1000 * 1000'}), ('timestamp', {'type': 'timestamp', 'expression': 'CAST(FROM_UNIXTIME("timestamp"/1000) AS timestamp)'}), ('host', {'type': 'string', 'path': '"host"'})])}
+    
+        # Time key is integer, have expression and format is epoch_second in json schema
+        schema = {'type': 'object', 'properties': collections.OrderedDict()}
+        schema['properties']['timestamp'] = {'type': 'integer', 'timeKey': True, 'format': 'epoch_second', 'expression': '"timestamp"/1000'}
+        schema['properties']['host'] = {'type': 'string'}
+        new_schema = table_metadata_generator.add_time_key(schema=schema)
+        assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'integer', 'timeKey': True, 'format': 'epoch_second', 'expression': '"timestamp"/1000', 'path': '"timestamp"'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': '"timestamp"/1000 * 1000'}), ('timestamp', {'type': 'timestamp', 'expression': 'CAST(FROM_UNIXTIME("timestamp"/1000) AS timestamp)'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        new_schema = table_metadata_generator.add_time_key(schema=schema, source_type='fluent-bit')
+        assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'integer', 'timeKey': True, 'format': 'epoch_second', 'expression': '"timestamp"/1000', 'path': '"timestamp"'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': '"timestamp"/1000 * 1000'}), ('timestamp', {'type': 'timestamp', 'expression': 'CAST(FROM_UNIXTIME("timestamp"/1000) AS timestamp)'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        new_schema = table_metadata_generator.add_time_key(schema=schema, source_type='s3')
+        assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'integer', 'timeKey': True, 'format': 'epoch_second', 'expression': '"timestamp"/1000', 'path': '"timestamp"'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': '"timestamp"/1000 * 1000'}), ('timestamp', {'type': 'timestamp', 'expression': 'CAST(FROM_UNIXTIME("timestamp"/1000) AS timestamp)'}), ('host', {'type': 'string', 'path': '"host"'})])}
+    
+        # Time key is big_int and time key in object in json schema
+        schema = {'type': 'object', 'properties': collections.OrderedDict()}
+        schema['properties']['timestamp'] = {'type': 'object', 'properties': {'rt': {'type': 'big_int', 'timeKey': True, 'format': 'epoch_millis'}}}
+        schema['properties']['host'] = {'type': 'string'}
+        new_schema = table_metadata_generator.add_time_key(schema=schema)
+        assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'object', 'properties': {'rt': {'type': 'big_int', 'timeKey': True, 'format': 'epoch_millis', 'path': '"timestamp"."rt"'}}, 'path': '"timestamp"'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': '"timestamp"."rt"'}), ('timestamp', {'type': 'timestamp', 'expression': 'CAST(FROM_UNIXTIME("timestamp"."rt" / 1000) AS timestamp)'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        new_schema = table_metadata_generator.add_time_key(schema=schema, source_type='fluent-bit')
+        assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'object', 'properties': {'rt': {'type': 'big_int', 'timeKey': True, 'format': 'epoch_millis', 'path': '"timestamp"."rt"'}}, 'path': '"timestamp"'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': '"timestamp"."rt"'}), ('timestamp', {'type': 'timestamp', 'expression': 'CAST(FROM_UNIXTIME("timestamp"."rt" / 1000) AS timestamp)'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        new_schema = table_metadata_generator.add_time_key(schema=schema, source_type='s3')
+        assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'object', 'properties': {'rt': {'type': 'big_int', 'timeKey': True, 'format': 'epoch_millis', 'path': '"timestamp"."rt"'}}, 'path': '"timestamp"'}), ('host', {'type': 'string', 'path': '"host"'})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': '"timestamp"."rt"'}), ('timestamp', {'type': 'timestamp', 'expression': 'CAST(FROM_UNIXTIME("timestamp"."rt" / 1000) AS timestamp)'}), ('host', {'type': 'string', 'path': '"host"'})])}
+
     def test_add_default_partition(self,):
         from pipeline_resources_builder.lambda_function import TableMetaDataGenerator
         
@@ -1303,8 +1772,16 @@ class TestTableMetaDataGenerator:
         assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('host', {'type': 'string', 'path': '"host"'}), ('event_hour', {'type': 'string', 'partition': True, 'expression': 'date_format(parse_datetime("time", \'YYYY-MM-dd\'\'T\'\'HH:mm:ss.SSSSSSSSSZ\'), \'%Y%m%d%H\')'}), ('__execution_name__', {'type': 'string', 'partition': True, 'expression': "'{{}}'"})])}
         new_schema = table_metadata_generator.add_default_partition(schema=schema, source_type='s3')
         assert schema == {'type': 'object', 'properties': collections.OrderedDict([('host', {'type': 'string'})])}
-        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('host', {'type': 'string', 'path': '"host"'}), ('__execution_name__', {'type': 'string', 'partition': True, 'expression': "'{{}}'"})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('host', {'type': 'string', 'path': '"host"'}), ('event_hour', {'type': 'string', 'partition': True, 'expression': "date_format(now(), '%Y%m%d%H')"}), ('__execution_name__', {'type': 'string', 'partition': True, 'expression': "'{{}}'"})])}
 
+        # no timeKey and has event_hour in Json schema
+        schema = {'type': 'object', 'properties': collections.OrderedDict()}
+        schema['properties']['host'] = {'type': 'string'}
+        schema['properties']['event_hour'] = {'type': 'string'}
+        new_schema = table_metadata_generator.add_default_partition(schema=schema, source_type='s3')
+        assert schema == {'type': 'object', 'properties': collections.OrderedDict([('host', {'type': 'string'}), ('event_hour', {'type': 'string'})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('host', {'type': 'string', 'path': '"host"'}), ('event_hour', {'type': 'string', 'partition': True, 'expression': "date_format(now(), '%Y%m%d%H')"}), ('__execution_name__', {'type': 'string', 'partition': True, 'expression': "'{{}}'"})])}
+        
         # have timeKey in json schema
         schema = {'type': 'object', 'properties': collections.OrderedDict()}
         schema['properties']['timestamp'] = {'type': 'timestamp', 'timeKey': True, 'format': 'YYYY-MM-dd\'\'T\'\'HH:mm:ss.SSSSSSSSSZ'}
@@ -1346,6 +1823,34 @@ class TestTableMetaDataGenerator:
         new_schema = table_metadata_generator.add_default_partition(schema=schema, source_type='s3')
         assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'integer', 'timeKey': True}), ('host', {'type': 'string', 'partition': True})])}
         assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'integer', 'timeKey': True, 'path': '"timestamp"'}), ('host', {'type': 'string', 'partition': True, 'path': '"host"'}), ('event_hour', {'type': 'string', 'partition': True, 'expression': 'date_format(CAST(FROM_UNIXTIME("timestamp") AS timestamp), \'%Y%m%d%H\')'}), ('__execution_name__', {'type': 'string', 'partition': True, 'expression': "'{{}}'"})])}
+
+        # Time key is big_int and format is epoch_millis in json schema
+        schema = {'type': 'object', 'properties': collections.OrderedDict()}
+        schema['properties']['timestamp'] = {'type': 'big_int', 'timeKey': True, 'format': 'epoch_millis'}
+        schema['properties']['host'] = {'type': 'string', 'partition': True}
+        new_schema = table_metadata_generator.add_default_partition(schema=schema)
+        assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'big_int', 'timeKey': True, 'format': 'epoch_millis'}), ('host', {'type': 'string', 'partition': True})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'big_int', 'timeKey': True, 'format': 'epoch_millis', 'path': '"timestamp"'}), ('host', {'type': 'string', 'partition': True, 'path': '"host"'}), ('event_hour', {'type': 'string', 'partition': True, 'expression': 'date_format(CAST(FROM_UNIXTIME("timestamp" / 1000) AS timestamp), \'%Y%m%d%H\')'}), ('__execution_name__', {'type': 'string', 'partition': True, 'expression': "'{{}}'"})])}
+        new_schema = table_metadata_generator.add_default_partition(schema=schema, source_type='fluent-bit')
+        assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'big_int', 'timeKey': True, 'format': 'epoch_millis'}), ('host', {'type': 'string', 'partition': True})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'big_int', 'timeKey': True, 'format': 'epoch_millis', 'path': '"timestamp"'}), ('host', {'type': 'string', 'partition': True, 'path': '"host"'}), ('event_hour', {'type': 'string', 'partition': True, 'expression': 'date_format(CAST(FROM_UNIXTIME("timestamp" / 1000) AS timestamp), \'%Y%m%d%H\')'}), ('__execution_name__', {'type': 'string', 'partition': True, 'expression': "'{{}}'"})])}
+        new_schema = table_metadata_generator.add_default_partition(schema=schema, source_type='s3')
+        assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'big_int', 'timeKey': True, 'format': 'epoch_millis'}), ('host', {'type': 'string', 'partition': True})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'big_int', 'timeKey': True, 'format': 'epoch_millis', 'path': '"timestamp"'}), ('host', {'type': 'string', 'partition': True, 'path': '"host"'}), ('event_hour', {'type': 'string', 'partition': True, 'expression': 'date_format(CAST(FROM_UNIXTIME("timestamp" / 1000) AS timestamp), \'%Y%m%d%H\')'}), ('__execution_name__', {'type': 'string', 'partition': True, 'expression': "'{{}}'"})])}
+
+        # Time key is big_int and format is epoch_second in json schema
+        schema = {'type': 'object', 'properties': collections.OrderedDict()}
+        schema['properties']['timestamp'] = {'type': 'big_int', 'timeKey': True, 'format': 'epoch_second'}
+        schema['properties']['host'] = {'type': 'string', 'partition': True}
+        new_schema = table_metadata_generator.add_default_partition(schema=schema)
+        assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'big_int', 'timeKey': True, 'format': 'epoch_second'}), ('host', {'type': 'string', 'partition': True})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'big_int', 'timeKey': True, 'format': 'epoch_second', 'path': '"timestamp"'}), ('host', {'type': 'string', 'partition': True, 'path': '"host"'}), ('event_hour', {'type': 'string', 'partition': True, 'expression': 'date_format(CAST(FROM_UNIXTIME("timestamp") AS timestamp), \'%Y%m%d%H\')'}), ('__execution_name__', {'type': 'string', 'partition': True, 'expression': "'{{}}'"})])}
+        new_schema = table_metadata_generator.add_default_partition(schema=schema, source_type='fluent-bit')
+        assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'big_int', 'timeKey': True, 'format': 'epoch_second'}), ('host', {'type': 'string', 'partition': True})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'big_int', 'timeKey': True, 'format': 'epoch_second', 'path': '"timestamp"'}), ('host', {'type': 'string', 'partition': True, 'path': '"host"'}), ('event_hour', {'type': 'string', 'partition': True, 'expression': 'date_format(CAST(FROM_UNIXTIME("timestamp") AS timestamp), \'%Y%m%d%H\')'}), ('__execution_name__', {'type': 'string', 'partition': True, 'expression': "'{{}}'"})])}
+        new_schema = table_metadata_generator.add_default_partition(schema=schema, source_type='s3')
+        assert schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'big_int', 'timeKey': True, 'format': 'epoch_second'}), ('host', {'type': 'string', 'partition': True})])}
+        assert new_schema == {'type': 'object', 'properties': collections.OrderedDict([('timestamp', {'type': 'big_int', 'timeKey': True, 'format': 'epoch_second', 'path': '"timestamp"'}), ('host', {'type': 'string', 'partition': True, 'path': '"host"'}), ('event_hour', {'type': 'string', 'partition': True, 'expression': 'date_format(CAST(FROM_UNIXTIME("timestamp") AS timestamp), \'%Y%m%d%H\')'}), ('__execution_name__', {'type': 'string', 'partition': True, 'expression': "'{{}}'"})])}
 
     def test_get_raw_table_metadata(self):
         from pipeline_resources_builder.lambda_function import TableMetaDataGenerator, dataformat, TableMetaData
@@ -1396,7 +1901,7 @@ class TestTableMetaDataGenerator:
         assert isinstance(table_metadata, TableMetaData) is True
         assert table_metadata.schema == {'type': 'object', 'properties': {'timestamp': {'type': 'string', 'timeKey': True, 'format': '%Y-%m-%dT%H:%M:%SZ', 'path': '"timestamp"'}}}
         assert table_metadata.ignore_partition is True
-    
+        
     def test_get_parquet_table_metadata_from_raw(self):
         from pipeline_resources_builder.lambda_function import TableMetaDataGenerator, dataformat, TableMetaData
         
@@ -1420,7 +1925,7 @@ class TestTableMetaDataGenerator:
         
         table_metadata = table_metadata_generator.get_parquet_table_metadata_from_raw(schema=schema, source_type='s3')
         assert isinstance(table_metadata, TableMetaData) is True
-        assert table_metadata.schema == {'type': 'object', 'properties': {'host': {'type': 'string', 'path': '"host"'}, '__execution_name__': {'type': 'string', 'partition': True, 'expression': "'{{}}'", 'path': '"__execution_name__"'}}}
+        assert table_metadata.schema == {'type': 'object', 'properties': {'host': {'type': 'string', 'path': '"host"'}, 'event_hour': {'type': 'string', 'partition': True, 'expression': "date_format(now(), '%Y%m%d%H')", 'path': '"event_hour"'}, '__execution_name__': {'type': 'string', 'partition': True, 'expression': "'{{}}'", 'path': '"__execution_name__"'}}}
         assert table_metadata.ignore_partition is False
         
         # Have timestamp data type and partition key in json schema
@@ -1444,13 +1949,9 @@ class TestTableMetaDataGenerator:
         assert table_metadata.schema == {'type': 'object', 'properties': collections.OrderedDict([('time', {'type': 'big_int', 'expression': 'CAST(to_unixtime(parse_datetime("timestamp", \'YYYY-MM-dd\'\'T\'\'HH:mm:ss.SSSSSSSSSZ\')) * 1000 AS bigint)', 'path': '"time"'}), ('timestamp', {'type': 'timestamp', 'expression': 'parse_datetime("timestamp", \'YYYY-MM-dd\'\'T\'\'HH:mm:ss.SSSSSSSSSZ\')', 'path': '"timestamp"'}), ('event_hour', {'type': 'string', 'partition': True, 'expression': 'date_format(parse_datetime("timestamp", \'YYYY-MM-dd\'\'T\'\'HH:mm:ss.SSSSSSSSSZ\'), \'%Y%m%d%H\')', 'path': '"event_hour"'}), ('service', {'type': 'string', 'partition': True, 'path': '"service"'}), ('__execution_name__', {'type': 'string', 'partition': True, 'expression': "'{{}}'", 'path': '"__execution_name__"'})])}
         assert table_metadata.ignore_partition is False
     
-    def test_get_table_metadata(self, mock_s3_context, mock_sqs_context, mock_ddb_context):
+    def test_get_table_metadata(self, mock_s3_context, mock_sqs_context, mock_iam_context, mock_ddb_context):
         from pipeline_resources_builder.lambda_function import Parameters, TableMetaDataGenerator, TableMetaData, MetaTable
-        from pipeline_resources_builder.lambda_function import WAF_RAW, WAF_PARQUET, WAF_METRICS
-        from pipeline_resources_builder.lambda_function import ALB_RAW, ALB_PARQUET, ALB_METRICS
-        from pipeline_resources_builder.lambda_function import CLOUDFRONT_RAW, CLOUDFRONT_PARQUET, CLOUDFRONT_METRICS
-        from pipeline_resources_builder.lambda_function import CLOUDTRAIL_RAW, CLOUDTRAIL_PARQUET, CLOUDTRAIL_METRICS
-        from pipeline_resources_builder.lambda_function import VPCFLOW_RAW, VPCFLOW_PARQUET
+        from pipeline_resources_builder.lambda_function import SOURCE_TYPE_RESOURCES
         
         AWS_DDB_META = MetaTable()
 
@@ -1465,37 +1966,37 @@ class TestTableMetaDataGenerator:
         source.type = 'waf'
         table_metadata_generator = TableMetaDataGenerator(source=source, destination=destination)
         raw, parquet, metrics = table_metadata_generator.get_table_metadata()
-        assert raw is WAF_RAW
-        assert parquet is WAF_PARQUET
-        assert metrics is WAF_METRICS
+        assert raw is SOURCE_TYPE_RESOURCES['waf']['schema'][0]
+        assert parquet is SOURCE_TYPE_RESOURCES['waf']['schema'][1]
+        assert metrics is SOURCE_TYPE_RESOURCES['waf']['schema'][2]
         
         source.type = 'alb'
         table_metadata_generator = TableMetaDataGenerator(source=source, destination=destination)
         raw, parquet, metrics = table_metadata_generator.get_table_metadata()
-        assert raw is ALB_RAW
-        assert parquet is ALB_PARQUET
-        assert metrics is ALB_METRICS
+        assert raw is SOURCE_TYPE_RESOURCES['alb']['schema'][0]
+        assert parquet is SOURCE_TYPE_RESOURCES['alb']['schema'][1]
+        assert metrics is SOURCE_TYPE_RESOURCES['alb']['schema'][2]
         
         source.type = 'cloudfront'
         table_metadata_generator = TableMetaDataGenerator(source=source, destination=destination)
         raw, parquet, metrics = table_metadata_generator.get_table_metadata()
-        assert raw is CLOUDFRONT_RAW
-        assert parquet is CLOUDFRONT_PARQUET
-        assert metrics is CLOUDFRONT_METRICS
+        assert raw is SOURCE_TYPE_RESOURCES['cloudfront']['schema'][0]
+        assert parquet is SOURCE_TYPE_RESOURCES['cloudfront']['schema'][1]
+        assert metrics is SOURCE_TYPE_RESOURCES['cloudfront']['schema'][2]
         
         source.type = 'cloudtrail'
         table_metadata_generator = TableMetaDataGenerator(source=source, destination=destination)
         raw, parquet, metrics = table_metadata_generator.get_table_metadata()
-        assert raw is CLOUDTRAIL_RAW
-        assert parquet is CLOUDTRAIL_PARQUET
-        assert metrics is CLOUDTRAIL_METRICS
+        assert raw is SOURCE_TYPE_RESOURCES['cloudtrail']['schema'][0]
+        assert parquet is SOURCE_TYPE_RESOURCES['cloudtrail']['schema'][1]
+        assert metrics is SOURCE_TYPE_RESOURCES['cloudtrail']['schema'][2]
         
         source.type = 'vpcflow'
         table_metadata_generator = TableMetaDataGenerator(source=source, destination=destination)
         raw, parquet, metrics = table_metadata_generator.get_table_metadata()
-        assert raw is VPCFLOW_RAW
-        assert parquet is VPCFLOW_PARQUET
-        assert metrics is None
+        assert raw is SOURCE_TYPE_RESOURCES['vpcflow']['schema'][0]
+        assert parquet is SOURCE_TYPE_RESOURCES['vpcflow']['schema'][1]
+        assert metrics is SOURCE_TYPE_RESOURCES['vpcflow']['schema'][2]
         
         # source type is 'fluent-bit'
         event = copy.deepcopy(create_application_pipeline_event)
@@ -2061,6 +2562,133 @@ class TestTableMetaDataGenerator:
             }
         }
         
+        # fluent-bit with no time key
+        pipeline_id = str(uuid.uuid4())
+        pipeline_info = copy.deepcopy(application_pipeline_info)
+        pipeline_info['data']['source']['table']['schema'] = json.dumps({
+            'type': 'object',
+            'properties': {
+                'log': {
+                    'type': 'string',
+                },
+            }
+        })
+        
+        AWS_DDB_META.put(meta_name=pipeline_id, item=pipeline_info)
+        
+        event = copy.deepcopy(create_application_pipeline_event)
+        event['ResourceProperties']['Id'] = pipeline_id
+        param = Parameters(event)
+        
+        table_metadata_generator = TableMetaDataGenerator(source=param.pipeline_info.source, destination=param.pipeline_info.destination)
+        raw, parquet, metrics = table_metadata_generator.get_table_metadata()
+        assert isinstance(raw, TableMetaData) is True
+        assert raw.schema == {
+            'type': 'object', 
+            'properties': {
+                'log': {
+                    'type': 'string', 
+                    'path': '"log"'
+                    }, 
+                'time': {
+                    'type': 'string', 
+                    'timeKey': True, 
+                    'format': 'YYYY-MM-dd\'\'T\'\'HH:mm:ss.SSSSSSSSSZ', 
+                    'path': '"time"'
+                    }, 
+                'file_name': {'type': 'string', 'path': '"file_name"'}, 
+                'az': {'type': 'string', 'path': '"az"'}, 
+                'ec2_instance_id': {'type': 'string', 'path': '"ec2_instance_id"'}, 
+                'private_ip': {'type': 'string', 'path': '"private_ip"'}, 
+                'hostname': {'type': 'string', 'path': '"hostname"'}, 
+                'cluster': {'type': 'string', 'path': '"cluster"'},
+                'kubernetes': {
+                    'type': 'object', 
+                    'properties': {
+                        'pod_name': {'type': 'string', 'path': '"kubernetes"."pod_name"'}, 
+                        'namespace_name': {'type': 'string', 'path': '"kubernetes"."namespace_name"'}, 
+                        'container_name': {'type': 'string', 'path': '"kubernetes"."container_name"'}, 
+                        'docker_id': {'type': 'string', 'path': '"kubernetes"."docker_id"'}
+                        }, 
+                    'path': '"kubernetes"'
+                    },
+                },
+            }        
+        assert isinstance(parquet, TableMetaData) is True
+        assert parquet.schema == {
+            'type': 'object',
+            'properties': {
+                'time': {
+                    'type': 'big_int',
+                    'expression': 'CAST(to_unixtime(parse_datetime("time", \'YYYY-MM-dd\'\'T\'\'HH:mm:ss.SSSSSSSSSZ\')) * 1000 AS bigint)',
+                    'path': '"time"'
+                },
+                'timestamp': {
+                    'type': 'timestamp',
+                    'expression': 'parse_datetime("time", \'YYYY-MM-dd\'\'T\'\'HH:mm:ss.SSSSSSSSSZ\')',
+                    'path': '"timestamp"'
+                },
+                'log': {
+                    'type': 'string',
+                    'path': '"log"'
+                },
+                'agent_info': {
+                    'type': 'object',
+                    'properties': {
+                        'file_name': {
+                            'type': 'string',
+                            'path': '"agent_info"."file_name"'
+                        },
+                        'az': {
+                            'type': 'string',
+                            'path': '"agent_info"."az"'
+                        },
+                        'ec2_instance_id': {
+                            'type': 'string',
+                            'path': '"agent_info"."ec2_instance_id"'
+                        },
+                        'private_ip': {
+                            'type': 'string',
+                            'path': '"agent_info"."private_ip"'
+                        },
+                        'hostname': {
+                            'type': 'string',
+                            'path': '"agent_info"."hostname"'
+                        },
+                        'cluster': {
+                            'type': 'string',
+                            'path': '"agent_info"."cluster"'
+                        },
+                        'kubernetes': {
+                            'type': 'object', 
+                            'properties': {
+                                'pod_name': {'type': 'string', 'path': '"agent_info"."kubernetes"."pod_name"'}, 
+                                'namespace_name': {'type': 'string', 'path': '"agent_info"."kubernetes"."namespace_name"'}, 
+                                'container_name': {'type': 'string', 'path': '"agent_info"."kubernetes"."container_name"'}, 
+                                'docker_id': {'type': 'string', 'path': '"agent_info"."kubernetes"."docker_id"'}
+                            }, 
+                            'path': '"agent_info"."kubernetes"'
+                        },
+                    },
+                    'expression': 'CAST(ROW("file_name", "az", "ec2_instance_id", "private_ip", "hostname", "cluster", "kubernetes") AS ROW("file_name" varchar, "az" varchar, "ec2_instance_id" varchar, "private_ip" varchar, "hostname" varchar, "cluster" varchar, "kubernetes" ROW("pod_name" varchar, "namespace_name" varchar, "container_name" varchar, "docker_id" varchar)))',
+                    'path': '"agent_info"'
+                },
+                'event_hour': {
+                    'type': 'string',
+                    'partition': True,
+                    'expression': 'date_format(parse_datetime("time", \'YYYY-MM-dd\'\'T\'\'HH:mm:ss.SSSSSSSSSZ\'), \'%Y%m%d%H\')',
+                    'path': '"event_hour"'
+                },
+                '__execution_name__': {
+                    'type': 'string',
+                    'partition': True,
+                    'expression': '\'{{}}\'',
+                    'path': '"__execution_name__"'
+                }
+            }
+        }
+        assert metrics is None
+        
         # source type is 's3'
         pipeline_id = str(uuid.uuid4())
         pipeline_info = copy.deepcopy(application_pipeline_info)
@@ -2560,10 +3188,65 @@ class TestTableMetaDataGenerator:
                 }
             }
         }
+        
+        # s3 with no time key
+        pipeline_id = str(uuid.uuid4())
+        pipeline_info = copy.deepcopy(application_pipeline_info)
+        pipeline_info['data']['source']['type'] = 's3'
+        pipeline_info['data']['source']['table']['schema'] = json.dumps({
+            'type': 'object',
+            'properties': {
+                'log': {
+                    'type': 'string',
+                },
+            }
+        })
+        
+        AWS_DDB_META.put(meta_name=pipeline_id, item=pipeline_info)
+        
+        event = copy.deepcopy(create_application_pipeline_event)
+        event['ResourceProperties']['Id'] = pipeline_id
+        param = Parameters(event)
+        
+        table_metadata_generator = TableMetaDataGenerator(source=param.pipeline_info.source, destination=param.pipeline_info.destination)
+        raw, parquet, metrics = table_metadata_generator.get_table_metadata()
+        assert isinstance(raw, TableMetaData) is True
+        assert raw.schema == {
+            'type': 'object', 
+            'properties': {
+                'log': {
+                    'type': 'string', 
+                    'path': '"log"'
+                    }, 
+                }
+            }        
+        assert isinstance(parquet, TableMetaData) is True
+        assert parquet.schema == {
+            'type': 'object',
+            'properties': {
+                'log': {
+                    'type': 'string',
+                    'path': '"log"'
+                },
+                'event_hour': {
+                    'type': 'string',
+                    'partition': True,
+                    'expression': 'date_format(now(), \'%Y%m%d%H\')',
+                    'path': '"event_hour"'
+                },
+                '__execution_name__': {
+                    'type': 'string',
+                    'partition': True,
+                    'expression': '\'{{}}\'',
+                    'path': '"__execution_name__"'
+                }
+            }
+        }
+        assert metrics is None
     
     def test_get_table_metadata_and_statements_waf(self, mock_s3_context, mock_iam_context, mock_sqs_context, mock_ddb_context):
         from pipeline_resources_builder.lambda_function import Parameters, TableMetaDataGenerator
-        from pipeline_resources_builder.lambda_function import WAF_RAW, WAF_PARQUET, WAF_METRICS
+        from pipeline_resources_builder.lambda_function import SOURCE_TYPE_RESOURCES
         
         waf_pipeline_id = os.environ["WAF_PIPELINE_ID"]
         
@@ -2575,17 +3258,17 @@ class TestTableMetaDataGenerator:
         
         table_metadata_generator = TableMetaDataGenerator(source=param.pipeline_info.source, destination=param.pipeline_info.destination)
         raw, parquet, metrics, statements = table_metadata_generator.get_table_metadata_and_statements()
-        assert raw is WAF_RAW
-        assert parquet is WAF_PARQUET
-        assert metrics is WAF_METRICS
-        assert statements.create == "CREATE EXTERNAL TABLE IF NOT EXISTS `tmp`.`waf{}` (`timestamp` bigint, `formatversion` int, `webaclid` string, `terminatingruleid` string, `terminatingruletype` string, `action` string, `terminatingrulematchdetails` array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>, `httpsourcename` string, `httpsourceid` string, `rulegrouplist` array<struct<`rulegroupid`:string,`terminatingrule`:struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>>,`nonterminatingmatchingrules`:array<struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>>>,`excludedrules`:string>>, `ratebasedrulelist` array<struct<`ratebasedruleid`:string,`limitkey`:string,`maxrateallowed`:int>>, `nonterminatingmatchingrules` array<struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>,`captcharesponse`:struct<`responsecode`:string,`solvetimestamp`:string>>>, `requestheadersinserted` array<struct<`name`:string,`value`:string>>, `responsecodesent` string, `httprequest` struct<`clientip`:string,`country`:string,`headers`:array<struct<`name`:string,`value`:string>>,`uri`:string,`args`:string,`httpversion`:string,`httpmethod`:string,`requestid`:string>, `labels` array<struct<`name`:string>>, `captcharesponse` struct<`responsecode`:string,`solvetimestamp`:string,`failureReason`:string>)  ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'  STORED AS INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat' OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat' LOCATION '{}' ;"
-        assert statements.insert == """INSERT INTO "centralized"."waf" ("time", "timestamp", "formatversion", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "action", "terminatingrulematchdetails", "httpsourcename", "httpsourceid", "rulegrouplist", "ratebasedrulelist", "nonterminatingmatchingrules", "requestheadersinserted", "responsecodesent", "httprequest", "labels", "captcharesponse", "account_id", "region", "event_hour", "__execution_name__") SELECT "timestamp", CAST(FROM_UNIXTIME("timestamp" / 1000) AS timestamp), "formatversion", "webaclid", SPLIT("webaclid", '/')[3], "terminatingruleid", "terminatingruletype", "action", "terminatingrulematchdetails", "httpsourcename", "httpsourceid", "rulegrouplist", "ratebasedrulelist", "nonterminatingmatchingrules", "requestheadersinserted", "responsecodesent", "httprequest", "labels", "captcharesponse", SPLIT("webaclid", ':')[5], SPLIT("webaclid", ':')[4], DATE_FORMAT(CAST(FROM_UNIXTIME("timestamp" / 1000) AS timestamp), '%Y%m%d%H'), '{}' FROM "tmp"."waf{}";"""
+        assert raw is SOURCE_TYPE_RESOURCES['waf']['schema'][0]
+        assert parquet is SOURCE_TYPE_RESOURCES['waf']['schema'][1]
+        assert metrics is SOURCE_TYPE_RESOURCES['waf']['schema'][2]
+        assert statements.create == "CREATE EXTERNAL TABLE IF NOT EXISTS `tmp`.`waf{}` (`timestamp` bigint, `formatversion` int, `webaclid` string, `terminatingruleid` string, `terminatingruletype` string, `action` string, `terminatingrulematchdetails` array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>, `httpsourcename` string, `httpsourceid` string, `rulegrouplist` array<struct<`rulegroupid`:string,`terminatingrule`:struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>>,`nonterminatingmatchingrules`:array<struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>>>,`excludedrules`:string>>, `ratebasedrulelist` array<struct<`ratebasedruleid`:string,`limitkey`:string,`maxrateallowed`:int>>, `nonterminatingmatchingrules` array<struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>,`captcharesponse`:struct<`responsecode`:string,`solvetimestamp`:string>>>, `requestheadersinserted` array<struct<`name`:string,`value`:string>>, `responsecodesent` string, `ja3fingerprint` string, `httprequest` struct<`clientip`:string,`country`:string,`headers`:array<struct<`name`:string,`value`:string>>,`uri`:string,`args`:string,`httpversion`:string,`httpmethod`:string,`requestid`:string>, `labels` array<struct<`name`:string>>, `captcharesponse` struct<`responsecode`:string,`solvetimestamp`:string,`failureReason`:string>)  ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'  STORED AS INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat' OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat' LOCATION '{}' ;"
+        assert statements.insert == """INSERT INTO "centralized"."waf" ("time", "timestamp", "formatversion", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "action", "action_fixed", "terminatingrulematchdetails", "httpsourcename", "httpsourceid", "rulegrouplist", "ratebasedrulelist", "nonterminatingmatchingrules", "requestheadersinserted", "responsecodesent", "host", "clientip", "country", "uri", "args", "httpmethod", "ja3fingerprint", "httprequest", "labels", "captcharesponse", "account_id", "region", "event_hour", "__execution_name__") SELECT "timestamp", CAST(FROM_UNIXTIME("timestamp" / 1000) AS timestamp), "formatversion", "webaclid", SPLIT("webaclid", '/')[3], "terminatingruleid", "terminatingruletype", "action", CASE WHEN action = 'ALLOW' AND labels != ARRAY[] THEN 'COUNT' ELSE action END, "terminatingrulematchdetails", "httpsourcename", "httpsourceid", "rulegrouplist", "ratebasedrulelist", "nonterminatingmatchingrules", "requestheadersinserted", "responsecodesent", case when filter(httprequest.headers, x -> lower(x.name) = 'host' ) = ARRAY[] then '' else filter(httprequest.headers, x -> lower(x.name) = 'host' )[1].value end, httprequest.clientip, httprequest.country, httprequest.uri, httprequest.args, httprequest.httpmethod, "ja3fingerprint", "httprequest", "labels", "captcharesponse", SPLIT("webaclid", ':')[5], SPLIT("webaclid", ':')[4], DATE_FORMAT(CAST(FROM_UNIXTIME("timestamp" / 1000) AS timestamp), '%Y%m%d%H'), '{}' FROM "tmp"."waf{}";"""
         assert statements.drop == 'DROP TABLE IF EXISTS `tmp`.`waf{}`'
-        assert statements.aggregate == ['INSERT INTO "centralized"."waf_metrics" ("time", "timestamp", "action", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "httpsourceid", "httpmethod", "country", "clientip", "uri", "first_label", "requests", "account_id", "region", "event_hour", "__execution_name__") SELECT FLOOR("time" / 60000) * 60000, DATE_TRUNC(\'minute\', "timestamp"), "action", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "httpsourceid", "httprequest"."httpmethod", "httprequest"."country", "httprequest"."clientip", "httprequest"."uri", CASE WHEN labels = ARRAY[] THEN \'\' ELSE labels[1].name END, CAST(COUNT(1) AS bigint), "account_id", "region", "event_hour", "__execution_name__" FROM "centralized"."waf" WHERE __execution_name__ = \'{}\' GROUP BY FLOOR("time" / 60000) * 60000, DATE_TRUNC(\'minute\', "timestamp"), "action", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "httpsourceid", "httprequest"."httpmethod", "httprequest"."country", "httprequest"."clientip", "httprequest"."uri", CASE WHEN labels = ARRAY[] THEN \'\' ELSE labels[1].name END, "account_id", "region", "event_hour", "__execution_name__";']
+        assert statements.aggregate ==  ['INSERT INTO "centralized"."waf_metrics" ("time", "timestamp", "action", "action_fixed", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "httpsourceid", "httpmethod", "country", "clientip", "host", "uri", "labels", "requests", "account_id", "region", "event_hour", "__execution_name__") SELECT FLOOR("time" / 60000) * 60000, DATE_TRUNC(\'minute\', "timestamp"), "action", "action_fixed", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "httpsourceid", "httpmethod", "country", "clientip", "host", "uri", ARRAY_DISTINCT(FLATTEN(ARRAY_AGG(TRANSFORM(labels, x -> x.name)) FILTER (WHERE labels != ARRAY[]))), CAST(COUNT(1) AS bigint), "account_id", "region", "event_hour", "__execution_name__" FROM "centralized"."waf" WHERE __execution_name__ = \'{}\' GROUP BY FLOOR("time" / 60000) * 60000, DATE_TRUNC(\'minute\', "timestamp"), "action", "action_fixed", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "httpsourceid", "httpmethod", "country", "clientip", "host", "uri", "account_id", "region", "event_hour", "__execution_name__";']
 
     def test_get_table_metadata_and_statements_alb(self, mock_s3_context, mock_iam_context, mock_sqs_context, mock_ddb_context):
         from pipeline_resources_builder.lambda_function import Parameters, TableMetaDataGenerator, MetaTable
-        from pipeline_resources_builder.lambda_function import ALB_RAW, ALB_PARQUET, ALB_METRICS
+        from pipeline_resources_builder.lambda_function import SOURCE_TYPE_RESOURCES
         
         AWS_DDB_META = MetaTable()
         
@@ -2610,17 +3293,17 @@ class TestTableMetaDataGenerator:
         
         table_metadata_generator = TableMetaDataGenerator(source=param.pipeline_info.source, destination=param.pipeline_info.destination)
         raw, parquet, metrics, statements = table_metadata_generator.get_table_metadata_and_statements()
-        assert raw is ALB_RAW
-        assert parquet is ALB_PARQUET
-        assert metrics is ALB_METRICS
-        assert statements.create == """CREATE EXTERNAL TABLE IF NOT EXISTS `tmp`.`alb{}` (`type` string, `time` string, `elb` string, `client_ip` string, `client_port` int, `target_ip` string, `target_port` int, `request_processing_time` double, `target_processing_time` double, `response_processing_time` double, `elb_status_code` int, `target_status_code` string, `received_bytes` double, `sent_bytes` double, `request_verb` string, `request_url` string, `request_proto` string, `user_agent` string, `ssl_cipher` string, `ssl_protocol` string, `target_group_arn` string, `trace_id` string, `domain_name` string, `chosen_cert_arn` string, `matched_rule_priority` string, `request_creation_time` string, `actions_executed` string, `redirect_url` string, `lambda_error_reason` string, `target_port_list` string, `target_status_code_list` string, `classification` string, `classification_reason` string, `enrichment` string)  ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.RegexSerDe' WITH SERDEPROPERTIES ('input.regex'='([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*):([0-9]*) ([^ ]*)[:-]([0-9]*) ([-.0-9]*) ([-.0-9]*) ([-.0-9]*) (|[-0-9]*) (-|[-0-9]*) ([-0-9]*) ([-0-9]*) "([^ ]*) (.*) (- |[^ ]*)" "([^"]*)" ([A-Z0-9-_]+) ([A-Za-z0-9.-]*) ([^ ]*) "([^"]*)" "([^"]*)" "([^"]*)" ([-.0-9]*) ([^ ]*) "([^"]*)" "([^"]*)" "([^ ]*)" "([^s]+?)" "([^s]+)" "([^ ]*)" "([^ ]*)" ?(.*)') STORED AS INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat' OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat' LOCATION '{}' ;"""
-        assert statements.insert == """INSERT INTO "centralized"."alb" ("time", "timestamp", "type", "elb", "client_ip", "client_port", "target_ip", "target_port", "request_processing_time", "target_processing_time", "response_processing_time", "elb_status_code_group", "elb_status_code", "target_status_code", "received_bytes", "sent_bytes", "request_verb", "request_url", "request_host", "request_path", "request_proto", "user_agent", "ssl_cipher", "ssl_protocol", "target_group_arn", "trace_id", "domain_name", "chosen_cert_arn", "matched_rule_priority", "request_creation_time", "actions_executed", "redirect_url", "lambda_error_reason", "target_port_list", "target_status_code_list", "classification", "classification_reason", "enrichment", "event_hour", "__execution_name__") SELECT CAST(to_unixtime(from_iso8601_timestamp("time")) * 1000 AS bigint), from_iso8601_timestamp("time"), "type", "elb", "client_ip", "client_port", "target_ip", "target_port", "request_processing_time", "target_processing_time", "response_processing_time", CASE WHEN elb_status_code BETWEEN 100 AND 199 THEN '1xx' WHEN elb_status_code BETWEEN 200 AND 299 THEN '2xx' WHEN elb_status_code BETWEEN 300 AND 399 THEN '3xx' WHEN elb_status_code BETWEEN 400 AND 499 THEN '4xx' WHEN elb_status_code BETWEEN 500 AND 599 THEN '5xx' ELSE '-' END, "elb_status_code", "target_status_code", "received_bytes", "sent_bytes", "request_verb", "request_url", url_extract_host("request_url"), url_extract_path("request_url"), "request_proto", "user_agent", "ssl_cipher", "ssl_protocol", "target_group_arn", "trace_id", "domain_name", "chosen_cert_arn", "matched_rule_priority", "request_creation_time", "actions_executed", "redirect_url", "lambda_error_reason", "target_port_list", "target_status_code_list", "classification", "classification_reason", CAST(ROW(json_extract_scalar("enrichment", '$.geo_iso_code'), json_extract_scalar("enrichment", '$.geo_country'), json_extract_scalar("enrichment", '$.geo_city'), json_extract_scalar("enrichment", '$.geo_location'), json_extract_scalar("enrichment", '$.ua_browser'), json_extract_scalar("enrichment", '$.ua_browser_version'), json_extract_scalar("enrichment", '$.ua_os'), json_extract_scalar("enrichment", '$.ua_os_version'), json_extract_scalar("enrichment", '$.ua_device'), json_extract_scalar("enrichment", '$.ua_category')) AS ROW(geo_iso_code varchar, geo_country varchar, geo_city varchar, geo_location varchar, ua_browser varchar, ua_browser_version varchar, ua_os varchar, ua_os_version varchar, ua_device varchar, ua_category varchar)), date_format(from_iso8601_timestamp("time"), '%Y%m%d%H'), '{}' FROM "tmp"."alb{}";"""
+        assert raw is SOURCE_TYPE_RESOURCES['alb']['schema'][0]
+        assert parquet is SOURCE_TYPE_RESOURCES['alb']['schema'][1]
+        assert metrics is SOURCE_TYPE_RESOURCES['alb']['schema'][2]
+        assert statements.create == """CREATE EXTERNAL TABLE IF NOT EXISTS `tmp`.`alb{}` (`type` string, `time` string, `elb` string, `client_ip` string, `client_port` int, `target_ip` string, `target_port` int, `request_processing_time` double, `target_processing_time` double, `response_processing_time` double, `elb_status_code` int, `target_status_code` string, `received_bytes` double, `sent_bytes` double, `request_verb` string, `request_url` string, `request_proto` string, `user_agent` string, `ssl_cipher` string, `ssl_protocol` string, `target_group_arn` string, `trace_id` string, `domain_name` string, `chosen_cert_arn` string, `matched_rule_priority` string, `request_creation_time` string, `actions_executed` string, `redirect_url` string, `lambda_error_reason` string, `target_port_list` string, `target_status_code_list` string, `classification` string, `classification_reason` string, `conn_trace_id` string, `enrichment` string)  ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.RegexSerDe' WITH SERDEPROPERTIES ('input.regex'='^([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*):([0-9]*) ([^ ]*)[:-]([0-9]*) ([-.0-9]*) ([-.0-9]*) ([-.0-9]*) (|[-0-9]*) (-|[-0-9]*) ([-0-9]*) ([-0-9]*) "([^ ]*) (.*) (- |[^ ]*)" "([^"]*)" ([A-Z0-9-_]+) ([A-Za-z0-9.-]*) ([^ ]*) "([^"]*)" "([^"]*)" "([^"]*)" ([-.0-9]*) ([^ ]*) "([^"]*)" "([^"]*)" "([^ ]*)" "([^ ]+?)" "([^ ]+)" "([^ ]*)" "([^ ]*)" ?(TID_[A-Za-z0-9.-]+)? ?(?:[^\\\\u007B]+?)? ?(\\\\u007B.*\\\\u007D)?$') STORED AS INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat' OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat' LOCATION '{}' ;"""
+        assert statements.insert == """INSERT INTO "centralized"."alb" ("time", "timestamp", "type", "elb", "client_ip", "client_port", "target_ip", "target_port", "request_processing_time", "target_processing_time", "response_processing_time", "elb_status_code_group", "elb_status_code", "target_status_code", "received_bytes", "sent_bytes", "request_verb", "request_url", "request_host", "request_path", "request_proto", "user_agent", "ssl_cipher", "ssl_protocol", "target_group_arn", "trace_id", "domain_name", "chosen_cert_arn", "matched_rule_priority", "request_creation_time", "actions_executed", "redirect_url", "lambda_error_reason", "target_port_list", "target_status_code_list", "classification", "classification_reason", "conn_trace_id", "enrichment", "event_hour", "__execution_name__") SELECT CAST(to_unixtime(from_iso8601_timestamp("time")) * 1000 AS bigint), from_iso8601_timestamp("time"), "type", "elb", "client_ip", "client_port", "target_ip", "target_port", "request_processing_time", "target_processing_time", "response_processing_time", CASE WHEN elb_status_code BETWEEN 100 AND 199 THEN '1xx' WHEN elb_status_code BETWEEN 200 AND 299 THEN '2xx' WHEN elb_status_code BETWEEN 300 AND 399 THEN '3xx' WHEN elb_status_code BETWEEN 400 AND 499 THEN '4xx' WHEN elb_status_code BETWEEN 500 AND 599 THEN '5xx' ELSE '-' END, "elb_status_code", "target_status_code", "received_bytes", "sent_bytes", "request_verb", "request_url", url_extract_host("request_url"), url_extract_path("request_url"), "request_proto", "user_agent", "ssl_cipher", "ssl_protocol", "target_group_arn", "trace_id", "domain_name", "chosen_cert_arn", "matched_rule_priority", "request_creation_time", "actions_executed", "redirect_url", "lambda_error_reason", "target_port_list", "target_status_code_list", "classification", "classification_reason", "conn_trace_id", CAST(ROW(json_extract_scalar("enrichment", '$.geo_iso_code'), json_extract_scalar("enrichment", '$.geo_country'), json_extract_scalar("enrichment", '$.geo_city'), json_extract_scalar("enrichment", '$.geo_location'), json_extract_scalar("enrichment", '$.ua_browser'), json_extract_scalar("enrichment", '$.ua_browser_version'), json_extract_scalar("enrichment", '$.ua_os'), json_extract_scalar("enrichment", '$.ua_os_version'), json_extract_scalar("enrichment", '$.ua_device'), json_extract_scalar("enrichment", '$.ua_category')) AS ROW(geo_iso_code varchar, geo_country varchar, geo_city varchar, geo_location varchar, ua_browser varchar, ua_browser_version varchar, ua_os varchar, ua_os_version varchar, ua_device varchar, ua_category varchar)), date_format(from_iso8601_timestamp("time"), '%Y%m%d%H'), '{}' FROM "tmp"."alb{}";"""
         assert statements.drop == 'DROP TABLE IF EXISTS `tmp`.`alb{}`'
-        assert statements.aggregate == ['INSERT INTO "centralized"."alb_metrics" ("time", "timestamp", "type", "elb", "client_ip", "target_group_arn", "target_ip", "elb_status_code_group", "elb_status_code", "request_verb", "request_host", "request_path", "ssl_protocol", "user_agent", "ua_os", "ua_device", "ua_browser", "ua_category", "geo_iso_code", "geo_country", "geo_city", "received_bytes", "sent_bytes", "request_processing_time", "target_processing_time", "response_processing_time", "requests", "event_hour", "__execution_name__") SELECT FLOOR("time" / 60000) * 60000, DATE_TRUNC(\'minute\', "timestamp"), "type", "elb", "client_ip", "target_group_arn", "target_ip", "elb_status_code_group", "elb_status_code", "request_verb", url_extract_host("request_url"), url_extract_path("request_url"), "ssl_protocol", "user_agent", "enrichment"."ua_os", "enrichment"."ua_device", "enrichment"."ua_browser", "enrichment"."ua_category", "enrichment"."geo_iso_code", "enrichment"."geo_country", "enrichment"."geo_city", CAST(SUM("received_bytes") AS DOUBLE), CAST(SUM("sent_bytes") AS DOUBLE), CAST(SUM("request_processing_time") AS DOUBLE), CAST(SUM("target_processing_time") AS DOUBLE), CAST(SUM("response_processing_time") AS DOUBLE), CAST(COUNT(1) AS bigint), "event_hour", "__execution_name__" FROM "centralized"."alb" WHERE __execution_name__ = \'{}\' GROUP BY FLOOR("time" / 60000) * 60000, DATE_TRUNC(\'minute\', "timestamp"), "type", "elb", "client_ip", "target_group_arn", "target_ip", "elb_status_code_group", "elb_status_code", "request_verb", url_extract_host("request_url"), url_extract_path("request_url"), "ssl_protocol", "user_agent", "enrichment"."ua_os", "enrichment"."ua_device", "enrichment"."ua_browser", "enrichment"."ua_category", "enrichment"."geo_iso_code", "enrichment"."geo_country", "enrichment"."geo_city", "event_hour", "__execution_name__";']
+        assert statements.aggregate == ['INSERT INTO "centralized"."alb_metrics" ("time", "timestamp", "type", "elb", "client_ip", "target_group_arn", "target_ip", "elb_status_code_group", "elb_status_code", "request_verb", "request_host", "request_path", "ssl_protocol", "ua_os", "ua_device", "ua_browser", "ua_category", "geo_iso_code", "geo_country", "geo_city", "received_bytes", "sent_bytes", "avg_request_processing_time", "avg_target_processing_time", "avg_response_processing_time", "requests", "event_hour", "__execution_name__") SELECT FLOOR("time" / 60000) * 60000, DATE_TRUNC(\'minute\', "timestamp"), "type", "elb", "client_ip", "target_group_arn", "target_ip", "elb_status_code_group", "elb_status_code", "request_verb", url_extract_host("request_url"), url_extract_path("request_url"), "ssl_protocol", "enrichment"."ua_os", "enrichment"."ua_device", "enrichment"."ua_browser", "enrichment"."ua_category", "enrichment"."geo_iso_code", "enrichment"."geo_country", "enrichment"."geo_city", CAST(SUM("received_bytes") AS DOUBLE), CAST(SUM("sent_bytes") AS DOUBLE), CAST(AVG("request_processing_time") FILTER(WHERE "request_processing_time" >= 0) AS DOUBLE), CAST(AVG("target_processing_time") FILTER(WHERE "target_processing_time" >= 0) AS DOUBLE), CAST(AVG("response_processing_time") FILTER(WHERE "response_processing_time" >= 0) AS DOUBLE), CAST(COUNT(1) AS bigint), "event_hour", "__execution_name__" FROM "centralized"."alb" WHERE __execution_name__ = \'{}\' GROUP BY FLOOR("time" / 60000) * 60000, DATE_TRUNC(\'minute\', "timestamp"), "type", "elb", "client_ip", "target_group_arn", "target_ip", "elb_status_code_group", "elb_status_code", "request_verb", url_extract_host("request_url"), url_extract_path("request_url"), "ssl_protocol", "enrichment"."ua_os", "enrichment"."ua_device", "enrichment"."ua_browser", "enrichment"."ua_category", "enrichment"."geo_iso_code", "enrichment"."geo_country", "enrichment"."geo_city", "event_hour", "__execution_name__";']
         
     def test_get_table_metadata_and_statements_cloudfront(self, mock_s3_context, mock_iam_context, mock_sqs_context, mock_ddb_context):
         from pipeline_resources_builder.lambda_function import Parameters, TableMetaDataGenerator, MetaTable
-        from pipeline_resources_builder.lambda_function import CLOUDFRONT_RAW, CLOUDFRONT_PARQUET, CLOUDFRONT_METRICS
+        from pipeline_resources_builder.lambda_function import SOURCE_TYPE_RESOURCES
         
         AWS_DDB_META = MetaTable()
 
@@ -2645,17 +3328,17 @@ class TestTableMetaDataGenerator:
         
         table_metadata_generator = TableMetaDataGenerator(source=param.pipeline_info.source, destination=param.pipeline_info.destination)
         raw, parquet, metrics, statements = table_metadata_generator.get_table_metadata_and_statements()
-        assert raw is CLOUDFRONT_RAW
-        assert parquet is CLOUDFRONT_PARQUET
-        assert metrics is CLOUDFRONT_METRICS
+        assert raw is SOURCE_TYPE_RESOURCES['cloudfront']['schema'][0]
+        assert parquet is SOURCE_TYPE_RESOURCES['cloudfront']['schema'][1]
+        assert metrics is SOURCE_TYPE_RESOURCES['cloudfront']['schema'][2]
         assert statements.create == "CREATE EXTERNAL TABLE IF NOT EXISTS `tmp`.`cloudfront{}` (`date` date, `time` string, `x-edge-location` string, `sc-bytes` bigint, `c-ip` string, `cs-method` string, `cs-host` string, `cs-uri-stem` string, `sc-status` int, `cs-referer` string, `cs-user-agent` string, `cs-uri-query` string, `cs-cookie` string, `x-edge-result-type` string, `x-edge-request-id` string, `x-host-header` string, `cs-protocol` string, `cs-bytes` bigint, `time-taken` double, `x-forwarded-for` string, `ssl-protocol` string, `ssl-cipher` string, `x-edge-response-result-type` string, `cs-protocol-version` string, `fle-status` string, `fle-encrypted-fields` int, `c-port` int, `time-to-first-byte` double, `x-edge-detailed-result-type` string, `sc-content-type` string, `sc-content-len` bigint, `sc-range-start` bigint, `sc-range-end` bigint, `enrichment` string)  ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe' WITH SERDEPROPERTIES ('field.delim'='\t', 'line.delim'='\n') STORED AS INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat' OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat' LOCATION '{}' TBLPROPERTIES ('skip.header.line.count'='2');"
         assert statements.insert == """INSERT INTO "centralized"."cloudfront" ("time", "timestamp", "x-edge-location", "sc-bytes", "c-ip", "cs-method", "cs-host", "cs-uri-stem", "sc-status-group", "sc-status", "cs-referer", "cs-user-agent", "cs-uri-query", "cs-cookie", "x-edge-result-type", "x-edge-request-id", "x-host-header", "cs-protocol", "cs-bytes", "time-taken-in-second", "time-taken", "x-forwarded-for", "ssl-protocol", "ssl-cipher", "x-edge-response-result-type", "cs-protocol-version", "fle-status", "fle-encrypted-fields", "c-port", "time-to-first-byte", "x-edge-detailed-result-type", "sc-content-type", "sc-content-len", "sc-range-start", "sc-range-end", "hit-cache", "back-to-origin", "enrichment", "event_hour", "__execution_name__") SELECT CAST(to_unixtime(from_iso8601_timestamp(concat(CAST(date AS varchar), 'T', "time", 'Z'))) * 1000 AS bigint), from_iso8601_timestamp(concat(CAST("date" AS varchar), 'T', "time", 'Z')), "x-edge-location", "sc-bytes", "c-ip", "cs-method", "cs-host", "cs-uri-stem", CASE WHEN "sc-status" BETWEEN 100 AND 199 THEN '1xx' WHEN "sc-status" BETWEEN 200 AND 299 THEN '2xx' WHEN "sc-status" BETWEEN 300 AND 399 THEN '3xx' WHEN "sc-status" BETWEEN 400 AND 499 THEN '4xx' WHEN "sc-status" BETWEEN 500 AND 599 THEN '5xx' ELSE '-' END, "sc-status", "cs-referer", url_decode("cs-user-agent"), "cs-uri-query", "cs-cookie", "x-edge-result-type", "x-edge-request-id", "x-host-header", "cs-protocol", "cs-bytes", cast(floor("time-taken") as integer), "time-taken", "x-forwarded-for", "ssl-protocol", "ssl-cipher", "x-edge-response-result-type", "cs-protocol-version", "fle-status", "fle-encrypted-fields", "c-port", "time-to-first-byte", "x-edge-detailed-result-type", "sc-content-type", "sc-content-len", "sc-range-start", "sc-range-end", CASE WHEN "x-edge-result-type" like '%Hit' THEN true ELSE false END, CASE WHEN ("x-edge-detailed-result-type" = 'Miss' OR ("x-edge-detailed-result-type" like '%Origin%' AND "x-edge-detailed-result-type" <> 'OriginShieldHit')) THEN true ELSE false END, CAST(ROW(json_extract_scalar("enrichment", '$.geo_iso_code'), json_extract_scalar("enrichment", '$.geo_country'), json_extract_scalar("enrichment", '$.geo_city'), json_extract_scalar("enrichment", '$.geo_location'), json_extract_scalar("enrichment", '$.ua_browser'), json_extract_scalar("enrichment", '$.ua_browser_version'), json_extract_scalar("enrichment", '$.ua_os'), json_extract_scalar("enrichment", '$.ua_os_version'), json_extract_scalar("enrichment", '$.ua_device'), json_extract_scalar("enrichment", '$.ua_category')) AS ROW(geo_iso_code varchar, geo_country varchar, geo_city varchar, geo_location varchar, ua_browser varchar, ua_browser_version varchar, ua_os varchar, ua_os_version varchar, ua_device varchar, ua_category varchar)), date_format(from_iso8601_timestamp(concat(CAST("date" AS varchar), 'T', "time", 'Z')), '%Y%m%d%H'), '{}' FROM "tmp"."cloudfront{}";"""
         assert statements.drop == 'DROP TABLE IF EXISTS `tmp`.`cloudfront{}`'
-        assert statements.aggregate == ['INSERT INTO "centralized"."cloudfront_metrics" ("time", "timestamp", "c-ip", "cs-method", "cs-host", "cs-protocol-version", "cs-uri-stem", "sc-status-group", "sc-status", "cs-protocol", "time-taken-in-second", "ssl-protocol", "x-edge-location", "x-edge-result-type", "x-edge-response-result-type", "x-edge-detailed-result-type", "hit-cache", "back-to-origin", "ua_os", "ua_device", "ua_browser", "ua_category", "geo_iso_code", "geo_country", "geo_city", "time-taken", "time-to-first-byte", "cs-bytes", "sc-bytes", "requests", "event_hour", "__execution_name__") SELECT FLOOR("time" / 60000) * 60000, DATE_TRUNC(\'minute\', "timestamp"), "c-ip", "cs-method", "cs-host", "cs-protocol-version", "cs-uri-stem", "sc-status-group", "sc-status", "cs-protocol", "time-taken-in-second", "ssl-protocol", "x-edge-location", "x-edge-result-type", "x-edge-response-result-type", "x-edge-detailed-result-type", "hit-cache", "back-to-origin", "enrichment"."ua_os", "enrichment"."ua_device", "enrichment"."ua_browser", "enrichment"."ua_category", "enrichment"."geo_iso_code", "enrichment"."geo_country", "enrichment"."geo_city", cast(sum("time-taken") as double), cast(sum("time-to-first-byte") as double), cast(sum("cs-bytes") as double), cast(sum("sc-bytes") as double), cast(count(1) as bigint), "event_hour", "__execution_name__" FROM "centralized"."cloudfront" WHERE __execution_name__ = \'{}\' GROUP BY FLOOR("time" / 60000) * 60000, DATE_TRUNC(\'minute\', "timestamp"), "c-ip", "cs-method", "cs-host", "cs-protocol-version", "cs-uri-stem", "sc-status-group", "sc-status", "cs-protocol", "time-taken-in-second", "ssl-protocol", "x-edge-location", "x-edge-result-type", "x-edge-response-result-type", "x-edge-detailed-result-type", "hit-cache", "back-to-origin", "enrichment"."ua_os", "enrichment"."ua_device", "enrichment"."ua_browser", "enrichment"."ua_category", "enrichment"."geo_iso_code", "enrichment"."geo_country", "enrichment"."geo_city", "event_hour", "__execution_name__";']
-    
+        assert statements.aggregate == ['INSERT INTO "centralized"."cloudfront_metrics" ("time", "timestamp", "c-ip", "cs-method", "cs-host", "x-host-header", "cs-protocol-version", "cs-uri-stem", "sc-status-group", "sc-status", "cs-protocol", "time-taken-in-second", "ssl-protocol", "x-edge-location", "x-edge-result-type", "x-edge-response-result-type", "x-edge-detailed-result-type", "hit-cache", "back-to-origin", "ua_os", "ua_device", "ua_browser", "ua_category", "geo_iso_code", "geo_country", "geo_city", "time-taken", "time-to-first-byte", "cs-bytes", "sc-bytes", "requests", "event_hour", "__execution_name__") SELECT FLOOR("time" / 60000) * 60000, DATE_TRUNC(\'minute\', "timestamp"), "c-ip", "cs-method", "cs-host", "x-host-header", "cs-protocol-version", "cs-uri-stem", "sc-status-group", "sc-status", "cs-protocol", "time-taken-in-second", "ssl-protocol", "x-edge-location", "x-edge-result-type", "x-edge-response-result-type", "x-edge-detailed-result-type", "hit-cache", "back-to-origin", "enrichment"."ua_os", "enrichment"."ua_device", "enrichment"."ua_browser", "enrichment"."ua_category", "enrichment"."geo_iso_code", "enrichment"."geo_country", "enrichment"."geo_city", cast(sum("time-taken") as double), cast(sum("time-to-first-byte") as double), cast(sum("cs-bytes") as double), cast(sum("sc-bytes") as double), cast(count(1) as bigint), "event_hour", "__execution_name__" FROM "centralized"."cloudfront" WHERE __execution_name__ = \'{}\' GROUP BY FLOOR("time" / 60000) * 60000, DATE_TRUNC(\'minute\', "timestamp"), "c-ip", "cs-method", "cs-host", "x-host-header", "cs-protocol-version", "cs-uri-stem", "sc-status-group", "sc-status", "cs-protocol", "time-taken-in-second", "ssl-protocol", "x-edge-location", "x-edge-result-type", "x-edge-response-result-type", "x-edge-detailed-result-type", "hit-cache", "back-to-origin", "enrichment"."ua_os", "enrichment"."ua_device", "enrichment"."ua_browser", "enrichment"."ua_category", "enrichment"."geo_iso_code", "enrichment"."geo_country", "enrichment"."geo_city", "event_hour", "__execution_name__";']
+        
     def test_get_table_metadata_and_statements_cloudtrail(self, mock_s3_context, mock_iam_context, mock_sqs_context, mock_ddb_context):
         from pipeline_resources_builder.lambda_function import Parameters, TableMetaDataGenerator, MetaTable
-        from pipeline_resources_builder.lambda_function import CLOUDTRAIL_RAW, CLOUDTRAIL_PARQUET, CLOUDTRAIL_METRICS
+        from pipeline_resources_builder.lambda_function import SOURCE_TYPE_RESOURCES
         
         AWS_DDB_META = MetaTable()
 
@@ -2680,9 +3363,9 @@ class TestTableMetaDataGenerator:
         
         table_metadata_generator = TableMetaDataGenerator(source=param.pipeline_info.source, destination=param.pipeline_info.destination)
         raw, parquet, metrics, statements = table_metadata_generator.get_table_metadata_and_statements()
-        assert raw is CLOUDTRAIL_RAW
-        assert parquet is CLOUDTRAIL_PARQUET
-        assert metrics is CLOUDTRAIL_METRICS
+        assert raw is SOURCE_TYPE_RESOURCES['cloudtrail']['schema'][0]
+        assert parquet is SOURCE_TYPE_RESOURCES['cloudtrail']['schema'][1]
+        assert metrics is SOURCE_TYPE_RESOURCES['cloudtrail']['schema'][2]
         assert statements.create == "CREATE EXTERNAL TABLE IF NOT EXISTS `tmp`.`cloudtrail{}` (`eventversion` string, `useridentity` struct<`type`:string,`principalid`:string,`arn`:string,`accountid`:string,`invokedby`:string,`accesskeyid`:string,`userName`:string,`sessioncontext`:struct<`attributes`:struct<`mfaauthenticated`:string,`creationdate`:string>,`sessionissuer`:struct<`type`:string,`principalId`:string,`arn`:string,`accountId`:string,`userName`:string>,`ec2RoleDelivery`:string,`webIdFederationData`:map<string,string>>>, `eventtime` string, `eventsource` string, `eventname` string, `awsregion` string, `sourceipaddress` string, `useragent` string, `errorcode` string, `errormessage` string, `requestparameters` string, `responseelements` string, `additionaleventdata` string, `requestid` string, `eventid` string, `resources` array<struct<`arn`:string,`accountid`:string,`type`:string>>, `eventtype` string, `apiversion` string, `readonly` string, `recipientaccountid` string, `serviceeventdetails` string, `sharedeventid` string, `vpcendpointid` string, `tlsDetails` struct<`tlsVersion`:string,`cipherSuite`:string,`clientProvidedHostHeader`:string>)  ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'  STORED AS INPUTFORMAT 'com.amazon.emr.cloudtrail.CloudTrailInputFormat' OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat' LOCATION '{}' ;"
         assert statements.insert == """INSERT INTO "centralized"."cloudtrail" ("time", "timestamp", "eventversion", "useridentity", "eventtime", "eventsource", "eventname", "awsregion", "sourceipaddress", "useragent", "errorcode", "errormessage", "requestparameters", "responseelements", "additionaleventdata", "requestid", "eventid", "resources", "eventtype", "apiversion", "readonly", "recipientaccountid", "serviceeventdetails", "sharedeventid", "vpcendpointid", "tlsDetails", "account_id", "region", "event_hour", "__execution_name__") SELECT CAST(to_unixtime(from_iso8601_timestamp("eventtime")) * 1000 AS bigint), from_iso8601_timestamp("eventtime"), "eventversion", "useridentity", "eventtime", "eventsource", "eventname", "awsregion", "sourceipaddress", "useragent", "errorcode", "errormessage", "requestparameters", "responseelements", "additionaleventdata", "requestid", "eventid", "resources", "eventtype", "apiversion", "readonly", "recipientaccountid", "serviceeventdetails", "sharedeventid", "vpcendpointid", "tlsDetails", "recipientaccountid", "awsregion", date_format(from_iso8601_timestamp("eventtime"), '%Y%m%d%H'), '{}' FROM "tmp"."cloudtrail{}";"""
         assert statements.drop == 'DROP TABLE IF EXISTS `tmp`.`cloudtrail{}`'
@@ -2690,7 +3373,7 @@ class TestTableMetaDataGenerator:
         
     def test_get_table_metadata_and_statements_vpcflow(self, mock_s3_context, mock_iam_context, mock_sqs_context, mock_ddb_context):
         from pipeline_resources_builder.lambda_function import Parameters, TableMetaDataGenerator, MetaTable
-        from pipeline_resources_builder.lambda_function import VPCFLOW_RAW, VPCFLOW_PARQUET
+        from pipeline_resources_builder.lambda_function import SOURCE_TYPE_RESOURCES
         
         AWS_DDB_META = MetaTable()
 
@@ -2715,13 +3398,13 @@ class TestTableMetaDataGenerator:
         
         table_metadata_generator = TableMetaDataGenerator(source=param.pipeline_info.source, destination=param.pipeline_info.destination)
         raw, parquet, metrics, statements = table_metadata_generator.get_table_metadata_and_statements()
-        assert raw is VPCFLOW_RAW
-        assert parquet is VPCFLOW_PARQUET
-        assert metrics is None
+        assert raw is SOURCE_TYPE_RESOURCES['vpcflow']['schema'][0]
+        assert parquet is SOURCE_TYPE_RESOURCES['vpcflow']['schema'][1]
+        assert metrics is SOURCE_TYPE_RESOURCES['vpcflow']['schema'][2]
         assert statements.create == "CREATE EXTERNAL TABLE IF NOT EXISTS `tmp`.`vpcflow{}` (`account-id` string, `action` string, `az-id` string, `bytes` bigint, `dstaddr` string, `dstport` int, `end` bigint, `flow-direction` string, `instance-id` string, `interface-id` string, `log-status` string, `packets` bigint, `pkt-dst-aws-service` string, `pkt-dstaddr` string, `pkt-src-aws-service` string, `pkt-srcaddr` string, `protocol` bigint, `region` string, `srcaddr` string, `srcport` int, `start` bigint, `sublocation-id` string, `sublocation-type` string, `subnet-id` string, `tcp-flags` int, `traffic-path` int, `type` string, `version` int, `vpc-id` string)  ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe' WITH SERDEPROPERTIES ('field.delim'=' ', 'line.delim'='\n') STORED AS INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat' OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat' LOCATION '{}' TBLPROPERTIES ('skip.header.line.count'='1');"
         assert statements.insert == """INSERT INTO "centralized"."vpcflow" ("time", "timestamp", "version", "account-id", "interface-id", "srcaddr", "dstaddr", "srcport", "dstport", "protocol", "packets", "bytes", "start", "end", "action", "log-status", "vpc-id", "subnet-id", "instance-id", "tcp-flags", "type", "pkt-srcaddr", "pkt-dstaddr", "az-id", "sublocation-type", "sublocation-id", "pkt-src-aws-service", "pkt-dst-aws-service", "flow-direction", "traffic-path", "account_id", "region", "event_hour", "__execution_name__") SELECT CAST("start" * 1000 AS bigint), from_unixtime("start"), "version", "account-id", "interface-id", "srcaddr", "dstaddr", "srcport", "dstport", "protocol", "packets", "bytes", "start", "end", "action", "log-status", "vpc-id", "subnet-id", "instance-id", "tcp-flags", "type", "pkt-srcaddr", "pkt-dstaddr", "az-id", "sublocation-type", "sublocation-id", "pkt-src-aws-service", "pkt-dst-aws-service", "flow-direction", "traffic-path", "account-id", "region", date_format(from_unixtime("start"), '%Y%m%d%H'), '{}' FROM "tmp"."vpcflow{}";"""
         assert statements.drop == 'DROP TABLE IF EXISTS `tmp`.`vpcflow{}`'
-        assert statements.aggregate == []
+        assert statements.aggregate == ['INSERT INTO "centralized"."vpcflow_metrics" ("time", "timestamp", "account-id", "vpc-id", "subnet-id", "flow-direction", "traffic-path", "type", "action", "srcaddr", "dstaddr", "pkt-src-aws-service", "pkt-dst-aws-service", "protocol", "packets", "bytes", "requests", "account_id", "region", "event_hour", "__execution_name__") SELECT FLOOR("time" / 60000) * 60000, DATE_TRUNC(\'minute\', "timestamp"), "account-id", "vpc-id", "subnet-id", "flow-direction", "traffic-path", "type", "action", "srcaddr", "dstaddr", "pkt-src-aws-service", "pkt-dst-aws-service", "protocol", CAST(SUM("packets") AS DOUBLE), CAST(SUM("packets") AS DOUBLE), CAST(COUNT(1) AS bigint), "account_id", "region", "event_hour", "__execution_name__" FROM "centralized"."vpcflow" WHERE __execution_name__ = \'{}\' GROUP BY FLOOR("time" / 60000) * 60000, DATE_TRUNC(\'minute\', "timestamp"), "account-id", "vpc-id", "subnet-id", "flow-direction", "traffic-path", "type", "action", "srcaddr", "dstaddr", "pkt-src-aws-service", "pkt-dst-aws-service", "protocol", "account_id", "region", "event_hour", "__execution_name__";']
 
     def test_get_table_metadata_and_statements_application(self, mock_s3_context, mock_iam_context, mock_sqs_context, mock_ddb_context):
         from pipeline_resources_builder.lambda_function import Parameters, TableMetaDataGenerator, TableMetaData, MetaTable
@@ -2840,6 +3523,34 @@ class TestTableMetaDataGenerator:
         assert statements.drop == 'DROP TABLE IF EXISTS `tmp`.`application{}`'
         assert statements.aggregate == ['INSERT INTO "centralized"."application_metrics" ("time", "timestamp", "type", "request_host", "requests", "event_hour", "__execution_name__") SELECT FLOOR("time" / 60000) * 60000, DATE_TRUNC(\'minute\', "timestamp"), "type", url_extract_host("request_url"), CAST(COUNT(1) AS bigint), "event_hour", "__execution_name__" FROM "centralized"."application" WHERE __execution_name__ = \'{}\' GROUP BY FLOOR("time" / 60000) * 60000, DATE_TRUNC(\'minute\', "timestamp"), "type", url_extract_host("request_url"), "event_hour", "__execution_name__";']
         
+        # fluent-bit with no time key
+        pipeline_id = str(uuid.uuid4())
+        pipeline_info = copy.deepcopy(application_pipeline_info)
+        pipeline_info['data']['source']['table']['schema'] = json.dumps({
+            'type': 'object',
+            'properties': {
+                'log': {
+                    'type': 'string',
+                },
+            }
+        })
+        
+        AWS_DDB_META.put(meta_name=pipeline_id, item=pipeline_info)
+        
+        event = copy.deepcopy(create_application_pipeline_event)
+        event['ResourceProperties']['Id'] = pipeline_id
+        param = Parameters(event)
+        
+        table_metadata_generator = TableMetaDataGenerator(source=param.pipeline_info.source, destination=param.pipeline_info.destination)
+        raw, parquet, metrics, statements = table_metadata_generator.get_table_metadata_and_statements()
+        assert isinstance(raw, TableMetaData) is True
+        assert isinstance(parquet, TableMetaData) is True
+        assert metrics is None
+        assert statements.create == "CREATE EXTERNAL TABLE IF NOT EXISTS `tmp`.`application{}` (`log` string, `time` string, `file_name` string, `az` string, `ec2_instance_id` string, `private_ip` string, `hostname` string, `cluster` string, `kubernetes` struct<`pod_name`:string,`namespace_name`:string,`container_name`:string,`docker_id`:string>)  ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'  STORED AS INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat' OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat' LOCATION '{}' ;"
+        assert statements.insert == """INSERT INTO "centralized"."application" ("time", "timestamp", "log", "agent_info", "event_hour", "__execution_name__") SELECT CAST(to_unixtime(parse_datetime("time", 'YYYY-MM-dd''T''HH:mm:ss.SSSSSSSSSZ')) * 1000 AS bigint), parse_datetime("time", 'YYYY-MM-dd''T''HH:mm:ss.SSSSSSSSSZ'), "log", CAST(ROW("file_name", "az", "ec2_instance_id", "private_ip", "hostname", "cluster", "kubernetes") AS ROW("file_name" varchar, "az" varchar, "ec2_instance_id" varchar, "private_ip" varchar, "hostname" varchar, "cluster" varchar, "kubernetes" ROW("pod_name" varchar, "namespace_name" varchar, "container_name" varchar, "docker_id" varchar))), date_format(parse_datetime("time", 'YYYY-MM-dd''T''HH:mm:ss.SSSSSSSSSZ'), '%Y%m%d%H'), '{}' FROM "tmp"."application{}";"""
+        assert statements.drop == 'DROP TABLE IF EXISTS `tmp`.`application{}`'
+        assert statements.aggregate == []
+        
         # s3
         pipeline_id = str(uuid.uuid4())
         pipeline_info = copy.deepcopy(application_pipeline_info)
@@ -2956,6 +3667,34 @@ class TestTableMetaDataGenerator:
         assert statements.drop == 'DROP TABLE IF EXISTS `tmp`.`application{}`'
         assert statements.aggregate == ['INSERT INTO "centralized"."application_metrics" ("time", "timestamp", "type", "request_host", "requests", "event_hour", "__execution_name__") SELECT FLOOR("time" / 60000) * 60000, DATE_TRUNC(\'minute\', "timestamp"), "type", url_extract_host("request_url"), CAST(COUNT(1) AS bigint), "event_hour", "__execution_name__" FROM "centralized"."application" WHERE __execution_name__ = \'{}\' GROUP BY FLOOR("time" / 60000) * 60000, DATE_TRUNC(\'minute\', "timestamp"), "type", url_extract_host("request_url"), "event_hour", "__execution_name__";']
 
+        # s3 with no time key
+        pipeline_id = str(uuid.uuid4())
+        pipeline_info = copy.deepcopy(application_pipeline_info)
+        pipeline_info['data']['source']['type'] = 's3'
+        pipeline_info['data']['source']['table']['schema'] = json.dumps({
+            'type': 'object',
+            'properties': {
+                'log': {
+                    'type': 'string',
+                }
+            }
+        })
+                
+        AWS_DDB_META.put(meta_name=pipeline_id, item=pipeline_info)
+
+        event = copy.deepcopy(create_application_pipeline_event)
+        event['ResourceProperties']['Id'] = pipeline_id
+        param = Parameters(event)
+        
+        table_metadata_generator = TableMetaDataGenerator(source=param.pipeline_info.source, destination=param.pipeline_info.destination)
+        raw, parquet, metrics, statements = table_metadata_generator.get_table_metadata_and_statements()
+        assert isinstance(raw, TableMetaData) is True
+        assert isinstance(parquet, TableMetaData) is True
+        assert metrics is None
+        assert statements.create == "CREATE EXTERNAL TABLE IF NOT EXISTS `tmp`.`application{}` (`log` string)  ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'  STORED AS INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat' OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat' LOCATION '{}' ;"
+        assert statements.insert == """INSERT INTO "centralized"."application" ("log", "event_hour", "__execution_name__") SELECT "log", date_format(now(), '%Y%m%d%H'), '{}' FROM "tmp"."application{}";"""
+        assert statements.drop == 'DROP TABLE IF EXISTS `tmp`.`application{}`'
+        assert statements.aggregate == []
 
 class TestPipelineResourceBuilder:
     
@@ -2972,6 +3711,7 @@ class TestPipelineResourceBuilder:
         self.centralized_bucket_name = os.environ["CENTRALIZED_BUCKET_NAME"]
         self.centralized_bucket_prefix = 'datalake'
         self.centralized_database = os.environ["CENTRALIZED_DATABASE"]
+        self.unique_database = os.environ["UNIQUE_DATABASE"]
         self.tmp_database = os.environ["TMP_DATABASE"]
         self.s3_public_access_policy = os.environ["S3_PUBLIC_ACCESS_POLICY"]
         self.s3_public_access_policy_arn = f'arn:aws:iam::{self.account_id}:policy/{self.s3_public_access_policy}'
@@ -3057,6 +3797,7 @@ class TestPipelineResourceBuilder:
                     'prefix': self.staging_bucket_prefix
                 }
             },
+            'type': 'Pipeline',
             'stack': {
                 'lambda': {
                     'replicate': self.replication_function_arn
@@ -3084,7 +3825,8 @@ class TestPipelineResourceBuilder:
                     'prefix': self.logging_bucket_prefix,
                 },
             },
-            'pipelineId': self.pipeline_id
+            'pipelineId': self.pipeline_id,
+            'type': 'Ingestion',
         }
         
         self.ingestion_event = {'RequestType': 'Create', 'ResourceProperties': {'Resource': 'ingestion', 'Id': self.ingestion_id}}
@@ -3106,11 +3848,11 @@ class TestPipelineResourceBuilder:
         httpserver.expect_request(uri='/api/dashboards/uid/w0x1c_Y4k5', method='DELETE').respond_with_data(response_data=json.dumps({'id': 17, 'message': 'Dashboard Production Overview deleted', 'title': 'Production Overview'}))
         httpserver.expect_request(uri='/api/folders', method='GET').respond_with_data(response_data=json.dumps([{'id': 1, 'uid': 'q_XODzX4z', 'title': 'General'}, {'id': 19, 'uid': 'zypaSkX4k', 'title': 'clo'}]))
         httpserver.expect_request(uri='/api/folders/zypaSkX4k', method='GET').respond_with_data(response_data=json.dumps({'id': 19, 'uid': 'zypaSkX4k', 'title': 'clo', 'url': '/dashboards/f/zypaSkX4k/clo', 'hasAcl': False, 'canSave': True, 'canEdit': True, 'canAdmin': True, 'canDelete': True, 'version': 1}))
+        httpserver.expect_request(uri='/api/folders/test-folder-permission', method='GET').respond_with_data(response_data=json.dumps({'id': 19, 'uid': 'zypaSkX4k', 'title': 'clo', 'url': '/dashboards/f/zypaSkX4k/clo', 'hasAcl': False, 'canSave': True, 'canEdit': True, 'canAdmin': True, 'canDelete': True, 'version': 1}))
+        httpserver.expect_request(uri='/api/folders/test-folder-permission', method='DELETE').respond_with_data(status=200)
         httpserver.expect_request(uri=f'/api/dashboards/uid/{self.pipeline_id}-00', method='GET').respond_with_data(response_data=json.dumps({'message': 'Dashboard not found', 'traceID': ''}), status=404)
         httpserver.expect_request(uri=f'/api/dashboards/uid/{self.pipeline_id}-01', method='GET').respond_with_data(response_data=json.dumps({'message': 'Dashboard not found', 'traceID': ''}), status=404)
-        httpserver.expect_request(uri='/api/folders/test-folder-permission', method='GET').respond_with_data(response_data=json.dumps({'id': 19, 'uid': 'test-folder-permission', 'title': 'clo', 'url': '/dashboards/f/test-folder-permission/clo', 'hasAcl': False, 'canSave': True, 'canEdit': True, 'canAdmin': True, 'canDelete': True, 'createdBy': 'Anonymous', 'updatedBy': 'Anonymous','version': 1}))
-        httpserver.expect_request(uri='/api/folders/test-folder-permission', method='DELETE').respond_with_data(status=200)
-        
+    
         self.pipeline_parameters = Parameters(self.pipeline_event)
         self.pipeline_resource_builder = PipelineResourceBuilder(parameters=self.pipeline_parameters)
         
@@ -3166,11 +3908,12 @@ class TestPipelineResourceBuilder:
         assert pipeline_resource_builder.grafana_dashboard_uid == f'{pipeline_id}-01'
     
     def test_get_grafana_dashboard(self, httpserver: HTTPServer, mock_iam_context, mock_s3_context, mock_sqs_context, mock_ddb_context, mock_glue_context, mock_scheduler_context):
-        from pipeline_resources_builder.lambda_function import ALB_GRAFANA_DETAILS, ALB_GRAFANA_DASHBOARD
-        from pipeline_resources_builder.lambda_function import WAF_GRAFANA_DETAILS, WAF_GRAFANA_DASHBOARD
-        from pipeline_resources_builder.lambda_function import CLOUDFRONT_GRAFANA_DETAILS, CLOUDFRONT_GRAFANA_DASHBOARD
-        from pipeline_resources_builder.lambda_function import CLOUDTRAIL_GRAFANA_DETAILS, CLOUDTRAIL_GRAFANA_DASHBOARD
-        from pipeline_resources_builder.lambda_function import APPLICATION_GRAFANA_DETAILS
+        from pipeline_resources_builder.logschema import ALB_GRAFANA_DETAILS, ALB_GRAFANA_DASHBOARD
+        from pipeline_resources_builder.logschema import WAF_GRAFANA_DETAILS, WAF_GRAFANA_DASHBOARD
+        from pipeline_resources_builder.logschema import CLOUDFRONT_GRAFANA_DETAILS, CLOUDFRONT_GRAFANA_DASHBOARD
+        from pipeline_resources_builder.logschema import CLOUDTRAIL_GRAFANA_DETAILS, CLOUDTRAIL_GRAFANA_DASHBOARD
+        from pipeline_resources_builder.logschema import VPCFLOW_GRAFANA_DETAILS, VPCFLOW_GRAFANA_DASHBOARD
+        from pipeline_resources_builder.logschema import APPLICATION_GRAFANA_DETAILS
         
         self.init_default_parameter(httpserver, mock_iam_context, mock_s3_context, mock_sqs_context, mock_ddb_context, mock_glue_context, mock_scheduler_context)
         
@@ -3191,8 +3934,8 @@ class TestPipelineResourceBuilder:
         assert dashboards == CLOUDTRAIL_GRAFANA_DASHBOARD
         
         details, dashboards = self.pipeline_resource_builder.get_grafana_dashboard(source_type='vpcflow')
-        assert details == APPLICATION_GRAFANA_DETAILS
-        assert dashboards is None
+        assert details == VPCFLOW_GRAFANA_DETAILS
+        assert dashboards == VPCFLOW_GRAFANA_DASHBOARD
         
         details, dashboards = self.pipeline_resource_builder.get_grafana_dashboard(source_type='application')
         assert details == APPLICATION_GRAFANA_DETAILS
@@ -3245,6 +3988,8 @@ class TestPipelineResourceBuilder:
         pipeline_resource_builder.import_dashboards_into_grafana()
     
     def test_delete_dashboards_from_grafana(self, httpserver: HTTPServer, mock_iam_context, mock_s3_context, mock_sqs_context, mock_ddb_context, mock_glue_context, mock_scheduler_context):
+        import urllib3
+        urllib3.disable_warnings()
         from pipeline_resources_builder.lambda_function import PipelineResourceBuilder, Parameters, MetaTable
         
         self.init_default_parameter(httpserver, mock_iam_context, mock_s3_context, mock_sqs_context, mock_ddb_context, mock_glue_context, mock_scheduler_context)
@@ -3273,6 +4018,22 @@ class TestPipelineResourceBuilder:
         httpserver.expect_oneshot_request(uri='/api/folders', method='POST').respond_with_data(response_data='{}', status=401)
         httpserver.expect_request(uri=f'/api/dashboards/uid/{pipeline_id}-00', method='DELETE').respond_with_data(response_data=json.dumps({'id': 17, 'message': 'Dashboard Production Overview deleted', 'title': 'Production Overview'}))
         httpserver.expect_request(uri=f'/api/dashboards/uid/{pipeline_id}-01', method='DELETE').respond_with_data(response_data=json.dumps({'id': 17, 'message': 'Dashboard Production Overview deleted', 'title': 'Production Overview'}))
+        
+        pipeline_resource_builder.delete_dashboards_from_grafana()
+        
+        # test can not connect uri
+        pipeline_id = str(uuid.uuid4())
+        pipeline_info = copy.deepcopy(self.pipeline_info)
+        pipeline_info['data']['source']['type'] = 'waf'
+        pipeline_info['data']['grafana']['importDashboards'] = 'true'
+        pipeline_info['data']['grafana']['url'] = 'http://1.1.1.1'
+        pipeline_info['data']['grafana']['token'] = 'glsa_123456789012'
+        pipeline_event = {'RequestType': 'Create', 'ResourceProperties': {'Resource': 'pipeline', 'Id': pipeline_id}}
+        
+        AWS_DDB_META.put(meta_name=pipeline_id, item=pipeline_info)
+        
+        parameters = Parameters(pipeline_event)
+        pipeline_resource_builder = PipelineResourceBuilder(parameters=parameters)
         
         pipeline_resource_builder.delete_dashboards_from_grafana()
     
@@ -3403,44 +4164,44 @@ class TestPipelineResourceBuilder:
         
         pipeline_resource_builder.create_rule()
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix='LogProcessor-waf', EventBusName='default')
-        assert response['Rules'][0]['Name'] == 'LogProcessor-waf'
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogProcessor-{pipeline_id}', EventBusName='default')
+        assert response['Rules'][0]['Name'] == f'LogProcessor-{pipeline_id}'
         assert response['Rules'][0]['State'] == 'ENABLED'
         assert response['Rules'][0]['ScheduleExpression'] == 'rate(5 minutes)'
         
-        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule='LogProcessor-waf', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogProcessor-{pipeline_id}', EventBusName='default')
         assert response['Targets'][0]['Id'] == pipeline_id
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix='LogMerger-waf', EventBusName='default')
-        assert response['Rules'][0]['Name'] == 'LogMerger-waf'
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMerger-{pipeline_id}', EventBusName='default')
+        assert response['Rules'][0]['Name'] == f'LogMerger-{pipeline_id}'
         assert response['Rules'][0]['State'] == 'ENABLED'
         assert response['Rules'][0]['ScheduleExpression'] == 'cron(0 1 * * ? *)'
         
-        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule='LogMerger-waf', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogMerger-{pipeline_id}', EventBusName='default')
         assert response['Targets'][0]['Id'] == pipeline_id
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix='LogMergerForMetrics-waf', EventBusName='default')
-        assert response['Rules'][0]['Name'] == f'LogMergerForMetrics-waf'
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMergerForMetrics-{pipeline_id}', EventBusName='default')
+        assert response['Rules'][0]['Name'] == f'LogMergerForMetrics-{pipeline_id}'
         assert response['Rules'][0]['State'] == 'ENABLED'
         assert response['Rules'][0]['ScheduleExpression'] == 'cron(0 1 * * ? *)'
         
-        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule='LogMergerForMetrics-waf', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogMergerForMetrics-{pipeline_id}', EventBusName='default')
         assert response['Targets'][0]['Id'] == pipeline_id
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix='LogArchive-waf', EventBusName='default')
-        assert response['Rules'][0]['Name'] == 'LogArchive-waf'
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchive-{pipeline_id}', EventBusName='default')
+        assert response['Rules'][0]['Name'] == f'LogArchive-{pipeline_id}'
         assert response['Rules'][0]['State'] == 'ENABLED'
         assert response['Rules'][0]['ScheduleExpression'] == 'cron(0 2 * * ? *)'
         
-        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule='LogArchive-waf', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogArchive-{pipeline_id}', EventBusName='default')
         assert response['Targets'][0]['Id'] == pipeline_id
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix='LogArchiveForMetrics-waf', EventBusName='default')
-        assert response['Rules'][0]['Name'] == 'LogArchiveForMetrics-waf'
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchiveForMetrics-{pipeline_id}', EventBusName='default')
+        assert response['Rules'][0]['Name'] == f'LogArchiveForMetrics-{pipeline_id}'
         assert response['Rules'][0]['State'] == 'ENABLED'
         assert response['Rules'][0]['ScheduleExpression'] == 'cron(0 2 * * ? *)'
         
-        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule='LogArchive-waf', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogArchive-{pipeline_id}', EventBusName='default')
         assert response['Targets'][0]['Id'] == pipeline_id
         
         # test for application
@@ -3462,34 +4223,34 @@ class TestPipelineResourceBuilder:
         
         pipeline_resource_builder.create_rule()
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix='LogProcessor-application', EventBusName='default')
-        assert response['Rules'][0]['Name'] == 'LogProcessor-application'
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogProcessor-{pipeline_id}', EventBusName='default')
+        assert response['Rules'][0]['Name'] == f'LogProcessor-{pipeline_id}'
         assert response['Rules'][0]['State'] == 'ENABLED'
         assert response['Rules'][0]['ScheduleExpression'] == 'rate(5 minutes)'
         
-        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule='LogProcessor-application', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogProcessor-{pipeline_id}', EventBusName='default')
         assert response['Targets'][0]['Id'] == pipeline_id
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix='LogMerger-application', EventBusName='default')
-        assert response['Rules'][0]['Name'] == 'LogMerger-application'
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMerger-{pipeline_id}', EventBusName='default')
+        assert response['Rules'][0]['Name'] == f'LogMerger-{pipeline_id}'
         assert response['Rules'][0]['State'] == 'ENABLED'
         assert response['Rules'][0]['ScheduleExpression'] == 'cron(0 1 * * ? *)'
         
-        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule='LogMerger-application', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogMerger-{pipeline_id}', EventBusName='default')
         assert response['Targets'][0]['Id'] == pipeline_id
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix='LogMergerForMetrics-application', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMergerForMetrics-{pipeline_id}', EventBusName='default')
         assert response['Rules'] == []
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix='LogArchive-application', EventBusName='default')
-        assert response['Rules'][0]['Name'] == 'LogArchive-application'
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchive-{pipeline_id}', EventBusName='default')
+        assert response['Rules'][0]['Name'] == f'LogArchive-{pipeline_id}'
         assert response['Rules'][0]['State'] == 'ENABLED'
         assert response['Rules'][0]['ScheduleExpression'] == 'cron(0 2 * * ? *)'
         
-        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule='LogArchive-application', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogArchive-{pipeline_id}', EventBusName='default')
         assert response['Targets'][0]['Id'] == pipeline_id
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix='LogArchiveForMetrics-application', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchiveForMetrics-{pipeline_id}', EventBusName='default')
         assert response['Rules'] == []
     
     def test_delete_rule(self, httpserver: HTTPServer, mock_iam_context, mock_s3_context, mock_sqs_context, mock_ddb_context, mock_glue_context, mock_scheduler_context, mock_events_context):
@@ -3517,61 +4278,76 @@ class TestPipelineResourceBuilder:
         
         pipeline_resource_builder.create_rule()
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix='LogProcessor-waf', EventBusName='default')
-        assert response['Rules'][0]['Name'] == 'LogProcessor-waf'
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogProcessor-{pipeline_id}', EventBusName='default')
+        assert response['Rules'][0]['Name'] == f'LogProcessor-{pipeline_id}'
         assert response['Rules'][0]['State'] == 'ENABLED'
         assert response['Rules'][0]['ScheduleExpression'] == 'rate(5 minutes)'
         
-        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule='LogProcessor-waf', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogProcessor-{pipeline_id}', EventBusName='default')
         assert response['Targets'][0]['Id'] == pipeline_id
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix='LogMerger-waf', EventBusName='default')
-        assert response['Rules'][0]['Name'] == 'LogMerger-waf'
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMerger-{pipeline_id}', EventBusName='default')
+        assert response['Rules'][0]['Name'] == f'LogMerger-{pipeline_id}'
         assert response['Rules'][0]['State'] == 'ENABLED'
         assert response['Rules'][0]['ScheduleExpression'] == 'cron(0 1 * * ? *)'
         
-        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule='LogMerger-waf', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogMerger-{pipeline_id}', EventBusName='default')
         assert response['Targets'][0]['Id'] == pipeline_id
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix='LogMergerForMetrics-waf', EventBusName='default')
-        assert response['Rules'][0]['Name'] == f'LogMergerForMetrics-waf'
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMergerForMetrics-{pipeline_id}', EventBusName='default')
+        assert response['Rules'][0]['Name'] == f'LogMergerForMetrics-{pipeline_id}'
         assert response['Rules'][0]['State'] == 'ENABLED'
         assert response['Rules'][0]['ScheduleExpression'] == 'cron(0 1 * * ? *)'
         
-        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule='LogMergerForMetrics-waf', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogMergerForMetrics-{pipeline_id}', EventBusName='default')
         assert response['Targets'][0]['Id'] == pipeline_id
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix='LogArchive-waf', EventBusName='default')
-        assert response['Rules'][0]['Name'] == 'LogArchive-waf'
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchive-{pipeline_id}', EventBusName='default')
+        assert response['Rules'][0]['Name'] == f'LogArchive-{pipeline_id}'
         assert response['Rules'][0]['State'] == 'ENABLED'
         assert response['Rules'][0]['ScheduleExpression'] == 'cron(0 2 * * ? *)'
         
-        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule='LogArchive-waf', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogArchive-{pipeline_id}', EventBusName='default')
         assert response['Targets'][0]['Id'] == pipeline_id
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix='LogArchiveForMetrics-waf', EventBusName='default')
-        assert response['Rules'][0]['Name'] == 'LogArchiveForMetrics-waf'
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchiveForMetrics-{pipeline_id}', EventBusName='default')
+        assert response['Rules'][0]['Name'] == f'LogArchiveForMetrics-{pipeline_id}'
         assert response['Rules'][0]['State'] == 'ENABLED'
         assert response['Rules'][0]['ScheduleExpression'] == 'cron(0 2 * * ? *)'
         
-        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule='LogArchiveForMetrics-waf', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogArchiveForMetrics-{pipeline_id}', EventBusName='default')
         assert response['Targets'][0]['Id'] == pipeline_id
         
         pipeline_resource_builder.delete_rule()
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix='LogProcessor-waf', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogProcessor-{pipeline_info["data"]["destination"]["table"]["name"]}', EventBusName='default')
         assert response['Rules'] == []
 
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix='LogMerger-waf', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMerger-{pipeline_info["data"]["destination"]["table"]["name"]}', EventBusName='default')
         assert response['Rules'] == []
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix='LogMergerForMetrics-waf', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMergerForMetrics-{pipeline_info["data"]["destination"]["table"]["name"]}', EventBusName='default')
         assert response['Rules'] == []
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix='LogArchive-waf', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchive-{pipeline_info["data"]["destination"]["table"]["name"]}', EventBusName='default')
         assert response['Rules'] == []
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix='LogArchiveForMetrics-waf', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchiveForMetrics-{pipeline_info["data"]["destination"]["table"]["name"]}', EventBusName='default')
+        assert response['Rules'] == []
+        
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogProcessor-{pipeline_id}', EventBusName='default')
+        assert response['Rules'] == []
+
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMerger-{pipeline_id}', EventBusName='default')
+        assert response['Rules'] == []
+        
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMergerForMetrics-{pipeline_id}', EventBusName='default')
+        assert response['Rules'] == []
+        
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchive-{pipeline_id}', EventBusName='default')
+        assert response['Rules'] == []
+        
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchiveForMetrics-{pipeline_id}', EventBusName='default')
         assert response['Rules'] == []
         
         # test for application
@@ -3593,51 +4369,66 @@ class TestPipelineResourceBuilder:
         
         pipeline_resource_builder.create_rule()
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix='LogProcessor-application', EventBusName='default')
-        assert response['Rules'][0]['Name'] == 'LogProcessor-application'
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogProcessor-{pipeline_id}', EventBusName='default')
+        assert response['Rules'][0]['Name'] == f'LogProcessor-{pipeline_id}'
         assert response['Rules'][0]['State'] == 'ENABLED'
         assert response['Rules'][0]['ScheduleExpression'] == 'rate(5 minutes)'
         
-        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule='LogProcessor-application', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogProcessor-{pipeline_id}', EventBusName='default')
         assert response['Targets'][0]['Id'] == pipeline_id
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix='LogMerger-application', EventBusName='default')
-        assert response['Rules'][0]['Name'] == 'LogMerger-application'
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMerger-{pipeline_id}', EventBusName='default')
+        assert response['Rules'][0]['Name'] == f'LogMerger-{pipeline_id}'
         assert response['Rules'][0]['State'] == 'ENABLED'
         assert response['Rules'][0]['ScheduleExpression'] == 'cron(0 1 * * ? *)'
         
-        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule='LogMerger-application', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogMerger-{pipeline_id}', EventBusName='default')
         assert response['Targets'][0]['Id'] == pipeline_id
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix='LogMergerForMetrics-application', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMergerForMetrics-{pipeline_id}', EventBusName='default')
         assert response['Rules'] == []
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix='LogArchive-application', EventBusName='default')
-        assert response['Rules'][0]['Name'] == 'LogArchive-application'
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchive-{pipeline_id}', EventBusName='default')
+        assert response['Rules'][0]['Name'] == f'LogArchive-{pipeline_id}'
         assert response['Rules'][0]['State'] == 'ENABLED'
         assert response['Rules'][0]['ScheduleExpression'] == 'cron(0 2 * * ? *)'
         
-        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule='LogArchive-application', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogArchive-{pipeline_id}', EventBusName='default')
         assert response['Targets'][0]['Id'] == pipeline_id
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix='LogArchiveForMetrics-application', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchiveForMetrics-{pipeline_id}', EventBusName='default')
         assert response['Rules'] == []
         
         pipeline_resource_builder.delete_rule()
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix='LogProcessor-application', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogProcessor-{pipeline_info["data"]["destination"]["table"]["name"]}', EventBusName='default')
         assert response['Rules'] == []
 
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix='LogMerger-application', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMerger-{pipeline_info["data"]["destination"]["table"]["name"]}', EventBusName='default')
         assert response['Rules'] == []
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix='LogMergerForMetrics-application', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMergerForMetrics-{pipeline_info["data"]["destination"]["table"]["name"]}', EventBusName='default')
         assert response['Rules'] == []
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix='LogArchive-application', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchive-{pipeline_info["data"]["destination"]["table"]["name"]}', EventBusName='default')
         assert response['Rules'] == []
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix='LogArchiveForMetrics-application', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchiveForMetrics-{pipeline_info["data"]["destination"]["table"]["name"]}', EventBusName='default')
+        assert response['Rules'] == []
+        
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogProcessor-{pipeline_id}', EventBusName='default')
+        assert response['Rules'] == []
+
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMerger-{pipeline_id}', EventBusName='default')
+        assert response['Rules'] == []
+        
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMergerForMetrics-{pipeline_id}', EventBusName='default')
+        assert response['Rules'] == []
+        
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchive-{pipeline_id}', EventBusName='default')
+        assert response['Rules'] == []
+        
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchiveForMetrics-{pipeline_id}', EventBusName='default')
         assert response['Rules'] == []
     
     def test_create_scheduler(self, httpserver: HTTPServer, mock_iam_context, mock_s3_context, mock_sqs_context, mock_ddb_context, mock_glue_context, mock_scheduler_context, mock_events_context):
@@ -3915,145 +4706,597 @@ class TestPipelineResourceBuilder:
         response = AWS_SCHEDULER.get_schedule(name='LogArchiveForMetrics', group_name=pipeline_id)
         assert response == {}
     
-    def test_init_destination_policy_info(self, httpserver: HTTPServer, mock_iam_context, mock_s3_context, mock_sqs_context, mock_ddb_context, mock_glue_context, mock_scheduler_context, mock_events_context):
-        from pipeline_resources_builder.lambda_function import PipelineResourceBuilder, Parameters, MetaTable
+    def test_create_connector(self, httpserver: HTTPServer, mock_sts_context, mock_iam_context, mock_s3_context, mock_sqs_context, mock_ddb_context, mock_glue_context, mock_scheduler_context, mock_events_context):
+        from pipeline_resources_builder.lambda_function import PipelineResourceBuilder, Parameters, MetaTable, SchedulerClient, EventsClient, IAMClient
         
         self.init_default_parameter(httpserver, mock_iam_context, mock_s3_context, mock_sqs_context, mock_ddb_context, mock_glue_context, mock_scheduler_context)
         
         AWS_DDB_META = MetaTable()
-        
-        self.pipeline_resource_builder._init_destination_policy_info()
-        
-        assert self.pipeline_resource_builder.destination_policy_resources == [
-            'arn:aws:s3:::centralized-bucket/datalake/centralized/waf*', 
-            'arn:aws:s3:::centralized-bucket/datalake/centralized/waf_metrics*'
-            ]
-        assert self.pipeline_resource_builder.s3_public_access_policy_sid == 'S3AccessPolicyForDestination'
-        assert self.pipeline_resource_builder.s3_public_access_policy_document['Document']['Statement'] == [
-            {'Sid': 'S3AccessPolicyForDestination', 
-             'Action': [
-                 's3:ListBucket', 
-                 's3:ListBucketMultipartUploads', 
-                 's3:ListMultipartUploadParts', 
-                 's3:GetObject', 
-                 's3:GetBucketLocation', 
-                 's3:AbortMultipartUpload', 
-                 's3:CreateBucket', 
-                 's3:PutObject', 
-                 's3:DeleteObject'
-                 ], 
-             'Resource': [
-                 'arn:aws:s3:::logging-bucket', 
-                 'arn:aws:s3:::logging-bucket/*'
-                 ], 
-             'Effect': 'Allow'
-             }
-            ]
-        
-        application_pipeline_id = str(uuid.uuid4())
-        application_pipeline_info = {
-            'metaName': application_pipeline_id,
-            'data': {
-                'source': {
-                    'type': 'fluent-bit',
-                    'table': {
-                        'schema': '{"type":"object","properties":{"timestamp":{"type":"string","timeKey":true,"format":"YYYY-MM-dd\'\'T\'\'HH:mm:ss.SSSSSSSSSZ"},"correlationId":{"type":"string"},"processInfo":{"type":"object","properties":{"hostname":{"type":"string"},"domainId":{"type":"string"},"groupId":{"type":"string"},"groupName":{"type":"string"},"serviceId":{"type":"string","partition":true},"serviceName":{"type":"string"},"version":{"type":"string"}}},"transactionSummary":{"type":"object","properties":{"path":{"type":"string"},"protocol":{"type":"string"},"protocolSrc":{"type":"string"},"status":{"type":"string"},"serviceContexts":{"type":"array","items":{"type":"object","properties":{"service":{"type":"string"},"monitor":{"type":"boolean"},"client":{"type":"string"},"org":{},"app":{},"method":{"type":"string"},"status":{"type":"string"},"duration":{"type":"number"}}}}}}}}',
-                        'dataFormat': 'json', 
-                        'tableProperties': '{}', 
-                        'serializationProperties': '{}', 
-                    },
-                },
-                'destination': {
-                    'location': {
-                        'bucket': self.centralized_bucket_name,
-                        'prefix': self.centralized_bucket_prefix,
-                    },
-                    'database': {
-                        'name': self.centralized_database,
-                    },
-                    'table': {
-                        'name': 'application',
-                        'schema': '{}',
-                    },
-                    'metrics': {
-                        'name': '',
-                        'schema': '{}',
-                    },
-                },
-                'notification': {
-                    'service': 'SES',
-                    'recipients': 'alejandro_rosalez@example.com,alejandro_rosalez@example.org'
-                },
-                'grafana': {
-                    'importDashboards': 'false',
-                    'url': '',
-                    'token': '',
-                },
-                'scheduler': {
-                    'LogProcessor': {
-                        'schedule': 'rate(5 minutes)',
-                    },
-                    'LogMerger': {
-                        'schedule': 'cron(0 1 * * ? *)',
-                        'age': 3,
-                    },
-                    'LogArchive': {
-                        'schedule': 'cron(0 2 * * ? *)',
-                        'age': 7,
-                    },
-                },
-                'staging': {
-                    'prefix': 'APPLogs/ServicesLogs'
-                }
-            },
-            'stack': {
-                'lambda': {
-                    'replicate': self.replication_function_arn
-                },
-                'queue':{
-                    'logEventQueue': self.replication_sqs_arn,
-                    'logEventDLQ': self.replication_dlq_arn,
-                },
-                'role': {
-                    'replicate': self.replication_role_arn
-                }
-            }
-        }
+        AWS_SCHEDULER = SchedulerClient()
+        AWS_EVENTS = EventsClient()
+        AWS_IAM = IAMClient()
 
-        AWS_DDB_META.put(meta_name=application_pipeline_id, item=application_pipeline_info)
+        # test for services with scheduler
+        AWS_DDB_META.put(meta_name='AvailableServices', item={'value': ['scheduler']})
+        pipeline_id = str(uuid.uuid4())
+        pipeline_info = copy.deepcopy(self.pipeline_info)
+        pipeline_info['data']['source']['type'] = 'rds'
+        pipeline_info['data']['destination']['table']['name'] = 'rds'
+        pipeline_info['data']['scheduler']['LogProcessor']['schedule'] = 'rate(5 minutes)'
+        pipeline_info['data']['scheduler']['LogMerger']['schedule'] = 'cron(0 1 * * ? *)'
+        pipeline_info['data']['scheduler']['LogArchive']['schedule'] = 'cron(0 2 * * ? *)'
+        pipeline_info['stack']['role']['invokeConnector']= self.replication_role_arn
+        pipeline_info['stack']['lambda']['connector']= self.replication_function_arn
+        AWS_DDB_META.put(meta_name=pipeline_id, item=pipeline_info)
         
-        create_pipeline_event = copy.deepcopy(self.pipeline_event)
-        create_pipeline_event['ResourceProperties']['Id'] = application_pipeline_id
-        param = Parameters(create_pipeline_event)
-        pipeline_resource_builder = PipelineResourceBuilder(parameters=param)
+        ingestion_id = str(uuid.uuid4())
+        ingestion_info = copy.deepcopy(self.ingestion_info)
+        ingestion_info['pipelineId'] = pipeline_id
+        ingestion_info['data']['source']['bucket'] = self.logging_bucket_name
+        ingestion_info['data']['source']['prefix'] = self.logging_bucket_prefix
+        ingestion_info['data']['source']['context'] = json.dumps({
+                "DBIdentifiers": ["aurora-mysql", "aurora-postgres15", "database-1", "database-2"],
+        })
+        ingestion_event = {'RequestType': 'Create', 'ResourceProperties': {'Resource': 'ingestion', 'Id': ingestion_id}}
+        AWS_DDB_META.put(meta_name=ingestion_id, item=ingestion_info)
+        
+        parameters = Parameters(ingestion_event)
+        ingestion_resource_builder = PipelineResourceBuilder(parameters=parameters)
+        
+        ingestion_resource_builder.create_pipeline()
+        ingestion_resource_builder.create_connector()
+        
+        response = AWS_SCHEDULER.get_schedule(name=f'Connector-{ingestion_id}', group_name=pipeline_id)
+        assert response['Arn'] == f'arn:aws:scheduler:{self.aws_region}:{self.account_id}:schedule/{pipeline_id}/Connector-{ingestion_id}'
+        assert response['FlexibleTimeWindow'] == {'Mode': 'OFF'}
+        assert response['GroupName'] == pipeline_id
+        assert response['ScheduleExpression'] == self.processor_schedule
+        assert response['State'] == 'ENABLED'
+        assert response['Target']['Arn'] == self.replication_function_arn
+
+        assert json.loads(response['Target']['Input']) == {
+            "metaName": ingestion_id, 
+            "source": {
+                "type": pipeline_info['data']['source']['type'], 
+                "context": { 
+                    "DBIdentifiers": [ 
+                        "aurora-mysql", 
+                        "aurora-postgres15",
+                        "database-1", 
+                        "database-2" 
+                        ],
+                    "role": ""
+                    },
+                }, 
+            "sink": { 
+                "type": "s3", 
+                "context": { 
+                    "bucket": self.logging_bucket_name, 
+                    "prefix": self.logging_bucket_prefix.strip('/'),
+                    "role": ""
+                    } 
+                } 
+            }
+        assert response['Target']['RoleArn'] == self.replication_role_arn
+        
+        # test for services with events rule
+        AWS_DDB_META.put(meta_name='AvailableServices', item={'value': ['events']})
+        pipeline_id = str(uuid.uuid4())
+        pipeline_info = copy.deepcopy(self.pipeline_info)
+        pipeline_info['data']['source']['type'] = 'rds'
+        pipeline_info['data']['destination']['table']['name'] = 'rds'
+        pipeline_info['data']['scheduler']['LogProcessor']['schedule'] = 'rate(5 minutes)'
+        pipeline_info['data']['scheduler']['LogMerger']['schedule'] = 'cron(0 1 * * ? *)'
+        pipeline_info['data']['scheduler']['LogArchive']['schedule'] = 'cron(0 2 * * ? *)'
+        pipeline_info['stack']['role']['invokeConnector']= self.replication_role_arn
+        pipeline_info['stack']['lambda']['connector']= self.replication_function_arn
+        AWS_DDB_META.put(meta_name=pipeline_id, item=pipeline_info)
+        
+        ingestion_id = str(uuid.uuid4())
+        ingestion_info = copy.deepcopy(self.ingestion_info)
+        ingestion_info['pipelineId'] = pipeline_id
+        ingestion_info['data']['source']['bucket'] = self.logging_bucket_name
+        ingestion_info['data']['source']['prefix'] = self.logging_bucket_prefix
+        ingestion_info['data']['source']['context'] = json.dumps({
+            "DBIdentifiers": ["aurora-mysql", "aurora-postgres15", "database-1", "database-2"],
+        })
+        ingestion_event = {'RequestType': 'Create', 'ResourceProperties': {'Resource': 'ingestion', 'Id': ingestion_id}}
+        AWS_DDB_META.put(meta_name=ingestion_id, item=ingestion_info)
+        
+        parameters = Parameters(ingestion_event)
+        ingestion_resource_builder = PipelineResourceBuilder(parameters=parameters)
+        
+        ingestion_resource_builder.create_pipeline()
+        ingestion_resource_builder.create_connector()
+        
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'Connector-{ingestion_id}', EventBusName='default')
+        assert response['Rules'][0] == {
+            'Name': f'Connector-{ingestion_id}', 
+            'Arn': f'arn:aws:events:{self.aws_region}:{self.account_id}:rule/Connector-{ingestion_id}', 
+            'State': 'ENABLED', 
+            'ScheduleExpression': self.processor_schedule, 
+            'EventBusName': 'default'
+            }
+        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'Connector-{ingestion_id}', EventBusName='default')
+        assert response['Targets'][0]['Id'] == ingestion_id
+        assert response['Targets'][0]['Arn'] == self.replication_function_arn
+        assert 'RoleArn' not in response['Targets'][0]
+        assert json.loads(response['Targets'][0]['Input']) == {
+            "metaName": ingestion_id, 
+            "source": {
+                "type": pipeline_info['data']['source']['type'], 
+                "context": { 
+                    "DBIdentifiers": [ 
+                        "aurora-mysql", 
+                        "aurora-postgres15",
+                        "database-1", 
+                        "database-2" 
+                        ],
+                    "role": ""
+                    },
+                }, 
+            "sink": { 
+                "type": "s3", 
+                "context": { 
+                    "bucket": self.logging_bucket_name, 
+                    "prefix": self.logging_bucket_prefix.strip('/'),
+                    "role": ""
+                    },
+                } 
+            }
+        
+        # test has role.sts
+        AWS_DDB_META.put(meta_name='AvailableServices', item={'value': ['scheduler']})
+        pipeline_id = str(uuid.uuid4())
+        pipeline_info = copy.deepcopy(self.pipeline_info)
+        pipeline_info['data']['source']['type'] = 'rds'
+        pipeline_info['data']['destination']['table']['name'] = 'rds'
+        pipeline_info['data']['scheduler']['LogProcessor']['schedule'] = 'rate(5 minutes)'
+        pipeline_info['data']['scheduler']['LogMerger']['schedule'] = 'cron(0 1 * * ? *)'
+        pipeline_info['data']['scheduler']['LogArchive']['schedule'] = 'cron(0 2 * * ? *)'
+        pipeline_info['stack']['role']['connector']= self.log_processor_start_execution_role
+        pipeline_info['stack']['role']['invokeConnector']= self.replication_role_arn
+        pipeline_info['stack']['lambda']['connector']= self.replication_function_arn
+        AWS_DDB_META.put(meta_name=pipeline_id, item=pipeline_info)
+        
+        ingestion_id = str(uuid.uuid4())
+        ingestion_info = copy.deepcopy(self.ingestion_info)
+        ingestion_info['pipelineId'] = pipeline_id
+        ingestion_info['data']['source']['bucket'] = self.logging_bucket_name
+        ingestion_info['data']['source']['prefix'] = self.logging_bucket_prefix
+        ingestion_info['data']['source']['context'] = json.dumps({
+                "DBIdentifiers": ["aurora-mysql", "aurora-postgres15", "database-1", "database-2"],
+        })
+        ingestion_info['data']['role']['sts'] = self.replication_role_arn
+        ingestion_event = {'RequestType': 'Create', 'ResourceProperties': {'Resource': 'ingestion', 'Id': ingestion_id}}
+        AWS_DDB_META.put(meta_name=ingestion_id, item=ingestion_info)
+        
+        parameters = Parameters(ingestion_event)
+        ingestion_resource_builder = PipelineResourceBuilder(parameters=parameters)
+        
+        ingestion_resource_builder.create_pipeline()
+        ingestion_resource_builder.create_connector()
+        
+        assert AWS_IAM.get_role_policy(role_name=self.log_processor_start_execution_role.split('/')[-1], policy_name=parameters.policy_sid)['PolicyDocument'] == {
+            'Version': '2012-10-17', 
+            'Statement': [
+                {
+                    'Effect': 'Allow', 
+                    'Action': 'sts:AssumeRole', 
+                    'Resource': [
+                        self.replication_role_arn,
+                        ]
+                    }
+                ]
+            }
+
+    def test_delete_connector(self, httpserver: HTTPServer, mock_iam_context, mock_s3_context, mock_sqs_context, mock_ddb_context, mock_glue_context, mock_scheduler_context, mock_events_context):
+        from pipeline_resources_builder.lambda_function import PipelineResourceBuilder, Parameters, MetaTable, SchedulerClient, EventsClient
+        
+        self.init_default_parameter(httpserver, mock_iam_context, mock_s3_context, mock_sqs_context, mock_ddb_context, mock_glue_context, mock_scheduler_context)
+        
+        AWS_DDB_META = MetaTable()
+        AWS_SCHEDULER = SchedulerClient()
+        AWS_EVENTS = EventsClient()
+
+        # test for services with scheduler
+        AWS_DDB_META.put(meta_name='AvailableServices', item={'value': ['scheduler']})
+        pipeline_id = str(uuid.uuid4())
+        pipeline_info = copy.deepcopy(self.pipeline_info)
+        pipeline_info['data']['source']['type'] = 'rds'
+        pipeline_info['data']['destination']['table']['name'] = 'rds'
+        pipeline_info['data']['scheduler']['LogProcessor']['schedule'] = 'rate(5 minutes)'
+        pipeline_info['data']['scheduler']['LogMerger']['schedule'] = 'cron(0 1 * * ? *)'
+        pipeline_info['data']['scheduler']['LogArchive']['schedule'] = 'cron(0 2 * * ? *)'
+        pipeline_info['stack']['role']['invokeConnector']= self.replication_role_arn
+        pipeline_info['stack']['lambda']['connector']= self.replication_function_arn
+        AWS_DDB_META.put(meta_name=pipeline_id, item=pipeline_info)
+        
+        ingestion_id = str(uuid.uuid4())
+        ingestion_info = copy.deepcopy(self.ingestion_info)
+        ingestion_info['pipelineId'] = pipeline_id
+        ingestion_info['data']['source']['bucket'] = self.logging_bucket_name
+        ingestion_info['data']['source']['prefix'] = self.logging_bucket_prefix
+        ingestion_info['data']['source']['context'] = json.dumps({
+            "type": "rds",
+            "context": {
+                "DBIdentifiers": ["aurora-mysql", "aurora-postgres15", "database-1", "database-2"],
+            }
+        })
+        ingestion_event = {'RequestType': 'Create', 'ResourceProperties': {'Resource': 'ingestion', 'Id': ingestion_id}}
+        AWS_DDB_META.put(meta_name=ingestion_id, item=ingestion_info)
+        
+        parameters = Parameters(ingestion_event)
+        ingestion_resource_builder = PipelineResourceBuilder(parameters=parameters)
+        
+        ingestion_resource_builder.create_pipeline()
+        ingestion_resource_builder.create_connector()
+        ingestion_resource_builder.delete_connector()
+        
+        response = AWS_SCHEDULER.get_schedule(name=f'Connector-{ingestion_id}', group_name=pipeline_id)
+        assert response == {}
+
+        # test for services with events rule
+        AWS_DDB_META.put(meta_name='AvailableServices', item={'value': ['events']})
+        pipeline_id = str(uuid.uuid4())
+        pipeline_info = copy.deepcopy(self.pipeline_info)
+        pipeline_info['data']['source']['type'] = 'rds'
+        pipeline_info['data']['destination']['table']['name'] = 'rds'
+        pipeline_info['data']['scheduler']['LogProcessor']['schedule'] = 'rate(5 minutes)'
+        pipeline_info['data']['scheduler']['LogMerger']['schedule'] = 'cron(0 1 * * ? *)'
+        pipeline_info['data']['scheduler']['LogArchive']['schedule'] = 'cron(0 2 * * ? *)'
+        pipeline_info['stack']['role']['invokeConnector']= self.replication_role_arn
+        pipeline_info['stack']['lambda']['connector']= self.replication_function_arn
+        AWS_DDB_META.put(meta_name=pipeline_id, item=pipeline_info)
+        
+        ingestion_id = str(uuid.uuid4())
+        ingestion_info = copy.deepcopy(self.ingestion_info)
+        ingestion_info['pipelineId'] = pipeline_id
+        ingestion_info['data']['source']['bucket'] = self.logging_bucket_name
+        ingestion_info['data']['source']['prefix'] = self.logging_bucket_prefix
+        ingestion_info['data']['source']['context'] = json.dumps({
+            "type": "rds",
+            "context": {
+                "DBIdentifiers": ["aurora-mysql", "aurora-postgres15", "database-1", "database-2"],
+            }
+        })
+        ingestion_event = {'RequestType': 'Create', 'ResourceProperties': {'Resource': 'ingestion', 'Id': ingestion_id}}
+        AWS_DDB_META.put(meta_name=ingestion_id, item=ingestion_info)
+        
+        parameters = Parameters(ingestion_event)
+        ingestion_resource_builder = PipelineResourceBuilder(parameters=parameters)
+        
+        ingestion_resource_builder.create_pipeline()
+        ingestion_resource_builder.create_connector()
+        ingestion_resource_builder.delete_connector()
+        
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'Connector-{pipeline_id}', EventBusName='default')
+        assert response['Rules'] == []
     
-        pipeline_resource_builder.table_metadata_and_statements.metrics = None
+    def test_init_destination_policy_info(self, httpserver: HTTPServer, mock_iam_context, mock_s3_context, mock_sqs_context, mock_ddb_context, mock_glue_context, mock_scheduler_context, mock_events_context):
+        from pipeline_resources_builder.lambda_function import PipelineResourceBuilder, Parameters, MetaTable, IAMClient
+        
+        self.init_default_parameter(httpserver, mock_iam_context, mock_s3_context, mock_sqs_context, mock_ddb_context, mock_glue_context, mock_scheduler_context)
+        
+        AWS_DDB_META = MetaTable()
+        AWS_IAM = IAMClient()
+        
+        # test no statements
+        policy_document = {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Action": [
+                        "s3:GetObject",
+                        "s3:GetObjectTagging",
+                    ],
+                    "Resource": [
+                        "arn:aws:s3:::staging-bucket/*"
+                    ],
+                    "Effect": "Allow"
+                }
+            ]
+        }
+        
+        response = AWS_IAM._iam_client.create_policy(PolicyName="TestPolicy1", PolicyDocument=json.dumps(policy_document))
+        test_policy_arn = response['Policy']['Arn']
+        
+        AWS_DDB_META.update(meta_name='S3PublicAccessPolicy', item={
+            'arn': test_policy_arn,
+            'name': 'S3PublicAccessPolicy',
+            'service': 'IAM',
+            'url': '',
+            })
+        
+        pipeline_id = str(uuid.uuid4())
+        pipeline_info = copy.deepcopy(self.pipeline_info)
+        pipeline_info['data']['destination']['database']['name'] = 'shared_database'
+        
+        AWS_DDB_META.put(meta_name=pipeline_id, item=pipeline_info)
+        
+        pipeline_event = copy.deepcopy(self.pipeline_event)
+        pipeline_event['ResourceProperties']['Id'] = pipeline_id
+        
+        parameters = Parameters(pipeline_event)
+        pipeline_resource_builder = PipelineResourceBuilder(parameters=parameters)
+    
         pipeline_resource_builder._init_destination_policy_info()
         
         assert pipeline_resource_builder.destination_policy_resources == [
-            'arn:aws:s3:::centralized-bucket/datalake/centralized/application*'
+            'arn:aws:s3:::centralized-bucket/datalake/shared_database*', 
+            ]
+        assert pipeline_resource_builder.s3_public_access_policy_sid == 'S3AccessPolicyForDestination'
+        assert pipeline_resource_builder.s3_public_access_policy_document['Document']['Statement'] == []
+        AWS_DDB_META.delete(meta_name=pipeline_id)
+        
+        # test has_shared_database_location is False
+        policy_document = {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Action": [
+                        "s3:GetObject",
+                        "s3:GetObjectTagging",
+                    ],
+                    "Resource": [
+                        "arn:aws:s3:::staging-bucket/*"
+                    ],
+                    "Effect": "Allow"
+                },
+                {
+                    'Sid': 'S3AccessPolicyForDestination', 
+                    'Action': [
+                        's3:ListBucket', 
+                        's3:ListBucketMultipartUploads', 
+                        's3:ListMultipartUploadParts', 
+                        's3:GetObject', 
+                        's3:GetBucketLocation', 
+                        's3:AbortMultipartUpload', 
+                        's3:CreateBucket', 
+                        's3:PutObject', 
+                        's3:DeleteObject'
+                        ], 
+                    'Resource': [
+                        'arn:aws:s3:::logging-bucket', 
+                        'arn:aws:s3:::logging-bucket/*'
+                        ], 
+                    'Effect': 'Allow'
+                },
+            ]
+        }
+        
+        response = AWS_IAM._iam_client.create_policy(PolicyName="TestPolicy2", PolicyDocument=json.dumps(policy_document))
+        test_policy_arn = response['Policy']['Arn']
+        
+        AWS_DDB_META.update(meta_name='S3PublicAccessPolicy', item={
+            'arn': test_policy_arn,
+            'name': 'S3PublicAccessPolicy',
+            'service': 'IAM',
+            'url': '',
+            })
+        
+        pipeline_id = str(uuid.uuid4())
+        pipeline_info = copy.deepcopy(self.pipeline_info)
+        pipeline_info['data']['destination']['database']['name'] = 'shared_database'
+        
+        AWS_DDB_META.put(meta_name=pipeline_id, item=pipeline_info)
+        
+        pipeline_event = copy.deepcopy(self.pipeline_event)
+        pipeline_event['ResourceProperties']['Id'] = pipeline_id
+        
+        parameters = Parameters(pipeline_event)
+        pipeline_resource_builder = PipelineResourceBuilder(parameters=parameters)
+        
+        pipeline_resource_builder._init_destination_policy_info()
+        
+        assert pipeline_resource_builder.destination_policy_resources == [
+            'arn:aws:s3:::centralized-bucket/datalake/shared_database*', 
             ]
         assert pipeline_resource_builder.s3_public_access_policy_sid == 'S3AccessPolicyForDestination'
         assert pipeline_resource_builder.s3_public_access_policy_document['Document']['Statement'] == [
-            {'Sid': 'S3AccessPolicyForDestination', 
-             'Action': [
-                 's3:ListBucket', 
-                 's3:ListBucketMultipartUploads', 
-                 's3:ListMultipartUploadParts', 
-                 's3:GetObject', 
-                 's3:GetBucketLocation', 
-                 's3:AbortMultipartUpload', 
-                 's3:CreateBucket', 
-                 's3:PutObject', 
-                 's3:DeleteObject'
-                 ], 
-             'Resource': [
-                 'arn:aws:s3:::logging-bucket', 
-                 'arn:aws:s3:::logging-bucket/*'
-                 ], 
-             'Effect': 'Allow'
-             }
+            {
+                'Sid': 'S3AccessPolicyForDestination', 
+                'Action': [
+                    's3:ListBucket', 
+                    's3:ListBucketMultipartUploads', 
+                    's3:ListMultipartUploadParts', 
+                    's3:GetObject', 
+                    's3:GetBucketLocation', 
+                    's3:AbortMultipartUpload', 
+                    's3:CreateBucket', 
+                    's3:PutObject', 
+                    's3:DeleteObject'
+                    ], 
+                'Resource': [
+                    'arn:aws:s3:::logging-bucket', 
+                    'arn:aws:s3:::logging-bucket/*'
+                    ], 
+                'Effect': 'Allow'
+            }
+        ]
+        AWS_DDB_META.delete(meta_name=pipeline_id)
+        
+        # bucket_location_arn not in statement[0]['Resource']
+        policy_document = {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Action": [
+                        "s3:GetObject",
+                        "s3:GetObjectTagging",
+                    ],
+                    "Resource": [
+                        "arn:aws:s3:::staging-bucket/*"
+                    ],
+                    "Effect": "Allow"
+                },
+                {
+                    'Sid': 'S3AccessPolicyForDestination', 
+                    'Action': [
+                        's3:ListBucket', 
+                        's3:ListBucketMultipartUploads', 
+                        's3:ListMultipartUploadParts', 
+                        's3:GetObject', 
+                        's3:GetBucketLocation', 
+                        's3:AbortMultipartUpload', 
+                        's3:CreateBucket', 
+                        's3:PutObject', 
+                        's3:DeleteObject'
+                        ], 
+                    'Resource': [
+                        'arn:aws:s3:::logging-bucket', 
+                        'arn:aws:s3:::logging-bucket/*'
+                        ], 
+                    'Effect': 'Allow'
+                },
             ]
+        }
+        
+        response = AWS_IAM._iam_client.create_policy(PolicyName="TestPolicy3", PolicyDocument=json.dumps(policy_document))
+        test_policy_arn = response['Policy']['Arn']
+        
+        AWS_DDB_META.update(meta_name='S3PublicAccessPolicy', item={
+            'arn': test_policy_arn,
+            'name': 'S3PublicAccessPolicy',
+            'service': 'IAM',
+            'url': '',
+            })
+        
+        pipeline_id_1 = str(uuid.uuid4())
+        pipeline_info_1 = copy.deepcopy(self.pipeline_info)
+        pipeline_info_1['data']['destination']['database']['name'] = 'shared_database'
+        
+        pipeline_id_2 = str(uuid.uuid4())
+        pipeline_info_2 = copy.deepcopy(pipeline_info_1)
+        
+        AWS_DDB_META.put(meta_name=pipeline_id_1, item=pipeline_info_1)
+        AWS_DDB_META.put(meta_name=pipeline_id_2, item=pipeline_info_2)
+        
+        pipeline_event = copy.deepcopy(self.pipeline_event)
+        pipeline_event['ResourceProperties']['Id'] = pipeline_id_1
+        
+        parameters = Parameters(pipeline_event)
+        pipeline_resource_builder = PipelineResourceBuilder(parameters=parameters)
+        
+        pipeline_resource_builder._init_destination_policy_info()
+        
+        assert pipeline_resource_builder.destination_policy_resources == [
+            'arn:aws:s3:::centralized-bucket/datalake/shared_database*', 
+            ]
+        assert pipeline_resource_builder.s3_public_access_policy_sid == 'S3AccessPolicyForDestination'
+        assert pipeline_resource_builder.s3_public_access_policy_document['Document']['Statement'] == [
+            {
+                'Sid': 'S3AccessPolicyForDestination', 
+                'Action': [
+                    's3:ListBucket', 
+                    's3:ListBucketMultipartUploads', 
+                    's3:ListMultipartUploadParts', 
+                    's3:GetObject', 
+                    's3:GetBucketLocation', 
+                    's3:AbortMultipartUpload', 
+                    's3:CreateBucket', 
+                    's3:PutObject', 
+                    's3:DeleteObject'
+                    ], 
+                'Resource': [
+                        'arn:aws:s3:::logging-bucket', 
+                        'arn:aws:s3:::logging-bucket/*'
+                    ], 
+                'Effect': 'Allow'
+            }
+        ]
+        AWS_DDB_META.delete(meta_name=pipeline_id_1)
+        AWS_DDB_META.delete(meta_name=pipeline_id_2)
+        
+        # test has statement and has_shared_database_location is True or bucket_location_arn in statement[0]['Resource']
+        policy_document = {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Action": [
+                        "s3:GetObject",
+                        "s3:GetObjectTagging",
+                    ],
+                    "Resource": [
+                        "arn:aws:s3:::staging-bucket/*"
+                    ],
+                    "Effect": "Allow"
+                },
+                {
+                    'Sid': 'S3AccessPolicyForDestination', 
+                    'Action': [
+                        's3:ListBucket', 
+                        's3:ListBucketMultipartUploads', 
+                        's3:ListMultipartUploadParts', 
+                        's3:GetObject', 
+                        's3:GetBucketLocation', 
+                        's3:AbortMultipartUpload', 
+                        's3:CreateBucket', 
+                        's3:PutObject', 
+                        's3:DeleteObject'
+                        ], 
+                    'Resource': [
+                        'arn:aws:s3:::centralized-bucket/datalake/shared_database*', 
+                        'arn:aws:s3:::centralized-bucket'
+                        ], 
+                    'Effect': 'Allow'
+                },
+            ]
+        }
+        
+        response = AWS_IAM._iam_client.create_policy(PolicyName="TestPolicy4", PolicyDocument=json.dumps(policy_document))
+        test_policy_arn = response['Policy']['Arn']
+        
+        AWS_DDB_META.update(meta_name='S3PublicAccessPolicy', item={
+            'arn': test_policy_arn,
+            'name': 'S3PublicAccessPolicy',
+            'service': 'IAM',
+            'url': '',
+            })
+        
+        pipeline_id_1 = str(uuid.uuid4())
+        pipeline_info_1 = copy.deepcopy(self.pipeline_info)
+        pipeline_info_1['data']['destination']['database']['name'] = 'shared_database'
+        
+        pipeline_id_2 = str(uuid.uuid4())
+        pipeline_info_2 = copy.deepcopy(pipeline_info_1)
+        
+        AWS_DDB_META.put(meta_name=pipeline_id_1, item=pipeline_info_1)
+        AWS_DDB_META.put(meta_name=pipeline_id_2, item=pipeline_info_2)
+        
+        pipeline_event = copy.deepcopy(self.pipeline_event)
+        pipeline_event['ResourceProperties']['Id'] = pipeline_id_1
+        
+        parameters = Parameters(pipeline_event)
+        pipeline_resource_builder = PipelineResourceBuilder(parameters=parameters)
+        
+        pipeline_resource_builder._init_destination_policy_info()
+        
+        assert pipeline_resource_builder.destination_policy_resources == []
+        assert pipeline_resource_builder.s3_public_access_policy_sid == 'S3AccessPolicyForDestination'
+        assert pipeline_resource_builder.s3_public_access_policy_document['Document']['Statement'] == [
+            {
+                'Sid': 'S3AccessPolicyForDestination', 
+                'Action': [
+                    's3:ListBucket', 
+                    's3:ListBucketMultipartUploads', 
+                    's3:ListMultipartUploadParts', 
+                    's3:GetObject', 
+                    's3:GetBucketLocation', 
+                    's3:AbortMultipartUpload', 
+                    's3:CreateBucket', 
+                    's3:PutObject', 
+                    's3:DeleteObject'
+                    ], 
+                'Resource': [
+                        'arn:aws:s3:::centralized-bucket/datalake/shared_database*', 
+                        'arn:aws:s3:::centralized-bucket'
+                    ], 
+                'Effect': 'Allow'
+            }
+        ]
+        AWS_DDB_META.delete(meta_name=pipeline_id_1)
+        AWS_DDB_META.delete(meta_name=pipeline_id_2)
     
     def test_grant_destination_bucket_access_permission(self, httpserver: HTTPServer, mock_iam_context, mock_s3_context, mock_sqs_context, mock_ddb_context, mock_glue_context, mock_scheduler_context):
         from pipeline_resources_builder.lambda_function import PipelineResourceBuilder, Parameters, MetaTable, IAMClient
@@ -4063,13 +5306,14 @@ class TestPipelineResourceBuilder:
         AWS_DDB_META = MetaTable()
         AWS_IAM = IAMClient()
         
-        pipeline_id = str(uuid.uuid4())
+        pipeline_id_1 = str(uuid.uuid4())
         pipeline_info = copy.deepcopy(self.pipeline_info)
+        pipeline_info['data']['destination']['database']['name'] = 'shared_database'
         
-        AWS_DDB_META.put(meta_name=pipeline_id, item=pipeline_info)
+        AWS_DDB_META.put(meta_name=pipeline_id_1, item=pipeline_info)
         
         pipeline_event = copy.deepcopy(self.pipeline_event)
-        pipeline_event['ResourceProperties']['Id'] = pipeline_id
+        pipeline_event['ResourceProperties']['Id'] = pipeline_id_1
         
         parameters = Parameters(pipeline_event)
         pipeline_resource_builder = PipelineResourceBuilder(parameters=parameters)
@@ -4094,9 +5338,47 @@ class TestPipelineResourceBuilder:
                 'Resource': [
                     'arn:aws:s3:::logging-bucket', 
                     'arn:aws:s3:::logging-bucket/*', 
-                    'arn:aws:s3:::centralized-bucket/datalake/centralized/waf*', 
+                    'arn:aws:s3:::centralized-bucket/datalake/shared_database*', 
                     'arn:aws:s3:::centralized-bucket', 
-                    'arn:aws:s3:::centralized-bucket/datalake/centralized/waf_metrics*'
+                    ], 
+                'Effect': 'Allow'
+                }
+            ]
+        
+        pipeline_id_2 = str(uuid.uuid4())
+        pipeline_info = copy.deepcopy(self.pipeline_info)
+        pipeline_info['data']['destination']['database']['name'] = 'shared_database'
+        
+        AWS_DDB_META.put(meta_name=pipeline_id_2, item=pipeline_info)
+        
+        pipeline_event = copy.deepcopy(self.pipeline_event)
+        pipeline_event['ResourceProperties']['Id'] = pipeline_id_2
+        
+        parameters = Parameters(pipeline_event)
+        pipeline_resource_builder = PipelineResourceBuilder(parameters=parameters)
+
+        pipeline_resource_builder.grant_destination_bucket_access_permission()
+        
+        response = AWS_IAM.get_policy_document(arn=pipeline_resource_builder.parameters.pipeline_info.role.s3_public_access, sid=pipeline_resource_builder.s3_public_access_policy_sid)
+        assert response['Document']['Statement'] == [
+            {
+                'Sid': 'S3AccessPolicyForDestination', 
+                'Action': [
+                    's3:ListBucket', 
+                    's3:ListBucketMultipartUploads', 
+                    's3:ListMultipartUploadParts', 
+                    's3:GetObject', 
+                    's3:GetBucketLocation', 
+                    's3:AbortMultipartUpload', 
+                    's3:CreateBucket', 
+                    's3:PutObject', 
+                    's3:DeleteObject'
+                    ], 
+                'Resource': [
+                    'arn:aws:s3:::logging-bucket', 
+                    'arn:aws:s3:::logging-bucket/*', 
+                    'arn:aws:s3:::centralized-bucket/datalake/shared_database*', 
+                    'arn:aws:s3:::centralized-bucket', 
                     ], 
                 'Effect': 'Allow'
                 }
@@ -4123,13 +5405,14 @@ class TestPipelineResourceBuilder:
                 'Resource': [
                     'arn:aws:s3:::logging-bucket', 
                     'arn:aws:s3:::logging-bucket/*', 
-                    'arn:aws:s3:::centralized-bucket/datalake/centralized/waf*', 
+                    'arn:aws:s3:::centralized-bucket/datalake/shared_database*', 
                     'arn:aws:s3:::centralized-bucket', 
-                    'arn:aws:s3:::centralized-bucket/datalake/centralized/waf_metrics*'
                     ], 
                 'Effect': 'Allow'
                 }
             ]
+        AWS_DDB_META.delete(meta_name=pipeline_id_1)
+        AWS_DDB_META.delete(meta_name=pipeline_id_2)
         
         policy_document = {
             "Version": "2012-10-17",
@@ -4159,6 +5442,7 @@ class TestPipelineResourceBuilder:
         
         pipeline_id = str(uuid.uuid4())
         pipeline_info = copy.deepcopy(self.pipeline_info)
+        pipeline_info['data']['destination']['database']['name'] = 'shared_database'
         
         AWS_DDB_META.put(meta_name=pipeline_id, item=pipeline_info)
         
@@ -4186,9 +5470,8 @@ class TestPipelineResourceBuilder:
                     's3:DeleteObject'
                     ], 
                 'Resource': [
-                    'arn:aws:s3:::centralized-bucket/datalake/centralized/waf*', 
+                    'arn:aws:s3:::centralized-bucket/datalake/shared_database*', 
                     'arn:aws:s3:::centralized-bucket',
-                    'arn:aws:s3:::centralized-bucket/datalake/centralized/waf_metrics*'
                     ], 
                 'Sid': 'S3AccessPolicyForDestination'
                 }
@@ -4202,13 +5485,14 @@ class TestPipelineResourceBuilder:
         AWS_DDB_META = MetaTable()
         AWS_IAM = IAMClient()
 
-        pipeline_id = str(uuid.uuid4())
+        pipeline_id_1 = str(uuid.uuid4())
         pipeline_info = copy.deepcopy(self.pipeline_info)
+        pipeline_info['data']['destination']['database']['name'] = 'shared_database'
         
-        AWS_DDB_META.put(meta_name=pipeline_id, item=pipeline_info)
+        AWS_DDB_META.put(meta_name=pipeline_id_1, item=pipeline_info)
         
         pipeline_event = copy.deepcopy(self.pipeline_event)
-        pipeline_event['ResourceProperties']['Id'] = pipeline_id
+        pipeline_event['ResourceProperties']['Id'] = pipeline_id_1
         
         parameters = Parameters(pipeline_event)
         pipeline_resource_builder = PipelineResourceBuilder(parameters=parameters)
@@ -4233,7 +5517,73 @@ class TestPipelineResourceBuilder:
                     ], 
                 'Resource': [
                     'arn:aws:s3:::logging-bucket', 
-                    'arn:aws:s3:::logging-bucket/*'
+                    'arn:aws:s3:::logging-bucket/*',
+                    ], 
+                'Effect': 'Allow'
+                }
+            ]
+        
+        pipeline_id_2 = str(uuid.uuid4())
+        pipeline_info = copy.deepcopy(self.pipeline_info)
+        pipeline_info['data']['destination']['database']['name'] = 'shared_database'
+        
+        AWS_DDB_META.put(meta_name=pipeline_id_2, item=pipeline_info)
+        
+        pipeline_event = copy.deepcopy(self.pipeline_event)
+        pipeline_event['ResourceProperties']['Id'] = pipeline_id_2
+        
+        parameters = Parameters(pipeline_event)
+        pipeline_resource_builder = PipelineResourceBuilder(parameters=parameters)
+
+        pipeline_resource_builder.grant_destination_bucket_access_permission()
+        pipeline_resource_builder.revoke_destination_bucket_access_permission()
+        
+        response = AWS_IAM.get_policy_document(arn=pipeline_resource_builder.parameters.pipeline_info.role.s3_public_access, sid=pipeline_resource_builder.s3_public_access_policy_sid)
+        assert response['Document']['Statement'] == [
+            {
+                'Sid': 'S3AccessPolicyForDestination', 
+                'Action': [
+                    's3:ListBucket', 
+                    's3:ListBucketMultipartUploads', 
+                    's3:ListMultipartUploadParts', 
+                    's3:GetObject', 
+                    's3:GetBucketLocation', 
+                    's3:AbortMultipartUpload', 
+                    's3:CreateBucket', 
+                    's3:PutObject', 
+                    's3:DeleteObject'
+                    ], 
+                'Resource': [
+                    'arn:aws:s3:::logging-bucket', 
+                    'arn:aws:s3:::logging-bucket/*',
+                    'arn:aws:s3:::centralized-bucket/datalake/shared_database*',
+                    'arn:aws:s3:::centralized-bucket', 
+                    ], 
+                'Effect': 'Allow'
+                }
+            ]
+
+        AWS_DDB_META.delete(meta_name=pipeline_id_1)
+        pipeline_resource_builder.revoke_destination_bucket_access_permission()
+        
+        response = AWS_IAM.get_policy_document(arn=pipeline_resource_builder.parameters.pipeline_info.role.s3_public_access, sid=pipeline_resource_builder.s3_public_access_policy_sid)
+        assert response['Document']['Statement'] == [
+            {
+                'Sid': 'S3AccessPolicyForDestination', 
+                'Action': [
+                    's3:ListBucket', 
+                    's3:ListBucketMultipartUploads', 
+                    's3:ListMultipartUploadParts', 
+                    's3:GetObject', 
+                    's3:GetBucketLocation', 
+                    's3:AbortMultipartUpload', 
+                    's3:CreateBucket', 
+                    's3:PutObject', 
+                    's3:DeleteObject'
+                    ], 
+                'Resource': [
+                    'arn:aws:s3:::logging-bucket', 
+                    'arn:aws:s3:::logging-bucket/*',
                     ], 
                 'Effect': 'Allow'
                 }
@@ -4267,6 +5617,7 @@ class TestPipelineResourceBuilder:
         
         pipeline_id = str(uuid.uuid4())
         pipeline_info = copy.deepcopy(self.pipeline_info)
+        pipeline_info['data']['destination']['database']['name'] = 'tmp_database'
         
         AWS_DDB_META.put(meta_name=pipeline_id, item=pipeline_info)
         
@@ -4277,12 +5628,12 @@ class TestPipelineResourceBuilder:
         pipeline_resource_builder = PipelineResourceBuilder(parameters=parameters)
 
         pipeline_resource_builder.grant_destination_bucket_access_permission()
-        
         pipeline_resource_builder.grant_destination_bucket_access_permission()
         pipeline_resource_builder.revoke_destination_bucket_access_permission()
         
         response = AWS_IAM.get_policy_document(arn=test_policy_arn, sid=pipeline_resource_builder.s3_public_access_policy_sid)
         assert response['Document']['Statement'] == []
+        AWS_DDB_META.delete(meta_name=pipeline_id)
         
     def test_grant_sqs_send_message_permission_to_source_bucket(self, httpserver: HTTPServer, mock_iam_context, mock_s3_context, mock_sqs_context, mock_ddb_context, mock_glue_context, mock_scheduler_context):
         from pipeline_resources_builder.lambda_function import PipelineResourceBuilder, Parameters, SQSClient
@@ -4943,6 +6294,7 @@ class TestPipelineResourceBuilder:
             {'Name': 'terminatingruleid', 'Type': 'string'}, 
             {'Name': 'terminatingruletype', 'Type': 'string'}, 
             {'Name': 'action', 'Type': 'string'}, 
+            {'Name': 'action_fixed', 'Type': 'string'}, 
             {'Name': 'terminatingrulematchdetails', 'Type': 'array<struct<conditiontype:string,sensitivitylevel:string,location:string,matcheddata:array<string>>>'}, 
             {'Name': 'httpsourcename', 'Type': 'string'}, 
             {'Name': 'httpsourceid', 'Type': 'string'}, 
@@ -4951,6 +6303,13 @@ class TestPipelineResourceBuilder:
             {'Name': 'nonterminatingmatchingrules', 'Type': 'array<struct<ruleid:string,action:string,rulematchdetails:array<struct<conditiontype:string,sensitivitylevel:string,location:string,matcheddata:array<string>>>,captcharesponse:struct<responsecode:string,solvetimestamp:string>>>'}, 
             {'Name': 'requestheadersinserted', 'Type': 'array<struct<name:string,value:string>>'}, 
             {'Name': 'responsecodesent', 'Type': 'string'}, 
+            {'Name': 'host', 'Type': 'string'},
+            {'Name': 'clientip', 'Type': 'string'},
+            {'Name': 'country', 'Type': 'string'},
+            {'Name': 'uri', 'Type': 'string'},
+            {'Name': 'args', 'Type': 'string'},
+            {'Name': 'httpmethod', 'Type': 'string'},
+            {'Name': 'ja3fingerprint', 'Type': 'string'},
             {'Name': 'httprequest', 'Type': 'struct<clientip:string,country:string,headers:array<struct<name:string,value:string>>,uri:string,args:string,httpversion:string,httpmethod:string,requestid:string>'}, 
             {'Name': 'labels', 'Type': 'array<struct<name:string>>'}, 
             {'Name': 'captcharesponse', 'Type': 'struct<responsecode:string,solvetimestamp:string,failureReason:string>'}
@@ -4968,7 +6327,19 @@ class TestPipelineResourceBuilder:
             {'Name': '__execution_name__', 'Type': 'string'}
             ]
         assert response['Table']['TableType'] == 'EXTERNAL_TABLE'
-        assert response['Table']['Parameters'] == {'partition_filtering.enabled': 'true', 'classification': 'parquet', 'has_encrypted_data': 'true'}
+        assert response['Table']['Parameters'] == {
+            'partition_filtering.enabled': 'true', 
+            'classification': 'parquet', 
+            'has_encrypted_data': 'true', 
+            'parquet.compression': 'ZSTD', 
+            'spark.sql.partitionProvider': 'catalog', 
+            'spark.sql.sources.schema': '{"type": "struct", "fields": [{"name": "time", "type": "long", "nullable": true, "metadata": {}}, {"name": "timestamp", "type": "timestamp", "nullable": true, "metadata": {}}, {"name": "formatversion", "type": "integer", "nullable": true, "metadata": {}}, {"name": "webaclid", "type": "string", "nullable": true, "metadata": {}}, {"name": "webaclname", "type": "string", "nullable": true, "metadata": {}}, {"name": "terminatingruleid", "type": "string", "nullable": true, "metadata": {}}, {"name": "terminatingruletype", "type": "string", "nullable": true, "metadata": {}}, {"name": "action", "type": "string", "nullable": true, "metadata": {}}, {"name": "action_fixed", "type": "string", "nullable": true, "metadata": {}}, {"name": "terminatingrulematchdetails", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "conditiontype", "type": "string", "nullable": true, "metadata": {}}, {"name": "sensitivitylevel", "type": "string", "nullable": true, "metadata": {}}, {"name": "location", "type": "string", "nullable": true, "metadata": {}}, {"name": "matcheddata", "type": {"type": "array", "elementType": "string", "containsNull": true}, "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "httpsourcename", "type": "string", "nullable": true, "metadata": {}}, {"name": "httpsourceid", "type": "string", "nullable": true, "metadata": {}}, {"name": "rulegrouplist", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "rulegroupid", "type": "string", "nullable": true, "metadata": {}}, {"name": "terminatingrule", "type": {"type": "struct", "fields": [{"name": "ruleid", "type": "string", "nullable": true, "metadata": {}}, {"name": "action", "type": "string", "nullable": true, "metadata": {}}, {"name": "rulematchdetails", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "conditiontype", "type": "string", "nullable": true, "metadata": {}}, {"name": "sensitivitylevel", "type": "string", "nullable": true, "metadata": {}}, {"name": "location", "type": "string", "nullable": true, "metadata": {}}, {"name": "matcheddata", "type": {"type": "array", "elementType": "string", "containsNull": true}, "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}]}, "nullable": true, "metadata": {}}, {"name": "nonterminatingmatchingrules", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "ruleid", "type": "string", "nullable": true, "metadata": {}}, {"name": "action", "type": "string", "nullable": true, "metadata": {}}, {"name": "rulematchdetails", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "conditiontype", "type": "string", "nullable": true, "metadata": {}}, {"name": "sensitivitylevel", "type": "string", "nullable": true, "metadata": {}}, {"name": "location", "type": "string", "nullable": true, "metadata": {}}, {"name": "matcheddata", "type": {"type": "array", "elementType": "string", "containsNull": true}, "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "excludedrules", "type": "string", "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "ratebasedrulelist", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "ratebasedruleid", "type": "string", "nullable": true, "metadata": {}}, {"name": "limitkey", "type": "string", "nullable": true, "metadata": {}}, {"name": "maxrateallowed", "type": "integer", "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "nonterminatingmatchingrules", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "ruleid", "type": "string", "nullable": true, "metadata": {}}, {"name": "action", "type": "string", "nullable": true, "metadata": {}}, {"name": "rulematchdetails", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "conditiontype", "type": "string", "nullable": true, "metadata": {}}, {"name": "sensitivitylevel", "type": "string", "nullable": true, "metadata": {}}, {"name": "location", "type": "string", "nullable": true, "metadata": {}}, {"name": "matcheddata", "type": {"type": "array", "elementType": "string", "containsNull": true}, "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "captcharesponse", "type": {"type": "struct", "fields": [{"name": "responsecode", "type": "string", "nullable": true, "metadata": {}}, {"name": "solvetimestamp", "type": "string", "nullable": true, "metadata": {}}]}, "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "requestheadersinserted", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "name", "type": "string", "nullable": true, "metadata": {}}, {"name": "value", "type": "string", "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "responsecodesent", "type": "string", "nullable": true, "metadata": {}}, {"name": "host", "type": "string", "nullable": true, "metadata": {}}, {"name": "clientip", "type": "string", "nullable": true, "metadata": {}}, {"name": "country", "type": "string", "nullable": true, "metadata": {}}, {"name": "uri", "type": "string", "nullable": true, "metadata": {}}, {"name": "args", "type": "string", "nullable": true, "metadata": {}}, {"name": "httpmethod", "type": "string", "nullable": true, "metadata": {}}, {"name": "ja3fingerprint", "type": "string", "nullable": true, "metadata": {}}, {"name": "httprequest", "type": {"type": "struct", "fields": [{"name": "clientip", "type": "string", "nullable": true, "metadata": {}}, {"name": "country", "type": "string", "nullable": true, "metadata": {}}, {"name": "headers", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "name", "type": "string", "nullable": true, "metadata": {}}, {"name": "value", "type": "string", "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "uri", "type": "string", "nullable": true, "metadata": {}}, {"name": "args", "type": "string", "nullable": true, "metadata": {}}, {"name": "httpversion", "type": "string", "nullable": true, "metadata": {}}, {"name": "httpmethod", "type": "string", "nullable": true, "metadata": {}}, {"name": "requestid", "type": "string", "nullable": true, "metadata": {}}]}, "nullable": true, "metadata": {}}, {"name": "labels", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "name", "type": "string", "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "captcharesponse", "type": {"type": "struct", "fields": [{"name": "responsecode", "type": "string", "nullable": true, "metadata": {}}, {"name": "solvetimestamp", "type": "string", "nullable": true, "metadata": {}}, {"name": "failurereason", "type": "string", "nullable": true, "metadata": {}}]}, "nullable": true, "metadata": {}}, {"name": "event_hour", "type": "string", "nullable": true, "metadata": {}}, {"name": "account_id", "type": "string", "nullable": true, "metadata": {}}, {"name": "region", "type": "string", "nullable": true, "metadata": {}}, {"name": "__execution_name__", "type": "string", "nullable": true, "metadata": {}}]}',
+            'spark.sql.sources.schema.numPartCols': '4', 
+            'spark.sql.sources.schema.partCol.0': 'event_hour', 
+            'spark.sql.sources.schema.partCol.1': 'account_id', 
+            'spark.sql.sources.schema.partCol.2': 'region', 
+            'spark.sql.sources.schema.partCol.3': '__execution_name__'
+            }
         
         response = AWS_GLUE.get_partition_indexes(database=self.centralized_database, table_name=self.table_name)
         assert response['PartitionIndexDescriptorList'] == []
@@ -4980,6 +6351,7 @@ class TestPipelineResourceBuilder:
             {'Name': 'time', 'Type': 'bigint'}, 
             {'Name': 'timestamp', 'Type': 'timestamp'}, 
             {'Name': 'action', 'Type': 'string'}, 
+            {'Name': 'action_fixed', 'Type': 'string'}, 
             {'Name': 'webaclid', 'Type': 'string'}, 
             {'Name': 'webaclname', 'Type': 'string'}, 
             {'Name': 'terminatingruleid', 'Type': 'string'}, 
@@ -4987,9 +6359,10 @@ class TestPipelineResourceBuilder:
             {'Name': 'httpsourceid', 'Type': 'string'}, 
             {'Name': 'httpmethod', 'Type': 'string'}, 
             {'Name': 'country', 'Type': 'string'}, 
-            {'Name': 'clientip', 'Type': 'string'}, 
+            {'Name': 'clientip', 'Type': 'string'},
+            {'Name': 'host', 'Type': 'string'},  
             {'Name': 'uri', 'Type': 'string'}, 
-            {'Name': 'first_label', 'Type': 'string'},
+            {'Name': 'labels', 'Type': 'array<string>'},
             {'Name': 'requests', 'Type': 'bigint'}
             ]
         assert response['Table']['StorageDescriptor']['Location'] == f's3://{self.centralized_bucket_name}/{self.centralized_bucket_prefix}/{self.centralized_database}/{self.table_name}_metrics'
@@ -5005,23 +6378,36 @@ class TestPipelineResourceBuilder:
             {'Name': '__execution_name__', 'Type': 'string'}
             ]
         assert response['Table']['TableType'] == 'EXTERNAL_TABLE'
-        assert response['Table']['Parameters'] == {'partition_filtering.enabled': 'true', 'classification': 'parquet', 'has_encrypted_data': 'true'}
+        assert response['Table']['Parameters'] == {
+            'partition_filtering.enabled': 'true', 
+            'classification': 'parquet', 
+            'has_encrypted_data': 'true', 
+            'parquet.compression': 'ZSTD', 
+            'spark.sql.partitionProvider': 'catalog', 
+            'spark.sql.sources.schema': '{"type": "struct", "fields": [{"name": "time", "type": "long", "nullable": true, "metadata": {}}, {"name": "timestamp", "type": "timestamp", "nullable": true, "metadata": {}}, {"name": "action", "type": "string", "nullable": true, "metadata": {}}, {"name": "action_fixed", "type": "string", "nullable": true, "metadata": {}}, {"name": "webaclid", "type": "string", "nullable": true, "metadata": {}}, {"name": "webaclname", "type": "string", "nullable": true, "metadata": {}}, {"name": "terminatingruleid", "type": "string", "nullable": true, "metadata": {}}, {"name": "terminatingruletype", "type": "string", "nullable": true, "metadata": {}}, {"name": "httpsourceid", "type": "string", "nullable": true, "metadata": {}}, {"name": "httpmethod", "type": "string", "nullable": true, "metadata": {}}, {"name": "country", "type": "string", "nullable": true, "metadata": {}}, {"name": "clientip", "type": "string", "nullable": true, "metadata": {}}, {"name": "host", "type": "string", "nullable": true, "metadata": {}}, {"name": "uri", "type": "string", "nullable": true, "metadata": {}}, {"name": "labels", "type": {"type": "array", "elementType": "string", "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "requests", "type": "long", "nullable": true, "metadata": {}}, {"name": "event_hour", "type": "string", "nullable": true, "metadata": {}}, {"name": "account_id", "type": "string", "nullable": true, "metadata": {}}, {"name": "region", "type": "string", "nullable": true, "metadata": {}}, {"name": "__execution_name__", "type": "string", "nullable": true, "metadata": {}}]}', 
+            'spark.sql.sources.schema.numPartCols': '4', 
+            'spark.sql.sources.schema.partCol.0': 'event_hour', 
+            'spark.sql.sources.schema.partCol.1': 'account_id', 
+            'spark.sql.sources.schema.partCol.2': 'region', 
+            'spark.sql.sources.schema.partCol.3': '__execution_name__'
+            }
         
         response = AWS_GLUE.get_partition_indexes(database=self.centralized_database, table_name=f'{self.table_name}_metrics')
         assert response['PartitionIndexDescriptorList'] == []
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogProcessor-{pipeline_parameters.pipeline_info.destination.table.name}', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogProcessor-{pipeline_id}', EventBusName='default')
         assert response['Rules'][0] == {
-            'Name': f'LogProcessor-{pipeline_parameters.pipeline_info.destination.table.name}', 
-            'Arn': f'arn:aws:events:{self.aws_region}:{self.account_id}:rule/LogProcessor-{pipeline_parameters.pipeline_info.destination.table.name}', 
+            'Name': f'LogProcessor-{pipeline_id}', 
+            'Arn': f'arn:aws:events:{self.aws_region}:{self.account_id}:rule/LogProcessor-{pipeline_id}', 
             'State': 'ENABLED', 
             'ScheduleExpression': self.processor_schedule, 
             'EventBusName': 'default'
             }
-        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogProcessor-{pipeline_parameters.pipeline_info.destination.table.name}', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogProcessor-{pipeline_id}', EventBusName='default')
         assert response['Targets'][0]['Id'] == pipeline_id
         assert response['Targets'][0]['Arn'] == pipeline_parameters.pipeline_info.scheduler.log_processor.arn
         assert response['Targets'][0]['RoleArn'] == pipeline_parameters.pipeline_info.scheduler.log_processor.execution_role
+        
         assert json.loads(response['Targets'][0]['Input']) == {
             "metadata": {
                 "pipelineId": pipeline_id,
@@ -5035,13 +6421,13 @@ class TestPipelineResourceBuilder:
                 "athena": {
                     "tableName": self.table_name,
                     "statements": {
-                        "create": "CREATE EXTERNAL TABLE IF NOT EXISTS `tmp`.`test_waf_01{}` (`timestamp` bigint, `formatversion` int, `webaclid` string, `terminatingruleid` string, `terminatingruletype` string, `action` string, `terminatingrulematchdetails` array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>, `httpsourcename` string, `httpsourceid` string, `rulegrouplist` array<struct<`rulegroupid`:string,`terminatingrule`:struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>>,`nonterminatingmatchingrules`:array<struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>>>,`excludedrules`:string>>, `ratebasedrulelist` array<struct<`ratebasedruleid`:string,`limitkey`:string,`maxrateallowed`:int>>, `nonterminatingmatchingrules` array<struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>,`captcharesponse`:struct<`responsecode`:string,`solvetimestamp`:string>>>, `requestheadersinserted` array<struct<`name`:string,`value`:string>>, `responsecodesent` string, `httprequest` struct<`clientip`:string,`country`:string,`headers`:array<struct<`name`:string,`value`:string>>,`uri`:string,`args`:string,`httpversion`:string,`httpmethod`:string,`requestid`:string>, `labels` array<struct<`name`:string>>, `captcharesponse` struct<`responsecode`:string,`solvetimestamp`:string,`failureReason`:string>)  ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'  STORED AS INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat' OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat' LOCATION '{}' ;",
-                        "drop": "DROP TABLE IF EXISTS `tmp`.`test_waf_01{}`",
-                        "insert": "INSERT INTO \"centralized\".\"test_waf_01\" (\"time\", \"timestamp\", \"formatversion\", \"webaclid\", \"webaclname\", \"terminatingruleid\", \"terminatingruletype\", \"action\", \"terminatingrulematchdetails\", \"httpsourcename\", \"httpsourceid\", \"rulegrouplist\", \"ratebasedrulelist\", \"nonterminatingmatchingrules\", \"requestheadersinserted\", \"responsecodesent\", \"httprequest\", \"labels\", \"captcharesponse\", \"account_id\", \"region\", \"event_hour\", \"__execution_name__\") SELECT \"timestamp\", CAST(FROM_UNIXTIME(\"timestamp\" / 1000) AS timestamp), \"formatversion\", \"webaclid\", SPLIT(\"webaclid\", '/')[3], \"terminatingruleid\", \"terminatingruletype\", \"action\", \"terminatingrulematchdetails\", \"httpsourcename\", \"httpsourceid\", \"rulegrouplist\", \"ratebasedrulelist\", \"nonterminatingmatchingrules\", \"requestheadersinserted\", \"responsecodesent\", \"httprequest\", \"labels\", \"captcharesponse\", SPLIT(\"webaclid\", ':')[5], SPLIT(\"webaclid\", ':')[4], DATE_FORMAT(CAST(FROM_UNIXTIME(\"timestamp\" / 1000) AS timestamp), '%Y%m%d%H'), '{}' FROM \"tmp\".\"test_waf_01{}\";",
-                        "aggregate": [
-                            "INSERT INTO \"centralized\".\"test_waf_01_metrics\" (\"time\", \"timestamp\", \"action\", \"webaclid\", \"webaclname\", \"terminatingruleid\", \"terminatingruletype\", \"httpsourceid\", \"httpmethod\", \"country\", \"clientip\", \"uri\", \"first_label\", \"requests\", \"account_id\", \"region\", \"event_hour\", \"__execution_name__\") SELECT FLOOR(\"time\" / 60000) * 60000, DATE_TRUNC('minute', \"timestamp\"), \"action\", \"webaclid\", \"webaclname\", \"terminatingruleid\", \"terminatingruletype\", \"httpsourceid\", \"httprequest\".\"httpmethod\", \"httprequest\".\"country\", \"httprequest\".\"clientip\", \"httprequest\".\"uri\", CASE WHEN labels = ARRAY[] THEN '' ELSE labels[1].name END, CAST(COUNT(1) AS bigint), \"account_id\", \"region\", \"event_hour\", \"__execution_name__\" FROM \"centralized\".\"test_waf_01\" WHERE __execution_name__ = '{}' GROUP BY FLOOR(\"time\" / 60000) * 60000, DATE_TRUNC('minute', \"timestamp\"), \"action\", \"webaclid\", \"webaclname\", \"terminatingruleid\", \"terminatingruletype\", \"httpsourceid\", \"httprequest\".\"httpmethod\", \"httprequest\".\"country\", \"httprequest\".\"clientip\", \"httprequest\".\"uri\", CASE WHEN labels = ARRAY[] THEN '' ELSE labels[1].name END, \"account_id\", \"region\", \"event_hour\", \"__execution_name__\";"
+                        'create': "CREATE EXTERNAL TABLE IF NOT EXISTS `tmp`.`test_waf_01{}` (`timestamp` bigint, `formatversion` int, `webaclid` string, `terminatingruleid` string, `terminatingruletype` string, `action` string, `terminatingrulematchdetails` array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>, `httpsourcename` string, `httpsourceid` string, `rulegrouplist` array<struct<`rulegroupid`:string,`terminatingrule`:struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>>,`nonterminatingmatchingrules`:array<struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>>>,`excludedrules`:string>>, `ratebasedrulelist` array<struct<`ratebasedruleid`:string,`limitkey`:string,`maxrateallowed`:int>>, `nonterminatingmatchingrules` array<struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>,`captcharesponse`:struct<`responsecode`:string,`solvetimestamp`:string>>>, `requestheadersinserted` array<struct<`name`:string,`value`:string>>, `responsecodesent` string, `ja3fingerprint` string, `httprequest` struct<`clientip`:string,`country`:string,`headers`:array<struct<`name`:string,`value`:string>>,`uri`:string,`args`:string,`httpversion`:string,`httpmethod`:string,`requestid`:string>, `labels` array<struct<`name`:string>>, `captcharesponse` struct<`responsecode`:string,`solvetimestamp`:string,`failureReason`:string>)  ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'  STORED AS INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat' OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat' LOCATION '{}' ;", 
+                        'drop': 'DROP TABLE IF EXISTS `tmp`.`test_waf_01{}`',
+                        'insert': 'INSERT INTO "centralized"."test_waf_01" ("time", "timestamp", "formatversion", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "action", "action_fixed", "terminatingrulematchdetails", "httpsourcename", "httpsourceid", "rulegrouplist", "ratebasedrulelist", "nonterminatingmatchingrules", "requestheadersinserted", "responsecodesent", "host", "clientip", "country", "uri", "args", "httpmethod", "ja3fingerprint", "httprequest", "labels", "captcharesponse", "account_id", "region", "event_hour", "__execution_name__") SELECT "timestamp", CAST(FROM_UNIXTIME("timestamp" / 1000) AS timestamp), "formatversion", "webaclid", SPLIT("webaclid", \'/\')[3], "terminatingruleid", "terminatingruletype", "action", CASE WHEN action = \'ALLOW\' AND labels != ARRAY[] THEN \'COUNT\' ELSE action END, "terminatingrulematchdetails", "httpsourcename", "httpsourceid", "rulegrouplist", "ratebasedrulelist", "nonterminatingmatchingrules", "requestheadersinserted", "responsecodesent", case when filter(httprequest.headers, x -> lower(x.name) = \'host\' ) = ARRAY[] then \'\' else filter(httprequest.headers, x -> lower(x.name) = \'host\' )[1].value end, httprequest.clientip, httprequest.country, httprequest.uri, httprequest.args, httprequest.httpmethod, "ja3fingerprint", "httprequest", "labels", "captcharesponse", SPLIT("webaclid", \':\')[5], SPLIT("webaclid", \':\')[4], DATE_FORMAT(CAST(FROM_UNIXTIME("timestamp" / 1000) AS timestamp), \'%Y%m%d%H\'), \'{}\' FROM "tmp"."test_waf_01{}";', 
+                        'aggregate': [
+                            'INSERT INTO "centralized"."test_waf_01_metrics" ("time", "timestamp", "action", "action_fixed", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "httpsourceid", "httpmethod", "country", "clientip", "host", "uri", "labels", "requests", "account_id", "region", "event_hour", "__execution_name__") SELECT FLOOR("time" / 60000) * 60000, DATE_TRUNC(\'minute\', "timestamp"), "action", "action_fixed", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "httpsourceid", "httpmethod", "country", "clientip", "host", "uri", ARRAY_DISTINCT(FLATTEN(ARRAY_AGG(TRANSFORM(labels, x -> x.name)) FILTER (WHERE labels != ARRAY[]))), CAST(COUNT(1) AS bigint), "account_id", "region", "event_hour", "__execution_name__" FROM "centralized"."test_waf_01" WHERE __execution_name__ = \'{}\' GROUP BY FLOOR("time" / 60000) * 60000, DATE_TRUNC(\'minute\', "timestamp"), "action", "action_fixed", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "httpsourceid", "httpmethod", "country", "clientip", "host", "uri", "account_id", "region", "event_hour", "__execution_name__";'
                         ]
-                    },
+                    }
                 },
                 "notification": {
                     "service": self.notification_service,
@@ -5050,15 +6436,15 @@ class TestPipelineResourceBuilder:
             }
         }
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMerger-{pipeline_parameters.pipeline_info.destination.table.name}', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMerger-{pipeline_id}', EventBusName='default')
         assert response['Rules'][0] == {
-            'Name': f'LogMerger-{pipeline_parameters.pipeline_info.destination.table.name}', 
-            'Arn': f'arn:aws:events:{self.aws_region}:{self.account_id}:rule/LogMerger-{pipeline_parameters.pipeline_info.destination.table.name}', 
+            'Name': f'LogMerger-{pipeline_id}', 
+            'Arn': f'arn:aws:events:{self.aws_region}:{self.account_id}:rule/LogMerger-{pipeline_id}', 
             'State': 'ENABLED', 
             'ScheduleExpression': self.merger_schedule, 
             'EventBusName': 'default'
             }
-        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogMerger-{pipeline_parameters.pipeline_info.destination.table.name}', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogMerger-{pipeline_id}', EventBusName='default')
         assert response['Targets'][0]['Id'] == pipeline_id
         assert response['Targets'][0]['Arn'] == pipeline_parameters.pipeline_info.scheduler.log_merger.arn
         assert response['Targets'][0]['RoleArn'] == pipeline_parameters.pipeline_info.scheduler.log_merger.execution_role
@@ -5101,15 +6487,15 @@ class TestPipelineResourceBuilder:
             }
         }
 
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMergerForMetrics-{pipeline_parameters.pipeline_info.destination.table.name}', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMergerForMetrics-{pipeline_id}', EventBusName='default')
         assert response['Rules'][0] == {
-            'Name': f'LogMergerForMetrics-{pipeline_parameters.pipeline_info.destination.table.name}', 
-            'Arn': f'arn:aws:events:{self.aws_region}:{self.account_id}:rule/LogMergerForMetrics-{pipeline_parameters.pipeline_info.destination.table.name}', 
+            'Name': f'LogMergerForMetrics-{pipeline_id}', 
+            'Arn': f'arn:aws:events:{self.aws_region}:{self.account_id}:rule/LogMergerForMetrics-{pipeline_id}', 
             'State': 'ENABLED', 
             'ScheduleExpression': self.merger_schedule, 
             'EventBusName': 'default'
             }
-        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogMergerForMetrics-{pipeline_parameters.pipeline_info.destination.table.name}', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogMergerForMetrics-{pipeline_id}', EventBusName='default')
         assert response['Targets'][0]['Id'] == pipeline_id
         assert response['Targets'][0]['Arn'] == pipeline_parameters.pipeline_info.scheduler.log_merger.arn
         assert response['Targets'][0]['RoleArn'] == pipeline_parameters.pipeline_info.scheduler.log_merger.execution_role
@@ -5152,15 +6538,15 @@ class TestPipelineResourceBuilder:
             }
         }
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchive-{pipeline_parameters.pipeline_info.destination.table.name}', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchive-{pipeline_id}', EventBusName='default')
         assert response['Rules'][0] == {
-            'Name': f'LogArchive-{pipeline_parameters.pipeline_info.destination.table.name}', 
-            'Arn': f'arn:aws:events:{self.aws_region}:{self.account_id}:rule/LogArchive-{pipeline_parameters.pipeline_info.destination.table.name}', 
+            'Name': f'LogArchive-{pipeline_id}', 
+            'Arn': f'arn:aws:events:{self.aws_region}:{self.account_id}:rule/LogArchive-{pipeline_id}', 
             'State': 'ENABLED', 
             'ScheduleExpression': self.archive_schedule, 
             'EventBusName': 'default'
             }
-        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogArchive-{pipeline_parameters.pipeline_info.destination.table.name}', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogArchive-{pipeline_id}', EventBusName='default')
         assert response['Targets'][0]['Id'] == pipeline_id
         assert response['Targets'][0]['Arn'] == pipeline_parameters.pipeline_info.scheduler.log_archive.arn
         assert response['Targets'][0]['RoleArn'] == pipeline_parameters.pipeline_info.scheduler.log_archive.execution_role
@@ -5186,15 +6572,15 @@ class TestPipelineResourceBuilder:
             }
         }
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchiveForMetrics-{pipeline_parameters.pipeline_info.destination.table.name}', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchiveForMetrics-{pipeline_id}', EventBusName='default')
         assert response['Rules'][0] == {
-            'Name': f'LogArchiveForMetrics-{pipeline_parameters.pipeline_info.destination.table.name}', 
-            'Arn': f'arn:aws:events:{self.aws_region}:{self.account_id}:rule/LogArchiveForMetrics-{pipeline_parameters.pipeline_info.destination.table.name}', 
+            'Name': f'LogArchiveForMetrics-{pipeline_id}', 
+            'Arn': f'arn:aws:events:{self.aws_region}:{self.account_id}:rule/LogArchiveForMetrics-{pipeline_id}', 
             'State': 'ENABLED', 
             'ScheduleExpression': self.archive_schedule, 
             'EventBusName': 'default'
             }
-        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogArchiveForMetrics-{pipeline_parameters.pipeline_info.destination.table.name}', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogArchiveForMetrics-{pipeline_id}', EventBusName='default')
         assert response['Targets'][0]['Id'] == pipeline_id
         assert response['Targets'][0]['Arn'] == pipeline_parameters.pipeline_info.scheduler.log_archive.arn
         assert response['Targets'][0]['RoleArn'] == pipeline_parameters.pipeline_info.scheduler.log_archive.execution_role
@@ -5257,11 +6643,9 @@ class TestPipelineResourceBuilder:
                 'Resource': [
                     f'arn:aws:s3:::{self.logging_bucket_name}', 
                     f'arn:aws:s3:::{self.logging_bucket_name}/*',
-                    f'arn:aws:s3:::{self.centralized_bucket_name}/{self.centralized_bucket_prefix}/{self.centralized_database}/waf*',
+                    f'arn:aws:s3:::{self.centralized_bucket_name}/{self.centralized_bucket_prefix}/{self.centralized_database}*',
                     f'arn:aws:s3:::{self.centralized_bucket_name}',
-                    f'arn:aws:s3:::{self.centralized_bucket_name}/{self.centralized_bucket_prefix}/{self.centralized_database}/waf_metrics*',
-                    f'arn:aws:s3:::{self.centralized_bucket_name}/{self.centralized_bucket_prefix}/{self.centralized_database}/{self.table_name}*',
-                    f'arn:aws:s3:::{self.centralized_bucket_name}/{self.centralized_bucket_prefix}/{self.centralized_database}/{self.table_name}_metrics*'], 
+                    ], 
                 }
             ]
         
@@ -5310,7 +6694,8 @@ class TestPipelineResourceBuilder:
             {'Name': 'webaclname', 'Type': 'string'}, 
             {'Name': 'terminatingruleid', 'Type': 'string'}, 
             {'Name': 'terminatingruletype', 'Type': 'string'}, 
-            {'Name': 'action', 'Type': 'string'}, 
+            {'Name': 'action', 'Type': 'string'},
+            {'Name': 'action_fixed', 'Type': 'string'}, 
             {'Name': 'terminatingrulematchdetails', 'Type': 'array<struct<conditiontype:string,sensitivitylevel:string,location:string,matcheddata:array<string>>>'}, 
             {'Name': 'httpsourcename', 'Type': 'string'}, 
             {'Name': 'httpsourceid', 'Type': 'string'}, 
@@ -5319,6 +6704,13 @@ class TestPipelineResourceBuilder:
             {'Name': 'nonterminatingmatchingrules', 'Type': 'array<struct<ruleid:string,action:string,rulematchdetails:array<struct<conditiontype:string,sensitivitylevel:string,location:string,matcheddata:array<string>>>,captcharesponse:struct<responsecode:string,solvetimestamp:string>>>'}, 
             {'Name': 'requestheadersinserted', 'Type': 'array<struct<name:string,value:string>>'}, 
             {'Name': 'responsecodesent', 'Type': 'string'}, 
+            {'Name': 'host', 'Type': 'string'}, 
+            {'Name': 'clientip', 'Type': 'string'},
+            {'Name': 'country', 'Type': 'string'},
+            {'Name': 'uri', 'Type': 'string'},
+            {'Name': 'args', 'Type': 'string'},
+            {'Name': 'httpmethod', 'Type': 'string'},
+            {'Name': 'ja3fingerprint', 'Type': 'string'},
             {'Name': 'httprequest', 'Type': 'struct<clientip:string,country:string,headers:array<struct<name:string,value:string>>,uri:string,args:string,httpversion:string,httpmethod:string,requestid:string>'}, 
             {'Name': 'labels', 'Type': 'array<struct<name:string>>'}, 
             {'Name': 'captcharesponse', 'Type': 'struct<responsecode:string,solvetimestamp:string,failureReason:string>'}
@@ -5336,7 +6728,19 @@ class TestPipelineResourceBuilder:
             {'Name': '__execution_name__', 'Type': 'string'}
             ]
         assert response['Table']['TableType'] == 'EXTERNAL_TABLE'
-        assert response['Table']['Parameters'] == {'partition_filtering.enabled': 'true', 'classification': 'parquet', 'has_encrypted_data': 'true'}
+        assert response['Table']['Parameters'] == {
+            'partition_filtering.enabled': 'true', 
+            'classification': 'parquet', 
+            'has_encrypted_data': 'true', 
+            'parquet.compression': 'ZSTD', 
+            'spark.sql.partitionProvider': 'catalog', 
+            'spark.sql.sources.schema': '{"type": "struct", "fields": [{"name": "time", "type": "long", "nullable": true, "metadata": {}}, {"name": "timestamp", "type": "timestamp", "nullable": true, "metadata": {}}, {"name": "formatversion", "type": "integer", "nullable": true, "metadata": {}}, {"name": "webaclid", "type": "string", "nullable": true, "metadata": {}}, {"name": "webaclname", "type": "string", "nullable": true, "metadata": {}}, {"name": "terminatingruleid", "type": "string", "nullable": true, "metadata": {}}, {"name": "terminatingruletype", "type": "string", "nullable": true, "metadata": {}}, {"name": "action", "type": "string", "nullable": true, "metadata": {}}, {"name": "action_fixed", "type": "string", "nullable": true, "metadata": {}}, {"name": "terminatingrulematchdetails", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "conditiontype", "type": "string", "nullable": true, "metadata": {}}, {"name": "sensitivitylevel", "type": "string", "nullable": true, "metadata": {}}, {"name": "location", "type": "string", "nullable": true, "metadata": {}}, {"name": "matcheddata", "type": {"type": "array", "elementType": "string", "containsNull": true}, "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "httpsourcename", "type": "string", "nullable": true, "metadata": {}}, {"name": "httpsourceid", "type": "string", "nullable": true, "metadata": {}}, {"name": "rulegrouplist", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "rulegroupid", "type": "string", "nullable": true, "metadata": {}}, {"name": "terminatingrule", "type": {"type": "struct", "fields": [{"name": "ruleid", "type": "string", "nullable": true, "metadata": {}}, {"name": "action", "type": "string", "nullable": true, "metadata": {}}, {"name": "rulematchdetails", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "conditiontype", "type": "string", "nullable": true, "metadata": {}}, {"name": "sensitivitylevel", "type": "string", "nullable": true, "metadata": {}}, {"name": "location", "type": "string", "nullable": true, "metadata": {}}, {"name": "matcheddata", "type": {"type": "array", "elementType": "string", "containsNull": true}, "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}]}, "nullable": true, "metadata": {}}, {"name": "nonterminatingmatchingrules", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "ruleid", "type": "string", "nullable": true, "metadata": {}}, {"name": "action", "type": "string", "nullable": true, "metadata": {}}, {"name": "rulematchdetails", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "conditiontype", "type": "string", "nullable": true, "metadata": {}}, {"name": "sensitivitylevel", "type": "string", "nullable": true, "metadata": {}}, {"name": "location", "type": "string", "nullable": true, "metadata": {}}, {"name": "matcheddata", "type": {"type": "array", "elementType": "string", "containsNull": true}, "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "excludedrules", "type": "string", "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "ratebasedrulelist", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "ratebasedruleid", "type": "string", "nullable": true, "metadata": {}}, {"name": "limitkey", "type": "string", "nullable": true, "metadata": {}}, {"name": "maxrateallowed", "type": "integer", "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "nonterminatingmatchingrules", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "ruleid", "type": "string", "nullable": true, "metadata": {}}, {"name": "action", "type": "string", "nullable": true, "metadata": {}}, {"name": "rulematchdetails", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "conditiontype", "type": "string", "nullable": true, "metadata": {}}, {"name": "sensitivitylevel", "type": "string", "nullable": true, "metadata": {}}, {"name": "location", "type": "string", "nullable": true, "metadata": {}}, {"name": "matcheddata", "type": {"type": "array", "elementType": "string", "containsNull": true}, "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "captcharesponse", "type": {"type": "struct", "fields": [{"name": "responsecode", "type": "string", "nullable": true, "metadata": {}}, {"name": "solvetimestamp", "type": "string", "nullable": true, "metadata": {}}]}, "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "requestheadersinserted", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "name", "type": "string", "nullable": true, "metadata": {}}, {"name": "value", "type": "string", "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "responsecodesent", "type": "string", "nullable": true, "metadata": {}}, {"name": "host", "type": "string", "nullable": true, "metadata": {}}, {"name": "clientip", "type": "string", "nullable": true, "metadata": {}}, {"name": "country", "type": "string", "nullable": true, "metadata": {}}, {"name": "uri", "type": "string", "nullable": true, "metadata": {}}, {"name": "args", "type": "string", "nullable": true, "metadata": {}}, {"name": "httpmethod", "type": "string", "nullable": true, "metadata": {}}, {"name": "ja3fingerprint", "type": "string", "nullable": true, "metadata": {}}, {"name": "httprequest", "type": {"type": "struct", "fields": [{"name": "clientip", "type": "string", "nullable": true, "metadata": {}}, {"name": "country", "type": "string", "nullable": true, "metadata": {}}, {"name": "headers", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "name", "type": "string", "nullable": true, "metadata": {}}, {"name": "value", "type": "string", "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "uri", "type": "string", "nullable": true, "metadata": {}}, {"name": "args", "type": "string", "nullable": true, "metadata": {}}, {"name": "httpversion", "type": "string", "nullable": true, "metadata": {}}, {"name": "httpmethod", "type": "string", "nullable": true, "metadata": {}}, {"name": "requestid", "type": "string", "nullable": true, "metadata": {}}]}, "nullable": true, "metadata": {}}, {"name": "labels", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "name", "type": "string", "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "captcharesponse", "type": {"type": "struct", "fields": [{"name": "responsecode", "type": "string", "nullable": true, "metadata": {}}, {"name": "solvetimestamp", "type": "string", "nullable": true, "metadata": {}}, {"name": "failurereason", "type": "string", "nullable": true, "metadata": {}}]}, "nullable": true, "metadata": {}}, {"name": "event_hour", "type": "string", "nullable": true, "metadata": {}}, {"name": "account_id", "type": "string", "nullable": true, "metadata": {}}, {"name": "region", "type": "string", "nullable": true, "metadata": {}}, {"name": "__execution_name__", "type": "string", "nullable": true, "metadata": {}}]}',
+            'spark.sql.sources.schema.numPartCols': '4', 
+            'spark.sql.sources.schema.partCol.0': 'event_hour', 
+            'spark.sql.sources.schema.partCol.1': 'account_id', 
+            'spark.sql.sources.schema.partCol.2': 'region', 
+            'spark.sql.sources.schema.partCol.3': '__execution_name__'
+            }
         
         response = AWS_GLUE.get_partition_indexes(database=self.centralized_database, table_name=self.table_name)
         assert response['PartitionIndexDescriptorList'] == []
@@ -5348,6 +6752,7 @@ class TestPipelineResourceBuilder:
             {'Name': 'time', 'Type': 'bigint'}, 
             {'Name': 'timestamp', 'Type': 'timestamp'}, 
             {'Name': 'action', 'Type': 'string'}, 
+            {'Name': 'action_fixed', 'Type': 'string'}, 
             {'Name': 'webaclid', 'Type': 'string'}, 
             {'Name': 'webaclname', 'Type': 'string'}, 
             {'Name': 'terminatingruleid', 'Type': 'string'}, 
@@ -5356,8 +6761,9 @@ class TestPipelineResourceBuilder:
             {'Name': 'httpmethod', 'Type': 'string'}, 
             {'Name': 'country', 'Type': 'string'}, 
             {'Name': 'clientip', 'Type': 'string'}, 
+            {'Name': 'host', 'Type': 'string'}, 
             {'Name': 'uri', 'Type': 'string'}, 
-            {'Name': 'first_label', 'Type': 'string'},
+            {'Name': 'labels', 'Type': 'array<string>'},
             {'Name': 'requests', 'Type': 'bigint'}
             ]
         assert response['Table']['StorageDescriptor']['Location'] == f's3://{self.centralized_bucket_name}/{self.centralized_bucket_prefix}/{self.centralized_database}/{self.table_name}_metrics'
@@ -5373,7 +6779,19 @@ class TestPipelineResourceBuilder:
             {'Name': '__execution_name__', 'Type': 'string'}
             ]
         assert response['Table']['TableType'] == 'EXTERNAL_TABLE'
-        assert response['Table']['Parameters'] == {'partition_filtering.enabled': 'true', 'classification': 'parquet', 'has_encrypted_data': 'true'}
+        assert response['Table']['Parameters'] == {
+            'partition_filtering.enabled': 'true', 
+            'classification': 'parquet', 
+            'has_encrypted_data': 'true', 
+            'parquet.compression': 'ZSTD', 
+            'spark.sql.partitionProvider': 'catalog', 
+            'spark.sql.sources.schema': '{"type": "struct", "fields": [{"name": "time", "type": "long", "nullable": true, "metadata": {}}, {"name": "timestamp", "type": "timestamp", "nullable": true, "metadata": {}}, {"name": "action", "type": "string", "nullable": true, "metadata": {}}, {"name": "action_fixed", "type": "string", "nullable": true, "metadata": {}}, {"name": "webaclid", "type": "string", "nullable": true, "metadata": {}}, {"name": "webaclname", "type": "string", "nullable": true, "metadata": {}}, {"name": "terminatingruleid", "type": "string", "nullable": true, "metadata": {}}, {"name": "terminatingruletype", "type": "string", "nullable": true, "metadata": {}}, {"name": "httpsourceid", "type": "string", "nullable": true, "metadata": {}}, {"name": "httpmethod", "type": "string", "nullable": true, "metadata": {}}, {"name": "country", "type": "string", "nullable": true, "metadata": {}}, {"name": "clientip", "type": "string", "nullable": true, "metadata": {}}, {"name": "host", "type": "string", "nullable": true, "metadata": {}}, {"name": "uri", "type": "string", "nullable": true, "metadata": {}}, {"name": "labels", "type": {"type": "array", "elementType": "string", "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "requests", "type": "long", "nullable": true, "metadata": {}}, {"name": "event_hour", "type": "string", "nullable": true, "metadata": {}}, {"name": "account_id", "type": "string", "nullable": true, "metadata": {}}, {"name": "region", "type": "string", "nullable": true, "metadata": {}}, {"name": "__execution_name__", "type": "string", "nullable": true, "metadata": {}}]}',
+            'spark.sql.sources.schema.numPartCols': '4', 
+            'spark.sql.sources.schema.partCol.0': 'event_hour', 
+            'spark.sql.sources.schema.partCol.1': 'account_id', 
+            'spark.sql.sources.schema.partCol.2': 'region', 
+            'spark.sql.sources.schema.partCol.3': '__execution_name__'
+            }
         
         response = AWS_GLUE.get_partition_indexes(database=self.centralized_database, table_name=f'{self.table_name}_metrics')
         assert response['PartitionIndexDescriptorList'] == []
@@ -5400,15 +6818,15 @@ class TestPipelineResourceBuilder:
                     "archivePath": f"s3://{self.staging_bucket_name}/archive/AWSLogs/WAFLogs"
                 },
                 "athena": {
-                        "tableName": self.table_name,
-                        "statements": {
-                        "create": "CREATE EXTERNAL TABLE IF NOT EXISTS `tmp`.`test_waf_02{}` (`timestamp` bigint, `formatversion` int, `webaclid` string, `terminatingruleid` string, `terminatingruletype` string, `action` string, `terminatingrulematchdetails` array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>, `httpsourcename` string, `httpsourceid` string, `rulegrouplist` array<struct<`rulegroupid`:string,`terminatingrule`:struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>>,`nonterminatingmatchingrules`:array<struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>>>,`excludedrules`:string>>, `ratebasedrulelist` array<struct<`ratebasedruleid`:string,`limitkey`:string,`maxrateallowed`:int>>, `nonterminatingmatchingrules` array<struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>,`captcharesponse`:struct<`responsecode`:string,`solvetimestamp`:string>>>, `requestheadersinserted` array<struct<`name`:string,`value`:string>>, `responsecodesent` string, `httprequest` struct<`clientip`:string,`country`:string,`headers`:array<struct<`name`:string,`value`:string>>,`uri`:string,`args`:string,`httpversion`:string,`httpmethod`:string,`requestid`:string>, `labels` array<struct<`name`:string>>, `captcharesponse` struct<`responsecode`:string,`solvetimestamp`:string,`failureReason`:string>)  ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'  STORED AS INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat' OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat' LOCATION '{}' ;",
-                        "drop": "DROP TABLE IF EXISTS `tmp`.`test_waf_02{}`",
-                        "insert": "INSERT INTO \"centralized\".\"test_waf_02\" (\"time\", \"timestamp\", \"formatversion\", \"webaclid\", \"webaclname\", \"terminatingruleid\", \"terminatingruletype\", \"action\", \"terminatingrulematchdetails\", \"httpsourcename\", \"httpsourceid\", \"rulegrouplist\", \"ratebasedrulelist\", \"nonterminatingmatchingrules\", \"requestheadersinserted\", \"responsecodesent\", \"httprequest\", \"labels\", \"captcharesponse\", \"account_id\", \"region\", \"event_hour\", \"__execution_name__\") SELECT \"timestamp\", CAST(FROM_UNIXTIME(\"timestamp\" / 1000) AS timestamp), \"formatversion\", \"webaclid\", SPLIT(\"webaclid\", '/')[3], \"terminatingruleid\", \"terminatingruletype\", \"action\", \"terminatingrulematchdetails\", \"httpsourcename\", \"httpsourceid\", \"rulegrouplist\", \"ratebasedrulelist\", \"nonterminatingmatchingrules\", \"requestheadersinserted\", \"responsecodesent\", \"httprequest\", \"labels\", \"captcharesponse\", SPLIT(\"webaclid\", ':')[5], SPLIT(\"webaclid\", ':')[4], DATE_FORMAT(CAST(FROM_UNIXTIME(\"timestamp\" / 1000) AS timestamp), '%Y%m%d%H'), '{}' FROM \"tmp\".\"test_waf_02{}\";",
-                        "aggregate": [
-                            "INSERT INTO \"centralized\".\"test_waf_02_metrics\" (\"time\", \"timestamp\", \"action\", \"webaclid\", \"webaclname\", \"terminatingruleid\", \"terminatingruletype\", \"httpsourceid\", \"httpmethod\", \"country\", \"clientip\", \"uri\", \"first_label\", \"requests\", \"account_id\", \"region\", \"event_hour\", \"__execution_name__\") SELECT FLOOR(\"time\" / 60000) * 60000, DATE_TRUNC('minute', \"timestamp\"), \"action\", \"webaclid\", \"webaclname\", \"terminatingruleid\", \"terminatingruletype\", \"httpsourceid\", \"httprequest\".\"httpmethod\", \"httprequest\".\"country\", \"httprequest\".\"clientip\", \"httprequest\".\"uri\", CASE WHEN labels = ARRAY[] THEN '' ELSE labels[1].name END, CAST(COUNT(1) AS bigint), \"account_id\", \"region\", \"event_hour\", \"__execution_name__\" FROM \"centralized\".\"test_waf_02\" WHERE __execution_name__ = '{}' GROUP BY FLOOR(\"time\" / 60000) * 60000, DATE_TRUNC('minute', \"timestamp\"), \"action\", \"webaclid\", \"webaclname\", \"terminatingruleid\", \"terminatingruletype\", \"httpsourceid\", \"httprequest\".\"httpmethod\", \"httprequest\".\"country\", \"httprequest\".\"clientip\", \"httprequest\".\"uri\", CASE WHEN labels = ARRAY[] THEN '' ELSE labels[1].name END, \"account_id\", \"region\", \"event_hour\", \"__execution_name__\";"
+                    "tableName": self.table_name,
+                    "statements": {
+                        'create': "CREATE EXTERNAL TABLE IF NOT EXISTS `tmp`.`test_waf_02{}` (`timestamp` bigint, `formatversion` int, `webaclid` string, `terminatingruleid` string, `terminatingruletype` string, `action` string, `terminatingrulematchdetails` array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>, `httpsourcename` string, `httpsourceid` string, `rulegrouplist` array<struct<`rulegroupid`:string,`terminatingrule`:struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>>,`nonterminatingmatchingrules`:array<struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>>>,`excludedrules`:string>>, `ratebasedrulelist` array<struct<`ratebasedruleid`:string,`limitkey`:string,`maxrateallowed`:int>>, `nonterminatingmatchingrules` array<struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>,`captcharesponse`:struct<`responsecode`:string,`solvetimestamp`:string>>>, `requestheadersinserted` array<struct<`name`:string,`value`:string>>, `responsecodesent` string, `ja3fingerprint` string, `httprequest` struct<`clientip`:string,`country`:string,`headers`:array<struct<`name`:string,`value`:string>>,`uri`:string,`args`:string,`httpversion`:string,`httpmethod`:string,`requestid`:string>, `labels` array<struct<`name`:string>>, `captcharesponse` struct<`responsecode`:string,`solvetimestamp`:string,`failureReason`:string>)  ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'  STORED AS INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat' OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat' LOCATION '{}' ;", 
+                        'drop': 'DROP TABLE IF EXISTS `tmp`.`test_waf_02{}`',
+                        'insert': 'INSERT INTO "centralized"."test_waf_02" ("time", "timestamp", "formatversion", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "action", "action_fixed", "terminatingrulematchdetails", "httpsourcename", "httpsourceid", "rulegrouplist", "ratebasedrulelist", "nonterminatingmatchingrules", "requestheadersinserted", "responsecodesent", "host", "clientip", "country", "uri", "args", "httpmethod", "ja3fingerprint", "httprequest", "labels", "captcharesponse", "account_id", "region", "event_hour", "__execution_name__") SELECT "timestamp", CAST(FROM_UNIXTIME("timestamp" / 1000) AS timestamp), "formatversion", "webaclid", SPLIT("webaclid", \'/\')[3], "terminatingruleid", "terminatingruletype", "action", CASE WHEN action = \'ALLOW\' AND labels != ARRAY[] THEN \'COUNT\' ELSE action END, "terminatingrulematchdetails", "httpsourcename", "httpsourceid", "rulegrouplist", "ratebasedrulelist", "nonterminatingmatchingrules", "requestheadersinserted", "responsecodesent", case when filter(httprequest.headers, x -> lower(x.name) = \'host\' ) = ARRAY[] then \'\' else filter(httprequest.headers, x -> lower(x.name) = \'host\' )[1].value end, httprequest.clientip, httprequest.country, httprequest.uri, httprequest.args, httprequest.httpmethod, "ja3fingerprint", "httprequest", "labels", "captcharesponse", SPLIT("webaclid", \':\')[5], SPLIT("webaclid", \':\')[4], DATE_FORMAT(CAST(FROM_UNIXTIME("timestamp" / 1000) AS timestamp), \'%Y%m%d%H\'), \'{}\' FROM "tmp"."test_waf_02{}";', 
+                        'aggregate': [
+                            'INSERT INTO "centralized"."test_waf_02_metrics" ("time", "timestamp", "action", "action_fixed", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "httpsourceid", "httpmethod", "country", "clientip", "host", "uri", "labels", "requests", "account_id", "region", "event_hour", "__execution_name__") SELECT FLOOR("time" / 60000) * 60000, DATE_TRUNC(\'minute\', "timestamp"), "action", "action_fixed", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "httpsourceid", "httpmethod", "country", "clientip", "host", "uri", ARRAY_DISTINCT(FLATTEN(ARRAY_AGG(TRANSFORM(labels, x -> x.name)) FILTER (WHERE labels != ARRAY[]))), CAST(COUNT(1) AS bigint), "account_id", "region", "event_hour", "__execution_name__" FROM "centralized"."test_waf_02" WHERE __execution_name__ = \'{}\' GROUP BY FLOOR("time" / 60000) * 60000, DATE_TRUNC(\'minute\', "timestamp"), "action", "action_fixed", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "httpsourceid", "httpmethod", "country", "clientip", "host", "uri", "account_id", "region", "event_hour", "__execution_name__";'
                         ]
-                    },
+                    }
                 },
                 "notification": {
                     "service": self.notification_service,
@@ -5613,11 +7031,9 @@ class TestPipelineResourceBuilder:
                 'Resource': [
                     f'arn:aws:s3:::{self.logging_bucket_name}', 
                     f'arn:aws:s3:::{self.logging_bucket_name}/*',
-                    'arn:aws:s3:::centralized-bucket/datalake/centralized/waf*',
+                    f'arn:aws:s3:::{self.centralized_bucket_name}/datalake/{self.centralized_database}*',
                     f'arn:aws:s3:::{self.centralized_bucket_name}',
-                    'arn:aws:s3:::centralized-bucket/datalake/centralized/waf_metrics*',
-                    f'arn:aws:s3:::{self.centralized_bucket_name}/{self.centralized_bucket_prefix}/{self.centralized_database}/{self.table_name}*',
-                    f'arn:aws:s3:::{self.centralized_bucket_name}/{self.centralized_bucket_prefix}/{self.centralized_database}/{self.table_name}_metrics*'], 
+                    ], 
                 }
             ]
         
@@ -5666,6 +7082,7 @@ class TestPipelineResourceBuilder:
             {'Name': 'terminatingruleid', 'Type': 'string'}, 
             {'Name': 'terminatingruletype', 'Type': 'string'}, 
             {'Name': 'action', 'Type': 'string'}, 
+            {'Name': 'action_fixed', 'Type': 'string'}, 
             {'Name': 'terminatingrulematchdetails', 'Type': 'array<struct<conditiontype:string,sensitivitylevel:string,location:string,matcheddata:array<string>>>'}, 
             {'Name': 'httpsourcename', 'Type': 'string'}, 
             {'Name': 'httpsourceid', 'Type': 'string'}, 
@@ -5674,6 +7091,13 @@ class TestPipelineResourceBuilder:
             {'Name': 'nonterminatingmatchingrules', 'Type': 'array<struct<ruleid:string,action:string,rulematchdetails:array<struct<conditiontype:string,sensitivitylevel:string,location:string,matcheddata:array<string>>>,captcharesponse:struct<responsecode:string,solvetimestamp:string>>>'}, 
             {'Name': 'requestheadersinserted', 'Type': 'array<struct<name:string,value:string>>'}, 
             {'Name': 'responsecodesent', 'Type': 'string'}, 
+            {'Name': 'host', 'Type': 'string'}, 
+            {'Name': 'clientip', 'Type': 'string'},
+            {'Name': 'country', 'Type': 'string'},
+            {'Name': 'uri', 'Type': 'string'},
+            {'Name': 'args', 'Type': 'string'},
+            {'Name': 'httpmethod', 'Type': 'string'},
+            {'Name': 'ja3fingerprint', 'Type': 'string'},
             {'Name': 'httprequest', 'Type': 'struct<clientip:string,country:string,headers:array<struct<name:string,value:string>>,uri:string,args:string,httpversion:string,httpmethod:string,requestid:string>'}, 
             {'Name': 'labels', 'Type': 'array<struct<name:string>>'}, 
             {'Name': 'captcharesponse', 'Type': 'struct<responsecode:string,solvetimestamp:string,failureReason:string>'}
@@ -5691,7 +7115,19 @@ class TestPipelineResourceBuilder:
             {'Name': '__execution_name__', 'Type': 'string'}
             ]
         assert response['Table']['TableType'] == 'EXTERNAL_TABLE'
-        assert response['Table']['Parameters'] == {'partition_filtering.enabled': 'true', 'classification': 'parquet', 'has_encrypted_data': 'true'}
+        assert response['Table']['Parameters'] == {
+            'partition_filtering.enabled': 'true', 
+            'classification': 'parquet', 
+            'has_encrypted_data': 'true', 
+            'parquet.compression': 'ZSTD', 
+            'spark.sql.partitionProvider': 'catalog', 
+            'spark.sql.sources.schema': '{"type": "struct", "fields": [{"name": "time", "type": "long", "nullable": true, "metadata": {}}, {"name": "timestamp", "type": "timestamp", "nullable": true, "metadata": {}}, {"name": "formatversion", "type": "integer", "nullable": true, "metadata": {}}, {"name": "webaclid", "type": "string", "nullable": true, "metadata": {}}, {"name": "webaclname", "type": "string", "nullable": true, "metadata": {}}, {"name": "terminatingruleid", "type": "string", "nullable": true, "metadata": {}}, {"name": "terminatingruletype", "type": "string", "nullable": true, "metadata": {}}, {"name": "action", "type": "string", "nullable": true, "metadata": {}}, {"name": "action_fixed", "type": "string", "nullable": true, "metadata": {}}, {"name": "terminatingrulematchdetails", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "conditiontype", "type": "string", "nullable": true, "metadata": {}}, {"name": "sensitivitylevel", "type": "string", "nullable": true, "metadata": {}}, {"name": "location", "type": "string", "nullable": true, "metadata": {}}, {"name": "matcheddata", "type": {"type": "array", "elementType": "string", "containsNull": true}, "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "httpsourcename", "type": "string", "nullable": true, "metadata": {}}, {"name": "httpsourceid", "type": "string", "nullable": true, "metadata": {}}, {"name": "rulegrouplist", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "rulegroupid", "type": "string", "nullable": true, "metadata": {}}, {"name": "terminatingrule", "type": {"type": "struct", "fields": [{"name": "ruleid", "type": "string", "nullable": true, "metadata": {}}, {"name": "action", "type": "string", "nullable": true, "metadata": {}}, {"name": "rulematchdetails", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "conditiontype", "type": "string", "nullable": true, "metadata": {}}, {"name": "sensitivitylevel", "type": "string", "nullable": true, "metadata": {}}, {"name": "location", "type": "string", "nullable": true, "metadata": {}}, {"name": "matcheddata", "type": {"type": "array", "elementType": "string", "containsNull": true}, "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}]}, "nullable": true, "metadata": {}}, {"name": "nonterminatingmatchingrules", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "ruleid", "type": "string", "nullable": true, "metadata": {}}, {"name": "action", "type": "string", "nullable": true, "metadata": {}}, {"name": "rulematchdetails", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "conditiontype", "type": "string", "nullable": true, "metadata": {}}, {"name": "sensitivitylevel", "type": "string", "nullable": true, "metadata": {}}, {"name": "location", "type": "string", "nullable": true, "metadata": {}}, {"name": "matcheddata", "type": {"type": "array", "elementType": "string", "containsNull": true}, "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "excludedrules", "type": "string", "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "ratebasedrulelist", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "ratebasedruleid", "type": "string", "nullable": true, "metadata": {}}, {"name": "limitkey", "type": "string", "nullable": true, "metadata": {}}, {"name": "maxrateallowed", "type": "integer", "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "nonterminatingmatchingrules", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "ruleid", "type": "string", "nullable": true, "metadata": {}}, {"name": "action", "type": "string", "nullable": true, "metadata": {}}, {"name": "rulematchdetails", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "conditiontype", "type": "string", "nullable": true, "metadata": {}}, {"name": "sensitivitylevel", "type": "string", "nullable": true, "metadata": {}}, {"name": "location", "type": "string", "nullable": true, "metadata": {}}, {"name": "matcheddata", "type": {"type": "array", "elementType": "string", "containsNull": true}, "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "captcharesponse", "type": {"type": "struct", "fields": [{"name": "responsecode", "type": "string", "nullable": true, "metadata": {}}, {"name": "solvetimestamp", "type": "string", "nullable": true, "metadata": {}}]}, "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "requestheadersinserted", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "name", "type": "string", "nullable": true, "metadata": {}}, {"name": "value", "type": "string", "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "responsecodesent", "type": "string", "nullable": true, "metadata": {}}, {"name": "host", "type": "string", "nullable": true, "metadata": {}}, {"name": "clientip", "type": "string", "nullable": true, "metadata": {}}, {"name": "country", "type": "string", "nullable": true, "metadata": {}}, {"name": "uri", "type": "string", "nullable": true, "metadata": {}}, {"name": "args", "type": "string", "nullable": true, "metadata": {}}, {"name": "httpmethod", "type": "string", "nullable": true, "metadata": {}}, {"name": "ja3fingerprint", "type": "string", "nullable": true, "metadata": {}}, {"name": "httprequest", "type": {"type": "struct", "fields": [{"name": "clientip", "type": "string", "nullable": true, "metadata": {}}, {"name": "country", "type": "string", "nullable": true, "metadata": {}}, {"name": "headers", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "name", "type": "string", "nullable": true, "metadata": {}}, {"name": "value", "type": "string", "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "uri", "type": "string", "nullable": true, "metadata": {}}, {"name": "args", "type": "string", "nullable": true, "metadata": {}}, {"name": "httpversion", "type": "string", "nullable": true, "metadata": {}}, {"name": "httpmethod", "type": "string", "nullable": true, "metadata": {}}, {"name": "requestid", "type": "string", "nullable": true, "metadata": {}}]}, "nullable": true, "metadata": {}}, {"name": "labels", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "name", "type": "string", "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "captcharesponse", "type": {"type": "struct", "fields": [{"name": "responsecode", "type": "string", "nullable": true, "metadata": {}}, {"name": "solvetimestamp", "type": "string", "nullable": true, "metadata": {}}, {"name": "failurereason", "type": "string", "nullable": true, "metadata": {}}]}, "nullable": true, "metadata": {}}, {"name": "event_hour", "type": "string", "nullable": true, "metadata": {}}, {"name": "account_id", "type": "string", "nullable": true, "metadata": {}}, {"name": "region", "type": "string", "nullable": true, "metadata": {}}, {"name": "__execution_name__", "type": "string", "nullable": true, "metadata": {}}]}',
+            'spark.sql.sources.schema.numPartCols': '4', 
+            'spark.sql.sources.schema.partCol.0': 'event_hour', 
+            'spark.sql.sources.schema.partCol.1': 'account_id', 
+            'spark.sql.sources.schema.partCol.2': 'region', 
+            'spark.sql.sources.schema.partCol.3': '__execution_name__'
+            }
         
         response = AWS_GLUE.get_partition_indexes(database=self.centralized_database, table_name=self.table_name)
         assert response['PartitionIndexDescriptorList'] == []
@@ -5703,6 +7139,7 @@ class TestPipelineResourceBuilder:
             {'Name': 'time', 'Type': 'bigint'}, 
             {'Name': 'timestamp', 'Type': 'timestamp'}, 
             {'Name': 'action', 'Type': 'string'}, 
+            {'Name': 'action_fixed', 'Type': 'string'}, 
             {'Name': 'webaclid', 'Type': 'string'}, 
             {'Name': 'webaclname', 'Type': 'string'}, 
             {'Name': 'terminatingruleid', 'Type': 'string'}, 
@@ -5711,8 +7148,9 @@ class TestPipelineResourceBuilder:
             {'Name': 'httpmethod', 'Type': 'string'}, 
             {'Name': 'country', 'Type': 'string'}, 
             {'Name': 'clientip', 'Type': 'string'}, 
+            {'Name': 'host', 'Type': 'string'}, 
             {'Name': 'uri', 'Type': 'string'}, 
-            {'Name': 'first_label', 'Type': 'string'},
+            {'Name': 'labels', 'Type': 'array<string>'},
             {'Name': 'requests', 'Type': 'bigint'}
             ]
         assert response['Table']['StorageDescriptor']['Location'] == f's3://{self.centralized_bucket_name}/{self.centralized_bucket_prefix}/{self.centralized_database}/{self.table_name}_metrics'
@@ -5728,7 +7166,19 @@ class TestPipelineResourceBuilder:
             {'Name': '__execution_name__', 'Type': 'string'}
             ]
         assert response['Table']['TableType'] == 'EXTERNAL_TABLE'
-        assert response['Table']['Parameters'] == {'partition_filtering.enabled': 'true', 'classification': 'parquet', 'has_encrypted_data': 'true'}
+        assert response['Table']['Parameters'] == {
+            'partition_filtering.enabled': 'true', 
+            'classification': 'parquet', 
+            'has_encrypted_data': 'true', 
+            'parquet.compression': 'ZSTD', 
+            'spark.sql.partitionProvider': 'catalog', 
+            'spark.sql.sources.schema': '{"type": "struct", "fields": [{"name": "time", "type": "long", "nullable": true, "metadata": {}}, {"name": "timestamp", "type": "timestamp", "nullable": true, "metadata": {}}, {"name": "action", "type": "string", "nullable": true, "metadata": {}}, {"name": "action_fixed", "type": "string", "nullable": true, "metadata": {}}, {"name": "webaclid", "type": "string", "nullable": true, "metadata": {}}, {"name": "webaclname", "type": "string", "nullable": true, "metadata": {}}, {"name": "terminatingruleid", "type": "string", "nullable": true, "metadata": {}}, {"name": "terminatingruletype", "type": "string", "nullable": true, "metadata": {}}, {"name": "httpsourceid", "type": "string", "nullable": true, "metadata": {}}, {"name": "httpmethod", "type": "string", "nullable": true, "metadata": {}}, {"name": "country", "type": "string", "nullable": true, "metadata": {}}, {"name": "clientip", "type": "string", "nullable": true, "metadata": {}}, {"name": "host", "type": "string", "nullable": true, "metadata": {}}, {"name": "uri", "type": "string", "nullable": true, "metadata": {}}, {"name": "labels", "type": {"type": "array", "elementType": "string", "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "requests", "type": "long", "nullable": true, "metadata": {}}, {"name": "event_hour", "type": "string", "nullable": true, "metadata": {}}, {"name": "account_id", "type": "string", "nullable": true, "metadata": {}}, {"name": "region", "type": "string", "nullable": true, "metadata": {}}, {"name": "__execution_name__", "type": "string", "nullable": true, "metadata": {}}]}', 
+            'spark.sql.sources.schema.numPartCols': '4', 
+            'spark.sql.sources.schema.partCol.0': 'event_hour', 
+            'spark.sql.sources.schema.partCol.1': 'account_id', 
+            'spark.sql.sources.schema.partCol.2': 'region', 
+            'spark.sql.sources.schema.partCol.3': '__execution_name__'
+            }
         
         response = AWS_GLUE.get_partition_indexes(database=self.centralized_database, table_name=f'{self.table_name}_metrics')
         assert response['PartitionIndexDescriptorList'] == []
@@ -5757,11 +7207,11 @@ class TestPipelineResourceBuilder:
                 "athena": {
                     "tableName": self.table_name,
                     "statements": {
-                        "create": "CREATE EXTERNAL TABLE IF NOT EXISTS `tmp`.`test_waf_03{}` (`timestamp` bigint, `formatversion` int, `webaclid` string, `terminatingruleid` string, `terminatingruletype` string, `action` string, `terminatingrulematchdetails` array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>, `httpsourcename` string, `httpsourceid` string, `rulegrouplist` array<struct<`rulegroupid`:string,`terminatingrule`:struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>>,`nonterminatingmatchingrules`:array<struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>>>,`excludedrules`:string>>, `ratebasedrulelist` array<struct<`ratebasedruleid`:string,`limitkey`:string,`maxrateallowed`:int>>, `nonterminatingmatchingrules` array<struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>,`captcharesponse`:struct<`responsecode`:string,`solvetimestamp`:string>>>, `requestheadersinserted` array<struct<`name`:string,`value`:string>>, `responsecodesent` string, `httprequest` struct<`clientip`:string,`country`:string,`headers`:array<struct<`name`:string,`value`:string>>,`uri`:string,`args`:string,`httpversion`:string,`httpmethod`:string,`requestid`:string>, `labels` array<struct<`name`:string>>, `captcharesponse` struct<`responsecode`:string,`solvetimestamp`:string,`failureReason`:string>)  ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'  STORED AS INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat' OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat' LOCATION '{}' ;",
-                        "drop": "DROP TABLE IF EXISTS `tmp`.`test_waf_03{}`",
-                        "insert": "INSERT INTO \"centralized\".\"test_waf_03\" (\"time\", \"timestamp\", \"formatversion\", \"webaclid\", \"webaclname\", \"terminatingruleid\", \"terminatingruletype\", \"action\", \"terminatingrulematchdetails\", \"httpsourcename\", \"httpsourceid\", \"rulegrouplist\", \"ratebasedrulelist\", \"nonterminatingmatchingrules\", \"requestheadersinserted\", \"responsecodesent\", \"httprequest\", \"labels\", \"captcharesponse\", \"account_id\", \"region\", \"event_hour\", \"__execution_name__\") SELECT \"timestamp\", CAST(FROM_UNIXTIME(\"timestamp\" / 1000) AS timestamp), \"formatversion\", \"webaclid\", SPLIT(\"webaclid\", '/')[3], \"terminatingruleid\", \"terminatingruletype\", \"action\", \"terminatingrulematchdetails\", \"httpsourcename\", \"httpsourceid\", \"rulegrouplist\", \"ratebasedrulelist\", \"nonterminatingmatchingrules\", \"requestheadersinserted\", \"responsecodesent\", \"httprequest\", \"labels\", \"captcharesponse\", SPLIT(\"webaclid\", ':')[5], SPLIT(\"webaclid\", ':')[4], DATE_FORMAT(CAST(FROM_UNIXTIME(\"timestamp\" / 1000) AS timestamp), '%Y%m%d%H'), '{}' FROM \"tmp\".\"test_waf_03{}\";",
-                        "aggregate": [
-                            "INSERT INTO \"centralized\".\"test_waf_03_metrics\" (\"time\", \"timestamp\", \"action\", \"webaclid\", \"webaclname\", \"terminatingruleid\", \"terminatingruletype\", \"httpsourceid\", \"httpmethod\", \"country\", \"clientip\", \"uri\", \"first_label\", \"requests\", \"account_id\", \"region\", \"event_hour\", \"__execution_name__\") SELECT FLOOR(\"time\" / 60000) * 60000, DATE_TRUNC('minute', \"timestamp\"), \"action\", \"webaclid\", \"webaclname\", \"terminatingruleid\", \"terminatingruletype\", \"httpsourceid\", \"httprequest\".\"httpmethod\", \"httprequest\".\"country\", \"httprequest\".\"clientip\", \"httprequest\".\"uri\", CASE WHEN labels = ARRAY[] THEN '' ELSE labels[1].name END, CAST(COUNT(1) AS bigint), \"account_id\", \"region\", \"event_hour\", \"__execution_name__\" FROM \"centralized\".\"test_waf_03\" WHERE __execution_name__ = '{}' GROUP BY FLOOR(\"time\" / 60000) * 60000, DATE_TRUNC('minute', \"timestamp\"), \"action\", \"webaclid\", \"webaclname\", \"terminatingruleid\", \"terminatingruletype\", \"httpsourceid\", \"httprequest\".\"httpmethod\", \"httprequest\".\"country\", \"httprequest\".\"clientip\", \"httprequest\".\"uri\", CASE WHEN labels = ARRAY[] THEN '' ELSE labels[1].name END, \"account_id\", \"region\", \"event_hour\", \"__execution_name__\";"
+                        'create': "CREATE EXTERNAL TABLE IF NOT EXISTS `tmp`.`test_waf_03{}` (`timestamp` bigint, `formatversion` int, `webaclid` string, `terminatingruleid` string, `terminatingruletype` string, `action` string, `terminatingrulematchdetails` array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>, `httpsourcename` string, `httpsourceid` string, `rulegrouplist` array<struct<`rulegroupid`:string,`terminatingrule`:struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>>,`nonterminatingmatchingrules`:array<struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>>>,`excludedrules`:string>>, `ratebasedrulelist` array<struct<`ratebasedruleid`:string,`limitkey`:string,`maxrateallowed`:int>>, `nonterminatingmatchingrules` array<struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>,`captcharesponse`:struct<`responsecode`:string,`solvetimestamp`:string>>>, `requestheadersinserted` array<struct<`name`:string,`value`:string>>, `responsecodesent` string, `ja3fingerprint` string, `httprequest` struct<`clientip`:string,`country`:string,`headers`:array<struct<`name`:string,`value`:string>>,`uri`:string,`args`:string,`httpversion`:string,`httpmethod`:string,`requestid`:string>, `labels` array<struct<`name`:string>>, `captcharesponse` struct<`responsecode`:string,`solvetimestamp`:string,`failureReason`:string>)  ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'  STORED AS INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat' OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat' LOCATION '{}' ;", 
+                        'drop': 'DROP TABLE IF EXISTS `tmp`.`test_waf_03{}`',
+                        'insert': 'INSERT INTO "centralized"."test_waf_03" ("time", "timestamp", "formatversion", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "action", "action_fixed", "terminatingrulematchdetails", "httpsourcename", "httpsourceid", "rulegrouplist", "ratebasedrulelist", "nonterminatingmatchingrules", "requestheadersinserted", "responsecodesent", "host", "clientip", "country", "uri", "args", "httpmethod", "ja3fingerprint", "httprequest", "labels", "captcharesponse", "account_id", "region", "event_hour", "__execution_name__") SELECT "timestamp", CAST(FROM_UNIXTIME("timestamp" / 1000) AS timestamp), "formatversion", "webaclid", SPLIT("webaclid", \'/\')[3], "terminatingruleid", "terminatingruletype", "action", CASE WHEN action = \'ALLOW\' AND labels != ARRAY[] THEN \'COUNT\' ELSE action END, "terminatingrulematchdetails", "httpsourcename", "httpsourceid", "rulegrouplist", "ratebasedrulelist", "nonterminatingmatchingrules", "requestheadersinserted", "responsecodesent", case when filter(httprequest.headers, x -> lower(x.name) = \'host\' ) = ARRAY[] then \'\' else filter(httprequest.headers, x -> lower(x.name) = \'host\' )[1].value end, httprequest.clientip, httprequest.country, httprequest.uri, httprequest.args, httprequest.httpmethod, "ja3fingerprint", "httprequest", "labels", "captcharesponse", SPLIT("webaclid", \':\')[5], SPLIT("webaclid", \':\')[4], DATE_FORMAT(CAST(FROM_UNIXTIME("timestamp" / 1000) AS timestamp), \'%Y%m%d%H\'), \'{}\' FROM "tmp"."test_waf_03{}";', 
+                        'aggregate': [
+                            'INSERT INTO "centralized"."test_waf_03_metrics" ("time", "timestamp", "action", "action_fixed", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "httpsourceid", "httpmethod", "country", "clientip", "host", "uri", "labels", "requests", "account_id", "region", "event_hour", "__execution_name__") SELECT FLOOR("time" / 60000) * 60000, DATE_TRUNC(\'minute\', "timestamp"), "action", "action_fixed", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "httpsourceid", "httpmethod", "country", "clientip", "host", "uri", ARRAY_DISTINCT(FLATTEN(ARRAY_AGG(TRANSFORM(labels, x -> x.name)) FILTER (WHERE labels != ARRAY[]))), CAST(COUNT(1) AS bigint), "account_id", "region", "event_hour", "__execution_name__" FROM "centralized"."test_waf_03" WHERE __execution_name__ = \'{}\' GROUP BY FLOOR("time" / 60000) * 60000, DATE_TRUNC(\'minute\', "timestamp"), "action", "action_fixed", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "httpsourceid", "httpmethod", "country", "clientip", "host", "uri", "account_id", "region", "event_hour", "__execution_name__";'
                         ]
                     }
                 },
@@ -5968,11 +7418,8 @@ class TestPipelineResourceBuilder:
                 'Resource': [
                     f'arn:aws:s3:::{self.logging_bucket_name}', 
                     f'arn:aws:s3:::{self.logging_bucket_name}/*',
-                    f'arn:aws:s3:::{self.centralized_bucket_name}/{self.centralized_bucket_prefix}/{self.centralized_database}/waf*',
+                    f'arn:aws:s3:::{self.centralized_bucket_name}/{self.centralized_bucket_prefix}/{self.centralized_database}*',
                     f'arn:aws:s3:::{self.centralized_bucket_name}', 
-                    f'arn:aws:s3:::{self.centralized_bucket_name}/{self.centralized_bucket_prefix}/{self.centralized_database}/waf_metrics*',
-                    f'arn:aws:s3:::{self.centralized_bucket_name}/{self.centralized_bucket_prefix}/{self.centralized_database}/{self.table_name}*',
-                    f'arn:aws:s3:::{self.centralized_bucket_name}/{self.centralized_bucket_prefix}/{self.centralized_database}/{self.table_name}_metrics*'
                     ]
                 }
             ]
@@ -6025,6 +7472,7 @@ class TestPipelineResourceBuilder:
             {'Name': 'terminatingruleid', 'Type': 'string'}, 
             {'Name': 'terminatingruletype', 'Type': 'string'}, 
             {'Name': 'action', 'Type': 'string'}, 
+            {'Name': 'action_fixed', 'Type': 'string'}, 
             {'Name': 'terminatingrulematchdetails', 'Type': 'array<struct<conditiontype:string,sensitivitylevel:string,location:string,matcheddata:array<string>>>'}, 
             {'Name': 'httpsourcename', 'Type': 'string'}, 
             {'Name': 'httpsourceid', 'Type': 'string'}, 
@@ -6033,6 +7481,13 @@ class TestPipelineResourceBuilder:
             {'Name': 'nonterminatingmatchingrules', 'Type': 'array<struct<ruleid:string,action:string,rulematchdetails:array<struct<conditiontype:string,sensitivitylevel:string,location:string,matcheddata:array<string>>>,captcharesponse:struct<responsecode:string,solvetimestamp:string>>>'}, 
             {'Name': 'requestheadersinserted', 'Type': 'array<struct<name:string,value:string>>'}, 
             {'Name': 'responsecodesent', 'Type': 'string'}, 
+            {'Name': 'host', 'Type': 'string'}, 
+            {'Name': 'clientip', 'Type': 'string'},
+            {'Name': 'country', 'Type': 'string'},
+            {'Name': 'uri', 'Type': 'string'},
+            {'Name': 'args', 'Type': 'string'},
+            {'Name': 'httpmethod', 'Type': 'string'},
+            {'Name': 'ja3fingerprint', 'Type': 'string'},
             {'Name': 'httprequest', 'Type': 'struct<clientip:string,country:string,headers:array<struct<name:string,value:string>>,uri:string,args:string,httpversion:string,httpmethod:string,requestid:string>'}, 
             {'Name': 'labels', 'Type': 'array<struct<name:string>>'}, 
             {'Name': 'captcharesponse', 'Type': 'struct<responsecode:string,solvetimestamp:string,failureReason:string>'}
@@ -6050,7 +7505,19 @@ class TestPipelineResourceBuilder:
             {'Name': '__execution_name__', 'Type': 'string'}
             ]
         assert response['Table']['TableType'] == 'EXTERNAL_TABLE'
-        assert response['Table']['Parameters'] == {'partition_filtering.enabled': 'true', 'classification': 'parquet', 'has_encrypted_data': 'true'}
+        assert response['Table']['Parameters'] == {
+            'partition_filtering.enabled': 'true', 
+            'classification': 'parquet', 
+            'has_encrypted_data': 'true', 
+            'parquet.compression': 'ZSTD', 
+            'spark.sql.partitionProvider': 'catalog', 
+            'spark.sql.sources.schema': '{"type": "struct", "fields": [{"name": "time", "type": "long", "nullable": true, "metadata": {}}, {"name": "timestamp", "type": "timestamp", "nullable": true, "metadata": {}}, {"name": "formatversion", "type": "integer", "nullable": true, "metadata": {}}, {"name": "webaclid", "type": "string", "nullable": true, "metadata": {}}, {"name": "webaclname", "type": "string", "nullable": true, "metadata": {}}, {"name": "terminatingruleid", "type": "string", "nullable": true, "metadata": {}}, {"name": "terminatingruletype", "type": "string", "nullable": true, "metadata": {}}, {"name": "action", "type": "string", "nullable": true, "metadata": {}}, {"name": "action_fixed", "type": "string", "nullable": true, "metadata": {}}, {"name": "terminatingrulematchdetails", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "conditiontype", "type": "string", "nullable": true, "metadata": {}}, {"name": "sensitivitylevel", "type": "string", "nullable": true, "metadata": {}}, {"name": "location", "type": "string", "nullable": true, "metadata": {}}, {"name": "matcheddata", "type": {"type": "array", "elementType": "string", "containsNull": true}, "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "httpsourcename", "type": "string", "nullable": true, "metadata": {}}, {"name": "httpsourceid", "type": "string", "nullable": true, "metadata": {}}, {"name": "rulegrouplist", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "rulegroupid", "type": "string", "nullable": true, "metadata": {}}, {"name": "terminatingrule", "type": {"type": "struct", "fields": [{"name": "ruleid", "type": "string", "nullable": true, "metadata": {}}, {"name": "action", "type": "string", "nullable": true, "metadata": {}}, {"name": "rulematchdetails", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "conditiontype", "type": "string", "nullable": true, "metadata": {}}, {"name": "sensitivitylevel", "type": "string", "nullable": true, "metadata": {}}, {"name": "location", "type": "string", "nullable": true, "metadata": {}}, {"name": "matcheddata", "type": {"type": "array", "elementType": "string", "containsNull": true}, "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}]}, "nullable": true, "metadata": {}}, {"name": "nonterminatingmatchingrules", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "ruleid", "type": "string", "nullable": true, "metadata": {}}, {"name": "action", "type": "string", "nullable": true, "metadata": {}}, {"name": "rulematchdetails", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "conditiontype", "type": "string", "nullable": true, "metadata": {}}, {"name": "sensitivitylevel", "type": "string", "nullable": true, "metadata": {}}, {"name": "location", "type": "string", "nullable": true, "metadata": {}}, {"name": "matcheddata", "type": {"type": "array", "elementType": "string", "containsNull": true}, "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "excludedrules", "type": "string", "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "ratebasedrulelist", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "ratebasedruleid", "type": "string", "nullable": true, "metadata": {}}, {"name": "limitkey", "type": "string", "nullable": true, "metadata": {}}, {"name": "maxrateallowed", "type": "integer", "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "nonterminatingmatchingrules", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "ruleid", "type": "string", "nullable": true, "metadata": {}}, {"name": "action", "type": "string", "nullable": true, "metadata": {}}, {"name": "rulematchdetails", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "conditiontype", "type": "string", "nullable": true, "metadata": {}}, {"name": "sensitivitylevel", "type": "string", "nullable": true, "metadata": {}}, {"name": "location", "type": "string", "nullable": true, "metadata": {}}, {"name": "matcheddata", "type": {"type": "array", "elementType": "string", "containsNull": true}, "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "captcharesponse", "type": {"type": "struct", "fields": [{"name": "responsecode", "type": "string", "nullable": true, "metadata": {}}, {"name": "solvetimestamp", "type": "string", "nullable": true, "metadata": {}}]}, "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "requestheadersinserted", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "name", "type": "string", "nullable": true, "metadata": {}}, {"name": "value", "type": "string", "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "responsecodesent", "type": "string", "nullable": true, "metadata": {}}, {"name": "host", "type": "string", "nullable": true, "metadata": {}}, {"name": "clientip", "type": "string", "nullable": true, "metadata": {}}, {"name": "country", "type": "string", "nullable": true, "metadata": {}}, {"name": "uri", "type": "string", "nullable": true, "metadata": {}}, {"name": "args", "type": "string", "nullable": true, "metadata": {}}, {"name": "httpmethod", "type": "string", "nullable": true, "metadata": {}}, {"name": "ja3fingerprint", "type": "string", "nullable": true, "metadata": {}}, {"name": "httprequest", "type": {"type": "struct", "fields": [{"name": "clientip", "type": "string", "nullable": true, "metadata": {}}, {"name": "country", "type": "string", "nullable": true, "metadata": {}}, {"name": "headers", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "name", "type": "string", "nullable": true, "metadata": {}}, {"name": "value", "type": "string", "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "uri", "type": "string", "nullable": true, "metadata": {}}, {"name": "args", "type": "string", "nullable": true, "metadata": {}}, {"name": "httpversion", "type": "string", "nullable": true, "metadata": {}}, {"name": "httpmethod", "type": "string", "nullable": true, "metadata": {}}, {"name": "requestid", "type": "string", "nullable": true, "metadata": {}}]}, "nullable": true, "metadata": {}}, {"name": "labels", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "name", "type": "string", "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "captcharesponse", "type": {"type": "struct", "fields": [{"name": "responsecode", "type": "string", "nullable": true, "metadata": {}}, {"name": "solvetimestamp", "type": "string", "nullable": true, "metadata": {}}, {"name": "failurereason", "type": "string", "nullable": true, "metadata": {}}]}, "nullable": true, "metadata": {}}, {"name": "event_hour", "type": "string", "nullable": true, "metadata": {}}, {"name": "account_id", "type": "string", "nullable": true, "metadata": {}}, {"name": "region", "type": "string", "nullable": true, "metadata": {}}, {"name": "__execution_name__", "type": "string", "nullable": true, "metadata": {}}]}',
+            'spark.sql.sources.schema.numPartCols': '4', 
+            'spark.sql.sources.schema.partCol.0': 'event_hour', 
+            'spark.sql.sources.schema.partCol.1': 'account_id', 
+            'spark.sql.sources.schema.partCol.2': 'region', 
+            'spark.sql.sources.schema.partCol.3': '__execution_name__'
+            }
         
         response = AWS_GLUE.get_partition_indexes(database=self.centralized_database, table_name=self.table_name)
         assert response['PartitionIndexDescriptorList'] == []
@@ -6062,6 +7529,7 @@ class TestPipelineResourceBuilder:
             {'Name': 'time', 'Type': 'bigint'}, 
             {'Name': 'timestamp', 'Type': 'timestamp'}, 
             {'Name': 'action', 'Type': 'string'}, 
+            {'Name': 'action_fixed', 'Type': 'string'}, 
             {'Name': 'webaclid', 'Type': 'string'}, 
             {'Name': 'webaclname', 'Type': 'string'}, 
             {'Name': 'terminatingruleid', 'Type': 'string'}, 
@@ -6070,8 +7538,9 @@ class TestPipelineResourceBuilder:
             {'Name': 'httpmethod', 'Type': 'string'}, 
             {'Name': 'country', 'Type': 'string'}, 
             {'Name': 'clientip', 'Type': 'string'}, 
+            {'Name': 'host', 'Type': 'string'}, 
             {'Name': 'uri', 'Type': 'string'}, 
-            {'Name': 'first_label', 'Type': 'string'},
+            {'Name': 'labels', 'Type': 'array<string>'},
             {'Name': 'requests', 'Type': 'bigint'}
             ]
         assert response['Table']['StorageDescriptor']['Location'] == f's3://{centralized_bucket_name}/{self.centralized_bucket_prefix}/{self.centralized_database}/{self.table_name}_metrics'
@@ -6087,7 +7556,19 @@ class TestPipelineResourceBuilder:
             {'Name': '__execution_name__', 'Type': 'string'}
             ]
         assert response['Table']['TableType'] == 'EXTERNAL_TABLE'
-        assert response['Table']['Parameters'] == {'partition_filtering.enabled': 'true', 'classification': 'parquet', 'has_encrypted_data': 'true'}
+        assert response['Table']['Parameters'] == {
+            'partition_filtering.enabled': 'true', 
+            'classification': 'parquet', 
+            'has_encrypted_data': 'true', 
+            'parquet.compression': 'ZSTD', 
+            'spark.sql.partitionProvider': 'catalog', 
+            'spark.sql.sources.schema': '{"type": "struct", "fields": [{"name": "time", "type": "long", "nullable": true, "metadata": {}}, {"name": "timestamp", "type": "timestamp", "nullable": true, "metadata": {}}, {"name": "action", "type": "string", "nullable": true, "metadata": {}}, {"name": "action_fixed", "type": "string", "nullable": true, "metadata": {}}, {"name": "webaclid", "type": "string", "nullable": true, "metadata": {}}, {"name": "webaclname", "type": "string", "nullable": true, "metadata": {}}, {"name": "terminatingruleid", "type": "string", "nullable": true, "metadata": {}}, {"name": "terminatingruletype", "type": "string", "nullable": true, "metadata": {}}, {"name": "httpsourceid", "type": "string", "nullable": true, "metadata": {}}, {"name": "httpmethod", "type": "string", "nullable": true, "metadata": {}}, {"name": "country", "type": "string", "nullable": true, "metadata": {}}, {"name": "clientip", "type": "string", "nullable": true, "metadata": {}}, {"name": "host", "type": "string", "nullable": true, "metadata": {}}, {"name": "uri", "type": "string", "nullable": true, "metadata": {}}, {"name": "labels", "type": {"type": "array", "elementType": "string", "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "requests", "type": "long", "nullable": true, "metadata": {}}, {"name": "event_hour", "type": "string", "nullable": true, "metadata": {}}, {"name": "account_id", "type": "string", "nullable": true, "metadata": {}}, {"name": "region", "type": "string", "nullable": true, "metadata": {}}, {"name": "__execution_name__", "type": "string", "nullable": true, "metadata": {}}]}', 
+            'spark.sql.sources.schema.numPartCols': '4', 
+            'spark.sql.sources.schema.partCol.0': 'event_hour', 
+            'spark.sql.sources.schema.partCol.1': 'account_id', 
+            'spark.sql.sources.schema.partCol.2': 'region', 
+            'spark.sql.sources.schema.partCol.3': '__execution_name__'
+            }
         
         response = AWS_GLUE.get_partition_indexes(database=self.centralized_database, table_name=f'{self.table_name}_metrics')
         assert response['PartitionIndexDescriptorList'] == []
@@ -6102,7 +7583,7 @@ class TestPipelineResourceBuilder:
         assert response['ScheduleExpression'] == self.processor_schedule
         assert response['State'] == 'ENABLED'
         assert response['Target']['Arn'] == self.log_processor_arn
-
+        
         assert json.loads(response['Target']['Input']) == {
             "metadata": {
                 "pipelineId": pipeline_id,
@@ -6116,11 +7597,12 @@ class TestPipelineResourceBuilder:
                 "athena": {
                     "tableName": self.table_name,
                     "statements": {
-                        "create": "CREATE EXTERNAL TABLE IF NOT EXISTS `tmp`.`waf{}` (`timestamp` bigint, `formatversion` int, `webaclid` string, `terminatingruleid` string, `terminatingruletype` string, `action` string, `terminatingrulematchdetails` array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>, `httpsourcename` string, `httpsourceid` string, `rulegrouplist` array<struct<`rulegroupid`:string,`terminatingrule`:struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>>,`nonterminatingmatchingrules`:array<struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>>>,`excludedrules`:string>>, `ratebasedrulelist` array<struct<`ratebasedruleid`:string,`limitkey`:string,`maxrateallowed`:int>>, `nonterminatingmatchingrules` array<struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>,`captcharesponse`:struct<`responsecode`:string,`solvetimestamp`:string>>>, `requestheadersinserted` array<struct<`name`:string,`value`:string>>, `responsecodesent` string, `httprequest` struct<`clientip`:string,`country`:string,`headers`:array<struct<`name`:string,`value`:string>>,`uri`:string,`args`:string,`httpversion`:string,`httpmethod`:string,`requestid`:string>, `labels` array<struct<`name`:string>>, `captcharesponse` struct<`responsecode`:string,`solvetimestamp`:string,`failureReason`:string>)  ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'  STORED AS INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat' OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat' LOCATION '{}' ;",
-                    "drop": "DROP TABLE IF EXISTS `tmp`.`waf{}`",
-                    "insert": "INSERT INTO \"centralized\".\"waf\" (\"time\", \"timestamp\", \"formatversion\", \"webaclid\", \"webaclname\", \"terminatingruleid\", \"terminatingruletype\", \"action\", \"terminatingrulematchdetails\", \"httpsourcename\", \"httpsourceid\", \"rulegrouplist\", \"ratebasedrulelist\", \"nonterminatingmatchingrules\", \"requestheadersinserted\", \"responsecodesent\", \"httprequest\", \"labels\", \"captcharesponse\", \"account_id\", \"region\", \"event_hour\", \"__execution_name__\") SELECT \"timestamp\", CAST(FROM_UNIXTIME(\"timestamp\" / 1000) AS timestamp), \"formatversion\", \"webaclid\", SPLIT(\"webaclid\", '/')[3], \"terminatingruleid\", \"terminatingruletype\", \"action\", \"terminatingrulematchdetails\", \"httpsourcename\", \"httpsourceid\", \"rulegrouplist\", \"ratebasedrulelist\", \"nonterminatingmatchingrules\", \"requestheadersinserted\", \"responsecodesent\", \"httprequest\", \"labels\", \"captcharesponse\", SPLIT(\"webaclid\", ':')[5], SPLIT(\"webaclid\", ':')[4], DATE_FORMAT(CAST(FROM_UNIXTIME(\"timestamp\" / 1000) AS timestamp), '%Y%m%d%H'), '{}' FROM \"tmp\".\"waf{}\";",
-                    "aggregate": [
-                        "INSERT INTO \"centralized\".\"waf_metrics\" (\"time\", \"timestamp\", \"action\", \"webaclid\", \"webaclname\", \"terminatingruleid\", \"terminatingruletype\", \"httpsourceid\", \"httpmethod\", \"country\", \"clientip\", \"uri\", \"first_label\", \"requests\", \"account_id\", \"region\", \"event_hour\", \"__execution_name__\") SELECT FLOOR(\"time\" / 60000) * 60000, DATE_TRUNC('minute', \"timestamp\"), \"action\", \"webaclid\", \"webaclname\", \"terminatingruleid\", \"terminatingruletype\", \"httpsourceid\", \"httprequest\".\"httpmethod\", \"httprequest\".\"country\", \"httprequest\".\"clientip\", \"httprequest\".\"uri\", CASE WHEN labels = ARRAY[] THEN '' ELSE labels[1].name END, CAST(COUNT(1) AS bigint), \"account_id\", \"region\", \"event_hour\", \"__execution_name__\" FROM \"centralized\".\"waf\" WHERE __execution_name__ = '{}' GROUP BY FLOOR(\"time\" / 60000) * 60000, DATE_TRUNC('minute', \"timestamp\"), \"action\", \"webaclid\", \"webaclname\", \"terminatingruleid\", \"terminatingruletype\", \"httpsourceid\", \"httprequest\".\"httpmethod\", \"httprequest\".\"country\", \"httprequest\".\"clientip\", \"httprequest\".\"uri\", CASE WHEN labels = ARRAY[] THEN '' ELSE labels[1].name END, \"account_id\", \"region\", \"event_hour\", \"__execution_name__\";"                    ]
+                        'create': "CREATE EXTERNAL TABLE IF NOT EXISTS `tmp`.`waf{}` (`timestamp` bigint, `formatversion` int, `webaclid` string, `terminatingruleid` string, `terminatingruletype` string, `action` string, `terminatingrulematchdetails` array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>, `httpsourcename` string, `httpsourceid` string, `rulegrouplist` array<struct<`rulegroupid`:string,`terminatingrule`:struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>>,`nonterminatingmatchingrules`:array<struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>>>,`excludedrules`:string>>, `ratebasedrulelist` array<struct<`ratebasedruleid`:string,`limitkey`:string,`maxrateallowed`:int>>, `nonterminatingmatchingrules` array<struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>,`captcharesponse`:struct<`responsecode`:string,`solvetimestamp`:string>>>, `requestheadersinserted` array<struct<`name`:string,`value`:string>>, `responsecodesent` string, `ja3fingerprint` string, `httprequest` struct<`clientip`:string,`country`:string,`headers`:array<struct<`name`:string,`value`:string>>,`uri`:string,`args`:string,`httpversion`:string,`httpmethod`:string,`requestid`:string>, `labels` array<struct<`name`:string>>, `captcharesponse` struct<`responsecode`:string,`solvetimestamp`:string,`failureReason`:string>)  ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'  STORED AS INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat' OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat' LOCATION '{}' ;", 
+                        'drop': 'DROP TABLE IF EXISTS `tmp`.`waf{}`',
+                        'insert': 'INSERT INTO "centralized"."waf" ("time", "timestamp", "formatversion", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "action", "action_fixed", "terminatingrulematchdetails", "httpsourcename", "httpsourceid", "rulegrouplist", "ratebasedrulelist", "nonterminatingmatchingrules", "requestheadersinserted", "responsecodesent", "host", "clientip", "country", "uri", "args", "httpmethod", "ja3fingerprint", "httprequest", "labels", "captcharesponse", "account_id", "region", "event_hour", "__execution_name__") SELECT "timestamp", CAST(FROM_UNIXTIME("timestamp" / 1000) AS timestamp), "formatversion", "webaclid", SPLIT("webaclid", \'/\')[3], "terminatingruleid", "terminatingruletype", "action", CASE WHEN action = \'ALLOW\' AND labels != ARRAY[] THEN \'COUNT\' ELSE action END, "terminatingrulematchdetails", "httpsourcename", "httpsourceid", "rulegrouplist", "ratebasedrulelist", "nonterminatingmatchingrules", "requestheadersinserted", "responsecodesent", case when filter(httprequest.headers, x -> lower(x.name) = \'host\' ) = ARRAY[] then \'\' else filter(httprequest.headers, x -> lower(x.name) = \'host\' )[1].value end, httprequest.clientip, httprequest.country, httprequest.uri, httprequest.args, httprequest.httpmethod, "ja3fingerprint", "httprequest", "labels", "captcharesponse", SPLIT("webaclid", \':\')[5], SPLIT("webaclid", \':\')[4], DATE_FORMAT(CAST(FROM_UNIXTIME("timestamp" / 1000) AS timestamp), \'%Y%m%d%H\'), \'{}\' FROM "tmp"."waf{}";', 
+                        'aggregate': [
+                            'INSERT INTO "centralized"."waf_metrics" ("time", "timestamp", "action", "action_fixed", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "httpsourceid", "httpmethod", "country", "clientip", "host", "uri", "labels", "requests", "account_id", "region", "event_hour", "__execution_name__") SELECT FLOOR("time" / 60000) * 60000, DATE_TRUNC(\'minute\', "timestamp"), "action", "action_fixed", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "httpsourceid", "httpmethod", "country", "clientip", "host", "uri", ARRAY_DISTINCT(FLATTEN(ARRAY_AGG(TRANSFORM(labels, x -> x.name)) FILTER (WHERE labels != ARRAY[]))), CAST(COUNT(1) AS bigint), "account_id", "region", "event_hour", "__execution_name__" FROM "centralized"."waf" WHERE __execution_name__ = \'{}\' GROUP BY FLOOR("time" / 60000) * 60000, DATE_TRUNC(\'minute\', "timestamp"), "action", "action_fixed", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "httpsourceid", "httpmethod", "country", "clientip", "host", "uri", "account_id", "region", "event_hour", "__execution_name__";'
+                        ]
                     }
                 },
                 "notification": {
@@ -6324,9 +7806,8 @@ class TestPipelineResourceBuilder:
                 'Resource': [
                     f'arn:aws:s3:::{self.logging_bucket_name}', 
                     f'arn:aws:s3:::{self.logging_bucket_name}/*',
-                    f'arn:aws:s3:::{self.centralized_bucket_name}/{self.centralized_bucket_prefix}/{self.centralized_database}/waf*',
+                    f'arn:aws:s3:::{self.centralized_bucket_name}/{self.centralized_bucket_prefix}/{self.centralized_database}*',
                     f'arn:aws:s3:::{self.centralized_bucket_name}', 
-                    f'arn:aws:s3:::{self.centralized_bucket_name}/{self.centralized_bucket_prefix}/{self.centralized_database}/waf_metrics*',
                     ], 
                 'Effect': 'Allow',
             }
@@ -6408,6 +7889,7 @@ class TestPipelineResourceBuilder:
             {'Name': 'target_status_code_list', 'Type': 'string'}, 
             {'Name': 'classification', 'Type': 'string'}, 
             {'Name': 'classification_reason', 'Type': 'string'},
+            {'Name': 'conn_trace_id', 'Type': 'string'},
             {'Name': 'enrichment', 'Type': 'struct<geo_iso_code:string,geo_country:string,geo_city:string,geo_location:string,ua_browser:string,ua_browser_version:string,ua_os:string,ua_os_version:string,ua_device:string,ua_category:string>'}
         ]
         assert response['Table']['StorageDescriptor']['Location'] == f's3://{self.centralized_bucket_name}/{self.centralized_bucket_prefix}/{self.centralized_database}/{self.table_name}'
@@ -6415,14 +7897,24 @@ class TestPipelineResourceBuilder:
         assert response['Table']['StorageDescriptor']['OutputFormat'] == 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
         assert response['Table']['StorageDescriptor']['Compressed'] is True
         assert response['Table']['StorageDescriptor']['SerdeInfo']['SerializationLibrary'] == 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
-        # assert response['Table']['StorageDescriptor']['SerdeInfo']['Parameters']['serialization.format'] == '1'
         assert response['Table']['PartitionKeys'] == [
             {'Name': 'event_hour', 'Type': 'string'}, 
             {'Name': 'elb', 'Type': 'string'}, 
             {'Name': '__execution_name__', 'Type': 'string'}
             ]
         assert response['Table']['TableType'] == 'EXTERNAL_TABLE'
-        assert response['Table']['Parameters'] == {'partition_filtering.enabled': 'true', 'classification': 'parquet', 'has_encrypted_data': 'true'}
+        assert response['Table']['Parameters'] == {
+            'partition_filtering.enabled': 'true',
+            'classification': 'parquet', 
+            'has_encrypted_data': 'true', 
+            'parquet.compression': 'ZSTD', 
+            'spark.sql.partitionProvider': 'catalog', 
+            'spark.sql.sources.schema': '{"type": "struct", "fields": [{"name": "time", "type": "long", "nullable": true, "metadata": {}}, {"name": "timestamp", "type": "timestamp", "nullable": true, "metadata": {}}, {"name": "type", "type": "string", "nullable": true, "metadata": {}}, {"name": "client_ip", "type": "string", "nullable": true, "metadata": {}}, {"name": "client_port", "type": "integer", "nullable": true, "metadata": {}}, {"name": "target_ip", "type": "string", "nullable": true, "metadata": {}}, {"name": "target_port", "type": "integer", "nullable": true, "metadata": {}}, {"name": "request_processing_time", "type": "double", "nullable": true, "metadata": {}}, {"name": "target_processing_time", "type": "double", "nullable": true, "metadata": {}}, {"name": "response_processing_time", "type": "double", "nullable": true, "metadata": {}}, {"name": "elb_status_code_group", "type": "string", "nullable": true, "metadata": {}}, {"name": "elb_status_code", "type": "integer", "nullable": true, "metadata": {}}, {"name": "target_status_code", "type": "string", "nullable": true, "metadata": {}}, {"name": "received_bytes", "type": "double", "nullable": true, "metadata": {}}, {"name": "sent_bytes", "type": "double", "nullable": true, "metadata": {}}, {"name": "request_verb", "type": "string", "nullable": true, "metadata": {}}, {"name": "request_url", "type": "string", "nullable": true, "metadata": {}}, {"name": "request_host", "type": "string", "nullable": true, "metadata": {}}, {"name": "request_path", "type": "string", "nullable": true, "metadata": {}}, {"name": "request_proto", "type": "string", "nullable": true, "metadata": {}}, {"name": "user_agent", "type": "string", "nullable": true, "metadata": {}}, {"name": "ssl_cipher", "type": "string", "nullable": true, "metadata": {}}, {"name": "ssl_protocol", "type": "string", "nullable": true, "metadata": {}}, {"name": "target_group_arn", "type": "string", "nullable": true, "metadata": {}}, {"name": "trace_id", "type": "string", "nullable": true, "metadata": {}}, {"name": "domain_name", "type": "string", "nullable": true, "metadata": {}}, {"name": "chosen_cert_arn", "type": "string", "nullable": true, "metadata": {}}, {"name": "matched_rule_priority", "type": "string", "nullable": true, "metadata": {}}, {"name": "request_creation_time", "type": "string", "nullable": true, "metadata": {}}, {"name": "actions_executed", "type": "string", "nullable": true, "metadata": {}}, {"name": "redirect_url", "type": "string", "nullable": true, "metadata": {}}, {"name": "lambda_error_reason", "type": "string", "nullable": true, "metadata": {}}, {"name": "target_port_list", "type": "string", "nullable": true, "metadata": {}}, {"name": "target_status_code_list", "type": "string", "nullable": true, "metadata": {}}, {"name": "classification", "type": "string", "nullable": true, "metadata": {}}, {"name": "classification_reason", "type": "string", "nullable": true, "metadata": {}}, {"name": "conn_trace_id", "type": "string", "nullable": true, "metadata": {}}, {"name": "enrichment", "type": {"type": "struct", "fields": [{"name": "geo_iso_code", "type": "string", "nullable": true, "metadata": {}}, {"name": "geo_country", "type": "string", "nullable": true, "metadata": {}}, {"name": "geo_city", "type": "string", "nullable": true, "metadata": {}}, {"name": "geo_location", "type": "string", "nullable": true, "metadata": {}}, {"name": "ua_browser", "type": "string", "nullable": true, "metadata": {}}, {"name": "ua_browser_version", "type": "string", "nullable": true, "metadata": {}}, {"name": "ua_os", "type": "string", "nullable": true, "metadata": {}}, {"name": "ua_os_version", "type": "string", "nullable": true, "metadata": {}}, {"name": "ua_device", "type": "string", "nullable": true, "metadata": {}}, {"name": "ua_category", "type": "string", "nullable": true, "metadata": {}}]}, "nullable": true, "metadata": {}}, {"name": "event_hour", "type": "string", "nullable": true, "metadata": {}}, {"name": "elb", "type": "string", "nullable": true, "metadata": {}}, {"name": "__execution_name__", "type": "string", "nullable": true, "metadata": {}}]}', 
+            'spark.sql.sources.schema.numPartCols': '3', 
+            'spark.sql.sources.schema.partCol.0': 'event_hour', 
+            'spark.sql.sources.schema.partCol.1': 'elb', 
+            'spark.sql.sources.schema.partCol.2': '__execution_name__'
+            }
         
         response = AWS_GLUE.get_partition_indexes(database=self.centralized_database, table_name=self.table_name)
         assert response['PartitionIndexDescriptorList'] == []
@@ -6444,7 +7936,6 @@ class TestPipelineResourceBuilder:
             {'Name': 'request_host', 'Type': 'string'}, 
             {'Name': 'request_path', 'Type': 'string'}, 
             {'Name': 'ssl_protocol', 'Type': 'string'}, 
-            {'Name': 'user_agent', 'Type': 'string'}, 
             {'Name': 'ua_os', 'Type': 'string'},
             {'Name': 'ua_device', 'Type': 'string'},
             {'Name': 'ua_browser', 'Type': 'string'},
@@ -6454,9 +7945,9 @@ class TestPipelineResourceBuilder:
             {'Name': 'geo_city', 'Type': 'string'},
             {'Name': 'received_bytes', 'Type': 'double'}, 
             {'Name': 'sent_bytes', 'Type': 'double'}, 
-            {'Name': 'request_processing_time', 'Type': 'double'}, 
-            {'Name': 'target_processing_time', 'Type': 'double'}, 
-            {'Name': 'response_processing_time', 'Type': 'double'}, 
+            {'Name': 'avg_request_processing_time', 'Type': 'double'}, 
+            {'Name': 'avg_target_processing_time', 'Type': 'double'}, 
+            {'Name': 'avg_response_processing_time', 'Type': 'double'}, 
             {'Name': 'requests', 'Type': 'bigint'}
             ]
         assert response['Table']['StorageDescriptor']['Location'] == f's3://{self.centralized_bucket_name}/{self.centralized_bucket_prefix}/{self.centralized_database}/{self.table_name}_metrics'
@@ -6464,14 +7955,24 @@ class TestPipelineResourceBuilder:
         assert response['Table']['StorageDescriptor']['OutputFormat'] == 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
         assert response['Table']['StorageDescriptor']['Compressed'] is True
         assert response['Table']['StorageDescriptor']['SerdeInfo']['SerializationLibrary'] == 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
-        # assert response['Table']['StorageDescriptor']['SerdeInfo']['Parameters']['serialization.format'] == '1'
         assert response['Table']['PartitionKeys'] == [
             {'Name': 'event_hour', 'Type': 'string'},
             {'Name': 'elb', 'Type': 'string'}, 
             {'Name': '__execution_name__', 'Type': 'string'}
             ]
         assert response['Table']['TableType'] == 'EXTERNAL_TABLE'
-        assert response['Table']['Parameters'] == {'partition_filtering.enabled': 'true', 'classification': 'parquet', 'has_encrypted_data': 'true'}
+        assert response['Table']['Parameters'] == {
+            'partition_filtering.enabled': 'true', 
+            'classification': 'parquet', 
+            'has_encrypted_data': 'true', 
+            'parquet.compression': 'ZSTD', 
+            'spark.sql.partitionProvider': 'catalog', 
+            'spark.sql.sources.schema': '{"type": "struct", "fields": [{"name": "time", "type": "long", "nullable": true, "metadata": {}}, {"name": "timestamp", "type": "timestamp", "nullable": true, "metadata": {}}, {"name": "type", "type": "string", "nullable": true, "metadata": {}}, {"name": "client_ip", "type": "string", "nullable": true, "metadata": {}}, {"name": "target_group_arn", "type": "string", "nullable": true, "metadata": {}}, {"name": "target_ip", "type": "string", "nullable": true, "metadata": {}}, {"name": "elb_status_code_group", "type": "string", "nullable": true, "metadata": {}}, {"name": "elb_status_code", "type": "integer", "nullable": true, "metadata": {}}, {"name": "request_verb", "type": "string", "nullable": true, "metadata": {}}, {"name": "request_host", "type": "string", "nullable": true, "metadata": {}}, {"name": "request_path", "type": "string", "nullable": true, "metadata": {}}, {"name": "ssl_protocol", "type": "string", "nullable": true, "metadata": {}}, {"name": "ua_os", "type": "string", "nullable": true, "metadata": {}}, {"name": "ua_device", "type": "string", "nullable": true, "metadata": {}}, {"name": "ua_browser", "type": "string", "nullable": true, "metadata": {}}, {"name": "ua_category", "type": "string", "nullable": true, "metadata": {}}, {"name": "geo_iso_code", "type": "string", "nullable": true, "metadata": {}}, {"name": "geo_country", "type": "string", "nullable": true, "metadata": {}}, {"name": "geo_city", "type": "string", "nullable": true, "metadata": {}}, {"name": "received_bytes", "type": "double", "nullable": true, "metadata": {}}, {"name": "sent_bytes", "type": "double", "nullable": true, "metadata": {}}, {"name": "avg_request_processing_time", "type": "double", "nullable": true, "metadata": {}}, {"name": "avg_target_processing_time", "type": "double", "nullable": true, "metadata": {}}, {"name": "avg_response_processing_time", "type": "double", "nullable": true, "metadata": {}}, {"name": "requests", "type": "long", "nullable": true, "metadata": {}}, {"name": "event_hour", "type": "string", "nullable": true, "metadata": {}}, {"name": "elb", "type": "string", "nullable": true, "metadata": {}}, {"name": "__execution_name__", "type": "string", "nullable": true, "metadata": {}}]}', 
+            'spark.sql.sources.schema.numPartCols': '3', 
+            'spark.sql.sources.schema.partCol.0': 'event_hour', 
+            'spark.sql.sources.schema.partCol.1': 'elb', 
+            'spark.sql.sources.schema.partCol.2': '__execution_name__'
+            }
         
         response = AWS_GLUE.get_partition_indexes(database=self.centralized_database, table_name=f'{self.table_name}_metrics')
         assert response['PartitionIndexDescriptorList'] == []
@@ -6486,7 +7987,7 @@ class TestPipelineResourceBuilder:
         assert response['ScheduleExpression'] == self.processor_schedule
         assert response['State'] == 'ENABLED'
         assert response['Target']['Arn'] == self.log_processor_arn
-
+        
         assert json.loads(response['Target']['Input']) == {
             "metadata": {
                 "pipelineId": pipeline_id,
@@ -6500,11 +8001,11 @@ class TestPipelineResourceBuilder:
                 "athena": {
                     "tableName": self.table_name,
                     "statements": {
-                        "create": "CREATE EXTERNAL TABLE IF NOT EXISTS `tmp`.`alb{}` (`type` string, `time` string, `elb` string, `client_ip` string, `client_port` int, `target_ip` string, `target_port` int, `request_processing_time` double, `target_processing_time` double, `response_processing_time` double, `elb_status_code` int, `target_status_code` string, `received_bytes` double, `sent_bytes` double, `request_verb` string, `request_url` string, `request_proto` string, `user_agent` string, `ssl_cipher` string, `ssl_protocol` string, `target_group_arn` string, `trace_id` string, `domain_name` string, `chosen_cert_arn` string, `matched_rule_priority` string, `request_creation_time` string, `actions_executed` string, `redirect_url` string, `lambda_error_reason` string, `target_port_list` string, `target_status_code_list` string, `classification` string, `classification_reason` string, `enrichment` string)  ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.RegexSerDe' WITH SERDEPROPERTIES ('input.regex'='([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*):([0-9]*) ([^ ]*)[:-]([0-9]*) ([-.0-9]*) ([-.0-9]*) ([-.0-9]*) (|[-0-9]*) (-|[-0-9]*) ([-0-9]*) ([-0-9]*) \"([^ ]*) (.*) (- |[^ ]*)\" \"([^\"]*)\" ([A-Z0-9-_]+) ([A-Za-z0-9.-]*) ([^ ]*) \"([^\"]*)\" \"([^\"]*)\" \"([^\"]*)\" ([-.0-9]*) ([^ ]*) \"([^\"]*)\" \"([^\"]*)\" \"([^ ]*)\" \"([^s]+?)\" \"([^s]+)\" \"([^ ]*)\" \"([^ ]*)\" ?(.*)') STORED AS INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat' OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat' LOCATION '{}' ;",
+                        "create": 'CREATE EXTERNAL TABLE IF NOT EXISTS `tmp`.`alb{}` (`type` string, `time` string, `elb` string, `client_ip` string, `client_port` int, `target_ip` string, `target_port` int, `request_processing_time` double, `target_processing_time` double, `response_processing_time` double, `elb_status_code` int, `target_status_code` string, `received_bytes` double, `sent_bytes` double, `request_verb` string, `request_url` string, `request_proto` string, `user_agent` string, `ssl_cipher` string, `ssl_protocol` string, `target_group_arn` string, `trace_id` string, `domain_name` string, `chosen_cert_arn` string, `matched_rule_priority` string, `request_creation_time` string, `actions_executed` string, `redirect_url` string, `lambda_error_reason` string, `target_port_list` string, `target_status_code_list` string, `classification` string, `classification_reason` string, `conn_trace_id` string, `enrichment` string)  ROW FORMAT SERDE \'org.apache.hadoop.hive.serde2.RegexSerDe\' WITH SERDEPROPERTIES (\'input.regex\'=\'^([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*):([0-9]*) ([^ ]*)[:-]([0-9]*) ([-.0-9]*) ([-.0-9]*) ([-.0-9]*) (|[-0-9]*) (-|[-0-9]*) ([-0-9]*) ([-0-9]*) "([^ ]*) (.*) (- |[^ ]*)" "([^"]*)" ([A-Z0-9-_]+) ([A-Za-z0-9.-]*) ([^ ]*) "([^"]*)" "([^"]*)" "([^"]*)" ([-.0-9]*) ([^ ]*) "([^"]*)" "([^"]*)" "([^ ]*)" "([^ ]+?)" "([^ ]+)" "([^ ]*)" "([^ ]*)" ?(TID_[A-Za-z0-9.-]+)? ?(?:[^\\\\u007B]+?)? ?(\\\\u007B.*\\\\u007D)?$\') STORED AS INPUTFORMAT \'org.apache.hadoop.mapred.TextInputFormat\' OUTPUTFORMAT \'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat\' LOCATION \'{}\' ;',
                         "drop": "DROP TABLE IF EXISTS `tmp`.`alb{}`",
-                        "insert": "INSERT INTO \"centralized\".\"alb\" (\"time\", \"timestamp\", \"type\", \"elb\", \"client_ip\", \"client_port\", \"target_ip\", \"target_port\", \"request_processing_time\", \"target_processing_time\", \"response_processing_time\", \"elb_status_code_group\", \"elb_status_code\", \"target_status_code\", \"received_bytes\", \"sent_bytes\", \"request_verb\", \"request_url\", \"request_host\", \"request_path\", \"request_proto\", \"user_agent\", \"ssl_cipher\", \"ssl_protocol\", \"target_group_arn\", \"trace_id\", \"domain_name\", \"chosen_cert_arn\", \"matched_rule_priority\", \"request_creation_time\", \"actions_executed\", \"redirect_url\", \"lambda_error_reason\", \"target_port_list\", \"target_status_code_list\", \"classification\", \"classification_reason\", \"enrichment\", \"event_hour\", \"__execution_name__\") SELECT CAST(to_unixtime(from_iso8601_timestamp(\"time\")) * 1000 AS bigint), from_iso8601_timestamp(\"time\"), \"type\", \"elb\", \"client_ip\", \"client_port\", \"target_ip\", \"target_port\", \"request_processing_time\", \"target_processing_time\", \"response_processing_time\", CASE WHEN elb_status_code BETWEEN 100 AND 199 THEN '1xx' WHEN elb_status_code BETWEEN 200 AND 299 THEN '2xx' WHEN elb_status_code BETWEEN 300 AND 399 THEN '3xx' WHEN elb_status_code BETWEEN 400 AND 499 THEN '4xx' WHEN elb_status_code BETWEEN 500 AND 599 THEN '5xx' ELSE '-' END, \"elb_status_code\", \"target_status_code\", \"received_bytes\", \"sent_bytes\", \"request_verb\", \"request_url\", url_extract_host(\"request_url\"), url_extract_path(\"request_url\"), \"request_proto\", \"user_agent\", \"ssl_cipher\", \"ssl_protocol\", \"target_group_arn\", \"trace_id\", \"domain_name\", \"chosen_cert_arn\", \"matched_rule_priority\", \"request_creation_time\", \"actions_executed\", \"redirect_url\", \"lambda_error_reason\", \"target_port_list\", \"target_status_code_list\", \"classification\", \"classification_reason\", CAST(ROW(json_extract_scalar(\"enrichment\", '$.geo_iso_code'), json_extract_scalar(\"enrichment\", '$.geo_country'), json_extract_scalar(\"enrichment\", '$.geo_city'), json_extract_scalar(\"enrichment\", '$.geo_location'), json_extract_scalar(\"enrichment\", '$.ua_browser'), json_extract_scalar(\"enrichment\", '$.ua_browser_version'), json_extract_scalar(\"enrichment\", '$.ua_os'), json_extract_scalar(\"enrichment\", '$.ua_os_version'), json_extract_scalar(\"enrichment\", '$.ua_device'), json_extract_scalar(\"enrichment\", '$.ua_category')) AS ROW(geo_iso_code varchar, geo_country varchar, geo_city varchar, geo_location varchar, ua_browser varchar, ua_browser_version varchar, ua_os varchar, ua_os_version varchar, ua_device varchar, ua_category varchar)), date_format(from_iso8601_timestamp(\"time\"), '%Y%m%d%H'), '{}' FROM \"tmp\".\"alb{}\";",
+                        "insert": "INSERT INTO \"centralized\".\"alb\" (\"time\", \"timestamp\", \"type\", \"elb\", \"client_ip\", \"client_port\", \"target_ip\", \"target_port\", \"request_processing_time\", \"target_processing_time\", \"response_processing_time\", \"elb_status_code_group\", \"elb_status_code\", \"target_status_code\", \"received_bytes\", \"sent_bytes\", \"request_verb\", \"request_url\", \"request_host\", \"request_path\", \"request_proto\", \"user_agent\", \"ssl_cipher\", \"ssl_protocol\", \"target_group_arn\", \"trace_id\", \"domain_name\", \"chosen_cert_arn\", \"matched_rule_priority\", \"request_creation_time\", \"actions_executed\", \"redirect_url\", \"lambda_error_reason\", \"target_port_list\", \"target_status_code_list\", \"classification\", \"classification_reason\", \"conn_trace_id\", \"enrichment\", \"event_hour\", \"__execution_name__\") SELECT CAST(to_unixtime(from_iso8601_timestamp(\"time\")) * 1000 AS bigint), from_iso8601_timestamp(\"time\"), \"type\", \"elb\", \"client_ip\", \"client_port\", \"target_ip\", \"target_port\", \"request_processing_time\", \"target_processing_time\", \"response_processing_time\", CASE WHEN elb_status_code BETWEEN 100 AND 199 THEN '1xx' WHEN elb_status_code BETWEEN 200 AND 299 THEN '2xx' WHEN elb_status_code BETWEEN 300 AND 399 THEN '3xx' WHEN elb_status_code BETWEEN 400 AND 499 THEN '4xx' WHEN elb_status_code BETWEEN 500 AND 599 THEN '5xx' ELSE '-' END, \"elb_status_code\", \"target_status_code\", \"received_bytes\", \"sent_bytes\", \"request_verb\", \"request_url\", url_extract_host(\"request_url\"), url_extract_path(\"request_url\"), \"request_proto\", \"user_agent\", \"ssl_cipher\", \"ssl_protocol\", \"target_group_arn\", \"trace_id\", \"domain_name\", \"chosen_cert_arn\", \"matched_rule_priority\", \"request_creation_time\", \"actions_executed\", \"redirect_url\", \"lambda_error_reason\", \"target_port_list\", \"target_status_code_list\", \"classification\", \"classification_reason\", \"conn_trace_id\", CAST(ROW(json_extract_scalar(\"enrichment\", '$.geo_iso_code'), json_extract_scalar(\"enrichment\", '$.geo_country'), json_extract_scalar(\"enrichment\", '$.geo_city'), json_extract_scalar(\"enrichment\", '$.geo_location'), json_extract_scalar(\"enrichment\", '$.ua_browser'), json_extract_scalar(\"enrichment\", '$.ua_browser_version'), json_extract_scalar(\"enrichment\", '$.ua_os'), json_extract_scalar(\"enrichment\", '$.ua_os_version'), json_extract_scalar(\"enrichment\", '$.ua_device'), json_extract_scalar(\"enrichment\", '$.ua_category')) AS ROW(geo_iso_code varchar, geo_country varchar, geo_city varchar, geo_location varchar, ua_browser varchar, ua_browser_version varchar, ua_os varchar, ua_os_version varchar, ua_device varchar, ua_category varchar)), date_format(from_iso8601_timestamp(\"time\"), '%Y%m%d%H'), '{}' FROM \"tmp\".\"alb{}\";",
                         "aggregate": [
-                            "INSERT INTO \"centralized\".\"alb_metrics\" (\"time\", \"timestamp\", \"type\", \"elb\", \"client_ip\", \"target_group_arn\", \"target_ip\", \"elb_status_code_group\", \"elb_status_code\", \"request_verb\", \"request_host\", \"request_path\", \"ssl_protocol\", \"user_agent\", \"ua_os\", \"ua_device\", \"ua_browser\", \"ua_category\", \"geo_iso_code\", \"geo_country\", \"geo_city\", \"received_bytes\", \"sent_bytes\", \"request_processing_time\", \"target_processing_time\", \"response_processing_time\", \"requests\", \"event_hour\", \"__execution_name__\") SELECT FLOOR(\"time\" / 60000) * 60000, DATE_TRUNC('minute', \"timestamp\"), \"type\", \"elb\", \"client_ip\", \"target_group_arn\", \"target_ip\", \"elb_status_code_group\", \"elb_status_code\", \"request_verb\", url_extract_host(\"request_url\"), url_extract_path(\"request_url\"), \"ssl_protocol\", \"user_agent\", \"enrichment\".\"ua_os\", \"enrichment\".\"ua_device\", \"enrichment\".\"ua_browser\", \"enrichment\".\"ua_category\", \"enrichment\".\"geo_iso_code\", \"enrichment\".\"geo_country\", \"enrichment\".\"geo_city\", CAST(SUM(\"received_bytes\") AS DOUBLE), CAST(SUM(\"sent_bytes\") AS DOUBLE), CAST(SUM(\"request_processing_time\") AS DOUBLE), CAST(SUM(\"target_processing_time\") AS DOUBLE), CAST(SUM(\"response_processing_time\") AS DOUBLE), CAST(COUNT(1) AS bigint), \"event_hour\", \"__execution_name__\" FROM \"centralized\".\"alb\" WHERE __execution_name__ = '{}' GROUP BY FLOOR(\"time\" / 60000) * 60000, DATE_TRUNC('minute', \"timestamp\"), \"type\", \"elb\", \"client_ip\", \"target_group_arn\", \"target_ip\", \"elb_status_code_group\", \"elb_status_code\", \"request_verb\", url_extract_host(\"request_url\"), url_extract_path(\"request_url\"), \"ssl_protocol\", \"user_agent\", \"enrichment\".\"ua_os\", \"enrichment\".\"ua_device\", \"enrichment\".\"ua_browser\", \"enrichment\".\"ua_category\", \"enrichment\".\"geo_iso_code\", \"enrichment\".\"geo_country\", \"enrichment\".\"geo_city\", \"event_hour\", \"__execution_name__\";"
+                            "INSERT INTO \"centralized\".\"alb_metrics\" (\"time\", \"timestamp\", \"type\", \"elb\", \"client_ip\", \"target_group_arn\", \"target_ip\", \"elb_status_code_group\", \"elb_status_code\", \"request_verb\", \"request_host\", \"request_path\", \"ssl_protocol\", \"ua_os\", \"ua_device\", \"ua_browser\", \"ua_category\", \"geo_iso_code\", \"geo_country\", \"geo_city\", \"received_bytes\", \"sent_bytes\", \"avg_request_processing_time\", \"avg_target_processing_time\", \"avg_response_processing_time\", \"requests\", \"event_hour\", \"__execution_name__\") SELECT FLOOR(\"time\" / 60000) * 60000, DATE_TRUNC('minute', \"timestamp\"), \"type\", \"elb\", \"client_ip\", \"target_group_arn\", \"target_ip\", \"elb_status_code_group\", \"elb_status_code\", \"request_verb\", url_extract_host(\"request_url\"), url_extract_path(\"request_url\"), \"ssl_protocol\", \"enrichment\".\"ua_os\", \"enrichment\".\"ua_device\", \"enrichment\".\"ua_browser\", \"enrichment\".\"ua_category\", \"enrichment\".\"geo_iso_code\", \"enrichment\".\"geo_country\", \"enrichment\".\"geo_city\", CAST(SUM(\"received_bytes\") AS DOUBLE), CAST(SUM(\"sent_bytes\") AS DOUBLE), CAST(AVG(\"request_processing_time\") FILTER(WHERE \"request_processing_time\" >= 0) AS DOUBLE), CAST(AVG(\"target_processing_time\") FILTER(WHERE \"target_processing_time\" >= 0) AS DOUBLE), CAST(AVG(\"response_processing_time\") FILTER(WHERE \"response_processing_time\" >= 0) AS DOUBLE), CAST(COUNT(1) AS bigint), \"event_hour\", \"__execution_name__\" FROM \"centralized\".\"alb\" WHERE __execution_name__ = '{}' GROUP BY FLOOR(\"time\" / 60000) * 60000, DATE_TRUNC('minute', \"timestamp\"), \"type\", \"elb\", \"client_ip\", \"target_group_arn\", \"target_ip\", \"elb_status_code_group\", \"elb_status_code\", \"request_verb\", url_extract_host(\"request_url\"), url_extract_path(\"request_url\"), \"ssl_protocol\", \"enrichment\".\"ua_os\", \"enrichment\".\"ua_device\", \"enrichment\".\"ua_browser\", \"enrichment\".\"ua_category\", \"enrichment\".\"geo_iso_code\", \"enrichment\".\"geo_country\", \"enrichment\".\"geo_city\", \"event_hour\", \"__execution_name__\";"
                         ]
                     }
                 },
@@ -6703,11 +8204,8 @@ class TestPipelineResourceBuilder:
                 'Resource': [
                     f'arn:aws:s3:::{self.logging_bucket_name}', 
                     f'arn:aws:s3:::{self.logging_bucket_name}/*',
-                    f'arn:aws:s3:::{self.centralized_bucket_name}/{self.centralized_bucket_prefix}/{self.centralized_database}/waf*',
+                    f'arn:aws:s3:::{self.centralized_bucket_name}/{self.centralized_bucket_prefix}/{self.centralized_database}*',
                     f'arn:aws:s3:::{self.centralized_bucket_name}',
-                    f'arn:aws:s3:::{self.centralized_bucket_name}/{self.centralized_bucket_prefix}/{self.centralized_database}/waf_metrics*',
-                    f'arn:aws:s3:::{self.centralized_bucket_name}/{self.centralized_bucket_prefix}/{self.centralized_database}/{self.table_name}*',
-                    f'arn:aws:s3:::{self.centralized_bucket_name}/{self.centralized_bucket_prefix}/{self.centralized_database}/{self.table_name}_metrics*',
                     ]
                 }
             ]
@@ -6802,7 +8300,18 @@ class TestPipelineResourceBuilder:
             {'Name': '__execution_name__', 'Type': 'string'}
             ]
         assert response['Table']['TableType'] == 'EXTERNAL_TABLE'
-        assert response['Table']['Parameters'] == {'partition_filtering.enabled': 'true', 'classification': 'parquet', 'has_encrypted_data': 'true'}
+        assert response['Table']['Parameters'] == {
+            'partition_filtering.enabled': 'true', 
+            'classification': 'parquet', 
+            'has_encrypted_data': 'true',
+            'parquet.compression': 'ZSTD', 
+            'spark.sql.partitionProvider': 'catalog',
+            'spark.sql.sources.schema': '{"type": "struct", "fields": [{"name": "time", "type": "long", "nullable": true, "metadata": {}}, {"name": "timestamp", "type": "timestamp", "nullable": true, "metadata": {}}, {"name": "x-edge-location", "type": "string", "nullable": true, "metadata": {}}, {"name": "sc-bytes", "type": "long", "nullable": true, "metadata": {}}, {"name": "c-ip", "type": "string", "nullable": true, "metadata": {}}, {"name": "cs-method", "type": "string", "nullable": true, "metadata": {}}, {"name": "cs-uri-stem", "type": "string", "nullable": true, "metadata": {}}, {"name": "sc-status-group", "type": "string", "nullable": true, "metadata": {}}, {"name": "sc-status", "type": "integer", "nullable": true, "metadata": {}}, {"name": "cs-referer", "type": "string", "nullable": true, "metadata": {}}, {"name": "cs-user-agent", "type": "string", "nullable": true, "metadata": {}}, {"name": "cs-uri-query", "type": "string", "nullable": true, "metadata": {}}, {"name": "cs-cookie", "type": "string", "nullable": true, "metadata": {}}, {"name": "x-edge-result-type", "type": "string", "nullable": true, "metadata": {}}, {"name": "x-edge-request-id", "type": "string", "nullable": true, "metadata": {}}, {"name": "x-host-header", "type": "string", "nullable": true, "metadata": {}}, {"name": "cs-protocol", "type": "string", "nullable": true, "metadata": {}}, {"name": "cs-bytes", "type": "long", "nullable": true, "metadata": {}}, {"name": "time-taken-in-second", "type": "integer", "nullable": true, "metadata": {}}, {"name": "time-taken", "type": "double", "nullable": true, "metadata": {}}, {"name": "x-forwarded-for", "type": "string", "nullable": true, "metadata": {}}, {"name": "ssl-protocol", "type": "string", "nullable": true, "metadata": {}}, {"name": "ssl-cipher", "type": "string", "nullable": true, "metadata": {}}, {"name": "x-edge-response-result-type", "type": "string", "nullable": true, "metadata": {}}, {"name": "cs-protocol-version", "type": "string", "nullable": true, "metadata": {}}, {"name": "fle-status", "type": "string", "nullable": true, "metadata": {}}, {"name": "fle-encrypted-fields", "type": "integer", "nullable": true, "metadata": {}}, {"name": "c-port", "type": "integer", "nullable": true, "metadata": {}}, {"name": "time-to-first-byte", "type": "double", "nullable": true, "metadata": {}}, {"name": "x-edge-detailed-result-type", "type": "string", "nullable": true, "metadata": {}}, {"name": "sc-content-type", "type": "string", "nullable": true, "metadata": {}}, {"name": "sc-content-len", "type": "long", "nullable": true, "metadata": {}}, {"name": "sc-range-start", "type": "long", "nullable": true, "metadata": {}}, {"name": "sc-range-end", "type": "long", "nullable": true, "metadata": {}}, {"name": "hit-cache", "type": "boolean", "nullable": true, "metadata": {}}, {"name": "back-to-origin", "type": "boolean", "nullable": true, "metadata": {}}, {"name": "enrichment", "type": {"type": "struct", "fields": [{"name": "geo_iso_code", "type": "string", "nullable": true, "metadata": {}}, {"name": "geo_country", "type": "string", "nullable": true, "metadata": {}}, {"name": "geo_city", "type": "string", "nullable": true, "metadata": {}}, {"name": "geo_location", "type": "string", "nullable": true, "metadata": {}}, {"name": "ua_browser", "type": "string", "nullable": true, "metadata": {}}, {"name": "ua_browser_version", "type": "string", "nullable": true, "metadata": {}}, {"name": "ua_os", "type": "string", "nullable": true, "metadata": {}}, {"name": "ua_os_version", "type": "string", "nullable": true, "metadata": {}}, {"name": "ua_device", "type": "string", "nullable": true, "metadata": {}}, {"name": "ua_category", "type": "string", "nullable": true, "metadata": {}}]}, "nullable": true, "metadata": {}}, {"name": "event_hour", "type": "string", "nullable": true, "metadata": {}}, {"name": "cs-host", "type": "string", "nullable": true, "metadata": {}}, {"name": "__execution_name__", "type": "string", "nullable": true, "metadata": {}}]}', 
+            'spark.sql.sources.schema.numPartCols': '3', 
+            'spark.sql.sources.schema.partCol.0': 'event_hour', 
+            'spark.sql.sources.schema.partCol.1': 'cs-host', 
+            'spark.sql.sources.schema.partCol.2': '__execution_name__'
+            }
         
         response = AWS_GLUE.get_partition_indexes(database=self.centralized_database, table_name=self.table_name)
         assert response['PartitionIndexDescriptorList'] == []
@@ -6816,6 +8325,7 @@ class TestPipelineResourceBuilder:
             {'Name': 'timestamp', 'Type': 'timestamp'}, 
             {'Name': 'c-ip', 'Type': 'string'}, 
             {'Name': 'cs-method', 'Type': 'string'}, 
+            {'Name': 'x-host-header', 'Type': 'string'}, 
             {'Name': 'cs-protocol-version', 'Type': 'string'}, 
             {'Name': 'cs-uri-stem', 'Type': 'string'}, 
             {'Name': 'sc-status-group', 'Type': 'string'}, 
@@ -6854,7 +8364,18 @@ class TestPipelineResourceBuilder:
             {'Name': '__execution_name__', 'Type': 'string'}
             ]
         assert response['Table']['TableType'] == 'EXTERNAL_TABLE'
-        assert response['Table']['Parameters'] == {'partition_filtering.enabled': 'true', 'classification': 'parquet', 'has_encrypted_data': 'true'}
+        assert response['Table']['Parameters'] == {
+            'partition_filtering.enabled': 'true', 
+            'classification': 'parquet', 
+            'has_encrypted_data': 'true', 
+            'parquet.compression': 'ZSTD', 
+            'spark.sql.partitionProvider': 'catalog', 
+            'spark.sql.sources.schema': '{"type": "struct", "fields": [{"name": "time", "type": "long", "nullable": true, "metadata": {}}, {"name": "timestamp", "type": "timestamp", "nullable": true, "metadata": {}}, {"name": "c-ip", "type": "string", "nullable": true, "metadata": {}}, {"name": "cs-method", "type": "string", "nullable": true, "metadata": {}}, {"name": "x-host-header", "type": "string", "nullable": true, "metadata": {}}, {"name": "cs-protocol-version", "type": "string", "nullable": true, "metadata": {}}, {"name": "cs-uri-stem", "type": "string", "nullable": true, "metadata": {}}, {"name": "sc-status-group", "type": "string", "nullable": true, "metadata": {}}, {"name": "sc-status", "type": "integer", "nullable": true, "metadata": {}}, {"name": "cs-protocol", "type": "string", "nullable": true, "metadata": {}}, {"name": "time-taken-in-second", "type": "integer", "nullable": true, "metadata": {}}, {"name": "ssl-protocol", "type": "string", "nullable": true, "metadata": {}}, {"name": "x-edge-location", "type": "string", "nullable": true, "metadata": {}}, {"name": "x-edge-result-type", "type": "string", "nullable": true, "metadata": {}}, {"name": "x-edge-response-result-type", "type": "string", "nullable": true, "metadata": {}}, {"name": "x-edge-detailed-result-type", "type": "string", "nullable": true, "metadata": {}}, {"name": "hit-cache", "type": "boolean", "nullable": true, "metadata": {}}, {"name": "back-to-origin", "type": "boolean", "nullable": true, "metadata": {}}, {"name": "ua_os", "type": "string", "nullable": true, "metadata": {}}, {"name": "ua_device", "type": "string", "nullable": true, "metadata": {}}, {"name": "ua_browser", "type": "string", "nullable": true, "metadata": {}}, {"name": "ua_category", "type": "string", "nullable": true, "metadata": {}}, {"name": "geo_iso_code", "type": "string", "nullable": true, "metadata": {}}, {"name": "geo_country", "type": "string", "nullable": true, "metadata": {}}, {"name": "geo_city", "type": "string", "nullable": true, "metadata": {}}, {"name": "time-taken", "type": "double", "nullable": true, "metadata": {}}, {"name": "time-to-first-byte", "type": "double", "nullable": true, "metadata": {}}, {"name": "cs-bytes", "type": "double", "nullable": true, "metadata": {}}, {"name": "sc-bytes", "type": "double", "nullable": true, "metadata": {}}, {"name": "requests", "type": "long", "nullable": true, "metadata": {}}, {"name": "event_hour", "type": "string", "nullable": true, "metadata": {}}, {"name": "cs-host", "type": "string", "nullable": true, "metadata": {}}, {"name": "__execution_name__", "type": "string", "nullable": true, "metadata": {}}]}',
+            'spark.sql.sources.schema.numPartCols': '3', 
+            'spark.sql.sources.schema.partCol.0': 'event_hour', 
+            'spark.sql.sources.schema.partCol.1': 'cs-host', 
+            'spark.sql.sources.schema.partCol.2': '__execution_name__'
+            }
         
         response = AWS_GLUE.get_partition_indexes(database=self.centralized_database, table_name=f'{self.table_name}_metrics')
         assert response['PartitionIndexDescriptorList'] == []
@@ -6869,7 +8390,6 @@ class TestPipelineResourceBuilder:
         assert response['ScheduleExpression'] == self.processor_schedule
         assert response['State'] == 'ENABLED'
         assert response['Target']['Arn'] == self.log_processor_arn
-        
         assert json.loads(response['Target']['Input']) == {
             "metadata": {
                 "pipelineId": pipeline_id,
@@ -6887,9 +8407,9 @@ class TestPipelineResourceBuilder:
                         "drop": "DROP TABLE IF EXISTS `tmp`.`cloudfront{}`",
                         "insert": "INSERT INTO \"centralized\".\"cloudfront\" (\"time\", \"timestamp\", \"x-edge-location\", \"sc-bytes\", \"c-ip\", \"cs-method\", \"cs-host\", \"cs-uri-stem\", \"sc-status-group\", \"sc-status\", \"cs-referer\", \"cs-user-agent\", \"cs-uri-query\", \"cs-cookie\", \"x-edge-result-type\", \"x-edge-request-id\", \"x-host-header\", \"cs-protocol\", \"cs-bytes\", \"time-taken-in-second\", \"time-taken\", \"x-forwarded-for\", \"ssl-protocol\", \"ssl-cipher\", \"x-edge-response-result-type\", \"cs-protocol-version\", \"fle-status\", \"fle-encrypted-fields\", \"c-port\", \"time-to-first-byte\", \"x-edge-detailed-result-type\", \"sc-content-type\", \"sc-content-len\", \"sc-range-start\", \"sc-range-end\", \"hit-cache\", \"back-to-origin\", \"enrichment\", \"event_hour\", \"__execution_name__\") SELECT CAST(to_unixtime(from_iso8601_timestamp(concat(CAST(date AS varchar), 'T', \"time\", 'Z'))) * 1000 AS bigint), from_iso8601_timestamp(concat(CAST(\"date\" AS varchar), 'T', \"time\", 'Z')), \"x-edge-location\", \"sc-bytes\", \"c-ip\", \"cs-method\", \"cs-host\", \"cs-uri-stem\", CASE WHEN \"sc-status\" BETWEEN 100 AND 199 THEN '1xx' WHEN \"sc-status\" BETWEEN 200 AND 299 THEN '2xx' WHEN \"sc-status\" BETWEEN 300 AND 399 THEN '3xx' WHEN \"sc-status\" BETWEEN 400 AND 499 THEN '4xx' WHEN \"sc-status\" BETWEEN 500 AND 599 THEN '5xx' ELSE '-' END, \"sc-status\", \"cs-referer\", url_decode(\"cs-user-agent\"), \"cs-uri-query\", \"cs-cookie\", \"x-edge-result-type\", \"x-edge-request-id\", \"x-host-header\", \"cs-protocol\", \"cs-bytes\", cast(floor(\"time-taken\") as integer), \"time-taken\", \"x-forwarded-for\", \"ssl-protocol\", \"ssl-cipher\", \"x-edge-response-result-type\", \"cs-protocol-version\", \"fle-status\", \"fle-encrypted-fields\", \"c-port\", \"time-to-first-byte\", \"x-edge-detailed-result-type\", \"sc-content-type\", \"sc-content-len\", \"sc-range-start\", \"sc-range-end\", CASE WHEN \"x-edge-result-type\" like '%Hit' THEN true ELSE false END, CASE WHEN (\"x-edge-detailed-result-type\" = 'Miss' OR (\"x-edge-detailed-result-type\" like '%Origin%' AND \"x-edge-detailed-result-type\" <> 'OriginShieldHit')) THEN true ELSE false END, CAST(ROW(json_extract_scalar(\"enrichment\", '$.geo_iso_code'), json_extract_scalar(\"enrichment\", '$.geo_country'), json_extract_scalar(\"enrichment\", '$.geo_city'), json_extract_scalar(\"enrichment\", '$.geo_location'), json_extract_scalar(\"enrichment\", '$.ua_browser'), json_extract_scalar(\"enrichment\", '$.ua_browser_version'), json_extract_scalar(\"enrichment\", '$.ua_os'), json_extract_scalar(\"enrichment\", '$.ua_os_version'), json_extract_scalar(\"enrichment\", '$.ua_device'), json_extract_scalar(\"enrichment\", '$.ua_category')) AS ROW(geo_iso_code varchar, geo_country varchar, geo_city varchar, geo_location varchar, ua_browser varchar, ua_browser_version varchar, ua_os varchar, ua_os_version varchar, ua_device varchar, ua_category varchar)), date_format(from_iso8601_timestamp(concat(CAST(\"date\" AS varchar), 'T', \"time\", 'Z')), '%Y%m%d%H'), '{}' FROM \"tmp\".\"cloudfront{}\";",
                         "aggregate": [
-                            "INSERT INTO \"centralized\".\"cloudfront_metrics\" (\"time\", \"timestamp\", \"c-ip\", \"cs-method\", \"cs-host\", \"cs-protocol-version\", \"cs-uri-stem\", \"sc-status-group\", \"sc-status\", \"cs-protocol\", \"time-taken-in-second\", \"ssl-protocol\", \"x-edge-location\", \"x-edge-result-type\", \"x-edge-response-result-type\", \"x-edge-detailed-result-type\", \"hit-cache\", \"back-to-origin\", \"ua_os\", \"ua_device\", \"ua_browser\", \"ua_category\", \"geo_iso_code\", \"geo_country\", \"geo_city\", \"time-taken\", \"time-to-first-byte\", \"cs-bytes\", \"sc-bytes\", \"requests\", \"event_hour\", \"__execution_name__\") SELECT FLOOR(\"time\" / 60000) * 60000, DATE_TRUNC('minute', \"timestamp\"), \"c-ip\", \"cs-method\", \"cs-host\", \"cs-protocol-version\", \"cs-uri-stem\", \"sc-status-group\", \"sc-status\", \"cs-protocol\", \"time-taken-in-second\", \"ssl-protocol\", \"x-edge-location\", \"x-edge-result-type\", \"x-edge-response-result-type\", \"x-edge-detailed-result-type\", \"hit-cache\", \"back-to-origin\", \"enrichment\".\"ua_os\", \"enrichment\".\"ua_device\", \"enrichment\".\"ua_browser\", \"enrichment\".\"ua_category\", \"enrichment\".\"geo_iso_code\", \"enrichment\".\"geo_country\", \"enrichment\".\"geo_city\", cast(sum(\"time-taken\") as double), cast(sum(\"time-to-first-byte\") as double), cast(sum(\"cs-bytes\") as double), cast(sum(\"sc-bytes\") as double), cast(count(1) as bigint), \"event_hour\", \"__execution_name__\" FROM \"centralized\".\"cloudfront\" WHERE __execution_name__ = '{}' GROUP BY FLOOR(\"time\" / 60000) * 60000, DATE_TRUNC('minute', \"timestamp\"), \"c-ip\", \"cs-method\", \"cs-host\", \"cs-protocol-version\", \"cs-uri-stem\", \"sc-status-group\", \"sc-status\", \"cs-protocol\", \"time-taken-in-second\", \"ssl-protocol\", \"x-edge-location\", \"x-edge-result-type\", \"x-edge-response-result-type\", \"x-edge-detailed-result-type\", \"hit-cache\", \"back-to-origin\", \"enrichment\".\"ua_os\", \"enrichment\".\"ua_device\", \"enrichment\".\"ua_browser\", \"enrichment\".\"ua_category\", \"enrichment\".\"geo_iso_code\", \"enrichment\".\"geo_country\", \"enrichment\".\"geo_city\", \"event_hour\", \"__execution_name__\";"
+                            "INSERT INTO \"centralized\".\"cloudfront_metrics\" (\"time\", \"timestamp\", \"c-ip\", \"cs-method\", \"cs-host\", \"x-host-header\", \"cs-protocol-version\", \"cs-uri-stem\", \"sc-status-group\", \"sc-status\", \"cs-protocol\", \"time-taken-in-second\", \"ssl-protocol\", \"x-edge-location\", \"x-edge-result-type\", \"x-edge-response-result-type\", \"x-edge-detailed-result-type\", \"hit-cache\", \"back-to-origin\", \"ua_os\", \"ua_device\", \"ua_browser\", \"ua_category\", \"geo_iso_code\", \"geo_country\", \"geo_city\", \"time-taken\", \"time-to-first-byte\", \"cs-bytes\", \"sc-bytes\", \"requests\", \"event_hour\", \"__execution_name__\") SELECT FLOOR(\"time\" / 60000) * 60000, DATE_TRUNC('minute', \"timestamp\"), \"c-ip\", \"cs-method\", \"cs-host\", \"x-host-header\", \"cs-protocol-version\", \"cs-uri-stem\", \"sc-status-group\", \"sc-status\", \"cs-protocol\", \"time-taken-in-second\", \"ssl-protocol\", \"x-edge-location\", \"x-edge-result-type\", \"x-edge-response-result-type\", \"x-edge-detailed-result-type\", \"hit-cache\", \"back-to-origin\", \"enrichment\".\"ua_os\", \"enrichment\".\"ua_device\", \"enrichment\".\"ua_browser\", \"enrichment\".\"ua_category\", \"enrichment\".\"geo_iso_code\", \"enrichment\".\"geo_country\", \"enrichment\".\"geo_city\", cast(sum(\"time-taken\") as double), cast(sum(\"time-to-first-byte\") as double), cast(sum(\"cs-bytes\") as double), cast(sum(\"sc-bytes\") as double), cast(count(1) as bigint), \"event_hour\", \"__execution_name__\" FROM \"centralized\".\"cloudfront\" WHERE __execution_name__ = '{}' GROUP BY FLOOR(\"time\" / 60000) * 60000, DATE_TRUNC('minute', \"timestamp\"), \"c-ip\", \"cs-method\", \"cs-host\", \"x-host-header\", \"cs-protocol-version\", \"cs-uri-stem\", \"sc-status-group\", \"sc-status\", \"cs-protocol\", \"time-taken-in-second\", \"ssl-protocol\", \"x-edge-location\", \"x-edge-result-type\", \"x-edge-response-result-type\", \"x-edge-detailed-result-type\", \"hit-cache\", \"back-to-origin\", \"enrichment\".\"ua_os\", \"enrichment\".\"ua_device\", \"enrichment\".\"ua_browser\", \"enrichment\".\"ua_category\", \"enrichment\".\"geo_iso_code\", \"enrichment\".\"geo_country\", \"enrichment\".\"geo_city\", \"event_hour\", \"__execution_name__\";"
                         ]
-                    }
+                    },
                 },
                 "notification": {
                     "service": self.notification_service,
@@ -7085,11 +8605,8 @@ class TestPipelineResourceBuilder:
                 'Resource': [
                     f'arn:aws:s3:::{self.logging_bucket_name}', 
                     f'arn:aws:s3:::{self.logging_bucket_name}/*',
-                    f'arn:aws:s3:::{self.centralized_bucket_name}/{self.centralized_bucket_prefix}/{self.centralized_database}/waf*',
+                    f'arn:aws:s3:::{self.centralized_bucket_name}/{self.centralized_bucket_prefix}/{self.centralized_database}*',
                     f'arn:aws:s3:::{self.centralized_bucket_name}',
-                    f'arn:aws:s3:::{self.centralized_bucket_name}/{self.centralized_bucket_prefix}/{self.centralized_database}/waf_metrics*',
-                    f'arn:aws:s3:::{self.centralized_bucket_name}/{self.centralized_bucket_prefix}/{self.centralized_database}/{self.table_name}*',
-                    f'arn:aws:s3:::{self.centralized_bucket_name}/{self.centralized_bucket_prefix}/{self.centralized_database}/{self.table_name}_metrics*',
                     ], 
                 'Sid': 'S3AccessPolicyForDestination'
                 }
@@ -7163,6 +8680,9 @@ class TestPipelineResourceBuilder:
         # test delete a pipelie have ingestion
         pipeline_id = str(uuid.uuid4())
         pipeline_info = copy.deepcopy(self.pipeline_info)
+        table_name = f'do-not-exist-table-name-{pipeline_id}'
+        pipeline_info['data']['destination']['table']['name'] = table_name
+        pipeline_info['data']['destination']['database']['name'] = self.unique_database
         ingestion_id = str(uuid.uuid4())
         ingestion_info = copy.deepcopy(self.ingestion_info)
         ingestion_info['pipelineId'] = pipeline_id
@@ -7182,28 +8702,28 @@ class TestPipelineResourceBuilder:
         assert AWS_DDB_META.get(meta_name=pipeline_id) is None
         assert AWS_DDB_META.get(meta_name=ingestion_id) is None
         
-        response = AWS_GLUE.get_table(database=self.centralized_database, name=self.table_name)
+        response = AWS_GLUE.get_table(database=self.centralized_database, name=table_name)
         assert response == {}
 
-        response = AWS_GLUE.get_table(database=self.centralized_database, name=f'{self.table_name}_metrics')
+        response = AWS_GLUE.get_table(database=self.centralized_database, name=f'{table_name}_metrics')
         assert response == {}
         
         response = AWS_SCHEDULER.get_schedule_group(name=pipeline_id)
         assert response == {}
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogProcessor-{self.table_name}', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogProcessor-{pipeline_id}', EventBusName='default')
         assert response['Rules'] == []
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMerger-{self.table_name}', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMerger-{pipeline_id}', EventBusName='default')
         assert response['Rules'] == []
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMergerForMetrics-{self.table_name}', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMergerForMetrics-{pipeline_id}', EventBusName='default')
         assert response['Rules'] == []
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchive-{self.table_name}', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchive-{pipeline_id}', EventBusName='default')
         assert response['Rules'] == []
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchiveForMetrics-{self.table_name}', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchiveForMetrics-{pipeline_id}', EventBusName='default')
         assert response['Rules'] == []
         
         response = AWS_IAM.get_policy_document(arn=self.s3_public_access_policy_arn)
@@ -7263,6 +8783,8 @@ class TestPipelineResourceBuilder:
         # test import_dashboards is True
         pipeline_id = str(uuid.uuid4())
         pipeline_info = copy.deepcopy(self.pipeline_info)
+        table_name = f'do-not-exist-table-name-{pipeline_id}'
+        pipeline_info['data']['destination']['table']['name'] = table_name
         pipeline_info['data']['grafana']['importDashboards'] = 'true'
         pipeline_info['data']['grafana']['url'] = httpserver.url_for('')
         pipeline_info['data']['grafana']['token'] = 'glsa_123456789012'
@@ -7291,8 +8813,9 @@ class TestPipelineResourceBuilder:
         
         pipeline_id = str(uuid.uuid4())
         pipeline_info = copy.deepcopy(self.pipeline_info)
+        table_name = f'do-not-exist-table-name-{pipeline_id}'
         pipeline_info['data']['source']['type'] = 'waf'
-        pipeline_info['data']['destination']['table']['name'] = self.table_name
+        pipeline_info['data']['destination']['table']['name'] = table_name
         pipeline_info['data']['notification']['service'] = self.notification_service
         pipeline_info['data']['notification']['recipients'] = self.recipients
         pipeline_info['data']['scheduler']['service'] = 'events'
@@ -7312,28 +8835,28 @@ class TestPipelineResourceBuilder:
         pipeline_resource_builder.create_pipeline()
         pipeline_resource_builder.delete_pipeline()
         
-        response = AWS_GLUE.get_table(database=self.centralized_database, name=self.table_name)
+        response = AWS_GLUE.get_table(database=self.centralized_database, name=table_name)
         assert response == {}
 
-        response = AWS_GLUE.get_table(database=self.centralized_database, name=f'{self.table_name}_metrics')
+        response = AWS_GLUE.get_table(database=self.centralized_database, name=f'{table_name}_metrics')
         assert response == {}
         
         response = AWS_SCHEDULER.get_schedule_group(name=pipeline_id)
         assert response == {}
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogProcessor-{self.pipeline_parameters.pipeline_info.destination.table.name}', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogProcessor-{pipeline_id}', EventBusName='default')
         assert response['Rules'] == []
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMerger-{self.pipeline_parameters.pipeline_info.destination.table.name}', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMerger-{pipeline_id}', EventBusName='default')
         assert response['Rules'] == []
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMergerForMetrics-{self.pipeline_parameters.pipeline_info.destination.table.name}', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMergerForMetrics-{pipeline_id}', EventBusName='default')
         assert response['Rules'] == []
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchive-{self.pipeline_parameters.pipeline_info.destination.table.name}', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchive-{pipeline_id}', EventBusName='default')
         assert response['Rules'] == []
         
-        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchiveForMetrics-{self.pipeline_parameters.pipeline_info.destination.table.name}', EventBusName='default')
+        response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchiveForMetrics-{pipeline_id}', EventBusName='default')
         assert response['Rules'] == []
         
         response = AWS_IAM.get_policy_document(arn=self.s3_public_access_policy_arn)
@@ -7369,7 +8892,9 @@ class TestPipelineResourceBuilder:
                     ],
                     "Resource": [
                         f"arn:aws:s3:::{self.logging_bucket_name}",
-                        f"arn:aws:s3:::{self.logging_bucket_name}/*"
+                        f"arn:aws:s3:::{self.logging_bucket_name}/*",
+                        f"arn:aws:s3:::{self.centralized_bucket_name}/datalake/{self.centralized_database}*",
+                        f"arn:aws:s3:::{self.centralized_bucket_name}",
                     ],
                     "Effect": "Allow"
                 }
@@ -7389,8 +8914,10 @@ class TestPipelineResourceBuilder:
         
         pipeline_id = str(uuid.uuid4())
         pipeline_info = copy.deepcopy(self.pipeline_info)
+        table_name = f'do-not-exist-table-name-{pipeline_id}'
         pipeline_info['data']['source']['type'] = 'waf'
-        pipeline_info['data']['destination']['table']['name'] = self.table_name
+        pipeline_info['data']['destination']['table']['name'] = table_name
+        pipeline_info['data']['destination']['database']['name'] = self.unique_database
         pipeline_info['data']['notification']['service'] = self.notification_service
         pipeline_info['data']['notification']['recipients'] = self.recipients
         pipeline_info['data']['scheduler']['LogProcessor']['schedule'] = self.processor_schedule
@@ -7408,10 +8935,10 @@ class TestPipelineResourceBuilder:
         pipeline_resource_builder.create_pipeline()
         pipeline_resource_builder.delete_pipeline()
         
-        response = AWS_GLUE.get_table(database=self.centralized_database, name=self.table_name)
+        response = AWS_GLUE.get_table(database=self.centralized_database, name=table_name)
         assert response == {}
 
-        response = AWS_GLUE.get_table(database=self.centralized_database, name=f'{self.table_name}_metrics')
+        response = AWS_GLUE.get_table(database=self.centralized_database, name=f'{table_name}_metrics')
         assert response == {}
         
         response = AWS_SCHEDULER.get_schedule_group(name=pipeline_id)
@@ -7465,7 +8992,9 @@ class TestPipelineResourceBuilder:
                     ],
                     "Resource": [
                         f"arn:aws:s3:::{self.logging_bucket_name}",
-                        f"arn:aws:s3:::{self.logging_bucket_name}/*"
+                        f"arn:aws:s3:::{self.logging_bucket_name}/*",
+                        f"arn:aws:s3:::{self.centralized_bucket_name}/datalake/{self.centralized_database}*",
+                        f"arn:aws:s3:::{self.centralized_bucket_name}",
                     ],
                     "Effect": "Allow"
                 }
@@ -7475,10 +9004,10 @@ class TestPipelineResourceBuilder:
         AWS_DDB_META.put(meta_name=pipeline_id, item=pipeline_info)
         pipeline_resource_builder.delete_pipeline()
         
-        response = AWS_GLUE.get_table(database=self.centralized_database, name=self.table_name)
+        response = AWS_GLUE.get_table(database=self.centralized_database, name=table_name)
         assert response == {}
 
-        response = AWS_GLUE.get_table(database=self.centralized_database, name=f'{self.table_name}_metrics')
+        response = AWS_GLUE.get_table(database=self.centralized_database, name=f'{table_name}_metrics')
         assert response == {}
 
         response = AWS_SCHEDULER.get_schedule_group(name=pipeline_id)
@@ -7532,7 +9061,9 @@ class TestPipelineResourceBuilder:
                     ],
                     "Resource": [
                         f"arn:aws:s3:::{self.logging_bucket_name}",
-                        f"arn:aws:s3:::{self.logging_bucket_name}/*"
+                        f"arn:aws:s3:::{self.logging_bucket_name}/*",
+                        f"arn:aws:s3:::{self.centralized_bucket_name}/datalake/{self.centralized_database}*",
+                        f"arn:aws:s3:::{self.centralized_bucket_name}",
                     ],
                     "Effect": "Allow"
                 }
@@ -7545,6 +9076,9 @@ class TestPipelineResourceBuilder:
         
         pipeline_id = str(uuid.uuid4())
         pipeline_info = copy.deepcopy(self.pipeline_info)
+        table_name = f'do-not-exist-table-name-{pipeline_id}'
+        pipeline_info['data']['destination']['table']['name'] = table_name
+        pipeline_info['data']['destination']['database']['name'] = self.unique_database
         pipeline_info['data']['notification']['service'] = notification_service
         pipeline_info['data']['notification']['recipients'] = receive_failed_topic_arn
         pipeline_event = {'RequestType': 'Create', 'ResourceProperties': {'Resource': 'pipeline', 'Id': pipeline_id}}
@@ -7572,8 +9106,37 @@ class TestPipelineResourceBuilder:
         pipeline_resource_builder.delete_pipeline()
         
         assert AWS_IAM.get_policy_document(arn=send_template_email_sns_public_policy_arn, sid=parameters.policy_sid)['Document']['Statement'] == []
+        
+        # test delete a shared table name
+        table_name = 'existing-table-name'
+        
+        pipeline_id = str(uuid.uuid4())
+        pipeline_info = copy.deepcopy(self.pipeline_info)
+        pipeline_info['data']['destination']['table']['name'] = table_name
+        pipeline_info['data']['source']['type'] = 'waf'
+
+        AWS_DDB_META.put(meta_name=pipeline_id, item=pipeline_info)
+
+        pipeline_id = str(uuid.uuid4())
+        pipeline_info = copy.deepcopy(self.pipeline_info)
+        pipeline_info['data']['destination']['table']['name'] = table_name
+        pipeline_info['data']['source']['type'] = 'waf'
+        pipeline_event = {'RequestType': 'Create', 'ResourceProperties': {'Resource': 'pipeline', 'Id': pipeline_id}}
+        
+        AWS_DDB_META.put(meta_name=pipeline_id, item=pipeline_info)
+        
+        parameters = Parameters(pipeline_event)
+        pipeline_resource_builder = PipelineResourceBuilder(parameters=parameters)
+        pipeline_resource_builder.create_pipeline()
+        pipeline_resource_builder.delete_pipeline()
+        
+        response = AWS_GLUE.get_table(database=self.centralized_database, name=table_name)
+        assert response['Table']['Name'] == table_name
+
+        response = AWS_GLUE.get_table(database=self.centralized_database, name=f'{table_name}_metrics')
+        assert response['Table']['Name'] == f'{table_name}_metrics'
   
-    def test_create_ingestion(self, httpserver: HTTPServer, mock_s3_context, mock_sqs_context, mock_ddb_context, mock_glue_context, mock_scheduler_context, mock_iam_context, mock_sts_context):
+    def test_create_ingestion(self, httpserver: HTTPServer, mock_s3_context, mock_sqs_context, mock_iam_context, mock_ddb_context, mock_glue_context, mock_scheduler_context, mock_sts_context):
         from pipeline_resources_builder.lambda_function import PipelineResourceBuilder, Parameters, MetaTable, SQSClient, S3Client, IAMClient
 
         self.init_default_parameter(httpserver, mock_s3_context, mock_sqs_context, mock_ddb_context, mock_glue_context, mock_scheduler_context, mock_iam_context)
@@ -7604,6 +9167,360 @@ class TestPipelineResourceBuilder:
             pipeline_resource_builder.create_ingestion()
         assert exception_info.value.args[0] == 'Pipeline Id: do-not-exists Information is not exist in Meta Table.'
         
+        # test create a ingestion using overlap prefix in staging bucekt with pipeline
+        self.sts_role = ''
+        self.table_name = 'test_same_prefix_in_staging_bucket'
+        self.notification_service = 'SES'
+        self.recipients = 'alejandro_rosalez@example.com,alejandro_rosalez@example.org'
+        self.processor_schedule = 'rate(5 minutes)'
+        self.merger_schedule = 'cron(0 1 * * ? *)'
+        self.archive_schedule = 'cron(0 1 * * ? *)'
+        self.merger_age = 3
+        self.archive_age = 7
+        self.staging_bucket_prefix = 'AWSLogs/WAFLogs'
+        
+        pipeline_id = str(uuid.uuid4())
+        pipeline_info = copy.deepcopy(self.pipeline_info)
+        pipeline_info['data']['source']['type'] = 'waf'
+        pipeline_info['data']['destination']['table']['name'] = self.table_name
+        pipeline_info['data']['notification']['service'] = self.notification_service
+        pipeline_info['data']['notification']['recipients'] = self.recipients
+        pipeline_info['data']['scheduler']['LogProcessor']['schedule'] = self.processor_schedule
+        pipeline_info['data']['scheduler']['LogMerger']['schedule'] = self.merger_schedule
+        pipeline_info['data']['scheduler']['LogMerger']['age'] = self.merger_age
+        pipeline_info['data']['scheduler']['LogArchive']['schedule'] = self.archive_schedule
+        pipeline_info['data']['scheduler']['LogArchive']['age'] = self.archive_age
+        pipeline_info['data']['staging']['prefix'] = self.staging_bucket_prefix
+
+        AWS_DDB_META.put(meta_name=pipeline_id, item=pipeline_info)
+        
+        ingestion_id = str(uuid.uuid4())
+        ingestion_info = copy.deepcopy(self.ingestion_info)
+        ingestion_info['data']['role']['sts'] = self.sts_role
+        ingestion_info['data']['source']['bucket'] = self.staging_bucket_name
+        ingestion_info['data']['source']['prefix'] = f'///{self.staging_bucket_prefix}/{ingestion_id}///'
+        ingestion_info['pipelineId'] = pipeline_id
+        ingestion_event = {'RequestType': 'Create', 'ResourceProperties': {'Resource': 'ingestion', 'Id': ingestion_id}}
+        
+        AWS_DDB_META.put(meta_name=ingestion_id, item=ingestion_info)
+        
+        parameters = Parameters(ingestion_event)
+        pipeline_resource_builder = PipelineResourceBuilder(parameters=parameters)
+        pipeline_resource_builder.create_ingestion()
+        
+        assert isinstance(pipeline_resource_builder.s3_client, S3Client) is True
+        replication_sqs_url = AWS_SQS.get_queue_url(name=self.replication_sqs_name)
+        
+        response = AWS_SQS.get_queue_policy(url=replication_sqs_url)
+        assert response['Statement'] == []
+        
+        replication_dlq_url = AWS_SQS.get_queue_url(name=self.replication_dlq_name)
+        response = AWS_SQS.get_queue_policy(url=replication_dlq_url)
+        assert response['Statement'] == []
+
+        response = AWS_S3.get_bucket_policy(bucket=self.staging_bucket_name)
+        assert response['Statement'] == []
+        
+        response = AWS_S3.get_bucket_notification(bucket=self.staging_bucket_name)
+        assert response == {}
+        
+        pipeline_resource_builder.delete_ingestion()
+
+        # test create a ingestion using same prefix in staging bucekt with pipeline
+        self.sts_role = ''
+        self.table_name = 'test_same_prefix_in_staging_bucket'
+        self.notification_service = 'SES'
+        self.recipients = 'alejandro_rosalez@example.com,alejandro_rosalez@example.org'
+        self.processor_schedule = 'rate(5 minutes)'
+        self.merger_schedule = 'cron(0 1 * * ? *)'
+        self.archive_schedule = 'cron(0 1 * * ? *)'
+        self.merger_age = 3
+        self.archive_age = 7
+        self.staging_bucket_prefix = 'AWSLogs/WAFLogs'
+        
+        pipeline_id = str(uuid.uuid4())
+        pipeline_info = copy.deepcopy(self.pipeline_info)
+        pipeline_info['data']['source']['type'] = 'waf'
+        pipeline_info['data']['destination']['table']['name'] = self.table_name
+        pipeline_info['data']['notification']['service'] = self.notification_service
+        pipeline_info['data']['notification']['recipients'] = self.recipients
+        pipeline_info['data']['scheduler']['LogProcessor']['schedule'] = self.processor_schedule
+        pipeline_info['data']['scheduler']['LogMerger']['schedule'] = self.merger_schedule
+        pipeline_info['data']['scheduler']['LogMerger']['age'] = self.merger_age
+        pipeline_info['data']['scheduler']['LogArchive']['schedule'] = self.archive_schedule
+        pipeline_info['data']['scheduler']['LogArchive']['age'] = self.archive_age
+        pipeline_info['data']['staging']['prefix'] = f'///{self.staging_bucket_prefix}///'
+
+        AWS_DDB_META.put(meta_name=pipeline_id, item=pipeline_info)
+        
+        ingestion_id = str(uuid.uuid4())
+        ingestion_info = copy.deepcopy(self.ingestion_info)
+        ingestion_info['data']['role']['sts'] = self.sts_role
+        ingestion_info['data']['source']['bucket'] = self.staging_bucket_name
+        ingestion_info['data']['source']['prefix'] = self.staging_bucket_prefix
+        ingestion_info['pipelineId'] = pipeline_id
+        ingestion_event = {'RequestType': 'Create', 'ResourceProperties': {'Resource': 'ingestion', 'Id': ingestion_id}}
+        
+        AWS_DDB_META.put(meta_name=ingestion_id, item=ingestion_info)
+        
+        parameters = Parameters(ingestion_event)
+        pipeline_resource_builder = PipelineResourceBuilder(parameters=parameters)
+        pipeline_resource_builder.create_ingestion()
+        
+        assert isinstance(pipeline_resource_builder.s3_client, S3Client) is True
+        replication_sqs_url = AWS_SQS.get_queue_url(name=self.replication_sqs_name)
+        
+        response = AWS_SQS.get_queue_policy(url=replication_sqs_url)
+        assert response['Statement'] == []
+        
+        replication_dlq_url = AWS_SQS.get_queue_url(name=self.replication_dlq_name)
+        response = AWS_SQS.get_queue_policy(url=replication_dlq_url)
+        assert response['Statement'] == []
+
+        response = AWS_S3.get_bucket_policy(bucket=self.staging_bucket_name)
+        assert response['Statement'] == []
+        
+        response = AWS_S3.get_bucket_notification(bucket=self.staging_bucket_name)
+        assert response == {}
+        
+        pipeline_resource_builder.delete_ingestion()
+        
+        # test create a ingestion using does not overlap prefix in staging bucekt with pipeline
+        self.sts_role = ''
+        self.table_name = 'test_same_prefix_in_staging_bucket'
+        self.notification_service = 'SES'
+        self.recipients = 'alejandro_rosalez@example.com,alejandro_rosalez@example.org'
+        self.processor_schedule = 'rate(5 minutes)'
+        self.merger_schedule = 'cron(0 1 * * ? *)'
+        self.archive_schedule = 'cron(0 1 * * ? *)'
+        self.merger_age = 3
+        self.archive_age = 7
+        self.staging_bucket_prefix = 'AWSLogs/WAFLogs'
+        
+        pipeline_id = str(uuid.uuid4())
+        pipeline_info = copy.deepcopy(self.pipeline_info)
+        pipeline_info['data']['source']['type'] = 'waf'
+        pipeline_info['data']['destination']['table']['name'] = self.table_name
+        pipeline_info['data']['notification']['service'] = self.notification_service
+        pipeline_info['data']['notification']['recipients'] = self.recipients
+        pipeline_info['data']['scheduler']['LogProcessor']['schedule'] = self.processor_schedule
+        pipeline_info['data']['scheduler']['LogMerger']['schedule'] = self.merger_schedule
+        pipeline_info['data']['scheduler']['LogMerger']['age'] = self.merger_age
+        pipeline_info['data']['scheduler']['LogArchive']['schedule'] = self.archive_schedule
+        pipeline_info['data']['scheduler']['LogArchive']['age'] = self.archive_age
+        pipeline_info['data']['staging']['prefix'] = self.staging_bucket_prefix
+
+        AWS_DDB_META.put(meta_name=pipeline_id, item=pipeline_info)
+        
+        ingestion_id = str(uuid.uuid4())
+        ingestion_info = copy.deepcopy(self.ingestion_info)
+        ingestion_info['data']['role']['sts'] = self.sts_role
+        ingestion_info['data']['source']['bucket'] = self.staging_bucket_name
+        ingestion_info['data']['source']['prefix'] = 'not-overlap-prefix'
+        ingestion_info['pipelineId'] = pipeline_id
+        ingestion_event = {'RequestType': 'Create', 'ResourceProperties': {'Resource': 'ingestion', 'Id': ingestion_id}}
+        
+        AWS_DDB_META.put(meta_name=ingestion_id, item=ingestion_info)
+        
+        parameters = Parameters(ingestion_event)
+        pipeline_resource_builder = PipelineResourceBuilder(parameters=parameters)
+        pipeline_resource_builder.create_ingestion()
+        
+        assert isinstance(pipeline_resource_builder.s3_client, S3Client) is True
+        replication_sqs_url = AWS_SQS.get_queue_url(name=self.replication_sqs_name)
+        
+        response = AWS_SQS.get_queue_policy(url=replication_sqs_url)
+        assert response['Statement'] == [
+            {'Effect': 'Allow', 
+            'Principal': {
+                'Service': 's3.amazonaws.com'
+                }, 
+            'Action': ['sqs:SendMessage'], 
+            'Resource': self.replication_sqs_arn,
+            'Condition': {
+                'ArnLike': {
+                    'aws:SourceArn': f'arn:aws:s3:::{self.staging_bucket_name}'
+                    }
+                }, 
+            'Sid': ingestion_id.replace('-', '')
+            }
+            ]
+        
+        replication_dlq_url = AWS_SQS.get_queue_url(name=self.replication_dlq_name)
+        response = AWS_SQS.get_queue_policy(url=replication_dlq_url)
+        assert response['Statement'] == [
+            {'Effect': 'Allow', 
+            'Principal': {
+                'Service': 's3.amazonaws.com'
+                }, 
+            'Action': ['sqs:SendMessage'], 
+            'Resource': self.replication_dlq_arn,
+            'Condition': {
+                'ArnLike': {
+                    'aws:SourceArn': f'arn:aws:s3:::{self.staging_bucket_name}'
+                    }
+                }, 
+            'Sid': ingestion_id.replace('-', '')
+            }
+            ]
+
+        response = AWS_S3.get_bucket_policy(bucket=self.staging_bucket_name)
+        assert response['Statement'] == [
+            {
+                'Effect': 'Allow', 
+                'Action': [
+                    's3:GetObject',
+                    's3:GetObjectTagging',
+                ],
+                'Principal': {
+                    'AWS': self.replication_role_arn
+                    }, 
+                'Resource': [
+                    f'arn:aws:s3:::{self.staging_bucket_name}/not-overlap-prefix*'
+                    ], 
+                'Sid': ingestion_id.replace('-', '')
+                },
+            ]
+        
+        response = AWS_S3.get_bucket_notification(bucket=self.staging_bucket_name)
+        assert response['QueueConfigurations'] == [
+            {
+                'Id': ingestion_id, 
+                'QueueArn': self.replication_sqs_arn, 
+                'Events': ['s3:ObjectCreated:*'], 
+                'Filter': {
+                    'Key': {
+                        'FilterRules': [
+                            {
+                                'Name': 'prefix', 
+                                'Value': 'not-overlap-prefix'
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        
+        pipeline_resource_builder.delete_ingestion()
+        
+        # test create a ingestion using same prefix wth staging bucekt, in logging bucket
+        self.sts_role = ''
+        self.table_name = 'test_same_prefix_in_staging_bucket'
+        self.notification_service = 'SES'
+        self.recipients = 'alejandro_rosalez@example.com,alejandro_rosalez@example.org'
+        self.processor_schedule = 'rate(5 minutes)'
+        self.merger_schedule = 'cron(0 1 * * ? *)'
+        self.archive_schedule = 'cron(0 1 * * ? *)'
+        self.merger_age = 3
+        self.archive_age = 7
+        self.staging_bucket_prefix = 'AWSLogs/WAFLogs'
+        
+        pipeline_id = str(uuid.uuid4())
+        pipeline_info = copy.deepcopy(self.pipeline_info)
+        pipeline_info['data']['source']['type'] = 'waf'
+        pipeline_info['data']['destination']['table']['name'] = self.table_name
+        pipeline_info['data']['notification']['service'] = self.notification_service
+        pipeline_info['data']['notification']['recipients'] = self.recipients
+        pipeline_info['data']['scheduler']['LogProcessor']['schedule'] = self.processor_schedule
+        pipeline_info['data']['scheduler']['LogMerger']['schedule'] = self.merger_schedule
+        pipeline_info['data']['scheduler']['LogMerger']['age'] = self.merger_age
+        pipeline_info['data']['scheduler']['LogArchive']['schedule'] = self.archive_schedule
+        pipeline_info['data']['scheduler']['LogArchive']['age'] = self.archive_age
+        pipeline_info['data']['staging']['prefix'] = self.staging_bucket_prefix
+
+        AWS_DDB_META.put(meta_name=pipeline_id, item=pipeline_info)
+        
+        ingestion_id = str(uuid.uuid4())
+        ingestion_info = copy.deepcopy(self.ingestion_info)
+        ingestion_info['data']['role']['sts'] = self.sts_role
+        ingestion_info['data']['source']['bucket'] = self.logging_bucket_name
+        ingestion_info['data']['source']['prefix'] = self.staging_bucket_prefix
+        ingestion_info['pipelineId'] = pipeline_id
+        ingestion_event = {'RequestType': 'Create', 'ResourceProperties': {'Resource': 'ingestion', 'Id': ingestion_id}}
+        
+        AWS_DDB_META.put(meta_name=ingestion_id, item=ingestion_info)
+        
+        parameters = Parameters(ingestion_event)
+        pipeline_resource_builder = PipelineResourceBuilder(parameters=parameters)
+        pipeline_resource_builder.create_ingestion()
+        
+        assert isinstance(pipeline_resource_builder.s3_client, S3Client) is True
+        replication_sqs_url = AWS_SQS.get_queue_url(name=self.replication_sqs_name)
+        
+        response = AWS_SQS.get_queue_policy(url=replication_sqs_url)
+        assert response['Statement'] == [
+            {'Effect': 'Allow', 
+            'Principal': {
+                'Service': 's3.amazonaws.com'
+                }, 
+            'Action': ['sqs:SendMessage'], 
+            'Resource': self.replication_sqs_arn,
+            'Condition': {
+                'ArnLike': {
+                    'aws:SourceArn': f'arn:aws:s3:::{self.logging_bucket_name}'
+                    }
+                }, 
+            'Sid': ingestion_id.replace('-', '')
+            }
+            ]
+        
+        replication_dlq_url = AWS_SQS.get_queue_url(name=self.replication_dlq_name)
+        response = AWS_SQS.get_queue_policy(url=replication_dlq_url)
+        assert response['Statement'] == [
+            {'Effect': 'Allow', 
+            'Principal': {
+                'Service': 's3.amazonaws.com'
+                }, 
+            'Action': ['sqs:SendMessage'], 
+            'Resource': self.replication_dlq_arn,
+            'Condition': {
+                'ArnLike': {
+                    'aws:SourceArn': f'arn:aws:s3:::{self.logging_bucket_name}'
+                    }
+                }, 
+            'Sid': ingestion_id.replace('-', '')
+            }
+            ]
+
+        response = AWS_S3.get_bucket_policy(bucket=self.logging_bucket_name)
+        assert response['Statement'] == [
+            {
+                'Effect': 'Allow', 
+                'Action': [
+                    's3:GetObject',
+                    's3:GetObjectTagging',
+                ],
+                'Principal': {
+                    'AWS': self.replication_role_arn
+                    }, 
+                'Resource': [
+                    f'arn:aws:s3:::{self.logging_bucket_name}/AWSLogs/WAFLogs*'
+                    ], 
+                'Sid': ingestion_id.replace('-', '')
+                },
+            ]
+        
+        response = AWS_S3.get_bucket_notification(bucket=self.logging_bucket_name)
+        assert response['QueueConfigurations'] == [
+            {
+                'Id': ingestion_id, 
+                'QueueArn': self.replication_sqs_arn, 
+                'Events': ['s3:ObjectCreated:*'], 
+                'Filter': {
+                    'Key': {
+                        'FilterRules': [
+                            {
+                                'Name': 'prefix', 
+                                'Value': 'AWSLogs/WAFLogs'
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        
+        pipeline_resource_builder.delete_ingestion()
+
         # test alb log format
         self.sts_role = ''
         self.table_name = 'alb'
@@ -7684,32 +9601,30 @@ class TestPipelineResourceBuilder:
             ]
 
         response = AWS_S3.get_bucket_policy(bucket=self.logging_bucket_name)
-        assert response['Statement'] == [
-            {
-                'Effect': 'Allow', 
-                'Action': [
-                    's3:GetObject',
-                    's3:GetObjectTagging',
-                ],
-                'Principal': {
-                    'AWS': self.replication_role_arn
-                    }, 
-                'Resource': [
-                    f'arn:aws:s3:::{self.logging_bucket_name}/AWSLogs/{self.account_id}/{self.aws_region}/WAFLogs*'
-                    ], 
-                'Sid': ingestion_id.replace('-', '')
-                },
-            {
-                'Effect': 'Allow', 
-                'Principal': {'AWS': 'arn:aws:iam::127311923021:root'}, 
-                'Action': [
-                    's3:PutObject',
-                    's3:PutObjectTagging',
+        assert response['Statement'][0] == {
+            'Effect': 'Allow', 
+            'Action': [
+                's3:GetObject',
+                's3:GetObjectTagging',
+            ],
+            'Principal': {
+                'AWS': self.replication_role_arn
+                }, 
+            'Resource': [
+                f'arn:aws:s3:::{self.logging_bucket_name}/AWSLogs/{self.account_id}/{self.aws_region}/WAFLogs*'
                 ], 
-                'Resource': f'arn:aws:s3:::{self.logging_bucket_name}/AWSLogs/{self.account_id}/{self.aws_region}/WAFLogs*', 
-                'Sid':  f'{parameters.pipeline_info.source.type}{parameters.policy_sid}'
-                },
-            ]
+            'Sid': ingestion_id.replace('-', '')
+            }
+        response['Statement'][1].pop('Principal')
+        assert response['Statement'][1] == {
+            'Effect': 'Allow', 
+            'Action': [
+                's3:PutObject',
+                's3:PutObjectTagging',
+            ], 
+            'Resource': f'arn:aws:s3:::{self.logging_bucket_name}/AWSLogs/{self.account_id}/{self.aws_region}/WAFLogs*', 
+            'Sid':  f'{parameters.pipeline_info.source.type}{parameters.policy_sid}'
+            }
         
         response = AWS_S3.get_bucket_notification(bucket=self.logging_bucket_name)
         assert response['QueueConfigurations'] == [
@@ -7959,60 +9874,6 @@ class TestPipelineResourceBuilder:
         
         pipeline_resource_builder.delete_ingestion()
         
-        # test source.bucekt = staging.bucket
-        pipeline_id = str(uuid.uuid4())
-        ingestion_id = str(uuid.uuid4())
-        
-        logging_bucket_name = self.staging_bucket_name
-        self.logging_bucket_prefix = f'/AWSLogs/{self.account_id}/{self.aws_region}/WAFLogs/'
-        self.staging_bucket_prefix = '/AWSLogs/WAFLogs/'
-        
-        pipeline_id = str(uuid.uuid4())
-        pipeline_info = copy.deepcopy(self.pipeline_info)
-        pipeline_info['data']['source']['type'] = 'waf'
-        pipeline_info['data']['destination']['table']['name'] = self.table_name
-        pipeline_info['data']['notification']['service'] = self.notification_service
-        pipeline_info['data']['notification']['recipients'] = self.recipients
-        pipeline_info['data']['scheduler']['LogProcessor']['schedule'] = self.processor_schedule
-        pipeline_info['data']['scheduler']['LogMerger']['schedule'] = self.merger_schedule
-        pipeline_info['data']['scheduler']['LogMerger']['age'] = self.merger_age
-        pipeline_info['data']['scheduler']['LogArchive']['schedule'] = self.archive_schedule
-        pipeline_info['data']['scheduler']['LogArchive']['age'] = self.archive_age
-        pipeline_info['data']['staging']['prefix'] = self.staging_bucket_prefix
-
-        AWS_DDB_META.put(meta_name=pipeline_id, item=pipeline_info)
-        
-        ingestion_id = str(uuid.uuid4())
-        ingestion_info = copy.deepcopy(self.ingestion_info)
-        ingestion_info['data']['role']['sts'] = self.sts_role
-        ingestion_info['data']['source']['bucket'] = logging_bucket_name
-        ingestion_info['data']['source']['prefix'] = self.logging_bucket_prefix
-        ingestion_info['pipelineId'] = pipeline_id
-        ingestion_event = {'RequestType': 'Create', 'ResourceProperties': {'Resource': 'ingestion', 'Id': ingestion_id}}
-        
-        AWS_DDB_META.put(meta_name=ingestion_id, item=ingestion_info)
-
-        parameters = Parameters(ingestion_event)
-        pipeline_resource_builder = PipelineResourceBuilder(parameters=parameters)
-        pipeline_resource_builder.create_ingestion()
-        
-        replication_sqs_url = AWS_SQS.get_queue_url(name=self.replication_sqs_name)
-        
-        response = AWS_SQS.get_queue_policy(url=replication_sqs_url)
-        assert response['Statement'] == []
-        
-        replication_dlq_url = AWS_SQS.get_queue_url(name=self.replication_dlq_name)
-        response = AWS_SQS.get_queue_policy(url=replication_dlq_url)
-        assert response['Statement'] == []
-
-        response = AWS_S3.get_bucket_policy(bucket=logging_bucket_name)
-        assert response['Statement'] == []
-        
-        response = AWS_S3.get_bucket_notification(bucket=logging_bucket_name)
-        assert response == {}
-        
-        pipeline_resource_builder.delete_ingestion()
-        
         # test logging bucket prefix == ''
         self.sts_role = ''
         self.table_name = 'waf'
@@ -8113,26 +9974,6 @@ class TestPipelineResourceBuilder:
                 },
             ]
         
-        # moto can not put event notification when prefix is '', so can not test this.
-        # response = AWS_S3.get_bucket_notification(bucket=self.logging_bucket_name)
-        # assert response['QueueConfigurations'] == [
-        #     {
-        #         'Id': ingestion_id, 
-        #         'QueueArn': self.replication_sqs_arn, 
-        #         'Events': ['s3:ObjectCreated:*'], 
-        #         'Filter': {
-        #             'Key': {
-        #                 'FilterRules': [
-        #                     {
-        #                         'Name': 'prefix', 
-        #                         'Value': ''
-        #                         }
-        #                     ]
-        #                 }
-        #             }
-        #         }
-        #     ]
-        
         response = AWS_IAM.get_role_policy(role_name=self.replication_role_arn.split('/')[-1], policy_name=ingestion_id.replace('-', ''))
         assert response['PolicyDocument'] == {
             'Statement': [
@@ -8154,13 +9995,247 @@ class TestPipelineResourceBuilder:
         
 
     def test_delete_ingestion(self, httpserver: HTTPServer, mock_iam_context, mock_s3_context, mock_sqs_context, mock_ddb_context, mock_glue_context, mock_scheduler_context):
-        from pipeline_resources_builder.lambda_function import PipelineResourceBuilder, Parameters, MetaTable, SQSClient, S3Client
+        from pipeline_resources_builder.lambda_function import PipelineResourceBuilder, Parameters, MetaTable, SQSClient, S3Client, SchedulerClient
 
         self.init_default_parameter(httpserver, mock_iam_context, mock_s3_context, mock_sqs_context, mock_ddb_context, mock_glue_context, mock_scheduler_context)
         
         AWS_DDB_META = MetaTable()
         AWS_SQS = SQSClient()
         AWS_S3 = S3Client()
+        AWS_SCHEDULER = SchedulerClient()
+        
+        # test create a ingestion using overlap prefix in staging bucekt with pipeline
+        self.sts_role = ''
+        self.table_name = 'test_same_prefix_in_staging_bucket'
+        self.notification_service = 'SES'
+        self.recipients = 'alejandro_rosalez@example.com,alejandro_rosalez@example.org'
+        self.processor_schedule = 'rate(5 minutes)'
+        self.merger_schedule = 'cron(0 1 * * ? *)'
+        self.archive_schedule = 'cron(0 1 * * ? *)'
+        self.merger_age = 3
+        self.archive_age = 7
+        self.staging_bucket_prefix = 'AWSLogs/WAFLogs'
+        
+        pipeline_id = str(uuid.uuid4())
+        pipeline_info = copy.deepcopy(self.pipeline_info)
+        pipeline_info['data']['source']['type'] = 'waf'
+        pipeline_info['data']['destination']['table']['name'] = self.table_name
+        pipeline_info['data']['notification']['service'] = self.notification_service
+        pipeline_info['data']['notification']['recipients'] = self.recipients
+        pipeline_info['data']['scheduler']['LogProcessor']['schedule'] = self.processor_schedule
+        pipeline_info['data']['scheduler']['LogMerger']['schedule'] = self.merger_schedule
+        pipeline_info['data']['scheduler']['LogMerger']['age'] = self.merger_age
+        pipeline_info['data']['scheduler']['LogArchive']['schedule'] = self.archive_schedule
+        pipeline_info['data']['scheduler']['LogArchive']['age'] = self.archive_age
+        pipeline_info['data']['staging']['prefix'] = self.staging_bucket_prefix
+
+        AWS_DDB_META.put(meta_name=pipeline_id, item=pipeline_info)
+        
+        ingestion_id = str(uuid.uuid4())
+        ingestion_info = copy.deepcopy(self.ingestion_info)
+        ingestion_info['data']['role']['sts'] = self.sts_role
+        ingestion_info['data']['source']['bucket'] = self.staging_bucket_name
+        ingestion_info['data']['source']['prefix'] = f'///{self.staging_bucket_prefix}/{ingestion_id}///'
+        ingestion_info['pipelineId'] = pipeline_id
+        ingestion_event = {'RequestType': 'Create', 'ResourceProperties': {'Resource': 'ingestion', 'Id': ingestion_id}}
+        
+        AWS_DDB_META.put(meta_name=ingestion_id, item=ingestion_info)
+        
+        parameters = Parameters(ingestion_event)
+        pipeline_resource_builder = PipelineResourceBuilder(parameters=parameters)
+        pipeline_resource_builder.create_ingestion()
+        pipeline_resource_builder.delete_ingestion()
+        
+        assert isinstance(pipeline_resource_builder.s3_client, S3Client) is True
+        replication_sqs_url = AWS_SQS.get_queue_url(name=self.replication_sqs_name)
+        
+        response = AWS_SQS.get_queue_policy(url=replication_sqs_url)
+        assert response['Statement'] == []
+        
+        replication_dlq_url = AWS_SQS.get_queue_url(name=self.replication_dlq_name)
+        response = AWS_SQS.get_queue_policy(url=replication_dlq_url)
+        assert response['Statement'] == []
+
+        response = AWS_S3.get_bucket_policy(bucket=self.staging_bucket_name)
+        assert response['Statement'] == []
+        
+        response = AWS_S3.get_bucket_notification(bucket=self.staging_bucket_name)
+        assert response == {}
+        
+
+        # test create a ingestion using same prefix in staging bucekt with pipeline
+        self.sts_role = ''
+        self.table_name = 'test_same_prefix_in_staging_bucket'
+        self.notification_service = 'SES'
+        self.recipients = 'alejandro_rosalez@example.com,alejandro_rosalez@example.org'
+        self.processor_schedule = 'rate(5 minutes)'
+        self.merger_schedule = 'cron(0 1 * * ? *)'
+        self.archive_schedule = 'cron(0 1 * * ? *)'
+        self.merger_age = 3
+        self.archive_age = 7
+        self.staging_bucket_prefix = 'AWSLogs/WAFLogs'
+        
+        pipeline_id = str(uuid.uuid4())
+        pipeline_info = copy.deepcopy(self.pipeline_info)
+        pipeline_info['data']['source']['type'] = 'waf'
+        pipeline_info['data']['destination']['table']['name'] = self.table_name
+        pipeline_info['data']['notification']['service'] = self.notification_service
+        pipeline_info['data']['notification']['recipients'] = self.recipients
+        pipeline_info['data']['scheduler']['LogProcessor']['schedule'] = self.processor_schedule
+        pipeline_info['data']['scheduler']['LogMerger']['schedule'] = self.merger_schedule
+        pipeline_info['data']['scheduler']['LogMerger']['age'] = self.merger_age
+        pipeline_info['data']['scheduler']['LogArchive']['schedule'] = self.archive_schedule
+        pipeline_info['data']['scheduler']['LogArchive']['age'] = self.archive_age
+        pipeline_info['data']['staging']['prefix'] = f'///{self.staging_bucket_prefix}///'
+
+        AWS_DDB_META.put(meta_name=pipeline_id, item=pipeline_info)
+        
+        ingestion_id = str(uuid.uuid4())
+        ingestion_info = copy.deepcopy(self.ingestion_info)
+        ingestion_info['data']['role']['sts'] = self.sts_role
+        ingestion_info['data']['source']['bucket'] = self.staging_bucket_name
+        ingestion_info['data']['source']['prefix'] = self.staging_bucket_prefix
+        ingestion_info['pipelineId'] = pipeline_id
+        ingestion_event = {'RequestType': 'Create', 'ResourceProperties': {'Resource': 'ingestion', 'Id': ingestion_id}}
+        
+        AWS_DDB_META.put(meta_name=ingestion_id, item=ingestion_info)
+        
+        parameters = Parameters(ingestion_event)
+        pipeline_resource_builder = PipelineResourceBuilder(parameters=parameters)
+        pipeline_resource_builder.create_ingestion()
+        pipeline_resource_builder.delete_ingestion()
+        
+        assert isinstance(pipeline_resource_builder.s3_client, S3Client) is True
+        replication_sqs_url = AWS_SQS.get_queue_url(name=self.replication_sqs_name)
+        
+        response = AWS_SQS.get_queue_policy(url=replication_sqs_url)
+        assert response['Statement'] == []
+        
+        replication_dlq_url = AWS_SQS.get_queue_url(name=self.replication_dlq_name)
+        response = AWS_SQS.get_queue_policy(url=replication_dlq_url)
+        assert response['Statement'] == []
+
+        response = AWS_S3.get_bucket_policy(bucket=self.staging_bucket_name)
+        assert response['Statement'] == []
+        
+        response = AWS_S3.get_bucket_notification(bucket=self.staging_bucket_name)
+        assert response == {}
+        
+        # test create a ingestion using does not overlap prefix in staging bucekt with pipeline
+        self.sts_role = ''
+        self.table_name = 'test_same_prefix_in_staging_bucket'
+        self.notification_service = 'SES'
+        self.recipients = 'alejandro_rosalez@example.com,alejandro_rosalez@example.org'
+        self.processor_schedule = 'rate(5 minutes)'
+        self.merger_schedule = 'cron(0 1 * * ? *)'
+        self.archive_schedule = 'cron(0 1 * * ? *)'
+        self.merger_age = 3
+        self.archive_age = 7
+        self.staging_bucket_prefix = 'AWSLogs/WAFLogs'
+        
+        pipeline_id = str(uuid.uuid4())
+        pipeline_info = copy.deepcopy(self.pipeline_info)
+        pipeline_info['data']['source']['type'] = 'waf'
+        pipeline_info['data']['destination']['table']['name'] = self.table_name
+        pipeline_info['data']['notification']['service'] = self.notification_service
+        pipeline_info['data']['notification']['recipients'] = self.recipients
+        pipeline_info['data']['scheduler']['LogProcessor']['schedule'] = self.processor_schedule
+        pipeline_info['data']['scheduler']['LogMerger']['schedule'] = self.merger_schedule
+        pipeline_info['data']['scheduler']['LogMerger']['age'] = self.merger_age
+        pipeline_info['data']['scheduler']['LogArchive']['schedule'] = self.archive_schedule
+        pipeline_info['data']['scheduler']['LogArchive']['age'] = self.archive_age
+        pipeline_info['data']['staging']['prefix'] = self.staging_bucket_prefix
+
+        AWS_DDB_META.put(meta_name=pipeline_id, item=pipeline_info)
+        
+        ingestion_id = str(uuid.uuid4())
+        ingestion_info = copy.deepcopy(self.ingestion_info)
+        ingestion_info['data']['role']['sts'] = self.sts_role
+        ingestion_info['data']['source']['bucket'] = self.staging_bucket_name
+        ingestion_info['data']['source']['prefix'] = 'not-overlap-prefix'
+        ingestion_info['pipelineId'] = pipeline_id
+        ingestion_event = {'RequestType': 'Create', 'ResourceProperties': {'Resource': 'ingestion', 'Id': ingestion_id}}
+        
+        AWS_DDB_META.put(meta_name=ingestion_id, item=ingestion_info)
+        
+        parameters = Parameters(ingestion_event)
+        pipeline_resource_builder = PipelineResourceBuilder(parameters=parameters)
+        pipeline_resource_builder.create_ingestion()
+        pipeline_resource_builder.delete_ingestion()
+        
+        assert isinstance(pipeline_resource_builder.s3_client, S3Client) is True
+        replication_sqs_url = AWS_SQS.get_queue_url(name=self.replication_sqs_name)
+        
+        response = AWS_SQS.get_queue_policy(url=replication_sqs_url)
+        assert response['Statement'] == []
+        
+        replication_dlq_url = AWS_SQS.get_queue_url(name=self.replication_dlq_name)
+        response = AWS_SQS.get_queue_policy(url=replication_dlq_url)
+        assert response['Statement'] == []
+
+        response = AWS_S3.get_bucket_policy(bucket=self.staging_bucket_name)
+        assert response['Statement'] == []
+        
+        response = AWS_S3.get_bucket_notification(bucket=self.staging_bucket_name)
+        assert response == {}
+        
+        # test create a ingestion using same prefix wth staging bucekt, in logging bucket
+        self.sts_role = ''
+        self.table_name = 'test_same_prefix_in_staging_bucket'
+        self.notification_service = 'SES'
+        self.recipients = 'alejandro_rosalez@example.com,alejandro_rosalez@example.org'
+        self.processor_schedule = 'rate(5 minutes)'
+        self.merger_schedule = 'cron(0 1 * * ? *)'
+        self.archive_schedule = 'cron(0 1 * * ? *)'
+        self.merger_age = 3
+        self.archive_age = 7
+        self.staging_bucket_prefix = 'AWSLogs/WAFLogs'
+        
+        pipeline_id = str(uuid.uuid4())
+        pipeline_info = copy.deepcopy(self.pipeline_info)
+        pipeline_info['data']['source']['type'] = 'waf'
+        pipeline_info['data']['destination']['table']['name'] = self.table_name
+        pipeline_info['data']['notification']['service'] = self.notification_service
+        pipeline_info['data']['notification']['recipients'] = self.recipients
+        pipeline_info['data']['scheduler']['LogProcessor']['schedule'] = self.processor_schedule
+        pipeline_info['data']['scheduler']['LogMerger']['schedule'] = self.merger_schedule
+        pipeline_info['data']['scheduler']['LogMerger']['age'] = self.merger_age
+        pipeline_info['data']['scheduler']['LogArchive']['schedule'] = self.archive_schedule
+        pipeline_info['data']['scheduler']['LogArchive']['age'] = self.archive_age
+        pipeline_info['data']['staging']['prefix'] = self.staging_bucket_prefix
+
+        AWS_DDB_META.put(meta_name=pipeline_id, item=pipeline_info)
+        
+        ingestion_id = str(uuid.uuid4())
+        ingestion_info = copy.deepcopy(self.ingestion_info)
+        ingestion_info['data']['role']['sts'] = self.sts_role
+        ingestion_info['data']['source']['bucket'] = self.logging_bucket_name
+        ingestion_info['data']['source']['prefix'] = self.staging_bucket_prefix
+        ingestion_info['pipelineId'] = pipeline_id
+        ingestion_event = {'RequestType': 'Create', 'ResourceProperties': {'Resource': 'ingestion', 'Id': ingestion_id}}
+        
+        AWS_DDB_META.put(meta_name=ingestion_id, item=ingestion_info)
+        
+        parameters = Parameters(ingestion_event)
+        pipeline_resource_builder = PipelineResourceBuilder(parameters=parameters)
+        pipeline_resource_builder.create_ingestion()
+        pipeline_resource_builder.delete_ingestion()
+        
+        assert isinstance(pipeline_resource_builder.s3_client, S3Client) is True
+        replication_sqs_url = AWS_SQS.get_queue_url(name=self.replication_sqs_name)
+        
+        response = AWS_SQS.get_queue_policy(url=replication_sqs_url)
+        assert response['Statement'] == []
+        
+        replication_dlq_url = AWS_SQS.get_queue_url(name=self.replication_dlq_name)
+        response = AWS_SQS.get_queue_policy(url=replication_dlq_url)
+        assert response['Statement'] == []
+
+        response = AWS_S3.get_bucket_policy(bucket=self.staging_bucket_name)
+        assert response['Statement'] == []
+        
+        response = AWS_S3.get_bucket_notification(bucket=self.staging_bucket_name)
+        assert response == {}
         
         # test alb log format
         self.sts_role = ''
@@ -8295,6 +10370,58 @@ class TestPipelineResourceBuilder:
         
         response = AWS_S3.get_bucket_notification(bucket=self.logging_bucket_name)
         assert response == {}
+        
+        # test rds log format
+        AWS_DDB_META.put(meta_name='AvailableServices', item={'value': ['scheduler']})
+        pipeline_id = str(uuid.uuid4())
+        pipeline_info = copy.deepcopy(self.pipeline_info)
+        pipeline_info['data']['source']['type'] = 'rds'
+        pipeline_info['data']['destination']['table']['name'] = 'rds'
+        pipeline_info['data']['scheduler']['LogProcessor']['schedule'] = 'rate(5 minutes)'
+        pipeline_info['data']['scheduler']['LogMerger']['schedule'] = 'cron(0 1 * * ? *)'
+        pipeline_info['data']['scheduler']['LogArchive']['schedule'] = 'cron(0 2 * * ? *)'
+        pipeline_info['stack']['role']['invokeConnector']= self.replication_role_arn
+        pipeline_info['stack']['lambda']['connector']= self.replication_function_arn
+        AWS_DDB_META.put(meta_name=pipeline_id, item=pipeline_info)
+        
+        ingestion_id = str(uuid.uuid4())
+        ingestion_info = copy.deepcopy(self.ingestion_info)
+        ingestion_info['pipelineId'] = pipeline_id
+        ingestion_info['data']['source']['bucket'] = self.logging_bucket_name
+        ingestion_info['data']['source']['prefix'] = self.logging_bucket_prefix
+        ingestion_info['data']['source']['context'] = json.dumps({
+            "type": "rds",
+            "context": {
+                "DBIdentifiers": ["aurora-mysql", "aurora-postgres15", "database-1", "database-2"],
+            }
+        })
+        ingestion_event = {'RequestType': 'Create', 'ResourceProperties': {'Resource': 'ingestion', 'Id': ingestion_id}}
+        AWS_DDB_META.put(meta_name=ingestion_id, item=ingestion_info)
+        
+        parameters = Parameters(ingestion_event)
+        ingestion_resource_builder = PipelineResourceBuilder(parameters=parameters)
+        
+        ingestion_resource_builder.create_pipeline()
+        ingestion_resource_builder.create_ingestion()
+        ingestion_resource_builder.delete_ingestion()
+        
+        replication_sqs_url = AWS_SQS.get_queue_url(name=self.replication_sqs_name)
+        
+        response = AWS_SQS.get_queue_policy(url=replication_sqs_url)
+        assert response['Statement'] == []
+        
+        replication_dlq_url = AWS_SQS.get_queue_url(name=self.replication_dlq_name)
+        response = AWS_SQS.get_queue_policy(url=replication_dlq_url)
+        assert response['Statement'] == []
+
+        response = AWS_S3.get_bucket_policy(bucket=self.logging_bucket_name)
+        assert response['Statement'] == []
+        
+        response = AWS_S3.get_bucket_notification(bucket=self.logging_bucket_name)
+        assert response == {}
+        
+        response = AWS_SCHEDULER.get_schedule(name=f'Connector-{ingestion_id}', group_name=pipeline_id)
+        assert response == {}
 
 
 def test_lambda_handler(httpserver: HTTPServer, mock_iam_context, mock_s3_context, mock_sqs_context, mock_ddb_context, mock_glue_context, mock_scheduler_context, mock_events_context):
@@ -8399,6 +10526,7 @@ def test_lambda_handler(httpserver: HTTPServer, mock_iam_context, mock_s3_contex
         {'Name': 'terminatingruleid', 'Type': 'string'}, 
         {'Name': 'terminatingruletype', 'Type': 'string'}, 
         {'Name': 'action', 'Type': 'string'}, 
+        {'Name': 'action_fixed', 'Type': 'string'}, 
         {'Name': 'terminatingrulematchdetails', 'Type': 'array<struct<conditiontype:string,sensitivitylevel:string,location:string,matcheddata:array<string>>>'}, 
         {'Name': 'httpsourcename', 'Type': 'string'}, 
         {'Name': 'httpsourceid', 'Type': 'string'}, 
@@ -8406,7 +10534,14 @@ def test_lambda_handler(httpserver: HTTPServer, mock_iam_context, mock_s3_contex
         {'Name': 'ratebasedrulelist', 'Type': 'array<struct<ratebasedruleid:string,limitkey:string,maxrateallowed:int>>'}, 
         {'Name': 'nonterminatingmatchingrules', 'Type': 'array<struct<ruleid:string,action:string,rulematchdetails:array<struct<conditiontype:string,sensitivitylevel:string,location:string,matcheddata:array<string>>>,captcharesponse:struct<responsecode:string,solvetimestamp:string>>>'}, 
         {'Name': 'requestheadersinserted', 'Type': 'array<struct<name:string,value:string>>'}, 
-        {'Name': 'responsecodesent', 'Type': 'string'}, 
+        {'Name': 'responsecodesent', 'Type': 'string'},
+        {'Name': 'host', 'Type': 'string'},
+        {'Name': 'clientip', 'Type': 'string'},
+        {'Name': 'country', 'Type': 'string'},
+        {'Name': 'uri', 'Type': 'string'},
+        {'Name': 'args', 'Type': 'string'},
+        {'Name': 'httpmethod', 'Type': 'string'}, 
+        {'Name': 'ja3fingerprint', 'Type': 'string'},
         {'Name': 'httprequest', 'Type': 'struct<clientip:string,country:string,headers:array<struct<name:string,value:string>>,uri:string,args:string,httpversion:string,httpmethod:string,requestid:string>'}, 
         {'Name': 'labels', 'Type': 'array<struct<name:string>>'}, 
         {'Name': 'captcharesponse', 'Type': 'struct<responsecode:string,solvetimestamp:string,failureReason:string>'}
@@ -8424,7 +10559,19 @@ def test_lambda_handler(httpserver: HTTPServer, mock_iam_context, mock_s3_contex
         {'Name': '__execution_name__', 'Type': 'string'}
         ]
     assert response['Table']['TableType'] == 'EXTERNAL_TABLE'
-    assert response['Table']['Parameters'] == {'partition_filtering.enabled': 'true', 'classification': 'parquet', 'has_encrypted_data': 'true'}
+    assert response['Table']['Parameters'] == {
+        'partition_filtering.enabled': 'true', 
+        'classification': 'parquet', 
+        'has_encrypted_data': 'true', 
+        'parquet.compression': 'ZSTD', 
+        'spark.sql.partitionProvider': 'catalog', 
+        'spark.sql.sources.schema': '{"type": "struct", "fields": [{"name": "time", "type": "long", "nullable": true, "metadata": {}}, {"name": "timestamp", "type": "timestamp", "nullable": true, "metadata": {}}, {"name": "formatversion", "type": "integer", "nullable": true, "metadata": {}}, {"name": "webaclid", "type": "string", "nullable": true, "metadata": {}}, {"name": "webaclname", "type": "string", "nullable": true, "metadata": {}}, {"name": "terminatingruleid", "type": "string", "nullable": true, "metadata": {}}, {"name": "terminatingruletype", "type": "string", "nullable": true, "metadata": {}}, {"name": "action", "type": "string", "nullable": true, "metadata": {}}, {"name": "action_fixed", "type": "string", "nullable": true, "metadata": {}}, {"name": "terminatingrulematchdetails", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "conditiontype", "type": "string", "nullable": true, "metadata": {}}, {"name": "sensitivitylevel", "type": "string", "nullable": true, "metadata": {}}, {"name": "location", "type": "string", "nullable": true, "metadata": {}}, {"name": "matcheddata", "type": {"type": "array", "elementType": "string", "containsNull": true}, "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "httpsourcename", "type": "string", "nullable": true, "metadata": {}}, {"name": "httpsourceid", "type": "string", "nullable": true, "metadata": {}}, {"name": "rulegrouplist", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "rulegroupid", "type": "string", "nullable": true, "metadata": {}}, {"name": "terminatingrule", "type": {"type": "struct", "fields": [{"name": "ruleid", "type": "string", "nullable": true, "metadata": {}}, {"name": "action", "type": "string", "nullable": true, "metadata": {}}, {"name": "rulematchdetails", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "conditiontype", "type": "string", "nullable": true, "metadata": {}}, {"name": "sensitivitylevel", "type": "string", "nullable": true, "metadata": {}}, {"name": "location", "type": "string", "nullable": true, "metadata": {}}, {"name": "matcheddata", "type": {"type": "array", "elementType": "string", "containsNull": true}, "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}]}, "nullable": true, "metadata": {}}, {"name": "nonterminatingmatchingrules", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "ruleid", "type": "string", "nullable": true, "metadata": {}}, {"name": "action", "type": "string", "nullable": true, "metadata": {}}, {"name": "rulematchdetails", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "conditiontype", "type": "string", "nullable": true, "metadata": {}}, {"name": "sensitivitylevel", "type": "string", "nullable": true, "metadata": {}}, {"name": "location", "type": "string", "nullable": true, "metadata": {}}, {"name": "matcheddata", "type": {"type": "array", "elementType": "string", "containsNull": true}, "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "excludedrules", "type": "string", "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "ratebasedrulelist", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "ratebasedruleid", "type": "string", "nullable": true, "metadata": {}}, {"name": "limitkey", "type": "string", "nullable": true, "metadata": {}}, {"name": "maxrateallowed", "type": "integer", "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "nonterminatingmatchingrules", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "ruleid", "type": "string", "nullable": true, "metadata": {}}, {"name": "action", "type": "string", "nullable": true, "metadata": {}}, {"name": "rulematchdetails", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "conditiontype", "type": "string", "nullable": true, "metadata": {}}, {"name": "sensitivitylevel", "type": "string", "nullable": true, "metadata": {}}, {"name": "location", "type": "string", "nullable": true, "metadata": {}}, {"name": "matcheddata", "type": {"type": "array", "elementType": "string", "containsNull": true}, "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "captcharesponse", "type": {"type": "struct", "fields": [{"name": "responsecode", "type": "string", "nullable": true, "metadata": {}}, {"name": "solvetimestamp", "type": "string", "nullable": true, "metadata": {}}]}, "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "requestheadersinserted", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "name", "type": "string", "nullable": true, "metadata": {}}, {"name": "value", "type": "string", "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "responsecodesent", "type": "string", "nullable": true, "metadata": {}}, {"name": "host", "type": "string", "nullable": true, "metadata": {}}, {"name": "clientip", "type": "string", "nullable": true, "metadata": {}}, {"name": "country", "type": "string", "nullable": true, "metadata": {}}, {"name": "uri", "type": "string", "nullable": true, "metadata": {}}, {"name": "args", "type": "string", "nullable": true, "metadata": {}}, {"name": "httpmethod", "type": "string", "nullable": true, "metadata": {}}, {"name": "ja3fingerprint", "type": "string", "nullable": true, "metadata": {}}, {"name": "httprequest", "type": {"type": "struct", "fields": [{"name": "clientip", "type": "string", "nullable": true, "metadata": {}}, {"name": "country", "type": "string", "nullable": true, "metadata": {}}, {"name": "headers", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "name", "type": "string", "nullable": true, "metadata": {}}, {"name": "value", "type": "string", "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "uri", "type": "string", "nullable": true, "metadata": {}}, {"name": "args", "type": "string", "nullable": true, "metadata": {}}, {"name": "httpversion", "type": "string", "nullable": true, "metadata": {}}, {"name": "httpmethod", "type": "string", "nullable": true, "metadata": {}}, {"name": "requestid", "type": "string", "nullable": true, "metadata": {}}]}, "nullable": true, "metadata": {}}, {"name": "labels", "type": {"type": "array", "elementType": {"type": "struct", "fields": [{"name": "name", "type": "string", "nullable": true, "metadata": {}}]}, "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "captcharesponse", "type": {"type": "struct", "fields": [{"name": "responsecode", "type": "string", "nullable": true, "metadata": {}}, {"name": "solvetimestamp", "type": "string", "nullable": true, "metadata": {}}, {"name": "failurereason", "type": "string", "nullable": true, "metadata": {}}]}, "nullable": true, "metadata": {}}, {"name": "event_hour", "type": "string", "nullable": true, "metadata": {}}, {"name": "account_id", "type": "string", "nullable": true, "metadata": {}}, {"name": "region", "type": "string", "nullable": true, "metadata": {}}, {"name": "__execution_name__", "type": "string", "nullable": true, "metadata": {}}]}',
+        'spark.sql.sources.schema.numPartCols': '4', 
+        'spark.sql.sources.schema.partCol.0': 'event_hour', 
+        'spark.sql.sources.schema.partCol.1': 'account_id', 
+        'spark.sql.sources.schema.partCol.2': 'region', 
+        'spark.sql.sources.schema.partCol.3': '__execution_name__'
+        }
     
     response = AWS_GLUE.get_partition_indexes(database=centralized_database, table_name=table_name)
     assert response['PartitionIndexDescriptorList'] == []
@@ -8436,6 +10583,7 @@ def test_lambda_handler(httpserver: HTTPServer, mock_iam_context, mock_s3_contex
         {'Name': 'time', 'Type': 'bigint'}, 
         {'Name': 'timestamp', 'Type': 'timestamp'}, 
         {'Name': 'action', 'Type': 'string'}, 
+        {'Name': 'action_fixed', 'Type': 'string'}, 
         {'Name': 'webaclid', 'Type': 'string'}, 
         {'Name': 'webaclname', 'Type': 'string'}, 
         {'Name': 'terminatingruleid', 'Type': 'string'}, 
@@ -8444,8 +10592,9 @@ def test_lambda_handler(httpserver: HTTPServer, mock_iam_context, mock_s3_contex
         {'Name': 'httpmethod', 'Type': 'string'}, 
         {'Name': 'country', 'Type': 'string'}, 
         {'Name': 'clientip', 'Type': 'string'}, 
+        {'Name': 'host', 'Type': 'string'}, 
         {'Name': 'uri', 'Type': 'string'}, 
-        {'Name': 'first_label', 'Type': 'string'},
+        {'Name': 'labels', 'Type': 'array<string>'},
         {'Name': 'requests', 'Type': 'bigint'}
         ]
     assert response['Table']['StorageDescriptor']['Location'] == f's3://{centralized_bucket_name}/{centralized_bucket_prefix}/{centralized_database}/{table_name}_metrics'
@@ -8461,20 +10610,32 @@ def test_lambda_handler(httpserver: HTTPServer, mock_iam_context, mock_s3_contex
         {'Name': '__execution_name__', 'Type': 'string'}
         ]
     assert response['Table']['TableType'] == 'EXTERNAL_TABLE'
-    assert response['Table']['Parameters'] == {'partition_filtering.enabled': 'true', 'classification': 'parquet', 'has_encrypted_data': 'true'}
+    assert response['Table']['Parameters'] == {
+        'partition_filtering.enabled': 'true', 
+        'classification': 'parquet', 
+        'has_encrypted_data': 'true', 
+        'parquet.compression': 'ZSTD', 
+        'spark.sql.partitionProvider': 'catalog', 
+        'spark.sql.sources.schema': '{"type": "struct", "fields": [{"name": "time", "type": "long", "nullable": true, "metadata": {}}, {"name": "timestamp", "type": "timestamp", "nullable": true, "metadata": {}}, {"name": "action", "type": "string", "nullable": true, "metadata": {}}, {"name": "action_fixed", "type": "string", "nullable": true, "metadata": {}}, {"name": "webaclid", "type": "string", "nullable": true, "metadata": {}}, {"name": "webaclname", "type": "string", "nullable": true, "metadata": {}}, {"name": "terminatingruleid", "type": "string", "nullable": true, "metadata": {}}, {"name": "terminatingruletype", "type": "string", "nullable": true, "metadata": {}}, {"name": "httpsourceid", "type": "string", "nullable": true, "metadata": {}}, {"name": "httpmethod", "type": "string", "nullable": true, "metadata": {}}, {"name": "country", "type": "string", "nullable": true, "metadata": {}}, {"name": "clientip", "type": "string", "nullable": true, "metadata": {}}, {"name": "host", "type": "string", "nullable": true, "metadata": {}}, {"name": "uri", "type": "string", "nullable": true, "metadata": {}}, {"name": "labels", "type": {"type": "array", "elementType": "string", "containsNull": true}, "nullable": true, "metadata": {}}, {"name": "requests", "type": "long", "nullable": true, "metadata": {}}, {"name": "event_hour", "type": "string", "nullable": true, "metadata": {}}, {"name": "account_id", "type": "string", "nullable": true, "metadata": {}}, {"name": "region", "type": "string", "nullable": true, "metadata": {}}, {"name": "__execution_name__", "type": "string", "nullable": true, "metadata": {}}]}', 
+        'spark.sql.sources.schema.numPartCols': '4', 
+        'spark.sql.sources.schema.partCol.0': 'event_hour', 
+        'spark.sql.sources.schema.partCol.1': 'account_id', 
+        'spark.sql.sources.schema.partCol.2': 'region', 
+        'spark.sql.sources.schema.partCol.3': '__execution_name__'
+        }
     
     response = AWS_GLUE.get_partition_indexes(database=centralized_database, table_name=f'{table_name}_metrics')
     assert response['PartitionIndexDescriptorList'] == []
     
-    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogProcessor-{table_name}', EventBusName='default')
+    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogProcessor-{pipeline_id}', EventBusName='default')
     assert response['Rules'][0] == {
-        'Name': f'LogProcessor-{table_name}', 
-        'Arn': f'arn:aws:events:{aws_region}:{account_id}:rule/LogProcessor-{table_name}', 
+        'Name': f'LogProcessor-{pipeline_id}', 
+        'Arn': f'arn:aws:events:{aws_region}:{account_id}:rule/LogProcessor-{pipeline_id}', 
         'State': 'ENABLED', 
         'ScheduleExpression': processor_schedule, 
         'EventBusName': 'default'
         }
-    response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogProcessor-{table_name}', EventBusName='default')
+    response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogProcessor-{pipeline_id}', EventBusName='default')
     assert response['Targets'][0]['Id'] == pipeline_id
     assert response['Targets'][0]['Arn'] == log_processor_arn
     assert response['Targets'][0]['RoleArn'] == log_processor_start_execution_role
@@ -8490,15 +10651,15 @@ def test_lambda_handler(httpserver: HTTPServer, mock_iam_context, mock_s3_contex
             },
             "athena": {
                 "tableName": table_name,
-                "statements": {
-                    "create": "CREATE EXTERNAL TABLE IF NOT EXISTS `tmp`.`waf{}` (`timestamp` bigint, `formatversion` int, `webaclid` string, `terminatingruleid` string, `terminatingruletype` string, `action` string, `terminatingrulematchdetails` array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>, `httpsourcename` string, `httpsourceid` string, `rulegrouplist` array<struct<`rulegroupid`:string,`terminatingrule`:struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>>,`nonterminatingmatchingrules`:array<struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>>>,`excludedrules`:string>>, `ratebasedrulelist` array<struct<`ratebasedruleid`:string,`limitkey`:string,`maxrateallowed`:int>>, `nonterminatingmatchingrules` array<struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>,`captcharesponse`:struct<`responsecode`:string,`solvetimestamp`:string>>>, `requestheadersinserted` array<struct<`name`:string,`value`:string>>, `responsecodesent` string, `httprequest` struct<`clientip`:string,`country`:string,`headers`:array<struct<`name`:string,`value`:string>>,`uri`:string,`args`:string,`httpversion`:string,`httpmethod`:string,`requestid`:string>, `labels` array<struct<`name`:string>>, `captcharesponse` struct<`responsecode`:string,`solvetimestamp`:string,`failureReason`:string>)  ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'  STORED AS INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat' OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat' LOCATION '{}' ;",
-                    "drop": "DROP TABLE IF EXISTS `tmp`.`waf{}`",
-                    "insert": "INSERT INTO \"centralized\".\"waf\" (\"time\", \"timestamp\", \"formatversion\", \"webaclid\", \"webaclname\", \"terminatingruleid\", \"terminatingruletype\", \"action\", \"terminatingrulematchdetails\", \"httpsourcename\", \"httpsourceid\", \"rulegrouplist\", \"ratebasedrulelist\", \"nonterminatingmatchingrules\", \"requestheadersinserted\", \"responsecodesent\", \"httprequest\", \"labels\", \"captcharesponse\", \"account_id\", \"region\", \"event_hour\", \"__execution_name__\") SELECT \"timestamp\", CAST(FROM_UNIXTIME(\"timestamp\" / 1000) AS timestamp), \"formatversion\", \"webaclid\", SPLIT(\"webaclid\", '/')[3], \"terminatingruleid\", \"terminatingruletype\", \"action\", \"terminatingrulematchdetails\", \"httpsourcename\", \"httpsourceid\", \"rulegrouplist\", \"ratebasedrulelist\", \"nonterminatingmatchingrules\", \"requestheadersinserted\", \"responsecodesent\", \"httprequest\", \"labels\", \"captcharesponse\", SPLIT(\"webaclid\", ':')[5], SPLIT(\"webaclid\", ':')[4], DATE_FORMAT(CAST(FROM_UNIXTIME(\"timestamp\" / 1000) AS timestamp), '%Y%m%d%H'), '{}' FROM \"tmp\".\"waf{}\";",
-                    "aggregate": [
-                        "INSERT INTO \"centralized\".\"waf_metrics\" (\"time\", \"timestamp\", \"action\", \"webaclid\", \"webaclname\", \"terminatingruleid\", \"terminatingruletype\", \"httpsourceid\", \"httpmethod\", \"country\", \"clientip\", \"uri\", \"first_label\", \"requests\", \"account_id\", \"region\", \"event_hour\", \"__execution_name__\") SELECT FLOOR(\"time\" / 60000) * 60000, DATE_TRUNC('minute', \"timestamp\"), \"action\", \"webaclid\", \"webaclname\", \"terminatingruleid\", \"terminatingruletype\", \"httpsourceid\", \"httprequest\".\"httpmethod\", \"httprequest\".\"country\", \"httprequest\".\"clientip\", \"httprequest\".\"uri\", CASE WHEN labels = ARRAY[] THEN '' ELSE labels[1].name END, CAST(COUNT(1) AS bigint), \"account_id\", \"region\", \"event_hour\", \"__execution_name__\" FROM \"centralized\".\"waf\" WHERE __execution_name__ = '{}' GROUP BY FLOOR(\"time\" / 60000) * 60000, DATE_TRUNC('minute', \"timestamp\"), \"action\", \"webaclid\", \"webaclname\", \"terminatingruleid\", \"terminatingruletype\", \"httpsourceid\", \"httprequest\".\"httpmethod\", \"httprequest\".\"country\", \"httprequest\".\"clientip\", \"httprequest\".\"uri\", CASE WHEN labels = ARRAY[] THEN '' ELSE labels[1].name END, \"account_id\", \"region\", \"event_hour\", \"__execution_name__\";"
+                'statements': {
+                    'create': "CREATE EXTERNAL TABLE IF NOT EXISTS `tmp`.`waf{}` (`timestamp` bigint, `formatversion` int, `webaclid` string, `terminatingruleid` string, `terminatingruletype` string, `action` string, `terminatingrulematchdetails` array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>, `httpsourcename` string, `httpsourceid` string, `rulegrouplist` array<struct<`rulegroupid`:string,`terminatingrule`:struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>>,`nonterminatingmatchingrules`:array<struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>>>,`excludedrules`:string>>, `ratebasedrulelist` array<struct<`ratebasedruleid`:string,`limitkey`:string,`maxrateallowed`:int>>, `nonterminatingmatchingrules` array<struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>,`captcharesponse`:struct<`responsecode`:string,`solvetimestamp`:string>>>, `requestheadersinserted` array<struct<`name`:string,`value`:string>>, `responsecodesent` string, `ja3fingerprint` string, `httprequest` struct<`clientip`:string,`country`:string,`headers`:array<struct<`name`:string,`value`:string>>,`uri`:string,`args`:string,`httpversion`:string,`httpmethod`:string,`requestid`:string>, `labels` array<struct<`name`:string>>, `captcharesponse` struct<`responsecode`:string,`solvetimestamp`:string,`failureReason`:string>)  ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'  STORED AS INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat' OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat' LOCATION '{}' ;", 
+                    'drop': 'DROP TABLE IF EXISTS `tmp`.`waf{}`',
+                    'insert': 'INSERT INTO "centralized"."waf" ("time", "timestamp", "formatversion", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "action", "action_fixed", "terminatingrulematchdetails", "httpsourcename", "httpsourceid", "rulegrouplist", "ratebasedrulelist", "nonterminatingmatchingrules", "requestheadersinserted", "responsecodesent", "host", "clientip", "country", "uri", "args", "httpmethod", "ja3fingerprint", "httprequest", "labels", "captcharesponse", "account_id", "region", "event_hour", "__execution_name__") SELECT "timestamp", CAST(FROM_UNIXTIME("timestamp" / 1000) AS timestamp), "formatversion", "webaclid", SPLIT("webaclid", \'/\')[3], "terminatingruleid", "terminatingruletype", "action", CASE WHEN action = \'ALLOW\' AND labels != ARRAY[] THEN \'COUNT\' ELSE action END, "terminatingrulematchdetails", "httpsourcename", "httpsourceid", "rulegrouplist", "ratebasedrulelist", "nonterminatingmatchingrules", "requestheadersinserted", "responsecodesent", case when filter(httprequest.headers, x -> lower(x.name) = \'host\' ) = ARRAY[] then \'\' else filter(httprequest.headers, x -> lower(x.name) = \'host\' )[1].value end, httprequest.clientip, httprequest.country, httprequest.uri, httprequest.args, httprequest.httpmethod, "ja3fingerprint", "httprequest", "labels", "captcharesponse", SPLIT("webaclid", \':\')[5], SPLIT("webaclid", \':\')[4], DATE_FORMAT(CAST(FROM_UNIXTIME("timestamp" / 1000) AS timestamp), \'%Y%m%d%H\'), \'{}\' FROM "tmp"."waf{}";', 
+                    'aggregate': [
+                        'INSERT INTO "centralized"."waf_metrics" ("time", "timestamp", "action", "action_fixed", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "httpsourceid", "httpmethod", "country", "clientip", "host", "uri", "labels", "requests", "account_id", "region", "event_hour", "__execution_name__") SELECT FLOOR("time" / 60000) * 60000, DATE_TRUNC(\'minute\', "timestamp"), "action", "action_fixed", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "httpsourceid", "httpmethod", "country", "clientip", "host", "uri", ARRAY_DISTINCT(FLATTEN(ARRAY_AGG(TRANSFORM(labels, x -> x.name)) FILTER (WHERE labels != ARRAY[]))), CAST(COUNT(1) AS bigint), "account_id", "region", "event_hour", "__execution_name__" FROM "centralized"."waf" WHERE __execution_name__ = \'{}\' GROUP BY FLOOR("time" / 60000) * 60000, DATE_TRUNC(\'minute\', "timestamp"), "action", "action_fixed", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "httpsourceid", "httpmethod", "country", "clientip", "host", "uri", "account_id", "region", "event_hour", "__execution_name__";'
                         ]
                     }
-            },
+                },
             "notification": {
                 "service": notification_service,
                 "recipients": recipients.split(',')
@@ -8506,15 +10667,15 @@ def test_lambda_handler(httpserver: HTTPServer, mock_iam_context, mock_s3_contex
         }
     }
     
-    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMerger-{table_name}', EventBusName='default')
+    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMerger-{pipeline_id}', EventBusName='default')
     assert response['Rules'][0] == {
-        'Name': f'LogMerger-{table_name}', 
-        'Arn': f'arn:aws:events:{aws_region}:{account_id}:rule/LogMerger-{table_name}', 
+        'Name': f'LogMerger-{pipeline_id}', 
+        'Arn': f'arn:aws:events:{aws_region}:{account_id}:rule/LogMerger-{pipeline_id}', 
         'State': 'ENABLED', 
         'ScheduleExpression': merger_schedule, 
         'EventBusName': 'default'
         }
-    response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogMerger-{table_name}', EventBusName='default')
+    response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogMerger-{pipeline_id}', EventBusName='default')
     assert response['Targets'][0]['Id'] == pipeline_id
     assert response['Targets'][0]['Arn'] == log_merger_arn
     assert response['Targets'][0]['RoleArn'] == log_merger_start_execution_role
@@ -8557,15 +10718,15 @@ def test_lambda_handler(httpserver: HTTPServer, mock_iam_context, mock_s3_contex
         }
     }
 
-    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMergerForMetrics-{table_name}', EventBusName='default')
+    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMergerForMetrics-{pipeline_id}', EventBusName='default')
     assert response['Rules'][0] == {
-        'Name': f'LogMergerForMetrics-{table_name}', 
-        'Arn': f'arn:aws:events:{aws_region}:{account_id}:rule/LogMergerForMetrics-{table_name}', 
+        'Name': f'LogMergerForMetrics-{pipeline_id}', 
+        'Arn': f'arn:aws:events:{aws_region}:{account_id}:rule/LogMergerForMetrics-{pipeline_id}', 
         'State': 'ENABLED', 
         'ScheduleExpression': merger_schedule, 
         'EventBusName': 'default'
         }
-    response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogMergerForMetrics-{table_name}', EventBusName='default')
+    response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogMergerForMetrics-{pipeline_id}', EventBusName='default')
     assert response['Targets'][0]['Id'] == pipeline_id
     assert response['Targets'][0]['Arn'] == log_merger_arn
     assert response['Targets'][0]['RoleArn'] == log_merger_start_execution_role
@@ -8608,15 +10769,15 @@ def test_lambda_handler(httpserver: HTTPServer, mock_iam_context, mock_s3_contex
         }
     }
     
-    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchive-{table_name}', EventBusName='default')
+    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchive-{pipeline_id}', EventBusName='default')
     assert response['Rules'][0] == {
-        'Name': f'LogArchive-{table_name}', 
-        'Arn': f'arn:aws:events:{aws_region}:{account_id}:rule/LogArchive-{table_name}', 
+        'Name': f'LogArchive-{pipeline_id}', 
+        'Arn': f'arn:aws:events:{aws_region}:{account_id}:rule/LogArchive-{pipeline_id}', 
         'State': 'ENABLED', 
         'ScheduleExpression': archive_schedule, 
         'EventBusName': 'default'
         }
-    response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogArchive-{table_name}', EventBusName='default')
+    response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogArchive-{pipeline_id}', EventBusName='default')
     assert response['Targets'][0]['Id'] == pipeline_id
     assert response['Targets'][0]['Arn'] == log_archive_arn
     assert response['Targets'][0]['RoleArn'] == log_archive_start_execution_role
@@ -8642,7 +10803,7 @@ def test_lambda_handler(httpserver: HTTPServer, mock_iam_context, mock_s3_contex
         }
     }
     
-    response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogArchiveForMetrics-{table_name}', EventBusName='default')
+    response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogArchiveForMetrics-{pipeline_id}', EventBusName='default')
     assert response['Targets'][0]['Id'] == pipeline_id
     assert response['Targets'][0]['Arn'] == log_archive_arn
     assert response['Targets'][0]['RoleArn'] == log_archive_start_execution_role
@@ -8705,9 +10866,9 @@ def test_lambda_handler(httpserver: HTTPServer, mock_iam_context, mock_s3_contex
             'Resource': [
                 f'arn:aws:s3:::{logging_bucket_name}', 
                 f'arn:aws:s3:::{logging_bucket_name}/*',
-                f'arn:aws:s3:::{centralized_bucket_name}/{centralized_bucket_prefix}/{centralized_database}/{table_name}*',
+                f'arn:aws:s3:::{centralized_bucket_name}/{centralized_bucket_prefix}/{centralized_database}*',
                 f'arn:aws:s3:::{centralized_bucket_name}',
-                f'arn:aws:s3:::{centralized_bucket_name}/{centralized_bucket_prefix}/{centralized_database}/{table_name}_metrics*'], 
+                ], 
             }
         ]
     lambda_handler(delete_pipeline_event, context)
@@ -8723,15 +10884,15 @@ def test_lambda_handler(httpserver: HTTPServer, mock_iam_context, mock_s3_contex
     
     lambda_handler(create_pipeline_event, context)
     
-    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogProcessor-{table_name}', EventBusName='default')
+    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogProcessor-{pipeline_id}', EventBusName='default')
     assert response['Rules'][0] == {
-        'Name': f'LogProcessor-{table_name}', 
-        'Arn': f'arn:aws:events:{aws_region}:{account_id}:rule/LogProcessor-{table_name}', 
+        'Name': f'LogProcessor-{pipeline_id}', 
+        'Arn': f'arn:aws:events:{aws_region}:{account_id}:rule/LogProcessor-{pipeline_id}', 
         'State': 'ENABLED', 
         'ScheduleExpression': processor_schedule, 
         'EventBusName': 'default'
         }
-    response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogProcessor-{table_name}', EventBusName='default')
+    response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogProcessor-{pipeline_id}', EventBusName='default')
     assert response['Targets'][0]['Id'] == pipeline_id
     assert response['Targets'][0]['Arn'] == log_processor_arn
     assert response['Targets'][0]['RoleArn'] == log_processor_start_execution_role
@@ -8748,13 +10909,13 @@ def test_lambda_handler(httpserver: HTTPServer, mock_iam_context, mock_s3_contex
             "athena": {
                 "tableName": table_name,
                 "statements": {
-                    "create": "CREATE EXTERNAL TABLE IF NOT EXISTS `tmp`.`waf{}` (`timestamp` bigint, `formatversion` int, `webaclid` string, `terminatingruleid` string, `terminatingruletype` string, `action` string, `terminatingrulematchdetails` array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>, `httpsourcename` string, `httpsourceid` string, `rulegrouplist` array<struct<`rulegroupid`:string,`terminatingrule`:struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>>,`nonterminatingmatchingrules`:array<struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>>>,`excludedrules`:string>>, `ratebasedrulelist` array<struct<`ratebasedruleid`:string,`limitkey`:string,`maxrateallowed`:int>>, `nonterminatingmatchingrules` array<struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>,`captcharesponse`:struct<`responsecode`:string,`solvetimestamp`:string>>>, `requestheadersinserted` array<struct<`name`:string,`value`:string>>, `responsecodesent` string, `httprequest` struct<`clientip`:string,`country`:string,`headers`:array<struct<`name`:string,`value`:string>>,`uri`:string,`args`:string,`httpversion`:string,`httpmethod`:string,`requestid`:string>, `labels` array<struct<`name`:string>>, `captcharesponse` struct<`responsecode`:string,`solvetimestamp`:string,`failureReason`:string>)  ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'  STORED AS INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat' OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat' LOCATION '{}' ;",
-                    "drop": "DROP TABLE IF EXISTS `tmp`.`waf{}`",
-                    "insert": "INSERT INTO \"centralized\".\"waf\" (\"time\", \"timestamp\", \"formatversion\", \"webaclid\", \"webaclname\", \"terminatingruleid\", \"terminatingruletype\", \"action\", \"terminatingrulematchdetails\", \"httpsourcename\", \"httpsourceid\", \"rulegrouplist\", \"ratebasedrulelist\", \"nonterminatingmatchingrules\", \"requestheadersinserted\", \"responsecodesent\", \"httprequest\", \"labels\", \"captcharesponse\", \"account_id\", \"region\", \"event_hour\", \"__execution_name__\") SELECT \"timestamp\", CAST(FROM_UNIXTIME(\"timestamp\" / 1000) AS timestamp), \"formatversion\", \"webaclid\", SPLIT(\"webaclid\", '/')[3], \"terminatingruleid\", \"terminatingruletype\", \"action\", \"terminatingrulematchdetails\", \"httpsourcename\", \"httpsourceid\", \"rulegrouplist\", \"ratebasedrulelist\", \"nonterminatingmatchingrules\", \"requestheadersinserted\", \"responsecodesent\", \"httprequest\", \"labels\", \"captcharesponse\", SPLIT(\"webaclid\", ':')[5], SPLIT(\"webaclid\", ':')[4], DATE_FORMAT(CAST(FROM_UNIXTIME(\"timestamp\" / 1000) AS timestamp), '%Y%m%d%H'), '{}' FROM \"tmp\".\"waf{}\";",
-                    "aggregate": [
-                        "INSERT INTO \"centralized\".\"waf_metrics\" (\"time\", \"timestamp\", \"action\", \"webaclid\", \"webaclname\", \"terminatingruleid\", \"terminatingruletype\", \"httpsourceid\", \"httpmethod\", \"country\", \"clientip\", \"uri\", \"first_label\", \"requests\", \"account_id\", \"region\", \"event_hour\", \"__execution_name__\") SELECT FLOOR(\"time\" / 60000) * 60000, DATE_TRUNC('minute', \"timestamp\"), \"action\", \"webaclid\", \"webaclname\", \"terminatingruleid\", \"terminatingruletype\", \"httpsourceid\", \"httprequest\".\"httpmethod\", \"httprequest\".\"country\", \"httprequest\".\"clientip\", \"httprequest\".\"uri\", CASE WHEN labels = ARRAY[] THEN '' ELSE labels[1].name END, CAST(COUNT(1) AS bigint), \"account_id\", \"region\", \"event_hour\", \"__execution_name__\" FROM \"centralized\".\"waf\" WHERE __execution_name__ = '{}' GROUP BY FLOOR(\"time\" / 60000) * 60000, DATE_TRUNC('minute', \"timestamp\"), \"action\", \"webaclid\", \"webaclname\", \"terminatingruleid\", \"terminatingruletype\", \"httpsourceid\", \"httprequest\".\"httpmethod\", \"httprequest\".\"country\", \"httprequest\".\"clientip\", \"httprequest\".\"uri\", CASE WHEN labels = ARRAY[] THEN '' ELSE labels[1].name END, \"account_id\", \"region\", \"event_hour\", \"__execution_name__\";"
+                    'create': "CREATE EXTERNAL TABLE IF NOT EXISTS `tmp`.`waf{}` (`timestamp` bigint, `formatversion` int, `webaclid` string, `terminatingruleid` string, `terminatingruletype` string, `action` string, `terminatingrulematchdetails` array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>, `httpsourcename` string, `httpsourceid` string, `rulegrouplist` array<struct<`rulegroupid`:string,`terminatingrule`:struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>>,`nonterminatingmatchingrules`:array<struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>>>,`excludedrules`:string>>, `ratebasedrulelist` array<struct<`ratebasedruleid`:string,`limitkey`:string,`maxrateallowed`:int>>, `nonterminatingmatchingrules` array<struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>,`captcharesponse`:struct<`responsecode`:string,`solvetimestamp`:string>>>, `requestheadersinserted` array<struct<`name`:string,`value`:string>>, `responsecodesent` string, `ja3fingerprint` string, `httprequest` struct<`clientip`:string,`country`:string,`headers`:array<struct<`name`:string,`value`:string>>,`uri`:string,`args`:string,`httpversion`:string,`httpmethod`:string,`requestid`:string>, `labels` array<struct<`name`:string>>, `captcharesponse` struct<`responsecode`:string,`solvetimestamp`:string,`failureReason`:string>)  ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'  STORED AS INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat' OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat' LOCATION '{}' ;", 
+                    'drop': 'DROP TABLE IF EXISTS `tmp`.`waf{}`',
+                    'insert': 'INSERT INTO "centralized"."waf" ("time", "timestamp", "formatversion", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "action", "action_fixed", "terminatingrulematchdetails", "httpsourcename", "httpsourceid", "rulegrouplist", "ratebasedrulelist", "nonterminatingmatchingrules", "requestheadersinserted", "responsecodesent", "host", "clientip", "country", "uri", "args", "httpmethod", "ja3fingerprint", "httprequest", "labels", "captcharesponse", "account_id", "region", "event_hour", "__execution_name__") SELECT "timestamp", CAST(FROM_UNIXTIME("timestamp" / 1000) AS timestamp), "formatversion", "webaclid", SPLIT("webaclid", \'/\')[3], "terminatingruleid", "terminatingruletype", "action", CASE WHEN action = \'ALLOW\' AND labels != ARRAY[] THEN \'COUNT\' ELSE action END, "terminatingrulematchdetails", "httpsourcename", "httpsourceid", "rulegrouplist", "ratebasedrulelist", "nonterminatingmatchingrules", "requestheadersinserted", "responsecodesent", case when filter(httprequest.headers, x -> lower(x.name) = \'host\' ) = ARRAY[] then \'\' else filter(httprequest.headers, x -> lower(x.name) = \'host\' )[1].value end, httprequest.clientip, httprequest.country, httprequest.uri, httprequest.args, httprequest.httpmethod, "ja3fingerprint", "httprequest", "labels", "captcharesponse", SPLIT("webaclid", \':\')[5], SPLIT("webaclid", \':\')[4], DATE_FORMAT(CAST(FROM_UNIXTIME("timestamp" / 1000) AS timestamp), \'%Y%m%d%H\'), \'{}\' FROM "tmp"."waf{}";', 
+                    'aggregate': [
+                        'INSERT INTO "centralized"."waf_metrics" ("time", "timestamp", "action", "action_fixed", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "httpsourceid", "httpmethod", "country", "clientip", "host", "uri", "labels", "requests", "account_id", "region", "event_hour", "__execution_name__") SELECT FLOOR("time" / 60000) * 60000, DATE_TRUNC(\'minute\', "timestamp"), "action", "action_fixed", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "httpsourceid", "httpmethod", "country", "clientip", "host", "uri", ARRAY_DISTINCT(FLATTEN(ARRAY_AGG(TRANSFORM(labels, x -> x.name)) FILTER (WHERE labels != ARRAY[]))), CAST(COUNT(1) AS bigint), "account_id", "region", "event_hour", "__execution_name__" FROM "centralized"."waf" WHERE __execution_name__ = \'{}\' GROUP BY FLOOR("time" / 60000) * 60000, DATE_TRUNC(\'minute\', "timestamp"), "action", "action_fixed", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "httpsourceid", "httpmethod", "country", "clientip", "host", "uri", "account_id", "region", "event_hour", "__execution_name__";'
                         ]
-                    }
+                }
             },
             "notification": {
                 "service": notification_service,
@@ -8763,15 +10924,15 @@ def test_lambda_handler(httpserver: HTTPServer, mock_iam_context, mock_s3_contex
         }
     }
     
-    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMerger-{table_name}', EventBusName='default')
+    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMerger-{pipeline_id}', EventBusName='default')
     assert response['Rules'][0] == {
-        'Name': f'LogMerger-{table_name}', 
-        'Arn': f'arn:aws:events:{aws_region}:{account_id}:rule/LogMerger-{table_name}', 
+        'Name': f'LogMerger-{pipeline_id}', 
+        'Arn': f'arn:aws:events:{aws_region}:{account_id}:rule/LogMerger-{pipeline_id}', 
         'State': 'ENABLED', 
         'ScheduleExpression': merger_schedule, 
         'EventBusName': 'default'
         }
-    response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogMerger-{table_name}', EventBusName='default')
+    response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogMerger-{pipeline_id}', EventBusName='default')
     assert response['Targets'][0]['Id'] == pipeline_id
     assert response['Targets'][0]['Arn'] == log_merger_arn
     assert response['Targets'][0]['RoleArn'] == log_merger_start_execution_role
@@ -8814,15 +10975,15 @@ def test_lambda_handler(httpserver: HTTPServer, mock_iam_context, mock_s3_contex
         }
     }
 
-    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMergerForMetrics-{table_name}', EventBusName='default')
+    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMergerForMetrics-{pipeline_id}', EventBusName='default')
     assert response['Rules'][0] == {
-        'Name': f'LogMergerForMetrics-{table_name}', 
-        'Arn': f'arn:aws:events:{aws_region}:{account_id}:rule/LogMergerForMetrics-{table_name}', 
+        'Name': f'LogMergerForMetrics-{pipeline_id}', 
+        'Arn': f'arn:aws:events:{aws_region}:{account_id}:rule/LogMergerForMetrics-{pipeline_id}', 
         'State': 'ENABLED', 
         'ScheduleExpression': merger_schedule, 
         'EventBusName': 'default'
         }
-    response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogMergerForMetrics-{table_name}', EventBusName='default')
+    response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogMergerForMetrics-{pipeline_id}', EventBusName='default')
     assert response['Targets'][0]['Id'] == pipeline_id
     assert response['Targets'][0]['Arn'] == log_merger_arn
     assert response['Targets'][0]['RoleArn'] == log_merger_start_execution_role
@@ -8865,15 +11026,15 @@ def test_lambda_handler(httpserver: HTTPServer, mock_iam_context, mock_s3_contex
         }
     }
     
-    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchive-{table_name}', EventBusName='default')
+    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchive-{pipeline_id}', EventBusName='default')
     assert response['Rules'][0] == {
-        'Name': f'LogArchive-{table_name}', 
-        'Arn': f'arn:aws:events:{aws_region}:{account_id}:rule/LogArchive-{table_name}', 
+        'Name': f'LogArchive-{pipeline_id}', 
+        'Arn': f'arn:aws:events:{aws_region}:{account_id}:rule/LogArchive-{pipeline_id}', 
         'State': 'ENABLED', 
         'ScheduleExpression': archive_schedule, 
         'EventBusName': 'default'
         }
-    response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogArchive-{table_name}', EventBusName='default')
+    response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogArchive-{pipeline_id}', EventBusName='default')
     assert response['Targets'][0]['Id'] == pipeline_id
     assert response['Targets'][0]['Arn'] == log_archive_arn
     assert response['Targets'][0]['RoleArn'] == log_archive_start_execution_role
@@ -8898,15 +11059,15 @@ def test_lambda_handler(httpserver: HTTPServer, mock_iam_context, mock_s3_contex
             }
         }
     }
-    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchive-{table_name}', EventBusName='default')
+    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchive-{pipeline_id}', EventBusName='default')
     assert response['Rules'][0] == {
-        'Name': f'LogArchive-{table_name}', 
-        'Arn': f'arn:aws:events:{aws_region}:{account_id}:rule/LogArchive-{table_name}', 
+        'Name': f'LogArchive-{pipeline_id}', 
+        'Arn': f'arn:aws:events:{aws_region}:{account_id}:rule/LogArchive-{pipeline_id}', 
         'State': 'ENABLED', 
         'ScheduleExpression': archive_schedule, 
         'EventBusName': 'default'
         }
-    response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogArchiveForMetrics-{table_name}', EventBusName='default')
+    response = AWS_EVENTS._events_client.list_targets_by_rule(Rule=f'LogArchiveForMetrics-{pipeline_id}', EventBusName='default')
     assert response['Targets'][0]['Id'] == pipeline_id
     assert response['Targets'][0]['Arn'] == log_archive_arn
     assert response['Targets'][0]['RoleArn'] == log_archive_start_execution_role
@@ -8969,14 +11130,14 @@ def test_lambda_handler(httpserver: HTTPServer, mock_iam_context, mock_s3_contex
             "athena": {
                 "tableName": table_name,
                 "statements": {
-                    "create": "CREATE EXTERNAL TABLE IF NOT EXISTS `tmp`.`waf{}` (`timestamp` bigint, `formatversion` int, `webaclid` string, `terminatingruleid` string, `terminatingruletype` string, `action` string, `terminatingrulematchdetails` array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>, `httpsourcename` string, `httpsourceid` string, `rulegrouplist` array<struct<`rulegroupid`:string,`terminatingrule`:struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>>,`nonterminatingmatchingrules`:array<struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>>>,`excludedrules`:string>>, `ratebasedrulelist` array<struct<`ratebasedruleid`:string,`limitkey`:string,`maxrateallowed`:int>>, `nonterminatingmatchingrules` array<struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>,`captcharesponse`:struct<`responsecode`:string,`solvetimestamp`:string>>>, `requestheadersinserted` array<struct<`name`:string,`value`:string>>, `responsecodesent` string, `httprequest` struct<`clientip`:string,`country`:string,`headers`:array<struct<`name`:string,`value`:string>>,`uri`:string,`args`:string,`httpversion`:string,`httpmethod`:string,`requestid`:string>, `labels` array<struct<`name`:string>>, `captcharesponse` struct<`responsecode`:string,`solvetimestamp`:string,`failureReason`:string>)  ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'  STORED AS INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat' OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat' LOCATION '{}' ;",
-                    "drop": "DROP TABLE IF EXISTS `tmp`.`waf{}`",
-                    "insert": "INSERT INTO \"centralized\".\"waf\" (\"time\", \"timestamp\", \"formatversion\", \"webaclid\", \"webaclname\", \"terminatingruleid\", \"terminatingruletype\", \"action\", \"terminatingrulematchdetails\", \"httpsourcename\", \"httpsourceid\", \"rulegrouplist\", \"ratebasedrulelist\", \"nonterminatingmatchingrules\", \"requestheadersinserted\", \"responsecodesent\", \"httprequest\", \"labels\", \"captcharesponse\", \"account_id\", \"region\", \"event_hour\", \"__execution_name__\") SELECT \"timestamp\", CAST(FROM_UNIXTIME(\"timestamp\" / 1000) AS timestamp), \"formatversion\", \"webaclid\", SPLIT(\"webaclid\", '/')[3], \"terminatingruleid\", \"terminatingruletype\", \"action\", \"terminatingrulematchdetails\", \"httpsourcename\", \"httpsourceid\", \"rulegrouplist\", \"ratebasedrulelist\", \"nonterminatingmatchingrules\", \"requestheadersinserted\", \"responsecodesent\", \"httprequest\", \"labels\", \"captcharesponse\", SPLIT(\"webaclid\", ':')[5], SPLIT(\"webaclid\", ':')[4], DATE_FORMAT(CAST(FROM_UNIXTIME(\"timestamp\" / 1000) AS timestamp), '%Y%m%d%H'), '{}' FROM \"tmp\".\"waf{}\";",
-                    "aggregate": [
-                        "INSERT INTO \"centralized\".\"waf_metrics\" (\"time\", \"timestamp\", \"action\", \"webaclid\", \"webaclname\", \"terminatingruleid\", \"terminatingruletype\", \"httpsourceid\", \"httpmethod\", \"country\", \"clientip\", \"uri\", \"first_label\", \"requests\", \"account_id\", \"region\", \"event_hour\", \"__execution_name__\") SELECT FLOOR(\"time\" / 60000) * 60000, DATE_TRUNC('minute', \"timestamp\"), \"action\", \"webaclid\", \"webaclname\", \"terminatingruleid\", \"terminatingruletype\", \"httpsourceid\", \"httprequest\".\"httpmethod\", \"httprequest\".\"country\", \"httprequest\".\"clientip\", \"httprequest\".\"uri\", CASE WHEN labels = ARRAY[] THEN '' ELSE labels[1].name END, CAST(COUNT(1) AS bigint), \"account_id\", \"region\", \"event_hour\", \"__execution_name__\" FROM \"centralized\".\"waf\" WHERE __execution_name__ = '{}' GROUP BY FLOOR(\"time\" / 60000) * 60000, DATE_TRUNC('minute', \"timestamp\"), \"action\", \"webaclid\", \"webaclname\", \"terminatingruleid\", \"terminatingruletype\", \"httpsourceid\", \"httprequest\".\"httpmethod\", \"httprequest\".\"country\", \"httprequest\".\"clientip\", \"httprequest\".\"uri\", CASE WHEN labels = ARRAY[] THEN '' ELSE labels[1].name END, \"account_id\", \"region\", \"event_hour\", \"__execution_name__\";"
-                        ]
-                    }
-                },
+                    'create': "CREATE EXTERNAL TABLE IF NOT EXISTS `tmp`.`waf{}` (`timestamp` bigint, `formatversion` int, `webaclid` string, `terminatingruleid` string, `terminatingruletype` string, `action` string, `terminatingrulematchdetails` array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>, `httpsourcename` string, `httpsourceid` string, `rulegrouplist` array<struct<`rulegroupid`:string,`terminatingrule`:struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>>,`nonterminatingmatchingrules`:array<struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>>>,`excludedrules`:string>>, `ratebasedrulelist` array<struct<`ratebasedruleid`:string,`limitkey`:string,`maxrateallowed`:int>>, `nonterminatingmatchingrules` array<struct<`ruleid`:string,`action`:string,`rulematchdetails`:array<struct<`conditiontype`:string,`sensitivitylevel`:string,`location`:string,`matcheddata`:array<string>>>,`captcharesponse`:struct<`responsecode`:string,`solvetimestamp`:string>>>, `requestheadersinserted` array<struct<`name`:string,`value`:string>>, `responsecodesent` string, `ja3fingerprint` string, `httprequest` struct<`clientip`:string,`country`:string,`headers`:array<struct<`name`:string,`value`:string>>,`uri`:string,`args`:string,`httpversion`:string,`httpmethod`:string,`requestid`:string>, `labels` array<struct<`name`:string>>, `captcharesponse` struct<`responsecode`:string,`solvetimestamp`:string,`failureReason`:string>)  ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'  STORED AS INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat' OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat' LOCATION '{}' ;", 
+                    'drop': 'DROP TABLE IF EXISTS `tmp`.`waf{}`',
+                    'insert': 'INSERT INTO "centralized"."waf" ("time", "timestamp", "formatversion", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "action", "action_fixed", "terminatingrulematchdetails", "httpsourcename", "httpsourceid", "rulegrouplist", "ratebasedrulelist", "nonterminatingmatchingrules", "requestheadersinserted", "responsecodesent", "host", "clientip", "country", "uri", "args", "httpmethod", "ja3fingerprint", "httprequest", "labels", "captcharesponse", "account_id", "region", "event_hour", "__execution_name__") SELECT "timestamp", CAST(FROM_UNIXTIME("timestamp" / 1000) AS timestamp), "formatversion", "webaclid", SPLIT("webaclid", \'/\')[3], "terminatingruleid", "terminatingruletype", "action", CASE WHEN action = \'ALLOW\' AND labels != ARRAY[] THEN \'COUNT\' ELSE action END, "terminatingrulematchdetails", "httpsourcename", "httpsourceid", "rulegrouplist", "ratebasedrulelist", "nonterminatingmatchingrules", "requestheadersinserted", "responsecodesent", case when filter(httprequest.headers, x -> lower(x.name) = \'host\' ) = ARRAY[] then \'\' else filter(httprequest.headers, x -> lower(x.name) = \'host\' )[1].value end, httprequest.clientip, httprequest.country, httprequest.uri, httprequest.args, httprequest.httpmethod, "ja3fingerprint", "httprequest", "labels", "captcharesponse", SPLIT("webaclid", \':\')[5], SPLIT("webaclid", \':\')[4], DATE_FORMAT(CAST(FROM_UNIXTIME("timestamp" / 1000) AS timestamp), \'%Y%m%d%H\'), \'{}\' FROM "tmp"."waf{}";', 
+                    'aggregate': [
+                        'INSERT INTO "centralized"."waf_metrics" ("time", "timestamp", "action", "action_fixed", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "httpsourceid", "httpmethod", "country", "clientip", "host", "uri", "labels", "requests", "account_id", "region", "event_hour", "__execution_name__") SELECT FLOOR("time" / 60000) * 60000, DATE_TRUNC(\'minute\', "timestamp"), "action", "action_fixed", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "httpsourceid", "httpmethod", "country", "clientip", "host", "uri", ARRAY_DISTINCT(FLATTEN(ARRAY_AGG(TRANSFORM(labels, x -> x.name)) FILTER (WHERE labels != ARRAY[]))), CAST(COUNT(1) AS bigint), "account_id", "region", "event_hour", "__execution_name__" FROM "centralized"."waf" WHERE __execution_name__ = \'{}\' GROUP BY FLOOR("time" / 60000) * 60000, DATE_TRUNC(\'minute\', "timestamp"), "action", "action_fixed", "webaclid", "webaclname", "terminatingruleid", "terminatingruletype", "httpsourceid", "httpmethod", "country", "clientip", "host", "uri", "account_id", "region", "event_hour", "__execution_name__";'
+                    ]
+                }
+            },
             "notification": {
                 "service": notification_service,
                 "recipients": recipients.split(',')
@@ -9151,6 +11312,8 @@ def test_lambda_handler(httpserver: HTTPServer, mock_iam_context, mock_s3_contex
     os.environ['SCHEDULE_SERVICE'] = 'events'
     pipeline_id = str(uuid.uuid4())
     pipeline_info = copy.deepcopy(waf_pipeline_info)
+    table_name = f'do-not-exist-table-name-{pipeline_id}'
+    pipeline_info['data']['destination']['table']['name'] = table_name
     ingestion_id = str(uuid.uuid4())
     ingestion_info = copy.deepcopy(waf_ingestion_info)
     ingestion_info['pipelineId'] = pipeline_id
@@ -9176,19 +11339,19 @@ def test_lambda_handler(httpserver: HTTPServer, mock_iam_context, mock_s3_contex
     response = AWS_SCHEDULER.get_schedule_group(name=pipeline_id)
     assert response == {}
     
-    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogProcessor-{table_name}', EventBusName='default')
+    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogProcessor-{pipeline_id}', EventBusName='default')
     assert response['Rules'] == []
     
-    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMerger-{table_name}', EventBusName='default')
+    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMerger-{pipeline_id}', EventBusName='default')
     assert response['Rules'] == []
     
-    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMergerForMetrics-{table_name}', EventBusName='default')
+    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMergerForMetrics-{pipeline_id}', EventBusName='default')
     assert response['Rules'] == []
     
-    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchive-{table_name}', EventBusName='default')
+    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchive-{pipeline_id}', EventBusName='default')
     assert response['Rules'] == []
     
-    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchiveForMetrics-{table_name}', EventBusName='default')
+    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchiveForMetrics-{pipeline_id}', EventBusName='default')
     assert response['Rules'] == []
     
     response = AWS_IAM.get_policy_document(arn=s3_public_access_policy_arn)
@@ -9224,7 +11387,9 @@ def test_lambda_handler(httpserver: HTTPServer, mock_iam_context, mock_s3_contex
                 ],
                 "Resource": [
                     f"arn:aws:s3:::{logging_bucket_name}",
-                    f"arn:aws:s3:::{logging_bucket_name}/*"
+                    f"arn:aws:s3:::{logging_bucket_name}/*",
+                    f'arn:aws:s3:::{centralized_bucket_name}/datalake/centralized*',
+                    f'arn:aws:s3:::{centralized_bucket_name}',
                 ],
                 "Effect": "Allow"
             }
@@ -9248,6 +11413,8 @@ def test_lambda_handler(httpserver: HTTPServer, mock_iam_context, mock_s3_contex
     os.environ.pop('SCHEDULE_SERVICE', None)
     pipeline_id = str(uuid.uuid4())
     pipeline_info = copy.deepcopy(waf_pipeline_info)
+    table_name = f'do-not-exist-table-name-{pipeline_id}'
+    pipeline_info['data']['destination']['table']['name'] = table_name
     ingestion_id = str(uuid.uuid4())
     ingestion_info = copy.deepcopy(waf_ingestion_info)
     ingestion_info['pipelineId'] = pipeline_id
@@ -9264,24 +11431,26 @@ def test_lambda_handler(httpserver: HTTPServer, mock_iam_context, mock_s3_contex
     lambda_handler(create_ingestion_event, context)
     lambda_handler(delete_pipeline_event, context)
     
-    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogProcessor-{table_name}', EventBusName='default')
+    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogProcessor-{pipeline_id}', EventBusName='default')
     assert response['Rules'] == []
     
-    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMerger-{table_name}', EventBusName='default')
+    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMerger-{pipeline_id}', EventBusName='default')
     assert response['Rules'] == []
     
-    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMergerForMetrics-{table_name}', EventBusName='default')
+    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogMergerForMetrics-{pipeline_id}', EventBusName='default')
     assert response['Rules'] == []
     
-    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchive-{table_name}', EventBusName='default')
+    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchive-{pipeline_id}', EventBusName='default')
     assert response['Rules'] == []
     
-    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchiveForMetrics-{table_name}', EventBusName='default')
+    response = AWS_EVENTS._events_client.list_rules(NamePrefix=f'LogArchiveForMetrics-{pipeline_id}', EventBusName='default')
     assert response['Rules'] == []
     
     os.environ['SCHEDULE_SERVICE'] = 'scheduler'
     pipeline_id = str(uuid.uuid4())
     pipeline_info = copy.deepcopy(waf_pipeline_info)
+    table_name = f'do-not-exist-table-name-{pipeline_id}'
+    pipeline_info['data']['destination']['table']['name'] = table_name
     ingestion_id = str(uuid.uuid4())
     ingestion_info = copy.deepcopy(waf_ingestion_info)
     ingestion_info['pipelineId'] = pipeline_id
@@ -9336,6 +11505,8 @@ def test_lambda_handler(httpserver: HTTPServer, mock_iam_context, mock_s3_contex
     os.environ['SCHEDULE_SERVICE'] = 'events'
     pipeline_id = str(uuid.uuid4())
     pipeline_info = copy.deepcopy(waf_pipeline_info)
+    table_name = f'do-not-exist-table-name-{pipeline_id}'
+    pipeline_info['data']['destination']['table']['name'] = table_name
     ingestion_id = str(uuid.uuid4())
     ingestion_info = copy.deepcopy(waf_ingestion_info)
     ingestion_info['pipelineId'] = pipeline_id
@@ -9445,6 +11616,8 @@ def test_lambda_handler(httpserver: HTTPServer, mock_iam_context, mock_s3_contex
     os.environ['SCHEDULE_SERVICE'] = 'events'
     pipeline_id = str(uuid.uuid4())
     pipeline_info = copy.deepcopy(waf_pipeline_info)
+    table_name = f'do-not-exist-table-name-{pipeline_id}'
+    pipeline_info['data']['destination']['table']['name'] = table_name
     ingestion_id = str(uuid.uuid4())
     ingestion_info = copy.deepcopy(waf_ingestion_info)
     ingestion_info['pipelineId'] = pipeline_id

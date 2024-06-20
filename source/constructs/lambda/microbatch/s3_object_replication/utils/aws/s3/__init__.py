@@ -3,18 +3,29 @@
 
 
 import os
-import gzip
 import time
 import json
 import uuid
-import shutil
 import random
 from pathlib import Path
-from typing import Union, Iterator, Callable, TextIO
-from binaryornot.check import is_binary
-from utils import fleep
-from utils.aws.commonlib import AWSConnection
-from utils.logger import logger
+from typing import Union, Iterator, Callable
+from utils.helpers import (
+    AWSConnection, 
+    logger,
+    CommonEnum,
+    make_local_work_dir, 
+    delete_local_file, 
+    clean_local_download_dir, 
+    detect_file_extension_by_header,
+    enrichment,
+)
+from .constants import ALB_LOGGING_ACCOUNT_MAPPING
+
+
+class Status(CommonEnum):
+    RUNNING = 'Running'
+    SUCCEEDED = 'Succeeded'
+    FAILED = 'Failed'
 
 
 class S3Client:
@@ -23,6 +34,26 @@ class S3Client:
     def __init__(self, sts_role_arn=''):
         self.conn = AWSConnection()
         self._s3_client = self.conn.get_client("s3", sts_role_arn=sts_role_arn)
+    
+    def list_all_objects(self, bucket: str, prefix: str = '', max_records: int = -1) -> list:
+        """To retrieve all non-empty object files and return a data list.
+
+        :param bucket (str): s3 bucket name, e.g. staging-bucket.
+        :param prefix (str, optional): Amazon S3 prefix, e.g. 'AWS/123456789012', Defaults to ''.
+        :param max_records (str, optional): Amazon S3 prefix, e.g. 'AWS/123456789012', Defaults to ''.
+
+        return list[dict]: Metadata only contains Key and Size about each object returned.
+        """
+        contents = []
+        
+        for content in self.list_objects(bucket=bucket, prefix=prefix):
+            if content['Size'] == 0:
+                logger.debug(f"Ignore object due to content size is zero, key is {content['Key']}.")
+                continue
+            contents.append({'Key':content['Key'], 'Size':content['Size']})
+            if len(contents) == max_records:
+                break
+        return contents
 
     def list_objects(self, bucket: str, prefix: str = '', limit: Union[int, None] = None,
                      page_size: Union[int, None] = None) -> Iterator[dict]:
@@ -54,7 +85,7 @@ class S3Client:
     def upload_file(self, filename: str, bucket: str, key: str) -> None:
         return self._s3_client.upload_file(Filename=filename, Bucket=bucket, Key=key)
 
-    def batch_copy_objects(self, tasks: list[dict], delete_on_success: bool = False, enrich_func: Union[Callable, None] = None, enrich_plugins: set = set()) -> None:
+    def batch_copy_objects(self, tasks: list[dict], delete_on_success: bool = False, enrich_func: Union[Callable, None] = None, enrich_plugins: set = set()) -> Status:
         """Batch copy S3 files to another Bucket or prefix. When replication fails, there is no need to retry,
            just retry the next batch.
 
@@ -64,10 +95,11 @@ class S3Client:
             when the value is False, the source file will not be deleted after the copy is completed.
         :return: None
         """
-        logger.info(f'Batch copy tasks are received, and the number of tasks is {len(tasks)}.')
+        logger.debug(f'Batch copy tasks are received, and the number of tasks is {len(tasks)}.')
+        status = Status.RUNNING
         succeed_task_count = 0
         failed_task_count = 0
-        local_work_path = self._make_local_work_dir()
+        local_work_path = make_local_work_dir()
         for task in tasks:
             local_file_uid = str(uuid.uuid4())
             local_download_filename = local_work_path / 'download' / local_file_uid
@@ -76,41 +108,48 @@ class S3Client:
                 source = task['source']
                 destination = task['destination']
                 logger.debug(f'Copying object, src: {json.dumps(source)}, dst: {json.dumps(destination)}.')
-                
-                s3_source_client = self.conn.get_client("s3", sts_role_arn=source.get('role', ''))
-                s3_source_client.download_file(Bucket=source['bucket'], Key=source['key'], Filename=local_download_filename.as_posix())
-                if enrich_func is not None:
-                    local_output_filename = self._enrichment(input_file_path=local_download_filename, 
-                                                             output_file_path=local_work_path / 'output' / local_file_uid, 
-                                                             enrich_func=enrich_func,
-                                                             enrich_plugins=enrich_plugins)
-                self._s3_client.upload_file(Filename=local_output_filename.as_posix(), Bucket=destination['bucket'], Key=destination['key'])
-
+                if source.get('role') or enrich_func is not None:
+                    s3_source_client = self.conn.get_client("s3", sts_role_arn=source.get('role'))
+                    s3_source_client.download_file(Bucket=source['bucket'], Key=source['key'], Filename=local_download_filename.as_posix())
+                    if enrich_func is not None:
+                        local_output_filename = enrichment(input_file_path=local_download_filename,
+                                                           output_file_path=local_work_path / 'output' / local_file_uid, 
+                                                           enrich_func=enrich_func,
+                                                           enrich_plugins=enrich_plugins)
+                    self._s3_client.upload_file(Filename=local_output_filename.as_posix(), Bucket=destination['bucket'], Key=destination['key'])
+                else:
+                    self._s3_client.copy_object(Bucket=destination['bucket'], Key=destination['key'], CopySource={'Bucket': source['bucket'], 'Key': source['key']})
+                    
                 succeed_task_count += 1
                 if delete_on_success is True:
                     self.delete_object(bucket=source['bucket'], key=source['key'])
+                status = Status.SUCCEEDED
             except Exception as e:
                 logger.error(f'{e}, the task is {task}.')
                 failed_task_count += 1
+                status = Status.FAILED
             
-            self._delete_local_file(path=local_download_filename)
-            self._delete_local_file(path=local_output_filename)
+            delete_local_file(path=local_download_filename)
+            delete_local_file(path=local_output_filename)
 
-        self._clean_local_download_dir(path=local_work_path)
+        clean_local_download_dir(path=local_work_path)
         logger.info(f'Batch copy task completed, Succeed: {succeed_task_count}, Failed: {failed_task_count}.')
+        return status
 
-    def batch_download_files(self, tasks: list[dict], local_download_dir: Path) -> Path:
+    def batch_download_files(self, tasks: list[dict], local_download_dir: Path, raise_if_fails: bool = False) -> Path:
         """Download S3 files in batches to the local directory. When the download fails, there is no need to retry,
            and the next batch can be retried.
 
         :param tasks: Download the task list, e.g. [{'source': {'bucket': 'stagingbucket', 'key': 'AWSLogs/apigateway1.gz'}, 
             'destination': {'bucket': 'stagingbucket', 'key': 'archive/centralized/aws_apigateway_logs_gz/apigateway1.gz'}}]
         :param local_download_dir: Local directory, all S3 files of the same batch will be downloaded to this directory.
+        :param raise_if_fails: If the download fails, return an exception.
         :return: The last file path downloaded to the local, used to determine the file format later.
         """
-        logger.info(f'Batch download tasks are received, and the number of tasks is {len(tasks)}.')
+        logger.debug(f'Batch download tasks are received, and the number of tasks is {len(tasks)}.')
         succeed_task_count = 0
         failed_task_count = 0
+        exception = None
 
         last_exists_file = Path('')
         for task in tasks:
@@ -124,7 +163,10 @@ class S3Client:
             except Exception as e:
                 logger.error(f'{e}, the task is {task}.')
                 failed_task_count += 1
+                exception = e
         logger.info(f'Batch download task completed, Succeed: {succeed_task_count}, Failed: {failed_task_count}.')
+        if raise_if_fails is True and exception is not None:
+            raise exception
         return last_exists_file
 
     def batch_delete_objects(self, tasks: list[dict], batch_num: int = 100) -> None:
@@ -160,127 +202,8 @@ class S3Client:
             succeed_task_count += len(response.get('Deleted', []))
             failed_task_count += len(response.get('Errors', []))
         logger.info(f'Batch delete task completed, Succeed: {succeed_task_count}, Failed: {failed_task_count}.')
-    
-    @staticmethod
-    def _file_reader(path, extension: str = 'text') -> Union[gzip.GzipFile, TextIO]:
-        if extension == 'gz':
-            return gzip.open(path, 'rt')
-        else:
-            return open(path, 'r')
-        
-    @staticmethod
-    def _file_writer(path, extension: str = 'text') -> Union[gzip.GzipFile, TextIO]:
-        if extension == 'gz':
-            return gzip.open(path, 'wt')
-        else:
-            return open(path, 'w')
-        
-    def _enrichment(self, input_file_path: Path, output_file_path: Path, enrich_func: Callable, enrich_plugins: set = set()) -> Path:
-        """Enrich data.
 
-        :param input_file_path: The File input path.
-        :param output_file_path: The file output path.
-        :param enrich_func: A callable function for data enrichment.
-        :param enrich_plugins: A tuple of enrich plugins.
-        
-        :return: output_file_path
-        """
-
-        if input_file_path.exists() is False:
-            logger.warning(f'The file: {input_file_path} is not exists, continuing.')
-            return input_file_path
-        
-        extension = self._detect_file_extension_by_header(input_file_path)
-        if extension not in ('gz', 'text'):
-            logger.error('Unsupported file extension, only gz, text is supported.')
-            return input_file_path
-        
-        output_file_object = self._file_writer(output_file_path, extension=extension) 
-        for record in self._file_reader(input_file_path.as_posix(), extension=extension):
-            output_file_object.write(enrich_func(record=record, enrich_plugins=enrich_plugins))
-        output_file_object.close()
-        
-        if os.path.exists(output_file_path) and os.path.getsize(output_file_path) > 0:
-            return output_file_path
-        else:
-            return input_file_path
-            
-    @staticmethod
-    def _delete_local_file(path: Path) -> None:
-        """Delete a local file.
-
-        :param path: The file path.
-        """
-
-        if os.path.exists(path.as_posix()):
-            os.remove(path.as_posix())
-
-    @staticmethod
-    def _make_local_work_dir(path: Path = Path('/tmp')) -> Path:
-        """Create a local working directory for the file merging operation, randomly generate a unique directory
-           through uuid, create a download directory in it to download the original files that need to be merged,
-           and create an output directory to store the merged files.
-
-        :param path: The parent directory of the working directory, the default is /tmp.
-        :return: return a unique working directory, e.g. /tmp/{uuid}.
-        """
-
-        local_work_path = path / str(uuid.uuid4())
-        local_work_path.mkdir(parents=True, exist_ok=True)
-        local_download_dir = local_work_path / 'download'
-        local_download_dir.mkdir(parents=True, exist_ok=True)
-        local_output_path = local_work_path / 'output'
-        local_output_path.mkdir(parents=True, exist_ok=True)
-        return local_work_path
-
-    @staticmethod
-    def _clean_local_download_dir(path: Path) -> None:
-        """Clean up all files in the local directory.
-
-        :param path: directory to clean
-        :return: None
-        """
-        shutil.rmtree(path.as_posix())
-        logger.info(f'The local directory {path} is cleaned up')
-
-    @staticmethod
-    def _detect_file_extension_by_header(file_path: Path) -> str:
-        """Detect file extension, If the file is a binary file, check the file header to determine the file extension,
-           otherwise return the text file extension.
-
-        :param file_path: local file path.
-        :return: file extension, such parquet, gz or text.
-        """
-        if is_binary(file_path.as_posix()) is True:
-            logger.debug(f'The file object {file_path} is a Binary file. parse file type through file head.')
-            with file_path.open('rb') as fd:
-                file_info = fleep.get(fd.read(128))
-            extension = file_info.extension[0]
-            logger.info(f'The file object {file_path} is a {extension} file.')
-            return extension
-        else:
-            logger.info(f'The file object {file_path} is a Text file.')
-            return 'text'
-
-    @staticmethod
-    def _extension_to_merge_func(extension) -> Callable: 
-        """A function that maps files to file merging through file extensions. Currently, only parquet, gzip,
-           and text are supported, and exceptions are returned for unsupported types.
-
-        :return: returns a merge function
-        """
-        from utils.filemerge import merge_parquets, merge_text, merge_gzip
-        
-        if extension not in ('parquet', 'gz', 'text'):
-            raise ValueError('Unsupported file extension, only parquet, gz, text is supported.')
-        extension_merge_function_mapping = {
-            "parquet": merge_parquets,
-            "gz": merge_gzip,
-            "text": merge_text
-        }
-        return extension_merge_function_mapping[extension]
-
-    def merge_objects(self, tasks: list[dict], delete_on_success: bool = False, max_size: int = 2 ** 10) -> None:
+    def merge_objects(self, tasks: list[dict], delete_on_success: bool = False, max_size: int = 2 ** 10) -> Status:
         """S3 object merge function, download all S3 files to the local, detect the file type and merge 
            into one file, currently only supports text, gzip, parquet file types.
 
@@ -290,41 +213,46 @@ class S3Client:
             When delete_on_success is True, delete the original object only if the file merge is successful.
             When delete_on_success is False, do not delete original object.
         """
+        from utils.filemerge.helpers import extension_to_merge_func
+        
         if tasks:
             if len(tasks) == 1:
                 logger.info('Only one task in data, degenerates into a s3 copy operation.')
                 return self.batch_copy_objects(tasks, delete_on_success)
             destination = tasks[0]['destination']
-            logger.info(
+            logger.debug(
                 f'Get the first task\' destination as the merge file\' s3 path, the destination is {destination}.')
         else:
-            logger.info('No task in data, do not need to start subtasks.')
-            return
+            logger.debug('No task in data, do not need to start subtasks.')
+            return Status.SUCCEEDED
 
-        local_work_path = self._make_local_work_dir()
+        local_work_path = make_local_work_dir()
         local_download_dir = local_work_path / 'download'
         local_merged_path =  local_work_path / f"output/{os.path.basename(destination['key'])}"
 
-        last_file_name = self.batch_download_files(tasks, local_download_dir)
-
         merge_is_succeeded = False
         try:
-            extension = self._detect_file_extension_by_header(last_file_name)
-            merge_function = self._extension_to_merge_func(extension)
+            last_file_name = self.batch_download_files(tasks, local_download_dir, raise_if_fails=True)
+            extension = detect_file_extension_by_header(last_file_name)
+            merge_function = extension_to_merge_func(extension)
 
-            logger.info(
+            logger.debug(
                 f'Starting merge all of {extension} files in {local_download_dir}, output to {local_merged_path}.')
             merge_function(local_download_dir, local_merged_path, max_size=max_size)
             logger.info(f'Merge task is completed, uploading {local_merged_path} to s3 {destination}.')
             self._s3_client.upload_file(local_merged_path.as_posix(), Bucket=destination['bucket'], Key=destination['key']) 
-            logger.info('S3 file uploaded successfully.')
+            logger.debug('S3 file uploaded successfully.')
             merge_is_succeeded = True
             if merge_is_succeeded is True and delete_on_success is True:
                 self.batch_delete_objects(tasks)
+            status = Status.SUCCEEDED
         except Exception as e:
             logger.error(e)
+            status = Status.FAILED
         finally:
-            self._clean_local_download_dir(local_work_path)
+            clean_local_download_dir(local_work_path)
+        
+        return status
 
     def delete_object(self, bucket, key):
         return self._s3_client.delete_object(Bucket=bucket, Key=key) 
@@ -579,45 +507,24 @@ class S3Client:
         return self.get_bucket_policy(bucket=bucket)
 
     def put_bucket_policy_for_alb(self, bucket: str, prefix: str, sid: str) -> dict:
-        alb_logging_account_mapping = {
-            None: 'arn:aws:iam::127311923021:root',
-            'us-east-1': 'arn:aws:iam::127311923021:root',
-            'us-east-2': 'arn:aws:iam::033677994240:root',
-            'us-west-1': 'arn:aws:iam::027434742980:root',
-            'us-west-2': 'arn:aws:iam::797873946194:root',
-            'af-south-1': 'arn:aws:iam::098369216593:root',
-            'ca-central-1': 'arn:aws:iam::985666609251:root',
-            'eu-central-1': 'arn:aws:iam::054676820928:root',
-            'eu-west-1': 'arn:aws:iam::156460612806:root',
-            'eu-west-2': 'arn:aws:iam::652711504416:root',
-            'eu-south-1': 'arn:aws:iam::635631232127:root',
-            'eu-west-3': 'arn:aws:iam::009996457667:root',
-            'eu-north-1': 'arn:aws:iam::897822967062:root',
-            'ap-east-1': 'arn:aws:iam::754344448648:root',
-            'ap-northeast-1': 'arn:aws:iam::582318560864:root',
-            'ap-northeast-2': 'arn:aws:iam::600734575887:root',
-            'ap-northeast-3': 'arn:aws:iam::383597477331:root',
-            'ap-southeast-1': 'arn:aws:iam::114774131450:root',
-            'ap-southeast-2': 'arn:aws:iam::783225319266:root',
-            'ap-southeast-3': 'arn:aws:iam::589379963580:root',
-            'ap-south-1': 'arn:aws:iam::718504428378:root',
-            'me-south-1': 'arn:aws:iam::076674570225:root',
-            'sa-east-1': 'arn:aws:iam::507241528517:root',
-            'cn-north-1': 'arn:aws-cn:iam::638102146993:root',
-            'cn-northwest-1': 'arn:aws-cn:iam::037604701340:root'
-        }
+        log_delivery_regions = ('ap-south-2', 'ap-southeast-4', 'ca-west-1', 'eu-south-2', 'eu-central-2', 'il-central-1', 'me-central-1')
+
         bucket_location = self.get_bucket_location(bucket=bucket)
         bucket_arn = self.get_bucket_arn_from_name(bucket=bucket)
-        elb_account_arn = alb_logging_account_mapping[bucket_location]
         policy_document = {
             'Effect': 'Allow',
-            'Principal': {
-                'AWS': elb_account_arn
-            },
+            'Principal': {},
             'Action': [
                 's3:PutObject',
                 's3:PutObjectTagging',
             ],
             'Resource': f'{bucket_arn}/{prefix}*'
             }
+        
+        if bucket_location in log_delivery_regions:
+            policy_document['Principal']['Service'] = 'logdelivery.elasticloadbalancing.amazonaws.com'
+        else:
+            elb_account_arn = ALB_LOGGING_ACCOUNT_MAPPING.get(bucket_location) or ALB_LOGGING_ACCOUNT_MAPPING[None]
+            policy_document['Principal']['AWS'] = elb_account_arn
+            
         return self.update_bucket_policy(bucket=bucket, sid=sid, policy_document=policy_document)

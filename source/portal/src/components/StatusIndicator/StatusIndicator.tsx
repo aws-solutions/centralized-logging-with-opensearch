@@ -16,22 +16,29 @@ limitations under the License.
 import React, { ReactElement } from "react";
 import CheckCircleOutlineIcon from "@material-ui/icons/CheckCircleOutline";
 import HighlightOffIcon from "@material-ui/icons/HighlightOff";
+import ErrorOutlineIcon from "@material-ui/icons/ErrorOutline";
 import AccessTimeIcon from "@material-ui/icons/AccessTime";
 import RemoveCircleOutlineIcon from "@material-ui/icons/RemoveCircleOutline";
 import LoadingText from "components/LoadingText";
 
 export interface StatusIndicatorProps {
-  type: "success" | "error" | "loading" | "normal" | "pending";
+  type: "success" | "error" | "loading" | "normal" | "pending" | "warning";
   children: ReactElement | string;
 }
 
 const StatusIndicator: React.FC<StatusIndicatorProps> = (
   props: StatusIndicatorProps
 ) => {
-  const { type, children } = props;
+  const { type: tmpType, children } = props;
+  const type = tmpType.toLocaleLowerCase();
   return (
     <div className="gsui-status-indicator">
       <span className={"flex status-text " + type}>
+        {type === "passed" && (
+          <i data-testid="success-icon">
+            <CheckCircleOutlineIcon fontSize="small" />
+          </i>
+        )}
         {type === "success" && (
           <i data-testid="success-icon">
             <CheckCircleOutlineIcon fontSize="small" />
@@ -50,6 +57,11 @@ const StatusIndicator: React.FC<StatusIndicatorProps> = (
         {type === "error" && (
           <i data-testid="error-icon">
             <HighlightOffIcon fontSize="small" />
+          </i>
+        )}
+        {type === "warning" && (
+          <i data-testid="warning-icon">
+            <ErrorOutlineIcon fontSize="small" />
           </i>
         )}
         {type === "loading" && (

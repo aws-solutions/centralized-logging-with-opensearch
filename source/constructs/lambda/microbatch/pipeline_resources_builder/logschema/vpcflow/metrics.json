@@ -1,0 +1,80 @@
+{
+	"type": "object",
+	"properties": {
+		"time": {
+			"type": "big_int",
+			"expression": "FLOOR(\"time\" / 60000) * 60000"
+		},
+		"timestamp": {
+			"type": "timestamp",
+			"expression": "DATE_TRUNC('minute', \"timestamp\")"
+		},
+		"account-id": {
+			"type": "string"
+		},
+		"vpc-id": {
+			"type": "string"
+		},
+		"subnet-id": {
+			"type": "string"
+		},
+		"flow-direction": {
+			"type": "string"
+		},
+		"traffic-path": {
+			"type": "integer"
+		},
+		"type": {
+			"type": "string"
+		},
+		"action": {
+			"type": "string"
+		},
+		"srcaddr": {
+			"type": "string"
+		},
+		"dstaddr": {
+			"type": "string"
+		},
+		"pkt-src-aws-service": {
+			"type": "string"
+		},
+		"pkt-dst-aws-service": {
+			"type": "string"
+		},
+		"protocol": {
+			"type": "big_int"
+		},
+		"packets": {
+			"type": "big_int",
+			"measure": true,
+			"expression": "CAST(SUM(\"packets\") AS DOUBLE)"
+		},
+		"bytes": {
+			"type": "big_int",
+			"measure": true,
+			"expression": "CAST(SUM(\"packets\") AS DOUBLE)"
+		},
+		"requests": {
+			"type": "big_int",
+			"measure": true,
+			"expression": "CAST(COUNT(1) AS bigint)"
+		},
+		"account_id": {
+			"type": "string",
+			"partition": true
+		},
+		"region": {
+			"type": "string",
+			"partition": true
+		},
+		"event_hour": {
+			"type": "string",
+			"partition": true
+		},
+		"__execution_name__": {
+			"type": "string",
+			"partition": true
+		}
+	}
+}

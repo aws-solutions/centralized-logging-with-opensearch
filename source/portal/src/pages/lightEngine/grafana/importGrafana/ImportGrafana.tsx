@@ -14,10 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import Breadcrumb from "components/Breadcrumb";
-import CreateStep from "components/CreateStep";
-import SideMenu from "components/SideMenu";
 import React, { useMemo, useState } from "react";
+import CreateStep from "components/CreateStep";
 import { useTranslation } from "react-i18next";
 import { ConfigServer } from "./steps/ConfigServer";
 import Button from "components/Button";
@@ -36,8 +34,9 @@ import {
 import { useDispatch } from "react-redux";
 import { useGrafana } from "assets/js/hooks/useGrafana";
 import { DomainStatusCheckType } from "API";
+import CommonLayout from "pages/layout/CommonLayout";
 
-export const ImportGrafana = () => {
+export const ImportGrafana: React.FC = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch<any>();
   const grafanaState = useGrafana();
@@ -65,8 +64,6 @@ export const ImportGrafana = () => {
     grafanaState.grafanaToken,
   ]);
 
-  const sideMenu = useMemo(() => <SideMenu />, []);
-  const breadcrumb = useMemo(() => <Breadcrumb list={breadCrumbList} />, []);
   const createStep = useMemo(
     () => (
       <CreateStep
@@ -116,87 +113,77 @@ export const ImportGrafana = () => {
   }
 
   return (
-    <div className="lh-main-content">
-      {sideMenu}
-      <div className="lh-container">
-        <div className="lh-content">
-          <div className="lh-import-cluster">
-            {breadcrumb}
-            <div className="create-wrapper">
-              <div className="create-step">{createStep}</div>
-              <div className="create-content m-w-1024">
-                {curStep === 0 && (
-                  <ConfigServer {...grafanaState} isNameReadOnly={false} />
-                )}
+    <CommonLayout breadCrumbList={breadCrumbList}>
+      <div className="create-wrapper">
+        <div className="create-step">{createStep}</div>
+        <div className="create-content m-w-1024">
+          {curStep === 0 && (
+            <ConfigServer {...grafanaState} isNameReadOnly={false} />
+          )}
 
-                {curStep === 1 && <CreateTags />}
-                <div className="button-action text-right">
-                  <Button
-                    btnType="text"
-                    onClick={() => {
-                      navigate("/grafana/list");
-                    }}
-                  >
-                    {t("button.cancel")}
-                  </Button>
-                  {curStep > 0 && (
-                    <Button
-                      disabled={loadingCreate}
-                      onClick={() => {
-                        setCurStep((curStep) => {
-                          return curStep - 1 < 0 ? 0 : curStep - 1;
-                        });
-                      }}
-                    >
-                      {t("button.previous")}
-                    </Button>
-                  )}
+          {curStep === 1 && <CreateTags />}
+          <div className="button-action text-right">
+            <Button
+              btnType="text"
+              onClick={() => {
+                navigate("/grafana/list");
+              }}
+            >
+              {t("button.cancel")}
+            </Button>
+            {curStep > 0 && (
+              <Button
+                disabled={loadingCreate}
+                onClick={() => {
+                  setCurStep((curStep) => {
+                    return curStep - 1 < 0 ? 0 : curStep - 1;
+                  });
+                }}
+              >
+                {t("button.previous")}
+              </Button>
+            )}
 
-                  {curStep < 1 && (
-                    <Button
-                      loading={grafanaState.loading}
-                      disabled={grafanaState.loading}
-                      btnType="primary"
-                      onClick={() => {
-                        if (curStep === 0 && !isGrafanaValid) {
-                          dispatch(grafana.actions.validateGrafana());
-                          return;
-                        }
-                        if (curStep === 0) {
-                          dispatch(
-                            validateGrafanaConnection({
-                              url: grafanaState.grafanaUrl,
-                              token: grafanaState.grafanaToken,
-                            })
-                          );
-                        }
-                        if (
-                          grafanaState.status === DomainStatusCheckType.PASSED
-                        ) {
-                          setCurStep(curStep + 1);
-                        }
-                      }}
-                    >
-                      {nextButtonText}
-                    </Button>
-                  )}
+            {curStep < 1 && (
+              <Button
+                loading={grafanaState.loading}
+                disabled={grafanaState.loading}
+                btnType="primary"
+                onClick={() => {
+                  if (curStep === 0 && !isGrafanaValid) {
+                    dispatch(grafana.actions.validateGrafana());
+                    return;
+                  }
+                  if (curStep === 0) {
+                    dispatch(
+                      validateGrafanaConnection({
+                        url: grafanaState.grafanaUrl,
+                        token: grafanaState.grafanaToken,
+                      })
+                    );
+                  }
+                  if (grafanaState.status === DomainStatusCheckType.PASSED) {
+                    setCurStep(curStep + 1);
+                  }
+                }}
+              >
+                {nextButtonText}
+              </Button>
+            )}
 
-                  {curStep === 1 && (
-                    <Button
-                      btnType="primary"
-                      onClick={confirmImportGrafana}
-                      loading={loadingCreate}
-                      disabled={loadingCreate}
-                    >
-                      {t("button.import")}
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
+            {curStep === 1 && (
+              <Button
+                btnType="primary"
+                onClick={confirmImportGrafana}
+                loading={loadingCreate}
+                disabled={loadingCreate}
+              >
+                {t("button.import")}
+              </Button>
+            )}
           </div>
         </div>
       </div>
-    </div>
+    </CommonLayout>
   );
 };

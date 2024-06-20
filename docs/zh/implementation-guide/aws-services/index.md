@@ -6,12 +6,12 @@
 
 Amazon OpenSearch Service 服务适用于实时日志分析和频繁查询，并具有全文搜索功能。
 
-从2.1.0版本开始，该解决方案开始支持将日志摄取到 Light Engine，适用于非实时日志分析和非频繁的查询，并具有类似SQL的搜索功能。Amazon CloudFront日志、ALB 日志和AWS WAF日志目前支持 Light Engine。
+从2.1.0版本开始，该解决方案开始支持将日志摄取到 Light Engine，适用于非实时日志分析和非频繁的查询，并具有类似SQL的搜索功能。AWS CloudTrail 日志、Amazon RDS 日志、Amazon CloudFront 日志、ALB 日志、AWS WAF 日志和 VPC Flow 日志目前支持 Light Engine。
 
 !!! Important "重要"
     - AWS 托管服务必须与日志通位于同一区域。
     - 默认情况下，该解决方案将每天轮换索引。您可以在**额外设置**中进行调整。
- 
+
 ## 支持的 AWS Services
 
 大多数 AWS 托管服务将日志输出到 Amazon CloudWatch Logs、Amazon S3、Amazon Kinesis Data Streams 或 Amazon Kinesis Firehose。
@@ -20,7 +20,7 @@ Amazon OpenSearch Service 服务适用于实时日志分析和频繁查询，并
 include-markdown "include-supported-service-logs.md"
 %}
 
-日志通中大多数受支持的 AWS 服务在创建日志分析管道时都提供了内置仪表板。在供应管道后，您可以转到 OpenSearch 查看仪表板。
+该解决方案支持自动检测资源的日志位置，读取日志，然后将其摄取到日志分析引擎中。该解决方案还为所有支持的AWS服务提供即用型的仪表板模板。它将自动摄取到日志分析引擎中。在管道被配置之后，您可以前往OpenSearch Dashboards或Grafana查看仪表板。
 
 在本章中，您将学习如何为以下 AWS 服务创建日志摄取并查看仪表板：
 

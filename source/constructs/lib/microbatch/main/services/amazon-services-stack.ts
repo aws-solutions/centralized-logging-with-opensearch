@@ -15,13 +15,12 @@ limitations under the License.
 */
 
 import { Construct } from "constructs";
-import { Aws } from "aws-cdk-lib";
+import { Aws, aws_ssm as ssm } from "aws-cdk-lib";
 import { InitDynamoDBStack } from "./dynamodb/init-dynamodb-stack";
 import { InitDynamoDBDataStack } from "./dynamodb/init-dynamodb-data-stack";
 import { InitSQSStack } from "./sqs/init-sqs-stack";
 import { InitLambdaStack } from "./lambda/init-lambda-stack";
 import { InitStepFunctionStack } from "./stepfunction/init-sfn-stack";
-import { InitSESStack } from "./ses/init-ses-stack";
 import { InitAthenaStack } from "./athena/init-athena-stack";
 import { InitGlueStack } from "./glue/init-glue-stack";
 import { InitIAMStack } from "./iam/init-iam-stack";
@@ -49,7 +48,6 @@ export class MicroBatchStack extends Construct {
     readonly microBatchSQSStack: InitSQSStack;
     readonly microBatchLambdaStack: InitLambdaStack;
     readonly microBatchSFNStack: InitStepFunctionStack;
-    readonly microBatchSESStack: InitSESStack;
     readonly microBatchGlueStack: InitGlueStack;
     readonly microBatchAthenaStack: InitAthenaStack;
     readonly microBatchDynamoDBDataStack: InitDynamoDBDataStack;
@@ -64,7 +62,6 @@ export class MicroBatchStack extends Construct {
       let stackPrefix = props.stackPrefix;
       let emailAddress = props.emailAddress;
       let SESState = props.SESState;
-      let SESEmailTemplate = `${Aws.STACK_NAME}-SESEmailTemplate`;
 
       // !!! Do not modify the execution order !!!
 
@@ -117,13 +114,6 @@ export class MicroBatchStack extends Construct {
         microBatchKMSStack: this.microBatchKMSStack,
       });
 
-      this.microBatchSESStack = new InitSESStack(this, 'SES', {
-        solutionId: solutionId, 
-        emailAddress: emailAddress,
-        SESEmailTemplate: SESEmailTemplate,
-        state: SESState,
-      });
-
       // Init SNS
       this.microBatchSNSStack = new InitSNSStack(this, 'SNS', {
         solutionId: solutionId, 
@@ -136,7 +126,6 @@ export class MicroBatchStack extends Construct {
         solutionId: solutionId, 
         solutionName: solutionName,
         emailAddress: emailAddress,
-        SESEmailTemplate: SESEmailTemplate,
         SESState: SESState,
         microBatchDDBStack: this.microBatchDDBStack, 
         microBatchSQSStack: this.microBatchSQSStack,
@@ -176,5 +165,14 @@ export class MicroBatchStack extends Construct {
         microBatchGlueStack: this.microBatchGlueStack,
         microBatchSNSStack: this.microBatchSNSStack,
       });
+
+      const MicroBatchStackName = new ssm.StringParameter(this, 'MicroBatchStackName', {
+        parameterName: '/MicroBatch/StackName',
+        stringValue: `${Aws.STACK_NAME}`,
+      });
+  
+      // Override the logical ID
+      const cfnMicroBatchStackName = MicroBatchStackName.node.defaultChild as ssm.CfnParameter;
+      cfnMicroBatchStackName.overrideLogicalId("MicroBatchStackName");
     }
 }

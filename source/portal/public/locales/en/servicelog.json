@@ -277,7 +277,7 @@
     "ingestedFields": "Ingested fields",
     "ingestedFieldsDesc": "Select the CloudFront access log fields you want to ingest into the Amazon Elasticsearch cluster.",
     "enrichedFields": "Enriched fields",
-    "enrichedFieldsDesc": "Enrich the CloudFront standard logs with additional information. For example, the longitude, latitude, city, state, country, OS and etc. The system use an open source library to enrich the data.",
+    "enrichedFieldsDesc": "Enrich standard logs with additional information. For example, the longitude, latitude, city, state, country, OS and etc. The system use an open source library to enrich the data. The fields selection will impact dashboard data exhibition.",
     "location": "Location",
     "osAgent": "OS/User Agent",
     "logType": "Log type",

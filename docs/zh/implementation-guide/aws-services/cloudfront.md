@@ -8,7 +8,7 @@
     - CloudFront 日志存储桶必须与日志通位于同一区域。
     - 默认情况下，该解决方案将每天轮换索引。您可以在**额外设置**中进行调整。
 
-## 创建日志摄取（Amazon OpenSearch）
+## 创建日志摄取（OpenSearch Engine）
 
 ### 使用日志通控制台
 1. 登录日志通控制台。
@@ -25,7 +25,7 @@
 9. 如果您要摄取关联的模板化 Amazon OpenSearch Service 仪表板，请为 **示例仪表板** 选择 **是**。
 10. 如果需要，您可以更改目标 Amazon OpenSearch Service 索引的 **索引前缀**。默认前缀是 CloudFront 分配 ID。
 11. 在 **日志生命周期** 部分，输入管理 Amazon OpenSearch Service 索引生命周期的天数。日志通 将为此管道自动创建关联的 [索引状态管理 (ISM)](https://opensearch.org/docs/latest/im-plugin/ism/index/) 策略。
-12. 选择**下一步**。
+12. 在 **日志处理器设置** 中，选择 **日志处理器类型**，并根据需要配置 Lambda 并发数，然后 **下一步**。
 13. 如果需要，添加标签。
 14. 选择**创建**。
 
@@ -70,7 +70,15 @@ include-markdown "include-cfn-plugins-common.md"
 | Top Referers                           | <ul><li> cs-referer</li></ul>                                              | 与 Amazon CloudFront 访问的前 10 个引荐者。                                                                                                                           |
 | Top Countries or Regions               | <ul><li> c_country</li></ul>                                               | 与 Amazon CloudFront 访问的前 10 个国家。                                                                                                                            |
 
-#### 样品仪表板
+#### 示例仪表板
+
+{%
+include-markdown "../include-dashboard.md"
+%}
+
+[![cloudfront-db]][cloudfront-db]
+
+[cloudfront-db]: ../../images/dashboards/cloudfront-db.png
 
 ## 创建日志摄取（Light Engine）
 
@@ -135,27 +143,27 @@ include-markdown "include-cfn-plugins-common.md"
     | --------------------------------| ---------- |----------------------------------------------------------------------------------------------------------|
     | LogProcessor Schedule Expression | rate(5 minutes) | 执行数据加工的任务周期表达式，默认值为每5分钟执行一次LogProcessorr，配置[可参考](https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html)。           |
     | LogMerger Schedule Expression   |  cron(0 1 * * ? *)                | 执行数据文件合并的任务周期表达式，默认值为每天1点执行LogMerger,配置[可参考](https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html)。 |
-    | LogArchive Schedule Expression              | cron(0 2 * * ? *) | 执行数据归档的任务周期表达式，默认值为每天2点执行LogArchive，配置[可参考](https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html)。  
+    | LogArchive Schedule Expression              | cron(0 2 * * ? *) | 执行数据归档的任务周期表达式，默认值为每天2点执行LogArchive，配置[可参考](https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html)。
     | Age to Merge   |  7                | 小文件保留天数，默认值为7，表示会对7天以前的日志进行小文件合并，可按需调整。 |
-    | Age to Archive              | 30 | 日志保留天数，默认值为30，表示30天以前的数据会进行归档删除，可按需调整。  
-                                                                                          
+    | Age to Archive              | 30 | 日志保留天数，默认值为30，表示30天以前的数据会进行归档删除，可按需调整。
+
     - **Notification settings** 专用参数
 
     | 参数                             | 默认          | 描述                                                                                                       |
     | --------------------------------| ---------- |----------------------------------------------------------------------------------------------------------|
     | Notification Service | SNS | 告警通知方式，如果您的主栈是使用China，则只能选择SNS方式，如果您的主栈是使用Global，则可以使用SNS或SES方式。           |
     | Recipients   |  `<需要输入>`               | 告警通知，如果Notification Service为SNS，则此处输入SNS的Topic arn，确保有权限，如果Notification Service为SES，则此处输入邮箱地址，以逗号分隔，确保邮件地址已在SES中Verified identities，创建主stack输入的adminEmail默认会发送验证邮件。 |
-   
+
     - **Dashboard settings** 专用参数
 
     | 参数                             | 默认          | 描述                                                                                                       |
     | --------------------------------| ---------- |----------------------------------------------------------------------------------------------------------|
     | Import Dashboards | FALSE | 是否导入Dashboard到Grafana中，默认值为false，如设置为true，则必须填写Grafana URL和Grafana Service Account Token。           |
     | Grafana URL   |  `<可选输入>`                | Grafana访问的URL，例如https://cloudfront-72277319.us-west-2.elb.amazonaws.com。 |
-    | Grafana Service Account Token              | `<可选输入>` | Grafana Service Account Token：Grafana中创建的Service Account Token。  
+    | Grafana Service Account Token              | `<可选输入>` | Grafana Service Account Token：Grafana中创建的Service Account Token。
                                                                                           |
 
-   
+
 
 
 6. 选择**下一步**。
@@ -219,10 +227,7 @@ include-markdown "include-cfn-plugins-common.md"
 | Cache Hit Rate by Content Encoding                | x-edge-response-result-type<br>cs(Content-Encoding)| 显示不同内容编码的边缘缓存命中率。                                                                                                                                                                                                                                                                     |
 | Cache Hit Rate by Vary Header                     | x-edge-response-result-type<br>cs(Vary)           | 显示不同 Vary 头的边缘
 
+####示例仪表板
+![cloudfront](../../images/dashboards/cloudfront-light.jpg)
 
 
-
-
-[![cloudfront-db]][cloudfront-db]
-
-[cloudfront-db]: ../../images/dashboards/cloudfront-db.png

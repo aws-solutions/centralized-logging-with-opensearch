@@ -19,7 +19,12 @@ import PagePanel from "components/PagePanel";
 import HeaderPanel from "components/HeaderPanel";
 import FormItem from "components/FormItem";
 import TextInput from "components/TextInput";
-import { EC2GroupType, LogSourceType, SubAccountLink } from "API";
+import {
+  EC2GroupPlatform,
+  EC2GroupType,
+  LogSourceType,
+  SubAccountLink,
+} from "API";
 import { InstanceGroupType } from "../instanceGroup/create/CreateInstanceGroup";
 import { useTranslation } from "react-i18next";
 import CrossAccountSelect from "pages/comps/account/CrossAccountSelect";
@@ -27,6 +32,7 @@ import InstanceTable, { InstanceWithStatusType } from "./InstanceTable";
 import SelectType from "../instanceGroup/SelectType";
 import ASGSelect from "./ASGSelect";
 import { OptionType } from "components/AutoComplete/autoComplete";
+import { defaultStr } from "assets/js/utils";
 
 interface InstanceGroupCompProps {
   accountId: string;
@@ -42,6 +48,8 @@ interface InstanceGroupCompProps {
   ) => void;
   changeASG: (asg: OptionType | null) => void;
   hideAccountSetting?: boolean;
+  platform: EC2GroupPlatform;
+  changePlatform?: (platform: EC2GroupPlatform) => void;
 }
 
 const InstanceGroupComp: React.FC<InstanceGroupCompProps> = (
@@ -58,6 +66,8 @@ const InstanceGroupComp: React.FC<InstanceGroupCompProps> = (
     changeCurAccount,
     changeASG,
     hideAccountSetting,
+    platform,
+    changePlatform,
   } = props;
 
   const { t } = useTranslation();
@@ -72,10 +82,11 @@ const InstanceGroupComp: React.FC<InstanceGroupCompProps> = (
         <div>
           <div className="ptb-10">
             <ul>
-              <li>{t("resource:group.comp.tips1")}</li>
-              <li>{t("resource:group.comp.tips2")}</li>
-              <li>{t("resource:group.comp.tips3")}</li>
-              <li>{t("resource:group.comp.tips4")}</li>
+              {[1, 2, 3, 4, 5].map((item) => {
+                return (
+                  <li key={item}>{t(`resource:group.comp.tips${item}`)}</li>
+                );
+              })}
             </ul>
           </div>
 
@@ -106,7 +117,7 @@ const InstanceGroupComp: React.FC<InstanceGroupCompProps> = (
             >
               <TextInput
                 className="m-w-75p"
-                value={instanceGroup?.groupName || ""}
+                value={defaultStr(instanceGroup?.groupName)}
                 onChange={(event) => {
                   changeGroupName(event.target.value);
                 }}
@@ -127,14 +138,17 @@ const InstanceGroupComp: React.FC<InstanceGroupCompProps> = (
                 />
                 {instanceGroup?.groupType === LogSourceType.EC2 && (
                   <InstanceTable
+                    platform={platform}
                     accountId={accountId}
                     changeInstanceSet={(sets) => {
-                      console.info(sets);
                       changeInstanceSet(sets);
                     }}
                     setCreateDisabled={(disable) => {
                       setInstanceIsLoading(disable);
                       setCreateDisabled(disable);
+                    }}
+                    changePlatform={(pf) => {
+                      changePlatform?.(pf);
                     }}
                   />
                 )}
@@ -144,6 +158,10 @@ const InstanceGroupComp: React.FC<InstanceGroupCompProps> = (
                     instanceGroupInfo={instanceGroup}
                     changeASG={(asg) => {
                       changeASG(asg);
+                    }}
+                    platform={platform}
+                    changePlatform={(pf) => {
+                      changePlatform?.(pf);
                     }}
                   />
                 )}

@@ -14,8 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import Breadcrumb from "components/Breadcrumb";
-import SideMenu from "components/SideMenu";
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -33,8 +31,9 @@ import {
 import { useDispatch } from "react-redux";
 import { useGrafana } from "assets/js/hooks/useGrafana";
 import { DomainStatusCheckType } from "API";
+import CommonLayout from "pages/layout/CommonLayout";
 
-export const UpdateGrafana = () => {
+export const UpdateGrafana: React.FC = () => {
   const { t } = useTranslation();
   const { id } = useParams();
   const dispatch = useDispatch<any>();
@@ -58,7 +57,7 @@ export const UpdateGrafana = () => {
       name: t("lightengine:grafana.edit"),
     },
   ];
-  const [loadingCreate, setLoadingUpdate] = useState(false);
+  const [loadingUpdate, setLoadingUpdate] = useState(false);
 
   const isGrafanaValid = useMemo(() => {
     return (
@@ -71,9 +70,6 @@ export const UpdateGrafana = () => {
     grafanaState.grafanaUrl,
     grafanaState.grafanaToken,
   ]);
-
-  const sideMenu = useMemo(() => <SideMenu />, []);
-  const breadcrumb = useMemo(() => <Breadcrumb list={breadCrumbList} />, []);
 
   const confirmUpdateGrafana = async () => {
     if (!isGrafanaValid) {
@@ -101,61 +97,48 @@ export const UpdateGrafana = () => {
       : t("button.validate");
 
   return (
-    <div className="lh-main-content">
-      {sideMenu}
-      <div className="lh-container">
-        <div className="lh-content">
-          <div className="lh-import-cluster">
-            {breadcrumb}
-            <div className="create-wrapper">
-              <div className="create-content m-w-1024">
-                <ConfigServer {...grafanaState} isNameReadOnly={true} />
-                <div className="button-action text-right">
-                  <Button
-                    btnType="text"
-                    onClick={() => {
-                      navigate("/grafana/list");
-                    }}
-                  >
-                    {t("button.cancel")}
-                  </Button>
+    <CommonLayout breadCrumbList={breadCrumbList}>
+      <div className="create-wrapper">
+        <div className="create-content m-w-1024">
+          <ConfigServer {...grafanaState} isNameReadOnly={true} />
+          <div className="button-action text-right">
+            <Button
+              btnType="text"
+              onClick={() => {
+                navigate("/grafana/list");
+              }}
+            >
+              {t("button.cancel")}
+            </Button>
 
-                  <Button
-                    loading={loadingCreate || grafanaState.loading}
-                    disabled={loadingCreate || grafanaState.loading}
-                    btnType="primary"
-                    onClick={() => {
-                      if (!isGrafanaValid) {
-                        dispatch(grafana.actions.validateGrafana());
-                        return;
-                      }
-                      console.log("grafanaState:", grafanaState)
-                      if (
-                        grafanaState.status ===
-                        DomainStatusCheckType.NOT_STARTED
-                      ) {
-                        dispatch(
-                          validateGrafanaConnection({
-                            url: grafanaState.grafanaUrl,
-                            token: grafanaState.grafanaToken,
-                          })
-                        );
-                      }
-                      if (
-                        grafanaState.status === DomainStatusCheckType.PASSED
-                      ) {
-                        confirmUpdateGrafana();
-                      }
-                    }}
-                  >
-                    {nextButtonText}
-                  </Button>
-                </div>
-              </div>
-            </div>
+            <Button
+              loading={loadingUpdate || grafanaState.loading}
+              disabled={loadingUpdate || grafanaState.loading}
+              btnType="primary"
+              onClick={() => {
+                if (!isGrafanaValid) {
+                  dispatch(grafana.actions.validateGrafana());
+                  return;
+                }
+                console.log("grafanaState:", grafanaState);
+                if (grafanaState.status === DomainStatusCheckType.NOT_STARTED) {
+                  dispatch(
+                    validateGrafanaConnection({
+                      url: grafanaState.grafanaUrl,
+                      token: grafanaState.grafanaToken,
+                    })
+                  );
+                }
+                if (grafanaState.status === DomainStatusCheckType.PASSED) {
+                  confirmUpdateGrafana();
+                }
+              }}
+            >
+              {nextButtonText}
+            </Button>
           </div>
         </div>
       </div>
-    </div>
+    </CommonLayout>
   );
 };

@@ -1,11 +1,9 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-import io
 import re
 import os
 import sys
-import gzip
 import boto3
 import types
 import uuid
@@ -14,10 +12,10 @@ import json
 import shutil
 import pytest
 import signal
+import datetime
 from pathlib import Path
-from datetime import datetime, timezone
 from boto3.dynamodb.conditions import Attr, Key
-from test.mock import mock_s3_context, mock_iam_context, mock_sqs_context, mock_ddb_context, mock_athena_context, mock_scheduler_context, mock_events_context, mock_glue_context, mock_sfn_context, mock_sns_context, mock_ses_context, default_environment_variables
+from test.mock import mock_s3_context, mock_iam_context, mock_sqs_context, mock_ddb_context, mock_athena_context, mock_scheduler_context, mock_events_context, mock_glue_context, mock_sfn_context, mock_sns_context, mock_ses_context, mock_sts_context, mock_rds_context, default_environment_variables
 
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -25,7 +23,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 class TestValidateParameters:
     def test_parameter(self, mock_sqs_context, mock_iam_context, mock_ddb_context, mock_s3_context):
-        from utils import ValidateParameters
+        from utils.helpers import ValidateParameters
         
         s3_object_scanning_event = json.loads(os.environ["S3_OBJECT_SCANNING_EVENT"])
         function_name =  os.environ["S3_OBJECTS_SCANNING_FUNCTION_NAME"]
@@ -110,7 +108,7 @@ class TestDynamoDBUtil:
 
         execution_name = '908c04d6-eaa6-4f9b-90ab-c48f965a327e'
         task_id = '00000000-0000-0000-0000-000000000000'
-        start_time = datetime.now(timezone.utc).isoformat()
+        start_time = datetime.datetime.now(datetime.UTC).isoformat()
         item = {'executionName': execution_name,
                 'taskId': task_id,
                 'API': 'Step Functions: StartExecution',
@@ -145,7 +143,7 @@ class TestDynamoDBUtil:
         key = {'executionName':non_execution_name, 'taskId':task_id}
         with pytest.raises(Exception) as exception_info:
             AWS_DDB_ETL_LOG.get_item(key=key, raise_if_not_found=True)
-        assert exception_info.value.args[1] == f"Key: {key}"
+        assert exception_info.value.args[0] == f"[Item is not found] Key: {key}"
         
         response = AWS_DDB_ETL_LOG.get_item(key=key, raise_if_not_found=False)
         assert response is None
@@ -311,7 +309,7 @@ class TestDynamoDBUtil:
 
         execution_name = '1ebf165b-f846-4813-8cab-305be5c8ca7e'
         task_id = '00000000-0000-0000-0000-000000000000'
-        end_time = datetime.now(timezone.utc).isoformat()
+        end_time = datetime.datetime.now(datetime.UTC).isoformat()
         key = {'executionName': execution_name, 'taskId': task_id}
         
         AWS_DDB_ETL_LOG.update_item(key=key, item={'status': 'COMPLETED', 'endTime': end_time})
@@ -322,7 +320,7 @@ class TestDynamoDBUtil:
         
         execution_name = '1ebf165b-f846-4813-8cab-305be5c8ca7e'
         task_id = '00000000-0000-0000-0000-000000000000'
-        end_time = datetime.now(timezone.utc).isoformat()
+        end_time = datetime.datetime.now(datetime.UTC).isoformat()
         key = {'executionName': execution_name, 'taskId': task_id}
         item={'status': 'COMPLETED', 'endTime': end_time, 'exists.dot': 'dot.test'}
         with pytest.raises(ValueError) as exception_info:
@@ -337,7 +335,7 @@ class TestDynamoDBUtil:
 
         execution_name = '1ebf165b-f846-4813-8cab-305be5c8ca7e'
         task_id = '00000000-0000-0000-0000-000000000000'
-        end_time = datetime.now(timezone.utc).isoformat()
+        end_time = datetime.datetime.now(datetime.UTC).isoformat()
         key = {'executionName': execution_name, 'taskId': task_id}
         
         response = AWS_DDB_ETL_LOG.get_item(key=key)
@@ -385,6 +383,36 @@ class TestS3Client:
             else:
                 return {'ResponseMetadata': {'RequestId': 'Qtu', 'HTTPStatusCode': 200}, 'ResponseMetadata': {}}
 
+    def test_list_all_objects(self, mock_s3_context):
+        from utils.aws import S3Client
+        
+        staging_bucket_name = os.environ['STAGING_BUCKET_NAME']
+        account_id = os.environ.get('ACCOUNT_ID')
+
+        s3_client = S3Client()
+
+        contents = s3_client.list_all_objects(bucket=staging_bucket_name,
+                                          prefix=f'AWSLogs/{account_id}/elasticloadbalancing/alb')
+        assert contents == [
+            {'Key': 'AWSLogs/123456789012/elasticloadbalancing/alb1.log', 'Size': 8}, 
+            {'Key': 'AWSLogs/123456789012/elasticloadbalancing/alb2.log', 'Size': 8}, 
+            {'Key': 'AWSLogs/123456789012/elasticloadbalancing/alb3.log', 'Size': 8}
+            ]
+        
+        contents = s3_client.list_all_objects(bucket=staging_bucket_name,
+                                          prefix=f'AWSLogs/{account_id}/elasticloadbalancing/alb',
+                                          max_records=2)
+        assert len(contents) == 2
+        
+        contents = s3_client.list_all_objects(bucket=staging_bucket_name,
+                                          prefix=f'do-not-exits-prefix')
+        assert contents == []
+        
+        s3_client._s3_client.put_object(Bucket=staging_bucket_name, Key=f'AWSLogs/{account_id}/test_list_all_objects/empty-folder')
+        contents = s3_client.list_all_objects(bucket=staging_bucket_name,
+                                          prefix=f'AWSLogs/{account_id}/test_list_all_objects')
+        assert contents == []
+        
     def test_list_objects(self, mock_s3_context):
         from utils.aws import S3Client
         
@@ -462,12 +490,14 @@ class TestS3Client:
                                   key=f'test/S3Client/upload_file/apigateway.gz')
         assert exception_info.value.args[0] == 2
 
-    def test_batch_copy_objects(self, mock_s3_context):
+    def test_batch_copy_objects(self, mock_s3_context, mock_sqs_context, mock_iam_context, mock_ddb_context, mock_sts_context):
         from utils.aws import S3Client
+        from utils.aws.s3 import Status
         
         current_dir = os.path.dirname(os.path.abspath(__file__))
         staging_bucket_name = os.environ['STAGING_BUCKET_NAME']
         account_id = os.environ.get('ACCOUNT_ID')
+        s3_objects_replication_role_arn = os.environ["S3_OBJECTS_REPLICATION_ROLE_ARN"]
 
         s3_client = S3Client()
 
@@ -494,7 +524,7 @@ class TestS3Client:
                     'key': f'test/batch_copy_objects/AWSLogs/{account_id}/elasticloadbalancing/alb4.log'},
             }
         ]
-        s3_client.batch_copy_objects(tasks, delete_on_success=False)
+        assert s3_client.batch_copy_objects(tasks, delete_on_success=False) is Status.FAILED
         assert s3_client.head_object(bucket=staging_bucket_name, key=tasks[0]['source']['key'])['ContentLength'] == 8
         assert s3_client.head_object(bucket=staging_bucket_name, key=tasks[1]['source']['key'])['ContentLength'] == 8
         with pytest.raises(Exception) as exception_info:
@@ -513,16 +543,29 @@ class TestS3Client:
         # test enrichment
         def enrichment(record, enrich_plugins):
             return f'{record}\n'
-        
-        s3_client.batch_copy_objects(tasks, delete_on_success=False, enrich_func=enrichment, enrich_plugins=set())
+        assert s3_client.batch_copy_objects(tasks, delete_on_success=False, enrich_func=enrichment, enrich_plugins=set()) is Status.FAILED
         
         assert s3_client.head_object(bucket=staging_bucket_name, key=tasks[0]['destination']['key'])['ContentLength'] == 9
         assert s3_client.head_object(bucket=staging_bucket_name, key=tasks[1]['destination']['key'])['ContentLength'] == 9
         with pytest.raises(Exception) as exception_info:
             s3_client.head_object(bucket=staging_bucket_name, key=tasks[2]['source']['key'])
+        
+        test_has_role_tasks = [
+            {'source': {
+                'role': s3_objects_replication_role_arn,
+                'bucket': staging_bucket_name,
+                'key': f'AWSLogs/{account_id}/elasticloadbalancing/alb1.log'},
+                'destination': {
+                    'bucket': staging_bucket_name,
+                    'key': f'test/batch_copy_objects/AWSLogs/{account_id}/elasticloadbalancing/alb1.log'},
+            }
+        ]
+        assert s3_client.batch_copy_objects(test_has_role_tasks, delete_on_success=False) is Status.SUCCEEDED
+        assert s3_client.head_object(bucket=staging_bucket_name, key=tasks[0]['destination']['key'])[
+                   'ContentLength'] == 8
 
         # test delete source object
-        s3_client.batch_copy_objects(tasks, delete_on_success=True)
+        assert s3_client.batch_copy_objects(tasks, delete_on_success=True) is Status.FAILED
         with pytest.raises(Exception) as exception_info:
             s3_client.head_object(bucket=staging_bucket_name, key=tasks[0]['source']['key'])
         assert exception_info.value.args[
@@ -579,6 +622,29 @@ class TestS3Client:
         assert (local_download_dir / f"{os.path.basename(tasks[2]['source']['key'])}").exists() is False
 
         shutil.rmtree(local_download_dir)
+        
+        tasks = [
+            {'source': {
+                'bucket': staging_bucket_name,
+                'key': f'AWSLogs/{account_id}/elasticloadbalancing/do-not-exists.log'},
+                'destination': {
+                    'bucket': staging_bucket_name,
+                    'key': f'test/batch_download_files/AWSLogs/{account_id}/elasticloadbalancing/alb1.log'},
+            }
+        ]
+
+        local_download_dir = Path(f'/tmp/{str(uuid.uuid4())}')
+        os.makedirs(local_download_dir)
+        file_path = s3_client.batch_download_files(tasks, local_download_dir, raise_if_fails=False)
+
+        assert file_path == Path('')
+        assert (local_download_dir / f"{os.path.basename(tasks[0]['source']['key'])}").exists() is False
+
+        with pytest.raises(Exception) as exception_info:
+            s3_client.batch_download_files(tasks, local_download_dir, raise_if_fails=True)
+        assert exception_info.value.args[0] == "An error occurred (404) when calling the HeadObject operation: Not Found"
+        
+        shutil.rmtree(local_download_dir)
 
     def test_batch_delete_objects(self, mock_s3_context):
         from utils.aws import S3Client
@@ -612,162 +678,9 @@ class TestS3Client:
         with pytest.raises(StopIteration):
             next(contents)
     
-    def test_file_reader(self, mock_s3_context):
-        from utils.aws import S3Client
-        
-        s3_client = S3Client()
-        
-        current_path = os.path.dirname(os.path.abspath(__file__))
-        
-        assert isinstance(s3_client._file_reader(path=f'{current_path}/data/apigateway1.log'), io.TextIOWrapper) is True
-        assert isinstance(s3_client._file_reader(path=f'{current_path}/data/apigateway1.log', extension='text'), io.TextIOWrapper) is True
-        assert isinstance(s3_client._file_reader(path=f'{current_path}/data/alb.log.gz', extension='gz'), io.TextIOWrapper) is True
-    
-    def test_file_writer(self, mock_s3_context):
-        from utils.aws import S3Client
-        
-        s3_client = S3Client()
-        
-        tmp_path = f'/tmp/{str(uuid.uuid4())}'
-        os.makedirs(tmp_path)
-        
-        assert isinstance(s3_client._file_writer(path=f'{tmp_path}/alb1.log'), io.TextIOWrapper) is True
-        assert isinstance(s3_client._file_writer(path=f'{tmp_path}/alb2.log', extension='text'), io.TextIOWrapper) is True
-        assert isinstance(s3_client._file_writer(path=f'{tmp_path}/alb.log.gz', extension='gz'), io.TextIOWrapper) is True
-        
-        shutil.rmtree(tmp_path)
-    
-    def test_enrichment(mock_s3_context):
-        from utils.aws import S3Client
-        
-        def enrichment(record, enrich_plugins):
-            return f'{record}\n'
-        
-        s3_client = S3Client()
-        current_path = os.path.dirname(os.path.abspath(__file__))
-        tmp_path = f'/tmp/{str(uuid.uuid4())}'
-        os.makedirs(tmp_path, exist_ok=True)
-        
-        input_filename = f'{current_path}/data/not-exists.log.gz'
-        output_filename = f'{tmp_path}/not-exists.log.gz'
-        assert s3_client._enrichment(input_file_path=Path(input_filename), output_file_path=Path(output_filename), enrich_func=enrichment, enrich_plugins=set()).as_posix() == input_filename
-
-        input_filename = f'{current_path}/data/apigateway1.parquet'
-        output_filename = f'{tmp_path}/apigateway1.parquet'
-        assert s3_client._enrichment(input_file_path=Path(input_filename), output_file_path=Path(output_filename), enrich_func=enrichment, enrich_plugins=set()).as_posix() == input_filename
-  
-        input_filename = f'{tmp_path}/no-data-src.log'
-        output_filename = f'{tmp_path}/no-data-dst.log'
-        Path(input_filename).touch()
-        assert s3_client._enrichment(input_file_path=Path(input_filename), output_file_path=Path(output_filename), enrich_func=enrichment, enrich_plugins=set()).as_posix() == input_filename
-
-        input_filename = f'{current_path}/data/alb.log.gz'
-        output_filename = f'{tmp_path}/alb.log.gz'
-        
-        s3_client._enrichment(input_file_path=Path(input_filename), output_file_path=Path(output_filename), enrich_func=enrichment, enrich_plugins=set())
-  
-        with gzip.open(output_filename, 'rt') as reader:
-            assert next(reader) == 'https 2023-07-04T13:28:28.138531Z app/ALB/nwpiqzrqc67zsbwq 185.249.140.9:1231 10.2.2.174:443 1.5414835421835185 1.8228018060637856 1.1708408317685808 200 200 1525 59997 "GET http://alb.us-east-1.elb.amazonaws.com/Book-10.png HTTP/1.1" "Mozilla/5.0 (Macintosh; PPC Mac OS X 10_9_4) AppleWebKit/536.2 (KHTML, like Gecko) Chrome/35.0.847.0 Safari/536.2" TLS_AES_128_GCM_SHA256 TLSv1.2 arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/app/e240e6889123qdqw "Root=1-5034982-7f2d2ae7a15148ff825e84b9f59a0c68" "alb.us-east-1.elb.amazonaws.com" "session-reused" 0 2023-07-04T13:28:28.138531Z "forward" "-" "-" "10.2.2.176:443" "200" "-" "-"\n'
-            assert next(reader) == '\n'
-            assert next(reader) == 'https 2023-07-04T13:28:26.138531Z app/ALB/6cv0xw490oh8nq7n 185.176.232.11:15364 10.2.2.175:443 1.9537748743523755 1.9607717664807693 1.3631916131229302 200 200 1521 50675 "GET https://alb.us-east-1.elb.amazonaws.com/Javascript-Master.png HTTP/2.0" "Mozilla/5.0 (iPod; U; CPU iPhone OS 3_0 like Mac OS X; yi-US) AppleWebKit/531.9.3 (KHTML, like Gecko) Version/3.0.5 Mobile/8B117 Safari/6531.9.3" TLS_CHACHA20_POLY1305_SHA256 TLSv1.2 arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/gateway/06409f87b3bad113 "Root=1-8187477-b5b5cdfa33534d589247a5c61de9fe0e" "alb.us-east-1.elb.amazonaws.com" "session-reused" 0 2023-07-04T13:28:26.138531Z "forward" "-" "-" "10.2.2.174:80" "200" "-" "-"\n'
-        
-        input_filename = f'{current_path}/data/alb.log.gz'
-        text_input_filename = f'{tmp_path}/alb.log'
-        text_output_filename = f'{tmp_path}/alb-enrichment.log'
-        
-        with open(text_input_filename, 'w') as writer:
-            with gzip.open(input_filename, 'rt') as reader:
-                writer.write(''.join(reader.readlines()))
-        
-        s3_client._enrichment(input_file_path=Path(text_input_filename), output_file_path=Path(text_output_filename), enrich_func=enrichment)
-  
-        with open(text_output_filename, 'r') as reader:
-            assert next(reader) == 'https 2023-07-04T13:28:28.138531Z app/ALB/nwpiqzrqc67zsbwq 185.249.140.9:1231 10.2.2.174:443 1.5414835421835185 1.8228018060637856 1.1708408317685808 200 200 1525 59997 "GET http://alb.us-east-1.elb.amazonaws.com/Book-10.png HTTP/1.1" "Mozilla/5.0 (Macintosh; PPC Mac OS X 10_9_4) AppleWebKit/536.2 (KHTML, like Gecko) Chrome/35.0.847.0 Safari/536.2" TLS_AES_128_GCM_SHA256 TLSv1.2 arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/app/e240e6889123qdqw "Root=1-5034982-7f2d2ae7a15148ff825e84b9f59a0c68" "alb.us-east-1.elb.amazonaws.com" "session-reused" 0 2023-07-04T13:28:28.138531Z "forward" "-" "-" "10.2.2.176:443" "200" "-" "-"\n'
-            assert next(reader) == '\n'
-            assert next(reader) == 'https 2023-07-04T13:28:26.138531Z app/ALB/6cv0xw490oh8nq7n 185.176.232.11:15364 10.2.2.175:443 1.9537748743523755 1.9607717664807693 1.3631916131229302 200 200 1521 50675 "GET https://alb.us-east-1.elb.amazonaws.com/Javascript-Master.png HTTP/2.0" "Mozilla/5.0 (iPod; U; CPU iPhone OS 3_0 like Mac OS X; yi-US) AppleWebKit/531.9.3 (KHTML, like Gecko) Version/3.0.5 Mobile/8B117 Safari/6531.9.3" TLS_CHACHA20_POLY1305_SHA256 TLSv1.2 arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/gateway/06409f87b3bad113 "Root=1-8187477-b5b5cdfa33534d589247a5c61de9fe0e" "alb.us-east-1.elb.amazonaws.com" "session-reused" 0 2023-07-04T13:28:26.138531Z "forward" "-" "-" "10.2.2.174:80" "200" "-" "-"\n'
-
-        shutil.rmtree(tmp_path)
-    
-    def test_delete_local_file(self):
-        from utils.aws import S3Client
-        
-        s3_client = S3Client()
-        
-        not_exists_file_path = f'/tmp/{uuid.uuid4()}'
-        s3_client._delete_local_file(path=Path(not_exists_file_path))
-        assert os.path.exists(not_exists_file_path) is False
-        
-        exists_file_path = f'/tmp/{uuid.uuid4()}'
-        Path(exists_file_path).touch()
-        s3_client._delete_local_file(path=Path(exists_file_path))
-        assert os.path.exists(exists_file_path) is False
-
-    def test_make_local_work_dir(self, mock_s3_context):
-        from utils.aws import S3Client
-        
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        staging_bucket_name = os.environ.get('STAGING_BUCKET_NAME')
-        account_id = os.environ.get('ACCOUNT_ID')
-
-        s3_client = S3Client()
-
-        local_work_path = s3_client._make_local_work_dir()
-        assert local_work_path.exists() is True
-        assert (local_work_path / 'download').exists() is True
-        assert (local_work_path / 'output').exists() is True
-        shutil.rmtree(local_work_path)
-
-        local_work_path = s3_client._make_local_work_dir(Path('/tmp/test'))
-        assert local_work_path.exists() is True
-        assert (local_work_path / 'download').exists() is True
-        assert (local_work_path / 'output').exists() is True
-        shutil.rmtree(local_work_path)
-
-    def test_clean_local_download_dir(self, mock_s3_context):
-        from utils.aws import S3Client
-        
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        staging_bucket_name = os.environ.get('STAGING_BUCKET_NAME')
-        account_id = os.environ.get('ACCOUNT_ID')
-
-        s3_client = S3Client()
-
-        local_work_path = s3_client._make_local_work_dir()
-        s3_client._clean_local_download_dir(local_work_path)
-        assert local_work_path.exists() is False
-
-    def test_detect_file_extension_by_header(self, mock_s3_context):
-        from utils.aws import S3Client
-        
-        current_dir = Path(os.path.dirname(os.path.abspath(__file__)))
-        staging_bucket_name = os.environ.get('STAGING_BUCKET_NAME')
-        account_id = os.environ.get('ACCOUNT_ID')
-
-        s3_client = S3Client()
-
-        assert s3_client._detect_file_extension_by_header(current_dir / 'data/apigateway1.log') == 'text'
-        assert s3_client._detect_file_extension_by_header(current_dir / 'data/apigateway1.gz') == 'gz'
-        assert s3_client._detect_file_extension_by_header(current_dir / 'data/apigateway1.parquet') == 'parquet'
-
-    def test_extension_to_merge_func(self, mock_s3_context):
-        from utils.aws import S3Client
-        from utils.filemerge import merge_parquets, merge_text, merge_gzip
-        
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        staging_bucket_name = os.environ.get('STAGING_BUCKET_NAME')
-        account_id = os.environ.get('ACCOUNT_ID')
-
-        s3_client = S3Client()
-
-        assert s3_client._extension_to_merge_func('text') == merge_text
-        assert s3_client._extension_to_merge_func('gz') == merge_gzip
-        assert s3_client._extension_to_merge_func('parquet') == merge_parquets
-        with pytest.raises(Exception) as exception_info:
-            s3_client._extension_to_merge_func('zip')
-        assert exception_info.value.args[0] == 'Unsupported file extension, only parquet, gz, text is supported.'
-
     def test_merge_objects(self, mock_s3_context):
         from utils.aws import S3Client
+        from utils.aws.s3 import Status
         
         current_dir = os.path.dirname(os.path.abspath(__file__))
         staging_bucket_name = os.environ['STAGING_BUCKET_NAME']
@@ -777,7 +690,7 @@ class TestS3Client:
         s3_client = S3Client()
         
         no_task = []
-        assert s3_client.merge_objects(no_task, delete_on_success=False) is None
+        assert s3_client.merge_objects(no_task, delete_on_success=False) is Status.SUCCEEDED
 
         not_exist_source_bucket_task = [
             {'source': {
@@ -788,7 +701,7 @@ class TestS3Client:
                     'key': f'test/merge_objects/AWSLogs/{account_id}/elasticloadbalancing/elb1.log'},
             }
         ]
-        assert s3_client.merge_objects(not_exist_source_bucket_task, delete_on_success=False) is None
+        assert s3_client.merge_objects(not_exist_source_bucket_task, delete_on_success=False) is Status.FAILED
         with pytest.raises(Exception) as exception_info:
             s3_client.head_object(bucket=staging_bucket_name, key=not_exist_source_bucket_task[0]['destination']['key'])
         assert exception_info.value.args[0] == "An error occurred (404) when calling the HeadObject operation: Not Found"
@@ -803,7 +716,7 @@ class TestS3Client:
             }
         ]
         
-        assert s3_client.merge_objects(not_exist_destination_bucket_task, delete_on_success=False) is None
+        assert s3_client.merge_objects(not_exist_destination_bucket_task, delete_on_success=False) is Status.FAILED
         
         only_one_task = [
             {'source': {
@@ -814,13 +727,13 @@ class TestS3Client:
                     'key': f'test/merge_objects/AWSLogs/{account_id}/elasticloadbalancing/elb1.log'},
             }
         ]
-        s3_client.merge_objects(only_one_task, delete_on_success=False)
+        assert s3_client.merge_objects(only_one_task, delete_on_success=False) is Status.SUCCEEDED
         assert s3_client.head_object(bucket=staging_bucket_name, key=only_one_task[0]['source']['key'])[
                    'ContentLength'] == 8
         assert s3_client.head_object(bucket=staging_bucket_name, key=only_one_task[0]['destination']['key'])[
                    'ContentLength'] == 8
 
-        s3_client.merge_objects(only_one_task, delete_on_success=True)
+        assert s3_client.merge_objects(only_one_task, delete_on_success=True) is Status.SUCCEEDED
         with pytest.raises(Exception) as exception_info:
             s3_client.head_object(bucket=staging_bucket_name, key=only_one_task[0]['source']['key'])
         assert exception_info.value.args[
@@ -837,7 +750,7 @@ class TestS3Client:
                     'key': f'test/merge_objects/AWSLogs/{account_id}/elasticloadbalancing/alb.log'},
             }
         ]
-        s3_client.merge_objects(only_one_task, delete_on_success=False)
+        assert s3_client.merge_objects(only_one_task, delete_on_success=False) is Status.FAILED
         with pytest.raises(Exception) as exception_info:
             s3_client.head_object(bucket=staging_bucket_name, key=file_not_exists_task[0]['source']['key'])
         assert exception_info.value.args[
@@ -871,7 +784,7 @@ class TestS3Client:
             }
         ]
 
-        s3_client.merge_objects(merge_text_tasks, delete_on_success=False, max_size=16)
+        assert s3_client.merge_objects(merge_text_tasks, delete_on_success=False, max_size=16) is Status.SUCCEEDED
         assert s3_client.head_object(bucket=staging_bucket_name, key=merge_text_tasks[0]['destination']['key'])[
                    'ContentLength'] == 24
         with pytest.raises(Exception) as exception_info:
@@ -890,7 +803,7 @@ class TestS3Client:
         assert s3_client.head_object(bucket=staging_bucket_name, key=merge_text_tasks[2]['source']['key'])[
                    'ContentLength'] == 8
 
-        s3_client.merge_objects(merge_text_tasks, delete_on_success=True)
+        assert s3_client.merge_objects(merge_text_tasks, delete_on_success=True) is Status.SUCCEEDED
         assert s3_client.head_object(bucket=staging_bucket_name, key=merge_text_tasks[0]['destination']['key'])[
                    'ContentLength'] == 24
         with pytest.raises(Exception) as exception_info:
@@ -939,7 +852,7 @@ class TestS3Client:
             }
         ]
 
-        s3_client.merge_objects(merge_gzip_tasks, delete_on_success=False, max_size=16)
+        assert s3_client.merge_objects(merge_gzip_tasks, delete_on_success=False, max_size=16) is Status.SUCCEEDED
         assert s3_client.head_object(bucket=staging_bucket_name, key=merge_gzip_tasks[0]['destination']['key'])[
                    'ContentLength'] > 2478
         # s3_client.batch_download_files([{'source': {'bucket': staging_bucket_name, 'key': merge_gzip_tasks[0]['destination']['key']}}], '/tmp/')
@@ -959,7 +872,7 @@ class TestS3Client:
         assert s3_client.head_object(bucket=staging_bucket_name, key=merge_gzip_tasks[2]['source']['key'])[
                    'ContentLength'] == 2467
 
-        s3_client.merge_objects(merge_gzip_tasks, delete_on_success=True)
+        assert s3_client.merge_objects(merge_gzip_tasks, delete_on_success=True) is Status.SUCCEEDED
         assert s3_client.head_object(bucket=staging_bucket_name, key=merge_gzip_tasks[0]['destination']['key'])[
                    'ContentLength'] > 2478
         with pytest.raises(Exception) as exception_info:
@@ -1008,7 +921,7 @@ class TestS3Client:
             }
         ]
 
-        s3_client.merge_objects(merge_parquet_tasks, delete_on_success=False, max_size=1024)
+        assert s3_client.merge_objects(merge_parquet_tasks, delete_on_success=False, max_size=1024) is Status.SUCCEEDED
         assert s3_client.head_object(bucket=staging_bucket_name, key=merge_parquet_tasks[0]['destination']['key'])[
                    'ContentLength'] > 36347
         # s3_client.batch_download_files([{'source': {'bucket': staging_bucket_name, 'key': merge_gzip_tasks[0]['destination']['key']}}], '/tmp/')
@@ -1028,7 +941,7 @@ class TestS3Client:
         assert s3_client.head_object(bucket=staging_bucket_name, key=merge_parquet_tasks[2]['source']['key'])[
                    'ContentLength'] == 36329
 
-        s3_client.merge_objects(merge_parquet_tasks, delete_on_success=True)
+        assert s3_client.merge_objects(merge_parquet_tasks, delete_on_success=True) is Status.SUCCEEDED
         assert s3_client.head_object(bucket=staging_bucket_name, key=merge_parquet_tasks[0]['destination']['key'])[
                    'ContentLength'] > 36347
         with pytest.raises(Exception) as exception_info:
@@ -1091,7 +1004,7 @@ class TestS3Client:
             }
         ]
 
-        assert s3_client.merge_objects(merge_multi_type_tasks, delete_on_success=True) is None
+        assert s3_client.merge_objects(merge_multi_type_tasks, delete_on_success=True) is Status.FAILED
         assert s3_client.head_object(bucket=staging_bucket_name, key=merge_multi_type_tasks[0]['source']['key'])[
                    'ContentLength'] == 36347
         with pytest.raises(Exception) as exception_info:
@@ -1569,8 +1482,27 @@ class TestS3Client:
                     }
                 ]
             }
-
-
+        
+        log_delivery_regions = ('ap-south-2', 'ap-southeast-4', 'ca-west-1', 'eu-south-2', 'eu-central-2', 'il-central-1', 'me-central-1')
+        for region in log_delivery_regions:
+            s3_client._s3_client.create_bucket(Bucket=f'alb-logging-bucket-{region}', CreateBucketConfiguration={'LocationConstraint': region})
+            
+            response = s3_client.put_bucket_policy_for_alb(bucket=f'alb-logging-bucket-{region}', prefix='test', sid='albPolicy')
+            assert response == {
+                'Version': '2012-10-17', 
+                'Statement': [
+                    {
+                        'Effect': 'Allow', 
+                        'Principal': {'Service': 'logdelivery.elasticloadbalancing.amazonaws.com'}, 
+                        'Action': [
+                            's3:PutObject',
+                            's3:PutObjectTagging',
+                        ], 
+                        'Resource': f'arn:aws:s3:::alb-logging-bucket-{region}/test*', 
+                        'Sid': 'albPolicy'
+                        }
+                    ]
+                }
 
 
 class TestSFNClient:
@@ -1857,6 +1789,49 @@ class TestAthenaClient:
                     }
             elif kwarg['QueryExecutionId'] == 'get-execution-return-exception':
                 raise ClientError(error_response={'Error': {'Code': '400', 'Message': 'Error Query String.'}}, operation_name=operation_name)
+        elif operation_name == 'CreateNamedQuery':
+            if kwarg['name'] == 'create_named_query_return_exception':
+                raise ClientError(error_response={'Error': {'Code': '400', 'Message': 'Error Query String.'}}, operation_name=operation_name)
+        elif operation_name == 'GetNamedQuery':
+            if kwarg['NamedQueryId'] == 'ce0760d7-cf5d-4416-9d1f-5a29a7a19744':
+                return {
+                    'NamedQuery': {
+                        'Name': 'test-filter',
+                        'Description': 'string',
+                        'Database': 'centralized',
+                        'QueryString': 'SELECT 1;',
+                        'NamedQueryId': 'ce0760d7-cf5d-4416-9d1f-5a29a7a19744',
+                        'WorkGroup': 'Primary'
+                    }
+                }
+            elif kwarg['NamedQueryId'] == '2aa6fcea-2294-4764-b090-9727c36f08ff':
+                return {
+                    'NamedQuery': {
+                        'Name': 'test-update-return-exception',
+                        'Description': 'string',
+                        'Database': 'centralized',
+                        'QueryString': 'SELECT 2;',
+                        'NamedQueryId': '2aa6fcea-2294-4764-b090-9727c36f08ff',
+                        'WorkGroup': 'Primary'
+                    }
+                }
+        elif operation_name == 'UpdateNamedQuery':
+            if kwarg['NamedQueryId'] == 'ce0760d7-cf5d-4416-9d1f-5a29a7a19744':
+                return {}
+            elif kwarg['NamedQueryId'] == '2aa6fcea-2294-4764-b090-9727c36f08ff':
+                raise ClientError(error_response={'Error': {'Code': '400', 'Message': 'Error Query String.'}}, operation_name=operation_name)
+        elif operation_name == 'DeleteNamedQuery':
+            if kwarg['NamedQueryId'] == 'test-delete-named-query-return-exception':
+                raise ClientError(error_response={'Error': {'Code': '400', 'Message': 'Error Query String.'}}, operation_name=operation_name)
+            else:
+                return {}
+        elif operation_name == 'ListNamedQueries':
+            return {
+                'NamedQueryIds': [
+                    'ce0760d7-cf5d-4416-9d1f-5a29a7a19744',
+                    '2aa6fcea-2294-4764-b090-9727c36f08ff'
+                ]
+            }
             
     
     def test_get_query_execution(self, mock_athena_context):
@@ -1910,7 +1885,7 @@ class TestAthenaClient:
         assert query_execution_status_state in ('QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED', 'CANCELLED')
         
         query_execution_info = athena_client.get_query_execution(dml_insert_execution_id)
-        completion_date_time = datetime.now(timezone.utc)
+        completion_date_time = datetime.datetime.now(datetime.UTC)
         query_execution_info['QueryExecution']['Status']['CompletionDateTime'] = completion_date_time
         query_execution_status = athena_client.get_query_execution_status(query_execution_info)
         query_execution_status_state = query_execution_status['state']
@@ -1984,6 +1959,97 @@ class TestAthenaClient:
         assert response['QueryExecution']['ResultConfiguration'] == {'OutputLocation': 's3://staging-bucket/athena-results'}
         assert response['QueryExecution']['WorkGroup'] == 'Primary'
         assert response['QueryExecution']['Status']['State'] in ('QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED', 'CANCELLED')
+    
+    def test_get_named_query(self, mock_athena_context):
+        from utils.aws import AthenaClient
+        
+        athena_database = os.environ["CENTRALIZED_DATABASE"]
+        work_group = os.environ['ATHENA_WORK_GROUP']
+        query_string = 'SELECT 1;'
+        
+        athena_client = AthenaClient()
+        response = athena_client.get_named_query(named_query_id='do-not-exists-named-query')
+        assert response['NamedQuery'] == {}
+        
+        response = athena_client.create_named_query(name='test', database=athena_database, query_string=query_string, work_group=work_group)
+        named_query_id = response['NamedQuery']['NamedQueryId']
+        response = athena_client.get_named_query(named_query_id=named_query_id)
+        assert response['NamedQuery']['QueryString'] == query_string
+    
+    def test_list_named_queries(self, mock_athena_context):
+        from utils.aws import AthenaClient
+        from unittest.mock import patch
+
+        athena_client = AthenaClient()
+        
+        # mock ListNamedQueries API
+        with patch('botocore.client.BaseClient._make_api_call', new=self.mock_athena_api_call):
+            response = athena_client.list_named_queries(name='test-filter')
+            assert response['NamedQueryIds']== [
+                'ce0760d7-cf5d-4416-9d1f-5a29a7a19744'
+            ]
+            response = athena_client.list_named_queries()
+            assert response['NamedQueryIds']== [
+                'ce0760d7-cf5d-4416-9d1f-5a29a7a19744',
+                '2aa6fcea-2294-4764-b090-9727c36f08ff'
+            ]
+
+    def test_create_named_query(self, mock_athena_context):
+        from utils.aws import AthenaClient
+        from unittest.mock import patch
+        
+        athena_database = os.environ["CENTRALIZED_DATABASE"]
+        work_group = os.environ['ATHENA_WORK_GROUP']
+        query_string = 'SELECT 1;'
+        
+        athena_client = AthenaClient()
+        response = athena_client.create_named_query(name='test', database=athena_database, query_string=query_string, work_group=work_group)
+        named_query_id = response['NamedQuery']['NamedQueryId']
+        response = athena_client.get_named_query(named_query_id=named_query_id)
+        assert response['NamedQuery']['QueryString'] == query_string
+        
+        # mock CreateNamedQuery return exception
+        with patch('botocore.client.BaseClient._make_api_call', new=self.mock_athena_api_call):
+            response = athena_client.create_named_query(name='create_named_query_return_exception', database=athena_database, query_string=query_string, work_group=work_group)
+            assert response['NamedQuery']== {}
+    
+    def test_update_named_query(self, mock_athena_context):
+        from utils.aws import AthenaClient
+        from unittest.mock import patch
+        
+        athena_database = os.environ["CENTRALIZED_DATABASE"]
+        work_group = os.environ['ATHENA_WORK_GROUP']
+        query_string = 'SELECT 1;'
+        
+        athena_client = AthenaClient()
+        
+        # mock UpdateNamedQuery 
+        with patch('botocore.client.BaseClient._make_api_call', new=self.mock_athena_api_call):
+            response = athena_client.update_named_query(name='test-update-return-exception', database=athena_database, query_string=query_string, work_group=work_group)
+            assert response['NamedQuery']== {}
+            
+            response = athena_client.update_named_query(name='test-filter', database=athena_database, query_string=query_string, work_group=work_group)
+            assert response['NamedQuery']== {}
+    
+    def test_delete_named_query(self, mock_athena_context):
+        from utils.aws import AthenaClient
+        from unittest.mock import patch
+        
+        athena_database = os.environ["CENTRALIZED_DATABASE"]
+        work_group = os.environ['ATHENA_WORK_GROUP']
+        query_string = 'SELECT 1;'
+        
+        athena_client = AthenaClient()
+        
+        response = athena_client.create_named_query(name='test', database=athena_database, query_string=query_string, work_group=work_group)
+        named_query_id = response['NamedQuery']['NamedQueryId']
+        response = athena_client.delete_named_query(named_query_id=named_query_id)
+        assert response == {}
+        
+        #mock DeleteNamedQuery 
+        with patch('botocore.client.BaseClient._make_api_call', new=self.mock_athena_api_call):
+            response = athena_client.delete_named_query(named_query_id='test-delete-named-query-return-exception')
+            assert response == {}
 
 
 class TestIamClient:
@@ -2808,7 +2874,12 @@ class TestIamClient:
                     }
                 ]
             }
-
+        
+        # test for return exception
+        with pytest.raises(Exception) as exception_info:
+            iam_client.add_service_principal_to_assume_role_policy(role_name='do-not-exists-role', service_principal='do-not-exists.amazonaws.com', tries=1)
+        assert exception_info.value.args[0] == 'An error occurred (NoSuchEntity) when calling the GetRole operation: Role do-not-exists-role not found'
+        
 
 class TestSchedulerClient:
 
@@ -2886,8 +2957,8 @@ class TestSchedulerClient:
         
         scheduler_client = SchedulerClient()
 
-        response = scheduler_client.create_schedule(name='do-not-exists-schedule', input={'meta': {}}, sfn_arn=s3_objects_scanning_function_arn, 
-                                                    role_arn=s3_objects_scanning_role_arn, group_name=application_pipeline_id)
+        response = scheduler_client.create_schedule(name='do-not-exists-schedule', input={'meta': {}}, target_arn=s3_objects_scanning_function_arn, 
+                                                    target_role_arn=s3_objects_scanning_role_arn, group_name=application_pipeline_id)
         assert response['Arn'] == f'arn:aws:scheduler:us-east-1:123456789012:schedule/{application_pipeline_id}/do-not-exists-schedule'
         assert response['FlexibleTimeWindow'] == {'Mode': 'OFF'}
         assert response['GroupName'] == application_pipeline_id
@@ -2898,8 +2969,8 @@ class TestSchedulerClient:
         assert response['Target']['Input'] == '{\n    "meta": {}\n}'
         assert response['Target']['RoleArn'] == s3_objects_scanning_role_arn
         
-        response = scheduler_client.create_schedule(name='LogMerger', input={'meta': {}}, sfn_arn=s3_objects_scanning_function_arn, 
-                                         role_arn=s3_objects_scanning_role_arn, schedule='rate(10 minutes)', 
+        response = scheduler_client.create_schedule(name='LogMerger', input={'meta': {}}, target_arn=s3_objects_scanning_function_arn, 
+                                         target_role_arn=s3_objects_scanning_role_arn, schedule='rate(10 minutes)', 
                                          flexible_time_windows={'Mode': 'ON'})
         assert response['Arn'] == 'arn:aws:scheduler:us-east-1:123456789012:schedule/default/LogMerger'
         assert response['FlexibleTimeWindow'] == {'Mode': 'ON'}
@@ -2912,8 +2983,8 @@ class TestSchedulerClient:
         assert response['Target']['RoleArn'] == s3_objects_scanning_role_arn
         
         
-        response = scheduler_client.create_schedule(name='LogMerger', input={'meta':{'athena': {}}}, sfn_arn=s3_objects_scanning_function_arn, 
-                                                    role_arn=s3_objects_scanning_role_arn)
+        response = scheduler_client.create_schedule(name='LogMerger', input={'meta':{'athena': {}}}, target_arn=s3_objects_scanning_function_arn, 
+                                                    target_role_arn=s3_objects_scanning_role_arn)
         assert response['Arn'] == 'arn:aws:scheduler:us-east-1:123456789012:schedule/default/LogMerger'
         assert response['FlexibleTimeWindow'] == {'Mode': 'OFF'}
         assert response['GroupName'] == 'default'
@@ -3116,7 +3187,7 @@ class TestEventsClient:
         
         events_client = EventsClient()
         
-        response = events_client.put_targets(id=application_pipeline_id, rule_name='LogProcessor', role_arn=s3_objects_scanning_role_arn, input={'meta': {}}, sfn_arn=s3_objects_scanning_function_arn, event_bus_name='default')
+        response = events_client.put_targets(id=application_pipeline_id, rule_name='LogProcessor', target_role_arn=s3_objects_scanning_role_arn, input={'meta': {}}, target_arn=s3_objects_scanning_function_arn, event_bus_name='default')
         assert response['ResponseMetadata']['HTTPStatusCode'] == 200
         response = events_client._events_client.list_targets_by_rule(Rule='LogProcessor', EventBusName='default')
         assert response['Targets'] == [
@@ -3135,7 +3206,7 @@ class TestEventsClient:
             ]
         
         # repeat to put target
-        response = events_client.put_targets(id=application_pipeline_id, rule_name='LogProcessor', role_arn=s3_objects_scanning_role_arn, input={'meta': {}}, sfn_arn=s3_objects_scanning_function_arn, event_bus_name='default')
+        response = events_client.put_targets(id=application_pipeline_id, rule_name='LogProcessor', target_role_arn=s3_objects_scanning_role_arn, input={'meta': {}}, target_arn=s3_objects_scanning_function_arn, event_bus_name='default')
         assert response['ResponseMetadata']['HTTPStatusCode'] == 200
         response = events_client._events_client.list_targets_by_rule(Rule='LogProcessor', EventBusName='default')
         assert response['Targets'] == [
@@ -3153,6 +3224,22 @@ class TestEventsClient:
                 }
             ]
         
+        response = events_client.put_targets(id=application_pipeline_id, rule_name='LogProcessor', input={'meta': {}}, target_arn=s3_objects_scanning_function_arn, event_bus_name='default')
+        assert response['ResponseMetadata']['HTTPStatusCode'] == 200
+        response = events_client._events_client.list_targets_by_rule(Rule='LogProcessor', EventBusName='default')
+        assert response['Targets'] == [
+            {
+                'Id': '1234567890', 
+                'Arn': 'arn:aws:states:us-east-1:123456789012:stateMachine:LogProcessor-jwEfndaqF0Yf', 
+                'RoleArn': 'arn:aws:iam::123456789012:role/LogProcessor-jwEfndaqF0Yf', 
+                'Input': '{\n    "metadata": {}\n}'
+                }, 
+            {
+                'Id': application_pipeline_id, 
+                'Arn': s3_objects_scanning_function_arn, 
+                'Input': '{\n    "meta": {}\n}'
+                }
+            ]
     def test_create_processor_rule(self, mock_events_context):
         from utils.aws import EventsClient
         
@@ -3336,7 +3423,17 @@ class TestGlueClient:
             {'Name': 'elb', 'Type': 'string'}
             ]
         assert response['Table']['TableType'] == 'EXTERNAL_TABLE'
-        assert response['Table']['Parameters'] == {'partition_filtering.enabled': 'true', 'classification': 'parquet', 'has_encrypted_data': 'true'}
+        assert response['Table']['Parameters'] == {
+            'partition_filtering.enabled': 'true', 
+            'classification': 'parquet', 
+            'has_encrypted_data': 'true', 
+            'parquet.compression': 'ZSTD', 
+            'spark.sql.partitionProvider': 'catalog', 
+            'spark.sql.sources.schema': '{"type": "struct", "fields": [{"name": "time", "type": "long", "nullable": true, "metadata": {}}, {"name": "timestamp", "type": "timestamp", "nullable": true, "metadata": {}}, {"name": "type", "type": "string", "nullable": true, "metadata": {}}, {"name": "event_hour", "type": "string", "nullable": true, "metadata": {}}, {"name": "elb", "type": "string", "nullable": true, "metadata": {}}]}', 
+            'spark.sql.sources.schema.numPartCols': '2', 
+            'spark.sql.sources.schema.partCol.0': 'event_hour', 
+            'spark.sql.sources.schema.partCol.1': 'elb'
+            }
     
     def test_get_partition_indexes(self, mock_glue_context):
         """moto can not return partition indexes, so this test case dose not make sense."""
@@ -3370,7 +3467,17 @@ class TestGlueClient:
             {'Name': 'elb', 'Type': 'string'}
             ]
         assert response['Table']['TableType'] == 'EXTERNAL_TABLE'
-        assert response['Table']['Parameters'] == {'partition_filtering.enabled': 'true', 'classification': 'parquet', 'has_encrypted_data': 'true'}
+        assert response['Table']['Parameters'] == {
+            'partition_filtering.enabled': 'true', 
+            'classification': 'parquet', 
+            'has_encrypted_data': 'true', 
+            'parquet.compression': 'ZSTD', 
+            'spark.sql.partitionProvider': 'catalog', 
+            'spark.sql.sources.schema': '{"type": "struct", "fields": [{"name": "time", "type": "long", "nullable": true, "metadata": {}}, {"name": "timestamp", "type": "timestamp", "nullable": true, "metadata": {}}, {"name": "type", "type": "string", "nullable": true, "metadata": {}}, {"name": "event_hour", "type": "string", "nullable": true, "metadata": {}}, {"name": "elb", "type": "string", "nullable": true, "metadata": {}}]}', 
+            'spark.sql.sources.schema.numPartCols': '2', 
+            'spark.sql.sources.schema.partCol.0': 'event_hour', 
+            'spark.sql.sources.schema.partCol.1': 'elb'
+            }
         
         # create a new table
         response = self.glue_client.create_table(database=self.centralized_database, name='new_table', table_metadata=self.table_metadata, location=f's3://centralized-bucket/datalake/{self.table_name}')
@@ -3391,7 +3498,17 @@ class TestGlueClient:
             {'Name': 'elb', 'Type': 'string'}
             ]
         assert response['Table']['TableType'] == 'EXTERNAL_TABLE'
-        assert response['Table']['Parameters'] == {'partition_filtering.enabled': 'true', 'classification': 'parquet', 'has_encrypted_data': 'true'}
+        assert response['Table']['Parameters'] == {
+            'partition_filtering.enabled': 'true', 
+            'classification': 'parquet', 
+            'has_encrypted_data': 'true', 
+            'parquet.compression': 'ZSTD', 
+            'spark.sql.partitionProvider': 'catalog', 
+            'spark.sql.sources.schema': '{"type": "struct", "fields": [{"name": "time", "type": "long", "nullable": true, "metadata": {}}, {"name": "timestamp", "type": "timestamp", "nullable": true, "metadata": {}}, {"name": "type", "type": "string", "nullable": true, "metadata": {}}, {"name": "event_hour", "type": "string", "nullable": true, "metadata": {}}, {"name": "elb", "type": "string", "nullable": true, "metadata": {}}]}', 
+            'spark.sql.sources.schema.numPartCols': '2', 
+            'spark.sql.sources.schema.partCol.0': 'event_hour', 
+            'spark.sql.sources.schema.partCol.1': 'elb'
+            }
         
     def test_update_table(self, mock_glue_context):
         from utils.aws.glue import TableMetaData
@@ -3418,7 +3535,17 @@ class TestGlueClient:
             {'Name': 'elb', 'Type': 'string'}
             ]
         assert response['Table']['TableType'] == 'EXTERNAL_TABLE'
-        assert response['Table']['Parameters'] == {'partition_filtering.enabled': 'true', 'classification': 'parquet', 'has_encrypted_data': 'true'}
+        assert response['Table']['Parameters'] == {
+            'partition_filtering.enabled': 'true', 
+            'classification': 'parquet', 
+            'has_encrypted_data': 'true', 
+            'parquet.compression': 'ZSTD', 
+            'spark.sql.partitionProvider': 'catalog', 
+            'spark.sql.sources.schema': '{"type": "struct", "fields": [{"name": "time", "type": "long", "nullable": true, "metadata": {}}, {"name": "timestamp", "type": "timestamp", "nullable": true, "metadata": {}}, {"name": "type", "type": "string", "nullable": true, "metadata": {}}, {"name": "event_hour", "type": "string", "nullable": true, "metadata": {}}, {"name": "elb", "type": "string", "nullable": true, "metadata": {}}]}', 
+            'spark.sql.sources.schema.numPartCols': '2', 
+            'spark.sql.sources.schema.partCol.0': 'event_hour', 
+            'spark.sql.sources.schema.partCol.1': 'elb'
+            }
         
         # update a existing table
         response = self.glue_client.update_table(database=self.centralized_database, name=self.table_name, table_metadata=self.table_metadata, location=f's3://centralized-bucket/datalake/{self.table_name}')
@@ -3439,7 +3566,16 @@ class TestGlueClient:
             {'Name': 'elb', 'Type': 'string'}
             ]
         assert response['Table']['TableType'] == 'EXTERNAL_TABLE'
-        assert response['Table']['Parameters'] == {'partition_filtering.enabled': 'true', 'classification': 'parquet', 'has_encrypted_data': 'true'}
+        assert response['Table']['Parameters'] == {
+            'partition_filtering.enabled': 'true', 
+            'classification': 'parquet', 
+            'has_encrypted_data': 'true', 
+            'parquet.compression': 'ZSTD', 
+            'spark.sql.partitionProvider': 'catalog', 
+            'spark.sql.sources.schema': '{"type": "struct", "fields": [{"name": "time", "type": "long", "nullable": true, "metadata": {}}, {"name": "timestamp", "type": "timestamp", "nullable": true, "metadata": {}}, {"name": "type", "type": "string", "nullable": true, "metadata": {}}, {"name": "event_hour", "type": "string", "nullable": true, "metadata": {}}, {"name": "elb", "type": "string", "nullable": true, "metadata": {}}]}', 
+            'spark.sql.sources.schema.numPartCols': '2', 
+            'spark.sql.sources.schema.partCol.0': 'event_hour', 
+            'spark.sql.sources.schema.partCol.1': 'elb'}
         
         # delete a partition key
         table_schema = {
@@ -3517,7 +3653,18 @@ class TestGlueClient:
             {'Name': '__execution_name__', 'Type': 'string'}
             ]
         assert response['Table']['TableType'] == 'EXTERNAL_TABLE'
-        assert response['Table']['Parameters'] == {'partition_filtering.enabled': 'true', 'classification': 'parquet', 'has_encrypted_data': 'true'}
+        assert response['Table']['Parameters'] == {
+            'partition_filtering.enabled': 'true', 
+            'classification': 'parquet', 
+            'has_encrypted_data': 'true', 
+            'parquet.compression': 'ZSTD', 
+            'spark.sql.partitionProvider': 'catalog', 
+            'spark.sql.sources.schema': '{"type": "struct", "fields": [{"name": "time", "type": "long", "nullable": true, "metadata": {}}, {"name": "timestamp", "type": "timestamp", "nullable": true, "metadata": {}}, {"name": "host", "type": "string", "nullable": true, "metadata": {}}, {"name": "event_hour", "type": "string", "nullable": true, "metadata": {}}, {"name": "elb", "type": "string", "nullable": true, "metadata": {}}, {"name": "__execution_name__", "type": "string", "nullable": true, "metadata": {}}]}', 
+            'spark.sql.sources.schema.numPartCols': '3', 
+            'spark.sql.sources.schema.partCol.0': 'event_hour', 
+            'spark.sql.sources.schema.partCol.1': 'elb', 
+            'spark.sql.sources.schema.partCol.2': '__execution_name__'
+            } 
     
     def test_delete_table(self, mock_glue_context):
         self.init_default_parameter()
@@ -3531,6 +3678,920 @@ class TestGlueClient:
         
         response = self.glue_client.get_table(database=self.centralized_database, name='do-not-exists')
         assert response == {}
+    
+    def test_convert_to_spark_sql_data_type(self, mock_glue_context):
+        self.init_default_parameter()
+        
+        assert self.glue_client._convert_to_spark_sql_data_type(input_string='boolean') == 'boolean'
+        assert self.glue_client._convert_to_spark_sql_data_type(input_string='tinyint') == 'byte'
+        assert self.glue_client._convert_to_spark_sql_data_type(input_string='smallint') == 'short'
+        assert self.glue_client._convert_to_spark_sql_data_type(input_string='int') == 'integer'
+        assert self.glue_client._convert_to_spark_sql_data_type(input_string='integer') == 'integer'
+        assert self.glue_client._convert_to_spark_sql_data_type(input_string='bigint') == 'long'
+        assert self.glue_client._convert_to_spark_sql_data_type(input_string='float') == 'float'
+        assert self.glue_client._convert_to_spark_sql_data_type(input_string='double') == 'double'
+        assert self.glue_client._convert_to_spark_sql_data_type(input_string='date') == 'date'
+        assert self.glue_client._convert_to_spark_sql_data_type(input_string='timestamp') == 'timestamp'
+        assert self.glue_client._convert_to_spark_sql_data_type(input_string='string') == 'string'
+        assert self.glue_client._convert_to_spark_sql_data_type(input_string='char') == 'string'
+        assert self.glue_client._convert_to_spark_sql_data_type(input_string='varchar') == 'string'
+        assert self.glue_client._convert_to_spark_sql_data_type(input_string='binary') == 'binary'
+        assert self.glue_client._convert_to_spark_sql_data_type(input_string='decimal') == 'decimal'
+        assert self.glue_client._convert_to_spark_sql_data_type(input_string='array') == 'array'
+        assert self.glue_client._convert_to_spark_sql_data_type(input_string='struct') == 'struct'
+        assert self.glue_client._convert_to_spark_sql_data_type(input_string='map') == 'map'
+        
+        with pytest.raises(Exception) as exception_info:
+            self.glue_client._convert_to_spark_sql_data_type(input_string='unknown')
+        assert exception_info.value.args[0] == 'Do not supported data type: unknown.'
+    
+    def test_parse_complex_input_string(self, mock_glue_context):
+        self.init_default_parameter()
+        
+        assert self.glue_client._parse_complex_input_string(input_string='struct<objects:struct<name:string,age:int,acl:struct<name:string>,json:map<string,string>>,value:int,field:string>') == ['struct<objects:struct<name:string,age:int,acl:struct<name:string>,json:map<string,string>>,value:int,field:string>']
+        assert self.glue_client._parse_complex_input_string(input_string='objects:struct<name:string,age:int,acl:struct<name:string>,json:map<string,string>>,value:int,field:string') == ['objects:struct<name:string,age:int,acl:struct<name:string>,json:map<string,string>>', 'value:int', 'field:string']
+        assert self.glue_client._parse_complex_input_string(input_string='value:int,field:string') == ['value:int', 'field:string']
+        assert self.glue_client._parse_complex_input_string(input_string='value:int') == ['value:int']
+        assert self.glue_client._parse_complex_input_string(input_string='') == []
+        
+    def test_generate_spark_sql_type(self, mock_glue_context):
+        self.init_default_parameter()
+        
+        assert self.glue_client._generate_spark_sql_type(input_string='boolean') == 'boolean'
+        assert self.glue_client._generate_spark_sql_type(input_string='tinyint') == 'byte'
+        assert self.glue_client._generate_spark_sql_type(input_string='smallint') == 'short'
+        assert self.glue_client._generate_spark_sql_type(input_string='int') == 'integer'
+        assert self.glue_client._generate_spark_sql_type(input_string='bigint') == 'long'
+        assert self.glue_client._generate_spark_sql_type(input_string='float') == 'float'
+        assert self.glue_client._generate_spark_sql_type(input_string='double') == 'double'
+        assert self.glue_client._generate_spark_sql_type(input_string='date') == 'date'
+        assert self.glue_client._generate_spark_sql_type(input_string='timestamp') == 'timestamp'
+        assert self.glue_client._generate_spark_sql_type(input_string='string') == 'string'
+        assert self.glue_client._generate_spark_sql_type(input_string='char') == 'string'
+        assert self.glue_client._generate_spark_sql_type(input_string='varchar') == 'string'
+        assert self.glue_client._generate_spark_sql_type(input_string='binary') == 'binary'
+        assert self.glue_client._generate_spark_sql_type(input_string='decimal') == 'decimal'
+        assert self.glue_client._generate_spark_sql_type(input_string='array<string>') == {
+                "type": "array",
+                "elementType": "string",
+                "containsNull": True
+            }
+        assert self.glue_client._generate_spark_sql_type(input_string='array<array<string>>') == {
+                "type": "array",
+                "elementType": {
+                    "type": "array",
+                    "elementType": "string",
+                    "containsNull": True
+                },
+                "containsNull": True
+            }
+        assert self.glue_client._generate_spark_sql_type(input_string='array<struct<name:string,age:int>>') == {
+                "type": "array",
+                "elementType": {
+                    "type": "struct",
+                    "fields": [
+                        {
+                            "name": "name",
+                            "type": "string",
+                            "nullable": True,
+                            "metadata": {}
+                        },
+                        {
+                            "name": "age",
+                            "type": "integer",
+                            "nullable": True,
+                            "metadata": {}
+                        },
+                    ]
+                },
+                "containsNull": True
+            }
+        assert self.glue_client._generate_spark_sql_type(input_string='array<map<string,int>>') == {
+                "type": "array",
+                "elementType": {
+                    "type": "map",
+                    "keyType": "string",
+                    "valueType": "integer",
+                    "valueContainsNull": True
+                },
+                "containsNull": True
+            }
+        assert self.glue_client._generate_spark_sql_type(input_string='array<map<string,struct<name:string>>>') == {
+                "type": "array",
+                "elementType": {
+                    "type": "map",
+                    "keyType": "string",
+                    "valueType": {
+                        "type": "struct",
+                        "fields": [
+                            {
+                                "name": "name",
+                                "type": "string",
+                                "nullable": True,
+                                "metadata": {}
+                            },
+                        ]
+                    },
+                    "valueContainsNull": True
+                },
+                "containsNull": True
+            }
+        assert self.glue_client._generate_spark_sql_type(input_string='struct<name:string,age:int>') == {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "name",
+                    "type": "string",
+                    "nullable": True,
+                    "metadata": {}
+                },
+                {
+                    "name": "age",
+                    "type": "integer",
+                    "nullable": True,
+                    "metadata": {}
+                },
+            ]
+        }
+        assert self.glue_client._generate_spark_sql_type(input_string='struct<list:array<string>>') == {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "list",
+                    "type": {
+                        "type": "array", 
+                        "elementType": "string", 
+                        "containsNull": True
+                    },
+                    "nullable": True,
+                    "metadata": {}
+                },
+            ]
+        }
+        assert self.glue_client._generate_spark_sql_type(input_string='struct<objects:struct<name:string,age:int,acl:struct<name:string>,json:map<string,string>>,value:int,field:string>') == {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "objects",
+                    "type": {
+                        "type": "struct",
+                        "fields": [
+                            {
+                                "name": "name",
+                                "type": "string",
+                                "nullable": True,
+                                "metadata": {}
+                            },
+                            {
+                                "name": "age",
+                                "type": "integer",
+                                "nullable": True,
+                                "metadata": {}
+                            },
+                            {
+                                "name": "acl",
+                                "type": {
+                                    "type": "struct",
+                                    "fields": [
+                                        {
+                                            "name": "name",
+                                            "type": "string",
+                                            "nullable": True,
+                                            "metadata": {}
+                                        }
+                                    ],
+                                },
+                                "nullable": True,
+                                "metadata": {},
+                            },
+                            {
+                                "name": "json",
+                                "type": {
+                                    "type": "map",
+                                    "keyType": "string",
+                                    "valueType": "string",
+                                    "valueContainsNull": True
+                                },
+                                "nullable": True,
+                                "metadata": {}
+                            },
+                        ],
+                    },
+                    "nullable": True,
+                    "metadata": {},
+                },
+                {
+                    "name": "value",
+                    "type": "integer",
+                    "nullable": True,
+                    "metadata": {}
+                },
+                {
+                    "name": "field",
+                    "type": "string",
+                    "nullable": True,
+                    "metadata": {}
+                }
+            ]
+        }
+        assert self.glue_client._generate_spark_sql_type(input_string='map<string,struct<objects:struct<name:string>,age:int,list:array<string>,field:string>>') == {
+            "type": "map",
+            "keyType": "string",
+            "valueType": {
+                "type": "struct",
+                "fields": [{
+                    "name": "objects",
+                    "type": {
+                        "type": "struct",
+                        "fields": [{
+                            "name": "name",
+                            "type": "string",
+                            "nullable": True,
+                            "metadata": {}
+                        }]
+                    },
+                    "nullable": True,
+                    "metadata": {}
+                }, {
+                    "name": "age",
+                    "type": "integer",
+                    "nullable": True,
+                    "metadata": {}
+                }, {
+                    "name": "list",
+                    "type": {
+                        "type": "array",
+                        "elementType": "string",
+                        "containsNull": True
+                    },
+                    "nullable": True,
+                    "metadata": {}
+                }, {
+                    "name": "field",
+                    "type": "string",
+                    "nullable": True,
+                    "metadata": {}
+                }]
+            },
+            "valueContainsNull": True
+        }
+        assert self.glue_client._generate_spark_sql_type(input_string='map<string,int>') == {
+            "type": "map",
+            "keyType": "string",
+            "valueType": "integer",
+            "valueContainsNull": True
+        }
+        assert self.glue_client._generate_spark_sql_type(input_string='map<string,array<string>>') == {
+            "type": "map",
+            "keyType": "string",
+            "valueType": {
+                "type": "array",
+                "elementType": "string",
+                "containsNull": True
+            },
+            "valueContainsNull": True
+        }
+        assert self.glue_client._generate_spark_sql_type(input_string='map<string,map<string,string>>') == {
+            "type": "map",
+            "keyType": "string",
+            "valueType": {
+                "type": "map",
+                "keyType": "string",
+                "valueType": "string",
+                "valueContainsNull": True
+            },
+            "valueContainsNull": True
+        }
+    
+    def test_generate_spark_sql_schema(self, mock_glue_context):
+        self.init_default_parameter()
+        
+        columns = [
+            {
+                'Name': 'Boolean_type', 
+                'Type': 'Boolean'
+                },
+            {
+                'Name': 'Tinyint_type', 
+                'Type': 'Tinyint'
+                },
+            {
+                'Name': 'SmallInt_type', 
+                'Type': 'SmallInt'
+                },
+            {
+                'Name': 'int_type', 
+                'Type': 'int'
+                },
+            {
+                'Name': 'integer_type', 
+                'Type': 'integer'
+                },
+            {
+                'Name': 'bigint_type', 
+                'Type': 'bigint'
+                },
+            {
+                'Name': 'float_type', 
+                'Type': 'float'
+                },
+            {
+                'Name': 'double_type', 
+                'Type': 'double'
+                },
+            {
+                'Name': 'date_type', 
+                'Type': 'date'
+                },
+            {
+                'Name': 'timestamp_type', 
+                'Type': 'timestamp'
+                },
+            {
+                'Name': 'string_type', 
+                'Type': 'string'
+                },
+            {
+                'Name': 'char_type', 
+                'Type': 'char(255)'
+                },
+            {
+                'Name': 'varchar_type', 
+                'Type': 'varchar(255)'
+                },
+            {
+                'Name': 'binary_type', 
+                'Type': 'binary'
+                },
+            {
+                'Name': 'decimal_type', 
+                'Type': 'decimal(10,2)'
+                },
+        ]
+        
+        assert self.glue_client._generate_spark_sql_schema(columns=columns) == {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "boolean_type",
+                    "type": "boolean",
+                    "nullable": True,
+                    "metadata": {}
+                },
+                {
+                    "name": "tinyint_type",
+                    "type": "byte",
+                    "nullable": True,
+                    "metadata": {}
+                },
+                {
+                    "name": "smallint_type",
+                    "type": "short",
+                    "nullable": True,
+                    "metadata": {}
+                },
+                {
+                    "name": "int_type",
+                    "type": "integer",
+                    "nullable": True,
+                    "metadata": {}
+                },
+                {
+                    "name": "integer_type",
+                    "type": "integer",
+                    "nullable": True,
+                    "metadata": {}
+                },
+                {
+                    "name": "bigint_type",
+                    "type": "long",
+                    "nullable": True,
+                    "metadata": {}
+                },
+                {
+                    "name": "float_type",
+                    "type": "float",
+                    "nullable": True,
+                    "metadata": {}
+                },
+                {
+                    "name": "double_type",
+                    "type": "double",
+                    "nullable": True,
+                    "metadata": {}
+                },
+                {
+                    "name": "date_type",
+                    "type": "date",
+                    "nullable": True,
+                    "metadata": {}
+                },
+                {
+                    "name": "timestamp_type",
+                    "type": "timestamp",
+                    "nullable": True,
+                    "metadata": {}
+                },
+                {
+                    "name": "string_type",
+                    "type": "string",
+                    "nullable": True,
+                    "metadata": {}
+                },
+                {
+                    "name": "char_type",
+                    "type": "string",
+                    "nullable": True,
+                    "metadata": {
+                        "__CHAR_VARCHAR_TYPE_STRING": "char(255)"
+                    }
+                },
+                {
+                    "name": "varchar_type",
+                    "type": "string",
+                    "nullable": True,
+                    "metadata": {
+                        "__CHAR_VARCHAR_TYPE_STRING": "varchar(255)"
+                    }
+                },
+                {
+                    "name": "binary_type",
+                    "type": "binary",
+                    "nullable": True,
+                    "metadata": {}
+                },
+                {
+                    "name": "decimal_type",
+                    "type": "decimal(10,2)",
+                    "nullable": True,
+                    "metadata": {}
+                },
+            ]
+        }
+        columns = [
+            {
+                'Name': 'string_in_array',
+                'Type': 'array<string>'
+            },
+            {
+                'Name': 'string_in_2_array',
+                'Type': 'array<array<string>>'
+            },
+            {
+                'Name': 'struct_in_array',
+                'Type': 'array<struct<name:string,age:int>>'
+            },
+            {
+                'Name': 'map_in_array',
+                'Type': 'array<map<string,int>>'
+            },
+            {
+                'Name': 'struct_map_in_array',
+                'Type': 'array<map<string,struct<name:string>>>'
+            },
+        ]
+        assert self.glue_client._generate_spark_sql_schema(columns=columns) == {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "string_in_array",
+                    "type": {
+                        "type": "array",
+                        "elementType": "string",
+                        "containsNull": True
+                    },
+                    "nullable": True,
+                    "metadata": {}
+                },
+                {
+                    "name": "string_in_2_array",
+                    "type": {
+                        "type": "array",
+                        "elementType": {
+                            "type": "array",
+                            "elementType": "string",
+                            "containsNull": True
+                        },
+                        "containsNull": True
+                    },
+                    "nullable": True,
+                    "metadata": {}
+                },
+                {
+                    "name": "struct_in_array",
+                    "type": {
+                        "type": "array",
+                        "elementType": {
+                            "type": "struct",
+                            "fields": [{
+                                "name": "name",
+                                "type": "string",
+                                "nullable": True,
+                                "metadata": {}
+                            }, {
+                                "name": "age",
+                                "type": "integer",
+                                "nullable": True,
+                                "metadata": {}
+                            }]
+                        },
+                        "containsNull": True
+                    },
+                    "nullable": True,
+                    "metadata": {}
+                }, {
+                    "name": "map_in_array",
+                    "type": {
+                        "type": "array",
+                        "elementType": {
+                            "type": "map",
+                            "keyType": "string",
+                            "valueType": "integer",
+                            "valueContainsNull": True
+                        },
+                        "containsNull": True
+                    },
+                    "nullable": True,
+                    "metadata": {}
+                }, {
+                    "name": "struct_map_in_array",
+                    "type": {
+                        "type": "array",
+                        "elementType": {
+                            "type": "map",
+                            "keyType": "string",
+                            "valueType": {
+                                "type": "struct",
+                                "fields": [{
+                                    "name": "name",
+                                    "type": "string",
+                                    "nullable": True,
+                                    "metadata": {}
+                                }]
+                            },
+                            "valueContainsNull": True
+                        },
+                        "containsNull": True
+                    },
+                    "nullable": True,
+                    "metadata": {}
+                }
+            ],
+        }
+        columns = [
+            {
+                'Name': 'string_in_struct',
+                'Type': 'struct<name:string,age:int>'
+            },
+            {
+                'Name': 'array_in_struct',
+                'Type': 'struct<list:array<string>>'
+            },
+            {
+                'Name': 'complex_struct',
+                'Type': 'struct<objects:struct<name:string,age:int,acl:struct<name:string>,json:map<string,string>>,value:int,field:string>'
+            }
+        ]
+        assert self.glue_client._generate_spark_sql_schema(columns=columns) == {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "string_in_struct",
+                    "type": {
+                        "type": "struct",
+                        "fields": [{
+                            "name": "name",
+                            "type": "string",
+                            "nullable": True,
+                            "metadata": {}
+                        }, {
+                            "name": "age",
+                            "type": "integer",
+                            "nullable": True,
+                            "metadata": {}
+                        }]
+                    },
+                    "nullable": True,
+                    "metadata": {}
+                }, {
+                    "name": "array_in_struct",
+                    "type": {
+                        "type": "struct",
+                        "fields": [{
+                            "name": "list",
+                            "type": {
+                                "type": "array",
+                                "elementType": "string",
+                                "containsNull": True
+                            },
+                            "nullable": True,
+                            "metadata": {}
+                        }]
+                    },
+                    "nullable": True,
+                    "metadata": {}
+                }, {
+                    "name": "complex_struct",
+                    "type": {
+                        "type": "struct",
+                        "fields": [{
+                            "name": "objects",
+                            "type": {
+                                "type": "struct",
+                                "fields": [{
+                                    "name": "name",
+                                    "type": "string",
+                                    "nullable": True,
+                                    "metadata": {}
+                                }, {
+                                    "name": "age",
+                                    "type": "integer",
+                                    "nullable": True,
+                                    "metadata": {}
+                                }, {
+                                    "name": "acl",
+                                    "type": {
+                                        "type": "struct",
+                                        "fields": [{
+                                            "name": "name",
+                                            "type": "string",
+                                            "nullable": True,
+                                            "metadata": {}
+                                        }]
+                                    },
+                                    "nullable": True,
+                                    "metadata": {}
+                                }, {
+                                    "name": "json",
+                                    "type": {
+                                        "type": "map",
+                                        "keyType": "string",
+                                        "valueType": "string",
+                                        "valueContainsNull": True
+                                    },
+                                    "nullable": True,
+                                    "metadata": {}
+                                }]
+                            },
+                            "nullable": True,
+                            "metadata": {}
+                        }, {
+                            "name": "value",
+                            "type": "integer",
+                            "nullable": True,
+                            "metadata": {}
+                        }, {
+                            "name": "field",
+                            "type": "string",
+                            "nullable": True,
+                            "metadata": {}
+                        }]
+                    },
+                    "nullable": True,
+                    "metadata": {}
+                }
+            ],
+        }
+        columns = [
+            {
+                'Name': 'complex_map',
+                'Type': 'map<string,struct<objects:struct<name:string>,age:int,list:array<string>,field:string>>'
+            },
+            {
+                'Name': 'string_in_map',
+                'Type': 'map<string,int>'
+            },
+            {
+                'Name': 'array_in_map',
+                'Type': 'map<string,array<string>>'
+            },
+            {
+                'Name': 'map_in_map',
+                'Type': 'map<string,map<string,string>>'
+            }
+        ]
+        assert self.glue_client._generate_spark_sql_schema(columns=columns) == {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "complex_map",
+                    "type": {
+                        "type": "map",
+                        "keyType": "string",
+                        "valueType": {
+                            "type": "struct",
+                            "fields": [{
+                                "name": "objects",
+                                "type": {
+                                    "type": "struct",
+                                    "fields": [{
+                                        "name": "name",
+                                        "type": "string",
+                                        "nullable": True,
+                                        "metadata": {}
+                                    }]
+                                },
+                                "nullable": True,
+                                "metadata": {}
+                            }, {
+                                "name": "age",
+                                "type": "integer",
+                                "nullable": True,
+                                "metadata": {}
+                            }, {
+                                "name": "list",
+                                "type": {
+                                    "type": "array",
+                                    "elementType": "string",
+                                    "containsNull": True
+                                },
+                                "nullable": True,
+                                "metadata": {}
+                            }, {
+                                "name": "field",
+                                "type": "string",
+                                "nullable": True,
+                                "metadata": {}
+                            }]
+                        },
+                        "valueContainsNull": True
+                    },
+                    "nullable": True,
+                    "metadata": {}
+                }, {
+                    "name": "string_in_map",
+                    "type": {
+                        "type": "map",
+                        "keyType": "string",
+                        "valueType": "integer",
+                        "valueContainsNull": True
+                    },
+                    "nullable": True,
+                    "metadata": {}
+                }, {
+                    "name": "array_in_map",
+                    "type": {
+                        "type": "map",
+                        "keyType": "string",
+                        "valueType": {
+                            "type": "array",
+                            "elementType": "string",
+                            "containsNull": True
+                        },
+                        "valueContainsNull": True
+                    },
+                    "nullable": True,
+                    "metadata": {}
+                }, {
+                    "name": "map_in_map",
+                    "type": {
+                        "type": "map",
+                        "keyType": "string",
+                        "valueType": {
+                            "type": "map",
+                            "keyType": "string",
+                            "valueType": "string",
+                            "valueContainsNull": True
+                        },
+                        "valueContainsNull": True
+                    },
+                    "nullable": True,
+                    "metadata": {}
+                }
+            ],
+        }
+        
+        columns = [
+            {
+                'Name': 'tags',
+                'Type': 'struct<ses:operation:struct<objects:struct<colon:name:string>>,ses:caller-identity:array<string>,ses:configuration-set:source-ip:array<string>,ses:tags:string>'
+            }
+        ]
+        assert self.glue_client._generate_spark_sql_schema(columns=columns) == {
+            'type': 'struct', 
+            'fields': [
+                {
+                    'name': 'tags', 
+                    'type': {
+                        'type': 'struct', 
+                        'fields': [
+                            {
+                                'name': 'ses:operation', 
+                                'type': {
+                                    'type': 'struct', 
+                                    'fields': [
+                                        {
+                                            'name': 'objects', 
+                                            'type': {
+                                                'type': 'struct', 
+                                                'fields': [
+                                                    {
+                                                        'name': 'colon:name', 
+                                                        'type': 'string', 
+                                                        'nullable': True, 
+                                                        'metadata': {}
+                                                        }
+                                                    ]
+                                                }, 
+                                            'nullable': True, 
+                                            'metadata': {}
+                                            }
+                                        ]
+                                    }, 
+                                'nullable': True, 
+                                'metadata': {}
+                                }, 
+                            {
+                                'name': 'ses:caller-identity', 
+                                'type': {
+                                    'type': 'array', 
+                                    'elementType': 'string', 
+                                    'containsNull': True
+                                    }, 
+                                'nullable': True, 
+                                'metadata': {}
+                                }, 
+                            {
+                                'name': 'ses:configuration-set:source-ip', 
+                                'type': {
+                                    'type': 'array', 
+                                    'elementType': 'string', 
+                                    'containsNull': True
+                                    }, 
+                                'nullable': True, 
+                                'metadata': {}
+                                }, 
+                            {
+                                'name': 'ses:tags', 
+                                'type': 'string', 
+                                'nullable': True, 
+                                'metadata': {}
+                                }
+                            ]
+                        }, 
+                    'nullable': True, 
+                    'metadata': {}
+                    }
+                ]
+            }
+    
+    def test_generate_table_input(self, mock_glue_context):
+        self.init_default_parameter()
+        
+        table_input = self.glue_client._generate_table_input(name='new-table', table_metadata=self.table_metadata, location=f's3://centralized-bucket/datalake/new-table')
+        assert table_input['Name'] == 'new-table'
+        assert table_input['StorageDescriptor']['Columns'] == [
+            {'Name': 'time', 'Type': 'bigint'}, 
+            {'Name': 'timestamp', 'Type': 'timestamp'}, 
+            {'Name': 'type', 'Type': 'string'}
+            ]
+        assert table_input['StorageDescriptor']['Location'] == f's3://centralized-bucket/datalake/new-table'
+        assert table_input['StorageDescriptor']['InputFormat'] == 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
+        assert table_input['StorageDescriptor']['OutputFormat'] == 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
+        assert table_input['StorageDescriptor']['Compressed'] is True
+        assert table_input['StorageDescriptor']['SerdeInfo']['SerializationLibrary'] == 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
+        assert table_input['PartitionKeys'] == [
+            {'Name': 'event_hour', 'Type': 'string'}, 
+            {'Name': 'elb', 'Type': 'string'}
+            ]
+        assert table_input['TableType'] == 'EXTERNAL_TABLE'
+        assert table_input['Parameters'] == {
+            'partition_filtering.enabled': 'true', 
+            'classification': 'parquet', 
+            'has_encrypted_data': 'true', 
+            'parquet.compression': 'ZSTD', 
+            'spark.sql.partitionProvider': 'catalog', 
+            'spark.sql.sources.schema': '{"type": "struct", "fields": [{"name": "time", "type": "long", "nullable": true, "metadata": {}}, {"name": "timestamp", "type": "timestamp", "nullable": true, "metadata": {}}, {"name": "type", "type": "string", "nullable": true, "metadata": {}}, {"name": "event_hour", "type": "string", "nullable": true, "metadata": {}}, {"name": "elb", "type": "string", "nullable": true, "metadata": {}}]}', 
+            'spark.sql.sources.schema.numPartCols': '2', 
+            'spark.sql.sources.schema.partCol.0': 'event_hour', 
+            'spark.sql.sources.schema.partCol.1': 'elb'
+            }
+        
+        table_metadata = copy.deepcopy(self.table_metadata)
+        table_metadata.partition_keys = []
+        table_input = self.glue_client._generate_table_input(name='new-table', table_metadata=table_metadata, location=f's3://centralized-bucket/datalake/new-table')
+        assert table_input['Name'] == 'new-table'
+        assert table_input['StorageDescriptor']['Columns'] == [
+            {'Name': 'time', 'Type': 'bigint'}, 
+            {'Name': 'timestamp', 'Type': 'timestamp'}, 
+            {'Name': 'type', 'Type': 'string'}
+            ]
+        assert table_input['StorageDescriptor']['Location'] == f's3://centralized-bucket/datalake/new-table'
+        assert table_input['StorageDescriptor']['InputFormat'] == 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
+        assert table_input['StorageDescriptor']['OutputFormat'] == 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
+        assert table_input['StorageDescriptor']['Compressed'] is True
+        assert table_input['StorageDescriptor']['SerdeInfo']['SerializationLibrary'] == 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
+        assert table_input['PartitionKeys'] == []
+        assert table_input['TableType'] == 'EXTERNAL_TABLE'
+        assert table_input['Parameters'] == {
+            'partition_filtering.enabled': 'true', 
+            'classification': 'parquet', 
+            'has_encrypted_data': 'true', 
+            'parquet.compression': 'ZSTD', 
+            'spark.sql.partitionProvider': 'catalog', 
+            'spark.sql.sources.schema': '{"type": "struct", "fields": [{"name": "time", "type": "long", "nullable": true, "metadata": {}}, {"name": "timestamp", "type": "timestamp", "nullable": true, "metadata": {}}, {"name": "type", "type": "string", "nullable": true, "metadata": {}}]}', 
+            'spark.sql.sources.schema.numPartCols': '0', 
+            }
 
 
 class TestSNSClient:
@@ -3548,6 +4609,91 @@ class TestSNSClient:
 
 class TestSESClient:
     
+    def test_get_template(self, mock_iam_context, mock_sqs_context, mock_ddb_context, mock_ses_context):
+        from utils.aws.ses import SESClient
+        
+        ses_email_template_name = "EmailTemplate"
+
+        ses_client = SESClient()
+        
+        ses_client.create_template(
+            template_name=ses_email_template_name, 
+            subject='[Notification] {{stateMachine.name}} task {{stateMachine.status}} to execute.',
+            text='Best regards',
+            html='')
+        
+        response = ses_client.get_template(template_name=ses_email_template_name)
+        assert response['Template']['TemplateName'] == ses_email_template_name
+        
+        response = ses_client.get_template(template_name='do-not-exists')
+        assert response == {}
+    
+    def test_create_template(self, mock_iam_context, mock_sqs_context, mock_ddb_context, mock_ses_context):
+        from utils.aws.ses import SESClient
+        
+        ses_email_template_name = "EmailTemplate"
+
+        ses_client = SESClient()
+        
+        response = ses_client.create_template(
+            template_name=ses_email_template_name, 
+            subject='[Notification] {{stateMachine.name}} task {{stateMachine.status}} to execute.',
+            text='Best regards',
+            html="")
+        assert response['ResponseMetadata']['HTTPStatusCode'] == 200
+    
+    def test_delete_template(self, mock_iam_context, mock_sqs_context, mock_ddb_context, mock_ses_context):
+        from utils.aws.ses import SESClient
+        
+        ses_email_template_name = "EmailTemplate"
+
+        ses_client = SESClient()
+        
+        ses_client.create_template(
+            template_name=ses_email_template_name, 
+            subject='[Notification] {{stateMachine.name}} task {{stateMachine.status}} to execute.',
+            text='Best regards',
+            html='')
+        
+        response = ses_client.delete_template(template_name=ses_email_template_name)
+        assert response["ResponseMetadata"]["HTTPStatusCode"] == 200
+        
+        response = ses_client.delete_template(template_name='do-not-exists')
+        assert response == {}
+    
+    def test_get_identity_verification_attributes(self, mock_iam_context, mock_sqs_context, mock_ddb_context, mock_ses_context):
+        from utils.aws.ses import SESClient
+
+        ses_client = SESClient()
+        
+        ses_client.verify_email_identity(email_address="alejandro_rosalez@example.com")
+        
+        response = ses_client.get_identity_verification_attributes(identity="alejandro_rosalez@example.com")
+        assert "alejandro_rosalez@example.com" in response["VerificationAttributes"].keys()
+        
+        response = ses_client.get_identity_verification_attributes(identity="alejandro_rosalez@example.org")
+        assert "alejandro_rosalez@example.org" not in response["VerificationAttributes"].keys()
+    
+    def test_verify_email_identity(self, mock_iam_context, mock_sqs_context, mock_ddb_context, mock_ses_context):
+        from utils.aws.ses import SESClient
+
+        ses_client = SESClient()
+        
+        response = ses_client.verify_email_identity(email_address="alejandro_rosalez@example.com")
+        assert response['ResponseMetadata']['HTTPStatusCode'] == 200
+    
+    def test_delete_identity(self, mock_iam_context, mock_sqs_context, mock_ddb_context, mock_ses_context):
+        from utils.aws.ses import SESClient
+        
+        ses_client = SESClient()
+        
+        ses_client.verify_email_identity(email_address="alejandro_rosalez@example.com")
+        response = ses_client.delete_identity(identity="alejandro_rosalez@example.com")
+        assert response["ResponseMetadata"]["HTTPStatusCode"] == 200
+        
+        response = ses_client.delete_identity(identity='do-not-exists')
+        assert response == {}
+        
     def test_send_templated_email(self, mock_iam_context, mock_sqs_context, mock_ddb_context, mock_ses_context):
         from utils.aws.ses import SESClient
         
@@ -3559,5 +4705,160 @@ class TestSESClient:
         response = ses_client.send_templated_email(source=source, to=['alejandro_rosalez@example.com'], template=ses_email_template, data={})
         assert response['ResponseMetadata']['HTTPStatusCode'] == 200
 
+
+def mock_rds_api_call(self, operation_name, kwarg): # NOSONAR
+    from test.mock import mock_rds_context, default_environment_variables
+    from botocore.exceptions import ClientError
+    
+    aurora_mysql_instance_8 = os.environ['AURORA_MYSQL8_INSTANCE_IDENTIFIER']
+    postgresql_instance = os.environ['POSTGRESQL_INSTANCE_IDENTIFIER']
         
+    aurora_mysql_audit_logs = os.environ['MYSQL_AUDIT_LOGS']
+    
+    if operation_name in ('DescribeDBLogFiles'):
+        if kwarg['DBInstanceIdentifier'] == aurora_mysql_instance_8:
+            if kwarg.get('FilenameContains') == 'audit':
+                return {
+                    'Marker': '', 
+                    'DescribeDBLogFiles': [
+                        {
+                            'LogFileName': 'audit/audit.log', 
+                            'LastWritten': 1704416941258, 
+                            'Size': 10817
+                            },
+                        ]
+                    }
+            return {
+                'Marker': '', 
+                'DescribeDBLogFiles': [
+                    {
+                        'LogFileName': 'audit/audit.log', 
+                        'LastWritten': 1704416941258, 
+                        'Size': 10817
+                        }, 
+                    {
+                        'LogFileName': 'slowquery/slowquery.log', 
+                        'LastWritten': 1704416941258, 
+                        'Size': 10817
+                        }, 
+                    {
+                        'LogFileName': 'error/mysql-error.log', 
+                        'LastWritten': 1704416941258, 
+                        'Size': 10817
+                        }, 
+                    {
+                        'LogFileName': 'general/mysql-general.log', 
+                        'LastWritten': 1704416958038, 
+                        'Size': 468796
+                        },
+                    {
+                        'LogFileName': 'test/no-parser.log', 
+                        'LastWritten': 1704416958038, 
+                        'Size': 468796
+                        }
+                    ]
+                }
+        elif kwarg['DBInstanceIdentifier'] == 'do-not-exists-instance':
+            return ClientError(error_response={'Error': {'Code': '400', 'Message': 'Error Query String.'}}, operation_name=operation_name)
+    elif operation_name in ('DownloadDBLogFilePortion'):
+        if kwarg['DBInstanceIdentifier'] == aurora_mysql_instance_8 and kwarg['LogFileName'] == 'audit/audit.log':
+            return {
+                'Marker': '2024-01-01.2:0', 
+                'LogFileData': aurora_mysql_audit_logs, 
+                'AdditionalDataPending': False
+                }
+        elif kwarg['DBInstanceIdentifier'] == 'do-not-exists-instance' and kwarg['LogFileName'] == 'audit/audit.log':
+            return ClientError(error_response={'Error': {'Code': '400', 'Message': 'Error Query String.'}}, operation_name=operation_name)
+            
+            
+class TestRDSClient:
+    def init_default_parameter(self):
+        from utils.aws.rds import RDSClient
         
+        self.rds_client = RDSClient()
+        
+        self.aurora_mysql_cluster_8 = os.environ['AURORA_MYSQL8_CLUSTER_IDENTIFIER']
+        self.aurora_postgresql_cluster = os.environ['AURORA_POSTGRESQL_CLUSTER_IDENTIFIER']
+        self.aurora_mysql_instance_8 = os.environ['AURORA_MYSQL8_INSTANCE_IDENTIFIER']
+        self.mysql_instance_8 = os.environ['MYSQL8_INSTANCE_IDENTIFIER']
+        self.postgresql_instance = os.environ['POSTGRESQL_INSTANCE_IDENTIFIER']
+        
+        self.aurora_mysql_audit_logs = os.environ['AURORA_MYSQL_AUDIT_LOGS']
+        self.mysql_audit_logs = os.environ['MYSQL_AUDIT_LOGS']
+        self.mysql_slow_query_logs = os.environ['MYSQL_SLOW_QUERY_LOGS']
+        self.mysql_error_logs_8 = os.environ['MYSQL8_ERROR_LOGS']
+        self.mysql_general_logs = os.environ['MYSQL_GENERAL_LOGS']
+        self.postgres_query_logs = os.environ['POSTGRES_QUERY_LOGS']
+        
+    def test_describe_db_cluster(self, mock_rds_context):
+        self.init_default_parameter()
+        
+        response = self.rds_client.describe_db_cluster(db_cluster_identifier=self.aurora_mysql_cluster_8)
+        assert response['DBClusterIdentifier'] == self.aurora_mysql_cluster_8
+        assert response['Engine'] == 'aurora-mysql'
+        
+        response = self.rds_client.describe_db_cluster(db_cluster_identifier=self.aurora_postgresql_cluster)
+        assert response['DBClusterIdentifier'] == self.aurora_postgresql_cluster
+        assert response['Engine'] == 'aurora-postgresql'
+        
+        response = self.rds_client.describe_db_cluster(db_cluster_identifier='do-not-exists-cluster')
+        assert response == {}
+        
+    def test_describe_db_instance(self, mock_rds_context):
+        self.init_default_parameter()
+        
+        response = self.rds_client.describe_db_instance(db_instance_identifier=self.mysql_instance_8)
+        assert response['DBInstanceIdentifier'] == self.mysql_instance_8
+        assert response['Engine'] == 'mysql'
+        
+        response = self.rds_client.describe_db_instance(db_instance_identifier=self.postgresql_instance)
+        assert response['DBInstanceIdentifier'] == self.postgresql_instance
+        assert response['Engine'] == 'postgres'
+        
+        response = self.rds_client.describe_db_instance(db_instance_identifier='do-not-exists-instance')
+        assert response == {}
+    
+    def test_describe_db_log_files(self, mock_rds_context):
+        from unittest.mock import patch
+        
+        self.init_default_parameter()
+        
+        with patch('botocore.client.BaseClient._make_api_call', new=mock_rds_api_call):
+            response = self.rds_client.describe_db_log_files(db_instance_identifier=self.aurora_mysql_instance_8)
+            assert len(response['DescribeDBLogFiles']) == 5
+            
+            response = self.rds_client.describe_db_log_files(db_instance_identifier=self.aurora_mysql_instance_8, filename_contains='audit')
+            assert len(response['DescribeDBLogFiles']) == 1
+            
+            response = self.rds_client.describe_db_log_files(db_instance_identifier='do-not-exists-instance')
+            assert len(response['DescribeDBLogFiles']) == 0
+    
+    def test_download_db_log_file_portion(self, mock_rds_context):
+        from unittest.mock import patch
+        
+        self.init_default_parameter()
+        
+        with patch('botocore.client.BaseClient._make_api_call', new=mock_rds_api_call):
+            response = self.rds_client.download_db_log_file_portion(db_instance_identifier=self.aurora_mysql_instance_8, log_file_name='audit/audit.log')
+            assert response['LogFileData'] == self.mysql_audit_logs
+            
+            response = self.rds_client.download_db_log_file_portion(db_instance_identifier=self.aurora_mysql_instance_8, log_file_name='audit/audit.log', marker='2024-01-01.2:0')
+            assert response['LogFileData'] == self.mysql_audit_logs
+            
+            response = self.rds_client.download_db_log_file_portion(db_instance_identifier='do-not-exists-instance', log_file_name='audit/audit.log')
+            assert response['LogFileData'] ==''
+    
+    def test_describe_db_instance_log_files(self, mock_rds_context):
+        from unittest.mock import patch
+        
+        self.init_default_parameter()
+        
+        with patch('botocore.client.BaseClient._make_api_call', new=mock_rds_api_call):
+            response = self.rds_client.describe_db_instance_log_files(db_instance_identifier=self.aurora_mysql_instance_8)
+            assert len(response.keys()) == 5
+            
+            response = self.rds_client.describe_db_instance_log_files(db_instance_identifier=self.aurora_mysql_instance_8, filename_contains_set={'audit'})
+            assert len(response.keys()) == 1
+            
+            response = self.rds_client.describe_db_instance_log_files(db_instance_identifier='do-not-exists-instance')
+            assert len(response.keys()) == 0

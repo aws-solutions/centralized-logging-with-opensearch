@@ -51,6 +51,7 @@ export class NginxForOpenSearchStack extends Stack {
   private cognitoEndpoint = "";
   private customEndpointValue = "";
   private engineURL = "";
+  private enableInternal = "internal;"
 
   private addToParamGroups(label: string, ...param: string[]) {
     this.paramGroups.push({
@@ -312,6 +313,7 @@ export class NginxForOpenSearchStack extends Stack {
         userData: ud_ec2,
         role: ec2Role,
         keyName: keyName.valueAsString,
+        requireImdsv2: true,
         securityGroup: ec2SecurityGroup,
         blockDevices: [
           {
@@ -417,6 +419,12 @@ export class NginxForOpenSearchStack extends Stack {
       this.openSearchEndPoint,
       cognitoEndpoint.valueAsString
     ).toString();
+
+    this.enableInternal = Fn.conditionIf(
+      cognitoNotEnabled.logicalId,
+      this.enableInternal,
+      ""
+    ).toString();
     this.customEndpointValue = Fn.conditionIf(
       customEndpointNotProvided.logicalId,
       lb.loadBalancerDnsName,
@@ -460,8 +468,10 @@ export class NginxForOpenSearchStack extends Stack {
       `openssl genrsa -out /etc/nginx/cert.key 2048`,
       `openssl req -config /etc/nginx/openssl.cnf -new -key /etc/nginx/cert.key -out /etc/nginx/cert.csr`,
       `openssl x509 -req -days 2048 -in /etc/nginx/cert.csr -signkey /etc/nginx/cert.key -out /etc/nginx/cert.crt`,
-      'mac_address=`curl -H "X-aws-ec2-metadata-token: $TOKEN" -v http://169.254.169.254/latest/meta-data/mac`',
-      'cider_block=`curl -H "X-aws-ec2-metadata-token: $TOKEN" -v http://169.254.169.254/latest/meta-data/network/interfaces/macs/$mac_address/vpc-ipv4-cidr-block`',
+      'TOKEN=`curl -X PUT -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" "http://169.254.169.254/latest/api/token"`',
+      'ACCESS_TOKEN=`curl -H "X-aws-ec2-metadata-token: $TOKEN" -X PUT -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" "http://169.254.169.254/latest/api/token"`',
+      'mac_address=`curl -H "X-aws-ec2-metadata-token: $ACCESS_TOKEN" -v http://169.254.169.254/latest/meta-data/mac`',
+      'cider_block=`curl -H "X-aws-ec2-metadata-token: $ACCESS_TOKEN" -v http://169.254.169.254/latest/meta-data/network/interfaces/macs/$mac_address/vpc-ipv4-cidr-block`',
       "cider_ip=`echo ${cider_block%/*}`",
       "front_three=`echo ${cider_ip%.*}`",
       "last_value=`echo ${cider_ip##*.}`",
@@ -472,6 +482,7 @@ export class NginxForOpenSearchStack extends Stack {
       `sed -i 's/$cognito_host/${this.cognitoEndpoint}/' /etc/nginx/conf.d/default.conf`,
       `sed -i 's/$SERVER_NAME/${this.customEndpointValue}/' /etc/nginx/conf.d/default.conf`,
       `sed -i 's/$ENGINE_URL/${this.engineURL}/' /etc/nginx/conf.d/default.conf`,
+      `sed -i 's/$enable_internal/${this.enableInternal}/' /etc/nginx/conf.d/default.conf`,
       `sed -i 's#/bin.*#service nginx reload >/dev/null 2>\&1#' /etc/logrotate.d/nginx`,
       `chmod a+x /etc/init.d/nginx`,
       `chkconfig --add /etc/init.d/nginx`,
@@ -501,7 +512,7 @@ export class NginxForOpenSearchStack extends Stack {
 }
 
 class InjectEC2LaunchTemplateNetWorkInterfaceSetting implements IAspect {
-  public constructor(private ec2LaunchTemplateNetworkInterfaceSetting: any) {}
+  public constructor(private ec2LaunchTemplateNetworkInterfaceSetting: any) { }
 
   public visit(node: IConstruct): void {
     if (

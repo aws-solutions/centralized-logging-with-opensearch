@@ -17,6 +17,7 @@ limitations under the License.
 import React from "react";
 import { MetricName, AppPipeline, PipelineType } from "API";
 import MonitorMetrics from "pages/comps/monitor/MonitorMetrics";
+import { defaultStr } from "assets/js/utils";
 
 interface AppLogKDSBufferMetricsProps {
   pipelineInfo?: AppPipeline;
@@ -59,7 +60,7 @@ const AppLogKDSBufferMetrics: React.FC<AppLogKDSBufferMetricsProps> = (
   return (
     <MonitorMetrics
       type={PipelineType.APP}
-      taskId={pipelineInfo?.pipelineId || ""}
+      taskId={defaultStr(pipelineInfo?.pipelineId)}
       metrics={AppLogKDSBufferMetricsChartList}
       startTime={startDate}
       endTime={endDate}

@@ -32,6 +32,7 @@ import ExtLink from "components/ExtLink";
 import { SelectItem } from "components/Select/select";
 import { splitStringToBucketAndPrefix } from "assets/js/utils";
 import { AlertType } from "components/Alert/alert";
+import { VPC_FLOW_LOG_SELECT_ALL_FIELDS } from "assets/js/const";
 
 interface AutoEnableProps {
   title: string;
@@ -119,7 +120,8 @@ const AutoEnableLogging: React.FC<AutoEnableProps> = (
       resourceName: resourceName,
       accountId: accountId,
       region: "",
-      LogFormat: "",
+      LogFormat:
+        resourceType === ResourceType.VPC ? VPC_FLOW_LOG_SELECT_ALL_FIELDS : "",
     };
     try {
       const createRes = await appSyncRequestMutation(

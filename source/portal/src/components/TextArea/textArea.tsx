@@ -16,35 +16,16 @@ limitations under the License.
 import React from "react";
 import classNames from "classnames";
 
-type TextAreaProp = {
-  type?: string;
-  rows: number;
-  value: string;
-  isSearch?: boolean;
+interface TextAreaProp extends React.HTMLProps<HTMLTextAreaElement> {
   className?: string;
-  placeholder?: string;
-  disabled?: boolean;
-  readonly?: boolean;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onChange: (event: any) => void;
-};
+}
 
 const TextArea: React.FC<TextAreaProp> = (props: TextAreaProp) => {
-  const { value, rows, placeholder, className, disabled, readonly, onChange } =
-    props;
+  const { className, ...restProps } = props;
 
   return (
     <div className={classNames("gsui-textarea", className)}>
-      <textarea
-        rows={rows}
-        readOnly={readonly}
-        disabled={disabled}
-        value={value}
-        placeholder={placeholder}
-        onChange={(event) => {
-          onChange(event);
-        }}
-      />
+      <textarea {...restProps} />
     </div>
   );
 };

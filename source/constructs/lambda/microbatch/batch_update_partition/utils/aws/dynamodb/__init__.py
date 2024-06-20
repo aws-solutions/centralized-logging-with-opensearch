@@ -3,14 +3,14 @@
 
 from typing import Union, Optional, List, Iterator
 from boto3.dynamodb.conditions import ConditionBase
-from utils.aws.commonlib import AWSConnection, APIException, ErrorCode
+from utils.helpers import AWSConnection
 
 
 class DynamoDBUtil:
     conn = AWSConnection()
-    dynamodb = conn.get_client("dynamodb", client_type="resource")
 
-    def __init__(self, table: str):
+    def __init__(self, table: str, max_attempts: int = 10):
+        self.dynamodb = self.conn.get_client("dynamodb", client_type="resource", max_attempts=max_attempts)
         self._table_name = table
         self._table = self.dynamodb.Table(table) # type: ignore
     
@@ -28,9 +28,7 @@ class DynamoDBUtil:
         resp = self._table.get_item(Key=key)
         item = resp.get("Item")
         if raise_if_not_found and not item:
-            raise APIException(
-                ErrorCode.ITEM_NOT_FOUND, f"Key: {key}"
-            )
+            raise KeyError(f'[Item is not found] Key: {key}')
         return item
     
     def list_items(self, filter: Union[Optional[ConditionBase], str] = None, projection_attribute_names: Optional[List[str]] = None) -> List[dict]:

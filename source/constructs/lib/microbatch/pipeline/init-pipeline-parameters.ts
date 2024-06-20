@@ -67,7 +67,7 @@ export class InitLogPipelineCfnParameters extends Construct {
     switch (sourceType) {
       case "waf": {
         this.pipelineId = "bf412f36-d95b-4b80-bcc6-29e775208d2a";
-        stagingBucketPrefixDefaultValue = "AWSLogs/WAFLogs";
+        stagingBucketPrefixDefaultValue = "AWSLogs/Waf";
         centralizedTableNameDefaultValue = "waf";
         break;
       }
@@ -79,7 +79,7 @@ export class InitLogPipelineCfnParameters extends Construct {
       }
       case "cloudfront": {
         this.pipelineId = "e41275c0-258f-4f82-994f-ef4c65760e67";
-        stagingBucketPrefixDefaultValue = "AWSLogs/CloudFrontLogs";
+        stagingBucketPrefixDefaultValue = "AWSLogs/CloudFront";
         centralizedTableNameDefaultValue = "cloudfront";
         break;
       }
@@ -93,6 +93,24 @@ export class InitLogPipelineCfnParameters extends Construct {
         this.pipelineId = "9734ea3f-64ba-4427-a0bf-9cfa90d5f50f";
         stagingBucketPrefixDefaultValue = "VPCFlowLogs";
         centralizedTableNameDefaultValue = "vpcflow";
+        break;
+      }
+      case "rds": {
+        this.pipelineId = "2e981437-574e-4995-b27c-c61c11927232";
+        stagingBucketPrefixDefaultValue = "AWSLogs/RDS";
+        centralizedTableNameDefaultValue = "rds";
+        break;
+      }
+      case "s3a": {
+        this.pipelineId = "8dc71f7e-2317-45e7-8881-08e342f8f1de";
+        stagingBucketPrefixDefaultValue = "AWSLogs/S3AccessLogs";
+        centralizedTableNameDefaultValue = "s3";
+        break;
+      }
+      case "ses": {
+        this.pipelineId = "ab3d8adc-be9d-4356-9fcc-aec4752c9947";
+        stagingBucketPrefixDefaultValue = "AWSLogs/SESLogs";
+        centralizedTableNameDefaultValue = "ses";
         break;
       }
       case "fluent-bit": {
@@ -581,6 +599,5 @@ export class InitLogPipelineCfnParameters extends Construct {
     this.importDashboards = importDashboardsParameter.valueAsString;
     this.grafanaUrl = grafanaUrlParameter.valueAsString;
     this.grafanaToken = grafanaTokenParameter.valueAsString;
-
   }
 }

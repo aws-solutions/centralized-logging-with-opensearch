@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import os
-import logging
+from commonlib.logging import get_logger
 from typing import List
 import json
 from distutils.util import strtobool
@@ -19,15 +19,16 @@ from commonlib.model import (
     DeploymentEnvEnum,
     LogConfigFilterCondition,
     EksSource,
+    GroupPlatformEnum,
 )
+from commonlib.dao import InstanceDao
 from commonlib.exception import APIException, ErrorCode
 from jinja2 import FileSystemLoader, Environment
 from flb.flb_model import FluentBitDataPipeline
 from flb.k8s import ConfigMap
 import urllib3
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 default_region = os.environ.get("AWS_REGION")
 
@@ -49,6 +50,9 @@ fluent_bit_image = os.environ.get(
 fluent_bit_log_group_name = os.environ["FLUENT_BIT_LOG_GROUP_NAME"]
 s3_address = os.environ.get("FLB_S3_ADDR")
 http = urllib3.PoolManager()
+
+instance_table_name = os.environ.get("INSTANCE_TABLE_NAME")
+instance_dao = InstanceDao(table_name=instance_table_name)
 
 
 class FluentBitDataPipelineBuilder(object):
@@ -112,7 +116,7 @@ class FluentBitDataPipelineBuilder(object):
         s3 = dict()
         for param in self._ingestion.output.params:
             if param.paramKey == "logBucketPrefix":
-                s3["prefix"] = param.paramValue.strip('/')
+                s3["prefix"] = param.paramValue.strip("/")
             elif param.paramKey == "maxFileSize":
                 s3["max_file_size"] = param.paramValue
             elif param.paramKey == "logBucketName":
@@ -213,7 +217,7 @@ class FluentBitDataPipelineBuilder(object):
         )
         if self._ingestion.input.name == "syslog":
             flb_data_pipeline.syslog = self.build_syslog_input()
-        else:
+        elif self._ingestion.input.name == "tail":
             flb_data_pipeline.tail = self.build_tail_input()
 
         if self._ingestion.output.name == "KDS":
@@ -274,6 +278,13 @@ class Flb:
             flb_data_pipelines.append(flb_pipeline)
         return flb_data_pipelines
 
+    def _get_os(self, instance_id: str) -> GroupPlatformEnum:
+        instance_list = instance_dao.get_instance_by_instance_id(instance_id)
+        if len(instance_list) > 0:
+            ec2_instance = instance_list[0]
+            return ec2_instance.platformType
+        return GroupPlatformEnum.LINUX
+
 
 class InstanceFlb(Flb):
     def __init__(self, sub_account_cwl_monitor_role_arn: str = cwl_monitor_role_arn):
@@ -303,6 +314,7 @@ class InstanceFlb(Flb):
                 params["fluent_bit_log_group_name"] = fluent_bit_log_group_name
                 params["cwl_monitor_role_arn"] = self._sub_account_cwl_monitor_role_arn
                 params["env"] = DeploymentEnvEnum.EC2.value
+                params["os"] = self._get_os(key)
                 params["placeholder"] = ""
                 content: str = content_template.render(params)
                 instance_content[key] = content

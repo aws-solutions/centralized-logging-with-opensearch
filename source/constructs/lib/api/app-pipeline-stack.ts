@@ -16,6 +16,9 @@ limitations under the License.
 import * as path from 'path';
 import * as appsync from '@aws-cdk/aws-appsync-alpha';
 import {
+  NagSuppressions,
+} from 'cdk-nag';
+import {
   Aws,
   Fn,
   CfnCondition,
@@ -25,6 +28,7 @@ import {
   aws_iam as iam,
   aws_lambda as lambda,
 } from 'aws-cdk-lib';
+import { IVpc, SecurityGroup, SubnetType } from 'aws-cdk-lib/aws-ec2';
 import { Construct } from 'constructs';
 
 import { AppPipelineFlowStack } from './app-pipeline-flow';
@@ -32,6 +36,15 @@ import { SharedPythonLayer } from '../layer/layer';
 import { MicroBatchStack } from '../microbatch/main/services/amazon-services-stack';
 
 export interface AppPipelineStackProps {
+  readonly vpc: IVpc;
+
+  /**
+   * Default Subnet Ids (Private)
+   *
+   */
+  readonly subnetIds: string[];
+
+  readonly processSg: SecurityGroup;
   /**
    * Step Functions State Machine ARN for CloudFormation deployment Flow
    *
@@ -57,6 +70,8 @@ export interface AppPipelineStackProps {
   readonly appPipelineTable: ddb.Table;
   readonly appLogIngestionTable: ddb.Table;
   readonly grafanaTable: ddb.Table;
+
+  readonly aosMasterRole: iam.Role;
 }
 export class AppPipelineStack extends Construct {
   constructor(scope: Construct, id: string, props: AppPipelineStackProps) {
@@ -78,6 +93,9 @@ export class AppPipelineStack extends Construct {
         path.join(__dirname, '../../lambda/api/app_pipeline/'),
         { followSymlinks: SymlinkFollowMode.ALWAYS },
       ),
+      vpc: props.vpc,
+      vpcSubnets: { subnetType: SubnetType.PRIVATE_WITH_EGRESS },
+      securityGroups: [props.processSg],
       runtime: lambda.Runtime.PYTHON_3_11,
       handler: 'lambda_function.lambda_handler',
       timeout: Duration.seconds(60),
@@ -87,6 +105,7 @@ export class AppPipelineStack extends Construct {
         STATE_MACHINE_ARN: pipeFlow.stateMachineArn,
         APPPIPELINE_TABLE: props.appPipelineTable.tableName,
         APPLOGINGESTION_TABLE: props.appLogIngestionTable.tableName,
+        OPENSEARCH_MASTER_ROLE_ARN: props.aosMasterRole.roleArn,
         LOG_CONFIG_TABLE: props.logConfigTable.tableName,
         SOLUTION_VERSION: process.env.VERSION || 'v1.0.0',
         SOLUTION_ID: props.solutionId,
@@ -107,6 +126,7 @@ export class AppPipelineStack extends Construct {
     props.appLogIngestionTable.grantReadWriteData(appPipelineHandler);
     props.logConfigTable.grantReadData(appPipelineHandler);
     props.microBatchStack.microBatchDDBStack.ETLLogTable.grantReadData(appPipelineHandler);
+    props.aosMasterRole.grantAssumeRole(appPipelineHandler.role!);
 
     appPipelineHandler.addToRolePolicy(
       new iam.PolicyStatement({
@@ -121,6 +141,14 @@ export class AppPipelineStack extends Construct {
         effect: iam.Effect.ALLOW,
         resources: ['*'],
         actions: ['kinesis:DescribeStreamSummary'],
+      })
+    );
+    // Grant lambda permissions to the appPipeline lambda
+    appPipelineHandler.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        resources: ['*'],
+        actions: ['lambda:GetAccountSettings'],
       })
     );
     // Grant es permissions to the appPipeline lambda
@@ -168,7 +196,23 @@ export class AppPipelineStack extends Construct {
         ],
       })
     );
-
+    appPipelineHandler.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: [
+          "s3:GetBucketNotification",
+        ],
+        effect: iam.Effect.ALLOW,
+        resources: [
+          `arn:${Aws.PARTITION}:s3:::*`,
+        ],
+      })
+    );
+    NagSuppressions.addResourceSuppressions(appPipelineHandler, [
+      {
+        id: "AwsSolutions-IAM5",
+        reason: "The managed policy needs to use any resources.",
+      },
+    ]);
     appPipelineHandler.addToRolePolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
@@ -301,6 +345,13 @@ export class AppPipelineStack extends Construct {
     appPipeLambdaDS.createResolver('checkOSIAvailability', {
       typeName: 'Query',
       fieldName: 'checkOSIAvailability',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    appPipeLambdaDS.createResolver('getAccountUnreservedConurrency', {
+      typeName: 'Query',
+      fieldName: 'getAccountUnreservedConurrency',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });

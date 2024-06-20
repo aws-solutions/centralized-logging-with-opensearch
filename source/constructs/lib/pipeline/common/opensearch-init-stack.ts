@@ -98,6 +98,13 @@ export interface OpenSearchInitProps {
    */
   // readonly logProcessorRoleArn?: string;
 
+  /**
+   * Log proceersor lambda reserve concurrency
+   *
+   * @default - 0.
+   */
+  readonly logProcessorConcurrency: number;
+
   readonly warmAge?: string;
   readonly coldAge?: string;
   readonly retainAge?: string;
@@ -250,6 +257,9 @@ export class OpenSearchInitStack extends Construct {
       vpc: props.vpc,
       vpcSubnets: { subnetType: SubnetType.PRIVATE_WITH_EGRESS },
       securityGroups: [props.securityGroup],
+      logFormat: "JSON",
+      applicationLogLevel: "ERROR",
+      systemLogLevel: "WARN",
       environment: Object.assign(
         {
           ENDPOINT: props.endpoint,
@@ -261,7 +271,7 @@ export class OpenSearchInitStack extends Construct {
               return this.logProcessorFn.role?.roleArn
             }
           }),
-
+          STACK_PREFIX: process.env.STACK_PREFIX,
           LOG_TYPE: props.logType || "",
           INDEX_PREFIX: props.indexPrefix,
           WARM_AGE: props.warmAge || "",
@@ -315,6 +325,24 @@ export class OpenSearchInitStack extends Construct {
         props.env),
       layers: [SharedPythonLayer.getInstance(this), pipeLayer],
     });
+
+    const isLogProcessorConcurrencyZero = new CfnCondition(this, "isLogProcessorConcurrencyZero", {
+      expression: Fn.conditionEquals(props.logProcessorConcurrency, 0),
+    });
+    if (props.logProcessorConcurrency !== 0) {
+      const logProcessorFn = this.logProcessorFn.node
+        .defaultChild as lambda.CfnFunction;
+
+      logProcessorFn.addPropertyOverride(
+        'ReservedConcurrentExecutions',
+        Fn.conditionIf(
+          isLogProcessorConcurrencyZero.logicalId,
+          Aws.NO_VALUE,
+          props.logProcessorConcurrency
+        )
+      );
+    }
+
     this.logProcessorFn.addToRolePolicy(
       new iam.PolicyStatement({
         actions: [
@@ -323,6 +351,18 @@ export class OpenSearchInitStack extends Construct {
         ],
         resources: [
           `arn:${Aws.PARTITION}:lambda:${Aws.REGION}:${Aws.ACCOUNT_ID}:function:${Aws.STACK_NAME}-LogProcessorFn`,
+        ],
+      })
+    );
+    this.logProcessorFn.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: [
+          "kms:DescribeCustomKeyStores",
+          "kms:Decrypt",
+          "kms:DescribeKey",
+        ],
+        resources: [
+          `arn:${Aws.PARTITION}:kms:${Aws.REGION}:${Aws.ACCOUNT_ID}:key/*`,
         ],
       })
     );

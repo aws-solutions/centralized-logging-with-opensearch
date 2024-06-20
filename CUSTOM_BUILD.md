@@ -1,11 +1,14 @@
 # Customization
 
-## Setup
+This solution is built using AWS Cloud Development Kit (CDK). You can customize the solution by following the steps below.
 
-Prerequisites: 
+
+## Prerequisites
+
+Before you start customizing the solution, make sure you have the following prerequisites on your local machine:
 
 - Python (>=3.9)
-- NodeJS (v14 or later)
+- NodeJS (v18 or later)
 - Docker
 
 > if you are using ARM CPU like Apple M1 chip, please run `export DOCKER_DEFAULT_PLATFORM=linux/amd64` for building amd64 container image.
@@ -18,6 +21,8 @@ git clone aws-solutions/centralized-logging-with-opensearch
 
 
 ## File Structure
+
+The following is the file structure of the solution. You can customize the solution by modifying the files in the `source` directory.
 
 ```
 ├── deployment/                             - contains build scripts, deployment templates, and dist folders for staging assets.
@@ -50,7 +55,7 @@ git clone aws-solutions/centralized-logging-with-opensearch
 
 ## Unit Test
 
-Run unit tests to make sure added customization passes the tests.
+After you have customized the solution. Run the unit tests to ensure the solution is working as expected. Review the generated coverage report.
 
 ```
 cd ./source
@@ -58,8 +63,6 @@ chmod +x ./run-all-tests.sh
 ./run-all-tests.sh
 cd ..
 ```
-
-Ensure all unit tests pass. Review the generated coverage report.
 
 ## Build
 
@@ -70,10 +73,10 @@ To build your customized distributable follow given steps.
 ```
 export DIST_OUTPUT_BUCKET=my-bucket-name # bucket where customized code will reside
 export TEMPLATE_OUTPUT_BUCKET=my-bucket-name # same as DIST_OUTPUT_BUCKET
-export SOLUTION_NAME=my-solution-name
-export SOLUTION_TRADEMARKEDNAME=my-solution-name # same as SOLUTION_NAME
-export VERSION=my-version # version number for the customized code
-export REGION=aws-region-code # the AWS region to launch the solution (e.g. us-east-1)
+export SOLUTION_NAME=my-solution-name # e.g., centralized-logging-with-opensearch
+export SOLUTION_TRADEMARKEDNAME=my-solution-name # same as SOLUTION_NAME (e.g., centralized-logging-with-opensearch)
+export VERSION=my-version # version number for the customized code (e.g., v2.1.9)
+export REGION=aws-region-code # the AWS region to launch the solution (e.g., us-east-1)
 ```
 
 _Note:_ You would have to create an S3 bucket with the prefix 'my-bucket-name-<aws_region>'; aws_region is where you are testing the customized solution. Also, the assets in bucket should be publicly accessible.

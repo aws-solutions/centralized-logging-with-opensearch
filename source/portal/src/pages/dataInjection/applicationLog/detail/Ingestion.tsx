@@ -16,16 +16,16 @@ limitations under the License.
 /* eslint-disable react/display-name */
 import { Pagination } from "@material-ui/lab";
 import {
-  AnalyticEngineType,
   AppLogIngestion,
   AppPipeline,
   GetLogSourceQueryVariables,
   LogSource,
   LogSourceType,
+  LogStructure,
   PipelineStatus,
 } from "API";
 import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
-import { buildS3Link, formatLocalTime } from "assets/js/utils";
+import { buildS3Link, defaultStr, formatLocalTime } from "assets/js/utils";
 import Button from "components/Button";
 import ButtonDropdown from "components/ButtonDropdown";
 import Modal from "components/Modal";
@@ -40,7 +40,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import Alert from "components/Alert";
 import { AlertType } from "components/Alert/alert";
 import { useSelector } from "react-redux";
-import { AmplifyConfigType } from "types";
+import { AmplifyConfigType, AnalyticEngineTypes } from "types";
 import ExtLink from "components/ExtLink";
 import { RootState } from "reducer/reducers";
 import { identity } from "lodash";
@@ -50,7 +50,7 @@ const PAGE_SIZE = 20;
 interface OverviewProps {
   isRefreshing: boolean;
   pipelineInfo: AppPipeline | undefined;
-  changeTab: (index: number) => void;
+  isLightEngine?: boolean;
 }
 
 enum INGESTION_TYPE {
@@ -64,6 +64,10 @@ interface AppIngestionItem {
   id: string; // AppLogIngestionId
   ingestion: AppLogIngestion;
   sourceData: LogSource | null;
+}
+
+export function isS3SourcePipeline(pipelineInfo: AppPipeline) {
+  return pipelineInfo.logStructure === LogStructure.RAW;
 }
 
 const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
@@ -82,7 +86,7 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
   const [loadingDelete, setLoadingDelete] = useState(false);
   const [disableDelete, setDisableDelete] = useState(true);
   const [curPage, setCurPage] = useState(1);
-  const [totoalCount, setTotoalCount] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
   const [userSelectType, setUserSelectType] = useState<string>("");
   const location = useLocation();
   const navigate = useNavigate();
@@ -171,7 +175,7 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
       );
 
       setIngestionList(tmpAppIngestions);
-      setTotoalCount(resData.data?.listAppLogIngestions?.total || 0);
+      setTotalCount(resData.data?.listAppLogIngestions?.total || 0);
       setLoadingData(false);
     } catch (error) {
       setLoadingData(false);
@@ -184,7 +188,7 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
   };
 
   useEffect(() => {
-    if (pipelineInfo && pipelineInfo.pipelineId) {
+    if (pipelineInfo?.pipelineId) {
       getIngestionByAppPipelineId();
     }
   }, [pipelineInfo, curPage]);
@@ -194,17 +198,15 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
       showEKSDaemonSetModal?: boolean;
       eksSourceId?: string;
     };
-    setShowEKSDaemonSetModal(state?.showEKSDaemonSetModal || false);
-    setEksSourceId(state?.eksSourceId || "");
+    setShowEKSDaemonSetModal(state?.showEKSDaemonSetModal ?? false);
+    setEksSourceId(defaultStr(state?.eksSourceId));
   }, []);
 
   useEffect(() => {
-    console.info("selectedIngestion:", selectedIngestion);
     if (
       (pipelineInfo?.status === PipelineStatus.ACTIVE ||
         pipelineInfo?.status === PipelineStatus.ERROR) &&
-      selectedIngestion &&
-      selectedIngestion.length > 0
+      selectedIngestion?.length > 0
     ) {
       const statusArr = selectedIngestion.map((element) => {
         return element.ingestion.status;
@@ -224,7 +226,7 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
 
   // Redirect create ingestion page by ingestion type
   const redirectToCreateIngestionPage = (type?: string, state?: unknown) => {
-    const ingestionType = type || userSelectType;
+    const ingestionType = defaultStr(type, userSelectType);
     if (ingestionType === INGESTION_TYPE.INSTANCE) {
       navigate(
         `/log-pipeline/application-log/detail/${pipelineInfo?.pipelineId}/create-ingestion-instance`,
@@ -232,7 +234,14 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
       );
     }
     if (ingestionType === INGESTION_TYPE.S3) {
-      navigate(`/log-pipeline/application-log/create/s3`, { state: state });
+      if (props.isLightEngine) {
+        navigate(
+          `/log-pipeline/application-log/create/s3?engineType=${AnalyticEngineTypes.LIGHT_ENGINE}`,
+          { state: state }
+        );
+      } else {
+        navigate(`/log-pipeline/application-log/create/s3`, { state: state });
+      }
     }
     if (ingestionType === INGESTION_TYPE.EKS) {
       navigate(
@@ -316,7 +325,9 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
           >
             {data.sourceData?.s3?.bucketName}
           </ExtLink>
-          ({data.sourceData?.s3?.compressionType})
+          {data.sourceData?.s3?.compressionType
+            ? `(${data.sourceData?.s3?.compressionType})`
+            : ""}
         </>
       );
     } else if (data.ingestion?.sourceType === LogSourceType.EC2) {
@@ -344,7 +355,7 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
           return data.ingestion.status?.toLocaleLowerCase() ===
             StatusType.Active.toLocaleLowerCase()
             ? StatusType.Created
-            : data.ingestion.status || "";
+            : defaultStr(data.ingestion.status);
         })()}
       />
     );
@@ -352,9 +363,11 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
 
   return (
     <div>
-      <Alert
-        content={<div>{t("applog:detail.ingestion.permissionInfo")}</div>}
-      />
+      {!isS3SourcePipeline && (
+        <Alert
+          content={<div>{t("applog:detail.ingestion.permissionInfo")}</div>}
+        />
+      )}
       <TablePanel
         trackId="id"
         title={t("applog:detail.tab.sources")}
@@ -406,7 +419,7 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
             id: "created",
             header: t("applog:detail.ingestion.created"),
             cell: (e: AppIngestionItem) => {
-              return formatLocalTime(e?.ingestion.createdAt || "");
+              return formatLocalTime(defaultStr(e?.ingestion.createdAt));
             },
           },
         ]}
@@ -447,18 +460,14 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
                   {
                     id: INGESTION_TYPE.SYSLOG,
                     text: "button.fromSysLog",
-                    disabled:
-                      (pipelineInfo && isS3SourcePipeline(pipelineInfo)) ||
-                      pipelineInfo?.engineType ===
-                        AnalyticEngineType.LightEngine,
+                    disabled: pipelineInfo && isS3SourcePipeline(pipelineInfo),
                   },
                   {
                     id: INGESTION_TYPE.S3,
                     text: "button.fromOtherSourceS3",
-                    disabled:
-                      !(pipelineInfo && isS3SourcePipeline(pipelineInfo)) ||
-                      pipelineInfo?.engineType ===
-                        AnalyticEngineType.LightEngine,
+                    disabled: !(
+                      pipelineInfo && isS3SourcePipeline(pipelineInfo)
+                    ),
                   },
                 ];
                 return list.filter((each) => !each.disabled);
@@ -477,7 +486,7 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
         }
         pagination={
           <Pagination
-            count={Math.ceil(totoalCount / PAGE_SIZE)}
+            count={Math.ceil(totalCount / PAGE_SIZE)}
             page={curPage}
             onChange={handlePageChange}
             size="small"
@@ -631,13 +640,3 @@ const Ingestion: React.FC<OverviewProps> = (props: OverviewProps) => {
 };
 
 export default Ingestion;
-
-function isS3SourcePipeline(pipelineInfo: AppPipeline) {
-  const list = pipelineInfo.bufferParams?.filter((param) => {
-    return param?.paramKey === "isS3Source";
-  });
-  if (list) {
-    return list.length > 0;
-  }
-  return false;
-}

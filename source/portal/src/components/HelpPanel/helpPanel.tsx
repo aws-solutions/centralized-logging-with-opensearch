@@ -47,6 +47,8 @@ import OSIPipeline from "help/OSIPipeline";
 import { LightEngineSampleDashboard } from "help/LightEngineSampleDashboard";
 import { LightEngineTableName } from "help/LightEngineTableName";
 import { GeneralHelp, GeneralHelpProps } from "help/GeneralHelp";
+import { defaultStr } from "assets/js/utils";
+import LogConfigPathWindows from "help/LogConfigPathWindows";
 
 interface HelpPanelProps {
   className?: string;
@@ -108,7 +110,7 @@ export const HelpPanel: React.FC<HelpPanelProps> = (props: HelpPanelProps) => {
                 className="close-icon"
               />
               <div className="head-title">
-                {t(InfoBarTitleMap[infoBarType || ""])}
+                {t(InfoBarTitleMap[defaultStr(infoBarType)])}
               </div>
             </div>
           </div>
@@ -158,6 +160,9 @@ export const HelpPanel: React.FC<HelpPanelProps> = (props: HelpPanelProps) => {
             <ApacheSampleLogParsing />
           )}
           {infoBarType === InfoBarTypes.LOG_CONFIG_PATH && <LogConfigPath />}
+          {infoBarType === InfoBarTypes.LOG_CONFIG_PATH_WINDOWS && (
+            <LogConfigPathWindows />
+          )}
           {infoBarType === InfoBarTypes.LOG_CONFIG_PATH_EKS && (
             <LogConfigPathEKS />
           )}

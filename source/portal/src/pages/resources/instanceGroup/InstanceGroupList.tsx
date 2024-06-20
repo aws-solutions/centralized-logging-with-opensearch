@@ -19,20 +19,17 @@ import { Link, useNavigate } from "react-router-dom";
 import Pagination from "@material-ui/lab/Pagination";
 import Button from "components/Button";
 import { TablePanel } from "components/TablePanel";
-import Breadcrumb from "components/Breadcrumb";
 import { SelectType } from "components/TablePanel/tablePanel";
-import { EC2GroupType, LogSource, LogSourceType } from "API";
+import { EC2GroupPlatform, EC2GroupType, LogSource, LogSourceType } from "API";
 import Modal from "components/Modal";
-import HelpPanel from "components/HelpPanel";
-import SideMenu from "components/SideMenu";
 import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
 import { listLogSources } from "graphql/queries";
 import { deleteLogSource } from "graphql/mutations";
-import { DEFAULT_PLATFORM } from "assets/js/const";
-import { formatLocalTime } from "assets/js/utils";
+import { defaultStr, formatLocalTime } from "assets/js/utils";
 import { useTranslation } from "react-i18next";
 import { handleErrorMessage } from "assets/js/alert";
 import ButtonRefresh from "components/ButtonRefresh";
+import CommonLayout from "pages/layout/CommonLayout";
 
 const PAGE_SIZE = 10;
 
@@ -47,12 +44,12 @@ const InstanceGroupList: React.FC = () => {
   const [loadingData, setLoadingData] = useState(false);
   const [openDeleteModel, setOpenDeleteModel] = useState(false);
   const [loadingDelete, setLoadingDelete] = useState(false);
-  const [curInstanceGroup, setCurInstantceGroup] = useState<LogSource>();
+  const [curInstanceGroup, setCurInstanceGroup] = useState<LogSource>();
   const [selectedInstanceGroup, setSelectedInstanceGroup] = useState<any[]>([]);
   const [disabledDetail, setDisabledDetail] = useState(false);
   const [disabledDelete, setDisabledDelete] = useState(false);
   const [instanceGroupList, setInstanceGroupList] = useState<LogSource[]>([]);
-  const [totoalCount, setTotoalCount] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
   const [curPage, setCurPage] = useState(1);
 
   // Get Instance Group List
@@ -66,10 +63,9 @@ const InstanceGroupList: React.FC = () => {
         count: PAGE_SIZE,
         type: LogSourceType.EC2,
       });
-      console.info("resData:", resData);
       const dataInstanceGroupList: LogSource[] =
         resData.data.listLogSources.logSources;
-      setTotoalCount(resData.data.listLogSources.total);
+      setTotalCount(resData.data.listLogSources.total);
       setInstanceGroupList(dataInstanceGroupList);
       setLoadingData(false);
     } catch (error: any) {
@@ -86,12 +82,12 @@ const InstanceGroupList: React.FC = () => {
 
   // Show Remove Instance Group Dialog
   const removeInstanceGroup = async () => {
-    setCurInstantceGroup(selectedInstanceGroup[0]);
+    setCurInstanceGroup(selectedInstanceGroup[0]);
     setOpenDeleteModel(true);
   };
 
   // Confirm to Remove Instance GroupBy Id
-  const confimRemoveInstanceGroup = async () => {
+  const confirmRemoveInstanceGroup = async () => {
     try {
       setLoadingDelete(true);
       const removeRes = await appSyncRequestMutation(deleteLogSource, {
@@ -144,146 +140,137 @@ const InstanceGroupList: React.FC = () => {
   };
 
   return (
-    <div className="lh-main-content">
-      <SideMenu />
-      <div className="lh-container">
-        <div className="lh-content">
-          <div className="service-log">
-            <Breadcrumb list={breadCrumbList} />
-            <div className="table-data">
-              <TablePanel
-                trackId="sourceId"
-                title={t("resource:group.groups")}
-                changeSelected={(item) => {
-                  console.info("item:", item);
-                  setSelectedInstanceGroup(item);
+    <CommonLayout breadCrumbList={breadCrumbList}>
+      <div className="table-data">
+        <TablePanel
+          trackId="sourceId"
+          title={t("resource:group.groups")}
+          changeSelected={(item) => {
+            console.info("item:", item);
+            setSelectedInstanceGroup(item);
+          }}
+          loading={loadingData}
+          selectType={SelectType.RADIO}
+          columnDefinitions={[
+            {
+              // width: 110,
+              id: "Name",
+              header: t("resource:group.list.name"),
+              cell: (e: LogSource) => renderGroupName(e),
+            },
+            {
+              id: "Type",
+              header: t("resource:group.list.type"),
+              cell: (e: LogSource) => {
+                return e.ec2?.groupType === EC2GroupType.ASG
+                  ? "EC2/Auto Scaling Group"
+                  : e.ec2?.groupType;
+              },
+            },
+            {
+              id: "Platform",
+              header: t("resource:group.list.platform"),
+              cell: (e: LogSource) => {
+                return e.ec2?.groupPlatform ?? EC2GroupPlatform.Linux;
+              },
+            },
+            {
+              width: 170,
+              id: "created",
+              header: t("resource:group.list.created"),
+              cell: (e: LogSource) => {
+                return formatLocalTime(defaultStr(e?.createdAt));
+              },
+            },
+          ]}
+          items={instanceGroupList}
+          actions={
+            <div>
+              <Button
+                btnType="icon"
+                disabled={loadingData}
+                onClick={() => {
+                  if (curPage === 1) {
+                    getInstanceGroupList();
+                  } else {
+                    setCurPage(1);
+                  }
                 }}
-                loading={loadingData}
-                selectType={SelectType.RADIO}
-                columnDefinitions={[
-                  {
-                    // width: 110,
-                    id: "Name",
-                    header: t("resource:group.list.name"),
-                    cell: (e: LogSource) => renderGroupName(e),
-                  },
-                  {
-                    id: "Type",
-                    header: t("resource:group.list.type"),
-                    cell: (e: LogSource) => {
-                      return e.ec2?.groupType === EC2GroupType.ASG
-                        ? "EC2/Auto Scaling Group"
-                        : e.ec2?.groupType;
-                    },
-                  },
-                  {
-                    id: "Platform",
-                    header: t("resource:group.list.platform"),
-                    cell: () => {
-                      return DEFAULT_PLATFORM;
-                    },
-                  },
-                  {
-                    width: 170,
-                    id: "created",
-                    header: t("resource:group.list.created"),
-                    cell: (e: LogSource) => {
-                      return formatLocalTime(e?.createdAt || "");
-                    },
-                  },
-                ]}
-                items={instanceGroupList}
-                actions={
-                  <div>
-                    <Button
-                      btnType="icon"
-                      disabled={loadingData}
-                      onClick={() => {
-                        if (curPage === 1) {
-                          getInstanceGroupList();
-                        } else {
-                          setCurPage(1);
-                        }
-                      }}
-                    >
-                      <ButtonRefresh loading={loadingData} />
-                    </Button>
-                    <Button
-                      disabled={disabledDetail}
-                      onClick={() => {
-                        clickToReviewDetail();
-                      }}
-                    >
-                      {t("button.viewDetail")}
-                    </Button>
-                    <Button
-                      disabled={disabledDelete}
-                      onClick={() => {
-                        removeInstanceGroup();
-                      }}
-                    >
-                      {t("button.delete")}
-                    </Button>
-                    <Button
-                      btnType="primary"
-                      onClick={() => {
-                        navigate("/resources/instance-group/create");
-                      }}
-                    >
-                      {t("button.createInstanceGroup")}
-                    </Button>
-                  </div>
-                }
-                pagination={
-                  <Pagination
-                    count={Math.ceil(totoalCount / PAGE_SIZE)}
-                    page={curPage}
-                    onChange={handlePageChange}
-                    size="small"
-                  />
-                }
-              />
+              >
+                <ButtonRefresh loading={loadingData} />
+              </Button>
+              <Button
+                disabled={disabledDetail}
+                onClick={() => {
+                  clickToReviewDetail();
+                }}
+              >
+                {t("button.viewDetail")}
+              </Button>
+              <Button
+                disabled={disabledDelete}
+                onClick={() => {
+                  removeInstanceGroup();
+                }}
+              >
+                {t("button.delete")}
+              </Button>
+              <Button
+                btnType="primary"
+                onClick={() => {
+                  navigate("/resources/instance-group/create");
+                }}
+              >
+                {t("button.createInstanceGroup")}
+              </Button>
             </div>
-          </div>
-          <Modal
-            title={t("resource:group.delete")}
-            fullWidth={false}
-            isOpen={openDeleteModel}
-            closeModal={() => {
-              setOpenDeleteModel(false);
-            }}
-            actions={
-              <div className="button-action no-pb text-right">
-                <Button
-                  btnType="text"
-                  disabled={loadingDelete}
-                  onClick={() => {
-                    setOpenDeleteModel(false);
-                  }}
-                >
-                  {t("button.cancel")}
-                </Button>
-                <Button
-                  loading={loadingDelete}
-                  btnType="primary"
-                  onClick={() => {
-                    confimRemoveInstanceGroup();
-                  }}
-                >
-                  {t("button.delete")}
-                </Button>
-              </div>
-            }
-          >
-            <div className="modal-content">
-              {t("resource:group.deleteTips")}
-              <b>{`${curInstanceGroup?.ec2?.groupName}`}</b> {"?"}
-            </div>
-          </Modal>
-        </div>
+          }
+          pagination={
+            <Pagination
+              count={Math.ceil(totalCount / PAGE_SIZE)}
+              page={curPage}
+              onChange={handlePageChange}
+              size="small"
+            />
+          }
+        />
       </div>
-      <HelpPanel />
-    </div>
+      <Modal
+        title={t("resource:group.delete")}
+        fullWidth={false}
+        isOpen={openDeleteModel}
+        closeModal={() => {
+          setOpenDeleteModel(false);
+        }}
+        actions={
+          <div className="button-action no-pb text-right">
+            <Button
+              btnType="text"
+              disabled={loadingDelete}
+              onClick={() => {
+                setOpenDeleteModel(false);
+              }}
+            >
+              {t("button.cancel")}
+            </Button>
+            <Button
+              loading={loadingDelete}
+              btnType="primary"
+              onClick={() => {
+                confirmRemoveInstanceGroup();
+              }}
+            >
+              {t("button.delete")}
+            </Button>
+          </div>
+        }
+      >
+        <div className="modal-content">
+          {t("resource:group.deleteTips")}
+          <b>{`${curInstanceGroup?.ec2?.groupName}`}</b> {"?"}
+        </div>
+      </Modal>
+    </CommonLayout>
   );
 };
 

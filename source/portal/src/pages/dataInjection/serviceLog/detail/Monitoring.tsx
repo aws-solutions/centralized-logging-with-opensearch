@@ -16,7 +16,7 @@ limitations under the License.
 
 import { AmplifyConfigType } from "types";
 import { useSelector } from "react-redux";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import RefreshIcon from "@material-ui/icons/Refresh";
 import { ServiceLogDetailProps } from "../ServiceLogDetail";
 import {
@@ -55,6 +55,7 @@ import Alert from "components/Alert";
 import OSIProcessorMetric from "pages/dataInjection/common/OSIProcessorMetrics";
 
 interface MonitoringProps {
+  isLightEngine?: boolean;
   pipelineInfo: ServiceLogDetailProps | undefined;
 }
 
@@ -63,10 +64,11 @@ export interface ServiceMetricProps {
   startDate: number;
   endDate: number;
   refreshCount: number;
+  isLightEngine?: boolean;
 }
 
 const Monitoring: React.FC<MonitoringProps> = (props: MonitoringProps) => {
-  const { pipelineInfo } = props;
+  const { pipelineInfo, isLightEngine } = props;
   const { t } = useTranslation();
   const amplifyConfig: AmplifyConfigType = useSelector(
     (state: RootState) => state.app.amplifyConfig
@@ -76,6 +78,15 @@ const Monitoring: React.FC<MonitoringProps> = (props: MonitoringProps) => {
   const [startDate, setStartDate] = useState(0);
   const [endDate, setEndDate] = useState(0);
   const [refreshCount, setRefreshCount] = useState(0);
+
+  const is_S3_WAF_ELB_Config = useMemo(() => {
+    return (
+      pipelineInfo?.type === "S3" ||
+      pipelineInfo?.type === "ELB" ||
+      pipelineInfo?.type === "WAF" ||
+      pipelineInfo?.type === "Config"
+    );
+  }, [pipelineInfo?.type]);
 
   const renderSQS = () => {
     return (
@@ -243,8 +254,9 @@ const Monitoring: React.FC<MonitoringProps> = (props: MonitoringProps) => {
                     ) : (
                       <></>
                     )}
-                    {pipelineInfo?.type === "RDS" ||
-                    pipelineInfo?.type === "Lambda" ? (
+                    {(pipelineInfo?.type === "RDS" ||
+                      pipelineInfo?.type === "Lambda") &&
+                    !isLightEngine ? (
                       renderKDF()
                     ) : (
                       <></>
@@ -329,10 +341,7 @@ const Monitoring: React.FC<MonitoringProps> = (props: MonitoringProps) => {
                       )}
                     </>
                   )}
-                  {(pipelineInfo?.type === "S3" ||
-                    pipelineInfo?.type === "ELB" ||
-                    pipelineInfo?.type === "WAF" ||
-                    pipelineInfo?.type === "Config") && (
+                  {is_S3_WAF_ELB_Config && (
                     <ServiceLogBufferMetrics
                       pipelineInfo={pipelineInfo}
                       startDate={startDate}

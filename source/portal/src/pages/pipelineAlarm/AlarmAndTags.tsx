@@ -27,10 +27,9 @@ import { WAFTaskProps } from "../dataInjection/serviceLog/create/waf/CreateWAF";
 import { PipelineType } from "API";
 import PagePanel from "components/PagePanel";
 import { useTranslation } from "react-i18next";
-import { ApplicationLogType } from "types";
+import { AnalyticEngineTypes, ApplicationLogType } from "types";
 import { CreateTags } from "pages/dataInjection/common/CreateTags";
 import CreateAlarms from "./alarm/CreateAlarms";
-import { AnalyticEngineTypes } from "pages/dataInjection/serviceLog/create/common/SpecifyAnalyticsEngine";
 import { LogProcessorType, SelectProcessorType } from "reducer/selectProcessor";
 
 export type PartialServiceType =

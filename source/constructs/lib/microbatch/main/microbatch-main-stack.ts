@@ -136,5 +136,6 @@ export class MicroBatchMainStack extends Stack {
       CMKArn: CMKArn,
       SESState: SESStateParameter.valueAsString,
     });
+
   }
 }

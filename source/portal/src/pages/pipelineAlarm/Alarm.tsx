@@ -66,13 +66,13 @@ import {
   CreateAlarmActionTypes,
   CreateAlarmActions,
   SNSCreateMethod,
-  validateAalrmInput,
+  validateAlarmInput,
 } from "reducer/createAlarm";
 import { Dispatch } from "redux";
 import { identity } from "lodash";
 import { TOPIC_NAME_REGEX } from "assets/js/const";
 import { LogReplicationAlarm } from "./alarm/LogReplicationAlarm";
-import { AnalyticEngineTypes } from "pages/dataInjection/serviceLog/create/common/SpecifyAnalyticsEngine";
+import { AnalyticEngineTypes } from "types";
 
 export interface LogSourceAlarmType {
   name: string;
@@ -541,7 +541,7 @@ const Alarm: React.FC<MonitoringProps> = (props: MonitoringProps) => {
                         loading={loadingEnableAlarm}
                         disabled={loadingEnableAlarm}
                         onClick={() => {
-                          if (!validateAalrmInput(createMonitor)) {
+                          if (!validateAlarmInput(createMonitor)) {
                             dispatch({
                               type: CreateAlarmActionTypes.VALIDATE_ALARM_INPUT,
                             });

@@ -1,0 +1,350 @@
+{
+    "type": "object",
+    "properties": {
+        "delivery": {
+            "type": "object",
+            "properties": {
+                "smtpResponse": {
+                    "type": "string"
+                },
+                "processingTimeMillis": {
+                    "type": "integer"
+                },
+                "reportingMTA": {
+                    "type": "string"
+                },
+                "recipients": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "format": ""
+                    }
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "mail": {
+            "type": "object",
+            "properties": {
+                "sourceArn": {
+                    "type": "string"
+                },
+                "headers": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string"
+                            },
+                            "value": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "sendingAccountId": {
+                    "type": "string"
+                },
+                "destination": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "format": ""
+                    }
+                },
+                "headersTruncated": {
+                    "type": "boolean"
+                },
+                "messageId": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "timeKey": false
+                },
+                "commonHeaders": {
+                    "type": "object",
+                    "properties": {
+                        "messageId": {
+                            "type": "string"
+                        },
+                        "from": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "format": ""
+                            }
+                        },
+                        "to": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "format": ""
+                            }
+                        },
+                        "subject": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "tags": {
+                    "type": "object",
+                    "properties": {
+                        "scenes": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "format": ""
+                            }
+                        },
+                        "tagId": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "format": ""
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "complaint": {
+            "type": "object",
+            "properties": {
+                "feedbackId": {
+                    "type": "string"
+                },
+                "complainedRecipients": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "emailAddress": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "userAgent": {
+                    "type": "string"
+                },
+                "complaintFeedbackType": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "arrivalDate": {
+                    "type": "string"
+                }
+            }
+        },
+        "bounce": {
+            "type": "object",
+            "properties": {
+                "bounceSubType": {
+                    "type": "string"
+                },
+                "feedbackId": {
+                    "type": "string"
+                },
+                "reportingMTA": {
+                    "type": "string"
+                },
+                "bounceType": {
+                    "type": "string"
+                },
+                "bouncedRecipients": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "action": {
+                                "type": "string"
+                            },
+                            "emailAddress": {
+                                "type": "string"
+                            },
+                            "diagnosticCode": {
+                                "type": "string"
+                            },
+                            "status": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "reject": {
+            "type": "object",
+            "properties": {
+                "reason": {
+                    "type": "string"
+                }
+            }
+        },
+        "failure": {
+            "type": "object",
+            "properties": {
+                "errorMessage": {
+                    "type": "string"
+                },
+                "templateName": {
+                    "type": "string"
+                }
+            }
+        },
+        "eventType": {
+            "type": "string"
+        },
+        "subscription": {
+            "type": "object",
+            "properties": {
+                "contactList": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "oldTopicPreferences": {
+                    "type": "object",
+                    "properties": {
+                        "topicSubscriptionStatus": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "subscriptionStatus": {
+                                        "type": "string"
+                                    },
+                                    "topicName": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        },
+                        "unsubscribeAll": {
+                            "type": "boolean"
+                        }
+                    }
+                },
+                "newTopicPreferences": {
+                    "type": "object",
+                    "properties": {
+                        "topicSubscriptionStatus": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "subscriptionStatus": {
+                                        "type": "string"
+                                    },
+                                    "topicName": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        },
+                        "unsubscribeAll": {
+                            "type": "boolean"
+                        }
+                    }
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "click": {
+            "type": "object",
+            "properties": {
+                "ipAddress": {
+                    "type": "string"
+                },
+                "link": {
+                    "type": "string"
+                },
+                "userAgent": {
+                    "type": "string"
+                },
+                "linkTags": {
+                    "type": "object",
+                    "properties": {
+                        "samplekey0": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "format": ""
+                            }
+                        },
+                        "samplekey1": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "format": ""
+                            }
+                        }
+                    }
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "open": {
+            "type": "object",
+            "properties": {
+                "ipAddress": {
+                    "type": "string"
+                },
+                "userAgent": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "deliveryDelay": {
+            "type": "object",
+            "properties": {
+                "expirationTime": {
+                    "type": "string"
+                },
+                "delayedRecipients": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "diagnosticCode": {
+                                "type": "string"
+                            },
+                            "emailAddress": {
+                                "type": "string"
+                            },
+                            "status": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "delayType": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

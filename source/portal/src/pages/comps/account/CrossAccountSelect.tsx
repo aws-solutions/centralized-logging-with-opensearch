@@ -22,6 +22,7 @@ import { appSyncRequestQuery } from "assets/js/request";
 import { listSubAccountLinks } from "graphql/queries";
 import { SubAccountLink } from "API";
 import { OptionType } from "components/AutoComplete/autoComplete";
+import { defaultStr } from "assets/js/utils";
 
 interface CrossAccountSelectProps {
   accountId: string;
@@ -47,7 +48,7 @@ const CrossAccountSelect: React.FC<CrossAccountSelectProps> = (
   const getCrossAccountList = async () => {
     try {
       setLoadingData(true);
-      loadingAccount && loadingAccount(true);
+      loadingAccount?.(true);
       const resData: any = await appSyncRequestQuery(listSubAccountLinks, {
         page: 1,
         count: PAGE_SIZE,
@@ -65,15 +66,15 @@ const CrossAccountSelect: React.FC<CrossAccountSelectProps> = (
       dataLogAccountList.forEach((element) => {
         if (element.subAccountId) {
           tmpList.push({
-            description: element.id || "",
-            value: element.subAccountId || "",
+            description: defaultStr(element.id),
+            value: defaultStr(element.subAccountId),
             name: `${element.subAccountName}(${element.subAccountId})`,
           });
         }
       });
       setAccountOptionList(tmpList);
       setLoadingData(false);
-      loadingAccount && loadingAccount(false);
+      loadingAccount?.(false);
     } catch (error) {
       console.error(error);
     }
@@ -84,42 +85,40 @@ const CrossAccountSelect: React.FC<CrossAccountSelectProps> = (
   }, []);
 
   return (
-    <>
-      <FormItem
-        optionTitle={t("resource:crossAccount.account")}
-        optionDesc={
-          <div>
-            {t("resource:crossAccount.selectDesc1")}
-            <ExtLink to="/resources/cross-account">
-              {t("resource:crossAccount.linkAccount")}
-            </ExtLink>
-          </div>
-        }
-      >
-        <Select
-          allowEmpty
-          disabled={disabled}
-          className={className ? className : "m-w-75p"}
-          loading={loadingData}
-          optionList={accountOptionList}
-          value={accountId}
-          onChange={(event) => {
-            console.info("event:", event);
-            changeAccount(
-              event.target.value,
-              subAccountList.find(
-                (element) => element.subAccountId === event.target.value
-              ) || null
-            );
-          }}
-          placeholder=""
-          hasRefresh
-          clickRefresh={() => {
-            getCrossAccountList();
-          }}
-        />
-      </FormItem>
-    </>
+    <FormItem
+      optionTitle={t("resource:crossAccount.account")}
+      optionDesc={
+        <div>
+          {t("resource:crossAccount.selectDesc1")}
+          <ExtLink to="/resources/cross-account">
+            {t("resource:crossAccount.linkAccount")}
+          </ExtLink>
+        </div>
+      }
+    >
+      <Select
+        allowEmpty
+        disabled={disabled}
+        className={className ?? "m-w-75p"}
+        loading={loadingData}
+        optionList={accountOptionList}
+        value={accountId}
+        onChange={(event) => {
+          console.info("event:", event);
+          changeAccount(
+            event.target.value,
+            subAccountList.find(
+              (element) => element.subAccountId === event.target.value
+            ) ?? null
+          );
+        }}
+        placeholder=""
+        hasRefresh
+        clickRefresh={() => {
+          getCrossAccountList();
+        }}
+      />
+    </FormItem>
   );
 };
 

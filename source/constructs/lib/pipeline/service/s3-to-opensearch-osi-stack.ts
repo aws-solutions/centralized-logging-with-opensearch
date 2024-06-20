@@ -43,6 +43,7 @@ import { Table } from "aws-cdk-lib/aws-dynamodb";
 import { Construct, IConstruct } from "constructs";
 import { SharedPythonLayer } from "../../layer/layer";
 import { S3toOpenSearchStackProps } from "../service/s3-to-opensearch-common-stack";
+import { UseS3BucketNotificationsWithRetryAspects } from "../../util/stack-helper";
 
 export interface S3toOpenSearchOSIStackProps extends S3toOpenSearchStackProps {
   /**
@@ -250,6 +251,7 @@ export class S3toOpenSearchOSIStack extends Construct {
               "osis:GetPipelineChangeProgress",
               "osis:ListTagsForResource",
               "osis:UpdatePipeline",
+              "osis:TagResource"
             ],
             resources: ["*"],
           }),
@@ -368,7 +370,7 @@ export class S3toOpenSearchOSIStack extends Construct {
       retentionPeriod: Duration.days(14),
       deadLetterQueue: {
         queue: logEventDLQ,
-        maxReceiveCount: 30,
+        maxReceiveCount: 3,
       },
       encryption: sqs.QueueEncryption.KMS,
       dataKeyReuse: Duration.minutes(5),
@@ -532,6 +534,12 @@ export class S3toOpenSearchOSIStack extends Construct {
         suffix: props.logBucketSuffix,
       }
     );
+
+    // TODO: Workaround since cdk>=v2.116.0 builtin custom resource lambda has an issue that will lead to remove all existing s3 bucket notifications. Remove this once the cdk issue is fixed.
+    const notificationHandler = Stack.of(this).node.tryFindChild('BucketNotificationsHandler050a0587b7544547bf325f094a3db834');
+    if (notificationHandler) {
+      Aspects.of(notificationHandler).add(new UseS3BucketNotificationsWithRetryAspects())
+    }
 
     logEventQueue.addToResourcePolicy(
       new iam.PolicyStatement({
@@ -862,7 +870,7 @@ export class S3toOpenSearchOSIStack extends Construct {
 }
 
 class InjectCondition implements IAspect {
-  public constructor(private condition: CfnCondition) {}
+  public constructor(private condition: CfnCondition) { }
 
   public visit(node: IConstruct): void {
     if (node instanceof CfnResource) {
@@ -872,7 +880,7 @@ class InjectCondition implements IAspect {
 }
 
 class SetRoleName implements IAspect {
-  public constructor(private roleName: string) {}
+  public constructor(private roleName: string) { }
 
   public visit(node: IConstruct): void {
     if (node instanceof CfnRole) {

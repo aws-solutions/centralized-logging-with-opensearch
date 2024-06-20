@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React from "react";
-import { PageType } from "../common/LogConfigComp";
 import { useTranslation } from "react-i18next";
-import LogConfigEditor from "./ConfigEditor";
+import LogConfigComp, { PageType } from "../common/LogConfigComp";
+import { useLogConfig } from "assets/js/hooks/useLogConfig";
 
 const CreateLogConfig: React.FC = () => {
   const { t } = useTranslation();
@@ -29,13 +29,15 @@ const CreateLogConfig: React.FC = () => {
     { name: t("resource:config.create") },
   ];
 
+  const logConfig = useLogConfig();
+
   return (
-    <div>
-      <LogConfigEditor
-        breadCrumbList={breadCrumbList}
-        pageType={PageType.New}
-      />
-    </div>
+    <LogConfigComp
+      headerTitle={t("resource:config.name")}
+      breadCrumbList={breadCrumbList}
+      pageType={PageType.New}
+      logConfig={logConfig}
+    />
   );
 };
 

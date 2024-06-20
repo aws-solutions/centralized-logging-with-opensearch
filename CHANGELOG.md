@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2024-06-20
+
+### Added
+
+- Added support to install, configure, and monitor the Fluent Bit agent on Windows Server 2016/2019/2022 Instances. #76
+- Added a log visualization template for Windows IIS (W3C Format) logs. #212
+- Added a default tag "CLOSolutionCostAnalysis" to all resources created by the solution. #285
+- Add support for tag propagation for resources when creating log pipelines, allowing customers to view all resources and associated costs at the pipeline level. #232
+- Added support for ingesting and analyzing data in a specified S3 location using Light Engine. #233
+- Added support for importing OpenSearch clusters with custom KMS encryption enabled. #172
+- Added support for ingesting and analyzing AWS CloudTrail logs using Light Engine. #234
+- Added support for ingesting and analyzing Syslog data using Light Engine. #235
+- Added support for using Unix epoch time format as the time key in Log Config. #198
+- Added support for Asia Pacific (Hyderabad), Asia Pacific (Jakarta), Asia Pacific (Melbourne), Israel (Tel Aviv), Canada (Calgary), Europe (Spain), Europe(Zurich), Middle East (UAE) regions. #230
+
+### Fixed
+
+- Fixed an issue where creating a pipeline failed when Lambda reached concurrency limits. #141
+- Fixed a bug where the system could not read properties of undefined ('accountId') when the Next button was clicked without selecting an Instance Group. #236
+- Fixed an issue where logs were not received when using the solution-provisioned staging bucket in Light Engine. #237
+- Fixed a permissions issue in the LogMerger State Machine within Light Engine: The S3ObjectMigration Lambda failed due to insufficient KMS permissions on the analytics S3 bucket. #272
+- Fixed a bug that prevented instances from being listed when switching accounts on the Instance Group list page. #291
+
 ## [2.1.2] - 2024-03-19
 
 ### Fixed
@@ -23,7 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed the issue that Log ingestion error in light engine when not specified time key in the log config #220
 - Fixed the issue that cannot deploy the Centralized Logging with OpenSearch solution in UAE region #221
-- Fixed the issue that EC2 instances should not be added to the same Instance Group #228
+- Fixed the issue that EC2 instances should not be added to the same Instance Group #128
 
 ## [2.1.0] - 2023-11-15
 

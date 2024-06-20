@@ -116,31 +116,45 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
     SelectItem[]
   >([]);
 
-  const [disabeCloudFront, setDisableCloudFront] = useState(false);
+  const [disableCloudFront, setDisableCloudFront] = useState(false);
 
-  const getCloudFrontList = async (accountId: string) => {
-    try {
-      setCloudFrontOptionList([]);
-      setLoadingCloudFrontList(true);
-      const resData: any = await appSyncRequestQuery(listResources, {
-        type: ResourceType.Distribution,
-        accountId: accountId,
-      });
-      const dataList: Resource[] = resData.data.listResources;
-      const tmpOptionList: SelectItem[] = [];
+  const fetchAllData = async (
+    fetchData: any,
+    accountId = "",
+    initialToken = ""
+  ) => {
+    const nextToken = initialToken;
+    const allData: SelectItem[] = [];
+
+    async function fetchPage(token: string) {
+      const response = await fetchData(accountId, token);
+      const dataList: Resource[] = response.data ?? [];
       dataList.forEach((element) => {
-        tmpOptionList.push({
+        allData.push({
           name: `${element.id}${
             element.description ? ` (${element.description})` : ""
           }`,
           value: element.id,
         });
       });
-      setCloudFrontOptionList(tmpOptionList);
-      setLoadingCloudFrontList(false);
-    } catch (error) {
-      console.error(error);
+      if (response.nextToken) {
+        await fetchPage(response.nextToken);
+      }
     }
+    await fetchPage(nextToken);
+    return allData;
+  };
+
+  const fetchData = async (accountId: string, nextToken: string) => {
+    const resData: any = await appSyncRequestQuery(listResources, {
+      type: ResourceType.Distribution,
+      accountId: accountId,
+      parentId: nextToken,
+    });
+    return {
+      data: resData.data.listResources,
+      nextToken: resData.data?.listResources?.[0]?.parentId ?? "",
+    };
   };
 
   useEffect(() => {
@@ -152,7 +166,13 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
 
   useEffect(() => {
     if (cloudFrontTask.params.taskType === CreateLogMethod.Automatic) {
-      getCloudFrontList(cloudFrontTask.logSourceAccountId);
+      setLoadingCloudFrontList(true);
+      fetchAllData(fetchData, cloudFrontTask.logSourceAccountId).then(
+        (allData) => {
+          setCloudFrontOptionList(allData);
+          setLoadingCloudFrontList(false);
+        }
+      );
     }
   }, [cloudFrontTask.logSourceAccountId]);
 
@@ -235,7 +255,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                       disabled={
                         loadingCloudFrontList ||
                         loadingBucket ||
-                        disabeCloudFront
+                        disableCloudFront
                       }
                       className="m-w-75p"
                       placeholder={t(
@@ -282,8 +302,8 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                     changeSamplingRate={(rate) => {
                       changeSamplingRate(rate);
                     }}
-                    changeCustomFields={(fileds) => {
-                      changeCustomFields(fileds);
+                    changeCustomFields={(fields) => {
+                      changeCustomFields(fields);
                     }}
                     changeMinCapacity={(num) => {
                       changeMinCapacity(num);

@@ -14,5 +14,8 @@ The following AWS services are included in this solution:
 | [Amazon Kinesis Data Streams](https://aws.amazon.com/kinesis/data-streams/)   | To subscribe to logs from a CloudWatch Log Group or as a data buffer for log shipping, and then initiate the Log Processor Lambda to run.        |
 | [Amazon Kinesis Data Firehose](https://aws.amazon.com/kinesis/data-firehose/) | To subscribe the logs from CloudWatch Log Group and then put logs into Amazon S3.                                                                   |
 | [Amazon SQS](https://aws.amazon.com/sqs)                   | To receive Amazon S3 Event Notifications and then initiate the Log Processor Lambda to run.                                                                |
+| [AWS Athena](https://aws.amazon.com/athena)                                          | To build the Light Engine.                                                                                                            |
+| [AWS Glue](https://aws.amazon.com/glue)                                                | To build the Light Engine.                                                                                                            |
+
 
 

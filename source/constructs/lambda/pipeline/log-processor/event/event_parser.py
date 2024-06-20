@@ -3,7 +3,7 @@
 
 from abc import ABC, abstractmethod
 import base64
-import logging
+from commonlib.logging import get_logger
 import json
 import gzip
 import os
@@ -19,9 +19,10 @@ from commonlib import AWSConnection
 from log_processor.log_parser import LogParser
 from idx.idx_svc import AosIdxService
 from event.failed_records_handler import Restorer
+from aws_lambda_powertools import Metrics
+from aws_lambda_powertools.metrics import MetricUnit
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 
 TOTAL_RETRIES = 3
@@ -105,6 +106,9 @@ class EventType(ABC):
             self._log_buffer = log_buffer
             self._log_parser: LogParser = LogParser(self._parser_name)
 
+    def set_metrics(self, m: Metrics):
+        self._metrics = m
+
     @abstractmethod
     def process_event(self, event):
         """Parse the lambda events, and return processed json record(s).
@@ -131,25 +135,14 @@ class EventType(ABC):
                 records = p.process(records)
         return records
 
-    def _logging(self, total, failed_number):
-        # only s3 source
-        if log_type == "WAFSampled":
-            logger.info(
-                "---> StackName: %s Total: %d Loaded: %d Failed: %d Scope: %s",
-                stack_name,
-                total,
-                total - failed_number,
-                failed_number,
-                scope,
-            )
-        else:
-            logging.info(
-                "--> StackName: %s Total: %d Excluded: 0 Loaded: %d Failed: %d",
-                stack_name,
-                total,
-                total - failed_number,
-                failed_number,
-            )
+    def _put_metric(self, total, failed_number):
+        if self._metrics:
+            # fmt: off
+            self._metrics.add_dimension("StackName", stack_name)
+            self._metrics.add_metric(name="TotalLogs", unit=MetricUnit.Count, value=total)
+            self._metrics.add_metric(name="LoadedLogs", unit=MetricUnit.Count, value=total - failed_number)
+            self._metrics.add_metric(name="FailedLogs", unit=MetricUnit.Count, value=failed_number)
+            # fmt: on
 
 
 class KDS(EventType):
@@ -185,7 +178,7 @@ class KDS(EventType):
             failed_records,
             restorer._get_export_prefix(),
         )
-        self._logging(len(total), len(failed_records))
+        self._put_metric(len(total), len(failed_records))
 
     def _process_event_with_gzip(self, event):
         records = []
@@ -209,7 +202,7 @@ class KDS(EventType):
             failed_records,
             restorer._get_export_prefix(),
         )
-        self._logging(len(total), len(failed_records))
+        self._put_metric(len(total), len(failed_records))
 
 
 class MSK(EventType):
@@ -248,7 +241,7 @@ class MSK(EventType):
             failed_records,
             restorer._get_export_prefix(),
         )
-        self._logging(len(total), len(failed_records))
+        self._put_metric(len(total), len(failed_records))
 
 
 class WAFSampled(EventType):
@@ -267,7 +260,7 @@ class WAFSampled(EventType):
             failed_records,
             restorer._get_export_prefix(),
         )
-        self._logging(len(total), len(failed_records))
+        self._put_metric(len(total), len(failed_records))
 
     def get_event_time(self, event):
         if dt := event.get("time", ""):
@@ -456,7 +449,7 @@ class SQS(EventType):
                         failed_records,
                         restorer._get_export_prefix(idx, bucket, key),
                     )
-                self._logging(total_logs_counter.value, failed_records_count)
+                self._put_metric(total_logs_counter.value, failed_records_count)
 
     def get_log_entry_iter(self, lines):
         if self._parser_name != "JSONWithS3":

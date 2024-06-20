@@ -20,10 +20,12 @@ import { useTranslation } from "react-i18next";
 import FormItem from "components/FormItem";
 import { FormControlLabel, RadioGroup } from "@material-ui/core";
 import Radio from "components/Radio";
+import { AnalyticEngineTypes } from "types";
 
 interface IngestionModeSelectorProps {
   value: string;
   setValue: React.Dispatch<React.SetStateAction<string>>;
+  engineType?: AnalyticEngineTypes;
 }
 export function IngestionModeSelector(props: IngestionModeSelectorProps) {
   const { t } = useTranslation();
@@ -59,20 +61,23 @@ export function IngestionModeSelector(props: IngestionModeSelectorProps) {
             </div>
           }
         />
-        <FormControlLabel
-          value={IngestionMode.ONE_TIME.toString()}
-          control={<Radio />}
-          label={
-            <div>
-              <div className="radio-title">
-                {t("applog:logSourceDesc.s3.step1.oneTimeLoad")}
+
+        {props.engineType !== AnalyticEngineTypes.LIGHT_ENGINE && (
+          <FormControlLabel
+            value={IngestionMode.ONE_TIME.toString()}
+            control={<Radio />}
+            label={
+              <div>
+                <div className="radio-title">
+                  {t("applog:logSourceDesc.s3.step1.oneTimeLoad")}
+                </div>
+                <div className="radio-desc">
+                  {t("applog:logSourceDesc.s3.step1.oneTimeLoadDesc")}
+                </div>
               </div>
-              <div className="radio-desc">
-                {t("applog:logSourceDesc.s3.step1.oneTimeLoadDesc")}
-              </div>
-            </div>
-          }
-        />
+            }
+          />
+        )}
       </RadioGroup>
     </FormItem>
   );

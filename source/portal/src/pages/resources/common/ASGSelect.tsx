@@ -19,19 +19,23 @@ import FormItem from "components/FormItem";
 import { SelectItem } from "components/Select/select";
 import { listResources } from "graphql/queries";
 import { appSyncRequestQuery } from "assets/js/request";
-import { Resource, ResourceType } from "API";
+import { EC2GroupPlatform, Resource, ResourceType } from "API";
 import { OptionType } from "components/AutoComplete/autoComplete";
 import { InstanceGroupType } from "../instanceGroup/create/CreateInstanceGroup";
 import { useTranslation } from "react-i18next";
+import SelectPlatform from "./SelectPlatform";
 
 interface ASGSelectProps {
   accountId: string;
   instanceGroupInfo: InstanceGroupType | undefined;
   changeASG: (asg: OptionType | null) => void;
+  platform: EC2GroupPlatform;
+  changePlatform?: (platform: EC2GroupPlatform) => void;
 }
 
 const ASGSelect: React.FC<ASGSelectProps> = (props: ASGSelectProps) => {
-  const { instanceGroupInfo, accountId, changeASG } = props;
+  const { instanceGroupInfo, accountId, changeASG, platform, changePlatform } =
+    props;
   const { t } = useTranslation();
   const [loadingASGList, setLoadingASGList] = useState(false);
   const [asgOptionList, setASGOptionList] = useState<SelectItem[]>([]);
@@ -77,11 +81,25 @@ const ASGSelect: React.FC<ASGSelectProps> = (props: ASGSelectProps) => {
           placeholder={t("resource:group.create.asg.selectASG")}
           loading={loadingASGList}
           optionList={asgOptionList}
-          value={instanceGroupInfo?.asgObj || null}
+          value={instanceGroupInfo?.asgObj ?? null}
           onChange={(event: React.ChangeEvent<HTMLInputElement>, data) => {
             changeASG(data);
           }}
         />
+      </FormItem>
+
+      <FormItem
+        optionTitle={t("resource:group.create.asg.platform")}
+        optionDesc={t("resource:group.create.asg.platformDesc")}
+      >
+        <div style={{ width: 250 }}>
+          <SelectPlatform
+            platform={platform}
+            changePlatform={(pf) => {
+              changePlatform?.(pf);
+            }}
+          />
+        </div>
       </FormItem>
     </div>
   );

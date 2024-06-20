@@ -1,5 +1,6 @@
 {
     "id": "2e536ae6-0f85-463c-9e61-04cebf3ec12b",
+    "arguments": {},
     "action": "START",
     "args": {
         "stackName": "Solution-SvcPipe-2e536",

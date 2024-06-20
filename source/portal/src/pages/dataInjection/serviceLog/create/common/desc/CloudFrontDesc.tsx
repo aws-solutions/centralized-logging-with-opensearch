@@ -15,14 +15,14 @@ limitations under the License.
 */
 import React, { useMemo, useState } from "react";
 import ExtLink from "components/ExtLink";
-import cloudFrontSArch from "assets/images/desc/cloudFrontArch.png";
-import cloudFrontSArchRealtime from "assets/images/desc/cloudFrontArch_Realtime.png";
-import cloudfrontLightEngineArch from "assets/images/desc/cloudfrontLightEngineArch.png";
+import cloudFrontSArch from "assets/images/desc/cloudFrontArch.webp";
+import cloudFrontSArchRealtime from "assets/images/desc/cloudFrontArch_Realtime.webp";
+import cloudfrontLightEngineArch from "assets/images/desc/cloudfrontLightEngineArch.webp";
 
 import { CLOUDFRONT_LOG_LINK } from "assets/js/const";
 import { useTranslation } from "react-i18next";
 import { AntTab, AntTabs, TabPanel } from "components/Tab";
-import { AnalyticEngineTypes } from "../SpecifyAnalyticsEngine";
+import { AnalyticEngineTypes } from "types";
 
 export interface CloudFrontDescProps {
   engineType: AnalyticEngineTypes;
@@ -30,7 +30,7 @@ export interface CloudFrontDescProps {
 
 const CloudFrontDesc = ({ engineType }: CloudFrontDescProps) => {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState("standard");
   const isLightEngine = useMemo(
     () => engineType === AnalyticEngineTypes.LIGHT_ENGINE,
     [engineType]
@@ -61,10 +61,16 @@ const CloudFrontDesc = ({ engineType }: CloudFrontDescProps) => {
               setActiveTab(newTab);
             }}
           >
-            <AntTab label={t("servicelog:cloudfront.standardLogs")} />
-            <AntTab label={t("servicelog:cloudfront.realtimeLogs")} />
+            <AntTab
+              label={t("servicelog:cloudfront.standardLogs")}
+              value="standard"
+            />
+            <AntTab
+              label={t("servicelog:cloudfront.realtimeLogs")}
+              value="realtime"
+            />
           </AntTabs>
-          <TabPanel value={activeTab} index={0}>
+          <TabPanel value={activeTab} index="standard">
             <div className="mt-10">
               <img
                 className="img-border"
@@ -74,7 +80,7 @@ const CloudFrontDesc = ({ engineType }: CloudFrontDescProps) => {
               />
             </div>
           </TabPanel>
-          <TabPanel value={activeTab} index={1}>
+          <TabPanel value={activeTab} index="realtime">
             <div className="mt-10">
               <img
                 className="img-border"

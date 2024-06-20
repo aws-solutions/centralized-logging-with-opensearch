@@ -92,7 +92,8 @@ types-PyYAML under the Apache License, Version 2.0
 typing_extensions under Python Software Foundation License
 ua-parser under the Apache License, Version 2.0
 user-agents under The MIT License
-websocket-client under the Apache License, Version 2.0 
+websocket-client under the Apache License, Version 2.0
+aws-lambda-powertools under The MIT License
 xmltodict under The MIT License
 @aws-cdk/aws-appsync-alpha under the Apache License, Version 2.0
 @aws-cdk/aws-kinesisfirehose-alpha under the Apache License, Version 2.0
@@ -113,6 +114,8 @@ source-map-support under The MIT License
 fs under The MIT License
 exceptiongroup under The MIT License
 tomli under MIT License
+pytest-xdist under MIT License
+execnet under MIT License
 @apollo/client under The MIT License
 @aws-amplify/ui-components under the Apache License, Version 2.0
 @aws-amplify/ui-react under the Apache License, Version 2.0

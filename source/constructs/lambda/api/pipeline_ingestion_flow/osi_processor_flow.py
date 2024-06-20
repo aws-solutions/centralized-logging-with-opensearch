@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 import os
 import json
-import logging
+from commonlib.logging import get_logger
 from datetime import datetime
 from abc import ABC, abstractmethod
 from commonlib.dao import (
@@ -15,8 +15,7 @@ from jinja2 import FileSystemLoader, Environment
 
 conn = AWSConnection()
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 default_region = os.environ.get("AWS_REGION")
 
@@ -50,9 +49,7 @@ app_pipeline_dao = AppPipelineDao(table_name=app_pipeline_table_name)
 
 osis = conn.get_client("osis")
 
-template_loader = FileSystemLoader(
-    searchpath="./util", encoding="utf-8"
-)
+template_loader = FileSystemLoader(searchpath="./util", encoding="utf-8")
 
 template_env = Environment(
     loader=template_loader,
@@ -60,6 +57,7 @@ template_env = Environment(
     trim_blocks=True,
     lstrip_blocks=True,
 )
+
 
 class Context:
     def __init__(self, action, result):
@@ -71,7 +69,6 @@ class Context:
             self._state = UpdateState(self, result)
         else:
             self._state = QueryState(self, result)
-
 
     def transit(self, state):
         self._state = state
@@ -172,7 +169,8 @@ class QueryState(State):
             "error": error,
             "statusReason": status_reason,
         }
-    
+
+
 class UpdateState(State):
     _action = "UPDATE"
 
@@ -184,10 +182,7 @@ class UpdateState(State):
         except Exception as e:
             status = "UPDATE_FAILED"
             error = str(e)
-        return {
-            "pipelineStatus": status,
-            "error": error
-        }
+        return {"pipelineStatus": status, "error": error}
 
 
 def lambda_handler(event, _):
@@ -235,10 +230,17 @@ def create_osi_pipeline():
     params["pipeline_id"] = osi_pipeline_name
     params["queue_url"] = queue_url
     # Support current account only
-    params["pipeline_role_arn"] = f"arn:aws:iam::{log_source_account_id}:role/{pipeline_role_name}"
+    params["pipeline_role_arn"] = (
+        f"arn:aws:iam::{log_source_account_id}:role/{pipeline_role_name}"
+    )
     params["endpoint"] = "https://" + aos_endpoint
     # SVC index contains logtype but APP does not
-    if log_type == "ELB" or log_type == "WAF" or log_type == "CloudTrail" or log_type == "VPCFlow":
+    if (
+        log_type == "ELB"
+        or log_type == "WAF"
+        or log_type == "CloudTrail"
+        or log_type == "VPCFlow"
+    ):
         params["index"] = aos_index_prefix + "-" + log_type.lower()
     else:
         params["index"] = aos_index_prefix
@@ -251,14 +253,20 @@ def create_osi_pipeline():
         MaxUnits=int(max_capacity),
         PipelineConfigurationBody=content,
         LogPublishingOptions={
-            'IsLoggingEnabled': True,
-            'CloudWatchLogDestination': {
-                'LogGroup': log_processor_group_name
-            }
-        }
+            "IsLoggingEnabled": True,
+            "CloudWatchLogDestination": {"LogGroup": log_processor_group_name},
+        },
+        Tags=[
+            {"Key": "CLOSolutionCostAnalysis", "Value": "CLOSolutionCostAnalysis"},
+        ],
     )
 
-    if log_type == "ELB" or log_type == "WAF" or log_type == "CloudTrail" or log_type == "VPCFlow":
+    if (
+        log_type == "ELB"
+        or log_type == "WAF"
+        or log_type == "CloudTrail"
+        or log_type == "VPCFlow"
+    ):
         svc_pipeline_table = dynamodb.Table(svc_pipeline_table_name)
         svc_pipeline_table.update_item(
             Key={"id": osi_pipeline_id},
@@ -273,7 +281,9 @@ def create_osi_pipeline():
             },
         )
     else:
-        app_pipeline_dao.update_app_pipeline(osi_pipeline_id, status=StatusEnum.CREATING)
+        app_pipeline_dao.update_app_pipeline(
+            osi_pipeline_id, status=StatusEnum.CREATING
+        )
 
     pipeline = response["Pipeline"]
     if pipeline != None:
@@ -283,16 +293,12 @@ def create_osi_pipeline():
 
 def delete_osi_pipeline():
     logger.info("Delete OSI Pipeline")
-    osis.delete_pipeline(
-        PipelineName=osi_pipeline_name
-    )
+    osis.delete_pipeline(PipelineName=osi_pipeline_name)
 
 
 def get_osi_pipeline_status():
     logger.info("Get OSI pipeline status")
-    response = osis.get_pipeline(
-        PipelineName=osi_pipeline_name
-    )
+    response = osis.get_pipeline(PipelineName=osi_pipeline_name)
 
     pipeline = response["Pipeline"]
     if pipeline != None:
@@ -308,7 +314,12 @@ def get_osi_pipeline_status():
 def update_osi_pipeline_status(result):
     logger.info("Update OSI pipeline status")
     if "osiPipelineStatus" in result and result["osiPipelineStatus"] == "ACTIVE":
-        if log_type == "ELB" or log_type == "WAF" or log_type == "CloudTrail" or log_type == "VPCFlow":
+        if (
+            log_type == "ELB"
+            or log_type == "WAF"
+            or log_type == "CloudTrail"
+            or log_type == "VPCFlow"
+        ):
             svc_pipeline_table = dynamodb.Table(svc_pipeline_table_name)
             svc_pipeline_table.update_item(
                 Key={"id": osi_pipeline_id},
@@ -323,9 +334,16 @@ def update_osi_pipeline_status(result):
                 },
             )
         else:
-            app_pipeline_dao.update_app_pipeline(osi_pipeline_id, status=StatusEnum.ACTIVE)
+            app_pipeline_dao.update_app_pipeline(
+                osi_pipeline_id, status=StatusEnum.ACTIVE
+            )
     else:
-        if log_type == "ELB" or log_type == "WAF" or log_type == "CloudTrail" or log_type == "VPCFlow":
+        if (
+            log_type == "ELB"
+            or log_type == "WAF"
+            or log_type == "CloudTrail"
+            or log_type == "VPCFlow"
+        ):
             svc_pipeline_table = dynamodb.Table(svc_pipeline_table_name)
             svc_pipeline_table.update_item(
                 Key={"id": osi_pipeline_id},
@@ -334,10 +352,9 @@ def update_osi_pipeline_status(result):
                     "#s": "status",
                     "#error": "error",
                 },
-                ExpressionAttributeValues={
-                    status: "ERROR",
-                    ":err": result
-                },
+                ExpressionAttributeValues={status: "ERROR", ":err": result},
             )
         else:
-            app_pipeline_dao.update_app_pipeline(osi_pipeline_id, error=result, status=StatusEnum.ERROR)
+            app_pipeline_dao.update_app_pipeline(
+                osi_pipeline_id, error=result, status=StatusEnum.ERROR
+            )

@@ -7,6 +7,7 @@ schema {
 }
 
 type Query {
+  latestVersion: AWSJSON!
   # List OpenSearch Domain names in a region
   listDomainNames(region: String): DomainNames
 
@@ -99,6 +100,7 @@ type Query {
     tags: [TagFilterInput]
     region: String
     accountId: String
+    platformType: EC2GroupPlatform
   ): ListInstanceResponse
 
   # Get logging Agent Status by instanceId
@@ -189,6 +191,9 @@ type Query {
   # Check if OSI is available in the current region
   checkOSIAvailability: Boolean
 
+  # Get account unreserved concurrency limit
+  getAccountUnreservedConurrency: Int
+
   listGrafanas(page: Int, count: Int): ListGrafanasResponse
 
   getGrafana(id: String!): Grafana
@@ -258,6 +263,7 @@ type Mutation {
     destinationType: DestinationType!
     osiParams: OpenSearchIngestionInput
     monitor: MonitorInput
+    logProcessorConcurrency: String!
   ): String
 
   # Create a new service pipeline with light engine
@@ -318,6 +324,7 @@ type Mutation {
     logType: LogType!
     syslogParser: SyslogParser
     multilineLogParser: MultiLineLogParser
+    iisLogParser: IISlogParser
     filterConfigMap: ProcessorFilterRegexInput
     regex: String
     jsonSchema: AWSJSON
@@ -340,6 +347,7 @@ type Mutation {
     logType: LogType!
     syslogParser: SyslogParser
     multilineLogParser: MultiLineLogParser
+    iisLogParser: IISlogParser
     filterConfigMap: ProcessorFilterRegexInput
     regex: String
     jsonSchema: AWSJSON
@@ -354,6 +362,7 @@ type Mutation {
   createAppPipeline(
     bufferType: BufferType!
     bufferParams: [BufferInput]
+    parameters: [ParameterInput]
     aosParams: AOSParameterInput!
     logConfigId: ID!
     logConfigVersionNumber: Int!
@@ -361,6 +370,7 @@ type Mutation {
     force: Boolean
     osiParams: OpenSearchIngestionInput
     tags: [TagInput]
+    logProcessorConcurrency: String!
   ): ID
 
   createLightEngineAppPipeline(
@@ -371,6 +381,7 @@ type Mutation {
     monitor: MonitorInput
     force: Boolean
     tags: [TagInput]
+    logStructure: LogStructure
   ): ID
   # Update a app pipeline
   updateAppPipeline(id: ID!, monitor: MonitorInput): String
@@ -427,6 +438,9 @@ type Mutation {
     subAccountRoleArn: String!
     agentInstallDoc: String!
     agentConfDoc: String!
+    windowsAgentInstallDoc: String!
+    windowsAgentConfDoc: String!
+    agentStatusCheckDoc: String!
     subAccountBucketName: String!
     subAccountStackId: String!
     subAccountKMSKeyArn: String!
@@ -440,6 +454,10 @@ type Mutation {
     subAccountId: String!
     region: String
     subAccountFlbConfUploadingEventTopicArn: String!
+    windowsAgentInstallDoc: String!
+    windowsAgentConfDoc: String!
+    agentStatusCheckDoc: String!
+    agentInstallDoc: String!
   ): String
   # Remove a cross account link
   deleteSubAccountLink(subAccountId: String!, region: String): String
@@ -636,6 +654,11 @@ enum ServiceType {
   WAF
   WAFSampled
   Config
+}
+
+enum LogStructure {
+  RAW
+  FLUENT_BIT_PARSED_JSON
 }
 
 enum ProtocolType {
@@ -840,6 +863,14 @@ enum LogType {
   Syslog
   SingleLineText
   MultiLineText
+  WindowsEvent
+  IIS
+}
+
+enum IISlogParser {
+  W3C
+  IIS
+  NCSA
 }
 
 enum MultiLineLogParser {
@@ -933,6 +964,7 @@ type LogConfig {
   logType: LogType
   syslogParser: SyslogParser
   multilineLogParser: MultiLineLogParser
+  iisLogParser: IISlogParser
   filterConfigMap: ProcessorFilterRegex
   regex: String
   jsonSchema: AWSJSON
@@ -1154,6 +1186,7 @@ type AppPipeline {
   pipelineId: ID!
   bufferType: BufferType
   bufferParams: [BufferParameter]
+  parameters: [Parameter]
   aosParams: AOSParameter
   lightEngineParams: LightEngineParameter
   createdAt: String
@@ -1176,6 +1209,7 @@ type AppPipeline {
   stackId: String
   error: String
   engineType: AnalyticEngineType
+  logStructure: LogStructure
   tags: [Tag]
 }
 
@@ -1250,6 +1284,7 @@ type LogAgentParameter {
 type Instance {
   id: ID!
   platformName: String
+  platformType: String
   ipAddress: String
   computerName: String
   name: String
@@ -1328,20 +1363,15 @@ enum EC2GroupType {
 
 enum EC2GroupPlatform {
   Linux
+  Windows
 }
 
 type EC2Instances {
   instanceId: String!
-  # instanceName: String
-  # platformName: String
-  # platformVersion: String
 }
 
 input EC2InstancesInput {
   instanceId: String
-  # instanceName: String
-  # platformName: String
-  # platformVersion: String
 }
 
 type EC2Source {
@@ -1395,6 +1425,9 @@ type SubAccountLink {
   subAccountRoleArn: String
   agentInstallDoc: String
   agentConfDoc: String
+  windowsAgentInstallDoc: String
+  windowsAgentConfDoc: String
+  agentStatusCheckDoc: String
   subAccountBucketName: String
   subAccountStackId: String
   subAccountKMSKeyArn: String
@@ -1503,6 +1536,7 @@ type PipelineAlarm {
 enum DomainStatusCheckType {
   FAILED
   PASSED
+  WARNING
   CHECKING
   NOT_STARTED
 }

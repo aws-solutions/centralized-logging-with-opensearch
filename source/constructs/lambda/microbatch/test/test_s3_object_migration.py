@@ -10,9 +10,9 @@ import gzip
 import types
 import base64
 import pytest
-from datetime import datetime, timezone
+import datetime
 from boto3.dynamodb.conditions import Attr
-from test.mock import mock_s3_context, mock_iam_context, mock_ddb_context, mock_sqs_context, mock_sfn_context, download_maxminddb, default_environment_variables
+from test.mock import mock_s3_context, mock_iam_context, mock_ddb_context, mock_sqs_context, mock_sfn_context, default_environment_variables
 
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -32,7 +32,6 @@ class TestParameter:
         record = event['Records'][0]['body']
         param = Parameters(record)
         assert param.source_type == ''
-        assert param.enrichment_plugins == set()
         assert param.data == [{'source': {
             'bucket': staging_bucket_name,
             'key': f'AWSLogs/{account_id}/centralized/aws_apigateway_logs_gz/__ds__=2023-03-11-20-01/region={aws_region}/__execution_name__=b49a793b-38d2-40c0-af22-cfacf494732e/apigateway1.gz'},
@@ -72,7 +71,6 @@ class TestParameter:
         record['enrichmentPlugins'] = ['geo_ip']
         param = Parameters(record)
         assert param.source_type == 'alb'
-        assert param.enrichment_plugins == set(['geo_ip'])
 
         assert param._get_parameter_value(True, (bool, str), False) is True
         assert param._get_parameter_value(True, int, 2) is True
@@ -922,7 +920,7 @@ def test_lambda_handler_from_scanning_to_migration_scene_9(mock_s3_context, mock
     scanning_event = copy.deepcopy(s3_object_scanning_event)
     scanning_event['executionName'] = execution_name
     scanning_event['merge'] = False
-    scanning_event['size'] = 2
+    scanning_event['maxObjectFilesNumPerCopyTask'] = 2
     
     scanning_lambda_handler(scanning_event, scanning_context)
     conditions = Attr('parentTaskId').eq('00000000-0000-0000-0000-000000000000')
@@ -992,7 +990,8 @@ def test_lambda_handler_from_scanning_to_migration_scene_10(mock_s3_context, moc
     scanning_event = copy.deepcopy(s3_object_scanning_event)
     scanning_event['executionName'] = execution_name
     scanning_event['merge'] = False
-    scanning_event['size'] = '3KiB'
+    scanning_event['maxObjectFilesSizePerCopyTask'] = '3KiB'
+    
     
     scanning_lambda_handler(scanning_event, scanning_context)
     conditions = Attr('parentTaskId').eq('00000000-0000-0000-0000-000000000000')
@@ -1289,17 +1288,12 @@ def test_lambda_handler_from_scanning_to_migration_scene_14(mock_s3_context, moc
         next(migration_task_info_iterator)
 
 
-@pytest.mark.usefixtures('download_maxminddb')
 def test_lambda_handler_from_scanning_to_migration_scene_15(mock_s3_context, mock_iam_context, mock_sqs_context, mock_ddb_context, mock_sfn_context):
     import boto3
-    from s3_object_scanning.lambda_function import lambda_handler as scanning_lambda_handler
-    from s3_object_migration.lambda_function import lambda_handler as migration_lambda_handler, AWS_S3, AWS_DDB_ETL_LOG, EnrichProcessor
+    from s3_object_scanning.lambda_function import lambda_handler as scanning_lambda_handler, AWS_SQS
+    from s3_object_migration.lambda_function import lambda_handler as migration_lambda_handler, AWS_S3, AWS_DDB_ETL_LOG
     
-    os.environ['ENV'] = 'LOCAL'
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    tmp_path = f'/tmp/{str(uuid.uuid4())}'
-    os.makedirs(tmp_path, exist_ok=True)
-    
     account_id = os.environ["ACCOUNT_ID"]
     aws_region = os.environ["AWS_REGION"]
     staging_bucket_name = os.environ["STAGING_BUCKET_NAME"]
@@ -1315,44 +1309,41 @@ def test_lambda_handler_from_scanning_to_migration_scene_15(mock_s3_context, moc
     migration_context = types.SimpleNamespace()
     migration_context.function_name = migration_function_name
     
-    """
-    Init object path
-    """
-    AWS_S3.upload_file(filename=f'{current_dir}/data/alb.log.gz', bucket=staging_bucket_name, key=f'ALBLogs/{account_id}/alb.log.gz')
-    AWS_S3.upload_file(filename=f'{current_dir}/data/cloudfront.log.gz', bucket=staging_bucket_name, key=f'CloudFrontLogs/{account_id}/cloudfront.log.gz')
+    tmp_bucket_prefix = f'tmp/AWSLogs/{account_id}/centralized/aws_apigateway_logs_gz/__ds__=2023-03-13-02-59/region={aws_region}/__execution_name__=c399c496-3f6a-4f4d-99e6-890493f19278'
+    
+    tasks = [
+        {
+            'source': {
+                'bucket': staging_bucket_name,
+                'key': f'AWSLogs/{account_id}/centralized/aws_apigateway_logs_gz/__ds__=2023-03-13-02-59/region={aws_region}/__execution_name__=c399c496-3f6a-4f4d-99e6-890493f19278/apigateway3.gz'
+            },
+            'destination': {
+                'bucket': staging_bucket_name,
+                'key': f'{tmp_bucket_prefix}/apigateway3.gz'
+            },
+        },
+        {
+            'source': {
+                'bucket': staging_bucket_name,
+                'key': f'AWSLogs/{account_id}/centralized/aws_apigateway_logs_parquet/__ds__=2023-03-11-20-01/region={aws_region}/__execution_name__=b49a793b-38d2-40c0-af22-cfacf494732e/apigateway1.parquet'
+            },
+            'destination': {
+                'bucket': staging_bucket_name,
+                'key': f'{tmp_bucket_prefix}/apigateway1.parquet'
+            },
+        }
+    ]
+    AWS_S3.batch_copy_objects(tasks=tasks)
     
     """ Scene 15:
-    Testing enrich data with plugins.
+    Testing status is FAILED
     """
     execution_name = str(uuid.uuid4())
     scanning_event = copy.deepcopy(s3_object_scanning_event)
     scanning_event['executionName'] = execution_name
-    scanning_event['sourceType'] = 'do-not-supported-source-type'
-    scanning_event['enrichmentPlugins'] = ['geo_ip']
-    scanning_event['srcPath'] = f's3://{staging_bucket_name}/ALBLogs/{account_id}'
-    scanning_event['dstPath'] = f's3://{staging_bucket_name}/archive/ALBLogs/{account_id}'
-    scanning_event['merge'] = False
-    
-    scanning_lambda_handler(scanning_event, scanning_context)
-    conditions = Attr('parentTaskId').eq('00000000-0000-0000-0000-000000000000')
-    scanning_task_info = next(AWS_DDB_ETL_LOG.query_item(execution_name=execution_name, filter=conditions))
-    scanning_task_id = scanning_task_info['taskId']
-    
-    migration_event = sqs_msg_to_lambda_event(sqs_client=sqs_client, url=migration_sqs_url)
-    assert len(migration_event['Records']) == 1
-    assert EnrichProcessor is not None
-    with pytest.raises(Exception) as exception_info:
-        migration_lambda_handler(migration_event, migration_context)
-    assert exception_info.value.args[0] == "Do not supported source type: do-not-supported-source-type. Supported source type: ['cloudfront', 'alb']."
-    
-    execution_name = str(uuid.uuid4())
-    scanning_event = copy.deepcopy(s3_object_scanning_event)
-    scanning_event['executionName'] = execution_name
-    scanning_event['sourceType'] = 'alb'
-    scanning_event['enrichmentPlugins'] = ['geo_ip']
-    scanning_event['srcPath'] = f's3://{staging_bucket_name}/ALBLogs/{account_id}'
-    scanning_event['dstPath'] = f's3://{staging_bucket_name}/archive/ALBLogs/{account_id}'
-    scanning_event['merge'] = False
+    scanning_event['srcPath'] = f"s3://{staging_bucket_name}/tmp/AWSLogs/{account_id}/centralized/aws_apigateway_logs_gz"
+    scanning_event['merge'] = True
+    scanning_event['taskToken'] = ''
     
     scanning_lambda_handler(scanning_event, scanning_context)
     conditions = Attr('parentTaskId').eq('00000000-0000-0000-0000-000000000000')
@@ -1363,91 +1354,14 @@ def test_lambda_handler_from_scanning_to_migration_scene_15(mock_s3_context, moc
     assert len(migration_event['Records']) == 1
     migration_lambda_handler(migration_event, migration_context)
     
-    AWS_S3.download_file(bucket=staging_bucket_name, key=f'archive/ALBLogs/{account_id}/alb.log.gz', filename=f'{tmp_path}/alb.log.gz')
-    with gzip.open(f'{tmp_path}/alb.log.gz', 'rt') as reader:
-        assert next(reader) == 'https 2023-07-04T13:28:28.138531Z app/ALB/nwpiqzrqc67zsbwq 185.249.140.9:1231 10.2.2.174:443 1.5414835421835185 1.8228018060637856 1.1708408317685808 200 200 1525 59997 "GET http://alb.us-east-1.elb.amazonaws.com/Book-10.png HTTP/1.1" "Mozilla/5.0 (Macintosh; PPC Mac OS X 10_9_4) AppleWebKit/536.2 (KHTML, like Gecko) Chrome/35.0.847.0 Safari/536.2" TLS_AES_128_GCM_SHA256 TLSv1.2 arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/app/e240e6889123qdqw "Root=1-5034982-7f2d2ae7a15148ff825e84b9f59a0c68" "alb.us-east-1.elb.amazonaws.com" "session-reused" 0 2023-07-04T13:28:28.138531Z "forward" "-" "-" "10.2.2.176:443" "200" "-" "-" {"geo_iso_code":"FR","geo_country":"France","geo_city":"Paris","geo_location":"48.8323,2.4075"}\n'
-        assert next(reader) == 'https 2023-07-04T13:28:26.138531Z app/ALB/6cv0xw490oh8nq7n 185.176.232.11:15364 10.2.2.175:443 1.9537748743523755 1.9607717664807693 1.3631916131229302 200 200 1521 50675 "GET https://alb.us-east-1.elb.amazonaws.com/Javascript-Master.png HTTP/2.0" "Mozilla/5.0 (iPod; U; CPU iPhone OS 3_0 like Mac OS X; yi-US) AppleWebKit/531.9.3 (KHTML, like Gecko) Version/3.0.5 Mobile/8B117 Safari/6531.9.3" TLS_CHACHA20_POLY1305_SHA256 TLSv1.2 arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/gateway/06409f87b3bad113 "Root=1-8187477-b5b5cdfa33534d589247a5c61de9fe0e" "alb.us-east-1.elb.amazonaws.com" "session-reused" 0 2023-07-04T13:28:26.138531Z "forward" "-" "-" "10.2.2.174:80" "200" "-" "-" {"geo_iso_code":"FR","geo_country":"France","geo_location":"48.8582,2.3387"}\n'
-    AWS_S3.delete_object(bucket=staging_bucket_name, key=f'archive/ALBLogs/{account_id}/alb.log.gz')
-    os.remove(f'{tmp_path}/alb.log.gz')
-    
-    execution_name = str(uuid.uuid4())
-    scanning_event = copy.deepcopy(s3_object_scanning_event)
-    scanning_event['executionName'] = execution_name
-    scanning_event['sourceType'] = 'alb'
-    scanning_event['enrichmentPlugins'] = ['user_agent']
-    scanning_event['srcPath'] = f's3://{staging_bucket_name}/ALBLogs/{account_id}'
-    scanning_event['dstPath'] = f's3://{staging_bucket_name}/archive/ALBLogs/{account_id}'
-    scanning_event['merge'] = False
-    
-    scanning_lambda_handler(scanning_event, scanning_context)
-    conditions = Attr('parentTaskId').eq('00000000-0000-0000-0000-000000000000')
-    scanning_task_info = next(AWS_DDB_ETL_LOG.query_item(execution_name=execution_name, filter=conditions))
-    scanning_task_id = scanning_task_info['taskId']
-    
-    migration_event = sqs_msg_to_lambda_event(sqs_client=sqs_client, url=migration_sqs_url)
-    assert len(migration_event['Records']) == 1
-    migration_lambda_handler(migration_event, migration_context)
-    
-    AWS_S3.download_file(bucket=staging_bucket_name, key=f'archive/ALBLogs/{account_id}/alb.log.gz', filename=f'{tmp_path}/alb.log.gz')
-    with gzip.open(f'{tmp_path}/alb.log.gz', 'rt') as reader:
-        assert next(reader) == 'https 2023-07-04T13:28:28.138531Z app/ALB/nwpiqzrqc67zsbwq 185.249.140.9:1231 10.2.2.174:443 1.5414835421835185 1.8228018060637856 1.1708408317685808 200 200 1525 59997 "GET http://alb.us-east-1.elb.amazonaws.com/Book-10.png HTTP/1.1" "Mozilla/5.0 (Macintosh; PPC Mac OS X 10_9_4) AppleWebKit/536.2 (KHTML, like Gecko) Chrome/35.0.847.0 Safari/536.2" TLS_AES_128_GCM_SHA256 TLSv1.2 arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/app/e240e6889123qdqw "Root=1-5034982-7f2d2ae7a15148ff825e84b9f59a0c68" "alb.us-east-1.elb.amazonaws.com" "session-reused" 0 2023-07-04T13:28:28.138531Z "forward" "-" "-" "10.2.2.176:443" "200" "-" "-" {"ua_browser":"Chrome","ua_browser_version":"35.0.847","ua_os":"Mac OS X","ua_os_version":"10.9.4","ua_device":"Mac","ua_category":"PC"}\n'
-        assert next(reader) == 'https 2023-07-04T13:28:26.138531Z app/ALB/6cv0xw490oh8nq7n 185.176.232.11:15364 10.2.2.175:443 1.9537748743523755 1.9607717664807693 1.3631916131229302 200 200 1521 50675 "GET https://alb.us-east-1.elb.amazonaws.com/Javascript-Master.png HTTP/2.0" "Mozilla/5.0 (iPod; U; CPU iPhone OS 3_0 like Mac OS X; yi-US) AppleWebKit/531.9.3 (KHTML, like Gecko) Version/3.0.5 Mobile/8B117 Safari/6531.9.3" TLS_CHACHA20_POLY1305_SHA256 TLSv1.2 arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/gateway/06409f87b3bad113 "Root=1-8187477-b5b5cdfa33534d589247a5c61de9fe0e" "alb.us-east-1.elb.amazonaws.com" "session-reused" 0 2023-07-04T13:28:26.138531Z "forward" "-" "-" "10.2.2.174:80" "200" "-" "-" {"ua_browser":"Mobile Safari","ua_browser_version":"3.0.5","ua_os":"iOS","ua_os_version":"3.0","ua_device":"iPod","ua_category":"Mobile"}\n'
-    AWS_S3.delete_object(bucket=staging_bucket_name, key=f'archive/ALBLogs/{account_id}/alb.log.gz')
-    os.remove(f'{tmp_path}/alb.log.gz')
-    
-    execution_name = str(uuid.uuid4())
-    scanning_event = copy.deepcopy(s3_object_scanning_event)
-    scanning_event['executionName'] = execution_name
-    scanning_event['sourceType'] = 'alb'
-    scanning_event['enrichmentPlugins'] = ['user_agent', 'geo_ip']
-    scanning_event['srcPath'] = f's3://{staging_bucket_name}/ALBLogs/{account_id}'
-    scanning_event['dstPath'] = f's3://{staging_bucket_name}/archive/ALBLogs/{account_id}'
-    scanning_event['merge'] = False
-    
-    scanning_lambda_handler(scanning_event, scanning_context)
-    conditions = Attr('parentTaskId').eq('00000000-0000-0000-0000-000000000000')
-    scanning_task_info = next(AWS_DDB_ETL_LOG.query_item(execution_name=execution_name, filter=conditions))
-    scanning_task_id = scanning_task_info['taskId']
-    
-    migration_event = sqs_msg_to_lambda_event(sqs_client=sqs_client, url=migration_sqs_url)
-    assert len(migration_event['Records']) == 1
-    migration_lambda_handler(migration_event, migration_context)
-    
-    AWS_S3.download_file(bucket=staging_bucket_name, key=f'archive/ALBLogs/{account_id}/alb.log.gz', filename=f'{tmp_path}/alb.log.gz')
-    with gzip.open(f'{tmp_path}/alb.log.gz', 'rt') as reader:
-        assert next(reader) == 'https 2023-07-04T13:28:28.138531Z app/ALB/nwpiqzrqc67zsbwq 185.249.140.9:1231 10.2.2.174:443 1.5414835421835185 1.8228018060637856 1.1708408317685808 200 200 1525 59997 "GET http://alb.us-east-1.elb.amazonaws.com/Book-10.png HTTP/1.1" "Mozilla/5.0 (Macintosh; PPC Mac OS X 10_9_4) AppleWebKit/536.2 (KHTML, like Gecko) Chrome/35.0.847.0 Safari/536.2" TLS_AES_128_GCM_SHA256 TLSv1.2 arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/app/e240e6889123qdqw "Root=1-5034982-7f2d2ae7a15148ff825e84b9f59a0c68" "alb.us-east-1.elb.amazonaws.com" "session-reused" 0 2023-07-04T13:28:28.138531Z "forward" "-" "-" "10.2.2.176:443" "200" "-" "-" {"geo_iso_code":"FR","geo_country":"France","geo_city":"Paris","geo_location":"48.8323,2.4075","ua_browser":"Chrome","ua_browser_version":"35.0.847","ua_os":"Mac OS X","ua_os_version":"10.9.4","ua_device":"Mac","ua_category":"PC"}\n'
-        assert next(reader) == 'https 2023-07-04T13:28:26.138531Z app/ALB/6cv0xw490oh8nq7n 185.176.232.11:15364 10.2.2.175:443 1.9537748743523755 1.9607717664807693 1.3631916131229302 200 200 1521 50675 "GET https://alb.us-east-1.elb.amazonaws.com/Javascript-Master.png HTTP/2.0" "Mozilla/5.0 (iPod; U; CPU iPhone OS 3_0 like Mac OS X; yi-US) AppleWebKit/531.9.3 (KHTML, like Gecko) Version/3.0.5 Mobile/8B117 Safari/6531.9.3" TLS_CHACHA20_POLY1305_SHA256 TLSv1.2 arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/gateway/06409f87b3bad113 "Root=1-8187477-b5b5cdfa33534d589247a5c61de9fe0e" "alb.us-east-1.elb.amazonaws.com" "session-reused" 0 2023-07-04T13:28:26.138531Z "forward" "-" "-" "10.2.2.174:80" "200" "-" "-" {"geo_iso_code":"FR","geo_country":"France","geo_location":"48.8582,2.3387","ua_browser":"Mobile Safari","ua_browser_version":"3.0.5","ua_os":"iOS","ua_os_version":"3.0","ua_device":"iPod","ua_category":"Mobile"}\n'
-    AWS_S3.delete_object(bucket=staging_bucket_name, key=f'archive/ALBLogs/{account_id}/alb.log.gz')
-    os.remove(f'{tmp_path}/alb.log.gz')
-    
-    execution_name = str(uuid.uuid4())
-    scanning_event = copy.deepcopy(s3_object_scanning_event)
-    scanning_event['executionName'] = execution_name
-    scanning_event['sourceType'] = 'cloudfront'
-    scanning_event['enrichmentPlugins'] = ['user_agent', 'geo_ip']
-    scanning_event['srcPath'] = f's3://{staging_bucket_name}/CloudFrontLogs/{account_id}'
-    scanning_event['dstPath'] = f's3://{staging_bucket_name}/archive/CloudFrontLogs/{account_id}'
-    scanning_event['merge'] = False
-    
-    scanning_lambda_handler(scanning_event, scanning_context)
-    conditions = Attr('parentTaskId').eq('00000000-0000-0000-0000-000000000000')
-    scanning_task_info = next(AWS_DDB_ETL_LOG.query_item(execution_name=execution_name, filter=conditions))
-    scanning_task_id = scanning_task_info['taskId']
-    
-    migration_event = sqs_msg_to_lambda_event(sqs_client=sqs_client, url=migration_sqs_url)
-    assert len(migration_event['Records']) == 1
-    migration_lambda_handler(migration_event, migration_context)
-    
-    AWS_S3.download_file(bucket=staging_bucket_name, key=f'archive/CloudFrontLogs/{account_id}/cloudfront.log.gz', filename=f'{tmp_path}/cloudfront.log.gz')
-    with gzip.open(f'{tmp_path}/cloudfront.log.gz', 'rt') as reader:
-        assert next(reader) == '#Version: 1.0\n'
-        assert next(reader) == '#Fields: date time x-edge-location sc-bytes c-ip cs-method cs(Host) cs-uri-stem sc-status cs(Referer) cs(User-Agent) cs-uri-query cs(Cookie) x-edge-result-type x-edge-request-id x-host-header cs-protocol cs-bytes time-taken x-forwarded-for ssl-protocol ssl-cipher x-edge-response-result-type cs-protocol-version fle-status fle-encrypted-fields c-port time-to-first-byte x-edge-detailed-result-type sc-content-type sc-content-len sc-range-start sc-range-end\n'
-        assert next(reader) == '2023-07-04\t01:29:09\tICN54-C3\t40811\t193.84.66.5\tGET\ttest.cloudfront.net\t/Javascript-Master.png\t200\thttps://www.mydomain.com/page/Python-Release.png\tMozilla/5.0 (iPad; CPU iPad OS 12_4_8 like Mac OS X) AppleWebKit/532.2 (KHTML, like Gecko) FxiOS/13.9n5321.0 Mobile/11T585 Safari/532.2\t-\t-\tRefreshHit\tGrkvUG1n0V2Ivvl69mkl6O1yew4RgFWcGfZaUm4WT3DGl0Op92S6nEku\ttest.cloudfront.net\tws\t1564\t1.1000590226167435\t-\tTLSv1.3\tTLS_AES_128_GCM_SHA256\tHit\tHTTP/2.0\t-\t -\t8301\t1.9329435721147732\tMiss\timage/png\t570129.7648412298\t-\t-\t{"geo_iso_code":"DE","geo_country":"Germany","geo_city":"Eschborn","geo_location":"50.1477,8.5618","ua_browser":"Firefox iOS","ua_browser_version":"13.9","ua_os":"iOS","ua_os_version":"12.4.8","ua_device":"iPad","ua_category":"Tablet"}\n'
-        assert next(reader) == '2023-07-04\t01:29:07\tLHR3-C1\t43901\t194.59.6.6\tGET\ttest.cloudfront.net\t/Python-Release.png\t200\thttps://www.mydomain.com/page/Javascript-Master.png\tMozilla/5.0 (compatible; MSIE 5.0; Windows NT 5.01; Trident/4.1)\t-\t-\tHit\tmZKYfcYxNyuAQ2nFhx4w3YHRknyvgFX0CFocDX62phgxK2rtnVPhGvvV\ttest.cloudfront.net\thttp\t1592\t1.4919984396160233\t-\tTLSv1.2\tTLS_AES_256_GCM_SHA384\tHit\tHTTP/2.0\t-\t -\t9414\t1.3188635240702153\tMiss\timage/png\t677955.7753429408\t-\t-\t{"geo_iso_code":"DE","geo_country":"Germany","geo_location":"51.2993,9.491","ua_browser":"IE","ua_browser_version":"5.0","ua_os":"Windows","ua_os_version":"2000","ua_device":"Other","ua_category":"PC"}\n'
-    AWS_S3.delete_object(bucket=staging_bucket_name, key=f'archive/CloudFrontLogs/{account_id}/cloudfront.log.gz')
-    os.remove(f'{tmp_path}/cloudfront.log.gz')
-
-
+    msg = json.loads(gzip.decompress(base64.b64decode(migration_event['Records'][0]['body'])))
+    assert AWS_DDB_ETL_LOG.get(execution_name, msg['taskId'])['status'] == 'Failed'
+    assert AWS_DDB_ETL_LOG.get_subtask_status_count(execution_name, scanning_task_id, status='Succeeded')[
+               'taskCount'] == 0
+    assert AWS_DDB_ETL_LOG.get_subtask_status_count(execution_name, scanning_task_id, status='Failed')[
+               'taskCount'] == 1
+        
+        
 def test_check_patent_task_completion(mock_s3_context, mock_iam_context, mock_sqs_context, mock_ddb_context, mock_sfn_context):
     from s3_object_migration.lambda_function import Parameters, AWS_S3, AWS_DDB_ETL_LOG, check_parent_task_completion
     from unittest.mock import patch
@@ -1469,14 +1383,14 @@ def test_check_patent_task_completion(mock_s3_context, mock_iam_context, mock_sq
     assert check_parent_task_completion(param=param) is False
     
     AWS_DDB_ETL_LOG.update(execution_name=execution_name, task_id=sub_task1_id, item={
-        'endTime': datetime.now(timezone.utc).isoformat(), 'status': 'Succeeded',
+        'endTime': datetime.datetime.now(datetime.UTC).isoformat(), 'status': 'Succeeded',
         'functionName': migration_function_name})
 
     assert check_parent_task_completion(param=param) is False
     assert AWS_DDB_ETL_LOG.get(execution_name=execution_name, task_id=parent_task_id)['status'] == 'Running'
     
     AWS_DDB_ETL_LOG.update(execution_name=execution_name, task_id=sub_task2_id, item={
-        'endTime': datetime.now(timezone.utc).isoformat(), 'status': 'Succeeded',
+        'endTime': datetime.datetime.now(datetime.UTC).isoformat(), 'status': 'Succeeded',
         'functionName': migration_function_name})
     
     assert check_parent_task_completion(param=param) is True

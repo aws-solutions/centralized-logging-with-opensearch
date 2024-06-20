@@ -1,0 +1,385 @@
+{
+    "type": "object",
+    "properties": {
+        "time": {
+            "type": "big_int",
+            "expression": "CAST(to_unixtime(case when eventType = 'Bounce' then coalesce(parse_datetime(bounce.timestamp, 'YYYY-MM-dd''T''HH:mm:ss.SSSSSSSSSZ'), now()) when eventType = 'Complaint' then coalesce(parse_datetime(complaint.timestamp, 'YYYY-MM-dd''T''HH:mm:ss.SSSSSSSSSZ'), now())  when eventType = 'Delivery' then coalesce(parse_datetime(delivery.timestamp, 'YYYY-MM-dd''T''HH:mm:ss.SSSSSSSSSZ'), now()) when eventType = 'Send' then parse_datetime(mail.timestamp, 'YYYY-MM-dd''T''HH:mm:ss.SSSSSSSSSZ') when eventType = 'Reject' then now() when eventType = 'Open' then coalesce(parse_datetime(open.timestamp, 'YYYY-MM-dd''T''HH:mm:ss.SSSSSSSSSZ'), now()) when eventType = 'Click' then coalesce(parse_datetime(click.timestamp, 'YYYY-MM-dd''T''HH:mm:ss.SSSSSSSSSZ'), now()) when eventType = 'Rendering Failure' then now() when eventType = 'DeliveryDelay' then coalesce(parse_datetime(deliveryDelay.timestamp, 'YYYY-MM-dd''T''HH:mm:ss.SSSSSSSSSZ'), now()) when eventType = 'Subscription' then coalesce(parse_datetime(subscription.timestamp, 'YYYY-MM-dd''T''HH:mm:ss.SSSSSSSSSZ'), now()) else now() end) * 1000 AS bigint)"
+        },
+        "timestamp": {
+            "type": "timestamp",
+            "expression": "case when eventType = 'Bounce' then coalesce(parse_datetime(bounce.timestamp, 'YYYY-MM-dd''T''HH:mm:ss.SSSSSSSSSZ'), now()) when eventType = 'Complaint' then coalesce(parse_datetime(complaint.timestamp, 'YYYY-MM-dd''T''HH:mm:ss.SSSSSSSSSZ'), now())  when eventType = 'Delivery' then coalesce(parse_datetime(delivery.timestamp, 'YYYY-MM-dd''T''HH:mm:ss.SSSSSSSSSZ'), now()) when eventType = 'Send' then parse_datetime(mail.timestamp, 'YYYY-MM-dd''T''HH:mm:ss.SSSSSSSSSZ') when eventType = 'Reject' then now() when eventType = 'Open' then coalesce(parse_datetime(open.timestamp, 'YYYY-MM-dd''T''HH:mm:ss.SSSSSSSSSZ'), now()) when eventType = 'Click' then coalesce(parse_datetime(click.timestamp, 'YYYY-MM-dd''T''HH:mm:ss.SSSSSSSSSZ'), now()) when eventType = 'Rendering Failure' then now() when eventType = 'DeliveryDelay' then coalesce(parse_datetime(deliveryDelay.timestamp, 'YYYY-MM-dd''T''HH:mm:ss.SSSSSSSSSZ'), now()) when eventType = 'Subscription' then coalesce(parse_datetime(subscription.timestamp, 'YYYY-MM-dd''T''HH:mm:ss.SSSSSSSSSZ'), now()) else now() end"
+        },
+        "tagId": {
+            "type": "string",
+            "expression": "case when mail.tags.tagId = ARRAY[] or mail.tags.tagId is null then '-' else mail.tags.tagId[1] end"
+        },
+        "subject": {
+            "type": "string",
+            "expression": "case when mail.commonHeaders.subject is null or mail.commonHeaders.subject = '' then '-' else mail.commonHeaders.subject end"
+        },
+        "source": {
+            "type": "string",
+            "expression": "mail.source"
+        },
+        "sender": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "expression": "mail.commonHeaders.\"from\""
+        },
+        "recipient": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "expression": "mail.destination"
+        },
+        "eventType": {
+            "type": "string"
+        },
+        "mail": {
+            "type": "object",
+            "properties": {
+                "sourceArn": {
+                    "type": "string"
+                },
+                "headers": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string"
+                            },
+                            "value": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "sendingAccountId": {
+                    "type": "string"
+                },
+                "destination": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "headersTruncated": {
+                    "type": "boolean"
+                },
+                "messageId": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "commonHeaders": {
+                    "type": "object",
+                    "properties": {
+                        "messageId": {
+                            "type": "string"
+                        },
+                        "from": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "to": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "subject": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "tags": {
+                    "type": "object",
+                    "properties": {
+                        "scenes": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "tagId": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "delivery": {
+            "type": "object",
+            "properties": {
+                "smtpResponse": {
+                    "type": "string"
+                },
+                "processingTimeMillis": {
+                    "type": "integer"
+                },
+                "reportingMTA": {
+                    "type": "string"
+                },
+                "recipients": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "complaint": {
+            "type": "object",
+            "properties": {
+                "feedbackId": {
+                    "type": "string"
+                },
+                "complainedRecipients": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "emailAddress": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "userAgent": {
+                    "type": "string"
+                },
+                "complaintFeedbackType": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "arrivalDate": {
+                    "type": "string"
+                }
+            }
+        },
+        "bounce": {
+            "type": "object",
+            "properties": {
+                "bounceSubType": {
+                    "type": "string"
+                },
+                "feedbackId": {
+                    "type": "string"
+                },
+                "reportingMTA": {
+                    "type": "string"
+                },
+                "bounceType": {
+                    "type": "string"
+                },
+                "bouncedRecipients": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "action": {
+                                "type": "string"
+                            },
+                            "emailAddress": {
+                                "type": "string"
+                            },
+                            "diagnosticCode": {
+                                "type": "string"
+                            },
+                            "status": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "reject": {
+            "type": "object",
+            "properties": {
+                "reason": {
+                    "type": "string"
+                }
+            }
+        },
+        "failure": {
+            "type": "object",
+            "properties": {
+                "errorMessage": {
+                    "type": "string"
+                },
+                "templateName": {
+                    "type": "string"
+                }
+            }
+        },
+        "subscription": {
+            "type": "object",
+            "properties": {
+                "contactList": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "oldTopicPreferences": {
+                    "type": "object",
+                    "properties": {
+                        "topicSubscriptionStatus": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "subscriptionStatus": {
+                                        "type": "string"
+                                    },
+                                    "topicName": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        },
+                        "unsubscribeAll": {
+                            "type": "boolean"
+                        }
+                    }
+                },
+                "newTopicPreferences": {
+                    "type": "object",
+                    "properties": {
+                        "topicSubscriptionStatus": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "subscriptionStatus": {
+                                        "type": "string"
+                                    },
+                                    "topicName": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        },
+                        "unsubscribeAll": {
+                            "type": "boolean"
+                        }
+                    }
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "click": {
+            "type": "object",
+            "properties": {
+                "ipAddress": {
+                    "type": "string"
+                },
+                "link": {
+                    "type": "string"
+                },
+                "userAgent": {
+                    "type": "string"
+                },
+                "linkTags": {
+                    "type": "object",
+                    "properties": {
+                        "samplekey0": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "samplekey1": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "open": {
+            "type": "object",
+            "properties": {
+                "ipAddress": {
+                    "type": "string"
+                },
+                "userAgent": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "deliveryDelay": {
+            "type": "object",
+            "properties": {
+                "expirationTime": {
+                    "type": "string"
+                },
+                "delayedRecipients": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "diagnosticCode": {
+                                "type": "string"
+                            },
+                            "emailAddress": {
+                                "type": "string"
+                            },
+                            "status": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "delayType": {
+                    "type": "string"
+                }
+            }
+        },
+        "event_hour": {
+            "type": "string",
+            "partition": true,
+            "expression": "date_format(case when eventType = 'Bounce' then coalesce(parse_datetime(bounce.timestamp, 'YYYY-MM-dd''T''HH:mm:ss.SSSSSSSSSZ'), now()) when eventType = 'Complaint' then coalesce(parse_datetime(complaint.timestamp, 'YYYY-MM-dd''T''HH:mm:ss.SSSSSSSSSZ'), now())  when eventType = 'Delivery' then coalesce(parse_datetime(delivery.timestamp, 'YYYY-MM-dd''T''HH:mm:ss.SSSSSSSSSZ'), now()) when eventType = 'Send' then parse_datetime(mail.timestamp, 'YYYY-MM-dd''T''HH:mm:ss.SSSSSSSSSZ') when eventType = 'Reject' then now() when eventType = 'Open' then coalesce(parse_datetime(open.timestamp, 'YYYY-MM-dd''T''HH:mm:ss.SSSSSSSSSZ'), now()) when eventType = 'Click' then coalesce(parse_datetime(click.timestamp, 'YYYY-MM-dd''T''HH:mm:ss.SSSSSSSSSZ'), now()) when eventType = 'Rendering Failure' then now() when eventType = 'DeliveryDelay' then coalesce(parse_datetime(deliveryDelay.timestamp, 'YYYY-MM-dd''T''HH:mm:ss.SSSSSSSSSZ'), now()) when eventType = 'Subscription' then coalesce(parse_datetime(subscription.timestamp, 'YYYY-MM-dd''T''HH:mm:ss.SSSSSSSSSZ'), now()) else now() end, '%Y%m%d%H')"
+        },
+        "__execution_name__": {
+            "type": "string",
+            "partition": true,
+            "expression": "'{{}}'"
+        }
+    }
+}

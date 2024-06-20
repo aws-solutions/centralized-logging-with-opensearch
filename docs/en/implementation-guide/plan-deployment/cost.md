@@ -279,3 +279,36 @@ Assumptions:
  | 1                         | 3.024 USD | 0.04 USD                                                        | 2.1 USD    | 5.164 USD                                       |
  | 10                        | 30.24 USD | 0.35 USD                                                        | 2.1 USD    | 32.69 USD                                       |
  | 100                       | 302.4 USD | 3.53 USD                                                        | 2.1 USD    | 308.03 USD                                      |
+
+
+
+## View main stack and pipeline cost
+
+**Activating user-defined cost allocation tags**
+
+For tags to appear on your billing reports, you must activate them. Your user-defined cost allocation tags represent the tag key, which you activate in the Billing and Cost Management console. Once you activate or deactivate the tag key, it will affect all tag values that share the same tag key. A tag key can have multiple tag values. For more information, see the [AWS Billing and Cost Management API Reference](https://docs.aws.amazon.com/aws-cost-management/latest/APIReference/API_UpdateCostAllocationTagsStatus.html).
+
+### To activate your tag keys
+
+1. Sign in to the AWS Management Console and open the [AWS Billing and Cost Management console](https://console.aws.amazon.com/billing/).
+2. In the navigation pane, choose **Cost allocation tags**.
+3. Select the tag keys **CLOSolutionCostAnalysis** to activate.
+4. Choose Activate.
+
+!!! note "Note"
+
+    After you create and apply user-defined tags to your resources, it can take up to 24 hours for the tag keys to appear on your cost allocation tags page for activation. 
+    
+For an example of how tag keys appear in your billing report with cost allocation tags, see[Viewing a cost allocation report](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/configurecostallocreport.html#allocation-viewing). 
+
+### View cost explorer dashboard
+
+1. Sign in to the AWS Management Console and open the [AWS Billing and Cost Management console](https://console.aws.amazon.com/billing/).
+2. In the navigation pane, choose **Cost Explorer**.
+3. Choose **Tag** as the displayed Dimension and select the specific tag **CLOSolutionCostAnalysis** to filter.
+4. If your activated tag is absent in the dropdown list, this is because the activation process is still in progress. It can take up to 24 hours for tag keys to activate. Try later.
+
+![costexplorerdashboard](../../images/cost-explorer-dashboard.png)
+
+
+

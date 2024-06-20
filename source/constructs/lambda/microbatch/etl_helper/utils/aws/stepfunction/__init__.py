@@ -2,8 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from botocore.exceptions import ClientError
-from utils.aws.commonlib import AWSConnection
-from utils.logger import logger
+from utils.helpers import logger, AWSConnection
 
 
 class SFNClient:

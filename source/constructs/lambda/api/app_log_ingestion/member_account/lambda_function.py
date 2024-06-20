@@ -2,14 +2,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import json
-import logging
+from commonlib.logging import get_logger
 import os
 
 from commonlib import AWSConnection
 
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 conn = AWSConnection()
 
@@ -21,7 +20,7 @@ sqs_cli = conn.get_client("sqs")
 
 
 def lambda_handler(event, _):
-    # logger.info("Received event: " + json.dumps(event, indent=2))
+    # logger.info("Received event: " + json.dumps(event["arguments"], indent=2))
 
     event_type = event["Records"][0]["eventName"]
 

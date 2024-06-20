@@ -1,0 +1,130 @@
+{
+    "type": "object",
+    "properties": {
+        "time": {
+            "type": "big_int",
+            "expression": "FLOOR(\"time\" / 3600000) * 3600000"
+        },
+        "timestamp": {
+            "type": "timestamp",
+            "expression": "DATE_TRUNC('hour', \"timestamp\")"
+        },
+        "tagId": {
+            "type": "string"
+        },
+        "source": {
+            "type": "string"
+        },
+        "subject": {
+            "type": "string"
+        },
+        "sum_bounce": {
+            "type": "big_int",
+            "measure": true,
+            "expression": "sum(case when eventType = 'Bounce' then 1 else 0 end)"
+        },
+        "sum_complaint": {
+            "type": "big_int",
+            "measure": true,
+            "expression": "sum(case when eventType = 'Complaint' then 1 else 0 end)"
+        },
+        "sum_delivery": {
+            "type": "big_int",
+            "measure": true,
+            "expression": "sum(case when eventType = 'Delivery' then 1 else 0 end)"
+        },
+        "sum_send": {
+            "type": "big_int",
+            "measure": true,
+            "expression": "sum(case when eventType = 'Send' then 1 else 0 end)"
+        },
+        "sum_reject": {
+            "type": "big_int",
+            "measure": true,
+            "expression": "sum(case when eventType = 'Reject' then 1 else 0 end)"
+        },
+        "sum_open": {
+            "type": "big_int",
+            "measure": true,
+            "expression": "sum(case when eventType = 'Open' then 1 else 0 end)"
+        },
+        "sum_click": {
+            "type": "big_int",
+            "measure": true,
+            "expression": "sum(case when eventType = 'Click' then 1 else 0 end)"
+        },
+        "sum_failure": {
+            "type": "big_int",
+            "measure": true,
+            "expression": "sum(case when eventType = 'Rendering Failure' then 1 else 0 end)"
+        },
+        "sum_delivery_delay": {
+            "type": "big_int",
+            "measure": true,
+            "expression": "sum(case when eventType = 'DeliveryDelay' then 1 else 0 end)"
+        },
+        "sum_delivery_delay_internalfailure": {
+            "type": "big_int",
+            "measure": true,
+            "expression": "sum(case when eventType = 'DeliveryDelay' and deliveryDelay.delayType= 'InternalFailure' then 1 else 0 end)"
+        },
+        "sum_delivery_delay_general": {
+            "type": "big_int",
+            "measure": true,
+            "expression": "sum(case when eventType = 'DeliveryDelay' and deliveryDelay.delayType= 'General' then 1 else 0 end)"
+        },
+        "sum_delivery_delay_mailboxfull": {
+            "type": "big_int",
+            "measure": true,
+            "expression": "sum(case when eventType = 'DeliveryDelay' and deliveryDelay.delayType= 'MailboxFull' then 1 else 0 end)"
+        },
+        "sum_delivery_delay_spamdetected": {
+            "type": "big_int",
+            "measure": true,
+            "expression": "sum(case when eventType = 'DeliveryDelay' and deliveryDelay.delayType= 'SpamDetected' then 1 else 0 end)"
+        },
+        "sum_delivery_delay_recipientservererror": {
+            "type": "big_int",
+            "measure": true,
+            "expression": "sum(case when eventType = 'DeliveryDelay' and deliveryDelay.delayType= 'RecipientServerError' then 1 else 0 end)"
+        },
+        "sum_delivery_delay_ipfailure": {
+            "type": "big_int",
+            "measure": true,
+            "expression": "sum(case when eventType = 'DeliveryDelay' and deliveryDelay.delayType= 'IPFailure' then 1 else 0 end)"
+        },
+        "sum_delivery_delay_transientcommunicationfailure": {
+            "type": "big_int",
+            "measure": true,
+            "expression": "sum(case when eventType = 'DeliveryDelay' and deliveryDelay.delayType= 'TransientCommunicationFailure' then 1 else 0 end)"
+        },
+        "sum_delivery_delay_byoiphostnamelookupunavailable": {
+            "type": "big_int",
+            "measure": true,
+            "expression": "sum(case when eventType = 'DeliveryDelay' and deliveryDelay.delayType= 'BYOIPHostNameLookupUnavailable' then 1 else 0 end)"
+        },
+        "sum_delivery_delay_undetermined": {
+            "type": "big_int",
+            "measure": true,
+            "expression": "sum(case when eventType = 'DeliveryDelay' and deliveryDelay.delayType= 'Undetermined' then 1 else 0 end)"
+        },
+        "sum_delivery_delay_sendingdeferral": {
+            "type": "big_int",
+            "measure": true,
+            "expression": "sum(case when eventType = 'DeliveryDelay' and deliveryDelay.delayType= 'SendingDeFerral' then 1 else 0 end)"
+        },
+        "sum_subscription": {
+            "type": "big_int",
+            "measure": true,
+            "expression": "sum(case when eventType = 'Subscription' then 1 else 0 end)"
+        },
+        "event_hour": {
+            "type": "string",
+            "partition": true
+        },
+        "__execution_name__": {
+            "type": "string",
+            "partition": true
+        }
+    }
+}

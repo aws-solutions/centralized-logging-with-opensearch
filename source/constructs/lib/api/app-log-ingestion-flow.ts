@@ -30,6 +30,7 @@ import {
     Table,
 } from 'aws-cdk-lib/aws-dynamodb';
 import { SharedPythonLayer } from "../layer/layer";
+import { MicroBatchStack } from '../microbatch/main/services/amazon-services-stack';
 
 import * as path from "path";
 
@@ -56,6 +57,7 @@ export interface PipelineFlowProps {
      */
     readonly logSourceTableArn: string
 
+    readonly microBatchStack: MicroBatchStack;
 }
 
 /**
@@ -106,7 +108,14 @@ export class AppIngestionFlowStack extends Construct {
         const appIngestionFlowFnTask = new tasks.LambdaInvoke(this, "Update Status", {
             lambdaFunction: appIngestionFlowFn,
             outputPath: "$.Payload",
-            inputPath: "$"
+            inputPath: "$",
+            payload: sfn.TaskInput.fromObject({
+                "id.$": "$$.Execution.Input.id",
+                "engineType.$": "$$.Execution.Input.args.engineType",
+                "pattern.$": "$$.Execution.Input.args.pattern",
+                "action.$": "$$.Execution.Input.action",
+                "result.$": "$.result",
+              }),
         });
 
         const child = sfn.StateMachine.fromStateMachineArn(this, 'ChildSM', props.cfnFlowSMArn)
@@ -121,6 +130,87 @@ export class AppIngestionFlowStack extends Construct {
             }),
             resultPath: '$.result',
         });
+
+        const createS3SourceIngestion = new tasks.LambdaInvoke(this, "Create S3 as Source ingestion for Light Engine.", {
+            lambdaFunction: props.microBatchStack.microBatchLambdaStack.PipelineResourcesBuilderStack.PipelineResourcesBuilder,
+            payload: sfn.TaskInput.fromObject({
+                "RequestType": "Create",
+                "ResourceProperties": {
+                  "Resource": "ingestion",
+                  "Id.$": "$$.Execution.Input.id",
+                  "Item": {
+                    "metaName.$": "$$.Execution.Input.id",
+                    "data": {
+                      "role": {
+                        "sts.$": "$$.Execution.Input.args.role"
+                      },
+                      "source": {
+                        "bucket.$": "$$.Execution.Input.args.bucket",
+                        "prefix.$": "$$.Execution.Input.args.prefix"
+                      }
+                    },
+                    "pipelineId.$": "$$.Execution.Input.args.pipelineId"
+                  }
+                }
+              }),
+            integrationPattern: sfn.IntegrationPattern.REQUEST_RESPONSE,
+            resultPath: "$.result",
+        });
+
+        createS3SourceIngestion.addRetry({
+            interval: Duration.seconds(60),
+            maxAttempts: 5,
+            maxDelay: Duration.seconds(120),
+            backoffRate: 2,
+            jitterStrategy: sfn.JitterType.FULL,
+          });
+        
+        const deleteS3SourceIngestionWhenFailed = new tasks.LambdaInvoke(this, "Delete ingestion when failed.", {
+            lambdaFunction: props.microBatchStack.microBatchLambdaStack.PipelineResourcesBuilderStack.PipelineResourcesBuilder,
+            payload: sfn.TaskInput.fromObject({
+                "RequestType": "Delete",
+                "ResourceProperties": {
+                  "Resource": "ingestion",
+                  "Id.$": "$$.Execution.Input.id"
+                }
+              }),
+            retryOnServiceExceptions: true,
+            integrationPattern: sfn.IntegrationPattern.REQUEST_RESPONSE,
+            resultPath: sfn.JsonPath.DISCARD,
+        });
+
+        const deleteS3SourceIngestion = new tasks.LambdaInvoke(this, "Delete S3 as Source ingestion for Light Engine.", {
+            lambdaFunction: props.microBatchStack.microBatchLambdaStack.PipelineResourcesBuilderStack.PipelineResourcesBuilder,
+            payload: sfn.TaskInput.fromObject({
+                "RequestType": "Delete",
+                "ResourceProperties": {
+                  "Resource": "ingestion",
+                  "Id.$": "$$.Execution.Input.id"
+                }
+              }),
+            retryOnServiceExceptions: false,
+            integrationPattern: sfn.IntegrationPattern.REQUEST_RESPONSE,
+            resultPath: "$.result",
+        });
+
+        const choice = new sfn.Choice(this, 'Choice')
+            .when(sfn.Condition.and(
+                sfn.Condition.stringEquals("$$.Execution.Input.args.engineType", "LightEngine"), 
+                sfn.Condition.stringEquals("$$.Execution.Input.action", "START"),
+                sfn.Condition.stringEquals("$$.Execution.Input.args.pattern", "S3SourceStack")), createS3SourceIngestion)
+            .when(sfn.Condition.and(
+                sfn.Condition.stringEquals("$$.Execution.Input.args.engineType", "LightEngine"), 
+                sfn.Condition.stringEquals("$$.Execution.Input.action", "STOP"),
+                sfn.Condition.stringEquals("$$.Execution.Input.args.pattern", "S3SourceStack")), deleteS3SourceIngestion)
+            .otherwise(cfnTask);
+        
+        cfnTask.next(appIngestionFlowFnTask);
+        createS3SourceIngestion.next(appIngestionFlowFnTask);
+        createS3SourceIngestion.addCatch(deleteS3SourceIngestionWhenFailed, {resultPath: "$.result"});
+        deleteS3SourceIngestionWhenFailed.next(appIngestionFlowFnTask);
+        deleteS3SourceIngestionWhenFailed.addCatch(appIngestionFlowFnTask, {resultPath: sfn.JsonPath.DISCARD});
+        deleteS3SourceIngestion.next(appIngestionFlowFnTask);
+        deleteS3SourceIngestion.addCatch(appIngestionFlowFnTask, {resultPath: "$.result"});
 
         // State machine log group for error logs
         const logGroup = new logs.LogGroup(this, 'ErrorLogGroup', {
@@ -152,8 +242,21 @@ export class AppIngestionFlowStack extends Construct {
             }),
         )
 
+        appLogIngestionFlowSMRole.addToPolicy(
+            new iam.PolicyStatement({
+                actions: [
+                    "lambda:InvokeFunction"
+                ],
+                effect: iam.Effect.ALLOW,
+                resources: [
+                  props.microBatchStack.microBatchLambdaStack.PipelineResourcesBuilderStack.PipelineResourcesBuilder.functionArn,
+                    `${props.microBatchStack.microBatchLambdaStack.PipelineResourcesBuilderStack.PipelineResourcesBuilder.functionArn}:*`
+                ],
+            }),
+        );
+
         const pipeSM = new sfn.StateMachine(this, 'PipelineFlowSM', {
-            definitionBody: sfn.DefinitionBody.fromChainable(cfnTask.next(appIngestionFlowFnTask)),
+            definitionBody: sfn.DefinitionBody.fromChainable(choice),
             role: appLogIngestionFlowSMRole,
             logs: {
                 destination: logGroup,

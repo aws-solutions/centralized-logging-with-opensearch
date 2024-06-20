@@ -16,7 +16,7 @@ limitations under the License.
 
 import { Construct } from "constructs";
 import * as path from "path";
-import { RemovalPolicy, aws_lambda as lambda, aws_ssm as ssm } from "aws-cdk-lib";
+import { Aws, RemovalPolicy, CfnOutput, aws_lambda as lambda } from "aws-cdk-lib";
 
 export interface InitLambdaLayerProps {
   readonly solutionId: string;
@@ -101,14 +101,11 @@ export class InitLambdaLayerStack extends Construct {
     const cfnMicroBatchLambdaUtilsLayer = this.microBatchLambdaUtilsLayer.node.defaultChild as lambda.CfnLayerVersion;
     cfnMicroBatchLambdaUtilsLayer.overrideLogicalId("LambdaUtilsLayer");
 
-    const SSMLambdaUtilsLayerArn = new ssm.StringParameter(this, "SSMLambdaUtilsLayerArn", {
-      parameterName: "/MicroBatch/LambdaUtilsLayerArn",
-      stringValue: this.microBatchLambdaUtilsLayer.layerVersionArn,
-    });
-
-    // Override the logical ID
-    const cfnSSMLambdaUtilsLayerArn = SSMLambdaUtilsLayerArn.node.defaultChild as ssm.CfnParameter;
-    cfnSSMLambdaUtilsLayerArn.overrideLogicalId("SSMLambdaUtilsLayerArn");
+    new CfnOutput(this, 'LambdaUtilsLayerArn', {
+      description: 'Lambda Utils Layer Arn',
+      value: this.microBatchLambdaUtilsLayer.layerVersionArn,
+      exportName: `${Aws.STACK_NAME}::LambdaUtilsLayerArn`,
+    }).overrideLogicalId('LambdaUtilsLayerArn');
 
     // Create a lambda layer with required python packages.
     this.microBatchLambdaEnrichmentLayer = new lambda.LayerVersion(this, 'LambdaEnrichmentLayer', {
@@ -134,14 +131,11 @@ export class InitLambdaLayerStack extends Construct {
     const cfnMicroBatchLambdaEnrichmentLayer = this.microBatchLambdaEnrichmentLayer.node.defaultChild as lambda.CfnLayerVersion;
     cfnMicroBatchLambdaEnrichmentLayer.overrideLogicalId("LambdaEnrichmentLayer");
 
-    const SSMMicroBatchLambdaEnrichmentLayerArn = new ssm.StringParameter(this, "SSMLambdaEnrichmentLayerArn", {
-      parameterName: "/MicroBatch/LambdaEnrichmentLayerArn",
-      stringValue: this.microBatchLambdaEnrichmentLayer.layerVersionArn,
-    });
-
-    // Override the logical ID
-    const cfnSSMMicroBatchLambdaEnrichmentLayerArn = SSMMicroBatchLambdaEnrichmentLayerArn.node.defaultChild as ssm.CfnParameter;
-    cfnSSMMicroBatchLambdaEnrichmentLayerArn.overrideLogicalId("SSMLambdaEnrichmentLayerArn");
+    new CfnOutput(this, 'LambdaEnrichmentLayerArn', {
+      description: 'Lambda Enrichment Layer Arn',
+      value: this.microBatchLambdaEnrichmentLayer.layerVersionArn,
+      exportName: `${Aws.STACK_NAME}::LambdaEnrichmentLayerArn`,
+    }).overrideLogicalId('LambdaEnrichmentLayerArn');
 
   }
 }

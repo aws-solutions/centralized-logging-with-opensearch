@@ -98,8 +98,8 @@ urlopen() {
     return 0
 }
 
-IS_CHINA_REGION=$(urlopen http://169.254.169.254/latest/dynamic/instance-identity/document | { grep cn- || true; })
-CURRENT_REGION=$(urlopen http://169.254.169.254/latest/dynamic/instance-identity/document | sed -n 's/ *"region" *: *"\(.*\)"[,]/\1/p')
+IS_CHINA_REGION=$(hostname | { grep cn- || true; })
+CURRENT_REGION=$(hostname | cut -d'.' -f2)
 
 has_svc() {
     local svc_name=$1

@@ -35,8 +35,7 @@ describe("buildInitPipelineData", () => {
 
       aosParams: {
         domainName: "",
-        engine: "",
-        failedLogBucket: "default-bucket",
+        engine: "OpenSearch",
         indexPrefix: "",
 
         opensearchArn: "",
@@ -49,6 +48,7 @@ describe("buildInitPipelineData", () => {
         codec: Codec.best_compression,
         refreshInterval: "1s",
         vpc: {
+          publicSubnetIds: "",
           privateSubnetIds: "",
           securityGroupId: "",
           vpcId: "",
@@ -78,14 +78,12 @@ describe("buildInitPipelineData", () => {
         compressionType: CompressionType.GZIP,
         s3StorageClass: S3_STORAGE_CLASS_TYPE.INTELLIGENT_TIERING,
       },
-      mskBufferParams: {
-        mskClusterName: "",
-        mskClusterArn: "",
-        mskBrokerServers: "",
-        topic: "",
-      },
       force: false,
       monitor: MONITOR_ALARM_INIT_DATA,
+      params: {
+        geoPlugin: false,
+        userAgentPlugin: false,
+      },
     };
     const pipelineData = buildInitPipelineData(amplifyConfigMock);
     expect(pipelineData).toEqual(expectedPipelineData);

@@ -16,7 +16,7 @@ limitations under the License.
 
 import { Construct } from "constructs";
 import * as path from "path";
-import { Aws, Duration, SymlinkFollowMode, aws_iam as iam, aws_lambda as lambda, aws_ec2 as ec2, aws_ssm as ssm } from "aws-cdk-lib";
+import { Aws, Duration, SymlinkFollowMode, CfnOutput, aws_iam as iam, aws_lambda as lambda, aws_ec2 as ec2 } from "aws-cdk-lib";
 import { InitLambdaLayerStack } from "./init-lambda-layer";
 import { InitDynamoDBStack } from "../dynamodb/init-dynamodb-stack";
 import { InitIAMStack } from "../iam/init-iam-stack";
@@ -180,23 +180,17 @@ export class InitLambdaPipelineResourcesBuilderStack extends Construct {
     const cfnPipelineResourcesBuilder = this.PipelineResourcesBuilder.node.defaultChild as lambda.CfnFunction;
     cfnPipelineResourcesBuilder.overrideLogicalId("PipelineResourcesBuilder");
 
-    const SSMPipelineResourcesBuilderRoleArn = new ssm.StringParameter(this, "SSMPipelineResourcesBuilderRoleArn", {
-      parameterName: "/MicroBatch/PipelineResourcesBuilderRoleArn",
-      stringValue: this.PipelineResourcesBuilderRole.roleArn,
-    });
+    new CfnOutput(this, 'PipelineResourcesBuilderRoleArn', {
+      description: 'Pipeline Resources Builder Role Arn',
+      value: this.PipelineResourcesBuilderRole.roleArn,
+      exportName: `${Aws.STACK_NAME}::PipelineResourcesBuilderRoleArn`,
+    }).overrideLogicalId('PipelineResourcesBuilderRoleArn');
 
-    // Override the logical ID
-    const cfnSSMPipelineResourcesBuilderRoleArn = SSMPipelineResourcesBuilderRoleArn.node.defaultChild as ssm.CfnParameter;
-    cfnSSMPipelineResourcesBuilderRoleArn.overrideLogicalId("SSMPipelineResourcesBuilderRoleArn");
-
-    const SSMPipelineResourcesBuilderArn = new ssm.StringParameter(this, "SSMPipelineResourcesBuilderArn", {
-      parameterName: "/MicroBatch/PipelineResourcesBuilderArn",
-      stringValue: this.PipelineResourcesBuilder.functionArn,
-    });
-
-    // Override the logical ID
-    const cfnSSMPipelineResourcesBuilderArn = SSMPipelineResourcesBuilderArn.node.defaultChild as ssm.CfnParameter;
-    cfnSSMPipelineResourcesBuilderArn.overrideLogicalId("SSMPipelineResourcesBuilderArn");
+    new CfnOutput(this, 'PipelineResourcesBuilderArn', {
+      description: 'Pipeline Resources Builder Arn',
+      value: this.PipelineResourcesBuilder.functionArn,
+      exportName: `${Aws.STACK_NAME}::PipelineResourcesBuilderArn`,
+    }).overrideLogicalId('PipelineResourcesBuilderArn');
 
   }
 }

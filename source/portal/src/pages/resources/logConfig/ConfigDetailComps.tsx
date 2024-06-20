@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React from "react";
-import { LogType, MultiLineLogParser, SyslogParser } from "API";
+import { IISlogParser, LogType, MultiLineLogParser, SyslogParser } from "API";
 import { ExLogConf } from "pages/resources/common/LogConfigComp";
 import ValueWithLabel from "components/ValueWithLabel";
 import { useTranslation } from "react-i18next";
@@ -26,8 +26,6 @@ import JSONSpecView from "./JSONSpecView";
 
 interface ConfDetailProps {
   curLogConfig: ExLogConf | undefined;
-  logPath?: string;
-  hideLogPath?: boolean;
   hideBasicInfo?: boolean;
 }
 
@@ -71,15 +69,6 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
       )}
       <div className="flex value-label-span">
         <div className="flex-1">
-          <ValueWithLabel label={t("resource:config.detail.sampleLog")}>
-            <div className="m-w-75p">
-              {buildSampleLogDisplay(
-                defaultStr(curLogConfig?.userSampleLog),
-                curLogConfig?.logType
-              )}
-            </div>
-          </ValueWithLabel>
-
           {curLogConfig?.logType === LogType.Nginx && (
             <ValueWithLabel label={t("resource:config.detail.nginxFormat")}>
               <div className="m-w-75p">
@@ -100,6 +89,14 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
             </ValueWithLabel>
           )}
 
+          {curLogConfig?.logType === LogType.IIS && (
+            <ValueWithLabel label={t("resource:config.detail.iisParser")}>
+              <div className="m-w-75p">
+                {defaultStr(curLogConfig.iisLogParser, "-")}
+              </div>
+            </ValueWithLabel>
+          )}
+
           {curLogConfig?.logType === LogType.MultiLineText &&
             curLogConfig.multilineLogParser ===
               MultiLineLogParser.JAVA_SPRING_BOOT && (
@@ -116,7 +113,7 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
 
           {curLogConfig?.logType === LogType.Syslog &&
             curLogConfig.syslogParser !== SyslogParser.CUSTOM && (
-              <ValueWithLabel label={t("resource:config.detail.syslogFormat")}>
+              <ValueWithLabel label={t("resource:config.detail.syslogParser")}>
                 <div className="m-w-75p">
                   {defaultStr(curLogConfig.syslogParser, "-")}
                 </div>
@@ -134,9 +131,21 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
               </ValueWithLabel>
             )}
 
+          {curLogConfig?.logType === LogType.IIS &&
+            curLogConfig.iisLogParser === IISlogParser.W3C && (
+              <ValueWithLabel label={t("resource:config.detail.iisLogFormat")}>
+                <div className="m-w-75p">
+                  <FieldDisplay
+                    text={defaultStr(curLogConfig.userLogFormat, "-")}
+                  />
+                </div>
+              </ValueWithLabel>
+            )}
+
           {(curLogConfig?.logType === LogType.Nginx ||
             curLogConfig?.logType === LogType.Apache ||
             curLogConfig?.logType === LogType.Syslog ||
+            curLogConfig?.logType === LogType.IIS ||
             curLogConfig?.logType === LogType.SingleLineText ||
             curLogConfig?.logType === LogType.MultiLineText) && (
             <ValueWithLabel label={t("resource:config.detail.regExp")}>
@@ -146,18 +155,24 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
             </ValueWithLabel>
           )}
 
+          <ValueWithLabel label={t("resource:config.detail.sampleLog")}>
+            <div className="m-w-75p">
+              {buildSampleLogDisplay(
+                defaultStr(curLogConfig?.userSampleLog, "-"),
+                curLogConfig?.logType
+              )}
+            </div>
+          </ValueWithLabel>
+
           {curLogConfig?.logType === LogType.JSON &&
             !isEmpty(curLogConfig.jsonSchema) && (
               <div className="mt-10">
                 <ValueWithLabel label={t("resource:config.detail.logSpecs")}>
-                  {curLogConfig.jsonSchema ? (
-                    <JSONSpecView
-                      schema={JSON.parse(defaultStr(curLogConfig.jsonSchema))}
-                      data={curLogConfig.userSampleLog}
-                    />
-                  ) : (
-                    <></>
-                  )}
+                  <JSONSpecView
+                    schema={JSON.parse(defaultStr(curLogConfig.jsonSchema))}
+                    data={curLogConfig.userSampleLog}
+                    configTimeKey={defaultStr(curLogConfig.timeKey)}
+                  />
                 </ValueWithLabel>
               </div>
             )}
@@ -167,6 +182,7 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
             curLogConfig?.logType === LogType.Nginx ||
             curLogConfig?.logType === LogType.Apache ||
             curLogConfig?.logType === LogType.Syslog ||
+            curLogConfig?.logType === LogType.IIS ||
             curLogConfig?.logType === LogType.SingleLineText ||
             curLogConfig?.logType === LogType.MultiLineText) &&
           curLogConfig.regexFieldSpecs &&
@@ -193,6 +209,9 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
                     </thead>
                     <tbody>
                       {curLogConfig.regexFieldSpecs?.map((element, index) => {
+                        if (element?.key === "log_timestamp") {
+                          return undefined;
+                        }
                         return (
                           <tr key={identity(index)}>
                             <td className="flex-1">{element?.key}</td>
@@ -206,8 +225,8 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
                             </td>
                             <td className="flex-1">
                               {element?.key === curLogConfig.timeKey
-                                ? "Yes(" + element?.format + ")"
-                                : "No"}
+                                ? `${t("yes")} (${element?.format ?? "-"})`
+                                : t("no")}
                             </td>
                           </tr>
                         );
@@ -236,7 +255,7 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
                         element.key
                       })`}
                     >
-                      {element.format || "-"}
+                      {defaultStr(element.format, "-")}
                     </ValueWithLabel>
                   </div>
                 );
@@ -252,7 +271,7 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
             <div>
               <div className="mt-10">
                 <ValueWithLabel label={t("resource:config.parsing.timeKey")}>
-                  {curLogConfig.timeKey || t("none")}
+                  {defaultStr(curLogConfig.timeKey, t("none"))}
                 </ValueWithLabel>
               </div>
 
@@ -261,9 +280,12 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
                   <ValueWithLabel
                     label={t("resource:config.parsing.timeKeyFormat")}
                   >
-                    {curLogConfig?.regexFieldSpecs?.find(
-                      (element) => element?.key === curLogConfig.timeKey
-                    )?.format || "-"}
+                    {defaultStr(
+                      curLogConfig?.regexFieldSpecs?.find(
+                        (element) => element?.key === curLogConfig.timeKey
+                      )?.format,
+                      "-"
+                    )}
                   </ValueWithLabel>
                 </div>
               )}
@@ -274,13 +296,11 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
             curLogConfig?.logType === LogType.Syslog ||
             curLogConfig?.logType === LogType.SingleLineText ||
             curLogConfig?.logType === LogType.MultiLineText) && (
-            <>
-              <div className="mt-10">
-                <ValueWithLabel label={t("resource:config.parsing.timezone")}>
-                  {defaultStr(curLogConfig.timeOffset, "-")}
-                </ValueWithLabel>
-              </div>
-            </>
+            <div className="mt-10">
+              <ValueWithLabel label={t("resource:config.parsing.timezone")}>
+                {defaultStr(curLogConfig.timeOffset, "-")}
+              </ValueWithLabel>
+            </div>
           )}
 
           {curLogConfig?.filterConfigMap?.filters && (
@@ -318,7 +338,7 @@ const ConfigDetailComps: React.FC<ConfDetailProps> = (
                                       FILTER_CONDITION_LIST.find(
                                         (ele) =>
                                           element?.condition === ele.value
-                                      )?.name || ""
+                                      )?.name ?? ""
                                     )}
                                   </td>
                                   <td className="flex-1">{element?.value}</td>

@@ -64,6 +64,7 @@ def default_environment_variables():
 
 
     os.environ["CLUSTER_TABLE"] = "mocked-cluster-table-name"
+    os.environ["OPENSEARCH_MASTER_ROLE_ARN"] = "OPENSEARCH_MASTER_ROLE_ARN"
     os.environ["APP_PIPELINE_TABLE_NAME"] = "mocked-app-pipeline-table-name"
     os.environ["SVC_PIPELINE_TABLE"] = "mocked-PipelineTable-table-name"
     os.environ[

@@ -20,6 +20,7 @@ def default_environment_variables():
     os.environ["SOLUTION_VERSION"] = "v1.0.0"
     os.environ["SSM_LOG_CONFIG_DOCUMENT_NAME"] = "v1.0.0"
     os.environ["CONFIG_FILE_S3_BUCKET_NAME"] = "mocked-s3-bucket-name"
+    os.environ["CLUSTER_TABLE"] = "mock-cluster_table-table-name"
     os.environ["INSTANCE_META_TABLE_NAME"] = "mocked-instance-meta-table-name"
     os.environ["APP_PIPELINE_TABLE_NAME"] = "mocked-app-pipeline-table-name"
     os.environ["APP_LOG_CONFIG_TABLE_NAME"] = "mocked-app-log-config-table-name"

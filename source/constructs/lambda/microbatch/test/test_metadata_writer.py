@@ -4,15 +4,10 @@
 import os
 import sys
 import uuid
-import json
-import gzip
 import copy
 import types
-import base64
 import pytest
-from typing import Union
-from boto3.dynamodb.conditions import ConditionBase, Attr, Key
-from test.mock import mock_iam_context, mock_sqs_context, mock_ddb_context, default_environment_variables
+from test.mock import mock_iam_context, mock_sqs_context, mock_ddb_context, mock_ses_context, default_environment_variables
 
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -56,7 +51,7 @@ def test_check_scheduler_services(mock_iam_context, mock_sqs_context, mock_ddb_c
     for cn_region in ('cn-north-1', 'cn-northwest-1'):
         AWS_DDB_META.put(meta_name='Region', item={'value': cn_region})
         
-        check_scheduler_services()
+        check_scheduler_services(request_type='Create')
         available_services_list = AWS_DDB_META.get(meta_name='AvailableServices')
         assert 'scheduler' not in available_services_list['value']
         assert 'events' in available_services_list['value']
@@ -69,7 +64,7 @@ def test_check_scheduler_services(mock_iam_context, mock_sqs_context, mock_ddb_c
     
     # test other region
     AWS_DDB_META.put(meta_name='Region', item={'value': region})
-    check_scheduler_services()
+    check_scheduler_services(request_type='Update')
     available_services_list = AWS_DDB_META.get(meta_name='AvailableServices')
     assert 'scheduler' in available_services_list['value']
     assert 'events' in available_services_list['value']
@@ -80,9 +75,41 @@ def test_check_scheduler_services(mock_iam_context, mock_sqs_context, mock_ddb_c
         assert {'Effect': 'Allow', 'Principal': {'Service': 'scheduler.amazonaws.com'}, 'Action': 'sts:AssumeRole'} in response['Role']['AssumeRolePolicyDocument']['Statement'] 
     assert policy_document in AWS_IAM.get_policy_document(arn=pipeline_resources_builder_schedule_policy_arn)['Document']['Statement']
 
+    check_scheduler_services(request_type='Delete')
+
+
+def test_check_ses_services(mock_iam_context, mock_sqs_context, mock_ddb_context, mock_ses_context):
+    from metadata_writer.lambda_function import check_ses_services, AWS_DDB_META, AWS_SES
     
-def test_lambda_handler(mock_iam_context, mock_sqs_context, mock_ddb_context):
-    from metadata_writer.lambda_function import lambda_handler, AWS_DDB_META, AWS_IAM
+
+    AWS_DDB_META.update(meta_name='SimpleEmailServiceState', item={'value': 'ENABLED'})
+    AWS_DDB_META.update(meta_name='SimpleEmailServiceTemplate', item={'value': 'TmpEmailTemplate'})
+    AWS_DDB_META.update(meta_name='EmailAddress', item={'value': 'alejandro_rosalez@example.com'})
+    
+    check_ses_services(request_type='Create')
+    assert AWS_SES.get_template(template_name='TmpEmailTemplate')['Template']['SubjectPart'] == '[Notification] {{stateMachine.name}} task {{stateMachine.status}} to execute.'
+    assert 'alejandro_rosalez@example.com' in AWS_SES._ses_client.list_identities(IdentityType='EmailAddress')['Identities']
+    AWS_SES.delete_template(template_name='TmpEmailTemplate')
+    AWS_SES.delete_identity(identity='alejandro_rosalez@example.com')
+    
+    AWS_DDB_META.update(meta_name='SimpleEmailServiceState', item={'value': 'DISABLED'})
+    
+    check_ses_services(request_type='Update')
+    assert AWS_SES.get_template(template_name='TmpEmailTemplate') == {}
+    assert AWS_SES.get_identity_verification_attributes(identity='alejandro_rosalez@example.com')['VerificationAttributes'] == {}
+
+    check_ses_services(request_type='Create')
+    check_ses_services(request_type='Delete')
+    assert AWS_SES.get_template(template_name='TmpEmailTemplate') == {}
+    assert AWS_SES.get_identity_verification_attributes(identity='alejandro_rosalez@example.com')['VerificationAttributes'] == {}
+
+
+def test_lambda_handler(mock_iam_context, mock_sqs_context, mock_ddb_context, mock_ses_context):
+    from metadata_writer.lambda_function import lambda_handler, AWS_DDB_META, AWS_IAM, AWS_SES
+    
+    AWS_DDB_META.update(meta_name='SimpleEmailServiceState', item={'value': 'ENABLED'})
+    AWS_DDB_META.update(meta_name='SimpleEmailServiceTemplate', item={'value': 'TmpEmailTemplate'})
+    AWS_DDB_META.update(meta_name='EmailAddress', item={'value': 'alejandro_rosalez@example.com'})
     
     account_id = os.environ['ACCOUNT_ID']
     meta_name = str(uuid.uuid4())
@@ -112,6 +139,8 @@ def test_lambda_handler(mock_iam_context, mock_sqs_context, mock_ddb_context):
     
     lambda_handler(event=event, _=context)
     assert AWS_DDB_META.scan_count() == item_count
+    assert AWS_SES.get_template(template_name='TmpEmailTemplate')['Template']['SubjectPart'] == '[Notification] {{stateMachine.name}} task {{stateMachine.status}} to execute.'
+    assert 'alejandro_rosalez@example.com' in AWS_SES._ses_client.list_identities(IdentityType='EmailAddress')['Identities']
     
     event = copy.deepcopy(metadata_writer_event)
     lambda_handler(event=event, _=context)
@@ -148,4 +177,5 @@ def test_lambda_handler(mock_iam_context, mock_sqs_context, mock_ddb_context):
     delete_event['RequestType'] = 'Delete'
     lambda_handler(event=delete_event, _=context)
     assert AWS_DDB_META.get(meta_name=meta_name) is None
-    
+    assert AWS_SES.get_template(template_name='TmpEmailTemplate') == {}
+    assert AWS_SES.get_identity_verification_attributes(identity='alejandro_rosalez@example.com')['VerificationAttributes'] == {}

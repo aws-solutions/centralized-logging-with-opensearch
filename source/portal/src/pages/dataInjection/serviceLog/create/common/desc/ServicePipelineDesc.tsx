@@ -25,24 +25,38 @@ import ELBDesc from "./ELBDesc";
 import WAFDesc from "./WAFDesc";
 import VPCDesc from "./VPCDesc";
 import ConfigDesc from "./ConfigDesc";
-import { AnalyticEngineTypes } from "../SpecifyAnalyticsEngine";
+import { AnalyticEngineTypes } from "types";
 
 export interface ServicePipelineDescProp {
   logType: ServiceLogType;
   engineType: AnalyticEngineTypes;
 }
 
-export const ServicePipelineDesc = ({ logType, engineType }: ServicePipelineDescProp) => (
+export const ServicePipelineDesc = ({
+  logType,
+  engineType,
+}: ServicePipelineDescProp) => (
   <>
-    {" "}
     {logType === ServiceLogType.Amazon_S3 && <S3Desc />}
-    {logType === ServiceLogType.Amazon_RDS && <RDSDesc />}
-    {logType === ServiceLogType.Amazon_CloudTrail && <CloudTrailDesc />}
-    {logType === ServiceLogType.Amazon_CloudFront && <CloudFrontDesc engineType={engineType} />}
+    {logType === ServiceLogType.Amazon_RDS && (
+      <RDSDesc engineType={engineType} />
+    )}
+    {logType === ServiceLogType.Amazon_CloudTrail && (
+      <CloudTrailDesc engineType={engineType} />
+    )}
+    {logType === ServiceLogType.Amazon_CloudFront && (
+      <CloudFrontDesc engineType={engineType} />
+    )}
     {logType === ServiceLogType.Amazon_Lambda && <LambdaDesc />}
-    {logType === ServiceLogType.Amazon_ELB && <ELBDesc engineType={engineType}/>}
-    {logType === ServiceLogType.Amazon_WAF && <WAFDesc engineType={engineType}/>}
-    {logType === ServiceLogType.Amazon_VPCLogs && <VPCDesc />}
+    {logType === ServiceLogType.Amazon_ELB && (
+      <ELBDesc engineType={engineType} />
+    )}
+    {logType === ServiceLogType.Amazon_WAF && (
+      <WAFDesc engineType={engineType} />
+    )}
+    {logType === ServiceLogType.Amazon_VPCLogs && (
+      <VPCDesc engineType={engineType} />
+    )}
     {logType === ServiceLogType.Amazon_Config && <ConfigDesc />}
   </>
 );

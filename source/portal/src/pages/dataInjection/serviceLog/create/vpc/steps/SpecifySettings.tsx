@@ -32,8 +32,10 @@ import { useTranslation } from "react-i18next";
 import { InfoBarTypes } from "reducer/appReducer";
 import { VpcLogTaskProps } from "../CreateVPC";
 import SourceType from "./comp/SourceType";
+import { AnalyticEngineTypes } from "types";
 
 interface SpecifySettingsProps {
+  engineType: AnalyticEngineTypes;
   vpcLogTask: VpcLogTaskProps;
   autoVpcEmptyError: boolean;
   manualVpcEmptyError: boolean;
@@ -68,6 +70,7 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
   props: SpecifySettingsProps
 ) => {
   const {
+    engineType,
     vpcLogTask,
     autoVpcEmptyError,
     manualVpcEmptyError,
@@ -181,8 +184,8 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                   setDisableVPC(loading);
                 }}
               />
-              {vpcLogTask.params.taskType === CreateLogMethod.Automatic && (
-                <div className="pb-50">
+              <div className="pb-50">
+                {vpcLogTask.params.taskType === CreateLogMethod.Automatic && (
                   <FormItem
                     optionTitle={t("servicelog:vpc.vpc")}
                     optionDesc={
@@ -213,64 +216,8 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                       }}
                     />
                   </FormItem>
-                  <SourceType
-                    vpcLogTask={vpcLogTask}
-                    sourceTypeEmptyError={sourceTypeEmptyError}
-                    manualS3EmptyError={manualS3EmptyError}
-                    manualS3PathInvalid={manualS3PathInvalid}
-                    vpcFlowLogEmptyError={vpcFlowLogEmptyError}
-                    shardNumError={shardNumError}
-                    maxShardNumError={maxShardNumError}
-                    changeSourceType={(type) => {
-                      changeSourceType(type);
-                    }}
-                    changeVPCFLowLog={(flow) => {
-                      changeVPCFLowLog(flow);
-                    }}
-                    changeBucket={(bucket) => {
-                      changeLogBucket(bucket);
-                    }}
-                    changeLogPath={(prefix) => {
-                      changeLogPrefix(prefix);
-                    }}
-                    setISChanging={(changing) => {
-                      setISChanging(changing);
-                    }}
-                    setNextStepDisableStatus={(disable) => {
-                      setNextStepDisableStatus(disable);
-                    }}
-                    changeS3FlowList={(list) => {
-                      changeS3FlowList(list);
-                    }}
-                    changeCWLFlowList={(list) => {
-                      changeCWLFlowList(list);
-                    }}
-                    changeTmpFlowList={(list) => {
-                      changeTmpFlowList(list);
-                    }}
-                    changeManualS3={(s3) => {
-                      changeManualS3(s3);
-                    }}
-                    changeLogFormat={(format) => {
-                      changeLogFormat(format);
-                    }}
-                    changeVpcLogSourceType={(type) => {
-                      changeVpcLogSourceType(type);
-                    }}
-                    changeMinCapacity={(num) => {
-                      changeMinCapacity(num);
-                    }}
-                    changeEnableAS={(enable) => {
-                      changeEnableAS(enable);
-                    }}
-                    changeMaxCapacity={(num) => {
-                      changeMaxCapacity(num);
-                    }}
-                  />
-                </div>
-              )}
-              {vpcLogTask.params.taskType === CreateLogMethod.Manual && (
-                <div className="pb-50">
+                )}
+                {vpcLogTask.params.taskType === CreateLogMethod.Manual && (
                   <FormItem
                     optionTitle={t("servicelog:vpc.vpcName")}
                     optionDesc={t("servicelog:vpc.vpcNameDesc")}
@@ -287,63 +234,63 @@ const SpecifySettings: React.FC<SpecifySettingsProps> = (
                       }}
                     />
                   </FormItem>
-
-                  <SourceType
-                    vpcLogTask={vpcLogTask}
-                    sourceTypeEmptyError={sourceTypeEmptyError}
-                    manualS3EmptyError={manualS3EmptyError}
-                    manualS3PathInvalid={manualS3PathInvalid}
-                    vpcFlowLogEmptyError={vpcFlowLogEmptyError}
-                    shardNumError={shardNumError}
-                    maxShardNumError={maxShardNumError}
-                    changeVPCFLowLog={(flow) => {
-                      changeVPCFLowLog(flow);
-                    }}
-                    changeSourceType={(type) => {
-                      changeSourceType(type);
-                    }}
-                    changeBucket={(bucket) => {
-                      changeLogBucket(bucket);
-                    }}
-                    changeLogPath={(prefix) => {
-                      changeLogPrefix(prefix);
-                    }}
-                    setISChanging={(changing) => {
-                      setISChanging(changing);
-                    }}
-                    setNextStepDisableStatus={(disable) => {
-                      setNextStepDisableStatus(disable);
-                    }}
-                    changeS3FlowList={(list) => {
-                      changeS3FlowList(list);
-                    }}
-                    changeCWLFlowList={(list) => {
-                      changeCWLFlowList(list);
-                    }}
-                    changeTmpFlowList={(list) => {
-                      changeTmpFlowList(list);
-                    }}
-                    changeManualS3={(s3) => {
-                      changeManualS3(s3);
-                    }}
-                    changeLogFormat={(format) => {
-                      changeLogFormat(format);
-                    }}
-                    changeVpcLogSourceType={(type) => {
-                      changeVpcLogSourceType(type);
-                    }}
-                    changeMinCapacity={(num) => {
-                      changeMinCapacity(num);
-                    }}
-                    changeEnableAS={(enable) => {
-                      changeEnableAS(enable);
-                    }}
-                    changeMaxCapacity={(num) => {
-                      changeMaxCapacity(num);
-                    }}
-                  />
-                </div>
-              )}
+                )}
+                <SourceType
+                  engineType={engineType}
+                  vpcLogTask={vpcLogTask}
+                  sourceTypeEmptyError={sourceTypeEmptyError}
+                  manualS3EmptyError={manualS3EmptyError}
+                  manualS3PathInvalid={manualS3PathInvalid}
+                  vpcFlowLogEmptyError={vpcFlowLogEmptyError}
+                  shardNumError={shardNumError}
+                  maxShardNumError={maxShardNumError}
+                  changeSourceType={(type) => {
+                    changeSourceType(type);
+                  }}
+                  changeVPCFLowLog={(flow) => {
+                    changeVPCFLowLog(flow);
+                  }}
+                  changeBucket={(bucket) => {
+                    changeLogBucket(bucket);
+                  }}
+                  changeLogPath={(prefix) => {
+                    changeLogPrefix(prefix);
+                  }}
+                  setISChanging={(changing) => {
+                    setISChanging(changing);
+                  }}
+                  setNextStepDisableStatus={(disable) => {
+                    setNextStepDisableStatus(disable);
+                  }}
+                  changeS3FlowList={(list) => {
+                    changeS3FlowList(list);
+                  }}
+                  changeCWLFlowList={(list) => {
+                    changeCWLFlowList(list);
+                  }}
+                  changeTmpFlowList={(list) => {
+                    changeTmpFlowList(list);
+                  }}
+                  changeManualS3={(s3) => {
+                    changeManualS3(s3);
+                  }}
+                  changeLogFormat={(format) => {
+                    changeLogFormat(format);
+                  }}
+                  changeVpcLogSourceType={(type) => {
+                    changeVpcLogSourceType(type);
+                  }}
+                  changeMinCapacity={(num) => {
+                    changeMinCapacity(num);
+                  }}
+                  changeEnableAS={(enable) => {
+                    changeEnableAS(enable);
+                  }}
+                  changeMaxCapacity={(num) => {
+                    changeMaxCapacity(num);
+                  }}
+                />
+              </div>
             </div>
           </HeaderPanel>
         </div>

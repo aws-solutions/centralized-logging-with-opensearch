@@ -23,8 +23,11 @@ import { ActionType } from "reducer/appReducer";
 import "@aws-amplify/ui-react/styles.css";
 import SignedInApp from "./SignedInApp";
 import AmplifyLoginPage from "./AmplifyLoginPage";
+import { useTranslation } from "react-i18next";
+import { Alert } from "assets/js/alert";
 
 const AmplifyAppRouter: React.FC = () => {
+  const { t } = useTranslation();
   const [authState, setAuthState] = useState<AuthState>();
 
   const dispatch = useDispatch();
@@ -32,6 +35,8 @@ const AmplifyAppRouter: React.FC = () => {
     if (payload?.data?.code === "ResourceNotFoundException") {
       window.localStorage.removeItem(AMPLIFY_CONFIG_JSON);
       window.location.reload();
+    } else if (payload?.event === "tokenRefresh_failure") {
+      Alert(t("signin.reSignInDesc"), t("signin.reSignIn"), "warning", true);
     } else {
       Auth?.currentAuthenticatedUser()
         .then((authData: any) => {

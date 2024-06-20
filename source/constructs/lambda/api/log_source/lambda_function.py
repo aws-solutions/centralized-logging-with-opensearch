@@ -3,7 +3,7 @@
 
 
 import json
-import logging
+from commonlib.logging import get_logger
 
 from util.log_source import LogSourceUtil
 from log_source_helper import SyslogHelper
@@ -11,15 +11,14 @@ from log_source_helper import SyslogHelper
 from commonlib import handle_error, AppSyncRouter
 
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 router = AppSyncRouter()
 
 
 @handle_error
 def lambda_handler(event, _):
-    logger.info("Received event: " + json.dumps(event, indent=2))
+    logger.info("Received event: " + json.dumps(event["arguments"], indent=2))
     return router.resolve(event)
 
 

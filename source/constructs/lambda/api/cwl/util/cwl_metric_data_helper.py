@@ -1,7 +1,7 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-import logging
+from commonlib.logging import get_logger
 import sys
 import os
 import math
@@ -15,8 +15,7 @@ from commonlib.model import LogSourceTypeEnum
 
 from boto3.dynamodb.conditions import Attr
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 conn = AWSConnection()
 
@@ -135,11 +134,13 @@ class MetricData:
         for serie in series:
             values = serie["data"]
             diff_values = [
-                int(int(values[i] - values[i - 1]) / period_in_minute)
-                if values[i] - values[i - 1] >= 0
-                # We must discard the first data point recovered from outliers, i.e., we cannot use int(values[i] / period_in_minute) for calculation.
-                # Because we cannot determine whether FLB restarted at this data point or it was a sporadic error in FLB's metrics
-                else 0
+                (
+                    int(int(values[i] - values[i - 1]) / period_in_minute)
+                    if values[i] - values[i - 1] >= 0
+                    # We must discard the first data point recovered from outliers, i.e., we cannot use int(values[i] / period_in_minute) for calculation.
+                    # Because we cannot determine whether FLB restarted at this data point or it was a sporadic error in FLB's metrics
+                    else 0
+                )
                 for i in range(1, len(values))
             ]
             serie["data"] = diff_values
@@ -414,7 +415,7 @@ class MetricData:
             "ProcessorFnConcurrentExecutions": {
                 "cwl_metric_name": "ConcurrentExecutions",
                 "namespace": lambda_namespace,
-                "statistics": ["Sum"],
+                "statistics": ["Maximum"],
                 "dimensions": [
                     {
                         "Name": "FunctionName",

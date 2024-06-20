@@ -6,11 +6,10 @@ import json
 import boto3
 import os
 from botocore import config
-import logging
+from commonlib.logging import get_logger
 from boto3_client import get_client
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 log_group_names = os.environ.get("LOGGROUP_NAMES").split(",")
 kds_arn = os.environ.get("DESTINATION_ARN")

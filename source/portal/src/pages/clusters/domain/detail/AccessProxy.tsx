@@ -21,7 +21,12 @@ import CopyText from "components/CopyText";
 import ExtLink from "components/ExtLink";
 import { AmplifyConfigType } from "types";
 import { useSelector } from "react-redux";
-import { buildSGLink, buildSubnetLink, buildVPCLink } from "assets/js/utils";
+import {
+  buildSGLink,
+  buildSubnetLink,
+  buildVPCLink,
+  defaultStr,
+} from "assets/js/utils";
 import Button from "components/Button";
 import Modal from "components/Modal";
 import { appSyncRequestMutation } from "assets/js/request";
@@ -83,8 +88,10 @@ const AccessProxy: React.FC<OverviewProps> = ({
           <div className="flex value-label-span">
             <div className="flex-1">
               <ValueWithLabel label={t("cluster:detail.proxy.domain")}>
-                <CopyText text={domainInfo?.proxyInput?.customEndpoint || ""}>
-                  {domainInfo?.proxyInput?.customEndpoint || "-"}
+                <CopyText
+                  text={defaultStr(domainInfo?.proxyInput?.customEndpoint)}
+                >
+                  {defaultStr(domainInfo?.proxyInput?.customEndpoint, "-")}
                 </CopyText>
               </ValueWithLabel>
               <ValueWithLabel label={t("cluster:detail.proxy.publicSubnets")}>
@@ -112,26 +119,26 @@ const AccessProxy: React.FC<OverviewProps> = ({
             </div>
             <div className="flex-1 border-left-c">
               <ValueWithLabel label={t("cluster:detail.proxy.lbDomain")}>
-                <CopyText text={domainInfo.proxyALB || ""}>
-                  {domainInfo.proxyALB || "-"}
+                <CopyText text={defaultStr(domainInfo.proxyALB)}>
+                  {defaultStr(domainInfo.proxyALB, "-")}
                 </CopyText>
               </ValueWithLabel>
               <ValueWithLabel label={t("cluster:detail.proxy.ec2Key")}>
-                <CopyText text={domainInfo?.proxyInput?.keyName || ""}>
-                  {domainInfo?.proxyInput?.keyName || "-"}
+                <CopyText text={defaultStr(domainInfo?.proxyInput?.keyName)}>
+                  {defaultStr(domainInfo?.proxyInput?.keyName, "-")}
                 </CopyText>
               </ValueWithLabel>
             </div>
             <div className="flex-1 border-left-c">
               <ValueWithLabel label={t("cluster:detail.proxy.vpc")}>
-                <CopyText text={domainInfo?.proxyInput?.vpc?.vpcId || ""}>
+                <CopyText text={defaultStr(domainInfo?.proxyInput?.vpc?.vpcId)}>
                   <ExtLink
                     to={buildVPCLink(
                       amplifyConfig.aws_project_region,
-                      domainInfo?.proxyInput?.vpc?.vpcId || ""
+                      defaultStr(domainInfo?.proxyInput?.vpc?.vpcId)
                     )}
                   >
-                    {domainInfo?.proxyInput?.vpc?.vpcId || ""}
+                    {defaultStr(domainInfo?.proxyInput?.vpc?.vpcId)}
                   </ExtLink>
                 </CopyText>
               </ValueWithLabel>
@@ -140,15 +147,17 @@ const AccessProxy: React.FC<OverviewProps> = ({
               <ValueWithLabel label={t("cluster:detail.proxy.publicSecurity")}>
                 <div>
                   <CopyText
-                    text={domainInfo?.proxyInput?.vpc?.securityGroupId || ""}
+                    text={defaultStr(
+                      domainInfo?.proxyInput?.vpc?.securityGroupId
+                    )}
                   >
                     <ExtLink
                       to={buildSGLink(
                         amplifyConfig.aws_project_region,
-                        domainInfo?.proxyInput?.vpc?.securityGroupId || ""
+                        defaultStr(domainInfo?.proxyInput?.vpc?.securityGroupId)
                       )}
                     >
-                      {domainInfo?.proxyInput?.vpc?.securityGroupId || ""}
+                      {defaultStr(domainInfo?.proxyInput?.vpc?.securityGroupId)}
                     </ExtLink>
                   </CopyText>
                 </div>

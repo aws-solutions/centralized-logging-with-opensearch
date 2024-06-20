@@ -2,13 +2,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import json
-import logging
+from commonlib.logging import get_logger
 import os
 from typing import List
 import uuid
 import gzip
 import base64
-
 
 from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import ClientError
@@ -17,6 +16,8 @@ from commonlib.utils import (
     create_stack_name,
     paginate,
     exec_sfn_flow as do_exec_sfn_flow,
+    get_kv_from_buffer_param,
+    set_kv_to_buffer_param,
 )
 from commonlib.exception import APIException, ErrorCode
 from commonlib.model import (
@@ -27,16 +28,29 @@ from commonlib.model import (
     LogConfig,
     LogTypeEnum,
     PipelineAlarmStatus,
+    LightEngineParams,
     StatusEnum,
     EngineType,
-    AgentTypeEnum,
+    LogStructure,
 )
-from commonlib.dao import AppLogIngestionDao, AppPipelineDao, LogConfigDao, ETLLogDao
+from commonlib.dao import (
+    AppLogIngestionDao,
+    AppPipelineDao,
+    LogConfigDao,
+    ETLLogDao,
+    s3_notification_prefix,
+)
+from commonlib.aws import (
+    verify_s3_bucket_prefix_overlap_for_event_notifications,
+)
 from util.utils import make_index_template, get_json_schema
 
+import boto3
+import requests
+from requests_aws4auth import AWS4Auth
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+
+logger = get_logger(__name__)
 
 stateMachine_arn = os.environ.get("STATE_MACHINE_ARN") or ""
 app_pipeline_table_name = os.environ.get("APPPIPELINE_TABLE")
@@ -59,13 +73,34 @@ conn = AWSConnection()
 router = AppSyncRouter()
 
 dynamodb = conn.get_client("dynamodb", client_type="resource")
+lambda_client = conn.get_client("lambda")
 sfn = conn.get_client("stepfunctions")
 kds = conn.get_client("kinesis")
 iam = conn.get_client("iam")
 glue = conn.get_client("glue")
+sts = conn.get_client("sts")
 
 app_pipeline_table = dynamodb.Table(app_pipeline_table_name)
 app_log_ingestion_table = dynamodb.Table(app_log_ingestion_table_name)
+
+OPENSEARCH_MASTER_ROLE_ARN = os.environ["OPENSEARCH_MASTER_ROLE_ARN"]
+
+s3_client = AWSConnection().get_client("s3", current_region)
+
+
+def aos_req_session(creds: dict = {}):
+    s = requests.Session()
+    s.auth = AWS4Auth(
+        refreshable_credentials=boto3.Session(
+            aws_access_key_id=creds.get("AccessKeyId"),
+            aws_secret_access_key=creds.get("SecretAccessKey"),
+            aws_session_token=creds.get("SessionToken"),
+        ).get_credentials(),
+        service="es",
+        region=os.environ.get("AWS_REGION"),
+    )
+    s.headers.update({"Content-Type": "application/json"})
+    return s
 
 
 def dict_to_gzip_base64(d: dict) -> str:
@@ -74,7 +109,7 @@ def dict_to_gzip_base64(d: dict) -> str:
 
 @handle_error
 def lambda_handler(event, context):
-    logger.info("Received event: " + json.dumps(event, indent=2))
+    logger.info(json.dumps(event["arguments"], indent=2))
     return router.resolve(event)
 
 
@@ -176,9 +211,7 @@ def get_schedules_info(app_pipeline: AppPipeline) -> list:
             name = schedule_name
             group = app_pipeline.pipelineId
         else:
-            name = (
-                f"{schedule_name}-{app_pipeline.lightEngineParams.centralizedTableName}"
-            )
+            name = f"{schedule_name}-{app_pipeline.pipelineId}"
             group = "default"
         schedule_expression = get_scheduler_expression(
             name=name, group=group, client=scheduler
@@ -266,60 +299,50 @@ def get_light_engine_app_pipeline_detail(**args):
 @router.route(field_name="createLightEngineAppPipeline")
 def create_light_engine_app_pipeline(**args):
     pipeline_id = str(uuid.uuid4())
-    params = args.get("params")
+    params = args.get("params", {})
     tags = args.get("tags") or []
     monitor = args.get("monitor")
     buffer_params = args.get("bufferParams", [])
     log_config_id = args.get("logConfigId")
     log_config_version_number = args.get("logConfigVersionNumber")
+    log_structure = args.get("logStructure", LogStructure.FLUENT_BIT_PARSED_JSON)
+
+    stack_name = create_stack_name("AppPipe", pipeline_id)
+    
     app_pipeline_dao = AppPipelineDao(app_pipeline_table_name)
     log_config_dao = LogConfigDao(log_config_table_name)
-
-    buffer_access_role_name = f"CL-buffer-access-{pipeline_id}"
-    create_role_response = iam.create_role(
-        RoleName=buffer_access_role_name,
-        AssumeRolePolicyDocument=json.dumps(
-            {
-                "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Effect": "Allow",
-                        "Principal": {"AWS": current_account_id},
-                        "Action": "sts:AssumeRole",
-                    }
-                ],
-            }
-        ),
-    )
-    stack_name = create_stack_name("AppPipe", pipeline_id)
-    params["stagingBucketPrefix"] = f"AppLogs/{stack_name}"
-
-    logging_bucket_name = [
-        param["paramValue"]
-        for param in buffer_params
-        if param["paramKey"] == "logBucketName"
-    ][0]
-    logging_bucket_prefix = [
-        param["paramValue"]
-        for param in buffer_params
-        if param["paramKey"] == "logBucketPrefix"
-    ][0]
 
     app_pipeline = AppPipeline(
         pipelineId=pipeline_id,
         bufferType=BufferTypeEnum.S3,
         bufferParams=buffer_params,
-        lightEngineParams=params,
         logConfigId=log_config_id,
         logConfigVersionNumber=log_config_version_number,
         tags=tags,
         monitor=monitor,
         engineType=EngineType.LIGHT_ENGINE,
-        bufferAccessRoleName=create_role_response["Role"]["RoleName"],
-        bufferAccessRoleArn=create_role_response["Role"]["Arn"],
-        bufferResourceArn=f"arn:{current_partition}:s3:::{logging_bucket_name}",
-        bufferResourceName=logging_bucket_name,
+        logStructure=log_structure,
     )
+
+    logging_bucket_name = get_kv_from_buffer_param(
+        key="logBucketName", buffer_param=app_pipeline.bufferParams
+    )
+    logging_bucket_prefix = get_kv_from_buffer_param(
+        key="logBucketPrefix", buffer_param=app_pipeline.bufferParams
+    )
+    logging_bucket_prefix = f'{logging_bucket_prefix.strip("/")}/{stack_name}'
+    verify_s3_bucket_prefix_overlap_for_event_notifications(
+        s3_client, logging_bucket_name, s3_notification_prefix(logging_bucket_prefix)
+    )
+    
+    params["stagingBucketPrefix"] = logging_bucket_prefix
+    app_pipeline.lightEngineParams = LightEngineParams(**params)
+    app_pipeline.bufferParams = set_kv_to_buffer_param(key='logBucketPrefix', value=logging_bucket_prefix, buffer_param=app_pipeline.bufferParams)
+
+    app_pipeline.bufferResourceArn = (
+        f"arn:{current_partition}:s3:::{logging_bucket_name}"
+    )
+    app_pipeline.bufferResourceName = logging_bucket_name
 
     sns_arn = ""
     if app_pipeline.monitor.pipelineAlarmStatus == PipelineAlarmStatus.ENABLED:
@@ -330,15 +353,13 @@ def create_light_engine_app_pipeline(**args):
 
     app_pipeline.lightEngineParams.recipients = sns_arn
 
-    agent_type = AgentTypeEnum.FLUENT_BIT
-    for param in buffer_params:
-        if param["paramKey"] == "isS3Source" and param["paramValue"].lower() == "true":
-            agent_type = AgentTypeEnum.NONE
     log_config = log_config_dao.get_log_config(
         app_pipeline.logConfigId, app_pipeline.logConfigVersionNumber
     )
     log_config.jsonSchema = get_json_schema(
-        log_conf=log_config, engine_type=EngineType.LIGHT_ENGINE, agent_type=agent_type
+        log_conf=log_config,
+        engine_type=EngineType.LIGHT_ENGINE,
+        log_structure=log_structure,
     )
 
     grafana = None
@@ -351,37 +372,73 @@ def create_light_engine_app_pipeline(**args):
     )
     pattern = app_pipeline_dao.get_stack_name(app_pipeline)
 
-    iam.put_role_policy(
-        RoleName=app_pipeline.bufferAccessRoleName,
-        PolicyName=f"{stack_name}-AllowBufferAccess",
-        PolicyDocument=json.dumps(
-            {
-                "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Sid": "AllowPutToBuffer",
-                        "Effect": "Allow",
-                        "Action": "s3:PutObject",
-                        "Resource": f"{app_pipeline.bufferResourceArn}/{os.path.normpath(logging_bucket_prefix)}/*",
-                    }
-                ],
-            }
-        ),
-    )
-
     sfn_args = {
         "stackName": stack_name,
         "pattern": pattern,
         "parameters": parameters,
         "engineType": EngineType.LIGHT_ENGINE,
-        "ingestion": {
+    }
+
+    if log_structure == LogStructure.FLUENT_BIT_PARSED_JSON:
+        buffer_access_role_name = f"CL-buffer-access-{pipeline_id}"
+        create_role_response = iam.create_role(
+            RoleName=buffer_access_role_name,
+            AssumeRolePolicyDocument=json.dumps(
+                {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {"AWS": current_account_id},
+                            "Action": "sts:AssumeRole",
+                        }
+                    ],
+                }
+            ),
+        )
+
+        iam.put_role_policy(
+            RoleName=buffer_access_role_name,
+            PolicyName=f"{stack_name}-AllowBufferAccess",
+            PolicyDocument=json.dumps(
+                {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Sid": "AllowPutToBuffer",
+                            "Effect": "Allow",
+                            "Action": "s3:PutObject",
+                            "Resource": f"{app_pipeline.bufferResourceArn}/{os.path.normpath(logging_bucket_prefix)}/*",
+                        },
+                        {
+                            "Sid": "AllowAccessKMSKey",
+                            "Effect": "Allow",
+                            "Action": [
+                                "kms:GenerateDataKey*",
+                                "kms:Decrypt",
+                                "kms:Encrypt",
+                            ],
+                            "Resource": f"arn:{current_partition}:kms:{current_region}:{current_account_id}:key/*",
+                        },
+                    ],
+                }
+            ),
+        )
+
+        app_pipeline.bufferAccessRoleName = create_role_response["Role"]["RoleName"]
+        app_pipeline.bufferAccessRoleArn = create_role_response["Role"]["Arn"]
+
+        sfn_args["ingestion"] = {
             "id": str(uuid.uuid4()),
             "role": "",
             "pipelineId": app_pipeline.pipelineId,
             "bucket": logging_bucket_name,
             "prefix": logging_bucket_prefix,
-        },
-    }
+        }
+
+    tag = args.get("tags", [])
+
+    sfn_args["tag"] = tag
 
     # Start the pipeline flow
     exec_sfn_flow(app_pipeline.pipelineId, "START", sfn_args)
@@ -389,6 +446,42 @@ def create_light_engine_app_pipeline(**args):
     app_pipeline_dao.save(app_pipeline)
 
     return app_pipeline.pipelineId
+
+
+def post_simulate_index_template(
+    aos_endpoint: str, index_prefix: str, index_template: str
+):
+    creds = sts.assume_role(
+        RoleArn=OPENSEARCH_MASTER_ROLE_ARN, RoleSessionName="AppPipeline"
+    )["Credentials"]
+    s = aos_req_session(creds)
+    return s.post(
+        f"https://{aos_endpoint}/_index_template/_simulate/{index_prefix}-template",
+        json=index_template,
+        timeout=5,
+    )
+
+
+def try_index_template(
+    aos_endpoint: str, index_prefix: str, index_template: str, fallback_method_fn=None
+):
+    if not callable(fallback_method_fn):
+        fallback_method_fn = lambda: None
+
+    try:
+        r = post_simulate_index_template(aos_endpoint, index_prefix, index_template)
+    except Exception as e:
+        logger.exception(e)
+        fallback_method_fn()
+    else:
+        if r.status_code == 403:
+            fallback_method_fn()
+        elif r.status_code >= 400:
+            err = r.json()["error"]
+            raise APIException(
+                ErrorCode.VALUE_ERROR,
+                f"status_code: {r.status_code} reason: {err['reason']}",
+            )
 
 
 @router.route(field_name="createAppPipeline")
@@ -399,18 +492,19 @@ def create_app_pipeline(**args):
     log_config_id = args.get("logConfigId")
     log_config_version_number = args.get("logConfigVersionNumber")
     force = args.get("force")
+    log_processor_concurrency = args.get("logProcessorConcurrency")
     monitor = args.get("monitor")
     osi = args.get("osiParams")
     tags = args.get("tags") or []
-
     app_pipeline_dao = AppPipelineDao(app_pipeline_table_name)
     log_config_dao = LogConfigDao(log_config_table_name)
 
     index_prefix = str(aos_params["indexPrefix"])
-
+    params = args.get("parameters", [])
     app_pipeline = AppPipeline(
         indexPrefix=index_prefix,
         bufferType=buffer_type,
+        parameters=params,
         aosParams=aos_params,
         bufferParams=buffer_params,
         logConfigId=log_config_id,
@@ -420,7 +514,18 @@ def create_app_pipeline(**args):
         monitor=monitor,
         osiParams=osi,
     )
-    app_pipeline_dao.validate(app_pipeline, force=force)
+    parameters = convert_parameter_key(params)
+    logging_bucket_name = get_kv_from_buffer_param(
+        key="logBucketName", buffer_param=app_pipeline.bufferParams
+    )
+    logging_bucket_prefix = get_kv_from_buffer_param(
+        key="logBucketPrefix", buffer_param=app_pipeline.bufferParams
+    )
+    logger.info(f"logBucketName={logging_bucket_name}")
+    logger.info(f"logBucketPrefix={logging_bucket_prefix}")
+    verify_s3_bucket_prefix_overlap_for_event_notifications(
+        s3_client, logging_bucket_name, s3_notification_prefix(logging_bucket_prefix)
+    )
 
     log_config = log_config_dao.get_log_config(
         app_pipeline.logConfigId, app_pipeline.logConfigVersionNumber
@@ -435,9 +540,16 @@ def create_app_pipeline(**args):
         refresh_interval=app_pipeline.aosParams.refreshInterval,
     )
 
+    try_index_template(
+        app_pipeline.aosParams.opensearchEndpoint,
+        index_prefix,
+        index_template,
+        fallback_method_fn=lambda: app_pipeline_dao.validate(app_pipeline, force=force),
+    )
+
     index_template_gzip_base64 = dict_to_gzip_base64(index_template)
 
-    parameters = app_pipeline_dao.get_stack_parameters(app_pipeline) + [
+    parameters += app_pipeline_dao.get_stack_parameters(app_pipeline) + [
         {
             "ParameterKey": "indexTemplateGzipBase64",
             "ParameterValue": index_template_gzip_base64,
@@ -460,7 +572,7 @@ def create_app_pipeline(**args):
                         "Effect": "Allow",
                         "Principal": {"AWS": account_id},
                         "Action": "sts:AssumeRole",
-                    }
+                    },
                 ],
             }
         ),
@@ -476,6 +588,10 @@ def create_app_pipeline(**args):
         {
             "ParameterKey": "logType",
             "ParameterValue": log_config.logType,
+        },
+        {
+            "ParameterKey": "logProcessorConcurrency",
+            "ParameterValue": log_processor_concurrency,
         },
     ]
 
@@ -575,12 +691,29 @@ def create_app_pipeline(**args):
         "engineType": EngineType.OPEN_SEARCH,
     }
 
+    tag = args.get("tags", [])
+
+    sfn_args["tag"] = tag
+
     # Start the pipeline flow
     exec_sfn_flow(app_pipeline.pipelineId, "START", sfn_args)
 
     app_pipeline_dao.save(app_pipeline)
 
     return app_pipeline.pipelineId
+
+
+def convert_parameter_key(parameters: list) -> list:
+    params = []
+    for p in parameters:
+        params.append(
+            {
+                "ParameterKey": p["parameterKey"],
+                "ParameterValue": p["parameterValue"],
+            }
+        )
+
+    return params
 
 
 def app_pipeline_to_dict(p: AppPipeline, log_config_dao: LogConfigDao) -> dict:
@@ -729,6 +862,21 @@ def check_osi_availability():
         logger.info(e)
 
     return False
+
+
+@router.route(field_name="getAccountUnreservedConurrency")
+def get_account_unreserved_conurrency():
+    logger.info("Get account unreserved concurrency quota.")
+    unreserved_concurrency = 0
+    try:
+        # Try get account unreserved concurrency
+        resp = lambda_client.get_account_settings()
+        account_limit = resp.get("AccountLimit")
+        unreserved_concurrency = account_limit.get("UnreservedConcurrentExecutions")
+    except Exception as e:
+        logger.info(e)
+
+    return unreserved_concurrency
 
 
 def exec_sfn_flow(id: str, action="START", args=None):

@@ -34,6 +34,7 @@ type Schema = {
 interface JSONSpecViewProps {
   schema: any;
   data: any;
+  configTimeKey: string;
 }
 
 type TreeNode = {
@@ -50,6 +51,7 @@ interface TreeComponentProps {
   disabled?: boolean;
   node: TreeNode;
   level: number;
+  configTimeKey: string;
 }
 
 function schemaToTree(schema: Schema, jsonData: any, key = "root"): TreeNode {
@@ -81,7 +83,11 @@ function schemaToTree(schema: Schema, jsonData: any, key = "root"): TreeNode {
   return treeNode;
 }
 
-const TreeComponent: React.FC<TreeComponentProps> = ({ node, level }) => {
+const TreeComponent: React.FC<TreeComponentProps> = ({
+  node,
+  level,
+  configTimeKey,
+}) => {
   const { t } = useTranslation();
   const [localNode, setLocalNode] = useState({
     ...node,
@@ -119,10 +125,14 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ node, level }) => {
           <div>{localNode.type}</div>
         </div>
         <div style={{ width: 180 }}>
-          <div>{localNode.format}</div>
+          <div>{localNode.format ?? ""}</div>
         </div>
         <div style={{ width: 120 }}>
-          <div>{localNode.timeKey ? t("yes") : t("no")}</div>
+          <div>
+            {level === 1 && localNode.key === configTimeKey
+              ? t("yes")
+              : t("no")}
+          </div>
         </div>
       </div>
       {localNode.isExpanded &&
@@ -131,6 +141,7 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ node, level }) => {
             key={identity(idx + childNode.type + childNode.value)}
             node={childNode}
             level={level + 1}
+            configTimeKey={configTimeKey}
           />
         ))}
     </div>
@@ -141,7 +152,7 @@ const JSONSpecView: React.FC<JSONSpecViewProps> = (
   props: JSONSpecViewProps
 ) => {
   const { t } = useTranslation();
-  const { schema, data } = props;
+  const { schema, data, configTimeKey } = props;
   if (!schema || !data) {
     return "-";
   }
@@ -164,6 +175,7 @@ const JSONSpecView: React.FC<JSONSpecViewProps> = (
       </div>
       {Object.keys(schema.properties).map((key) => (
         <TreeComponent
+          configTimeKey={configTimeKey}
           key={key}
           level={1}
           node={schemaToTree(schema.properties[key], jsonData[key], key)}

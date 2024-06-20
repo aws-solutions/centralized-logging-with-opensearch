@@ -1,13 +1,12 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-import logging
+from commonlib.logging import get_logger
 
 from commonlib.model import DomainStatusCheckType
 from commonlib import AWSConnection
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 conn = AWSConnection()
 ec2 = conn.get_client("ec2")
@@ -29,6 +28,12 @@ def clean_check_result(check_details):
         if global_status == DomainStatusCheckType.FAILED:
             # if the global_status is already FAILED, we will not update it any more
             continue
+        if (
+            detail["status"] == DomainStatusCheckType.WARNING
+            and global_status != DomainStatusCheckType.FAILED
+        ):
+            global_status = DomainStatusCheckType.WARNING
+
         if detail["status"] == DomainStatusCheckType.FAILED:
             global_status = DomainStatusCheckType.FAILED
 
@@ -36,7 +41,12 @@ def clean_check_result(check_details):
 
 
 def record_check_detail(
-    details: list, check_result: bool, name: str, values: any, error_code
+    details: list,
+    check_result: bool,
+    name: str,
+    values: any,
+    error_code,
+    return_warning_on_error=False,
 ):
     """Record the check detail
     Args:
@@ -45,14 +55,18 @@ def record_check_detail(
     if isinstance(values, str):
         values = values.split(",")
 
+    error_status = (
+        DomainStatusCheckType.WARNING
+        if return_warning_on_error
+        else DomainStatusCheckType.FAILED
+    )
+
     details.append(
         {
             "name": name,
             "values": values,
             "errorCode": error_code if not check_result else None,
-            "status": DomainStatusCheckType.PASSED
-            if check_result
-            else DomainStatusCheckType.FAILED,
+            "status": DomainStatusCheckType.PASSED if check_result else error_status,
         }
     )
 

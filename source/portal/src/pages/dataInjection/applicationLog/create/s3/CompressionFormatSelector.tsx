@@ -25,9 +25,9 @@ interface CompressionFormatSelectorProps {
   value: string;
   setValue: React.Dispatch<React.SetStateAction<string>>;
 }
-export function CompressionFormatSelector(
+const CompressionFormatSelector: React.FC<CompressionFormatSelectorProps> = (
   props: CompressionFormatSelectorProps
-) {
+) => {
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -56,4 +56,6 @@ export function CompressionFormatSelector(
       </FormItem>
     </div>
   );
-}
+};
+
+export default CompressionFormatSelector;

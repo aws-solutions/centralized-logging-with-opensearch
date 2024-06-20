@@ -4,22 +4,18 @@
 import boto3
 import os
 
-import logging
+from commonlib.logging import get_logger
 
 from botocore import config
 from string import Template
 
 from commonlib import LinkAccountHelper
 from commonlib.dao import AppLogIngestionDao, LogSourceDao
-from commonlib.model import (
-    LogSource,
-)
+from commonlib.model import LogSource, GroupPlatformEnum
 
 from distutils.util import strtobool
-from boto3.dynamodb.conditions import Attr
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 solution_version = os.environ.get("SOLUTION_VERSION", "v1.0.0")
 solution_id = os.environ.get("SOLUTION_ID", "SO8025")
@@ -41,6 +37,9 @@ default_open_containerd_runtime_flag = strtobool(
 )
 
 _asg_ingestion_script_path = "./util/asg_ingestion_script/asg_ingestion_script.sh"
+_asg_ingestion_windows_script_path = (
+    "./util/asg_ingestion_script/asg_ingestion_windows_script.sh"
+)
 
 _bucket_name = os.environ.get("CONFIG_FILE_S3_BUCKET_NAME")
 account_id = sts.get_caller_identity()["Account"]
@@ -57,9 +56,14 @@ log_source_dao = LogSourceDao(table_name=log_source_table_name)
 class ASGDeploymentConfigurationMng:
     __group_id: str
 
-    def __init__(self, instance_group_id: str, asg_name: str):
+    def __init__(
+        self, instance_group_id: str, asg_name: str, group_platform: GroupPlatformEnum
+    ):
         self.__group_id = instance_group_id
-        self._asg_ingestion_script_path = _asg_ingestion_script_path
+        if group_platform == GroupPlatformEnum.WINDOWS:
+            self._asg_ingestion_script_path = _asg_ingestion_windows_script_path
+        else:
+            self._asg_ingestion_script_path = _asg_ingestion_script_path
         self._bucket_name = _bucket_name
         self._asg_name = asg_name
 

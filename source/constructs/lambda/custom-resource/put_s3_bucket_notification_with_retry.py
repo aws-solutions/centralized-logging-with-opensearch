@@ -78,6 +78,15 @@ def handle_managed(request_type, notification_configuration):
     return notification_configuration
 
 
+def has_app_log_config_filter_rule(data):
+    filter_rules = data.get("Filter", {}).get("Key", {}).get("FilterRules", [])
+    return any(rule.get("Value") == "app_log_config/" for rule in filter_rules)
+
+
+def exclude_existing_app_log_config(config):
+    return not has_app_log_config_filter_rule(config)
+
+
 def handle_unmanaged(bucket, stack_id, request_type, notification_configuration):
     # find external notifications
     external_notifications = find_external_notifications(bucket, stack_id)
@@ -95,21 +104,15 @@ def handle_unmanaged(bucket, stack_id, request_type, notification_configuration)
     # otherwise, merge external with incoming config and augment with id
     notifications = {}
     for t in CONFIGURATION_TYPES:
-
-        def exclude_existing_app_log_config(config):
-            def has_app_log_config_filter_rule(data):
-                filter_rules = (
-                    data.get("Filter", {}).get("Key", {}).get("FilterRules", [])
-                )
-                return any(
-                    rule.get("Value") == "app_log_config/" for rule in filter_rules
-                )
-
-            return not has_app_log_config_filter_rule(config)
-
         external = external_notifications.get(t, [])
-        external = list(filter(exclude_existing_app_log_config, external))
         incoming = [with_id(n) for n in notification_configuration.get(t, [])]
+
+        external_has_app_log_config_filter_rule = any(map(has_app_log_config_filter_rule, external))
+        incoming_has_app_log_config_filter_rule = any(map(has_app_log_config_filter_rule, incoming))
+
+        if external_has_app_log_config_filter_rule and incoming_has_app_log_config_filter_rule:
+            external = list(filter(exclude_existing_app_log_config, external))
+
         notifications[t] = external + incoming
 
     # EventBridge configuration is a special case because it's just an empty object if it exists

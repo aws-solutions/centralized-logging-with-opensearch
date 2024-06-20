@@ -42,7 +42,10 @@ def test_invalid_id():
 
 @pytest.fixture
 def test_invalid_event():
-    return {"Hello": "World"}
+    return {
+        "Hello": "World",
+        "arguments": {},
+    }
 
 
 @pytest.fixture

@@ -2,12 +2,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import os
+import copy
 import json
 import uuid
 import logging
+import datetime
 from typing import Union
-from datetime import datetime
-from utils import ValidateParameters, SQSClient, S3Client, parse_bytes, logger
+from utils.aws import SQSClient, S3Client
+from utils.helpers import logger, ValidateParameters, parse_bytes, iso8601_strftime
 from utils.models.etllog import ETLLogTable
 from utils.models.meta import MetaTable
 
@@ -37,26 +39,26 @@ class Parameters(ValidateParameters):
         """Optional parameter verification, when the parameter does not exist or is illegal, supplement the default value."""
         self.function_name = parameters.get('functionName')
         self.task_id = parameters.get('taskId', str(uuid.uuid4()))
-        self.keep_prefix = self._get_parameter_value(parameters.get('keepPrefix'), (bool, dict), True)
-        parameters['size'] = self._get_parameter_value(parameters.get('size'), (int, str), 100)
-        if isinstance(parameters['size'], str):
-            try:
-                self.size = parse_bytes(parameters['size'])
-            except Exception:
-                self.size = parse_bytes('100MiB')
-            self.units = 'Bytes'
-        elif isinstance(parameters['size'], int) and parameters['size'] < 1:
-            self.size = 100
-            self.units = None
-        else:
-            self.size = parameters['size']
-            self.units = None if self.size <= 1000 else 'Bytes'
+        self.keep_prefix: bool = self._get_parameter_value(parameters.get('keepPrefix'), (bool, dict), True) # type: ignore
+        self.max_object_files_num_per_copy_task = self._get_parameter_value(parameters.get('maxObjectFilesNumPerCopyTask'), int, 1000)
+        self.max_object_files_size_per_copy_task = self._get_parameter_value(parameters.get('maxObjectFilesSizePerCopyTask'), (int, str), '10GiB')
+        try:
+            self.max_object_files_size_per_copy_task = parse_bytes(self.max_object_files_size_per_copy_task)
+        except Exception:
+            self.max_object_files_size_per_copy_task = parse_bytes('10GiB')
         self.source_type = parameters.get('sourceType')
         self.enrichment_plugins = self._get_parameter_value(parameters.get('enrichmentPlugins'), list, [])
         self.merge = self._get_parameter_value(parameters.get('merge'), bool, False)
+        _default_merge_size = '256MiB'
+        try:
+            parameters['size'] = self._get_parameter_value(parameters.get('size'), (int, str), _default_merge_size)
+            self.size = parse_bytes(parameters.get('size', _default_merge_size))
+        except Exception:
+            self.size = parse_bytes(_default_merge_size)
         self.task_token = parameters.get('taskToken')
-        self.extra = self._get_parameter_value(parameters.get('extra'), dict, {})
-        self.delete_on_success = self._get_parameter_value(parameters.get('deleteOnSuccess'), bool, False)
+        self.extra: dict = self._get_parameter_value(parameters.get('extra'), dict, {}) # type: ignore
+        self.delete_on_success: bool = self._get_parameter_value(parameters.get('deleteOnSuccess'), bool, False) # type: ignore
+        self.max_records: int = self._get_parameter_value(parameters.get('maxRecords'), int, -1) # type: ignore
         self.sqs_url = ''
         self.sqs_msg = self.get_sqs_msg()
         self.ddb_item = self.get_ddb_item()
@@ -72,8 +74,8 @@ class Parameters(ValidateParameters):
     def get_ddb_item(self) -> dict:
         """Generate default item of ETLLogTable."""
         ddb_item = {'executionName': self.execution_name, 'functionName': self.function_name,
-                    'taskId': self.task_id, 'data': '{"totalSubTask": 0}', 'startTime': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.') + datetime.utcnow().strftime('%f')[:3] + 'Z',
-                    'endTime': '', 'status': 'Running', 'expirationTime': int(datetime.utcnow().timestamp() + AWS_DDB_META.etl_log_ttl_secs)}
+                    'taskId': self.task_id, 'data': '{"totalSubTask": 0}', 'startTime': iso8601_strftime(),
+                    'endTime': '', 'status': 'Running', 'expirationTime': int(datetime.datetime.now(datetime.UTC).timestamp() + AWS_DDB_META.etl_log_ttl_secs)}
         ddb_item.update(self.extra)
         ddb_item['pipelineIndexKey'] = ':'.join((ddb_item.get('pipelineId', ''), ddb_item.get('stateMachineName', ''), ddb_item['taskId']))
         return ddb_item
@@ -96,12 +98,13 @@ def lambda_handler(event, context) -> None:
                 f'destination.bucket: {param.destination.bucket}, destination.prefix: {param.destination.prefix}, '
                 f'execution_name: {param.execution_name}, sqs_name: {param.sqs_name}, function_name: {param.function_name}, '
                 f'task_id: {param.task_id}, keep_prefix: {param.keep_prefix}, size: {param.size}, '
-                f'units: {param.units}, merge: {param.merge}, extra: {param.extra}, delete_on_success: {param.delete_on_success}, '
+                f'max_object_files_num_per_copy_task: {param.max_object_files_num_per_copy_task}, max_object_files_size_per_copy_task: {param.max_object_files_size_per_copy_task}, '
+                f'merge: {param.merge}, extra: {param.extra}, delete_on_success: {param.delete_on_success}, '
                 f'sqs_url: {param.sqs_url}, task_token: {param.task_token}.')
     logger.debug(f'The initialization SQS\' message is {param.sqs_msg}.')
     logger.debug(f'The initialization DDB\' item is {param.ddb_item}.')
 
-    logger.info(f'Put scanning task to DynamoDB, executionName: {param.execution_name}, taskId: {param.task_id}, '
+    logger.debug(f'Put scanning task to DynamoDB, executionName: {param.execution_name}, taskId: {param.task_id}, '
                 f'item: {param.ddb_item}.')
     AWS_DDB_ETL_LOG.put(execution_name=param.execution_name, task_id=param.task_id, item=param.ddb_item)
     migration_task_count = migration_task_generator(param)
@@ -127,40 +130,50 @@ def migration_task_generator(param: Parameters) -> int:
     task_count = 0
     migration_tasks = {}
 
-    for content in AWS_S3.list_objects(bucket=param.source.bucket, prefix=param.source.prefix):
-        if content['Size'] == 0:
-            logger.debug(f"Ignore object due to content size is zero, key is {content['Key']}.")
-            continue
+    contents = AWS_S3.list_all_objects(bucket=param.source.bucket, prefix=param.source.prefix, max_records=param.max_records)
+    logger.info(f'List all objects is done, the bucket is {param.source.bucket}, prefix is {param.source.prefix}, the number of objects is {len(contents)}.')
 
+    msg = copy.copy(param.sqs_msg)
+    max_32bit_integer = 2147483647
+    for content in contents:
         converted_prefix = prefix_converter(content['Key'], keep_prefix=param.keep_prefix)
         dst_key = f'{param.destination.prefix}/{converted_prefix}' if param.keep_prefix is False else ''.join([param.destination.prefix, converted_prefix[len(param.source.prefix):]])
-        unique_prefix = os.path.dirname(dst_key) if param.merge is True else 'all'
-
         task = {'source': {'bucket': param.source.bucket, 'key': content['Key']},
                 'destination': {'bucket': param.destination.bucket,
                                 'key': dst_key}}
         logger.debug(f'The migration task is {task}.')
-        size = content['Size'] if param.units is not None else 1
-        if unique_prefix not in migration_tasks.keys():
-            migration_tasks[unique_prefix] = {'data': [task], 'size': size}
-        else:
-            migration_tasks[unique_prefix]['data'].append(task)
-            migration_tasks[unique_prefix]['size'] += size
 
-        if migration_tasks[unique_prefix]['size'] >= param.size:
+        unique_prefix =  'all'
+        max_size = param.max_object_files_size_per_copy_task
+        max_num = param.max_object_files_num_per_copy_task
+        msg['merge'] = False
+        size = content['Size']
+        
+        if param.merge is True and size < param.size:
+            unique_prefix = os.path.dirname(dst_key)
+            msg['merge'] = True
+            max_size = param.size
+            max_num = max_32bit_integer
+        
+        migration_tasks[unique_prefix] = migration_tasks.get(unique_prefix, {'data': [], 'size': 0})
+        migration_tasks[unique_prefix]['data'].append(task)
+        migration_tasks[unique_prefix]['size'] += size
+        
+        if migration_tasks[unique_prefix]['size'] >= max_size or len(migration_tasks[unique_prefix]['data']) >= max_num: # type: ignore
             data = migration_tasks[unique_prefix]['data']
-            logger.info(f'The messages num is {migration_tasks[unique_prefix]["size"]}, has reached max size {param.size}, send message to SQS {param.sqs_url}.')
-            migration_task_writer(data, param.sqs_msg, param.sqs_url, param.ddb_item, parent_task_id=param.task_id)
+            logger.debug(f'The messages num is {migration_tasks[unique_prefix]["size"]}, has reached max size {max_size}, send message to SQS {param.sqs_url}.')
+            migration_task_writer(data, msg, param.sqs_url, param.ddb_item, parent_task_id=param.task_id)
             migration_tasks.pop(unique_prefix)
             task_count += 1
 
     for unique_prefix in migration_tasks.keys():
         data = migration_tasks[unique_prefix]['data']
         logger.debug(f'unique_prefix: {unique_prefix}, data: {data}')
-        logger.info(f'Send the remaining messages to SQS {param.sqs_url}, the number of messages is {len(data)}.')
-        migration_task_writer(data, param.sqs_msg, param.sqs_url, param.ddb_item, parent_task_id=param.task_id)
+        logger.debug(f'Send the remaining messages to SQS {param.sqs_url}, the number of messages is {len(data)}.')
+        msg['merge'] = False if unique_prefix == 'all' else param.merge
+        migration_task_writer(data, msg, param.sqs_url, param.ddb_item, parent_task_id=param.task_id)
         task_count += 1
-
+        
     return task_count
 
 
@@ -180,13 +193,13 @@ def migration_task_writer(tasks: list, msg: dict, sqs_url: str, item: dict, pare
     msg['parentTaskId'] = parent_task_id
     msg['data'] = tasks
     item['taskId'] = msg['taskId']
-    item['startTime'] = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.') + datetime.utcnow().strftime('%f')[:3] + 'Z'
+    item['startTime'] = iso8601_strftime()
     item['parentTaskId'] = parent_task_id
     item['data'] = ''
     item['pipelineIndexKey'] = ':'.join((item.get('pipelineId', ''), item.get('stateMachineName', ''), item['taskId']))
     logger.debug(f'Sending message {msg} to SQS {sqs_url}.')
     AWS_SQS.send_message(sqs_url, msg)
-    logger.info(f'Put migration task to DynamoDB, executionName: {item["executionName"]}, '
+    logger.debug(f'Put migration task to DynamoDB, executionName: {item["executionName"]}, '
                 f'taskId: {item["taskId"]}, item: {item}')
     AWS_DDB_ETL_LOG.put(execution_name=item['executionName'], task_id=item['taskId'], item=item)
 
@@ -202,7 +215,7 @@ def time_partition_transform(time: str, from_format: str = '%Y-%m-%d-%H-%M', to_
     :return: converted time string format, such as 2023-01-01-00-00.
     """
     try:
-        return datetime.strftime(datetime.strptime(time, from_format), to_format)
+        return datetime.datetime.strftime(datetime.datetime.strptime(time, from_format), to_format)
     except Exception as e:
         logging.error(f'Time transform failed, time: {time}, from_format: {from_format}, to_format: {to_format}.')
         raise e

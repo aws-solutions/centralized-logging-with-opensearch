@@ -5,6 +5,7 @@ moto>=4.1.7,<=4.2.13
 pyparsing
 pytest
 pytest-cov
+pytest-xdist
 pyyaml
 docker
 openapi-spec-validator

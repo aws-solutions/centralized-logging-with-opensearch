@@ -1,3 +1,7 @@
+$util.validate($util.matches("^[a-zA-Z0-9-_]{1,128}$", $ctx.args.name), "Invalid name. The name convention must follow ^[a-zA-Z0-9-_]{1,128}$")
+$util.validate($util.matches("^(http(s)?:\/\/.)[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$", $ctx.args.url), "Invalid url")
+$util.validate($util.matches("^[a-zA-Z0-9-_]{1,128}$", $ctx.args.token), "Invalid token. The token convention must follow ^[a-zA-Z0-9-_]{1,128}$")
+
 #foreach( $tag in $ctx.args.tags )
     #set($tag.key = $util.urlDecode($tag.key))
     $util.validate($util.matches("^[\w\s_.:\/=+\-@]{1,128}$", $tag.key), "Invalid key. Keys can contain alphanumeric characters, spaces, or any of the following: _.:/=+-@")

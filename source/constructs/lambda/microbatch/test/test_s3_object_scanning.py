@@ -8,7 +8,7 @@ import json
 import copy
 import types
 import pytest
-from datetime import datetime
+import datetime
 from test.mock import mock_s3_context, mock_iam_context, mock_ddb_context, mock_sqs_context, default_environment_variables
 
 
@@ -40,10 +40,11 @@ class TestParameter:
         assert param.function_name == function_name
         assert param.task_id == '0b40a554-7004-48fd-8998-742853bfa620'
         assert param.keep_prefix is True
-        assert param.units == 'Bytes'
         assert param.enrichment_plugins == ['geo_ip', 'user_agent']
         assert param.merge is True
         assert param.task_token == ''
+        assert param.max_object_files_num_per_copy_task == 1000
+        assert param.max_object_files_size_per_copy_task == 10737418240
         assert param.extra == {'parentTaskId': '00000000-0000-0000-0000-000000000000', 'API': 'Lambda: Invoke',
                                'stateName': 'Step 1: S3 Migration Task from Staging to Archive',
                                'stateMachineName': 'LogProcessor-HBTz7GoOjZoz',
@@ -60,15 +61,23 @@ class TestParameter:
         param = Parameters(event)
         param.sqs_url = AWS_SQS.get_queue_url(param.sqs_name)
         assert param.keep_prefix is True
+        assert param.max_records == -1
+        assert param.max_object_files_num_per_copy_task == 1000
+        assert param.max_object_files_size_per_copy_task == 10737418240
         
         event = copy.deepcopy(s3_object_scanning_event)
         event['functionName'] = function_name
         event['taskId'] = '0b40a554-7004-48fd-8998-742853bfa620'
+        event['maxRecords'] = 15000
+        event['maxObjectFilesNumPerCopyTask'] = 100
+        event['maxObjectFilesSizePerCopyTask'] = 200
         event.pop('size')
         param = Parameters(event)
         param.sqs_url = AWS_SQS.get_queue_url(param.sqs_name)
-        assert param.size == 100
-        assert param.units is None
+        assert param.size == 268435456
+        assert param.max_records == 15000
+        assert param.max_object_files_num_per_copy_task == 100
+        assert param.max_object_files_size_per_copy_task == 200
         
         event = copy.deepcopy(s3_object_scanning_event)
         event['functionName'] = function_name
@@ -76,8 +85,9 @@ class TestParameter:
         event['size'] = 0
         param = Parameters(event)
         param.sqs_url = AWS_SQS.get_queue_url(param.sqs_name)
-        assert param.size == 100
-        assert param.units is None
+        assert param.size == 0
+        assert param.max_object_files_num_per_copy_task == 1000
+        assert param.max_object_files_size_per_copy_task == 10737418240
         
         event = copy.deepcopy(s3_object_scanning_event)
         event['functionName'] = function_name
@@ -86,7 +96,8 @@ class TestParameter:
         param = Parameters(event)
         param.sqs_url = AWS_SQS.get_queue_url(param.sqs_name)
         assert param.size == 2048
-        assert param.units == 'Bytes'
+        assert param.max_object_files_num_per_copy_task == 1000
+        assert param.max_object_files_size_per_copy_task == 10737418240
         
         event = copy.deepcopy(s3_object_scanning_event)
         event['functionName'] = function_name
@@ -95,7 +106,6 @@ class TestParameter:
         param = Parameters(event)
         param.sqs_url = AWS_SQS.get_queue_url(param.sqs_name)
         assert param.size == 104857600
-        assert param.units == 'Bytes'
 
         assert param._get_parameter_value(True, (bool, str), False) is True
         assert param._get_parameter_value(True, int, 2) is True
@@ -118,8 +128,7 @@ class TestParameter:
         param = Parameters(event)
         param.sqs_url = AWS_SQS.get_queue_url(param.sqs_name)
         assert param.keep_prefix is True
-        assert param.size == 104857600
-        assert param.units == 'Bytes'
+        assert param.size == 268435456
         assert param.merge is False
         assert param.extra == {}
         assert param.delete_on_success is False
@@ -138,8 +147,15 @@ class TestParameter:
         event['size'] = 0
         param = Parameters(event)
         param.sqs_url = AWS_SQS.get_queue_url(param.sqs_name)
-        assert param.size == 100
-        assert param.units is None
+        assert param.size == 0
+        
+        event = s3_object_scanning_event.copy()
+        event['functionName'] = function_name
+        event['taskId'] = '0b40a554-7004-48fd-8998-742853bfa620'
+        event['maxObjectFilesSizePerCopyTask'] = 'test'
+        param = Parameters(event)
+        param.sqs_url = AWS_SQS.get_queue_url(param.sqs_name)
+        assert param.max_object_files_size_per_copy_task == 10737418240
         
         event = s3_object_scanning_event.copy()
         event['functionName'] = function_name
@@ -148,7 +164,6 @@ class TestParameter:
         param = Parameters(event)
         param.sqs_url = AWS_SQS.get_queue_url(param.sqs_name)
         assert param.size == 2048
-        assert param.units == 'Bytes'
         
         event = s3_object_scanning_event.copy()
         event['functionName'] = function_name
@@ -157,7 +172,6 @@ class TestParameter:
         param = Parameters(event)
         param.sqs_url = AWS_SQS.get_queue_url(param.sqs_name)
         assert param.size == 104857600
-        assert param.units == 'Bytes'
 
         param.sqs_msg.pop('taskId')
         assert param.sqs_msg == {'executionName': 'e4233e1a-1797-49d5-926f-3339504296df',
@@ -168,7 +182,7 @@ class TestParameter:
         param.ddb_item.pop('startTime')
         pipeline_index_key = param.ddb_item['pipelineIndexKey']
         param.ddb_item.pop('pipelineIndexKey')
-        assert param.ddb_item['expirationTime'] > datetime.utcnow().timestamp()
+        assert param.ddb_item['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
         param.ddb_item.pop('expirationTime')
         assert param.ddb_item == {'executionName': 'e4233e1a-1797-49d5-926f-3339504296df',
                                 'functionName': function_name,
@@ -283,7 +297,7 @@ def test_lambda_handler(mock_s3_context, mock_iam_context, mock_sqs_context, moc
     scanning_task_info.pop('startTime')
     pipeline_index_key = scanning_task_info['pipelineIndexKey']
     scanning_task_info.pop('pipelineIndexKey')
-    assert scanning_task_info['expirationTime'] > datetime.utcnow().timestamp()
+    assert scanning_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
     scanning_task_info.pop('expirationTime')
     assert scanning_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
                                   'data': '{"totalSubTask": 2}', 'endTime': '', 'status': 'Running', 'parentTaskId': '00000000-0000-0000-0000-000000000000', 
@@ -300,7 +314,7 @@ def test_lambda_handler(mock_s3_context, mock_iam_context, mock_sqs_context, moc
     migration_task_info.pop('startTime')
     pipeline_index_key = migration_task_info['pipelineIndexKey']
     migration_task_info.pop('pipelineIndexKey')
-    assert migration_task_info['expirationTime'] > datetime.utcnow().timestamp()
+    assert migration_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
     migration_task_info.pop('expirationTime')
     assert migration_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
                                   'data': '', 'endTime': '', 'status': 'Running', 'parentTaskId': scanning_task_id, 
@@ -315,7 +329,7 @@ def test_lambda_handler(mock_s3_context, mock_iam_context, mock_sqs_context, moc
     migration_task_info.pop('startTime')
     pipeline_index_key = migration_task_info['pipelineIndexKey']
     migration_task_info.pop('pipelineIndexKey')
-    assert migration_task_info['expirationTime'] > datetime.utcnow().timestamp()
+    assert migration_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
     migration_task_info.pop('expirationTime')
     assert migration_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
                                   'data': '', 'endTime': '', 'status': 'Running', 'parentTaskId': scanning_task_id, 
@@ -364,7 +378,7 @@ def test_lambda_handler(mock_s3_context, mock_iam_context, mock_sqs_context, moc
     scanning_task_info.pop('startTime')
     pipeline_index_key = scanning_task_info['pipelineIndexKey']
     scanning_task_info.pop('pipelineIndexKey')
-    assert scanning_task_info['expirationTime'] > datetime.utcnow().timestamp()
+    assert scanning_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
     scanning_task_info.pop('expirationTime')
     assert scanning_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
                                   'data': '{"totalSubTask": 2}', 'endTime': '', 'status': 'Running', 'parentTaskId': '00000000-0000-0000-0000-000000000000', 
@@ -380,7 +394,7 @@ def test_lambda_handler(mock_s3_context, mock_iam_context, mock_sqs_context, moc
     migration_task_info.pop('startTime')
     pipeline_index_key = migration_task_info['pipelineIndexKey']
     migration_task_info.pop('pipelineIndexKey')
-    assert migration_task_info['expirationTime'] > datetime.utcnow().timestamp()
+    assert migration_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
     migration_task_info.pop('expirationTime')
     assert migration_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
                                   'data': '', 'endTime': '', 'status': 'Running', 'parentTaskId': scanning_task_id, 
@@ -395,7 +409,7 @@ def test_lambda_handler(mock_s3_context, mock_iam_context, mock_sqs_context, moc
     migration_task_info.pop('startTime')
     pipeline_index_key = migration_task_info['pipelineIndexKey']
     migration_task_info.pop('pipelineIndexKey')
-    assert migration_task_info['expirationTime'] > datetime.utcnow().timestamp()
+    assert migration_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
     migration_task_info.pop('expirationTime')
     assert migration_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
                                   'data': '', 'endTime': '', 'status': 'Running', 'parentTaskId': scanning_task_id, 
@@ -410,8 +424,8 @@ def test_lambda_handler(mock_s3_context, mock_iam_context, mock_sqs_context, moc
 
     """ Scene 3:
     Testing Merge is True, DeleteOnSuccess is False, Size is 15KiB, keepPrefix is True,
-    Since Size is 15KiB, But the actual file is larger than 16KiB, so one task per 1 files, 
-        the expected result is 3 SQS messages with 3 subtasks in DDB
+    Since Size is 15KiB, But the actual file is larger than 16KiB, so all files in one task, 
+        the expected result is 1 SQS messages with 1 subtasks in DDB
     """
     
     execution_name = str(uuid.uuid4())
@@ -424,27 +438,12 @@ def test_lambda_handler(mock_s3_context, mock_iam_context, mock_sqs_context, moc
     migration_task = next(migration_task_iterator)
     migration_task.pop('taskId')
     migration_task.pop('parentTaskId')
-    assert migration_task == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 'taskToken': '', 'deleteOnSuccess': False, 'merge': True, 
+    assert migration_task == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 'taskToken': '', 'deleteOnSuccess': False, 'merge': False, 
                               'sourceType': 'alb', 'enrichmentPlugins': ['geo_ip', 'user_agent'],
-                              'data': [{'source': {'bucket': staging_bucket_name, 'key': parquet_src_apigateway2}, 'destination': {'bucket': staging_bucket_name, 'key': parquet_dst_keep_prefix_apigateway2}}
+                              'data': [{'source': {'bucket': staging_bucket_name, 'key': parquet_src_apigateway2}, 'destination': {'bucket': staging_bucket_name, 'key': parquet_dst_keep_prefix_apigateway2}},
+                                       {'source': {'bucket': staging_bucket_name, 'key': parquet_src_apigateway3}, 'destination': {'bucket': staging_bucket_name, 'key': parquet_dst_keep_prefix_apigateway3}},
+                                       {'source': {'bucket': staging_bucket_name, 'key': parquet_src_apigateway1}, 'destination': {'bucket': staging_bucket_name, 'key': parquet_dst_keep_prefix_apigateway1}}
                              ]}
-    migration_task = next(migration_task_iterator)
-    migration_task.pop('taskId')
-    migration_task.pop('parentTaskId')
-    assert migration_task == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 'taskToken': '', 'deleteOnSuccess': False, 'merge': True, 
-                              'sourceType': 'alb', 'enrichmentPlugins': ['geo_ip', 'user_agent'],
-                              'data': [{'source': {'bucket': staging_bucket_name, 'key': parquet_src_apigateway3}, 'destination': {'bucket': staging_bucket_name, 'key': parquet_dst_keep_prefix_apigateway3}}
-                             ]}
-    
-    migration_task = next(migration_task_iterator)
-    migration_task.pop('taskId')
-    migration_task.pop('parentTaskId')
-    assert migration_task == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 'taskToken': '', 'deleteOnSuccess': False, 'merge': True, 
-                              'sourceType': 'alb', 'enrichmentPlugins': ['geo_ip', 'user_agent'],
-                              'data': [{'source': {'bucket': staging_bucket_name, 'key': parquet_src_apigateway1}, 'destination': {'bucket': staging_bucket_name, 'key': parquet_dst_keep_prefix_apigateway1}}
-                             ]}
-    with pytest.raises(StopIteration):
-        next(migration_task_iterator)
     
     scanning_task_info = next(AWS_DDB_ETL_LOG.query_subtasks(execution_name=execution_name, parent_task_id='00000000-0000-0000-0000-000000000000'))
     scanning_task_id = scanning_task_info['taskId']
@@ -452,10 +451,10 @@ def test_lambda_handler(mock_s3_context, mock_iam_context, mock_sqs_context, moc
     scanning_task_info.pop('startTime')
     pipeline_index_key = scanning_task_info['pipelineIndexKey']
     scanning_task_info.pop('pipelineIndexKey')
-    assert scanning_task_info['expirationTime'] > datetime.utcnow().timestamp()
+    assert scanning_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
     scanning_task_info.pop('expirationTime')
     assert scanning_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
-                                  'data': '{"totalSubTask": 3}', 'endTime': '', 'status': 'Running', 'parentTaskId': '00000000-0000-0000-0000-000000000000', 
+                                  'data': '{"totalSubTask": 1}', 'endTime': '', 'status': 'Running', 'parentTaskId': '00000000-0000-0000-0000-000000000000', 
                                   'API': 'Lambda: Invoke', 'stateName': 'Step 1: S3 Migration Task from Staging to Archive', 
                                   'stateMachineName': 'LogProcessor-HBTz7GoOjZoz', 
                                   'pipelineId': '189f73eb-1808-47e4-a9db-ee9c35100abe'}
@@ -468,7 +467,7 @@ def test_lambda_handler(mock_s3_context, mock_iam_context, mock_sqs_context, moc
     migration_task_info.pop('startTime')
     pipeline_index_key = migration_task_info['pipelineIndexKey']
     migration_task_info.pop('pipelineIndexKey')
-    assert migration_task_info['expirationTime'] > datetime.utcnow().timestamp()
+    assert migration_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
     migration_task_info.pop('expirationTime')
     assert migration_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
                                   'data': '', 'endTime': '', 'status': 'Running', 'parentTaskId': scanning_task_id, 
@@ -478,38 +477,6 @@ def test_lambda_handler(mock_s3_context, mock_iam_context, mock_sqs_context, moc
     assert pipeline_index_key.split(':')[0] == '189f73eb-1808-47e4-a9db-ee9c35100abe'
     assert pipeline_index_key.split(':')[1] == 'LogProcessor-HBTz7GoOjZoz'
     assert pipeline_index_key.split(':')[2] != ''
-    migration_task_info = next(migration_task_info_iterator)
-    migration_task_info.pop('taskId')
-    migration_task_info.pop('startTime')
-    pipeline_index_key = migration_task_info['pipelineIndexKey']
-    migration_task_info.pop('pipelineIndexKey')
-    assert migration_task_info['expirationTime'] > datetime.utcnow().timestamp()
-    migration_task_info.pop('expirationTime')
-    assert migration_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
-                                  'data': '', 'endTime': '', 'status': 'Running', 'parentTaskId': scanning_task_id, 
-                                  'API': 'Lambda: Invoke', 'stateName': 'Step 1: S3 Migration Task from Staging to Archive', 
-                                  'stateMachineName': 'LogProcessor-HBTz7GoOjZoz',
-                                  'pipelineId': '189f73eb-1808-47e4-a9db-ee9c35100abe'}
-    assert pipeline_index_key.split(':')[0] == '189f73eb-1808-47e4-a9db-ee9c35100abe'
-    assert pipeline_index_key.split(':')[1] == 'LogProcessor-HBTz7GoOjZoz'
-    assert pipeline_index_key.split(':')[2] != ''
-    migration_task_info = next(migration_task_info_iterator)
-    migration_task_info.pop('taskId')
-    migration_task_info.pop('startTime')
-    pipeline_index_key = migration_task_info['pipelineIndexKey']
-    migration_task_info.pop('pipelineIndexKey')
-    assert migration_task_info['expirationTime'] > datetime.utcnow().timestamp()
-    migration_task_info.pop('expirationTime')
-    assert migration_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
-                                  'data': '', 'endTime': '', 'status': 'Running', 'parentTaskId': scanning_task_id, 
-                                  'API': 'Lambda: Invoke', 'stateName': 'Step 1: S3 Migration Task from Staging to Archive', 
-                                  'stateMachineName': 'LogProcessor-HBTz7GoOjZoz', 
-                                  'pipelineId': '189f73eb-1808-47e4-a9db-ee9c35100abe'}
-    assert pipeline_index_key.split(':')[0] == '189f73eb-1808-47e4-a9db-ee9c35100abe'
-    assert pipeline_index_key.split(':')[1] == 'LogProcessor-HBTz7GoOjZoz'
-    assert pipeline_index_key.split(':')[2] != ''
-    with pytest.raises(StopIteration):
-        next(migration_task_info_iterator)
     
     """ Scene 4:
     Testing Merge is True, DeleteOnSuccess is False, Size is 40KiB, keepPrefix is True,
@@ -548,7 +515,7 @@ def test_lambda_handler(mock_s3_context, mock_iam_context, mock_sqs_context, moc
     scanning_task_info.pop('startTime')
     pipeline_index_key = scanning_task_info['pipelineIndexKey']
     scanning_task_info.pop('pipelineIndexKey')
-    assert scanning_task_info['expirationTime'] > datetime.utcnow().timestamp()
+    assert scanning_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
     scanning_task_info.pop('expirationTime')
     assert scanning_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
                                   'data': '{"totalSubTask": 2}', 'endTime': '', 'status': 'Running', 'parentTaskId': '00000000-0000-0000-0000-000000000000', 
@@ -564,7 +531,7 @@ def test_lambda_handler(mock_s3_context, mock_iam_context, mock_sqs_context, moc
     migration_task_info.pop('startTime')
     pipeline_index_key = migration_task_info['pipelineIndexKey']
     migration_task_info.pop('pipelineIndexKey')
-    assert migration_task_info['expirationTime'] > datetime.utcnow().timestamp()
+    assert migration_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
     migration_task_info.pop('expirationTime')
     assert migration_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
                                   'data': '', 'endTime': '', 'status': 'Running', 'parentTaskId': scanning_task_id, 
@@ -579,7 +546,7 @@ def test_lambda_handler(mock_s3_context, mock_iam_context, mock_sqs_context, moc
     migration_task_info.pop('startTime')
     pipeline_index_key = migration_task_info['pipelineIndexKey']
     migration_task_info.pop('pipelineIndexKey')
-    assert migration_task_info['expirationTime'] > datetime.utcnow().timestamp()
+    assert migration_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
     migration_task_info.pop('expirationTime')
     assert migration_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
                                   'data': '', 'endTime': '', 'status': 'Running', 'parentTaskId': scanning_task_id, 
@@ -630,7 +597,7 @@ def test_lambda_handler(mock_s3_context, mock_iam_context, mock_sqs_context, moc
     scanning_task_info.pop('startTime')
     pipeline_index_key = scanning_task_info['pipelineIndexKey']
     scanning_task_info.pop('pipelineIndexKey')
-    assert scanning_task_info['expirationTime'] > datetime.utcnow().timestamp()
+    assert scanning_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
     scanning_task_info.pop('expirationTime')
     assert scanning_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
                                   'data': '{"totalSubTask": 2}', 'endTime': '', 'status': 'Running', 'parentTaskId': '00000000-0000-0000-0000-000000000000', 
@@ -646,7 +613,7 @@ def test_lambda_handler(mock_s3_context, mock_iam_context, mock_sqs_context, moc
     migration_task_info.pop('startTime')
     pipeline_index_key = migration_task_info['pipelineIndexKey']
     migration_task_info.pop('pipelineIndexKey')
-    assert migration_task_info['expirationTime'] > datetime.utcnow().timestamp()
+    assert migration_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
     migration_task_info.pop('expirationTime')
     assert migration_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
                                   'data': '', 'endTime': '', 'status': 'Running', 'parentTaskId': scanning_task_id, 
@@ -661,7 +628,7 @@ def test_lambda_handler(mock_s3_context, mock_iam_context, mock_sqs_context, moc
     migration_task_info.pop('startTime')
     pipeline_index_key = migration_task_info['pipelineIndexKey']
     migration_task_info.pop('pipelineIndexKey')
-    assert migration_task_info['expirationTime'] > datetime.utcnow().timestamp()
+    assert migration_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
     migration_task_info.pop('expirationTime')
     assert migration_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
                                   'data': '', 'endTime': '', 'status': 'Running', 'parentTaskId': scanning_task_id, 
@@ -682,7 +649,7 @@ def test_lambda_handler(mock_s3_context, mock_iam_context, mock_sqs_context, moc
     execution_name = str(uuid.uuid4())
     scanning_event = copy.deepcopy(s3_object_scanning_event)
     scanning_event['executionName'] = execution_name
-    scanning_event['size'] = 500
+    scanning_event['maxObjectFilesNumPerCopyTask'] = 500
     scanning_event['keepPrefix'] = {"__ds__": {
             "type": "time",
             "from": "%Y-%m-%d-%H-%M",
@@ -720,7 +687,7 @@ def test_lambda_handler(mock_s3_context, mock_iam_context, mock_sqs_context, moc
     scanning_task_info.pop('startTime')
     pipeline_index_key = scanning_task_info['pipelineIndexKey']
     scanning_task_info.pop('pipelineIndexKey')
-    assert scanning_task_info['expirationTime'] > datetime.utcnow().timestamp()
+    assert scanning_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
     scanning_task_info.pop('expirationTime')
     assert scanning_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
                                   'data': '{"totalSubTask": 1}', 'endTime': '', 'status': 'Running', 'parentTaskId': '00000000-0000-0000-0000-000000000000', 
@@ -736,7 +703,7 @@ def test_lambda_handler(mock_s3_context, mock_iam_context, mock_sqs_context, moc
     migration_task_info.pop('startTime')
     pipeline_index_key = migration_task_info['pipelineIndexKey']
     migration_task_info.pop('pipelineIndexKey')
-    assert migration_task_info['expirationTime'] > datetime.utcnow().timestamp()
+    assert migration_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
     migration_task_info.pop('expirationTime')
     assert migration_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
                                   'data': '', 'endTime': '', 'status': 'Running', 'parentTaskId': scanning_task_id, 
@@ -779,7 +746,7 @@ def test_lambda_handler(mock_s3_context, mock_iam_context, mock_sqs_context, moc
     scanning_task_info.pop('startTime')
     pipeline_index_key = scanning_task_info['pipelineIndexKey']
     scanning_task_info.pop('pipelineIndexKey')
-    assert scanning_task_info['expirationTime'] > datetime.utcnow().timestamp()
+    assert scanning_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
     scanning_task_info.pop('expirationTime')
     assert scanning_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
                                   'data': '{"totalSubTask": 1}', 'endTime': '', 'status': 'Running', 'parentTaskId': '00000000-0000-0000-0000-000000000000', 
@@ -795,7 +762,7 @@ def test_lambda_handler(mock_s3_context, mock_iam_context, mock_sqs_context, moc
     migration_task_info.pop('startTime')
     pipeline_index_key = migration_task_info['pipelineIndexKey']
     migration_task_info.pop('pipelineIndexKey')
-    assert migration_task_info['expirationTime'] > datetime.utcnow().timestamp()
+    assert migration_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
     migration_task_info.pop('expirationTime')
     assert migration_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
                                   'data': '', 'endTime': '', 'status': 'Running', 'parentTaskId': scanning_task_id, 
@@ -817,7 +784,7 @@ def test_lambda_handler(mock_s3_context, mock_iam_context, mock_sqs_context, moc
     scanning_event = copy.deepcopy(s3_object_scanning_event)
     scanning_event['executionName'] = execution_name
     scanning_event['merge'] = False
-    scanning_event['size'] = 2
+    scanning_event['maxObjectFilesNumPerCopyTask'] = 2
     
     scanning_lambda_handler(scanning_event, scanning_context)
     migration_task_iterator = AWS_SQS.receive_message(url=migration_sqs_url)
@@ -845,7 +812,7 @@ def test_lambda_handler(mock_s3_context, mock_iam_context, mock_sqs_context, moc
     scanning_task_info.pop('startTime')
     pipeline_index_key = scanning_task_info['pipelineIndexKey']
     scanning_task_info.pop('pipelineIndexKey')
-    assert scanning_task_info['expirationTime'] > datetime.utcnow().timestamp()
+    assert scanning_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
     scanning_task_info.pop('expirationTime')
     assert scanning_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
                                   'data': '{"totalSubTask": 2}', 'endTime': '', 'status': 'Running', 'parentTaskId': '00000000-0000-0000-0000-000000000000', 
@@ -861,7 +828,7 @@ def test_lambda_handler(mock_s3_context, mock_iam_context, mock_sqs_context, moc
     migration_task_info.pop('startTime')
     pipeline_index_key = migration_task_info['pipelineIndexKey']
     migration_task_info.pop('pipelineIndexKey')
-    assert migration_task_info['expirationTime'] > datetime.utcnow().timestamp()
+    assert migration_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
     migration_task_info.pop('expirationTime')
     assert migration_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
                                   'data': '', 'endTime': '', 'status': 'Running', 'parentTaskId': scanning_task_id, 
@@ -876,7 +843,7 @@ def test_lambda_handler(mock_s3_context, mock_iam_context, mock_sqs_context, moc
     migration_task_info.pop('startTime')
     pipeline_index_key = migration_task_info['pipelineIndexKey']
     migration_task_info.pop('pipelineIndexKey')
-    assert migration_task_info['expirationTime'] > datetime.utcnow().timestamp()
+    assert migration_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
     migration_task_info.pop('expirationTime')
     assert migration_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
                                   'data': '', 'endTime': '', 'status': 'Running', 'parentTaskId': scanning_task_id, 
@@ -898,7 +865,7 @@ def test_lambda_handler(mock_s3_context, mock_iam_context, mock_sqs_context, moc
     scanning_event = copy.deepcopy(s3_object_scanning_event)
     scanning_event['executionName'] = execution_name
     scanning_event['merge'] = False
-    scanning_event['size'] = 2
+    scanning_event['maxObjectFilesNumPerCopyTask'] = 2
     scanning_event['keepPrefix'] = False
     
     scanning_lambda_handler(scanning_event, scanning_context)
@@ -927,7 +894,7 @@ def test_lambda_handler(mock_s3_context, mock_iam_context, mock_sqs_context, moc
     scanning_task_info.pop('startTime')
     pipeline_index_key = scanning_task_info['pipelineIndexKey']
     scanning_task_info.pop('pipelineIndexKey')
-    assert scanning_task_info['expirationTime'] > datetime.utcnow().timestamp()
+    assert scanning_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
     scanning_task_info.pop('expirationTime')
     assert scanning_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
                                   'data': '{"totalSubTask": 2}', 'endTime': '', 'status': 'Running', 'parentTaskId': '00000000-0000-0000-0000-000000000000', 
@@ -943,7 +910,7 @@ def test_lambda_handler(mock_s3_context, mock_iam_context, mock_sqs_context, moc
     migration_task_info.pop('startTime')
     pipeline_index_key = migration_task_info['pipelineIndexKey']
     migration_task_info.pop('pipelineIndexKey')
-    assert migration_task_info['expirationTime'] > datetime.utcnow().timestamp()
+    assert migration_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
     migration_task_info.pop('expirationTime')
     assert migration_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
                                   'data': '', 'endTime': '', 'status': 'Running', 'parentTaskId': scanning_task_id, 
@@ -958,7 +925,7 @@ def test_lambda_handler(mock_s3_context, mock_iam_context, mock_sqs_context, moc
     migration_task_info.pop('startTime')
     pipeline_index_key = migration_task_info['pipelineIndexKey']
     migration_task_info.pop('pipelineIndexKey')
-    assert migration_task_info['expirationTime'] > datetime.utcnow().timestamp()
+    assert migration_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
     migration_task_info.pop('expirationTime')
     assert migration_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
                                   'data': '', 'endTime': '', 'status': 'Running', 'parentTaskId': scanning_task_id, 
@@ -1014,7 +981,7 @@ def test_lambda_handler(mock_s3_context, mock_iam_context, mock_sqs_context, moc
     scanning_task_info.pop('startTime')
     pipeline_index_key = scanning_task_info['pipelineIndexKey']
     scanning_task_info.pop('pipelineIndexKey')
-    assert scanning_task_info['expirationTime'] > datetime.utcnow().timestamp()
+    assert scanning_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
     scanning_task_info.pop('expirationTime')
     assert scanning_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
                                   'data': '{"totalSubTask": 1}', 'endTime': '', 'status': 'Running', 'parentTaskId': '00000000-0000-0000-0000-000000000000', 
@@ -1030,7 +997,7 @@ def test_lambda_handler(mock_s3_context, mock_iam_context, mock_sqs_context, moc
     migration_task_info.pop('startTime')
     pipeline_index_key = migration_task_info['pipelineIndexKey']
     migration_task_info.pop('pipelineIndexKey')
-    assert migration_task_info['expirationTime'] > datetime.utcnow().timestamp()
+    assert migration_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
     migration_task_info.pop('expirationTime')
     assert migration_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
                                   'data': '', 'endTime': '', 'status': 'Running', 'parentTaskId': scanning_task_id, 
@@ -1071,7 +1038,7 @@ def test_lambda_handler(mock_s3_context, mock_iam_context, mock_sqs_context, moc
     scanning_task_info.pop('startTime')
     pipeline_index_key = scanning_task_info['pipelineIndexKey']
     scanning_task_info.pop('pipelineIndexKey')
-    assert scanning_task_info['expirationTime'] > datetime.utcnow().timestamp()
+    assert scanning_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
     scanning_task_info.pop('expirationTime')
     assert scanning_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
                                   'data': '{"totalSubTask": 0}', 'endTime': '', 'status': 'Running', 'parentTaskId': '00000000-0000-0000-0000-000000000000', 
@@ -1082,6 +1049,264 @@ def test_lambda_handler(mock_s3_context, mock_iam_context, mock_sqs_context, moc
     assert pipeline_index_key.split(':')[1] == 'LogProcessor-HBTz7GoOjZoz'
     assert pipeline_index_key.split(':')[2] != ''
     migration_task_info_iterator = AWS_DDB_ETL_LOG.query_subtasks(execution_name=execution_name, parent_task_id=scanning_task_id)
+    with pytest.raises(StopIteration):
+        next(migration_task_info_iterator)
+    
+    """ Scene 11:
+    Test cases with Merge is True and file size > size
+    """
+    
+    execution_name = str(uuid.uuid4())
+    scanning_event = copy.deepcopy(s3_object_scanning_event)
+    scanning_event['executionName'] = execution_name
+    scanning_event['merge'] = True
+    scanning_event['size'] = '3000B'
+    scanning_event['keepPrefix'] = {"__ds__": {
+            "type": "time",
+            "from": "%Y-%m-%d-%H-%M",
+            "to": "%Y-%m-%d-00-00",
+        },
+            "region": {
+                "type": "retain",
+            },
+            "__execution_name__": {
+                "type": "default",
+                "value": "00000000-0000-0000-0000-000000000000"
+            }
+        }
+    
+    scanning_lambda_handler(scanning_event, scanning_context)
+    migration_task_iterator = AWS_SQS.receive_message(url=migration_sqs_url)
+    migration_task = next(migration_task_iterator)
+    migration_task.pop('taskId')
+    migration_task.pop('parentTaskId')
+    assert migration_task == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 'taskToken': '', 'deleteOnSuccess': False, 'merge': False, 
+                              'sourceType': 'alb', 'enrichmentPlugins': ['geo_ip', 'user_agent'],
+                              'data': [{'source': {'bucket': staging_bucket_name, 'key': parquet_src_apigateway2}, 'destination': {'bucket': staging_bucket_name, 'key': parquet_dst_keep_prefix_dict_apigateway2}}, 
+                                       {'source': {'bucket': staging_bucket_name, 'key': parquet_src_apigateway3}, 'destination': {'bucket': staging_bucket_name, 'key': parquet_dst_keep_prefix_dict_apigateway3}},
+                                       {'source': {'bucket': staging_bucket_name, 'key': parquet_src_apigateway1}, 'destination': {'bucket': staging_bucket_name, 'key': parquet_dst_keep_prefix_dict_apigateway1}}
+                             ]}
+    with pytest.raises(StopIteration):
+        next(migration_task_iterator)
+    
+    scanning_task_info = next(AWS_DDB_ETL_LOG.query_subtasks(execution_name=execution_name, parent_task_id='00000000-0000-0000-0000-000000000000'))
+    scanning_task_id = scanning_task_info['taskId']
+    scanning_task_info.pop('taskId')
+    scanning_task_info.pop('startTime')
+    pipeline_index_key = scanning_task_info['pipelineIndexKey']
+    scanning_task_info.pop('pipelineIndexKey')
+    assert scanning_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
+    scanning_task_info.pop('expirationTime')
+    assert scanning_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
+                                  'data': '{"totalSubTask": 1}', 'endTime': '', 'status': 'Running', 'parentTaskId': '00000000-0000-0000-0000-000000000000', 
+                                  'API': 'Lambda: Invoke', 'stateName': 'Step 1: S3 Migration Task from Staging to Archive', 
+                                  'stateMachineName': 'LogProcessor-HBTz7GoOjZoz', 
+                                  'pipelineId': '189f73eb-1808-47e4-a9db-ee9c35100abe'}
+    assert pipeline_index_key.split(':')[0] == '189f73eb-1808-47e4-a9db-ee9c35100abe'
+    assert pipeline_index_key.split(':')[1] == 'LogProcessor-HBTz7GoOjZoz'
+    assert pipeline_index_key.split(':')[2] != ''
+    migration_task_info_iterator = AWS_DDB_ETL_LOG.query_subtasks(execution_name=execution_name, parent_task_id=scanning_task_id)
+    migration_task_info = next(migration_task_info_iterator)
+    migration_task_info.pop('taskId')
+    migration_task_info.pop('startTime')
+    pipeline_index_key = migration_task_info['pipelineIndexKey']
+    migration_task_info.pop('pipelineIndexKey')
+    assert migration_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
+    migration_task_info.pop('expirationTime')
+    assert migration_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
+                                  'data': '', 'endTime': '', 'status': 'Running', 'parentTaskId': scanning_task_id, 
+                                  'API': 'Lambda: Invoke', 'stateName': 'Step 1: S3 Migration Task from Staging to Archive', 
+                                  'stateMachineName': 'LogProcessor-HBTz7GoOjZoz', 
+                                  'pipelineId': '189f73eb-1808-47e4-a9db-ee9c35100abe'}
+    assert pipeline_index_key.split(':')[0] == '189f73eb-1808-47e4-a9db-ee9c35100abe'
+    assert pipeline_index_key.split(':')[1] == 'LogProcessor-HBTz7GoOjZoz'
+    assert pipeline_index_key.split(':')[2] != ''
+    with pytest.raises(StopIteration):
+        next(migration_task_info_iterator)
+    
+    """ Scene 12:
+    Test cases with Merge is True and file size < size
+    """
+    
+    execution_name = str(uuid.uuid4())
+    scanning_event = copy.deepcopy(s3_object_scanning_event)
+    scanning_event['executionName'] = execution_name
+    scanning_event['merge'] = True
+    scanning_event['size'] = '40KiB'
+    scanning_event['keepPrefix'] = {"__ds__": {
+            "type": "time",
+            "from": "%Y-%m-%d-%H-%M",
+            "to": "%Y-%m-%d-00-00",
+        },
+            "region": {
+                "type": "retain",
+            },
+            "__execution_name__": {
+                "type": "default",
+                "value": "00000000-0000-0000-0000-000000000000"
+            }
+        }
+    
+    scanning_lambda_handler(scanning_event, scanning_context)
+    migration_task_iterator = AWS_SQS.receive_message(url=migration_sqs_url)
+    migration_task = next(migration_task_iterator)
+    migration_task.pop('taskId')
+    migration_task.pop('parentTaskId')
+    assert migration_task == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 'taskToken': '', 'deleteOnSuccess': False, 'merge': True, 
+                              'sourceType': 'alb', 'enrichmentPlugins': ['geo_ip', 'user_agent'],
+                              'data': [{'source': {'bucket': staging_bucket_name, 'key': parquet_src_apigateway2}, 'destination': {'bucket': staging_bucket_name, 'key': parquet_dst_keep_prefix_dict_apigateway2}}, 
+                                       {'source': {'bucket': staging_bucket_name, 'key': parquet_src_apigateway3}, 'destination': {'bucket': staging_bucket_name, 'key': parquet_dst_keep_prefix_dict_apigateway3}}
+                             ]}
+    migration_task = next(migration_task_iterator)
+    migration_task.pop('taskId')
+    migration_task.pop('parentTaskId')
+    assert migration_task == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 'taskToken': '', 'deleteOnSuccess': False, 'merge': True, 
+                              'sourceType': 'alb', 'enrichmentPlugins': ['geo_ip', 'user_agent'],
+                              'data': [{'source': {'bucket': staging_bucket_name, 'key': parquet_src_apigateway1}, 'destination': {'bucket': staging_bucket_name, 'key': parquet_dst_keep_prefix_dict_apigateway1}}
+                             ]}
+    with pytest.raises(StopIteration):
+        next(migration_task_iterator)
+    
+    scanning_task_info = next(AWS_DDB_ETL_LOG.query_subtasks(execution_name=execution_name, parent_task_id='00000000-0000-0000-0000-000000000000'))
+    scanning_task_id = scanning_task_info['taskId']
+    scanning_task_info.pop('taskId')
+    scanning_task_info.pop('startTime')
+    pipeline_index_key = scanning_task_info['pipelineIndexKey']
+    scanning_task_info.pop('pipelineIndexKey')
+    assert scanning_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
+    scanning_task_info.pop('expirationTime')
+    assert scanning_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
+                                  'data': '{"totalSubTask": 2}', 'endTime': '', 'status': 'Running', 'parentTaskId': '00000000-0000-0000-0000-000000000000', 
+                                  'API': 'Lambda: Invoke', 'stateName': 'Step 1: S3 Migration Task from Staging to Archive', 
+                                  'stateMachineName': 'LogProcessor-HBTz7GoOjZoz', 
+                                  'pipelineId': '189f73eb-1808-47e4-a9db-ee9c35100abe'}
+    assert pipeline_index_key.split(':')[0] == '189f73eb-1808-47e4-a9db-ee9c35100abe'
+    assert pipeline_index_key.split(':')[1] == 'LogProcessor-HBTz7GoOjZoz'
+    assert pipeline_index_key.split(':')[2] != ''
+    migration_task_info_iterator = AWS_DDB_ETL_LOG.query_subtasks(execution_name=execution_name, parent_task_id=scanning_task_id)
+    migration_task_info = next(migration_task_info_iterator)
+    migration_task_info.pop('taskId')
+    migration_task_info.pop('startTime')
+    pipeline_index_key = migration_task_info['pipelineIndexKey']
+    migration_task_info.pop('pipelineIndexKey')
+    assert migration_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
+    migration_task_info.pop('expirationTime')
+    assert migration_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
+                                  'data': '', 'endTime': '', 'status': 'Running', 'parentTaskId': scanning_task_id, 
+                                  'API': 'Lambda: Invoke', 'stateName': 'Step 1: S3 Migration Task from Staging to Archive', 
+                                  'stateMachineName': 'LogProcessor-HBTz7GoOjZoz', 
+                                  'pipelineId': '189f73eb-1808-47e4-a9db-ee9c35100abe'}
+    assert pipeline_index_key.split(':')[0] == '189f73eb-1808-47e4-a9db-ee9c35100abe'
+    assert pipeline_index_key.split(':')[1] == 'LogProcessor-HBTz7GoOjZoz'
+    assert pipeline_index_key.split(':')[2] != ''
+    migration_task_info = next(migration_task_info_iterator)
+    migration_task_info.pop('taskId')
+    migration_task_info.pop('startTime')
+    pipeline_index_key = migration_task_info['pipelineIndexKey']
+    migration_task_info.pop('pipelineIndexKey')
+    assert migration_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
+    migration_task_info.pop('expirationTime')
+    assert migration_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
+                                  'data': '', 'endTime': '', 'status': 'Running', 'parentTaskId': scanning_task_id, 
+                                  'API': 'Lambda: Invoke', 'stateName': 'Step 1: S3 Migration Task from Staging to Archive', 
+                                  'stateMachineName': 'LogProcessor-HBTz7GoOjZoz', 
+                                  'pipelineId': '189f73eb-1808-47e4-a9db-ee9c35100abe'}
+    assert pipeline_index_key.split(':')[0] == '189f73eb-1808-47e4-a9db-ee9c35100abe'
+    assert pipeline_index_key.split(':')[1] == 'LogProcessor-HBTz7GoOjZoz'
+    assert pipeline_index_key.split(':')[2] != ''
+    with pytest.raises(StopIteration):
+        next(migration_task_info_iterator)
+    
+    """ Scene 13:
+    Test cases with Merge is True and has file size < size and file size > size
+    """
+    execution_name = str(uuid.uuid4())
+    scanning_event = copy.deepcopy(s3_object_scanning_event)
+    scanning_event['executionName'] = execution_name
+    scanning_event['srcPath'] = f's3://{staging_bucket_name}/AWSLogs/{account_id}/centralized/aws_apigateway_logs_gz/__ds__=2023-03-13-02'
+    scanning_event['merge'] = True
+    scanning_event['size'] = '2500B'
+    scanning_event['keepPrefix'] = {"__ds__": {
+            "type": "time",
+            "from": "%Y-%m-%d-%H-%M",
+            "to": "%Y-%m-%d-00-00",
+        },
+            "region": {
+                "type": "retain",
+            },
+            "__execution_name__": {
+                "type": "default",
+                "value": "00000000-0000-0000-0000-000000000000"
+            }
+        }
+
+    scanning_lambda_handler(scanning_event, scanning_context)
+    migration_task_iterator = AWS_SQS.receive_message(url=migration_sqs_url)
+    migration_task = next(migration_task_iterator)
+    migration_task.pop('taskId')
+    migration_task.pop('parentTaskId')
+    assert migration_task == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 'taskToken': '', 'deleteOnSuccess': False, 'merge': True, 
+                              'sourceType': 'alb', 'enrichmentPlugins': ['geo_ip', 'user_agent'],
+                              'data': [{'source': {'bucket': staging_bucket_name, 'key': f'AWSLogs/{account_id}/centralized/aws_apigateway_logs_gz/__ds__=2023-03-13-02-05/region=us-east-1/__execution_name__=c399c496-3f6a-4f4d-99e6-890493f19278/apigateway2.gz'}, 'destination': {'bucket': staging_bucket_name, 'key': 'archive/centralized/aws_apigateway_logs_parquet/__ds__=2023-03-11-00/region=us-east-1/__execution_name__=00000000-0000-0000-0000-000000000000/apigateway2.gz'}}, 
+                                       {'source': {'bucket': staging_bucket_name, 'key': f'AWSLogs/{account_id}/centralized/aws_apigateway_logs_gz/__ds__=2023-03-13-02-59/region=us-east-1/__execution_name__=c399c496-3f6a-4f4d-99e6-890493f19278/apigateway3.gz'}, 'destination': {'bucket': staging_bucket_name, 'key': 'archive/centralized/aws_apigateway_logs_parquet/__ds__=2023-03-11-00/region=us-east-1/__execution_name__=00000000-0000-0000-0000-000000000000/apigateway3.gz'}}
+                             ]}
+    migration_task = next(migration_task_iterator)
+    migration_task.pop('taskId')
+    migration_task.pop('parentTaskId')
+    assert migration_task == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 'taskToken': '', 'deleteOnSuccess': False, 'merge': False, 
+                              'sourceType': 'alb', 'enrichmentPlugins': ['geo_ip', 'user_agent'],
+                              'data': [{'source': {'bucket': staging_bucket_name, 'key': f'AWSLogs/{account_id}/centralized/aws_apigateway_logs_gz/__ds__=2023-03-13-02-01/region=us-east-1/__execution_name__=03ed14db-7a91-4eda-a44f-6270efce4fd9/apigateway1.gz'}, 'destination': {'bucket': staging_bucket_name, 'key': 'archive/centralized/aws_apigateway_logs_parquet/__ds__=2023-03-11-00/region=us-east-1/__execution_name__=00000000-0000-0000-0000-000000000000/apigateway1.gz'}}
+                             ]}
+    with pytest.raises(StopIteration):
+        next(migration_task_iterator)
+    
+    scanning_task_info = next(AWS_DDB_ETL_LOG.query_subtasks(execution_name=execution_name, parent_task_id='00000000-0000-0000-0000-000000000000'))
+    scanning_task_id = scanning_task_info['taskId']
+    scanning_task_info.pop('taskId')
+    scanning_task_info.pop('startTime')
+    pipeline_index_key = scanning_task_info['pipelineIndexKey']
+    scanning_task_info.pop('pipelineIndexKey')
+    assert scanning_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
+    scanning_task_info.pop('expirationTime')
+    assert scanning_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
+                                  'data': '{"totalSubTask": 2}', 'endTime': '', 'status': 'Running', 'parentTaskId': '00000000-0000-0000-0000-000000000000', 
+                                  'API': 'Lambda: Invoke', 'stateName': 'Step 1: S3 Migration Task from Staging to Archive', 
+                                  'stateMachineName': 'LogProcessor-HBTz7GoOjZoz', 
+                                  'pipelineId': '189f73eb-1808-47e4-a9db-ee9c35100abe'}
+    assert pipeline_index_key.split(':')[0] == '189f73eb-1808-47e4-a9db-ee9c35100abe'
+    assert pipeline_index_key.split(':')[1] == 'LogProcessor-HBTz7GoOjZoz'
+    assert pipeline_index_key.split(':')[2] != ''
+    migration_task_info_iterator = AWS_DDB_ETL_LOG.query_subtasks(execution_name=execution_name, parent_task_id=scanning_task_id)
+    migration_task_info = next(migration_task_info_iterator)
+    migration_task_info.pop('taskId')
+    migration_task_info.pop('startTime')
+    pipeline_index_key = migration_task_info['pipelineIndexKey']
+    migration_task_info.pop('pipelineIndexKey')
+    assert migration_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
+    migration_task_info.pop('expirationTime')
+    assert migration_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
+                                  'data': '', 'endTime': '', 'status': 'Running', 'parentTaskId': scanning_task_id, 
+                                  'API': 'Lambda: Invoke', 'stateName': 'Step 1: S3 Migration Task from Staging to Archive', 
+                                  'stateMachineName': 'LogProcessor-HBTz7GoOjZoz', 
+                                  'pipelineId': '189f73eb-1808-47e4-a9db-ee9c35100abe'}
+    assert pipeline_index_key.split(':')[0] == '189f73eb-1808-47e4-a9db-ee9c35100abe'
+    assert pipeline_index_key.split(':')[1] == 'LogProcessor-HBTz7GoOjZoz'
+    assert pipeline_index_key.split(':')[2] != ''
+    migration_task_info = next(migration_task_info_iterator)
+    migration_task_info.pop('taskId')
+    migration_task_info.pop('startTime')
+    pipeline_index_key = migration_task_info['pipelineIndexKey']
+    migration_task_info.pop('pipelineIndexKey')
+    assert migration_task_info['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
+    migration_task_info.pop('expirationTime')
+    assert migration_task_info == {'executionName': execution_name, 'functionName': 'S3ObjectScanning-vHVIc4qyW86Q', 
+                                  'data': '', 'endTime': '', 'status': 'Running', 'parentTaskId': scanning_task_id, 
+                                  'API': 'Lambda: Invoke', 'stateName': 'Step 1: S3 Migration Task from Staging to Archive', 
+                                  'stateMachineName': 'LogProcessor-HBTz7GoOjZoz', 
+                                  'pipelineId': '189f73eb-1808-47e4-a9db-ee9c35100abe'}
+    assert pipeline_index_key.split(':')[0] == '189f73eb-1808-47e4-a9db-ee9c35100abe'
+    assert pipeline_index_key.split(':')[1] == 'LogProcessor-HBTz7GoOjZoz'
+    assert pipeline_index_key.split(':')[2] != ''
     with pytest.raises(StopIteration):
         next(migration_task_info_iterator)
 
@@ -1095,52 +1320,55 @@ def test_migration_task_generator(mock_s3_context, mock_iam_context, mock_sqs_co
     event = s3_object_scanning_event.copy()
     param = Parameters(event)
     param.sqs_url = AWS_SQS.get_queue_url(param.sqs_name)
-    param.units = None
-
+    param.size = 104857600
+    
     assert migration_task_generator(param) == 1
 
-    param.size = 1
-    assert migration_task_generator(param) == 3
+    param.max_object_files_num_per_copy_task = 1
+    assert migration_task_generator(param) == 1
 
-    param.size = 2
+    param.size = 2050
+    param.max_object_files_num_per_copy_task = 2
     assert migration_task_generator(param) == 2
 
-    param.size = 2
+    param.max_object_files_num_per_copy_task = 2
     param.merge = True
     assert migration_task_generator(param) == 2
 
     param.source.prefix = f"AWSLogs/{account_id}/centralized/aws_apigateway_logs_gz"
-    param.size = 1
+    param.max_object_files_num_per_copy_task = 1
     param.merge = False
     assert migration_task_generator(param) == 9
 
     param.source.prefix = f"AWSLogs/{account_id}/centralized/aws_apigateway_logs_gz"
-    param.size = 2
+    param.max_object_files_num_per_copy_task = 2
     param.merge = False
     assert migration_task_generator(param) == 5
 
     param.source.prefix = f"AWSLogs/{account_id}/centralized/aws_apigateway_logs_gz"
-    param.size = 1
+    param.max_object_files_num_per_copy_task = 1
     param.merge = False
     param.keep_prefix = False
     assert migration_task_generator(param) == 9
 
     param.source.prefix = f"AWSLogs/{account_id}/centralized/aws_apigateway_logs_gz"
-    param.size = 2
+    param.max_object_files_num_per_copy_task = 2
     param.merge = False
     param.keep_prefix = False
     assert migration_task_generator(param) == 5
     
     param.source.prefix = f"AWSLogs/{account_id}/centralized/aws_apigateway_logs_gz"
-    param.size = 3
+    param.max_object_files_num_per_copy_task = 3
     param.merge = False
     param.keep_prefix = False
     assert migration_task_generator(param) == 3
     
     param.source.prefix = f"AWSLogs/{account_id}/centralized/aws_apigateway_logs_gz"
-    param.size = 1
+    param.size = 104857600
+    param.max_object_files_size_per_copy_task = 2048
+    param.max_object_files_num_per_copy_task = 2
     param.merge = True
-    param.keep_prefix = {"__ds__": {
+    param.keep_prefix = {"__ds__": { # type: ignore
             "type": "time",
             "from": "%Y-%m-%d-%H-%M",
             "to": "%Y-%m-%d-00-00",
@@ -1153,30 +1381,14 @@ def test_migration_task_generator(mock_s3_context, mock_iam_context, mock_sqs_co
                 "value": "00000000-0000-0000-0000-000000000000"
             }
         }
-    assert migration_task_generator(param) == 9
-
-    param.source.prefix = f"AWSLogs/{account_id}/centralized/aws_apigateway_logs_gz"
-    param.size = 2
-    param.merge = True
-    param.keep_prefix = {"__ds__": {
-            "type": "time",
-            "from": "%Y-%m-%d-%H-%M",
-            "to": "%Y-%m-%d-00-00",
-        },
-            "region": {
-                "type": "retain",
-            },
-            "__execution_name__": {
-                "type": "default",
-                "value": "00000000-0000-0000-0000-000000000000"
-            }
-        }
-    assert migration_task_generator(param) == 6
+    assert migration_task_generator(param) == 3
     
     param.source.prefix = f"AWSLogs/{account_id}/centralized/aws_apigateway_logs_gz"
-    param.size = 3
+    param.size = 104857600
+    param.max_object_files_size_per_copy_task = 2048
+    param.max_object_files_num_per_copy_task = 3
     param.merge = True
-    param.keep_prefix = {"__ds__": {
+    param.keep_prefix = {"__ds__": { # type: ignore
             "type": "time",
             "from": "%Y-%m-%d-%H-%M",
             "to": "%Y-%m-%d-00-00",
@@ -1196,7 +1408,7 @@ def test_migration_task_generator(mock_s3_context, mock_iam_context, mock_sqs_co
     param.sqs_url = AWS_SQS.get_queue_url(param.sqs_name)
     param.source.prefix = f"AWSLogs/{account_id}/centralized/aws_apigateway_logs_gz"
     param.merge = True
-    param.keep_prefix = {"__ds__": {
+    param.keep_prefix = {"__ds__": { # type: ignore
             "type": "time",
             "from": "%Y-%m-%d-%H-%M",
             "to": "%Y-%m-%d-00-00",
@@ -1216,7 +1428,7 @@ def test_migration_task_generator(mock_s3_context, mock_iam_context, mock_sqs_co
     param.sqs_url = AWS_SQS.get_queue_url(param.sqs_name)
     param.source.prefix = f"AWSLogs/{account_id}/centralized/aws_apigateway_logs_gz"
     param.merge = True
-    param.keep_prefix = {"__ds__": {
+    param.keep_prefix = {"__ds__": { # type: ignore
             "type": "time",
             "from": "%Y-%m-%d-%H-%M",
             "to": "%Y-%m-%d-00-00",
@@ -1231,16 +1443,109 @@ def test_migration_task_generator(mock_s3_context, mock_iam_context, mock_sqs_co
         }
     assert migration_task_generator(param) == 3
     
+    event['size'] = '1 B'
+    param = Parameters(event)
+    param.sqs_url = AWS_SQS.get_queue_url(param.sqs_name)
+    param.source.prefix = f"AWSLogs/{account_id}/centralized/aws_apigateway_logs_gz"
+    param.merge = True
+    param.keep_prefix = {"__ds__": { # type: ignore
+            "type": "time",
+            "from": "%Y-%m-%d-%H-%M",
+            "to": "%Y-%m-%d-00-00",
+        },
+            "region": {
+                "type": "retain",
+            },
+            "__execution_name__": {
+                "type": "default",
+                "value": "00000000-0000-0000-0000-000000000000"
+            }
+        }
+
+    assert migration_task_generator(param) == 1
+    
+    event['size'] = '4 KiB'
+    param = Parameters(event)
+    param.sqs_url = AWS_SQS.get_queue_url(param.sqs_name)
+    param.source.prefix = f"AWSLogs/{account_id}/centralized/aws_apigateway_logs_gz"
+    param.merge = True
+    param.keep_prefix = {"__ds__": { # type: ignore
+            "type": "time",
+            "from": "%Y-%m-%d-%H-%M",
+            "to": "%Y-%m-%d-00-00",
+        },
+            "region": {
+                "type": "retain",
+            },
+            "__execution_name__": {
+                "type": "default",
+                "value": "00000000-0000-0000-0000-000000000000"
+            }
+        }
+
+    assert migration_task_generator(param) == 6
+    
     event = s3_object_scanning_event.copy()
     event['srcPath'] = f's3://{staging_bucket_name}/AWSLogs/{account_id}/elasticloadbalancing/elb'
+    event['maxObjectFilesNumPerCopyTask'] = 100
+    event['merge'] = False
+    param = Parameters(event)
+    param.sqs_url = AWS_SQS.get_queue_url(param.sqs_name)
+
+    assert migration_task_generator(param) == 20
+    
+    # test merge is True and file size < size
+    event = s3_object_scanning_event.copy()
+    event['srcPath'] = f's3://{staging_bucket_name}/AWSLogs/{account_id}/centralized/aws_apigateway_logs_gz'
+    event['size'] = '3000B'
+    event['merge'] = True
+    param = Parameters(event)
+    param.sqs_url = AWS_SQS.get_queue_url(param.sqs_name)
+    param.keep_prefix = {"__ds__": { # type: ignore
+            "type": "time",
+            "from": "%Y-%m-%d-%H-%M",
+            "to": "%Y-%m-%d-00-00",
+        },
+            "region": {
+                "type": "retain",
+            },
+            "__execution_name__": {
+                "type": "default",
+                "value": "00000000-0000-0000-0000-000000000000"
+            }
+        }
+    assert migration_task_generator(param) == 6
+    
+    # test merge is False
+    event = s3_object_scanning_event.copy()
+    event['srcPath'] = f's3://{staging_bucket_name}/AWSLogs/{account_id}/centralized/aws_apigateway_logs_gz'
     event['size'] = 100
     event['merge'] = False
     param = Parameters(event)
     param.sqs_url = AWS_SQS.get_queue_url(param.sqs_name)
-    param.units = None
-
-    assert migration_task_generator(param) == 20
-
+    assert migration_task_generator(param) == 1
+    
+    # test merge is True and file size > size
+    event = s3_object_scanning_event.copy()
+    event['srcPath'] = f's3://{staging_bucket_name}/AWSLogs/{account_id}/centralized/aws_apigateway_logs_gz'
+    event['size'] = '2000B'
+    event['merge'] = True
+    param = Parameters(event)
+    param.sqs_url = AWS_SQS.get_queue_url(param.sqs_name)
+    param.keep_prefix = {"__ds__": { # type: ignore
+            "type": "time",
+            "from": "%Y-%m-%d-%H-%M",
+            "to": "%Y-%m-%d-00-00",
+        },
+            "region": {
+                "type": "retain",
+            },
+            "__execution_name__": {
+                "type": "default",
+                "value": "00000000-0000-0000-0000-000000000000"
+            }
+        }
+    assert migration_task_generator(param) == 1
 
 
 def test_migration_task_writer(mock_s3_context, mock_iam_context, mock_sqs_context, mock_ddb_context):
@@ -1263,7 +1568,7 @@ def test_migration_task_writer(mock_s3_context, mock_iam_context, mock_sqs_conte
     response.pop('taskId')
     pipeline_index_key = response['pipelineIndexKey']
     response.pop('pipelineIndexKey')
-    assert response['expirationTime'] > datetime.utcnow().timestamp()
+    assert response['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
     response.pop('expirationTime')
     assert response == {
         'executionName': 'e4233e1a-1797-49d5-926f-3339504296df', 
@@ -1307,7 +1612,7 @@ def test_migration_task_writer(mock_s3_context, mock_iam_context, mock_sqs_conte
     response.pop('taskId')
     pipeline_index_key = response['pipelineIndexKey']
     response.pop('pipelineIndexKey')
-    assert response['expirationTime'] > datetime.utcnow().timestamp()
+    assert response['expirationTime'] > datetime.datetime.now(datetime.UTC).timestamp()
     response.pop('expirationTime')
     assert response == {
         'executionName': execution_name, 

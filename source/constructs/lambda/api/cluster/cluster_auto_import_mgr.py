@@ -1,7 +1,7 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-import logging
+from commonlib.logging import get_logger
 import os
 import time
 from datetime import datetime
@@ -15,8 +15,7 @@ from commonlib import AWSConnection
 from commonlib.exception import APIException, ErrorCode
 from commonlib.model import DomainRelatedResourceEnum
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 conn = AWSConnection()
 

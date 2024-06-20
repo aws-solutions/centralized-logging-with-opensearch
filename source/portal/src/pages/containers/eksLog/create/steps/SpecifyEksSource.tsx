@@ -86,7 +86,7 @@ const SpecifyEksSource: React.FC<SpecifyEksSourceProps> = (
       }
       const importedSourceList: LogSource[] =
         importedClusters?.data?.listLogSources?.logSources?.filter(
-          (element: LogSource) => element.accountId === filterAccountId
+          (element: LogSource) => element?.accountId === filterAccountId
         ) || [];
       const eksClusterNames = importedSourceList.map(
         (cluster) => cluster?.eks?.eksClusterName
@@ -123,7 +123,7 @@ const SpecifyEksSource: React.FC<SpecifyEksSourceProps> = (
         <div>
           <CrossAccountSelect
             disabled={loadingEksList}
-            accountId={eksClusterLogSource.accountId as string}
+            accountId={eksClusterLogSource?.accountId as string}
             changeAccount={(id, accountInfo) => {
               changeCurAccount(id, accountInfo);
             }}

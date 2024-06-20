@@ -27,7 +27,6 @@ export interface InitLambdaSendTemplateEmailProps {
   readonly solutionId: string;
   readonly emailAddress: string;
   readonly SESState: string;
-  readonly SESEmailTemplate: string;
   readonly microBatchDDBStack: InitDynamoDBStack;
   readonly microBatchVPCStack: InitVPCStack;
   readonly microBatchLambdaLayerStack: InitLambdaLayerStack;
@@ -51,7 +50,6 @@ export class InitLambdaSendTemplateEmailStack extends Construct {
     let solutionId = props.solutionId;
     let emailAddress = props.emailAddress;
     let SESState = props.SESState;
-    let SESEmailTemplate = props.SESEmailTemplate;
     let microBatchDDBStack = props.microBatchDDBStack;
     let microBatchVPCStack = props.microBatchVPCStack;
     let microBatchIAMStack = props.microBatchIAMStack;
@@ -145,7 +143,6 @@ export class InitLambdaSendTemplateEmailStack extends Construct {
         META_TABLE_NAME: microBatchDDBStack.MetaTable.tableName,
         SOURCE: emailAddress,
         NOTIFICATION_PRIORITY: NotificationPriority.PIPELINE,
-        SES_EMAIL_TEMPLATE: SESEmailTemplate,
       },
       vpc: microBatchVPCStack.vpc,
       vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },

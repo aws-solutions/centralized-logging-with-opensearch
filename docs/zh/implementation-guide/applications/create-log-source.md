@@ -61,7 +61,7 @@ Make sure the instances meet the following requirements:
 !!! important "重要"
 
     * 日志通不支持将一个 EKS 集群中的日志同时发送到多个 Amazon OpenSearch 域。
-    * 确保 EKS 集群的 VPC 已连接到 Amazon OpenSearch Service 集群的 VPC，以进行日志摄取。有关连接 VPC 的方法的详细信息，请参考 [VPC Connectivity][vpc-connectivity]。 
+    * 确保 EKS 集群的 VPC 已连接到 Amazon OpenSearch Service 集群的 VPC，以进行日志摄取。有关连接 VPC 的方法的详细信息，请参考 [VPC Connectivity][vpc-connectivity]。
 
 1. 登录日志通控制台。
 2. 在左侧边栏中的 **日志源** 下，选择 **EKS Cluster**。
@@ -104,12 +104,12 @@ Make sure the instances meet the following requirements:
 1. 登录到日志通控制台。
 
 2. 左侧边栏中， 在 **Log Analytics Pipelines**, 选择 **Application Log**。
-   
+
 3. 通过单击其来选择日志管道的 **ID**。
 
 4. 选择 **Create a source**。
 
-5. 按照 [Amazon EC2 instance group](#amazon-ec2-instance-group), [Amazon EKS cluster](#amazon-eks-cluster), [Amazon S3](#amazon-s3), or [Syslog](#syslog) 的操作指南，根据您的需要创建日志源。 
+5. 按照 [Amazon Instance Group](#amazon-ec2-instance-group), [Amazon EKS cluster](#amazon-eks-cluster), [Amazon S3](#amazon-s3), or [Syslog](#syslog) 的操作指南，根据您的需要创建日志源。
 
 
 

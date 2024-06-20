@@ -265,6 +265,7 @@ export class SvcPipelineFlowStack extends Construct {
                             source: {
                                 bucket: sfn.JsonPath.stringAt('$$.Execution.Input.args.ingestion.bucket'),
                                 prefix: sfn.JsonPath.stringAt('$$.Execution.Input.args.ingestion.prefix'),
+                                context: sfn.JsonPath.stringAt('$$.Execution.Input.args.ingestion.context'),
                             },
                         },
                         pipelineId: sfn.JsonPath.stringAt('$$.Execution.Input.args.ingestion.pipelineId'),
@@ -278,7 +279,8 @@ export class SvcPipelineFlowStack extends Construct {
 
         const createIngestionChoice = new sfn.Choice(this, 'Engine type is LightEngine or not?')
             .when(sfn.Condition.and(sfn.Condition.stringEquals('$$.Execution.Input.action', 'START'),
-                sfn.Condition.stringEquals('$$.Execution.Input.args.engineType', 'LightEngine')), pipelineResourcesBuilderTask)
+                sfn.Condition.stringEquals('$$.Execution.Input.args.engineType', 'LightEngine'),
+                sfn.Condition.isPresent('$$.Execution.Input.args.ingestion')), pipelineResourcesBuilderTask)
             .otherwise(svcPipelineFlowComplete);
 
         pipelineAlarmTask.next(createIngestionChoice)

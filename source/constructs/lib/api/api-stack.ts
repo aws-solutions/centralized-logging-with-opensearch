@@ -14,8 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { CfnOutput, Aws, aws_s3 as s3, aws_ecs as ecs, aws_sqs as sqs, } from 'aws-cdk-lib';
-import { IVpc } from 'aws-cdk-lib/aws-ec2';
+import { CfnOutput, Aws, aws_s3 as s3, aws_ecs as ecs, aws_sqs as sqs, aws_iam as iam } from 'aws-cdk-lib';
+import * as appsync from '@aws-cdk/aws-appsync-alpha';
+import { IVpc, SecurityGroup } from 'aws-cdk-lib/aws-ec2';
 import { NagSuppressions } from 'cdk-nag';
 import { Construct } from 'constructs';
 
@@ -40,6 +41,8 @@ import { GrafanaStack } from './grafana-stack';
 import { MicroBatchStack } from '../../lib/microbatch/main/services/amazon-services-stack';
 import { SvcPipelineStack } from './svc-pipeline-stack';
 import { CfnFlowStack } from '../main/cfn-flow-stack';
+
+const TEMPLATE_OUTPUT_BUCKET = process.env.TEMPLATE_OUTPUT_BUCKET || 'solutions-features-reference';
 
 export interface APIProps {
   /**
@@ -67,6 +70,9 @@ export interface APIProps {
    *
    */
   readonly subnetIds: string[];
+
+
+  readonly processSg: SecurityGroup;
 
   /**
    * Processing SecurityGroup Id
@@ -106,6 +112,7 @@ export interface APIProps {
 
   readonly flbConfUploadingEventQueue: sqs.Queue;
 
+  readonly aosMasterRole: iam.Role;
 }
 
 /**
@@ -113,6 +120,7 @@ export interface APIProps {
  */
 export class APIStack extends Construct {
   readonly apiEndpoint: string;
+  readonly clusterStack: ClusterStack;
   // readonly graphqlApi: appsync.GraphqlApi;
 
   constructor(scope: Construct, id: string, props: APIProps) {
@@ -125,6 +133,33 @@ export class APIStack extends Construct {
       userPoolId: props.userPoolId,
       userPoolClientId: props.userPoolClientId,
     });
+
+    apiStack.graphqlApi
+      .addHttpDataSource('LatestVersionDS', "https://s3.amazonaws.com")
+      .createResolver("LatestVersionResolver", {
+        typeName: 'Query',
+        fieldName: 'latestVersion',
+        requestMappingTemplate: appsync.MappingTemplate.fromString(JSON.stringify({
+          "version": "2018-05-29",
+          "method": "GET",
+          "resourcePath": `/${TEMPLATE_OUTPUT_BUCKET}/centralized-logging-with-opensearch/latest/version`,
+          "params": {
+            "headers": {
+              "Content-Type": "application/json"
+            }
+          },
+        })),
+        responseMappingTemplate: appsync.MappingTemplate.fromString(
+          `#if($ctx.error)
+  {"version": "unknown", "reason": $util.toJson($ctx.error)}
+#else
+  #if($ctx.result.statusCode == 200)
+      $ctx.result.body
+  #else
+      {"version": "unknown"}
+  #end
+#end`),
+      });
 
     // Create the Cross Account API stack
     const crossAccountStack = new CrossAccountStack(this, `CrossAccountStack`, {
@@ -237,8 +272,12 @@ export class APIStack extends Construct {
 
     // Create the App Pipeline APIs stack
     const appPipelineStack = new AppPipelineStack(this, 'AppPipelineAPI', {
+      aosMasterRole: props.aosMasterRole,
       graphqlApi: apiStack.graphqlApi,
       cfnFlowSMArn: cfnFlowSMArn,
+      vpc: props.vpc,
+      subnetIds: props.subnetIds,
+      processSg: props.processSg,
       centralAssumeRolePolicy: crossAccountStack.centralAssumeRolePolicy,
       solutionId: props.solutionId,
       stackPrefix: props.stackPrefix,
@@ -277,8 +316,9 @@ export class APIStack extends Construct {
     );
 
     // Create the OpenSearch cluster related APIs stack
-    const clusterStack = new ClusterStack(this, 'ClusterAPI', {
+    const clusterStack = this.clusterStack = new ClusterStack(this, 'ClusterAPI', {
       graphqlApi: apiStack.graphqlApi,
+      aosMasterRole: props.aosMasterRole,
       cfnFlowSMArn: cfnFlowSMArn,
       vpc: props.vpc,
       subnetIds: props.subnetIds,
@@ -312,7 +352,16 @@ export class APIStack extends Construct {
       }
     );
 
-    props.microBatchStack.microBatchIAMStack.AthenaPublicAccessRole.grantAssumeRole(Ec2IamInstanceProfile.Ec2IamInstanceProfileRole);
+    Ec2IamInstanceProfile.Ec2IamInstanceProfilePolicy.addStatements(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: [
+          "sts:AssumeRole",
+        ],
+        resources: [
+          props.microBatchStack.microBatchIAMStack.AthenaPublicAccessRole.roleArn
+        ],
+      }),);
 
     // Create the CloudWatch API stack
     const cloudWatchStack = new CloudWatchStack(this, 'CloudWatchAPI', {
@@ -362,7 +411,7 @@ export class APIStack extends Construct {
         cwlAccessRole: crossAccountStack.cwlAccessRole,
         fluentBitLogGroupName: cloudWatchStack.fluentBitLogGroup,
         flbConfUploadingEventQueue: props.flbConfUploadingEventQueue,
-
+        microBatchStack: props.microBatchStack,
       }
     );
     appLogIngestionStack.node.addDependency(

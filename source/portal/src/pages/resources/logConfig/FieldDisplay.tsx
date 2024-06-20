@@ -27,16 +27,7 @@ const FieldDisplay: React.FC<FiledDisplayProps> = (
 ) => {
   const { isTextArea, text } = props;
   if (isTextArea) {
-    return (
-      <TextArea
-        rows={5}
-        disabled
-        value={text}
-        onChange={(event) => {
-          console.info(event);
-        }}
-      />
-    );
+    return <TextArea rows={5} disabled value={text} />;
   }
   return <div className="log-config-display-text">{text}</div>;
 };

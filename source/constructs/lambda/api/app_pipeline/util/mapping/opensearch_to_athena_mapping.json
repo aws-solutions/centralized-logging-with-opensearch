@@ -15,5 +15,7 @@
     "binary": "binary",
     "map": "map",
     "object": "object",
-    "array": "array"
+    "array": "array",
+    "epoch_second": "big_int",
+    "epoch_millis": "big_int"
 }

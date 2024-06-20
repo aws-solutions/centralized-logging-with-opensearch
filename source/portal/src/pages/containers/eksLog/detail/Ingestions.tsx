@@ -19,7 +19,7 @@ import { AppLogIngestion, AppPipeline, LogSource, LogSourceType } from "API";
 import { SelectType, TablePanel } from "components/TablePanel";
 import Button from "components/Button";
 import { Link, useNavigate } from "react-router-dom";
-import { formatLocalTime } from "assets/js/utils";
+import { defaultStr, formatLocalTime } from "assets/js/utils";
 import Status, { StatusType } from "components/Status/Status";
 import Modal from "components/Modal";
 import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
@@ -115,7 +115,7 @@ const EksIngestions: React.FC<IngestionsProps> = (props: IngestionsProps) => {
   };
 
   useEffect(() => {
-    if (eksLogSourceInfo && eksLogSourceInfo.sourceId) {
+    if (eksLogSourceInfo?.sourceId) {
       getIngestions();
     }
   }, [eksLogSourceInfo]);
@@ -173,7 +173,7 @@ const EksIngestions: React.FC<IngestionsProps> = (props: IngestionsProps) => {
           data?.ingestion?.status?.toLocaleLowerCase() ===
           StatusType.Active.toLocaleLowerCase()
             ? StatusType.Created
-            : data?.ingestion?.status || ""
+            : defaultStr(data?.ingestion?.status)
         }
       />
     );
@@ -241,7 +241,7 @@ const EksIngestions: React.FC<IngestionsProps> = (props: IngestionsProps) => {
             id: "created",
             header: t("ekslog:detail.ingestions.created"),
             cell: (e: EksIngestion) => {
-              return formatLocalTime(e?.ingestion?.createdAt || "");
+              return formatLocalTime(defaultStr(e?.ingestion?.createdAt));
             },
           },
           {

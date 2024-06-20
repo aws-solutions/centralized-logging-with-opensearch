@@ -1,0 +1,61 @@
+{
+	"type": "object",
+	"properties": {
+		"time": {
+			"type": "big_int",
+			"expression": "FLOOR(\"time\" / 60000) * 60000"
+		},
+		"timestamp": {
+			"type": "timestamp",
+			"expression": "DATE_TRUNC('minute', \"timestamp\")"
+		},
+		"bucket": {
+			"type": "string"
+		},
+		"remote_ip": {
+			"type": "string"
+		},
+		"operation": {
+			"type": "string"
+		},
+		"http_status_group": {
+			"type": "string"
+		},
+		"http_status": {
+			"type": "integer"
+		},
+		"bytes_sent": {
+			"type": "double",
+			"measure": true,
+			"expression": "CAST(SUM(bytes_sent) AS DOUBLE)"
+		},
+		"object_size": {
+			"type": "double",
+			"measure": true,
+			"expression": "CAST(SUM(object_size) AS DOUBLE)"
+		},
+		"total_time": {
+			"type": "double",
+			"measure": true,
+			"expression": "CAST(SUM(total_time) AS DOUBLE)"
+		},
+		"turn_around_time": {
+			"type": "double",
+			"measure": true,
+			"expression": "CAST(SUM(turn_around_time) AS DOUBLE)"
+		},
+		"requests": {
+			"type": "big_int",
+			"measure": true,
+			"expression": "CAST(COUNT(1) AS bigint)"
+		},
+		"event_hour": {
+			"type": "string",
+			"partition": true
+		},
+		"__execution_name__": {
+			"type": "string",
+			"partition": true
+		}
+	}
+}

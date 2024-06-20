@@ -2,13 +2,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import boto3
-import logging
+from commonlib.logging import get_logger
 
-logging.getLogger().setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 
 def on_event(event, _):
-    logging.info("on_event %s", event)
+    logger.info("on_event %s", event)
 
     props = event["ResourceProperties"]
     cf_distribution = props["CloudFrontDistribution"]
@@ -21,7 +21,7 @@ def on_event(event, _):
     request_type = event["RequestType"]
 
     if request_type == "Create" or request_type == "Update":
-        logging.info(
+        logger.info(
             "Set distribution: %s realtime log config to %s",
             cf_distribution,
             cf_rt_log_config_arn,
@@ -31,12 +31,12 @@ def on_event(event, _):
             "RealtimeLogConfigArn"
         ] = cf_rt_log_config_arn
     elif request_type == "Delete":
-        logging.info("Delete distribution: %s realtime log config", cf_distribution)
+        logger.info("Delete distribution: %s realtime log config", cf_distribution)
 
         if "RealtimeLogConfigArn" in distribution_config["DefaultCacheBehavior"]:
             del distribution_config["DefaultCacheBehavior"]["RealtimeLogConfigArn"]
     else:
-        logging.info("Unknown request_type: %s, do nothing" % request_type)
+        logger.info("Unknown request_type: %s, do nothing" % request_type)
 
         return {}
 
@@ -47,6 +47,6 @@ def on_event(event, _):
         IfMatch=response["ETag"],
     )
 
-    logging.info("response: %s", response)
+    logger.info("response: %s", response)
 
     return {"status": response["Distribution"]["Status"]}

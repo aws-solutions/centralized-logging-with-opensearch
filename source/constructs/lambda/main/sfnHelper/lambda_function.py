@@ -3,13 +3,12 @@
 
 import os
 import json
-import logging
+from commonlib.logging import get_logger
 
 import boto3
 from botocore import config
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 solution_version = os.environ.get("SOLUTION_VERSION", "v1.0.0")
 solution_id = os.environ.get("SOLUTION_ID", "SO8025")
@@ -39,7 +38,7 @@ def lambda_handler(event, _):
     }
     """
 
-    # print("Received event: " + json.dumps(event, indent=2))
+    # print("Received event: " + json.dumps(event["arguments"], indent=2))
 
     try:
         token = event["token"]

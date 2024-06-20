@@ -27,6 +27,7 @@ import {
   buildSGLink,
   buildSubnetLink,
   buildVPCLink,
+  defaultStr,
 } from "assets/js/utils";
 import { t } from "i18next";
 import { RootState } from "reducer/reducers";
@@ -46,14 +47,14 @@ const Network: React.FC<OverviewProps> = ({ domainInfo }: OverviewProps) => {
         <div className="flex value-label-span">
           <div className="flex-1">
             <ValueWithLabel label={t("cluster:detail.network.vpc")}>
-              <CopyText text={domainInfo?.esVpc?.vpcId || ""}>
+              <CopyText text={defaultStr(domainInfo?.esVpc?.vpcId)}>
                 <ExtLink
                   to={buildVPCLink(
                     amplifyConfig.aws_project_region,
-                    domainInfo?.esVpc?.vpcId || ""
+                    defaultStr(domainInfo?.esVpc?.vpcId)
                   )}
                 >
-                  {domainInfo?.esVpc?.vpcId || ""}
+                  {defaultStr(domainInfo?.esVpc?.vpcId)}
                 </ExtLink>
               </CopyText>
             </ValueWithLabel>
@@ -67,7 +68,7 @@ const Network: React.FC<OverviewProps> = ({ domainInfo }: OverviewProps) => {
                       <ExtLink
                         to={buildSGLink(
                           amplifyConfig.aws_project_region,
-                          element || ""
+                          defaultStr(element)
                         )}
                       >
                         {element}
@@ -120,14 +121,14 @@ const Network: React.FC<OverviewProps> = ({ domainInfo }: OverviewProps) => {
         <div className="flex value-label-span">
           <div className="flex-1">
             <ValueWithLabel label={t("cluster:detail.network.vpc")}>
-              <CopyText text={domainInfo?.vpc?.vpcId || ""}>
+              <CopyText text={defaultStr(domainInfo?.vpc?.vpcId)}>
                 <ExtLink
                   to={buildVPCLink(
                     amplifyConfig.aws_project_region,
-                    domainInfo?.vpc?.vpcId || ""
+                    defaultStr(domainInfo?.vpc?.vpcId)
                   )}
                 >
-                  {domainInfo?.vpc?.vpcId || ""}
+                  {defaultStr(domainInfo?.vpc?.vpcId)}
                 </ExtLink>
               </CopyText>
             </ValueWithLabel>
@@ -138,10 +139,10 @@ const Network: React.FC<OverviewProps> = ({ domainInfo }: OverviewProps) => {
                 <ExtLink
                   to={buildSGLink(
                     amplifyConfig.aws_project_region,
-                    domainInfo?.vpc?.securityGroupId || ""
+                    defaultStr(domainInfo?.vpc?.securityGroupId)
                   )}
                 >
-                  {domainInfo?.vpc?.securityGroupId || ""}
+                  {defaultStr(domainInfo?.vpc?.securityGroupId)}
                 </ExtLink>
               </div>
             </ValueWithLabel>

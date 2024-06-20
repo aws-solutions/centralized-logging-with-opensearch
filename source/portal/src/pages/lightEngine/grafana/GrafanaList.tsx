@@ -15,12 +15,9 @@ limitations under the License.
 */
 
 import { Pagination } from "@material-ui/lab";
-import Breadcrumb from "components/Breadcrumb";
-import HelpPanel from "components/HelpPanel";
-import SideMenu from "components/SideMenu";
 import Button from "components/Button";
 import { SelectType, TablePanel } from "components/TablePanel";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useAsyncData } from "assets/js/useAsyncData";
@@ -34,6 +31,7 @@ import { Grafana, ListGrafanasResponse } from "API";
 import moment from "moment";
 import Modal from "components/Modal";
 import { deleteGrafana } from "graphql/mutations";
+import CommonLayout from "pages/layout/CommonLayout";
 
 const PAGE_SIZE = 10;
 
@@ -62,8 +60,6 @@ export const GrafanaList: React.FC = () => {
       name: t("lightengine:grafana.name"),
     },
   ];
-  const sideMenu = useMemo(() => <SideMenu />, []);
-  const breadcrumb = useMemo(() => <Breadcrumb list={breadCrumbList} />, []);
 
   const confirmRemoveGrafana = useCallback(async () => {
     try {
@@ -85,93 +81,87 @@ export const GrafanaList: React.FC = () => {
     }
   }, [selectedGrafana]);
 
+  const renderLink = (url: string) => {
+    return (
+      <a target="_blank" rel="noreferrer" href={url}>
+        {url}
+      </a>
+    );
+  };
+
   return (
-    <div className="lh-main-content">
-      {sideMenu}
-      <div className="lh-container">
-        <div className="lh-content">
-          <div className="service-log">
-            {breadcrumb}
-            <div className="table-data">
-              <TablePanel
-                trackId="id"
-                loading={isLoadingData}
-                title={t("lightengine:grafana.create.server")}
-                selectType={SelectType.RADIO}
-                actions={
-                  <div>
-                    <Button
-                      disabled={selectedGrafana === null}
-                      onClick={() => {
-                        if (selectedGrafana) {
-                          const { id, url, name } = selectedGrafana;
-                          navigate(
-                            `/grafana/edit/${id}?url=${encodeURIComponent(
-                              url
-                            )}&name=${encodeURIComponent(name)}`
-                          );
-                        }
-                      }}
-                    >
-                      {t("button.edit")}
-                    </Button>
-                    <Button
-                      disabled={selectedGrafana === null}
-                      onClick={() => setRemoveModelOpened(true)}
-                    >
-                      {t("button.remove")}
-                    </Button>
-                    <Button
-                      btnType="primary"
-                      onClick={() => {
-                        navigate("/grafana/import");
-                      }}
-                    >
-                      {t("lightengine:grafana.import")}
-                    </Button>
-                  </div>
-                }
-                pagination={
-                  <Pagination
-                    count={Math.ceil(totalItems / PAGE_SIZE)}
-                    page={currentPage}
-                    onChange={(_, value) => {
-                      setCurrentPage(value);
-                      setSelectedGrafana(null);
-                    }}
-                    size="small"
-                  />
-                }
-                items={isLoadingData ? [] : grafanaListItem ?? []}
-                changeSelected={([grafana]: Grafana[]) =>
-                  setSelectedGrafana(grafana)
-                }
-                columnDefinitions={[
-                  {
-                    id: "name",
-                    header: t("lightengine:grafana.serverName"),
-                    cell: ({ name }: Grafana) => name,
-                  },
-                  {
-                    id: "createdDate",
-                    header: t("lightengine:grafana.dateImported"),
-                    cell: ({ createdAt }: Grafana) =>
-                      moment(createdAt).format("YYYY-MM-DD"),
-                  },
-                  {
-                    id: "url",
-                    header: t("lightengine:grafana.url"),
-                    cell: ({ url }: Grafana) => (
-                      <a target="_blank" rel="noreferrer" href={url}>
-                        {url}
-                      </a>
-                    ),
-                  },
-                ]}
-              />
+    <CommonLayout breadCrumbList={breadCrumbList}>
+      <div className="table-data">
+        <TablePanel
+          trackId="id"
+          loading={isLoadingData}
+          title={t("lightengine:grafana.create.server")}
+          selectType={SelectType.RADIO}
+          actions={
+            <div>
+              <Button
+                disabled={selectedGrafana === null}
+                onClick={() => {
+                  if (selectedGrafana) {
+                    const { id, url, name } = selectedGrafana;
+                    navigate(
+                      `/grafana/edit/${id}?url=${encodeURIComponent(
+                        url
+                      )}&name=${encodeURIComponent(name)}`
+                    );
+                  }
+                }}
+              >
+                {t("button.edit")}
+              </Button>
+              <Button
+                disabled={selectedGrafana === null}
+                onClick={() => setRemoveModelOpened(true)}
+              >
+                {t("button.remove")}
+              </Button>
+              <Button
+                btnType="primary"
+                onClick={() => {
+                  navigate("/grafana/import");
+                }}
+              >
+                {t("lightengine:grafana.import")}
+              </Button>
             </div>
-          </div>
-        </div>
+          }
+          pagination={
+            <Pagination
+              count={Math.ceil(totalItems / PAGE_SIZE)}
+              page={currentPage}
+              onChange={(_, value) => {
+                setCurrentPage(value);
+                setSelectedGrafana(null);
+              }}
+              size="small"
+            />
+          }
+          items={isLoadingData ? [] : grafanaListItem ?? []}
+          changeSelected={([grafana]: Grafana[]) => setSelectedGrafana(grafana)}
+          columnDefinitions={[
+            {
+              id: "name",
+              header: t("lightengine:grafana.serverName"),
+              cell: ({ name }: Grafana) => name,
+            },
+            {
+              id: "createdDate",
+              header: t("lightengine:grafana.dateImported"),
+              cell: ({ createdAt }: Grafana) =>
+                moment(createdAt).format("YYYY-MM-DD"),
+            },
+            {
+              id: "url",
+              header: t("lightengine:grafana.url"),
+              cell: ({ url }: Grafana) => renderLink(url),
+            },
+          ]}
+        />
       </div>
       <Modal
         title={t("lightengine:grafana.delete")}
@@ -206,7 +196,6 @@ export const GrafanaList: React.FC = () => {
           <b>{`${selectedGrafana?.name}`}</b> {"?"}
         </div>
       </Modal>
-      <HelpPanel />
-    </div>
+    </CommonLayout>
   );
 };

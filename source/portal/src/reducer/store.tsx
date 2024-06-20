@@ -14,8 +14,17 @@
   limitations under the License.
  */
 import { configureStore } from "@reduxjs/toolkit";
-import { reducer } from "./reducers";
+import { RootState, reducer } from "./reducers";
 
 const store = configureStore({ reducer });
 
+export function setupStore(preloadedState?: Partial<RootState>) {
+  return configureStore({
+    reducer,
+    preloadedState
+  })
+}
+
 export const getStore = () => store;
+export type AppDispatch = typeof store.dispatch;
+export type AppStore = ReturnType<typeof setupStore>

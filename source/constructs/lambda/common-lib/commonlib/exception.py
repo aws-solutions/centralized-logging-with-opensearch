@@ -55,10 +55,20 @@ class ErrorCode(Enum):
     # Grafana Exception
     GRAFANA_URL_CONNECTIVITY_FAILED = "Grafana URL connectivity check failed"
     GRAFANA_TOKEN_VALIDATION_FAILED = "Grafana token validation failed"
-    GRAFANA_HAS_INSTALLED_ATHENA_PLUGIN_FAILED = "Grafana does not have installed Athena plugin"
-    GRAFANA_DATA_SOURCE_PERMISSION_CHECK_FAILED = "Grafana data source permission check failed"
+    GRAFANA_HAS_INSTALLED_ATHENA_PLUGIN_FAILED = (
+        "Grafana does not have installed Athena plugin"
+    )
+    GRAFANA_DATA_SOURCE_PERMISSION_CHECK_FAILED = (
+        "Grafana data source permission check failed"
+    )
     GRAFANA_FOLDER_PERMISSION_CHECK_FAILED = "Grafana folder permission check failed"
-    GRAFANA_DASHBOARDS_PERMISSION_CHECK_FAILED = "Grafana dashboards permission check failed"
+    GRAFANA_DASHBOARDS_PERMISSION_CHECK_FAILED = (
+        "Grafana dashboards permission check failed"
+    )
+    OVERLAPPED_EVENT_NOTIFICATIONS_PREFIX = "Overlapped Amazon S3 Bucket Prefix"
+    S3_BUCKET_CHECK_FAILED = (
+        "Failed to detect S3 storage bucket, please check if it is correct"
+    )
 
 
 class APIException(Exception):

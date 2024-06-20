@@ -3,6 +3,8 @@
 import re
 import boto3
 import json
+import gzip
+import base64
 import urllib.parse
 
 from fnmatch import fnmatchcase
@@ -11,6 +13,7 @@ from boto3.dynamodb.conditions import Attr, ConditionBase, Key
 from commonlib import DynamoDBUtil, AWSConnection, ErrorCode, APIException
 from commonlib.model import (
     EC2Instances,
+    OpenSearchDomain,
     now_iso8601,
     LogSource,
     LogConfig,
@@ -24,7 +27,10 @@ from commonlib.model import (
     EngineType,
     InstanceIngestionDetail,
     ExecutionStatus,
+    LogStructure,
+    LogTypeEnum,
 )
+from commonlib.utils import get_kv_from_buffer_param
 
 
 def rekey(d: dict, prefix: str = ":"):
@@ -40,6 +46,28 @@ def expr_attr_vals(d):
 
 def expr_attr_names(d):
     return rekey(d, "#")
+
+
+class OpenSearchDomainDao:
+    def __init__(self, table_name) -> None:
+        self.table_name = table_name
+        self._ddb_table = DynamoDBUtil(self.table_name)
+
+    def list_domains(
+        self,
+        filter_expression: Optional[ConditionBase] = None,
+    ) -> List[OpenSearchDomain]:
+        if not filter_expression:
+            filter_expression = Attr("status").ne(StatusEnum.INACTIVE)
+
+        items = self._ddb_table.list_items(filter_expression)
+        return [OpenSearchDomain.parse_obj(each) for each in items]
+
+    def set_master_role_arn(self, id_: str, master_role_arn: str):
+        self._ddb_table.update_item(
+            {"id": id_},
+            {"masterRoleArn": master_role_arn},
+        )
 
 
 class LogConfigDao:
@@ -212,8 +240,16 @@ class AppPipelineDao:
         self._ddb_table = DynamoDBUtil(table_name)
 
     def get_stack_name(self, app_pipeline: AppPipeline):
-        if app_pipeline.engineType == EngineType.LIGHT_ENGINE:
+        if (
+            app_pipeline.engineType == EngineType.LIGHT_ENGINE
+            and app_pipeline.logStructure == LogStructure.FLUENT_BIT_PARSED_JSON
+        ):
             return "MicroBatchApplicationFluentBitPipeline"
+        elif (
+            app_pipeline.engineType == EngineType.LIGHT_ENGINE
+            and app_pipeline.logStructure == LogStructure.RAW
+        ):
+            return "MicroBatchApplicationS3Pipeline"
         buffer_type = app_pipeline.bufferType
         enable_auto_scaling_values = [
             param.paramValue
@@ -280,6 +316,12 @@ class AppPipelineDao:
     def get_light_engine_stack_parameters(
         self, app_pipeline: AppPipeline, log_config: LogConfig, grafana=None
     ):
+        source_schema = json.dumps(log_config.jsonSchema)
+        if len(source_schema) >= 4000:
+            source_schema = base64.b64encode(
+                gzip.compress(bytes(source_schema, encoding="utf-8"))
+            ).decode("utf-8")
+
         params = {
             "stagingBucketPrefix": app_pipeline.lightEngineParams.stagingBucketPrefix,
             "centralizedBucketName": app_pipeline.lightEngineParams.centralizedBucketName,
@@ -293,13 +335,65 @@ class AppPipelineDao:
             "logArchiveAge": app_pipeline.lightEngineParams.logArchiveAge,
             "importDashboards": app_pipeline.lightEngineParams.importDashboards,
             "recipients": app_pipeline.lightEngineParams.recipients,
-            "sourceSchema": json.dumps(log_config.jsonSchema),
+            "sourceSchema": source_schema,
             "pipelineId": app_pipeline.pipelineId,
         }
         if grafana is not None:
             params["grafanaUrl"] = grafana["url"]
             params["grafanaToken"] = grafana["token"]
+
+        if (
+            app_pipeline.logStructure == LogStructure.RAW
+            and log_config.logType == LogTypeEnum.JSON
+        ):
+            params["sourceDataFormat"] = "Json"
+        elif app_pipeline.logStructure == LogStructure.RAW:
+            params["sourceDataFormat"] = "Regex"
+            skip_header_line_count = (
+                get_kv_from_buffer_param(
+                    key="skip.header.line.count", buffer_param=app_pipeline.bufferParams
+                )
+                or "0"
+            )
+
+            params["sourceTableProperties"] = json.dumps(
+                {"skip.header.line.count": skip_header_line_count}
+            )
+            if len(params["sourceTableProperties"]) >= 4000:
+                params["sourceTableProperties"] = base64.b64encode(
+                    gzip.compress(
+                        bytes(params["sourceTableProperties"], encoding="utf-8")
+                    )
+                ).decode("utf-8")
+
+            params["sourceSerializationProperties"] = json.dumps(
+                {"input.regex": log_config.regex}
+            )
+            if len(params["sourceSerializationProperties"]) >= 4000:
+                params["sourceSerializationProperties"] = base64.b64encode(
+                    gzip.compress(
+                        bytes(params["sourceSerializationProperties"], encoding="utf-8")
+                    )
+                ).decode("utf-8")
+
         return _create_stack_params(params)
+
+    def get_buffer_params(self, app_pipeline: AppPipeline) -> List[BufferParam]:
+        if app_pipeline.engineType == EngineType.LIGHT_ENGINE:
+            buffer_params = []
+            for param in app_pipeline.bufferParams:
+                if param.paramKey == "logBucketPrefix":
+                    buffer_params.append(
+                        BufferParam(
+                            paramKey=param.paramKey,
+                            paramValue=f'{param.paramValue.strip("/")}/year=%Y/month=%m/day=%d',
+                        )
+                    )
+                else:
+                    buffer_params.append(param)
+            return buffer_params
+        else:
+            return app_pipeline.bufferParams
 
     def validate_duplicated_index_prefix(self, app_pipeline: AppPipeline, force: bool):
         pipelines = self.list_app_pipelines(
@@ -321,10 +415,7 @@ class AppPipelineDao:
                 if not force:
                     raise APIException(ErrorCode.DUPLICATED_INDEX_PREFIX, msg)
 
-    def validate_index_prefix_overlap(
-        self,
-        app_pipeline: AppPipeline,
-    ):
+    def validate_index_prefix_overlap(self, app_pipeline: AppPipeline):
         index_prefix = app_pipeline.indexPrefix or app_pipeline.aosParams.indexPrefix
         pipelines = self.list_app_pipelines(
             Attr("aosParams.domainName").eq(app_pipeline.aosParams.domainName)
@@ -347,10 +438,7 @@ class AppPipelineDao:
                     raise APIException(ErrorCode.OVERLAP_INDEX_PREFIX, msg)
 
     def validate_buffer_params(self, app_pipeline: AppPipeline):
-        required_params = self._get_required_params("buffer_type")
-        if not required_params:
-            return
-
+        required_params = self._get_required_params(app_pipeline.bufferType)
         buffer_names = [param.paramKey for param in app_pipeline.bufferParams]
         missing_params = [
             param for param in required_params if param not in buffer_names
@@ -799,7 +887,7 @@ class InstanceIngestionDetailDao:
         self, filter_expression: Optional[ConditionBase] = None
     ) -> List[InstanceIngestionDetail]:
         if not filter_expression:
-            filter_expression = Attr("status").eq(StatusEnum.INACTIVE)
+            filter_expression = Attr("status").ne(StatusEnum.INACTIVE)
 
         items = self._ddb_table.list_items(filter_expression)
         return [InstanceIngestionDetail.parse_obj(each) for each in items]

@@ -17,7 +17,6 @@ import React, { useState, useEffect } from "react";
 import HeaderPanel from "components/HeaderPanel";
 import FormItem from "components/FormItem";
 import Button from "components/Button";
-import Breadcrumb from "components/Breadcrumb";
 import { useNavigate, useParams } from "react-router-dom";
 import Select from "components/Select";
 import {
@@ -30,7 +29,6 @@ import { SelectItem } from "components/Select/select";
 import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
 import { getDomainDetails, listResources } from "graphql/queries";
 import MultiSelect from "components/MultiSelect";
-import LoadingText from "components/LoadingText";
 import { createProxyForOpenSearch } from "graphql/mutations";
 import TextInput from "components/TextInput";
 import ExtLink from "components/ExtLink";
@@ -42,12 +40,11 @@ import {
   buildSGLink,
   buildSubnetLink,
   buildVPCLink,
+  defaultStr,
   domainIsValid,
 } from "assets/js/utils";
 import { useSelector } from "react-redux";
 import { InfoBarTypes } from "reducer/appReducer";
-import HelpPanel from "components/HelpPanel";
-import SideMenu from "components/SideMenu";
 import { useTranslation } from "react-i18next";
 import {
   PROXY_INSTANCE_NUMBER_LIST,
@@ -55,6 +52,7 @@ import {
   AmplifyConfigType,
 } from "types";
 import { RootState } from "reducer/reducers";
+import CommonLayout from "pages/layout/CommonLayout";
 
 const NginxForOpenSearch: React.FC = () => {
   const { id, name } = useParams();
@@ -154,7 +152,7 @@ const NginxForOpenSearch: React.FC = () => {
         tmpOptionList.push({
           name: `${element.id}(${element.name})`,
           value: element.id,
-          optTitle: element.description || "",
+          optTitle: defaultStr(element.description),
         });
       }
     });
@@ -206,11 +204,11 @@ const NginxForOpenSearch: React.FC = () => {
     try {
       setLoadingData(true);
       const resData: any = await appSyncRequestQuery(getDomainDetails, {
-        id: decodeURIComponent(id || ""),
+        id: decodeURIComponent(defaultStr(id)),
       });
       const dataDomain: DomainDetails = resData.data.getDomainDetails;
       setDomainInfo(dataDomain);
-      setPublicVpc(dataDomain?.vpc?.vpcId || "");
+      setPublicVpc(defaultStr(dataDomain?.vpc?.vpcId));
       setNginxForOpenSearch(
         (prev: CreateProxyForOpenSearchMutationVariables) => {
           return {
@@ -218,11 +216,11 @@ const NginxForOpenSearch: React.FC = () => {
             id: dataDomain.id,
             input: {
               ...prev.input,
-              cognitoEndpoint: dataDomain.cognito?.domain || "",
+              cognitoEndpoint: defaultStr(dataDomain.cognito?.domain),
               vpc: {
                 ...prev.input.vpc,
-                privateSubnetIds: dataDomain?.vpc?.privateSubnetIds || "",
-                vpcId: dataDomain?.vpc?.vpcId || "",
+                privateSubnetIds: defaultStr(dataDomain?.vpc?.privateSubnetIds),
+                vpcId: defaultStr(dataDomain?.vpc?.vpcId),
               },
             },
           };
@@ -306,367 +304,349 @@ const NginxForOpenSearch: React.FC = () => {
   }, []);
 
   return (
-    <div className="lh-main-content">
-      <SideMenu />
-      <div className="lh-container">
-        <div className="lh-content">
-          <div className="service-log">
-            <Breadcrumb list={breadCrumbList} />
-          </div>
-          {loadingData ? (
-            <LoadingText text="" />
-          ) : (
-            <div className="m-w-1024">
-              <HeaderPanel title={t("cluster:proxy.logProcessNetwork")}>
-                <div className="flex value-label-span">
-                  <div className="flex-1">
-                    <ValueWithLabel label={t("cluster:proxy.clusterVPC")}>
-                      <CopyText text={domainInfo?.vpc?.vpcId || ""}>
-                        <ExtLink
-                          to={buildVPCLink(
-                            amplifyConfig.aws_project_region,
-                            domainInfo?.vpc?.vpcId || ""
-                          )}
-                        >
-                          {domainInfo?.vpc?.vpcId || ""}
-                        </ExtLink>
-                      </CopyText>
-                    </ValueWithLabel>
-                  </div>
-
-                  <div className="flex-1 border-left-c">
-                    <ValueWithLabel label={t("cluster:proxy.subnetGroup")}>
-                      <div>
-                        {domainInfo?.vpc?.privateSubnetIds
-                          ?.split(",")
-                          .map((element) => {
-                            return (
-                              <div key={element}>
-                                <ExtLink
-                                  to={buildSubnetLink(
-                                    amplifyConfig.aws_project_region,
-                                    element
-                                  )}
-                                >
-                                  {element}
-                                </ExtLink>
-                              </div>
-                            );
-                          })}
-                        {domainInfo?.vpc?.publicSubnetIds
-                          ?.split(",")
-                          .map((element) => {
-                            return element ? (
-                              <div key={element}>
-                                <ExtLink
-                                  to={buildSubnetLink(
-                                    amplifyConfig.aws_project_region,
-                                    element
-                                  )}
-                                >
-                                  {element}
-                                </ExtLink>
-                              </div>
-                            ) : (
-                              ""
-                            );
-                          })}
-                      </div>
-                    </ValueWithLabel>
-                  </div>
-                  <div className="flex-1 border-left-c">
-                    <ValueWithLabel label={t("cluster:proxy.securityGroup")}>
-                      <div>
-                        <ExtLink
-                          to={buildSGLink(
-                            amplifyConfig.aws_project_region,
-                            domainInfo?.vpc?.securityGroupId || ""
-                          )}
-                        >
-                          {domainInfo?.vpc?.securityGroupId || ""}
-                        </ExtLink>
-                      </div>
-                    </ValueWithLabel>
-                  </div>
-                </div>
-              </HeaderPanel>
-
-              <HeaderPanel
-                title={t("cluster:proxy.publicProxy")}
-                desc={t("cluster:proxy.publicProxyDesc")}
-              >
-                <FormItem
-                  infoType={InfoBarTypes.PROXY_INSTANCE}
-                  optionTitle={t("cluster:proxy.instanceType")}
-                  optionDesc={t("cluster:proxy.instanceTypeDesc")}
-                >
-                  <Select
-                    className="m-w-75p"
-                    optionList={PROXY_INSTANCE_TYPE_LIST}
-                    value={nginxForOpenSearch.input.proxyInstanceType || ""}
-                    onChange={(event) => {
-                      setNginxForOpenSearch(
-                        (prev: CreateProxyForOpenSearchMutationVariables) => {
-                          return {
-                            ...prev,
-                            input: {
-                              ...prev.input,
-                              proxyInstanceType: event.target.value,
-                            },
-                          };
-                        }
-                      );
-                    }}
-                  />
-                </FormItem>
-
-                <FormItem
-                  infoType={InfoBarTypes.PROXY_INSTANCE}
-                  optionTitle={t("cluster:proxy.instanceNumber")}
-                  optionDesc={t("cluster:proxy.instanceNumberDesc")}
-                >
-                  <Select
-                    className="m-w-75p"
-                    optionList={PROXY_INSTANCE_NUMBER_LIST}
-                    value={
-                      nginxForOpenSearch.input.proxyInstanceNumber?.toString() ||
-                      ""
-                    }
-                    onChange={(event) => {
-                      setNginxForOpenSearch(
-                        (prev: CreateProxyForOpenSearchMutationVariables) => {
-                          return {
-                            ...prev,
-                            input: {
-                              ...prev.input,
-                              proxyInstanceNumber: event.target.value,
-                            },
-                          };
-                        }
-                      );
-                    }}
-                  />
-                </FormItem>
-
-                <FormItem
-                  optionTitle={t("cluster:proxy.publicSubnets")}
-                  optionDesc={t("cluster:proxy.publicSubnetsDesc")}
-                  errorText={
-                    subnetEmptyError ? t("cluster:proxy.subnetError") : ""
-                  }
-                >
-                  <MultiSelect
-                    className="m-w-75p"
-                    loading={loadingRes}
-                    optionList={publicSubnetOptionList}
-                    value={publicSubnet}
-                    onChange={(subnetIds) => {
-                      if (subnetIds) {
-                        setSubnetEmptyError(false);
-                        setPublicSubnet(subnetIds);
-                        setNginxForOpenSearch(
-                          (prev: CreateProxyForOpenSearchMutationVariables) => {
-                            return {
-                              ...prev,
-                              input: {
-                                ...prev.input,
-                                vpc: {
-                                  ...prev.input.vpc,
-                                  publicSubnetIds: subnetIds.join(","),
-                                },
-                              },
-                            };
-                          }
-                        );
-                      }
-                    }}
-                    placeholder={t("cluster:proxy.chooseSubnet")}
-                    hasRefresh
-                    clickRefresh={() => {
-                      getResources(ResourceType.Subnet, publicVpc);
-                    }}
-                  />
-                </FormItem>
-
-                <FormItem
-                  optionTitle={t("cluster:proxy.publicSG")}
-                  optionDesc={t("cluster:proxy.publicSGDesc")}
-                  errorText={sgEmptyError ? t("cluster:proxy.sgError") : ""}
-                >
-                  <Select
-                    className="m-w-75p"
-                    loading={loadingSG}
-                    optionList={publicSecGroupList}
-                    value={publicSecGroup}
-                    onChange={(event) => {
-                      setPublicSecGroup(event.target.value);
-                      setSgEmptyError(false);
-                      setNginxForOpenSearch(
-                        (prev: CreateProxyForOpenSearchMutationVariables) => {
-                          return {
-                            ...prev,
-                            input: {
-                              ...prev.input,
-                              vpc: {
-                                ...prev.input.vpc,
-                                securityGroupId: event.target.value,
-                              },
-                            },
-                          };
-                        }
-                      );
-                    }}
-                    placeholder={t("cluster:proxy.chooseSG")}
-                    hasRefresh
-                    clickRefresh={() => {
-                      getResources(ResourceType.SecurityGroup, publicVpc);
-                    }}
-                  />
-                </FormItem>
-
-                <FormItem
-                  optionTitle={t("cluster:proxy.nginxKeyName")}
-                  optionDesc={
-                    <div>
-                      {t("cluster:proxy.nginxKeyNameDesc1")}
-                      <ExtLink
-                        to={buildKeyPairsLink(amplifyConfig.aws_project_region)}
-                      >
-                        {t("cluster:proxy.keyPairs")}
-                      </ExtLink>
-                      {t("cluster:proxy.nginxKeyNameDesc2")}
-                    </div>
-                  }
-                  errorText={keyEmptyError ? t("cluster:proxy.keyError") : ""}
-                >
-                  <Select
-                    className="m-w-75p"
-                    loading={loadingKey}
-                    optionList={keyPairOptionList}
-                    value={nginxForOpenSearch.input.keyName}
-                    onChange={(event) => {
-                      setKeyEmptyError(false);
-                      setNginxForOpenSearch(
-                        (prev: CreateProxyForOpenSearchMutationVariables) => {
-                          return {
-                            ...prev,
-                            input: {
-                              ...prev.input,
-                              keyName: event.target.value,
-                            },
-                          };
-                        }
-                      );
-                    }}
-                    placeholder={t("cluster:proxy.chooseKeyName")}
-                    hasRefresh
-                    clickRefresh={() => {
-                      getResources(ResourceType.KeyPair);
-                    }}
-                  />
-                </FormItem>
-
-                <div className="mt-10">
-                  <FormItem
-                    optionTitle={t("cluster:proxy.domainName")}
-                    optionDesc={t("cluster:proxy.domainNameDesc")}
-                    errorText={
-                      showDomainInvalid
-                        ? t("cluster:proxy.domainNameFormatError")
-                        : ""
-                    }
+    <CommonLayout breadCrumbList={breadCrumbList} loadingData={loadingData}>
+      <div className="m-w-1024">
+        <HeaderPanel title={t("cluster:proxy.logProcessNetwork")}>
+          <div className="flex value-label-span">
+            <div className="flex-1">
+              <ValueWithLabel label={t("cluster:proxy.clusterVPC")}>
+                <CopyText text={defaultStr(domainInfo?.vpc?.vpcId)}>
+                  <ExtLink
+                    to={buildVPCLink(
+                      amplifyConfig.aws_project_region,
+                      defaultStr(domainInfo?.vpc?.vpcId)
+                    )}
                   >
-                    <TextInput
-                      className="m-w-75p"
-                      value={nginxForOpenSearch?.input.customEndpoint || ""}
-                      onChange={(event) => {
-                        setShowDomainInvalid(false);
-                        setNginxForOpenSearch(
-                          (prev: CreateProxyForOpenSearchMutationVariables) => {
-                            return {
-                              ...prev,
-                              input: {
-                                ...prev.input,
-                                customEndpoint: event.target.value,
-                              },
-                            };
-                          }
-                        );
-                      }}
-                      placeholder="xxxxx.example.com"
-                    />
-                  </FormItem>
-
-                  <FormItem
-                    optionTitle={t("cluster:proxy.lbSSL")}
-                    optionDesc={
-                      <div>
-                        {t("cluster:proxy.lbSSLDesc1")}
-                        <ExtLink
-                          to={buildACMLink(amplifyConfig.aws_project_region)}
-                        >
-                          {t("cluster:proxy.ACM")}
-                        </ExtLink>
-                        {t("cluster:proxy.lbSSLDesc2")}
-                      </div>
-                    }
-                    errorText={sslError ? t("cluster:proxy.sslError") : ""}
-                  >
-                    <Select
-                      className="m-w-75p"
-                      loading={loadingCert}
-                      optionList={certificateOptionList}
-                      value={nginxForOpenSearch.input.certificateArn}
-                      onChange={(event) => {
-                        setSslError(false);
-                        setNginxForOpenSearch(
-                          (prev: CreateProxyForOpenSearchMutationVariables) => {
-                            return {
-                              ...prev,
-                              input: {
-                                ...prev.input,
-                                certificateArn: event.target.value,
-                              },
-                            };
-                          }
-                        );
-                      }}
-                      placeholder={t("cluster:proxy.chooseSSL")}
-                      hasRefresh
-                      clickRefresh={() => {
-                        getResources(ResourceType.Certificate);
-                      }}
-                    />
-                  </FormItem>
-                </div>
-              </HeaderPanel>
-
-              <div className="button-action text-right">
-                <Button
-                  disabled={loadingCreate}
-                  btnType="text"
-                  onClick={() => {
-                    backToDetailPage();
-                  }}
-                >
-                  {t("button.cancel")}
-                </Button>
-                <Button
-                  loading={loadingCreate}
-                  btnType="primary"
-                  onClick={() => {
-                    confirmCreateNginxForOpenSearch();
-                  }}
-                >
-                  {t("button.create")}
-                </Button>
-              </div>
+                    {defaultStr(domainInfo?.vpc?.vpcId)}
+                  </ExtLink>
+                </CopyText>
+              </ValueWithLabel>
             </div>
-          )}
+
+            <div className="flex-1 border-left-c">
+              <ValueWithLabel label={t("cluster:proxy.subnetGroup")}>
+                <div>
+                  {domainInfo?.vpc?.privateSubnetIds
+                    ?.split(",")
+                    .map((element) => {
+                      return (
+                        <div key={element}>
+                          <ExtLink
+                            to={buildSubnetLink(
+                              amplifyConfig.aws_project_region,
+                              element
+                            )}
+                          >
+                            {element}
+                          </ExtLink>
+                        </div>
+                      );
+                    })}
+                  {domainInfo?.vpc?.publicSubnetIds
+                    ?.split(",")
+                    .map((element) => {
+                      return element ? (
+                        <div key={element}>
+                          <ExtLink
+                            to={buildSubnetLink(
+                              amplifyConfig.aws_project_region,
+                              element
+                            )}
+                          >
+                            {element}
+                          </ExtLink>
+                        </div>
+                      ) : (
+                        ""
+                      );
+                    })}
+                </div>
+              </ValueWithLabel>
+            </div>
+            <div className="flex-1 border-left-c">
+              <ValueWithLabel label={t("cluster:proxy.securityGroup")}>
+                <div>
+                  <ExtLink
+                    to={buildSGLink(
+                      amplifyConfig.aws_project_region,
+                      defaultStr(domainInfo?.vpc?.securityGroupId)
+                    )}
+                  >
+                    {defaultStr(domainInfo?.vpc?.securityGroupId)}
+                  </ExtLink>
+                </div>
+              </ValueWithLabel>
+            </div>
+          </div>
+        </HeaderPanel>
+
+        <HeaderPanel
+          title={t("cluster:proxy.publicProxy")}
+          desc={t("cluster:proxy.publicProxyDesc")}
+        >
+          <FormItem
+            infoType={InfoBarTypes.PROXY_INSTANCE}
+            optionTitle={t("cluster:proxy.instanceType")}
+            optionDesc={t("cluster:proxy.instanceTypeDesc")}
+          >
+            <Select
+              className="m-w-75p"
+              optionList={PROXY_INSTANCE_TYPE_LIST}
+              value={defaultStr(nginxForOpenSearch.input.proxyInstanceType)}
+              onChange={(event) => {
+                setNginxForOpenSearch(
+                  (prev: CreateProxyForOpenSearchMutationVariables) => {
+                    return {
+                      ...prev,
+                      input: {
+                        ...prev.input,
+                        proxyInstanceType: event.target.value,
+                      },
+                    };
+                  }
+                );
+              }}
+            />
+          </FormItem>
+
+          <FormItem
+            infoType={InfoBarTypes.PROXY_INSTANCE}
+            optionTitle={t("cluster:proxy.instanceNumber")}
+            optionDesc={t("cluster:proxy.instanceNumberDesc")}
+          >
+            <Select
+              className="m-w-75p"
+              optionList={PROXY_INSTANCE_NUMBER_LIST}
+              value={defaultStr(
+                nginxForOpenSearch.input.proxyInstanceNumber?.toString()
+              )}
+              onChange={(event) => {
+                setNginxForOpenSearch(
+                  (prev: CreateProxyForOpenSearchMutationVariables) => {
+                    return {
+                      ...prev,
+                      input: {
+                        ...prev.input,
+                        proxyInstanceNumber: event.target.value,
+                      },
+                    };
+                  }
+                );
+              }}
+            />
+          </FormItem>
+
+          <FormItem
+            optionTitle={t("cluster:proxy.publicSubnets")}
+            optionDesc={t("cluster:proxy.publicSubnetsDesc")}
+            errorText={subnetEmptyError ? t("cluster:proxy.subnetError") : ""}
+          >
+            <MultiSelect
+              className="m-w-75p"
+              loading={loadingRes}
+              optionList={publicSubnetOptionList}
+              value={publicSubnet}
+              onChange={(subnetIds) => {
+                if (subnetIds) {
+                  setSubnetEmptyError(false);
+                  setPublicSubnet(subnetIds);
+                  setNginxForOpenSearch(
+                    (prev: CreateProxyForOpenSearchMutationVariables) => {
+                      return {
+                        ...prev,
+                        input: {
+                          ...prev.input,
+                          vpc: {
+                            ...prev.input.vpc,
+                            publicSubnetIds: subnetIds.join(","),
+                          },
+                        },
+                      };
+                    }
+                  );
+                }
+              }}
+              placeholder={t("cluster:proxy.chooseSubnet")}
+              hasRefresh
+              clickRefresh={() => {
+                getResources(ResourceType.Subnet, publicVpc);
+              }}
+            />
+          </FormItem>
+
+          <FormItem
+            optionTitle={t("cluster:proxy.publicSG")}
+            optionDesc={t("cluster:proxy.publicSGDesc")}
+            errorText={sgEmptyError ? t("cluster:proxy.sgError") : ""}
+          >
+            <Select
+              className="m-w-75p"
+              loading={loadingSG}
+              optionList={publicSecGroupList}
+              value={publicSecGroup}
+              onChange={(event) => {
+                setPublicSecGroup(event.target.value);
+                setSgEmptyError(false);
+                setNginxForOpenSearch(
+                  (prev: CreateProxyForOpenSearchMutationVariables) => {
+                    return {
+                      ...prev,
+                      input: {
+                        ...prev.input,
+                        vpc: {
+                          ...prev.input.vpc,
+                          securityGroupId: event.target.value,
+                        },
+                      },
+                    };
+                  }
+                );
+              }}
+              placeholder={t("cluster:proxy.chooseSG")}
+              hasRefresh
+              clickRefresh={() => {
+                getResources(ResourceType.SecurityGroup, publicVpc);
+              }}
+            />
+          </FormItem>
+
+          <FormItem
+            optionTitle={t("cluster:proxy.nginxKeyName")}
+            optionDesc={
+              <div>
+                {t("cluster:proxy.nginxKeyNameDesc1")}
+                <ExtLink
+                  to={buildKeyPairsLink(amplifyConfig.aws_project_region)}
+                >
+                  {t("cluster:proxy.keyPairs")}
+                </ExtLink>
+                {t("cluster:proxy.nginxKeyNameDesc2")}
+              </div>
+            }
+            errorText={keyEmptyError ? t("cluster:proxy.keyError") : ""}
+          >
+            <Select
+              className="m-w-75p"
+              loading={loadingKey}
+              optionList={keyPairOptionList}
+              value={nginxForOpenSearch.input.keyName}
+              onChange={(event) => {
+                setKeyEmptyError(false);
+                setNginxForOpenSearch(
+                  (prev: CreateProxyForOpenSearchMutationVariables) => {
+                    return {
+                      ...prev,
+                      input: {
+                        ...prev.input,
+                        keyName: event.target.value,
+                      },
+                    };
+                  }
+                );
+              }}
+              placeholder={t("cluster:proxy.chooseKeyName")}
+              hasRefresh
+              clickRefresh={() => {
+                getResources(ResourceType.KeyPair);
+              }}
+            />
+          </FormItem>
+
+          <div className="mt-10">
+            <FormItem
+              optionTitle={t("cluster:proxy.domainName")}
+              optionDesc={t("cluster:proxy.domainNameDesc")}
+              errorText={
+                showDomainInvalid
+                  ? t("cluster:proxy.domainNameFormatError")
+                  : ""
+              }
+            >
+              <TextInput
+                className="m-w-75p"
+                value={nginxForOpenSearch?.input.customEndpoint || ""}
+                onChange={(event) => {
+                  setShowDomainInvalid(false);
+                  setNginxForOpenSearch(
+                    (prev: CreateProxyForOpenSearchMutationVariables) => {
+                      return {
+                        ...prev,
+                        input: {
+                          ...prev.input,
+                          customEndpoint: event.target.value,
+                        },
+                      };
+                    }
+                  );
+                }}
+                placeholder="xxxxx.example.com"
+              />
+            </FormItem>
+
+            <FormItem
+              optionTitle={t("cluster:proxy.lbSSL")}
+              optionDesc={
+                <div>
+                  {t("cluster:proxy.lbSSLDesc1")}
+                  <ExtLink to={buildACMLink(amplifyConfig.aws_project_region)}>
+                    {t("cluster:proxy.ACM")}
+                  </ExtLink>
+                  {t("cluster:proxy.lbSSLDesc2")}
+                </div>
+              }
+              errorText={sslError ? t("cluster:proxy.sslError") : ""}
+            >
+              <Select
+                className="m-w-75p"
+                loading={loadingCert}
+                optionList={certificateOptionList}
+                value={nginxForOpenSearch.input.certificateArn}
+                onChange={(event) => {
+                  setSslError(false);
+                  setNginxForOpenSearch(
+                    (prev: CreateProxyForOpenSearchMutationVariables) => {
+                      return {
+                        ...prev,
+                        input: {
+                          ...prev.input,
+                          certificateArn: event.target.value,
+                        },
+                      };
+                    }
+                  );
+                }}
+                placeholder={t("cluster:proxy.chooseSSL")}
+                hasRefresh
+                clickRefresh={() => {
+                  getResources(ResourceType.Certificate);
+                }}
+              />
+            </FormItem>
+          </div>
+        </HeaderPanel>
+
+        <div className="button-action text-right">
+          <Button
+            disabled={loadingCreate}
+            btnType="text"
+            onClick={() => {
+              backToDetailPage();
+            }}
+          >
+            {t("button.cancel")}
+          </Button>
+          <Button
+            loading={loadingCreate}
+            btnType="primary"
+            onClick={() => {
+              confirmCreateNginxForOpenSearch();
+            }}
+          >
+            {t("button.create")}
+          </Button>
         </div>
       </div>
-      <HelpPanel />
-    </div>
+    </CommonLayout>
   );
 };
 

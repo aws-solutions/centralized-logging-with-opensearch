@@ -157,19 +157,27 @@ export class CrossAccountStack extends Construct {
     crossAccountHandler.addToRolePolicy(
       new iam.PolicyStatement({
         actions: [
-          'iam:CreatePolicyVersion',
-          'iam:SetDefaultPolicyVersion',
-          'iam:ListPolicyVersions',
-          'iam:DeletePolicyVersion',
-          'iam:PutRolePolicy',
           'iam:GetRole',
           'iam:GetInstanceProfile',
-          'iam:AttachRolePolicy',
           'iam:ListAttachedRolePolicies',
           'iam:UpdateAssumeRolePolicy',
         ],
         effect: iam.Effect.ALLOW,
         resources: [`arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:*`],
+      })
+    );
+    crossAccountHandler.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: [
+          'iam:CreatePolicyVersion',
+          'iam:SetDefaultPolicyVersion',
+          'iam:ListPolicyVersions',
+          'iam:DeletePolicyVersion',
+        ],
+        effect: iam.Effect.ALLOW,
+        resources: [
+          this.centralAssumeRolePolicy.managedPolicyArn
+        ],
       })
     );
 

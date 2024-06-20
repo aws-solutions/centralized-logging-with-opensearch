@@ -3,14 +3,15 @@
 
 import uuid
 import json
-import logging
+from commonlib.logging import get_logger
 
+logger = get_logger(__name__)
 
 def exec_sfn_flow(
     sfn_client, state_machine_arn: str, flow_id: str, action="START", args=None
 ):
     """Helper function to execute a step function flow"""
-    logging.info(f"Execute Step Function Flow: {state_machine_arn}")
+    logger.info(f"Execute Step Function Flow: {state_machine_arn}")
 
     if args is None:
         args = {}

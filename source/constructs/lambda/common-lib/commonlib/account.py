@@ -3,7 +3,6 @@
 
 
 import os
-import logging
 import json
 from string import Template
 from datetime import datetime
@@ -12,8 +11,9 @@ from typing import Union
 from .aws import DynamoDBUtil, AWSConnection
 from .utils import paginate
 from .exception import APIException, ErrorCode
+from .logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 STATEMENT_TEMPLATE = """
 {
@@ -93,6 +93,10 @@ class LinkAccountHelper:
         account_id: str = "",
         region: str = "",
         uploading_event_topic_arn: str = "",
+        windows_agent_install_doc: str = "",
+        windows_agent_conf_doc: str = "",
+        agent_status_check_doc: str = "",
+        agent_install_doc: str = "",
     ) -> Union[dict, str]:
         """Get a sub account link
 
@@ -118,6 +122,10 @@ class LinkAccountHelper:
         if not account:
             raise APIException(ErrorCode.ACCOUNT_NOT_FOUND)
         account["subAccountFlbConfUploadingEventTopicArn"] = uploading_event_topic_arn
+        account["windowsAgentInstallDoc"] = windows_agent_install_doc
+        account["windowsAgentConfDoc"] = windows_agent_conf_doc
+        account["agentStatusCheckDoc"] = agent_status_check_doc
+        account["agentInstallDoc"] = agent_install_doc
         account["updatedAt"] = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
         self._ddb_util.put_item(account)
         return "OK"
@@ -181,6 +189,10 @@ class LinkAccountHelper:
     def default_region(self) -> str:
         """Current AWS Region"""
         return self._default_region
+
+    @default_region.setter
+    def default_region(self, value):
+        self._default_region = value
 
     def update_role(self, role_name: str, sub_account_ids=list()):
         """

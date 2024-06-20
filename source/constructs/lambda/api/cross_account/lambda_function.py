@@ -3,13 +3,12 @@
 
 
 import json
-import logging
+from commonlib.logging import get_logger
 import os
 
 from commonlib import AWSConnection, LinkAccountHelper, AppSyncRouter, handle_error
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 conn = AWSConnection()
 router = AppSyncRouter()
@@ -60,7 +59,20 @@ def update_sub_account_link(**args):
     account_id = args.pop("subAccountId", "")
     region = args.pop("region", "")
     uploading_event_topic_arn = args.pop("subAccountFlbConfUploadingEventTopicArn")
-    return acc_helper.update_link_account(account_id, region, uploading_event_topic_arn)
+    windows_agent_install_doc = args.pop("windowsAgentInstallDoc")
+    windows_agent_conf_doc = args.pop("windowsAgentConfDoc")
+    agent_status_check_doc = args.pop("agentStatusCheckDoc")
+    agent_install_doc = args.pop("agentInstallDoc")
+
+    return acc_helper.update_link_account(
+        account_id,
+        region,
+        uploading_event_topic_arn,
+        windows_agent_install_doc,
+        windows_agent_conf_doc,
+        agent_status_check_doc,
+        agent_install_doc,
+    )
 
 
 @router.route(field_name="listSubAccountLinks")

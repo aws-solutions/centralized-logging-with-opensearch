@@ -21,6 +21,7 @@ import Typography from "@material-ui/core/Typography";
 
 interface StyledTabProps {
   label: string;
+  value?: string;
   className?: string;
 }
 
@@ -59,8 +60,8 @@ const AntTab = withStyles((theme: Theme) =>
 
 interface TabPanelProps {
   children?: any;
-  index: number;
-  value: number;
+  index: string;
+  value: string;
 }
 
 const TabPanel = (props: TabPanelProps): ReactElement => {

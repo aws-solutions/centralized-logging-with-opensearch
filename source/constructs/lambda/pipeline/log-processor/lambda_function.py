@@ -2,14 +2,17 @@
 # SPDX-License-Identifier: Apache-2.0
 import os
 import sys
-import logging
-import boto3
+from commonlib.logging import get_logger
+from commonlib import AWSConnection
 from event.event_parser import KDS, MSK, WAFSampled, SQS
 from idx.idx_svc import AosIdxService
 
+from aws_lambda_powertools import Metrics
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+
+STACK_PREFIX = os.environ.get("STACK_PREFIX", "CL")
+
+logger = get_logger(__name__)
 
 log_type = os.environ.get("LOG_TYPE")
 source = str(os.environ.get("SOURCE", "KDS"))
@@ -17,7 +20,10 @@ sub_category = str(os.environ.get("SUB_CATEGORY", ""))
 write_idx_data = str(os.environ.get("WRITE_IDX_DATA", "True"))
 idx_svc = AosIdxService()
 
-sqs_client = boto3.client("sqs")
+default_region = os.environ.get("REGION")
+conn = AWSConnection()
+sqs_client = conn.get_client("sqs", default_region)
+
 sqs_queue_url = str(os.environ.get("SQS_QUEUE_URL", ""))
 
 plugins = os.environ.get("PLUGINS", "")
@@ -26,9 +32,12 @@ write_idx_data = str(os.environ.get("WRITE_IDX_DATA", "True"))
 
 no_buffer_access_role_arn = str(os.environ.get("NO_BUFFER_ACCESS_ROLE_ARN", ""))
 
-event_bridge_client = boto3.client("events")
+event_bridge_client = conn.get_client("events", default_region)
+
+metrics = Metrics(namespace=f"Solution/{STACK_PREFIX}")
 
 
+@metrics.log_metrics
 def lambda_handler(event, _):
     try:
         idx_svc.init_idx_env()
@@ -41,8 +50,27 @@ def lambda_handler(event, _):
         if not (plugins or log_type in ("ELB", "CloudFront")) and "Records" in event:
             for event_record in event["Records"]:
                 change_sqs_message_visibility(event_record)
-        raise e
+        if "Records" in event and event["Records"]:
+            record = event["Records"][0]
+            if record["eventSource"] == "aws:sqs":
+                handle_sqs_retries(record)
+        else:
+            raise e
     return "Ok"
+
+
+def handle_sqs_retries(record):
+    approximate_receive_count = int(
+        record.get("attributes").get("ApproximateReceiveCount", "3")
+    )
+    if approximate_receive_count > 2:
+        logger.info(f"record is {record}")
+        logger.error(
+            "Error: %s",
+            "This message has exceeded the maximum number of retries, verify that you can connect to OpenSearch or that the data type does not match the field type defined for the index",
+        )
+    else:
+        raise Exception(f"Error processing SQS message: {record}")
 
 
 def change_sqs_message_visibility(event_record):
@@ -62,12 +90,14 @@ def change_sqs_message_visibility(event_record):
 
 def parse_kds_event(event):
     kds: KDS = KDS(source)
+    kds.set_metrics(metrics)
     kds.process_event(event)
 
 
 def parse_msk_event(event):
     # parse event which is from MSK
     msk: MSK = MSK(source)
+    msk.set_metrics(metrics)
     msk.process_event(event)
 
 
@@ -75,12 +105,14 @@ def parse_event_bridge_event(event):
     # parse event which is from EventBridge
     if log_type in ("WAFSampled"):
         waf_sampled: WAFSampled = WAFSampled()
+        waf_sampled.set_metrics(metrics)
         waf_sampled.process_event(event)
 
 
 def parse_sqs_event(event):
     # parse event which is from S3 bucket
     sqs: SQS = SQS(source)
+    sqs.set_metrics(metrics)
     sqs.process_event(event)
 
 

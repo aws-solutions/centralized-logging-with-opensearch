@@ -116,15 +116,9 @@ export class LogSourceStack extends Construct {
 
     logSourceHandler.addToRolePolicy(
       new iam.PolicyStatement({
-        sid: "iam",
+        sid: "IamOidc",
         actions: [
           "iam:GetServerCertificate",
-          "iam:DetachRolePolicy",
-          "iam:GetPolicy",
-          "iam:TagRole",
-          "iam:CreateRole",
-          "iam:AttachRolePolicy",
-          "iam:TagPolicy",
           "iam:GetOpenIDConnectProvider",
           "iam:TagOpenIDConnectProvider",
           "iam:CreateOpenIDConnectProvider",
@@ -132,9 +126,21 @@ export class LogSourceStack extends Construct {
         effect: iam.Effect.ALLOW,
         resources: [
           `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:oidc-provider/*`,
-          `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/*`,
           `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:server-certificate/*`,
-          `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:policy/*`,
+        ],
+      })
+    );
+    logSourceHandler.addToRolePolicy(
+      new iam.PolicyStatement({
+        sid: "iam",
+        actions: [
+          "iam:TagRole",
+          "iam:CreateRole",
+        ],
+        effect: iam.Effect.ALLOW,
+        resources: [
+          `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/*-EKS-LogAgent-Role-*`,
+
         ],
       })
     );

@@ -45,7 +45,11 @@ This AWS CloudFormation template automatically deploys the Centralized Logging w
 
 6. Choose **Next**.
 
-7. On the **Configure stack options** page, choose **Next**.
+7. On the **Configure stack options** page, choose Add new tag and type in the following key and value:
+    1. Key: CLOSolutionCostAnalysis
+    2. Value: CLOSolutionCostAnalysis
+    
+    You can activate the CLOSolutionCostAnalysis tag after all resources has been successfully deployed. Choose **Next**.
 
 8. On the **Review** page, review and confirm the settings. Select the box acknowledging that the template creates AWS Identity and Access Management (IAM) resources.
 

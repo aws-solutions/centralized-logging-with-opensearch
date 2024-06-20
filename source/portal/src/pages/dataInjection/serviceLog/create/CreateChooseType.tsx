@@ -25,16 +25,14 @@ import {
 } from "assets/js/const";
 
 import Button from "components/Button";
-import Breadcrumb from "components/Breadcrumb";
 import { useDispatch } from "react-redux";
 import { ActionType } from "reducer/appReducer";
-import HelpPanel from "components/HelpPanel";
-import SideMenu from "components/SideMenu";
 import { useTranslation } from "react-i18next";
-import { AnalyticEngineTypes } from "./common/SpecifyAnalyticsEngine";
 import { identity } from "lodash";
 import { SelectAnalyticsEngine } from "pages/dataInjection/common/SelectAnalyticsEngine";
 import { PipelineType } from "API";
+import { AnalyticEngineTypes } from "types";
+import CommonLayout from "pages/layout/CommonLayout";
 
 const CreateChooseType: React.FC = () => {
   const { t } = useTranslation();
@@ -64,89 +62,78 @@ const CreateChooseType: React.FC = () => {
   }, []);
 
   return (
-    <div className="lh-main-content">
-      <SideMenu />
-      <div className="lh-container">
-        <div className="lh-content">
-          <div className="service-log">
-            <Breadcrumb list={breadCrumbList} />
-            <div className="m-w-1024">
-              <PagePanel title={t("servicelog:create.select")}>
-                <HeaderPanel title={t("servicelog:create.awsServices")}>
-                  <div>
-                    <div className="service-item-list">
-                      {ServiceLogList.map((element, index) => {
-                        return (
-                          <label key={identity(index)}>
-                            <div
-                              className={classNames("service-item", {
-                                active: element.value === logType,
-                                disabled: element.disabled,
-                              })}
-                            >
-                              <div className="name">
-                                <input
-                                  disabled={element.disabled}
-                                  onChange={() => {
-                                    console.info("changed");
-                                  }}
-                                  onClick={() => {
-                                    setLogType(element.value);
-                                    setEngineType(
-                                      AnalyticEngineTypes.OPENSEARCH
-                                    );
-                                  }}
-                                  checked={element.value === logType}
-                                  name="service"
-                                  type="radio"
-                                />{" "}
-                                {t(element.name)}
-                              </div>
-                              <div className="image">
-                                <img
-                                  width="64"
-                                  alt={element.name}
-                                  src={element.img}
-                                />
-                              </div>
-                            </div>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </HeaderPanel>
-                <SelectAnalyticsEngine
-                  pipelineType={PipelineType.SERVICE}
-                  svcLogType={logType}
-                  engineType={engineType}
-                  setEngineType={setEngineType}
-                />
-              </PagePanel>
-              <div className="button-action text-right">
-                <Button
-                  btnType="text"
-                  onClick={() => {
-                    navigate(`/log-pipeline/service-log`);
-                  }}
-                >
-                  {t("button.cancel")}
-                </Button>
-                <Button
-                  btnType="primary"
-                  onClick={() => {
-                    goToCreatePage();
-                  }}
-                >
-                  {t("button.next")}
-                </Button>
+    <CommonLayout breadCrumbList={breadCrumbList}>
+      <div className="m-w-1024">
+        <PagePanel title={t("servicelog:create.select")}>
+          <HeaderPanel title={t("servicelog:create.awsServices")}>
+            <div>
+              <div className="service-item-list">
+                {ServiceLogList.map((element, index) => {
+                  return (
+                    <label key={identity(index)}>
+                      <div
+                        className={classNames("service-item", {
+                          active: element.value === logType,
+                          disabled: element.disabled,
+                        })}
+                      >
+                        <div className="name">
+                          <input
+                            disabled={element.disabled}
+                            onChange={() => {
+                              console.info("changed");
+                            }}
+                            onClick={() => {
+                              setLogType(element.value);
+                              setEngineType(AnalyticEngineTypes.OPENSEARCH);
+                            }}
+                            checked={element.value === logType}
+                            name="service"
+                            type="radio"
+                          />{" "}
+                          {t(element.name)}
+                        </div>
+                        <div className="image">
+                          <img
+                            width="64"
+                            alt={element.name}
+                            src={element.img}
+                          />
+                        </div>
+                      </div>
+                    </label>
+                  );
+                })}
               </div>
             </div>
-          </div>
+          </HeaderPanel>
+          <SelectAnalyticsEngine
+            pipelineType={PipelineType.SERVICE}
+            svcLogType={logType}
+            engineType={engineType}
+            setEngineType={setEngineType}
+          />
+        </PagePanel>
+        <div className="button-action text-right">
+          <Button
+            btnType="text"
+            onClick={() => {
+              navigate(`/log-pipeline/service-log`);
+            }}
+          >
+            {t("button.cancel")}
+          </Button>
+          <Button
+            btnType="primary"
+            onClick={() => {
+              goToCreatePage();
+            }}
+          >
+            {t("button.next")}
+          </Button>
         </div>
       </div>
-      <HelpPanel />
-    </div>
+    </CommonLayout>
   );
 };
 

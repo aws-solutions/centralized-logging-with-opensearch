@@ -18,60 +18,41 @@ import FormItem from "components/FormItem";
 import Select from "components/Select";
 import TextInput from "components/TextInput";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
-import {
-  AmplifyConfigType,
-  YesNo,
-  YESNO_LIST,
-  ApplicationLogType,
-} from "types";
+import { useDispatch, useSelector } from "react-redux";
+import { AmplifyConfigType, YesNo, YESNO_LIST } from "types";
 import { NOT_SUPPORT_KDS_AUTO_SCALING_REGION } from "assets/js/const";
 import { RootState } from "reducer/reducers";
+import { AppDispatch } from "reducer/store";
+import {
+  enableAutoScalingChanged,
+  maxCapacityChanged,
+  minCapacityChanged,
+} from "reducer/configBufferKDS";
+import { displayI18NMessage } from "assets/js/utils";
 
-interface BufferKDSProps {
-  shardNumInvalidError: boolean | undefined;
-  maxShardNumInvalidError: boolean | undefined;
-  applicationLog: ApplicationLogType;
-  changeShardNumber: (number: string) => void;
-  changeEnableAS: (enable: string) => void;
-  changeMaxShardNum: (number: string) => void;
-}
-
-const BufferKDS: React.FC<BufferKDSProps> = (props: BufferKDSProps) => {
+const BufferKDS: React.FC = () => {
   const { t } = useTranslation();
   const amplifyConfig: AmplifyConfigType = useSelector(
     (state: RootState) => state.app.amplifyConfig
   );
-  const {
-    shardNumInvalidError,
-    maxShardNumInvalidError,
-    applicationLog,
-    changeShardNumber,
-    changeEnableAS,
-    changeMaxShardNum,
-  } = props;
+  const kdsBuffer = useSelector((state: RootState) => state.kdsBuffer);
+  const dispatch = useDispatch<AppDispatch>();
   const [enableAS, setEnableAS] = useState(
-    applicationLog.kdsBufferParams.enableAutoScaling === "true"
-      ? YesNo.Yes
-      : YesNo.No
+    kdsBuffer.data.enableAutoScaling === "true" ? YesNo.Yes : YesNo.No
   );
   return (
     <div>
       <FormItem
         optionTitle={t("applog:create.ingestSetting.shardNum")}
         optionDesc={t("applog:create.ingestSetting.shardNumDesc")}
-        errorText={
-          shardNumInvalidError
-            ? t("applog:create.ingestSetting.shardNumError")
-            : ""
-        }
+        errorText={displayI18NMessage(kdsBuffer.minCapacityError)}
       >
         <TextInput
           className="m-w-45p"
-          value={applicationLog.kdsBufferParams.minCapacity}
+          value={kdsBuffer.data.minCapacity}
           type="number"
           onChange={(event) => {
-            changeShardNumber(event.target.value);
+            dispatch(minCapacityChanged(event.target.value));
           }}
           placeholder={t("applog:create.ingestSetting.shardNum")}
         />
@@ -91,34 +72,33 @@ const BufferKDS: React.FC<BufferKDSProps> = (props: BufferKDSProps) => {
           value={enableAS}
           onChange={(event) => {
             setEnableAS(event.target.value);
-            changeEnableAS(event.target.value === YesNo.Yes ? "true" : "false");
+            dispatch(
+              enableAutoScalingChanged(
+                event.target.value === YesNo.Yes ? "true" : "false"
+              )
+            );
           }}
           placeholder=""
         />
       </FormItem>
 
-      <FormItem
-        optionTitle={t("applog:create.ingestSetting.maxShardNum")}
-        optionDesc={t("applog:create.ingestSetting.maxShardNumDesc")}
-        errorText={
-          maxShardNumInvalidError
-            ? t("applog:create.ingestSetting.maxShardNumError")
-            : ""
-        }
-      >
-        <TextInput
-          disabled={
-            applicationLog.kdsBufferParams.enableAutoScaling === "false"
-          }
-          className="m-w-45p"
-          type="number"
-          value={applicationLog.kdsBufferParams.maxCapacity}
-          onChange={(event) => {
-            changeMaxShardNum(event.target.value);
-          }}
-          placeholder={t("applog:create.ingestSetting.maxShardNum")}
-        />
-      </FormItem>
+      {kdsBuffer.data.enableAutoScaling === "true" && (
+        <FormItem
+          optionTitle={t("applog:create.ingestSetting.maxShardNum")}
+          optionDesc={t("applog:create.ingestSetting.maxShardNumDesc")}
+          errorText={displayI18NMessage(kdsBuffer.maxCapacityError)}
+        >
+          <TextInput
+            className="m-w-45p"
+            type="number"
+            value={kdsBuffer.data.maxCapacity}
+            onChange={(event) => {
+              dispatch(maxCapacityChanged(event.target.value));
+            }}
+            placeholder={t("applog:create.ingestSetting.maxShardNum")}
+          />
+        </FormItem>
+      )}
     </div>
   );
 };

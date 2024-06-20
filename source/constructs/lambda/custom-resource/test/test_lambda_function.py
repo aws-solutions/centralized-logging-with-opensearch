@@ -6,11 +6,17 @@ import os
 import boto3
 import json
 from moto import mock_s3, mock_dynamodb, mock_cloudfront, mock_iam
+from moto.core import DEFAULT_ACCOUNT_ID as ACCOUNT_ID
+
+
+def init_table(table, rows):
+    with table.batch_writer() as batch:
+        for data in rows:
+            batch.put_item(Item=data)
 
 
 @pytest.fixture
 def s3_client():
-
     with mock_s3():
         region = os.environ.get("AWS_REGION")
 
@@ -18,12 +24,13 @@ def s3_client():
         # Create the buckets
         default_bucket = os.environ.get("WEB_BUCKET_NAME")
         s3.create_bucket(Bucket=default_bucket)
+        s3.create_bucket(Bucket=os.environ["DEFAULT_LOGGING_BUCKET"])
+        s3.create_bucket(Bucket=os.environ["ACCESS_LOGGING_BUCKET"])
         yield
 
 
 @pytest.fixture
 def iam_client():
-
     with mock_iam():
         region = os.environ.get("AWS_REGION")
 
@@ -52,7 +59,6 @@ def iam_client():
 
 @pytest.fixture
 def cloudfront_client():
-
     with mock_cloudfront():
         region = os.environ.get("AWS_REGION")
 
@@ -95,7 +101,6 @@ def cloudfront_client():
 
 @pytest.fixture
 def ddb_client():
-
     with mock_dynamodb():
         region = os.environ.get("AWS_REGION")
 
@@ -105,6 +110,90 @@ def ddb_client():
         app_pipeline_table_name = os.environ.get("APP_PIPELINE_TABLE")
         pipeline_table_name = os.environ.get("PIPELINE_TABLE")
         sub_account_link_table_name = os.environ.get("SUB_ACCOUNT_LINK_TABLE")
+
+        opensearch_domain_table_name = os.environ.get("OPENSEARCH_DOMAIN_TABLE")
+        table = ddb.create_table(
+            TableName=opensearch_domain_table_name,
+            KeySchema=[{"AttributeName": "id", "KeyType": "HASH"}],
+            AttributeDefinitions=[{"AttributeName": "id", "AttributeType": "S"}],
+            ProvisionedThroughput={"ReadCapacityUnits": 10, "WriteCapacityUnits": 10},
+        )
+        data_list = [
+            {
+                "id": "opensearch-1",
+                "accountId": ACCOUNT_ID,
+                "alarmStatus": "DISABLED",
+                "domainArn": f"arn:aws:es:us-west-2:{ACCOUNT_ID}:domain/may24",
+                "domainInfo": {
+                    "DomainStatus": {
+                        "VPCOptions": {
+                            "AvailabilityZones": ["us-west-2b"],
+                            "SecurityGroupIds": ["sg-0fc8398d4dc270f01"],
+                            "SubnetIds": ["subnet-0eb38879d66848a99"],
+                            "VPCId": "vpc-09d983bed6954836e",
+                        }
+                    }
+                },
+                "domainName": "may24",
+                "endpoint": "vpc-may24.us-west-2.es.amazonaws.com",
+                "engine": "OpenSearch",
+                "importedDt": "2023-05-24T08:47:11Z",
+                "proxyALB": "",
+                "proxyError": "",
+                "proxyInput": {},
+                "proxyStackId": f"arn:aws:cloudformation:us-west-2:{ACCOUNT_ID}:stack/CL-Proxy-f862f9f5/9bd7c7c0-fb87-11ed-912f-0aac039a8cd1",
+                "proxyStatus": "DISABLED",
+                "region": "us-west-2",
+                "resources": [
+                    {
+                        "name": "OpenSearchSecurityGroup",
+                        "status": "UPDATED",
+                        "values": ["sg-0fc8398d4dc270f01"],
+                    },
+                    {
+                        "name": "VPCPeering",
+                        "status": "CREATED",
+                        "values": ["pcx-0f756a20c2d967681"],
+                    },
+                    {
+                        "name": "OpenSearchRouteTables",
+                        "status": "UPDATED",
+                        "values": ["rtb-085e9e315daffeb47"],
+                    },
+                    {
+                        "name": "SolutionRouteTables",
+                        "status": "UPDATED",
+                        "values": ["rtb-0fd78aa9852632af9", "rtb-001b397b7e8eccb55"],
+                    },
+                ],
+                "status": "ACTIVE",
+                "tags": [],
+                "version": "2.5",
+                "vpc": {
+                    "privateSubnetIds": "subnet-081f8e7c722477a83,subnet-0c95536ae6b1cdb07",
+                    "securityGroupId": "sg-0d6567095a7667f7f",
+                    "vpcId": "vpc-03089a5f415c2be27",
+                },
+            },
+            {
+                "id": "opensearch-2",
+                "accountId": ACCOUNT_ID,
+                "alarmStatus": "DISABLED",
+                "domainArn": f"arn:aws:es:us-west-2:{ACCOUNT_ID}:domain/may23",
+                "domainName": "may23",
+                "endpoint": "vpc-may23.us-west-2.es.amazonaws.com",
+                "status": "INACTIVE",
+                "tags": [],
+                "version": "2.5",
+                "vpc": {
+                    "privateSubnetIds": "subnet-081f8e7c722477a83,subnet-0c95536ae6b1cdb07",
+                    "securityGroupId": "sg-0d6567095a7667f7f",
+                    "vpcId": "vpc-03089a5f415c2be27",
+                },
+            },
+        ]
+
+        init_table(table, data_list)
 
         ddb.create_table(
             TableName=sub_account_link_table_name,
@@ -156,8 +245,8 @@ def ddb_client():
             AttributeDefinitions=[{"AttributeName": "id", "AttributeType": "S"}],
             ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
         )
-        app_pipeline_table = ddb.Table(app_pipeline_table_name)
-        app_pipeline_table.put_item(
+        table = ddb.Table(app_pipeline_table_name)
+        table.put_item(
             Item={
                 "id": "6683bcd2-befc-4c44-88f1-9501de1853ff",
                 "aosParas": {"domainName": "dev"},
@@ -242,7 +331,10 @@ def ddb_client():
         yield
 
 
-def test_lambda_function(s3_client, ddb_client, cloudfront_client, iam_client):
+def test_lambda_function(mocker, s3_client, ddb_client, cloudfront_client, iam_client):
+    mocker.patch("lambda_function.is_advanced_security_enabled_safe", return_value=True)
+    mocker.patch("lambda_function.set_master_user_arn")
+    mocker.patch("lambda_function.enable_s3_bucket_access_logging")
     import lambda_function
 
     result = lambda_function.lambda_handler(None, None)

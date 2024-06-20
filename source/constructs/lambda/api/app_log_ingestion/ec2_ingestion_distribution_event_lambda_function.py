@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import json
-import logging
+from commonlib.logging import get_logger
 import os
 import urllib.parse
 import time
@@ -10,14 +10,10 @@ from typing import List
 from botocore.exceptions import ClientError
 from boto3.dynamodb.conditions import Attr
 from commonlib import AWSConnection, AppSyncRouter, LinkAccountHelper
-from commonlib.dao import (
-    InstanceIngestionDetailDao,
-)
-from commonlib.model import InstanceIngestionDetail, StatusEnum
+from commonlib.dao import InstanceIngestionDetailDao, InstanceDao
+from commonlib.model import InstanceIngestionDetail, StatusEnum, GroupPlatformEnum
 
-
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 conn = AWSConnection()
 router = AppSyncRouter()
@@ -32,13 +28,18 @@ instance_ingestion_detail_table_name = os.environ.get(
 instance_ingestion_detail_dao = InstanceIngestionDetailDao(
     table_name=instance_ingestion_detail_table_name
 )
+instance_table_name = os.environ.get("INSTANCE_TABLE_NAME")
+instance_dao = InstanceDao(table_name=instance_table_name)
 
 # link account
 sub_account_link_table_name = os.environ.get("SUB_ACCOUNT_LINK_TABLE_NAME")
 account_helper = LinkAccountHelper(sub_account_link_table_name)
 
 # Get SSM resource
-ssm_log_config_document_name = os.environ.get("SSM_LOG_CONFIG_DOCUMENT_NAME")
+ssm_linux_log_config_document_name = os.environ.get("SSM_LOG_CONFIG_DOCUMENT_NAME")
+ssm_windows_log_config_document_name = os.environ.get(
+    "SSM_WINDOWS_LOG_CONFIG_DOCUMENT_NAME"
+)
 
 
 class SSMSendCommandStatus:
@@ -48,7 +49,7 @@ class SSMSendCommandStatus:
 
 
 def lambda_handler(event, _):
-    # logger.info("Received event: " + json.dumps(event, indent=2))
+    # logger.info("Received event: " + json.dumps(event["arguments"], indent=2))
     if is_s3_event(event):
         process_s3_event(event)
     elif is_sns_event(event):
@@ -189,9 +190,17 @@ def upload_flb_config(instance_id: str):
         link_account = get_link_account(instance_ingestion_details)
         sts_role_arn = link_account.get("subAccountRoleArn", "")
         ssm_config_document_name = link_account.get(
-            "agentConfDoc", ssm_log_config_document_name
+            "agentConfDoc", ssm_linux_log_config_document_name
         )
-        if ssm_config_document_name == ssm_log_config_document_name:
+        is_windows = is_windows_instance(instance_id)
+        if is_windows:
+            ssm_config_document_name = link_account.get(
+                "windowsAgentConfDoc", ssm_windows_log_config_document_name
+            )
+        if (
+            ssm_config_document_name == ssm_linux_log_config_document_name
+            or ssm_config_document_name == ssm_windows_log_config_document_name
+        ):
             ssm = conn.get_client("ssm")
         else:
             ssm = conn.get_client(
@@ -203,6 +212,16 @@ def upload_flb_config(instance_id: str):
         send_ssm_command_to_instances(
             ssm, [instance_id], ssm_config_document_name, instance_ingestion_details
         )
+
+
+def is_windows_instance(instance_id: str):
+    is_windows = False
+    instance_list = instance_dao.get_instance_by_instance_id(instance_id)
+    if len(instance_list) > 0:
+        ec2_instance = instance_list[0]
+        if ec2_instance.platformType == GroupPlatformEnum.WINDOWS:
+            is_windows = True
+    return is_windows
 
 
 def send_ssm_command_to_instances(

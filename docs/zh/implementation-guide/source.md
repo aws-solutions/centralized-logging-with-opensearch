@@ -2,4 +2,4 @@
 
 [source]: https://github.com/aws-solutions/centralized-logging-with-opensearch
 [cdk]: http://aws.amazon.com/cdk/
-[readme]: https://github.com/aws-solutions/centralized
+[readme]: https://github.com/aws-solutions/centralized-logging-with-opensearch/blob/main/README.md
