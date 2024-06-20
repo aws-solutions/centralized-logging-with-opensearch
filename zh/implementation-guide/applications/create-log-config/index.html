@@ -387,6 +387,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../solution-overview/concepts/" class="md-nav__link">
+        概念
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -426,7 +440,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/" class="md-nav__link">
+      <a href="../../architecture-overview/architecture/" class="md-nav__link">
         架构图
       </a>
     </li>
@@ -487,8 +501,36 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture-details/solution-components/" class="md-nav__link">
-        解决方案组件
+      <a href="../../architecture-details/service-log-analytics-pipeline/" class="md-nav__link">
+        AWS 服务日志分析管道
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-details/application-log-analytics-pipeline/" class="md-nav__link">
+        应用程序日志分析管道
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-details/light-engine/" class="md-nav__link">
+        Light Engine
       </a>
     </li>
   
@@ -502,7 +544,7 @@
   
     <li class="md-nav__item">
       <a href="../../architecture-details/services-in-this-solution/" class="md-nav__link">
-        AWS 服务
+        此解决方案中的 AWS 服务
       </a>
     </li>
   
@@ -905,7 +947,7 @@
   
     <li class="md-nav__item">
       <a href="../../aws-services/cloudtrail/" class="md-nav__link">
-        Amazon CloudTrail
+        AWS CloudTrail
       </a>
     </li>
   
@@ -1431,6 +1473,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../update/" class="md-nav__link">
+        升级解决方案
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../uninstall/" class="md-nav__link">
         卸载解决方案
       </a>
@@ -1448,18 +1504,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_15" type="checkbox" id="__nav_1_15" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_16" type="checkbox" id="__nav_1_16" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_15">
+        <label class="md-nav__link" for="__nav_1_16">
           额外资源
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="额外资源" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_15">
+        <label class="md-nav__title" for="__nav_1_16">
           <span class="md-nav__icon md-icon"></span>
           额外资源
         </label>
@@ -1731,7 +1787,6 @@
 <li>在左侧边栏中的 <strong>资源</strong> 下，选择 <strong>日志配置</strong>。</li>
 <li>单击<strong>创建日志配置</strong>按钮。</li>
 <li>指定<strong>配置名称</strong>。</li>
-<li>指定<strong>日志路径</strong>。 您可以使用 <code>,</code> 分隔多个路径。</li>
 <li>在日志类型下拉列表中选择<strong>JSON</strong>。</li>
 <li>
 <p>在<strong>示例日志解析</strong>部分，粘贴一个示例 JSON 日志，点击<strong>解析日志</strong>，验证日志解析是否成功。</p>
@@ -1797,7 +1852,6 @@
 <li>在左侧边栏中的 <strong>资源</strong> 下，选择 <strong>日志配置</strong>。</li>
 <li>单击<strong>创建日志配置</strong>按钮。</li>
 <li>指定<strong>配置名称</strong>。</li>
-<li>指定<strong>日志路径</strong>。 您可以使用 <code>,</code> 分隔多个路径。</li>
 <li>在日志类型下拉菜单中选择<strong>Apache HTTP 服务器</strong>。</li>
 <li>
 <p>在 <strong>Apache Log Format</strong> 部分，粘贴您的 Apache HTTP 服务器日志格式配置。 它的格式为<code>/etc/httpd/conf/httpd.conf</code>，以<code>LogFormat</code>开头。</p>
@@ -1821,7 +1875,6 @@
 <li>在左侧边栏中的 <strong>资源</strong> 下，选择 <strong>日志配置</strong>。</li>
 <li>单击<strong>创建日志配置</strong>按钮。</li>
 <li>指定<strong>配置名称</strong>。</li>
-<li>指定<strong>日志路径</strong>。 您可以使用 <code>,</code> 分隔多个路径。</li>
 <li>在日志类型下拉菜单中选择<strong>Nginx</strong>。</li>
 <li>
 <p>在<strong>Nginx Log Format</strong>部分，粘贴你的Nginx日志格式配置，格式为<code>/etc/nginx/nginx.conf</code>，以<code>log_format</code>开头。</p>
@@ -1948,7 +2001,6 @@
 <li>在左侧边栏中的 <strong>资源</strong> 下，选择 <strong>日志配置</strong>。</li>
 <li>单击<strong>创建日志配置</strong>按钮。</li>
 <li>指定<strong>配置名称</strong>。</li>
-<li>指定<strong>日志路径</strong>。 您可以使用 <code>,</code> 分隔多个路径。</li>
 <li>在日志类型下拉菜单中选择<strong>单行文本</strong>。</li>
 <li>
 <p>在<a href="https://rubular.com/">Rubular</a>中写正则表达式先验证并输入值。 例如：</p>
@@ -1983,7 +2035,6 @@
 <li>在左侧边栏中的 <strong>资源</strong> 下，选择 <strong>日志配置</strong>。</li>
 <li>单击<strong>创建日志配置</strong>按钮。</li>
 <li>指定<strong>配置名称</strong>。</li>
-<li>指定<strong>日志路径</strong>。 您可以使用 <code>,</code> 分隔多个路径。</li>
 <li>在日志类型下拉菜单中选择<strong>多行文本</strong>。</li>
 </ol>
 <h3 id="java-spring-boot">Java - Spring Boot</h3>

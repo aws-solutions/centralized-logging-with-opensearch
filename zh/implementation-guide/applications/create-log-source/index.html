@@ -387,6 +387,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../solution-overview/concepts/" class="md-nav__link">
+        概念
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -426,7 +440,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/" class="md-nav__link">
+      <a href="../../architecture-overview/architecture/" class="md-nav__link">
         架构图
       </a>
     </li>
@@ -487,8 +501,36 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture-details/solution-components/" class="md-nav__link">
-        解决方案组件
+      <a href="../../architecture-details/service-log-analytics-pipeline/" class="md-nav__link">
+        AWS 服务日志分析管道
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-details/application-log-analytics-pipeline/" class="md-nav__link">
+        应用程序日志分析管道
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-details/light-engine/" class="md-nav__link">
+        Light Engine
       </a>
     </li>
   
@@ -502,7 +544,7 @@
   
     <li class="md-nav__item">
       <a href="../../architecture-details/services-in-this-solution/" class="md-nav__link">
-        AWS 服务
+        此解决方案中的 AWS 服务
       </a>
     </li>
   
@@ -905,7 +947,7 @@
   
     <li class="md-nav__item">
       <a href="../../aws-services/cloudtrail/" class="md-nav__link">
-        Amazon CloudTrail
+        AWS CloudTrail
       </a>
     </li>
   
@@ -1400,6 +1442,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../update/" class="md-nav__link">
+        升级解决方案
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../uninstall/" class="md-nav__link">
         卸载解决方案
       </a>
@@ -1417,18 +1473,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_15" type="checkbox" id="__nav_1_15" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_16" type="checkbox" id="__nav_1_16" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_15">
+        <label class="md-nav__link" for="__nav_1_16">
           额外资源
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="额外资源" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_15">
+        <label class="md-nav__title" for="__nav_1_16">
           <span class="md-nav__icon md-icon"></span>
           额外资源
         </label>
@@ -1714,7 +1770,7 @@
 <p class="admonition-title">重要</p>
 <ul>
 <li>日志通不支持将一个 EKS 集群中的日志同时发送到多个 Amazon OpenSearch 域。</li>
-<li>确保 EKS 集群的 VPC 已连接到 Amazon OpenSearch Service 集群的 VPC，以进行日志摄取。有关连接 VPC 的方法的详细信息，请参考 <a href="https://docs.aws.amazon.com/whitepapers/latest/building-scalable-secure-multi-vpc-network-infrastructure/vpc-to-vpc-connectivity.html">VPC Connectivity</a>。 </li>
+<li>确保 EKS 集群的 VPC 已连接到 Amazon OpenSearch Service 集群的 VPC，以进行日志摄取。有关连接 VPC 的方法的详细信息，请参考 <a href="https://docs.aws.amazon.com/whitepapers/latest/building-scalable-secure-multi-vpc-network-infrastructure/vpc-to-vpc-connectivity.html">VPC Connectivity</a>。</li>
 </ul>
 </div>
 <ol>
@@ -1766,7 +1822,7 @@
 <p>选择 <strong>Create a source</strong>。</p>
 </li>
 <li>
-<p>按照 <a href="#amazon-ec2-instance-group">Amazon EC2 instance group</a>, <a href="#amazon-eks-cluster">Amazon EKS cluster</a>, <a href="#amazon-s3">Amazon S3</a>, or <a href="#syslog">Syslog</a> 的操作指南，根据您的需要创建日志源。 </p>
+<p>按照 <a href="#amazon-ec2-instance-group">Amazon Instance Group</a>, <a href="#amazon-eks-cluster">Amazon EKS cluster</a>, <a href="#amazon-s3">Amazon S3</a>, or <a href="#syslog">Syslog</a> 的操作指南，根据您的需要创建日志源。</p>
 </li>
 </ol>
 

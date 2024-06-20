@@ -387,6 +387,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../solution-overview/concepts/" class="md-nav__link">
+        Concepts
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -426,7 +440,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/" class="md-nav__link">
+      <a href="../architecture-overview/architecture/" class="md-nav__link">
         Architecture diagram
       </a>
     </li>
@@ -487,8 +501,36 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture-details/solution-components/" class="md-nav__link">
-        Solution components
+      <a href="../architecture-details/service-log-analytics-pipeline/" class="md-nav__link">
+        Service log analytics pipeline
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture-details/application-log-analytics-pipeline/" class="md-nav__link">
+        Application log analytics pipeline
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture-details/light-engine/" class="md-nav__link">
+        Light Engine
       </a>
     </li>
   
@@ -955,7 +997,7 @@
   
     <li class="md-nav__item">
       <a href="cloudtrail/" class="md-nav__link">
-        Amazon CloudTrail
+        AWS CloudTrail
       </a>
     </li>
   
@@ -1025,7 +1067,7 @@
   
     <li class="md-nav__item">
       <a href="elb/" class="md-nav__link">
-        Elastic Load Balancing
+        Application Load Balancer
       </a>
     </li>
   
@@ -1128,7 +1170,7 @@
   
     <li class="md-nav__item">
       <a href="../applications/ec2-pipeline/" class="md-nav__link">
-        EC2 instance group
+        Instance Group
       </a>
     </li>
   
@@ -1354,6 +1396,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../update/" class="md-nav__link">
+        Upgrade the solution
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../uninstall/" class="md-nav__link">
         Uninstall the solution
       </a>
@@ -1371,18 +1427,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_15" type="checkbox" id="__nav_1_15" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_16" type="checkbox" id="__nav_1_16" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_15">
+        <label class="md-nav__link" for="__nav_1_16">
           Additional resources
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Additional resources" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_15">
+        <label class="md-nav__title" for="__nav_1_16">
           <span class="md-nav__icon md-icon"></span>
           Additional resources
         </label>
@@ -1565,7 +1621,7 @@
 <p>Centralized Logging with OpenSearch supports ingesting AWS service logs into Amazon OpenSearch Service through log analytics pipelines, which you can build using the <strong>Centralized Logging with OpenSearch web console</strong> or via a <strong>standalone CloudFormation template</strong>. </p>
 <p>Centralized Logging with OpenSearch reads the data source, parse, cleanup/enrich and ingest logs into Amazon OpenSearch Service domains for analysis. Moreover, the solution provides templated dashboards to facilitate log visualization.</p>
 <p>Amazon OpenSearch Service is suitable for real-time log analytics and frequent queries and has full-text search capability.</p>
-<p>As of release 2.1.0, the solution starts to support log ingestion into Light Engine, which is suitable for non real-time log analytics and infrequent queries and has SQL-like search capability. The feature is supported by Amazon CloudFront logs, Application Load Balancing logs, and AWS WAF logs.</p>
+<p>As of release 2.1.0, the solution starts to support log ingestion into Light Engine, which is suitable for non real-time log analytics and infrequent queries and has SQL-like search capability. </p>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
 <ul>
@@ -1582,84 +1638,71 @@
 <tr>
 <th>AWS Service</th>
 <th>Log Type</th>
-<th>Log Location</th>
-<th>Automatic Ingestion</th>
-<th>Built-in Dashboard</th>
+<th>OpenSearch Engine Support</th>
+<th>Light Engine Support</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>AWS CloudTrail</td>
 <td>N/A</td>
-<td>S3</td>
 <td>Yes</td>
 <td>Yes</td>
 </tr>
 <tr>
 <td>Amazon S3</td>
 <td><a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/ServerLogs.html">Access logs</a></td>
-<td>S3</td>
 <td>Yes</td>
-<td>Yes</td>
+<td>No</td>
 </tr>
 <tr>
 <td>Amazon RDS/Aurora</td>
 <td><a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_LogAccess.MySQL.LogFileSize.html">MySQL Logs</a></td>
-<td>CloudWatch Logs</td>
 <td>Yes</td>
 <td>Yes</td>
 </tr>
 <tr>
 <td>Amazon CloudFront</td>
-<td><a href="https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/AccessLogs.html">Standard access logs</a></td>
-<td>S3</td>
+<td><a href="https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/AccessLogs.html">Standard access logs</a>, <a href="https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/real-time-logs.html">real-time logs</a></td>
 <td>Yes</td>
 <td>Yes</td>
 </tr>
 <tr>
 <td>Application Load Balancer</td>
 <td><a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-access-logs.html">Access logs</a></td>
-<td>S3</td>
 <td>Yes</td>
 <td>Yes</td>
 </tr>
 <tr>
 <td>AWS WAF</td>
 <td><a href="https://docs.aws.amazon.com/waf/latest/developerguide/logging.html">Web ACL logs</a></td>
-<td>S3</td>
 <td>Yes</td>
 <td>Yes</td>
 </tr>
 <tr>
 <td>AWS Lambda</td>
 <td>N/A</td>
-<td>CloudWatch Logs</td>
 <td>Yes</td>
-<td>Yes</td>
+<td>No</td>
 </tr>
 <tr>
 <td>Amazon VPC</td>
 <td><a href="https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs.html">Flow logs</a></td>
-<td>S3</td>
 <td>Yes</td>
 <td>Yes</td>
 </tr>
 <tr>
 <td>AWS Config</td>
 <td>N/A</td>
-<td>S3</td>
 <td>Yes</td>
-<td>Yes</td>
+<td>No</td>
 </tr>
 </tbody>
 </table>
-<ul>
-<li><strong>Automatic Ingestion</strong>: The solution detects the log location of the resource automatically and then reads the logs.</li>
-<li><strong>Built-in Dashboard</strong>: An out-of-box dashboard for the specified AWS service. The solution will automatically ingest a dashboard into the Amazon OpenSearch Service.</li>
-</ul>
+<p>The solution supports detects the log location of the resource automatically, reads the logs, and then ingests them into the log anlaytics engines. The solution also
+provides out-of-the-box dashboard templates for all supported AWS service. It will automatically ingest into the log anlytics engine. You go to the OpenSearch Dashboards or Grafana to view the dashboards after the pipeline being provisioned.</p>
 <!-- END INCLUDE -->
 
-<p>Most of supported AWS services in Centralized Logging with OpenSearch offers built-in dashboard when creating the log analytics pipelines. You go to the OpenSearch Dashboards to view the dashboards after the pipeline being provisioned.</p>
 <p>In this chapter, you will learn how to create log ingestion and dashboards for the following AWS services:</p>
 <ul>
 <li><a href="cloudtrail/">AWS CloudTrail</a></li>
@@ -1667,7 +1710,7 @@
 <li><a href="rds/">Amazon RDS/Aurora</a></li>
 <li><a href="cloudfront/">Amazon CloudFront</a></li>
 <li><a href="lambda/">AWS Lambda</a></li>
-<li><a href="elb/">Elastic Load Balancing</a></li>
+<li><a href="elb/">Application Load Balancer</a></li>
 <li><a href="waf/">AWS WAF</a></li>
 <li><a href="vpc/">Amazon VPC</a></li>
 <li><a href="config/">AWS Config</a></li>
@@ -1742,13 +1785,13 @@
       
       
         
-        <a href="cloudtrail/" class="md-footer__link md-footer__link--next" aria-label="Next: Amazon CloudTrail" rel="next">
+        <a href="cloudtrail/" class="md-footer__link md-footer__link--next" aria-label="Next: AWS CloudTrail" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Amazon CloudTrail
+              AWS CloudTrail
             </div>
           </div>
           <div class="md-footer__button md-icon">

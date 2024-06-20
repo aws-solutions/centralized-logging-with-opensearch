@@ -15,7 +15,7 @@
     
     
       
-        <title>Amazon CloudTrail - Centralized Logging with OpenSearch</title>
+        <title>AWS CloudTrail - Centralized Logging with OpenSearch</title>
       
     
     
@@ -102,7 +102,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Amazon CloudTrail
+              AWS CloudTrail
             
           </span>
         </div>
@@ -387,6 +387,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../solution-overview/concepts/" class="md-nav__link">
+        Concepts
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -426,7 +440,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/" class="md-nav__link">
+      <a href="../../architecture-overview/architecture/" class="md-nav__link">
         Architecture diagram
       </a>
     </li>
@@ -487,8 +501,36 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture-details/solution-components/" class="md-nav__link">
-        Solution components
+      <a href="../../architecture-details/service-log-analytics-pipeline/" class="md-nav__link">
+        Service log analytics pipeline
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-details/application-log-analytics-pipeline/" class="md-nav__link">
+        Application log analytics pipeline
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-details/light-engine/" class="md-nav__link">
+        Light Engine
       </a>
     </li>
   
@@ -916,12 +958,12 @@
       
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
-          Amazon CloudTrail
+          AWS CloudTrail
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
-        Amazon CloudTrail
+        AWS CloudTrail
       </a>
       
         
@@ -940,11 +982,11 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#create-log-ingestion" class="md-nav__link">
-    Create log ingestion
+  <a href="#create-log-ingestion-opensearch-engine" class="md-nav__link">
+    Create log ingestion (OpenSearch Engine)
   </a>
   
-    <nav class="md-nav" aria-label="Create log ingestion">
+    <nav class="md-nav" aria-label="Create log ingestion (OpenSearch Engine)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -955,18 +997,13 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#using-the-standalone-cloudformation-stack" class="md-nav__link">
-    Using the standalone CloudFormation Stack
+  <a href="#using-the-cloudformation-stack" class="md-nav__link">
+    Using the CloudFormation Stack
   </a>
   
 </li>
         
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
+          <li class="md-nav__item">
   <a href="#view-dashboard" class="md-nav__link">
     View dashboard
   </a>
@@ -977,6 +1014,38 @@
           <li class="md-nav__item">
   <a href="#sample-dashboard" class="md-nav__link">
     Sample dashboard
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-log-ingestion-light-engine" class="md-nav__link">
+    Create log ingestion (Light Engine)
+  </a>
+  
+    <nav class="md-nav" aria-label="Create log ingestion (Light Engine)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#using-the-centralized-logging-with-opensearch-console_1" class="md-nav__link">
+    Using the Centralized Logging with OpenSearch Console
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-the-cloudformation-stack_1" class="md-nav__link">
+    Using the CloudFormation Stack
   </a>
   
 </li>
@@ -1058,7 +1127,7 @@
   
     <li class="md-nav__item">
       <a href="../elb/" class="md-nav__link">
-        Elastic Load Balancing
+        Application Load Balancer
       </a>
     </li>
   
@@ -1161,7 +1230,7 @@
   
     <li class="md-nav__item">
       <a href="../../applications/ec2-pipeline/" class="md-nav__link">
-        EC2 instance group
+        Instance Group
       </a>
     </li>
   
@@ -1387,6 +1456,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../update/" class="md-nav__link">
+        Upgrade the solution
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../uninstall/" class="md-nav__link">
         Uninstall the solution
       </a>
@@ -1404,18 +1487,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_15" type="checkbox" id="__nav_1_15" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_16" type="checkbox" id="__nav_1_16" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_15">
+        <label class="md-nav__link" for="__nav_1_16">
           Additional resources
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Additional resources" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_15">
+        <label class="md-nav__title" for="__nav_1_16">
           <span class="md-nav__icon md-icon"></span>
           Additional resources
         </label>
@@ -1561,11 +1644,11 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#create-log-ingestion" class="md-nav__link">
-    Create log ingestion
+  <a href="#create-log-ingestion-opensearch-engine" class="md-nav__link">
+    Create log ingestion (OpenSearch Engine)
   </a>
   
-    <nav class="md-nav" aria-label="Create log ingestion">
+    <nav class="md-nav" aria-label="Create log ingestion (OpenSearch Engine)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1576,18 +1659,13 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#using-the-standalone-cloudformation-stack" class="md-nav__link">
-    Using the standalone CloudFormation Stack
+  <a href="#using-the-cloudformation-stack" class="md-nav__link">
+    Using the CloudFormation Stack
   </a>
   
 </li>
         
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
+          <li class="md-nav__item">
   <a href="#view-dashboard" class="md-nav__link">
     View dashboard
   </a>
@@ -1598,6 +1676,38 @@
           <li class="md-nav__item">
   <a href="#sample-dashboard" class="md-nav__link">
     Sample dashboard
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-log-ingestion-light-engine" class="md-nav__link">
+    Create log ingestion (Light Engine)
+  </a>
+  
+    <nav class="md-nav" aria-label="Create log ingestion (Light Engine)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#using-the-centralized-logging-with-opensearch-console_1" class="md-nav__link">
+    Using the Centralized Logging with OpenSearch Console
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-the-cloudformation-stack_1" class="md-nav__link">
+    Using the CloudFormation Stack
   </a>
   
 </li>
@@ -1629,15 +1739,15 @@
 
 <h1 id="aws-cloudtrail-logs">AWS CloudTrail Logs</h1>
 <p>AWS CloudTrail monitors and records account activity across your AWS infrastructure. It outputs all the data to the specified S3 bucket or a CloudWatch log group.</p>
-<h2 id="create-log-ingestion">Create log ingestion</h2>
 <p>You can create a log ingestion into Amazon OpenSearch Service either by using the Centralized Logging with OpenSearch console or by deploying a standalone CloudFormation stack.</p>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
 <ul>
-<li>The CloudTrail region must be the same as the solution region.</li>
+<li>The CloudTrail logging bucket must be in the same Region as the Centralized Logging with OpenSearch solution.</li>
 <li>The Amazon OpenSearch Service index is rotated on a daily basis by default, and you can adjust the index in the Additional Settings.</li>
 </ul>
 </div>
+<h2 id="create-log-ingestion-opensearch-engine">Create log ingestion (OpenSearch Engine)</h2>
 <h3 id="using-the-centralized-logging-with-opensearch-console">Using the Centralized Logging with OpenSearch console</h3>
 <ol>
 <li>Sign in to the Centralized Logging with OpenSearch console.</li>
@@ -1645,22 +1755,28 @@
 <li>Choose <strong>Create a log ingestion</strong>.</li>
 <li>In the <strong>AWS Services</strong> section, choose <strong>AWS CloudTrail</strong>.</li>
 <li>Choose <strong>Next</strong>.</li>
-<li>Under <strong>Specify settings</strong>, for <strong>Trail</strong>, select one from the dropdown list. (Optional) If you are ingesting CloudTrail logs from another account, select a <a href="../../link-account/">linked account</a> from the <strong>Account</strong> dropdown list first.</li>
+<li>Under <strong>Specify settings</strong>, choose <strong>Automatic</strong> or <strong>Manual</strong>.<ul>
+<li>For <strong>Automatic</strong> mode, choose a CloudTrail in the dropdown list.</li>
+<li>For <strong>Manual</strong> mode, enter the <strong>CloudTrail name</strong>.</li>
+<li>(Optional) If you are ingesting CloudTrail logs from another account, select a <a href="../../link-account/">linked account</a> from the <strong>Account</strong> dropdown list first.</li>
+</ul>
+</li>
 <li>Under <strong>Log Source</strong>, Select <strong>S3</strong> or <strong>CloudWatch</strong> as the log source.</li>
 <li>Choose <strong>Next</strong>.</li>
 <li>In the <strong>Specify OpenSearch domain</strong> section, select an imported domain for <strong>Amazon OpenSearch domain</strong>.</li>
 <li>Choose <strong>Yes</strong> for <strong>Sample dashboard</strong> if you want to ingest an associated built-in Amazon OpenSearch Service dashboard.</li>
 <li>You can change the <strong>Index Prefix</strong> of the target Amazon OpenSearch Service index if needed. The default prefix is your trail name.</li>
 <li>In the <strong>Log Lifecycle</strong> section, enter the number of days to manage the Amazon OpenSearch Service index lifecycle. Centralized Logging with OpenSearch will create the associated <a href="https://opensearch.org/docs/latest/im-plugin/ism/index/">Index State Management (ISM)</a> policy automatically for this pipeline.</li>
-<li>In the <strong>Select log processor</strong> section, please choose the log processor. <ul>
-<li>(Optional) OSI as log processor is now supported in these <a href="https://aws.amazon.com/about-aws/whats-new/2023/04/amazon-opensearch-service-ingestion/">regions</a>. When OSI is selected, please type in the minimum and maximum number of OCU. See more information <a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ingestion.html#ingestion-scaling">here</a>. </li>
+<li>In the <strong>Select log processor</strong> section, please choose the log processor.<ul>
+<li>When selecting Lambda as log processor, you can configure the Lambda concurrency if needed.</li>
+<li>(Optional) OSI as log processor is now supported in these <a href="https://aws.amazon.com/about-aws/whats-new/2023/04/amazon-opensearch-service-ingestion/">regions</a>. When OSI is selected, please type in the minimum and maximum number of OCU. See more information <a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ingestion.html#ingestion-scaling">here</a>.</li>
 </ul>
 </li>
 <li>Choose <strong>Next</strong>.</li>
 <li>Add tags if needed.</li>
 <li>Choose <strong>Create</strong>.</li>
 </ol>
-<h3 id="using-the-standalone-cloudformation-stack">Using the standalone CloudFormation Stack</h3>
+<h3 id="using-the-cloudformation-stack">Using the CloudFormation Stack</h3>
 <p>This automated AWS CloudFormation template deploys the <em>Centralized Logging with OpenSearch - CloudTrail Log Ingestion</em> solution in the AWS Cloud.</p>
 <table>
 <thead>
@@ -1699,6 +1815,8 @@
 </li>
 <li>
 <p>Under <strong>Parameters</strong>, review the parameters for the template and modify them as necessary. This solution uses the following parameters.</p>
+</li>
+</ol>
 <table>
 <thead>
 <tr>
@@ -1732,6 +1850,21 @@
 <td>Log Source Account Assume Role</td>
 <td><code>&lt;Optional&gt;</code></td>
 <td>The IAM Role ARN used for cross-account log ingestion. Required for cross-account log ingestion (Please <a href="../../link-account/">add a member account</a> first).</td>
+</tr>
+<tr>
+<td>KMS-CMK ARN</td>
+<td><code>&lt;Optional&gt;</code></td>
+<td>The KMS-CMK ARN for encryption. Leave it blank to create a new KMS CMK.</td>
+</tr>
+<tr>
+<td>Enable OpenSearch Ingestion as processor</td>
+<td><code>&lt;Optional&gt;</code></td>
+<td>Ingestion table Arn. Leave empty if you do not use OSI as Processor.</td>
+</tr>
+<tr>
+<td>S3 Backup Bucket</td>
+<td><code>&lt;Requires input&gt;</code></td>
+<td>The S3 backup bucket name to store the failed ingestion logs.</td>
 </tr>
 <tr>
 <td>Engine Type</td>
@@ -1774,16 +1907,6 @@
 <td>Select a Security Group which will be associated with the log processing Lambda. Make sure the Security Group has access to the OpenSearch domain.</td>
 </tr>
 <tr>
-<td>S3 Backup Bucket</td>
-<td><code>&lt;Requires input&gt;</code></td>
-<td>The S3 backup bucket name to store the failed ingestion logs.</td>
-</tr>
-<tr>
-<td>KMS-CMK ARN</td>
-<td><code>&lt;Optional&gt;</code></td>
-<td>The KMS-CMK ARN for encryption. Leave it blank to create a new KMS CMK.</td>
-</tr>
-<tr>
 <td>Number Of Shards</td>
 <td>5</td>
 <td>Number of shards to distribute the index evenly across all data nodes. Keep the size of each shard between 10-50 GB.</td>
@@ -1791,7 +1914,7 @@
 <tr>
 <td>Number of Replicas</td>
 <td>1</td>
-<td>Number of replicas for OpenSearch Index. Each replica is a full copy of an index.</td>
+<td>Number of replicas for OpenSearch Index. Each replica is a full copy of an index. If the OpenSearch option is set to <a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/managedomains-multiaz.html#managedomains-za-standby">Domain with standby</a>, you need to configure it to 2.</td>
 </tr>
 <tr>
 <td>Age to Warm Storage</td>
@@ -1845,7 +1968,7 @@
 </tr>
 </tbody>
 </table>
-</li>
+<ol>
 <li>
 <p>Choose <strong>Next</strong>.</p>
 </li>
@@ -1863,7 +1986,7 @@
 a <strong>CREATE_COMPLETE</strong> status in approximately 10 minutes.</p>
 <!-- END INCLUDE -->
 
-<h2 id="view-dashboard">View dashboard</h2>
+<h3 id="view-dashboard">View dashboard</h3>
 <p>The dashboard includes the following visualizations.</p>
 <table>
 <thead>
@@ -1890,6 +2013,11 @@ a <strong>CREATE_COMPLETE</strong> status in approximately 10 minutes.</p>
 <td>Breaks down events based on the AWS account ID, enabling you to analyze activity patterns across different accounts within your organization.</td>
 </tr>
 <tr>
+<td>Total Event Count</td>
+<td>eventSource eventName</td>
+<td>Shows the total count of CloudTrail events.</td>
+</tr>
+<tr>
 <td>Top Event Names</td>
 <td>eventName</td>
 <td>Shows the most frequently occurring event names, helping you identify common activities or potential anomalies.</td>
@@ -1898,6 +2026,11 @@ a <strong>CREATE_COMPLETE</strong> status in approximately 10 minutes.</p>
 <td>Top Event Sources</td>
 <td>eventSource</td>
 <td>Highlights the top sources generating events, providing insights into the services or resources that are most active or experiencing the highest event volume.</td>
+</tr>
+<tr>
+<td>Event By Region</td>
+<td>awsRegion</td>
+<td>Breaks down events based on regions, enabling you to analyze activity patterns across different regions.</td>
 </tr>
 <tr>
 <td>Event Category</td>
@@ -1951,13 +2084,242 @@ a <strong>CREATE_COMPLETE</strong> status in approximately 10 minutes.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="sample-dashboard">Sample dashboard</h3>
+<h4 id="sample-dashboard">Sample dashboard</h4>
 <!-- BEGIN INCLUDE ../include-dashboard.md -->
 <p>You can access the built-in dashboard in Amazon OpenSearch to view log data. For more information, see <a href="../../getting-started/4.view-dashboard/">Access Dashboard</a>.</p>
 <p>You can click the below image to view the high-resolution sample dashboard.</p>
 <!-- END INCLUDE -->
 
 <p><a href="../../../images/dashboards/cloudtrail-db.png"><img alt="cloudtrail-db" src="../../../images/dashboards/cloudtrail-db.png" /></a></p>
+<h2 id="create-log-ingestion-light-engine">Create log ingestion (Light Engine)</h2>
+<h3 id="using-the-centralized-logging-with-opensearch-console_1">Using the Centralized Logging with OpenSearch Console</h3>
+<ol>
+<li>Sign in to the Centralized Logging with OpenSearch Console.</li>
+<li>In the navigation pane, under <strong>Log Analytics Pipelines</strong>, choose <strong>Service Log</strong>.</li>
+<li>Choose the <strong>Create a log ingestion</strong> button.</li>
+<li>In the <strong>AWS Services</strong> section, choose <strong>AWS CloudTrail</strong>.</li>
+<li>Choose <strong>Light Engine</strong>, and choose <strong>Next</strong>.</li>
+<li>Under <strong>Specify settings</strong>, choose <strong>Automatic</strong> or <strong>Manual</strong> for <strong>CloudTrail logs enabling</strong>. The automatic mode will detect the CloudTrail log location automatically.<ul>
+<li>For <strong>Automatic mode</strong>, choose the CloudTrail from the dropdown lists.</li>
+<li>For Standard Log, the solution will automatically detect the log location if logging is enabled.</li>
+<li>For <strong>Manual mode</strong>, enter the <strong>CloudTrail ID</strong> and <strong>CloudTrail Standard Log location</strong>.</li>
+<li>(Optional) If you are ingesting CloudTrail logs from another account, select a <a href="../../link-account/">linked account</a> from the <strong>Account</strong> dropdown list first.</li>
+</ul>
+</li>
+<li>Choose <strong>Next</strong>.</li>
+<li>In the <strong>Specify Light Engine Configuration</strong> section, if you want to ingest associated templated Grafana dashboards, select <strong>Yes</strong> for the sample dashboard.</li>
+<li>You can choose an existing Grafana, or if you need to import a new one, you can go to Grafana for configuration.</li>
+<li>Select an S3 bucket to store partitioned logs and define a name for the log table. We have provided a predefined table name, but you can modify it according to your business needs.</li>
+<li>If needed, change the log processing frequency, which is set to <strong>5</strong> minutes by default, with a minimum processing frequency of <strong>1</strong> minute.</li>
+<li>In the <strong>Log Lifecycle</strong> section, enter the log merge time and log archive time. We have provided default values, but you can adjust them based on your business requirements.</li>
+<li>Select <strong>Next</strong>.</li>
+<li>If desired, add tags.</li>
+<li>Select <strong>Create</strong>.</li>
+</ol>
+<h3 id="using-the-cloudformation-stack_1">Using the CloudFormation Stack</h3>
+<p>This automated AWS CloudFormation template deploys the <em>Centralized Logging with OpenSearch - CloudTrail Standard Log Ingestion</em> template in the AWS Cloud.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Launch in AWS Console</th>
+<th>Download Template</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AWS Regions</td>
+<td><a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/MicroBatchAwsServicesCloudTrailPipeline.template" target="_blank"><img alt="Launch Stack" src="../../../images/launch-stack.png" /></a></td>
+<td><a href="https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/MicroBatchAwsServicesCloudTrailPipeline.template">Template</a></td>
+</tr>
+<tr>
+<td>AWS China Regions</td>
+<td><a href="https://console.amazonaws.cn/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/MicroBatchAwsServicesCloudTrailPipeline.template" target="_blank"><img alt="Launch Stack" src="../../../images/launch-stack.png" /></a></td>
+<td><a href="https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/MicroBatchAwsServicesCloudTrailPipeline.template">Template</a></td>
+</tr>
+</tbody>
+</table>
+<ol>
+<li>
+<p>Log in to the AWS Management Console and select the button to launch the AWS CloudFormation template. You can also download the template as a starting point for your own implementation.</p>
+</li>
+<li>
+<p>To launch the stack in a different AWS Region, use the Region selector in the console navigation bar.</p>
+</li>
+<li>
+<p>On the <strong>Create stack</strong> page, verify that the correct template URL shows in the <strong>Amazon S3 URL</strong> text box and choose <strong>Next</strong>.</p>
+</li>
+<li>
+<p>On the <strong>Specify stack details</strong> page, assign a name to your solution stack.</p>
+</li>
+<li>
+<p>Under <strong>Parameters</strong>, review the parameters for the template and modify them as necessary. This solution uses the following parameters.</p>
+<ul>
+<li>Parameters for <strong>Pipeline settings</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pipeline Id</td>
+<td><code>&lt;Requires input&gt;</code></td>
+<td>The unique identifier for the pipeline is essential if you need to create multiple ALB pipelines and write different ALB logs into separate tables. To ensure uniqueness, you can generate a unique pipeline identifier using <a href="https://www.uuidgenerator.net/version4">uuidgenerator</a>.</td>
+</tr>
+<tr>
+<td>Staging Bucket Prefix</td>
+<td>AWSLogs/CloudTrailLogs</td>
+<td>The storage directory for logs in the temporary storage area should ensure the uniqueness and non-overlapping of the Prefix for different pipelines.</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Parameters for <strong>Destination settings</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Parameters</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Centralized Bucket Name</td>
+<td><code>&lt;Requires input&gt;</code></td>
+<td>Centralized s3 bucket name. For example, centralized-logging-bucket.</td>
+</tr>
+<tr>
+<td>Centralized Bucket Prefix</td>
+<td>datalake</td>
+<td>Centralized bucket prefix. By default, the data base location is s3://{Centralized Bucket Name}/{Centralized Bucket Prefix}/amazon_cl_centralized.</td>
+</tr>
+<tr>
+<td>Centralized Table Name</td>
+<td>CloudTrail</td>
+<td>Table name for writing data to the centralized database. You can modify it if needed.</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Parameters for <strong>Scheduler settings</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Parameters</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LogProcessor Schedule Expression</td>
+<td>rate(5 minutes)</td>
+<td>Task scheduling expression for performing log processing, with a default value of executing the LogProcessor every 5 minutes. Configuration <a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html">for reference</a>.</td>
+</tr>
+<tr>
+<td>LogMerger Schedule Expression</td>
+<td>cron(0 1 * <em> ? </em>)</td>
+<td>Task scheduling expression for performing log merging, with a default value of executing the LogMerger at 1 AM every day. Configuration <a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html">for reference</a>.</td>
+</tr>
+<tr>
+<td>LogArchive Schedule Expression</td>
+<td>cron(0 2 * <em> ? </em>)</td>
+<td>Task scheduling expression for performing log archiving, with a default value of executing the LogArchive at 2 AM every day. Configuration <a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html">for reference</a>.</td>
+</tr>
+<tr>
+<td>Age to Merge</td>
+<td>7</td>
+<td>Small file retention days, with a default value of 7, indicating that logs older than 7 days will be merged into small files. It can be adjusted as needed.</td>
+</tr>
+<tr>
+<td>Age to Archive</td>
+<td>30</td>
+<td>Log retention days, with a default value of 30, indicating that data older than 30 days will be archived and deleted. It can be adjusted as needed.</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Parameters for <strong>Notification settings</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Parameters</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Notification Service</td>
+<td>SNS</td>
+<td>Notification method for alerts. If your main stack is using China, you can only choose the SNS method. If your main stack is using Global, you can choose either the SNS or SES method.</td>
+</tr>
+<tr>
+<td>Recipients</td>
+<td><code>&lt;Requires Input&gt;</code></td>
+<td>Alert notification: If the Notification Service is SNS, enter the SNS Topic ARN here, ensuring that you have the necessary permissions. If the Notification Service is SES, enter the email addresses separated by commas here, ensuring that the email addresses are already Verified Identities in SES. The adminEmail provided during the creation of the main stack will receive a verification email by default.</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Parameters for <strong>Dashboard settings</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Parameters</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Import Dashboards</td>
+<td>FALSE</td>
+<td>Whether to import the Dashboard into Grafana, with a default value of false. If set to true, you must provide the Grafana URL and Grafana Service Account Token.</td>
+</tr>
+<tr>
+<td>Grafana URL</td>
+<td><code>&lt;Requires Input&gt;</code></td>
+<td>Grafana access URL，for example: https://alb-72277319.us-west-2.elb.amazonaws.com.</td>
+</tr>
+<tr>
+<td>Grafana Service Account Token</td>
+<td><code>&lt;Requires Input&gt;</code></td>
+<td>Grafana Service Account Token：Service Account Token created in Grafana.</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</li>
+<li>
+<p>Choose <strong>Next</strong>.</p>
+</li>
+<li>
+<p>On the <strong>Configure stack options</strong> page, choose <strong>Next</strong>.</p>
+</li>
+<li>
+<p>On the <strong>Review</strong> page, review and confirm the settings. Check the box acknowledging that the template creates AWS Identity and Access Management (IAM) resources.</p>
+</li>
+<li>
+<p>Choose <strong>Create</strong> stack to deploy the stack.</p>
+</li>
+</ol>
+<p>You can view the status of the stack in the AWS CloudFormation console in the <strong>Status</strong> column. You should receive
+a <strong>CREATE_COMPLETE</strong> status in approximately 10 minutes.</p>
 
 
 

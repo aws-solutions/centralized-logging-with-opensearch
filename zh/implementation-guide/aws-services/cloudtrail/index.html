@@ -15,7 +15,7 @@
     
     
       
-        <title>Amazon CloudTrail - Centralized Logging with OpenSearch</title>
+        <title>AWS CloudTrail - Centralized Logging with OpenSearch</title>
       
     
     
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#cloudtrail" class="md-skip">
+        <a href="#aws-cloudtrail" class="md-skip">
           跳转至
         </a>
       
@@ -102,7 +102,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Amazon CloudTrail
+              AWS CloudTrail
             
           </span>
         </div>
@@ -387,6 +387,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../solution-overview/concepts/" class="md-nav__link">
+        概念
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -426,7 +440,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/" class="md-nav__link">
+      <a href="../../architecture-overview/architecture/" class="md-nav__link">
         架构图
       </a>
     </li>
@@ -487,8 +501,36 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture-details/solution-components/" class="md-nav__link">
-        解决方案组件
+      <a href="../../architecture-details/service-log-analytics-pipeline/" class="md-nav__link">
+        AWS 服务日志分析管道
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-details/application-log-analytics-pipeline/" class="md-nav__link">
+        应用程序日志分析管道
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-details/light-engine/" class="md-nav__link">
+        Light Engine
       </a>
     </li>
   
@@ -502,7 +544,7 @@
   
     <li class="md-nav__item">
       <a href="../../architecture-details/services-in-this-solution/" class="md-nav__link">
-        AWS 服务
+        此解决方案中的 AWS 服务
       </a>
     </li>
   
@@ -916,12 +958,12 @@
       
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
-          Amazon CloudTrail
+          AWS CloudTrail
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
-        Amazon CloudTrail
+        AWS CloudTrail
       </a>
       
         
@@ -940,15 +982,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#_1" class="md-nav__link">
-    创建日志摄取
+  <a href="#opensearch-engine" class="md-nav__link">
+    创建日志摄取（OpenSearch Engine）
   </a>
   
-    <nav class="md-nav" aria-label="创建日志摄取">
+    <nav class="md-nav" aria-label="创建日志摄取（OpenSearch Engine）">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#_1" class="md-nav__link">
     使用日志通控制台
   </a>
   
@@ -956,8 +998,28 @@
         
           <li class="md-nav__item">
   <a href="#cloudformation" class="md-nav__link">
-    使用独立的 CloudFormation 堆栈
+    使用 CloudFormation 堆栈
   </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    查看仪表板
+  </a>
+  
+    <nav class="md-nav" aria-label="查看仪表板">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    示例仪表板
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -967,16 +1029,23 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
-    查看仪表板
+  <a href="#light-engine" class="md-nav__link">
+    创建日志摄取（Light Engine）
   </a>
   
-    <nav class="md-nav" aria-label="查看仪表板">
+    <nav class="md-nav" aria-label="创建日志摄取（Light Engine）">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#_4" class="md-nav__link">
-    示例仪表板
+    使用日志通控制台
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cloudformation_1" class="md-nav__link">
+    使用 CloudFormation 堆栈
   </a>
   
 </li>
@@ -1387,6 +1456,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../update/" class="md-nav__link">
+        升级解决方案
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../uninstall/" class="md-nav__link">
         卸载解决方案
       </a>
@@ -1404,18 +1487,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_15" type="checkbox" id="__nav_1_15" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_16" type="checkbox" id="__nav_1_16" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_15">
+        <label class="md-nav__link" for="__nav_1_16">
           额外资源
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="额外资源" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_15">
+        <label class="md-nav__title" for="__nav_1_16">
           <span class="md-nav__icon md-icon"></span>
           额外资源
         </label>
@@ -1561,15 +1644,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#_1" class="md-nav__link">
-    创建日志摄取
+  <a href="#opensearch-engine" class="md-nav__link">
+    创建日志摄取（OpenSearch Engine）
   </a>
   
-    <nav class="md-nav" aria-label="创建日志摄取">
+    <nav class="md-nav" aria-label="创建日志摄取（OpenSearch Engine）">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#_1" class="md-nav__link">
     使用日志通控制台
   </a>
   
@@ -1577,8 +1660,28 @@
         
           <li class="md-nav__item">
   <a href="#cloudformation" class="md-nav__link">
-    使用独立的 CloudFormation 堆栈
+    使用 CloudFormation 堆栈
   </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    查看仪表板
+  </a>
+  
+    <nav class="md-nav" aria-label="查看仪表板">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    示例仪表板
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -1588,16 +1691,23 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
-    查看仪表板
+  <a href="#light-engine" class="md-nav__link">
+    创建日志摄取（Light Engine）
   </a>
   
-    <nav class="md-nav" aria-label="查看仪表板">
+    <nav class="md-nav" aria-label="创建日志摄取（Light Engine）">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#_4" class="md-nav__link">
-    示例仪表板
+    使用日志通控制台
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cloudformation_1" class="md-nav__link">
+    使用 CloudFormation 堆栈
   </a>
   
 </li>
@@ -1627,9 +1737,8 @@
   </a>
 
 
-<h1 id="cloudtrail">CloudTrail 日志</h1>
+<h1 id="aws-cloudtrail">AWS CloudTrail 日志</h1>
 <p>AWS CloudTrail 监控和记录您的 AWS 基础设施中的账户活动。它将所有数据输出到指定的 S3 存储桶或者 CloudWatch 日志组中。</p>
-<h2 id="_1">创建日志摄取</h2>
 <p>您可以使用日志通控制台或通过部署独立的 CloudFormation 堆栈来将日志摄取到 Amazon OpenSearch Service 中。</p>
 <div class="admonition important">
 <p class="admonition-title">重要</p>
@@ -1638,14 +1747,20 @@
 <li>默认情况下，该解决方案将每天轮换索引。您可以在<strong>额外设置</strong>中进行调整。</li>
 </ul>
 </div>
-<h3 id="_2">使用日志通控制台</h3>
+<h2 id="opensearch-engine">创建日志摄取（OpenSearch Engine）</h2>
+<h3 id="_1">使用日志通控制台</h3>
 <ol>
 <li>登录日志通控制台。</li>
 <li>在导航窗格中的 <strong>日志分析管道</strong> 下，选择 <strong>AWS 服务日志</strong>。</li>
 <li>单击 <strong>创建日志摄取</strong> 按钮。</li>
 <li>在 <strong>AWS 服务</strong> 部分，选择 <strong>AWS CloudTrail</strong>。</li>
 <li>选择<strong>下一步</strong>。</li>
-<li>在 <strong>指定设置</strong>，对于 <strong>Trail</strong>，从下拉列表中选择一项。（可选步骤）如果需要跨账户摄取日志，需要先在 <strong>账户</strong> 的下拉列表中选择一个<a href="../../link-account/">链接的 AWS 账户</a>。</li>
+<li>在 <strong>指定设置</strong> 下，选择 <strong>自动</strong> 或 <strong>手动</strong>。<ul>
+<li>对于 <strong>自动</strong> 模式，请在下拉列表中选择一个 CloudTrail。</li>
+<li>对于 <strong>手动</strong> 模式，请输入 <strong>CloudTrail 名称</strong>。</li>
+<li>（可选）如果您正在从另一个账户摄取 CloudTrail 日志，请先从 <strong>账户</strong> 下拉列表中选择一个<a href="../../link-account/">链接账户</a>。</li>
+</ul>
+</li>
 <li>在 <strong>日志来源</strong>，选择 <strong>S3</strong> 或者 <strong>CloudWatch</strong> 作为日志源。</li>
 <li>选择<strong>下一步</strong>。</li>
 <li>在 <strong>指定 OpenSearch 域</strong> 部分，为 <strong>Amazon OpenSearch 域</strong> 选择一个导入的域。</li>
@@ -1653,6 +1768,7 @@
 <li>如果需要，您可以更改目标 Amazon OpenSearch Service 索引的 <strong>索引前缀</strong>。默认前缀是您的跟踪名称。</li>
 <li>在 <strong>日志生命周期</strong> 部分，输入管理 Amazon OpenSearch Service 索引生命周期的天数。日志通 将为此管道自动创建关联的 <a href="https://opensearch.org/docs/latest/im-plugin/ism/index/">索引状态管理 (ISM)</a> 策略。</li>
 <li>在 <strong>选择日志处理器</strong> 部分，请选择日志处理器。<ul>
+<li>当选择 Lambda 作为日志处理器时，您可以根据需要配置 Lambda 并发数。</li>
 <li>（可选）这些<a href="https://aws.amazon.com/about-aws/whats-new/2023/04/amazon-opensearch-service-ingestion/">区域</a>现在支持 OSI 作为日志处理器。 当选择 OSI 时，请输入 OCU 的最小和最大数量。 请参阅<a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ingestion.html#ingestion-scaling">此处</a> 的更多信息。</li>
 </ul>
 </li>
@@ -1660,7 +1776,7 @@
 <li>如果需要，添加标签。</li>
 <li>选择<strong>创建</strong>。</li>
 </ol>
-<h3 id="cloudformation">使用独立的 CloudFormation 堆栈</h3>
+<h3 id="cloudformation">使用 CloudFormation 堆栈</h3>
 <p>此自动化 AWS CloudFormation 模板在 AWS 云中部署 <em>日志通- CloudTrail Log Ingestion</em> 解决方案。</p>
 <table>
 <thead>
@@ -1734,6 +1850,21 @@
 <td>跨账户日志摄取所需要使用的 IAM Role。 对于跨账户日志摄取是必填 (需要先 <a href="../../link-account/">添加一个成员账户</a>)。</td>
 </tr>
 <tr>
+<td>KMS-CMK ARN</td>
+<td><code>&lt;可选输入&gt;</code></td>
+<td>用于加密的 KMS-CMK ARN。 留空以创建新的 KMS CMK。</td>
+</tr>
+<tr>
+<td>Enable OpenSearch Ingestion as processor</td>
+<td><code>&lt;可选输入&gt;</code></td>
+<td>Ingestion 表 Arn。如果不使用 OSI 作为处理器，请留空。</td>
+</tr>
+<tr>
+<td>S3 Backup Bucket</td>
+<td><code>&lt;需要输入&gt;</code></td>
+<td>用于存储失败提取日志的 S3 备份存储桶名称。</td>
+</tr>
+<tr>
 <td>Engine Type</td>
 <td>OpenSearch</td>
 <td>OpenSearch 的引擎类型。选择 OpenSearch 或 Elasticsearch。</td>
@@ -1774,16 +1905,6 @@
 <td>选择将与日志处理 Lambda 关联的安全组。确保安全组有权访问 OpenSearch 域。</td>
 </tr>
 <tr>
-<td>S3 Backup Bucket</td>
-<td><code>&lt;需要输入&gt;</code></td>
-<td>用于存储失败提取日志的 S3 备份存储桶名称。</td>
-</tr>
-<tr>
-<td>KMS-CMK ARN</td>
-<td><code>&lt;可选输入&gt;</code></td>
-<td>用于加密的 KMS-CMK ARN。 留空以创建新的 KMS CMK。</td>
-</tr>
-<tr>
 <td>Number Of Shards</td>
 <td>5</td>
 <td>将索引均匀分布在所有数据节点上的分片数。将每个分片的大小保持在 10-50 GiB 之间。</td>
@@ -1791,7 +1912,7 @@
 <tr>
 <td>Number of Replicas</td>
 <td>1</td>
-<td>OpenSearch 索引的副本数。每个副本都是索引的完整副本。</td>
+<td>OpenSearch 索引的副本数。每个副本都是索引的完整副本。 如果 OpenSearch 选项设置为 <a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/managedomains-multiaz.html#managedomains-za-standby">带备用的域</a>，你需要将其配置为 2。</td>
 </tr>
 <tr>
 <td>Age to Warm Storage</td>
@@ -1862,7 +1983,7 @@
 <p>您可以在 AWS CloudFormation 控制台的 <strong>状态</strong> 列中查看堆栈的状态。正常情况下，您大约 10 分钟后会看到 <strong>CREATE_COMPLETE</strong> 状态。</p>
 <!-- END INCLUDE -->
 
-<h2 id="_3">查看仪表板</h2>
+<h3 id="_2">查看仪表板</h3>
 <p>仪表板包括以下可视化。</p>
 <table>
 <thead>
@@ -1889,6 +2010,11 @@
 <td>根据 AWS 帐户 ID 细分事件，使您能够分析组织内不同帐户之间的活动模式。</td>
 </tr>
 <tr>
+<td>Total Event Count</td>
+<td>eventSource eventName</td>
+<td>显示事件总数。</td>
+</tr>
+<tr>
 <td>Top Event Names</td>
 <td>eventName</td>
 <td>显示最常发生的事件名称，帮助您识别常见活动或潜在异常。</td>
@@ -1897,6 +2023,11 @@
 <td>Top Event Sources</td>
 <td>eventSource</td>
 <td>突出显示生成事件的顶级来源，提供有关最活跃或事件量最高的服务或资源的洞察。</td>
+</tr>
+<tr>
+<td>Event By Region</td>
+<td>awsRegion</td>
+<td>将事件按照区域划分，便于分析和了解跨区域的事件分布。</td>
 </tr>
 <tr>
 <td>Event Category</td>
@@ -1950,13 +2081,240 @@
 </tr>
 </tbody>
 </table>
-<h3 id="_4">示例仪表板</h3>
+<h4 id="_3">示例仪表板</h4>
 <!-- BEGIN INCLUDE ../include-dashboard.md -->
 <p>您可以访问Amazon OpenSearch中的内置仪表板来查看日志数据。更多信息请参阅<a href="../../getting-started/4.view-dashboard/">访问仪表板</a>。</p>
 <p>您可以点击下面的图像查看高分辨率的示例仪表板。</p>
 <!-- END INCLUDE -->
 
 <p><a href="../../../images/dashboards/cloudtrail-db.png"><img alt="cloudtrail-db" src="../../../images/dashboards/cloudtrail-db.png" /></a></p>
+<h2 id="light-engine">创建日志摄取（Light Engine）</h2>
+<h3 id="_4">使用日志通控制台</h3>
+<ol>
+<li>登录日志通控制台。</li>
+<li>在导航窗格中的 <strong>日志分析管道</strong> 下，选择 <strong>AWS 服务日志</strong>。</li>
+<li>选择<strong>创建日志摄取</strong>按钮。</li>
+<li>在 <strong>AWS 服务</strong> 部分，选择 <strong>AWS CloudTrail</strong>。</li>
+<li>选择<strong>Light Engine</strong>， 选择<strong>下一步</strong>。</li>
+<li>在 <strong>指定设置</strong> 下，为 <strong>CloudTrail 日志启用</strong>选择 <strong>自动</strong> 或 <strong>手动</strong>。自动模式将自动检测 CloudTrail 日志位置。<ul>
+<li>对于<strong>自动模式</strong>，从下拉列表中选择 CloudTrail 分配。</li>
+<li>对于 <strong>手动模式</strong>，输入 <strong>CloudTrail ID</strong> 和 <strong>CloudTrail 标准日志来源</strong>。</li>
+<li>（可选步骤）如果需要跨账户摄取日志，需要先在 <strong>账户</strong> 的下拉列表中选择一个<a href="../../link-account/">链接的 AWS 账户</a>。</li>
+</ul>
+</li>
+<li>选择<strong>下一步</strong>。</li>
+<li>在 <strong>指定 Light Engine 配置</strong> 部分，如果您要摄取关联的模板化 Grafana 仪表板，请为 <strong>样例看板</strong> 选择 <strong>是</strong>。</li>
+<li>你可以选择一个Grafana，如果需要<strong>导入</strong>一个新的Grafana，可以跳转到<a href="../../resources/grafana/">Grafana</a>进行配置。</li>
+<li>选择一个S3桶存放分区后的日志。并且定义一个用于存放日志表的名称，我们已经为你预定义了一个表名，你可以根据你的业务需求进行修改。</li>
+<li>日志处理频率，默认为<strong>5</strong>分钟，最小时间处理频率为<strong>1</strong>分钟。</li>
+<li>在 <strong>日志生命周期</strong> 部分，输入管理 日志合并时间 和 日志归档时间。我们为你提供了默认值，你可以根据你的业务需求来进行调整。</li>
+<li>选择<strong>下一步</strong>。</li>
+<li>如果需要，添加标签。</li>
+<li>选择<strong>创建</strong>。</li>
+</ol>
+<h3 id="cloudformation_1">使用 CloudFormation 堆栈</h3>
+<p>此自动化 AWS CloudFormation 模板在 AWS 云中部署 <em>日志通- CloudTrail 标准日志摄取</em> 解决方案。</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>在 AWS 控制台中启动</th>
+<th>下载模板</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AWS 海外区域</td>
+<td><a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/MicroBatchAwsServicesCloudTrailPipeline.template" target="_blank"><img alt="启动堆栈" src="../../../images/launch-stack.png" /></a></td>
+<td><a href="https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/MicroBatchAwsServicesCloudTrailPipeline.template">模板</a></td>
+</tr>
+<tr>
+<td>AWS 中国区域</td>
+<td><a href="https://console.amazonaws.cn/cloudformation/home#/stacks/new?templateURL=https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/MicroBatchAwsServicesCloudTrailPipeline.template" target="_blank"><img alt="启动堆栈" src="../../../images/launch-stack.png" /></a></td>
+<td><a href="https://solutions-reference.s3.amazonaws.com/centralized-logging-with-opensearch/latest/MicroBatchAwsServicesCloudTrailPipeline.template">模板</a></td>
+</tr>
+</tbody>
+</table>
+<ol>
+<li>
+<p>登录 AWS 管理控制台并选择以上按钮以启动 AWS CloudFormation 模板。您还可以下载模板开始部署。</p>
+</li>
+<li>
+<p>要在不同的 AWS 区域中启动堆栈，请使用控制台导航栏中的区域选择器。</p>
+</li>
+<li>
+<p>在 <strong>创建堆栈</strong> 页面上，验证正确的模板 URL 显示在 <strong>Amazon S3 URL</strong> 文本框中，然后选择 <strong>下一步</strong>。</p>
+</li>
+<li>
+<p>在 <strong>指定堆栈详细信息</strong> 页面上，为您的解决方案堆栈分配一个名称。</p>
+</li>
+<li>
+<p>在 <strong>参数</strong> 下，查看模板的参数并根据需要进行修改。此解决方案使用以下参数。</p>
+<ul>
+<li><strong>Pipeline settings</strong> 专用参数</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pipeline Id</td>
+<td><code>&lt;需要输入&gt;</code></td>
+<td>pipeline的唯一标识符，如果您需要创建多个ELB pipeline，将不同的CloudTrail日志写入到不同的表中时，则必须保证唯一性，可以通过<a href="https://www.uuidgenerator.net/version4">uuidgenerator</a>生成唯一的。</td>
+</tr>
+<tr>
+<td>Staging Bucket Prefix</td>
+<td>AWSLogs/CloudTrailLogs</td>
+<td>日志在临时存储区的存放目录，不同pipeline要保证Prefix的唯一性且无重叠。</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Destination settings</strong> 专用参数</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Centralized Bucket Name</td>
+<td><code>&lt;需要输入&gt;</code></td>
+<td>输入centralized的s3 bucket名称，例如centralized-logging-bucket。</td>
+</tr>
+<tr>
+<td>Centralized Bucket Prefix</td>
+<td>datalake</td>
+<td>输入centralized bucket的路径前缀，默认为datalake，意味着您的数据库的location为s3://{Centralized Bucket Name}/{Centralized Bucket Prefix}/amazon_cl_centralized。</td>
+</tr>
+<tr>
+<td>Centralized Table Name</td>
+<td>CloudTrail</td>
+<td>数据写入到Centralized数据库的表名称，按需定义，默认值为CloudTrail。</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Scheduler settings</strong> 专用参数</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LogProcessor Schedule Expression</td>
+<td>rate(5 minutes)</td>
+<td>执行数据加工的任务周期表达式，默认值为每5分钟执行一次LogProcessorr，配置<a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html">可参考</a>。</td>
+</tr>
+<tr>
+<td>LogMerger Schedule Expression</td>
+<td>cron(0 1 * <em> ? </em>)</td>
+<td>执行数据文件合并的任务周期表达式，默认值为每天1点执行LogMerger,配置<a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html">可参考</a>。</td>
+</tr>
+<tr>
+<td>LogArchive Schedule Expression</td>
+<td>cron(0 2 * <em> ? </em>)</td>
+<td>执行数据归档的任务周期表达式，默认值为每天2点执行LogArchive，配置<a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html">可参考</a>。</td>
+</tr>
+<tr>
+<td>Age to Merge</td>
+<td>7</td>
+<td>小文件保留天数，默认值为7，表示会对7天以前的日志进行小文件合并，可按需调整。</td>
+</tr>
+<tr>
+<td>Age to Archive</td>
+<td>30</td>
+<td>日志保留天数，默认值为30，表示30天以前的数据会进行归档删除，可按需调整。</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Notification settings</strong> 专用参数</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Notification Service</td>
+<td>SNS</td>
+<td>告警通知方式，如果您的主栈是使用China，则只能选择SNS方式，如果您的主栈是使用Global，则可以使用SNS或SES方式。</td>
+</tr>
+<tr>
+<td>Recipients</td>
+<td><code>&lt;需要输入&gt;</code></td>
+<td>告警通知，如果Notification Service为SNS，则此处输入SNS的Topic arn，确保有权限，如果Notification Service为SES，则此处输入邮箱地址，以逗号分隔，确保邮件地址已在SES中Verified identities，创建主stack输入的adminEmail默认会发送验证邮件。</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Dashboard settings</strong> 专用参数</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Import Dashboards</td>
+<td>FALSE</td>
+<td>是否导入Dashboard到Grafana中，默认值为false，如设置为true，则必须填写Grafana URL和Grafana Service Account Token。</td>
+</tr>
+<tr>
+<td>Grafana URL</td>
+<td><code>&lt;可选输入&gt;</code></td>
+<td>Grafana访问的URL，例如https://CloudTrail-72277319.us-west-2.elb.amazonaws.com。</td>
+</tr>
+<tr>
+<td>Grafana Service Account Token</td>
+<td><code>&lt;可选输入&gt;</code></td>
+<td>Grafana Service Account Token：Grafana中创建的Service Account Token。</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</li>
+<li>
+<p>选择<strong>下一步</strong>。</p>
+</li>
+<li>
+<p>在 <strong>配置堆栈选项</strong> 页面上，选择 <strong>下一步</strong>。</p>
+</li>
+<li>
+<p>在 <strong>审核</strong> 页面上，查看并确认设置。选中确认模板创建 AWS Identity and Access Management (IAM) 资源的复选框。</p>
+</li>
+<li>
+<p>选择 <strong>创建堆栈</strong> 部署堆栈。</p>
+</li>
+</ol>
+<p>您可以在 AWS CloudFormation 控制台的 <strong>状态</strong> 列中查看堆栈的状态。正常情况下，您大约 10 分钟后会看到 <strong>CREATE_COMPLETE</strong> 状态。</p>
 
 
 

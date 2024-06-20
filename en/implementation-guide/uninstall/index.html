@@ -387,6 +387,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../solution-overview/concepts/" class="md-nav__link">
+        Concepts
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -426,7 +440,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/" class="md-nav__link">
+      <a href="../architecture-overview/architecture/" class="md-nav__link">
         Architecture diagram
       </a>
     </li>
@@ -487,8 +501,36 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture-details/solution-components/" class="md-nav__link">
-        Solution components
+      <a href="../architecture-details/service-log-analytics-pipeline/" class="md-nav__link">
+        Service log analytics pipeline
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture-details/application-log-analytics-pipeline/" class="md-nav__link">
+        Application log analytics pipeline
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture-details/light-engine/" class="md-nav__link">
+        Light Engine
       </a>
     </li>
   
@@ -905,7 +947,7 @@
   
     <li class="md-nav__item">
       <a href="../aws-services/cloudtrail/" class="md-nav__link">
-        Amazon CloudTrail
+        AWS CloudTrail
       </a>
     </li>
   
@@ -975,7 +1017,7 @@
   
     <li class="md-nav__item">
       <a href="../aws-services/elb/" class="md-nav__link">
-        Elastic Load Balancing
+        Application Load Balancer
       </a>
     </li>
   
@@ -1078,7 +1120,7 @@
   
     <li class="md-nav__item">
       <a href="../applications/ec2-pipeline/" class="md-nav__link">
-        EC2 instance group
+        Instance Group
       </a>
     </li>
   
@@ -1302,6 +1344,20 @@
               
   
   
+  
+    <li class="md-nav__item">
+      <a href="../update/" class="md-nav__link">
+        Upgrade the solution
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
     
   
   
@@ -1383,18 +1439,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_15" type="checkbox" id="__nav_1_15" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_16" type="checkbox" id="__nav_1_16" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_15">
+        <label class="md-nav__link" for="__nav_1_16">
           Additional resources
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Additional resources" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_15">
+        <label class="md-nav__title" for="__nav_1_16">
           <span class="md-nav__icon md-icon"></span>
           Additional resources
         </label>
@@ -1590,8 +1646,8 @@
 <h1 id="uninstall-the-centralized-logging-with-opensearch">Uninstall the Centralized Logging with OpenSearch</h1>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>You will encounter IAM role missing error if you delete the Centralized Logging with OpenSearch main stack before you delete the log pipelines. Centralized Logging with OpenSearch console launches additional CloudFormation stacks to ingest logs. If you want to uninstall the Centralized Logging with OpenSearch solution. 
-We recommend you to delete log pipelines (incl. AWS Service log pipelines and application log pipelines) before uninstall the solution. </p>
+<p>You will encounter IAM role missing error if you delete the Centralized Logging with OpenSearch main stack before you delete the log pipelines. Centralized Logging with OpenSearch console launches additional CloudFormation stacks to ingest logs. If you want to uninstall the Centralized Logging with OpenSearch solution.
+We recommend you to delete log pipelines (incl. AWS Service log pipelines and application log pipelines) before uninstall the solution.</p>
 </div>
 <h2 id="step-1-delete-application-log-pipelines">Step 1. Delete Application Log Pipelines</h2>
 <div class="admonition important">
@@ -1603,7 +1659,7 @@ We recommend you to delete log pipelines (incl. AWS Service log pipelines and ap
 <li>Click the application log pipeline to view details.</li>
 <li>In the ingestion tab, delete all the application log ingestion in the pipeline.</li>
 <li>Uninstall/Disable the Fluent Bit agent.<ul>
-<li>EC2 (Optional): after removing the log ingestion from EC2 instance group. Fluent Bit will automatically stop ship logs, it is optional for you to stop the Fluent Bit in your instances. Here are the command for stopping Fluent Bit agent.
+<li>EC2 (Optional): after removing the log ingestion from Instance Group. Fluent Bit will automatically stop ship logs, it is optional for you to stop the Fluent Bit in your instances. Here are the command for stopping Fluent Bit agent.
       <div class="highlight"><pre><span></span><code>   sudo service fluent-bit stop
    sudo systemctl disable fluent-bit.service
 </code></pre></div></li>
@@ -1673,7 +1729,7 @@ We recommend you to delete log pipelines (incl. AWS Service log pipelines and ap
     <nav class="md-footer__inner md-grid" aria-label="Footer" >
       
         
-        <a href="../trouble-shooting/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Troubleshooting" rel="prev">
+        <a href="../update/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Upgrade the solution" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
           </div>
@@ -1682,7 +1738,7 @@ We recommend you to delete log pipelines (incl. AWS Service log pipelines and ap
               <span class="md-footer__direction">
                 Previous
               </span>
-              Troubleshooting
+              Upgrade the solution
             </div>
           </div>
         </a>

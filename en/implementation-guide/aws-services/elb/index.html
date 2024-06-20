@@ -15,7 +15,7 @@
     
     
       
-        <title>Elastic Load Balancing - Centralized Logging with OpenSearch</title>
+        <title>Application Load Balancer - Centralized Logging with OpenSearch</title>
       
     
     
@@ -102,7 +102,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Elastic Load Balancing
+              Application Load Balancer
             
           </span>
         </div>
@@ -387,6 +387,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../solution-overview/concepts/" class="md-nav__link">
+        Concepts
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -426,7 +440,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/" class="md-nav__link">
+      <a href="../../architecture-overview/architecture/" class="md-nav__link">
         Architecture diagram
       </a>
     </li>
@@ -487,8 +501,36 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture-details/solution-components/" class="md-nav__link">
-        Solution components
+      <a href="../../architecture-details/service-log-analytics-pipeline/" class="md-nav__link">
+        Service log analytics pipeline
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-details/application-log-analytics-pipeline/" class="md-nav__link">
+        Application log analytics pipeline
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-details/light-engine/" class="md-nav__link">
+        Light Engine
       </a>
     </li>
   
@@ -907,7 +949,7 @@
   
     <li class="md-nav__item">
       <a href="../cloudtrail/" class="md-nav__link">
-        Amazon CloudTrail
+        AWS CloudTrail
       </a>
     </li>
   
@@ -986,12 +1028,12 @@
       
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
-          Elastic Load Balancing
+          Application Load Balancer
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
-        Elastic Load Balancing
+        Application Load Balancer
       </a>
       
         
@@ -1010,11 +1052,11 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#create-log-ingestion-amazon-opensearch-for-log-analytics" class="md-nav__link">
-    Create log ingestion (Amazon OpenSearch for log analytics)
+  <a href="#create-log-ingestion-opensearch-engine" class="md-nav__link">
+    Create log ingestion (OpenSearch Engine)
   </a>
   
-    <nav class="md-nav" aria-label="Create log ingestion (Amazon OpenSearch for log analytics)">
+    <nav class="md-nav" aria-label="Create log ingestion (OpenSearch Engine)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1057,11 +1099,11 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#create-log-ingestion-light-engine-for-log-analytics" class="md-nav__link">
-    Create log ingestion (Light Engine for log analytics)
+  <a href="#create-log-ingestion-light-engine" class="md-nav__link">
+    Create log ingestion (Light Engine)
   </a>
   
-    <nav class="md-nav" aria-label="Create log ingestion (Light Engine for log analytics)">
+    <nav class="md-nav" aria-label="Create log ingestion (Light Engine)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1082,6 +1124,19 @@
   <a href="#view-dashboard_1" class="md-nav__link">
     View Dashboard
   </a>
+  
+    <nav class="md-nav" aria-label="View Dashboard">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sample-dashboard_1" class="md-nav__link">
+    Sample dashboard
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -1195,7 +1250,7 @@
   
     <li class="md-nav__item">
       <a href="../../applications/ec2-pipeline/" class="md-nav__link">
-        EC2 instance group
+        Instance Group
       </a>
     </li>
   
@@ -1421,6 +1476,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../update/" class="md-nav__link">
+        Upgrade the solution
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../uninstall/" class="md-nav__link">
         Uninstall the solution
       </a>
@@ -1438,18 +1507,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_15" type="checkbox" id="__nav_1_15" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_16" type="checkbox" id="__nav_1_16" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_15">
+        <label class="md-nav__link" for="__nav_1_16">
           Additional resources
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Additional resources" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_15">
+        <label class="md-nav__title" for="__nav_1_16">
           <span class="md-nav__icon md-icon"></span>
           Additional resources
         </label>
@@ -1595,11 +1664,11 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#create-log-ingestion-amazon-opensearch-for-log-analytics" class="md-nav__link">
-    Create log ingestion (Amazon OpenSearch for log analytics)
+  <a href="#create-log-ingestion-opensearch-engine" class="md-nav__link">
+    Create log ingestion (OpenSearch Engine)
   </a>
   
-    <nav class="md-nav" aria-label="Create log ingestion (Amazon OpenSearch for log analytics)">
+    <nav class="md-nav" aria-label="Create log ingestion (OpenSearch Engine)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1642,11 +1711,11 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#create-log-ingestion-light-engine-for-log-analytics" class="md-nav__link">
-    Create log ingestion (Light Engine for log analytics)
+  <a href="#create-log-ingestion-light-engine" class="md-nav__link">
+    Create log ingestion (Light Engine)
   </a>
   
-    <nav class="md-nav" aria-label="Create log ingestion (Light Engine for log analytics)">
+    <nav class="md-nav" aria-label="Create log ingestion (Light Engine)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1667,6 +1736,19 @@
   <a href="#view-dashboard_1" class="md-nav__link">
     View Dashboard
   </a>
+  
+    <nav class="md-nav" aria-label="View Dashboard">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sample-dashboard_1" class="md-nav__link">
+    Sample dashboard
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -1706,7 +1788,7 @@ balancer node every 5 minutes.</p>
 <li>The Amazon OpenSearch Service index is rotated on a daily basis by default, and you can adjust the index in the Additional Settings.</li>
 </ul>
 </div>
-<h2 id="create-log-ingestion-amazon-opensearch-for-log-analytics">Create log ingestion (Amazon OpenSearch for log analytics)</h2>
+<h2 id="create-log-ingestion-opensearch-engine">Create log ingestion (OpenSearch Engine)</h2>
 <h3 id="using-the-console">Using the Console</h3>
 <ol>
 <li>Sign in to the Centralized Logging with OpenSearch Console.</li>
@@ -1725,8 +1807,9 @@ balancer node every 5 minutes.</p>
 <li>Choose <strong>Yes</strong> for <strong>Sample dashboard</strong> if you want to ingest an associated templated Amazon OpenSearch Service dashboard.</li>
 <li>You can change the <strong>Index Prefix</strong> of the target Amazon OpenSearch Service index if needed. The default prefix is the <code>Load Balancer Name</code>.</li>
 <li>In the <strong>Log Lifecycle</strong> section, input the number of days to manage the Amazon OpenSearch Service index lifecycle. The Centralized Logging with OpenSearch will create the associated <a href="https://opensearch.org/docs/latest/im-plugin/ism/index/">Index State Management (ISM)</a> policy automatically for this pipeline.</li>
-<li>In the <strong>Select log processor</strong> section, please choose the log processor. <ul>
-<li>(Optional) OSI as log processor is now supported in these <a href="https://aws.amazon.com/about-aws/whats-new/2023/04/amazon-opensearch-service-ingestion/">regions</a>. When OSI is selected, please type in the minimum and maximum number of OCU. See more information <a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ingestion.html#ingestion-scaling">here</a>. </li>
+<li>In the <strong>Select log processor</strong> section, please choose the log processor.<ul>
+<li>When selecting Lambda as log processor, you can configure the Lambda concurrency if needed.</li>
+<li>(Optional) OSI as log processor is now supported in these <a href="https://aws.amazon.com/about-aws/whats-new/2023/04/amazon-opensearch-service-ingestion/">regions</a>. When OSI is selected, please type in the minimum and maximum number of OCU. See more information <a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ingestion.html#ingestion-scaling">here</a>.</li>
 </ul>
 </li>
 <li>Choose <strong>Next</strong>.</li>
@@ -1772,6 +1855,8 @@ balancer node every 5 minutes.</p>
 </li>
 <li>
 <p>Under <strong>Parameters</strong>, review the parameters for the template and modify them as necessary. This solution uses the following parameters.</p>
+</li>
+</ol>
 <table>
 <thead>
 <tr>
@@ -1805,6 +1890,21 @@ balancer node every 5 minutes.</p>
 <td>Log Source Account Assume Role</td>
 <td><code>&lt;Optional&gt;</code></td>
 <td>The IAM Role ARN used for cross-account log ingestion. Required for cross-account log ingestion (Please <a href="../../link-account/">add a member account</a> first).</td>
+</tr>
+<tr>
+<td>KMS-CMK ARN</td>
+<td><code>&lt;Optional&gt;</code></td>
+<td>The KMS-CMK ARN for encryption. Leave it blank to create a new KMS CMK.</td>
+</tr>
+<tr>
+<td>Enable OpenSearch Ingestion as processor</td>
+<td><code>&lt;Optional&gt;</code></td>
+<td>Ingestion table Arn. Leave empty if you do not use OSI as Processor.</td>
+</tr>
+<tr>
+<td>S3 Backup Bucket</td>
+<td><code>&lt;Requires input&gt;</code></td>
+<td>The S3 backup bucket name to store the failed ingestion logs.</td>
 </tr>
 <tr>
 <td>Engine Type</td>
@@ -1847,16 +1947,6 @@ balancer node every 5 minutes.</p>
 <td>Select a Security Group which will be associated with the log processing Lambda. Make sure the Security Group has access to the OpenSearch domain.</td>
 </tr>
 <tr>
-<td>S3 Backup Bucket</td>
-<td><code>&lt;Requires input&gt;</code></td>
-<td>The S3 backup bucket name to store the failed ingestion logs.</td>
-</tr>
-<tr>
-<td>KMS-CMK ARN</td>
-<td><code>&lt;Optional&gt;</code></td>
-<td>The KMS-CMK ARN for encryption. Leave it blank to create a new KMS CMK.</td>
-</tr>
-<tr>
 <td>Number Of Shards</td>
 <td>5</td>
 <td>Number of shards to distribute the index evenly across all data nodes. Keep the size of each shard between 10-50 GB.</td>
@@ -1864,7 +1954,7 @@ balancer node every 5 minutes.</p>
 <tr>
 <td>Number of Replicas</td>
 <td>1</td>
-<td>Number of replicas for OpenSearch Index. Each replica is a full copy of an index.</td>
+<td>Number of replicas for OpenSearch Index. Each replica is a full copy of an index. If the OpenSearch option is set to <a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/managedomains-multiaz.html#managedomains-za-standby">Domain with standby</a>, you need to configure it to 2.</td>
 </tr>
 <tr>
 <td>Age to Warm Storage</td>
@@ -1906,9 +1996,24 @@ balancer node every 5 minutes.</p>
 <td><code>&lt;Optional&gt;</code></td>
 <td>List of plugins delimited by comma. Leave it blank if there are no available plugins to use. Valid inputs are <code>user_agent</code>, <code>geo_ip</code>.</td>
 </tr>
+<tr>
+<td>EnableS3Notification</td>
+<td>True</td>
+<td>An option to enable or disable notifications for Amazon S3 buckets. The default option is recommended for most cases.</td>
+</tr>
+<tr>
+<td>LogProcessorRoleName</td>
+<td><code>&lt;Optional&gt;</code></td>
+<td>Specify a role name for the log processor. The name should NOT duplicate an existing role name. If no name is specified, a random name is generated.</td>
+</tr>
+<tr>
+<td>QueueName</td>
+<td><code>&lt;Optional&gt;</code></td>
+<td>Specify a queue name for an SQS. The name should NOT duplicate an existing queue name. If no name is given, a random name will be generated.</td>
+</tr>
 </tbody>
 </table>
-</li>
+<ol>
 <li>
 <p>Choose <strong>Next</strong>.</p>
 </li>
@@ -1963,12 +2068,12 @@ a <strong>CREATE_COMPLETE</strong> status in approximately 10 minutes.</p>
 <td>Displays the count of requests made to the ALB, grouped by HTTP status codes (e.g., 200, 404, 403, etc.).</td>
 </tr>
 <tr>
-<td>Status History</td>
+<td>Status Code History</td>
 <td><ul><li>elb_status_code </li></ul></td>
 <td>Shows the historical trend of HTTP status codes returned by the ALB over a specific period of time.</td>
 </tr>
 <tr>
-<td>Status Code Pipe</td>
+<td>Status Code Pie</td>
 <td><ul><li>elb_status_code</li></ul></td>
 <td>Represents the distribution of requests based on different HTTP status codes using a pie chart.</td>
 </tr>
@@ -2033,12 +2138,12 @@ a <strong>CREATE_COMPLETE</strong> status in approximately 10 minutes.</p>
 <td>Displays the count of requests made to the ALB, grouped by user agent OS</td>
 </tr>
 <tr>
-<td>Request by Device</td>
+<td>Requests by Device</td>
 <td><ul><li> ua_device</li></ul></td>
 <td>Displays the count of requests made to the ALB, grouped by user agent device.</td>
 </tr>
 <tr>
-<td>Request by Browser</td>
+<td>Requests by Browser</td>
 <td><ul><li> ua_browser</li></ul></td>
 <td>Displays the count of requests made to the ALB, grouped by user agent browser.</td>
 </tr>
@@ -2065,7 +2170,7 @@ a <strong>CREATE_COMPLETE</strong> status in approximately 10 minutes.</p>
 </tbody>
 </table>
 <h4 id="sample-dashboard">Sample Dashboard</h4>
-<h2 id="create-log-ingestion-light-engine-for-log-analytics">Create log ingestion (Light Engine for log analytics)</h2>
+<h2 id="create-log-ingestion-light-engine">Create log ingestion (Light Engine)</h2>
 <h3 id="using-the-console_1">Using the Console</h3>
 <ol>
 <li>Sign in to the Centralized Logging with OpenSearch Console.</li>
@@ -2129,7 +2234,7 @@ a <strong>CREATE_COMPLETE</strong> status in approximately 10 minutes.</p>
 <li>
 <p>Under <strong>Parameters</strong>, review the parameters for the template and modify them as necessary. This solution uses the following parameters.</p>
 <ul>
-<li>Parameters for <strong>Pipeline settings</strong> </li>
+<li>Parameters for <strong>Pipeline settings</strong></li>
 </ul>
 <table>
 <thead>
@@ -2153,7 +2258,7 @@ a <strong>CREATE_COMPLETE</strong> status in approximately 10 minutes.</p>
 </tbody>
 </table>
 <ul>
-<li>Parameters for <strong>Destination settings</strong> </li>
+<li>Parameters for <strong>Destination settings</strong></li>
 </ul>
 <table>
 <thead>
@@ -2167,12 +2272,12 @@ a <strong>CREATE_COMPLETE</strong> status in approximately 10 minutes.</p>
 <tr>
 <td>Centralized Bucket Name</td>
 <td><code>&lt;Requires input&gt;</code></td>
-<td>Input centralized s3 bucket name，for expample:centralized-logging-bucket。</td>
+<td>Input centralized s3 bucket name，for expample:centralized-logging-bucket.</td>
 </tr>
 <tr>
 <td>Centralized Bucket Prefix</td>
 <td>datalake</td>
-<td>Input centralized bucket prefix，default is datalake which means your data base's location is s3://{Centralized Bucket Name}/{Centralized Bucket Prefix}/amazon_cl_centralized。</td>
+<td>Input centralized bucket prefix，default is datalake which means your data base's location is s3://{Centralized Bucket Name}/{Centralized Bucket Prefix}/amazon_cl_centralized.</td>
 </tr>
 <tr>
 <td>Centralized Table Name</td>
@@ -2187,7 +2292,7 @@ a <strong>CREATE_COMPLETE</strong> status in approximately 10 minutes.</p>
 </tbody>
 </table>
 <ul>
-<li>Parameters for <strong>Scheduler settings</strong> </li>
+<li>Parameters for <strong>Scheduler settings</strong></li>
 </ul>
 <table>
 <thead>
@@ -2201,17 +2306,17 @@ a <strong>CREATE_COMPLETE</strong> status in approximately 10 minutes.</p>
 <tr>
 <td>LogProcessor Schedule Expression</td>
 <td>rate(5 minutes)</td>
-<td>Task scheduling expression for performing log processing, with a default value of executing the LogProcessor every 5 minutes. Configuration <a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html">for reference</a>。</td>
+<td>Task scheduling expression for performing log processing, with a default value of executing the LogProcessor every 5 minutes. Configuration <a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html">for reference</a>.</td>
 </tr>
 <tr>
 <td>LogMerger Schedule Expression</td>
 <td>cron(0 1 * <em> ? </em>)</td>
-<td>执ask scheduling expression for performing log merging, with a default value of executing the LogMerger at 1 AM every day. Configuration <a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html">for reference</a>。</td>
+<td>执ask scheduling expression for performing log merging, with a default value of executing the LogMerger at 1 AM every day. Configuration <a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html">for reference</a>.</td>
 </tr>
 <tr>
 <td>LogArchive Schedule Expression</td>
 <td>cron(0 2 * <em> ? </em>)</td>
-<td>Task scheduling expression for performing log archiving, with a default value of executing the LogArchive at 2 AM every day. Configuration <a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html">for reference</a>。</td>
+<td>Task scheduling expression for performing log archiving, with a default value of executing the LogArchive at 2 AM every day. Configuration <a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html">for reference</a>.</td>
 </tr>
 <tr>
 <td>Age to Merge</td>
@@ -2226,7 +2331,7 @@ a <strong>CREATE_COMPLETE</strong> status in approximately 10 minutes.</p>
 </tbody>
 </table>
 <ul>
-<li>Parameters for <strong>Notification settings</strong> </li>
+<li>Parameters for <strong>Notification settings</strong></li>
 </ul>
 <table>
 <thead>
@@ -2250,7 +2355,7 @@ a <strong>CREATE_COMPLETE</strong> status in approximately 10 minutes.</p>
 </tbody>
 </table>
 <ul>
-<li>Parameters for <strong>Dashboard settings</strong> </li>
+<li>Parameters for <strong>Dashboard settings</strong></li>
 </ul>
 <table>
 <thead>
@@ -2264,17 +2369,17 @@ a <strong>CREATE_COMPLETE</strong> status in approximately 10 minutes.</p>
 <tr>
 <td>Import Dashboards</td>
 <td>FALSE</td>
-<td>Whether to import the Dashboard into Grafana, with a default value of false. If set to true, you must provide the Grafana URL and Grafana Service Account Token.。</td>
+<td>Whether to import the Dashboard into Grafana, with a default value of false. If set to true, you must provide the Grafana URL and Grafana Service Account Token..</td>
 </tr>
 <tr>
 <td>Grafana URL</td>
 <td><code>&lt;Requires Input&gt;</code></td>
-<td>Grafana access URL，for example: https://alb-72277319.us-west-2.elb.amazonaws.com。</td>
+<td>Grafana access URL，for example: https://alb-72277319.us-west-2.elb.amazonaws.com.</td>
 </tr>
 <tr>
 <td>Grafana Service Account Token</td>
 <td><code>&lt;Requires Input&gt;</code></td>
-<td>Grafana Service Account Token：Service Account Token created in Grafana。</td>
+<td>Grafana Service Account Token：Service Account Token created in Grafana.</td>
 </tr>
 <tr>
 <td></td>
@@ -2431,6 +2536,8 @@ a <strong>CREATE_COMPLETE</strong> status in approximately 10 minutes.</p>
 </tr>
 </tbody>
 </table>
+<h4 id="sample-dashboard_1">Sample dashboard</h4>
+<p><img alt="elb" src="../../../images/dashboards/alb-light.jpg" /></p>
 
 
 

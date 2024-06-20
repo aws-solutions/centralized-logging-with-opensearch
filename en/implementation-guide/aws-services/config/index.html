@@ -387,6 +387,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../solution-overview/concepts/" class="md-nav__link">
+        Concepts
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -426,7 +440,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/" class="md-nav__link">
+      <a href="../../architecture-overview/architecture/" class="md-nav__link">
         Architecture diagram
       </a>
     </li>
@@ -487,8 +501,36 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture-details/solution-components/" class="md-nav__link">
-        Solution components
+      <a href="../../architecture-details/service-log-analytics-pipeline/" class="md-nav__link">
+        Service log analytics pipeline
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-details/application-log-analytics-pipeline/" class="md-nav__link">
+        Application log analytics pipeline
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-details/light-engine/" class="md-nav__link">
+        Light Engine
       </a>
     </li>
   
@@ -907,7 +949,7 @@
   
     <li class="md-nav__item">
       <a href="../cloudtrail/" class="md-nav__link">
-        Amazon CloudTrail
+        AWS CloudTrail
       </a>
     </li>
   
@@ -977,7 +1019,7 @@
   
     <li class="md-nav__item">
       <a href="../elb/" class="md-nav__link">
-        Elastic Load Balancing
+        Application Load Balancer
       </a>
     </li>
   
@@ -1067,8 +1109,8 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#using-the-standalone-cloudformation-stack" class="md-nav__link">
-    Using the standalone CloudFormation Stack
+  <a href="#using-the-cloudformation-stack" class="md-nav__link">
+    Using the CloudFormation Stack
   </a>
   
 </li>
@@ -1161,7 +1203,7 @@
   
     <li class="md-nav__item">
       <a href="../../applications/ec2-pipeline/" class="md-nav__link">
-        EC2 instance group
+        Instance Group
       </a>
     </li>
   
@@ -1387,6 +1429,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../update/" class="md-nav__link">
+        Upgrade the solution
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../uninstall/" class="md-nav__link">
         Uninstall the solution
       </a>
@@ -1404,18 +1460,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_15" type="checkbox" id="__nav_1_15" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_16" type="checkbox" id="__nav_1_16" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_15">
+        <label class="md-nav__link" for="__nav_1_16">
           Additional resources
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Additional resources" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_15">
+        <label class="md-nav__title" for="__nav_1_16">
           <span class="md-nav__icon md-icon"></span>
           Additional resources
         </label>
@@ -1576,8 +1632,8 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#using-the-standalone-cloudformation-stack" class="md-nav__link">
-    Using the standalone CloudFormation Stack
+  <a href="#using-the-cloudformation-stack" class="md-nav__link">
+    Using the CloudFormation Stack
   </a>
   
 </li>
@@ -1661,7 +1717,7 @@
 <li>Add tags if needed.</li>
 <li>Choose <strong>Create</strong>.</li>
 </ol>
-<h3 id="using-the-standalone-cloudformation-stack">Using the standalone CloudFormation Stack</h3>
+<h3 id="using-the-cloudformation-stack">Using the CloudFormation Stack</h3>
 <p>This automated AWS CloudFormation template deploys the <em>Centralized Logging with OpenSearch - AWS Config Log Ingestion</em> solution in the AWS Cloud.</p>
 <table>
 <thead>
@@ -1700,6 +1756,8 @@
 </li>
 <li>
 <p>Under <strong>Parameters</strong>, review the parameters for the template and modify them as necessary. This solution uses the following parameters.</p>
+</li>
+</ol>
 <table>
 <thead>
 <tr>
@@ -1733,6 +1791,21 @@
 <td>Log Source Account Assume Role</td>
 <td><code>&lt;Optional&gt;</code></td>
 <td>The IAM Role ARN used for cross-account log ingestion. Required for cross-account log ingestion (Please <a href="../../link-account/">add a member account</a> first).</td>
+</tr>
+<tr>
+<td>KMS-CMK ARN</td>
+<td><code>&lt;Optional&gt;</code></td>
+<td>The KMS-CMK ARN for encryption. Leave it blank to create a new KMS CMK.</td>
+</tr>
+<tr>
+<td>Enable OpenSearch Ingestion as processor</td>
+<td><code>&lt;Optional&gt;</code></td>
+<td>Ingestion table Arn. Leave empty if you do not use OSI as Processor.</td>
+</tr>
+<tr>
+<td>S3 Backup Bucket</td>
+<td><code>&lt;Requires input&gt;</code></td>
+<td>The S3 backup bucket name to store the failed ingestion logs.</td>
 </tr>
 <tr>
 <td>Engine Type</td>
@@ -1775,16 +1848,6 @@
 <td>Select a Security Group which will be associated with the log processing Lambda. Make sure the Security Group has access to the OpenSearch domain.</td>
 </tr>
 <tr>
-<td>S3 Backup Bucket</td>
-<td><code>&lt;Requires input&gt;</code></td>
-<td>The S3 backup bucket name to store the failed ingestion logs.</td>
-</tr>
-<tr>
-<td>KMS-CMK ARN</td>
-<td><code>&lt;Optional&gt;</code></td>
-<td>The KMS-CMK ARN for encryption. Leave it blank to create a new KMS CMK.</td>
-</tr>
-<tr>
 <td>Number Of Shards</td>
 <td>5</td>
 <td>Number of shards to distribute the index evenly across all data nodes. Keep the size of each shard between 10-50 GB.</td>
@@ -1792,7 +1855,7 @@
 <tr>
 <td>Number of Replicas</td>
 <td>1</td>
-<td>Number of replicas for OpenSearch Index. Each replica is a full copy of an index.</td>
+<td>Number of replicas for OpenSearch Index. Each replica is a full copy of an index. If the OpenSearch option is set to <a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/managedomains-multiaz.html#managedomains-za-standby">Domain with standby</a>, you need to configure it to 2.</td>
 </tr>
 <tr>
 <td>Age to Warm Storage</td>
@@ -1846,7 +1909,7 @@
 </tr>
 </tbody>
 </table>
-</li>
+<ol>
 <li>
 <p>Choose <strong>Next</strong>.</p>
 </li>

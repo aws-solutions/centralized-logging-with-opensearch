@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#amazon-ec2-instance-group" class="md-skip">
+        <a href="#amazon-instance-group" class="md-skip">
           Skip to content
         </a>
       
@@ -387,6 +387,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../solution-overview/concepts/" class="md-nav__link">
+        Concepts
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -426,7 +440,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/" class="md-nav__link">
+      <a href="../../architecture-overview/architecture/" class="md-nav__link">
         Architecture diagram
       </a>
     </li>
@@ -487,8 +501,36 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture-details/solution-components/" class="md-nav__link">
-        Solution components
+      <a href="../../architecture-details/service-log-analytics-pipeline/" class="md-nav__link">
+        Service log analytics pipeline
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-details/application-log-analytics-pipeline/" class="md-nav__link">
+        Application log analytics pipeline
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-details/light-engine/" class="md-nav__link">
+        Light Engine
       </a>
     </li>
   
@@ -905,7 +947,7 @@
   
     <li class="md-nav__item">
       <a href="../../aws-services/cloudtrail/" class="md-nav__link">
-        Amazon CloudTrail
+        AWS CloudTrail
       </a>
     </li>
   
@@ -975,7 +1017,7 @@
   
     <li class="md-nav__item">
       <a href="../../aws-services/elb/" class="md-nav__link">
-        Elastic Load Balancing
+        Application Load Balancer
       </a>
     </li>
   
@@ -1080,7 +1122,7 @@
   
     <li class="md-nav__item">
       <a href="../ec2-pipeline/" class="md-nav__link">
-        EC2 instance group
+        Instance Group
       </a>
     </li>
   
@@ -1193,11 +1235,11 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#amazon-ec2-instance-group" class="md-nav__link">
-    Amazon EC2 Instance Group
+  <a href="#amazon-instance-group" class="md-nav__link">
+    Amazon Instance Group
   </a>
   
-    <nav class="md-nav" aria-label="Amazon EC2 Instance Group">
+    <nav class="md-nav" aria-label="Amazon Instance Group">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1400,6 +1442,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../update/" class="md-nav__link">
+        Upgrade the solution
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../uninstall/" class="md-nav__link">
         Uninstall the solution
       </a>
@@ -1417,18 +1473,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_15" type="checkbox" id="__nav_1_15" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_16" type="checkbox" id="__nav_1_16" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_15">
+        <label class="md-nav__link" for="__nav_1_16">
           Additional resources
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Additional resources" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_15">
+        <label class="md-nav__title" for="__nav_1_16">
           <span class="md-nav__icon md-icon"></span>
           Additional resources
         </label>
@@ -1572,11 +1628,11 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#amazon-ec2-instance-group" class="md-nav__link">
-    Amazon EC2 Instance Group
+  <a href="#amazon-instance-group" class="md-nav__link">
+    Amazon Instance Group
   </a>
   
-    <nav class="md-nav" aria-label="Amazon EC2 Instance Group">
+    <nav class="md-nav" aria-label="Amazon Instance Group">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1657,13 +1713,13 @@
 
 <p>You need to create a log source first before collecting application logs. Centralized Logging with OpenSearch supports the following log sources:</p>
 <ul>
-<li><a href="#amazon-ec2-instance-group">Amazon EC2 instance group</a></li>
+<li><a href="#amazon-ec2-instance-group">Amazon Instance Group</a></li>
 <li><a href="#amazon-eks-cluster">Amazon EKS cluster</a></li>
 <li><a href="#amazon-s3">Amazon S3</a></li>
 <li><a href="#syslog">Syslog</a></li>
 </ul>
 <p>For more information, see <a href="../#concepts">concepts</a>.</p>
-<h2 id="amazon-ec2-instance-group">Amazon EC2 Instance Group</h2>
+<h2 id="amazon-instance-group">Amazon Instance Group</h2>
 <p>An instance group represents a group of EC2 Linux instances, which enables the solution to associate a <a href="../#log-config">Log Config</a> with multiple EC2 instances quickly. Centralized Logging with OpenSearch uses <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/ssm-agent.html" target="_blank">Systems Manager Agent(SSM Agent)</a> to install/configure Fluent Bit agent, and sends log data to <a href="https://aws.amazon.com/kinesis/data-streams/" target="_blank">Kinesis Data Streams</a>.</p>
 <h3 id="prerequisites">Prerequisites</h3>
 <p>Make sure the instances meet the following requirements:</p>
@@ -1763,13 +1819,13 @@ The newly launched instances will ingest logs to the OpenSearch cluster or the <
 <p>In the left sidebar, under <strong>Log Analytics Pipelines</strong>, choose <strong>Application Log</strong>.</p>
 </li>
 <li>
-<p>Choose the log pipeline by clicking its <strong>ID</strong>。</p>
+<p>Choose the log pipeline by clicking its <strong>ID</strong>.</p>
 </li>
 <li>
-<p>Choose <strong>Create a source</strong>. </p>
+<p>Choose <strong>Create a source</strong>.</p>
 </li>
 <li>
-<p>Follow the instructions in <a href="#amazon-ec2-instance-group">Amazon EC2 instance group</a>, <a href="#amazon-eks-cluster">Amazon EKS cluster</a>, <a href="#amazon-s3">Amazon S3</a>, or <a href="#syslog">Syslog</a> to create a log source according to your need. </p>
+<p>Follow the instructions in <a href="#amazon-ec2-instance-group">Amazon Instance Group</a>, <a href="#amazon-eks-cluster">Amazon EKS cluster</a>, <a href="#amazon-s3">Amazon S3</a>, or <a href="#syslog">Syslog</a> to create a log source according to your need.</p>
 </li>
 </ol>
 

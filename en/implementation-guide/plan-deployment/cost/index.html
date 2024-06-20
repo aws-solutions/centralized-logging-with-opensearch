@@ -387,6 +387,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../solution-overview/concepts/" class="md-nav__link">
+        Concepts
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -426,7 +440,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/" class="md-nav__link">
+      <a href="../../architecture-overview/architecture/" class="md-nav__link">
         Architecture diagram
       </a>
     </li>
@@ -487,8 +501,36 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture-details/solution-components/" class="md-nav__link">
-        Solution components
+      <a href="../../architecture-details/service-log-analytics-pipeline/" class="md-nav__link">
+        Service log analytics pipeline
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-details/application-log-analytics-pipeline/" class="md-nav__link">
+        Application log analytics pipeline
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-details/light-engine/" class="md-nav__link">
+        Light Engine
       </a>
     </li>
   
@@ -676,6 +718,33 @@
           <li class="md-nav__item">
   <a href="#pipeline-monitoring" class="md-nav__link">
     Pipeline Monitoring
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#view-main-stack-and-pipeline-cost" class="md-nav__link">
+    View main stack and pipeline cost
+  </a>
+  
+    <nav class="md-nav" aria-label="View main stack and pipeline cost">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#to-activate-your-tag-keys" class="md-nav__link">
+    To activate your tag keys
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#view-cost-explorer-dashboard" class="md-nav__link">
+    View cost explorer dashboard
   </a>
   
 </li>
@@ -1043,7 +1112,7 @@
   
     <li class="md-nav__item">
       <a href="../../aws-services/cloudtrail/" class="md-nav__link">
-        Amazon CloudTrail
+        AWS CloudTrail
       </a>
     </li>
   
@@ -1113,7 +1182,7 @@
   
     <li class="md-nav__item">
       <a href="../../aws-services/elb/" class="md-nav__link">
-        Elastic Load Balancing
+        Application Load Balancer
       </a>
     </li>
   
@@ -1216,7 +1285,7 @@
   
     <li class="md-nav__item">
       <a href="../../applications/ec2-pipeline/" class="md-nav__link">
-        EC2 instance group
+        Instance Group
       </a>
     </li>
   
@@ -1442,6 +1511,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../update/" class="md-nav__link">
+        Upgrade the solution
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../uninstall/" class="md-nav__link">
         Uninstall the solution
       </a>
@@ -1459,18 +1542,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_15" type="checkbox" id="__nav_1_15" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_16" type="checkbox" id="__nav_1_16" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_15">
+        <label class="md-nav__link" for="__nav_1_16">
           Additional resources
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Additional resources" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_15">
+        <label class="md-nav__title" for="__nav_1_16">
           <span class="md-nav__icon md-icon"></span>
           Additional resources
         </label>
@@ -1708,6 +1791,33 @@
           <li class="md-nav__item">
   <a href="#pipeline-monitoring" class="md-nav__link">
     Pipeline Monitoring
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#view-main-stack-and-pipeline-cost" class="md-nav__link">
+    View main stack and pipeline cost
+  </a>
+  
+    <nav class="md-nav" aria-label="View main stack and pipeline cost">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#to-activate-your-tag-keys" class="md-nav__link">
+    To activate your tag keys
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#view-cost-explorer-dashboard" class="md-nav__link">
+    View cost explorer dashboard
   </a>
   
 </li>
@@ -2483,6 +2593,29 @@
 </tr>
 </tbody>
 </table>
+<h2 id="view-main-stack-and-pipeline-cost">View main stack and pipeline cost</h2>
+<p><strong>Activating user-defined cost allocation tags</strong></p>
+<p>For tags to appear on your billing reports, you must activate them. Your user-defined cost allocation tags represent the tag key, which you activate in the Billing and Cost Management console. Once you activate or deactivate the tag key, it will affect all tag values that share the same tag key. A tag key can have multiple tag values. For more information, see the <a href="https://docs.aws.amazon.com/aws-cost-management/latest/APIReference/API_UpdateCostAllocationTagsStatus.html">AWS Billing and Cost Management API Reference</a>.</p>
+<h3 id="to-activate-your-tag-keys">To activate your tag keys</h3>
+<ol>
+<li>Sign in to the AWS Management Console and open the <a href="https://console.aws.amazon.com/billing/">AWS Billing and Cost Management console</a>.</li>
+<li>In the navigation pane, choose <strong>Cost allocation tags</strong>.</li>
+<li>Select the tag keys <strong>CLOSolutionCostAnalysis</strong> to activate.</li>
+<li>Choose Activate.</li>
+</ol>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>After you create and apply user-defined tags to your resources, it can take up to 24 hours for the tag keys to appear on your cost allocation tags page for activation. </p>
+</div>
+<p>For an example of how tag keys appear in your billing report with cost allocation tags, see<a href="https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/configurecostallocreport.html#allocation-viewing">Viewing a cost allocation report</a>. </p>
+<h3 id="view-cost-explorer-dashboard">View cost explorer dashboard</h3>
+<ol>
+<li>Sign in to the AWS Management Console and open the <a href="https://console.aws.amazon.com/billing/">AWS Billing and Cost Management console</a>.</li>
+<li>In the navigation pane, choose <strong>Cost Explorer</strong>.</li>
+<li>Choose <strong>Tag</strong> as the displayed Dimension and select the specific tag <strong>CLOSolutionCostAnalysis</strong> to filter.</li>
+<li>If your activated tag is absent in the dropdown list, this is because the activation process is still in progress. It can take up to 24 hours for tag keys to activate. Try later.</li>
+</ol>
+<p><img alt="costexplorerdashboard" src="../../../images/cost-explorer-dashboard.png" /></p>
 
 
 

@@ -15,7 +15,7 @@
     
     
       
-        <title>EC2 instance group - Centralized Logging with OpenSearch</title>
+        <title>Instance Group - Centralized Logging with OpenSearch</title>
       
     
     
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#amazon-ec2-instance-group-as-log-source" class="md-skip">
+        <a href="#amazon-instance-group-as-log-source" class="md-skip">
           Skip to content
         </a>
       
@@ -102,7 +102,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              EC2 instance group
+              Instance Group
             
           </span>
         </div>
@@ -387,6 +387,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../solution-overview/concepts/" class="md-nav__link">
+        Concepts
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -426,7 +440,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/" class="md-nav__link">
+      <a href="../../architecture-overview/architecture/" class="md-nav__link">
         Architecture diagram
       </a>
     </li>
@@ -487,8 +501,36 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture-details/solution-components/" class="md-nav__link">
-        Solution components
+      <a href="../../architecture-details/service-log-analytics-pipeline/" class="md-nav__link">
+        Service log analytics pipeline
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-details/application-log-analytics-pipeline/" class="md-nav__link">
+        Application log analytics pipeline
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-details/light-engine/" class="md-nav__link">
+        Light Engine
       </a>
     </li>
   
@@ -905,7 +947,7 @@
   
     <li class="md-nav__item">
       <a href="../../aws-services/cloudtrail/" class="md-nav__link">
-        Amazon CloudTrail
+        AWS CloudTrail
       </a>
     </li>
   
@@ -975,7 +1017,7 @@
   
     <li class="md-nav__item">
       <a href="../../aws-services/elb/" class="md-nav__link">
-        Elastic Load Balancing
+        Application Load Balancer
       </a>
     </li>
   
@@ -1089,12 +1131,12 @@
       
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
-          EC2 instance group
+          Instance Group
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
-        EC2 instance group
+        Instance Group
       </a>
       
         
@@ -1113,11 +1155,11 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#create-a-log-analytics-pipeline-amazon-opensearch" class="md-nav__link">
-    Create a log analytics pipeline (Amazon OpenSearch)
+  <a href="#create-a-log-analytics-pipeline-opensearch-engine" class="md-nav__link">
+    Create a log analytics pipeline (OpenSearch Engine)
   </a>
   
-    <nav class="md-nav" aria-label="Create a log analytics pipeline (Amazon OpenSearch)">
+    <nav class="md-nav" aria-label="Create a log analytics pipeline (OpenSearch Engine)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1387,6 +1429,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../update/" class="md-nav__link">
+        Upgrade the solution
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../uninstall/" class="md-nav__link">
         Uninstall the solution
       </a>
@@ -1404,18 +1460,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_15" type="checkbox" id="__nav_1_15" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_16" type="checkbox" id="__nav_1_16" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_15">
+        <label class="md-nav__link" for="__nav_1_16">
           Additional resources
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Additional resources" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_15">
+        <label class="md-nav__title" for="__nav_1_16">
           <span class="md-nav__icon md-icon"></span>
           Additional resources
         </label>
@@ -1561,11 +1617,11 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#create-a-log-analytics-pipeline-amazon-opensearch" class="md-nav__link">
-    Create a log analytics pipeline (Amazon OpenSearch)
+  <a href="#create-a-log-analytics-pipeline-opensearch-engine" class="md-nav__link">
+    Create a log analytics pipeline (OpenSearch Engine)
   </a>
   
-    <nav class="md-nav" aria-label="Create a log analytics pipeline (Amazon OpenSearch)">
+    <nav class="md-nav" aria-label="Create a log analytics pipeline (OpenSearch Engine)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1627,10 +1683,10 @@
   </a>
 
 
-<h1 id="amazon-ec2-instance-group-as-log-source">Amazon EC2 instance group as log source</h1>
+<h1 id="amazon-instance-group-as-log-source">Amazon Instance Group as log source</h1>
 <p>An instance group represents a group of EC2 Linux instances, which enables the solution to associate a Log Config with multiple EC2 instances quickly. Centralized Logging with OpenSearch uses Systems Manager Agent (SSM Agent) to install/configure Fluent Bit agent, and sends log data to Kinesis Data Streams.</p>
-<p>This article guides you to create a log pipeline that ingests logs from an EC2 instance group.</p>
-<h2 id="create-a-log-analytics-pipeline-amazon-opensearch">Create a log analytics pipeline (Amazon OpenSearch)</h2>
+<p>This article guides you to create a log pipeline that ingests logs from an Instance Group.</p>
+<h2 id="create-a-log-analytics-pipeline-opensearch-engine">Create a log analytics pipeline (OpenSearch Engine)</h2>
 <h3 id="prerequisites">Prerequisites</h3>
 <ol>
 <li><a href="../../domains/import/">Import an Amazon OpenSearch Service domain</a>.</li>
@@ -1666,20 +1722,20 @@
 <li>On the left navigation pane, choose <strong>IAM</strong>, and select <strong>Policies</strong> under <strong>Access management</strong>.</li>
 <li>Choose <strong>Create Policy</strong>, choose <strong>JSON</strong> and replace all the content inside the text block. Make sure to substitute <code>&lt;YOUR ACCOUNT ID&gt;</code> with your account id.</li>
 <li>Choose <strong>Next</strong>, and then enter a name for this policy.</li>
-<li>Attach the policy to your EC2 instance profile to grant the log agent permissions to send logs to the application log pipeline. If you are using Auto Scaling group, you need to update the IAM instance profile associated with the Auto Scaling Group. If needed, you can follow the documentation to update your [launch template][launch-template] or [launch configuration][launch-configuration].</li>
+<li>Attach the policy to your EC2 instance profile to grant the log agent permissions to send logs to the application log pipeline. If you are using Auto Scaling group, you need to update the IAM instance profile associated with the Auto Scaling Group. If needed, you can follow the documentation to update your <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html">launch template</a> or <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/launch-configurations.html">launch configuration</a>.</li>
 </ol>
 </li>
 <li>
 <p>Choose <strong>Next</strong>.</p>
 </li>
 </ol>
-<p>You have created a log source for the log analytics pipeline. Now you are ready to make further configurations for the log analytics pipeline with Amazon EC2 instance group as log source.</p>
+<p>You have created a log source for the log analytics pipeline. Now you are ready to make further configurations for the log analytics pipeline with Amazon Instance Group as log source.</p>
 <ol>
 <li>
-<p>Enter a <strong>Log Path</strong> to specify the location of logs you want to collect.</p>
+<p>Select a <strong>log config</strong>. If you do not find desired log config from the drop-down list, choose <strong>Create New</strong>, and follow instructions in <a href="../create-log-config/">Log Cong</a>.</p>
 </li>
 <li>
-<p>Select a log config and then choose <strong>Next</strong>. If you do not find desired log config from the drop-down list, choose <strong>Create New</strong>, and follow instructions in <a href="../create-log-config/">Log Cong</a>.</p>
+<p>Enter a <strong>Log Path</strong> to specify the location of logs you want to collect. You can use <code>,</code> to separate multiple paths. Choose <strong>Next</strong>.</p>
 </li>
 <li>
 <p>Specify <strong>Index name</strong> in lowercase.</p>
@@ -1770,9 +1826,10 @@ KDS shard can support up to 1,000 records per second for writes, up to a maximum
 <p>In the <strong>Log Lifecycle</strong> section, enter the number of days to manage the Amazon OpenSearch Service index lifecycle. The Centralized Logging with OpenSearch will create the associated <a href="https://opensearch.org/docs/latest/im-plugin/ism/index/">Index State Management (ISM)</a> policy automatically for this pipeline.</p>
 </li>
 <li>
-<p>In the <strong>Select log processor</strong> section, please choose the log processor. </p>
+<p>In the <strong>Select log processor</strong> section, please choose the log processor.</p>
 <ul>
-<li>(Optional) OSI as log processor is now supported in these <a href="https://aws.amazon.com/about-aws/whats-new/2023/04/amazon-opensearch-service-ingestion/">regions</a>. When OSI is selected, please type in the minimum and maximum number of OCU. See more information <a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ingestion.html#ingestion-scaling">here</a>. </li>
+<li>When selecting Lambda as log processor, you can configure the Lambda concurrency if needed.</li>
+<li>(Optional) OSI as log processor is now supported in these <a href="https://aws.amazon.com/about-aws/whats-new/2023/04/amazon-opensearch-service-ingestion/">regions</a>. When OSI is selected, please type in the minimum and maximum number of OCU. See more information <a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ingestion.html#ingestion-scaling">here</a>.</li>
 </ul>
 </li>
 <li>
@@ -1804,7 +1861,7 @@ KDS shard can support up to 1,000 records per second for writes, up to a maximum
 <p>Choose <strong>Create a pipeline</strong></p>
 </li>
 <li>
-<p>Choose <strong>Instance Group</strong> as Log Source, Choose <strong>Light Engine</strong>, and choose <strong>Next</strong>.</p>
+<p>Choose <strong>Instance Group</strong> as Log Source, choose <strong>Light Engine</strong>, and choose <strong>Next</strong>.</p>
 </li>
 <li>
 <p>Select an instance group. If you have no instance group yet, choose <strong>Create Instance Group</strong> at the top right corner, and follow the <a href="../create-log-source/#amazon-ec2-instance-group">Instance Group</a> guide to create an instance group. After that, choose <strong>Refresh</strong> and then select the newly created instance group.</p>
@@ -1823,23 +1880,23 @@ KDS shard can support up to 1,000 records per second for writes, up to a maximum
 <li>On the left navigation pane, choose <strong>IAM</strong>, and select <strong>Policies</strong> under <strong>Access management</strong>.</li>
 <li>Choose <strong>Create Policy</strong>, choose <strong>JSON</strong> and replace all the content inside the text block. Make sure to substitute <code>&lt;YOUR ACCOUNT ID&gt;</code> with your account id.</li>
 <li>Choose <strong>Next</strong>, and then enter a name for this policy.</li>
-<li>Attach the policy to your EC2 instance profile to grant the log agent permissions to send logs to the application log pipeline. If you are using Auto Scaling group, you need to update the IAM instance profile associated with the Auto Scaling Group. If needed, you can follow the documentation to update your [launch template][launch-template] or [launch configuration][launch-configuration].</li>
+<li>Attach the policy to your EC2 instance profile to grant the log agent permissions to send logs to the application log pipeline. If you are using Auto Scaling group, you need to update the IAM instance profile associated with the Auto Scaling Group. If needed, you can follow the documentation to update your <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html">launch template</a> or <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/launch-configurations.html">launch configuration</a>.</li>
 </ol>
 </li>
 <li>
 <p>Choose <strong>Next</strong>.</p>
 </li>
 </ol>
-<p>You have created a log source for the log analytics pipeline. Now you are ready to make further configurations for the log analytics pipeline with Amazon EC2 instance group as log source.</p>
+<p>You have created a log source for the log analytics pipeline. Now you are ready to make further configurations for the log analytics pipeline with Amazon Instance Group as log source.</p>
 <ol>
 <li>
-<p>Enter a <strong>Log Path</strong> to specify the location of logs you want to collect.</p>
+<p>Select a <strong>log config</strong>. If you do not find desired log config from the drop-down list, choose <strong>Create New</strong>, and follow instructions in <a href="../create-log-config/">Log Cong</a>.</p>
 </li>
 <li>
-<p>Select a log config and then choose <strong>Next</strong>. If you do not find desired log config from the drop-down list, choose <strong>Create New</strong>, and follow instructions in <a href="../create-log-config/">Log Cong</a>.</p>
+<p>Enter a <strong>Log Path</strong> to specify the location of logs you want to collect. You can use <code>,</code> to separate multiple paths. Choose <strong>Next</strong>.</p>
 </li>
 <li>
-<p>In the <strong>Buffer</strong> section, </p>
+<p>In the <strong>Buffer</strong> section,</p>
 <ul>
 <li>S3 buffer parameters</li>
 </ul>

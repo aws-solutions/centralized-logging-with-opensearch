@@ -387,6 +387,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../solution-overview/concepts/" class="md-nav__link">
+        Concepts
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -426,7 +440,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/" class="md-nav__link">
+      <a href="../architecture-overview/architecture/" class="md-nav__link">
         Architecture diagram
       </a>
     </li>
@@ -487,8 +501,36 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture-details/solution-components/" class="md-nav__link">
-        Solution components
+      <a href="../architecture-details/service-log-analytics-pipeline/" class="md-nav__link">
+        Service log analytics pipeline
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture-details/application-log-analytics-pipeline/" class="md-nav__link">
+        Application log analytics pipeline
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture-details/light-engine/" class="md-nav__link">
+        Light Engine
       </a>
     </li>
   
@@ -905,7 +947,7 @@
   
     <li class="md-nav__item">
       <a href="../aws-services/cloudtrail/" class="md-nav__link">
-        Amazon CloudTrail
+        AWS CloudTrail
       </a>
     </li>
   
@@ -975,7 +1017,7 @@
   
     <li class="md-nav__item">
       <a href="../aws-services/elb/" class="md-nav__link">
-        Elastic Load Balancing
+        Application Load Balancer
       </a>
     </li>
   
@@ -1078,7 +1120,7 @@
   
     <li class="md-nav__item">
       <a href="../applications/ec2-pipeline/" class="md-nav__link">
-        EC2 instance group
+        Instance Group
       </a>
     </li>
   
@@ -1372,6 +1414,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../update/" class="md-nav__link">
+        Upgrade the solution
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../uninstall/" class="md-nav__link">
         Uninstall the solution
       </a>
@@ -1389,18 +1445,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_15" type="checkbox" id="__nav_1_15" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_16" type="checkbox" id="__nav_1_16" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_15">
+        <label class="md-nav__link" for="__nav_1_16">
           Additional resources
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Additional resources" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_15">
+        <label class="md-nav__title" for="__nav_1_16">
           <span class="md-nav__icon md-icon"></span>
           Additional resources
         </label>
@@ -1607,7 +1663,7 @@
 <li><strong>Member account</strong>: Another account from which you want to ingest AWS Service logs or application logs.</li>
 </ul>
 <p>The CloudFormation stack in the member account has the least privileges. Centralized Logging with OpenSearch need to provision some AWS resources in the member account to collect logs, and will assume an IAM role provisioned in the member account to list or create resources.</p>
-<p>For more information, refer to the <a href="../architecture/">Architecture</a> section.</p>
+<p>For more information, refer to the <a href="../architecture-overview/architecture/">Architecture</a> section.</p>
 <h2 id="add-a-member-account">Add a member account</h2>
 <h3 id="step-1-launch-a-cloudformation-stack-in-the-member-account">Step 1. Launch a CloudFormation stack in the member account</h3>
 <ol>
@@ -1671,14 +1727,29 @@
 <td>Centralized Logging with OpenSearch will assume this role to operate resources in the member account.</td>
 </tr>
 <tr>
-<td>FluentBit Agent Installation Document</td>
+<td>Fluent Bit Agent Installation Document</td>
 <td>AgentInstallDocument</td>
 <td>Centralized Logging with OpenSearch will use this SSM Document to install Fluent Bit agent on EC2 instances in the member account.</td>
 </tr>
 <tr>
-<td>FluentBit Agent Configuration Document</td>
+<td>Fluent Bit Agent Configuration Document</td>
 <td>AgentConfigDocument</td>
 <td>Centralized Logging with OpenSearch will use this SSM Document to deliver Fluent Bit configuration to EC2 instances.</td>
+</tr>
+<tr>
+<td>Fluent Bit Agent Installation Document for Windows</td>
+<td>AgentInstallDocumentForWindows</td>
+<td>Fluent Bit Agent Installation Configuration for Windows.</td>
+</tr>
+<tr>
+<td>Fluent Bit Agent Configuration Document for Windows</td>
+<td>AnentConfigDocumentForWindows</td>
+<td>Fluent Bit Agent Configuration Document.</td>
+</tr>
+<tr>
+<td>Fluent Bit Status Check Document</td>
+<td>AgentStatusCheckDocument</td>
+<td>Status detection of Fluent Bit.</td>
 </tr>
 <tr>
 <td>Cross Account S3 Bucket</td>

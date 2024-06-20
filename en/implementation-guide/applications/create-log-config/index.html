@@ -387,6 +387,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../solution-overview/concepts/" class="md-nav__link">
+        Concepts
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -426,7 +440,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/" class="md-nav__link">
+      <a href="../../architecture-overview/architecture/" class="md-nav__link">
         Architecture diagram
       </a>
     </li>
@@ -487,8 +501,36 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture-details/solution-components/" class="md-nav__link">
-        Solution components
+      <a href="../../architecture-details/service-log-analytics-pipeline/" class="md-nav__link">
+        Service log analytics pipeline
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-details/application-log-analytics-pipeline/" class="md-nav__link">
+        Application log analytics pipeline
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-details/light-engine/" class="md-nav__link">
+        Light Engine
       </a>
     </li>
   
@@ -905,7 +947,7 @@
   
     <li class="md-nav__item">
       <a href="../../aws-services/cloudtrail/" class="md-nav__link">
-        Amazon CloudTrail
+        AWS CloudTrail
       </a>
     </li>
   
@@ -975,7 +1017,7 @@
   
     <li class="md-nav__item">
       <a href="../../aws-services/elb/" class="md-nav__link">
-        Elastic Load Balancing
+        Application Load Balancer
       </a>
     </li>
   
@@ -1080,7 +1122,7 @@
   
     <li class="md-nav__item">
       <a href="../ec2-pipeline/" class="md-nav__link">
-        EC2 instance group
+        Instance Group
       </a>
     </li>
   
@@ -1431,6 +1473,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../update/" class="md-nav__link">
+        Upgrade the solution
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../uninstall/" class="md-nav__link">
         Uninstall the solution
       </a>
@@ -1448,18 +1504,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_15" type="checkbox" id="__nav_1_15" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_16" type="checkbox" id="__nav_1_16" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_15">
+        <label class="md-nav__link" for="__nav_1_16">
           Additional resources
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Additional resources" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_15">
+        <label class="md-nav__title" for="__nav_1_16">
           <span class="md-nav__icon md-icon"></span>
           Additional resources
         </label>
@@ -1731,7 +1787,6 @@
 <li>In the left sidebar, under <strong>Resources</strong>, choose <strong>Log Config</strong>.</li>
 <li>Choose <strong>Create a log config</strong>.</li>
 <li>Specify <strong>Config Name</strong>.</li>
-<li>Specify <strong>Log Path</strong>. You can use <code>,</code> to separate multiple paths.</li>
 <li>Choose <strong>JSON</strong> in the log type dropdown list.</li>
 <li>
 <p>In the <strong>Sample log parsing</strong> section, paste a sample JSON log and click <strong>Parse log</strong> to verify if the log parsing is successful.JSON type  support nested Json with a maximum nesting depth of X. </p>
@@ -1795,7 +1850,6 @@ For Example:
 <li>In the left sidebar, under <strong>Resources</strong>, choose <strong>Log Config</strong>.</li>
 <li>Click the <strong>Create a log config</strong> button.</li>
 <li>Specify <strong>Config Name</strong>.</li>
-<li>Specify <strong>Log Path</strong>. You can use <code>,</code> to separate multiple paths.</li>
 <li>Choose <strong>Apache HTTP server</strong> in the log type dropdown menu.</li>
 <li>
 <p>In the <strong>Apache Log Format</strong> section, paste your Apache HTTP server log format configuration. It is in the format of <code>/etc/httpd/conf/httpd.conf</code> and starts with <code>LogFormat</code>.</p>
@@ -1819,7 +1873,6 @@ For Example:
 <li>In the left sidebar, under <strong>Resources</strong>, choose <strong>Log Config</strong>.</li>
 <li>Click the <strong>Create a log config</strong> button.</li>
 <li>Specify <strong>Config Name</strong>.</li>
-<li>Specify <strong>Log Path</strong>. You can use <code>,</code> to separate multiple paths.</li>
 <li>Choose <strong>Nginx</strong> in the log type dropdown menu.</li>
 <li>
 <p>In the <strong>Nginx Log Format</strong> section, paste your Nginx log format configuration. It is in the format of <code>/etc/nginx/nginx.conf</code> and starts with <code>log_format</code>.</p>
@@ -1944,7 +1997,6 @@ For Example:
 <li>In the left sidebar, under <strong>Resources</strong>, choose <strong>Log Config</strong>.</li>
 <li>Click the <strong>Create a log config</strong> button.</li>
 <li>Specify <strong>Config Name</strong>.</li>
-<li>Specify <strong>Log Path</strong>. You can use <code>,</code> to separate multiple paths.</li>
 <li>Choose <strong>Single-line Text</strong> in the log type dropdown menu.</li>
 <li>
 <p>Write the regular expression in <a href="https://rubular.com/">Rubular</a> to validate first and enter the value. For example:</p>
@@ -1979,7 +2031,6 @@ For Example:
 <li>In the left sidebar, under <strong>Resources</strong>, choose <strong>Log Config</strong>.</li>
 <li>Click the <strong>Create a log config</strong> button.</li>
 <li>Specify <strong>Config Name</strong>.</li>
-<li>Specify <strong>Log Path</strong>. You can use <code>,</code> to separate multiple paths.</li>
 <li>Choose <strong>Multi-line Text</strong> in the log type dropdown menu.</li>
 </ol>
 <h3 id="java-spring-boot">Java - Spring Boot</h3>

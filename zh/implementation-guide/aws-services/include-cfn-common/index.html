@@ -378,6 +378,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../solution-overview/concepts/" class="md-nav__link">
+        概念
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -417,7 +431,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/" class="md-nav__link">
+      <a href="../../architecture-overview/architecture/" class="md-nav__link">
         架构图
       </a>
     </li>
@@ -478,8 +492,36 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture-details/solution-components/" class="md-nav__link">
-        解决方案组件
+      <a href="../../architecture-details/service-log-analytics-pipeline/" class="md-nav__link">
+        AWS 服务日志分析管道
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-details/application-log-analytics-pipeline/" class="md-nav__link">
+        应用程序日志分析管道
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-details/light-engine/" class="md-nav__link">
+        Light Engine
       </a>
     </li>
   
@@ -493,7 +535,7 @@
   
     <li class="md-nav__item">
       <a href="../../architecture-details/services-in-this-solution/" class="md-nav__link">
-        AWS 服务
+        此解决方案中的 AWS 服务
       </a>
     </li>
   
@@ -896,7 +938,7 @@
   
     <li class="md-nav__item">
       <a href="../cloudtrail/" class="md-nav__link">
-        Amazon CloudTrail
+        AWS CloudTrail
       </a>
     </li>
   
@@ -1295,6 +1337,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../update/" class="md-nav__link">
+        升级解决方案
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../uninstall/" class="md-nav__link">
         卸载解决方案
       </a>
@@ -1312,18 +1368,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_15" type="checkbox" id="__nav_1_15" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_16" type="checkbox" id="__nav_1_16" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_15">
+        <label class="md-nav__link" for="__nav_1_16">
           额外资源
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="额外资源" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_15">
+        <label class="md-nav__title" for="__nav_1_16">
           <span class="md-nav__icon md-icon"></span>
           额外资源
         </label>
@@ -1530,6 +1586,21 @@
 <td>跨账户日志摄取所需要使用的 IAM Role。 对于跨账户日志摄取是必填 (需要先 <a href="../../link-account/">添加一个成员账户</a>)。</td>
 </tr>
 <tr>
+<td>KMS-CMK ARN</td>
+<td><code>&lt;可选输入&gt;</code></td>
+<td>用于加密的 KMS-CMK ARN。 留空以创建新的 KMS CMK。</td>
+</tr>
+<tr>
+<td>Enable OpenSearch Ingestion as processor</td>
+<td><code>&lt;可选输入&gt;</code></td>
+<td>Ingestion 表 Arn。如果不使用 OSI 作为处理器，请留空。</td>
+</tr>
+<tr>
+<td>S3 Backup Bucket</td>
+<td><code>&lt;需要输入&gt;</code></td>
+<td>用于存储失败提取日志的 S3 备份存储桶名称。</td>
+</tr>
+<tr>
 <td>Engine Type</td>
 <td>OpenSearch</td>
 <td>OpenSearch 的引擎类型。选择 OpenSearch 或 Elasticsearch。</td>
@@ -1570,16 +1641,6 @@
 <td>选择将与日志处理 Lambda 关联的安全组。确保安全组有权访问 OpenSearch 域。</td>
 </tr>
 <tr>
-<td>S3 Backup Bucket</td>
-<td><code>&lt;需要输入&gt;</code></td>
-<td>用于存储失败提取日志的 S3 备份存储桶名称。</td>
-</tr>
-<tr>
-<td>KMS-CMK ARN</td>
-<td><code>&lt;可选输入&gt;</code></td>
-<td>用于加密的 KMS-CMK ARN。 留空以创建新的 KMS CMK。</td>
-</tr>
-<tr>
 <td>Number Of Shards</td>
 <td>5</td>
 <td>将索引均匀分布在所有数据节点上的分片数。将每个分片的大小保持在 10-50 GiB 之间。</td>
@@ -1587,7 +1648,7 @@
 <tr>
 <td>Number of Replicas</td>
 <td>1</td>
-<td>OpenSearch 索引的副本数。每个副本都是索引的完整副本。</td>
+<td>OpenSearch 索引的副本数。每个副本都是索引的完整副本。 如果 OpenSearch 选项设置为 <a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/managedomains-multiaz.html#managedomains-za-standby">带备用的域</a>，你需要将其配置为 2。</td>
 </tr>
 <tr>
 <td>Age to Warm Storage</td>

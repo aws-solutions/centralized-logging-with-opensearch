@@ -382,6 +382,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../solution-overview/concepts/" class="md-nav__link">
+        概念
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -421,7 +435,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/" class="md-nav__link">
+      <a href="../architecture-overview/architecture/" class="md-nav__link">
         架构图
       </a>
     </li>
@@ -482,8 +496,36 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture-details/solution-components/" class="md-nav__link">
-        解决方案组件
+      <a href="../architecture-details/service-log-analytics-pipeline/" class="md-nav__link">
+        AWS 服务日志分析管道
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture-details/application-log-analytics-pipeline/" class="md-nav__link">
+        应用程序日志分析管道
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture-details/light-engine/" class="md-nav__link">
+        Light Engine
       </a>
     </li>
   
@@ -497,7 +539,7 @@
   
     <li class="md-nav__item">
       <a href="../architecture-details/services-in-this-solution/" class="md-nav__link">
-        AWS 服务
+        此解决方案中的 AWS 服务
       </a>
     </li>
   
@@ -900,7 +942,7 @@
   
     <li class="md-nav__item">
       <a href="../aws-services/cloudtrail/" class="md-nav__link">
-        Amazon CloudTrail
+        AWS CloudTrail
       </a>
     </li>
   
@@ -1299,6 +1341,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../update/" class="md-nav__link">
+        升级解决方案
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../uninstall/" class="md-nav__link">
         卸载解决方案
       </a>
@@ -1316,18 +1372,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_15" type="checkbox" id="__nav_1_15" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_16" type="checkbox" id="__nav_1_16" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_15">
+        <label class="md-nav__link" for="__nav_1_16">
           额外资源
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="额外资源" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_15">
+        <label class="md-nav__title" for="__nav_1_16">
           <span class="md-nav__icon md-icon"></span>
           额外资源
         </label>
@@ -1525,8 +1581,8 @@
 <td>发布版本 2.1.1</br>修复了以下问题：<li> 实例不应添加到同一个实例组中     </br><li>无法在阿联酋地区部署 CLO</br>  <li> 当日志配置中未指定时间键时，在轻量分析引擎中引起日志摄取错误 </br></td>
 </tr>
 <tr>
-<td>2024 年 3 月</td>
-<td>发布版本 2.1.2</br>修复了以下问题: <li>解决了一个从早于 2.1.0 版本升级时会导致丢失 S3 通知的错误，从而阻止从 S3 缓冲区正确收集日志。</li> <li>解决了在日志配置中包含 "@timestamp" 字段会导致创建 index_templates 失败的问题，从而无法将数据写入 OpenSearch。</li> <li>修复了 Log Processor Lambda 中由于缺少 "batch_size" 变量而导致处理失败的错误。</li> <li>解决了日志分析管道的部署问题，之前无法跨账户部署 Lambda 管道。</li> <li>修正了 ELB 服务日志解析器导致大量日志行被省略的问题。</li> <li>修改了在现有 OpenSearch 索引中创建管道时显示的不准确警告消息。</li> <li>解决了在 Application Logs 中删除实例组时显示不正确错误消息的问题。</li></td>
+<td>2024 年 5 月</td>
+<td>发布版本 2.2.0 </br><li> 新增了来自 Windows 实例的摄取日志功能 </br><li> 在轻量级日志分析引擎中，增加了服务日志：VPC Flow, RDS, CloudTrail。应用程序日志：Syslog 和 S3 as source。  </br><li> 支持 Unix 时间格式 </br><li> 自动生成标签 'CLOSolutionCostAnalysis'，用于在 AWS 计费与成本管理服务中查看解决方案成本 </br><li> 在创建日志管道过程中，添加了 Lambda 并发配置  </br><li> 支持新的地区: 亚太地区 (海得拉巴，雅加达，墨尔本)，以色列 (特拉维夫)，加拿大 (卡尔加里)，欧洲 (西班牙，苏黎世)，中东 (阿联酋) </br><li> 在日志通的控制台中添加了新版本发布通知 </br></td>
 </tr>
 </tbody>
 </table>

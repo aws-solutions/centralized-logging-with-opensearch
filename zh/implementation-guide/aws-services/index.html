@@ -387,6 +387,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../solution-overview/concepts/" class="md-nav__link">
+        概念
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -426,7 +440,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/" class="md-nav__link">
+      <a href="../architecture-overview/architecture/" class="md-nav__link">
         架构图
       </a>
     </li>
@@ -487,8 +501,36 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture-details/solution-components/" class="md-nav__link">
-        解决方案组件
+      <a href="../architecture-details/service-log-analytics-pipeline/" class="md-nav__link">
+        AWS 服务日志分析管道
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture-details/application-log-analytics-pipeline/" class="md-nav__link">
+        应用程序日志分析管道
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture-details/light-engine/" class="md-nav__link">
+        Light Engine
       </a>
     </li>
   
@@ -502,7 +544,7 @@
   
     <li class="md-nav__item">
       <a href="../architecture-details/services-in-this-solution/" class="md-nav__link">
-        AWS 服务
+        此解决方案中的 AWS 服务
       </a>
     </li>
   
@@ -955,7 +997,7 @@
   
     <li class="md-nav__item">
       <a href="cloudtrail/" class="md-nav__link">
-        Amazon CloudTrail
+        AWS CloudTrail
       </a>
     </li>
   
@@ -1354,6 +1396,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../update/" class="md-nav__link">
+        升级解决方案
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../uninstall/" class="md-nav__link">
         卸载解决方案
       </a>
@@ -1371,18 +1427,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_15" type="checkbox" id="__nav_1_15" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_16" type="checkbox" id="__nav_1_16" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_15">
+        <label class="md-nav__link" for="__nav_1_16">
           额外资源
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="额外资源" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_15">
+        <label class="md-nav__title" for="__nav_1_16">
           <span class="md-nav__icon md-icon"></span>
           额外资源
         </label>
@@ -1565,7 +1621,7 @@
 <p>日志通支持通过日志分析管道将 AWS 服务日志摄取到 Amazon OpenSearch Service。您可以使用 <strong>日志通网页控制台</strong> 或通过 <strong>独立 CloudFormation 模板</strong>构建日志分析管道。</p>
 <p>日志通读取数据源、解析、清理或丰富、和摄取日志到 Amazon OpenSearch Service 域进行分析。此外，该解决方案提供模板化的仪表板便于日志可视化。</p>
 <p>Amazon OpenSearch Service 服务适用于实时日志分析和频繁查询，并具有全文搜索功能。</p>
-<p>从2.1.0版本开始，该解决方案开始支持将日志摄取到 Light Engine，适用于非实时日志分析和非频繁的查询，并具有类似SQL的搜索功能。Amazon CloudFront日志、ALB 日志和AWS WAF日志目前支持 Light Engine。</p>
+<p>从2.1.0版本开始，该解决方案开始支持将日志摄取到 Light Engine，适用于非实时日志分析和非频繁的查询，并具有类似SQL的搜索功能。AWS CloudTrail 日志、Amazon RDS 日志、Amazon CloudFront 日志、ALB 日志、AWS WAF 日志和 VPC Flow 日志目前支持 Light Engine。</p>
 <div class="admonition important">
 <p class="admonition-title">重要</p>
 <ul>
@@ -1582,84 +1638,70 @@
 <tr>
 <th>AWS Service</th>
 <th>日志类型</th>
-<th>日志位置</th>
-<th>自动摄取</th>
-<th>内置仪表板</th>
+<th>支持 OpenSearch Engine</th>
+<th>支持 Light Engine</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>AWS CloudTrail</td>
 <td>N/A</td>
-<td>S3</td>
 <td>是</td>
 <td>是</td>
 </tr>
 <tr>
 <td>Amazon S3</td>
 <td><a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/ServerLogs.html">Access logs</a></td>
-<td>S3</td>
 <td>是</td>
-<td>是</td>
+<td>否</td>
 </tr>
 <tr>
 <td>Amazon RDS/Aurora</td>
 <td><a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_LogAccess.MySQL.LogFileSize.html">MySQL Logs</a></td>
-<td>CloudWatch Logs</td>
 <td>是</td>
 <td>是</td>
 </tr>
 <tr>
 <td>Amazon CloudFront</td>
 <td><a href="https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/AccessLogs.html">Standard access logs</a></td>
-<td>S3</td>
 <td>是</td>
 <td>是</td>
 </tr>
 <tr>
 <td>Application Load Balancer</td>
 <td><a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-access-logs.html">Access logs</a></td>
-<td>S3</td>
 <td>是</td>
 <td>是</td>
 </tr>
 <tr>
 <td>AWS WAF</td>
 <td><a href="https://docs.aws.amazon.com/waf/latest/developerguide/logging.html">Web ACL logs</a></td>
-<td>S3</td>
 <td>是</td>
 <td>是</td>
 </tr>
 <tr>
 <td>AWS Lambda</td>
 <td>N/A</td>
-<td>CloudWatch Logs</td>
 <td>是</td>
-<td>是</td>
+<td>否</td>
 </tr>
 <tr>
 <td>Amazon VPC</td>
 <td><a href="https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs.html">Flow logs</a></td>
-<td>S3</td>
 <td>是</td>
 <td>是</td>
 </tr>
 <tr>
 <td>AWS Config</td>
 <td>N/A</td>
-<td>S3</td>
 <td>是</td>
 <td>是</td>
 </tr>
 </tbody>
 </table>
-<ul>
-<li><strong>自动摄取</strong>: 该解决方案自动检测资源的日志位置，然后读取日志。</li>
-<li><strong>内置仪表板</strong>: 指定 AWS 服务的开箱即用仪表板。 该解决方案将自动将仪表板引入 Amazon OpenSearch Service。</li>
-</ul>
 <!-- END INCLUDE -->
 
-<p>日志通中大多数受支持的 AWS 服务在创建日志分析管道时都提供了内置仪表板。在供应管道后，您可以转到 OpenSearch 查看仪表板。</p>
+<p>该解决方案支持自动检测资源的日志位置，读取日志，然后将其摄取到日志分析引擎中。该解决方案还为所有支持的AWS服务提供即用型的仪表板模板。它将自动摄取到日志分析引擎中。在管道被配置之后，您可以前往OpenSearch Dashboards或Grafana查看仪表板。</p>
 <p>在本章中，您将学习如何为以下 AWS 服务创建日志摄取并查看仪表板：</p>
 <ul>
 <li><a href="cloudtrail/">AWS CloudTrail</a></li>
@@ -1742,13 +1784,13 @@
       
       
         
-        <a href="cloudtrail/" class="md-footer__link md-footer__link--next" aria-label="下一页: Amazon CloudTrail" rel="next">
+        <a href="cloudtrail/" class="md-footer__link md-footer__link--next" aria-label="下一页: AWS CloudTrail" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 下一页
               </span>
-              Amazon CloudTrail
+              AWS CloudTrail
             </div>
           </div>
           <div class="md-footer__button md-icon">

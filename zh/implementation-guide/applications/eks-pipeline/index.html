@@ -387,6 +387,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../solution-overview/concepts/" class="md-nav__link">
+        概念
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -426,7 +440,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/" class="md-nav__link">
+      <a href="../../architecture-overview/architecture/" class="md-nav__link">
         架构图
       </a>
     </li>
@@ -487,8 +501,36 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture-details/solution-components/" class="md-nav__link">
-        解决方案组件
+      <a href="../../architecture-details/service-log-analytics-pipeline/" class="md-nav__link">
+        AWS 服务日志分析管道
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-details/application-log-analytics-pipeline/" class="md-nav__link">
+        应用程序日志分析管道
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-details/light-engine/" class="md-nav__link">
+        Light Engine
       </a>
     </li>
   
@@ -502,7 +544,7 @@
   
     <li class="md-nav__item">
       <a href="../../architecture-details/services-in-this-solution/" class="md-nav__link">
-        AWS 服务
+        此解决方案中的 AWS 服务
       </a>
     </li>
   
@@ -905,7 +947,7 @@
   
     <li class="md-nav__item">
       <a href="../../aws-services/cloudtrail/" class="md-nav__link">
-        Amazon CloudTrail
+        AWS CloudTrail
       </a>
     </li>
   
@@ -1127,11 +1169,11 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#amazon-opensearch" class="md-nav__link">
-    创建日志管道（Amazon OpenSearch）
+  <a href="#opensearch-engine" class="md-nav__link">
+    创建日志管道（OpenSearch Engine）
   </a>
   
-    <nav class="md-nav" aria-label="创建日志管道（Amazon OpenSearch）">
+    <nav class="md-nav" aria-label="创建日志管道（OpenSearch Engine）">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1387,6 +1429,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../update/" class="md-nav__link">
+        升级解决方案
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../uninstall/" class="md-nav__link">
         卸载解决方案
       </a>
@@ -1404,18 +1460,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_15" type="checkbox" id="__nav_1_15" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1_16" type="checkbox" id="__nav_1_16" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_1_15">
+        <label class="md-nav__link" for="__nav_1_16">
           额外资源
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="额外资源" data-md-level="2">
-        <label class="md-nav__title" for="__nav_1_15">
+        <label class="md-nav__title" for="__nav_1_16">
           <span class="md-nav__icon md-icon"></span>
           额外资源
         </label>
@@ -1561,11 +1617,11 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#amazon-opensearch" class="md-nav__link">
-    创建日志管道（Amazon OpenSearch）
+  <a href="#opensearch-engine" class="md-nav__link">
+    创建日志管道（OpenSearch Engine）
   </a>
   
-    <nav class="md-nav" aria-label="创建日志管道（Amazon OpenSearch）">
+    <nav class="md-nav" aria-label="创建日志管道（OpenSearch Engine）">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1630,7 +1686,7 @@
 <h1 id="amazon-eks">Amazon EKS集群作为日志源</h1>
 <p>日志通中的 <a href="https://docs.aws.amazon.com/eks/latest/userguide/what-is-eks.html">EKS Cluster</a> 是指您要从中收集 pod 日志的 Amazon Elastic Kubernetes Service (Amazon EKS)。日志通将指导您将日志记录代理部署为 EKS 集群中的 <a href="https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/">DaemonSet</a> 或 <a href="https://kubernetes.io/docs/concepts/workloads/pods/#workload-resources-for-managing-pods">Sidecar</a>。</p>
 <p>本文将指导您如何从 EKS集群提取日志，并创建日志管道。</p>
-<h2 id="amazon-opensearch">创建日志管道（Amazon OpenSearch）</h2>
+<h2 id="opensearch-engine">创建日志管道（OpenSearch Engine）</h2>
 <h3 id="_1">请确认您已经完成</h3>
 <ol>
 <li><a href="../../domains/import/">导入 Amazon OpenSearch Service 域</a>。</li>
@@ -1662,10 +1718,10 @@
 <p>您已为日志分析管道创建日志源。 现在，您可以使用 Amazon EKS 集群作为日志源对日志分析管道进行进一步配置。</p>
 <ol>
 <li>
-<p>输入 <strong>日志路径</strong> 指定要收集的日志的位置。</p>
+<p>选择之前设置中创建的<strong>日志配置</strong>。如果您没有从下拉列表中找到所需的日志配置，请选择 <strong>创建新的</strong>, 并参考 <a href="../create-log-config/">日志配置</a>.</p>
 </li>
 <li>
-<p>选择之前设置中创建的日志配置，点击 <strong>下一步</strong>。如果您没有从下拉列表中找到所需的日志配置，请选择 <strong>创建新的</strong>, 并参考 <a href="../create-log-config/">日志配置</a>。</p>
+<p>输入<strong>日志路径</strong>，指定要收集的日志的位置。 您可以使用 <code>,</code> 分隔多个路径，点击 <strong>下一步</strong>。</p>
 </li>
 <li>
 <p>在 <strong>索引名称</strong> 中小写指定。</p>
@@ -1808,7 +1864,7 @@
 <li>在左侧栏，选择 <strong>IAM</strong>, 并从 <strong>Access management</strong> 下面选择 <strong>策略</strong>。</li>
 <li>选择 <strong>创建策略</strong>，选择 <strong>JSON</strong> 并替换文本块内的所有内容。请记住将 <code>&lt;YOUR ACCOUNT ID&gt;</code> 替换为您的账户ID。</li>
 <li>选择 <strong>下一步</strong>, 然后为此策略输入名称。</li>
-<li>将策略附加到您的EC2实例配置文件，以授予日志代理发送日志到应用日志管道的权限。如果您使用的是自动扩展组，则需要更新与自动扩展组关联的IAM实例配置文件。如有需要，您可以按照文档来更新您的[启动模板][launch-template]或[启动配置][launch-configuration]。</li>
+<li>将策略附加到您的EC2实例配置文件，以授予日志代理发送日志到应用日志管道的权限。如果您使用的是自动扩展组，则需要更新与自动扩展组关联的IAM实例配置文件。如有需要，您可以按照文档来更新您的<a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html">启动模板</a>或<a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/launch-configurations.html">启动配置</a>。</li>
 </ol>
 </li>
 <li>
@@ -1818,10 +1874,10 @@
 <p>您已为日志分析管道创建日志源。 现在您可以使用 Amazon EC2 实例组作为日志源对日志分析管道进行进一步配置。</p>
 <ol>
 <li>
-<p>输入 <strong>日志路径</strong> 指定要收集的日志的位置。</p>
+<p>选择之前设置中创建的<strong>日志配置</strong>。如果您没有从下拉列表中找到所需的日志配置，请选择 <strong>创建新的</strong>, 并参考 <a href="../create-log-config/">日志配置</a>.</p>
 </li>
 <li>
-<p>选择之前设置中创建的日志配置，点击 <strong>下一步</strong>。如果您没有从下拉列表中找到所需的日志配置，请选择 <strong>创建新的</strong>, 并参考 <a href="../create-log-config/">日志配置</a>.</p>
+<p>输入<strong>日志路径</strong>，指定要收集的日志的位置。 您可以使用 <code>,</code> 分隔多个路径，点击 <strong>下一步</strong>。</p>
 </li>
 <li>
 <p>在 <strong>缓冲区</strong> 部分中，选择 <strong>S3</strong>。</p>
