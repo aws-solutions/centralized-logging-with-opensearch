@@ -36,6 +36,7 @@ import {
 import { AmplifyConfigType } from "types";
 import { useSelector } from "react-redux";
 import { RootState } from "reducer/reducers";
+import { HeaderPanelStatus } from "components/IndicatorWithLink/IndicatorWithLink";
 
 interface SelectDomainProps {
   importedCluster: ImportedDomainType;
@@ -44,14 +45,6 @@ interface SelectDomainProps {
   emptyError?: boolean;
   clearEmptyError?: () => void;
   changeDomainStatus: (domainStatus: string) => void;
-}
-
-enum HeaderPanelStatus {
-  Loading = "loading",
-  Success = "success",
-  Error = "error",
-  Normal = "normal",
-  Pending = "pending",
 }
 
 const SelectDomain: React.FC<SelectDomainProps> = (
@@ -106,7 +99,7 @@ const SelectDomain: React.FC<SelectDomainProps> = (
           name: element.domainName ?? "",
           value: element.domainName ?? "",
           optTitle: element.status ?? "",
-          disabled: (element.status ?? "") === "ACTIVE" ? false : true,
+          disabled: (element.status ?? "") !== "ACTIVE",
         });
       });
       setDomainOptionList(tmpDomainOptionList);
@@ -128,9 +121,15 @@ const SelectDomain: React.FC<SelectDomainProps> = (
   };
 
   const getTmpStatus = (status: DomainStatusCheckType | null | undefined) => {
-    return status === DomainStatusCheckType.PASSED
-      ? HeaderPanelStatus.Success
-      : HeaderPanelStatus.Error;
+    if (status === DomainStatusCheckType.PASSED) {
+      return HeaderPanelStatus.Success;
+    } else if (status === DomainStatusCheckType.FAILED) {
+      return HeaderPanelStatus.Error;
+    } else if (status === DomainStatusCheckType.WARNING) {
+      return HeaderPanelStatus.Warning;
+    } else {
+      return HeaderPanelStatus.Loading;
+    }
   };
 
   const updateCheckingDetails = (
@@ -184,6 +183,18 @@ const SelectDomain: React.FC<SelectDomainProps> = (
     }
   };
 
+  const getAlertType = (alertType: DomainStatusCheckType) => {
+    if (alertType === DomainStatusCheckType.PASSED) {
+      return AlertType.Pass;
+    } else if (alertType === DomainStatusCheckType.WARNING) {
+      return AlertType.Warning;
+    } else if (alertType === DomainStatusCheckType.FAILED) {
+      return AlertType.Error;
+    } else {
+      return AlertType.InProgress;
+    }
+  };
+
   const checkAndUpdateDomainStatus = async (domainName: string) => {
     try {
       resetCheckStatus();
@@ -195,11 +206,7 @@ const SelectDomain: React.FC<SelectDomainProps> = (
       changeDomainStatus(domainStatus || DomainStatusCheckType.CHECKING);
       const domainStatusDetails: DomainStatusCheckDetail[] =
         resData.data?.domainStatusCheck?.details;
-      setAlertType(
-        domainStatus === DomainStatusCheckType.PASSED
-          ? AlertType.Pass
-          : AlertType.Error
-      );
+      setAlertType(getAlertType(domainStatus));
       updateCheckingDetails(domainStatusDetails);
     } catch (error) {
       console.error(error);
@@ -246,7 +253,7 @@ const SelectDomain: React.FC<SelectDomainProps> = (
               onChange={(event) => {
                 console.info(event);
                 changeDomainStatus(DomainStatusCheckType.CHECKING);
-                clearEmptyError && clearEmptyError();
+                clearEmptyError?.();
                 setDomain(event.target.value);
                 changeDomain(event.target.value);
               }}

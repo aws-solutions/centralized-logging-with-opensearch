@@ -15,9 +15,9 @@ limitations under the License.
 */
 import FormItem from "components/FormItem";
 import Tiles from "components/Tiles";
-import { AnalyticEngineTypes } from "pages/dataInjection/serviceLog/create/common/SpecifyAnalyticsEngine";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { AnalyticEngineTypes } from "types";
 
 export enum BufferType {
   NONE = "None",
@@ -35,7 +35,11 @@ const SelectBuffer: React.FC<SelectBufferProps> = (
   props: SelectBufferProps
 ) => {
   const { t } = useTranslation();
-  const { currentBufferLayer, changeActiveLayer, engineType = AnalyticEngineTypes.OPENSEARCH } = props;
+  const {
+    currentBufferLayer,
+    changeActiveLayer,
+    engineType = AnalyticEngineTypes.OPENSEARCH,
+  } = props;
   const selectionItems = useMemo(
     () =>
       engineType === AnalyticEngineTypes.LIGHT_ENGINE
@@ -43,7 +47,9 @@ const SelectBuffer: React.FC<SelectBufferProps> = (
             {
               value: BufferType.S3,
               label: t("applog:create.ingestSetting.bufferS3"),
-              description: t("applog:create.ingestSetting.bufferS3LightEngineDesc"),
+              description: t(
+                "applog:create.ingestSetting.bufferS3LightEngineDesc"
+              ),
             },
           ]
         : [

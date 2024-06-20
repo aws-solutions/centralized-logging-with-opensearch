@@ -6,8 +6,8 @@ import json
 import boto3
 import pytest
 import requests
-from datetime import datetime, timezone
-from moto import mock_s3, mock_dynamodb, mock_sqs, mock_athena, mock_ses, mock_sns, mock_glue, mock_iam, mock_scheduler, mock_events, mock_sts, mock_stepfunctions
+import datetime
+from moto import mock_s3, mock_dynamodb, mock_sqs, mock_athena, mock_ses, mock_sns, mock_glue, mock_iam, mock_scheduler, mock_events, mock_sts, mock_stepfunctions, mock_rds
 
 
 @pytest.fixture(autouse=True) # type: ignore
@@ -31,6 +31,7 @@ def default_environment_variables():
     os.environ["ETL_LOG_TABLE_NAME"] = "ETLLogTable"
     os.environ["META_TABLE_NAME"] = "MetaTable"
     os.environ["CENTRALIZED_DATABASE"] = 'centralized'
+    os.environ["UNIQUE_DATABASE"] = 'unique_database'
     os.environ["CENTRALIZED_CATALOG"] = 'AwsDataCatalog'
     os.environ["TMP_DATABASE"] = 'tmp'
     os.environ["S3_PUBLIC_ACCESS_POLICY"] = 'S3PublicAccessPolicy-SJR01YRWEDSP'
@@ -93,24 +94,28 @@ def default_environment_variables():
     os.environ["ATHENA_PUBLIC_ACCESS_ROLE"] = f'arn:aws:iam::{os.environ["ACCOUNT_ID"]}:role/AthenaPublicAccessRole'
     os.environ["ETL_ALTER_ATHENA_PARTITION_FUNCTION_NAME"] = 'ETLAlterAthenaPartition-WuQ7BUYqgA2L'
     os.environ["ETL_ALTER_ATHENA_PARTITION_EVENT"] = json.dumps(
-        {
+        {   
+            "API": "Athena: BatchUpdatePartition",
             "executionName": "848be54a-ae2c-414c-9ae3-f0b3d11089ab",
-            "action": "ADD",
-            "catalog": "AwsDataCatalog",
-            "database": "centralized",
-            "tableName": "aws_apigateway_logs_parquet",
-            "location": f's3://{os.environ["STAGING_BUCKET_NAME"]}/AWSLogs/{os.environ["ACCOUNT_ID"]}/centralized/aws_apigateway_logs_parquet/',
-            "partitionPrefix": "__ds__=2023-03-11",
-            "workGroup": os.environ["ATHENA_WORK_GROUP"],
-            "outputLocation": os.environ["ATHENA_OUTPUT_LOCATION"],
+            "taskId": "9d512f44-7626-49e2-a465-f450e93f6388",
+            "parameters": {
+                "action": "ADD",
+                "catalog": "AwsDataCatalog",
+                "database": "centralized",
+                "tableName": "aws_apigateway_logs_parquet",
+                "location": f's3://{os.environ["STAGING_BUCKET_NAME"]}/AWSLogs/{os.environ["ACCOUNT_ID"]}/centralized/aws_apigateway_logs_parquet/',
+                "partitionPrefix": "__ds__=2023-03-11",
+                "workGroup": os.environ["ATHENA_WORK_GROUP"],
+                "outputLocation": os.environ["ATHENA_OUTPUT_LOCATION"],
+            },
             "extra": {
+                "parentTaskId": "00000000-0000-0000-0000-000000000000",
                 "stateMachineName": "LogMerger-7vcYqNfMtsJK",
                 "stateName": "Step 2: Drop partitions for History data",
-                "API": "Lambda: Invoke"
+                "pipelineId": "189f73eb-1808-47e4-a9db-ee9c35100abe",
             }
         })
     os.environ['SOURCE'] = 'alejandro_rosalez@example.com'
-    os.environ['SES_EMAIL_TEMPLATE'] = 'MicroBatchEmailTemplate'
     os.environ["SEND_EMAIL_EVENT"] = json.dumps({'Records': [{'EventSource': 'aws:sns', 'EventVersion': '1.0',
                                                               'EventSubscriptionArn': f'arn:aws:sns:{os.environ["AWS_REGION"]}:{os.environ["ACCOUNT_ID"]}:AlarmNotification:1f4157b9-89c6-49f2-8102-e75f02b47d1d',
                                                               'Sns': {'Type': 'Notification',
@@ -124,6 +129,7 @@ def default_environment_variables():
                                                                       'SigningCertUrl': f'https://sns.{os.environ["AWS_REGION"]}.amazonaws.com/SimpleNotificationService-56e67fcb41f6fec09b0196692625d385.pem',
                                                                       'UnsubscribeUrl': f'https://sns.{os.environ["AWS_REGION"]}.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:{os.environ["AWS_REGION"]}:{os.environ["ACCOUNT_ID"]}:AlarmNotification:1f4157b9-89c6-49f2-8102-e75f02b47d1d',
                                                                       'MessageAttributes': {}}}]})
+    os.environ['SES_EMAIL_TEMPLATE'] = 'MicroBatchEmailTemplate'
     os.environ['SES_EMAIL_TEMPLATE_CONTENT'] = json.dumps({
         'TemplateName': os.environ['SES_EMAIL_TEMPLATE'],
         'SubjectPart': '[Notification] {{stateMachine.name}} task {{stateMachine.status}} to execute.',
@@ -178,7 +184,13 @@ def default_environment_variables():
     os.environ['WAF_INGESTION_ID'] = 'dddc2d66-ac99-48a5-834d-dc2d5b75069b'
     os.environ['APPLICATION_PIPELINE_ID'] = '0616c38e-b31f-401e-a642-677849226c5b'
     os.environ['APPLICATION_INGESTION_ID'] = '29df4748-3a26-4ccb-ab68-f62629a57cb5'
-    
+    os.environ['AURORA_MYSQL5_CLUSTER_IDENTIFIER'] = 'aurora_mysql_cluster_5'
+    os.environ['AURORA_MYSQL8_CLUSTER_IDENTIFIER'] = 'aurora_mysql_cluster_8'
+    os.environ['AURORA_POSTGRESQL_CLUSTER_IDENTIFIER'] = 'aurora_postgresql_cluster'
+    os.environ['AURORA_MYSQL8_INSTANCE_IDENTIFIER'] = 'aurora_mysql_instance_8'
+    os.environ['MYSQL5_INSTANCE_IDENTIFIER'] = 'mysql-instance-5'
+    os.environ['MYSQL8_INSTANCE_IDENTIFIER'] = 'mysql-instance-8'
+    os.environ['POSTGRESQL_INSTANCE_IDENTIFIER'] = 'postgresql-instance'
 
 
 @pytest.fixture
@@ -455,7 +467,7 @@ def mock_ddb_context():
                                  'API': 'Step Functions: StartExecution',
                                  'parentTaskId': '',
                                  'pipelineId': '189f73eb-1808-47e4-a9db-ee9c35100abe',
-                                 'startTime': datetime.now(timezone.utc).isoformat(),
+                                 'startTime': datetime.datetime.now(datetime.UTC).isoformat(),
                                  'endTime': '',
                                  'stateMachineName': 'LogProcessor-HBTz7GoOjZoz',
                                  'stateName': 'Put task info of Step Function to DynamoDB',
@@ -468,7 +480,7 @@ def mock_ddb_context():
                                       'functionName': os.environ["S3_OBJECTS_SCANNING_FUNCTION_NAME"],
                                       'parentTaskId': '00000000-0000-0000-0000-000000000000',
                                       'pipelineId': '189f73eb-1808-47e4-a9db-ee9c35100abe',
-                                      'startTime': datetime.now(timezone.utc).isoformat(),
+                                      'startTime': datetime.datetime.now(datetime.UTC).isoformat(),
                                       'endTime': '',
                                       'stateMachineName': 'LogProcessor-HBTz7GoOjZoz',
                                       'stateName': 'Step 1: S3 Migration Task from Staging to Archive',
@@ -481,7 +493,7 @@ def mock_ddb_context():
                                              'functionName': os.environ["S3_OBJECTS_SCANNING_FUNCTION_NAME"],
                                              'parentTaskId': '6b10286b-c4b3-44ed-b4e8-c251a04b6a59',
                                              'pipelineId': '189f73eb-1808-47e4-a9db-ee9c35100abe',
-                                             'startTime': datetime.now(timezone.utc).isoformat(),
+                                             'startTime': datetime.datetime.now(datetime.UTC).isoformat(),
                                              'endTime': '',
                                              'stateMachineName': 'LogProcessor-HBTz7GoOjZoz',
                                              'stateName': 'Step 1: S3 Migration Task from Staging to Archive',
@@ -494,7 +506,7 @@ def mock_ddb_context():
                                              'functionName': os.environ["S3_OBJECTS_SCANNING_FUNCTION_NAME"],
                                              'parentTaskId': '6b10286b-c4b3-44ed-b4e8-c251a04b6a59',
                                              'pipelineId': '189f73eb-1808-47e4-a9db-ee9c35100abe',
-                                             'startTime': datetime.now(timezone.utc).isoformat(),
+                                             'startTime': datetime.datetime.now(datetime.UTC).isoformat(),
                                              'endTime': '',
                                              'stateMachineName': 'LogProcessor-HBTz7GoOjZoz',
                                              'stateName': 'Step 1: S3 Migration Task from Staging to Archive',
@@ -657,6 +669,23 @@ def mock_ddb_context():
             'service': 'IAM',
             'url': '',
         }
+        simple_email_service_state = {
+            'metaName': 'SimpleEmailServiceState',
+            'arn': '',
+            'name': 'SimpleEmailServiceState',
+            'service': 'CloudFormation',
+            'type': 'Parameter',
+            'url': '',
+            'value': 'ENABLED',
+        }
+        send_email_template_name = {
+            'metaName': 'SimpleEmailServiceTemplate',
+            'arn': '',
+            'name': 'SimpleEmailServiceTemplate',
+            'service': 'SES',
+            'url': '',
+            'value': os.environ['SES_EMAIL_TEMPLATE'],
+        }
         staging_bucket = {
             'metaName': 'StagingBucket',
             'arn': f'arn:aws:s3:::{staging_bucket_name}',
@@ -736,6 +765,7 @@ def mock_ddb_context():
                     'prefix': 'AWSLogs/WAFLogs'
                 }
             },
+            'type': 'Pipeline',
             'stack': {
                 'lambda': {
                     'replicate': replication_function_arn
@@ -761,7 +791,8 @@ def mock_ddb_context():
                     'prefix': logging_bucket_prefix,
                 },
             },
-            'pipelineId': waf_pipeline_id
+            'pipelineId': waf_pipeline_id,
+            'type': 'Ingestion',
         }
         
         application_pipeline_info = {
@@ -820,6 +851,7 @@ def mock_ddb_context():
                     'prefix': 'APPLogs/ServicesLogs'
                 }
             },
+            'type': 'Pipeline',
             'stack': {
                 'lambda': {
                     'replicate': replication_function_arn
@@ -845,7 +877,8 @@ def mock_ddb_context():
                     'prefix': logging_bucket_prefix,
                 },
             },
-            'pipelineId': application_pipeline_id
+            'pipelineId': application_pipeline_id,
+            'type': 'Ingestion',
         }
         meta_table.put_item(Item=meta_available_services)
         meta_table.put_item(Item=meta_account_id)
@@ -875,6 +908,8 @@ def mock_ddb_context():
         meta_table.put_item(Item=application_ingestion_info)
         meta_table.put_item(Item=meta_pipeline_resources_builder_role)
         meta_table.put_item(Item=meta_pipeline_resources_builder_schedule_policy)
+        meta_table.put_item(Item=send_email_template_name)
+        meta_table.put_item(Item=simple_email_service_state)
         yield
 
 
@@ -924,9 +959,11 @@ def mock_athena_context():
                 "API": "Athena: StartQueryExecution",
                 "executionName": "848be54a-ae2c-414c-9ae3-f0b3d11089ab",
                 "taskId": os.environ['DDL_CREATE_DATABASE_EXECUTION_ID'],
-                "queryString": DDL_CREATE_DATABASE,
-                "workGroup": work_group,
-                "outputLocation": f's3://{staging_bucket}/athena-results/',
+                "parameters": {
+                    "queryString": DDL_CREATE_DATABASE,
+                    "workGroup": work_group,
+                    "outputLocation": f's3://{staging_bucket}/athena-results/',
+                },
                 "extra": {
                     "parentTaskId": "00000000-0000-0000-0000-000000000000",
                     "stateName": "Step 2.1: Create tmp table in Athena",
@@ -971,11 +1008,13 @@ def mock_glue_context():
         aws_region = os.environ.get('AWS_REGION')
         account_id = os.environ["ACCOUNT_ID"]
         centralized_database = os.environ["CENTRALIZED_DATABASE"]
+        unique_database = os.environ["UNIQUE_DATABASE"]
         tmp_database = os.environ["TMP_DATABASE"]
         
         glue_client = boto3.client('glue', region_name=aws_region)
         
         glue_client.create_database(DatabaseInput={'Name': centralized_database})
+        glue_client.create_database(DatabaseInput={'Name': unique_database})
         glue_client.create_database(DatabaseInput={'Name': tmp_database})
         
         yield
@@ -1044,13 +1083,201 @@ def mock_events_context():
 def mock_sts_context():
     with mock_sts():
         yield
+
+
+@pytest.fixture
+def mock_rds_context():
+    with mock_rds():
+        aurora_mysql_cluster_5 = os.environ['AURORA_MYSQL5_CLUSTER_IDENTIFIER']
+        aurora_mysql_cluster_8 = os.environ['AURORA_MYSQL8_CLUSTER_IDENTIFIER']
+        aurora_postgresql_cluster = os.environ['AURORA_POSTGRESQL_CLUSTER_IDENTIFIER']
+        mysql_instance_5 = os.environ['MYSQL5_INSTANCE_IDENTIFIER']
+        mysql_instance_8 = os.environ['MYSQL8_INSTANCE_IDENTIFIER']
+        postgresql_instance = os.environ['POSTGRESQL_INSTANCE_IDENTIFIER']
         
+        rds_client = boto3.client('rds')
+        
+        rds_client.create_db_cluster(
+            DBClusterIdentifier=aurora_mysql_cluster_5,
+            Engine='aurora-mysql',
+            EngineVersion='5.7.mysql_aurora.2.12.2',
+            MasterUsername='admin',
+            MasterUserPassword='123456789012',
+        )
+        rds_client.create_db_cluster(
+            DBClusterIdentifier=aurora_mysql_cluster_8,
+            Engine='aurora-mysql',
+            EngineVersion='8.0.mysql_aurora.3.06.0',
+            MasterUsername='admin',
+            MasterUserPassword='123456789012',
+        )
+        rds_client.create_db_cluster(
+            DBClusterIdentifier=aurora_postgresql_cluster,
+            Engine='aurora-postgresql',
+            EngineVersion='12.12',
+            MasterUsername='admin',
+            MasterUserPassword='123456789012',
+        )
+        rds_client.create_db_instance(
+            DBInstanceIdentifier=mysql_instance_5,
+            DBInstanceClass='db.m5.large',
+            Engine='mysql',
+            EngineVersion='5.7.44',
+        )
+        rds_client.create_db_instance(
+            DBInstanceIdentifier=mysql_instance_8,
+            DBInstanceClass='db.m5.large',
+            Engine='mysql',
+            EngineVersion='8.0.36',
+        )
+        rds_client.create_db_instance(
+            DBInstanceIdentifier=postgresql_instance,
+            DBInstanceClass='db.m5.large',
+            Engine='postgres',
+            EngineVersion='12.12',
+        )
+        
+        os.environ['AURORA_MYSQL_AUDIT_LOGS'] = """1703817810074458,aurora-mysql-instance-1,rdsadmin,localhost,223153,20070830,QUERY,,'SELECT @@aurora_version',0
+1703817810075253,aurora-mysql-instance-1,rdsadmin,localhost,217705,20070831,QUERY,mysql,'select @@session.transaction_read_only',0
+1703817810076091,aurora-mysql-instance-1,rdsadmin,localhost,223170,0,CONNECT,,,0
+1703817810076149,aurora-mysql-instance-1,rdsadmin,localhost,217705,20070832,QUERY,mysql,'COMMIT',0
+1703817810076500,aurora-mysql-instance-1,rdsadmin,localhost,217705,20070833,QUERY,,'SET @@sql_log_bin=on',0
+1703817810076799,aurora-mysql-instance-1,rdsadmin,localhost,223170,20070834,QUERY,,'SET SESSION wait_timeout=28800,SESSION time_zone=\'+00:00\',SESSION sql_mode=0,SESSION autocommit=1',0
+1703817810077132,aurora-mysql-instance-1,rdsadmin,localhost,223170,20070835,QUERY,,'/* mysql-connector-java-5.1.48 ( Revision: 29734982609c32d3ab7e5cac2e6acee69ff6b4aa ) */SELECT  @@session.auto_increment_increment AS auto_increment_increment, @@character_set_client AS character_set_client, @@character_set_connection AS character_set_connection, @@character_set_results AS character_set_results, @@character_set_server AS character_set_server, @@collation_server AS collation_server, @@collation_connection AS collation_connection, @@init_connect AS init_connect, @@interactive_timeout AS interactive_timeout, @@license AS license, @@lower_case_table_names AS lower_case_table_names, @@max_allowed_packet AS max_allowed_packet, @@net_buffer_length AS net_buffer_length, @@net_write_timeout AS net_write_timeout, @@performance_schema AS performance_schema, @@sql_mode AS sql_mode, @@system_time_zone AS system_time_zone, @@time_zone AS time_zone, @@transaction_isolation AS transaction_isolation, @@wait_timeout AS wait_timeout',0
+1703817812006334,aurora-mysql-instance-1,rdsadmin,localhost,217704,20070843,QUERY,,'set local oscar_local_only_replica_host_status=1',0
+1703817812018585,aurora-mysql-instance-1,rdsadmin,localhost,217704,20070847,QUERY,,'SELECT durable_lsn, current_read_point, server_id, last_update_timestamp FROM information_schema.replica_host_status',0
+1703817812025947,aurora-mysql-instance-1,rdsadmin,localhost,217705,20070852,QUERY,mysql,'select @@session.transaction_read_only',0
+1703817812026505,aurora-mysql-instance-1,rdsadmin,localhost,217705,20070854,QUERY,,'SET @@sql_log_bin=on',0"""
+        os.environ['MYSQL_AUDIT_LOGS'] = """20240323 13:36:07,ip-172-17-4-137,rdsadmin,localhost,4,149867,QUERY,,'SELECT @@session.transaction_read_only',0,,
+20240323 13:36:08,ip-172-17-4-137,rdsadmin,localhost,4,149868,QUERY,,'INSERT INTO mysql.rds_heartbeat2(id, value) values (1,1711200968676) ON DUPLICATE KEY UPDATE value = 1711200968676',0,,
+20240323 13:36:09,ip-172-17-4-137,rdsadmin,localhost,4,149869,QUERY,,'SELECT 1',0,,
+20240323 13:36:10,ip-172-17-4-137,rdsadmin,localhost,4,149870,QUERY,,'SELECT @@session.transaction_read_only',0,,
+20240323 13:36:11,ip-172-17-4-137,rdsadmin,localhost,4,149871,QUERY,,'COMMIT',0,,
+20240323 13:36:12,ip-172-17-4-137,rdsadmin,localhost,4,149872,QUERY,,'SELECT 1',0,,
+20240323 13:36:13,ip-172-17-4-137,rdsadmin,localhost,4,149873,QUERY,,'SELECT @@GLOBAL.read_only',0,,"""
+        os.environ['MYSQL_SLOW_QUERY_LOGS'] = """/rdsdbbin/oscar/bin/mysqld, Version: 8.0.28 (Source distribution). started with:
+Tcp port: 3306  Unix socket: /tmp/mysql.sock
+Time                 Id Command    Argument
+# Time: 2023-11-30T07:22:10.190471Z
+# User@Host: admin[admin] @  [127.0.0.1]  Id:  7432
+# Query_time: 2.000192  Lock_time: 0.000000 Rows_sent: 1  Rows_examined: 1
+use audit;
+SET timestamp=1701328928;
+select sleep(2);
+/rdsdbbin/oscar/bin/mysqld, Version: 8.0.28 (Source distribution). started with:
+Tcp port: 3306  Unix socket: /tmp/mysql.sock
+Time                 Id Command    Argument
+/rdsdbbin/oscar/bin/mysqld, Version: 8.0.28 (Source distribution). started with:
+Tcp port: 3306  Unix socket: /tmp/mysql.sock
+Time                 Id Command    Argument
+/rdsdbbin/oscar/bin/mysqld, Version: 8.0.28 (Source distribution). started with:
+Tcp port: 3306  Unix socket: /tmp/mysql.sock
+Time                 Id Command    Argument
+/rdsdbbin/oscar/bin/mysqld, Version: 8.0.28 (Source distribution). started with:
+Tcp port: 3306 Unix socket: /tmp/mysql.sock
+Time Id Command Argument
+/rdsdbbin/oscar/bin/mysqld, Version: 8.0.28 (Source distribution). started with:
+Tcp port: 3306 Unix socket: /tmp/mysql.sock
+Time Id Command Argument
+# Time: 2024-01-03T01:35:35.952622Z
+# User@Host: admin[admin] @ [127.0.0.1] Id: 260259
+# Query_time: 2.000294 Lock_time: 0.000000 Rows_sent: 1 Rows_examined: 1
+SET timestamp=1704245733;
+select
+sleep(2);
+/rdsdbbin/oscar/bin/mysqld, Version: 8.0.28 (Source distribution). started with:
+Tcp port: 3306 Unix socket: /tmp/mysql.sock
+Time Id Command Argument
+# Time: 2024-01-03T07:15:38.660108Z
+# User@Host: admin[admin] @ [127.0.0.2] Id: 262030
+# Query_time: 2.000231 Lock_time: 0.000000 Rows_sent: 1 Rows_examined: 1
+use audit;
+SET timestamp=1704266136;
+select sleep(2);
+# Time: 2024-01-03T07:15:42.875605Z
+# User@Host: admin[admin] @ [127.0.0.1] Id: 262030
+# Query_time: 2.000255 Lock_time: 0.000000 Rows_sent: 1 Rows_examined: 1
+SET timestamp=1704266140;
+select sleep(2);
+# Time: 2024-01-03T07:17:20.525029Z
+# User@Host: admin[admin] @ [127.0.0.1] Id: 262030
+# Query_time: 2.002099 Lock_time: 0.000000 Rows_sent: 1 Rows_examined: 2
+SET timestamp=1704266238;
+with dataset as (
+select sleep(2) as t)
+select *
+from dataset;
+# Time: 2024-01-03T07:20:25.435204Z
+# User@Host: admin[admin] @ [127.0.0.1] Id: 262030
+# Query_time: 2.000233 Lock_time: 0.000000 Rows_sent: 1 Rows_examined: 1
+SET timestamp=1704266423;
+select sleep(2);"""
+        os.environ['MYSQL8_ERROR_LOGS'] = """2023-11-28T09:13:22.104678Z 0 [System] [MY-010116] [Server] /rdsdbbin/oscar/bin/mysqld (mysqld 8.0.28) starting as process 259 (mysqld.cc:5965)
+2023-11-28T09:13:22.112841Z 0 [Note] [MY-010747] [Server] Plugin 'FEDERATED' is disabled. (sql_plugin.cc:3604)
+231128  9:13:22 server_audit: Audit STARTED.
+Found DAS config file, trying to load DAS switcher from DAS config file.
+2023-11-28 09:13:22 22566174378368:[DAS][INFO]: Calculated persistence threads 4
+aurora_enable_das:0
+231128  9:13:22 server_audit: server_audit_incl_users set to ''.
+231128  9:13:22 server_audit: server_audit_excl_users set to ''.
+2023-11-28T09:13:22.114869Z 1 [System] [MY-013576] [InnoDB] InnoDB initialization has started. (ha_innodb.cc:13611)
+2023-11-28T09:13:34.131165Z 5 [Note] [MY-013386] [Server] Running queries to upgrade MySQL server. (server.cc:758)
+# Existing AMS 5.7 external services integration privilege columns is converted to role grants for the user
+INSERT INTO mysql.role_edges (from_host, from_user, to_host, to_user) select '%', 'AWS_LOAD_S3_ACCESS', host, user from mysql.user where load_from_s3_priv = 'Y';
+. Ignored error No: 1054, Ignored error: Unknown column 'load_from_s3_priv' in 'where clause'(server.cc:629)
+2023-11-28T09:13:38.582491Z 5 [Note] [MY-013387] [Server] Upgrading system table data. (server.cc:784)
+2023-11-28T09:13:39.861463Z 5 [Note] [MY-013385] [Server] Upgrading the sys schema. (server.cc:720)"""
+        os.environ['MYSQL5_ERROR_LOGS'] = """2024-03-27T04:38:18.925623Z 0 [Note] #
+2024-03-27T04:38:19.085914Z 0 [Warning] The syntax '--secure-auth' is deprecated and will be removed in a future release
+2024-03-27T04:38:19.086121Z 0 [Warning] 'NO_AUTO_CREATE_USER' sql mode was not set.
+2024-03-27T04:38:19.087012Z 0 [Note] /rdsdbbin/oscar/bin/mysqld (mysqld 5.7.12-log) starting as process 256 ...
+2024-03-27T04:38:19.094698Z 0 [Warning] You need to use --log-bin to make --log-slave-updates work.
+2024-03-27T04:38:19.096007Z 0 [Warning] InnoDB: Setting innodb_checksums to OFF is DEPRECATED. This option may be removed in future releases. You should set innodb_checksum_algorithm=NONE instead.
+2024-03-27T04:38:19.096085Z 0 [Note] InnoDB: PUNCH HOLE support available"""
+        os.environ['MYSQL_GENERAL_LOGS'] = """/rdsdbbin/oscar/bin/mysqld, Version: 8.0.28 (Source distribution). started with:
+Tcp port: 3306  Unix socket: /tmp/mysql.sock
+Time                 Id Command    Argument
+2024-01-03T08:00:01.341151Z	217720 Query	SET @@sql_log_bin=on
+2024-01-03T08:00:01.511636Z	217704 Query	set local oscar_local_only_replica_host_status=1;
+2024-01-03T08:00:01.511747Z	217704 Query	SELECT durable_lsn, current_read_point, server_id, last_update_timestamp FROM information_schema.replica_host_status;
+2024-01-03T08:12:18.027713Z	217705 Query	SET @@sql_log_bin=on
+2024-01-03T08:12:19.125290Z	262325 Query	with dataset as (
+select sleep(2) as t)
+select * from t
+2024-01-03T08:12:19.340385Z	126289 Query	SELECT 1
+2024-01-03T08:12:20.050828Z	217704 Query	set local oscar_local_only_replica_host_status=1;
+2024-01-03T08:12:20.050990Z	217704 Query	SELECT durable_lsn, current_read_point, server_id, last_update_timestamp FROM information_schema.replica_host_status;"""
+        os.environ['POSTGRES_QUERY_LOGS'] = """2023-11-29 09:23:46 UTC::@:[560]:LOG:  checkpoint starting: time
+2023-11-29 09:23:46 UTC::@:[560]:LOG:  checkpoint complete: wrote 0 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.001 s, sync=0.001 s, total=0.001 s; sync files=0, longest=0.000 s, average=0.000 s; distance=0 kB, estimate=0 kB
+2023-11-29 09:23:51 UTC:10.0.2.55(57562):postgres@postgres:[29735]:LOG:  statement: SELECT d.datname as "Name",
+        pg_catalog.pg_get_userbyid(d.datdba) as "Owner",
+        pg_catalog.pg_encoding_to_char(d.encoding) as "Encoding",
+        d.datcollate as "Collate",
+        d.datctype as "Ctype",
+        pg_catalog.array_to_string(d.datacl, E'\n') AS "Access privileges"
+    FROM pg_catalog.pg_database d
+    ORDER BY 1;
+2023-11-29 09:24:05 UTC:10.0.2.55(57562):postgres@postgres:[29735]:ERROR:  syntax error at or near "/" at character 1
+2023-11-29 09:24:05 UTC:10.0.2.55(57562):postgres@postgres:[29735]:STATEMENT:  /h
+    LIst
+    list
+    select * from audit.record_history;
+2023-11-29 09:24:09 UTC:10.0.2.55(57562):postgres@postgres:[29735]:LOG:  statement: select * from audit.record_history;
+2023-11-29 09:24:09 UTC:10.0.2.55(57562):postgres@postgres:[29735]:ERROR:  relation "audit.record_history" does not exist at character 15
+2023-11-29 09:24:09 UTC:10.0.2.55(57562):postgres@postgres:[29735]:STATEMENT:  select * from audit.record_history;
+2023-11-29 09:24:22 UTC:10.0.2.55(57562):postgres@postgres:[29735]:LOG:  statement: select * from audit.record_history;
+2024-03-27 01:35:26.270 GMT [394] LOG:  skipping missing configuration file "/rdsdbdata/config/recovery.conf"
+2024-03-27 01:35:26.271 GMT [394] LOG:  skipping missing configuration file "/rdsdbdata/config/recovery.conf"
+2024-03-27 01:36:27 UTC:10.0.2.55(57562):postgres@postgres:[29735]:LOG:  statement: select * from audit.record_history;
+"""
+        yield
+
 
 @pytest.fixture(scope="session")
 def download_maxminddb():
     maxminddb_url = 'https://aws-gcr-solutions-assets.s3.amazonaws.com/maxmind/GeoLite2-City.mmdb'
     
-    local_path = f'{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}/utils/enrichment/maxminddb/GeoLite2-City.mmdb'
+    local_path = f'{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}/s3_object_replication/enrichment/maxminddb/GeoLite2-City.mmdb'
     if os.path.exists(os.path.dirname(local_path)) is False:
         os.makedirs(os.path.dirname(local_path), mode=755, exist_ok=True)
 

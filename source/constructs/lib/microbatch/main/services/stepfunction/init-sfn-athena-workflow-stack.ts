@@ -108,6 +108,9 @@ export class InitSFNAthenaWorkflowStack extends Construct {
           "API": "Athena: GetQueryExecution",
           "executionName.$": "$.executionName",
           "taskId.$": "$.athena.response.QueryExecution.QueryExecutionId",
+          "parameters": {
+            "queryExecutionId.$": "$.athena.response.QueryExecution.QueryExecutionId",
+          },
           "extra": {
             "API": "Athena: StartQueryExecution",
             "parentTaskId.$": "$.extra.parentTaskId",
@@ -116,8 +119,15 @@ export class InitSFNAthenaWorkflowStack extends Construct {
             "stateName.$": "$.extra.stateName",
           }
         }),
-        retryOnServiceExceptions: false,
         resultPath: sfn.JsonPath.DISCARD,
+      });
+
+      writeQueryExecutionStatusToDDB.addRetry({
+        interval: Duration.seconds(1),
+        maxAttempts: 5,
+        maxDelay: Duration.seconds(10),
+        backoffRate: 2,
+        jitterStrategy: sfn.JitterType.FULL,
       });
 
       const writeQueryExecutionFailedStatusToDDB = new tasks.LambdaInvoke(this, "Put Athena: StartQueryExecution failed logs to DynamoDB", {
@@ -126,6 +136,9 @@ export class InitSFNAthenaWorkflowStack extends Construct {
           "API": "DynamoDB: PutItem",
           "executionName.$": "$.executionName",
           "taskId.$": "States.UUID()",
+          "parameters": {
+            "action": "ADD",
+          },
           "extra": {
             "API": "Athena: StartQueryExecution",
             data: sfn.JsonPath.stringAt("$.queryString"),
@@ -138,8 +151,15 @@ export class InitSFNAthenaWorkflowStack extends Construct {
             "stateName.$": "$.extra.stateName",
           }
         }),
-        retryOnServiceExceptions: false,
         resultPath: sfn.JsonPath.DISCARD,
+      });
+
+      writeQueryExecutionFailedStatusToDDB.addRetry({
+        interval: Duration.seconds(1),
+        maxAttempts: 5,
+        maxDelay: Duration.seconds(10),
+        backoffRate: 2,
+        jitterStrategy: sfn.JitterType.FULL,
       });
 
       startQueryExecution.next(writeQueryExecutionStatusToDDB);

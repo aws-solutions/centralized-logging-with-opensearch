@@ -27,7 +27,7 @@ interface FilePathPrefixFilterProps {
   setValue: React.Dispatch<React.SetStateAction<string>>;
   validator: Validator;
 }
-export const FilePathPrefixFilter: React.FC<FilePathPrefixFilterProps> = (
+const FilePathPrefixFilter: React.FC<FilePathPrefixFilterProps> = (
   props: FilePathPrefixFilterProps
 ) => {
   const { t } = useTranslation();
@@ -44,10 +44,14 @@ export const FilePathPrefixFilter: React.FC<FilePathPrefixFilterProps> = (
           value={props.value}
           placeholder="AWSLogs/000000000000/CloudTrail/ap-northeast-1/"
           rows={1}
-          onChange={(event) => props.setValue(event.target.value)}
+          onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) =>
+            props.setValue(event.target.value)
+          }
         />
         <div className="input-tip"></div>
       </FormItem>
     </div>
   );
 };
+
+export default FilePathPrefixFilter;

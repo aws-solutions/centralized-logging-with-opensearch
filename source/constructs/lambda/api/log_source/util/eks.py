@@ -4,7 +4,7 @@
 
 import os
 import json
-import logging
+from commonlib.logging import get_logger
 import uuid
 
 import socket
@@ -16,7 +16,7 @@ from botocore.exceptions import ClientError
 from commonlib import AWSConnection
 from commonlib.exception import APIException, ErrorCode
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 stack_prefix = os.environ.get("STACK_PREFIX", "CL")
 eks_oidc_client_id = os.environ.get("EKS_OIDC_CLIENT_ID", "sts.amazonaws.com")

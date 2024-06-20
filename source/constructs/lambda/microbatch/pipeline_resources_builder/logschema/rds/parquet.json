@@ -1,0 +1,94 @@
+
+{
+	"type": "object",
+	"properties": {
+		"time": {
+			"type": "big_int",
+			"expression": "CAST(to_unixtime(from_iso8601_timestamp(\"timestamp\")) * 1000 AS bigint)"
+		},
+		"timestamp": {
+			"type": "timestamp",
+			"expression": "from_iso8601_timestamp(\"timestamp\")"
+		},
+		"username": {
+			"type": "string"
+		},
+		"host": {
+			"type": "string"
+		},
+		"port": {
+			"type": "string"
+		},
+		"connection_id": {
+			"type": "string"
+		},
+		"connection_type": {
+			"type": "integer"
+		},
+		"query_id": {
+			"type": "string"
+		},
+		"operation": {
+			"type": "string"
+		},
+		"database": {
+			"type": "string"
+		},
+		"object": {
+			"type": "string"
+		},
+		"return_code": {
+			"type": "string"
+		},
+		"priority": {
+			"type": "string"
+		},
+		"subsystem": {
+			"type": "string"
+		},
+		"query_time": {
+			"type": "double"
+		},
+		"lock_time": {
+			"type": "double"
+		},
+		"rows_sent": {
+			"type": "big_int"
+		},
+		"rows_examined": {
+			"type": "big_int"
+		},
+		"db_cluster_identifier": {
+			"type": "string"
+		},
+		"db_instance_identifier": {
+			"type": "string"
+		},
+		"engine": {
+			"type": "string"
+		},
+		"engine_version": {
+			"type": "string"
+		},
+		"endpoint_address": {
+			"type": "string"
+		},
+		"endpoint_port": {
+			"type": "integer"
+		},
+		"log_type": {
+			"type": "string",
+			"partition": true
+		},
+		"event_hour": {
+			"type": "string",
+			"partition": true,
+			"expression": "date_format(from_iso8601_timestamp(\"timestamp\"), '%Y%m%d%H')"
+		},
+		"__execution_name__": {
+			"type": "string",
+			"partition": true,
+			"expression": "'{{}}'"
+		}
+	}
+}

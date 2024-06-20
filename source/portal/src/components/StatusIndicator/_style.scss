@@ -7,6 +7,9 @@
       margin-left: -22px;
       margin-top: -1px;
     }
+    &.passed {
+      color: green;
+    }
     &.success {
       color: green;
     }
@@ -15,6 +18,9 @@
     }
     &.pending {
       color: #666;
+    }
+    &.warning {
+      color: #ff9900;
     }
     &.error {
       color: red;

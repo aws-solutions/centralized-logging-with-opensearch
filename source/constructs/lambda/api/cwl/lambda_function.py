@@ -1,7 +1,7 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-import logging
+from commonlib.logging import get_logger
 
 from botocore.exceptions import ClientError
 
@@ -11,8 +11,7 @@ from commonlib.utils import paginate
 
 from util.cwl_metric_data_helper import MetricDataHelper
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 conn = AWSConnection()
 router = AppSyncRouter()

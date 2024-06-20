@@ -16,19 +16,17 @@ limitations under the License.
 import React, { useState, useEffect } from "react";
 import { LogEvent, PipelineType } from "API";
 import { getLogEvents } from "graphql/queries";
-import Breadcrumb from "components/Breadcrumb";
-import HelpPanel from "components/HelpPanel";
 import { useTranslation } from "react-i18next";
 import Button from "components/Button";
 import { appSyncRequestQuery } from "assets/js/request";
-import SideMenu from "components/SideMenu";
 import LoadingText from "components/LoadingText";
 import TextInput from "components/TextInput";
 import TimeRange from "components/TimeRange/TimeRange";
 import { useParams } from "react-router-dom";
-import { formatLogEventTimestamp } from "assets/js/utils";
+import { defaultStr, formatLogEventTimestamp } from "assets/js/utils";
 import { identity } from "lodash";
 import ButtonRefresh from "components/ButtonRefresh";
+import CommonLayout from "pages/layout/CommonLayout";
 
 interface LogEventResponse {
   logEvents: LogEvent[];
@@ -87,7 +85,7 @@ const EventList: React.FC = () => {
   const [hasHistory, setHasHistory] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const [curTimeRangeType, setCurTimeRangeType] = useState("");
-  const [logFilterPattern, setlogFilterPattern] = useState("");
+  const [logFilterPattern, setLogFilterPattern] = useState("");
   const [startDate, setStartDate] = useState(DEFAULT_START_TIME || null);
   const [endDate, setEndDate] = useState(DEFAULT_END_TIME || null);
   const [cachedNextToken, setCachedNextToken] = useState("");
@@ -95,12 +93,48 @@ const EventList: React.FC = () => {
   const getNextToken = (isLoadForward: boolean, isLoadHistory: boolean) => {
     if (isLoadForward) {
       return forwardToken || cachedNextToken;
-    } else {
-      if (isLoadHistory) {
-        return backwardToken;
-      }
+    } else if (isLoadHistory) {
+      return backwardToken;
     }
     return "";
+  };
+
+  const notLoadForwardAndHistory = (eventResponse: LogEventResponse) => {
+    setLogEventList(eventResponse.logEvents);
+    if (eventResponse.nextForwardToken) {
+      setForwardToken(eventResponse.nextForwardToken);
+    } else {
+      setHasMore(false);
+    }
+    if (eventResponse.nextBackwardToken) {
+      setBackwardToken(eventResponse.nextBackwardToken);
+      setNotSupportHistory(false);
+    } else {
+      setNotSupportHistory(true);
+    }
+  };
+
+  const executeLoadForward = (eventResponse: LogEventResponse) => {
+    if (eventResponse.nextForwardToken) {
+      setCachedNextToken(eventResponse.nextForwardToken);
+    }
+    if (eventResponse.logEvents.length > 0 && eventResponse.nextForwardToken) {
+      setHasMore(true);
+      setForwardToken(eventResponse.nextForwardToken);
+    } else {
+      setHasMore(false);
+      setForwardToken(eventResponse.nextForwardToken);
+    }
+  };
+
+  const executeLoadHistory = (eventResponse: LogEventResponse) => {
+    if (eventResponse.logEvents.length > 0 && eventResponse.nextBackwardToken) {
+      setHasHistory(true);
+      setBackwardToken(eventResponse.nextBackwardToken);
+    } else {
+      setHasHistory(false);
+      setBackwardToken(eventResponse.nextBackwardToken);
+    }
   };
 
   const getLogEventsByLogGroup = async (
@@ -119,8 +153,8 @@ const EventList: React.FC = () => {
         setLoadingHistory(true);
       }
       const resData = await appSyncRequestQuery(getLogEvents, {
-        logGroupName: decodeURIComponent(logGroupName || ""),
-        logStreamName: decodeURIComponent(logStreamName || ""),
+        logGroupName: decodeURIComponent(defaultStr(logGroupName)),
+        logStreamName: decodeURIComponent(defaultStr(logStreamName)),
         startTime: clearTimeRange ? DEFAULT_START_TIME : startDate,
         endTime: clearTimeRange ? DEFAULT_END_TIME : endDate,
         limit: PAGE_SIZE,
@@ -129,18 +163,7 @@ const EventList: React.FC = () => {
       });
       const eventResponse: LogEventResponse = resData?.data?.getLogEvents;
       if (!isLoadForward && !isLoadHistory) {
-        setLogEventList(eventResponse.logEvents);
-        if (eventResponse.nextForwardToken) {
-          setForwardToken(eventResponse.nextForwardToken);
-        } else {
-          setHasMore(false);
-        }
-        if (eventResponse.nextBackwardToken) {
-          setBackwardToken(eventResponse.nextBackwardToken);
-          setNotSupportHistory(false);
-        } else {
-          setNotSupportHistory(true);
-        }
+        notLoadForwardAndHistory(eventResponse);
       }
       if (isLoadForward) {
         setLogEventList((prev) => {
@@ -153,31 +176,10 @@ const EventList: React.FC = () => {
         });
       }
       if (isLoadForward) {
-        if (eventResponse.nextForwardToken) {
-          setCachedNextToken(eventResponse.nextForwardToken);
-        }
-        if (
-          eventResponse.logEvents.length > 0 &&
-          eventResponse.nextForwardToken
-        ) {
-          setHasMore(true);
-          setForwardToken(eventResponse.nextForwardToken);
-        } else {
-          setHasMore(false);
-          setForwardToken(eventResponse.nextForwardToken);
-        }
+        executeLoadForward(eventResponse);
       }
       if (isLoadHistory) {
-        if (
-          eventResponse.logEvents.length > 0 &&
-          eventResponse.nextBackwardToken
-        ) {
-          setHasHistory(true);
-          setBackwardToken(eventResponse.nextBackwardToken);
-        } else {
-          setHasHistory(false);
-          setBackwardToken(eventResponse.nextBackwardToken);
-        }
+        executeLoadHistory(eventResponse);
       }
 
       setLoadingEvents(false);
@@ -204,197 +206,183 @@ const EventList: React.FC = () => {
   }, [endDate]);
 
   return (
-    <div className="lh-main-content">
-      <SideMenu />
-      <div className="lh-container">
-        <div className="lh-content">
-          <Breadcrumb list={breadCrumbList} />
-
-          <div className="log-table tab-padding box-shadow">
-            <div className="general-info tab-padding box-shadow">
-              <div className="header">
-                <div className="header-title">
-                  <div className="big-title">
-                    {t("common:logging.logEvents")}
-                    {decodeURIComponent(logStreamName || "")}
-                  </div>
-                  <div>
-                    <Button
-                      onClick={() => {
-                        console.info("refresh");
-                        getLogEventsByLogGroup();
-                      }}
-                    >
-                      <ButtonRefresh loading={loadingEvents} fontSize="small" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="flex space-between mt-10">
-                  <div className="flex-1">
-                    <TextInput
-                      value={logFilterPattern}
-                      isSearch={true}
-                      placeholder={t("common:logging.filterEvents")}
-                      onChange={(event) => {
-                        setlogFilterPattern(event.target.value);
-                      }}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") {
-                          getLogEventsByLogGroup();
-                        }
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <TimeRange
-                      isSmall
-                      curTimeRangeType={curTimeRangeType}
-                      startTime={""}
-                      endTime={""}
-                      clearTimeRange={() => {
-                        setCurTimeRangeType("");
-                        getLogEventsByLogGroup(false, false, true);
-                      }}
-                      changeTimeRange={(range) => {
-                        setStartDate(range[0]);
-                        setEndDate(range[1]);
-                      }}
-                      changeRangeType={(type) => {
-                        setCurTimeRangeType(type);
-                      }}
-                    />
-                  </div>
-                </div>
+    <CommonLayout breadCrumbList={breadCrumbList}>
+      <div className="log-table tab-padding box-shadow">
+        <div className="general-info tab-padding box-shadow">
+          <div className="header">
+            <div className="header-title">
+              <div className="big-title">
+                {t("common:logging.logEvents")}
+                {decodeURIComponent(defaultStr(logStreamName))}
+              </div>
+              <div>
+                <Button
+                  onClick={() => {
+                    console.info("refresh");
+                    getLogEventsByLogGroup();
+                  }}
+                >
+                  <ButtonRefresh loading={loadingEvents} fontSize="small" />
+                </Button>
               </div>
             </div>
-
-            <div className="general-info-content">
-              <table width="100%" cellPadding={0} cellSpacing={0}>
-                <thead>
-                  <tr>
-                    <th style={{ width: 280 }}>
-                      {t("common:logging.timestamp")}
-                    </th>
-                    <th>{t("common:logging.message")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {!notSupportHistory && (
-                    <tr>
-                      <td colSpan={3}>
-                        <div className="load-more-wrap">
-                          {(loadingHistory ? (
-                            <LoadingText text={t("loading")} />
-                          ) : (
-                            ""
-                          )) ||
-                            (hasHistory ? (
-                              <div>
-                                {t("common:logging.hasOlder")}
-                                <span
-                                  className="load-more"
-                                  onClick={() => {
-                                    loadHistoryEvents();
-                                  }}
-                                >
-                                  {t("common:logging.loadMore")}
-                                </span>
-                              </div>
-                            ) : (
-                              <div>
-                                {t("common:logging.noOlder")}
-                                <span
-                                  className="load-more"
-                                  onClick={() => {
-                                    loadHistoryEvents();
-                                  }}
-                                >
-                                  {t("common:logging.retry")}
-                                </span>
-                              </div>
-                            ))}
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-
-                  {(loadingEvents ? (
-                    <tr>
-                      <td colSpan={3}>
-                        <div className="text-center">
-                          <LoadingText />
-                        </div>
-                      </td>
-                    </tr>
-                  ) : (
-                    ""
-                  )) ||
-                    (logEventList && logEventList.length > 0 ? (
-                      logEventList.map((element, index) => {
-                        return (
-                          <tr key={identity(index)}>
-                            <td>
-                              {formatLogEventTimestamp(
-                                parseInt(element.timestamp as string)
-                              )}
-                            </td>
-                            <td>{element.message}</td>
-                          </tr>
-                        );
-                      })
-                    ) : (
-                      <tr>
-                        <td colSpan={3}>
-                          <div className="no-data text-center">
-                            {t("common:logging.noData")}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  <tr>
-                    <td colSpan={3}>
-                      <div className="load-more-wrap">
-                        {(loadingMore ? (
-                          <LoadingText text="Loading..." />
-                        ) : (
-                          ""
-                        )) ||
-                          (hasMore ? (
-                            <div>
-                              {t("common:logging.hasNewer")}
-                              <span
-                                className="load-more"
-                                onClick={() => {
-                                  loadForwardEvents();
-                                }}
-                              >
-                                {t("common:logging.loadMore")}
-                              </span>
-                            </div>
-                          ) : (
-                            <div>
-                              {t("common:logging.noNewer")}
-                              <span
-                                className="load-more"
-                                onClick={() => {
-                                  loadForwardEvents();
-                                }}
-                              >
-                                {t("common:logging.retry")}
-                              </span>
-                            </div>
-                          ))}
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+            <div className="flex space-between mt-10">
+              <div className="flex-1">
+                <TextInput
+                  value={logFilterPattern}
+                  isSearch={true}
+                  placeholder={t("common:logging.filterEvents")}
+                  onChange={(event) => {
+                    setLogFilterPattern(event.target.value);
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      getLogEventsByLogGroup();
+                    }
+                  }}
+                />
+              </div>
+              <div>
+                <TimeRange
+                  isSmall
+                  curTimeRangeType={curTimeRangeType}
+                  startTime={""}
+                  endTime={""}
+                  clearTimeRange={() => {
+                    setCurTimeRangeType("");
+                    getLogEventsByLogGroup(false, false, true);
+                  }}
+                  changeTimeRange={(range) => {
+                    setStartDate(range[0]);
+                    setEndDate(range[1]);
+                  }}
+                  changeRangeType={(type) => {
+                    setCurTimeRangeType(type);
+                  }}
+                />
+              </div>
             </div>
           </div>
         </div>
+
+        <div className="general-info-content">
+          <table width="100%" cellPadding={0} cellSpacing={0}>
+            <thead>
+              <tr>
+                <th style={{ width: 280 }}>{t("common:logging.timestamp")}</th>
+                <th>{t("common:logging.message")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {!notSupportHistory && (
+                <tr>
+                  <td colSpan={3}>
+                    <div className="load-more-wrap">
+                      {(loadingHistory ? (
+                        <LoadingText text={t("loading")} />
+                      ) : (
+                        ""
+                      )) ||
+                        (hasHistory ? (
+                          <div>
+                            {t("common:logging.hasOlder")}
+                            <span
+                              className="load-more"
+                              onClick={() => {
+                                loadHistoryEvents();
+                              }}
+                            >
+                              {t("common:logging.loadMore")}
+                            </span>
+                          </div>
+                        ) : (
+                          <div>
+                            {t("common:logging.noOlder")}
+                            <span
+                              className="load-more"
+                              onClick={() => {
+                                loadHistoryEvents();
+                              }}
+                            >
+                              {t("common:logging.retry")}
+                            </span>
+                          </div>
+                        ))}
+                    </div>
+                  </td>
+                </tr>
+              )}
+
+              {(loadingEvents ? (
+                <tr>
+                  <td colSpan={3}>
+                    <div className="text-center">
+                      <LoadingText />
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                ""
+              )) ||
+                (logEventList && logEventList.length > 0 ? (
+                  logEventList.map((element, index) => {
+                    return (
+                      <tr key={identity(index)}>
+                        <td>
+                          {formatLogEventTimestamp(
+                            parseInt(element.timestamp as string)
+                          )}
+                        </td>
+                        <td>{element.message}</td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={3}>
+                      <div className="no-data text-center">
+                        {t("common:logging.noData")}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              <tr>
+                <td colSpan={3}>
+                  <div className="load-more-wrap">
+                    {(loadingMore ? <LoadingText text="Loading..." /> : "") ||
+                      (hasMore ? (
+                        <div>
+                          {t("common:logging.hasNewer")}
+                          <span
+                            className="load-more"
+                            onClick={() => {
+                              loadForwardEvents();
+                            }}
+                          >
+                            {t("common:logging.loadMore")}
+                          </span>
+                        </div>
+                      ) : (
+                        <div>
+                          {t("common:logging.noNewer")}
+                          <span
+                            className="load-more"
+                            onClick={() => {
+                              loadForwardEvents();
+                            }}
+                          >
+                            {t("common:logging.retry")}
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-      <HelpPanel />
-    </div>
+    </CommonLayout>
   );
 };
 

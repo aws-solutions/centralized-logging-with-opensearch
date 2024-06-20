@@ -13,46 +13,29 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import CreateStep from "components/CreateStep";
 import SpecifySettings from "./steps/SpecifySettings";
-import SpecifyOpenSearchCluster, {
-  AOSInputValidRes,
-  checkOpenSearchInput,
-  covertParametersByKeyAndConditions,
-} from "../common/SpecifyCluster";
 import Button from "components/Button";
 
-import Breadcrumb from "components/Breadcrumb";
 import { appSyncRequestMutation } from "assets/js/request";
-import { createServicePipeline } from "graphql/mutations";
 import {
-  Codec,
-  DestinationType,
-  EngineType,
-  ServiceType,
-  MonitorInput,
-  DomainStatusCheckType,
-  DomainStatusCheckResponse,
-} from "API";
-import {
-  WarmTransitionType,
-  YesNo,
-  AmplifyConfigType,
-  SERVICE_LOG_INDEX_SUFFIX,
-} from "types";
+  createLightEngineServicePipeline,
+  createServicePipeline,
+} from "graphql/mutations";
+import { DestinationType, ServiceType, MonitorInput } from "API";
+import { AmplifyConfigType, AnalyticEngineTypes } from "types";
 import { OptionType } from "components/AutoComplete/autoComplete";
 import {
   CreateLogMethod,
+  DOMAIN_ALLOW_STATUS,
   RDS_LOG_GROUP_SUFFIX_AUDIT,
   RDS_LOG_GROUP_SUFFIX_ERROR,
   RDS_LOG_GROUP_SUFFIX_GENERAL,
   RDS_LOG_GROUP_SUFFIX_SLOWQUERY,
   ServiceLogType,
 } from "assets/js/const";
-import HelpPanel from "components/HelpPanel";
-import SideMenu from "components/SideMenu";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { MONITOR_ALARM_INIT_DATA } from "assets/js/init";
@@ -64,24 +47,46 @@ import { useAlarm } from "assets/js/hooks/useAlarm";
 import { ActionType } from "reducer/appReducer";
 import {
   CreateAlarmActionTypes,
-  validateAalrmInput,
+  validateAlarmInput,
 } from "reducer/createAlarm";
 import SelectLogProcessor from "pages/comps/processor/SelectLogProcessor";
 import { useSelectProcessor } from "assets/js/hooks/useSelectProcessor";
-import { buildOSIParamsValue } from "assets/js/utils";
+import {
+  buildLambdaConcurrency,
+  buildOSIParamsValue,
+  defaultStr,
+} from "assets/js/utils";
 import {
   SelectProcessorActionTypes,
   validateOCUInput,
 } from "reducer/selectProcessor";
+import {
+  INIT_OPENSEARCH_DATA,
+  OpenSearchState,
+  convertOpenSearchTaskParameters,
+  indexPrefixChanged,
+  validateOpenSearch,
+  validateOpenSearchParams,
+} from "reducer/createOpenSearch";
+import { useOpenSearch } from "assets/js/hooks/useOpenSearch";
+import { AppDispatch } from "reducer/store";
+import ConfigOpenSearch from "../common/ConfigOpenSearch";
+import CommonLayout from "pages/layout/CommonLayout";
+import { useLightEngine } from "assets/js/hooks/useLightEngine";
+import { useGrafana } from "assets/js/hooks/useGrafana";
+import ConfigLightEngine, {
+  covertSvcTaskToLightEngine,
+} from "../common/ConfigLightEngine";
+import {
+  CreateLightEngineActionTypes,
+  validateLightEngine,
+} from "reducer/createLightEngine";
 
 const EXCLUDE_PARAMS = [
-  "esDomainId",
   "rdsObj",
   "taskType",
   "manualDBIdentifier",
   "manualDBType",
-  "warmEnable",
-  "coldEnable",
   "autoLogGroupPrefix",
   "errorLogEnable",
   "queryLogEnable",
@@ -93,7 +98,6 @@ const EXCLUDE_PARAMS = [
   "queryLogARN",
   "generalLogARN",
   "auditLogARN",
-  "rolloverSizeNotSupport",
 ];
 export interface RDSTaskProps {
   type: ServiceType;
@@ -103,12 +107,8 @@ export interface RDSTaskProps {
   logSourceRegion: string;
   destinationType: string;
   params: {
-    // [index: string]: string | any;
-    engineType: string;
-    warmEnable: boolean;
-    coldEnable: boolean;
-    rdsObj: OptionType | null;
     taskType: string;
+    rdsObj: OptionType | null;
     autoLogGroupPrefix: string;
     errorLogEnable: boolean;
     errorLogARN: string;
@@ -122,32 +122,9 @@ export interface RDSTaskProps {
     kdsRetentionHours: string;
     manualDBIdentifier: string;
     manualDBType: string;
-    endpoint: string;
-    domainName: string;
-    esDomainId: string;
-    indexPrefix: string;
-    createDashboard: string;
-    vpcId: string;
-    subnetIds: string;
-    securityGroupId: string;
-
     logBucketName: string;
     logBucketPrefix: string;
-    shardNumbers: string;
-    replicaNumbers: string;
-
-    enableRolloverByCapacity: boolean;
-    warmTransitionType: string;
-    warmAge: string;
-    coldAge: string;
-    retainAge: string;
-    rolloverSize: string;
-    indexSuffix: string;
-    codec: string;
-    refreshInterval: string;
-
-    rolloverSizeNotSupport: boolean;
-  };
+  } & OpenSearchState;
   monitor: MonitorInput;
 }
 
@@ -159,11 +136,8 @@ const DEFAULT_TASK_VALUE: RDSTaskProps = {
   logSourceRegion: "",
   destinationType: DestinationType.CloudWatch,
   params: {
-    engineType: "",
-    warmEnable: false,
-    coldEnable: false,
-    rdsObj: null,
     taskType: CreateLogMethod.Automatic,
+    rdsObj: null,
     autoLogGroupPrefix: "",
     errorLogEnable: false,
     errorLogARN: "",
@@ -177,31 +151,9 @@ const DEFAULT_TASK_VALUE: RDSTaskProps = {
     kdsRetentionHours: "",
     manualDBIdentifier: "",
     manualDBType: "",
-    endpoint: "",
-    domainName: "",
-    esDomainId: "",
-    indexPrefix: "",
-    createDashboard: YesNo.Yes,
-    vpcId: "",
-    subnetIds: "",
-    securityGroupId: "",
-
     logBucketName: "",
     logBucketPrefix: "",
-    shardNumbers: "1",
-    replicaNumbers: "1",
-
-    enableRolloverByCapacity: true,
-    warmTransitionType: WarmTransitionType.IMMEDIATELY,
-    warmAge: "0",
-    coldAge: "60",
-    retainAge: "180",
-    rolloverSize: "30",
-    indexSuffix: SERVICE_LOG_INDEX_SUFFIX.yyyy_MM_dd,
-    codec: Codec.best_compression,
-    refreshInterval: "1s",
-
-    rolloverSizeNotSupport: false,
+    ...INIT_OPENSEARCH_DATA,
   },
   monitor: MONITOR_ALARM_INIT_DATA,
 };
@@ -224,6 +176,18 @@ const CreateRDS: React.FC = () => {
   const amplifyConfig: AmplifyConfigType = useSelector(
     (state: RootState) => state.app.amplifyConfig
   );
+  const [searchParams] = useSearchParams();
+  const engineType =
+    (searchParams.get("engineType") as AnalyticEngineTypes | null) ??
+    AnalyticEngineTypes.OPENSEARCH;
+
+  const totalStep =
+    searchParams.get("engineType") === AnalyticEngineTypes.LIGHT_ENGINE ? 2 : 3;
+  const isLightEngine = useMemo(
+    () => engineType === AnalyticEngineTypes.LIGHT_ENGINE,
+    [engineType]
+  );
+
   const dispatch = useDispatch<Dispatch<Actions>>();
 
   const [curStep, setCurStep] = useState(0);
@@ -233,30 +197,17 @@ const CreateRDS: React.FC = () => {
     useState<RDSTaskProps>(DEFAULT_TASK_VALUE);
 
   const [autoRDSEmptyError, setAutoRDSEmptyError] = useState(false);
-  const [manualRDSEmpryError, setManualRDSEmpryError] = useState(false);
-  const [esDomainEmptyError, setEsDomainEmptyError] = useState(false);
+  const [manualRDSEmptyError, setManualRDSEmptyError] = useState(false);
 
-  const [nextStepDisable, setNextStepDisable] = useState(false);
   const [rdsIsChanging, setRDSIsChanging] = useState(false);
-  const [domainListIsLoading, setDomainListIsLoading] = useState(false);
-
-  const [aosInputValidRes, setAosInputValidRes] = useState<AOSInputValidRes>({
-    shardsInvalidError: false,
-    warmLogInvalidError: false,
-    coldLogInvalidError: false,
-    logRetentionInvalidError: false,
-    coldMustLargeThanWarm: false,
-    logRetentionMustThanColdAndWarm: false,
-    capacityInvalidError: false,
-    indexEmptyError: false,
-    indexNameFormatError: false,
-  });
-  const [domainCheckStatus, setDomainCheckStatus] =
-    useState<DomainStatusCheckResponse>();
 
   const tags = useTags();
   const monitor = useAlarm();
   const osiParams = useSelectProcessor();
+  const lightEngine = useLightEngine();
+  const grafana = useGrafana();
+  const openSearch = useOpenSearch();
+  const appDispatch = useDispatch<AppDispatch>();
 
   const getGroupNamesForAutomatic = () => {
     // Add logGroupNames by User Select
@@ -304,12 +255,44 @@ const CreateRDS: React.FC = () => {
     return groupNames;
   };
 
+  const confirmCreateLightEnginePipeline = useCallback(async () => {
+    const params = covertSvcTaskToLightEngine(rdsPipelineTask, lightEngine);
+
+    const createPipelineParams = {
+      ...params,
+      type: ServiceType.RDS,
+      tags,
+      logSourceRegion: amplifyConfig.aws_project_region,
+      logSourceAccountId: rdsPipelineTask.logSourceAccountId,
+      source: rdsPipelineTask.source,
+      monitor: monitor.monitor,
+    };
+    try {
+      setLoadingCreate(true);
+      const createRes = await appSyncRequestMutation(
+        createLightEngineServicePipeline,
+        createPipelineParams
+      );
+      console.info("createRes:", createRes);
+      setLoadingCreate(false);
+      navigate("/log-pipeline/service-log");
+    } catch (error) {
+      setLoadingCreate(false);
+      console.error(error);
+    }
+  }, [lightEngine, rdsPipelineTask, tags, monitor]);
+
   const confirmCreatePipeline = async () => {
-    console.info("rdsPipelineTask:", rdsPipelineTask);
+    rdsPipelineTask.params = {
+      ...rdsPipelineTask.params,
+      ...openSearch,
+    };
     const createPipelineParams: any = {};
     createPipelineParams.type = ServiceType.RDS;
     createPipelineParams.source = rdsPipelineTask.source;
-    createPipelineParams.target = rdsPipelineTask.target;
+    // Update domain name and engine type from openSearch
+    createPipelineParams.target = openSearch.domainName;
+    createPipelineParams.engine = openSearch.engineType;
     createPipelineParams.tags = tags;
     createPipelineParams.logSourceAccountId =
       rdsPipelineTask.logSourceAccountId;
@@ -318,9 +301,13 @@ const CreateRDS: React.FC = () => {
 
     createPipelineParams.monitor = monitor.monitor;
     createPipelineParams.osiParams = buildOSIParamsValue(osiParams);
-    const tmpParamList: any = covertParametersByKeyAndConditions(
+    createPipelineParams.logProcessorConcurrency =
+      buildLambdaConcurrency(osiParams);
+
+    const tmpParamList: any = convertOpenSearchTaskParameters(
       rdsPipelineTask,
-      EXCLUDE_PARAMS
+      EXCLUDE_PARAMS,
+      openSearch
     );
 
     // Automatic Task
@@ -370,14 +357,37 @@ const CreateRDS: React.FC = () => {
     }
   };
 
+  const isOpenSearchValid = useMemo(
+    () => validateOpenSearchParams(openSearch),
+    [openSearch]
+  );
+
+  const isLightEngineValid = useMemo(
+    () => validateLightEngine(lightEngine, grafana),
+    [lightEngine]
+  );
+
+  const validateAnalyticsEngine = () => {
+    if (isLightEngine) {
+      // validate light engine and display error message
+      if (!isLightEngineValid) {
+        dispatch({
+          type: CreateLightEngineActionTypes.VALIDATE_LIGHT_ENGINE,
+        });
+        return false;
+      }
+    } else if (!isOpenSearchValid) {
+      appDispatch(validateOpenSearch());
+      return false;
+    }
+    return true;
+  };
+
   useEffect(() => {
     dispatch({ type: ActionType.CLOSE_SIDE_MENU });
   }, []);
 
-  const validateStep0 = () => {
-    if (nextStepDisable) {
-      return false;
-    }
+  const validateRDSInput = () => {
     if (rdsPipelineTask?.params?.taskType === CreateLogMethod.Automatic) {
       if (!rdsPipelineTask?.params?.rdsObj) {
         setAutoRDSEmptyError(true);
@@ -386,617 +396,347 @@ const CreateRDS: React.FC = () => {
     }
     if (rdsPipelineTask?.params?.taskType === CreateLogMethod.Manual) {
       if (!rdsPipelineTask?.params?.manualDBIdentifier) {
-        setManualRDSEmpryError(true);
+        setManualRDSEmptyError(true);
         return false;
       }
     }
     return true;
   };
 
-  const validateStep1 = () => {
-    if (!rdsPipelineTask?.params?.domainName) {
-      setEsDomainEmptyError(true);
-      return false;
-    } else {
-      setEsDomainEmptyError(false);
-    }
-    const validRes = checkOpenSearchInput(rdsPipelineTask);
-    setAosInputValidRes(validRes);
-    if (Object.values(validRes).indexOf(true) >= 0) {
-      return false;
-    }
-    // Check domain connection status
-    if (domainCheckStatus?.status !== DomainStatusCheckType.PASSED) {
-      return false;
-    }
-    return true;
-  };
-
   const isNextDisabled = () => {
+    if (curStep === 1 && isLightEngine) {
+      return false;
+    }
     return (
       rdsIsChanging ||
-      domainListIsLoading ||
+      openSearch.domainLoading ||
       (curStep === 1 &&
-        domainCheckStatus?.status !== DomainStatusCheckType.PASSED) ||
+        !DOMAIN_ALLOW_STATUS.includes(
+          openSearch.domainCheckedStatus?.status
+        )) ||
       osiParams.serviceAvailableCheckedLoading
     );
   };
 
+  useEffect(() => {
+    dispatch({
+      type: CreateLightEngineActionTypes.CENTRALIZED_TABLE_NAME_CHANGED,
+      value: `rds_${rdsPipelineTask.source}`,
+    });
+  }, [rdsPipelineTask.source]);
+
   return (
-    <div className="lh-main-content">
-      <SideMenu />
-      <div className="lh-container">
-        <div className="lh-content">
-          <div className="lh-create-log">
-            <Breadcrumb list={breadCrumbList} />
-            <div className="create-wrapper">
-              <div className="create-step">
-                <CreateStep
-                  list={[
-                    {
-                      name: t("servicelog:create.step.specifySetting"),
-                    },
-                    {
-                      name: t("servicelog:create.step.specifyDomain"),
-                    },
+    <CommonLayout breadCrumbList={breadCrumbList}>
+      <div className="create-wrapper" data-testid="test-create-rds">
+        <div className="create-step">
+          <CreateStep
+            list={[
+              {
+                name: t("servicelog:create.step.specifySetting"),
+              },
+              {
+                name: isLightEngine
+                  ? t("servicelog:create.step.specifyLightEngine")
+                  : t("servicelog:create.step.specifyDomain"),
+              },
+              ...(!isLightEngine
+                ? [
                     {
                       name: t("processor.logProcessorSettings"),
                     },
-                    {
-                      name: t("servicelog:create.step.createTags"),
+                  ]
+                : []),
+              {
+                name: t("servicelog:create.step.createTags"),
+              },
+            ]}
+            activeIndex={curStep}
+          />
+        </div>
+        <div className="create-content m-w-800">
+          {curStep === 0 && (
+            <SpecifySettings
+              engineType={engineType}
+              rdsTask={rdsPipelineTask}
+              setISChanging={(status) => {
+                setRDSIsChanging(status);
+              }}
+              manualRDSEmptyError={manualRDSEmptyError}
+              autoRDSEmptyError={autoRDSEmptyError}
+              changeCrossAccount={(id) => {
+                setRDSPipelineTask((prev: RDSTaskProps) => {
+                  return {
+                    ...prev,
+                    logSourceAccountId: id,
+                  };
+                });
+              }}
+              manualChangeDBIdentifier={(dbIdentifier) => {
+                setAutoRDSEmptyError(false);
+                setManualRDSEmptyError(false);
+                appDispatch(indexPrefixChanged(dbIdentifier.toLowerCase()));
+                setRDSPipelineTask((prev: RDSTaskProps) => {
+                  return {
+                    ...prev,
+                    source: dbIdentifier,
+                    params: {
+                      ...prev.params,
+                      manualDBIdentifier: dbIdentifier,
                     },
-                  ]}
-                  activeIndex={curStep}
-                />
-              </div>
-              <div className="create-content m-w-800">
-                {curStep === 0 && (
-                  <SpecifySettings
-                    rdsTask={rdsPipelineTask}
-                    setISChanging={(status) => {
-                      setRDSIsChanging(status);
-                    }}
-                    manualRDSEmptyError={manualRDSEmpryError}
-                    autoRDSEmptyError={autoRDSEmptyError}
-                    changeCrossAccount={(id) => {
-                      setRDSPipelineTask((prev: RDSTaskProps) => {
-                        return {
-                          ...prev,
-                          logSourceAccountId: id,
-                        };
-                      });
-                    }}
-                    manualChangeDBIdentifier={(dbIdentifier) => {
-                      setAutoRDSEmptyError(false);
-                      setManualRDSEmpryError(false);
-                      setAosInputValidRes((prev) => {
-                        return {
-                          ...prev,
-                          indexEmptyError: false,
-                          indexNameFormatError: false,
-                        };
-                      });
-                      setRDSPipelineTask((prev: RDSTaskProps) => {
-                        return {
-                          ...prev,
-                          source: dbIdentifier,
-                          params: {
-                            ...prev.params,
-                            manualDBIdentifier: dbIdentifier,
-                            indexPrefix: dbIdentifier.toLowerCase(),
-                          },
-                        };
-                      });
-                    }}
-                    manualChangeDBType={(type: string) => {
-                      setRDSPipelineTask((prev: RDSTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            errorLogEnable: true,
-                            queryLogEnable: true,
-                            generalLogEnable: false,
-                            auditLogEnable: false,
-                            manualDBType: type,
-                          },
-                        };
-                      });
-                    }}
-                    changeErrorARN={(arn: string) => {
-                      setRDSPipelineTask((prev: RDSTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            errorLogARN: arn,
-                          },
-                        };
-                      });
-                    }}
-                    changeQeuryARN={(arn: string) => {
-                      setRDSPipelineTask((prev: RDSTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            queryLogARN: arn,
-                          },
-                        };
-                      });
-                    }}
-                    changeGeneralARN={(arn: string) => {
-                      setRDSPipelineTask((prev: RDSTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            generalLogARN: arn,
-                          },
-                        };
-                      });
-                    }}
-                    changeAuditARN={(arn: string) => {
-                      setRDSPipelineTask((prev: RDSTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            auditLogARN: arn,
-                          },
-                        };
-                      });
-                    }}
-                    changeTaskType={(taskType) => {
-                      console.info("taskType:", taskType);
-                      setRDSPipelineTask({
-                        ...DEFAULT_TASK_VALUE,
-                        params: {
-                          ...DEFAULT_TASK_VALUE.params,
-                          taskType: taskType,
-                        },
-                      });
-                    }}
-                    changeRDSObj={(rdsObj) => {
-                      console.info("rdsObj:", rdsObj);
-                      setAutoRDSEmptyError(false);
-                      setAosInputValidRes((prev) => {
-                        return {
-                          ...prev,
-                          indexEmptyError: false,
-                          indexNameFormatError: false,
-                        };
-                      });
-                      setRDSPipelineTask((prev: RDSTaskProps) => {
-                        return {
-                          ...prev,
-                          source: rdsObj?.name || "",
-                          params: {
-                            ...prev.params,
-                            indexPrefix: rdsObj?.value?.toLowerCase() || "",
-                            rdsObj: rdsObj,
-                            autoLogGroupPrefix: rdsObj?.description || "",
-                            // Reset Select
-                            errorLogEnable: true,
-                            queryLogEnable: true,
-                            generalLogEnable: false,
-                            auditLogEnable: false,
-                          },
-                        };
-                      });
-                    }}
-                    changeRDSBucket={(bucket, prefix) => {
-                      setRDSPipelineTask((prev: RDSTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            logBucketName: bucket,
-                            logBucketPrefix: prefix,
-                          },
-                        };
-                      });
-                    }}
-                    errorLogEnabled={(enable) => {
-                      console.info("enable:", enable);
-                      setRDSPipelineTask((prev: RDSTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            errorLogEnable: enable,
-                          },
-                        };
-                      });
-                    }}
-                    queryLogEnabled={(enable) => {
-                      console.info("enable:", enable);
-                      setRDSPipelineTask((prev: RDSTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            queryLogEnable: enable,
-                          },
-                        };
-                      });
-                    }}
-                    generalLogEnabled={(enable) => {
-                      console.info("enable:", enable);
-                      setRDSPipelineTask((prev: RDSTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            generalLogEnable: enable,
-                          },
-                        };
-                      });
-                    }}
-                    auditLogEnabled={(enable) => {
-                      console.info("enable:", enable);
-                      setRDSPipelineTask((prev: RDSTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            auditLogEnable: enable,
-                          },
-                        };
-                      });
-                    }}
-                    changeS3Bucket={(bucketName) => {
-                      setAosInputValidRes((prev) => {
-                        return {
-                          ...prev,
-                          indexEmptyError: false,
-                          indexNameFormatError: false,
-                        };
-                      });
-                      setRDSPipelineTask((prev: RDSTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            logBucket: bucketName,
-                            indexPrefix: bucketName,
-                          },
-                        };
-                      });
-                    }}
-                    setNextStepDisableStatus={(status) => {
-                      setNextStepDisable(status);
-                    }}
-                  />
-                )}
-                {curStep === 1 && (
-                  <SpecifyOpenSearchCluster
-                    taskType={ServiceLogType.Amazon_RDS}
-                    pipelineTask={rdsPipelineTask}
-                    esDomainEmptyError={esDomainEmptyError}
-                    changeLoadingDomain={(loading) => {
-                      setDomainListIsLoading(loading);
-                    }}
-                    aosInputValidRes={aosInputValidRes}
-                    changeShards={(shards) => {
-                      setAosInputValidRes((prev) => {
-                        return {
-                          ...prev,
-                          shardsInvalidError: false,
-                        };
-                      });
-                      setRDSPipelineTask((prev: RDSTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            shardNumbers: shards,
-                          },
-                        };
-                      });
-                    }}
-                    changeReplicas={(replicas) => {
-                      setRDSPipelineTask((prev: RDSTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            replicaNumbers: replicas,
-                          },
-                        };
-                      });
-                    }}
-                    changeBucketIndex={(indexPrefix) => {
-                      setAosInputValidRes((prev) => {
-                        return {
-                          ...prev,
-                          indexEmptyError: false,
-                          indexNameFormatError: false,
-                        };
-                      });
-                      setRDSPipelineTask((prev: RDSTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            indexPrefix: indexPrefix,
-                          },
-                        };
-                      });
-                    }}
-                    changeOpenSearchCluster={(cluster) => {
-                      const NOT_SUPPORT_VERSION =
-                        cluster?.engine === EngineType.Elasticsearch ||
-                        parseFloat(cluster?.version || "") < 1.3;
-                      setEsDomainEmptyError(false);
-                      setRDSPipelineTask((prev: RDSTaskProps) => {
-                        return {
-                          ...prev,
-                          target: cluster?.domainName || "",
-                          engine: cluster?.engine || "",
-                          params: {
-                            ...prev.params,
-                            engineType: cluster?.engine || "",
-                            domainName: cluster?.domainName || "",
-                            esDomainId: cluster?.id || "",
-                            endpoint: cluster?.endpoint || "",
-                            securityGroupId:
-                              cluster?.vpc?.securityGroupId || "",
-                            subnetIds: cluster?.vpc?.privateSubnetIds || "",
-                            vpcId: cluster?.vpc?.vpcId || "",
-                            warmEnable: cluster?.nodes?.warmEnabled || false,
-                            coldEnable: cluster?.nodes?.coldEnabled || false,
-                            rolloverSizeNotSupport: NOT_SUPPORT_VERSION,
-                            enableRolloverByCapacity: !NOT_SUPPORT_VERSION,
-                            rolloverSize: NOT_SUPPORT_VERSION ? "" : "30",
-                          },
-                        };
-                      });
-                    }}
-                    changeSampleDashboard={(yesNo) => {
-                      setRDSPipelineTask((prev: RDSTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            createDashboard: yesNo,
-                          },
-                        };
-                      });
-                    }}
-                    changeWarnLogTransition={(value: string) => {
-                      setAosInputValidRes((prev) => {
-                        return {
-                          ...prev,
-                          warmLogInvalidError: false,
-                        };
-                      });
-                      setRDSPipelineTask((prev: RDSTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            warmAge: value,
-                          },
-                        };
-                      });
-                    }}
-                    changeColdLogTransition={(value: string) => {
-                      setAosInputValidRes((prev) => {
-                        return {
-                          ...prev,
-                          coldLogInvalidError: false,
-                          coldMustLargeThanWarm: false,
-                        };
-                      });
-                      setRDSPipelineTask((prev: RDSTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            coldAge: value,
-                          },
-                        };
-                      });
-                    }}
-                    changeLogRetention={(value: string) => {
-                      setAosInputValidRes((prev) => {
-                        return {
-                          ...prev,
-                          logRetentionInvalidError: false,
-                          logRetentionMustThanColdAndWarm: false,
-                        };
-                      });
-                      setRDSPipelineTask((prev: RDSTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            retainAge: value,
-                          },
-                        };
-                      });
-                    }}
-                    changeIndexSuffix={(suffix: string) => {
-                      setRDSPipelineTask((prev: RDSTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            indexSuffix: suffix,
-                          },
-                        };
-                      });
-                    }}
-                    changeEnableRollover={(enable: boolean) => {
-                      setAosInputValidRes((prev) => {
-                        return {
-                          ...prev,
-                          capacityInvalidError: false,
-                        };
-                      });
-                      setRDSPipelineTask((prev: RDSTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            enableRolloverByCapacity: enable,
-                          },
-                        };
-                      });
-                    }}
-                    changeRolloverSize={(size: string) => {
-                      setAosInputValidRes((prev) => {
-                        return {
-                          ...prev,
-                          capacityInvalidError: false,
-                        };
-                      });
-                      setRDSPipelineTask((prev: RDSTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            rolloverSize: size,
-                          },
-                        };
-                      });
-                    }}
-                    changeCompressionType={(codec: string) => {
-                      setRDSPipelineTask((prev: RDSTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            codec: codec,
-                          },
-                        };
-                      });
-                    }}
-                    changeWarmSettings={(type: string) => {
-                      setAosInputValidRes((prev) => {
-                        return {
-                          ...prev,
-                          coldMustLargeThanWarm: false,
-                        };
-                      });
-                      setRDSPipelineTask((prev: RDSTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            warmTransitionType: type,
-                          },
-                        };
-                      });
-                    }}
-                    domainCheckedStatus={domainCheckStatus}
-                    changeOSDomainCheckStatus={(status) => {
-                      setRDSPipelineTask((prev: RDSTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            replicaNumbers: status.multiAZWithStandbyEnabled
-                              ? "2"
-                              : "1",
-                          },
-                        };
-                      });
-                      setDomainCheckStatus(status);
-                    }}
-                  />
-                )}
-                {curStep === 2 && (
-                  <div>
-                    <SelectLogProcessor supportOSI={false} />
-                  </div>
-                )}
-                {curStep === 3 && (
-                  <div>
-                    <AlarmAndTags
-                      pipelineTask={rdsPipelineTask}
-                      osiParams={osiParams}
-                    />
-                  </div>
-                )}
-                <div className="button-action text-right">
-                  <Button
-                    btnType="text"
-                    onClick={() => {
-                      navigate("/log-pipeline/service-log/create");
-                    }}
-                  >
-                    {t("button.cancel")}
-                  </Button>
-                  {curStep > 0 && (
-                    <Button
-                      onClick={() => {
-                        setCurStep((curStep) => {
-                          return curStep - 1 < 0 ? 0 : curStep - 1;
-                        });
-                      }}
-                    >
-                      {t("button.previous")}
-                    </Button>
-                  )}
-
-                  {curStep < 3 && (
-                    <Button
-                      disabled={isNextDisabled()}
-                      btnType="primary"
-                      onClick={() => {
-                        if (curStep === 0) {
-                          if (!validateStep0()) {
-                            return;
-                          }
-                        }
-                        if (curStep === 1) {
-                          if (!validateStep1()) {
-                            return;
-                          }
-                        }
-                        if (curStep === 2) {
-                          dispatch({
-                            type: SelectProcessorActionTypes.VALIDATE_OCU_INPUT,
-                          });
-                          if (!validateOCUInput(osiParams)) {
-                            return;
-                          }
-                        }
-                        setCurStep((curStep) => {
-                          return curStep + 1 > 3 ? 3 : curStep + 1;
-                        });
-                      }}
-                    >
-                      {t("button.next")}
-                    </Button>
-                  )}
-                  {curStep === 3 && (
-                    <Button
-                      loading={loadingCreate}
-                      btnType="primary"
-                      onClick={() => {
-                        if (!validateAalrmInput(monitor)) {
-                          dispatch({
-                            type: CreateAlarmActionTypes.VALIDATE_ALARM_INPUT,
-                          });
-                          return;
-                        }
-                        confirmCreatePipeline();
-                      }}
-                    >
-                      {t("button.create")}
-                    </Button>
-                  )}
-                </div>
-              </div>
+                  };
+                });
+              }}
+              manualChangeDBType={(type: string) => {
+                setRDSPipelineTask((prev: RDSTaskProps) => {
+                  return {
+                    ...prev,
+                    params: {
+                      ...prev.params,
+                      errorLogEnable: true,
+                      queryLogEnable: true,
+                      generalLogEnable: false,
+                      auditLogEnable: false,
+                      manualDBType: type,
+                    },
+                  };
+                });
+              }}
+              changeErrorARN={(arn: string) => {
+                setRDSPipelineTask((prev: RDSTaskProps) => {
+                  return {
+                    ...prev,
+                    params: {
+                      ...prev.params,
+                      errorLogARN: arn,
+                    },
+                  };
+                });
+              }}
+              changeQeuryARN={(arn: string) => {
+                setRDSPipelineTask((prev: RDSTaskProps) => {
+                  return {
+                    ...prev,
+                    params: {
+                      ...prev.params,
+                      queryLogARN: arn,
+                    },
+                  };
+                });
+              }}
+              changeGeneralARN={(arn: string) => {
+                setRDSPipelineTask((prev: RDSTaskProps) => {
+                  return {
+                    ...prev,
+                    params: {
+                      ...prev.params,
+                      generalLogARN: arn,
+                    },
+                  };
+                });
+              }}
+              changeAuditARN={(arn: string) => {
+                setRDSPipelineTask((prev: RDSTaskProps) => {
+                  return {
+                    ...prev,
+                    params: {
+                      ...prev.params,
+                      auditLogARN: arn,
+                    },
+                  };
+                });
+              }}
+              changeTaskType={(taskType) => {
+                console.info("taskType:", taskType);
+                setRDSPipelineTask({
+                  ...DEFAULT_TASK_VALUE,
+                  params: {
+                    ...DEFAULT_TASK_VALUE.params,
+                    taskType: taskType,
+                  },
+                });
+              }}
+              changeRDSObj={(rdsObj) => {
+                console.info("rdsObj:", rdsObj);
+                setAutoRDSEmptyError(false);
+                appDispatch(
+                  indexPrefixChanged(rdsObj?.value?.toLowerCase() ?? "")
+                );
+                setRDSPipelineTask((prev: RDSTaskProps) => {
+                  return {
+                    ...prev,
+                    source: defaultStr(rdsObj?.value),
+                    params: {
+                      ...prev.params,
+                      rdsObj: rdsObj,
+                      autoLogGroupPrefix: defaultStr(rdsObj?.description),
+                      // Reset Select
+                      errorLogEnable: true,
+                      queryLogEnable: true,
+                      generalLogEnable: false,
+                      auditLogEnable: false,
+                    },
+                  };
+                });
+              }}
+              changeRDSBucket={(bucket, prefix) => {
+                setRDSPipelineTask((prev: RDSTaskProps) => {
+                  return {
+                    ...prev,
+                    params: {
+                      ...prev.params,
+                      logBucketName: bucket,
+                      logBucketPrefix: prefix,
+                    },
+                  };
+                });
+              }}
+              errorLogEnabled={(enable) => {
+                console.info("enable:", enable);
+                setRDSPipelineTask((prev: RDSTaskProps) => {
+                  return {
+                    ...prev,
+                    params: {
+                      ...prev.params,
+                      errorLogEnable: enable,
+                    },
+                  };
+                });
+              }}
+              queryLogEnabled={(enable) => {
+                console.info("enable:", enable);
+                setRDSPipelineTask((prev: RDSTaskProps) => {
+                  return {
+                    ...prev,
+                    params: {
+                      ...prev.params,
+                      queryLogEnable: enable,
+                    },
+                  };
+                });
+              }}
+              generalLogEnabled={(enable) => {
+                console.info("enable:", enable);
+                setRDSPipelineTask((prev: RDSTaskProps) => {
+                  return {
+                    ...prev,
+                    params: {
+                      ...prev.params,
+                      generalLogEnable: enable,
+                    },
+                  };
+                });
+              }}
+              auditLogEnabled={(enable) => {
+                console.info("enable:", enable);
+                setRDSPipelineTask((prev: RDSTaskProps) => {
+                  return {
+                    ...prev,
+                    params: {
+                      ...prev.params,
+                      auditLogEnable: enable,
+                    },
+                  };
+                });
+              }}
+            />
+          )}
+          {curStep === 1 && (
+            <>
+              {isLightEngine ? (
+                <ConfigLightEngine />
+              ) : (
+                <ConfigOpenSearch taskType={ServiceLogType.Amazon_RDS} />
+              )}
+            </>
+          )}
+          {curStep === 2 && !isLightEngine && (
+            <div>
+              <SelectLogProcessor supportOSI={false} />
             </div>
+          )}
+          {curStep === totalStep && (
+            <div>
+              <AlarmAndTags
+                pipelineTask={rdsPipelineTask}
+                osiParams={osiParams}
+              />
+            </div>
+          )}
+          <div className="button-action text-right">
+            <Button
+              btnType="text"
+              onClick={() => {
+                navigate("/log-pipeline/service-log/create");
+              }}
+            >
+              {t("button.cancel")}
+            </Button>
+            {curStep > 0 && (
+              <Button
+                onClick={() => {
+                  setCurStep((curStep) => {
+                    return curStep - 1 < 0 ? 0 : curStep - 1;
+                  });
+                }}
+              >
+                {t("button.previous")}
+              </Button>
+            )}
+
+            {curStep < totalStep && (
+              <Button
+                disabled={isNextDisabled()}
+                btnType="primary"
+                onClick={() => {
+                  if (curStep === 0) {
+                    if (!validateRDSInput()) {
+                      return;
+                    }
+                  }
+                  if (curStep === 1) {
+                    if (!validateAnalyticsEngine()) {
+                      return;
+                    }
+                  }
+                  if (curStep === 2) {
+                    dispatch({
+                      type: SelectProcessorActionTypes.VALIDATE_OCU_INPUT,
+                    });
+                    if (!validateOCUInput(osiParams)) {
+                      return;
+                    }
+                  }
+                  setCurStep((curStep) => {
+                    return curStep + 1 > totalStep ? totalStep : curStep + 1;
+                  });
+                }}
+              >
+                {t("button.next")}
+              </Button>
+            )}
+            {curStep === totalStep && (
+              <Button
+                loading={loadingCreate}
+                btnType="primary"
+                onClick={() => {
+                  if (!validateAlarmInput(monitor)) {
+                    dispatch({
+                      type: CreateAlarmActionTypes.VALIDATE_ALARM_INPUT,
+                    });
+                    return;
+                  }
+                  isLightEngine
+                    ? confirmCreateLightEnginePipeline()
+                    : confirmCreatePipeline();
+                }}
+              >
+                {t("button.create")}
+              </Button>
+            )}
           </div>
         </div>
       </div>
-      <HelpPanel />
-    </div>
+    </CommonLayout>
   );
 };
 

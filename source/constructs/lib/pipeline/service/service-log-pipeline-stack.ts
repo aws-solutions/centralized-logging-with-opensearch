@@ -26,16 +26,12 @@ import {
   CWtoFirehosetoS3Props,
   CWtoFirehosetoS3Stack,
 } from "./cw-to-firehose-to-s3-stack";
-import {
-  S3toOpenSearchStack,
-} from "./s3-to-opensearch-stack";
+import { S3toOpenSearchStack } from "./s3-to-opensearch-stack";
 import {
   S3toOpenSearchOSIStack,
-  S3toOpenSearchOSIStackProps
+  S3toOpenSearchOSIStackProps,
 } from "./s3-to-opensearch-osi-stack";
-import {
-  S3toOpenSearchStackProps,
-} from "./s3-to-opensearch-common-stack";
+import { S3toOpenSearchStackProps } from "./s3-to-opensearch-common-stack";
 import { WAFSampledStack, WAFSampledStackProps } from "./waf-sampled-stack";
 
 const { VERSION } = process.env;
@@ -225,6 +221,20 @@ export class ServiceLogPipelineStack extends SolutionStack {
       logSourceAccountAssumeRole.logicalId
     );
 
+    const logProcessorConcurrency = new CfnParameter(
+      this,
+      "logProcessorConcurrency",
+      {
+        description: "Reserve concurrency for log processor lambda",
+        default: 0,
+        type: "Number",
+      }
+    );
+    this.addToParamLabels(
+      "Number Of Reserve Concurrency",
+      logProcessorConcurrency.logicalId
+    );
+
     if (["ELB", "CloudFront"].includes(props.logType)) {
       plugins = new CfnParameter(this, "plugins", {
         description:
@@ -248,8 +258,6 @@ export class ServiceLogPipelineStack extends SolutionStack {
       "ProcessSG",
       securityGroupId.valueAsString
     );
-
-
 
     if (
       [
@@ -302,7 +310,10 @@ export class ServiceLogPipelineStack extends SolutionStack {
         description:
           "Ingestion table Arn. Leave empty if you do not use OSI as Processor.",
       });
-      this.addToParamLabels("Enable OpenSearch Ingestion as processor", pipelineTableArn.logicalId);
+      this.addToParamLabels(
+        "Enable OpenSearch Ingestion as processor",
+        pipelineTableArn.logicalId
+      );
 
       this.addToParamGroups(
         "Source Information",
@@ -348,6 +359,7 @@ export class ServiceLogPipelineStack extends SolutionStack {
         refreshInterval: refreshInterval.valueAsString,
         source: "SQS",
         subCategory: "S3",
+        logProcessorConcurrency: logProcessorConcurrency.valueAsNumber,
       };
 
       if (props.enableOSIProcessor == "true") {
@@ -510,9 +522,9 @@ export class ServiceLogPipelineStack extends SolutionStack {
       this.addToParamLabels("Resource type", webACLScope.logicalId);
 
       const interval = new CfnParameter(this, "interval", {
-        description: `The Default Interval (in minutes) to get sampled logs, default is 1 minutes`,
+        description: `The Default Interval (in minutes) to get sampled logs, default is 2 minutes. This value must large than or equal 2 and less than 180.`,
         type: "Number",
-        default: "1",
+        default: "2",
       });
       this.addToParamLabels("Interval", interval.logicalId);
 
@@ -570,7 +582,7 @@ export class ServiceLogPipelineStack extends SolutionStack {
         codec: codec.valueAsString,
         refreshInterval: refreshInterval.valueAsString,
         source: "EVENT_BRIDGE",
-
+        logProcessorConcurrency: logProcessorConcurrency.valueAsNumber,
       };
 
       const openSearchInitStack = new OpenSearchInitStack(

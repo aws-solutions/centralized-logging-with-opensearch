@@ -27,7 +27,7 @@ import { getResourceLogConfigs } from "graphql/queries";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { AmplifyConfigType, CWL_SOURCE_LIST } from "types";
+import { AmplifyConfigType, CWL_LOG_S3, CWL_SOURCE_LIST } from "types";
 import AutoEnableLogging from "../../../common/AutoEnableLogging";
 import KDSSettings from "../../../common/KDSSettings";
 import { CloudTrailTaskProps } from "../../CreateCloudTrail";
@@ -53,6 +53,8 @@ interface SourceTypeProps {
   changeMinCapacity?: (num: string) => void;
   changeEnableAS?: (enable: string) => void;
   changeMaxCapacity?: (num: string) => void;
+  region: string;
+  standardOnly?: boolean;
 }
 
 export enum S3SourceType {
@@ -86,6 +88,8 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
     changeMinCapacity,
     changeEnableAS,
     changeMaxCapacity,
+    region,
+    standardOnly,
   } = props;
   const { t } = useTranslation();
 
@@ -211,10 +215,20 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
         }
       >
         <Select
-          disabled={cloudTrailTask.params.taskType === CreateLogMethod.Automatic && (loadingBucket || cloudTrailTask.params.curTrailObj === null)}
+          disabled={
+            cloudTrailTask.params.taskType === CreateLogMethod.Automatic &&
+            (loadingBucket || cloudTrailTask.params.curTrailObj === null)
+          }
           placeholder={t("servicelog:trail.chooseLogSource")}
           className="m-w-45p"
-          optionList={CWL_SOURCE_LIST}
+          // optionList={CWL_SOURCE_LIST}
+          optionList={
+            cloudTrailTask.logSourceAccountId ||
+            region.startsWith("cn") ||
+            standardOnly
+              ? CWL_LOG_S3
+              : CWL_SOURCE_LIST
+          }
           value={cloudTrailTask.destinationType}
           onChange={(event) => {
             changeSourceType(event.target.value);
@@ -272,13 +286,17 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
               />
             )}
 
-            {cloudTrailTask.params.taskType === CreateLogMethod.Manual && (
+          {cloudTrailTask.params.taskType === CreateLogMethod.Manual && (
             <>
               {cloudTrailTask.destinationType === DestinationType.S3 && (
                 <FormItem
                   optionTitle={t("servicelog:trail.cloudtrailLogLocation")}
                   optionDesc={t("servicelog:trail.cloudtrailLogLocationDesc")}
-                  errorText={manualS3EmptyError ? t("servicelog:trail.error.s3Empty") : ""}
+                  errorText={
+                    manualS3EmptyError
+                      ? t("servicelog:trail.error.s3Empty")
+                      : ""
+                  }
                 >
                   <TextInput
                     className="m-w-75p"
@@ -296,11 +314,16 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
                 </FormItem>
               )}
 
-              {cloudTrailTask.destinationType === DestinationType.CloudWatch && (
+              {cloudTrailTask.destinationType ===
+                DestinationType.CloudWatch && (
                 <FormItem
                   optionTitle={t("servicelog:trail.cloudtrailLogLocation")}
                   optionDesc={t("servicelog:trail.cloudtrailCWLLocationDesc")}
-                  errorText={manualCwlArnEmptyError ? t("servicelog:trail.error.cwlEmpty") : ""}
+                  errorText={
+                    manualCwlArnEmptyError
+                      ? t("servicelog:trail.error.cwlEmpty")
+                      : ""
+                  }
                 >
                   <TextInput
                     placeholder={`log-group-name`}

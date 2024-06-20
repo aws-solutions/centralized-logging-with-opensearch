@@ -95,12 +95,12 @@
 
 对于记录到Amazon CloudWatch 的 Amazon RDS/Aurora 日志和 AWS Lambda 日志，除了上面列出的 S3 和 Lambda 成本外，还有使用Kinesis Data Firehose (KDF) 来订阅 CloudWatch 日志流并将它们放入Amazon S3桶的额外成本，KDF 以 5KB 为增量收费（每条记录小于 5KB 按 5KB 计费）。 假设日志大小为每条记录 0.2 KB，则每天的 KDF 成本估算如下：
 
-* Kinesis Data Firehose 成本 = 每 GB 0.029 美元 x `N` GB/天 x (5KB/0.2 KB) 
+* Kinesis Data Firehose 成本 = 每 GB 0.029 美元 x `N` GB/天 x (5KB/0.2 KB)
 
 例如，每天 1GB 的日志，KDF 的每月额外费用为 21.75 美元。
 
 !!! important "重要"
-    
+
     为了节约 KDF 的成本，请确保您只记录需要的日志。 例如，除非需要，否则不要打开 RDS 常规日志(General Log)。
 
 
@@ -192,12 +192,12 @@
 部署解决方案时会自动创建 Web 控制台。 假设一个月（30天）控制台访问次数为3000次，则将产生以下费用：
 
 !!! Note "注意"
-    
+
     AWS Step Functions, Amazon CloudWatch, AWS Systems Manager, 和 Amazon EventBridge 均属于免费套餐。
 
-| 服务 | 每月的总费用 (USD) | 
+| 服务 | 每月的总费用 (USD) |
 | --------------------- | ------ |
-| Amazon CloudFront (1GB Data Transfer Out to Internet and 1GB Data Transfer Out to Origin) | 0.25 | 
+| Amazon CloudFront (1GB Data Transfer Out to Internet and 1GB Data Transfer Out to Origin) | 0.25 |
 | Amazon S3 | 0.027 |
 | Amazon Cognito | 0.05 |
 | AWS AppSync | 0.01 |
@@ -208,7 +208,7 @@
 ## 额外特性费用
 
 !!! Note "注意"
-    
+
      如果您选择不使用日志通控制台中的附加功能，则不会向您收费。
 
 ### 访问代理
@@ -234,3 +234,35 @@
 ### 告警
 
 如果通过日志通部署并创建了[告警](../domains/alarms.md)，可参考[CloudWatch 价格](https://aws.amazon.com/cloudwatch/pricing/)。
+
+
+## 查看主堆栈和日志管道费用
+
+**激活用户定义的成本分配标签**
+
+为了让标签出现在您的账单报告上，您必须激活它们。 您的用户定义的成本分配标签代表您在 Billing and Cost Management 控制台中激活的标签键。 一旦激活或停用标签键，它将影响共享同一标签键的所有标签值。 一个标签键可以有多个标签值。 有关更多信息，请参阅 [AWS Billing and Cost Management API 参考](https://docs.aws.amazon.com/aws-cost-management/latest/APIReference/API_UpdateCostAllocationTagsStatus.html)。
+
+### 激活您的标签
+
+1. 登录 AWS 管理控制台并打开 [AWS 账单和成本管理控制台](https://console.aws.amazon.com/billing/)。
+2. 在导航窗格中，选择**成本分配标签**。
+3. 选择标签键 **CLOSolutionCostAnalysis** 进行激活。
+4. 选择激活。
+
+!!! Note "注意"
+
+     创建用户定义标签并将其应用到资源后，标签最多可能需要 24 小时才会显示在成本分配标签页面上以供激活。
+
+
+有关标签如何与成本分配标签一起显示在账单报告中的示例，请参阅[查看成本分配报告](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/configurecostallocreport.html#allocation-viewing)。
+
+
+
+### 查看成本浏览器仪表板
+
+1. 登录 AWS 管理控制台并打开 [AWS 账单和成本管理控制台](https://console.aws.amazon.com/billing/)。
+2. 在导航窗格中，选择“**Cost Explorer**”。
+3. 选择 **Tag** 作为显示的维度，然后选择特定标签 **CLOSolutionCostAnalysis** 进行过滤。
+4. 如果下拉列表中没有您激活的标签，这是因为激活过程仍在进行中。 标签最长可能需要 24 小时才能激活。 稍后再试。
+
+![costexplorerdashboard](../../images/cost-explorer-dashboard.png)

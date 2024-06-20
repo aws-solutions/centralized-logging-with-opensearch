@@ -120,7 +120,7 @@ export class InitLambdaS3ObjectScanningStack extends Construct {
       runtime: lambda.Runtime.PYTHON_3_11,
       handler: "lambda_function.lambda_handler",
       timeout: Duration.minutes(15),
-      memorySize: 128,
+      memorySize: 256,
       role: this.S3ObjectScanningRole.withoutPolicyUpdates(),
       layers: [microBatchLambdaLayerStack.microBatchLambdaUtilsLayer],
       environment: {

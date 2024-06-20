@@ -175,6 +175,7 @@
       "maxShardNumDesc": "指定最大分片数。",
       "maxShardNumError": "最大分片数必须大于分片个数",
       "overlapIndexError": "似乎配置了一个活动或已删除的管道与您输入的索引重叠。请选择“编辑”进行更新。({{message}})",
+      "overlapWithPrefix": "索引前缀与您之前创建的索引前缀重叠。",
       "duplicatedIndexError": "看起来有一个活动或已删除的管道配置了您输入的索引。要继续创建此新管道并将日志发送到同一索引，请选择“继续创建”。如果您想使用 而是使用不同的索引前缀，请选择“编辑”进行更新。",
       "s3StorageClass": "前缀的 S3 存储层",
       "s3StorageClassDesc": "为缓冲日志数据的前缀选择存储层。"
@@ -256,7 +257,8 @@
       "config": "配置",
       "configRequiredError": "请选择一个日志配置",
       "inputLogPath": "请输入日志路径",
-      "logPathMustBeginWithSlash": "Log path must begin with / (slash)"
+      "logPathMustBeginWithSlash": "日志路径必须使用 / 开头 (slash)",
+      "logPathMustBeginWithDriver": "日志路径必须使用 Windows 盘符开头 (e.g. C:\\)"
     },
     "s3": {
       "ingestFromS3": "从 Amazon S3 摄取",
@@ -515,6 +517,7 @@
         "title3": "导入模式",
         "desc3": "指定执行导入作业的间隔。",
         "title4": "压缩格式",
+        "athenaFormat": "请参阅 Athena 支持的压缩格式，点击<0>文档</0>了解更多信息。",
         "desc4": "指定S3中的日志文件如何进行压缩",
         "onGoing": "持续加载",
         "onGoingDesc": "当新文件传递到指定的S3位置时，将运行导入作业",
@@ -531,7 +534,8 @@
         "chooseALogConfig": "选择一个日志配置",
         "createNew": "创建新的",
         "alert": "如果你选择一个启用了过滤器的日志配置，日志配置中的过滤器将不会生效。",
-        "alertCanNotChangeLogConfig": "注意，在现有的管道中添加一个新的源时，你不能改变日志配置，请审查并确保现有的日志配置可以解析新的日志源。"
+        "alertCanNotChangeLogConfig": "注意，在现有的管道中添加一个新的源时，你不能改变日志配置，请审查并确保现有的日志配置可以解析新的日志源。",
+        "alertLightEngine": "Light Engine - S3 作为日志源不支持多行日志格式"
       },
       "step3": {
         "naviTitle": "日志处理器",

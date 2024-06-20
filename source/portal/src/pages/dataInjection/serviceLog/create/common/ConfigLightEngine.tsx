@@ -10,7 +10,7 @@ import { AmplifyConfigType, YesNo } from "types";
 import TextInput from "components/TextInput";
 import Button from "components/Button";
 import { useAsyncData } from "assets/js/useAsyncData";
-import { ListGrafanasResponse, Resource, ResourceType } from "API";
+import { ListGrafanasResponse, Resource, ResourceType, ServiceType } from "API";
 import { ApiResponse, appSyncRequestQuery } from "assets/js/request";
 import { listGrafanas, listResources } from "graphql/queries";
 import AutoComplete from "components/AutoComplete";
@@ -38,6 +38,9 @@ import { Grid, styled } from "@material-ui/core";
 import { SelectItem } from "components/Select/select";
 import { CENTRALIZED_BUCKET_PREFIX } from "assets/js/helpers/lightEngineHelper";
 import ExtLink from "components/ExtLink";
+import { CloudTrailTaskProps } from "../cloudtrail/CreateCloudTrail";
+import { VpcLogTaskProps } from "../vpc/CreateVPC";
+import { RDSTaskProps } from "../rds/CreateRDS";
 
 const SCHEDULE_DOC_HREF =
   "https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html";
@@ -363,69 +366,65 @@ const ConfigLightEngine = () => {
           </div>
 
           <div className={showAdvanceSetting ? "" : "hide"}>
-            <>
-              <FormItem
-                infoType={InfoBarTypes.LIGHT_ENGINE_LOG_MERGE}
-                optionTitle={t("lightengine:engine.create.logMergerExpTitle")}
-                errorText={lightEngine.logMergerScheduleError}
-                optionDesc={
-                  <Trans
-                    i18={i18n}
-                    i18nKey="lightengine:engine.create.logMergerExpDesc"
-                    components={[
-                      <ExtLink key="1" to={`${SCHEDULE_DOC_HREF}#cron-based`}>
-                        1
-                      </ExtLink>,
-                    ]}
-                  />
-                }
-              >
-                <TextInput
-                  className="m-w-75p"
-                  onChange={(e) =>
-                    dispatch({
-                      type: CreateLightEngineActionTypes.LOG_MERGER_SCHEDULE_CHANGED,
-                      value: e.target.value,
-                    })
-                  }
-                  value={logMergerSchedule}
+            <FormItem
+              infoType={InfoBarTypes.LIGHT_ENGINE_LOG_MERGE}
+              optionTitle={t("lightengine:engine.create.logMergerExpTitle")}
+              errorText={lightEngine.logMergerScheduleError}
+              optionDesc={
+                <Trans
+                  i18={i18n}
+                  i18nKey="lightengine:engine.create.logMergerExpDesc"
+                  components={[
+                    <ExtLink key="1" to={`${SCHEDULE_DOC_HREF}#cron-based`}>
+                      1
+                    </ExtLink>,
+                  ]}
                 />
-              </FormItem>
+              }
+            >
+              <TextInput
+                className="m-w-75p"
+                onChange={(e) =>
+                  dispatch({
+                    type: CreateLightEngineActionTypes.LOG_MERGER_SCHEDULE_CHANGED,
+                    value: e.target.value,
+                  })
+                }
+                value={logMergerSchedule}
+              />
+            </FormItem>
 
-              <FormItem
-                infoType={InfoBarTypes.LIGHT_ENGINE_LOG_ARCHIVE}
-                optionTitle={t("lightengine:engine.create.logArchiveExpTitle")}
-                errorText={lightEngine.logArchiveScheduleError}
-                optionDesc={
-                  <Trans
-                    i18={i18n}
-                    i18nKey="lightengine:engine.create.logArchiveExpDesc"
-                    components={[
-                      <ExtLink key="1" to={`${SCHEDULE_DOC_HREF}#cron-based`}>
-                        1
-                      </ExtLink>,
-                    ]}
-                  />
-                }
-              >
-                <TextInput
-                  className="m-w-75p"
-                  onChange={(e) =>
-                    dispatch({
-                      type: CreateLightEngineActionTypes.LOG_ARCHIVE_SCHEDULE_CHANGED,
-                      value: e.target.value,
-                    })
-                  }
-                  value={logArchiveSchedule}
+            <FormItem
+              infoType={InfoBarTypes.LIGHT_ENGINE_LOG_ARCHIVE}
+              optionTitle={t("lightengine:engine.create.logArchiveExpTitle")}
+              errorText={lightEngine.logArchiveScheduleError}
+              optionDesc={
+                <Trans
+                  i18={i18n}
+                  i18nKey="lightengine:engine.create.logArchiveExpDesc"
+                  components={[
+                    <ExtLink key="1" to={`${SCHEDULE_DOC_HREF}#cron-based`}>
+                      1
+                    </ExtLink>,
+                  ]}
                 />
-              </FormItem>
-            </>
+              }
+            >
+              <TextInput
+                className="m-w-75p"
+                onChange={(e) =>
+                  dispatch({
+                    type: CreateLightEngineActionTypes.LOG_ARCHIVE_SCHEDULE_CHANGED,
+                    value: e.target.value,
+                  })
+                }
+                value={logArchiveSchedule}
+              />
+            </FormItem>
           </div>
         </div>
       </HeaderPanel>
-      <HeaderPanel
-        title={t("servicelog:cluster.logLifecycle")}
-      >
+      <HeaderPanel title={t("servicelog:cluster.logLifecycle")}>
         <FormItem
           optionTitle={t("lightengine:engine.create.logMergerAgeTitle")}
           optionDesc={t("lightengine:engine.create.logMergerAgeDesc")}
@@ -480,7 +479,13 @@ const SVC_TASK_LIGHT_ENGINE_INGEST_MAP = {
 };
 
 export const covertSvcTaskToLightEngine = (
-  pipelineTask: CloudFrontTaskProps | ELBTaskProps | WAFTaskProps,
+  pipelineTask:
+    | CloudFrontTaskProps
+    | ELBTaskProps
+    | WAFTaskProps
+    | VpcLogTaskProps
+    | CloudTrailTaskProps
+    | RDSTaskProps,
   lightEngineState: CreateLightEngineSate
 ) => {
   const parameters = Object.entries(
@@ -506,6 +511,14 @@ export const covertSvcTaskToLightEngine = (
     parameterKey: "centralizedBucketPrefix",
     parameterValue: CENTRALIZED_BUCKET_PREFIX,
   });
+  // only for RDS task
+  if (pipelineTask.type === ServiceType.RDS) {
+    const paramValue = { DBIdentifiers: [pipelineTask.source] };
+    parameters.push({
+      parameterKey: "context",
+      parameterValue: `${JSON.stringify(paramValue)}`,
+    });
+  }
   // only pick ingestion params defined in SVC_TASK_LIGHT_ENGINE_INGEST_MAP
   const ingestion = Object.entries(SVC_TASK_LIGHT_ENGINE_INGEST_MAP).reduce(
     (ret, [k, v]) => {

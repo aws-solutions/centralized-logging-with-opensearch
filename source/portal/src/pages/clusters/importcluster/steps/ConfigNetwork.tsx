@@ -30,7 +30,12 @@ import { ImportedDomainType } from "../ImportCluster";
 import { AmplifyConfigType } from "types";
 import { useSelector } from "react-redux";
 import { InfoBarTypes } from "reducer/appReducer";
-import { buildSGLink, buildSubnetLink, buildVPCLink } from "assets/js/utils";
+import {
+  buildSGLink,
+  buildSubnetLink,
+  buildVPCLink,
+  defaultStr,
+} from "assets/js/utils";
 import Alert from "components/Alert";
 import { useTranslation } from "react-i18next";
 import { RootState } from "reducer/reducers";
@@ -91,7 +96,7 @@ const ConfigNetwork: React.FC<ConfigNetworkProps> = (
         tmpOptionList.push({
           name: `${element.id}(${element.name})`,
           value: element.id,
-          optTitle: element.description || "",
+          optTitle: defaultStr(element.description),
         });
       }
     });
@@ -155,7 +160,7 @@ const ConfigNetwork: React.FC<ConfigNetworkProps> = (
                       <ExtLink
                         to={buildSGLink(
                           amplifyConfig.aws_project_region,
-                          element || ""
+                          defaultStr(element)
                         )}
                       >
                         {element}

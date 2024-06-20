@@ -3,13 +3,14 @@
 
 import hashlib
 import json
-import logging
 import os
 import uuid
 from datetime import datetime
 
 from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import ClientError
+from commonlib.logging import get_logger
+from commonlib.decorator import retry
 from commonlib import AWSConnection, handle_error
 from commonlib.utils import create_stack_name
 from commonlib.exception import APIException, ErrorCode
@@ -24,10 +25,10 @@ from cluster_auto_import_mgr import ClusterAutoImportManager
 from util.metric import get_metric_data
 import util.cluster_status_check_helper as cluster_status_checker
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 DOMAIN_NOT_FOUND_ERROR = "OpenSearch Domain Not Found"
+OPENSEARCH_MASTER_ROLE_ARN = os.environ["OPENSEARCH_MASTER_ROLE_ARN"]
 
 partition = os.environ.get("PARTITION")
 stateMachineArn = os.environ.get("STATE_MACHINE_ARN")
@@ -48,6 +49,7 @@ dynamodb = conn.get_client("dynamodb", client_type="resource")
 sfn = conn.get_client("stepfunctions")
 sts = conn.get_client("sts")
 ec2 = conn.get_client("ec2")
+aos = conn.get_client("opensearch")
 
 cluster_table = dynamodb.Table(cluster_table_name)
 app_pipeline_table = dynamodb.Table(app_pipeline_table_name)
@@ -75,9 +77,27 @@ def get_or_default(d: dict, key: str, default=None):
     return d.get(key) or default
 
 
+@retry(retries=5, delays=3, backoff=2)
+def set_master_user_arn(aos_client, domain_name, master_role_arn: str):
+    resp = aos_client.update_domain_config(
+        DomainName=domain_name,
+        AdvancedSecurityOptions={
+            "MasterUserOptions": {
+                "MasterUserARN": master_role_arn,
+            },
+        },
+    )
+    status_code = resp["ResponseMetadata"]["HTTPStatusCode"]
+    if status_code >= 300:
+        raise APIException(
+            ErrorCode.UNKNOWN_ERROR,
+            "Failed to add backend role {role_arn} to domain {domain_name}, status: {status_code}",
+        )
+
+
 @handle_error
 def lambda_handler(event, _):
-    # logger.info("Received event: " + json.dumps(event, indent=2))
+    # logger.info("Received event: " + json.dumps(event["arguments"], indent=2))
 
     action = event["info"]["fieldName"]
     args = event["arguments"]
@@ -104,7 +124,7 @@ def lambda_handler(event, _):
         # call related functions
         return func[action](**args)
     else:
-        logger.info("Event received: " + json.dumps(event, indent=2))
+        logger.info("Event received: " + json.dumps(event["arguments"], indent=2))
         raise APIException(ErrorCode.UNKNOWN_ERROR)
 
 
@@ -316,6 +336,9 @@ def import_domain(**args):
     # generate a unique id
     cluster_id = unique_id(arn)
 
+    logger.info(f"Set master user arn {OPENSEARCH_MASTER_ROLE_ARN} to {domain_name}")
+    set_master_user_arn(aos, domain_name, OPENSEARCH_MASTER_ROLE_ARN)
+
     cluster_table.put_item(
         Item={
             "id": cluster_id,
@@ -326,6 +349,7 @@ def import_domain(**args):
             "endpoint": domain["Endpoints"]["vpc"],
             "region": region_name,
             "accountId": account_id,
+            "masterRoleArn": OPENSEARCH_MASTER_ROLE_ARN,
             "vpc": vpc,
             "resources": related_resources,
             "domainInfo": domain_info,
@@ -809,6 +833,7 @@ def domain_status_check(**args):
         DomainStatusCheckItem.NAT,
         solution_private_subnet_ids_str,
         ErrorCode.SUBNET_WITHOUT_NAT.name,
+        return_warning_on_error=True,
     )
 
     # Check if domain exists in dynamoDB table

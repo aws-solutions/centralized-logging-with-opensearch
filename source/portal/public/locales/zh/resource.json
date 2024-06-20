@@ -57,7 +57,9 @@
       "asg": {
         "name": "Auto Scaling 组",
         "desc": "选择您想创建日志摄取到 Auto Scaling 组。",
-        "selectASG": "请选择一个 Auto Scaling 组"
+        "selectASG": "请选择一个 Auto Scaling 组",
+        "platform": "实例平台",
+        "platformDesc": "同一个 Auto Scaling 组中的实例必须是相同的平台。"
       }
     },
     "comp": {
@@ -68,6 +70,7 @@
       "tips2": "与实例关联的 AmazonSSMManagedInstanceCore 策略。",
       "tips3": "这些实例具有对 AWS Systems Manager 的网络访问权限。",
       "tips4": "Fluent Bit 代理依赖 OpenSSL 1.1，请确保 Linux 实例上安装了 OpenSSL 1.1。",
+      "tips5": "同一个实例组中不允许同时存在 Windows 和 Linux 实例。",
       "settings": "实例组设置",
       "groupName": "组名",
       "groupNameDesc": "输入日志组的名称。名称必须是唯一的，并且只能包含小写字母和 -。",
@@ -88,13 +91,16 @@
     "name": "日志配置",
     "create": "创建",
     "edit": "编辑",
+    "alert": "警告",
     "type": {
       "nginx": "Nginx",
       "json": "JSON",
       "apache": "Apache HTTP 服务",
       "syslog": "Syslog",
       "singleLine": "单行文本日志",
-      "multiLine": "多行文本日志"
+      "multiLine": "多行文本日志",
+      "windowsEvent": "Windows事件",
+      "iis": "IIS 配置模式"
     },
     "list": {
       "config": "配置",
@@ -118,7 +124,10 @@
       "nginxFormat": "Nginx 日志格式",
       "apacheFormat": "Apache 日志格式",
       "springbootFormat": "Spring Boot 日志格式",
-      "syslogFormat": "Syslog格式",
+      "syslogParser": "syslog 解析器",
+      "iisParser": "IIS log 解析器",
+      "syslogFormat": "Syslog 格式",
+      "iisLogFormat": "IIS W3C 日志格式",
       "jsonFormat": "JSON 日志格式",
       "regExp": "正则表达式",
       "logSpecs": "日志规范",
@@ -160,9 +169,13 @@
       "springbootLogFormat": "日志格式",
       "springbootLogFormatDesc": "在 Spring Boot 应用程序中输入日志格式配置.\n(*当前生成的正则表达式只支持标准输出格式，如果是非标准输出，请使用自定义正则表达式方式创建)",
       "firstLineRegEx": "首行正则表达式",
-      "firstLineRegExDesc": "输入正则表达式以摄取日志的首行。"
+      "firstLineRegExDesc": "输入正则表达式以摄取日志的首行。",
+      "iisFormat": "IIS W3C 日志格式",
+      "iisFormatDesc": "IIS W3C 日志格式配置。请打开 Windows IIS 日志文件并复制日志字段配置，例如. #Fields: date time s-ip ...",
+      "cookieAlert": "Cookie 警告：日志配置中的字段可能涉及安全内容（cookie），建议在“Windows -site-W3C 日志字段”中取消勾选。 请删除 Cookie 字段再继续。"
     },
     "parsing": {
+      "duplicated": "日志配置中存在重复的字段名称",
       "alert": "正则表达式无效，请检查您的日志格式。",
       "sampleLog": "日志样例",
       "sampleLogDesc": "输入一行示例日志以验证正则表达式。",
@@ -193,7 +206,8 @@
       "userLogFormatError": "用户日志格式包含非拉丁字符。",
       "userLogFormatNotEmpty": "用户日志格式不能为空。",
       "regexMustNotBeEmpty": "正则表达式不能为空",
-      "notJSONFormat": "日志样例不是合法的 JSON 格式"
+      "notJSONFormat": "日志样例不是合法的 JSON 格式",
+      "regexTimeout": "验证超时，请检查您的正则表达式和示例日志。"
     },
     "filter": {
       "name": "过滤器",
@@ -215,7 +229,7 @@
     "selectDesc1": "选择存储日志的 AWS 账户。 要链接帐户，请转到",
     "linkAccount": "链接一个账户",
     "detail": "详细信息",
-    "updateAlert": "请在成员账户中更新您的子堆栈并在链接账户中更新成员账户中的 Fluent Bit 配置文件上传 SNS Event Topic ARN 字段。",
+    "updateAlert": "请在成员账户中更新您的子堆栈并在链接账户中更新成员账户中的缺失的字段。",
     "list": {
       "accounts": "成员账户",
       "accountId": "账户 ID",
@@ -235,8 +249,7 @@
       "stepOne3": "3. 从 Amazon S3 模板 url 创建新堆栈：",
       "stepOne3Update": "3. 使用下面的模板 URL 更新此堆栈：",
       "stepOne4": "4. 等待部署完成",
-      "stepOne5": "5. 复制 CloudFormation 输出中的 MemberAccountFluentBitConfUploadingEventTopicARN。",
-      "stepOne6": "6. 更新成员账户 Fluent Bit 配置文件上传 SNS Event Topic ARN 然后保存.",
+      "stepOne5": "5. 更新成员账户缺失的相关配置然后保存.",
       "stepTwoTitle": "步骤2: 关联账户",
       "accountName": "帐户名称",
       "accountNameDesc": "输入帐户的昵称，账户名称必须是唯一的。例如: sub-account-1",
@@ -249,14 +262,26 @@
       "accountRolesDesc": "输入步骤 1 的 CloudFormation 输出中的 MemberAccountRoleARN。",
       "inputAccountRoles": "请输入成员账户角色 ARN",
       "accountRolesFormatError": "成员账户角色 ARN 格式错误",
-      "installDocs": "Fluent Bit 代理安装文档",
+      "installDocs": "Fluent Bit for Linux 代理安装文档",
       "installDocsDesc": "在步骤 1 的 CloudFormation 输出中的 AgentInstallDocument。",
       "inputInstallDocs": "请输入代理安装文件",
       "installDocsFormatError": "代理安装文件格式错误",
-      "configDocs": "Fluent Bit 代理配置文档",
+      "installDocsWindows": "Fluent Bit for Windows 代理安装文档",
+      "installDocsDescWindows": "在步骤 1 的 CloudFormation 输出中的 AgentInstallDocumentForWindows。",
+      "inputInstallDocsWindows": "请输入 Windows 代理安装文件",
+      "installDocsFormatErrorWindows": "Windows 代理安装文件格式错误",
+      "configDocs": "Fluent Bit for Linux 代理配置文档",
       "configDocsDesc": "在步骤 1 的 CloudFormation 输出中的 AgentConfigDocument。",
       "inputConfigDocs": "请输入配置文件",
       "configDocsFormatError": "配置文件格式错误",
+      "configDocsWindows": "Fluent Bit for Windows 代理配置文档",
+      "configDocsDescWindows": "在步骤 1 的 CloudFormation 输出中的 AgentConfigDocumentWindows。",
+      "inputConfigDocsWindows": "请输入 Windows 配置文件",
+      "configDocsFormatErrorWindows": "Windows 配置文件格式错误",
+      "statusCheckDoc": "Fluent Bit 状态检查文档",
+      "statusCheckDocDesc": "在步骤 1 的 CloudFormation 输出中的 AgentStatusCheckDocument",
+      "inputStatusCheckDoc": "请输入 AgentStatusCheckDocument.",
+      "statusCheckDocFormatError": "Fluent Bit 状态检查文档格式错误",
       "s3Bucket": "成员账户 Amazon S3 存储桶",
       "s3BucketDesc": "输入步骤 1 的 CloudFormation 输出中的 MemberAccountS3Bucket。",
       "inputS3Bucket": "请输入成员账户 Amazon S3 存储桶",

@@ -9,7 +9,7 @@ Centralized Logging with OpenSearch supports ingesting AWS Service logs and Appl
 
 The CloudFormation stack in the member account has the least privileges. Centralized Logging with OpenSearch need to provision some AWS resources in the member account to collect logs, and will assume an IAM role provisioned in the member account to list or create resources.
 
-For more information, refer to the [Architecture](../architecture.md) section.
+For more information, refer to the [Architecture](../architecture-overview/architecture.md) section.
 
 ## Add a member account
 
@@ -45,8 +45,11 @@ For more information, refer to the [Architecture](../architecture.md) section.
     | Account Name                           | N/A                    | Name of the member account.                                                                                                                                        |
     | Account ID                             | N/A                    | 12-digit AWS account ID.                                                                                                                                           |
     | Cross Account Role ARN                 | CrossAccountRoleARN    | Centralized Logging with OpenSearch will assume this role to operate resources in the member account.                                                              |
-    | FluentBit Agent Installation Document  | AgentInstallDocument   | Centralized Logging with OpenSearch will use this SSM Document to install Fluent Bit agent on EC2 instances in the member account.                                 |
-    | FluentBit Agent Configuration Document | AgentConfigDocument    | Centralized Logging with OpenSearch will use this SSM Document to deliver Fluent Bit configuration to EC2 instances.                                               |
+    | Fluent Bit Agent Installation Document  | AgentInstallDocument   | Centralized Logging with OpenSearch will use this SSM Document to install Fluent Bit agent on EC2 instances in the member account.                                 |
+    | Fluent Bit Agent Configuration Document | AgentConfigDocument    | Centralized Logging with OpenSearch will use this SSM Document to deliver Fluent Bit configuration to EC2 instances.                                               |
+    | Fluent Bit Agent Installation Document for Windows                | AgentInstallDocumentForWindows   | Fluent Bit Agent Installation Configuration for Windows. |
+    | Fluent Bit Agent Configuration Document for Windows                | AnentConfigDocumentForWindows   | Fluent Bit Agent Configuration Document. |
+    | Fluent Bit Status Check Document                | AgentStatusCheckDocument   | Status detection of Fluent Bit. |
     | Cross Account S3 Bucket                | CrossAccountS3Bucket   | You can use the Centralized Logging with OpenSearch console to enable some AWS Service logs and output them to Amazon S3. The logs will be stored in this account. |
     | Cross Account Stack ID                 | CrossAccountStackId    | CloudFormation stack ID in the member account.                                                                                                                     |
     | Cross Account KMS Key                  | CrossAccountKMSKeyARN  | Centralized Logging with OpenSearch will use the Key Management Services (KMS) key to encrypt Simple Queue Service (SQS).                                          |

@@ -186,7 +186,7 @@ class TestVPC:
         assert len(resp) == 0
 
         resp2 = resource.put_resource_log_config(
-            vpc_id, dest_type="S3", dest_name="", log_format=""
+            vpc_id, dest_type="S3", dest_name="s3://log-bucket", log_format=""
         )
         print(resp2)
         assert resp2["destinationType"] == "S3"

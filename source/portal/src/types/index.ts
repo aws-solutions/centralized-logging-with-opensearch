@@ -27,9 +27,15 @@ import { OptionType } from "components/AutoComplete/autoComplete";
 import { InstanceWithStatusType } from "pages/resources/common/InstanceTable";
 import { ExLogConf } from "pages/resources/common/LogConfigComp";
 import { InstanceGroupType } from "pages/resources/instanceGroup/create/CreateInstanceGroup";
+import { AppLogOpenSearchParam } from "reducer/createOpenSearch";
 export enum YesNo {
   Yes = "Yes",
   No = "No",
+}
+
+export const enum AnalyticEngineTypes {
+  OPENSEARCH = "OPENSEARCH",
+  LIGHT_ENGINE = "LIGHT_ENGINE",
 }
 
 export enum CreationMethod {
@@ -178,8 +184,12 @@ export enum CWLSourceType {
   CWL = "CloudWatch Logs",
 }
 
-export const CWL_SOURCE_LIST = [
+export const CWL_LOG_S3 = [
   { name: CWLSourceType.S3, value: DestinationType.S3 },
+];
+
+export const CWL_SOURCE_LIST = [
+  ...CWL_LOG_S3,
   { name: CWLSourceType.CWL, value: DestinationType.CloudWatch },
 ];
 
@@ -212,28 +222,7 @@ export interface ApplicationLogType {
   rolloverSizeNotSupport: boolean;
   enableRolloverByCapacity: boolean;
   warmTransitionType: string;
-  aosParams: {
-    coldLogTransition: string;
-    domainName: string;
-    engine: string;
-    failedLogBucket: string;
-    indexPrefix: string;
-    logRetention: string;
-    opensearchArn: string;
-    opensearchEndpoint: string;
-    replicaNumbers: string;
-    shardNumbers: string;
-    rolloverSize: string;
-    indexSuffix: string;
-    codec: string;
-    refreshInterval: string;
-    vpc: {
-      privateSubnetIds: string;
-      securityGroupId: string;
-      vpcId: string;
-    };
-    warmLogTransition: string;
-  };
+  aosParams: AppLogOpenSearchParam;
   bufferType: string;
   kdsBufferParams: {
     enableAutoScaling: string;
@@ -252,14 +241,15 @@ export interface ApplicationLogType {
     compressionType: CompressionType | string;
     s3StorageClass: string;
   };
-  mskBufferParams: {
-    mskClusterName: string;
-    mskClusterArn: string;
-    mskBrokerServers: string;
-    topic: string;
-  };
   force: boolean;
   monitor: MonitorInput;
+  // For Plugin
+  type?: string;
+  destinationType?: string;
+  params: {
+    geoPlugin: boolean;
+    userAgentPlugin: boolean;
+  };
 }
 
 export interface IngestionPropsType {

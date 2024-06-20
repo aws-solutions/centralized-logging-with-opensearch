@@ -174,7 +174,13 @@
             - 若无需自定义域名，则保持 Domain, IamCertificateID, AcmCertificateArn 为空。
 
 7. 选择**下一步**。
-8. 在 **配置堆栈选项** 页面上，选择 **下一步**。
+7. 在 **配置堆栈选项** 页面上，选择添加新标签并输入以下键和值：
+     1. 键：CLOSolutionCostAnalysis
+     2. 值：CLOSolutionCostAnalysis
+
+     成功部署所有资源后，您可以激活 CLOSolutionCostAnalysis 标签。 选择**下一步**。
+
+8. 在 **审核** 页面上，查看并确认设置。选中确认模板创建 AWS Identity and Access Management (IAM) 资源的复选框。
 9. 在 **审核** 页面上，查看并确认设置。选中确认模板创建 AWS Identity and Access Management (IAM) 资源的复选框。
 10. 选择 **创建堆栈** 部署堆栈。
 

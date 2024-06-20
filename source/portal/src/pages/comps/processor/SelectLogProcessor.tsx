@@ -13,24 +13,31 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import { appSyncRequestMutation } from "assets/js/request";
+import { LAMBDA_CONCURRENCY_DOC_LINK } from "assets/js/const";
+import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
 import Alert from "components/Alert";
 import { AlertType } from "components/Alert/alert";
+import ExpandableSection from "components/ExpandableSection";
+import ExtLink from "components/ExtLink";
 import FormItem from "components/FormItem";
 import HeaderPanel from "components/HeaderPanel";
 import LoadingText from "components/LoadingText";
 import PagePanel from "components/PagePanel";
 import TextInput from "components/TextInput";
 import Tiles from "components/Tiles";
-import { checkOSIAvailability } from "graphql/queries";
+import {
+  checkOSIAvailability,
+  getAccountUnreservedConurrency,
+} from "graphql/queries";
 import React, { useEffect } from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { InfoBarTypes } from "reducer/appReducer";
 import { Actions, RootState } from "reducer/reducers";
 import {
   LogProcessorType,
   SelectProcessorActionTypes,
+  getRestUnreservedAccountConcurrency,
 } from "reducer/selectProcessor";
 import { Dispatch } from "redux";
 
@@ -47,6 +54,7 @@ const SelectLogProcessor: React.FC<SelectProcessorProps> = (
   const selectProcessor = useSelector(
     (state: RootState) => state.selectProcessor
   );
+
   const dispatch = useDispatch<Dispatch<Actions>>();
   const checkOSIServiceAvailable = async () => {
     try {
@@ -63,11 +71,23 @@ const SelectLogProcessor: React.FC<SelectProcessorProps> = (
         type: SelectProcessorActionTypes.SET_SERVICE_AVAILABLE_CHECK,
         available: available,
       });
+      const concurrencyData: any = await appSyncRequestQuery(
+        getAccountUnreservedConurrency
+      );
+      console.info("concurrencyData:", concurrencyData);
+      dispatch({
+        type: SelectProcessorActionTypes.CHANGE_UNRESERVED_CONCURRENCY,
+        concurrency: concurrencyData.data.getAccountUnreservedConurrency,
+      });
       dispatch({
         type: SelectProcessorActionTypes.SET_SERVICE_AVAILABLE_CHECK_LOADING,
         loading: false,
       });
     } catch (error) {
+      dispatch({
+        type: SelectProcessorActionTypes.SET_SERVICE_AVAILABLE_CHECK_LOADING,
+        loading: false,
+      });
       console.error(error);
     }
   };
@@ -119,6 +139,53 @@ const SelectLogProcessor: React.FC<SelectProcessorProps> = (
             ]}
           />
         </FormItem>
+        <>
+          {selectProcessor.logProcessorType === LogProcessorType.LAMBDA && (
+            <ExpandableSection
+              defaultExpanded={true}
+              headerText={t("processor.lambdaConcurrency")}
+            >
+              <>
+                <div className="mb-10">
+                  {t("processor.accountConcurrency")}
+                  <b>
+                    {getRestUnreservedAccountConcurrency(
+                      selectProcessor.logProcessorConcurrency,
+                      selectProcessor.unreservedAccountConcurrency
+                    )}
+                  </b>
+                </div>
+                <FormItem
+                  optionTitle={t("processor.configConcurrency")}
+                  optionDesc={
+                    <Trans
+                      i18nKey="processor.configConcurrencyDesc"
+                      components={[
+                        <ExtLink key="1" to={`${LAMBDA_CONCURRENCY_DOC_LINK}`}>
+                          1
+                        </ExtLink>,
+                      ]}
+                    />
+                  }
+                  errorText={t(selectProcessor.logProcessorConcurrencyError)}
+                >
+                  <TextInput
+                    placeholder="0"
+                    className="m-w-45p"
+                    type="number"
+                    value={selectProcessor.logProcessorConcurrency}
+                    onChange={(e) => {
+                      dispatch({
+                        type: SelectProcessorActionTypes.CHANGE_LAMBDA_CONCURRENCY,
+                        concurrency: e.target.value,
+                      });
+                    }}
+                  />
+                </FormItem>
+              </>
+            </ExpandableSection>
+          )}
+        </>
       </HeaderPanel>
       <>
         {selectProcessor.logProcessorType === LogProcessorType.OSI && (

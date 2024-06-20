@@ -38,6 +38,7 @@ import {
   listSubAccountLinks,
 } from "graphql/queries";
 import { StatusType } from "components/Status/Status";
+import { defaultArray, defaultStr } from "assets/js/utils";
 
 interface IngestSettingProps {
   ingestionInfo: IngestionFromEKSPropsType;
@@ -73,10 +74,10 @@ const StepChooseEKSSource: React.FC<IngestSettingProps> = (
     dataList.forEach((element) => {
       if (accountId === element.accountId) {
         tmpOptionList.push({
-          description: element.eks?.deploymentKind ?? "",
+          description: defaultStr(element.eks?.deploymentKind),
           name: `${element.eks?.eksClusterName}`,
           id: element.sourceId,
-          value: element.accountId || "",
+          value: defaultStr(element.accountId),
           status: buildStatus(existEKSList, element.eks?.eksClusterName),
         });
       }
@@ -93,12 +94,12 @@ const StepChooseEKSSource: React.FC<IngestSettingProps> = (
     const accountIdList = tmpAccountList.map((element) => element.value);
     if (accountIdList.length > 0) {
       dataList.forEach((element) => {
-        if (!accountIdList.includes(element?.accountId || "")) {
+        if (!accountIdList.includes(defaultStr(element?.accountId))) {
           tmpOptionList.push({
             description: element.eks?.deploymentKind ?? "",
             name: `${element.eks?.eksClusterName}`,
             id: element.sourceId,
-            value: element.accountId || "",
+            value: defaultStr(element.accountId),
             status: buildStatus(existEKSList, element.eks?.eksClusterName),
           });
         }
@@ -107,10 +108,10 @@ const StepChooseEKSSource: React.FC<IngestSettingProps> = (
       // Account Id is empty and sub account list is empty, set all account to current account
       dataList.forEach((element) => {
         tmpOptionList.push({
-          description: element.eks?.deploymentKind ?? "",
+          description: defaultStr(element.eks?.deploymentKind),
           name: `${element.eks?.eksClusterName}`,
           id: element.sourceId,
-          value: element.accountId || "",
+          value: defaultStr(element.accountId),
           status: buildStatus(existEKSList, element.eks?.eksClusterName),
         });
       });
@@ -131,14 +132,16 @@ const StepChooseEKSSource: React.FC<IngestSettingProps> = (
           count: PAGE_SIZE,
         }
       );
-      const dataLogAccountList: SubAccountLink[] =
-        resAccountData.data.listSubAccountLinks?.subAccountLinks || [];
-
+      const dataLogAccountList: SubAccountLink[] = defaultArray(
+        resAccountData.data.listSubAccountLinks?.subAccountLinks,
+        []
+      );
+      console.info("dataLogAccountList:", dataLogAccountList);
       dataLogAccountList.forEach((element) => {
         if (element.subAccountId) {
           tmpAccountList.push({
-            description: element.id || "",
-            value: element.subAccountId || "",
+            description: defaultStr(element.subAccountId),
+            value: defaultStr(element.subAccountId),
             name: `${element.subAccountName}(${element.subAccountId})`,
           });
         }

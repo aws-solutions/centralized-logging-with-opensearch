@@ -33,20 +33,30 @@ import {
   createAlarmReducer,
 } from "./createAlarm";
 import { grafana, GrafanaState } from "./grafana";
+import { openSearchSlice, OpenSearchState } from "./createOpenSearch";
 
 import {
   SelectProcessorActions,
   SelectProcessorState,
   selectProcessorReducer,
 } from "./selectProcessor";
+import { S3BufferState, s3BufferSlice } from "./configBufferS3";
+import { KDSBufferState, kdsBufferSlice } from "./configBufferKDS";
+import { LogConfigState, logConfigSlice } from "./createLogConfig";
+import { MemberAccountState, memberAccountSlice } from "./linkMemberAccount";
 
-const reducers = {
+export const reducers = {
   app: appReducer,
   createTag: createTagReducer,
   createLightEngine: createLightEngineReducer,
   createAlarm: createAlarmReducer,
   grafana: grafana.reducer,
   selectProcessor: selectProcessorReducer,
+  openSearch: openSearchSlice.reducer,
+  s3Buffer: s3BufferSlice.reducer,
+  kdsBuffer: kdsBufferSlice.reducer,
+  logConfig: logConfigSlice.reducer,
+  memberAccount: memberAccountSlice.reducer,
 };
 
 export type RootState = {
@@ -56,6 +66,11 @@ export type RootState = {
   createAlarm: CreateAlarmState;
   grafana: GrafanaState;
   selectProcessor: SelectProcessorState;
+  openSearch: OpenSearchState;
+  s3Buffer: S3BufferState;
+  kdsBuffer: KDSBufferState;
+  logConfig: LogConfigState;
+  memberAccount: MemberAccountState;
 };
 
 export type Actions =

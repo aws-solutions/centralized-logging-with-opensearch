@@ -109,7 +109,7 @@ def check_grafana(**args):
         item = ddb_util.get_item({"id": grafana_id})
         url, token = item["url"], item["token"]
 
-    grafana_client = GrafanaClient(url=url, token=token, verify=False, timeout=5)
+    grafana_client = GrafanaClient(url=url, token=token, verify=False, timeout=30)
 
     check_detail_list = []
 

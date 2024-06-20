@@ -14,12 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React, { useMemo } from "react";
-import ELBArch from "assets/images/desc/elbArch.png";
-import elbLightEngineArch from "assets/images/desc/elbLightEngineArch.png"
+import ELBArch from "assets/images/desc/elbArch.webp";
+import elbLightEngineArch from "assets/images/desc/elbLightEngineArch.webp";
 import ExtLink from "components/ExtLink";
 import { ELB_ACCESS_LOG_LINK } from "assets/js/const";
 import { useTranslation } from "react-i18next";
-import { AnalyticEngineTypes } from "../SpecifyAnalyticsEngine";
+import { AnalyticEngineTypes } from "types";
 
 export interface ELBDescProps {
   engineType: AnalyticEngineTypes;

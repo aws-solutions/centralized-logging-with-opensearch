@@ -222,11 +222,31 @@ export class AppPipelineStack extends SolutionStack {
       bufferAccessRoleArn.logicalId
     );
 
+    const logProcessorConcurrency = this.newParam("logProcessorConcurrency", {
+      description:
+        "Reserve concurrency for log processor lambda",
+      default: 0,
+      type: "Number",
+    });
+    this.addToParamLabels("Number Of Reserve Concurrency", logProcessorConcurrency.logicalId);
+
     const logType = this.newParam("logType", {
       type: "String",
       description: "The log type of the pipeline",
       default: "",
     });
+
+    let pluginList = "";
+
+    const plugins = new CfnParameter(this, "enrichmentPlugins", {
+      description:
+        "List of plugins delimited by comma, leave blank if no available plugins to use.",
+      default: "",
+      type: "String",
+    });
+    this.addToParamLabels("Plugins", plugins.logicalId);
+    pluginList = plugins.valueAsString;
+
 
     const processVpc = Vpc.fromVpcAttributes(this, "ProcessVpc", {
       vpcId: vpcId.valueAsString,
@@ -326,6 +346,8 @@ export class AppPipelineStack extends SolutionStack {
         logType: logType.valueAsString,
         subCategory: 'FLB',
         enableConfigJsonParam: true,
+        logProcessorConcurrency: logProcessorConcurrency.valueAsNumber,
+        plugins: pluginList,
       };
 
       if (props.enableOSIProcessor == "true") {
@@ -416,6 +438,17 @@ export class AppPipelineStack extends SolutionStack {
               effect: iam.Effect.ALLOW,
               resources: [
                 `arn:${Aws.PARTITION}:s3:::${logBucketName.valueAsString}/*`,
+              ],
+            }),
+            new iam.PolicyStatement({
+              actions: [
+                "kms:GenerateDataKey*",
+                "kms:Decrypt",
+                "kms:Encrypt"
+              ],
+              effect: iam.Effect.ALLOW,
+              resources: [
+                `arn:${Aws.PARTITION}:kms:${Aws.REGION}:${Aws.ACCOUNT_ID}:key/*`,
               ],
             }),
           ],
@@ -539,6 +572,7 @@ export class AppPipelineStack extends SolutionStack {
         solutionId: solutionId,
         logType: logType.valueAsString,
         indexTemplateGzipBase64: indexTemplateGzipBase64.valueAsString,
+        plugins: pluginList,
       };
 
 
@@ -549,8 +583,8 @@ export class AppPipelineStack extends SolutionStack {
         minCapacity: minCapacity.valueAsNumber,
         enableAutoScaling: props.enableAutoScaling!,
         stackPrefix: stackPrefix,
-        subCategory: 'FLB'
-
+        subCategory: 'FLB',
+        logProcessorConcurrency: logProcessorConcurrency.valueAsNumber,
       };
 
       const kdsBufferStack = new KDSStack(this, "KDSBuffer", pipelineProps);
@@ -637,6 +671,7 @@ export class AppPipelineStack extends SolutionStack {
         topic: topic.valueAsString,
         stackPrefix: stackPrefix,
         logType: "Application",
+        logProcessorConcurrency: logProcessorConcurrency.valueAsNumber
       };
 
       const mskBufferStack = new MSKStack(this, "MSKBuffer", pipelineProps);
@@ -699,6 +734,7 @@ export class AppPipelineStack extends SolutionStack {
         enableConfigJsonParam: false,
         writeIdxData: 'False',
         noBufferAccessRoleArn: noBufferAccessRole!.roleArn,
+        logProcessorConcurrency: logProcessorConcurrency.valueAsNumber
       };
       const noBufferOpenSearchInitStack = new OpenSearchInitStack(this, "OpenSearchInit", noBufferOSProps);
       // Setup Event Bridge

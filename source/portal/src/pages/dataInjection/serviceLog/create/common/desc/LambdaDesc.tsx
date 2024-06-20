@@ -15,7 +15,7 @@ limitations under the License.
 */
 import React from "react";
 import ExtLink from "components/ExtLink";
-import LambdaArch from "assets/images/desc/lambdaArch.png";
+import LambdaArch from "assets/images/desc/lambdaArch.webp";
 import { LAMBDA_LOG_LINK } from "assets/js/const";
 import { useTranslation } from "react-i18next";
 const LambdaDesc: React.FC = () => {

@@ -26,7 +26,7 @@ class ETLLogModel:
 
 class ETLLogTable:
     model = ETLLogModel()
-    ddb_client = DynamoDBUtil(model.__table_name__)
+    ddb_client = DynamoDBUtil(table=model.__table_name__)
     
     def put(self, execution_name: str, task_id: str, item: dict) -> None:
         item[self.model.partition_key] = execution_name

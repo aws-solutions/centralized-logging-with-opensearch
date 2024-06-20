@@ -21,9 +21,9 @@ import { AntTabs, AntTab, TabPanel } from "./tab";
 describe("Tabs Component", () => {
   test("renders AntTabs and AntTab correctly", () => {
     render(
-      <AntTabs value={0}>
-        <AntTab label="Tab 1" />
-        <AntTab label="Tab 2" />
+      <AntTabs value="tab1">
+        <AntTab label="Tab 1" value="tab1" />
+        <AntTab label="Tab 2" value="tab2" />
       </AntTabs>
     );
     expect(screen.getByText("Tab 1")).toBeInTheDocument();
@@ -33,14 +33,14 @@ describe("Tabs Component", () => {
   test("renders TabPanel correctly", () => {
     render(
       <div>
-        <AntTabs value={0}>
-          <AntTab label="Tab 1" />
-          <AntTab label="Tab 2" />
+        <AntTabs value="tab1">
+          <AntTab label="Tab 1" value="tab1" />
+          <AntTab label="Tab 2" value="tab2" />
         </AntTabs>
-        <TabPanel value={0} index={0}>
+        <TabPanel value="tab1" index="tab1">
           Content 1
         </TabPanel>
-        <TabPanel value={0} index={1}>
+        <TabPanel value="tab1" index="tab2">
           Content 2
         </TabPanel>
       </div>

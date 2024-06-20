@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import os
-import logging
+from commonlib.logging import get_logger
 
 
 from boto3.dynamodb.conditions import Attr
@@ -17,11 +17,12 @@ from commonlib.model import (
     StatusEnum,
     AppLogIngestion,
     InstanceIngestionDetail,
+    LogTypeEnum,
 )
+from commonlib.exception import APIException, ErrorCode
 from svc.ec2_attach_iam_instance_profile import attach_permission_to_instance
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 instance_table_name = os.environ.get("INSTANCE_TABLE_NAME")
 instance_dao = InstanceDao(table_name=instance_table_name)
@@ -195,3 +196,16 @@ class EC2SourceHandler(FlbHandler):
         self._ingestion_dao.update_app_log_ingestion(
             app_log_ingestion.id, status=StatusEnum.INACTIVE
         )
+
+    def check_duplicated_win_event_log(self, source_id, app_pipeline_id: str):
+        applog_ingestion_list = (
+            self._ingestion_dao.get_app_log_ingestions_by_pipeline_id(app_pipeline_id)
+        )
+        for applog_ingestion in applog_ingestion_list:
+            if (applog_ingestion.sourceId == source_id) and (
+                applog_ingestion.logConfig.logType == LogTypeEnum.WINDOWS_EVENT
+            ):
+                raise APIException(
+                    ErrorCode.ITEM_ALREADY_EXISTS,
+                    r"${common:error.ingestionAlreadyExists}",
+                )

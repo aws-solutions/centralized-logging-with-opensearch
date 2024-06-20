@@ -30,11 +30,13 @@ import {
   aws_kms as kms,
   aws_sns as sns,
   aws_s3_notifications as s3n,
+  Aspects,
 } from "aws-cdk-lib";
 import { CfnDocument } from "aws-cdk-lib/aws-ssm";
 import { NagSuppressions } from "cdk-nag";
 import { Construct } from "constructs";
 import { Ec2IamInstanceProfileStack } from "../api/ec2-iam-instance-profile";
+import { UseS3BucketNotificationsWithRetryAspects } from "../util/stack-helper";
 const { VERSION } = process.env;
 
 /**
@@ -383,10 +385,25 @@ export class CrossAccount extends Stack {
         }),
         // Attach Policy to Role
         new iam.PolicyStatement({
-          sid: "AttachPolicyToInstanceProfile",
+          sid: "AttachPolicyToInstanceProfile1",
           effect: iam.Effect.ALLOW,
           actions: [
             "iam:AttachRolePolicy",
+          ],
+          resources: [
+            `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/*`,
+            `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:instance-profile/*`,
+          ],
+          conditions: {
+            StringEquals: {
+              "iam:PolicyARN": Ec2IamInstanceProfile.Ec2IamInstanceProfilePolicy.managedPolicyArn
+            }
+          }
+        }),
+        new iam.PolicyStatement({
+          sid: "AttachPolicyToInstanceProfile2",
+          effect: iam.Effect.ALLOW,
+          actions: [
             "iam:AddRoleToInstanceProfile",
             "iam:GetInstanceProfile",
             "iam:ListAttachedRolePolicies",
@@ -629,6 +646,7 @@ export class CrossAccount extends Stack {
             `arn:${Aws.PARTITION}:ssm:*:*:document/AWS-RunShellScript`,
             `arn:${Aws.PARTITION}:ssm:*:*:document/*FluentBitDocumentInstallation*`,
             `arn:${Aws.PARTITION}:ssm:*:*:document/*FluentBitConfigDownloading*`,
+            `arn:${Aws.PARTITION}:ssm:*:*:document/*FluentBitStatusCheckDocument*`,
           ],
         }),
         new iam.PolicyStatement({
@@ -703,6 +721,20 @@ export class CrossAccount extends Stack {
           ],
         }),
         new iam.PolicyStatement({
+          sid: "RDSPolicy",
+          effect: iam.Effect.ALLOW,
+          resources: [
+            `arn:${Aws.PARTITION}:rds:${Aws.REGION}:${Aws.ACCOUNT_ID}:cluster:*`,
+            `arn:${Aws.PARTITION}:rds:${Aws.REGION}:${Aws.ACCOUNT_ID}:db:*`,
+          ],
+          actions: [
+            "rds:DownloadDBLogFilePortion",
+            "rds:DescribeDBInstances",
+            "rds:DescribeDBLogFiles",
+            "rds:DescribeDBClusters",
+          ],
+        }),
+        new iam.PolicyStatement({
           effect: iam.Effect.ALLOW,
           resources: [`${flbUploadingEventSubscriptionTopic.topicArn}`],
           actions: [
@@ -745,6 +777,12 @@ export class CrossAccount extends Stack {
       }
     );
 
+    // TODO: Workaround since cdk>=v2.116.0 builtin custom resource lambda has an issue that will lead to remove all existing s3 bucket notifications. Remove this once the cdk issue is fixed.
+    const notificationHandler = Stack.of(this).node.tryFindChild('BucketNotificationsHandler050a0587b7544547bf325f094a3db834');
+    if (notificationHandler) {
+      Aspects.of(notificationHandler).add(new UseS3BucketNotificationsWithRetryAspects())
+    }
+
     // Download agent from CN if deployed in CN
     const isCN = new CfnCondition(this, "isCN", {
       expression: Fn.conditionEquals(Aws.PARTITION, "aws-cn"),
@@ -757,9 +795,10 @@ export class CrossAccount extends Stack {
 
     const FluentBitVersion = "v1.9.10";
 
-    const installLogAgentDocument = new CfnDocument(
+
+    const installLogAgentDocumentForLinux = new CfnDocument(
       this,
-      "Fluent-BitDocumentInstallation",
+      "Fluent-BitDocumentInstallationForLinux",
       {
         content: {
           schemaVersion: "2.2",
@@ -776,11 +815,23 @@ export class CrossAccount extends Stack {
               default: "/usr/lib",
               description: "(Required) systemd path for current OS",
             },
+            "FluentBitSource": {
+              "default": "AWS",
+              "description": "(Required) The source of FluentBit",
+              "type": "String",
+              "allowedValues": ["AWS", "Community"]
+            }
           },
           mainSteps: [
             {
               action: "aws:downloadContent",
               name: "downloadFluentBit",
+              "precondition": {
+                "StringEquals": [
+                  "{{FluentBitSource}}",
+                  "AWS"
+                ]
+              },
               inputs: {
                 sourceType: "S3",
                 sourceInfo: `{\"path\":\"https://${s3Address}/clo/${VERSION}/aws-for-fluent-bit/fluent-bit{{ARCHITECTURE}}.tar.gz\"}`,
@@ -790,11 +841,34 @@ export class CrossAccount extends Stack {
             {
               action: "aws:runShellScript",
               name: "installFluentBit",
+              "precondition": {
+                "StringEquals": [
+                  "{{FluentBitSource}}",
+                  "AWS"
+                ]
+              },
               inputs: {
                 runCommand: [
                   "cd /opt",
                   'FLUENT_BIT_CONFIG=$(ls /opt/fluent-bit/etc/fluent-bit.conf | wc -l)',
                   'if [ ${FLUENT_BIT_CONFIG} = 1 ];  then tar zxvf fluent-bit{{ARCHITECTURE}}.tar.gz --exclude=fluent-bit/etc/fluent-bit.conf --exclude=fluent-bit/etc/parsers.conf ; else sudo tar zxvf fluent-bit{{ARCHITECTURE}}.tar.gz;  fi',
+                ],
+              },
+            },
+            {
+              action: 'aws:runShellScript',
+              name: 'installCommunityFluentBit',
+              "precondition": {
+                "StringEquals": [
+                  "{{FluentBitSource}}",
+                  "Community"
+                ]
+              },
+              inputs: {
+                runCommand: [
+                  "set -x",
+                  'export FLUENT_BIT_RELEASE_VERSION=3.0.4',
+                  'curl https://raw.githubusercontent.com/fluent/fluent-bit/master/install.sh | sh',
                 ],
               },
             },
@@ -829,6 +903,200 @@ export class CrossAccount extends Stack {
         documentFormat: "JSON",
         documentType: "Command",
         updateMethod: "NewVersion",
+      }
+    );
+    const installLogAgentDocumentForWindows = new CfnDocument(
+      this,
+      'WindowsFluent-BitDocumentInstallationForWindows',
+      {
+        content: {
+          "schemaVersion": "2.2",
+          "description": "Deploy and install PowerShell modules.",
+          "parameters": {
+            "workingDirectory": {
+              "type": "String",
+              "default": "",
+              "description": "(Optional) The path to the working directory on your instance.",
+              "maxChars": 4096
+            },
+            "source": {
+              "type": "String",
+              "description": "The URL or local path on the instance to the application .zip file."
+            },
+            "sourceHash": {
+              "type": "String",
+              "default": "",
+              "description": "(Optional) The SHA256 hash of the zip file."
+            },
+            "commands": {
+              "type": "StringList",
+              "default": [],
+              "description": "(Optional) Specify PowerShell commands to run on your instance.",
+              "displayType": "textarea"
+            },
+            "executionTimeout": {
+              "type": "String",
+              "default": "3600",
+              "description": "(Optional) The time in seconds for a command to be completed before it is considered to have failed. Default is 3600 (1 hour). Maximum is 172800 (48 hours).",
+              "allowedPattern": "([1-9][0-9]{0,4})|(1[0-6][0-9]{4})|(17[0-1][0-9]{3})|(172[0-7][0-9]{2})|(172800)"
+            }
+          },
+          "mainSteps": [
+            {
+              "action": "aws:runPowerShellScript",
+              "name": "createDownloadFolder",
+              "precondition": {
+                "StringEquals": [
+                  "platformType",
+                  "Windows"
+                ]
+              },
+              "inputs": {
+                "runCommand": [
+                  "try {",
+                  "  $sku = (Get-CimInstance -ClassName Win32_OperatingSystem).OperatingSystemSKU",
+                  "  if ($sku -eq 143 -or $sku -eq 144) {",
+                  "    Write-Host \"This document is not supported on Windows 2016 Nano Server.\"",
+                  "    exit 40",
+                  "  }",
+                  "  $ssmAgentService = Get-ItemProperty 'HKLM:SYSTEM\\\\CurrentControlSet\\\\Services\\\\AmazonSSMAgent\\\\'",
+                  "  if ($ssmAgentService -and [System.Version]$ssmAgentService.Version -ge [System.Version]'3.0.1031.0') {",
+                  "     exit 0",
+                  "  }",
+                  "  $DataFolder = \"Application Data\"",
+                  "  if ( ![string]::IsNullOrEmpty($env:ProgramData) ) {",
+                  "    $DataFolder = $env:ProgramData",
+                  "  } elseif ( ![string]::IsNullOrEmpty($env:AllUsersProfile) ) {",
+                  "    $DataFolder = \"$env:AllUsersProfile\\Application Data\"",
+                  "  }",
+                  "  $TempFolder = \"/\"",
+                  "  if ( $env:Temp -ne $null ) {",
+                  "    $TempFolder = $env:Temp",
+                  "  }",
+                  "  $DataFolder = Join-Path $DataFolder 'Amazon\\SSM'",
+                  "  $DownloadFolder = Join-Path $TempFolder 'Amazon\\SSM'",
+                  "  if ( !( Test-Path -LiteralPath $DataFolder )) {",
+                  "    $none = New-Item -ItemType directory -Path $DataFolder",
+                  "  }",
+                  "  $DataACL = Get-Acl $DataFolder",
+                  "  if ( Test-Path -LiteralPath $DownloadFolder ) {",
+                  "    $DownloadACL = Get-Acl $DownloadFolder",
+                  "    $ACLDiff = Compare-Object ($DownloadACL.AccessToString) ($DataACL.AccessToString)",
+                  "    if ( $ACLDiff.count -eq 0 ) {",
+                  "      exit 0",
+                  "    }",
+                  "    Remove-Item $DownloadFolder -Recurse -Force",
+                  "  }",
+                  "  $none = New-Item -ItemType directory -Path $DownloadFolder",
+                  "  Set-Acl $DownloadFolder -aclobject $DataACL",
+                  "  $DownloadACL = Get-Acl $DownloadFolder",
+                  "  $ACLDiff = Compare-Object ($DownloadACL.AccessToString) ($DataACL.AccessToString)",
+                  "  if ( $ACLDiff.count -ne 0 ) {",
+                  "    Write-Error \"Failed to create download folder\" -ErrorAction Continue",
+                  "    exit 41",
+                  "  }",
+                  "} catch {",
+                  "  Write-Host  \"Failed to create download folder\"",
+                  "  Write-Error  $Error[0]  -ErrorAction Continue",
+                  "  exit 42",
+                  "}"
+                ]
+              }
+            },
+            {
+              "action": "aws:psModule",
+              "name": "installModule",
+              "inputs": {
+                "id": "0.aws:psModule",
+                "runCommand": "{{ commands }}",
+                "source": "{{ source }}",
+                "sourceHash": "{{ sourceHash }}",
+                "workingDirectory": "{{ workingDirectory }}",
+                "timeoutSeconds": "{{ executionTimeout }}"
+              }
+            }
+          ]
+        },
+        documentFormat: 'JSON',
+        documentType: 'Command',
+        updateMethod: "NewVersion",
+      }
+    );
+    const agentStatusCheckDocument = new CfnDocument(
+      this,
+      'FluentBit-StatusCheckDocument',
+      {
+        content: {
+          "schemaVersion": "2.2",
+          "description": "Execute scripts stored in a remote location. The following remote locations are currently supported: GitHub (public and private) and Amazon S3 (S3). The following script types are currently supported: #! support on Linux and file associations on Windows.",
+          "parameters": {
+            "executionTimeout": {
+              "default": "3600",
+              "description": "(Optional) The time in seconds for a command to complete before it is considered to have failed. Default is 3600 (1 hour). Maximum is 28800 (8 hours).",
+              "type": "String",
+              "allowedPattern": "([1-9][0-9]{0,3})|(1[0-9]{1,4})|(2[0-7][0-9]{1,3})|(28[0-7][0-9]{1,2})|(28800)"
+            },
+            "winCommandLine": {
+              "default": "",
+              "description": "(Required) Specify the command line to be executed. The following formats of commands can be run: 'pythonMainFile.py argument1 argument2', 'ansible-playbook -i \"localhost,\" -c local example.yml'",
+              "type": "String"
+            },
+            "linuxCommandLine": {
+              "default": "",
+              "description": "(Required) Specify the command line to be executed. The following formats of commands can be run: 'pythonMainFile.py argument1 argument2', 'ansible-playbook -i \"localhost,\" -c local example.yml'",
+              "type": "String"
+            }
+          },
+          "mainSteps": [
+            {
+              "inputs": {
+                "timeoutSeconds": "{{ executionTimeout }}",
+                "runCommand": [
+                  "",
+                  "$directory = Convert-Path .",
+                  "$env:PATH += \";$directory\"",
+                  " {{ winCommandLine }}",
+                  "if ($?) {",
+                  "    exit $LASTEXITCODE",
+                  "} else {",
+                  "    exit 255",
+                  "}",
+                  ""
+                ]
+              },
+              "name": "runPowerShellScript",
+              "action": "aws:runPowerShellScript",
+              "precondition": {
+                "StringEquals": [
+                  "platformType",
+                  "Windows"
+                ]
+              }
+            },
+            {
+              "inputs": {
+                "timeoutSeconds": "{{ executionTimeout }}",
+                "runCommand": [
+                  "",
+                  "directory=$(pwd)",
+                  "export PATH=$PATH:$directory",
+                  " {{ linuxCommandLine }} ",
+                  ""
+                ]
+              },
+              "name": "runShellScript",
+              "action": "aws:runShellScript",
+              "precondition": {
+                "StringEquals": [
+                  "platformType",
+                  "Linux"
+                ]
+              }
+            }
+          ]
+        },
+        documentFormat: 'JSON',
+        documentType: 'Command',
       }
     );
 
@@ -905,20 +1173,140 @@ export class CrossAccount extends Stack {
       }
     );
 
+    const downloadLogConfigDocumentForWindows = new CfnDocument(
+      this,
+      "Fluent-BitConfigDownloadingForWindows",
+      {
+        content: {
+          "schemaVersion": "2.2",
+          "description": "Execute scripts stored in a remote location. The following remote locations are currently supported: GitHub (public and private) and Amazon S3 (S3). The following script types are currently supported: #! support on Linux and file associations on Windows.",
+          "parameters": {
+            "executionTimeout": {
+              "default": "3600",
+              "description": "(Optional) The time in seconds for a command to complete before it is considered to have failed. Default is 3600 (1 hour). Maximum is 28800 (8 hours).",
+              "type": "String",
+              "allowedPattern": "([1-9][0-9]{0,3})|(1[0-9]{1,4})|(2[0-7][0-9]{1,3})|(28[0-7][0-9]{1,2})|(28800)"
+            },
+            "workingDirectory": {
+              "default": "",
+              "description": "(Optional) The path where the content will be downloaded and executed from on your instance.",
+              "maxChars": 4096,
+              "type": "String"
+            },
+            "INSTANCEID": {
+              "type": 'String',
+              "default": '',
+              "description": '(Required) Instance Id',
+            },
+            "commandLine": {
+              "default": "ReStart-Service fluent-bit",
+              "description": "(Required) Specify the command line to be executed. The following formats of commands can be run: 'pythonMainFile.py argument1 argument2', 'ansible-playbook -i \"localhost,\" -c local example.yml'",
+              "type": "String"
+            }
+          },
+          "mainSteps": [
+            {
+              "inputs": {
+                "sourceInfo": `{\"path\":\"https://${loggingBucket.bucketRegionalDomainName}/app_log_config/{{INSTANCEID}}/applog_parsers.conf\"}`,
+                "sourceType": "S3",
+                "destinationPath": "C:/fluent-bit/etc"
+              },
+              "name": "downloadFluentBitParserConfig",
+              "action": "aws:downloadContent"
+            },
+            {
+              "inputs": {
+                "sourceInfo": `{\"path\":\"https://${loggingBucket.bucketRegionalDomainName}/app_log_config/{{INSTANCEID}}/fluent-bit.conf\"}`,
+                "sourceType": "S3",
+                "destinationPath": "C:/fluent-bit/etc"
+              },
+              "name": "downloadFluentBitConfig",
+              "action": "aws:downloadContent"
+            },
+            {
+              "inputs": {
+                "workingDirectory": "{{ workingDirectory }}",
+                "timeoutSeconds": "{{ executionTimeout }}",
+                "runCommand": [
+                  "",
+                  "$directory = Convert-Path .",
+                  "$env:PATH += \";$directory\"",
+                  " {{ commandLine }}",
+                  "if ($?) {",
+                  "    exit $LASTEXITCODE",
+                  "} else {",
+                  "    exit 255",
+                  "}",
+                  ""
+                ]
+              },
+              "name": "runPowerShellScript",
+              "action": "aws:runPowerShellScript",
+              "precondition": {
+                "StringEquals": [
+                  "platformType",
+                  "Windows"
+                ]
+              }
+            },
+            {
+              "inputs": {
+                "workingDirectory": "{{ workingDirectory }}",
+                "timeoutSeconds": "{{ executionTimeout }}",
+                "runCommand": [
+                  "",
+                  "directory=$(pwd)",
+                  "export PATH=$PATH:$directory",
+                  " {{ commandLine }} ",
+                  ""
+                ]
+              },
+              "name": "runShellScript",
+              "action": "aws:runShellScript",
+              "precondition": {
+                "StringEquals": [
+                  "platformType",
+                  "Linux"
+                ]
+              }
+            }
+          ]
+        },
+        documentFormat: "JSON",
+        documentType: "Command",
+        updateMethod: "NewVersion",
+      }
+    );
+
     new CfnOutput(this, "MemberAccountRoleARN", {
       description: "Member Account Role ARN",
       value: crossAccountRole.roleArn,
     }).overrideLogicalId("MemberAccountRoleARN");
 
-    new CfnOutput(this, "AgentInstallDocument", {
-      description: "FluentBit Agent Installation Document",
-      value: installLogAgentDocument.ref,
+    new CfnOutput(this, "AgentInstallDocumentForLinux", {
+      description: "FluentBit Agent Installation Document for Linux",
+      value: installLogAgentDocumentForLinux.ref,
     }).overrideLogicalId("AgentInstallDocument");
 
-    new CfnOutput(this, "AgentConfigDocument", {
-      description: "FluentBit Agent Configuration Document",
+    new CfnOutput(this, "AgentConfigDocumentForLinux", {
+      description: "FluentBit Agent Configuration Document for Linux",
       value: downloadLogConfigDocument.ref,
     }).overrideLogicalId("AgentConfigDocument");
+
+    new CfnOutput(this, "AgentInstallDocumentForWindows", {
+      description: "FluentBit Agent Installation Document for Windows",
+      value: installLogAgentDocumentForWindows.ref,
+    }).overrideLogicalId("AgentInstallDocumentForWindows");
+
+    new CfnOutput(this, "AgentConfigDocumentForWindows", {
+      description: "FluentBit Agent Configuration Document for Windows",
+      value: downloadLogConfigDocumentForWindows.ref,
+    }).overrideLogicalId("AgentConfigDocumentForWindows");
+
+    new CfnOutput(this, "AgentStatusCheckDocument", {
+      description: "Status detection of FluentBit ",
+      value: agentStatusCheckDocument.ref,
+    }).overrideLogicalId("AgentStatusCheckDocument");
 
     new CfnOutput(this, "MemberAccountS3Bucket", {
       description: "Member Account S3 Bucket",

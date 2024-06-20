@@ -81,7 +81,7 @@ export class InitSQSStack extends Construct {
         retentionPeriod: Duration.days(7),
         deadLetterQueue: {
           queue: this.S3ObjectMigrationDLQ,
-          maxReceiveCount: 30,
+          maxReceiveCount: 3,
         },
         encryption: sqs.QueueEncryption.KMS,
         encryptionMasterKey: microBatchKMSStack.encryptionKey,
@@ -158,7 +158,7 @@ export class InitSQSStack extends Construct {
         retentionPeriod: Duration.days(7),
         deadLetterQueue: {
           queue: this.S3ObjectMigrationDLQ,
-          maxReceiveCount: 30,
+          maxReceiveCount: 3,
         },
         encryption: sqs.QueueEncryption.KMS,
         encryptionMasterKey: microBatchKMSStack.encryptionKey,

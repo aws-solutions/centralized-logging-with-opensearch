@@ -18,6 +18,7 @@ import {
   BufferType,
   Codec,
   CompressionType,
+  EngineType,
   IndexSuffix,
   PipelineAlarmStatus,
   PipelineMonitorStatus,
@@ -52,8 +53,7 @@ export const buildInitPipelineData = (
 
     aosParams: {
       domainName: "",
-      engine: "",
-      failedLogBucket: amplifyConfig.default_logging_bucket,
+      engine: EngineType.OpenSearch,
       indexPrefix: "",
 
       opensearchArn: "",
@@ -66,6 +66,7 @@ export const buildInitPipelineData = (
       codec: Codec.best_compression,
       refreshInterval: "1s",
       vpc: {
+        publicSubnetIds: "",
         privateSubnetIds: "",
         securityGroupId: "",
         vpcId: "",
@@ -95,13 +96,11 @@ export const buildInitPipelineData = (
       compressionType: CompressionType.GZIP,
       s3StorageClass: S3_STORAGE_CLASS_TYPE.INTELLIGENT_TIERING,
     },
-    mskBufferParams: {
-      mskClusterName: "",
-      mskClusterArn: "",
-      mskBrokerServers: "",
-      topic: "",
-    },
     force: false,
     monitor: MONITOR_ALARM_INIT_DATA,
+    params: {
+      geoPlugin: false,
+      userAgentPlugin: false,
+    },
   };
 };

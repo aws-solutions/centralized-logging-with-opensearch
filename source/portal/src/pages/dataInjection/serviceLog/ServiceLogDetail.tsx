@@ -15,8 +15,6 @@ limitations under the License.
 */
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
-import Breadcrumb from "components/Breadcrumb";
-import LoadingText from "components/LoadingText";
 import ExtLink from "components/ExtLink";
 import { AntTabs, AntTab, TabPanel } from "components/Tab";
 import { ApiResponse, appSyncRequestQuery } from "assets/js/request";
@@ -47,13 +45,10 @@ import {
   defaultStr,
   formatLocalTime,
   isOSIPipeline,
-  ternary,
 } from "assets/js/utils";
 import { AmplifyConfigType } from "types";
 import { useSelector } from "react-redux";
 import { ServiceTypeMapMidSuffix } from "assets/js/const";
-import HelpPanel from "components/HelpPanel";
-import SideMenu from "components/SideMenu";
 import { useTranslation } from "react-i18next";
 import Monitoring from "./detail/Monitoring";
 import Logging from "./detail/Logging";
@@ -70,15 +65,15 @@ import Status from "components/Status/Status";
 import { LightEngineAnalyticsEngineDetails } from "../common/LightEngineAnalyticsEngineDetails";
 import { LightEngineLogProcessor } from "../common/LightEngineLogProcessor";
 import { LightEngineLoggingList } from "../common/LightEngineLoggingList";
+import CommonLayout from "pages/layout/CommonLayout";
 
 export const getParamValueByKey = (
   dataList: (Parameter | null)[] | null | undefined,
   key: string
 ) => {
   if (dataList) {
-    return (
-      dataList.find((element) => element?.parameterKey === key)
-        ?.parameterValue || ""
+    return defaultStr(
+      dataList.find((element) => element?.parameterKey === key)?.parameterValue
     );
   }
   return "-";
@@ -155,7 +150,7 @@ const ServiceLogDetail: React.FC = () => {
       link: "/log-pipeline/service-log",
     },
     {
-      name: id || "",
+      name: defaultStr(id),
     },
   ];
 
@@ -167,14 +162,14 @@ const ServiceLogDetail: React.FC = () => {
     ServiceLogDetailProps | undefined
   >();
   const [svcPipeline, setSvcPipeline] = useState<ServicePipeline | undefined>();
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState("logSource");
   const [analyticsEngine, setAnalyticsEngine] = useState<
     AnalyticsEngineType | undefined
   >();
   const [schedules, setSchedules] = useState<Schedule[] | undefined>();
   console.log(analyticsEngine, schedules);
 
-  const changeTab = (event: any, newTab: number) => {
+  const changeTab = (event: any, newTab: string) => {
     setActiveTab(newTab);
   };
 
@@ -194,7 +189,7 @@ const ServiceLogDetail: React.FC = () => {
     try {
       setLoadingData(true);
       const resData: any = await appSyncRequestQuery(getServicePipeline, {
-        id: id,
+        id: encodeURIComponent(defaultStr(id)),
       });
       const dataPipeline: ServicePipeline = resData.data.getServicePipeline;
       let tmpLogLocation = "";
@@ -226,7 +221,7 @@ const ServiceLogDetail: React.FC = () => {
         id: defaultStr(id),
         engineType: dataPipeline.engineType ?? AnalyticEngineType.OpenSearch,
         type: dataPipeline.type,
-        status: dataPipeline.status || PipelineStatus.ERROR,
+        status: dataPipeline.status ?? PipelineStatus.ERROR,
         source: defaultStr(dataPipeline.source),
         esName: getParamValueByKey(dataPipeline.parameters, "domainName"),
         esIndex: getParamValueByKey(dataPipeline.parameters, "indexPrefix"),
@@ -235,7 +230,7 @@ const ServiceLogDetail: React.FC = () => {
           dataPipeline.parameters,
           "createDashboard"
         ),
-        createTime: formatLocalTime(dataPipeline?.createdAt || ""),
+        createTime: formatLocalTime(defaultStr(dataPipeline?.createdAt)),
         warnRetention: getParamValueByKey(
           dataPipeline.parameters,
           "daysToWarm"
@@ -259,11 +254,11 @@ const ServiceLogDetail: React.FC = () => {
           dataPipeline.parameters,
           "replicaNumbers"
         ),
-        logSourceAccountId:
-          getParamValueByKey(dataPipeline.parameters, "logSourceAccountId") ||
-          dataPipeline.logSourceAccountId ||
-          "",
-        destinationType: dataPipeline.destinationType || "",
+        logSourceAccountId: defaultStr(
+          getParamValueByKey(dataPipeline.parameters, "logSourceAccountId"),
+          dataPipeline?.logSourceAccountId
+        ),
+        destinationType: defaultStr(dataPipeline.destinationType),
         samplingRate: getParamValueByKey(
           dataPipeline.parameters,
           "samplingRate"
@@ -365,7 +360,7 @@ const ServiceLogDetail: React.FC = () => {
       {
         label: t("servicelog:detail.index"),
         data: `${curPipeline?.esIndex}${
-          ServiceTypeMapMidSuffix[curPipeline?.type || ""]
+          ServiceTypeMapMidSuffix[defaultStr(curPipeline?.type)]
         }`,
       },
     ];
@@ -437,7 +432,7 @@ const ServiceLogDetail: React.FC = () => {
           <ExtLink
             to={buildESLink(
               amplifyConfig.aws_project_region,
-              curPipeline?.esName || ""
+              defaultStr(curPipeline?.esName)
             )}
           >
             {curPipeline?.esName}
@@ -452,7 +447,7 @@ const ServiceLogDetail: React.FC = () => {
     return [
       {
         label: t("applog:list.status"),
-        data: <Status status={curPipeline?.status || "-"} />,
+        data: <Status status={defaultStr(curPipeline?.status, "-")} />,
       },
     ];
   };
@@ -461,123 +456,106 @@ const ServiceLogDetail: React.FC = () => {
     return [
       {
         label: t("servicelog:detail.createdAt"),
-        data: formatLocalTime(curPipeline?.createTime || ""),
+        data: formatLocalTime(defaultStr(curPipeline?.createTime)),
       },
     ];
   };
 
   return (
-    <div className="lh-main-content">
-      <SideMenu />
-      <div className="lh-container">
-        <div className="lh-content">
-          <Breadcrumb list={breadCrumbList} />
-          {loadingData ? (
-            <LoadingText text="" />
-          ) : (
-            <div className="service-log">
-              <HeaderWithValueLabel
-                numberOfColumns={5}
-                headerTitle={t("servicelog:detail.generalConfig")}
-                fixedDataList={[
-                  isLightEngine
-                    ? buildLightEngineTableInfo()
-                    : buildOpenSearchIndexInfo(),
-                  buildCFNStackInfo(),
-                  isLightEngine
-                    ? buildGrafanaDashboardInfo()
-                    : buildOpenSearchInfo(),
-                  buildPipelineStatusInfo(),
-                  buildCreateTimeInfo(),
-                ]}
-                additionalData={buildCloudFrontFields()}
-              />
+    <CommonLayout breadCrumbList={breadCrumbList} loadingData={loadingData}>
+      <HeaderWithValueLabel
+        numberOfColumns={5}
+        headerTitle={t("servicelog:detail.generalConfig")}
+        fixedDataList={[
+          isLightEngine
+            ? buildLightEngineTableInfo()
+            : buildOpenSearchIndexInfo(),
+          buildCFNStackInfo(),
+          isLightEngine ? buildGrafanaDashboardInfo() : buildOpenSearchInfo(),
+          buildPipelineStatusInfo(),
+          buildCreateTimeInfo(),
+        ]}
+        additionalData={buildCloudFrontFields()}
+      />
 
-              <div>
-                <AntTabs
-                  value={activeTab}
-                  onChange={(event, newTab) => {
-                    changeTab(event, newTab);
-                  }}
-                >
-                  <AntTab label={t("servicelog:tab.logSource")} />
-                  <AntTab label={t("servicelog:tab.analyticsEngine")} />
-                  <AntTab label={t("servicelog:tab.logProcessor")} />
-                  <AntTab label={t("servicelog:tab.monitoring")} />
-                  <AntTab label={t("servicelog:tab.logging")} />
-                  {!isOSIPipeline(curPipeline) && (
-                    <AntTab label={t("servicelog:tab.alarm")} />
-                  )}
-                  <AntTab label={t("servicelog:tab.tags")} />
-                </AntTabs>
-                <TabPanel value={activeTab} index={0}>
-                  <LogSource pipelineInfo={curPipeline} />
-                </TabPanel>
-                <TabPanel value={activeTab} index={1}>
-                  {isLightEngine ? (
-                    <LightEngineAnalyticsEngineDetails
-                      pipelineInfo={svcPipeline}
-                      analyticsEngine={analyticsEngine}
-                    />
-                  ) : (
-                    <AnalyticsEngine
-                      pipelineInfo={curPipeline}
-                      amplifyConfig={amplifyConfig}
-                    />
-                  )}
-                </TabPanel>
-                <TabPanel value={activeTab} index={2}>
-                  {isLightEngine ? (
-                    <LightEngineLogProcessor schedules={schedules} />
-                  ) : (
-                    <LogProcessor
-                      amplifyConfig={amplifyConfig}
-                      pipelineInfo={curPipeline}
-                    />
-                  )}
-                </TabPanel>
-                <TabPanel value={activeTab} index={3}>
-                  <Monitoring pipelineInfo={curPipeline} />
-                </TabPanel>
-                <TabPanel value={activeTab} index={4}>
-                  {isLightEngine ? (
-                    <LightEngineLoggingList
-                      schedules={schedules ?? []}
-                      pipelineId={curPipeline?.id ?? ""}
-                      pipelineType={PipelineType.SERVICE}
-                    />
-                  ) : (
-                    <Logging pipelineInfo={curPipeline} />
-                  )}
-                </TabPanel>
-                {!isOSIPipeline(curPipeline) && (
-                  <TabPanel value={activeTab} index={5}>
-                    <Alarm
-                      pipelineInfo={curPipeline}
-                      changePipelineMonitor={(monitor) => {
-                        setCurPipeline((prev: any) => {
-                          return {
-                            ...prev,
-                            monitor: monitor,
-                          };
-                        });
-                      }}
-                    />
-                  </TabPanel>
-                )}
-                <TabPanel
-                  value={activeTab}
-                  index={ternary(isOSIPipeline(curPipeline), 5, 6)}
-                >
-                  <Tags tags={curPipeline?.tags} />
-                </TabPanel>
-              </div>
-            </div>
+      <div>
+        <AntTabs
+          value={activeTab}
+          onChange={(event, newTab) => {
+            changeTab(event, newTab);
+          }}
+        >
+          <AntTab label={t("servicelog:tab.logSource")} value="logSource" />
+          <AntTab label={t("servicelog:tab.analyticsEngine")} value="engine" />
+          <AntTab label={t("servicelog:tab.logProcessor")} value="processor" />
+          <AntTab label={t("servicelog:tab.monitoring")} value="monitoring" />
+          <AntTab label={t("servicelog:tab.logging")} value="logging" />
+          {!isOSIPipeline(curPipeline) && (
+            <AntTab label={t("servicelog:tab.alarm")} value="alarm" />
           )}
-        </div>
+          <AntTab label={t("servicelog:tab.tags")} value="tags" />
+        </AntTabs>
+        <TabPanel value={activeTab} index="logSource">
+          <LogSource pipelineInfo={curPipeline} />
+        </TabPanel>
+        <TabPanel value={activeTab} index="engine">
+          {isLightEngine ? (
+            <LightEngineAnalyticsEngineDetails
+              pipelineInfo={svcPipeline}
+              analyticsEngine={analyticsEngine}
+            />
+          ) : (
+            <AnalyticsEngine
+              pipelineInfo={curPipeline}
+              amplifyConfig={amplifyConfig}
+            />
+          )}
+        </TabPanel>
+        <TabPanel value={activeTab} index="processor">
+          {isLightEngine ? (
+            <LightEngineLogProcessor schedules={schedules} />
+          ) : (
+            <LogProcessor
+              amplifyConfig={amplifyConfig}
+              pipelineInfo={curPipeline}
+            />
+          )}
+        </TabPanel>
+        <TabPanel value={activeTab} index="monitoring">
+          <Monitoring
+            isLightEngine={isLightEngine}
+            pipelineInfo={curPipeline}
+          />
+        </TabPanel>
+        <TabPanel value={activeTab} index="logging">
+          {isLightEngine ? (
+            <LightEngineLoggingList
+              schedules={schedules ?? []}
+              pipelineId={curPipeline?.id ?? ""}
+              pipelineType={PipelineType.SERVICE}
+            />
+          ) : (
+            <Logging pipelineInfo={curPipeline} />
+          )}
+        </TabPanel>
+        <TabPanel value={activeTab} index="alarm">
+          <Alarm
+            pipelineInfo={curPipeline}
+            changePipelineMonitor={(monitor) => {
+              setCurPipeline((prev: any) => {
+                return {
+                  ...prev,
+                  monitor: monitor,
+                };
+              });
+            }}
+          />
+        </TabPanel>
+        <TabPanel value={activeTab} index="tags">
+          <Tags tags={curPipeline?.tags} />
+        </TabPanel>
       </div>
-      <HelpPanel />
-    </div>
+    </CommonLayout>
   );
 };
 

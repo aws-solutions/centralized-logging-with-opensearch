@@ -5,7 +5,7 @@ import re
 import json
 import types
 from typing import Union
-from utils.aws.commonlib import AWSConnection
+from utils.helpers import AWSConnection
 
 
 class EventsClient:
@@ -66,28 +66,25 @@ class EventsClient:
             
             self._events_client.delete_rule(Name=name, EventBusName=event_bus_name, Force=force)
     
-    def put_targets(self, id: str, rule_name: str, role_arn: str, input: dict, sfn_arn: str, event_bus_name: str = 'default') -> dict:
+    def put_targets(self, id: str, rule_name: str, input: dict, target_arn: str, target_role_arn: Union[str, None] = None, event_bus_name: str = 'default') -> dict:
         """Creates or updates the specified rule. Rules are enabled by default, or based on value of the state.
         
         :param id (str): The ID of the target within the specified rule. Use this ID to reference the target when updating the rule. We recommend using a memorable and unique string.
         :param rule_name (str): The name of the rule.
-        :param role_arn (str): The Amazon Resource Name (ARN) of the IAM role associated with the rule.
         :param input (str): Valid JSON text passed to the target. In this case, nothing from the event itself is passed to the target. For more information, see https://www.rfc-editor.org/rfc/rfc7159.txt.
-        :param sfn_arn (str): Indicates whether the rule is enabled or disabled.
+        :param target_arn (str): Indicates whether the rule is enabled or disabled.
+        :param target_role_arn (str, None): The Amazon Resource Name (ARN) of the IAM role associated with the rule.
         :param event_bus_name (str): The name or ARN of the event bus to associate with this rule. If you omit this, the default event bus is used.
         
         Returns:
             dict: response
         """
+        target = dict(Id=id, Arn=target_arn, Input=json.dumps(input, indent=4))
+        if target_role_arn:
+            target['RoleArn'] = target_role_arn
+
         return self._events_client.put_targets(Rule=rule_name, EventBusName=event_bus_name,
-                                               Targets=[
-                                                   {
-                                                       'Id': id,
-                                                       'Arn': sfn_arn,
-                                                       'Input': json.dumps(input, indent=4),
-                                                       'RoleArn': role_arn,
-                                                   }
-                                               ])
+                                               Targets=[target])
     
     def create_processor_rule(self, pipeline_id: str, source_type: str, table_name: str,  # NOSONAR
                                   staging_location: str, archive_location: str, statements: types.SimpleNamespace,
@@ -126,7 +123,7 @@ class EventsClient:
             }
         
         self.put_rule(name=name, schedule=schedule, state='ENABLED', event_bus_name=event_bus_name)
-        return self.put_targets(id=pipeline_id, rule_name=name, role_arn=role_arn, input=constant, sfn_arn=sfn_arn, event_bus_name=event_bus_name)
+        return self.put_targets(id=pipeline_id, rule_name=name, target_role_arn=role_arn, input=constant, target_arn=sfn_arn, event_bus_name=event_bus_name)
     
     def create_merger_rule(self, pipeline_id: str, source_type: str, table_name: str, schedule_type: str,
                            table_location: str, archive_location: str, partition_info: dict,
@@ -166,7 +163,7 @@ class EventsClient:
             }
         
         self.put_rule(name=name, schedule=schedule, state='ENABLED', event_bus_name=event_bus_name)
-        return self.put_targets(id=pipeline_id, rule_name=name, role_arn=role_arn, input=constant, sfn_arn=sfn_arn, event_bus_name=event_bus_name)
+        return self.put_targets(id=pipeline_id, rule_name=name, target_role_arn=role_arn, input=constant, target_arn=sfn_arn, event_bus_name=event_bus_name)
     
     def create_archive_rule(self, pipeline_id: str, source_type: str, table_name: str, schedule_type: str,
                                   table_location: str, archive_location: str, 
@@ -205,5 +202,5 @@ class EventsClient:
             }
         
         self.put_rule(name=name, schedule=schedule, state='ENABLED', event_bus_name=event_bus_name)
-        return self.put_targets(id=pipeline_id, rule_name=name, role_arn=role_arn, input=constant, sfn_arn=sfn_arn, event_bus_name=event_bus_name)
+        return self.put_targets(id=pipeline_id, rule_name=name, target_role_arn=role_arn, input=constant, target_arn=sfn_arn, event_bus_name=event_bus_name)
     

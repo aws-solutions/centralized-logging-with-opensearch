@@ -2,6 +2,11 @@
 /* eslint-disable */
 // this is an auto generated file. This will be overwritten
 
+export const latestVersion = /* GraphQL */ `
+  query LatestVersion {
+    latestVersion
+  }
+`;
 export const listDomainNames = /* GraphQL */ `
   query ListDomainNames($region: String) {
     listDomainNames(region: $region) {
@@ -359,6 +364,7 @@ export const listLogConfigs = /* GraphQL */ `
         logType
         syslogParser
         multilineLogParser
+        iisLogParser
         filterConfigMap {
           enabled
           filters {
@@ -399,6 +405,7 @@ export const getLogConfig = /* GraphQL */ `
       logType
       syslogParser
       multilineLogParser
+      iisLogParser
       filterConfigMap {
         enabled
         filters {
@@ -437,6 +444,11 @@ export const listAppPipelines = /* GraphQL */ `
           paramValue
           __typename
         }
+        parameters {
+          parameterKey
+          parameterValue
+          __typename
+        }
         aosParams {
           opensearchArn
           domainName
@@ -451,12 +463,6 @@ export const listAppPipelines = /* GraphQL */ `
           shardNumbers
           replicaNumbers
           engine
-          __typename
-        }
-        osiPipelineName
-        osiParams {
-          minCapacity
-          maxCapacity
           __typename
         }
         lightEngineParams {
@@ -488,6 +494,7 @@ export const listAppPipelines = /* GraphQL */ `
           logType
           syslogParser
           multilineLogParser
+          iisLogParser
           filterConfigMap {
             enabled
             filters {
@@ -530,11 +537,18 @@ export const listAppPipelines = /* GraphQL */ `
           emails
           __typename
         }
+        osiParams {
+          minCapacity
+          maxCapacity
+          __typename
+        }
+        osiPipelineName
         minCapacity
         maxCapacity
         stackId
         error
         engineType
+        logStructure
         tags {
           key
           value
@@ -557,6 +571,11 @@ export const getAppPipeline = /* GraphQL */ `
         paramValue
         __typename
       }
+      parameters {
+        parameterKey
+        parameterValue
+        __typename
+      }
       aosParams {
         opensearchArn
         domainName
@@ -571,12 +590,6 @@ export const getAppPipeline = /* GraphQL */ `
         shardNumbers
         replicaNumbers
         engine
-        __typename
-      }
-      osiPipelineName
-      osiParams {
-        minCapacity
-        maxCapacity
         __typename
       }
       lightEngineParams {
@@ -608,6 +621,7 @@ export const getAppPipeline = /* GraphQL */ `
         logType
         syslogParser
         multilineLogParser
+        iisLogParser
         filterConfigMap {
           enabled
           filters {
@@ -650,11 +664,18 @@ export const getAppPipeline = /* GraphQL */ `
         emails
         __typename
       }
+      osiParams {
+        minCapacity
+        maxCapacity
+        __typename
+      }
+      osiPipelineName
       minCapacity
       maxCapacity
       stackId
       error
       engineType
+      logStructure
       tags {
         key
         value
@@ -771,6 +792,7 @@ export const listInstances = /* GraphQL */ `
     $tags: [TagFilterInput]
     $region: String
     $accountId: String
+    $platformType: EC2GroupPlatform
   ) {
     listInstances(
       maxResults: $maxResults
@@ -779,10 +801,12 @@ export const listInstances = /* GraphQL */ `
       tags: $tags
       region: $region
       accountId: $accountId
+      platformType: $platformType
     ) {
       instances {
         id
         platformName
+        platformType
         ipAddress
         computerName
         name
@@ -980,6 +1004,9 @@ export const listSubAccountLinks = /* GraphQL */ `
         subAccountRoleArn
         agentInstallDoc
         agentConfDoc
+        windowsAgentInstallDoc
+        windowsAgentConfDoc
+        agentStatusCheckDoc
         subAccountBucketName
         subAccountStackId
         subAccountKMSKeyArn
@@ -1011,6 +1038,9 @@ export const getSubAccountLink = /* GraphQL */ `
       subAccountRoleArn
       agentInstallDoc
       agentConfDoc
+      windowsAgentInstallDoc
+      windowsAgentConfDoc
+      agentStatusCheckDoc
       subAccountBucketName
       subAccountStackId
       subAccountKMSKeyArn
@@ -1175,6 +1205,11 @@ export const domainStatusCheck = /* GraphQL */ `
 export const checkOSIAvailability = /* GraphQL */ `
   query CheckOSIAvailability {
     checkOSIAvailability
+  }
+`;
+export const getAccountUnreservedConurrency = /* GraphQL */ `
+  query GetAccountUnreservedConurrency {
+    getAccountUnreservedConurrency
   }
 `;
 export const listGrafanas = /* GraphQL */ `

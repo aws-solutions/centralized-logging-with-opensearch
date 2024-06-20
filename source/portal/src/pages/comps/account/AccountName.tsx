@@ -19,13 +19,14 @@ import { Link } from "react-router-dom";
 import { SubAccountLink } from "API";
 import { getSubAccountLink } from "graphql/queries";
 import { appSyncRequestQuery } from "assets/js/request";
+import { defaultStr } from "assets/js/utils";
 
-interface AccouNameProps {
+interface AccountNameProps {
   accountId?: string;
   region?: string;
 }
 
-const AccountName: React.FC<AccouNameProps> = (props: AccouNameProps) => {
+const AccountName: React.FC<AccountNameProps> = (props: AccountNameProps) => {
   const { accountId, region } = props;
   const [loadingData, setLoadingData] = useState(false);
   const [curAccount, setCurAccount] = useState<SubAccountLink>();
@@ -34,15 +35,11 @@ const AccountName: React.FC<AccouNameProps> = (props: AccouNameProps) => {
     setLoadingData(true);
     try {
       const resData: any = await appSyncRequestQuery(getSubAccountLink, {
-        subAccountId: accountId || "",
+        subAccountId: defaultStr(accountId),
         region: region,
       });
       console.info("resData:", resData);
-      if (
-        resData.data &&
-        resData.data.getSubAccountLink &&
-        resData.data.getSubAccountLink.subAccountId
-      ) {
+      if (resData?.data?.getSubAccountLink?.subAccountId) {
         setCurAccount(resData.data.getSubAccountLink);
       }
       setLoadingData(false);

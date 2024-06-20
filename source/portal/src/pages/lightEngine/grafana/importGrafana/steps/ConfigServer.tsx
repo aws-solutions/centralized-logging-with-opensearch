@@ -22,6 +22,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import { GrafanaState, grafana } from "reducer/grafana";
 import { GrafanaCheckList } from "../../components/GrafanaCheckList";
+import { MAX_INPUT_LENGTH } from "assets/js/const";
 
 export const ConfigServer = (
   props: GrafanaState & { isNameReadOnly: boolean }
@@ -29,6 +30,24 @@ export const ConfigServer = (
   const grafanaState = props;
   const dispatch = useDispatch<any>();
   const { t } = useTranslation();
+
+  const changeName = (name: string) => {
+    if (name.length <= MAX_INPUT_LENGTH) {
+      dispatch(grafana.actions.nameChanged(name));
+    }
+  };
+
+  const changeUrl = (url: string) => {
+    if (url.length <= MAX_INPUT_LENGTH) {
+      dispatch(grafana.actions.urlChanged(url));
+    }
+  };
+
+  const changeToken = (token: string) => {
+    if (token.length <= MAX_INPUT_LENGTH) {
+      dispatch(grafana.actions.tokenChanged(token));
+    }
+  };
 
   const nameInput = useMemo(
     () => (
@@ -39,10 +58,8 @@ export const ConfigServer = (
       >
         <TextInput
           placeholder="clo-grafana"
-          onChange={(e) =>
-            dispatch(grafana.actions.nameChanged(e.target.value))
-          }
-          onBlur={(e) => dispatch(grafana.actions.nameChanged(e.target.value))}
+          onChange={(e) => changeName(e.target.value)}
+          onBlur={(e) => changeName(e.target.value)}
           value={grafanaState.grafanaName}
           readonly={props.isNameReadOnly}
         />
@@ -60,8 +77,8 @@ export const ConfigServer = (
       >
         <TextInput
           placeholder="http(s)://my-grafana.corporate.com:3000"
-          onChange={(e) => dispatch(grafana.actions.urlChanged(e.target.value))}
-          onBlur={(e) => dispatch(grafana.actions.urlChanged(e.target.value))}
+          onChange={(e) => changeUrl(e.target.value)}
+          onBlur={(e) => changeUrl(e.target.value)}
           value={grafanaState.grafanaUrl}
         />
       </FormItem>
@@ -78,10 +95,8 @@ export const ConfigServer = (
       >
         <TextInput
           placeholder="glsa_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-          onChange={(e) =>
-            dispatch(grafana.actions.tokenChanged(e.target.value))
-          }
-          onBlur={(e) => dispatch(grafana.actions.tokenChanged(e.target.value))}
+          onChange={(e) => changeToken(e.target.value)}
+          onBlur={(e) => changeToken(e.target.value)}
           value={grafanaState.grafanaToken}
         />
       </FormItem>

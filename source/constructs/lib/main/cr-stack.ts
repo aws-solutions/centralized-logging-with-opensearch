@@ -30,15 +30,10 @@ import {
 } from "aws-cdk-lib";
 
 import * as path from "path";
+import { SharedPythonLayer } from "../layer/layer";
+import { APIStack } from "../api/api-stack";
 
 export interface CRProps {
-  /**
-   * Backend GraphQL API Endpoint
-   *
-   * @default - None.
-   */
-  readonly apiEndpoint: string;
-
   /**
    * Authentication Type (Cognito or OIDC)
    *
@@ -112,6 +107,10 @@ export interface CRProps {
   readonly oidcClientId: string;
 
 
+  readonly openSearchMasterRoleArn: string;
+
+  readonly apiStack: APIStack;
+  readonly webUILoggingBucket: string;
 }
 
 /**
@@ -148,11 +147,14 @@ export class CustomResourceStack extends Construct {
         path.join(__dirname, "../../lambda/custom-resource")
       ),
       handler: "lambda_function.lambda_handler",
-      timeout: Duration.seconds(60),
+      layers: [SharedPythonLayer.getInstance(this)],
+      timeout: Duration.minutes(5),
       memorySize: 128,
       environment: {
         WEB_BUCKET_NAME: props.portalBucketName,
-        API_ENDPOINT: props.apiEndpoint,
+        OPENSEARCH_MASTER_ROLE_ARN: props.openSearchMasterRoleArn,
+        OPENSEARCH_DOMAIN_TABLE: props.apiStack.clusterStack.clusterTable.tableName,
+        API_ENDPOINT: props.apiStack.apiEndpoint,
         OIDC_PROVIDER: props.oidcProvider,
         OIDC_CLIENT_ID: props.oidcClientId,
         OIDC_CUSTOMER_DOMAIN: props.oidcCustomerDomain,
@@ -166,6 +168,7 @@ export class CustomResourceStack extends Construct {
         SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
         TEMPLATE_OUTPUT_BUCKET: templateBucket,
         SOLUTION_NAME: solutionName,
+        ACCESS_LOGGING_BUCKET: props.webUILoggingBucket
       },
       description: `${Aws.STACK_NAME} - Init Config Handler`,
     });
@@ -182,6 +185,29 @@ export class CustomResourceStack extends Construct {
         ],
       })
     );
+    this.initConfigFn.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: [
+          's3:PutBucketLogging',
+          's3:GetBucketLogging',
+        ],
+        resources: [
+          `arn:${Aws.PARTITION}:s3:::${props.defaultLoggingBucket}`,
+        ],
+      })
+    );
+    this.initConfigFn.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: [
+          'es:DescribeDomainConfig',
+          'es:UpdateDomainConfig',
+        ],
+        resources: ["*"],
+      })
+    );
+    props.apiStack.clusterStack.clusterTable.grantReadWriteData(this.initConfigFn);
 
     const CRLambdaProvider = new cr.Provider(this, "CRLambdaProvider", {
       onEventHandler: this.initConfigFn,

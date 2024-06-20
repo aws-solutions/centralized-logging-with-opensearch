@@ -15,9 +15,9 @@ interface PermissionsModeSelectorProps {
 export const AUTO = "AUTO";
 export const MANUAL = "MANUAL";
 
-export default function PermissionsModeSelector(
+const PermissionsModeSelector: React.FC<PermissionsModeSelectorProps> = (
   props: PermissionsModeSelectorProps
-) {
+) => {
   const { t } = useTranslation();
   useEffect(() => {
     if (!props.value) {
@@ -58,4 +58,6 @@ export default function PermissionsModeSelector(
       </RadioGroup>
     </FormItem>
   );
-}
+};
+
+export default PermissionsModeSelector;

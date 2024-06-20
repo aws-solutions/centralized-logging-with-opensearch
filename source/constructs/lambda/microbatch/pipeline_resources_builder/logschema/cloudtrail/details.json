@@ -1,0 +1,535 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 818,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "Bn93a3_Vk"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "green",
+            "mode": "fixed"
+          },
+          "custom": {
+            "align": "center",
+            "cellOptions": {
+              "type": "color-text"
+            },
+            "filterable": true,
+            "inspect": true
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 32,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": []
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "datasource": {
+            "type": "grafana-athena-datasource",
+            "uid": "Bn93a3_Vk"
+          },
+          "format": 1,
+          "hide": false,
+          "rawSQL": "SELECT t.rn as \"No.\", t.time, t.timestamp, t.eventversion, t.useridentity, t.eventtime, t.eventsource, t.eventname, t.awsregion, t.sourceipaddress, t.useragent, t.errorcode, t.errormessage, t.requestparameters, t.responseelements, t.additionaleventdata, t.requestid, t.eventid, t.resources, t.eventtype, t.apiversion, t.readonly, t.recipientaccountid, t.serviceeventdetails, t.sharedeventid, t.vpcendpointid, t.tlsdetails, t.account_id, t.region\nFROM (SELECT time, timestamp, eventversion, useridentity, eventtime, eventsource, eventname, awsregion, sourceipaddress, useragent, errorcode, errormessage, requestparameters, responseelements, additionaleventdata, requestid, eventid, resources, eventtype, apiversion, readonly, recipientaccountid, serviceeventdetails, sharedeventid, vpcendpointid, tlsdetails, account_id, region\n    , row_number() over (order by time ${sort_by}) as rn\n    FROM \"$__table\"\n    WHERE\n        account_id IN (${account_id:sqlstring})\n        AND region IN (${region:sqlstring})\n        AND eventtype IN (${event_type:sqlstring})\n        AND useridentity.type IN (${user_identity_type:sqlstring})\n        AND eventsource LIKE '${event_source}%'\n        AND eventname LIKE '${event_name}%'\n        AND COALESCE(errorcode, '') LIKE '${error_code}%'\n        AND $__unixEpochFilter(time / 1000)\n        AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n            OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n  ) t \n  WHERE t.rn BETWEEN (${page_no:int} - 1) * ${page_size:int} + 1 AND ${page_no:int} * ${page_size:int};\n\n",
+          "refId": "Details",
+          "table": "cloudtrail"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "No.": "",
+              "account_id": "Account Id",
+              "additionaleventdata": "Additional Event DAta",
+              "apiversion": "API Version",
+              "awsregion": "AWS Region",
+              "errorcode": "Error Code",
+              "errormessage": "Error Message",
+              "eventid": "Event Id",
+              "eventname": "Event Name",
+              "eventsource": "Event Source",
+              "eventtime": "Event Time",
+              "eventtype": "Event Type",
+              "eventversion": "Event Version",
+              "readonly": "Readonly",
+              "recipientaccountid": "Recipient Account Id",
+              "region": "Region",
+              "requestid": "Request Id",
+              "requestparameters": "Request Parameters",
+              "resources": "Resources",
+              "responseelements": "Response Elements",
+              "serviceeventdetails": "Service Event Details",
+              "sharedeventid": "Shared Event Id",
+              "sourceipaddress": "Source Ip Address",
+              "time": "Time",
+              "timestamp": "Timestamp",
+              "tlsdetails": "TLS Details",
+              "useragent": "User Agent",
+              "useridentity": "User Identity",
+              "vpcendpointid": "VPC Endpoint Id"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    }
+  ],
+  "refresh": "",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "allValue": "SELECT account_id FROM \"$__table\"  WHERE  event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH') \tOR event_hour = $__rawTimeFrom('yyyyMMdd00') GROUP BY account_id",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "grafana-athena-datasource",
+          "uid": "Bn93a3_Vk"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Account Id",
+        "multi": true,
+        "name": "account_id",
+        "options": [],
+        "query": {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT account_id\nFROM \"$__table\" \nWHERE  event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\tOR event_hour = $__rawTimeFrom('yyyyMMdd00')\nGROUP BY account_id",
+          "refId": "Metrics",
+          "table": "cloudtrail_metrics"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "allValue": "SELECT region FROM \"$__table\" WHERE  event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH') \tOR event_hour = $__rawTimeFrom('yyyyMMdd00') GROUP BY region",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-athena-datasource",
+          "uid": "Bn93a3_Vk"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Region",
+        "multi": true,
+        "name": "region",
+        "options": [],
+        "query": {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT region\nFROM \"$__table\"\nWHERE  event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\tOR event_hour = $__rawTimeFrom('yyyyMMdd00')\nGROUP BY region",
+          "refId": "Metrics",
+          "table": "cloudtrail_metrics"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 2,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "hide": 0,
+        "includeAll": true,
+        "label": "Event Type",
+        "multi": true,
+        "name": "event_type",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "AwsApiCall",
+            "value": "AwsApiCall"
+          },
+          {
+            "selected": false,
+            "text": "AwsServiceEvent",
+            "value": "AwsServiceEvent"
+          },
+          {
+            "selected": false,
+            "text": "AwsConsoleAction",
+            "value": "AwsConsoleAction"
+          },
+          {
+            "selected": false,
+            "text": "AwsConsoleSignIn",
+            "value": "AwsConsoleSignIn"
+          },
+          {
+            "selected": false,
+            "text": "AwsCloudTrailInsight",
+            "value": "AwsCloudTrailInsight"
+          }
+        ],
+        "query": "AwsApiCall, AwsServiceEvent, AwsConsoleAction, AwsConsoleSignIn, AwsCloudTrailInsight",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "description": "R",
+        "hide": 0,
+        "includeAll": true,
+        "label": "User Identity Type",
+        "multi": true,
+        "name": "user_identity_type",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "Root",
+            "value": "Root"
+          },
+          {
+            "selected": false,
+            "text": "IAMUser",
+            "value": "IAMUser"
+          },
+          {
+            "selected": false,
+            "text": "AssumedRole",
+            "value": "AssumedRole"
+          },
+          {
+            "selected": false,
+            "text": "Role",
+            "value": "Role"
+          },
+          {
+            "selected": false,
+            "text": "FederatedUser",
+            "value": "FederatedUser"
+          },
+          {
+            "selected": false,
+            "text": "Directory",
+            "value": "Directory"
+          },
+          {
+            "selected": false,
+            "text": "AWSAccount",
+            "value": "AWSAccount"
+          },
+          {
+            "selected": false,
+            "text": "AWSService",
+            "value": "AWSService"
+          },
+          {
+            "selected": false,
+            "text": "IdentityCenterUser",
+            "value": "IdentityCenterUser"
+          },
+          {
+            "selected": false,
+            "text": "Unknown",
+            "value": "Unknown"
+          }
+        ],
+        "query": "Root, IAMUser, AssumedRole, Role, FederatedUser, Directory, AWSAccount, AWSService, IdentityCenterUser, Unknown",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "hide": 0,
+        "label": "Event Source",
+        "name": "event_source",
+        "options": [
+          {
+            "selected": true,
+            "text": "",
+            "value": ""
+          }
+        ],
+        "query": "",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "hide": 0,
+        "label": "Event Name",
+        "name": "event_name",
+        "options": [
+          {
+            "selected": true,
+            "text": "",
+            "value": ""
+          }
+        ],
+        "query": "",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "hide": 0,
+        "label": "Error Code",
+        "name": "error_code",
+        "options": [
+          {
+            "selected": true,
+            "text": "",
+            "value": ""
+          }
+        ],
+        "query": "",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "1",
+          "value": "1"
+        },
+        "datasource": {
+          "type": "grafana-athena-datasource",
+          "uid": "Bn93a3_Vk"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Page No",
+        "multi": false,
+        "name": "page_no",
+        "options": [],
+        "query": {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT cast(page_no as varchar) as page_no\nFROM (\n\tSELECT sequence(1, count(1) / ${page_size:int} + 1, 1)\n  FROM \"$__table\"\n  WHERE account_id IN (${account_id:sqlstring})\n\t\t\tAND region IN (${region:sqlstring})\n\t\t\tAND eventtype IN (${event_type:sqlstring})\n\t\t\tAND useridentity.type IN (${user_identity_type:sqlstring})\n\t\t\tAND eventsource LIKE '${event_source}%'\n\t\t\tAND eventname LIKE '${event_name}%'\n\t\t\tAND COALESCE(errorcode, '') LIKE '${error_code}%'\n\t\t\tAND $__unixEpochFilter(time / 1000)\n\t\t\tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\t\t\t\t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n\t) AS x (no)\nCROSS JOIN UNNEST(no) AS t (page_no)\n;",
+          "refId": "Details",
+          "table": "cloudtrail"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "100",
+          "value": "100"
+        },
+        "hide": 0,
+        "includeAll": false,
+        "label": "Page Size",
+        "multi": false,
+        "name": "page_size",
+        "options": [
+          {
+            "selected": true,
+            "text": "100",
+            "value": "100"
+          },
+          {
+            "selected": false,
+            "text": "1000",
+            "value": "1000"
+          },
+          {
+            "selected": false,
+            "text": "10000",
+            "value": "10000"
+          },
+          {
+            "selected": false,
+            "text": "50000",
+            "value": "50000"
+          }
+        ],
+        "query": "100, 1000, 10000, 50000",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "Asc",
+          "value": "Asc"
+        },
+        "description": "",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Sort  by",
+        "multi": false,
+        "name": "sort_by",
+        "options": [
+          {
+            "selected": true,
+            "text": "Asc",
+            "value": "Asc"
+          },
+          {
+            "selected": false,
+            "text": "Desc",
+            "value": "Desc"
+          }
+        ],
+        "query": "Asc, Desc",
+        "skipUrlSync": false,
+        "type": "custom"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "cloudtrail-details",
+  "uid": "aafa0c26-5e4a-480a-a0ca-2950686c622e-00",
+  "version": 5,
+  "weekStart": ""
+}

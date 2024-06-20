@@ -170,6 +170,7 @@
       "checkDomainInProgressDesc": "Evaluate if the selected domain can be imported into this solution",
       "checkDomainPassDesc": "The selected domain meets the requirements to be imported into this solution.",
       "checkDomainErrorDesc": "The selected domain did not meet one or more requirements, please change the domain configuration or select a different domain.",
+      "checkDomainWarningDesc": "There is a warning message in the selected domain configuration, please confirm before continuing.",
       "engineVersion": "Engine version: ",
       "engineType": "Engine type: ",
       "solutionPrivateSubnetWithNat": "NAT in solution private subnet: ",

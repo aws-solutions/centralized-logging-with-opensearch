@@ -3,19 +3,20 @@
 
 
 import os
-import logging
 import boto3
 
 from functools import reduce
 
 from botocore import config
+from botocore.exceptions import ClientError
 from typing import List, Optional
 from boto3.dynamodb.conditions import ConditionBase, Key
 from .exception import APIException, ErrorCode
 from .decorator import singleton
+from .logging import get_logger
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @singleton
@@ -111,6 +112,45 @@ def get_bucket_location(s3_client, bucket_name):
     loc = resp["LocationConstraint"]
     # For us-east-1, the location is None
     return "us-east-1" if loc is None else loc
+
+
+def verify_s3_bucket_prefix_overlap_for_event_notifications(
+    s3_client, bucket_name, input_prefix: str
+) -> None:  # NOSONAR
+    """Verify that prefixes overlap in event notifications for s3 bucket"""
+    if not bucket_name:
+        return
+    resp = dict()
+    try:
+        resp = s3_client.get_bucket_notification_configuration(Bucket=bucket_name)
+    except ClientError as e:
+        logger.error("Error: %s", e)
+        raise APIException(
+            ErrorCode.S3_BUCKET_CHECK_FAILED,
+            r"${common:error.s3BucketCheckFailed}",
+        )
+
+    all_configs = []
+
+    for key in [
+        "LambdaFunctionConfigurations",
+        "QueueConfigurations",
+        "TopicConfigurations",
+    ]:
+        if key in resp:
+            all_configs.extend(resp[key])
+
+    prefixes = []
+    for notification_config in all_configs:
+        for filter in notification_config["Filter"]["Key"]["FilterRules"]:
+            if filter["Name"].lower() == "prefix":
+                prefixes.append(filter["Value"])
+    for prefix in prefixes:
+        if input_prefix.startswith(prefix):
+            raise APIException(
+                ErrorCode.OVERLAPPED_EVENT_NOTIFICATIONS_PREFIX,
+                r"${common:error.overlappedPrefixWithS3Bucket}",
+            )
 
 
 class DynamoDBUtil:
@@ -314,6 +354,9 @@ class DynamoDBUtil:
             UpdateExpression=update_expression,
             ExpressionAttributeNames=expr_attr_names,
             ExpressionAttributeValues=expr_attr_values,
+            ConditionExpression=" AND ".join(
+                f"attribute_exists({k})" for k in key.keys()
+            ),
         )
 
     def delete_item(self, key: dict):

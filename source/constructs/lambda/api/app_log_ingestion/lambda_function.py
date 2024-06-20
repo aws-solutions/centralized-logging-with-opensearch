@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import json
-import logging
+from commonlib.logging import get_logger
 import os
 from typing import List
 from commonlib.model import AppLogIngestion
@@ -10,8 +10,7 @@ from commonlib import AWSConnection, handle_error, AppSyncRouter
 from commonlib.dao import AppLogIngestionDao
 from svc.service import AppLogIngestionService
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 conn = AWSConnection()
 router = AppSyncRouter()
@@ -24,7 +23,7 @@ ingestion_svc = AppLogIngestionService()
 
 @handle_error
 def lambda_handler(event, _):
-    logger.info("Received event: " + json.dumps(event, indent=2))
+    logger.info("Received event: " + json.dumps(event["arguments"], indent=2))
     return router.resolve(event)
 
 

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import { AppPipeline } from "API";
-import { buildESLink } from "assets/js/utils";
+import { buildESLink, defaultStr } from "assets/js/utils";
 import ExtLink from "components/ExtLink";
 import React from "react";
 import { useSelector } from "react-redux";
@@ -52,10 +52,10 @@ const AnalyticsEngineDetails: React.FC<OverviewProps> = (
               <ExtLink
                 to={buildESLink(
                   amplifyConfig.aws_project_region,
-                  curPipeline?.aosParams?.domainName || ""
+                  defaultStr(curPipeline?.aosParams?.domainName)
                 )}
               >
-                {curPipeline?.aosParams?.domainName || "-"}
+                {defaultStr(curPipeline?.aosParams?.domainName, "-")}
               </ExtLink>
             ),
           },
@@ -113,14 +113,17 @@ const AnalyticsEngineDetails: React.FC<OverviewProps> = (
           },
           {
             label: t("applog:detail.lifecycle.coldLog"),
-            data:
-              pipelineInfo?.aosParams?.coldLogTransition?.replace("d", "") ||
-              "-",
+            data: defaultStr(
+              pipelineInfo?.aosParams?.coldLogTransition?.replace("d", ""),
+              "-"
+            ),
           },
           {
             label: t("applog:detail.lifecycle.logRetention"),
-            data:
-              pipelineInfo?.aosParams?.logRetention?.replace("d", "") || "-",
+            data: defaultStr(
+              pipelineInfo?.aosParams?.logRetention?.replace("d", ""),
+              "-"
+            ),
           },
         ]}
       />

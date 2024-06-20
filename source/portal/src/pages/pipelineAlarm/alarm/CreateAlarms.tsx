@@ -23,7 +23,7 @@ import {
   CreateAlarmActionTypes,
   CreateAlarmActions,
 } from "reducer/createAlarm";
-import { AnalyticEngineTypes } from "pages/dataInjection/serviceLog/create/common/SpecifyAnalyticsEngine";
+import { AnalyticEngineTypes } from "types";
 
 interface CreateAlarmsProps {
   type: PipelineType;

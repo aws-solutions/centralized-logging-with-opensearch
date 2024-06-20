@@ -1,4 +1,5 @@
 # Application Load Balancing (ALB) Logs
+
 [ALB Access logs](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-access-logs.html) provide access logs that capture detailed information about requests sent to your load balancer. ALB publishes a log file for each load
 balancer node every 5 minutes.
 
@@ -9,7 +10,7 @@ You can create a log ingestion into Amazon OpenSearch Service or Light Engine ei
     - The ELB logging bucket's region must be the same as the Centralized Logging with OpenSearch solution.
     - The Amazon OpenSearch Service index is rotated on a daily basis by default, and you can adjust the index in the Additional Settings.
 
-## Create log ingestion (Amazon OpenSearch for log analytics)
+## Create log ingestion (OpenSearch Engine)
 
 ### Using the Console
 
@@ -27,8 +28,9 @@ You can create a log ingestion into Amazon OpenSearch Service or Light Engine ei
 9. Choose **Yes** for **Sample dashboard** if you want to ingest an associated templated Amazon OpenSearch Service dashboard.
 10. You can change the **Index Prefix** of the target Amazon OpenSearch Service index if needed. The default prefix is the `Load Balancer Name`.
 11. In the **Log Lifecycle** section, input the number of days to manage the Amazon OpenSearch Service index lifecycle. The Centralized Logging with OpenSearch will create the associated [Index State Management (ISM)](https://opensearch.org/docs/latest/im-plugin/ism/index/) policy automatically for this pipeline.
-13. In the **Select log processor** section, please choose the log processor. 
-    - (Optional) OSI as log processor is now supported in these [regions](https://aws.amazon.com/about-aws/whats-new/2023/04/amazon-opensearch-service-ingestion/). When OSI is selected, please type in the minimum and maximum number of OCU. See more information [here](https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ingestion.html#ingestion-scaling). 
+13. In the **Select log processor** section, please choose the log processor.
+    - When selecting Lambda as log processor, you can configure the Lambda concurrency if needed.
+    - (Optional) OSI as log processor is now supported in these [regions](https://aws.amazon.com/about-aws/whats-new/2023/04/amazon-opensearch-service-ingestion/). When OSI is selected, please type in the minimum and maximum number of OCU. See more information [here](https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ingestion.html#ingestion-scaling).
 14. Choose **Next**.
 13. Add tags if needed.
 14. Choose **Create**.
@@ -56,8 +58,8 @@ The dashboard includes the following visualizations.
 | Request By Target                | <ul><li> log event</li><li>target_ip </li></ul>                                                                                                                                                                                                                  | Presents a bar chart that displays the distribution of events over time and IP.                                                                           |
 | Unique Visitors                   | <ul><li> client_ip </li></ul>                                                                                                                                                                                                                                    | Displays unique visitors identified by client IP address.                                                                                                 |
 | Status Code                      | <ul><li>elb_status_code</li></ul>                                                                                                                                                                                                                                | Displays the count of requests made to the ALB, grouped by HTTP status codes (e.g., 200, 404, 403, etc.).                          |
-| Status History                   | <ul><li>elb_status_code </li></ul>                                                                                                                                                                                                                               | Shows the historical trend of HTTP status codes returned by the ALB over a specific period of time.                                                       |
-| Status Code Pipe                 | <ul><li>elb_status_code</li></ul>                                                                                                                                                                                                                                | Represents the distribution of requests based on different HTTP status codes using a pie chart.                                                           |
+| Status Code History                   | <ul><li>elb_status_code </li></ul>                                                                                                                                                                                                                               | Shows the historical trend of HTTP status codes returned by the ALB over a specific period of time.                                                       |
+| Status Code Pie                 | <ul><li>elb_status_code</li></ul>                                                                                                                                                                                                                                | Represents the distribution of requests based on different HTTP status codes using a pie chart.                                                           |
 | Average Processing Time          | <ul><li>request_processing_time</li><li>response_processing_time</li><li>target_processing_time</li></ul>                                                                                                                                                        | This visualization calculates and presents the average time taken for various operations in the ALB.                                                      |
 | Avg. Processing Time History     | <ul><li>request_processing_time</li><li>response_processing_time</li><li>target_processing_time</li></ul>                                                                                                                                                        | Displays the historical trend of the average time-consuming of each operation returned by the ALB within a specific period of time.                       |
 | Request Verb                     | <ul><li> request_verb</li></ul>                                                                                                                                                                                                                                  | Displays the count of requests made to the ALB using a pie chart, grouped by http request method names (e.g., POST, GET, HEAD, etc.). |
@@ -70,8 +72,8 @@ The dashboard includes the following visualizations.
 | Target Status                    | <ul><li> target_ip</li><li>target_status_code</li></ul>                                                                                                                                                                                                          | Displays the http status code request count for targets in ALB target group.                                                                              |
 | Abnormal Requests                | <ul><li> @timestamp</li><li> client_ip</li><li> target_ip</li><li> elb_status_code</li><li> error_reason</li><li>request_verb</li><li>target_status_code</li><li>target_status_code_list</li><li> request_url</li><li> request_proto</li><li> trace_id</li></ul> | Provides a detailed list of log events, including timestamps, client ip, target ip, etc.                                                                  |
 | Requests by OS                   | <ul><li> ua_os</li></ul>                                                                                                                                                                                                                                         | Displays the count of requests made to the ALB, grouped by user agent OS                                                                                  |
-| Request by Device                | <ul><li> ua_device</li></ul>                                                                                                                                                                                                                                     | Displays the count of requests made to the ALB, grouped by user agent device.                                                                             |
-| Request by Browser               | <ul><li> ua_browser</li></ul>                                                                                                                                                                                                                                    | Displays the count of requests made to the ALB, grouped by user agent browser.                                                                            |
+| Requests by Device                | <ul><li> ua_device</li></ul>                                                                                                                                                                                                                                     | Displays the count of requests made to the ALB, grouped by user agent device.                                                                             |
+| Requests by Browser               | <ul><li> ua_browser</li></ul>                                                                                                                                                                                                                                    | Displays the count of requests made to the ALB, grouped by user agent browser.                                                                            |
 | Request by Category              | <ul><li> ua_category</li></ul>                                                                                                                                                                                                                                   | Displays the count of category made to the ALB, grouped by user agent category (e.g., PC, Mobile, Tablet,  etc.).                                         |
 | Requests by Countries or Regions | <ul><li> geo_iso_code</li></ul>                                                                                                                                                                                                                                  | Displays the count of requests made to the ALB (grouped by the corresponding country or region resolved by the client IP).                                |
 | Top Countries or Regions         | <ul><li> geo_country</li></ul>                                                                                                                                                                                                                                   | Top 10 countries with the ALB Access.                                                                                                                         |
@@ -80,7 +82,7 @@ The dashboard includes the following visualizations.
 
 #### Sample Dashboard
 
-## Create log ingestion (Light Engine for log analytics)
+## Create log ingestion (Light Engine)
 
 ### Using the Console
 
@@ -122,49 +124,49 @@ This automated AWS CloudFormation template deploys the *Centralized Logging with
 
 5. Under **Parameters**, review the parameters for the template and modify them as necessary. This solution uses the following parameters.
 
-    - Parameters for **Pipeline settings** 
+    - Parameters for **Pipeline settings**
 
     | Parameter                             | Defaul          | Description                                                                                                       |
     | --------------------------------| ---------- |----------------------------------------------------------------------------------------------------------|
     | Pipeline Id                | `<Requires input>` | The unique identifier for the pipeline is essential if you need to create multiple ALB pipelines and write different ALB logs into separate tables. To ensure uniqueness, you can generate a unique pipeline identifier using [uuidgenerator](https://www.uuidgenerator.net/version4).                                                                                         |
     | Staging Bucket Prefix              | AWSLogs/ALBLogs | The storage directory for logs in the temporary storage area should ensure the uniqueness and non-overlapping of the Prefix for different pipelines.                                                                                        |
 
-    - Parameters for **Destination settings** 
+    - Parameters for **Destination settings**
 
     | Parameters                             | Default          | Description                                                                                                       |
     | --------------------------------| ---------- |----------------------------------------------------------------------------------------------------------|
-    | Centralized Bucket Name | `<Requires input>` | Input centralized s3 bucket name，for expample:centralized-logging-bucket。           |
-    | Centralized Bucket Prefix     |  datalake                | Input centralized bucket prefix，default is datalake which means your data base's location is s3://{Centralized Bucket Name}/{Centralized Bucket Prefix}/amazon_cl_centralized。 |
+    | Centralized Bucket Name | `<Requires input>` | Input centralized s3 bucket name，for expample:centralized-logging-bucket.           |
+    | Centralized Bucket Prefix     |  datalake                | Input centralized bucket prefix，default is datalake which means your data base's location is s3://{Centralized Bucket Name}/{Centralized Bucket Prefix}/amazon_cl_centralized. |
     | Centralized Table Name              | ALB | Table name for writing data to the centralized database, can be defined as needed, default value is 'ALB'.                                                                                        |
     | Enrichment Plugins              | `<Optional input>`  | The available plugins to choose from are **location** and **OS/User Agent**. Enabling rich fields will increase data processing latency and processing costs, it is not selected by default.                                                                                        |
 
-    - Parameters for **Scheduler settings** 
+    - Parameters for **Scheduler settings**
 
     | Parameters                             | Default          | Description                                                                                                       |
     | --------------------------------| ---------- |----------------------------------------------------------------------------------------------------------|
-    | LogProcessor Schedule Expression | rate(5 minutes) | Task scheduling expression for performing log processing, with a default value of executing the LogProcessor every 5 minutes. Configuration [for reference](https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html)。           |
-    | LogMerger Schedule Expression   |  cron(0 1 * * ? *)                | 执ask scheduling expression for performing log merging, with a default value of executing the LogMerger at 1 AM every day. Configuration [for reference](https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html)。 |
-    | LogArchive Schedule Expression              | cron(0 2 * * ? *) | Task scheduling expression for performing log archiving, with a default value of executing the LogArchive at 2 AM every day. Configuration [for reference](https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html)。  
+    | LogProcessor Schedule Expression | rate(5 minutes) | Task scheduling expression for performing log processing, with a default value of executing the LogProcessor every 5 minutes. Configuration [for reference](https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html).           |
+    | LogMerger Schedule Expression   |  cron(0 1 * * ? *)                | 执ask scheduling expression for performing log merging, with a default value of executing the LogMerger at 1 AM every day. Configuration [for reference](https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html). |
+    | LogArchive Schedule Expression              | cron(0 2 * * ? *) | Task scheduling expression for performing log archiving, with a default value of executing the LogArchive at 2 AM every day. Configuration [for reference](https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html).
     | Age to Merge              | 7 | Small file retention days, with a default value of 7, indicates that logs older than 7 days will be merged into small files. It can be adjusted as needed.
     | Age to Archive              | 30 | Log retention days, with a default value of 30, indicates that data older than 30 days will be archived and deleted. It can be adjusted as needed.
-                                                                                          
-    - Parameters for **Notification settings** 
+
+    - Parameters for **Notification settings**
 
     | Parameters                             | Default          | Description                                                                                                       |
     | --------------------------------| ---------- |----------------------------------------------------------------------------------------------------------|
     | Notification Service | SNS | Notification method for alerts. If your main stack is using China, you can only choose the SNS method. If your main stack is using Global, you can choose either the SNS or SES method.           |
     | Recipients   |  `<Requires Input>`               | Alert notification: If the Notification Service is SNS, enter the SNS Topic ARN here, ensuring that you have the necessary permissions. If the Notification Service is SES, enter the email addresses separated by commas here, ensuring that the email addresses are already Verified Identities in SES. The adminEmail provided during the creation of the main stack will receive a verification email by default. |
-   
-    - Parameters for **Dashboard settings** 
+
+    - Parameters for **Dashboard settings**
 
     | Parameters                             | Default          | Description                                                                                                       |
     | --------------------------------| ---------- |----------------------------------------------------------------------------------------------------------|
-    | Import Dashboards | FALSE | Whether to import the Dashboard into Grafana, with a default value of false. If set to true, you must provide the Grafana URL and Grafana Service Account Token.。           |
-    | Grafana URL   |  `<Requires Input>`                | Grafana access URL，for example: https://alb-72277319.us-west-2.elb.amazonaws.com。 |
-    | Grafana Service Account Token              | `<Requires Input>` | Grafana Service Account Token：Service Account Token created in Grafana。  
+    | Import Dashboards | FALSE | Whether to import the Dashboard into Grafana, with a default value of false. If set to true, you must provide the Grafana URL and Grafana Service Account Token..           |
+    | Grafana URL   |  `<Requires Input>`                | Grafana access URL，for example: https://alb-72277319.us-west-2.elb.amazonaws.com. |
+    | Grafana Service Account Token              | `<Requires Input>` | Grafana Service Account Token：Service Account Token created in Grafana.
                                                                                           |
 
-   
+
 
 
 6. Choose **Next**.
@@ -207,3 +209,6 @@ a **CREATE_COMPLETE** status in approximately 10 minutes.
 | Requests by Countries or Regions          | geo_iso_code                                  | Displays the count of requests made to the ALB (grouped by the corresponding country or region resolved by the client IP).                          |
 | Top Countries or Regions                  | geo_country                                   | Top 10 countries with the ALB Access.                                                                                                                |
 | Top Cities                                | geo_city                                      | Top 10 cities with ALB Access.                                                                                                                      |
+
+####Sample dashboard
+![elb](../../images/dashboards/alb-light.jpg)

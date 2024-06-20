@@ -19,16 +19,17 @@ import * as path from "path";
 import {
   Aws,
   SymlinkFollowMode,
+  StackProps,
+  Fn,
   Aspects,
   IAspect,
   CfnParameter,
-  StackProps,
-  Fn,
   Duration,
   CfnOutput,
   CustomResource,
   CfnCustomResource,
   custom_resources as cr,
+  aws_ec2 as ec2,
   aws_s3 as s3,
   aws_iam as iam,
   aws_dynamodb as ddb,
@@ -42,7 +43,6 @@ import { Database } from "@aws-cdk/aws-glue-alpha";
 import { NagSuppressions } from "cdk-nag";
 import { CfnPolicy } from "aws-cdk-lib/aws-iam";
 
-const { VERSION } = process.env;
 
 export interface InitLogPipelineResourcesProps extends StackProps {
   readonly solutionId: string;
@@ -79,6 +79,7 @@ export interface InitLogPipelineResourcesProps extends StackProps {
   readonly grafanaToken: string;
 
   readonly enrichmentPlugins: string;
+  
 }
 
 export class InitLogPipelineResourcesStack extends Construct {
@@ -119,69 +120,44 @@ export class InitLogPipelineResourcesStack extends Construct {
 
     const enrichmentPlugins = props.enrichmentPlugins;
 
-    const StagingBucketName = ssm.StringParameter.fromStringParameterName(
-      this,
-      "SSMStagingBucketName",
-      "/MicroBatch/StagingBucketName"
-    ).stringValue;
+    const microBatchStackName = ssm.StringParameter.fromStringParameterName(this, "MicroBatchStackName", "/MicroBatch/StackName").stringValue;
+    
+    const StagingBucketName = Fn.importValue(`${microBatchStackName}::StagingBucketName`);
     const stagingBucket = s3.Bucket.fromBucketName(
       this,
       "StagingBucket",
       StagingBucketName
     );
 
-    const centralizedDatabaseArn = ssm.StringParameter.fromStringParameterName(
-      this,
-      "SSMCentralizedDatabaseArn",
-      "/MicroBatch/CentralizedDatabaseArn"
-    ).stringValue;
+    const centralizedDatabaseArn = Fn.importValue(`${microBatchStackName}::CentralizedDatabaseArn`);
     const centralizedDatabase = Database.fromDatabaseArn(
       this,
       "CentralizedDatabase",
       centralizedDatabaseArn
     );
 
-    const microBatchKeyArn = ssm.StringParameter.fromStringParameterName(
-      this,
-      "SSMCMKeyArn",
-      "/MicroBatch/CMKeyArn"
-    ).stringValue;
+    const microBatchKeyArn = Fn.importValue(`${microBatchStackName}::CMKeyArn`);
     const microBatchKey = kms.Key.fromKeyArn(
       this,
       "MicroBatchKey",
       microBatchKeyArn
     );
 
-    const KMSPublicAccessPolicyArn =
-      ssm.StringParameter.fromStringParameterName(
-        this,
-        "SSMKMSPublicAccessPolicyArn",
-        "/MicroBatch/KMSPublicAccessPolicyArn"
-      ).stringValue;
+    const KMSPublicAccessPolicyArn = Fn.importValue(`${microBatchStackName}::KMSPublicAccessPolicyArn`);
     const KMSPublicAccessPolicy = iam.ManagedPolicy.fromManagedPolicyArn(
       this,
       "KMSPublicAccessPolicy",
       KMSPublicAccessPolicyArn
     );
 
-    const microBatchLambdaUtilsLayerArn =
-      ssm.StringParameter.fromStringParameterName(
-        this,
-        "SSMLambdaUtilsLayerArn",
-        "/MicroBatch/LambdaUtilsLayerArn"
-      ).stringValue;
+    const microBatchLambdaUtilsLayerArn = Fn.importValue(`${microBatchStackName}::LambdaUtilsLayerArn`);
     const microBatchLambdaUtilsLayer = lambda.LayerVersion.fromLayerVersionArn(
       this,
       "LambdaUtilsLayer",
       microBatchLambdaUtilsLayerArn
     );
 
-    const microBatchLambdaEnrichmentLayerArn =
-      ssm.StringParameter.fromStringParameterName(
-        this,
-        "SSMLambdaEnrichmentLayerArn",
-        "/MicroBatch/LambdaEnrichmentLayerArn"
-      ).stringValue;
+    const microBatchLambdaEnrichmentLayerArn = Fn.importValue(`${microBatchStackName}::LambdaEnrichmentLayerArn`);
     const microBatchLambdaEnrichmentLayer =
       lambda.LayerVersion.fromLayerVersionArn(
         this,
@@ -189,12 +165,7 @@ export class InitLogPipelineResourcesStack extends Construct {
         microBatchLambdaEnrichmentLayerArn
       );
 
-    const pipelineResourcesBuilderArn =
-      ssm.StringParameter.fromStringParameterName(
-        this,
-        "SSMPipelineResourcesBuilderArn",
-        "/MicroBatch/PipelineResourcesBuilderArn"
-      ).stringValue;
+    const pipelineResourcesBuilderArn = Fn.importValue(`${microBatchStackName}::PipelineResourcesBuilderArn`);
     const pipelineResourcesBuilderFunctionName = Fn.select(
       6,
       Fn.split(":", pipelineResourcesBuilderArn)
@@ -205,28 +176,30 @@ export class InitLogPipelineResourcesStack extends Construct {
       pipelineResourcesBuilderFunctionName
     );
 
-    const pipelineResourcesBuilderRoleArn =
-      ssm.StringParameter.fromStringParameterName(
-        this,
-        "SSMPipelineResourcesBuilderRoleArn",
-        "/MicroBatch/PipelineResourcesBuilderRoleArn"
-      ).stringValue;
+    const pipelineResourcesBuilderRoleArn = Fn.importValue(`${microBatchStackName}::PipelineResourcesBuilderRoleArn`);
     const pipelineResourcesBuilderRole = iam.Role.fromRoleArn(
       this,
       "PipelineResourcesBuilderRole",
       pipelineResourcesBuilderRoleArn
     );
-
-    const metadataTableArn =
-      ssm.StringParameter.fromStringParameterName(
-        this,
-        "SSMMetadataTableArn",
-        "/MicroBatch/MetadataTableArn"
-      ).stringValue;
+    
+    const metadataTableArn = Fn.importValue(`${microBatchStackName}::MetadataTableArn`);
     const metadataTable = ddb.Table.fromTableArn(this,
       "MetadataTable",
       metadataTableArn
       );
+
+    const virtualPrivateCloud = Fn.importValue(`${microBatchStackName}::VpcId`);
+    const privateSubnetIds = Fn.importValue(`${microBatchStackName}::PrivateSubnetIds`);
+
+    const vpc = ec2.Vpc.fromVpcAttributes(this, "vpc", {
+      vpcId: virtualPrivateCloud,
+      availabilityZones: Fn.getAzs(),
+      privateSubnetIds: Fn.split(',', privateSubnetIds),
+    });
+
+    const securityGroupId = Fn.importValue(`${microBatchStackName}::PrivateSecurityGroupId`);
+    const securityGroup = ec2.SecurityGroup.fromSecurityGroupId(this, "securityGroup", securityGroupId);
 
     Aspects.of(this).add(
       new UpdateSSMStringParameterMetadata(
@@ -285,7 +258,7 @@ export class InitLogPipelineResourcesStack extends Construct {
       retentionPeriod: Duration.days(7),
       deadLetterQueue: {
         queue: LogEventDLQ,
-        maxReceiveCount: 30,
+        maxReceiveCount: 3,
       },
       encryption: sqs.QueueEncryption.KMS,
       encryptionMasterKey: microBatchKey,
@@ -400,11 +373,11 @@ export class InitLogPipelineResourcesStack extends Construct {
     S3ObjectReplicationRole.addManagedPolicy(KMSPublicAccessPolicy);
     S3ObjectReplicationRole.attachInlinePolicy(S3ObjectsReplicationPolicy);
 
-    const attachPolicyForS3Replicate = new iam.Policy(
+    const inlinePolicyForPipeline = new iam.Policy(
       this,
-      "AttachPolicyForS3Replicate",
+      "InlinePolicyForPipeline",
       {
-        policyName: `AttachPolicyForS3Replicate-${Aws.STACK_NAME}`,
+        policyName: `InlinePolicyForPipeline-${Aws.STACK_NAME}`,
         statements: [
           new iam.PolicyStatement({
             effect: iam.Effect.ALLOW,
@@ -420,13 +393,13 @@ export class InitLogPipelineResourcesStack extends Construct {
     );
 
     // Override the logical ID
-    const cfnAttachPolicyForS3Replicate = attachPolicyForS3Replicate.node
+    const cfnInlinePolicyForPipeline = inlinePolicyForPipeline.node
       .defaultChild as CfnPolicy;
-    cfnAttachPolicyForS3Replicate.overrideLogicalId(
-      "AttachPolicyForS3Replicate"
+    cfnInlinePolicyForPipeline.overrideLogicalId(
+      "InlinePolicyForPipeline"
     );
 
-    pipelineResourcesBuilderRole.attachInlinePolicy(attachPolicyForS3Replicate);
+    pipelineResourcesBuilderRole.attachInlinePolicy(inlinePolicyForPipeline);
 
     const S3ObjectReplication = new lambda.Function(
       this,
@@ -446,6 +419,11 @@ export class InitLogPipelineResourcesStack extends Construct {
         architecture: lambda.Architecture.X86_64,
         role: S3ObjectReplicationRole,
         layers: [microBatchLambdaUtilsLayer, microBatchLambdaEnrichmentLayer],
+        vpc: vpc, 
+        vpcSubnets: {
+          subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS
+        },
+        securityGroups: [securityGroup],
         environment: {
           SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
           SOLUTION_ID: solutionId,
@@ -461,10 +439,10 @@ export class InitLogPipelineResourcesStack extends Construct {
 
     // Override the logical ID
     const cfnS3ObjectReplication = S3ObjectReplication.node
-      .defaultChild as iam.CfnRole;
+      .defaultChild as lambda.CfnFunction;
     cfnS3ObjectReplication.overrideLogicalId("S3ObjectReplication");
 
-    S3ObjectReplication.node.addDependency(attachPolicyForS3Replicate);
+    S3ObjectReplication.node.addDependency(inlinePolicyForPipeline);
     S3ObjectReplication.node.addDependency(S3ObjectsReplicationPolicy);
 
     const S3ObjectReplicationEventSource = new SqsEventSource(LogEventQueue, {
@@ -476,9 +454,209 @@ export class InitLogPipelineResourcesStack extends Construct {
       value: S3ObjectReplication.logGroup.logGroupName,
     }).overrideLogicalId('ProcessorLogGroupName');
 
+    let connector = undefined;
+    let connectorRole = undefined;
+    let invokeConnectorRole = undefined;
+
+    if ( ('rds').includes(sourceType) ) {
+      const connectorPolicy = new iam.Policy(
+        this,
+        "ConnectorPolicy",
+        {
+          statements: [
+            new iam.PolicyStatement({
+              effect: iam.Effect.ALLOW,
+              actions: [
+                "dynamodb:GetItem",
+                "dynamodb:UpdateItem",
+              ],
+              resources: [
+                metadataTable.tableArn
+              ],
+            }),
+            new iam.PolicyStatement({
+              effect: iam.Effect.ALLOW,
+              actions: [
+                "kms:GenerateDataKey*", 
+                "kms:Decrypt", 
+                "kms:Encrypt",
+              ],
+              resources: [
+                `arn:${Aws.PARTITION}:kms:${Aws.REGION}:${Aws.ACCOUNT_ID}:key/*`
+              ],
+            }),
+          ],
+        }
+      );
+  
+      // Override the logical ID
+      const cfnConnectorPolicy = connectorPolicy.node
+        .defaultChild as iam.CfnPolicy;
+        cfnConnectorPolicy.overrideLogicalId(
+        "ConnectorPolicy"
+      );
+  
+      connectorRole = new iam.Role(
+        this,
+        "ConnectorRole",
+        {
+          assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
+        }
+      );
+  
+      // Override the logical ID
+      const cfnConnectorRole = connectorRole.node
+        .defaultChild as iam.CfnRole;
+      cfnConnectorRole.overrideLogicalId("ConnectorRole");
+  
+      connectorRole.addManagedPolicy(
+        iam.ManagedPolicy.fromAwsManagedPolicyName(
+          "service-role/AWSLambdaBasicExecutionRole"
+        )
+      );
+      connectorRole.addManagedPolicy(
+        iam.ManagedPolicy.fromAwsManagedPolicyName(
+          "service-role/AWSLambdaVPCAccessExecutionRole"
+        )
+      );
+      connectorRole.addManagedPolicy(
+        iam.ManagedPolicy.fromAwsManagedPolicyName(
+          "AmazonS3FullAccess"
+        )
+      );
+      connectorRole.addManagedPolicy(KMSPublicAccessPolicy);
+      connectorRole.attachInlinePolicy(connectorPolicy);
+      
+  
+      connector = new lambda.Function(
+        this,
+        "Connector",
+        {
+          code: lambda.AssetCode.fromAsset(
+            path.join(
+              __dirname,
+              "../../../lambda/microbatch/connector"
+            ),
+            { followSymlinks: SymlinkFollowMode.ALWAYS }
+          ),
+          runtime: lambda.Runtime.PYTHON_3_11,
+          handler: "lambda_function.lambda_handler",
+          timeout: Duration.minutes(15),
+          memorySize: 128,
+          architecture: lambda.Architecture.X86_64,
+          role: connectorRole,
+          layers: [microBatchLambdaUtilsLayer, microBatchLambdaEnrichmentLayer],
+          vpc: vpc, 
+          vpcSubnets: {
+            subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS
+          },
+          securityGroups: [securityGroup],
+          environment: {
+            SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
+            SOLUTION_ID: solutionId,
+            META_TABLE_NAME: metadataTable.tableName,
+          },
+          description: `${Aws.STACK_NAME} - Lambda function to collect ${sourceType} logs to logging bucket.`,
+        }
+      );
+  
+      // Override the logical ID
+      const cfnConnector = connector.node
+        .defaultChild as lambda.CfnFunction;
+      cfnConnector.overrideLogicalId("Connector");
+
+      connector.addPermission("EventsResourceBasedPolicy", {
+        action: "lambda:InvokeFunction",
+        principal: new iam.ServicePrincipal("events.amazonaws.com"),
+        sourceArn: `arn:${Aws.PARTITION}:events:${Aws.REGION}:${Aws.ACCOUNT_ID}:rule/Connector-*`,
+      });
+      
+      invokeConnectorRole = new iam.Role(this, "InvokeConnectorRole", {
+        assumedBy: new iam.ServicePrincipal("events.amazonaws.com"),
+      });
+
+      // Override the logical ID
+      const cfnInvokeConnectorRole = invokeConnectorRole.node
+        .defaultChild as iam.CfnRole;
+      cfnInvokeConnectorRole.overrideLogicalId("InvokeConnectorRole");
+
+      const invokeConnectorPolicy = new iam.Policy(
+        this,
+        "InvokeConnectorPolicy",
+        {
+          statements: [
+            new iam.PolicyStatement({
+              effect: iam.Effect.ALLOW,
+              actions: [
+                "lambda:InvokeFunction",
+              ],
+              resources: [
+                connector.functionArn,
+                `${connector.functionArn}:*`
+              ],
+            }),
+          ],
+        }
+      );
+  
+      // Override the logical ID
+      const cfnInvokeConnectorPolicy = invokeConnectorPolicy.node
+        .defaultChild as iam.CfnPolicy;
+      cfnInvokeConnectorPolicy.overrideLogicalId(
+        "InvokeConnectorPolicy"
+      );
+
+      invokeConnectorRole.attachInlinePolicy(invokeConnectorPolicy);
+
+      inlinePolicyForPipeline.addStatements(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            "iam:GetRole",
+            "iam:PassRole",
+            "iam:UpdateAssumeRolePolicy",
+          ],
+          resources: [invokeConnectorRole.roleArn],
+        }),
+      );
+
+      inlinePolicyForPipeline.addStatements(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            "iam:DeleteRolePolicy",
+            "iam:PutRolePolicy",
+            "iam:GetRolePolicy"
+          ],
+          resources: [connectorRole.roleArn],
+        }),
+      );
+      
+      switch (sourceType) {
+        case "rds": {
+          connectorPolicy.addStatements(
+            new iam.PolicyStatement({
+              effect: iam.Effect.ALLOW,
+              actions: [
+                "rds:DownloadDBLogFilePortion",
+                "rds:DescribeDBInstances",
+                "rds:DescribeDBLogFiles",
+                "rds:DescribeDBClusters",
+              ],
+              resources: [
+                `arn:${Aws.PARTITION}:rds:${Aws.REGION}:${Aws.ACCOUNT_ID}:cluster:*`,
+                `arn:${Aws.PARTITION}:rds:${Aws.REGION}:${Aws.ACCOUNT_ID}:db:*`,
+              ],
+            }),
+          );
+          break;
+        }
+      };
+    };
+
     const pipelineResourcesBuilderProvider = new cr.Provider(this, "Provider", {
       onEventHandler: pipelineResourcesBuilder,
-      providerFunctionName: `${Aws.STACK_NAME}-Provider`,
+      providerFunctionName: `${Aws.STACK_NAME.substring(0, 40)}-Provider`,
     });
 
     const pipelineCustomResource = new CustomResource(this, "CustomResource", {
@@ -547,6 +725,8 @@ export class InitLogPipelineResourcesStack extends Construct {
           stack: {
             role: {
               replicate: S3ObjectReplicationRole.roleArn,
+              connector: typeof connectorRole !== "undefined" ? connectorRole.roleArn : "",
+              invokeConnector: typeof invokeConnectorRole !== "undefined" ? invokeConnectorRole.roleArn : "",
             },
             queue: {
               logEventDLQ: LogEventDLQ.queueArn,
@@ -554,6 +734,7 @@ export class InitLogPipelineResourcesStack extends Construct {
             },
             lambda: {
               replicate: S3ObjectReplication.functionArn,
+              connector: typeof connector !== "undefined" ? connector.functionArn : "",
             },
             stackId: `${Aws.STACK_ID}`,
           },
@@ -580,58 +761,18 @@ export class UpdateSSMStringParameterMetadata implements IAspect {
     private paramGroups: Record<string, any>[],
     private label: string
   ) { }
-
+ 
   private mapping = {
-    "SSMStagingBucketName.Parameter": {
-      logicalId: "StagingBucketName",
+    "MicroBatchStackName.Parameter": {
+      logicalId: "MicroBatchStackName",
       description:
-        "The name of Staging Bucket, automatically retrieved from SSM Parameter Store. [/MicroBatch/StagingBucketName].",
-    },
-    "SSMCentralizedDatabaseArn.Parameter": {
-      logicalId: "CentralizedDatabaseArn",
-      description:
-        "The database arn of centralized, automatically retrieved from SSM Parameter Store. [/MicroBatch/CentralizedDatabaseArn].",
-    },
-    "SSMCMKeyArn.Parameter": {
-      logicalId: "CMKeyArn",
-      description:
-        "The key ARN for a KMS key, automatically retrieved from SSM Parameter Store. [/MicroBatch/CMKeyArn].",
-    },
-    "SSMKMSPublicAccessPolicyArn.Parameter": {
-      logicalId: "KMSPublicAccessPolicyArn",
-      description:
-        "The ARN of KMSPublicAccessPolicy, automatically retrieved from SSM Parameter Store. [/MicroBatch/KMSPublicAccessPolicyArn].",
-    },
-    "SSMLambdaUtilsLayerArn.Parameter": {
-      logicalId: "LambdaUtilsLayerArn",
-      description:
-        "The ARN of Lambda Layer., automatically retrieved from SSM Parameter Store. [/MicroBatch/LambdaUtilsLayerArn].",
-    },
-    "SSMLambdaEnrichmentLayerArn.Parameter": {
-      logicalId: "LambdaEnrichmentLayerArn",
-      description:
-        "The ARN of Lambda Layer., automatically retrieved from SSM Parameter Store. [/MicroBatch/LambdaEnrichmentLayerArn].",
-    },
-    "SSMPipelineResourcesBuilderArn.Parameter": {
-      logicalId: "PipelineResourcesBuilderArn",
-      description:
-        "The arn of the Lambda to build resources of pipeline, automatically retrieved from SSM Parameter Store. [/MicroBatch/PipelineResourcesBuilderArn].",
-    },
-    "SSMPipelineResourcesBuilderRoleArn.Parameter": {
-      logicalId: "PipelineResourcesBuilderRoleArn",
-      description:
-        "The arn of the role of the Lambda to build resources of pipeline, automatically retrieved from SSM Parameter Store. [/MicroBatch/PipelineResourcesBuilderRoleArn].",
-    },
-    "SSMMetadataTableArn.Parameter": {
-      logicalId: "MetadataTableArn",
-      description:
-        "The arn of Metadata Table of DynamoDB, automatically retrieved from SSM Parameter Store. [/MicroBatch/MetadataTableArn].",
+        "The Name of Main Stack, automatically retrieved from SSM Parameter Store. [/MicroBatch/StackName].",
     },
   };
-
+ 
   public visit(node: IConstruct): void {
     let nodeLogicalId: string | undefined;
-
+ 
     Object.entries(this.mapping).some(([id, { logicalId, description }]) => {
       if (node instanceof CfnParameter && node.node.id == id) {
         node.overrideLogicalId(logicalId);
@@ -641,9 +782,9 @@ export class UpdateSSMStringParameterMetadata implements IAspect {
       }
       return false;
     });
-
+ 
     if (!nodeLogicalId) return;
-
+ 
     const target = this.paramGroups.find(
       ({ Label }) => Label.default === this.label
     );

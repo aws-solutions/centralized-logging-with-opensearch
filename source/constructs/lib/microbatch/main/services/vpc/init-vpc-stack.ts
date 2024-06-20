@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import { Construct } from "constructs";
-import { Fn, CfnOutput, RemovalPolicy } from "aws-cdk-lib";
+import { Aws, Fn, RemovalPolicy, CfnOutput } from "aws-cdk-lib";
 import {
   SecurityGroup,
   CfnSecurityGroup,
@@ -89,12 +89,6 @@ export class InitVPCStack extends Construct {
         service: GatewayVpcEndpointAwsService.DYNAMODB,
       });
 
-      new CfnOutput(this, "PrivateSubnets", {
-        description: "Private subnets",
-        value: this.vpc.privateSubnets
-          .map((subnet) => subnet.subnetId)
-          .join(","),
-      }).overrideLogicalId("PrivateSubnets");
     }
 
     // Create a Default Security Group to allow outbound https & http traffic only
@@ -121,14 +115,23 @@ export class InitVPCStack extends Construct {
       ],
     });
 
-    new CfnOutput(this, "VPCId", {
-      description: "Default VPC ID",
+    new CfnOutput(this, 'VpcId', {
+      description: 'Vpc Id',
       value: this.vpc.vpcId,
-    }).overrideLogicalId("VPCId");
+      exportName: `${Aws.STACK_NAME}::VpcId`,
+    }).overrideLogicalId('VpcId');
 
-    new CfnOutput(this, "PrivateSecurityGroupId", {
-      description: "Private Security Group",
+    new CfnOutput(this, 'PrivateSubnetIds', {
+      description: 'Private Subnet Ids',
+      value: Fn.join(',', this.vpc.privateSubnets.map((subnet) => subnet.subnetId)),
+      exportName: `${Aws.STACK_NAME}::PrivateSubnetIds`,
+    }).overrideLogicalId('PrivateSubnetIds');
+
+    new CfnOutput(this, 'PrivateSecurityGroupId', {
+      description: 'Private Security Group Id',
       value: this.privateSecurityGroup.securityGroupId,
-    }).overrideLogicalId("PrivateSecurityGroupId");
+      exportName: `${Aws.STACK_NAME}::PrivateSecurityGroupId`,
+    }).overrideLogicalId('PrivateSecurityGroupId');
+
   }
 }

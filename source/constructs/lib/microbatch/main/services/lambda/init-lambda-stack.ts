@@ -20,8 +20,6 @@ import { InitSQSStack } from "../sqs/init-sqs-stack";
 import { InitLambdaLayerStack } from "./init-lambda-layer";
 import { InitLambdaS3ObjectScanningStack } from "./init-s3-object-scanning-stack";
 import { InitLambdaS3ObjectMigrationStack } from "./init-s3-object-migration-stack";
-import { InitLambdaBatchUpdatePartitionStack } from "./init-etl-batch-update-partition-stack";
-import { InitLambdaETLDateTransformStack } from "./init-etl-date-transform";
 import { InitLambdaETLHelperStack } from "./init-etl-helper";
 import { InitLambdaSendTemplateEmailStack } from "./init-ses-send-email";
 import { InitLambdaPipelineResourcesBuilderStack } from "./init-pipeline-resources-builder-stack";
@@ -35,7 +33,6 @@ export interface  InitLambdaProps {
   readonly solutionName: string;
   readonly emailAddress: string;
   readonly SESState: string;
-  readonly SESEmailTemplate: string;
   readonly microBatchSQSStack: InitSQSStack;
   readonly microBatchDDBStack: InitDynamoDBStack;
   readonly microBatchIAMStack: InitIAMStack;
@@ -47,8 +44,6 @@ export class InitLambdaStack extends Construct {
     readonly LambdaLayerStack: InitLambdaLayerStack;
     readonly S3ObjectScanningStack: InitLambdaS3ObjectScanningStack;
     readonly S3ObjectMigrationStack: InitLambdaS3ObjectMigrationStack;
-    readonly BatchUpdatePartitionStack: InitLambdaBatchUpdatePartitionStack;
-    readonly ETLDateTransformStack: InitLambdaETLDateTransformStack;
     readonly ETLHelperStack: InitLambdaETLHelperStack;
     readonly SendTemplateEmailStack: InitLambdaSendTemplateEmailStack;
     readonly PipelineResourcesBuilderStack: InitLambdaPipelineResourcesBuilderStack;
@@ -61,7 +56,6 @@ export class InitLambdaStack extends Construct {
       let solutionName = props.solutionName;
       let emailAddress = props.emailAddress;
       let SESState = props.SESState;
-      let SESEmailTemplate = props.SESEmailTemplate;
       let microBatchSQSStack = props.microBatchSQSStack;
       let microBatchDDBStack = props.microBatchDDBStack;
       let microBatchIAMStack = props.microBatchIAMStack;
@@ -85,14 +79,6 @@ export class InitLambdaStack extends Construct {
         microBatchVPCStack: microBatchVPCStack,
         microBatchLambdaLayerStack: this.LambdaLayerStack,
       });
-      this.BatchUpdatePartitionStack = new InitLambdaBatchUpdatePartitionStack(this, 'LambdaBatchUpdatePartitionStack', {
-        solutionId: solutionId,
-        microBatchDDBStack: microBatchDDBStack,
-        microBatchIAMStack: microBatchIAMStack,
-        microBatchVPCStack: microBatchVPCStack,
-        microBatchLambdaLayerStack: this.LambdaLayerStack,
-      });
-      this.ETLDateTransformStack = new InitLambdaETLDateTransformStack(this, 'LambdaETLDateTransformStack', props);
       this.ETLHelperStack = new InitLambdaETLHelperStack(this, 'LambdaETLHelperStack', {
         solutionId: solutionId,
         microBatchDDBStack: microBatchDDBStack,
@@ -104,7 +90,6 @@ export class InitLambdaStack extends Construct {
         solutionId: solutionId,
         emailAddress: emailAddress,
         SESState: SESState,
-        SESEmailTemplate: SESEmailTemplate,
         microBatchDDBStack: microBatchDDBStack,
         microBatchIAMStack: microBatchIAMStack,
         microBatchVPCStack: microBatchVPCStack,

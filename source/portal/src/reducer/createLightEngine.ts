@@ -159,9 +159,15 @@ const validateGteOne = createFieldValidator(
 const CRON_REGEX_STR =
   "^cron\\(((\\d{1,2}|\\*),?\\/?)+\\s((\\d{1,2}|\\*),?)+\\s((\\d{1,2}|\\*|\\?),?)+\\s((\\d{1,2}|\\*|\\?|(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)),?)+\\s((\\d{1,2}[FL]?|\\*|\\?|(SAT|SUN|MON|TUE|WED|THU|FRI)#?\\d?),?-?)+\\s((\\d{1,4}|\\*),?-?)+\\)$";
 
+const TABLE_NAME_REGEX_STR = "^[a-zA-Z0-9_]{1,255}$";
+
 const validateCronExpression = validateWithRegex(
   new RegExp(`${CRON_REGEX_STR}`)
 )(() => i18n.t("lightengine:engine.create.errorCronExpression"));
+
+const validateTableNameFormat = validateWithRegex(
+  new RegExp(`${TABLE_NAME_REGEX_STR}`)
+)(() => i18n.t("lightengine:engine.create.errorTableName"));
 
 const validateGrafanaId = withI18nErrorMessage(
   validateRequiredText("lightengine:engine.create.errorGrafanaIdMissing")
@@ -182,10 +188,11 @@ const validateLogMergerSchedule = pipFieldValidator(
   ),
   validateCronExpression
 );
-const validateCentralizedTableName = withI18nErrorMessage(
-  validateRequiredText(
-    "lightengine:engine.create.errorCentralizedTableNameMissing"
-  )
+const validateCentralizedTableName = pipFieldValidator(
+  validateRequiredText(() =>
+    i18n.t("lightengine:engine.create.errorCentralizedTableNameMissing")
+  ),
+  validateTableNameFormat
 );
 const validateLogArchiveAge = withI18nErrorMessage(
   pipFieldValidator(

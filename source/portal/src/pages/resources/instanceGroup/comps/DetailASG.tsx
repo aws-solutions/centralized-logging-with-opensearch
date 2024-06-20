@@ -16,10 +16,11 @@ limitations under the License.
 import React, { useState } from "react";
 import { AntTab, AntTabs, TabPanel } from "components/Tab";
 import InstanceTable from "pages/resources/common/InstanceTable";
-import { LogSource } from "API";
+import { EC2GroupPlatform, LogSource } from "API";
 import { useTranslation } from "react-i18next";
 
 import ASGGuide from "./ASGGuide";
+import { defaultStr } from "assets/js/utils";
 
 interface DetailASGProps {
   instanceGroup: LogSource;
@@ -28,24 +29,34 @@ interface DetailASGProps {
 const DetailASG: React.FC<DetailASGProps> = (props: DetailASGProps) => {
   const { instanceGroup } = props;
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState("asgGuide");
 
   return (
-    <div>
+    <div data-testid="asg-detail-tab">
       <AntTabs
         value={activeTab}
         onChange={(event, newTab) => {
           setActiveTab(newTab);
         }}
       >
-        <AntTab label={t("resource:group.detail.asg.asgGuide")} />
-        <AntTab label={t("resource:group.detail.asg.instance")} />
+        <AntTab
+          data-testid="a"
+          label={t("resource:group.detail.asg.asgGuide")}
+          value="asgGuide"
+        />
+        <AntTab
+          data-testid="b"
+          label={t("resource:group.detail.asg.instance")}
+          value="instanceTable"
+        />
       </AntTabs>
-      <TabPanel value={activeTab} index={0}>
+      <TabPanel value={activeTab} index="asgGuide">
         <ASGGuide instanceGroup={instanceGroup} />
       </TabPanel>
-      <TabPanel value={activeTab} index={1}>
+      <TabPanel value={activeTab} index="instanceTable">
         <InstanceTable
+          platform={instanceGroup.ec2?.groupPlatform ?? EC2GroupPlatform.Linux}
+          disableChangePlatform
           isASGList
           defaultTagFilter={[
             {
@@ -55,13 +66,7 @@ const DetailASG: React.FC<DetailASGProps> = (props: DetailASGProps) => {
               ],
             },
           ]}
-          accountId={instanceGroup.accountId || ""}
-          changeInstanceSet={(sets) => {
-            console.info(sets);
-          }}
-          setCreateDisabled={(disable) => {
-            console.info(disable);
-          }}
+          accountId={defaultStr(instanceGroup.accountId)}
         />
       </TabPanel>
     </div>

@@ -19,27 +19,19 @@ import { Link, useNavigate } from "react-router-dom";
 import Pagination from "@material-ui/lab/Pagination";
 import Button from "components/Button";
 import { TablePanel } from "components/TablePanel";
-import Breadcrumb from "components/Breadcrumb";
 import { SelectType } from "components/TablePanel/tablePanel";
-import {
-  AnalyticEngineType,
-  AppPipeline,
-  BufferType,
-  PipelineStatus,
-} from "API";
+import { AnalyticEngineType, AppPipeline, PipelineStatus } from "API";
 import Modal from "components/Modal";
-import HelpPanel from "components/HelpPanel";
-import SideMenu from "components/SideMenu";
 import { listAppPipelines } from "graphql/queries";
 import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
 import { deleteAppPipeline } from "graphql/mutations";
-import { formatLocalTime } from "assets/js/utils";
+import { defaultStr, formatLocalTime } from "assets/js/utils";
 import { useTranslation } from "react-i18next";
 import { AUTO_REFRESH_INT } from "assets/js/const";
-import { getListBufferLayer } from "assets/js/applog";
 import { handleErrorMessage } from "assets/js/alert";
 import PipelineStatusComp from "../common/PipelineStatus";
 import ButtonRefresh from "components/ButtonRefresh";
+import CommonLayout from "pages/layout/CommonLayout";
 
 const PAGE_SIZE = 10;
 
@@ -170,19 +162,6 @@ const ApplicationLog: React.FC = () => {
     );
   };
 
-  const renderBufferLayer = (data: AppPipeline) => {
-    if (
-      data.bufferType !== BufferType.None &&
-      data.status === PipelineStatus.CREATING
-    ) {
-      return <i className="gray">({t("pendingCreation")})</i>;
-    } else if (data.bufferType === BufferType.None) {
-      return t("none");
-    } else {
-      return getListBufferLayer(data.bufferType, data.bufferResourceName || "");
-    }
-  };
-
   const renderStatus = (data: AppPipeline) => {
     return (
       <PipelineStatusComp
@@ -199,176 +178,162 @@ const ApplicationLog: React.FC = () => {
         target="_blank"
         to={`/resources/log-config/detail/${data?.logConfig?.id}/${data?.logConfigVersionNumber}`}
       >
-        {`${data?.logConfig?.name || ""}`}
+        {defaultStr(data?.logConfig?.name)}
       </Link>
     );
   };
 
   return (
-    <div className="lh-main-content">
-      <SideMenu />
-      <div className="lh-container">
-        <div className="lh-content">
-          <div className="application-log">
-            <Breadcrumb list={breadCrumbList} />
-            <div className="table-data">
-              <TablePanel
-                trackId="pipelineId"
-                title={t("applog:title")}
-                defaultSelectItem={selectedApplicationLog}
-                changeSelected={(item) => {
-                  console.info("item:", item);
-                  setSelectedApplicationLog(item);
+    <CommonLayout breadCrumbList={breadCrumbList}>
+      <div className="table-data">
+        <TablePanel
+          trackId="pipelineId"
+          title={t("applog:title")}
+          defaultSelectItem={selectedApplicationLog}
+          changeSelected={(item) => {
+            console.info("item:", item);
+            setSelectedApplicationLog(item);
+          }}
+          loading={loadingData}
+          selectType={SelectType.RADIO}
+          columnDefinitions={[
+            {
+              id: "id",
+              header: "ID",
+              // width: 120,
+              cell: (e: AppPipeline) => renderPipelineId(e),
+            },
+            {
+              // width: 110,
+              id: "EngineType",
+              header: t("applog:list.engineType"),
+              cell: ({ aosParams, engineType }: AppPipeline) => {
+                return (
+                  (engineType === AnalyticEngineType.LightEngine
+                    ? t("applog:list.lightEngine")
+                    : `${t("applog:list.os")}(${aosParams?.domainName})`) || "-"
+                );
+              },
+            },
+            {
+              id: "Indexname",
+              header: t("applog:list.indexTable"),
+              cell: (e: AppPipeline) => {
+                return (
+                  e.aosParams?.indexPrefix ??
+                  e.lightEngineParams?.centralizedTableName ??
+                  "-"
+                );
+              },
+            },
+            {
+              id: "logConfig",
+              header: t("applog:list.logConfig"),
+              cell: (e: AppPipeline) => renderLogConfig(e),
+            },
+            {
+              width: 170,
+              id: "created",
+              header: t("applog:list.created"),
+              cell: (e: AppPipeline) => {
+                return formatLocalTime(defaultStr(e?.createdAt));
+              },
+            },
+            {
+              width: 120,
+              id: "status",
+              header: t("applog:list.status"),
+              cell: (e: AppPipeline) => renderStatus(e),
+            },
+          ]}
+          items={applicationLogs}
+          actions={
+            <div>
+              <Button
+                btnType="icon"
+                disabled={loadingData}
+                onClick={() => {
+                  if (curPage === 1) {
+                    getApplicationLogList();
+                  } else {
+                    setCurPage(1);
+                  }
                 }}
-                loading={loadingData}
-                selectType={SelectType.RADIO}
-                columnDefinitions={[
-                  {
-                    id: "id",
-                    header: "ID",
-                    // width: 120,
-                    cell: (e: AppPipeline) => renderPipelineId(e),
-                  },
-                  {
-                    // width: 110,
-                    id: "EngineType",
-                    header: t("applog:list.engineType"),
-                    cell: ({ aosParams, engineType }: AppPipeline) => {
-                      return (
-                        (engineType === AnalyticEngineType.LightEngine
-                          ? t("applog:list.lightEngine")
-                          : `${t("applog:list.os")}(${aosParams?.domainName})`) || "-"
-                      );
-                    },
-                  },
-                  {
-                    id: "Indexname",
-                    header: t("applog:list.indexTable"),
-                    cell: (e: AppPipeline) => {
-                      return (
-                        e.aosParams?.indexPrefix ??
-                        e.lightEngineParams?.centralizedTableName ??
-                        "-"
-                      );
-                    },
-                  },
-                  {
-                    id: "bufferLayer",
-                    header: t("applog:list.bufferLayer"),
-                    cell: (e: AppPipeline) => renderBufferLayer(e),
-                  },
-                  {
-                    id: "logConfig",
-                    header: t("applog:list.logConfig"),
-                    cell: (e: AppPipeline) => renderLogConfig(e),
-                  },
-                  {
-                    width: 170,
-                    id: "created",
-                    header: t("applog:list.created"),
-                    cell: (e: AppPipeline) => {
-                      return formatLocalTime(e?.createdAt || "");
-                    },
-                  },
-                  {
-                    width: 120,
-                    id: "status",
-                    header: t("applog:list.status"),
-                    cell: (e: AppPipeline) => renderStatus(e),
-                  },
-                ]}
-                items={applicationLogs}
-                actions={
-                  <div>
-                    <Button
-                      btnType="icon"
-                      disabled={loadingData}
-                      onClick={() => {
-                        if (curPage === 1) {
-                          getApplicationLogList();
-                        } else {
-                          setCurPage(1);
-                        }
-                      }}
-                    >
-                      <ButtonRefresh loading={loadingData} />
-                    </Button>
-                    <Button
-                      disabled={disabledDetail}
-                      onClick={() => {
-                        clickToReviewDetail();
-                      }}
-                    >
-                      {t("button.viewDetail")}
-                    </Button>
-                    <Button
-                      disabled={disabledDelete}
-                      onClick={() => {
-                        removeApplicationLog();
-                      }}
-                    >
-                      {t("button.delete")}
-                    </Button>
-                    <Button
-                      btnType="primary"
-                      onClick={() => {
-                        navigate("/log-pipeline/application-log/create");
-                      }}
-                    >
-                      {t("button.createPipeline")}
-                    </Button>
-                  </div>
-                }
-                pagination={
-                  <Pagination
-                    count={Math.ceil(totoalCount / PAGE_SIZE)}
-                    page={curPage}
-                    onChange={handlePageChange}
-                    size="small"
-                  />
-                }
-              />
+              >
+                <ButtonRefresh loading={loadingData} />
+              </Button>
+              <Button
+                disabled={disabledDetail}
+                onClick={() => {
+                  clickToReviewDetail();
+                }}
+              >
+                {t("button.viewDetail")}
+              </Button>
+              <Button
+                disabled={disabledDelete}
+                onClick={() => {
+                  removeApplicationLog();
+                }}
+              >
+                {t("button.delete")}
+              </Button>
+              <Button
+                btnType="primary"
+                onClick={() => {
+                  navigate("/log-pipeline/application-log/create");
+                }}
+              >
+                {t("button.createPipeline")}
+              </Button>
             </div>
-          </div>
-          <Modal
-            title={t("applog:delete")}
-            fullWidth={false}
-            isOpen={openDeleteModel}
-            closeModal={() => {
-              setOpenDeleteModel(false);
-            }}
-            actions={
-              <div className="button-action no-pb text-right">
-                <Button
-                  btnType="text"
-                  disabled={loadingDelete}
-                  onClick={() => {
-                    setOpenDeleteModel(false);
-                  }}
-                >
-                  {t("button.cancel")}
-                </Button>
-                <Button
-                  loading={loadingDelete}
-                  btnType="primary"
-                  onClick={() => {
-                    confimRemoveApplicationLog();
-                  }}
-                >
-                  {t("button.delete")}
-                </Button>
-              </div>
-            }
-          >
-            <div className="modal-content">
-              {t("applog:deleteTips")}
-              <b>{`${curTipsApplicationLog?.pipelineId}`}</b> {"?"}
-            </div>
-          </Modal>
-        </div>
+          }
+          pagination={
+            <Pagination
+              count={Math.ceil(totoalCount / PAGE_SIZE)}
+              page={curPage}
+              onChange={handlePageChange}
+              size="small"
+            />
+          }
+        />
       </div>
-      <HelpPanel />
-    </div>
+      <Modal
+        title={t("applog:delete")}
+        fullWidth={false}
+        isOpen={openDeleteModel}
+        closeModal={() => {
+          setOpenDeleteModel(false);
+        }}
+        actions={
+          <div className="button-action no-pb text-right">
+            <Button
+              btnType="text"
+              disabled={loadingDelete}
+              onClick={() => {
+                setOpenDeleteModel(false);
+              }}
+            >
+              {t("button.cancel")}
+            </Button>
+            <Button
+              loading={loadingDelete}
+              btnType="primary"
+              onClick={() => {
+                confimRemoveApplicationLog();
+              }}
+            >
+              {t("button.delete")}
+            </Button>
+          </div>
+        }
+      >
+        <div className="modal-content">
+          {t("applog:deleteTips")}
+          <b>{`${curTipsApplicationLog?.pipelineId}`}</b> {"?"}
+        </div>
+      </Modal>
+    </CommonLayout>
   );
 };
 

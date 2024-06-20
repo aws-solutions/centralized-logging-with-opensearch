@@ -18,11 +18,11 @@ import React, { useState, useEffect } from "react";
 import { SelectType, TablePanel } from "components/TablePanel";
 import { Link } from "react-router-dom";
 import { Pagination } from "@material-ui/lab";
-import { EC2GroupType, LogSource, LogSourceType } from "API";
+import { EC2GroupPlatform, EC2GroupType, LogSource, LogSourceType } from "API";
 import { appSyncRequestQuery } from "assets/js/request";
 import { listLogSources } from "graphql/queries";
 import Button from "components/Button";
-import { formatLocalTime } from "assets/js/utils";
+import { defaultStr, formatLocalTime } from "assets/js/utils";
 import { useTranslation } from "react-i18next";
 import ExtButton from "components/ExtButton";
 import { Validator } from "pages/comps/Validator";
@@ -35,6 +35,12 @@ interface ChooseInstanceGroupTableProps {
   value: LogSource[];
   setValue: React.Dispatch<React.SetStateAction<LogSource[]>>;
   validator: Validator;
+  isIngestion?: boolean;
+  isWindowsLog?: boolean;
+}
+
+interface ExtLogSource extends LogSource {
+  disable: boolean;
 }
 
 const ChooseInstanceGroupTable: React.FC<ChooseInstanceGroupTableProps> = (
@@ -44,12 +50,21 @@ const ChooseInstanceGroupTable: React.FC<ChooseInstanceGroupTableProps> = (
   const [loadingData, setLoadingData] = useState(false);
   const [instanceGroupList, setInstanceGroupList] = useState<LogSource[]>([]);
   const [curPage, setCurPage] = useState(1);
-  const [totoalCount, setTotoalCount] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
 
   const handlePageChange = (event: any, value: number) => {
-    console.info("event:", event);
-    console.info("value:", value);
     setCurPage(value);
+  };
+
+  const isDisabledGroup = (item: ExtLogSource) => {
+    if (
+      props.isIngestion &&
+      props.isWindowsLog &&
+      item.ec2?.groupPlatform === EC2GroupPlatform.Linux
+    ) {
+      return true;
+    }
+    return false;
   };
 
   const getInstanceGroupList = async () => {
@@ -62,9 +77,12 @@ const ChooseInstanceGroupTable: React.FC<ChooseInstanceGroupTableProps> = (
         type: LogSourceType.EC2,
       });
       console.info("resData:", resData);
-      const dataInstanceGroupList: LogSource[] =
+      const dataInstanceGroupList: ExtLogSource[] =
         resData.data.listLogSources.logSources;
-      setTotoalCount(resData.data.listLogSources.total);
+      setTotalCount(resData.data.listLogSources.total);
+      dataInstanceGroupList.forEach((element) => {
+        element.disable = isDisabledGroup(element);
+      });
       setInstanceGroupList(dataInstanceGroupList);
       setLoadingData(false);
     } catch (error) {
@@ -112,7 +130,14 @@ const ChooseInstanceGroupTable: React.FC<ChooseInstanceGroupTableProps> = (
               id: "Account",
               header: t("resource:group.list.account"),
               cell: (e: LogSource) => {
-                return e.accountId;
+                return e?.accountId;
+              },
+            },
+            {
+              id: "Type",
+              header: t("resource:group.list.platform"),
+              cell: (e: LogSource) => {
+                return e.ec2?.groupPlatform ?? EC2GroupPlatform.Linux;
               },
             },
             {
@@ -129,7 +154,7 @@ const ChooseInstanceGroupTable: React.FC<ChooseInstanceGroupTableProps> = (
               id: "created",
               header: t("applog:ingestion.chooseInstanceGroup.list.created"),
               cell: (e: LogSource) => {
-                return formatLocalTime(e?.createdAt || "");
+                return formatLocalTime(defaultStr(e?.createdAt));
               },
             },
           ]}
@@ -156,7 +181,7 @@ const ChooseInstanceGroupTable: React.FC<ChooseInstanceGroupTableProps> = (
           }
           pagination={
             <Pagination
-              count={Math.ceil(totoalCount / PAGE_SIZE)}
+              count={Math.ceil(totalCount / PAGE_SIZE)}
               page={curPage}
               onChange={handlePageChange}
               size="small"

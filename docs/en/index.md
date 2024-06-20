@@ -10,10 +10,12 @@ Use this navigation table to quickly find answers to these questions:
 | Get started with the solution quickly to import an Amazon OpenSearch Service domain, build a log analytics pipeline, and access the built-in dashboard  | [Getting started](./implementation-guide/getting-started/index.md) |
 | Learn the operations related to Amazon OpenSearch Service domains | [Domain management](./implementation-guide/domains/index.md) |
 | Walk through the processes of building log analytics pipelines | [AWS Services logs](./implementation-guide/aws-services/index.md) and [Applications logs](./implementation-guide/applications/index.md) |
+| Encountering issues when using the solution | [Troubleshooting](./implementation-guide/trouble-shooting/) |
+| Go through a hands-on workshop designed for this solution | [Workshop](https://catalog.workshops.aws/centralized-logging-with-opensearch/) |
 
 
 This implementation guide describes architectural considerations and configuration steps for deploying the Centralized Logging with OpenSearch solution in the AWS cloud. It includes links to [CloudFormation][cloudformation] templates that launches and configures the AWS services required to deploy this solution using AWS best practices for security and availability.
 
 The guide is intended for IT architects, developers, DevOps, data engineers with practical experience architecting on the AWS Cloud.
 
-[cloudformation]: https://aws.amazon.com/zh/cloudformation/
+[cloudformation]: https://aws.amazon.com/cloudformation/

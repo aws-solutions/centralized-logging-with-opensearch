@@ -214,7 +214,8 @@ export class AppPipelineFlowStack extends Construct {
 
     const createIngestionChoice = new sfn.Choice(this, 'Engine type is LightEngine or not?')
       .when(sfn.Condition.and(sfn.Condition.stringEquals('$$.Execution.Input.action', 'START'),
-        sfn.Condition.stringEquals('$$.Execution.Input.args.engineType', 'LightEngine')), pipelineResourcesBuilderTask)
+        sfn.Condition.stringEquals('$$.Execution.Input.args.engineType', 'LightEngine'),
+        sfn.Condition.isPresent('$$.Execution.Input.args.ingestion')), pipelineResourcesBuilderTask)
       .otherwise(appPipelineFlowComplete);
 
     pipelineAlarmTask.next(createIngestionChoice)

@@ -43,7 +43,7 @@ export class InitLambdaETLHelperStack extends Construct {
     let microBatchIAMStack = props.microBatchIAMStack;
     let microBatchLambdaLayerStack = props.microBatchLambdaLayerStack;
 
-    // Create a Role for Lambda:ETLDateTransform 
+    // Create a Role for Lambda:ETLTransform 
     this.ETLHelperRole = new iam.Role(this, "ETLHelperRole", {
       assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
     });
@@ -85,7 +85,7 @@ export class InitLambdaETLHelperStack extends Construct {
     this.ETLHelperRole.attachInlinePolicy(ETLHelperRWDDBPolicy);
 
     // Create a lambda to handle all cluster related APIs.
-    this.ETLHelper = new lambda.Function(this, "ETLDateTransform", {
+    this.ETLHelper = new lambda.Function(this, "ETLHelper", {
       code: lambda.AssetCode.fromAsset(
         path.join(__dirname, "../../../../../lambda/microbatch/etl_helper"),
         { followSymlinks: SymlinkFollowMode.ALWAYS },

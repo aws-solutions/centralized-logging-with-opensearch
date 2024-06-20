@@ -1,17 +1,16 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-import logging
 import os
 import json
 
 
 from commonlib import AWSConnection, AppSyncRouter, handle_error
 from commonlib.exception import APIException, ErrorCode
+from commonlib.logging import get_logger
 from util.alarm_helper import AlarmHelper
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger('alarm')
 
 conn = AWSConnection()
 router = AppSyncRouter()
@@ -25,7 +24,7 @@ def lambda_handler(event, _):
     This lambda handles request for central alarm system.
     """
 
-    logger.info("Received event: " + json.dumps(event, indent=2))
+    logger.info("Received event: " + json.dumps(event["arguments"], indent=2))
     return router.resolve(event)
 
 

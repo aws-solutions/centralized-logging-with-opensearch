@@ -26,6 +26,9 @@ def default_environment_variables():
     os.environ["AUTHENTICATION_TYPE"] = "AMAZON_COGNITO_USER_POOLS"
     os.environ["CLOUDFRONT_URL"] = "solution.cloudfront.net"
     os.environ["DEFAULT_LOGGING_BUCKET"] = "solution-bucket"
+    os.environ["ACCESS_LOGGING_BUCKET"] = "solution-logging-bucket"
+    os.environ["OPENSEARCH_MASTER_ROLE_ARN"] = "OPENSEARCH_MASTER_ROLE_ARN"
+    os.environ["OPENSEARCH_DOMAIN_TABLE"] = "OPENSEARCH_DOMAIN_TABLE"
 
     os.environ["EKS_DEPLOY_KIND_TABLE"] = "LogAgentEKSDeploymentKindTable"
     os.environ["EKS_LOG_SOURCE_TABLE"] = "EKSClusterLogSourceTable"

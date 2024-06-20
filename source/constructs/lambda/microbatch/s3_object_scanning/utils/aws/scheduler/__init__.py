@@ -4,8 +4,7 @@
 import json
 import types
 from typing import Union
-from utils.aws.commonlib import AWSConnection
-from utils.logger import logger
+from utils.helpers import logger, AWSConnection
 
 
 
@@ -75,14 +74,14 @@ class SchedulerClient:
             logger.warning(e)
             return {}
 
-    def create_schedule(self, name: str, input: dict, sfn_arn: str, role_arn: str, group_name: str = 'default', 
+    def create_schedule(self, name: str, input: dict, target_arn: str, target_role_arn: str, group_name: str = 'default', 
                         schedule: str = 'rate(5 minutes)', flexible_time_windows: dict = {'Mode': 'OFF'}) -> dict:
         """Create a specified schedule.
         
         :param name (str): The name of the schedule group that you are creating.
         :param input (str): The text, or well-formed JSON, passed to the target.
-        :param sfn_arn (str): The Amazon Resource Name (ARN) of the IAM role that EventBridge Scheduler will use for this target when the schedule is invoked.
-        :param role_arn (str): The Amazon Resource Name (ARN) of the target.
+        :param target_arn (str): The Amazon Resource Name (ARN) of the IAM role that EventBridge Scheduler will use for this target when the schedule is invoked.
+        :param target_role_arn (str): The Amazon Resource Name (ARN) of the target.
         :param group_name (str, optional): The name of the schedule group to associate with this schedule.
         :param schedule (str, optional): The expression that defines when the schedule runs.
         :param flexible_time_windows (str, optional): Allows you to configure a time window during which EventBridge Scheduler invokes the schedule.
@@ -95,16 +94,16 @@ class SchedulerClient:
             self._scheduler_client.update_schedule(FlexibleTimeWindow=flexible_time_windows, GroupName=group_name,
                                                Name=name, ScheduleExpression=schedule,
                                                State='ENABLED', Target={
-                                                   'Arn': sfn_arn,
+                                                   'Arn': target_arn,
                                                    'Input': json.dumps(input, indent=4),
-                                                   'RoleArn': role_arn})
+                                                   'RoleArn': target_role_arn})
         else:
             self._scheduler_client.create_schedule(FlexibleTimeWindow=flexible_time_windows, GroupName=group_name,
                                                 Name=name, ScheduleExpression=schedule,
                                                 State='ENABLED', Target={
-                                                    'Arn': sfn_arn,
+                                                    'Arn': target_arn,
                                                     'Input': json.dumps(input, indent=4),
-                                                    'RoleArn': role_arn})
+                                                    'RoleArn': target_role_arn})
         return self.get_schedule(name=name, group_name=group_name)
     
     def delete_schedule(self, name: str, group_name: str = 'default') -> None:
@@ -156,7 +155,7 @@ class SchedulerClient:
                 }
             }
         
-        return self.create_schedule(name=name, input=constant, sfn_arn=sfn_arn, role_arn=role_arn, group_name=group_name, 
+        return self.create_schedule(name=name, input=constant, target_arn=sfn_arn, target_role_arn=role_arn, group_name=group_name, 
                         schedule=schedule, flexible_time_windows={'Mode': 'OFF'})
     
     def create_merger_schedule(self, pipeline_id: str, source_type: str, table_name: str, 
@@ -196,7 +195,7 @@ class SchedulerClient:
                 }
             }
         
-        return self.create_schedule(name=name, input=constant, sfn_arn=sfn_arn, role_arn=role_arn, group_name=group_name, 
+        return self.create_schedule(name=name, input=constant, target_arn=sfn_arn, target_role_arn=role_arn, group_name=group_name, 
                         schedule=schedule, flexible_time_windows={'Mode': 'FLEXIBLE', 'MaximumWindowInMinutes': 30})
     
     def create_archive_schedule(self, pipeline_id: str, source_type: str, table_name: str,
@@ -235,6 +234,6 @@ class SchedulerClient:
                 }
             }
         
-        return self.create_schedule(name=name, input=constant, sfn_arn=sfn_arn, role_arn=role_arn, group_name=group_name, 
+        return self.create_schedule(name=name, input=constant, target_arn=sfn_arn, target_role_arn=role_arn, group_name=group_name, 
                         schedule=schedule, flexible_time_windows={'Mode': 'FLEXIBLE', 'MaximumWindowInMinutes': 30})
 

@@ -18,6 +18,7 @@ import React from "react";
 import { AppPipeline, PipelineType, MetricName, AnalyticEngineType } from "API";
 import MonitorMetrics from "pages/comps/monitor/MonitorMetrics";
 import { LightEngineLambdaMetrics } from "pages/dataInjection/common/LightEngineMonitor";
+import { defaultStr } from "assets/js/utils";
 
 interface AppLogProcessorMetricsProps {
   pipelineInfo?: AppPipeline;
@@ -78,7 +79,7 @@ const AppLogProcessorMetric: React.FC<AppLogProcessorMetricsProps> = (
   return (
     <MonitorMetrics
       type={PipelineType.APP}
-      taskId={pipelineInfo?.pipelineId || ""}
+      taskId={defaultStr(pipelineInfo?.pipelineId)}
       metrics={processorMetricsChartList}
       startTime={startDate}
       endTime={endDate}

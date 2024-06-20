@@ -1,8 +1,8 @@
 # Uninstall the Centralized Logging with OpenSearch
 
 !!! Warning "Warning"
-    You will encounter IAM role missing error if you delete the Centralized Logging with OpenSearch main stack before you delete the log pipelines. Centralized Logging with OpenSearch console launches additional CloudFormation stacks to ingest logs. If you want to uninstall the Centralized Logging with OpenSearch solution. 
-    We recommend you to delete log pipelines (incl. AWS Service log pipelines and application log pipelines) before uninstall the solution. 
+    You will encounter IAM role missing error if you delete the Centralized Logging with OpenSearch main stack before you delete the log pipelines. Centralized Logging with OpenSearch console launches additional CloudFormation stacks to ingest logs. If you want to uninstall the Centralized Logging with OpenSearch solution.
+    We recommend you to delete log pipelines (incl. AWS Service log pipelines and application log pipelines) before uninstall the solution.
 
 ## Step 1. Delete Application Log Pipelines
 
@@ -13,7 +13,7 @@
 2. Click the application log pipeline to view details.
 3. In the ingestion tab, delete all the application log ingestion in the pipeline.
 4. Uninstall/Disable the Fluent Bit agent.
-    - EC2 (Optional): after removing the log ingestion from EC2 instance group. Fluent Bit will automatically stop ship logs, it is optional for you to stop the Fluent Bit in your instances. Here are the command for stopping Fluent Bit agent.
+    - EC2 (Optional): after removing the log ingestion from Instance Group. Fluent Bit will automatically stop ship logs, it is optional for you to stop the Fluent Bit in your instances. Here are the command for stopping Fluent Bit agent.
           ```commandline
              sudo service fluent-bit stop
              sudo systemctl disable fluent-bit.service

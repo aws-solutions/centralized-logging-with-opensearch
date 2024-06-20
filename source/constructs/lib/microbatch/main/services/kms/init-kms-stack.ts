@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import { Construct } from "constructs";
-import { Duration, aws_kms as kms, RemovalPolicy, aws_iam as iam, aws_ssm as ssm } from "aws-cdk-lib";
+import { Aws, Duration, CfnOutput, aws_kms as kms, RemovalPolicy, aws_iam as iam } from "aws-cdk-lib";
 
 export interface  InitKMSProps {
   readonly solutionId: string;
@@ -91,15 +91,11 @@ export class InitKMSStack extends Construct {
       });
       };
 
-
-      const SSMCMKeyArn = new ssm.StringParameter(this, 'SSMCMKeyArn', {
-        parameterName: '/MicroBatch/CMKeyArn',
-        stringValue: this.encryptionKey.keyArn,
-      });
-
-      // Override the logical ID
-      const cfnSSMCMKeyArn = SSMCMKeyArn.node.defaultChild as ssm.CfnParameter;
-      cfnSSMCMKeyArn.overrideLogicalId("SSMCMKeyArn");
+      new CfnOutput(this, 'CMKeyArn', {
+        description: 'CMKey Arn',
+        value: this.encryptionKey.keyArn,
+        exportName: `${Aws.STACK_NAME}::CMKeyArn`,
+      }).overrideLogicalId('CMKeyArn');
       
     }
 }

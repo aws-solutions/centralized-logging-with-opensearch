@@ -6,6 +6,10 @@ import boto3
 import pytest
 from commonlib.dao import AppLogIngestionDao
 from commonlib.model import (
+    AppPipeline,
+    BufferParam,
+    MonitorDetail,
+    AOSParams,
     LogSource,
     SyslogSource,
     LogSourceTypeEnum,
@@ -42,6 +46,80 @@ def get_syslog_source():
     return mock_syslog_source
 
 
+def get_app_pipeline():
+    mock_app_pipeline  = AppPipeline(
+        indexPrefix="app-pipe",
+        aosParams=AOSParams(
+            **{
+                "coldLogTransition": 0,
+                "domainName": "solution-os",
+                "engine": "OpenSearch",
+                "failedLogBucket": "solution-solutionloggingbucket0fa53b76-12cw0hl0kfnk6",
+                "indexPrefix": "app-pipe",
+                "logRetention": 10,
+                "opensearchArn": "arn:aws:es:us-west-2:123456789012:domain/solution-os",
+                "opensearchEndpoint": "vpc-solution-os-yhb4z4uzd544pna27wlqqumk2y.us-west-2.es.amazonaws.com",
+                "replicaNumbers": 0,
+                "shardNumbers": 1,
+                "vpc": {
+                    "privateSubnetIds": "subnet-0e33bba1e55791d9a,subnet-0c34c064b47a5f4fb",
+                    "publicSubnetIds": "",
+                    "securityGroupId": "sg-06ee9849f105f4208",
+                    "vpcId": "vpc-09990f6348b2ba3d9",
+                },
+                "warmLogTransition": 0,
+            }
+        ),
+        queueArn="sqs-queue-arn",
+        logProcessorRoleArn="log-processor-role-arn",
+        bufferAccessRoleArn="arn:aws:iam::123456:role/CL-AppPipe-33653b46-BufferAccessRoleDF53FD85-DNE93UP0U4NE",
+        bufferAccessRoleName="CL-AppPipe-33653b46-BufferAccessRoleDF53FD85-DNE93UP0U4NE",
+        bufferResourceArn="arn:aws:s3:::solution-solutionloggingbucket0fa53b76-1jyvyptgjbge9",
+        bufferResourceName="solution-solutionloggingbucket0fa53b76-1jyvyptgjbge9",
+        bufferParams=[
+            BufferParam(
+                paramKey="logBucketName",
+                paramValue="solution-solutionloggingbucket0fa53b76-1jyvyptgjbge9",
+            ),
+            BufferParam(
+                paramKey="logBucketPrefix",
+                paramValue="my-key-prefix",
+            ),
+            BufferParam(
+                paramKey="logBucketSuffix",
+                paramValue="my-key-suffix",
+            ),
+            BufferParam(
+                paramKey="defaultCmkArn",
+                paramValue="arn:aws:kms:us-west-2:123456:key/7a262998-de54-444e-8643-4fa3e4ea818a",
+            ),
+            BufferParam(
+                paramKey="maxFileSize",
+                paramValue="50",
+            ),
+            BufferParam(
+                paramKey="uploadTimeout",
+                paramValue="60",
+            ),
+            BufferParam(
+                paramKey="compressionType",
+                paramValue="gzip",
+            ),
+            BufferParam(
+                paramKey="s3StorageClass",
+                paramValue="INTELLIGENT_TIERING",
+            ),
+        ],
+        logConfigId="00000000",
+        logConfigVersionNumber=0,
+        monitor=MonitorDetail(
+            status="ENABLED",
+            backupBucketName="xxxxx",
+            errorLogPrefix="xxxxxx",
+        ),
+    )
+    return mock_app_pipeline
+
 def get_app_log_ingestion():
     ingestion_args = dict()
     ingestion_args["appPipelineId"] = "appPipelineId1"
@@ -76,7 +154,7 @@ def mocked_elbv2_client():
     with mock_elbv2():
         boto3.client("elbv2")
         yield
-def test_create_syslog_substack(mocker,mocked_elbv2_client):
+def test_create_syslog_substack(mocker, mocked_elbv2_client):
 
     mocker.patch("commonlib.LinkAccountHelper")
     from svc.syslog import SyslogSourceHandler
@@ -86,7 +164,7 @@ def test_create_syslog_substack(mocker,mocked_elbv2_client):
     mocked_exec_sfn_flow = mocker.patch("svc.syslog.exec_sfn_flow")
     mocked_elb = mocker.patch("svc.syslog.elb.create_load_balancer")
     syslog_source_handler.create_syslog_substack(
-        get_syslog_source(), get_app_log_ingestion()
+        get_syslog_source(), get_app_log_ingestion(), get_app_pipeline(),
     )
     mocked_exec_sfn_flow.assert_called_once()
     mocked_elb.assert_called_once()
@@ -95,6 +173,7 @@ def test_create_syslog_substack(mocker,mocked_elbv2_client):
     mocked_remove_sfn_flow = mocker.patch("svc.syslog.exec_sfn_flow")
     mocked_ingestion_dao_delete=mocker.patch.object(ingestion_dao, "delete_with_log_source")
     mocked_ingestion_dao = mocker.patch.object(ingestion_dao, "list_app_log_ingestions")
+    mocker.patch( "svc.syslog.app_pipeline_dao.get_app_pipeline", return_value=get_app_pipeline())
     syslog_source_handler.delete_ingestion(get_syslog_source(), get_app_log_ingestion())
     mocked_remove_sfn_flow.assert_called()
     mocked_ingestion_dao_delete.assert_called_once()

@@ -20,6 +20,7 @@ import ExtLink from "components/ExtLink";
 import CopyText from "components/CopyText";
 import { DomainDetails, EngineType, StorageType } from "API";
 import { useTranslation } from "react-i18next";
+import { defaultStr } from "assets/js/utils";
 
 interface OverviewProps {
   domainInfo: DomainDetails | undefined | null;
@@ -34,15 +35,15 @@ const Overview: React.FC<OverviewProps> = ({ domainInfo }: OverviewProps) => {
           <div className="flex-1">
             <ValueWithLabel label={t("cluster:detail.overview.domainARN")}>
               <div>
-                <CopyText text={domainInfo?.domainArn || ""}>
-                  {domainInfo?.domainArn || ""}
+                <CopyText text={defaultStr(domainInfo?.domainArn)}>
+                  {defaultStr(domainInfo?.domainArn)}
                 </CopyText>
               </div>
             </ValueWithLabel>
             <ValueWithLabel label={t("cluster:detail.overview.vpcEndpoint")}>
               <div>
-                <CopyText text={`https://${domainInfo?.endpoint}` || ""}>
-                  <ExtLink to={`https://${domainInfo?.endpoint}` || "/"}>
+                <CopyText text={`https://${domainInfo?.endpoint}`}>
+                  <ExtLink to={`https://${domainInfo?.endpoint}`}>
                     {t("cluster:detail.overview.clickOpen")}
                   </ExtLink>
                 </CopyText>
@@ -55,9 +56,7 @@ const Overview: React.FC<OverviewProps> = ({ domainInfo }: OverviewProps) => {
                     text={`https://${domainInfo?.endpoint}/_plugin/kibana/`}
                   >
                     <ExtLink
-                      to={
-                        `https://${domainInfo?.endpoint}/_plugin/kibana/` || "/"
-                      }
+                      to={`https://${domainInfo?.endpoint}/_plugin/kibana/`}
                     >
                       {t("cluster:detail.overview.clickOpen")}
                     </ExtLink>
@@ -71,9 +70,7 @@ const Overview: React.FC<OverviewProps> = ({ domainInfo }: OverviewProps) => {
                   <CopyText
                     text={`https://${domainInfo?.endpoint}/_dashboards`}
                   >
-                    <ExtLink
-                      to={`https://${domainInfo?.endpoint}/_dashboards` || "/"}
-                    >
+                    <ExtLink to={`https://${domainInfo?.endpoint}/_dashboards`}>
                       {t("cluster:detail.overview.clickOpen")}
                     </ExtLink>
                   </CopyText>
@@ -83,7 +80,7 @@ const Overview: React.FC<OverviewProps> = ({ domainInfo }: OverviewProps) => {
           </div>
           <div className="flex-1 border-left-c">
             <ValueWithLabel label={t("cluster:detail.overview.az")}>
-              <div>{domainInfo?.esVpc?.availabilityZones?.length || 0}</div>
+              <div>{domainInfo?.esVpc?.availabilityZones?.length ?? 0}</div>
             </ValueWithLabel>
             <ValueWithLabel label={t("cluster:detail.overview.instanceType")}>
               <div>{domainInfo?.nodes?.instanceType}</div>

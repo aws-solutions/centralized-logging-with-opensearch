@@ -70,7 +70,8 @@
       "errorLogArchiveAgeGteLogMergerAge": "日志合并时间须小于日志归档时间",
       "errorLogMergerAgeGteOne": "日志合并时间须大于等于 1 天",
       "errorLogProcessorScheduleExp": "日志处理频率的设定须大于 1 分钟",
-      "errorCronExpression": "请填写有效的正则表达式"
+      "errorCronExpression": "请填写有效的正则表达式",
+      "errorTableName": "表名称必须是字母、数字和下划线的组合，并且长度在 1 到 255 个字符之间。"
     }
   },
   "logging": {

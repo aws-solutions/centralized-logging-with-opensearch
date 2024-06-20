@@ -19,7 +19,6 @@ The following describes how to create log config for each log format.
 2. In the left sidebar, under **Resources**, choose **Log Config**.
 3. Choose **Create a log config**.
 4. Specify **Config Name**.
-5. Specify **Log Path**. You can use `,` to separate multiple paths.
 6. Choose **JSON** in the log type dropdown list.
 7. In the **Sample log parsing** section, paste a sample JSON log and click **Parse log** to verify if the log parsing is successful.JSON type  support nested Json with a maximum nesting depth of X. 
 
@@ -80,7 +79,6 @@ Apache HTTP Server (httpd) is capable of writing error and access log files to a
 2. In the left sidebar, under **Resources**, choose **Log Config**.
 3. Click the **Create a log config** button.
 4. Specify **Config Name**.
-5. Specify **Log Path**. You can use `, ` to separate multiple paths.
 6. Choose **Apache HTTP server** in the log type dropdown menu.
 7. In the **Apache Log Format** section, paste your Apache HTTP server log format configuration. It is in the format of `/etc/httpd/conf/httpd.conf` and starts with `LogFormat`.
 
@@ -104,7 +102,6 @@ Apache HTTP Server (httpd) is capable of writing error and access log files to a
 2. In the left sidebar, under **Resources**, choose **Log Config**.
 3. Click the **Create a log config** button.
 4. Specify **Config Name**.
-5. Specify **Log Path**. You can use `, ` to separate multiple paths.
 6. Choose **Nginx** in the log type dropdown menu.
 7. In the **Nginx Log Format** section, paste your Nginx log format configuration. It is in the format of `/etc/nginx/nginx.conf` and starts with `log_format`.
 
@@ -214,7 +211,6 @@ Apache HTTP Server (httpd) is capable of writing error and access log files to a
 2. In the left sidebar, under **Resources**, choose **Log Config**.
 3. Click the **Create a log config** button.
 4. Specify **Config Name**.
-5. Specify **Log Path**. You can use `,` to separate multiple paths.
 6. Choose **Single-line Text** in the log type dropdown menu.
 7. Write the regular expression in [Rubular](https://rubular.com/) to validate first and enter the value. For example:
 
@@ -246,7 +242,6 @@ Apache HTTP Server (httpd) is capable of writing error and access log files to a
 2. In the left sidebar, under **Resources**, choose **Log Config**.
 3. Click the **Create a log config** button.
 4. Specify **Config Name**.
-5. Specify **Log Path**. You can use `,` to separate multiple paths.
 6. Choose **Multi-line Text** in the log type dropdown menu.
 
 ### Java - Spring Boot

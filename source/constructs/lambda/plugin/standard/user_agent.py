@@ -3,7 +3,7 @@
 
 from user_agents import parse
 
-SUPPORTED_LOG_TYPES = ["cloudfront", "elb", "nginx", "apache"]
+SUPPORTED_LOG_TYPES = ["cloudfront", "elb", "nginx", "apache", "iis"]
 
 
 def _get_user_agent_field(log_type: str):

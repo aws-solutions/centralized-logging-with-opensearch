@@ -1,0 +1,4917 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 1223,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 19,
+      "panels": [],
+      "title": "Overview (updates based on top time selection)",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "Bn93a3_Vk"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "fixed"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 1
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [],
+          "fields": "/.*/",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "datasource": {
+            "type": "grafana-athena-datasource",
+            "uid": "Bn93a3_Vk"
+          },
+          "format": 1,
+          "rawSQL": "SELECT\n    count(distinct source) as distinct_source\n    , sum(sum_bounce) as sum_bounce\n    , sum(sum_complaint) as sum_complaint\n    , sum(sum_delivery) as sum_delivery\n    , sum(sum_send) as sum_send\n    , sum(sum_reject) as sum_reject\n    , sum(sum_open) as sum_open\n    , sum(sum_click) as sum_click\n    , sum(sum_failure) as sum_failure\n    , sum(sum_delivery_delay) as sum_delivery_delay\n    , sum(sum_delivery_delay_internalfailure) as sum_delivery_delay_internalfailure\n    , sum(sum_delivery_delay_general) as sum_delivery_delay_general\n    , sum(sum_delivery_delay_mailboxfull) as sum_delivery_delay_mailboxfull\n    , sum(sum_delivery_delay_spamdetected) as sum_delivery_delay_spamdetected\n    , sum(sum_delivery_delay_recipientservererror) as sum_delivery_delay_recipientservererror\n    , sum(sum_delivery_delay_ipfailure) as sum_delivery_delay_ipfailure\n    , sum(sum_delivery_delay_transientcommunicationfailure) as sum_delivery_delay_transientcommunicationfailure\n    , sum(sum_delivery_delay_byoiphostnamelookupunavailable) as sum_delivery_delay_byoiphostnamelookupunavailable\n    , sum(sum_delivery_delay_undetermined) as sum_delivery_delay_undetermined\n    , sum(sum_delivery_delay_sendingdeferral) as sum_delivery_delay_sendingdeferral\n    , sum(sum_subscription) as sum_subscription\nFROM \"$__table\"\nWHERE source IN (${source:sqlstring})\n    AND subject IN (${subject:sqlstring})\n    AND tagId IN (${tagId:sqlstring})\n    AND $__unixEpochFilter(time / 1000)\n    AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n        OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n",
+          "refId": "Metrics",
+          "table": "ses_metrics"
+        }
+      ],
+      "title": "* Total Events",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "sum_bounce": false,
+              "sum_delivery_delay": true,
+              "sum_delivery_delay_byoiphostnamelookupunavailable": true,
+              "sum_delivery_delay_general": true,
+              "sum_delivery_delay_internalfailure": true,
+              "sum_delivery_delay_ipfailure": true,
+              "sum_delivery_delay_mailboxfull": true,
+              "sum_delivery_delay_recipientservererror": true,
+              "sum_delivery_delay_sendingdeferral": true,
+              "sum_delivery_delay_spamdetected": true,
+              "sum_delivery_delay_transientcommunicationfailure": true,
+              "sum_delivery_delay_undetermined": true,
+              "sum_failure": true,
+              "sum_subscription": true
+            },
+            "indexByName": {
+              "distinct_source": 0,
+              "sum_bounce": 3,
+              "sum_click": 7,
+              "sum_complaint": 4,
+              "sum_delivery": 2,
+              "sum_delivery_delay": 9,
+              "sum_delivery_delay_byoiphostnamelookupunavailable": 17,
+              "sum_delivery_delay_general": 11,
+              "sum_delivery_delay_internalfailure": 10,
+              "sum_delivery_delay_ipfailure": 15,
+              "sum_delivery_delay_mailboxfull": 12,
+              "sum_delivery_delay_recipientservererror": 14,
+              "sum_delivery_delay_sendingdeferral": 19,
+              "sum_delivery_delay_spamdetected": 13,
+              "sum_delivery_delay_transientcommunicationfailure": 16,
+              "sum_delivery_delay_undetermined": 18,
+              "sum_failure": 8,
+              "sum_open": 5,
+              "sum_reject": 6,
+              "sum_send": 1,
+              "sum_subscription": 20
+            },
+            "renameByName": {
+              "distinct_source": "Source Identities",
+              "sum_bounce": "Bounces",
+              "sum_click": "Clicks",
+              "sum_complaint": "Complaints",
+              "sum_delivery": "Deliveries",
+              "sum_delivery_delay": "DeliveryDelay",
+              "sum_delivery_delay_byoiphostnamelookupunavailable": "BYOIPHostNameLookupUnavailable",
+              "sum_delivery_delay_general": "General",
+              "sum_delivery_delay_internalfailure": "InternalFailure",
+              "sum_delivery_delay_ipfailure": "IPFailure",
+              "sum_delivery_delay_mailboxfull": "MailboxFull",
+              "sum_delivery_delay_recipientservererror": "RecipientServerError",
+              "sum_delivery_delay_sendingdeferral": "SendingDeFerral",
+              "sum_delivery_delay_spamdetected": "SpamDetected",
+              "sum_delivery_delay_transientcommunicationfailure": "TransientCommunicationFailure",
+              "sum_delivery_delay_undetermined": "Undetermined",
+              "sum_failure": "Failure",
+              "sum_open": "Opens",
+              "sum_reject": "Rejects",
+              "sum_send": "Sends",
+              "sum_subscription": "Subscription"
+            }
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "Bn93a3_Vk"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Count",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Send"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Complaint"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Bounce"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Delivery"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Reject"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Open"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Click"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Failure"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "DeliveryDelay"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Subscription"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 18,
+        "x": 0,
+        "y": 8
+      },
+      "id": 126,
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.84,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "firstNotNull",
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "orientation": "auto",
+        "showValue": "never",
+        "stacking": "normal",
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        },
+        "xField": "time",
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 100
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "datasource": {
+            "type": "grafana-athena-datasource",
+            "uid": "Bn93a3_Vk"
+          },
+          "format": 1,
+          "rawSQL": "SELECT time\n    , sum(t.sum_bounce) as sum_bounce\n    , sum(t.sum_complaint) as sum_complaint\n    , sum(t.sum_delivery) as sum_delivery\n    , sum(t.sum_send) as sum_send\n    , sum(t.sum_reject) as sum_reject\n    , sum(t.sum_open) as sum_open\n    , sum(t.sum_click) as sum_click\n    , sum(t.sum_failure) as sum_failure\n    , sum(t.sum_delivery_delay) as sum_delivery_delay\n    , sum(t.sum_delivery_delay_internalfailure) as sum_delivery_delay_internalfailure\n    , sum(t.sum_delivery_delay_general) as sum_delivery_delay_general\n    , sum(t.sum_delivery_delay_mailboxfull) as sum_delivery_delay_mailboxfull\n    , sum(t.sum_delivery_delay_spamdetected) as sum_delivery_delay_spamdetected\n    , sum(t.sum_delivery_delay_recipientservererror) as sum_delivery_delay_recipientservererror\n    , sum(t.sum_delivery_delay_ipfailure) as sum_delivery_delay_ipfailure\n    , sum(t.sum_delivery_delay_transientcommunicationfailure) as sum_delivery_delay_transientcommunicationfailure\n    , sum(t.sum_delivery_delay_byoiphostnamelookupunavailable) as sum_delivery_delay_byoiphostnamelookupunavailable\n    , sum(t.sum_delivery_delay_undetermined) as sum_delivery_delay_undetermined\n    , sum(t.sum_delivery_delay_sendingdeferral) as sum_delivery_delay_sendingdeferral\n    , sum(t.sum_subscription) as sum_subscription\n    , sum(t.acc_bounce) as acc_bounce\n    , sum(t.acc_complaint) as acc_complaint\n    , sum(t.acc_delivery) as acc_delivery\n    , sum(t.acc_send) as acc_send\n    , sum(t.acc_reject) as acc_reject\n    , sum(t.acc_open) as acc_open\n    , sum(t.acc_click) as acc_click\n    , sum(t.acc_failure) as acc_failure\n    , sum(t.acc_delivery_delay) as acc_delivery_delay\n    , sum(t.acc_delivery_delay_internalfailure) as acc_delivery_delay_internalfailure\n    , sum(t.acc_delivery_delay_general) as acc_delivery_delay_general\n    , sum(t.acc_delivery_delay_mailboxfull) as acc_delivery_delay_mailboxfull\n    , sum(t.acc_delivery_delay_spamdetected) as acc_delivery_delay_spamdetected\n    , sum(t.acc_delivery_delay_recipientservererror) as acc_delivery_delay_recipientservererror\n    , sum(t.acc_delivery_delay_ipfailure) as acc_delivery_delay_ipfailure\n    , sum(t.acc_delivery_delay_transientcommunicationfailure) as acc_delivery_delay_transientcommunicationfailure\n    , sum(t.acc_delivery_delay_byoiphostnamelookupunavailable) as acc_delivery_delay_byoiphostnamelookupunavailable\n    , sum(t.acc_delivery_delay_undetermined) as acc_delivery_delay_undetermined\n    , sum(t.acc_delivery_delay_sendingdeferral) as acc_delivery_delay_sendingdeferral\n    , sum(t.acc_subscription) as acc_subscription\nFROM (SELECT \n        $__unixEpochGroup(time / 1000, '${interval}') as time\n        , sum(sum_bounce) over(partition by $__unixEpochGroup(time / 1000, '${interval}') ) as sum_bounce\n        , sum(sum_complaint) over(partition by $__unixEpochGroup(time / 1000, '${interval}') ) as sum_complaint\n        , sum(sum_delivery) over(partition by $__unixEpochGroup(time / 1000, '${interval}') ) as sum_delivery\n        , sum(sum_send) over(partition by $__unixEpochGroup(time / 1000, '${interval}') ) as sum_send\n        , sum(sum_reject) over(partition by $__unixEpochGroup(time / 1000, '${interval}') ) as sum_reject\n        , sum(sum_open) over(partition by $__unixEpochGroup(time / 1000, '${interval}') ) as sum_open\n        , sum(sum_click) over(partition by $__unixEpochGroup(time / 1000, '${interval}') ) as sum_click\n        , sum(sum_failure) over(partition by $__unixEpochGroup(time / 1000, '${interval}') ) as sum_failure\n        , sum(sum_delivery_delay) over(partition by $__unixEpochGroup(time / 1000, '${interval}') ) as sum_delivery_delay\n        , sum(sum_delivery_delay_internalfailure) over(partition by $__unixEpochGroup(time / 1000, '${interval}') ) as sum_delivery_delay_internalfailure\n        , sum(sum_delivery_delay_general) over(partition by $__unixEpochGroup(time / 1000, '${interval}') ) as sum_delivery_delay_general\n        , sum(sum_delivery_delay_mailboxfull) over(partition by $__unixEpochGroup(time / 1000, '${interval}') ) as sum_delivery_delay_mailboxfull\n        , sum(sum_delivery_delay_spamdetected) over(partition by $__unixEpochGroup(time / 1000, '${interval}') ) as sum_delivery_delay_spamdetected\n        , sum(sum_delivery_delay_recipientservererror) over(partition by $__unixEpochGroup(time / 1000, '${interval}') ) as sum_delivery_delay_recipientservererror\n        , sum(sum_delivery_delay_ipfailure) over(partition by $__unixEpochGroup(time / 1000, '${interval}') ) as sum_delivery_delay_ipfailure\n        , sum(sum_delivery_delay_transientcommunicationfailure) over(partition by $__unixEpochGroup(time / 1000, '${interval}') ) as sum_delivery_delay_transientcommunicationfailure\n        , sum(sum_delivery_delay_byoiphostnamelookupunavailable) over(partition by $__unixEpochGroup(time / 1000, '${interval}') ) as sum_delivery_delay_byoiphostnamelookupunavailable\n        , sum(sum_delivery_delay_undetermined) over(partition by $__unixEpochGroup(time / 1000, '${interval}') ) as sum_delivery_delay_undetermined\n        , sum(sum_delivery_delay_sendingdeferral) over(partition by $__unixEpochGroup(time / 1000, '${interval}') ) as sum_delivery_delay_sendingdeferral\n        , sum(sum_subscription) over(partition by $__unixEpochGroup(time / 1000, '${interval}') ) as sum_subscription\n        , sum(sum_bounce) over(order by $__unixEpochGroup(time / 1000, '${interval}') asc) as acc_bounce\n        , sum(sum_complaint) over(order by $__unixEpochGroup(time / 1000, '${interval}') asc) as acc_complaint\n        , sum(sum_delivery) over(order by $__unixEpochGroup(time / 1000, '${interval}') asc) as acc_delivery\n        , sum(sum_send) over(order by $__unixEpochGroup(time / 1000, '${interval}') asc) as acc_send\n        , sum(sum_reject) over(order by $__unixEpochGroup(time / 1000, '${interval}') asc) as acc_reject\n        , sum(sum_open) over(order by $__unixEpochGroup(time / 1000, '${interval}') asc) as acc_open\n        , sum(sum_click) over(order by $__unixEpochGroup(time / 1000, '${interval}') asc) as acc_click\n        , sum(sum_failure) over(order by $__unixEpochGroup(time / 1000, '${interval}') asc) as acc_failure\n        , sum(sum_delivery_delay) over(order by $__unixEpochGroup(time / 1000, '${interval}') asc) as acc_delivery_delay\n        , sum(sum_delivery_delay_internalfailure) over(order by $__unixEpochGroup(time / 1000, '${interval}') asc) as acc_delivery_delay_internalfailure\n        , sum(sum_delivery_delay_general) over(order by $__unixEpochGroup(time / 1000, '${interval}') asc) as acc_delivery_delay_general\n        , sum(sum_delivery_delay_mailboxfull) over(order by $__unixEpochGroup(time / 1000, '${interval}') asc) as acc_delivery_delay_mailboxfull\n        , sum(sum_delivery_delay_spamdetected) over(order by $__unixEpochGroup(time / 1000, '${interval}') asc) as acc_delivery_delay_spamdetected\n        , sum(sum_delivery_delay_recipientservererror) over(order by $__unixEpochGroup(time / 1000, '${interval}') asc) as acc_delivery_delay_recipientservererror\n        , sum(sum_delivery_delay_ipfailure) over(order by $__unixEpochGroup(time / 1000, '${interval}') asc) as acc_delivery_delay_ipfailure\n        , sum(sum_delivery_delay_transientcommunicationfailure) over(order by $__unixEpochGroup(time / 1000, '${interval}') asc) as acc_delivery_delay_transientcommunicationfailure\n        , sum(sum_delivery_delay_byoiphostnamelookupunavailable) over(order by $__unixEpochGroup(time / 1000, '${interval}') asc) as acc_delivery_delay_byoiphostnamelookupunavailable\n        , sum(sum_delivery_delay_undetermined) over(order by $__unixEpochGroup(time / 1000, '${interval}') asc) as acc_delivery_delay_undetermined\n        , sum(sum_delivery_delay_sendingdeferral) over(order by $__unixEpochGroup(time / 1000, '${interval}') asc) as acc_delivery_delay_sendingdeferral\n        , sum(sum_subscription) over(order by $__unixEpochGroup(time / 1000, '${interval}') asc) as acc_subscription\n    FROM \"$__table\"\n    WHERE source IN (${source:sqlstring})\n        AND subject IN (${subject:sqlstring})\n        AND tagId IN (${tagId:sqlstring})\n        AND $__unixEpochFilter(time / 1000)\n        AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n            OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n) t\nGROUP BY time",
+          "refId": "Metrics",
+          "table": "ses_metrics"
+        }
+      ],
+      "title": "* Event History",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "ALLOW": false,
+              "acc_bounce": true,
+              "acc_click": true,
+              "acc_complaint": true,
+              "acc_delivery": true,
+              "acc_delivery_delay": true,
+              "acc_delivery_delay_byoiphostnamelookupunavailable": true,
+              "acc_delivery_delay_general": true,
+              "acc_delivery_delay_internalfailure": true,
+              "acc_delivery_delay_ipfailure": true,
+              "acc_delivery_delay_mailboxfull": true,
+              "acc_delivery_delay_recipientservererror": true,
+              "acc_delivery_delay_sendingdeferral": true,
+              "acc_delivery_delay_spamdetected": true,
+              "acc_delivery_delay_transientcommunicationfailure": true,
+              "acc_delivery_delay_undetermined": true,
+              "acc_failure": true,
+              "acc_open": true,
+              "acc_reject": true,
+              "acc_send": true,
+              "acc_subscription": true,
+              "captcha_requests": false,
+              "challenge_requests": false,
+              "sum_delivery_delay_byoiphostnamelookupunavailable": true,
+              "sum_delivery_delay_general": true,
+              "sum_delivery_delay_internalfailure": true,
+              "sum_delivery_delay_ipfailure": true,
+              "sum_delivery_delay_mailboxfull": true,
+              "sum_delivery_delay_recipientservererror": true,
+              "sum_delivery_delay_sendingdeferral": true,
+              "sum_delivery_delay_spamdetected": true,
+              "sum_delivery_delay_transientcommunicationfailure": true,
+              "sum_delivery_delay_undetermined": true,
+              "sum_subscription": false
+            },
+            "indexByName": {
+              "acc_bounce": 21,
+              "acc_click": 27,
+              "acc_complaint": 22,
+              "acc_delivery": 23,
+              "acc_delivery_delay": 29,
+              "acc_delivery_delay_byoiphostnamelookupunavailable": 37,
+              "acc_delivery_delay_general": 31,
+              "acc_delivery_delay_internalfailure": 30,
+              "acc_delivery_delay_ipfailure": 35,
+              "acc_delivery_delay_mailboxfull": 32,
+              "acc_delivery_delay_recipientservererror": 34,
+              "acc_delivery_delay_sendingdeferral": 39,
+              "acc_delivery_delay_spamdetected": 33,
+              "acc_delivery_delay_transientcommunicationfailure": 36,
+              "acc_delivery_delay_undetermined": 38,
+              "acc_failure": 28,
+              "acc_open": 26,
+              "acc_reject": 25,
+              "acc_send": 24,
+              "acc_subscription": 40,
+              "sum_bounce": 3,
+              "sum_click": 7,
+              "sum_complaint": 4,
+              "sum_delivery": 2,
+              "sum_delivery_delay": 9,
+              "sum_delivery_delay_byoiphostnamelookupunavailable": 17,
+              "sum_delivery_delay_general": 11,
+              "sum_delivery_delay_internalfailure": 10,
+              "sum_delivery_delay_ipfailure": 15,
+              "sum_delivery_delay_mailboxfull": 12,
+              "sum_delivery_delay_recipientservererror": 14,
+              "sum_delivery_delay_sendingdeferral": 19,
+              "sum_delivery_delay_spamdetected": 13,
+              "sum_delivery_delay_transientcommunicationfailure": 16,
+              "sum_delivery_delay_undetermined": 18,
+              "sum_failure": 8,
+              "sum_open": 5,
+              "sum_reject": 6,
+              "sum_send": 1,
+              "sum_subscription": 20,
+              "time": 0
+            },
+            "renameByName": {
+              "ALLOW": "allowed",
+              "BLOCK": "blocked",
+              "CAPTCHA": "captcha",
+              "allow_requests": "Allow",
+              "block_requests": "Block",
+              "captcha_requests": "CAPTCHA",
+              "challenge_requests": "Challenge",
+              "count_requests": "Count",
+              "sum_bounce": "Bounce",
+              "sum_click": "Click",
+              "sum_complaint": "Complaint",
+              "sum_delivery": "Delivery",
+              "sum_delivery_delay": "DeliveryDelay",
+              "sum_failure": "Failure",
+              "sum_open": "Open",
+              "sum_reject": "Reject",
+              "sum_send": "Send",
+              "sum_subscription": "Subscription",
+              "time": "",
+              "time\\action": "time"
+            }
+          }
+        }
+      ],
+      "type": "barchart"
+    },
+    {
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "Bn93a3_Vk"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 6,
+        "x": 18,
+        "y": 8
+      },
+      "id": 139,
+      "options": {
+        "displayLabels": [
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "datasource": {
+            "type": "grafana-athena-datasource",
+            "uid": "Bn93a3_Vk"
+          },
+          "format": 1,
+          "rawSQL": "SELECT source\n    , sum(sum_send) as sum_send\n    , sum(sum_bounce) as sum_bounce\n    , sum(sum_complaint) as sum_complaint\n    , sum(sum_delivery) as sum_delivery\n    , sum(sum_reject) as sum_reject\n    , sum(sum_open) as sum_open\n    , sum(sum_click) as sum_click\n    , sum(sum_failure) as sum_failure\n    , sum(sum_delivery_delay) as sum_delivery_delay\n    , sum(sum_delivery_delay_internalfailure) as sum_delivery_delay_internalfailure\n    , sum(sum_delivery_delay_general) as sum_delivery_delay_general\n    , sum(sum_delivery_delay_mailboxfull) as sum_delivery_delay_mailboxfull\n    , sum(sum_delivery_delay_spamdetected) as sum_delivery_delay_spamdetected\n    , sum(sum_delivery_delay_recipientservererror) as sum_delivery_delay_recipientservererror\n    , sum(sum_delivery_delay_ipfailure) as sum_delivery_delay_ipfailure\n    , sum(sum_delivery_delay_transientcommunicationfailure) as sum_delivery_delay_transientcommunicationfailure\n    , sum(sum_delivery_delay_byoiphostnamelookupunavailable) as sum_delivery_delay_byoiphostnamelookupunavailable\n    , sum(sum_delivery_delay_undetermined) as sum_delivery_delay_undetermined\n    , sum(sum_delivery_delay_sendingdeferral) as sum_delivery_delay_sendingdeferral\n    , sum(sum_subscription) as sum_subscription\nFROM \"$__table\"\nWHERE source IN (${source:sqlstring})\n    AND subject IN (${subject:sqlstring})\n    AND tagId IN (${tagId:sqlstring})\n    AND $__unixEpochFilter(time / 1000)\n    AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n        OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\nGROUP BY source\nHAVING sum(sum_send) > 0",
+          "refId": "Metrics",
+          "table": "ses_metrics"
+        }
+      ],
+      "title": "* Total Sends By Source Identities",
+      "transformations": [
+        {
+          "id": "rowsToFields",
+          "options": {
+            "mappings": [
+              {
+                "fieldName": "source",
+                "handlerKey": "field.name"
+              },
+              {
+                "fieldName": "sum_send",
+                "handlerKey": "field.value"
+              },
+              {
+                "fieldName": "sum_bounce",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_complaint",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_reject",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_open",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_click",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_failure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_internalfailure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_general",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_mailboxfull",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_spamdetected",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_recipientservererror",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_ipfailure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_transientcommunicationfailure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_byoiphostnamelookupunavailable",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_undetermined",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_sendingdeferral",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_subscription",
+                "handlerKey": "__ignore"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "piechart"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 20
+      },
+      "id": 136,
+      "panels": [],
+      "title": "Sending statistics",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "The count of successful send requests.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Count"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 21
+      },
+      "id": 104,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "firstNotNull",
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 126,
+          "refId": "A"
+        }
+      ],
+      "title": "Sends",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "acc_bounce": true,
+              "acc_click": true,
+              "acc_complaint": true,
+              "acc_delivery": true,
+              "acc_delivery_delay": true,
+              "acc_delivery_delay_byoiphostnamelookupunavailable": true,
+              "acc_delivery_delay_general": true,
+              "acc_delivery_delay_internalfailure": true,
+              "acc_delivery_delay_ipfailure": true,
+              "acc_delivery_delay_mailboxfull": true,
+              "acc_delivery_delay_recipientservererror": true,
+              "acc_delivery_delay_sendingdeferral": true,
+              "acc_delivery_delay_spamdetected": true,
+              "acc_delivery_delay_transientcommunicationfailure": true,
+              "acc_delivery_delay_undetermined": true,
+              "acc_failure": true,
+              "acc_open": true,
+              "acc_reject": true,
+              "acc_send": true,
+              "acc_subscription": true,
+              "connection_ids_cnt": false,
+              "database": true,
+              "db_instance_identifier": true,
+              "host": true,
+              "operation": true,
+              "sum_bounce": true,
+              "sum_click": true,
+              "sum_complaint": true,
+              "sum_delivery": true,
+              "sum_delivery_delay": true,
+              "sum_delivery_delay_byoiphostnamelookupunavailable": true,
+              "sum_delivery_delay_general": true,
+              "sum_delivery_delay_internalfailure": true,
+              "sum_delivery_delay_ipfailure": true,
+              "sum_delivery_delay_mailboxfull": true,
+              "sum_delivery_delay_recipientservererror": true,
+              "sum_delivery_delay_sendingdeferral": true,
+              "sum_delivery_delay_spamdetected": true,
+              "sum_delivery_delay_transientcommunicationfailure": true,
+              "sum_delivery_delay_undetermined": true,
+              "sum_failure": true,
+              "sum_open": true,
+              "sum_reject": true,
+              "sum_subscription": true,
+              "username": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "connection_ids_cnt": "Count",
+              "sum_send": "Count",
+              "username": ""
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "time"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "The percentage of emails delivery by Amazon SES.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Rate"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 0,
+        "y": 33
+      },
+      "id": 128,
+      "options": {
+        "legend": {
+          "calcs": [
+            "firstNotNull",
+            "lastNotNull",
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 126,
+          "refId": "A"
+        }
+      ],
+      "title": "Deliveries",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "acc_bounce": true,
+              "acc_click": true,
+              "acc_complaint": true,
+              "acc_delivery": false,
+              "acc_delivery_delay": true,
+              "acc_delivery_delay_byoiphostnamelookupunavailable": true,
+              "acc_delivery_delay_general": true,
+              "acc_delivery_delay_internalfailure": true,
+              "acc_delivery_delay_ipfailure": true,
+              "acc_delivery_delay_mailboxfull": true,
+              "acc_delivery_delay_recipientservererror": true,
+              "acc_delivery_delay_sendingdeferral": true,
+              "acc_delivery_delay_spamdetected": true,
+              "acc_delivery_delay_transientcommunicationfailure": true,
+              "acc_delivery_delay_undetermined": true,
+              "acc_failure": true,
+              "acc_open": true,
+              "acc_reject": true,
+              "acc_send": false,
+              "acc_subscription": true,
+              "connection_ids_cnt": false,
+              "database": true,
+              "db_instance_identifier": true,
+              "host": true,
+              "operation": true,
+              "sum_bounce": true,
+              "sum_click": true,
+              "sum_complaint": true,
+              "sum_delivery": true,
+              "sum_delivery_delay": true,
+              "sum_delivery_delay_byoiphostnamelookupunavailable": true,
+              "sum_delivery_delay_general": true,
+              "sum_delivery_delay_internalfailure": true,
+              "sum_delivery_delay_ipfailure": true,
+              "sum_delivery_delay_mailboxfull": true,
+              "sum_delivery_delay_recipientservererror": true,
+              "sum_delivery_delay_sendingdeferral": true,
+              "sum_delivery_delay_spamdetected": true,
+              "sum_delivery_delay_transientcommunicationfailure": true,
+              "sum_delivery_delay_undetermined": true,
+              "sum_failure": true,
+              "sum_open": true,
+              "sum_reject": true,
+              "sum_send": true,
+              "sum_subscription": true,
+              "username": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "connection_ids_cnt": "Count",
+              "sum_send": "",
+              "username": ""
+            }
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "Rate",
+            "binary": {
+              "left": "acc_delivery",
+              "operator": "/",
+              "reducer": "sum",
+              "right": "acc_send"
+            },
+            "mode": "binary",
+            "reduce": {
+              "reducer": "sum"
+            },
+            "replaceFields": true
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "time"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "dark-red",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 0.2
+              },
+              {
+                "color": "yellow",
+                "value": 0.4
+              },
+              {
+                "color": "orange",
+                "value": 0.6
+              },
+              {
+                "color": "#73BF69",
+                "value": 0.8
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 12,
+        "y": 33
+      },
+      "id": 140,
+      "options": {
+        "displayMode": "lcd",
+        "minVizHeight": 10,
+        "minVizWidth": 10,
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "showUnfilled": true,
+        "text": {},
+        "valueMode": "color"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 139,
+          "refId": "A"
+        }
+      ],
+      "title": "Deliveries Rate By Source (Exclude the sources which Total Sends is 0)",
+      "transformations": [
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "rate",
+            "binary": {
+              "left": "sum_delivery",
+              "operator": "/",
+              "reducer": "sum",
+              "right": "sum_send"
+            },
+            "mode": "binary",
+            "reduce": {
+              "reducer": "sum"
+            },
+            "replaceFields": false
+          }
+        },
+        {
+          "id": "rowsToFields",
+          "options": {
+            "mappings": [
+              {
+                "fieldName": "source",
+                "handlerKey": "field.name"
+              },
+              {
+                "fieldName": "sum_send",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_bounce",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_complaint",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_reject",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_open",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_click",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_failure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_internalfailure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_general",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_mailboxfull",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_spamdetected",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_recipientservererror",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_ipfailure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_transientcommunicationfailure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_byoiphostnamelookupunavailable",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_undetermined",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_sendingdeferral",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_subscription",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "rate",
+                "handlerKey": "field.value"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "The percentage of emails that resulted in a hard bounce.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Rate"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 0,
+        "y": 45
+      },
+      "id": 130,
+      "options": {
+        "legend": {
+          "calcs": [
+            "firstNotNull",
+            "lastNotNull",
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 126,
+          "refId": "A"
+        }
+      ],
+      "title": "Bounces",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "acc_bounce": false,
+              "acc_click": true,
+              "acc_complaint": true,
+              "acc_delivery": true,
+              "acc_delivery_delay": true,
+              "acc_delivery_delay_byoiphostnamelookupunavailable": true,
+              "acc_delivery_delay_general": true,
+              "acc_delivery_delay_internalfailure": true,
+              "acc_delivery_delay_ipfailure": true,
+              "acc_delivery_delay_mailboxfull": true,
+              "acc_delivery_delay_recipientservererror": true,
+              "acc_delivery_delay_sendingdeferral": true,
+              "acc_delivery_delay_spamdetected": true,
+              "acc_delivery_delay_transientcommunicationfailure": true,
+              "acc_delivery_delay_undetermined": true,
+              "acc_failure": true,
+              "acc_open": true,
+              "acc_reject": true,
+              "acc_send": false,
+              "acc_subscription": true,
+              "connection_ids_cnt": false,
+              "database": true,
+              "db_instance_identifier": true,
+              "host": true,
+              "operation": true,
+              "sum_bounce": true,
+              "sum_click": true,
+              "sum_complaint": true,
+              "sum_delivery": true,
+              "sum_delivery_delay": true,
+              "sum_delivery_delay_byoiphostnamelookupunavailable": true,
+              "sum_delivery_delay_general": true,
+              "sum_delivery_delay_internalfailure": true,
+              "sum_delivery_delay_ipfailure": true,
+              "sum_delivery_delay_mailboxfull": true,
+              "sum_delivery_delay_recipientservererror": true,
+              "sum_delivery_delay_sendingdeferral": true,
+              "sum_delivery_delay_spamdetected": true,
+              "sum_delivery_delay_transientcommunicationfailure": true,
+              "sum_delivery_delay_undetermined": true,
+              "sum_failure": true,
+              "sum_open": true,
+              "sum_reject": true,
+              "sum_send": true,
+              "sum_subscription": true,
+              "username": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "connection_ids_cnt": "Count",
+              "sum_send": "",
+              "username": ""
+            }
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "Rate",
+            "binary": {
+              "left": "acc_bounce",
+              "operator": "/",
+              "reducer": "sum",
+              "right": "acc_send"
+            },
+            "mode": "binary",
+            "reduce": {
+              "reducer": "sum"
+            },
+            "replaceFields": true
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "time"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.2
+              },
+              {
+                "color": "orange",
+                "value": 0.4
+              },
+              {
+                "color": "red",
+                "value": 0.6
+              },
+              {
+                "color": "dark-red",
+                "value": 0.8
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 12,
+        "y": 45
+      },
+      "id": 141,
+      "options": {
+        "displayMode": "lcd",
+        "minVizHeight": 10,
+        "minVizWidth": 10,
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "showUnfilled": true,
+        "text": {},
+        "valueMode": "color"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 139,
+          "refId": "A"
+        }
+      ],
+      "title": "Bounces Rate By Source (Exclude the sources which Total Sends is 0)",
+      "transformations": [
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "rate",
+            "binary": {
+              "left": "sum_bounce",
+              "operator": "/",
+              "reducer": "sum",
+              "right": "sum_send"
+            },
+            "mode": "binary",
+            "reduce": {
+              "reducer": "sum"
+            },
+            "replaceFields": false
+          }
+        },
+        {
+          "id": "rowsToFields",
+          "options": {
+            "mappings": [
+              {
+                "fieldName": "source",
+                "handlerKey": "field.name"
+              },
+              {
+                "fieldName": "sum_send",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_bounce",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_complaint",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_reject",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_open",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_click",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_failure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_internalfailure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_general",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_mailboxfull",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_spamdetected",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_recipientservererror",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_ipfailure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_transientcommunicationfailure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_byoiphostnamelookupunavailable",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_undetermined",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_sendingdeferral",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_subscription",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "rate",
+                "handlerKey": "field.value"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "The percentage of emails reported as spam by the recipients.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Rate"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 0,
+        "y": 57
+      },
+      "id": 129,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "firstNotNull",
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 126,
+          "refId": "A"
+        }
+      ],
+      "title": "Complaints",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "acc_bounce": true,
+              "acc_click": true,
+              "acc_complaint": false,
+              "acc_delivery": true,
+              "acc_delivery_delay": true,
+              "acc_delivery_delay_byoiphostnamelookupunavailable": true,
+              "acc_delivery_delay_general": true,
+              "acc_delivery_delay_internalfailure": true,
+              "acc_delivery_delay_ipfailure": true,
+              "acc_delivery_delay_mailboxfull": true,
+              "acc_delivery_delay_recipientservererror": true,
+              "acc_delivery_delay_sendingdeferral": true,
+              "acc_delivery_delay_spamdetected": true,
+              "acc_delivery_delay_transientcommunicationfailure": true,
+              "acc_delivery_delay_undetermined": true,
+              "acc_failure": true,
+              "acc_open": true,
+              "acc_reject": true,
+              "acc_subscription": true,
+              "connection_ids_cnt": false,
+              "database": true,
+              "db_instance_identifier": true,
+              "host": true,
+              "operation": true,
+              "sum_bounce": true,
+              "sum_click": true,
+              "sum_complaint": true,
+              "sum_delivery": true,
+              "sum_delivery_delay": true,
+              "sum_delivery_delay_byoiphostnamelookupunavailable": true,
+              "sum_delivery_delay_general": true,
+              "sum_delivery_delay_internalfailure": true,
+              "sum_delivery_delay_ipfailure": true,
+              "sum_delivery_delay_mailboxfull": true,
+              "sum_delivery_delay_recipientservererror": true,
+              "sum_delivery_delay_sendingdeferral": true,
+              "sum_delivery_delay_spamdetected": true,
+              "sum_delivery_delay_transientcommunicationfailure": true,
+              "sum_delivery_delay_undetermined": true,
+              "sum_failure": true,
+              "sum_open": true,
+              "sum_reject": true,
+              "sum_send": true,
+              "sum_subscription": true,
+              "username": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "connection_ids_cnt": "Count",
+              "sum_reject": "",
+              "sum_send": "",
+              "username": ""
+            }
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "Rate",
+            "binary": {
+              "left": "acc_complaint",
+              "operator": "/",
+              "reducer": "sum",
+              "right": "acc_send"
+            },
+            "mode": "binary",
+            "reduce": {
+              "reducer": "sum"
+            },
+            "replaceFields": true
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "time"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.2
+              },
+              {
+                "color": "orange",
+                "value": 0.4
+              },
+              {
+                "color": "red",
+                "value": 0.6
+              },
+              {
+                "color": "dark-red",
+                "value": 0.8
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 12,
+        "y": 57
+      },
+      "id": 142,
+      "options": {
+        "displayMode": "lcd",
+        "minVizHeight": 10,
+        "minVizWidth": 10,
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "showUnfilled": true,
+        "text": {},
+        "valueMode": "color"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 139,
+          "refId": "A"
+        }
+      ],
+      "title": "Complaints Rate By Source (Exclude the sources which Total Sends is 0)",
+      "transformations": [
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "rate",
+            "binary": {
+              "left": "sum_complaint",
+              "operator": "/",
+              "reducer": "sum",
+              "right": "sum_send"
+            },
+            "mode": "binary",
+            "reduce": {
+              "reducer": "sum"
+            },
+            "replaceFields": false
+          }
+        },
+        {
+          "id": "rowsToFields",
+          "options": {
+            "mappings": [
+              {
+                "fieldName": "source",
+                "handlerKey": "field.name"
+              },
+              {
+                "fieldName": "sum_send",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_bounce",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_complaint",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_reject",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_open",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_click",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_failure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_internalfailure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_general",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_mailboxfull",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_spamdetected",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_recipientservererror",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_ipfailure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_transientcommunicationfailure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_byoiphostnamelookupunavailable",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_undetermined",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_sendingdeferral",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_subscription",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "rate",
+                "handlerKey": "field.value"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "The percentage of emails opened by recipients.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Rate"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 0,
+        "y": 69
+      },
+      "id": 131,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "firstNotNull",
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 126,
+          "refId": "A"
+        }
+      ],
+      "title": "Opens",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "acc_bounce": true,
+              "acc_click": true,
+              "acc_complaint": true,
+              "acc_delivery": true,
+              "acc_delivery_delay": true,
+              "acc_delivery_delay_byoiphostnamelookupunavailable": true,
+              "acc_delivery_delay_general": true,
+              "acc_delivery_delay_internalfailure": true,
+              "acc_delivery_delay_ipfailure": true,
+              "acc_delivery_delay_mailboxfull": true,
+              "acc_delivery_delay_recipientservererror": true,
+              "acc_delivery_delay_sendingdeferral": true,
+              "acc_delivery_delay_spamdetected": true,
+              "acc_delivery_delay_transientcommunicationfailure": true,
+              "acc_delivery_delay_undetermined": true,
+              "acc_failure": true,
+              "acc_open": false,
+              "acc_reject": true,
+              "acc_send": false,
+              "acc_subscription": true,
+              "connection_ids_cnt": false,
+              "database": true,
+              "db_instance_identifier": true,
+              "host": true,
+              "operation": true,
+              "sum_bounce": true,
+              "sum_click": true,
+              "sum_complaint": true,
+              "sum_delivery": true,
+              "sum_delivery_delay": true,
+              "sum_delivery_delay_byoiphostnamelookupunavailable": true,
+              "sum_delivery_delay_general": true,
+              "sum_delivery_delay_internalfailure": true,
+              "sum_delivery_delay_ipfailure": true,
+              "sum_delivery_delay_mailboxfull": true,
+              "sum_delivery_delay_recipientservererror": true,
+              "sum_delivery_delay_sendingdeferral": true,
+              "sum_delivery_delay_spamdetected": true,
+              "sum_delivery_delay_transientcommunicationfailure": true,
+              "sum_delivery_delay_undetermined": true,
+              "sum_failure": true,
+              "sum_open": true,
+              "sum_reject": true,
+              "sum_send": true,
+              "sum_subscription": true,
+              "username": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "connection_ids_cnt": "Count",
+              "sum_reject": "",
+              "sum_send": "",
+              "username": ""
+            }
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "Rate",
+            "binary": {
+              "left": "acc_open",
+              "operator": "/",
+              "reducer": "sum",
+              "right": "acc_send"
+            },
+            "mode": "binary",
+            "reduce": {
+              "reducer": "sum"
+            },
+            "replaceFields": true
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "time"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "dark-red",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 0.2
+              },
+              {
+                "color": "orange",
+                "value": 0.4
+              },
+              {
+                "color": "yellow",
+                "value": 0.6
+              },
+              {
+                "color": "#73BF69",
+                "value": 0.8
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 12,
+        "y": 69
+      },
+      "id": 143,
+      "options": {
+        "displayMode": "lcd",
+        "minVizHeight": 10,
+        "minVizWidth": 10,
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "showUnfilled": true,
+        "text": {},
+        "valueMode": "color"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 139,
+          "refId": "A"
+        }
+      ],
+      "title": "Opens Rate By Source (Exclude the sources which Total Sends is 0)",
+      "transformations": [
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "rate",
+            "binary": {
+              "left": "sum_open",
+              "operator": "/",
+              "reducer": "sum",
+              "right": "sum_send"
+            },
+            "mode": "binary",
+            "reduce": {
+              "reducer": "sum"
+            },
+            "replaceFields": false
+          }
+        },
+        {
+          "id": "rowsToFields",
+          "options": {
+            "mappings": [
+              {
+                "fieldName": "source",
+                "handlerKey": "field.name"
+              },
+              {
+                "fieldName": "sum_send",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_bounce",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_complaint",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_reject",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_open",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_click",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_failure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_internalfailure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_general",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_mailboxfull",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_spamdetected",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_recipientservererror",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_ipfailure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_transientcommunicationfailure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_byoiphostnamelookupunavailable",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_undetermined",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_sendingdeferral",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_subscription",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "rate",
+                "handlerKey": "field.value"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "The percentage of emails rejected by Amazon SES.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Rate"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 0,
+        "y": 81
+      },
+      "id": 127,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "firstNotNull",
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 126,
+          "refId": "A"
+        }
+      ],
+      "title": "Rejects",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "acc_bounce": true,
+              "acc_click": true,
+              "acc_complaint": true,
+              "acc_delivery": true,
+              "acc_delivery_delay": true,
+              "acc_delivery_delay_byoiphostnamelookupunavailable": true,
+              "acc_delivery_delay_general": true,
+              "acc_delivery_delay_internalfailure": true,
+              "acc_delivery_delay_ipfailure": true,
+              "acc_delivery_delay_mailboxfull": true,
+              "acc_delivery_delay_recipientservererror": true,
+              "acc_delivery_delay_sendingdeferral": true,
+              "acc_delivery_delay_spamdetected": true,
+              "acc_delivery_delay_transientcommunicationfailure": true,
+              "acc_delivery_delay_undetermined": true,
+              "acc_failure": true,
+              "acc_open": true,
+              "acc_reject": false,
+              "acc_subscription": true,
+              "connection_ids_cnt": false,
+              "database": true,
+              "db_instance_identifier": true,
+              "host": true,
+              "operation": true,
+              "sum_bounce": true,
+              "sum_click": true,
+              "sum_complaint": true,
+              "sum_delivery": true,
+              "sum_delivery_delay": true,
+              "sum_delivery_delay_byoiphostnamelookupunavailable": true,
+              "sum_delivery_delay_general": true,
+              "sum_delivery_delay_internalfailure": true,
+              "sum_delivery_delay_ipfailure": true,
+              "sum_delivery_delay_mailboxfull": true,
+              "sum_delivery_delay_recipientservererror": true,
+              "sum_delivery_delay_sendingdeferral": true,
+              "sum_delivery_delay_spamdetected": true,
+              "sum_delivery_delay_transientcommunicationfailure": true,
+              "sum_delivery_delay_undetermined": true,
+              "sum_failure": true,
+              "sum_open": true,
+              "sum_reject": true,
+              "sum_send": true,
+              "sum_subscription": true,
+              "username": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "connection_ids_cnt": "Count",
+              "sum_reject": "",
+              "sum_send": "",
+              "username": ""
+            }
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "Rate",
+            "binary": {
+              "left": "acc_reject",
+              "operator": "/",
+              "reducer": "sum",
+              "right": "acc_send"
+            },
+            "mode": "binary",
+            "reduce": {
+              "reducer": "sum"
+            },
+            "replaceFields": true
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "time"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.2
+              },
+              {
+                "color": "orange",
+                "value": 0.4
+              },
+              {
+                "color": "red",
+                "value": 0.6
+              },
+              {
+                "color": "dark-red",
+                "value": 0.8
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 12,
+        "y": 81
+      },
+      "id": 144,
+      "options": {
+        "displayMode": "lcd",
+        "minVizHeight": 10,
+        "minVizWidth": 10,
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "showUnfilled": true,
+        "text": {},
+        "valueMode": "color"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 139,
+          "refId": "A"
+        }
+      ],
+      "title": "Rejects Rate By Source (Exclude the sources which Total Sends is 0)",
+      "transformations": [
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "rate",
+            "binary": {
+              "left": "sum_reject",
+              "operator": "/",
+              "reducer": "sum",
+              "right": "sum_send"
+            },
+            "mode": "binary",
+            "reduce": {
+              "reducer": "sum"
+            },
+            "replaceFields": false
+          }
+        },
+        {
+          "id": "rowsToFields",
+          "options": {
+            "mappings": [
+              {
+                "fieldName": "source",
+                "handlerKey": "field.name"
+              },
+              {
+                "fieldName": "sum_send",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_bounce",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_complaint",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_reject",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_open",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_click",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_failure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_internalfailure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_general",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_mailboxfull",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_spamdetected",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_recipientservererror",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_ipfailure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_transientcommunicationfailure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_byoiphostnamelookupunavailable",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_undetermined",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_sendingdeferral",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_subscription",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "rate",
+                "handlerKey": "field.value"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "The percentage of emails clicked a link by recipients.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Rate"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 0,
+        "y": 93
+      },
+      "id": 132,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "firstNotNull",
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 126,
+          "refId": "A"
+        }
+      ],
+      "title": "Clicks",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "acc_bounce": true,
+              "acc_click": false,
+              "acc_complaint": true,
+              "acc_delivery": true,
+              "acc_delivery_delay": true,
+              "acc_delivery_delay_byoiphostnamelookupunavailable": true,
+              "acc_delivery_delay_general": true,
+              "acc_delivery_delay_internalfailure": true,
+              "acc_delivery_delay_ipfailure": true,
+              "acc_delivery_delay_mailboxfull": true,
+              "acc_delivery_delay_recipientservererror": true,
+              "acc_delivery_delay_sendingdeferral": true,
+              "acc_delivery_delay_spamdetected": true,
+              "acc_delivery_delay_transientcommunicationfailure": true,
+              "acc_delivery_delay_undetermined": true,
+              "acc_failure": true,
+              "acc_open": true,
+              "acc_reject": true,
+              "acc_subscription": true,
+              "connection_ids_cnt": false,
+              "database": true,
+              "db_instance_identifier": true,
+              "host": true,
+              "operation": true,
+              "sum_bounce": true,
+              "sum_click": true,
+              "sum_complaint": true,
+              "sum_delivery": true,
+              "sum_delivery_delay": true,
+              "sum_delivery_delay_byoiphostnamelookupunavailable": true,
+              "sum_delivery_delay_general": true,
+              "sum_delivery_delay_internalfailure": true,
+              "sum_delivery_delay_ipfailure": true,
+              "sum_delivery_delay_mailboxfull": true,
+              "sum_delivery_delay_recipientservererror": true,
+              "sum_delivery_delay_sendingdeferral": true,
+              "sum_delivery_delay_spamdetected": true,
+              "sum_delivery_delay_transientcommunicationfailure": true,
+              "sum_delivery_delay_undetermined": true,
+              "sum_failure": true,
+              "sum_open": true,
+              "sum_reject": true,
+              "sum_send": true,
+              "sum_subscription": true,
+              "username": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "connection_ids_cnt": "Count",
+              "sum_reject": "",
+              "sum_send": "",
+              "username": ""
+            }
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "Rate",
+            "binary": {
+              "left": "acc_click",
+              "operator": "/",
+              "reducer": "sum",
+              "right": "acc_send"
+            },
+            "mode": "binary",
+            "reduce": {
+              "reducer": "sum"
+            },
+            "replaceFields": true
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "time"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "dark-red",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 0.2
+              },
+              {
+                "color": "orange",
+                "value": 0.4
+              },
+              {
+                "color": "yellow",
+                "value": 0.6
+              },
+              {
+                "color": "#73BF69",
+                "value": 0.8
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 12,
+        "y": 93
+      },
+      "id": 145,
+      "options": {
+        "displayMode": "lcd",
+        "minVizHeight": 10,
+        "minVizWidth": 10,
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "showUnfilled": true,
+        "text": {},
+        "valueMode": "color"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 139,
+          "refId": "A"
+        }
+      ],
+      "title": "Clicks Rate By Source (Exclude the sources which Total Sends is 0)",
+      "transformations": [
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "rate",
+            "binary": {
+              "left": "sum_click",
+              "operator": "/",
+              "reducer": "sum",
+              "right": "sum_send"
+            },
+            "mode": "binary",
+            "reduce": {
+              "reducer": "sum"
+            },
+            "replaceFields": false
+          }
+        },
+        {
+          "id": "rowsToFields",
+          "options": {
+            "mappings": [
+              {
+                "fieldName": "source",
+                "handlerKey": "field.name"
+              },
+              {
+                "fieldName": "sum_send",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_bounce",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_complaint",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_reject",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_open",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_click",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_failure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_internalfailure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_general",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_mailboxfull",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_spamdetected",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_recipientservererror",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_ipfailure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_transientcommunicationfailure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_byoiphostnamelookupunavailable",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_undetermined",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_sendingdeferral",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_subscription",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "rate",
+                "handlerKey": "field.value"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Rate"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "acc_send"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 0,
+        "y": 105
+      },
+      "id": 133,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "firstNotNull",
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 126,
+          "refId": "A"
+        }
+      ],
+      "title": "Failures",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "acc_bounce": true,
+              "acc_click": true,
+              "acc_complaint": true,
+              "acc_delivery": true,
+              "acc_delivery_delay": true,
+              "acc_delivery_delay_byoiphostnamelookupunavailable": true,
+              "acc_delivery_delay_general": true,
+              "acc_delivery_delay_internalfailure": true,
+              "acc_delivery_delay_ipfailure": true,
+              "acc_delivery_delay_mailboxfull": true,
+              "acc_delivery_delay_recipientservererror": true,
+              "acc_delivery_delay_sendingdeferral": true,
+              "acc_delivery_delay_spamdetected": true,
+              "acc_delivery_delay_transientcommunicationfailure": true,
+              "acc_delivery_delay_undetermined": true,
+              "acc_failure": false,
+              "acc_open": true,
+              "acc_reject": true,
+              "acc_subscription": true,
+              "connection_ids_cnt": false,
+              "database": true,
+              "db_instance_identifier": true,
+              "host": true,
+              "operation": true,
+              "sum_bounce": true,
+              "sum_click": true,
+              "sum_complaint": true,
+              "sum_delivery": true,
+              "sum_delivery_delay": true,
+              "sum_delivery_delay_byoiphostnamelookupunavailable": true,
+              "sum_delivery_delay_general": true,
+              "sum_delivery_delay_internalfailure": true,
+              "sum_delivery_delay_ipfailure": true,
+              "sum_delivery_delay_mailboxfull": true,
+              "sum_delivery_delay_recipientservererror": true,
+              "sum_delivery_delay_sendingdeferral": true,
+              "sum_delivery_delay_spamdetected": true,
+              "sum_delivery_delay_transientcommunicationfailure": true,
+              "sum_delivery_delay_undetermined": true,
+              "sum_failure": true,
+              "sum_open": true,
+              "sum_reject": true,
+              "sum_send": true,
+              "sum_subscription": true,
+              "username": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "connection_ids_cnt": "Count",
+              "sum_reject": "",
+              "sum_send": "",
+              "username": ""
+            }
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "Rate",
+            "binary": {
+              "left": "acc_failure",
+              "operator": "/",
+              "reducer": "sum",
+              "right": "acc_send"
+            },
+            "mode": "binary",
+            "reduce": {
+              "reducer": "sum"
+            },
+            "replaceFields": true
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "time"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.2
+              },
+              {
+                "color": "orange",
+                "value": 0.4
+              },
+              {
+                "color": "red",
+                "value": 0.6
+              },
+              {
+                "color": "dark-red",
+                "value": 0.8
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 12,
+        "y": 105
+      },
+      "id": 146,
+      "options": {
+        "displayMode": "lcd",
+        "minVizHeight": 10,
+        "minVizWidth": 10,
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "showUnfilled": true,
+        "text": {},
+        "valueMode": "color"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 140,
+          "refId": "A"
+        }
+      ],
+      "title": "Failures Rate By Source (Exclude the sources which Total Sends is 0)",
+      "transformations": [
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "rate",
+            "binary": {
+              "left": "sum_reject",
+              "operator": "/",
+              "reducer": "sum",
+              "right": "sum_send"
+            },
+            "mode": "binary",
+            "reduce": {
+              "reducer": "sum"
+            },
+            "replaceFields": false
+          }
+        },
+        {
+          "id": "rowsToFields",
+          "options": {
+            "mappings": [
+              {
+                "fieldName": "source",
+                "handlerKey": "field.name"
+              },
+              {
+                "fieldName": "sum_send",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_bounce",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_complaint",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_reject",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_open",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_click",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_failure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_internalfailure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_general",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_mailboxfull",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_spamdetected",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_recipientservererror",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_ipfailure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_transientcommunicationfailure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_byoiphostnamelookupunavailable",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_undetermined",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_sendingdeferral",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_subscription",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "rate",
+                "handlerKey": "field.value"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Rate"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 0,
+        "y": 117
+      },
+      "id": 135,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "firstNotNull",
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 126,
+          "refId": "A"
+        }
+      ],
+      "title": "Subscriptions",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "acc_bounce": true,
+              "acc_click": true,
+              "acc_complaint": true,
+              "acc_delivery": true,
+              "acc_delivery_delay": true,
+              "acc_delivery_delay_byoiphostnamelookupunavailable": true,
+              "acc_delivery_delay_general": true,
+              "acc_delivery_delay_internalfailure": true,
+              "acc_delivery_delay_ipfailure": true,
+              "acc_delivery_delay_mailboxfull": true,
+              "acc_delivery_delay_recipientservererror": true,
+              "acc_delivery_delay_sendingdeferral": true,
+              "acc_delivery_delay_spamdetected": true,
+              "acc_delivery_delay_transientcommunicationfailure": true,
+              "acc_delivery_delay_undetermined": true,
+              "acc_failure": true,
+              "acc_open": true,
+              "acc_reject": true,
+              "acc_subscription": false,
+              "connection_ids_cnt": false,
+              "database": true,
+              "db_instance_identifier": true,
+              "host": true,
+              "operation": true,
+              "sum_bounce": true,
+              "sum_click": true,
+              "sum_complaint": true,
+              "sum_delivery": true,
+              "sum_delivery_delay": true,
+              "sum_delivery_delay_byoiphostnamelookupunavailable": true,
+              "sum_delivery_delay_general": true,
+              "sum_delivery_delay_internalfailure": true,
+              "sum_delivery_delay_ipfailure": true,
+              "sum_delivery_delay_mailboxfull": true,
+              "sum_delivery_delay_recipientservererror": true,
+              "sum_delivery_delay_sendingdeferral": true,
+              "sum_delivery_delay_spamdetected": true,
+              "sum_delivery_delay_transientcommunicationfailure": true,
+              "sum_delivery_delay_undetermined": true,
+              "sum_failure": true,
+              "sum_open": true,
+              "sum_reject": true,
+              "sum_send": true,
+              "sum_subscription": true,
+              "username": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "connection_ids_cnt": "Count",
+              "sum_reject": "",
+              "sum_send": "",
+              "username": ""
+            }
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "Rate",
+            "binary": {
+              "left": "acc_subscription",
+              "operator": "/",
+              "reducer": "sum",
+              "right": "acc_send"
+            },
+            "mode": "binary",
+            "reduce": {
+              "reducer": "sum"
+            },
+            "replaceFields": true
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "time"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "dark-red",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 0.2
+              },
+              {
+                "color": "orange",
+                "value": 0.4
+              },
+              {
+                "color": "yellow",
+                "value": 0.6
+              },
+              {
+                "color": "#73BF69",
+                "value": 0.8
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 12,
+        "y": 117
+      },
+      "id": 147,
+      "options": {
+        "displayMode": "lcd",
+        "minVizHeight": 10,
+        "minVizWidth": 10,
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "showUnfilled": true,
+        "text": {},
+        "valueMode": "color"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 139,
+          "refId": "A"
+        }
+      ],
+      "title": "Subscriptions Rate By Source (Exclude the sources which Total Sends is 0)",
+      "transformations": [
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "rate",
+            "binary": {
+              "left": "sum_click",
+              "operator": "/",
+              "reducer": "sum",
+              "right": "sum_send"
+            },
+            "mode": "binary",
+            "reduce": {
+              "reducer": "sum"
+            },
+            "replaceFields": false
+          }
+        },
+        {
+          "id": "rowsToFields",
+          "options": {
+            "mappings": [
+              {
+                "fieldName": "source",
+                "handlerKey": "field.name"
+              },
+              {
+                "fieldName": "sum_send",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_bounce",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_complaint",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_reject",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_open",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_click",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_failure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_internalfailure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_general",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_mailboxfull",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_spamdetected",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_recipientservererror",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_ipfailure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_transientcommunicationfailure",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_byoiphostnamelookupunavailable",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_undetermined",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_delivery_delay_sendingdeferral",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "sum_subscription",
+                "handlerKey": "__ignore"
+              },
+              {
+                "fieldName": "rate",
+                "handlerKey": "field.value"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "bargauge"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 129
+      },
+      "id": 54,
+      "panels": [],
+      "title": "Delivery Delay statistics",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "fixed"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 6,
+        "x": 0,
+        "y": 130
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 2,
+          "refId": "A",
+          "withTransforms": false
+        }
+      ],
+      "title": "Total Delivery Delay",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Bounce": true,
+              "Complaint": true,
+              "distinct_source": true,
+              "sum_bounce": true,
+              "sum_click": true,
+              "sum_complaint": true,
+              "sum_delivery": true,
+              "sum_delivery_delay_byoiphostnamelookupunavailable": true,
+              "sum_delivery_delay_general": true,
+              "sum_delivery_delay_internalfailure": true,
+              "sum_delivery_delay_ipfailure": true,
+              "sum_delivery_delay_mailboxfull": true,
+              "sum_delivery_delay_recipientservererror": true,
+              "sum_delivery_delay_sendingdeferral": true,
+              "sum_delivery_delay_spamdetected": true,
+              "sum_delivery_delay_transientcommunicationfailure": true,
+              "sum_delivery_delay_undetermined": true,
+              "sum_failure": true,
+              "sum_open": true,
+              "sum_reject": true,
+              "sum_send": true,
+              "sum_subscription": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "sum_delivery_delay": "Count"
+            }
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "DeliveryDelay"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 6,
+        "y": 130
+      },
+      "id": 134,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "firstNotNull",
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 126,
+          "refId": "A"
+        }
+      ],
+      "title": "Delivery Delay Time History",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "acc_bounce": true,
+              "acc_click": true,
+              "acc_complaint": true,
+              "acc_delivery": true,
+              "acc_delivery_delay": true,
+              "acc_delivery_delay_byoiphostnamelookupunavailable": true,
+              "acc_delivery_delay_general": true,
+              "acc_delivery_delay_internalfailure": true,
+              "acc_delivery_delay_ipfailure": true,
+              "acc_delivery_delay_mailboxfull": true,
+              "acc_delivery_delay_recipientservererror": true,
+              "acc_delivery_delay_sendingdeferral": true,
+              "acc_delivery_delay_spamdetected": true,
+              "acc_delivery_delay_transientcommunicationfailure": true,
+              "acc_delivery_delay_undetermined": true,
+              "acc_failure": true,
+              "acc_open": true,
+              "acc_reject": true,
+              "acc_send": true,
+              "acc_subscription": true,
+              "connection_ids_cnt": false,
+              "database": true,
+              "db_instance_identifier": true,
+              "host": true,
+              "operation": true,
+              "sum_bounce": true,
+              "sum_click": true,
+              "sum_complaint": true,
+              "sum_delivery": true,
+              "sum_delivery_delay": false,
+              "sum_delivery_delay_byoiphostnamelookupunavailable": true,
+              "sum_delivery_delay_general": true,
+              "sum_delivery_delay_internalfailure": true,
+              "sum_delivery_delay_ipfailure": true,
+              "sum_delivery_delay_mailboxfull": true,
+              "sum_delivery_delay_recipientservererror": true,
+              "sum_delivery_delay_sendingdeferral": true,
+              "sum_delivery_delay_spamdetected": true,
+              "sum_delivery_delay_transientcommunicationfailure": true,
+              "sum_delivery_delay_undetermined": true,
+              "sum_failure": true,
+              "sum_open": true,
+              "sum_reject": true,
+              "sum_send": true,
+              "sum_subscription": true,
+              "username": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "connection_ids_cnt": "Count",
+              "sum_delivery_delay": "DeliveryDelay",
+              "sum_reject": "",
+              "sum_send": "",
+              "username": ""
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "time"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 6,
+        "x": 18,
+        "y": 130
+      },
+      "id": 91,
+      "options": {
+        "displayLabels": [
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "firstNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 2,
+          "refId": "A"
+        }
+      ],
+      "title": "Delivery Delay Type",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "distinct_source": true,
+              "sum_bounce": true,
+              "sum_click": true,
+              "sum_complaint": true,
+              "sum_delivery": true,
+              "sum_delivery_delay": true,
+              "sum_delivery_delay_sendingdeferral": false,
+              "sum_delivery_delay_undetermined": false,
+              "sum_failure": true,
+              "sum_open": true,
+              "sum_reject": true,
+              "sum_send": true,
+              "sum_subscription": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "sum_delivery_delay_byoiphostnamelookupunavailable": "BYOIPHostNameLookupUnavailable",
+              "sum_delivery_delay_general": "General",
+              "sum_delivery_delay_internalfailure": "InternalFailure",
+              "sum_delivery_delay_ipfailure": "IPFailure",
+              "sum_delivery_delay_mailboxfull": "MailboxFull",
+              "sum_delivery_delay_recipientservererror": "RecipientServerError",
+              "sum_delivery_delay_sendingdeferral": "SendingDeFerral",
+              "sum_delivery_delay_spamdetected": "SpamDetected",
+              "sum_delivery_delay_transientcommunicationfailure": "TransientCommunicationFailure",
+              "sum_delivery_delay_undetermined": "Undetermined"
+            }
+          }
+        }
+      ],
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "TransientCommunicationFailure"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 142
+      },
+      "id": 138,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "firstNotNull",
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 126,
+          "refId": "A"
+        }
+      ],
+      "title": "The accumulation time series for \"Delay Type\"",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "acc_bounce": true,
+              "acc_click": true,
+              "acc_complaint": true,
+              "acc_delivery": true,
+              "acc_delivery_delay": true,
+              "acc_delivery_delay_byoiphostnamelookupunavailable": false,
+              "acc_delivery_delay_general": false,
+              "acc_delivery_delay_internalfailure": false,
+              "acc_delivery_delay_ipfailure": false,
+              "acc_delivery_delay_mailboxfull": false,
+              "acc_delivery_delay_recipientservererror": false,
+              "acc_delivery_delay_sendingdeferral": false,
+              "acc_delivery_delay_spamdetected": false,
+              "acc_delivery_delay_transientcommunicationfailure": false,
+              "acc_delivery_delay_undetermined": false,
+              "acc_failure": true,
+              "acc_open": true,
+              "acc_reject": true,
+              "acc_send": true,
+              "acc_subscription": true,
+              "connection_ids_cnt": false,
+              "database": true,
+              "db_instance_identifier": true,
+              "host": true,
+              "operation": true,
+              "sum_bounce": true,
+              "sum_click": true,
+              "sum_complaint": true,
+              "sum_delivery": true,
+              "sum_delivery_delay": true,
+              "sum_delivery_delay_byoiphostnamelookupunavailable": true,
+              "sum_delivery_delay_general": true,
+              "sum_delivery_delay_internalfailure": true,
+              "sum_delivery_delay_ipfailure": true,
+              "sum_delivery_delay_mailboxfull": true,
+              "sum_delivery_delay_recipientservererror": true,
+              "sum_delivery_delay_sendingdeferral": true,
+              "sum_delivery_delay_spamdetected": true,
+              "sum_delivery_delay_transientcommunicationfailure": true,
+              "sum_delivery_delay_undetermined": true,
+              "sum_failure": true,
+              "sum_open": true,
+              "sum_reject": true,
+              "sum_send": true,
+              "sum_subscription": true,
+              "username": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "acc_delivery_delay_byoiphostnamelookupunavailable": "BYOIPHostNameLookupUnavailable",
+              "acc_delivery_delay_general": "General",
+              "acc_delivery_delay_internalfailure": "InternalFailure",
+              "acc_delivery_delay_ipfailure": "IPFailure",
+              "acc_delivery_delay_mailboxfull": "MailboxFull",
+              "acc_delivery_delay_recipientservererror": "RecipientServerError",
+              "acc_delivery_delay_sendingdeferral": "SendingDeferral",
+              "acc_delivery_delay_spamdetected": "SpamDetected",
+              "acc_delivery_delay_transientcommunicationfailure": "TransientCommunicationFailure",
+              "acc_delivery_delay_undetermined": "Undetermined",
+              "connection_ids_cnt": "Count",
+              "sum_delivery_delay": "DeliveryDelay",
+              "sum_reject": "",
+              "sum_send": "",
+              "username": ""
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "time"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "",
+  "revision": 1,
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "allValue": "SELECT source FROM \"$__table\" WHERE event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH') \tOR event_hour = $__rawTimeFrom('yyyyMMdd00') GROUP BY source",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-athena-datasource",
+          "uid": "Bn93a3_Vk"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Source",
+        "multi": true,
+        "name": "source",
+        "options": [],
+        "query": {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT source\nFROM \"$__table\"\nWHERE event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\tOR event_hour = $__rawTimeFrom('yyyyMMdd00')\nGROUP BY source",
+          "refId": "Metrics",
+          "table": "ses_metrics"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "allValue": "SELECT subject FROM \"$__table\" WHERE event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH') \tOR event_hour = $__rawTimeFrom('yyyyMMdd00') GROUP BY subject",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-athena-datasource",
+          "uid": "Bn93a3_Vk"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Subject",
+        "multi": true,
+        "name": "subject",
+        "options": [],
+        "query": {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT subject\nFROM \"$__table\"\nWHERE event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\tOR event_hour = $__rawTimeFrom('yyyyMMdd00')\nGROUP BY subject",
+          "refId": "Metrics",
+          "table": "ses_metrics"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "allValue": "SELECT tagid FROM \"$__table\" WHERE event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH') \tOR event_hour = $__rawTimeFrom('yyyyMMdd00') GROUP BY tagid",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-athena-datasource",
+          "uid": "Bn93a3_Vk"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Tag Id",
+        "multi": true,
+        "name": "tagId",
+        "options": [],
+        "query": {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT tagid\nFROM \"$__table\"\nWHERE event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\tOR event_hour = $__rawTimeFrom('yyyyMMdd00')\nGROUP BY tagid",
+          "refId": "Metrics",
+          "table": "ses_metrics"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "auto": true,
+        "auto_count": 100,
+        "auto_min": "1m",
+        "current": {
+          "selected": false,
+          "text": "auto",
+          "value": "$__auto_interval_interval"
+        },
+        "hide": 0,
+        "label": "Interval",
+        "name": "interval",
+        "options": [
+          {
+            "selected": true,
+            "text": "auto",
+            "value": "$__auto_interval_interval"
+          },
+          {
+            "selected": false,
+            "text": "1m",
+            "value": "1m"
+          },
+          {
+            "selected": false,
+            "text": "10m",
+            "value": "10m"
+          },
+          {
+            "selected": false,
+            "text": "30m",
+            "value": "30m"
+          },
+          {
+            "selected": false,
+            "text": "1h",
+            "value": "1h"
+          },
+          {
+            "selected": false,
+            "text": "6h",
+            "value": "6h"
+          },
+          {
+            "selected": false,
+            "text": "12h",
+            "value": "12h"
+          },
+          {
+            "selected": false,
+            "text": "1d",
+            "value": "1d"
+          },
+          {
+            "selected": false,
+            "text": "7d",
+            "value": "7d"
+          },
+          {
+            "selected": false,
+            "text": "14d",
+            "value": "14d"
+          },
+          {
+            "selected": false,
+            "text": "30d",
+            "value": "30d"
+          }
+        ],
+        "query": "1m,10m,30m,1h,6h,12h,1d,7d,14d,30d",
+        "queryValue": "",
+        "refresh": 2,
+        "skipUrlSync": false,
+        "type": "interval"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ]
+  },
+  "timezone": "",
+  "title": "ses-dashboard Copy",
+  "uid": "bb0ef6f4-a928-4e35-8960-34ce3186d9b7",
+  "version": 3,
+  "weekStart": ""
+}

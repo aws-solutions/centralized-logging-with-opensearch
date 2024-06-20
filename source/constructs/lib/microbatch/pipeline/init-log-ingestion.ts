@@ -109,11 +109,28 @@ export class MicroBatchLogIngestionStack extends Stack {
       default: "Source Bucket Prefix",
     };
 
+    const sourceContextParameter = new CfnParameter(
+      this,
+      "sourceContext",
+      {
+        type: "String",
+        default: "{}",
+        description:
+          'You can specify a json string as context for connector, e.g. {"DBIdentifiers": ["aurora-mysql", "aurora-postgres"]}.',
+      }
+    );
+
+    sourceContextParameter.overrideLogicalId("context");
+    this.paramLabels[sourceContextParameter.logicalId] = {
+      default: "Source Context",
+    };
+
     const memberAccountRoleArnParameter = new CfnParameter(
       this,
       "memberAccountRoleArn",
       {
         type: "String",
+        default: "",
         description:
           "The Role arn of the member account, if the current account is used, no configuration is required.",
       }
@@ -129,6 +146,7 @@ export class MicroBatchLogIngestionStack extends Stack {
       Parameters: [
         sourceBucketNameParameter.logicalId,
         sourceBucketPrefixParameter.logicalId,
+        sourceContextParameter.logicalId,
         memberAccountRoleArnParameter.logicalId,
       ],
     });
@@ -144,14 +162,12 @@ export class MicroBatchLogIngestionStack extends Stack {
     const ingestionId = ingestionIdParameter.valueAsString;
     const sourceBucketName = sourceBucketNameParameter.valueAsString;
     const sourceBucketPrefix = sourceBucketPrefixParameter.valueAsString;
+    const sourceContext = sourceContextParameter.valueAsString;
     const memberAccountRoleArn = memberAccountRoleArnParameter.valueAsString;
 
-    const pipelineResourcesBuilderArn =
-      ssm.StringParameter.fromStringParameterName(
-        this,
-        "SSMPipelineResourcesBuilderArn",
-        "/MicroBatch/PipelineResourcesBuilderArn"
-      ).stringValue;
+    const microBatchStackName = ssm.StringParameter.fromStringParameterName(this, "MicroBatchStackName", "/MicroBatch/StackName").stringValue;
+
+    const pipelineResourcesBuilderArn = Fn.importValue(`${microBatchStackName}::PipelineResourcesBuilderArn`);
     const pipelineResourcesBuilderFunctionName = Fn.select(
       6,
       Fn.split(":", pipelineResourcesBuilderArn)
@@ -172,7 +188,7 @@ export class MicroBatchLogIngestionStack extends Stack {
 
     const pipelineResourcesBuilderProvider = new cr.Provider(this, "Provider", {
       onEventHandler: pipelineResourcesBuilder,
-      providerFunctionName: `${Aws.STACK_NAME}-Provider`,
+      providerFunctionName: `${Aws.STACK_NAME.substring(0, 30)}-Provider`,
     });
 
     const ingestionCustomResource = new CustomResource(this, "CustomResource", {
@@ -190,6 +206,7 @@ export class MicroBatchLogIngestionStack extends Stack {
             source: {
               bucket: sourceBucketName,
               prefix: sourceBucketPrefix,
+              context: sourceContext,
             },
           },
           pipelineId: pipelineId,

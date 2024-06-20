@@ -27,17 +27,8 @@ __all__ = ['GrafanaClient', 'AthenaConnection']
 
 class AthenaConnection:
     
-    uid = ''
-    name = ''
-    account_id = ''
-    region = ''
-    database = ''
-    work_group = ''
-    output_location = ''
-    assume_role_arn = ''
-    catalog = 'AwsDataCatalog'
-    
-    def __init__(self, account_id: str, region: str, database: str, work_group: str, output_location: str, assume_role_arn: str, catalog: str = 'AwsDataCatalog'):
+    def __init__(self, account_id: str, region: str, database: str, work_group: str, output_location: str, assume_role_arn: str, table: str = '', catalog: str = 'AwsDataCatalog', reuse: bool = True, reuse_age: int = 5, uid: str = '', name: str = ''):
+        self.uid = uid
         self.account_id = account_id
         self.region = region
         self.database = database
@@ -45,7 +36,10 @@ class AthenaConnection:
         self.output_location = output_location
         self.assume_role_arn = assume_role_arn
         self.catalog = catalog
-        self.name = f'Athena-clo-{self.account_id}-{self.region}'
+        self.table = table
+        self.name = f'Athena-clo-{self.account_id}-{self.region}' if not name else name
+        self.reuse = reuse
+        self.reuse_age = reuse_age
 
 
 class GrafanaClient:
@@ -98,13 +92,9 @@ class GrafanaClient:
         return False
     
     def check_data_source_permission(self) -> bool:
-        response = self.create_athena_datasource(datasource_name='TestCreateAthenaDatasource',
-                                                 database='',
-                                                 region='',
-                                                 work_group='',
-                                                 assume_role_arn='',
-                                                 output_location='',
-                                                 catalog='')
+        athena_connection = AthenaConnection(name='TestCreateAthenaDatasource', database='', account_id='', region='', work_group='', assume_role_arn='', output_location='', catalog='')
+        
+        response = self.create_athena_datasource(athena_connection=athena_connection)        
         if response['status'] == 200:
             self.datasource.delete_datasource(datasource_uid=response['content']['uid'])
             return True
@@ -207,17 +197,11 @@ class GrafanaClient:
         Returns:
             str: _description_
         """
-        datasource_info = self.create_athena_datasource(datasource_name=athena_connection.name,
-                                                        database=athena_connection.database,
-                                                        region=athena_connection.region,
-                                                        work_group=athena_connection.work_group,
-                                                        assume_role_arn=athena_connection.assume_role_arn,
-                                                        output_location=athena_connection.output_location,
-                                                        catalog=athena_connection.catalog)
+        datasource_info = self.create_athena_datasource(athena_connection=athena_connection)
         athena_connection.uid = datasource_info['content']['uid']
         return athena_connection
     
-    def create_athena_datasource(self, datasource_name: str, database: str, region: str, work_group: str, assume_role_arn: str, output_location: str, catalog: str = 'AwsDataCatalog') -> dict:
+    def create_athena_datasource(self, athena_connection: AthenaConnection) -> dict:
         """Create an Athena data source in Grafana.
 
         Args:
@@ -238,65 +222,53 @@ class GrafanaClient:
             "isDefault": False,
             "jsonData": {
                 "authType": "default",
-                "catalog": catalog,
-                "database": database,
-                "defaultRegion": region,
-                "workgroup": work_group,
-                "assumeRoleArn": assume_role_arn,
-                "outputLocation": output_location,
+                "catalog": athena_connection.catalog,
+                "database": athena_connection.database,
+                "defaultRegion": athena_connection.region,
+                "workgroup": athena_connection.work_group,
+                "assumeRoleArn": athena_connection.assume_role_arn,
+                "outputLocation": athena_connection.output_location,
             }
         }
         
-        return self.update_datasource_by_name(datasource_name=datasource_name, datasource=datasource)
+        return self.update_datasource_by_name(datasource_name=athena_connection.name, datasource=datasource)
         
     @staticmethod
-    def replace_athena_connection_args_in_templates(datasource_uid: str, catalog: str, 
-                                                    database: str, region: str, table: str, 
-                                                    dashboard: dict, reuse: bool = True, 
-                                                    reuse_age: int = 5) -> dict:
+    def replace_athena_connection_args_in_templates(dashboard:dict, athena_connection_args: dict) -> dict:
         
         """Replace Athena's connection parameter information in templates.
         
-           1. traverse templating.list.
-           2. replace datasource.uid in templating.list.
-           3. replace query.connectionArgs.database in templating.list.
-           4. replace query.connectionArgs.region in templating.list.
-           5. replace query.connectionArgs.resultReuseEnabled in templating.list.
-           6. replace query.connectionArgs.resultReuseMaxAgeInMinutes in templating.list.
-           7. replace datasource.uid in templating.list.
-           8. replace table in templating.list.
-
-        Args:
-            datasource_id (str): 
-            catalog (str): The ID of the Data Catalog. e.g.g AwsDataCatalog.
-            database (str): The database name.
-            region (str): Region in which the Athena is deployed.
-            table (str): The table name.
-            data (dict): A Grafana JSON structure that contains layout, variables, styles, data sources, queries, and so on. For more information, you can see https://grafana.com/docs/grafana/latest/dashboards/manage-dashboards/#export-a-dashboard.
-            reuse (bool, optional): Query result reuse is a feature that allows Athena to reuse query results from previous queries. Defaults to True.
-            reuse_age (int, optional): You can specify a maximum age for reusing query results in minutes. Defaults to 5.
-
+            1. traverse templating.list.
+            2. replace datasource.uid in templating.list.
+            3. replace query.connectionArgs.database in templating.list.
+            4. replace query.connectionArgs.region in templating.list.
+            5. replace query.connectionArgs.resultReuseEnabled in templating.list.
+            6. replace query.connectionArgs.resultReuseMaxAgeInMinutes in templating.list.
+            7. replace datasource.uid in templating.list.
+            8. replace table in templating.list.
+            
         Returns:
             dict: A new Grafana Json structure.
         """
         for template in dashboard.get('templating', {}).get('list', []):
             if template.get('datasource', {}).get('type') == 'grafana-athena-datasource':
-                template['datasource']['uid'] = datasource_uid
-                template['query']['table'] = table
+                if template.get('query', {}).get('refId') not in athena_connection_args.keys():
+                    continue
+                athena_connection = athena_connection_args[template['query']['refId']]
+                template['datasource']['uid'] = athena_connection.uid
+                template['query']['table'] = athena_connection.table
                 if not template['query'].get('connectionArgs'):
                     continue
-                template['query']['connectionArgs']['catalog'] = catalog
-                template['query']['connectionArgs']['database'] = database
-                template['query']['connectionArgs']['region'] = region
-                template['query']['connectionArgs']['resultReuseEnabled'] = reuse
-                template['query']['connectionArgs']['resultReuseMaxAgeInMinutes'] = reuse_age
+                template['query']['connectionArgs']['catalog'] = athena_connection.catalog
+                template['query']['connectionArgs']['database'] = athena_connection.database
+                template['query']['connectionArgs']['region'] = athena_connection.region
+                template['query']['connectionArgs']['resultReuseEnabled'] = athena_connection.reuse
+                template['query']['connectionArgs']['resultReuseMaxAgeInMinutes'] = athena_connection.reuse_age
+        
         return dashboard
     
     @staticmethod
-    def replace_athena_connection_args_in_panels(datasource_uid: str, catalog: str, 
-                                                 database: str, region: str, table: str, 
-                                                 dashboard: dict, reuse: bool = True, 
-                                                 reuse_age: int = 5) -> dict:
+    def replace_athena_connection_args_in_panels(dashboard:dict, athena_connection_args: dict) -> dict:
         """Replace Athena's connection parameter information in panels.
         
            1. replace panels.datasource.uid
@@ -309,37 +281,28 @@ class GrafanaClient:
                2.6. replace datasource.uid in panels.targets.
                2.7. replace table in panels.targets.
 
-        Args:
-            datasource_id (str): 
-            catalog (str): The ID of the Data Catalog. e.g.g AwsDataCatalog.
-            database (str): The database name.
-            region (str): Region in which the Athena is deployed.
-            table (str): The table name.
-            data (dict): A Grafana JSON structure that contains layout, variables, styles, data sources, queries, and so on. For more information, you can see https://grafana.com/docs/grafana/latest/dashboards/manage-dashboards/#export-a-dashboard.
-            reuse (bool, optional): Query result reuse is a feature that allows Athena to reuse query results from previous queries. Defaults to True.
-            reuse_age (int, optional): You can specify a maximum age for reusing query results in minutes. Defaults to 5.
-
         Returns:
             dict: A new Grafana Json structure.
         """
         for panel in dashboard.get('panels', []):
-            if panel.get('datasource') and panel['datasource'].get('type') == 'grafana-athena-datasource':
-                panel['datasource']['uid'] = datasource_uid
-
             for target in panel.get('targets', []):
-                if target.get('datasource', {}).get('type') == 'grafana-athena-datasource':
-                    target['datasource']['uid'] = datasource_uid
-                    target['table'] = table
+                if target.get('refId') in athena_connection_args.keys() and target.get('datasource', {}).get('type') == 'grafana-athena-datasource':
+                    athena_connection = athena_connection_args[target['refId']]
+                    target['datasource']['uid'] = athena_connection.uid
+                    target['table'] = athena_connection.table
                     if not target.get('connectionArgs'):
                         continue
-                    target['connectionArgs']['catalog'] = catalog
-                    target['connectionArgs']['database'] = database
-                    target['connectionArgs']['region'] = region
-                    target['connectionArgs']['resultReuseEnabled'] = reuse
-                    target['connectionArgs']['resultReuseMaxAgeInMinutes'] = reuse_age
+                    target['connectionArgs']['catalog'] = athena_connection.catalog
+                    target['connectionArgs']['database'] = athena_connection.database
+                    target['connectionArgs']['region'] = athena_connection.region
+                    target['connectionArgs']['resultReuseEnabled'] = athena_connection.reuse
+                    target['connectionArgs']['resultReuseMaxAgeInMinutes'] = athena_connection.reuse_age
+
+                    if panel.get('datasource', {}).get('type') == 'grafana-athena-datasource':
+                        panel['datasource']['uid'] = athena_connection.uid
         return dashboard
     
-    def import_dashboard(self, dashboard: dict, overwrite: bool = True, folder_title: str = '') -> dict:
+    def import_dashboard(self, dashboard: dict, athena_connection_args: dict, overwrite: bool = True, folder_title: str = '') -> dict:
         """ Import the dashboard json file exported by the Grafana console.
             
             Rules:
@@ -348,9 +311,14 @@ class GrafanaClient:
                 3. Do nothing if dashboard.uid is not exists and overwrite is False.
 
         :param dashboard (dict): The complete dashboard model. For more information, you can see https://grafana.com/docs/grafana/latest/dashboards/manage-dashboards/#export-a-dashboard.
+               athena_connection_args (dict): A dict object used to store the correspondence between RefId and Athena connection
                overwrite (bool): Set to true if you want to overwrite existing dashboard with newer version, same dashboard title in folder or same dashboard uid.
         :return:
         """
+        
+        dashboard = self.replace_athena_connection_args_in_panels(dashboard=dashboard, athena_connection_args=athena_connection_args)
+        dashboard = self.replace_athena_connection_args_in_templates(dashboard=dashboard, athena_connection_args=athena_connection_args)
+        
         dashboard.pop('id', None)
         payload = {'dashboard': dashboard, 'overwrite': overwrite}
         
@@ -363,100 +331,6 @@ class GrafanaClient:
         
         return {'status': 200, 'content': {'message': 'Dashboard is exist and overwrite is false.'}}
     
-    def import_dashboard_for_services(self, table: str, dashboard: dict, athena_connection: AthenaConnection, overwrite: bool = False, folder_title: str = '') -> dict:
-        """ Import the Dashboard, using the dashboard json file exported from grafana for the Services log.
-
-        Args:
-            dashboard_name (str): The dashboard name, unique name in the directory.
-            database (str): The database name.
-            table (str): The table name.
-            dashboard (dict): The complete dashboard model. For more information, you can see https://grafana.com/docs/grafana/latest/dashboards/manage-dashboards/#export-a-dashboard.
-            overwrite (bool): Set to true if you want to overwrite existing dashboard with newer version, same dashboard title in folder or same dashboard uid.
-
-        Returns:
-            dict: _description_
-        """
-        athena_connection = self.update_athena_connection_uid(athena_connection=athena_connection)
-        
-        dashboard = self.replace_athena_connection_args_in_panels(datasource_uid=athena_connection.uid,
-                                                                  catalog=athena_connection.catalog,
-                                                                  database=athena_connection.database,
-                                                                  region=athena_connection.region,
-                                                                  table=table,
-                                                                  dashboard=dashboard)
-        dashboard = self.replace_athena_connection_args_in_templates(datasource_uid=athena_connection.uid,
-                                                                     catalog=athena_connection.catalog,
-                                                                     database=athena_connection.database,
-                                                                     region=athena_connection.region,
-                                                                     table=table,
-                                                                     dashboard=dashboard)
-        
-        return self.import_dashboard(dashboard=dashboard, overwrite=overwrite, folder_title=folder_title)
-    
-    def import_details_for_services(self, table: str, metrics_table: str, dashboard: dict, athena_connection: AthenaConnection, overwrite: bool = False, folder_title: str = '') -> dict:
-        """Import detailed data to query the Dashboard, using the dashboard json file exported from grafana for the Services log.
-        
-        Args:
-            dashboard_name (str): The dashboard name, unique name in the directory.
-            database (str): The database name.
-            table (str): The table name.
-            metrics_table (str): The metrics table name.
-            dashboard (dict): The complete dashboard model. For more information, you can see https://grafana.com/docs/grafana/latest/dashboards/manage-dashboards/#export-a-dashboard.
-            overwrite (bool): Set to true if you want to overwrite existing dashboard with newer version, same dashboard title in folder or same dashboard uid.
-
-        Returns:
-            dict: _description_
-        """
-        athena_connection = self.update_athena_connection_uid(athena_connection=athena_connection)
-        
-        dashboard = self.replace_athena_connection_args_in_panels(datasource_uid=athena_connection.uid,
-                                                                  catalog=athena_connection.catalog,
-                                                                  database=athena_connection.database,
-                                                                  region=athena_connection.region,
-                                                                  table=table,
-                                                                  dashboard=dashboard)
-        dashboard = self.replace_athena_connection_args_in_templates(datasource_uid=athena_connection.uid,
-                                                                     catalog=athena_connection.catalog,
-                                                                     database=athena_connection.database,
-                                                                     region=athena_connection.region,
-                                                                     table=metrics_table,
-                                                                     dashboard=dashboard)
-        for template in dashboard.get('templating', {}).get('list', []):
-            if template.get('datasource', {}).get('type') == 'grafana-athena-datasource' and template.get('name') == 'page_no':
-                template['query']['table'] = table
-                
-        return self.import_dashboard(dashboard=dashboard, overwrite=overwrite, folder_title=folder_title)
-
-    def import_details_for_application(self, table: str, dashboard: dict, athena_connection: AthenaConnection, overwrite: bool = False, folder_title: str = '') -> dict:
-        """Import detailed data to query the Dashboard, using the dashboard json file exported from grafana for the Application log.
-        
-        Args:
-            dashboard_name (str): The dashboard name, unique name in the directory.
-            database (str): The database name.
-            table (str): The table name.
-            dashboard (dict): The complete dashboard model. For more information, you can see https://grafana.com/docs/grafana/latest/dashboards/manage-dashboards/#export-a-dashboard.
-            overwrite (bool): Set to true if you want to overwrite existing dashboard with newer version, same dashboard title in folder or same dashboard uid.
-
-        Returns:
-            dict: _description_
-        """
-        athena_connection = self.update_athena_connection_uid(athena_connection=athena_connection)
-        
-        dashboard = self.replace_athena_connection_args_in_panels(datasource_uid=athena_connection.uid,
-                                                                  catalog=athena_connection.catalog,
-                                                                  database=athena_connection.database,
-                                                                  region=athena_connection.region,
-                                                                  table=table,
-                                                                  dashboard=dashboard)
-        dashboard = self.replace_athena_connection_args_in_templates(datasource_uid=athena_connection.uid,
-                                                                     catalog=athena_connection.catalog,
-                                                                     database=athena_connection.database,
-                                                                     region=athena_connection.region,
-                                                                     table=table,
-                                                                     dashboard=dashboard)
-
-        return self.import_dashboard(dashboard=dashboard, overwrite=overwrite, folder_title=folder_title)
-
 
 class GrafanaApi:
     

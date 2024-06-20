@@ -1,0 +1,2632 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 1172,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 19,
+      "panels": [],
+      "title": "Overview (updates based on top time selection)",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "Bn93a3_Vk"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "fixed"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 0,
+        "y": 1
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "/^requests$/",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "datasource": {
+            "type": "grafana-athena-datasource",
+            "uid": "Bn93a3_Vk"
+          },
+          "format": 1,
+          "rawSQL": "SELECT sum(requests) as requests\n    , sum(case when action_fixed = 'ALLOW' then requests else 0 end) as allow_requests\n\t\t, sum(case when action_fixed = 'BLOCK' then requests else 0 end) as block_requests\n    , count(distinct clientip) as vistors\nFROM \"$__table\"\nWHERE account_id IN (${account_id:sqlstring})\n    AND region IN (${region:sqlstring})\n    AND action_fixed IN (${action:sqlstring}) \n    AND terminatingruletype IN (${terminatingruletype:sqlstring})\n    AND webaclname IN (${webaclname:sqlstring})\n    AND terminatingruleid IN (${terminatingruleid:sqlstring})\n    AND clientip LIKE '${clientip}%'\n    AND uri LIKE '${uri}%'\n    AND $__unixEpochFilter(time / 1000)\n    AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n        OR event_hour = $__rawTimeFrom('yyyyMMdd00'))",
+          "refId": "Metrics",
+          "table": "waf_metrics"
+        }
+      ],
+      "title": "* Total Requests",
+      "transformations": [],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "fixed"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 6,
+        "y": 1
+      },
+      "id": 26,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "/^allow_requests$/",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 2,
+          "refId": "A"
+        }
+      ],
+      "title": "Allow",
+      "transformations": [],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "fixed"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 12,
+        "y": 1
+      },
+      "id": 27,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "/^block_requests$/",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 2,
+          "refId": "A"
+        }
+      ],
+      "title": "Block",
+      "transformations": [],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "fixed"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 18,
+        "y": 1
+      },
+      "id": 28,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "/^vistors$/",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 2,
+          "refId": "A"
+        }
+      ],
+      "title": "Unique Vistors",
+      "transformations": [],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "Bn93a3_Vk"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Count",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Allow"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CAPTCHA"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Captcha"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Count"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Challenge"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 7
+      },
+      "id": 4,
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.84,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "orientation": "auto",
+        "showValue": "never",
+        "stacking": "normal",
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        },
+        "xField": "time",
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 100
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "datasource": {
+            "type": "grafana-athena-datasource",
+            "uid": "Bn93a3_Vk"
+          },
+          "format": 1,
+          "rawSQL": "SELECT $__unixEpochGroup(time / 1000, '${interval}') as time\n    , sum(case when action_fixed = 'ALLOW' then requests else 0 end) as allow_requests\n    , sum(case when action_fixed = 'BLOCK' then requests else 0 end) as block_requests\n    , sum(case when action_fixed = 'COUNT' then requests else 0 end) as count_requests\nFROM \"$__table\"\nWHERE account_id IN (${account_id:sqlstring})\n    AND region IN (${region:sqlstring})\n    AND action_fixed IN (${action:sqlstring}) \n    AND terminatingruletype IN (${terminatingruletype:sqlstring})\n    AND webaclname IN (${webaclname:sqlstring})\n    AND terminatingruleid IN (${terminatingruleid:sqlstring})\n    AND clientip LIKE '${clientip}%'\n    AND uri LIKE '${uri}%'\n    AND $__unixEpochFilter(time / 1000)\n    AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n      OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\nGROUP BY $__unixEpochGroup(time / 1000, '${interval}')",
+          "refId": "Metrics",
+          "table": "waf_metrics"
+        }
+      ],
+      "title": "* Requests History",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "ALLOW": false,
+              "captcha_requests": false,
+              "challenge_requests": false
+            },
+            "indexByName": {
+              "ALLOW": 1,
+              "BLOCK": 2,
+              "time\\action": 0
+            },
+            "renameByName": {
+              "ALLOW": "allowed",
+              "BLOCK": "blocked",
+              "CAPTCHA": "captcha",
+              "allow_requests": "Allow",
+              "block_requests": "Block",
+              "captcha_requests": "CAPTCHA",
+              "challenge_requests": "Challenge",
+              "count_requests": "Count",
+              "time": "",
+              "time\\action": "time"
+            }
+          }
+        }
+      ],
+      "type": "barchart"
+    },
+    {
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "Bn93a3_Vk"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "unit": "locale"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "webaclname"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "WebAclName"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 6,
+        "x": 0,
+        "y": 19
+      },
+      "id": 5,
+      "options": {
+        "displayLabels": [
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "/^requests \\(sum\\)$/",
+          "values": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "datasource": {
+            "type": "grafana-athena-datasource",
+            "uid": "Bn93a3_Vk"
+          },
+          "format": 1,
+          "rawSQL": "SELECT webaclname, terminatingruleid, httpsourceid, httpmethod, action_fixed as action, country, sum(requests) as requests\nFROM \"$__table\"\nWHERE account_id IN (${account_id:sqlstring})\n    AND region IN (${region:sqlstring})\n    AND action_fixed IN (${action:sqlstring}) \n    AND terminatingruletype IN (${terminatingruletype:sqlstring})\n    AND webaclname IN (${webaclname:sqlstring})\n    AND terminatingruleid IN (${terminatingruleid:sqlstring})\n    AND clientip LIKE '${clientip}%'\n    AND uri LIKE '${uri}%'\n    AND $__unixEpochFilter(time / 1000)\n    AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n        OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\nGROUP BY webaclname, terminatingruleid, httpsourceid, httpmethod, action_fixed, country",
+          "refId": "Metrics",
+          "table": "waf_metrics"
+        }
+      ],
+      "title": "* WAF ACLs",
+      "transformations": [
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "allowed": {
+                "aggregations": [
+                  "sum"
+                ]
+              },
+              "blocked": {
+                "aggregations": [
+                  "sum"
+                ]
+              },
+              "requests": {
+                "aggregations": [
+                  "sum"
+                ],
+                "operation": "aggregate"
+              },
+              "time": {
+                "aggregations": []
+              },
+              "web_acl_id": {
+                "aggregations": []
+              },
+              "web_acl_name": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "webaclname": {
+                "aggregations": [],
+                "operation": "groupby"
+              }
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "desc": true,
+                "field": "requests (sum)"
+              }
+            ]
+          }
+        },
+        {
+          "id": "limit",
+          "options": {
+            "limitField": 10
+          }
+        }
+      ],
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "unit": "locale"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 6,
+        "x": 6,
+        "y": 19
+      },
+      "id": 8,
+      "options": {
+        "displayLabels": [
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "/^requests \\(sum\\)$/",
+          "values": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 5,
+          "refId": "A",
+          "withTransforms": false
+        }
+      ],
+      "title": "WAF Rules",
+      "transformations": [
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "requests": {
+                "aggregations": [
+                  "sum"
+                ],
+                "operation": "aggregate"
+              },
+              "terminating_rule_id": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "terminatingruleid": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "time": {
+                "aggregations": []
+              },
+              "webaclname": {
+                "aggregations": []
+              }
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "desc": true,
+                "field": "requests (sum)"
+              }
+            ]
+          }
+        },
+        {
+          "id": "limit",
+          "options": {
+            "limitField": 10
+          }
+        }
+      ],
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "unit": "locale"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 6,
+        "x": 12,
+        "y": 19
+      },
+      "id": 7,
+      "options": {
+        "displayLabels": [
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "/^requests \\(sum\\)$/",
+          "values": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 5,
+          "refId": "A",
+          "withTransforms": false
+        }
+      ],
+      "title": "Sources",
+      "transformations": [
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "http_source_id": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "httpsourceid": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "requests": {
+                "aggregations": [
+                  "sum"
+                ],
+                "operation": "aggregate"
+              },
+              "time": {
+                "aggregations": []
+              },
+              "webaclname": {
+                "aggregations": []
+              }
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "desc": true,
+                "field": "requests (sum)"
+              }
+            ]
+          }
+        },
+        {
+          "id": "limit",
+          "options": {
+            "limitField": 10
+          }
+        }
+      ],
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "unit": "locale"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 6,
+        "x": 18,
+        "y": 19
+      },
+      "id": 9,
+      "options": {
+        "displayLabels": [
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "/^requests \\(sum\\)$/",
+          "values": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 5,
+          "refId": "A",
+          "withTransforms": false
+        }
+      ],
+      "title": "HTTP Methods",
+      "transformations": [
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "http_method": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "httpmethod": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "httpsourceid": {
+                "aggregations": []
+              },
+              "requests": {
+                "aggregations": [
+                  "sum"
+                ],
+                "operation": "aggregate"
+              },
+              "time": {
+                "aggregations": []
+              },
+              "webaclname": {
+                "aggregations": []
+              }
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "desc": true,
+                "field": "requests (sum)"
+              }
+            ]
+          }
+        },
+        {
+          "id": "limit",
+          "options": {
+            "limitField": 10
+          }
+        }
+      ],
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-BlYlRd"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "percentage",
+            "steps": [
+              {
+                "color": "dark-orange",
+                "value": null
+              },
+              {
+                "color": "rgba(237, 129, 40, 0.89)",
+                "value": 0
+              },
+              {
+                "color": "rgba(50, 172, 45, 0.97)",
+                "value": 10
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 16,
+        "w": 24,
+        "x": 0,
+        "y": 28
+      },
+      "id": 6,
+      "maxDataPoints": 1,
+      "options": {
+        "basemap": {
+          "config": {},
+          "name": "Basemap",
+          "type": "default"
+        },
+        "controls": {
+          "mouseWheelZoom": false,
+          "showAttribution": true,
+          "showDebug": false,
+          "showMeasure": false,
+          "showScale": false,
+          "showZoom": true
+        },
+        "layers": [
+          {
+            "config": {
+              "rules": [],
+              "src": "public/maps/countries.geojson",
+              "style": {
+                "color": {
+                  "fixed": "#37872D"
+                },
+                "opacity": 0.4,
+                "rotation": {
+                  "fixed": 0,
+                  "max": 360,
+                  "min": -360,
+                  "mode": "mod"
+                },
+                "size": {
+                  "fixed": 5,
+                  "max": 15,
+                  "min": 2
+                },
+                "symbol": {
+                  "fixed": "img/icons/marker/circle.svg",
+                  "mode": "fixed"
+                },
+                "textConfig": {
+                  "fontSize": 12,
+                  "offsetX": 0,
+                  "offsetY": 0,
+                  "textAlign": "center",
+                  "textBaseline": "middle"
+                }
+              }
+            },
+            "location": {
+              "mode": "auto"
+            },
+            "name": "GeoJson",
+            "opacity": 0.5,
+            "tooltip": false,
+            "type": "geojson"
+          },
+          {
+            "config": {
+              "showLegend": false,
+              "style": {
+                "color": {
+                  "field": "requests (sum)",
+                  "fixed": "red"
+                },
+                "opacity": 0.4,
+                "rotation": {
+                  "fixed": 0,
+                  "max": 360,
+                  "min": -360,
+                  "mode": "mod"
+                },
+                "size": {
+                  "field": "requests (sum)",
+                  "fixed": 5,
+                  "max": 30,
+                  "min": 5
+                },
+                "symbol": {
+                  "fixed": "img/icons/marker/circle.svg",
+                  "mode": "fixed"
+                },
+                "text": {
+                  "field": "requests (sum)",
+                  "fixed": "",
+                  "mode": "field"
+                },
+                "textConfig": {
+                  "fontSize": 12,
+                  "offsetX": 0,
+                  "offsetY": 0,
+                  "textAlign": "center",
+                  "textBaseline": "middle"
+                }
+              }
+            },
+            "location": {
+              "mode": "auto"
+            },
+            "name": "Data",
+            "tooltip": true,
+            "type": "markers"
+          }
+        ],
+        "tooltip": {
+          "mode": "details"
+        },
+        "view": {
+          "allLayers": true,
+          "id": "fit",
+          "lastOnly": false,
+          "lat": 0,
+          "layer": "Geo Data",
+          "lon": 0,
+          "padding": 5,
+          "zoom": 7
+        }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 5,
+          "refId": "A"
+        }
+      ],
+      "title": "Country or Region By Requests",
+      "transformations": [
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "country": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "requests": {
+                "aggregations": [
+                  "sum"
+                ],
+                "operation": "aggregate"
+              }
+            }
+          }
+        },
+        {
+          "id": "spatial",
+          "options": {
+            "action": "prepare",
+            "source": {
+              "gazetteer": "public/gazetteer/countries.json",
+              "geohash": "country",
+              "latitude": "requests (sum)",
+              "lookup": "country",
+              "mode": "lookup"
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "Geometry": "Geometry",
+              "country": "Country",
+              "requests (sum)": "Count"
+            }
+          }
+        }
+      ],
+      "type": "geomap"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 44
+      },
+      "id": 21,
+      "panels": [],
+      "title": "Top N",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "Bn93a3_Vk"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "center",
+            "cellOptions": {
+              "type": "color-text"
+            },
+            "filterable": true,
+            "inspect": true
+          },
+          "mappings": [],
+          "min": -3,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 13,
+        "w": 6,
+        "x": 0,
+        "y": 45
+      },
+      "id": 17,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "datasource": {
+            "type": "grafana-athena-datasource",
+            "uid": "Bn93a3_Vk"
+          },
+          "format": 1,
+          "rawSQL": "SELECT label, type, requests\nFROM (\n    SELECT host as label, 'Host' as type, sum(requests) as requests, row_number() OVER (ORDER BY SUM(\"requests\") DESC) AS rn\n    FROM \"$__table\"\n    WHERE account_id IN (${account_id:sqlstring})\n        AND region IN (${region:sqlstring})\n        AND action_fixed IN (${action:sqlstring})\n        AND terminatingruletype IN (${terminatingruletype:sqlstring})\n        AND webaclname IN (${webaclname:sqlstring})\n        AND terminatingruleid IN (${terminatingruleid:sqlstring})\n        AND clientip LIKE '${clientip}%'\n        AND uri LIKE '${uri}%'\n        AND $__unixEpochFilter(time / 1000)\n        AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n            OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n    GROUP BY host\n    UNION ALL\n    SELECT uri as label, 'URI' as type, sum(requests) as requests, row_number() OVER (ORDER BY SUM(\"requests\") DESC) AS rn\n    FROM \"$__table\"\n    WHERE account_id IN (${account_id:sqlstring})\n        AND region IN (${region:sqlstring})\n        AND action_fixed IN (${action:sqlstring})\n        AND terminatingruletype IN (${terminatingruletype:sqlstring})\n        AND webaclname IN (${webaclname:sqlstring})\n        AND terminatingruleid IN (${terminatingruleid:sqlstring})\n        AND clientip LIKE '${clientip}%'\n        AND uri LIKE '${uri}%'\n        AND $__unixEpochFilter(time / 1000)\n        AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n            OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n    GROUP BY uri\n    UNION ALL\n    SELECT clientip as label, 'ClientIp' as type, sum(requests) as requests, row_number() OVER (ORDER BY SUM(\"requests\") DESC) AS rn\n    FROM \"$__table\"\n    WHERE account_id IN (${account_id:sqlstring})\n        AND region IN (${region:sqlstring})\n        AND action_fixed IN (${action:sqlstring})\n        AND terminatingruletype IN (${terminatingruletype:sqlstring})\n        AND webaclname IN (${webaclname:sqlstring})\n        AND terminatingruleid IN (${terminatingruleid:sqlstring})\n        AND clientip LIKE '${clientip}%'\n        AND uri LIKE '${uri}%'\n        AND $__unixEpochFilter(time / 1000)\n        AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n            OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n    GROUP BY clientip\n    UNION ALL\n    SELECT country as label, 'Country' as type, sum(requests) as requests, row_number() OVER (ORDER BY SUM(\"requests\") DESC) AS rn\n    FROM \"$__table\"\n    WHERE account_id IN (${account_id:sqlstring})\n        AND region IN (${region:sqlstring})\n        AND action_fixed IN (${action:sqlstring})\n        AND terminatingruletype IN (${terminatingruletype:sqlstring})\n        AND webaclname IN (${webaclname:sqlstring})\n        AND terminatingruleid IN (${terminatingruleid:sqlstring})\n        AND clientip LIKE '${clientip}%'\n        AND uri LIKE '${uri}%'\n        AND $__unixEpochFilter(time / 1000)\n        AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n            OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n    GROUP BY country\n    UNION ALL\n    SELECT label as label, 'Label' as type, sum(requests) as requests, row_number() OVER (ORDER BY SUM(\"requests\") DESC) AS rn\n    FROM \"$__table\"\n        CROSS JOIN UNNEST(labels) AS t(label)\n    WHERE account_id IN (${account_id:sqlstring})\n        AND region IN (${region:sqlstring})\n        AND action_fixed IN (${action:sqlstring})\n        AND terminatingruletype IN (${terminatingruletype:sqlstring})\n        AND webaclname IN (${webaclname:sqlstring})\n        AND terminatingruleid IN (${terminatingruleid:sqlstring})\n        AND clientip LIKE '${clientip}%'\n        AND uri LIKE '${uri}%'\n        AND $__unixEpochFilter(time / 1000)\n        AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n            OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n    GROUP BY label\n) t\nWHERE t.rn <= 100;",
+          "refId": "Metrics",
+          "table": "waf_metrics"
+        }
+      ],
+      "title": "* Top 10 Host",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {
+              "host": 0,
+              "requests (sum)": 1
+            },
+            "renameByName": {
+              "first_label": "",
+              "host": "Host",
+              "requests": "",
+              "requests (sum)": "Count"
+            }
+          }
+        },
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "Host"
+                  }
+                },
+                "fieldName": "type"
+              }
+            ],
+            "match": "all",
+            "type": "include"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "type": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "label": "Host",
+              "requests": "Count"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "desc": true,
+                "field": "Count"
+              }
+            ]
+          }
+        },
+        {
+          "id": "limit",
+          "options": {}
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "center",
+            "cellOptions": {
+              "type": "color-text"
+            },
+            "filterable": true,
+            "inspect": true
+          },
+          "mappings": [],
+          "min": -3,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 21,
+        "w": 6,
+        "x": 6,
+        "y": 45
+      },
+      "id": 12,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 17,
+          "refId": "A"
+        }
+      ],
+      "title": "Top 100 Request URIs",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "URI"
+                  }
+                },
+                "fieldName": "type"
+              }
+            ],
+            "match": "all",
+            "type": "include"
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "desc": true,
+                "field": "requests"
+              }
+            ]
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "type": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "label": "URI",
+              "requests": "Count",
+              "requests (sum)": "Count",
+              "uri": "URI"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "center",
+            "cellOptions": {
+              "type": "color-text"
+            },
+            "filterable": true,
+            "inspect": true
+          },
+          "mappings": [],
+          "min": -3,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 21,
+        "w": 6,
+        "x": 12,
+        "y": 45
+      },
+      "id": 15,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 17,
+          "refId": "A"
+        }
+      ],
+      "title": "Top 100 Client IPs",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "ClientIp"
+                  }
+                },
+                "fieldName": "type"
+              }
+            ],
+            "match": "all",
+            "type": "include"
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "desc": true,
+                "field": "requests"
+              }
+            ]
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "type": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "clientip": "Client Ip",
+              "label": "Client Ip",
+              "requests": "Count"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "A label is metadata added to a web request by a matching rule.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "center",
+            "cellOptions": {
+              "type": "color-text"
+            },
+            "filterable": true,
+            "inspect": true
+          },
+          "mappings": [],
+          "min": -3,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 21,
+        "w": 6,
+        "x": 18,
+        "y": 45
+      },
+      "id": 29,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": []
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 17,
+          "refId": "A"
+        }
+      ],
+      "title": "Top 100 Labels",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "Label"
+                  }
+                },
+                "fieldName": "type"
+              }
+            ],
+            "match": "all",
+            "type": "include"
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "requests"
+              }
+            ]
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "type": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "action": "Action",
+              "clientip": "",
+              "country": "",
+              "host": "",
+              "label": "Label",
+              "requests": "Count",
+              "uri": ""
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "center",
+            "cellOptions": {
+              "type": "color-text"
+            },
+            "filterable": true,
+            "inspect": true
+          },
+          "mappings": [],
+          "min": -3,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 0,
+        "y": 58
+      },
+      "id": 13,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 17,
+          "refId": "A",
+          "withTransforms": false
+        }
+      ],
+      "title": "Top 5 Countries or Regions",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "Country"
+                  }
+                },
+                "fieldName": "type"
+              }
+            ],
+            "match": "all",
+            "type": "include"
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "desc": true,
+                "field": "requests"
+              }
+            ]
+          }
+        },
+        {
+          "id": "limit",
+          "options": {
+            "limitField": 5
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "type": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "country": "Country or Region",
+              "label": "Country",
+              "requests": "Count",
+              "requests (sum)": "Count"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "Bn93a3_Vk"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "center",
+            "cellOptions": {
+              "type": "color-text"
+            },
+            "filterable": true,
+            "inspect": true
+          },
+          "mappings": [],
+          "min": -3,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 13,
+        "w": 12,
+        "x": 0,
+        "y": 66
+      },
+      "id": 11,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "datasource": {
+            "type": "grafana-athena-datasource",
+            "uid": "Bn93a3_Vk"
+          },
+          "format": 1,
+          "rawSQL": "SELECT rulegroupid\n    , terminatingrule.ruleid\n    , terminatingrule.action\n    , count(1) as cn\nFROM (\n    SELECT\n        \"rulegroup\".\"rulegroupid\", \n        \"rulegroup\".\"terminatingrule\"\n    FROM \"$__table\"\n        CROSS JOIN UNNEST(rulegrouplist) AS t(rulegroup)\n    WHERE \"rulegroup\".\"terminatingrule\" is not null\n        AND account_id IN (${account_id:sqlstring})\n        AND region IN (${region:sqlstring})\n        AND action_fixed IN (${action:sqlstring})\n        AND terminatingruletype IN (${terminatingruletype:sqlstring})\n        AND webaclname IN (${webaclname:sqlstring})\n        AND terminatingruleid IN (${terminatingruleid:sqlstring})\n        AND clientip LIKE '${clientip}%'\n        AND uri LIKE '${uri}%'\n        AND $__unixEpochFilter(time / 1000)\n        AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n            OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n) t\nGROUP BY rulegroupid, terminatingrule.ruleid, terminatingrule.action\nORDER BY cn DESC\nLIMIT 100;",
+          "refId": "Details",
+          "table": "waf"
+        }
+      ],
+      "title": "* Top 100 Terminating Rules",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "action": "Action",
+              "cn": "Count",
+              "requests (sum)": "Count",
+              "rulegroupid": "Rule Group Id",
+              "ruleid": "Rule Id",
+              "terminatingruleid": "Rule Id"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "Bn93a3_Vk"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "center",
+            "cellOptions": {
+              "type": "color-text"
+            },
+            "filterable": true,
+            "inspect": true
+          },
+          "mappings": [],
+          "min": -3,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 13,
+        "w": 12,
+        "x": 12,
+        "y": 66
+      },
+      "id": 32,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "datasource": {
+            "type": "grafana-athena-datasource",
+            "uid": "Bn93a3_Vk"
+          },
+          "format": 1,
+          "rawSQL": "SELECT \n    rg.rulegroupid,\n    rules.ruleid,\n    rules.action,\n    count(1) as cn\nFROM (\n    SELECT\n        \"rulegroup\".\"rulegroupid\", \n        \"rulegroup\".\"nonterminatingmatchingrules\"\n    FROM \"$__table\"\n        CROSS JOIN UNNEST(rulegrouplist) AS t(rulegroup)\n    WHERE \"rulegroup\".\"nonterminatingmatchingrules\" != ARRAY[]\n        AND account_id IN (${account_id:sqlstring})\n        AND region IN (${region:sqlstring})\n        AND action_fixed IN (${action:sqlstring})\n        AND terminatingruletype IN (${terminatingruletype:sqlstring})\n        AND webaclname IN (${webaclname:sqlstring})\n        AND terminatingruleid IN (${terminatingruleid:sqlstring})\n        AND clientip LIKE '${clientip}%'\n        AND uri LIKE '${uri}%'\n        AND $__unixEpochFilter(time / 1000)\n        AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n            OR event_hour = $__rawTimeFrom('yyyyMMdd00'))) rg\n        CROSS JOIN UNNEST(nonterminatingmatchingrules) AS t(rules)\nGROUP BY rg.rulegroupid, rules.ruleid, rules.action\nORDER BY cn DESC\nLIMIT 100;",
+          "refId": "Details",
+          "table": "waf"
+        }
+      ],
+      "title": "* Top 100 Non-Terminating Rules",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "action": "Action",
+              "cn": "Count",
+              "requests (sum)": "Count",
+              "rulegroupid": "Rule Group Id",
+              "ruleid": "Rule Id",
+              "terminatingruleid": "Rule Id"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 79
+      },
+      "id": 23,
+      "panels": [],
+      "title": "Details",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "Bn93a3_Vk"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "center",
+            "cellOptions": {
+              "type": "color-text"
+            },
+            "filterable": true,
+            "inspect": true
+          },
+          "mappings": [],
+          "min": -3,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 24,
+        "x": 0,
+        "y": 80
+      },
+      "id": 30,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": true,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": []
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "datasource": {
+            "type": "grafana-athena-datasource",
+            "uid": "Bn93a3_Vk"
+          },
+          "format": 1,
+          "rawSQL": "SELECT \"timestamp\"\r\n    , \"webaclname\"\r\n    , rulegroupid\r\n    , ruleid\r\n    , action\r\n    , rulematchdetails\r\n    , isterminatingrule\r\n    , country\r\n    , clientip\r\n    , uri\r\n    , host\r\nFROM (\r\n    SELECT\r\n        \"timestamp\",\r\n        \"webaclname\",\r\n        \"rulegroup\".\"rulegroupid\", \r\n        \"rulegroup\".\"terminatingrule\".\"ruleid\", \r\n        \"rulegroup\".\"terminatingrule\".\"action\", \r\n        \"rulegroup\".\"terminatingrule\".\"rulematchdetails\",\r\n        'Y' as isterminatingrule,\r\n        \"country\", \r\n        \"clientip\", \r\n        \"uri\", \r\n        \"host\"\r\n    FROM \"$__table\"\r\n        CROSS JOIN UNNEST(rulegrouplist) AS t(rulegroup)\r\n    WHERE \"rulegroup\".\"terminatingrule\" is not null\r\n        AND account_id IN (${account_id:sqlstring})\r\n        AND region IN (${region:sqlstring})\r\n        AND action_fixed IN (${action:sqlstring})\r\n        AND terminatingruletype IN (${terminatingruletype:sqlstring})\r\n        AND webaclname IN (${webaclname:sqlstring})\r\n        AND terminatingruleid IN (${terminatingruleid:sqlstring})\r\n        AND clientip LIKE '${clientip}%'\r\n        AND uri LIKE '${uri}%'\r\n        AND $__unixEpochFilter(time / 1000)\r\n        AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\r\n            OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\r\n    UNION ALL\r\n    SELECT \r\n        \"timestamp\",\r\n        \"webaclname\",\r\n        rg.rulegroupid,\r\n        rules.ruleid,\r\n        rules.action,\r\n        rules.rulematchdetails,\r\n        'N' as isterminatingrule,\r\n        country, \r\n        clientip, \r\n        uri, \r\n        host\r\n    FROM (\r\n        SELECT\r\n            \"timestamp\",\r\n            \"webaclname\",\r\n            \"rulegroup\".\"rulegroupid\", \r\n            \"rulegroup\".\"nonterminatingmatchingrules\",\r\n            \"country\", \r\n            \"clientip\", \r\n            \"uri\", \r\n            \"host\"\r\n        FROM \"$__table\"\r\n            CROSS JOIN UNNEST(rulegrouplist) AS t(rulegroup)\r\n        WHERE \"rulegroup\".\"nonterminatingmatchingrules\" != ARRAY[]\r\n            AND account_id IN (${account_id:sqlstring})\r\n            AND region IN (${region:sqlstring})\r\n            AND action_fixed IN (${action:sqlstring})\r\n            AND terminatingruletype IN (${terminatingruletype:sqlstring})\r\n            AND webaclname IN (${webaclname:sqlstring})\r\n            AND terminatingruleid IN (${terminatingruleid:sqlstring})\r\n            AND clientip LIKE '${clientip}%'\r\n            AND uri LIKE '${uri}%'\r\n            AND $__unixEpochFilter(time / 1000)\r\n            AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\r\n                OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\r\n        ) rg\r\n            CROSS JOIN UNNEST(nonterminatingmatchingrules) AS t(rules)\r\n) t\r\nORDER BY timestamp DESC\r\nLIMIT 500;",
+          "refId": "Details",
+          "table": "waf"
+        }
+      ],
+      "title": "* View by Rule (The Latest 500 Items)",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "action": "Action",
+              "clientip": "Client Ip",
+              "country": "Country",
+              "host": "Host",
+              "isterminatingrule": "Is Terminating Rule",
+              "rulegroupid": "Rule Group Id",
+              "ruleid": "Rule Id",
+              "rulematchdetails": "Rule Match Details",
+              "timestamp": "Timestamp",
+              "uri": "URI",
+              "webaclname": "Web Acl Name"
+            }
+          }
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [],
+            "fields": {}
+          }
+        }
+      ],
+      "type": "table"
+    }
+  ],
+  "refresh": "",
+  "revision": 1,
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "allValue": "SELECT account_id FROM \"$__table\"  WHERE  event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH') \tOR event_hour = $__rawTimeFrom('yyyyMMdd00') GROUP BY account_id",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-athena-datasource",
+          "uid": "Bn93a3_Vk"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Account Id",
+        "multi": true,
+        "name": "account_id",
+        "options": [],
+        "query": {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT account_id\nFROM \"$__table\" \nWHERE  event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\tOR event_hour = $__rawTimeFrom('yyyyMMdd00')\nGROUP BY account_id",
+          "refId": "Metrics",
+          "table": "waf_metrics"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "allValue": "SELECT region FROM \"$__table\"  WHERE  event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH') \tOR event_hour = $__rawTimeFrom('yyyyMMdd00') GROUP BY region",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-athena-datasource",
+          "uid": "Bn93a3_Vk"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Region",
+        "multi": true,
+        "name": "region",
+        "options": [],
+        "query": {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT region\nFROM \"$__table\" \nWHERE  event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\tOR event_hour = $__rawTimeFrom('yyyyMMdd00')\nGROUP BY region",
+          "refId": "Metrics",
+          "table": "waf_metrics"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "hide": 0,
+        "includeAll": true,
+        "label": "Action",
+        "multi": true,
+        "name": "action",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "ALLOW",
+            "value": "ALLOW"
+          },
+          {
+            "selected": false,
+            "text": "BLOCK",
+            "value": "BLOCK"
+          },
+          {
+            "selected": false,
+            "text": "COUNT",
+            "value": "COUNT"
+          }
+        ],
+        "query": "ALLOW, BLOCK, COUNT, CAPTCHA, CHALLENGE",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "allValue": "SELECT webaclname FROM \"$__table\" WHERE account_id IN (${account_id:sqlstring}) \tAND region IN (${region:sqlstring}) \tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH') \t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00')) GROUP BY webaclname",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-athena-datasource",
+          "uid": "Bn93a3_Vk"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Web ACL Name",
+        "multi": true,
+        "name": "webaclname",
+        "options": [],
+        "query": {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT webaclname\nFROM \"$__table\"\nWHERE account_id IN (${account_id:sqlstring})\n\tAND region IN (${region:sqlstring})\n\tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00'))\nGROUP BY webaclname",
+          "refId": "Metrics",
+          "table": "waf_metrics"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "hide": 0,
+        "includeAll": true,
+        "label": "Terminating Rule Type",
+        "multi": true,
+        "name": "terminatingruletype",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "RATE_BASED",
+            "value": "RATE_BASED"
+          },
+          {
+            "selected": false,
+            "text": "REGULAR",
+            "value": "REGULAR"
+          },
+          {
+            "selected": false,
+            "text": "GROUP",
+            "value": "GROUP"
+          },
+          {
+            "selected": false,
+            "text": "MANAGED_RULE_GROUP",
+            "value": "MANAGED_RULE_GROUP"
+          }
+        ],
+        "query": "RATE_BASED, REGULAR, GROUP, MANAGED_RULE_GROUP",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "allValue": "SELECT terminatingruleid FROM \"$__table\" WHERE  account_id IN (${account_id:sqlstring}) \tAND region IN (${region:sqlstring}) \tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH') \t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00')) GROUP BY terminatingruleid",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-athena-datasource",
+          "uid": "Bn93a3_Vk"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Terminating Rule Id",
+        "multi": true,
+        "name": "terminatingruleid",
+        "options": [],
+        "query": {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT terminatingruleid\nFROM \"$__table\"\nWHERE  account_id IN (${account_id:sqlstring})\n\tAND region IN (${region:sqlstring})\n\tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00'))\nGROUP BY terminatingruleid\n\n",
+          "refId": "Metrics",
+          "table": "waf_metrics"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "hide": 0,
+        "label": "Client Ip",
+        "name": "clientip",
+        "options": [
+          {
+            "selected": true,
+            "text": "",
+            "value": ""
+          }
+        ],
+        "query": "",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "hide": 0,
+        "label": "URI",
+        "name": "uri",
+        "options": [
+          {
+            "selected": true,
+            "text": "",
+            "value": ""
+          }
+        ],
+        "query": "",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "auto": true,
+        "auto_count": 100,
+        "auto_min": "1m",
+        "current": {
+          "selected": false,
+          "text": "auto",
+          "value": "$__auto_interval_interval"
+        },
+        "hide": 0,
+        "label": "Interval",
+        "name": "interval",
+        "options": [
+          {
+            "selected": true,
+            "text": "auto",
+            "value": "$__auto_interval_interval"
+          },
+          {
+            "selected": false,
+            "text": "1m",
+            "value": "1m"
+          },
+          {
+            "selected": false,
+            "text": "5m",
+            "value": "5m"
+          },
+          {
+            "selected": false,
+            "text": "15m",
+            "value": "15m"
+          },
+          {
+            "selected": false,
+            "text": "30m",
+            "value": "30m"
+          },
+          {
+            "selected": false,
+            "text": "1h",
+            "value": "1h"
+          },
+          {
+            "selected": false,
+            "text": "6h",
+            "value": "6h"
+          },
+          {
+            "selected": false,
+            "text": "12h",
+            "value": "12h"
+          },
+          {
+            "selected": false,
+            "text": "1d",
+            "value": "1d"
+          },
+          {
+            "selected": false,
+            "text": "7d",
+            "value": "7d"
+          },
+          {
+            "selected": false,
+            "text": "14d",
+            "value": "14d"
+          },
+          {
+            "selected": false,
+            "text": "30d",
+            "value": "30d"
+          }
+        ],
+        "query": "1m,5m,15m,30m,1h,6h,12h,1d,7d,14d,30d",
+        "queryValue": "",
+        "refresh": 2,
+        "skipUrlSync": false,
+        "type": "interval"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ]
+  },
+  "timezone": "",
+  "title": "waf-dashboard",
+  "uid": "c23e0d9b-bb16-4d77-a42d-7ee12c377eff",
+  "version": 4,
+  "weekStart": ""
+}

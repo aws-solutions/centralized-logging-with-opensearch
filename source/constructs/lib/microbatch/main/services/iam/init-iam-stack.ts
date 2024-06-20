@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import { Construct } from "constructs";
-import { Aws, aws_iam as iam, aws_s3 as s3, aws_ssm as ssm } from "aws-cdk-lib";
+import { Aws, CfnOutput, aws_iam as iam, aws_s3 as s3 } from "aws-cdk-lib";
 import { InitKMSStack } from "../kms/init-kms-stack";
 import { InitGlueStack } from "../glue/init-glue-stack";
 import { InitAthenaStack } from "../athena/init-athena-stack";
@@ -128,6 +128,11 @@ export class InitIAMStack extends Construct {
               "athena:ListTableMetadata",
               "athena:StartQueryExecution",
               "athena:StopQueryExecution",
+              "athena:GetNamedQuery",
+              "athena:CreateNamedQuery",
+              "athena:DeleteNamedQuery",
+              "athena:UpdateNamedQuery",
+              "athena:ListNamedQueries",
             ], 
             resources: [
               `arn:${Aws.PARTITION}:athena:${Aws.REGION}:${Aws.ACCOUNT_ID}:datacatalog/*`,
@@ -169,6 +174,17 @@ export class InitIAMStack extends Construct {
             ], 
             resources: [microBatchKMSStack.encryptionKey.keyArn],
           }),
+          new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            actions: [
+              "kms:GenerateDataKey*", 
+              "kms:Decrypt", 
+              "kms:Encrypt"
+            ], 
+            resources: [
+              `arn:${Aws.PARTITION}:kms:${Aws.REGION}:${Aws.ACCOUNT_ID}:key/*`
+            ],
+          }),
         ],
       });
 
@@ -179,10 +195,9 @@ export class InitIAMStack extends Construct {
       // Create a Public Access Role for Athena 
       // It can be used to other service to access data in centralized via athena, such as Grafana.
       this.AthenaPublicAccessRole = new iam.Role(this, "AthenaPublicAccessRole", {
-        assumedBy: new iam.ServicePrincipal('states.amazonaws.com'),
+        assumedBy: new iam.CompositePrincipal(new iam.ServicePrincipal('states.amazonaws.com'), new iam.AccountRootPrincipal()),
       });
-      this.AthenaPublicAccessRole.grantAssumeRole(new iam.AccountRootPrincipal());
-      
+
       this.AthenaPublicAccessRole.addManagedPolicy(this.S3PublicAccessPolicy);
       this.AthenaPublicAccessRole.addManagedPolicy(this.GluePublicAccessPolicy);
       this.AthenaPublicAccessRole.addManagedPolicy(this.AthenaPublicAccessPolicy);
@@ -209,14 +224,17 @@ export class InitIAMStack extends Construct {
       const cfnSendTemplateEmailSNSPublicPolicy = this.SendTemplateEmailSNSPublicPolicy.node.defaultChild as iam.CfnPolicy;
       cfnSendTemplateEmailSNSPublicPolicy.overrideLogicalId("SendTemplateEmailSNSPublicPolicy");
 
-      const SSMKMSPublicAccessPolicyArn = new ssm.StringParameter(this, 'SSMKMSPublicAccessPolicyArn', {
-        parameterName: '/MicroBatch/KMSPublicAccessPolicyArn',
-        stringValue: this.KMSPublicAccessPolicy.managedPolicyArn,
-      });
+      new CfnOutput(this, 'KMSPublicAccessPolicyArn', {
+        description: 'KMS Public Access Policy Arn',
+        value: this.KMSPublicAccessPolicy.managedPolicyArn,
+        exportName: `${Aws.STACK_NAME}::KMSPublicAccessPolicyArn`,
+      }).overrideLogicalId('KMSPublicAccessPolicyArn');
 
-      // Override the logical ID
-      const cfnSSMKMSPublicAccessPolicyArn = SSMKMSPublicAccessPolicyArn.node.defaultChild as ssm.CfnParameter;
-      cfnSSMKMSPublicAccessPolicyArn.overrideLogicalId("KMSPublicAccessPolicyArn");
+      new CfnOutput(this, 'AthenaPublicAccessRoleArn', {
+        description: 'Athena Public Access Role Arn',
+        value: this.AthenaPublicAccessRole.roleArn,
+        exportName: `${Aws.STACK_NAME}::AthenaPublicAccessRoleArn`,
+      }).overrideLogicalId('AthenaPublicAccessRoleArn');
 
     }
 }

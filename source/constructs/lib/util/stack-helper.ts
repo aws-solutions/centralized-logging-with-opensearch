@@ -32,9 +32,9 @@ export const constructFactory =
   <T extends Construct, P extends ConstructParam>(
     ConstructClass: new (...p: P) => T
   ) =>
-  (...params: P): T => {
-    return new ConstructClass(...params);
-  };
+    (...params: P): T => {
+      return new ConstructClass(...params);
+    };
 
 /**
  * This High Order function constructs a new instance of a given class with a fixed logical ID for use
@@ -49,11 +49,11 @@ export const constructWithFixedLogicalId =
   <T extends Construct, P extends ConstructParam>(
     ConstructClass: new (...p: P) => T
   ) =>
-  (...params: P): T => {
-    const construct = new ConstructClass(...params);
-    const cfnElement = construct.node.defaultChild as CfnElement;
-    // Make the logical ID in CFN template fixed
-    cfnElement.overrideLogicalId(params[1]);
+    (...params: P): T => {
+      const construct = new ConstructClass(...params);
+      const cfnElement = construct.node.defaultChild as CfnElement;
+      // Make the logical ID in CFN template fixed
+      cfnElement.overrideLogicalId(params[1]);
 
       return construct;
     };

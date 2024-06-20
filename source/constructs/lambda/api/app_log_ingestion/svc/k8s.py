@@ -5,7 +5,7 @@ import os
 import json
 import re
 
-import logging
+from commonlib.logging import get_logger
 from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import ClientError
 from typing import List
@@ -19,8 +19,7 @@ from commonlib.model import (
 )
 from flb.flb_builder import K8sFlb
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 conn = AWSConnection()
 

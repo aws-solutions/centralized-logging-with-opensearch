@@ -6,7 +6,7 @@ Centralized Logging with OpenSearch reads the data source, parse, cleanup/enrich
 
 Amazon OpenSearch Service is suitable for real-time log analytics and frequent queries and has full-text search capability.
 
-As of release 2.1.0, the solution starts to support log ingestion into Light Engine, which is suitable for non real-time log analytics and infrequent queries and has SQL-like search capability. The feature is supported by Amazon CloudFront logs, Application Load Balancing logs, and AWS WAF logs.
+As of release 2.1.0, the solution starts to support log ingestion into Light Engine, which is suitable for non real-time log analytics and infrequent queries and has SQL-like search capability. 
 
 !!! Important "Important"
     - AWS managed services must be in the same region as Centralized Logging with OpenSearch. To ingest logs from different AWS regions, we recommend using [S3 cross-region replication](https://docs.aws.amazon.com/AmazonS3/latest/userguide/replication.html#crr-scenario).
@@ -20,8 +20,6 @@ Most of AWS managed services output logs to Amazon CloudWatch Logs, Amazon S3, A
 include-markdown "include-supported-service-logs.md"
 %}
 
-Most of supported AWS services in Centralized Logging with OpenSearch offers built-in dashboard when creating the log analytics pipelines. You go to the OpenSearch Dashboards to view the dashboards after the pipeline being provisioned.
-
 In this chapter, you will learn how to create log ingestion and dashboards for the following AWS services:
 
 - [AWS CloudTrail](cloudtrail.md)
@@ -29,7 +27,7 @@ In this chapter, you will learn how to create log ingestion and dashboards for t
 - [Amazon RDS/Aurora](rds.md)
 - [Amazon CloudFront](cloudfront.md)
 - [AWS Lambda](lambda.md)
-- [Elastic Load Balancing](elb.md)
+- [Application Load Balancer](elb.md)
 - [AWS WAF](waf.md)
 - [Amazon VPC](vpc.md)
 - [AWS Config](config.md)

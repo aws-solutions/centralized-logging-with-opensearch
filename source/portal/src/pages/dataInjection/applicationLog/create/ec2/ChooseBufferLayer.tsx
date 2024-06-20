@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React from "react";
-import { ApplicationLogType } from "types";
+import { AnalyticEngineTypes, ApplicationLogType } from "types";
 import SelectBuffer, { BufferType } from "../steps/SelectBuffer";
 import BufferKDS from "pages/comps/buffer/BufferKDS";
 import BufferS3 from "pages/comps/buffer/BufferS3";
@@ -22,7 +22,6 @@ import Alert from "components/Alert";
 import { AlertType } from "components/Alert/alert";
 import FormItem from "components/FormItem";
 import { useTranslation } from "react-i18next";
-import { AnalyticEngineTypes } from "pages/dataInjection/serviceLog/create/common/SpecifyAnalyticsEngine";
 import { useDispatch } from "react-redux";
 import { Dispatch } from "redux";
 import { Actions } from "reducer/reducers";
@@ -32,20 +31,13 @@ import {
 } from "reducer/selectProcessor";
 
 interface ChooseBufferLayerProps {
-  maxShardNumInvalidError: boolean;
-  s3BucketEmptyError: boolean;
-  s3PrefixError: boolean;
-  bufferSizeError: boolean;
-  bufferIntervalError: boolean;
-  shardNumInvalidError: boolean;
   notConfirmNetworkError: boolean;
   engineType?: AnalyticEngineTypes;
-
   applicationLog: ApplicationLogType;
   setApplicationLog: React.Dispatch<React.SetStateAction<ApplicationLogType>>;
 }
 
-export default function ChooseBufferLayer(props: ChooseBufferLayerProps) {
+const ChooseBufferLayer = (props: ChooseBufferLayerProps) => {
   const {
     applicationLog,
     setApplicationLog,
@@ -73,123 +65,9 @@ export default function ChooseBufferLayer(props: ChooseBufferLayerProps) {
           });
         }}
       />
-      {applicationLog.bufferType === BufferType.KDS && (
-        <BufferKDS
-          shardNumInvalidError={props.shardNumInvalidError}
-          maxShardNumInvalidError={props.maxShardNumInvalidError}
-          applicationLog={applicationLog}
-          changeShardNumber={(shardNum) => {
-            setApplicationLog((prev) => {
-              return {
-                ...prev,
-                kdsBufferParams: {
-                  ...prev.kdsBufferParams,
-                  shardCount: shardNum,
-                  minCapacity: shardNum,
-                },
-              };
-            });
-          }}
-          changeEnableAS={(enableAS) => {
-            setApplicationLog((prev) => {
-              return {
-                ...prev,
-                kdsBufferParams: {
-                  ...prev.kdsBufferParams,
-                  enableAutoScaling: enableAS,
-                },
-              };
-            });
-          }}
-          changeMaxShardNum={(maxShardNum) => {
-            setApplicationLog((prev) => {
-              return {
-                ...prev,
-                kdsBufferParams: {
-                  ...prev.kdsBufferParams,
-                  maxCapacity: maxShardNum,
-                },
-              };
-            });
-          }}
-        />
-      )}
+      {applicationLog.bufferType === BufferType.KDS && <BufferKDS />}
       {applicationLog.bufferType === BufferType.S3 && (
-        <BufferS3
-          engineType={engineType}
-          applicationLog={applicationLog}
-          s3BucketEmptyError={props.s3BucketEmptyError}
-          s3PrefixError={props.s3PrefixError}
-          bufferSizeError={props.bufferSizeError}
-          bufferIntervalError={props.bufferIntervalError}
-          changeS3BufferBucket={(bucket) => {
-            setApplicationLog((prev) => {
-              return {
-                ...prev,
-                s3BufferBucketObj: bucket,
-                s3BufferParams: {
-                  ...prev.s3BufferParams,
-                  logBucketName: bucket?.value || "",
-                },
-              };
-            });
-          }}
-          changeS3BufferPrefix={(prefix) => {
-            setApplicationLog((prev) => {
-              return {
-                ...prev,
-                s3BufferParams: {
-                  ...prev.s3BufferParams,
-                  logBucketPrefix: prefix,
-                },
-              };
-            });
-          }}
-          changeS3BufferBufferSize={(size) => {
-            setApplicationLog((prev) => {
-              return {
-                ...prev,
-                s3BufferParams: {
-                  ...prev.s3BufferParams,
-                  maxFileSize: size,
-                },
-              };
-            });
-          }}
-          changeS3BufferTimeout={(timeout) => {
-            setApplicationLog((prev) => {
-              return {
-                ...prev,
-                s3BufferParams: {
-                  ...prev.s3BufferParams,
-                  uploadTimeout: timeout,
-                },
-              };
-            });
-          }}
-          changeS3CompressionType={(type) => {
-            setApplicationLog((prev) => {
-              return {
-                ...prev,
-                s3BufferParams: {
-                  ...prev.s3BufferParams,
-                  compressionType: type,
-                },
-              };
-            });
-          }}
-          changeS3StorageClass={(storage) => {
-            setApplicationLog((prev) => {
-              return {
-                ...prev,
-                s3BufferParams: {
-                  ...prev.s3BufferParams,
-                  s3StorageClass: storage,
-                },
-              };
-            });
-          }}
-        />
+        <BufferS3 engineType={engineType} />
       )}
       {applicationLog.bufferType === BufferType.NONE && (
         <FormItem
@@ -220,4 +98,6 @@ export default function ChooseBufferLayer(props: ChooseBufferLayerProps) {
       )}
     </>
   );
-}
+};
+
+export default ChooseBufferLayer;

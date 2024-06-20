@@ -117,6 +117,13 @@ export interface KDSStackProps {
    */
   readonly plugins?: string;
 
+  /**
+   * Log proceersor lambda reserve concurrency
+   *
+   * @default - 0.
+   */
+  readonly logProcessorConcurrency: number;
+
   readonly warmAge?: string;
   readonly coldAge?: string;
   readonly retainAge?: string;
@@ -199,7 +206,7 @@ export class KDSStack extends Construct {
       stackPrefix: props.stackPrefix,
       enableConfigJsonParam: false,
       indexTemplateGzipBase64: props.indexTemplateGzipBase64,
-
+      logProcessorConcurrency: props.logProcessorConcurrency
     });
     NagSuppressions.addResourceSuppressions(logProcessor, [
       {

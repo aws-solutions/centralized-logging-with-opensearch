@@ -41,6 +41,7 @@ import {
   AddCfnNagSuppressRules,
   SolutionStack,
 } from "../common/solution-stack";
+import { SharedPythonLayer } from "../../layer/layer";
 
 const GB = 1024;
 const DOCKER_IMAGE_VERSION = "20230606";
@@ -421,6 +422,7 @@ class SqsAllowS3ToPutEvent extends Construct {
         timeout: Duration.seconds(60),
         logRetention: logs.RetentionDays.ONE_MONTH,
         handler: "sqs_allow_s3_to_put_event.on_event",
+        layers: [SharedPythonLayer.getInstance(this)],
         initialPolicy: [
           new iam.PolicyStatement({
             resources: [queueArn],

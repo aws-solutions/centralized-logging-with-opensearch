@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import { Construct } from "constructs";
-import { Duration, CfnOutput, RemovalPolicy, aws_s3 as s3, aws_ssm as ssm } from "aws-cdk-lib";
+import { Aws, Duration, CfnOutput, RemovalPolicy, aws_s3 as s3 } from "aws-cdk-lib";
 import { InitKMSStack } from "../kms/init-kms-stack";
 
 export interface  InitS3Props {
@@ -95,19 +95,11 @@ export class InitS3Stack extends Construct {
         ],
       });
 
-      const SSMStagingBucketName = new ssm.StringParameter(this, "SSMStagingBucketName", {
-        parameterName: "/MicroBatch/StagingBucketName",
-        stringValue: this.StagingBucket.bucketName,
-      });
-
-      // Override the logical ID
-      const cfnSSMStagingBucketName = SSMStagingBucketName.node.defaultChild as ssm.CfnParameter;
-      cfnSSMStagingBucketName.overrideLogicalId("SSMStagingBucketName");
-
-      new CfnOutput(this, "StagingBucketName", {
-        description: "The name of Staging Bucket.",
+      new CfnOutput(this, 'StagingBucketName', {
+        description: 'Staging Bucket Name',
         value: this.StagingBucket.bucketName,
-      }).overrideLogicalId("StagingBucketName");
+        exportName: `${Aws.STACK_NAME}::StagingBucketName`,
+      }).overrideLogicalId('StagingBucketName');
 
     };
 }

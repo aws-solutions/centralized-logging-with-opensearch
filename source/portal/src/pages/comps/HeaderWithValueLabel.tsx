@@ -51,61 +51,56 @@ const HeaderWithValueLabel: React.FC<HeaderWithValueLabelProps> = (
   };
 
   return (
-    <>
-      <HeaderPanel title={headerTitle ?? ""} infoType={infoType}>
-        <div style={gridStyle}>
-          {fixedDataList ? (
-            <>
-              {fixedDataList?.map((element, index) => (
-                <div
-                  key={identity(index)}
-                  className={classNames({
-                    "flex-1": true,
-                    "border-left-c": index % numberOfColumns !== 0,
-                    "no-padding-left": index % numberOfColumns === 0,
-                  })}
-                >
-                  {element.map((item, idx) => (
-                    <ValueWithLabel
-                      key={identity(idx)}
-                      label={item?.label ?? ""}
-                    >
-                      <>{item?.data}</>
-                    </ValueWithLabel>
-                  ))}
-                </div>
-              ))}
-            </>
-          ) : (
-            <>
-              {dataList?.map((element, index) => (
-                <div
-                  key={identity(index)}
-                  className={classNames({
-                    "flex-1": true,
-                    "border-left-c": index % numberOfColumns !== 0,
-                    "no-padding-left": index % numberOfColumns === 0,
-                  })}
-                >
-                  <ValueWithLabel label={element?.label ?? ""}>
-                    <>{element?.data}</>
+    <HeaderPanel title={headerTitle ?? ""} infoType={infoType}>
+      <div style={gridStyle}>
+        {fixedDataList ? (
+          <>
+            {fixedDataList?.map((element, index) => (
+              <div
+                key={identity(index)}
+                className={classNames({
+                  "flex-1": true,
+                  "border-left-c": index % numberOfColumns !== 0,
+                  "no-padding-left": index % numberOfColumns === 0,
+                })}
+              >
+                {element.map((item, idx) => (
+                  <ValueWithLabel key={identity(idx)} label={item?.label ?? ""}>
+                    <>{item?.data}</>
                   </ValueWithLabel>
-                </div>
-              ))}
-            </>
-          )}
-        </div>
-        {additionalData ? (
-          <div className="flex-1 no-padding-left">
-            <ValueWithLabel label={additionalData?.label ?? ""}>
-              <>{additionalData?.data} </>
-            </ValueWithLabel>
-          </div>
+                ))}
+              </div>
+            ))}
+          </>
         ) : (
-          <></>
+          <>
+            {dataList?.map((element, index) => (
+              <div
+                key={identity(index)}
+                className={classNames({
+                  "flex-1": true,
+                  "border-left-c": index % numberOfColumns !== 0,
+                  "no-padding-left": index % numberOfColumns === 0,
+                })}
+              >
+                <ValueWithLabel label={element?.label ?? ""}>
+                  <>{element?.data}</>
+                </ValueWithLabel>
+              </div>
+            ))}
+          </>
         )}
-      </HeaderPanel>
-    </>
+      </div>
+      {additionalData ? (
+        <div className="flex-1 no-padding-left">
+          <ValueWithLabel label={additionalData?.label ?? ""}>
+            <>{additionalData?.data} </>
+          </ValueWithLabel>
+        </div>
+      ) : (
+        <></>
+      )}
+    </HeaderPanel>
   );
 };
 

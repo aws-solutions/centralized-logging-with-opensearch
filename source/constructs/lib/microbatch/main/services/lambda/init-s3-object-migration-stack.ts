@@ -16,7 +16,7 @@ limitations under the License.
 
 import { Construct } from "constructs";
 import * as path from "path";
-import { Aws, Duration, SymlinkFollowMode, aws_iam as iam, aws_lambda as lambda, aws_ec2 as ec2 } from "aws-cdk-lib";
+import { Aws, Duration, SymlinkFollowMode, Size, aws_iam as iam, aws_lambda as lambda, aws_ec2 as ec2 } from "aws-cdk-lib";
 import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 import { InitLambdaLayerStack } from "./init-lambda-layer";
 import { InitDynamoDBStack } from "../dynamodb/init-dynamodb-stack";
@@ -121,7 +121,7 @@ export class InitLambdaS3ObjectMigrationStack extends Construct {
       timeout: Duration.minutes(15),
       memorySize: 256,
       role: this.S3ObjectMigrationRole.withoutPolicyUpdates(),
-      layers: [microBatchLambdaLayerStack.microBatchLambdaUtilsLayer, microBatchLambdaLayerStack.microBatchLambdaEnrichmentLayer],
+      layers: [microBatchLambdaLayerStack.microBatchLambdaUtilsLayer],
       environment: {
         SOLUTION_VERSION: process.env.VERSION || "v1.0.0",
         SOLUTION_ID: solutionId,
@@ -140,7 +140,7 @@ export class InitLambdaS3ObjectMigrationStack extends Construct {
     this.S3ObjectMigration.node.addDependency(S3ObjectMigrationRWSQSPolicy);
 
     const S3ObjectMigrationEventSource = new SqsEventSource(microBatchSQSStack.S3ObjectMigrationQ, {
-      batchSize: 10,
+      batchSize: 1,
     });
     this.S3ObjectMigration.addEventSource(S3ObjectMigrationEventSource);
 
@@ -155,7 +155,8 @@ export class InitLambdaS3ObjectMigrationStack extends Construct {
       runtime: lambda.Runtime.PYTHON_3_11,
       handler: "lambda_function.lambda_handler",
       timeout: Duration.minutes(15),
-      memorySize: 512,
+      memorySize: 1024,
+      ephemeralStorageSize: Size.mebibytes(2048),
       role: this.S3ObjectMigrationRole.withoutPolicyUpdates(),
       layers: [microBatchLambdaLayerStack.microBatchLambdaUtilsLayer, microBatchLambdaLayerStack.microBatchLambdaPyarrowLayer],
       environment: {

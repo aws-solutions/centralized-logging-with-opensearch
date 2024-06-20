@@ -14,31 +14,28 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React, { useState, useEffect } from "react";
-import Breadcrumb from "components/Breadcrumb";
 import CreateStep from "components/CreateStep";
-import SideMenu from "components/SideMenu";
 import SpecifySettings from "./step/SpecifySettings";
 import Button from "components/Button";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import HelpPanel from "components/HelpPanel";
 import { EKSDeployKind, LogSource, LogSourceType } from "API";
 import { ActionType } from "reducer/appReducer";
 import { useDispatch } from "react-redux";
 import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
 import { getLogSource } from "graphql/queries";
 import { CreationMethod } from "types";
-import LoadingText from "components/LoadingText";
 import { createAppLogIngestion } from "graphql/mutations";
 import { OptionType } from "components/AutoComplete/autoComplete";
 import HeaderPanel from "components/HeaderPanel";
 import LogPathInput from "pages/dataInjection/applicationLog/common/LogPathInput";
 import PagePanel from "components/PagePanel";
-import { UnmodifiableLogConfigSelector } from "pages/dataInjection/applicationLog/common/UnmodifiableLogConfigSelector";
+import UnmodifiableLogConfigSelector from "pages/dataInjection/applicationLog/common/UnmodifiableLogConfigSelector";
 import { Validator } from "pages/comps/Validator";
 import { CreateTags } from "pages/dataInjection/common/CreateTags";
 import { useTags } from "assets/js/hooks/useTags";
-import { hasSamePrefix } from "assets/js/utils";
+import { defaultStr, hasSamePrefix } from "assets/js/utils";
+import CommonLayout from "pages/layout/CommonLayout";
 
 export interface EksIngestionPropsType {
   createMethod: CreationMethod;
@@ -69,7 +66,7 @@ const EksLogIngest: React.FC = () => {
       link: "/containers/eks-log",
     },
     {
-      name: curEksLogSource?.eks?.eksClusterName || "",
+      name: defaultStr(curEksLogSource?.eks?.eksClusterName),
       link: "/containers/eks-log/detail/" + id,
     },
     {
@@ -116,7 +113,7 @@ const EksLogIngest: React.FC = () => {
       setLoadingEKSData(true);
       const resEksData: any = await appSyncRequestQuery(getLogSource, {
         type: LogSourceType.EKSCluster,
-        sourceId: id,
+        sourceId: encodeURIComponent(defaultStr(id)),
       });
       const eksData = resEksData.data?.getLogSource;
       console.info("eksData:", eksData);
@@ -124,7 +121,7 @@ const EksLogIngest: React.FC = () => {
       setEksIngestionInfo((prev) => {
         return {
           ...prev,
-          eksClusterId: id || "",
+          eksClusterId: defaultStr(id),
         };
       });
 
@@ -141,7 +138,10 @@ const EksLogIngest: React.FC = () => {
     const logIngestionParams = {
       sourceType: LogSourceType.EKSCluster,
       sourceId: eksIngestionInfo.eksClusterId,
-      appPipelineId: pipelineId || eksIngestionInfo.existsPipeline.value,
+      appPipelineId: defaultStr(
+        pipelineId,
+        eksIngestionInfo.existsPipeline.value
+      ),
       tags,
       logPath: eksIngestionInfo.logPath,
       autoAddPermission: false,
@@ -203,10 +203,7 @@ const EksLogIngest: React.FC = () => {
     {
       name: t("applog:logSourceDesc.eks.step2.naviTitle"),
       element: (
-        <PagePanel
-          title={t("applog:logSourceDesc.eks.step2.title")}
-          desc={t("")}
-        >
+        <PagePanel title={t("applog:logSourceDesc.eks.step2.title")} desc="">
           <HeaderPanel title={t("resource:config.common.logPath")}>
             <LogPathInput
               value={eksIngestionInfo.logPath}
@@ -228,9 +225,9 @@ const EksLogIngest: React.FC = () => {
               hideViewDetailButton
               title={t("applog:logSourceDesc.eks.step2.logConfigName")}
               desc=""
-              configId={eksIngestionInfo.existsPipeline.logConfigId || ""}
+              configId={defaultStr(eksIngestionInfo.existsPipeline.logConfigId)}
               configVersion={
-                eksIngestionInfo.existsPipeline.logConfigVersionNumber || 0
+                eksIngestionInfo.existsPipeline.logConfigVersionNumber ?? 0
               }
             />
           </HeaderPanel>
@@ -250,94 +247,77 @@ const EksLogIngest: React.FC = () => {
   ].filter((each) => !each.disabled);
 
   return (
-    <div className="lh-main-content">
-      <SideMenu />
-      <div className="lh-container">
-        <div className="lh-content">
-          <div className="lh-import-cluster">
-            <Breadcrumb list={breadCrumbList} />
+    <CommonLayout breadCrumbList={breadCrumbList} loadingData={loadingEKSData}>
+      <div className="create-wrapper">
+        <div className="create-step">
+          <CreateStep list={stepComps} activeIndex={currentStep} />
+        </div>
+        <div className="create-content m-w-1024">
+          {stepComps[currentStep].element}
+          <div className="button-action text-right">
+            <Button
+              btnType="text"
+              onClick={() => {
+                navigate(`/containers/eks-log/detail/${id}`);
+              }}
+            >
+              {t("button.cancel")}
+            </Button>
+            {currentStep > 0 && (
+              <Button
+                onClick={() => {
+                  setCurrentStep(Math.max(currentStep - 1, 0));
+                }}
+              >
+                {t("button.previous")}
+              </Button>
+            )}
 
-            {loadingEKSData ? (
-              <LoadingText />
-            ) : (
-              <div className="create-wrapper">
-                <div className="create-step">
-                  <CreateStep list={stepComps} activeIndex={currentStep} />
-                </div>
-                <div className="create-content m-w-1024">
-                  {stepComps[currentStep].element}
-                  <div className="button-action text-right">
-                    <Button
-                      btnType="text"
-                      onClick={() => {
-                        navigate(`/containers/eks-log/detail/${id}`);
-                      }}
-                    >
-                      {t("button.cancel")}
-                    </Button>
-                    {currentStep > 0 && (
-                      <Button
-                        onClick={() => {
-                          setCurrentStep(Math.max(currentStep - 1, 0));
-                        }}
-                      >
-                        {t("button.previous")}
-                      </Button>
-                    )}
-
-                    {currentStep < stepComps.length - 1 && (
-                      <Button
-                        btnType="primary"
-                        onClick={() => {
-                          if (currentStep === 0) {
-                            if (
-                              eksIngestionInfo.createMethod ===
-                                CreationMethod.Exists &&
-                              !eksIngestionInfo.existsPipeline?.value
-                            ) {
-                              setEksIngestionInfo((prev) => {
-                                return {
-                                  ...prev,
-                                  pipelineRequiredError: true,
-                                };
-                              });
-                              return;
-                            }
-                          }
-                          if (
-                            stepComps[currentStep].validators
-                              .map((each) => each.validate())
-                              .every(Boolean)
-                          ) {
-                            setCurrentStep(
-                              Math.min(currentStep + 1, stepComps.length)
-                            );
-                          }
-                        }}
-                      >
-                        {t("button.next")}
-                      </Button>
-                    )}
-                    {currentStep === stepComps.length - 1 && (
-                      <Button
-                        loading={loadingCreate}
-                        btnType="primary"
-                        onClick={() => {
-                          confirmCreateEksLogIngestionWithExistsPipeline();
-                        }}
-                      >
-                        {t("button.create")}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </div>
+            {currentStep < stepComps.length - 1 && (
+              <Button
+                btnType="primary"
+                onClick={() => {
+                  if (currentStep === 0) {
+                    if (
+                      eksIngestionInfo.createMethod === CreationMethod.Exists &&
+                      !eksIngestionInfo.existsPipeline?.value
+                    ) {
+                      setEksIngestionInfo((prev) => {
+                        return {
+                          ...prev,
+                          pipelineRequiredError: true,
+                        };
+                      });
+                      return;
+                    }
+                  }
+                  if (
+                    stepComps[currentStep].validators
+                      .map((each) => each.validate())
+                      .every(Boolean)
+                  ) {
+                    setCurrentStep(Math.min(currentStep + 1, stepComps.length));
+                  }
+                }}
+              >
+                {t("button.next")}
+              </Button>
+            )}
+            {currentStep === stepComps.length - 1 && (
+              <Button
+                loading={loadingCreate}
+                btnType="primary"
+                onClick={() => {
+                  confirmCreateEksLogIngestionWithExistsPipeline();
+                }}
+              >
+                {t("button.create")}
+              </Button>
             )}
           </div>
         </div>
       </div>
-      <HelpPanel />
-    </div>
+    </CommonLayout>
   );
 };
 

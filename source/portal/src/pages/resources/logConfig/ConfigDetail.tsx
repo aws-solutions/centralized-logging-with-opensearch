@@ -14,24 +14,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React, { useState, useEffect } from "react";
-import SideMenu from "components/SideMenu";
-import Breadcrumb from "components/Breadcrumb";
 import PagePanel from "components/PagePanel";
 import Button from "components/Button";
 import HeaderPanel from "components/HeaderPanel";
 import ValueWithLabel from "components/ValueWithLabel";
-import LoadingText from "components/LoadingText";
 import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
 import { getLogConfig } from "graphql/queries";
 import { deleteLogConfig } from "graphql/mutations";
 import Modal from "components/Modal";
-import { formatLocalTime } from "assets/js/utils";
+import { defaultStr, formatLocalTime } from "assets/js/utils";
 import { useTranslation } from "react-i18next";
 import ConfigDetailComps from "./ConfigDetailComps";
 import { Alert as AlertMsg } from "assets/js/alert";
 import { ExLogConf } from "../common/LogConfigComp";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import Alert from "components/Alert";
+import CommonLayout from "pages/layout/CommonLayout";
+import { isWindowsEvent } from "reducer/createLogConfig";
 
 const ConfigDetail: React.FC = () => {
   const { id, version } = useParams();
@@ -48,7 +47,7 @@ const ConfigDetail: React.FC = () => {
       name: t("resource:config.name"),
       link: "/resources/log-config",
     },
-    { name: curLogConfig?.name || "" },
+    { name: defaultStr(curLogConfig?.name) },
   ];
 
   // Show Remove Log Config Dialog
@@ -57,11 +56,11 @@ const ConfigDetail: React.FC = () => {
   };
 
   // Confirm to Remove Log Config By ID
-  const confimRemoveLogConfig = async () => {
+  const confirmRemoveLogConfig = async () => {
     try {
       setLoadingDelete(true);
       const removeRes = await appSyncRequestMutation(deleteLogConfig, {
-        id: curLogConfig?.id,
+        id: encodeURIComponent(defaultStr(curLogConfig?.id)),
       });
       console.info("removeRes:", removeRes);
       setLoadingDelete(false);
@@ -77,8 +76,8 @@ const ConfigDetail: React.FC = () => {
     try {
       setLoadingData(true);
       const resData: any = await appSyncRequestQuery(getLogConfig, {
-        id: id,
-        version: version ? version : 0,
+        id: encodeURIComponent(defaultStr(id)),
+        version: version ?? 0,
       });
       console.info("resData:", resData);
       const dataLogConfig: ExLogConf = resData.data.getLogConfig;
@@ -99,143 +98,120 @@ const ConfigDetail: React.FC = () => {
   }, [version]);
 
   return (
-    <div className="lh-main-content">
-      <SideMenu />
-      <div className="lh-container">
-        <div className="lh-content">
-          <div className="service-log">
-            <Breadcrumb list={breadCrumbList} />
-
-            {loadingData ? (
-              <LoadingText text="" />
-            ) : (
-              <div>
-                <PagePanel
-                  title={curLogConfig?.name || ""}
-                  actions={
-                    version ? undefined : (
-                      <div>
-                        <Button
-                          onClick={() => {
-                            console.info("edit click");
-                            navigate(
-                              "/resources/log-config/detail/" + id + "/edit"
-                            );
-                          }}
-                        >
-                          {t("button.edit")}
-                        </Button>
-                        <Button
-                          onClick={() => {
-                            removeLogConfig();
-                          }}
-                        >
-                          {t("button.delete")}
-                        </Button>
-                      </div>
-                    )
-                  }
-                >
-                  <>
-                    {version && (
-                      <Alert
-                        content={
-                          <div>
-                            {t("resource:config.detail.notSupportEdit")}
-                            <Link
-                              to={`/resources/log-config/detail/${curLogConfig?.id}`}
-                            >
-                              {curLogConfig?.name}
-                            </Link>
-                          </div>
-                        }
-                      />
-                    )}
-                  </>
-                  <HeaderPanel title={t("resource:config.detail.general")}>
-                    <div className="flex value-label-span">
-                      <div className="flex-1">
-                        <ValueWithLabel
-                          label={t("resource:config.detail.name")}
-                        >
-                          <div>{curLogConfig?.name}</div>
-                        </ValueWithLabel>
-                      </div>
-                      <div className="flex-1 border-left-c">
-                        <ValueWithLabel
-                          label={t("resource:config.detail.type")}
-                        >
-                          <div>{curLogConfig?.logType}</div>
-                        </ValueWithLabel>
-                      </div>
-                      <div className="flex-1 border-left-c">
-                        <ValueWithLabel
-                          label={t("resource:config.detail.version")}
-                        >
-                          <div>{version ? version : "latest"}</div>
-                        </ValueWithLabel>
-                      </div>
-                      <div className="flex-1 border-left-c">
-                        <ValueWithLabel
-                          label={t("resource:config.detail.created")}
-                        >
-                          <div>
-                            {formatLocalTime(curLogConfig?.createdAt || "")}
-                          </div>
-                        </ValueWithLabel>
-                      </div>
-                    </div>
-                  </HeaderPanel>
-
-                  <HeaderPanel title={t("resource:config.detail.logConfig")}>
-                    <ConfigDetailComps
-                      hideBasicInfo
-                      hideLogPath
-                      curLogConfig={curLogConfig}
-                    />
-                  </HeaderPanel>
-                </PagePanel>
-              </div>
-            )}
-          </div>
-        </div>
-        <Modal
-          title={t("resource:config.delete")}
-          fullWidth={false}
-          isOpen={openDeleteModel}
-          closeModal={() => {
-            setOpenDeleteModel(false);
-          }}
+    <CommonLayout breadCrumbList={breadCrumbList} loadingData={loadingData}>
+      <div>
+        <PagePanel
+          title={defaultStr(curLogConfig?.name)}
           actions={
-            <div className="button-action no-pb text-right">
-              <Button
-                btnType="text"
-                disabled={loadingDelete}
-                onClick={() => {
-                  setOpenDeleteModel(false);
-                }}
-              >
-                {t("button.cancel")}
-              </Button>
-              <Button
-                loading={loadingDelete}
-                btnType="primary"
-                onClick={() => {
-                  confimRemoveLogConfig();
-                }}
-              >
-                {t("button.delete")}
-              </Button>
-            </div>
+            version ? undefined : (
+              <div>
+                <Button
+                  onClick={() => {
+                    console.info("edit click");
+                    navigate("/resources/log-config/detail/" + id + "/edit");
+                  }}
+                >
+                  {t("button.edit")}
+                </Button>
+                <Button
+                  onClick={() => {
+                    removeLogConfig();
+                  }}
+                >
+                  {t("button.delete")}
+                </Button>
+              </div>
+            )
           }
         >
-          <div className="modal-content">
-            {t("resource:config.deleteTips")}
-            <b>{`${curLogConfig?.name}`}</b> {"?"}
-          </div>
-        </Modal>
+          <>
+            {version && (
+              <Alert
+                content={
+                  <div>
+                    {t("resource:config.detail.notSupportEdit")}
+                    <Link
+                      to={`/resources/log-config/detail/${curLogConfig?.id}`}
+                    >
+                      {curLogConfig?.name}
+                    </Link>
+                  </div>
+                }
+              />
+            )}
+          </>
+          <HeaderPanel title={t("resource:config.detail.general")}>
+            <div className="flex value-label-span">
+              <div className="flex-1">
+                <ValueWithLabel label={t("resource:config.detail.name")}>
+                  <div>{curLogConfig?.name}</div>
+                </ValueWithLabel>
+              </div>
+              <div className="flex-1 border-left-c">
+                <ValueWithLabel label={t("resource:config.detail.type")}>
+                  <div>{curLogConfig?.logType}</div>
+                </ValueWithLabel>
+              </div>
+              <div className="flex-1 border-left-c">
+                <ValueWithLabel label={t("resource:config.detail.version")}>
+                  <div>{defaultStr(version, "latest")}</div>
+                </ValueWithLabel>
+              </div>
+              <div className="flex-1 border-left-c">
+                <ValueWithLabel label={t("resource:config.detail.created")}>
+                  <div>
+                    {formatLocalTime(defaultStr(curLogConfig?.createdAt))}
+                  </div>
+                </ValueWithLabel>
+              </div>
+            </div>
+          </HeaderPanel>
+
+          <>
+            {!isWindowsEvent(curLogConfig?.logType) && (
+              <HeaderPanel title={t("resource:config.detail.logConfig")}>
+                <ConfigDetailComps hideBasicInfo curLogConfig={curLogConfig} />
+              </HeaderPanel>
+            )}
+          </>
+        </PagePanel>
       </div>
-    </div>
+      <Modal
+        title={t("resource:config.delete")}
+        fullWidth={false}
+        isOpen={openDeleteModel}
+        closeModal={() => {
+          setOpenDeleteModel(false);
+        }}
+        actions={
+          <div className="button-action no-pb text-right">
+            <Button
+              btnType="text"
+              disabled={loadingDelete}
+              onClick={() => {
+                setOpenDeleteModel(false);
+              }}
+            >
+              {t("button.cancel")}
+            </Button>
+            <Button
+              loading={loadingDelete}
+              btnType="primary"
+              onClick={() => {
+                confirmRemoveLogConfig();
+              }}
+            >
+              {t("button.delete")}
+            </Button>
+          </div>
+        }
+      >
+        <div className="modal-content">
+          {t("resource:config.deleteTips")}
+          <b>{`${curLogConfig?.name}`}</b> {"?"}
+        </div>
+      </Modal>
+    </CommonLayout>
   );
 };
 

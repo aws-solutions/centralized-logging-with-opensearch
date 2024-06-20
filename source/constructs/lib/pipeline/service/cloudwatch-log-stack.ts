@@ -30,6 +30,7 @@ import {
 import * as cr from "aws-cdk-lib/custom-resources";
 import * as path from "path";
 import { NagSuppressions } from "cdk-nag";
+import { SharedPythonLayer } from "../../layer/layer";
 
 const { VERSION } = process.env;
 
@@ -249,6 +250,16 @@ export class CloudWatchLogStack extends SolutionStack {
       securityGroupId.valueAsString
     );
 
+    const logProcessorConcurrency = this.newParam("logProcessorConcurrency", {
+      description: "Reserve concurrency for log processor lambda",
+      default: 0,
+      type: "Number",
+    });
+    this.addToParamLabels(
+      "Number Of Reserve Concurrency",
+      logProcessorConcurrency.logicalId
+    );
+
     const baseProps = {
       vpc: processVpc,
       securityGroup: processSg,
@@ -320,12 +331,13 @@ export class CloudWatchLogStack extends SolutionStack {
         LOG_FORMAT: logFormat.valueAsString,
       },
       logType: logType.valueAsString,
-      stackPrefix: stackPrefix
+      stackPrefix: stackPrefix,
+      logProcessorConcurrency: logProcessorConcurrency.valueAsNumber,
     };
 
     const kdsBufferStack = new KDSStack(this, "KDSBuffer", pipelineProps);
 
-    const logProcessorLogGroupName = kdsBufferStack.logProcessorLogGroupName
+    const logProcessorLogGroupName = kdsBufferStack.logProcessorLogGroupName;
 
     const bufferAccessPolicy = new iam.Policy(this, "BufferAccessPolicy", {
       statements: [
@@ -502,6 +514,7 @@ export class CloudWatchLogStack extends SolutionStack {
       memorySize: 256,
       timeout: Duration.seconds(60),
       role: cwSubFilterLambdaRole,
+      layers: [SharedPythonLayer.getInstance(this)],
       environment: {
         LOGGROUP_NAMES: logSource.valueAsString,
         DESTINATION_NAME: kdsBufferStack.kinesisStreamName,

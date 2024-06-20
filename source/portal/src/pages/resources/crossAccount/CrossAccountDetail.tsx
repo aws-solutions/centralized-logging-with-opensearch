@@ -13,73 +13,51 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React, { useState, useEffect, useCallback } from "react";
-import SideMenu from "components/SideMenu";
-import Breadcrumb from "components/Breadcrumb";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
 import { getSubAccountLink } from "graphql/queries";
-import LoadingText from "components/LoadingText";
 import { SubAccountLink } from "API";
 import PagePanel from "components/PagePanel";
 import HeaderPanel from "components/HeaderPanel";
-import FormItem from "components/FormItem";
-import TextInput from "components/TextInput";
 import { handleErrorMessage } from "assets/js/alert";
 import Button from "components/Button";
-import {
-  FieldValidator,
-  buildCrossAccountTemplateLink,
-  pipFieldValidator,
-  validateRequiredText,
-  validateWithRegex,
-} from "assets/js/utils";
+import { buildCrossAccountTemplateLink, defaultStr } from "assets/js/utils";
 import { updateSubAccountLink } from "graphql/mutations";
 import cloneDeep from "lodash.clonedeep";
 import { AmplifyConfigType } from "types";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "reducer/reducers";
 import CopyText from "components/CopyText";
 import Alert, { AlertType } from "components/Alert/alert";
-
-let validateFBUploadSNSTopicArn: FieldValidator<string>;
+import CommonLayout from "pages/layout/CommonLayout";
+import LinkAccountComp from "./LinkAccountComp";
+import { AppDispatch } from "reducer/store";
+import {
+  setAccountData,
+  validateMemberAccount,
+  validateMemberAccountInput,
+} from "reducer/linkMemberAccount";
 
 const CrossAccountDetail: React.FC = () => {
   const { id } = useParams();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const navigate = useNavigate();
-  const [curAccount, setCurAccount] = useState<SubAccountLink>();
+  // const [curAccount, setCurAccount] = useState<SubAccountLink>();
   const [copyAccount, setCopyAccount] = useState<SubAccountLink>();
   const [loadingData, setLoadingData] = useState(true);
   const [loadingSave, setLoadingSave] = useState(false);
-  const [accountFBUploadSNSArnError, setAccountFBUploadSNSArnError] =
-    useState("");
   const amplifyConfig: AmplifyConfigType = useSelector(
     (state: RootState) => state.app.amplifyConfig
   );
-
-  validateFBUploadSNSTopicArn = useCallback(
-    pipFieldValidator(
-      validateRequiredText(
-        t("resource:crossAccount.link.inputFBConfigUploadSNSTopicArn")
-      ),
-      validateWithRegex(
-        new RegExp(
-          `^arn:(aws-cn|aws):sns:\\w+-\\w+-\\d:${
-            curAccount?.subAccountId || "\\d{12}"
-          }:.+`
-        )
-      )(t("resource:crossAccount.link.fbConfigUploadSNSTopicArnFormatError"))
-    ),
-    [i18n.language]
-  );
-
+  const memberAccount = useSelector((state: RootState) => state.memberAccount);
+  const dispatch = useDispatch<AppDispatch>();
   const breadCrumbList = [
     { name: t("name"), link: "/" },
     { name: t("resource:crossAccount.name"), link: "/resources/cross-account" },
     {
-      name: curAccount?.subAccountName || "",
+      name: defaultStr(memberAccount.data?.subAccountName),
     },
   ];
 
@@ -88,16 +66,9 @@ const CrossAccountDetail: React.FC = () => {
   };
 
   const updateCrossAccountLink = async () => {
-    const validateErrorText = validateFBUploadSNSTopicArn(
-      curAccount?.subAccountFlbConfUploadingEventTopicArn ?? ""
-    );
-    setAccountFBUploadSNSArnError(validateErrorText);
-    if (validateErrorText) {
-      return;
-    }
     // Trim All Parameter value
     const toTrimObj: { [key: string]: string } = JSON.parse(
-      JSON.stringify(curAccount)
+      JSON.stringify(memberAccount.data)
     );
     console.info("toTrimObj:", toTrimObj);
     toTrimObj.subAccountFlbConfUploadingEventTopicArn =
@@ -125,12 +96,12 @@ const CrossAccountDetail: React.FC = () => {
     setLoadingData(true);
     try {
       const resData: any = await appSyncRequestQuery(getSubAccountLink, {
-        subAccountId: decodeURIComponent(id || ""),
+        subAccountId: decodeURIComponent(defaultStr(id)),
       });
       console.info("resData:", resData);
       const dataAccount: SubAccountLink = resData.data.getSubAccountLink;
       console.info("dataAccount:", dataAccount);
-      setCurAccount(dataAccount);
+      dispatch(setAccountData(dataAccount));
       setCopyAccount(cloneDeep(dataAccount));
       setLoadingData(false);
     } catch (error: any) {
@@ -145,237 +116,84 @@ const CrossAccountDetail: React.FC = () => {
   }, []);
 
   return (
-    <div>
-      <div className="lh-main-content">
-        <SideMenu />
-        <div className="lh-container">
-          <div className="lh-content">
-            <Breadcrumb list={breadCrumbList} />
-            {loadingData ? (
-              <LoadingText />
-            ) : (
-              <div className="m-w-800">
-                <PagePanel title={curAccount?.subAccountName || ""}>
-                  <HeaderPanel title={t("resource:crossAccount.detail")}>
-                    <>
-                      {!copyAccount?.subAccountFlbConfUploadingEventTopicArn && (
-                        <div className="cross-account mb-10">
-                          <Alert
-                            content={t(
-                              "resource:crossAccount.link.stepOneUpdateTipsDesc"
-                            )}
-                            type={AlertType.Normal}
-                          />
-                          <div className="deploy-steps">
-                            <div>
-                              {t("resource:crossAccount.link.stepOne1")}
-                            </div>
-                            <div>{`${t(
-                              "resource:crossAccount.link.stepOne2"
-                            )} ${amplifyConfig.aws_project_region}`}</div>
-                            <div>
-                              {t("resource:crossAccount.link.stepOne3Update")}
-                            </div>
-                            <div className="pl-20">
-                              <CopyText
-                                text={buildCrossAccountTemplateLink(
-                                  amplifyConfig.aws_appsync_region,
-                                  amplifyConfig.solution_version,
-                                  amplifyConfig.template_bucket,
-                                  amplifyConfig.solution_name
-                                )}
-                              >
-                                {""}
-                              </CopyText>
-                              <pre className="ml-20">
-                                <code>
-                                  {buildCrossAccountTemplateLink(
-                                    amplifyConfig.aws_appsync_region,
-                                    amplifyConfig.solution_version,
-                                    amplifyConfig.template_bucket,
-                                    amplifyConfig.solution_name
-                                  )}
-                                </code>
-                              </pre>
-                            </div>
-                            <div className="mt-m10">
-                              {t("resource:crossAccount.link.stepOne4")}
-                            </div>
-                            <div>
-                              {t("resource:crossAccount.link.stepOne5")}
-                            </div>
-                            <div>
-                              {t("resource:crossAccount.link.stepOne6")}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </>
-
-                    <FormItem
-                      optionTitle={t("resource:crossAccount.link.accountName")}
-                      optionDesc=""
-                    >
-                      <TextInput
-                        readonly
-                        value={curAccount?.subAccountName || ""}
-                        onChange={(event) => {
-                          console.info(event);
-                        }}
-                      />
-                    </FormItem>
-                    <FormItem
-                      optionTitle={t("resource:crossAccount.link.accountId")}
-                      optionDesc=""
-                    >
-                      <TextInput
-                        readonly
-                        value={curAccount?.subAccountId || ""}
-                        onChange={(event) => {
-                          console.info(event);
-                        }}
-                      />
-                    </FormItem>
-                    <FormItem
-                      optionTitle={t("resource:crossAccount.link.accountRoles")}
-                      optionDesc=""
-                    >
-                      <TextInput
-                        readonly
-                        value={curAccount?.subAccountRoleArn || ""}
-                        onChange={(event) => {
-                          console.info(event);
-                        }}
-                      />
-                    </FormItem>
-                    <FormItem
-                      optionTitle={t("resource:crossAccount.link.installDocs")}
-                      optionDesc=""
-                    >
-                      <TextInput
-                        readonly
-                        value={curAccount?.agentInstallDoc || ""}
-                        onChange={(event) => {
-                          console.info(event);
-                        }}
-                      />
-                    </FormItem>
-                    <FormItem
-                      optionTitle={t("resource:crossAccount.link.configDocs")}
-                      optionDesc=""
-                    >
-                      <TextInput
-                        readonly
-                        value={curAccount?.agentConfDoc || ""}
-                        onChange={(event) => {
-                          console.info(event);
-                        }}
-                      />
-                    </FormItem>
-                    <FormItem
-                      optionTitle={t("resource:crossAccount.link.s3Bucket")}
-                      optionDesc=""
-                    >
-                      <TextInput
-                        readonly
-                        value={curAccount?.subAccountBucketName || ""}
-                        onChange={(event) => {
-                          console.info(event);
-                        }}
-                      />
-                    </FormItem>
-                    <FormItem
-                      optionTitle={t("resource:crossAccount.link.stackId")}
-                      optionDesc=""
-                    >
-                      <TextInput
-                        readonly
-                        value={curAccount?.subAccountStackId || ""}
-                        onChange={(event) => {
-                          console.info(event);
-                        }}
-                      />
-                    </FormItem>
-                    <FormItem
-                      optionTitle={t("resource:crossAccount.link.kmsKey")}
-                      optionDesc=""
-                    >
-                      <TextInput
-                        readonly
-                        value={curAccount?.subAccountKMSKeyArn || ""}
-                        onChange={(event) => {
-                          console.info(event);
-                        }}
-                      />
-                    </FormItem>
-                    <FormItem
-                      optionTitle={t(
-                        "resource:crossAccount.link.iamInstanceProfileArn"
-                      )}
-                      optionDesc=""
-                    >
-                      <TextInput
-                        readonly
-                        value={
-                          curAccount?.subAccountIamInstanceProfileArn || ""
-                        }
-                        onChange={(event) => {
-                          console.info(event);
-                        }}
-                      />
-                    </FormItem>
-                    <FormItem
-                      optionTitle={t(
-                        "resource:crossAccount.link.fbConfigUploadSNSTopicArn"
-                      )}
-                      optionDesc=""
-                      errorText={accountFBUploadSNSArnError}
-                    >
-                      <TextInput
-                        value={
-                          curAccount?.subAccountFlbConfUploadingEventTopicArn ||
-                          ""
-                        }
-                        onChange={(event) => {
-                          setAccountFBUploadSNSArnError("");
-                          setCurAccount((prev: any) => {
-                            return {
-                              ...prev,
-                              subAccountFlbConfUploadingEventTopicArn:
-                                event.target.value,
-                            };
-                          });
-                        }}
-                      />
-                    </FormItem>
-                  </HeaderPanel>
-                  <div className="button-action text-right">
-                    <Button
-                      disabled={loadingSave}
-                      btnType="text"
-                      onClick={() => {
-                        backToListPage();
-                      }}
-                    >
-                      {t("button.cancel")}
-                    </Button>
-                    <Button
-                      loading={loadingSave}
-                      btnType="primary"
-                      onClick={() => {
-                        updateCrossAccountLink();
-                      }}
-                    >
-                      {t("button.save")}
-                    </Button>
+    <CommonLayout breadCrumbList={breadCrumbList} loadingData={loadingData}>
+      <div className="m-w-800">
+        <PagePanel title={defaultStr(memberAccount.data?.subAccountName)}>
+          <HeaderPanel title={t("resource:crossAccount.detail")}>
+            <>
+              {!copyAccount?.subAccountFlbConfUploadingEventTopicArn && (
+                <div className="cross-account mb-10">
+                  <Alert
+                    content={t(
+                      "resource:crossAccount.link.stepOneUpdateTipsDesc"
+                    )}
+                    type={AlertType.Normal}
+                  />
+                  <div className="deploy-steps">
+                    <div>{t("resource:crossAccount.link.stepOne1")}</div>
+                    <div>{`${t("resource:crossAccount.link.stepOne2")} ${
+                      amplifyConfig.aws_project_region
+                    }`}</div>
+                    <div>{t("resource:crossAccount.link.stepOne3Update")}</div>
+                    <div className="pl-20">
+                      <CopyText
+                        text={buildCrossAccountTemplateLink(
+                          amplifyConfig.aws_appsync_region,
+                          amplifyConfig.solution_version,
+                          amplifyConfig.template_bucket,
+                          amplifyConfig.solution_name
+                        )}
+                      >
+                        {""}
+                      </CopyText>
+                      <pre className="ml-20">
+                        <code>
+                          {buildCrossAccountTemplateLink(
+                            amplifyConfig.aws_appsync_region,
+                            amplifyConfig.solution_version,
+                            amplifyConfig.template_bucket,
+                            amplifyConfig.solution_name
+                          )}
+                        </code>
+                      </pre>
+                    </div>
+                    <div className="mt-m10">
+                      {t("resource:crossAccount.link.stepOne4")}
+                    </div>
+                    <div>{t("resource:crossAccount.link.stepOne5")}</div>
                   </div>
-                </PagePanel>
-              </div>
-            )}
+                </div>
+              )}
+            </>
+            <LinkAccountComp isEdit />
+          </HeaderPanel>
+          <div className="button-action text-right">
+            <Button
+              disabled={loadingSave}
+              btnType="text"
+              onClick={() => {
+                backToListPage();
+              }}
+            >
+              {t("button.cancel")}
+            </Button>
+            <Button
+              loading={loadingSave}
+              btnType="primary"
+              onClick={() => {
+                if (!validateMemberAccountInput(memberAccount)) {
+                  dispatch(validateMemberAccount());
+                  return;
+                }
+                updateCrossAccountLink();
+              }}
+            >
+              {t("button.save")}
+            </Button>
           </div>
-        </div>
+        </PagePanel>
       </div>
-    </div>
+    </CommonLayout>
   );
 };
 

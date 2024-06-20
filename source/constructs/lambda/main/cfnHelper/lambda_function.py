@@ -2,14 +2,14 @@
 # SPDX-License-Identifier: Apache-2.0
 import os
 import json
-import logging
+from commonlib.logging import get_logger
 from abc import ABC, abstractmethod
 
 import boto3
 from botocore import config
 from commonlib import AWSConnection, LinkAccountHelper
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+
+logger = get_logger(__name__)
 
 solution_version = os.environ.get("SOLUTION_VERSION", "v1.0.0")
 solution_id = os.environ.get("SOLUTION_ID", "SO8025")
@@ -44,12 +44,19 @@ class Context:
 
         self._deploy_account_id = args.get("deployAccountId") or account_id
         self._deploy_region = args.get("deployRegion") or default_region
-        link_account = account_helper.get_link_account(self._deploy_account_id, self._deploy_region)
+        link_account = account_helper.get_link_account(
+            self._deploy_account_id, self._deploy_region
+        )
         if link_account and "subAccountRoleArn" in link_account:
-            self._cfn = conn.get_client(service_name="cloudformation", region_name=self._deploy_region,sts_role_arn=link_account.get("subAccountRoleArn"))
+            self._cfn = conn.get_client(
+                service_name="cloudformation",
+                region_name=self._deploy_region,
+                sts_role_arn=link_account.get("subAccountRoleArn"),
+            )
         else:
-            self._cfn = conn.get_client(service_name="cloudformation", region_name=self._deploy_region)
-        
+            self._cfn = conn.get_client(
+                service_name="cloudformation", region_name=self._deploy_region
+            )
 
     def get_client(self):
         return self._cfn
@@ -107,9 +114,13 @@ class StartState(State):
             stack_name = self._args["stackName"]
             pattern = self._args["pattern"]
             params = self._args["parameters"]
+            if "tag" in self._args:
+                tag = self._args["tag"]
+            else:
+                tag = []
             # start cfn deployment
             stack_id = start_cfn(
-                self._context.get_client(), stack_name, pattern, params
+                self._context.get_client(), stack_name, pattern, params, tag
             )
             args = {
                 "stackId": stack_id,
@@ -197,10 +208,21 @@ def lambda_handler(event, _):
     return output
 
 
-def start_cfn(cfn_client: boto3.client, stack_name, pattern, params):
+def start_cfn(cfn_client: boto3.client, stack_name, pattern, params, tag=[]):
     logger.info("Start CloudFormation deployment")
 
     template_url = get_template_url(pattern)
+
+    propagation_tag = [
+        {"Key": stack_name, "Value": stack_name},
+        {"Key": "CLOSolutionCostAnalysis", "Value": "CLOSolutionCostAnalysis"},
+    ]
+
+    if len(tag) != 0:
+        for element in tag:
+            propagation_tag.append(
+                {"Key": element.get("key"), "Value": element.get("value")}
+            )
 
     response = cfn_client.create_stack(
         StackName=stack_name,
@@ -212,6 +234,7 @@ def start_cfn(cfn_client: boto3.client, stack_name, pattern, params):
             "CAPABILITY_NAMED_IAM",
         ],
         EnableTerminationProtection=False,
+        Tags=propagation_tag,
     )
 
     stack_id = response["StackId"]
@@ -271,7 +294,11 @@ def get_template_url(pattern):
         "MicroBatchAwsServicesWafPipeline": f"{template_prefix}/MicroBatchAwsServicesWafPipeline.template",
         "MicroBatchAwsServicesCloudFrontPipeline": f"{template_prefix}/MicroBatchAwsServicesCloudFrontPipeline.template",
         "MicroBatchAwsServicesAlbPipeline": f"{template_prefix}/MicroBatchAwsServicesAlbPipeline.template",
+        "MicroBatchAwsServicesCloudTrailPipeline": f"{template_prefix}/MicroBatchAwsServicesCloudTrailPipeline.template",
+        "MicroBatchAwsServicesVpcFlowPipeline": f"{template_prefix}/MicroBatchAwsServicesVpcFlowPipeline.template",
+        "MicroBatchAwsServicesRDSPipeline": f"{template_prefix}/MicroBatchAwsServicesRDSPipeline.template",
         "MicroBatchApplicationFluentBitPipeline": f"{template_prefix}/MicroBatchApplicationFluentBitPipeline.template",
+        "MicroBatchApplicationS3Pipeline": f"{template_prefix}/MicroBatchApplicationS3Pipeline.template",
     }
 
     if pattern not in tpl_list:

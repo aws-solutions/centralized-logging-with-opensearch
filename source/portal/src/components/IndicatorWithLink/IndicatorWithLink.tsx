@@ -27,6 +27,7 @@ export enum HeaderPanelStatus {
   Error = "error",
   Normal = "normal",
   Pending = "pending",
+  Warning = "warning",
 }
 
 export interface IndicatorWithLinkProps {

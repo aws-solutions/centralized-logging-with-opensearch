@@ -17,7 +17,6 @@ import React, { useState, useEffect } from "react";
 import HeaderPanel from "components/HeaderPanel";
 import FormItem from "components/FormItem";
 import Button from "components/Button";
-import Breadcrumb from "components/Breadcrumb";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   AlarmInput,
@@ -27,16 +26,17 @@ import {
 } from "API";
 import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
 import { getDomainDetails } from "graphql/queries";
-import LoadingText from "components/LoadingText";
 import TextInput from "components/TextInput";
-import { AlarmParamType, domainAlramList } from "assets/js/const";
+import {
+  AlarmParamType,
+  domainAlramList as domainAlarmList,
+} from "assets/js/const";
 import { createAlarmForOpenSearch } from "graphql/mutations";
-import HelpPanel from "components/HelpPanel";
-import SideMenu from "components/SideMenu";
 import { useTranslation } from "react-i18next";
-import { emailIsValid } from "assets/js/utils";
+import { defaultStr, emailIsValid } from "assets/js/utils";
 import { Alert } from "assets/js/alert";
 import classNames from "classnames";
+import CommonLayout from "pages/layout/CommonLayout";
 
 interface DomainAlarmProps {
   id: string;
@@ -79,7 +79,7 @@ const DomainAlarm: React.FC = () => {
       phone: "",
       phonePostNum: "",
       phoneNum: "",
-      alarmParams: domainAlramList,
+      alarmParams: domainAlarmList,
     },
   });
 
@@ -108,6 +108,12 @@ const DomainAlarm: React.FC = () => {
     navigate(`/clusters/opensearch-domains/detail/${id}`);
   };
 
+  const genValidateText = (alarmType: AlarmType) => {
+    return `${
+      domainAlarmList.find((element) => element.key === alarmType)?.name
+    }${t("cluster:alarm.forbidNegative")}`;
+  };
+
   const checkMinStorage = () => {
     // Check Min Storage Value
     if (
@@ -116,13 +122,7 @@ const DomainAlarm: React.FC = () => {
       )?.isChecked &&
       minFreeStorageError
     ) {
-      Alert(
-        t(
-          domainAlramList.find(
-            (element) => element.key === AlarmType.FREE_STORAGE_SPACE
-          )?.name || ""
-        ) + t("cluster:alarm.forbidNegative")
-      );
+      Alert(genValidateText(AlarmType.FREE_STORAGE_SPACE));
       return false;
     }
     return true;
@@ -136,13 +136,7 @@ const DomainAlarm: React.FC = () => {
       )?.isChecked &&
       writeBlockError
     ) {
-      Alert(
-        t(
-          domainAlramList.find(
-            (element) => element.key === AlarmType.WRITE_BLOCKED
-          )?.name || ""
-        ) + t("cluster:alarm.forbidNegative")
-      );
+      Alert(genValidateText(AlarmType.WRITE_BLOCKED));
       return false;
     }
     return true;
@@ -156,13 +150,7 @@ const DomainAlarm: React.FC = () => {
       )?.isChecked &&
       nodeMinError
     ) {
-      Alert(
-        t(
-          domainAlramList.find(
-            (element) => element.key === AlarmType.NODE_UNREACHABLE
-          )?.name || ""
-        ) + t("cluster:alarm.forbidNegative")
-      );
+      Alert(genValidateText(AlarmType.NODE_UNREACHABLE));
       return false;
     }
     return true;
@@ -309,180 +297,154 @@ const DomainAlarm: React.FC = () => {
   };
 
   return (
-    <div className="lh-main-content">
-      <SideMenu />
-      <div className="lh-container">
-        <div className="lh-content">
-          <div className="service-log">
-            <Breadcrumb list={breadCrumbList} />
+    <CommonLayout loadingData={loadingData} breadCrumbList={breadCrumbList}>
+      <div className="m-w-1024">
+        <HeaderPanel
+          contentNoPadding
+          title={t("cluster:alarm.domainAlarm")}
+          desc={t("cluster:alarm.domainAlarmDesc")}
+        >
+          <div className="pd-20">
+            <FormItem
+              optionTitle={t("cluster:alarm.email")}
+              optionDesc={t("cluster:alarm.emailDesc")}
+              errorText={
+                (showRequireEmailError ? t("cluster:alarm.emailError") : "") ||
+                (emailFormatError ? t("cluster:alarm.emailFormatError") : "")
+              }
+            >
+              <TextInput
+                className="m-w-75p"
+                value={alarmData.input.email}
+                onChange={(event) => {
+                  setShowRequireEmailError(false);
+                  setEmailFormatError(false);
+                  setAlarmData((prev) => {
+                    return {
+                      ...prev,
+                      input: {
+                        ...prev.input,
+                        email: event.target.value,
+                      },
+                    };
+                  });
+                }}
+                placeholder="abc@example.com"
+              />
+            </FormItem>
           </div>
-          {loadingData ? (
-            <LoadingText text="" />
-          ) : (
-            <div className="m-w-1024">
-              <HeaderPanel
-                contentNoPadding
-                title={t("cluster:alarm.domainAlarm")}
-                desc={t("cluster:alarm.domainAlarmDesc")}
-              >
-                <div className="pd-20">
-                  <FormItem
-                    optionTitle={t("cluster:alarm.email")}
-                    optionDesc={t("cluster:alarm.emailDesc")}
-                    errorText={
-                      (showRequireEmailError
-                        ? t("cluster:alarm.emailError")
-                        : "") ||
-                      (emailFormatError
-                        ? t("cluster:alarm.emailFormatError")
-                        : "")
-                    }
-                  >
-                    <TextInput
-                      className="m-w-75p"
-                      value={alarmData.input.email}
-                      onChange={(event) => {
-                        setShowRequireEmailError(false);
-                        setEmailFormatError(false);
-                        setAlarmData((prev) => {
-                          return {
-                            ...prev,
-                            input: {
-                              ...prev.input,
-                              email: event.target.value,
-                            },
-                          };
+
+          <div>
+            <div className="flex show-tag-list">
+              <div className="checkbox">
+                <input
+                  type="checkbox"
+                  onChange={(event) => {
+                    if (event.target.checked) {
+                      setAlarmData((prev) => {
+                        const prevObj: any = JSON.parse(JSON.stringify(prev));
+                        prevObj.input.alarmParams.forEach((element: any) => {
+                          element.isChecked = true;
                         });
-                      }}
-                      placeholder="abc@example.com"
-                    />
-                  </FormItem>
-                </div>
-
-                <div>
-                  <div className="flex show-tag-list">
-                    <div className="checkbox">
-                      <input
-                        type="checkbox"
-                        onChange={(event) => {
-                          if (event.target.checked) {
-                            setAlarmData((prev) => {
-                              const prevObj: any = JSON.parse(
-                                JSON.stringify(prev)
-                              );
-                              prevObj.input.alarmParams.forEach(
-                                (element: any) => {
-                                  element.isChecked = true;
-                                }
-                              );
-                              return prevObj;
-                            });
-                          } else {
-                            setAlarmData((prev) => {
-                              const prevObj: any = JSON.parse(
-                                JSON.stringify(prev)
-                              );
-                              prevObj.input.alarmParams.forEach(
-                                (element: any) => {
-                                  element.isChecked = false;
-                                }
-                              );
-                              return prevObj;
-                            });
-                          }
-                        }}
-                      />
-                    </div>
-                    <div className="tag-key w-alarm">
-                      <b>{t("cluster:alarm.alarm")}</b>
-                    </div>
-                    <div className="tag-value flex-1">
-                      <b>{t("cluster:alarm.value")}</b>
-                    </div>
-                  </div>
-                  {alarmData.input.alarmParams.map((element) => {
-                    return (
-                      <div key={element.key} className="flex show-tag-list">
-                        <div className="checkbox">
-                          <input
-                            type="checkbox"
-                            checked={element.isChecked}
-                            onChange={(event) => {
-                              updateAlarmData(event, element);
-                            }}
-                          />
-                        </div>
-                        <div className="tag-key w-alarm">
-                          {t(
-                            domainAlramList.find(
-                              (item) => item.key === element.key
-                            )?.name || ""
-                          )}
-                        </div>
-                        <div className="tag-value flex-1">
-                          {element.isNumber ? (
-                            <TextInput
-                              className={classNames(
-                                {
-                                  error:
-                                    element.key === AlarmType.WRITE_BLOCKED &&
-                                    writeBlockError,
-                                },
-                                {
-                                  error:
-                                    element.key ===
-                                      AlarmType.FREE_STORAGE_SPACE &&
-                                    minFreeStorageError,
-                                },
-                                {
-                                  error:
-                                    element.key ===
-                                      AlarmType.NODE_UNREACHABLE &&
-                                    nodeMinError,
-                                }
-                              )}
-                              type="number"
-                              value={element.value.toString()}
-                              onChange={(event) => {
-                                updateAlarmDataValue(event, element);
-                              }}
-                            />
-                          ) : (
-                            "N/A"
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </HeaderPanel>
-
-              <div className="button-action text-right">
-                <Button
-                  disabled={loadingCreate}
-                  btnType="text"
-                  onClick={() => {
-                    backToDetailPage();
+                        return prevObj;
+                      });
+                    } else {
+                      setAlarmData((prev) => {
+                        const prevObj: any = JSON.parse(JSON.stringify(prev));
+                        prevObj.input.alarmParams.forEach((element: any) => {
+                          element.isChecked = false;
+                        });
+                        return prevObj;
+                      });
+                    }
                   }}
-                >
-                  {t("button.cancel")}
-                </Button>
-                <Button
-                  loading={loadingCreate}
-                  btnType="primary"
-                  onClick={() => {
-                    confirmCreateDomainAlarm();
-                  }}
-                >
-                  {t("button.create")}
-                </Button>
+                />
+              </div>
+              <div className="tag-key w-alarm">
+                <b>{t("cluster:alarm.alarm")}</b>
+              </div>
+              <div className="tag-value flex-1">
+                <b>{t("cluster:alarm.value")}</b>
               </div>
             </div>
-          )}
+            {alarmData.input.alarmParams.map((element) => {
+              return (
+                <div key={element.key} className="flex show-tag-list">
+                  <div className="checkbox">
+                    <input
+                      type="checkbox"
+                      checked={element.isChecked}
+                      onChange={(event) => {
+                        updateAlarmData(event, element);
+                      }}
+                    />
+                  </div>
+                  <div className="tag-key w-alarm">
+                    {t(
+                      defaultStr(
+                        domainAlarmList.find((item) => item.key === element.key)
+                          ?.name
+                      )
+                    )}
+                  </div>
+                  <div className="tag-value flex-1">
+                    {element.isNumber ? (
+                      <TextInput
+                        className={classNames(
+                          {
+                            error:
+                              element.key === AlarmType.WRITE_BLOCKED &&
+                              writeBlockError,
+                          },
+                          {
+                            error:
+                              element.key === AlarmType.FREE_STORAGE_SPACE &&
+                              minFreeStorageError,
+                          },
+                          {
+                            error:
+                              element.key === AlarmType.NODE_UNREACHABLE &&
+                              nodeMinError,
+                          }
+                        )}
+                        type="number"
+                        value={element.value.toString()}
+                        onChange={(event) => {
+                          updateAlarmDataValue(event, element);
+                        }}
+                      />
+                    ) : (
+                      "N/A"
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </HeaderPanel>
+
+        <div className="button-action text-right">
+          <Button
+            disabled={loadingCreate}
+            btnType="text"
+            onClick={() => {
+              backToDetailPage();
+            }}
+          >
+            {t("button.cancel")}
+          </Button>
+          <Button
+            loading={loadingCreate}
+            btnType="primary"
+            onClick={() => {
+              confirmCreateDomainAlarm();
+            }}
+          >
+            {t("button.create")}
+          </Button>
         </div>
       </div>
-      <HelpPanel />
-    </div>
+    </CommonLayout>
   );
 };
 

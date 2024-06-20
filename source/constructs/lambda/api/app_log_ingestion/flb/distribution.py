@@ -3,7 +3,7 @@
 import os
 import io
 import time
-import logging
+from commonlib.logging import get_logger
 import json
 from abc import ABC, abstractmethod
 from typing import Set, List
@@ -16,8 +16,7 @@ from commonlib import ErrorCode, APIException
 s3_first_layer_prefix = "app_log_config"
 config_file_s3_bucket_name = os.environ.get("CONFIG_FILE_S3_BUCKET_NAME")
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 conn = AWSConnection()
 
 iam_res = conn.get_client(service_name="iam", client_type="resource")

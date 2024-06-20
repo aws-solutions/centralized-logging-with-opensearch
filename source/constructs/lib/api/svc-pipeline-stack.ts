@@ -16,6 +16,9 @@ limitations under the License.
 import * as path from 'path';
 import * as appsync from '@aws-cdk/aws-appsync-alpha';
 import {
+    NagSuppressions,
+} from 'cdk-nag';
+import {
     Aws,
     Duration,
     Fn,
@@ -170,6 +173,23 @@ export class SvcPipelineStack extends Construct {
                 ],
             })
         );
+        pipelineHandler.addToRolePolicy(
+            new iam.PolicyStatement({
+                actions: [
+                    "s3:GetBucketNotification",
+                ],
+                effect: iam.Effect.ALLOW,
+                resources: [
+                    `arn:${Aws.PARTITION}:s3:::*`,
+                ],
+            })
+        );
+        NagSuppressions.addResourceSuppressions(pipelineHandler, [
+            {
+                id: "AwsSolutions-IAM5",
+                reason: "The managed policy needs to use any resources.",
+            },
+        ]);
 
         pipelineHandler.addToRolePolicy(
             new iam.PolicyStatement({

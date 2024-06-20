@@ -45,8 +45,8 @@ i18n
     ],
     defaultNS: "common",
     fallbackLng: "en",
-    debug: true,
-    saveMissing: true,
+    debug: false,
+    saveMissing: false,
     interpolation: {
       escapeValue: false, // not needed for react as it escapes by default
     },

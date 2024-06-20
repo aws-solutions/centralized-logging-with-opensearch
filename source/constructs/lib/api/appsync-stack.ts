@@ -32,6 +32,7 @@ import {
 import * as appsync from "@aws-cdk/aws-appsync-alpha";
 import * as path from "path";
 import { AuthType, addCfnNagSuppressRules } from "../main-stack";
+import { SharedPythonLayer } from "../layer/layer";
 
 export interface AppPipelineStackProps {
 
@@ -190,6 +191,7 @@ export class AppSyncStack extends Construct {
                 timeout: Duration.seconds(60),
                 memorySize: 128,
                 description: `${Aws.STACK_NAME} - Service Linked Role Create Handler`,
+                layers: [SharedPythonLayer.getInstance(this)]
             }
         );
 

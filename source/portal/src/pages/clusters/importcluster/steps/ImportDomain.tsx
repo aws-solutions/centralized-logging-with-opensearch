@@ -28,18 +28,11 @@ import {
   buildVPCPeeringLink,
 } from "assets/js/utils";
 import IndicatorWithLink from "components/IndicatorWithLink";
+import { HeaderPanelStatus } from "components/IndicatorWithLink/IndicatorWithLink";
 
 interface ImportDomainProps {
   importedCluster: ImportedDomainType;
   importedRes: DomainRelevantResource[];
-}
-
-enum HeaderPanelStatus {
-  Loading = "loading",
-  Success = "success",
-  Error = "error",
-  Normal = "normal",
-  Pending = "pending",
 }
 
 const ImportDomain: React.FC<ImportDomainProps> = (
@@ -78,9 +71,9 @@ const ImportDomain: React.FC<ImportDomainProps> = (
     string[]
   >([]);
 
-  const [solutionRouteTableStatus, setSoLutionRouteTableStatus] =
+  const [solutionRouteTableStatus, setSolutionRouteTableStatus] =
     useState<HeaderPanelStatus>(HeaderPanelStatus.Loading);
-  const [solutionRouteTableDetail, setSoLutionRouteTableDetail] = useState<
+  const [solutionRouteTableDetail, setSolutionRouteTableDetail] = useState<
     string[]
   >([]);
 
@@ -145,8 +138,8 @@ const ImportDomain: React.FC<ImportDomainProps> = (
       const { values, status } = solutionRouteTableDetailItem;
       const tmp_status =
         statusMap[status ?? ResourceStatus.CREATED] || statusMap.default;
-      setSoLutionRouteTableStatus(tmp_status);
-      setSoLutionRouteTableDetail((values ?? []).filter(Boolean).map(String));
+      setSolutionRouteTableStatus(tmp_status);
+      setSolutionRouteTableDetail((values ?? []).filter(Boolean).map(String));
     }
   };
 

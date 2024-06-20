@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import os
-import logging
 from typing import List
+from commonlib.logging import get_logger
 from commonlib import AWSConnection, APIException, ErrorCode
 from commonlib.dao import AppLogIngestionDao
 from commonlib.utils import create_stack_name
@@ -16,10 +16,10 @@ from commonlib.model import (
     S3IngestionMode,
     AppLogIngestion,
     StatusEnum,
+    EngineType,
 )
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 stack_prefix = os.environ.get("STACK_PREFIX", "CL")
 ecs_cluster_name = os.environ.get("ECS_CLUSTER_NAME")
@@ -53,7 +53,18 @@ class S3SourceHandler:
             raise APIException(
                 ErrorCode.VALUE_ERROR, "The log source s3 config is empty."
             )
-
+            
+        if app_pipeline.engineType == EngineType.OPEN_SEARCH:
+            self.aos_create_ingestion_handler(app_log_ingestion=app_log_ingestion, log_source=log_source, app_pipeline=app_pipeline)
+        elif app_pipeline.engineType == EngineType.LIGHT_ENGINE:
+            self.light_engine_create_ingestion_handler(app_log_ingestion=app_log_ingestion, log_source=log_source, app_pipeline=app_pipeline)
+    
+    def aos_create_ingestion_handler(
+        self, 
+        app_log_ingestion: AppLogIngestion,
+        log_source: LogSource,
+        app_pipeline: AppPipeline,
+    ):
         aws_partition = (
             "aws-cn" if os.environ.get("AWS_REGION", "").startswith("cn-") else "aws"
         )
@@ -70,6 +81,7 @@ class S3SourceHandler:
                 "stackName": create_stack_name(
                     id=log_source.sourceId, pattern="AppIngestion-S3"
                 ),
+                "engineType": app_pipeline.engineType,
                 "pattern": "S3SourceStack",
                 "deployAccountId": log_source.accountId,
                 "deployRegion": log_source.region,
@@ -113,6 +125,7 @@ class S3SourceHandler:
                     "stackName": create_stack_name(
                         id=log_source.sourceId, pattern="AppIngestion-S3"
                     ),
+                    "engineType": app_pipeline.engineType,
                     "pattern": "S3SourceStack",
                     "deployAccountId": log_source.accountId,
                     "deployRegion": log_source.region,
@@ -132,6 +145,31 @@ class S3SourceHandler:
                 exec_sfn_flow(
                     sfn, state_machine_arn, app_log_ingestion.id, "START", sfn_args
                 )
+    
+    def light_engine_create_ingestion_handler(
+        self, 
+        app_log_ingestion: AppLogIngestion,
+        log_source: LogSource,
+        app_pipeline: AppPipeline,
+    ):
+        if log_source.s3.mode == S3IngestionMode.ONE_TIME:
+            raise APIException(
+                ErrorCode.VALUE_ERROR,
+                f"Light Engine does not support {S3IngestionMode.ONE_TIME} mode, only {S3IngestionMode.ON_GOING} mode.",
+            )
+        elif log_source.s3.mode == S3IngestionMode.ON_GOING:
+            app_log_ingestion = self._ingestion_dao.save(app_log_ingestion)
+            sfn_args = {
+                    "engineType": app_pipeline.engineType,
+                    "pattern": "S3SourceStack",
+                    "role": "",
+                    "pipelineId": app_pipeline.pipelineId,
+                    "bucket": log_source.s3.bucketName,
+                    "prefix": log_source.s3.keyPrefix,
+                }
+            exec_sfn_flow(
+                sfn, state_machine_arn, app_log_ingestion.id, "START", sfn_args
+            )
 
     def mk_cfn_params(self, params: dict):
         return [
@@ -143,10 +181,19 @@ class S3SourceHandler:
         ]
 
     def delete_ingestion(
-        self, log_source: LogSource, app_log_ingestion: AppLogIngestion
+        self, app_pipeline: AppPipeline, log_source: LogSource, app_log_ingestion: AppLogIngestion
     ):
         """Delete a S3 source sub stack"""
         logger.info("delete a S3 source sub stack")
+        
+        if app_pipeline.engineType == EngineType.OPEN_SEARCH:
+            self.aos_delete_ingestion_handler(log_source, app_log_ingestion)
+        elif app_pipeline.engineType == EngineType.LIGHT_ENGINE:
+            self.light_engine_delete_ingestion_handler(log_source, app_log_ingestion)
+        
+    def aos_delete_ingestion_handler(
+        self, log_source: LogSource, app_log_ingestion: AppLogIngestion
+    ):
         stack_id = app_log_ingestion.stackId
         if stack_id:
             # Delete ingestion & log source
@@ -155,6 +202,8 @@ class S3SourceHandler:
             )
             args = {
                 "stackId": stack_id,
+                "engineType": EngineType.OPEN_SEARCH,
+                "pattern": "S3SourceStack",
                 "deployAccountId": log_source.accountId,
                 "deployRegion": log_source.region,
             }
@@ -164,6 +213,21 @@ class S3SourceHandler:
             self._ingestion_dao.update_app_log_ingestion(
                 app_log_ingestion.id, status=StatusEnum.INACTIVE
             )
+    
+    def light_engine_delete_ingestion_handler(
+        self, log_source: LogSource, app_log_ingestion: AppLogIngestion
+    ):
+        # Delete ingestion & log source
+        self._ingestion_dao.delete_with_log_source(
+            app_log_ingestion, log_source_table_name, log_source
+        )
+        args = {
+            "engineType": EngineType.LIGHT_ENGINE,
+            "pattern": "S3SourceStack",
+        }
+        
+        # Start the pipeline flow
+        exec_sfn_flow(sfn, state_machine_arn, app_log_ingestion.id, "STOP", args)
 
 
 def params_to_kv(params: List[BufferParam]) -> dict:

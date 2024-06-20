@@ -6,7 +6,8 @@ import re
 import json
 from typing import Union
 from prettytable import PrettyTable
-from utils import ValidateParameters, SNSClient, SESClient, logger
+from utils.aws import SNSClient, SESClient
+from utils.helpers import logger, ValidateParameters
 from utils.models.etllog import ETLLogTable
 from utils.models.meta import MetaTable
 
@@ -107,7 +108,7 @@ def lambda_handler(event, _) -> Union[dict, None]:
         raise ValueError('The event is not a dict.')
     
     source = os.environ.get('SOURCE')
-    ses_email_template = os.environ.get('SES_EMAIL_TEMPLATE')
+    ses_email_template = AWS_DDB_META.get(meta_name="SimpleEmailServiceTemplate")['value']
     notification_priority = os.environ.get('NOTIFICATION_PRIORITY', 'Pipeline')
 
     for record in event.get('Records', []):

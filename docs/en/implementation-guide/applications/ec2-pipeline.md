@@ -1,9 +1,9 @@
-# Amazon EC2 instance group as log source
+# Amazon Instance Group as log source
 An instance group represents a group of EC2 Linux instances, which enables the solution to associate a Log Config with multiple EC2 instances quickly. Centralized Logging with OpenSearch uses Systems Manager Agent (SSM Agent) to install/configure Fluent Bit agent, and sends log data to Kinesis Data Streams.
 
-This article guides you to create a log pipeline that ingests logs from an EC2 instance group.
+This article guides you to create a log pipeline that ingests logs from an Instance Group.
 
-## Create a log analytics pipeline (Amazon OpenSearch)
+## Create a log analytics pipeline (OpenSearch Engine)
 
 ### Prerequisites
 1. [Import an Amazon OpenSearch Service domain](../domains/import.md).
@@ -13,7 +13,7 @@ This article guides you to create a log pipeline that ingests logs from an EC2 i
 1. Sign in to the Centralized Logging with OpenSearch Console.
 
 2. In the left sidebar, under **Log Analytics Pipelines**, choose **Application Log**.
-   
+
 3. Choose **Create a pipeline**
 
 4. Choose **Instance Group** as Log Source, choose **Amazon OpenSearch**, and choose **Next**.
@@ -35,11 +35,11 @@ This article guides you to create a log pipeline that ingests logs from an EC2 i
 
 9. Choose **Next**.
 
-You have created a log source for the log analytics pipeline. Now you are ready to make further configurations for the log analytics pipeline with Amazon EC2 instance group as log source.
+You have created a log source for the log analytics pipeline. Now you are ready to make further configurations for the log analytics pipeline with Amazon Instance Group as log source.
 
-1. Enter a **Log Path** to specify the location of logs you want to collect.
-   
-2. Select a log config and then choose **Next**. If you do not find desired log config from the drop-down list, choose **Create New**, and follow instructions in [Log Cong](./create-log-config.md).
+1. Select a **log config**. If you do not find desired log config from the drop-down list, choose **Create New**, and follow instructions in [Log Cong](./create-log-config.md).
+
+2. Enter a **Log Path** to specify the location of logs you want to collect. You can use `,` to separate multiple paths. Choose **Next**.
 
 3. Specify **Index name** in lowercase.
 
@@ -73,8 +73,10 @@ You have created a log source for the log analytics pipeline. Now you are ready 
 
 7. In the **Log Lifecycle** section, enter the number of days to manage the Amazon OpenSearch Service index lifecycle. The Centralized Logging with OpenSearch will create the associated [Index State Management (ISM)](https://opensearch.org/docs/latest/im-plugin/ism/index/) policy automatically for this pipeline.
 
-13. In the **Select log processor** section, please choose the log processor. 
-    - (Optional) OSI as log processor is now supported in these [regions](https://aws.amazon.com/about-aws/whats-new/2023/04/amazon-opensearch-service-ingestion/). When OSI is selected, please type in the minimum and maximum number of OCU. See more information [here](https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ingestion.html#ingestion-scaling). 
+13. In the **Select log processor** section, please choose the log processor.
+    - When selecting Lambda as log processor, you can configure the Lambda concurrency if needed.
+    - (Optional) OSI as log processor is now supported in these [regions](https://aws.amazon.com/about-aws/whats-new/2023/04/amazon-opensearch-service-ingestion/). When OSI is selected, please type in the minimum and maximum number of OCU. See more information [here](https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ingestion.html#ingestion-scaling).
+
 14. Choose **Next**.
 
 9. Enable **Alarms** if needed and select an exiting SNS topic. If you choose **Create a new SNS topic**, please provide a name and an email address for the new SNS topic.
@@ -93,10 +95,10 @@ You have created a log source for the log analytics pipeline. Now you are ready 
 1. Sign in to the Centralized Logging with OpenSearch Console.
 
 2. In the left sidebar, under **Log Analytics Pipelines**, choose **Application Log**.
-   
+
 3. Choose **Create a pipeline**
 
-4. Choose **Instance Group** as Log Source, Choose **Light Engine**, and choose **Next**.
+4. Choose **Instance Group** as Log Source, choose **Light Engine**, and choose **Next**.
 
 5. Select an instance group. If you have no instance group yet, choose **Create Instance Group** at the top right corner, and follow the [Instance Group](./create-log-source.md#amazon-ec2-instance-group) guide to create an instance group. After that, choose **Refresh** and then select the newly created instance group.
 
@@ -115,14 +117,13 @@ You have created a log source for the log analytics pipeline. Now you are ready 
 
 9. Choose **Next**.
 
-You have created a log source for the log analytics pipeline. Now you are ready to make further configurations for the log analytics pipeline with Amazon EC2 instance group as log source.
+You have created a log source for the log analytics pipeline. Now you are ready to make further configurations for the log analytics pipeline with Amazon Instance Group as log source.
 
-1. Enter a **Log Path** to specify the location of logs you want to collect.
-   
-2. Select a log config and then choose **Next**. If you do not find desired log config from the drop-down list, choose **Create New**, and follow instructions in [Log Cong](./create-log-config.md).
+1. Select a **log config**. If you do not find desired log config from the drop-down list, choose **Create New**, and follow instructions in [Log Cong](./create-log-config.md).
 
+2. Enter a **Log Path** to specify the location of logs you want to collect. You can use `,` to separate multiple paths. Choose **Next**.
 
-4. In the **Buffer** section, 
+4. In the **Buffer** section,
 
     * S3 buffer parameters
 
@@ -133,7 +134,7 @@ You have created a log source for the log analytics pipeline. Now you are ready 
     | Buffer interval              | 60 seconds                                       | The maximum interval of the log agent to deliver logs to S3. For more information, see [Data Delivery Frequency](https://docs.aws.amazon.com/firehose/latest/dev/basic-deliver.html#frequency). |
     | Compression for data records | `Gzip`                                           | The log agent compresses records before delivering them to the S3 bucket. |
 
-    
+
 
 5. Choose **Next**.
 
@@ -170,4 +171,5 @@ You have created a log source for the log analytics pipeline. Now you are ready 
 [vpc-connectivity]: https://docs.aws.amazon.com/whitepapers/latest/building-scalable-secure-multi-vpc-network-infrastructure/vpc-to-vpc-connectivity.html
 [ec2-user-data]: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html#user-data-shell-scripts
 [instance-refresh]: https://docs.aws.amazon.com/autoscaling/ec2/userguide/asg-instance-refresh.html
-
+[launch-template]: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html
+[launch-configuration]: https://docs.aws.amazon.com/autoscaling/ec2/userguide/launch-configurations.html

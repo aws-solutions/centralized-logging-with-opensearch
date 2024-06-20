@@ -13,49 +13,84 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React, { Ref } from "react";
 import FormItem from "components/FormItem";
+import HeaderPanel from "components/HeaderPanel";
+import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { BreadcrumbType } from "components/Breadcrumb/breadcrumb";
+import CommonLayout from "pages/layout/CommonLayout";
 import TextInput from "components/TextInput";
-import Select from "components/Select";
-import {
-  LOG_CONFIG_TYPE_LIST,
-  MULTI_LINE_LOG_PARSER_LIST,
-  SYSLOG_CONFIG_TYPE_LIST,
-  SYS_LOG_PARSER_LIST,
-} from "assets/js/const";
 import {
   LogConfFilterInput,
   LogConfig,
-  LogSourceType,
   LogType,
-  MultiLineLogParser,
   ProcessorFilterRegexInput,
-  SyslogParser,
 } from "API";
-import TextArea from "components/TextArea";
-import HeaderPanel from "components/HeaderPanel";
-import SampleLogParsing, {
-  RegexListType,
-  SampleLogParsingRefType,
-} from "./SampleLogParsing";
-import { ActionType, InfoBarTypes } from "reducer/appReducer";
+import {
+  LogConfigState,
+  configLogTypeChanged,
+  configNameChanged,
+  getCurrentParser,
+  getFormatDescription,
+  getFormatInfoType,
+  getFormatInputType,
+  getFormatPlaceholder,
+  getFormatTitle,
+  getRegexDescription,
+  getRegexInfoType,
+  getRegexTitle,
+  iisLogParserChanged,
+  isJSONType,
+  isWindowsEvent,
+  multiLineParserChanged,
+  regexChanged,
+  sysLogParserChanged,
+  userLogFormatChanged,
+  validateLogConfig,
+  validateLogConfigParams,
+  validateWindowsHasCookie,
+} from "reducer/createLogConfig";
+import { defaultStr, displayI18NMessage } from "assets/js/utils";
 import { useDispatch } from "react-redux";
-import { useTranslation } from "react-i18next";
-import LoadingText from "components/LoadingText";
+import { AppDispatch } from "reducer/store";
+import Select from "components/Select";
+import {
+  IIS_LOG_PARSER_LIST,
+  LOG_CONFIG_TYPE_LIST,
+  MULTI_LINE_LOG_PARSER_LIST,
+  SYS_LOG_PARSER_LIST,
+} from "assets/js/const";
+import { ActionType } from "reducer/appReducer";
+import TextArea from "components/TextArea";
+import Button from "components/Button";
+import { useNavigate, useParams } from "react-router-dom";
+import { handleErrorMessage } from "assets/js/alert";
+import { appSyncRequestMutation } from "assets/js/request";
+import { createLogConfig, updateLogConfig } from "graphql/mutations";
+import cloneDeep from "lodash.clonedeep";
+import SampleLogParsing from "./SampleLogParsing";
 import ConfigFilter from "./ConfigFilter";
-import { OptionType } from "components/AutoComplete/autoComplete";
-import { ternary } from "assets/js/utils";
+import Modal from "components/Modal";
 
 export interface ProcessorFilterRegexInputExt
   extends Omit<ProcessorFilterRegexInput, "filters"> {
   filters: LogConfFilterInput[];
 }
 
+export interface RegexListType {
+  key: string;
+  type: string;
+  format: string;
+  value: string;
+  loadingCheck: boolean;
+  showError: boolean;
+  error: string;
+  showSuccess: boolean;
+}
+
 export interface ExLogConf extends Omit<LogConfig, "filterConfigMap"> {
-  smapleLogDateFormatStr?: string;
-  regexKeyList?: RegexListType[];
+  sampleLogDateFormatStr?: string;
   filterConfigMap?: ProcessorFilterRegexInput;
-  selectKeyList?: OptionType[];
 }
 
 export enum PageType {
@@ -63,90 +98,100 @@ export enum PageType {
   New = "New",
 }
 
-interface LogConfigProps {
-  pageType: PageType;
-  logSourceType?: LogSourceType;
+interface LogConfigCompProps {
+  loadingData?: boolean;
+  breadCrumbList?: BreadcrumbType[];
   headerTitle: string;
-  curConfig: ExLogConf | undefined;
-  changeLogConfName: (name: string) => void;
-  changeLogType: (type: LogType) => void;
-  changeUserLogFormat: (format: string) => void;
-  changeRegExpSpecs: (specs: any) => void;
-  changeLogParser: (parser: MultiLineLogParser) => void;
-  changeSyslogParser: (parser: SyslogParser) => void;
-  changeUserSmapleLog: (log: string) => void;
-  showNameRequiredError: boolean;
-  showTypeRequiedError: boolean;
-  userLogFormatError: boolean;
-  userLogFormatErrorMsg?: string;
-  syslogParserError?: boolean;
-  regexErrorMsg?: string;
-  sampleLogRequiredError: boolean;
-  isLoading: boolean;
-  sampleLogInvalid: boolean;
-  changeSampleLogInvalid: (invalid: boolean) => void;
-  changeTimeKey: (key: string) => void;
-  changeRegexKeyList: (list: RegexListType[]) => void;
-  changeFilterRegex: (filter: ProcessorFilterRegexInput) => void;
-  changeSelectKeyList: (list: OptionType[]) => void;
-  changeTimeOffset: (offset: string) => void;
-  sampleLogParsingRef?: Ref<SampleLogParsingRefType>;
-  changeJSONSchema?: (schema: any) => void;
+  pageType: PageType;
+  logConfig: LogConfigState;
 }
 
-const LogConfigComp: React.FC<LogConfigProps> = (props: LogConfigProps) => {
-  const {
-    pageType,
-    headerTitle,
-    logSourceType,
-    curConfig,
-    changeLogConfName,
-    changeLogType,
-    changeUserLogFormat,
-    changeRegExpSpecs,
-    changeLogParser,
-    changeSyslogParser,
-    changeUserSmapleLog,
-    showNameRequiredError,
-    showTypeRequiedError,
-    userLogFormatError,
-    syslogParserError,
-    sampleLogRequiredError,
-    isLoading,
-    sampleLogInvalid,
-    changeSampleLogInvalid,
-    changeTimeKey,
-    changeRegexKeyList,
-    changeFilterRegex,
-    changeSelectKeyList,
-    changeTimeOffset,
-    changeJSONSchema,
-  } = props;
+const LogConfigComp = (props: LogConfigCompProps) => {
+  const { loadingData, headerTitle, breadCrumbList, pageType, logConfig } =
+    props;
+  const dispatch = useDispatch<AppDispatch>();
   const { t } = useTranslation();
-  const dispatch = useDispatch();
+  const { id } = useParams();
+  const navigate = useNavigate();
+
+  const [loadingUpdate, setLoadingUpdate] = useState(false);
+  const [showCookieAlert, setShowCookieAlert] = useState(false);
+
+  const mutationLogConfig = async (isForce = false) => {
+    if (!validateLogConfigParams(logConfig)) {
+      dispatch(validateLogConfig());
+      return;
+    }
+    // validate cookie
+    if (!isForce && validateWindowsHasCookie(logConfig)) {
+      setShowCookieAlert(true);
+      return;
+    }
+    const createLogConfigParam = cloneDeep(logConfig.data);
+    console.info("createLogConfigParam:", createLogConfigParam);
+
+    // trim regular expression and user log format
+    if (
+      logConfig.data.logType === LogType.MultiLineText ||
+      logConfig.data.logType === LogType.SingleLineText
+    ) {
+      createLogConfigParam.regex = logConfig.data.regex
+        ?.trim()
+        .replace(/[\n\t\r]/g, "");
+      createLogConfigParam.userLogFormat = logConfig.data.userLogFormat
+        ?.trim()
+        .replace(/[\n\t\r]/g, "");
+    }
+
+    // convert json schema to string
+    if (isJSONType(logConfig.data.logType)) {
+      if (logConfig.data.jsonSchema) {
+        createLogConfigParam.jsonSchema = JSON.stringify(
+          logConfig.data.jsonSchema
+        );
+      }
+    } else if (isWindowsEvent(logConfig.data.logType)) {
+      createLogConfigParam.jsonSchema = logConfig.data.jsonSchema;
+    } else {
+      createLogConfigParam.jsonSchema = undefined;
+    }
+
+    try {
+      setLoadingUpdate(true);
+      if (pageType === PageType.New) {
+        await appSyncRequestMutation(createLogConfig, createLogConfigParam);
+      } else {
+        await appSyncRequestMutation(updateLogConfig, createLogConfigParam);
+      }
+      dispatch({
+        type: ActionType.CLOSE_INFO_BAR,
+      });
+      navigate("/resources/log-config");
+      setLoadingUpdate(false);
+      setShowCookieAlert(false);
+    } catch (error: any) {
+      setLoadingUpdate(false);
+      handleErrorMessage(error.message);
+      console.error(error);
+    }
+  };
 
   return (
-    <div>
-      <HeaderPanel title={headerTitle}>
-        {ternary(
-          isLoading,
-          <LoadingText />,
+    <CommonLayout loadingData={loadingData} breadCrumbList={breadCrumbList}>
+      <div className="m-w-1024">
+        <HeaderPanel title={headerTitle}>
           <div>
             <FormItem
               optionTitle={t("resource:config.common.configName")}
               optionDesc={t("resource:config.common.configNameDesc")}
-              errorText={
-                showNameRequiredError
-                  ? t("resource:config.common.configNameError")
-                  : ""
-              }
+              errorText={displayI18NMessage(logConfig.nameError)}
             >
               <TextInput
                 disabled={pageType === PageType.Edit}
                 className="m-w-75p"
-                value={curConfig?.name || ""}
+                value={defaultStr(logConfig.data.name)}
                 onChange={(event) => {
-                  changeLogConfName && changeLogConfName(event.target.value);
+                  dispatch(configNameChanged(event.target.value));
                 }}
                 placeholder="log-example-config"
               />
@@ -154,311 +199,232 @@ const LogConfigComp: React.FC<LogConfigProps> = (props: LogConfigProps) => {
 
             <FormItem
               optionTitle={t("resource:config.common.logType")}
-              optionDesc={
-                logSourceType === LogSourceType.Syslog
-                  ? t("resource:config.common.logTypeDescSyslog")
-                  : t("resource:config.common.logTypeDesc")
-              }
-              errorText={
-                showTypeRequiedError
-                  ? t("resource:config.common.logTypeError")
-                  : ""
-              }
+              optionDesc={t("resource:config.common.logTypeDesc")}
+              errorText={displayI18NMessage(logConfig.logTypeError)}
             >
               <Select
                 isI18N
                 disabled={pageType === PageType.Edit}
                 className="m-w-45p"
-                optionList={
-                  logSourceType === LogSourceType.Syslog
-                    ? SYSLOG_CONFIG_TYPE_LIST
-                    : LOG_CONFIG_TYPE_LIST
-                }
-                value={curConfig?.logType || ""}
+                optionList={LOG_CONFIG_TYPE_LIST}
+                value={defaultStr(logConfig.data?.logType)}
                 onChange={(event) => {
                   dispatch({
                     type: ActionType.CLOSE_INFO_BAR,
                   });
-                  changeUserLogFormat && changeUserLogFormat("");
-                  changeLogType && changeLogType(event.target.value);
+                  dispatch(configLogTypeChanged(event.target.value));
                 }}
                 placeholder={t("resource:config.common.chooseLogType")}
               />
             </FormItem>
 
-            {curConfig?.logType === LogType.Syslog && (
+            {logConfig.data?.logType === LogType.Syslog && (
               <FormItem
                 optionTitle={t("resource:config.common.parser")}
                 optionDesc={t("resource:config.common.parserDesc")}
-                errorText={
-                  syslogParserError ? t("error.syslogParserError") : ""
-                }
+                errorText={displayI18NMessage(logConfig.syslogParserError)}
               >
                 <Select
                   disabled={pageType === PageType.Edit}
                   className="m-w-45p"
                   optionList={SYS_LOG_PARSER_LIST}
-                  value={curConfig?.syslogParser || ""}
+                  value={defaultStr(logConfig.data?.syslogParser)}
                   onChange={(event) => {
-                    changeSyslogParser &&
-                      changeSyslogParser(event.target.value);
+                    dispatch(sysLogParserChanged(event.target.value));
                   }}
                   placeholder={t("resource:config.common.chooseParser")}
                 />
               </FormItem>
             )}
 
-            {curConfig?.logType === LogType.Syslog &&
-              curConfig?.syslogParser === SyslogParser.CUSTOM && (
-                <div className="m-w-75p">
-                  <FormItem
-                    optionTitle={t("resource:config.common.syslogFormat")}
-                    optionDesc={t("resource:config.common.syslogFormatDesc")}
-                    errorText={props.regexErrorMsg}
-                  >
-                    <TextInput
-                      placeholder="<%pri%>1 %timestamp:::date-rfc3339% %HOSTNAME% %app-name% %procid% %msgid% %msg%\n"
-                      value={curConfig?.userLogFormat || ""}
-                      onChange={(event) => {
-                        changeUserLogFormat &&
-                          changeUserLogFormat(event.target.value);
-                      }}
-                    />
-                  </FormItem>
-                  <div className="input-tip">
-                    {t("resource:config.common.regName") + curConfig.regex}
-                  </div>
-                </div>
-              )}
-
-            {curConfig?.logType === LogType.MultiLineText && (
+            {logConfig.data?.logType === LogType.IIS && (
               <FormItem
                 optionTitle={t("resource:config.common.parser")}
                 optionDesc={t("resource:config.common.parserDesc")}
+                errorText={displayI18NMessage(logConfig.iisParserError)}
+              >
+                <Select
+                  className="m-w-45p"
+                  optionList={IIS_LOG_PARSER_LIST}
+                  value={defaultStr(logConfig.data?.iisLogParser)}
+                  onChange={(event) => {
+                    dispatch(iisLogParserChanged(event.target.value));
+                  }}
+                  placeholder={t("resource:config.common.chooseParser")}
+                />
+              </FormItem>
+            )}
+
+            {logConfig.data?.logType === LogType.MultiLineText && (
+              <FormItem
+                optionTitle={t("resource:config.common.parser")}
+                optionDesc={t("resource:config.common.parserDesc")}
+                errorText={displayI18NMessage(logConfig.multiLineParserError)}
               >
                 <Select
                   disabled={pageType === PageType.Edit}
                   className="m-w-45p"
                   optionList={MULTI_LINE_LOG_PARSER_LIST}
-                  value={curConfig?.multilineLogParser || ""}
+                  value={defaultStr(logConfig.data?.multilineLogParser)}
                   onChange={(event) => {
-                    changeLogParser && changeLogParser(event.target.value);
+                    dispatch(multiLineParserChanged(event.target.value));
                   }}
                   placeholder={t("resource:config.common.chooseParser")}
                 />
               </FormItem>
             )}
 
-            {curConfig?.logType === LogType.MultiLineText &&
-              curConfig?.multilineLogParser ===
-                MultiLineLogParser.JAVA_SPRING_BOOT && (
+            {logConfig.data.logType && logConfig.showLogFormat && (
+              <FormItem
+                infoType={getFormatInfoType(logConfig.data.logType)}
+                optionTitle={displayI18NMessage(
+                  getFormatTitle(logConfig.data.logType)
+                )}
+                optionDesc={displayI18NMessage(
+                  getFormatDescription(logConfig.data.logType)
+                )}
+                errorText={displayI18NMessage(logConfig.logFormatError)}
+              >
                 <div className="m-w-75p">
-                  <FormItem
-                    optionTitle={t(
-                      "resource:config.common.springbootLogFormat"
-                    )}
-                    optionDesc={t(
-                      "resource:config.common.springbootLogFormatDesc"
-                    )}
-                    errorText={props.userLogFormatErrorMsg}
-                  >
-                    <TextInput
-                      placeholder="%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
-                      value={curConfig?.userLogFormat || ""}
-                      onChange={(event) => {
-                        changeUserLogFormat &&
-                          changeUserLogFormat(event.target.value);
+                  {getFormatInputType(logConfig.data.logType) ===
+                    "textarea" && (
+                    <TextArea
+                      value={defaultStr(logConfig.data.userLogFormat)}
+                      placeholder={getFormatPlaceholder(logConfig.data.logType)}
+                      rows={4}
+                      onChange={(
+                        event: React.ChangeEvent<HTMLTextAreaElement>
+                      ) => {
+                        dispatch(userLogFormatChanged(event.target.value));
                       }}
                     />
-                  </FormItem>
+                  )}
+                  {getFormatInputType(logConfig.data.logType) === "input" && (
+                    <TextInput
+                      placeholder={getFormatPlaceholder(logConfig.data.logType)}
+                      value={defaultStr(logConfig.data.userLogFormat)}
+                      onChange={(event) => {
+                        dispatch(userLogFormatChanged(event.target.value));
+                      }}
+                    />
+                  )}
                   <div className="input-tip">
-                    {t("resource:config.common.regName") + curConfig.regex}
-                  </div>
-                </div>
-              )}
-
-            {curConfig?.logType === LogType.Nginx && (
-              <FormItem
-                infoType={InfoBarTypes.NGINX_LOG_FORMAT}
-                optionTitle={t("resource:config.common.nginxFormat")}
-                optionDesc={t("resource:config.common.nginxFormatDesc")}
-                errorText={
-                  userLogFormatError
-                    ? t("resource:config.common.nginxFormatInvalid")
-                    : props.userLogFormatErrorMsg
-                }
-              >
-                <div className="m-w-75p">
-                  <TextArea
-                    value={curConfig.userLogFormat || ""}
-                    placeholder="log_format main ..."
-                    rows={4}
-                    onChange={(event) => {
-                      changeUserLogFormat &&
-                        changeUserLogFormat(event.target.value);
-                    }}
-                  />
-                  <div className="input-tip">
-                    {t("resource:config.common.regName") + curConfig.regex}
+                    {t("resource:config.common.regName") + logConfig.data.regex}
                   </div>
                 </div>
               </FormItem>
             )}
 
-            {curConfig?.logType === LogType.Apache && (
+            {logConfig.data.logType && logConfig.showRegex && (
               <FormItem
-                infoType={InfoBarTypes.APACHE_LOG_FORMAT}
-                optionTitle={t("resource:config.common.apacheFormat")}
-                optionDesc={t("resource:config.common.apacheFormatDesc")}
-                errorText={
-                  userLogFormatError
-                    ? t("resource:config.common.apacheFormatError")
-                    : props.userLogFormatErrorMsg
-                }
+                infoType={getRegexInfoType(
+                  logConfig.data.logType,
+                  getCurrentParser(
+                    logConfig.data.logType,
+                    logConfig.data.syslogParser,
+                    logConfig.data.multilineLogParser,
+                    logConfig.data.iisLogParser
+                  )
+                )}
+                optionTitle={displayI18NMessage(
+                  getRegexTitle(
+                    logConfig.data.logType,
+                    getCurrentParser(
+                      logConfig.data.logType,
+                      logConfig.data.syslogParser,
+                      logConfig.data.multilineLogParser,
+                      logConfig.data.iisLogParser
+                    )
+                  )
+                )}
+                optionDesc={displayI18NMessage(
+                  getRegexDescription(
+                    logConfig.data.logType,
+                    getCurrentParser(
+                      logConfig.data.logType,
+                      logConfig.data.syslogParser,
+                      logConfig.data.multilineLogParser,
+                      logConfig.data.iisLogParser
+                    )
+                  )
+                )}
+                errorText={displayI18NMessage(logConfig.regexError)}
               >
                 <div className="m-w-75p">
                   <TextArea
-                    value={curConfig.userLogFormat || ""}
-                    placeholder='LogFormat "%h %l ...'
-                    rows={4}
-                    onChange={(event) => {
-                      changeUserLogFormat &&
-                        changeUserLogFormat(event.target.value);
-                    }}
-                  />
-                  <div className="input-tip">
-                    {t("resource:config.common.regName") + curConfig.regex}
-                  </div>
-                </div>
-              </FormItem>
-            )}
-
-            {curConfig?.logType === LogType.SingleLineText && (
-              <FormItem
-                infoType={InfoBarTypes.REGEX_LOG_FORMAT}
-                optionTitle={t("resource:config.common.regexFormat")}
-                optionDesc={t("resource:config.common.regexFormatDesc")}
-                errorText={props.regexErrorMsg}
-              >
-                <div className="m-w-75p">
-                  <TextArea
-                    value={curConfig.regex || ""}
+                    disabled={logConfig.regexDisabled}
+                    value={defaultStr(logConfig.data.regex)}
                     placeholder="\S\s+.*"
                     rows={4}
-                    onChange={(event) => {
-                      changeUserLogFormat &&
-                        changeUserLogFormat(event.target.value);
+                    onChange={(
+                      event: React.ChangeEvent<HTMLTextAreaElement>
+                    ) => {
+                      dispatch(regexChanged(event.target.value));
                     }}
                   />
                 </div>
               </FormItem>
             )}
-
-            {curConfig?.logType === LogType.Syslog &&
-              (curConfig.syslogParser === SyslogParser.RFC5424 ||
-                curConfig.syslogParser === SyslogParser.RFC3164) && (
-                <FormItem
-                  optionTitle={t("resource:config.common.regexFormat")}
-                  optionDesc=""
-                >
-                  <div className="m-w-75p">
-                    <TextArea
-                      disabled={
-                        curConfig.syslogParser === SyslogParser.RFC5424 ||
-                        curConfig.syslogParser === SyslogParser.RFC3164
-                      }
-                      value={curConfig.regex || ""}
-                      placeholder="\S\s+.*"
-                      rows={4}
-                      onChange={(event) => {
-                        changeUserLogFormat &&
-                          changeUserLogFormat(event.target.value);
-                      }}
-                    />
-                  </div>
-                </FormItem>
-              )}
-
-            {curConfig?.logType === LogType.MultiLineText &&
-              curConfig.multilineLogParser === MultiLineLogParser.CUSTOM && (
-                <FormItem
-                  infoType={InfoBarTypes.REGEX_LOG_FORMAT}
-                  optionTitle={t("resource:config.common.firstLineRegEx")}
-                  optionDesc={t("resource:config.common.firstLineRegExDesc")}
-                  errorText={props.regexErrorMsg}
-                >
-                  <div className="m-w-75p">
-                    <TextArea
-                      value={curConfig.regex || ""}
-                      placeholder="\S\s+.*"
-                      rows={4}
-                      onChange={(event) => {
-                        changeUserLogFormat &&
-                          changeUserLogFormat(event.target.value);
-                      }}
-                    />
-                  </div>
-                </FormItem>
-              )}
           </div>
-        )}
-      </HeaderPanel>
-
-      {(curConfig?.logType === LogType.JSON ||
-        curConfig?.logType === LogType.Nginx ||
-        curConfig?.logType === LogType.Apache ||
-        curConfig?.logType === LogType.Syslog ||
-        curConfig?.logType === LogType.SingleLineText ||
-        (curConfig?.logType === LogType.MultiLineText &&
-          curConfig?.multilineLogParser ===
-            MultiLineLogParser.JAVA_SPRING_BOOT) ||
-        (curConfig?.logType === LogType.MultiLineText &&
-          curConfig?.multilineLogParser === MultiLineLogParser.CUSTOM)) && (
-        <HeaderPanel title={t("resource:config.common.sampleParsing")}>
-          <SampleLogParsing
-            pageType={pageType}
-            ref={props.sampleLogParsingRef}
-            sampleLogInvalid={sampleLogInvalid}
-            changeSampleLogInvalid={(invalid) => {
-              changeSampleLogInvalid && changeSampleLogInvalid(invalid);
-            }}
-            changeSpecs={(specs) => {
-              changeRegExpSpecs && changeRegExpSpecs(specs);
-            }}
-            changeSampleLog={(log) => {
-              changeUserSmapleLog && changeUserSmapleLog(log);
-            }}
-            changeTimeKey={(key) => {
-              changeTimeKey && changeTimeKey(key);
-            }}
-            changeRegExpList={(list) => {
-              changeRegexKeyList && changeRegexKeyList(list);
-            }}
-            changeSelectKeyList={(keyList) => {
-              changeSelectKeyList && changeSelectKeyList(keyList);
-            }}
-            changeTimeOffset={(offset) => {
-              changeTimeOffset && changeTimeOffset(offset);
-            }}
-            changeJSONSchema={(schema) => {
-              changeJSONSchema && changeJSONSchema(schema);
-            }}
-            logConfig={curConfig}
-            logType={curConfig.logType}
-            showSampleLogRequiredError={sampleLogRequiredError}
-          />
         </HeaderPanel>
-      )}
 
-      {curConfig && (
-        <ConfigFilter
-          logConfig={curConfig}
-          changeFilter={(filter) => {
-            changeFilterRegex && changeFilterRegex(filter);
+        {!isWindowsEvent(logConfig.data.logType) && (
+          <SampleLogParsing pageType={pageType} />
+        )}
+
+        {!isWindowsEvent(logConfig.data.logType) && logConfig.data.logType && (
+          <ConfigFilter />
+        )}
+
+        <div className="button-action text-right">
+          <Button
+            btnType="text"
+            onClick={() => {
+              if (pageType === PageType.New) {
+                navigate("/resources/log-config");
+              } else {
+                navigate("/resources/log-config/detail/" + id);
+              }
+            }}
+          >
+            {t("button.cancel")}
+          </Button>
+          <Button
+            btnType="primary"
+            loading={loadingUpdate}
+            onClick={() => {
+              mutationLogConfig();
+            }}
+          >
+            {pageType === PageType.New ? t("button.create") : t("button.save")}
+          </Button>
+        </div>
+        <Modal
+          title={t("resource:config.alert")}
+          fullWidth={false}
+          isOpen={showCookieAlert}
+          closeModal={() => {
+            setShowCookieAlert(false);
           }}
-        />
-      )}
-    </div>
+          actions={
+            <div className="button-action no-pb text-right">
+              <Button
+                disabled={loadingUpdate}
+                onClick={() => {
+                  setShowCookieAlert(false);
+                }}
+              >
+                {t("button.close")}
+              </Button>
+            </div>
+          }
+        >
+          <div className="modal-content">
+            {t("resource:config.common.cookieAlert")}
+          </div>
+        </Modal>
+      </div>
+    </CommonLayout>
   );
 };
 

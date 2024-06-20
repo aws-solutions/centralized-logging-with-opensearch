@@ -2,14 +2,31 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import os
+import boto3
 
 from commonlib.utils import (
+    get_kv_from_buffer_param,
     get_resource_from_arn,
     get_name_from_tags,
     get_partition,
     paginate,
     create_stack_name,
+    exec_sfn_flow,
 )
+from commonlib.model import BufferParam
+from moto import mock_stepfunctions
+from moto.core import DEFAULT_ACCOUNT_ID as ACCOUNT_ID
+
+SFN_DEF = (
+    '{"Comment": "An example of the Amazon States Language using a choice state.",'
+    '"StartAt": "DefaultState",'
+    '"States": '
+    '{"DefaultState": {"Type": "Fail","Error": "DefaultStateError","Cause": "No Matches!"}}}'
+)
+
+
+def get_default_role():
+    return "arn:aws:iam::" + ACCOUNT_ID + ":role/unknown_sf_role"
 
 
 def test_get_resource_from_arn():
@@ -125,3 +142,29 @@ def test_create_stack_name():
     os.environ["STACK_PREFIX"] = "Test"
     id = "abc"
     assert create_stack_name("Haha", id) == "Test-Haha-abc"
+
+
+@mock_stepfunctions
+def test_exec_sfn_flow():
+    client = boto3.client("stepfunctions")
+    response = client.create_state_machine(
+        name="sample-state", definition=str(SFN_DEF), roleArn=get_default_role()
+    )
+    arn = response["stateMachineArn"]
+
+    exec_sfn_flow(
+        client,
+        arn,
+        "flowid",
+    )
+
+
+def test_get_kv_from_buffer_param():
+    assert "Value1" == get_kv_from_buffer_param("Key1", [
+        BufferParam(paramKey="Key1", paramValue="Value1"),
+        BufferParam(paramKey="Key2", paramValue="Value2"),
+    ])
+    assert "" == get_kv_from_buffer_param("Key99", [
+        BufferParam(paramKey="Key1", paramValue="Value1"),
+        BufferParam(paramKey="Key2", paramValue="Value2"),
+    ])

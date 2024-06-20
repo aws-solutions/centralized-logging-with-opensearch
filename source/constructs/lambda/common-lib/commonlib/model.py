@@ -27,11 +27,6 @@ class CommonEnum(str, Enum):
         return self.value
 
 
-class AgentTypeEnum(CommonEnum):
-    FLUENT_BIT = "fluent-bit"
-    NONE = None
-
-
 class LogTypeEnum(CommonEnum):
     JSON = "JSON"
     REGEX = "Regex"
@@ -40,6 +35,8 @@ class LogTypeEnum(CommonEnum):
     SYSLOG = "Syslog"
     SINGLELINE_TEXT = "SingleLineText"
     MULTILINE_TEXT = "MultiLineText"
+    WINDOWS_EVENT = "WindowsEvent"
+    IIS = "IIS"
 
 
 class SyslogParserEnum(CommonEnum):
@@ -53,11 +50,26 @@ class MultiLineLogParserEnum(CommonEnum):
     CUSTOM = "CUSTOM"
 
 
+class IISLogParserEnum(CommonEnum):
+    W3C = "W3C"
+    IIS = "IIS"
+    NCSA = "NCSA"
+
+
 class BufferTypeEnum(CommonEnum):
     NONE = "None"
     KDS = "KDS"
     S3 = "S3"
     MSK = "MSK"
+
+
+class DomainImportStatusEnum(CommonEnum):
+    ACTIVE = "ACTIVE"
+    IMPORTED = "IMPORTED"
+    INACTIVE = "INACTIVE"
+    IN_PROGRESS = "IN_PROGRESS"
+    UNKNOWN = "UNKNOWN"
+    FAILED = "FAILED"
 
 
 class StatusEnum(CommonEnum):
@@ -82,6 +94,7 @@ class DomainStatus(CommonEnum):
 class DomainStatusCheckType(CommonEnum):
     FAILED = "FAILED"
     PASSED = "PASSED"
+    WARNING = "WARNING"
 
 
 class DomainImportType(CommonEnum):
@@ -168,6 +181,11 @@ class PipelineMonitorStatus(CommonEnum):
     DISABLED = "DISABLED"
 
 
+class LogStructure(CommonEnum):
+    RAW = "RAW"
+    FLUENT_BIT_PARSED_JSON = "FLUENT_BIT_PARSED_JSON"
+
+
 class IndexSuffix(CommonEnum):
     yyyy_MM_dd = "yyyy_MM_dd"
     yyyy_MM_dd_HH = "yyyy_MM_dd_HH"
@@ -183,8 +201,8 @@ class EngineType(CommonEnum):
 class NotificationService(CommonEnum):
     SNS = "SNS"
     SES = "SES"
-    
-    
+
+
 class Tag(BaseModel):
     key: str
     value: str
@@ -268,9 +286,11 @@ class MonitorDetail(BaseModel):
     snsTopicArn: str = ""
     emails: str = ""
 
+
 class OpenSearchIngestionInput(BaseModel):
     minCapacity: Optional[int]
     maxCapacity: Optional[int]
+
 
 class AppPipeline(CommonModel):
     pipelineId: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -282,6 +302,7 @@ class AppPipeline(CommonModel):
     bufferResourceName: str = ""
     bufferParams: List[BufferParam] = []
     aosParams: Optional[AOSParams] = None
+    parameters: List[Parameter] = []
     lightEngineParams: Optional[LightEngineParams] = None
     logConfigId: str
     logConfigVersionNumber: int
@@ -297,6 +318,22 @@ class AppPipeline(CommonModel):
     logEventQueueName: str = ""
     osiPipelineName: Optional[str] = None
     engineType: EngineType = EngineType.OPEN_SEARCH
+    logStructure: Optional[LogStructure] = None
+
+    @validator("logStructure", always=True)
+    def validate_log_structure(cls, value, values):
+        if not value:
+            is_s3_source = "false"
+            for param in values["bufferParams"]:
+                if param.paramKey == "isS3Source":
+                    is_s3_source = param.paramValue
+
+            if str(is_s3_source).lower() == "true":
+                return LogStructure.RAW
+
+            return LogStructure.FLUENT_BIT_PARSED_JSON
+        else:
+            return value
 
 
 class RegularSpec(BaseModel):
@@ -334,6 +371,7 @@ class LogConfig(CommonModel):
     logType: LogTypeEnum
     syslogParser: Optional[SyslogParserEnum] = None
     multilineLogParser: Optional[MultiLineLogParserEnum] = None
+    iisLogParser: Optional[IISLogParserEnum] = None
     filterConfigMap: FilterConfigMap = FilterConfigMap(enabled=False, filters=[])
     regex: str = ""
     jsonSchema: Optional[dict] = None
@@ -364,11 +402,19 @@ class LogConfig(CommonModel):
                 )
                 if not spec:
                     raise ValueError(f"No regexFieldSpecs for time key: {time_key}")
-                if spec.type != "date":
+                if (
+                    spec.type != "date"
+                    and spec.type != "epoch_millis"
+                    and spec.type != "epoch_second"
+                ):
                     raise ValueError(
                         f'The time key: {time_key} type of regexFieldSpecs must be "date"'
                     )
-                if not spec.format:
+                if (
+                    not spec.format
+                    and spec.type != "epoch_millis"
+                    and spec.type != "epoch_second"
+                ):
                     raise ValueError(
                         f"The time key: {time_key} format must not be empty"
                     )
@@ -427,6 +473,7 @@ class GroupTypeEnum(CommonEnum):
 
 class GroupPlatformEnum(CommonEnum):
     LINUX = "Linux"
+    WINDOWS = "Windows"
 
 
 class EC2Instances(BaseModel):
@@ -436,7 +483,7 @@ class EC2Instances(BaseModel):
 class Ec2Source(BaseModel):
     groupName: str
     groupType: GroupTypeEnum
-    groupPlatform: GroupPlatformEnum
+    groupPlatform: GroupPlatformEnum = GroupPlatformEnum.LINUX
     asgName: str = ""
     instances: Optional[List[EC2Instances]]
 
@@ -481,7 +528,7 @@ class S3Source(BaseModel):
     mode: S3IngestionMode
     bucketName: str
     keyPrefix: str
-    keySuffix: str
+    keySuffix: Optional[str] = None
     compressionType: CompressionType = CompressionType.NONE
 
 
@@ -542,6 +589,7 @@ class Instance(CommonModel):
     sourceId: str
     accountId: str = ""
     region: str = ""
+    platformType: GroupPlatformEnum = GroupPlatformEnum.LINUX
     ingestionIds: List[str] = []
 
 
@@ -555,7 +603,6 @@ class InstanceIngestionDetail(CommonModel):
     ssmCommandId: str = ""
     ssmCommandStatus: str = ""
     details: str = ""
-
 
 
 class SvcPipeline(CommonModel):
@@ -590,6 +637,7 @@ class ExecutionStatus(CommonEnum):
     TIMED_OUT = "Timed_out"
     ABORTED = "Aborted"
 
+
 class ETLLog(CommonModel):
     executionName: str
     taskId: str
@@ -604,3 +652,13 @@ class ETLLog(CommonModel):
     stateMachineName: str
     stateName: str
     status: ExecutionStatus
+
+
+class OpenSearchDomain(BaseModel):
+    # NOTE: This model can only match partial fields in DDB due to the limited time.
+    id: str
+    domainArn: str
+    domainName: str
+    endpoint: str
+    masterRoleArn: Optional[str]
+    status: DomainImportStatusEnum = DomainImportStatusEnum.INACTIVE

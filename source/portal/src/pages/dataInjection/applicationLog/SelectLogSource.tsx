@@ -20,18 +20,16 @@ import PagePanel from "components/PagePanel";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import Breadcrumb from "components/Breadcrumb";
 import Button from "components/Button";
-import HelpPanel from "components/HelpPanel";
-import SideMenu from "components/SideMenu";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import { ActionType } from "reducer/appReducer";
 import { identity } from "lodash";
-import { AnalyticEngineTypes } from "../serviceLog/create/common/SpecifyAnalyticsEngine";
 import { SelectAnalyticsEngine } from "../common/SelectAnalyticsEngine";
 import { PipelineType } from "API";
 import { AppLogSourceMap } from "./common/AppPipelineDesc";
+import { AnalyticEngineTypes } from "types";
+import CommonLayout from "pages/layout/CommonLayout";
 
 const AppLogSourceList = [
   AppLogSourceMap[AppLogSourceType.EC2],
@@ -70,89 +68,78 @@ const SelectLogSource: React.FC = () => {
   }, []);
 
   return (
-    <div className="lh-main-content">
-      <SideMenu />
-      <div className="lh-container">
-        <div className="lh-content">
-          <div className="service-log">
-            <Breadcrumb list={breadCrumbList} />
-            <div className="m-w-1024">
-              <PagePanel title={t("applog:selectLogSource.name")}>
-                <HeaderPanel title={t("applog:selectLogSource.logSources")}>
-                  <div>
-                    <div className="service-item-list">
-                      {AppLogSourceList.map((element, index) => {
-                        return (
-                          <label key={identity(index)}>
-                            <div
-                              className={classNames("service-item", {
-                                active: element.value === appLogSourceType,
-                                disabled: element.disabled,
-                              })}
-                            >
-                              <div className="name">
-                                <input
-                                  disabled={element.disabled}
-                                  onChange={() => {
-                                    console.info("changed");
-                                  }}
-                                  onClick={() => {
-                                    setAppLogSourceType(element.value);
-                                    setEngineType(
-                                      AnalyticEngineTypes.OPENSEARCH
-                                    );
-                                  }}
-                                  checked={element.value === appLogSourceType}
-                                  name="service"
-                                  type="radio"
-                                />{" "}
-                                {t(element.name)}
-                              </div>
-                              <div className="image">
-                                <img
-                                  width="64"
-                                  alt={element.name}
-                                  src={element.img}
-                                />
-                              </div>
-                            </div>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </HeaderPanel>
-              </PagePanel>
-              <SelectAnalyticsEngine
-                pipelineType={PipelineType.APP}
-                appLogType={appLogSourceType}
-                engineType={engineType}
-                setEngineType={setEngineType}
-              />
-              <div className="button-action text-right">
-                <Button
-                  btnType="text"
-                  onClick={() => {
-                    navigate("/log-pipeline/application-log");
-                  }}
-                >
-                  {t("button.cancel")}
-                </Button>
-                <Button
-                  btnType="primary"
-                  onClick={() => {
-                    goToCreatePage();
-                  }}
-                >
-                  {t("button.next")}
-                </Button>
+    <CommonLayout breadCrumbList={breadCrumbList}>
+      <div className="m-w-1024">
+        <PagePanel title={t("applog:selectLogSource.name")}>
+          <HeaderPanel title={t("applog:selectLogSource.logSources")}>
+            <div>
+              <div className="service-item-list">
+                {AppLogSourceList.map((element, index) => {
+                  return (
+                    <label key={identity(index)}>
+                      <div
+                        className={classNames("service-item", {
+                          active: element.value === appLogSourceType,
+                          disabled: element.disabled,
+                        })}
+                      >
+                        <div className="name">
+                          <input
+                            disabled={element.disabled}
+                            onChange={() => {
+                              console.info("changed");
+                            }}
+                            onClick={() => {
+                              setAppLogSourceType(element.value);
+                              setEngineType(AnalyticEngineTypes.OPENSEARCH);
+                            }}
+                            checked={element.value === appLogSourceType}
+                            name="service"
+                            type="radio"
+                          />{" "}
+                          {t(element.name)}
+                        </div>
+                        <div className="image">
+                          <img
+                            width="64"
+                            alt={element.name}
+                            src={element.img}
+                          />
+                        </div>
+                      </div>
+                    </label>
+                  );
+                })}
               </div>
             </div>
-          </div>
+          </HeaderPanel>
+        </PagePanel>
+        <SelectAnalyticsEngine
+          pipelineType={PipelineType.APP}
+          appLogType={appLogSourceType}
+          engineType={engineType}
+          setEngineType={setEngineType}
+        />
+        <div className="button-action text-right">
+          <Button
+            btnType="text"
+            onClick={() => {
+              navigate("/log-pipeline/application-log");
+            }}
+          >
+            {t("button.cancel")}
+          </Button>
+          <Button
+            btnType="primary"
+            onClick={() => {
+              goToCreatePage();
+            }}
+          >
+            {t("button.next")}
+          </Button>
         </div>
       </div>
-      <HelpPanel />
-    </div>
+    </CommonLayout>
   );
 };
 

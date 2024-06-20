@@ -25,6 +25,7 @@ def create_event():
                 {"parameterKey": "hello", "parameterValue": "world"},
                 {"parameterKey": "domainName", "parameterValue": "solution-os"},
             ],
+            "logProcessorConcurrency": "200",
             "osiParams": {
                 "maxCapacity": 0,
                 "minCapacity": 0,
@@ -467,10 +468,11 @@ def glue_client():
 @pytest.fixture
 def events_client():
     with mock_events():
+        pipeline_id = os.environ['LIGHT_ENGINE_SVC_PIPELINE_ID']
         events = boto3.client("events")
         
-        events.put_rule(Name='LogProcessor-waf', ScheduleExpression='rate(5 minutes)', State='ENABLED', EventBusName='default')
-        events.put_targets(Rule='LogProcessor-waf', EventBusName='default',
+        events.put_rule(Name=f'LogProcessor-{pipeline_id}', ScheduleExpression='rate(5 minutes)', State='ENABLED', EventBusName='default')
+        events.put_targets(Rule=f'LogProcessor-{pipeline_id}', EventBusName='default',
                            Targets=[
                                 {
                                     'Id': '1234567890',
@@ -481,8 +483,8 @@ def events_client():
                                 ]
                             )
         
-        events.put_rule(Name='LogMerger-waf', ScheduleExpression='cron(0 1 * * ? *)', State='ENABLED', EventBusName='default')
-        events.put_targets(Rule='LogMerger-waf', EventBusName='default',
+        events.put_rule(Name=f'LogMerger-{pipeline_id}', ScheduleExpression='cron(0 1 * * ? *)', State='ENABLED', EventBusName='default')
+        events.put_targets(Rule=f'LogMerger-{pipeline_id}', EventBusName='default',
                            Targets=[
                                 {
                                     'Id': '1234567890',
@@ -492,8 +494,8 @@ def events_client():
                                     }
                                 ]
                             )
-        events.put_rule(Name='LogArchive-waf', ScheduleExpression='cron(0 2 * * ? *)', State='ENABLED', EventBusName='default')
-        events.put_targets(Rule='LogMerger-waf', EventBusName='default',
+        events.put_rule(Name=f'LogArchive-{pipeline_id}', ScheduleExpression='cron(0 2 * * ? *)', State='ENABLED', EventBusName='default')
+        events.put_targets(Rule=f'LogMerger-{pipeline_id}', EventBusName='default',
                            Targets=[
                                 {
                                     'Id': '1234567890',
@@ -503,8 +505,8 @@ def events_client():
                                     }
                                 ]
                             )
-        events.put_rule(Name='LogMergerForMetrics-waf', ScheduleExpression='cron(0 1 * * ? *)', State='ENABLED', EventBusName='default')
-        events.put_targets(Rule='LogMergerForMetrics-waf', EventBusName='default',
+        events.put_rule(Name=f'LogMergerForMetrics-{pipeline_id}', ScheduleExpression='cron(0 1 * * ? *)', State='ENABLED', EventBusName='default')
+        events.put_targets(Rule=f'LogMergerForMetrics-{pipeline_id}', EventBusName='default',
                            Targets=[
                                 {
                                     'Id': '1234567890',
@@ -768,16 +770,16 @@ def test_get_scheduler_expression(events_client, scheduler_client):
     response = get_scheduler_expression(name='do-not-exists', group='default', client=events)
     assert response == ''
     
-    response = get_scheduler_expression(name='LogProcessor-waf', group='default', client=events)
+    response = get_scheduler_expression(name=f'LogProcessor-{light_engine_svc_pipeline_id}', group='default', client=events)
     assert response == 'rate(5 minutes)'
     
-    response = get_scheduler_expression(name='LogMerger-waf', group='default', client=events)
+    response = get_scheduler_expression(name=f'LogMerger-{light_engine_svc_pipeline_id}', group='default', client=events)
     assert response == 'cron(0 1 * * ? *)'
     
-    response = get_scheduler_expression(name='LogMergerForMetrics-waf', group='default', client=events)
+    response = get_scheduler_expression(name=f'LogMergerForMetrics-{light_engine_svc_pipeline_id}', group='default', client=events)
     assert response == 'cron(0 1 * * ? *)'
     
-    response = get_scheduler_expression(name='LogArchive-waf', group='default', client=events)
+    response = get_scheduler_expression(name=f'LogArchive-{light_engine_svc_pipeline_id}', group='default', client=events)
     assert response == 'cron(0 2 * * ? *)'
     
     scheduler = conn.get_client('scheduler')
@@ -913,7 +915,7 @@ def test_get_schedules_info(ddb_client, events_client, scheduler_client):
             'scheduler': {
                 'type': 'EventBridgeEvents', 
                 'group': 'default', 
-                'name': 'LogProcessor-waf', 
+                'name': f'LogProcessor-{pipeline_id}', 
                 'expression': 'rate(5 minutes)'
                 }
             }, 
@@ -926,7 +928,7 @@ def test_get_schedules_info(ddb_client, events_client, scheduler_client):
             'scheduler': {
                 'type': 'EventBridgeEvents', 
                 'group': 'default', 
-                'name': 'LogMerger-waf', 
+                'name': f'LogMerger-{pipeline_id}', 
                 'expression': 'cron(0 1 * * ? *)', 
                 'age': '1'
                 }
@@ -940,7 +942,7 @@ def test_get_schedules_info(ddb_client, events_client, scheduler_client):
             'scheduler': {
                 'type': 'EventBridgeEvents', 
                 'group': 'default', 
-                'name': 'LogMergerForMetrics-waf', 
+                'name': f'LogMergerForMetrics-{pipeline_id}', 
                 'expression': 'cron(0 1 * * ? *)', 
                 'age': '1'
                 }
@@ -954,7 +956,7 @@ def test_get_schedules_info(ddb_client, events_client, scheduler_client):
             'scheduler': {
                 'type': 'EventBridgeEvents', 
                 'group': 'default', 
-                'name': 'LogArchive-waf', 
+                'name': f'LogArchive-{pipeline_id}', 
                 'expression': 'cron(0 2 * * ? *)', 
                 'age': '7'
                 }
@@ -1106,7 +1108,7 @@ def test_create_light_engine_service_pipeline(sfn_client, ddb_client, sts_client
     assert service_pipeline_info.id == service_pipeline_id
     assert service_pipeline_info.destinationType == BufferTypeEnum.S3
     assert service_pipeline_info.engineType == EngineType.LIGHT_ENGINE
-    assert service_pipeline_info.lightEngineParams.stagingBucketPrefix[:26] == 'AWSLogs/WAFLogs/CL-SvcPipe'
+    assert service_pipeline_info.lightEngineParams.stagingBucketPrefix[:38] == 'LightEngine/AWSLogs/WAFLogs/CL-SvcPipe'
     assert service_pipeline_info.lightEngineParams.centralizedBucketName == 'centralized-bucket'
     assert service_pipeline_info.lightEngineParams.centralizedBucketPrefix == 'datalake'
     assert service_pipeline_info.lightEngineParams.centralizedTableName == 'waf'

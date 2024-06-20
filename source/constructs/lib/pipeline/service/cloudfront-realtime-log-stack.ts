@@ -32,6 +32,7 @@ import * as logs from "aws-cdk-lib/aws-logs";
 import * as cr from "aws-cdk-lib/custom-resources";
 import * as path from "path";
 import { constructFactory } from "../../util/stack-helper";
+import { SharedPythonLayer } from "../../layer/layer";
 
 const { VERSION } = process.env;
 
@@ -253,6 +254,16 @@ export class CloudFrontRealtimeLogStack extends SolutionStack {
       securityGroupId.valueAsString
     );
 
+    const logProcessorConcurrency = this.newParam("logProcessorConcurrency", {
+      description: "Reserve concurrency for log processor lambda",
+      default: 0,
+      type: "Number",
+    });
+    this.addToParamLabels(
+      "Number Of Reserve Concurrency",
+      logProcessorConcurrency.logicalId
+    );
+
     const baseProps = {
       vpc: processVpc,
       securityGroup: processSg,
@@ -325,6 +336,7 @@ export class CloudFrontRealtimeLogStack extends SolutionStack {
         FIELD_NAMES: Fn.join(",", fieldNames.valueAsList),
       },
       stackPrefix: stackPrefix,
+      logProcessorConcurrency: logProcessorConcurrency.valueAsNumber,
     };
 
     const kdsBufferStack = new KDSStack(this, "KDSBuffer", pipelineProps);
@@ -365,7 +377,7 @@ export class CloudFrontRealtimeLogStack extends SolutionStack {
     this.cfnOutput("BufferAccessRoleArn", bufferAccessRole.roleArn);
     this.cfnOutput("BufferAccessRoleName", bufferAccessRole.roleName);
 
-
+    
 
     constructFactory(CloudFrontRealTimeLog)(this, "CloudFrontRealTimeLog", {
       samplingRate: samplingRate.valueAsNumber,
@@ -515,6 +527,7 @@ class CloudFrontRealTimeLogConfigUpdater extends Construct {
           timeout: Duration.seconds(60),
           logRetention: logs.RetentionDays.ONE_MONTH,
           handler: "cloudfront_realtime_log_config_updater.on_event",
+          layers: [SharedPythonLayer.getInstance(this)],
           initialPolicy: [
             new iam.PolicyStatement({
               resources: ["*"],

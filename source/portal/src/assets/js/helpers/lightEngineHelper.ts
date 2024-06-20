@@ -17,38 +17,42 @@ limitations under the License.
 import {
   CompressionType,
   CreateLightEngineAppPipelineMutationVariables,
+  LogStructure,
 } from "API";
 import { AlarmStateType } from "reducer/createAlarm";
 import { CreateLightEngineSate } from "reducer/createLightEngine";
 import { CreateTagSate } from "reducer/createTags";
-import { ApplicationLogType, YesNo } from "types";
+import { YesNo } from "types";
 import { CovertObjToParameterKeyValue } from "../applog";
 import { cloneDeep } from "lodash";
 import { ApiResponse, appSyncRequestMutation } from "../request";
 import { createLightEngineAppPipeline } from "graphql/mutations";
+import { S3BufferState } from "reducer/configBufferS3";
 
 export const CENTRALIZED_BUCKET_PREFIX = "datalake";
 
 export const createLightEngineApplicationPipeline = async (
   lightEngine: CreateLightEngineSate,
-  appPipeline: ApplicationLogType,
+  s3BufferData: S3BufferState,
   logConfigObj: any,
   monitor: AlarmStateType,
   tags: CreateTagSate["tags"],
-  isForce = false
+  isForce = false,
+  logStructure = LogStructure.FLUENT_BIT_PARSED_JSON
 ) => {
   const createParams: CreateLightEngineAppPipelineMutationVariables = {
     logConfigId: logConfigObj.id,
     logConfigVersionNumber: parseInt(logConfigObj.version, 10),
     force: isForce,
     monitor: monitor.monitor,
+    logStructure,
     tags,
     bufferParams: CovertObjToParameterKeyValue(
-      Object.assign(cloneDeep(appPipeline.s3BufferParams), {
+      Object.assign(cloneDeep(s3BufferData.data), {
         compressionType:
-          appPipeline.s3BufferParams.compressionType === CompressionType.NONE
+          s3BufferData.data.compressionType === CompressionType.NONE
             ? undefined
-            : appPipeline.s3BufferParams.compressionType,
+            : s3BufferData.data.compressionType,
         logBucketPrefix: `LightEngine/AppLogs/${lightEngine.centralizedTableName}`,
       })
     ),

@@ -1,0 +1,83 @@
+{
+	"type": "object",
+	"properties": {
+		"bucket_owner": {
+			"type": "string"
+		},
+		"bucket": {
+			"type": "string"
+		},
+		"timestamp": {
+			"type": "string"
+		},
+		"remote_ip": {
+			"type": "string"
+		},
+		"requester": {
+			"type": "string"
+		},
+		"request_id": {
+			"type": "string"
+		},
+		"operation": {
+			"type": "string"
+		},
+		"key": {
+			"type": "string"
+		},
+		"request_uri": {
+			"type": "string"
+		},
+		"http_status": {
+			"type": "integer"
+		},
+		"error_code": {
+			"type": "string"
+		},
+		"bytes_sent": {
+			"type": "string"
+		},
+		"object_size": {
+			"type": "string"
+		},
+		"total_time": {
+			"type": "string"
+		},
+		"turn_around_time": {
+			"type": "string"
+		},
+		"referrer": {
+			"type": "string"
+		},
+		"user_agent": {
+			"type": "string"
+		},
+		"version_id": {
+			"type": "string"
+		},
+		"host_id": {
+			"type": "string"
+		},
+		"signature_version": {
+			"type": "string"
+		},
+		"cipher_suite": {
+			"type": "string"
+		},
+		"authentication_type": {
+			"type": "string"
+		},
+		"host_header": {
+			"type": "string"
+		},
+		"tls_version": {
+			"type": "string"
+		},
+		"access_point_arn": {
+			"type": "string"
+		},
+		"acl_required": {
+			"type": "string"
+		}
+	}
+}

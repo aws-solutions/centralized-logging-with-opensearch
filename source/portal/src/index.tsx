@@ -22,6 +22,7 @@ import reportWebVitals from "./reportWebVitals";
 import { Provider } from "react-redux";
 import "./i18n";
 import { getStore } from "reducer/store";
+import CommonAlert from "pages/comps/alert";
 
 if (process.env.NODE_ENV === "production") {
   console.log = () => {};
@@ -37,6 +38,7 @@ root.render(
     <Suspense fallback={<div className="page-loading"></div>}>
       <App />
     </Suspense>
+    <CommonAlert />
   </Provider>
 );
 

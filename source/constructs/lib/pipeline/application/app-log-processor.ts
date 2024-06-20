@@ -78,6 +78,13 @@ export interface LogProcessorProps {
    */
   readonly plugins?: string;
 
+  /**
+   * Log proceersor lambda reserve concurrency
+   *
+   * @default - 0.
+   */
+  readonly logProcessorConcurrency: number;
+
   readonly logBucketName?: string;
   readonly backupBucketName: string;
   readonly stackPrefix: string;
@@ -155,6 +162,7 @@ export class AppLogProcessor extends Construct {
       logType: props.logType,
       env: props.env,
       enableConfigJsonParam: props.enableConfigJsonParam,
+      logProcessorConcurrency: props.logProcessorConcurrency
     };
 
     const osInitStack = new OpenSearchInitStack(

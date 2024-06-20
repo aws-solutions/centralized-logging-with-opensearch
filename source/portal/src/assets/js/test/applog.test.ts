@@ -21,7 +21,6 @@ import {
   getSourceInfoValueByKey,
   removeNewLineBreack,
   ParamListToObj,
-  checkConfigInput,
   CovertObjToParameterKeyValue,
 } from "../applog";
 import { BufferType, LogType } from "API"; // 假设API模块已存在
@@ -95,34 +94,9 @@ describe("applog.ts", () => {
     it("should return an empty string if the key is not found", () => {
       expect(getParamValueByKey("key3", params)).toEqual("");
     });
-  });
 
-  describe("checkConfigInput", () => {
-    it("should not return logConfigNameError when name is provided", () => {
-      const config: any = {
-        name: "validName",
-        logType: LogType.MultiLineText,
-      };
-      const errors = checkConfigInput(config);
-      expect(errors.logConfigNameError).toBeFalsy();
-    });
-
-    it("should not return logConfigNameError when name is provided", () => {
-      const config: any = {
-        name: "validName",
-        logType: LogType.MultiLineText,
-      };
-      const errors = checkConfigInput(config);
-      expect(errors.logConfigNameError).toBeFalsy();
-    });
-
-    it("should not return logConfigTypeError when logType is provided", () => {
-      const config: any = {
-        name: "validName",
-        logType: LogType.SingleLineText,
-      };
-      const errors = checkConfigInput(config);
-      expect(errors.logConfigTypeError).toBeFalsy();
+    it("should return an empty string if params is empty", () => {
+      expect(getParamValueByKey("key1", null)).toEqual("");
     });
   });
 
@@ -140,6 +114,10 @@ describe("applog.ts", () => {
 
     it("should return an empty string if the key is not found", () => {
       expect(getSourceInfoValueByKey("sourceKey3", sourceInfo)).toEqual("");
+    });
+
+    it("should return an empty string if sourceInfo is empty", () => {
+      expect(getSourceInfoValueByKey("sourceKey1", null)).toEqual("");
     });
   });
 

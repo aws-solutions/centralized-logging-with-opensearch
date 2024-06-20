@@ -1,0 +1,580 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 999,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "Bn93a3_Vk"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "green",
+            "mode": "fixed"
+          },
+          "custom": {
+            "align": "center",
+            "cellOptions": {
+              "type": "color-text"
+            },
+            "filterable": true,
+            "inspect": true
+          },
+          "mappings": [],
+          "min": -3,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 33,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 14,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": false,
+          "fields": [
+            "response_latency",
+            "response_length"
+          ],
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": []
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "datasource": {
+            "type": "grafana-athena-datasource",
+            "uid": "Bn93a3_Vk"
+          },
+          "format": 1,
+          "rawSQL": "SELECT t.rn as No, t.time, t.timestamp, t.formatversion, t.webaclid, t.httprequest.clientip, case when filter(t.httprequest.headers, x -> lower(x.name) = 'host' ) = ARRAY[] then '' else filter(t.httprequest.headers, x -> lower(x.name) = 'host' )[1].value end as host, t.httprequest.uri, t.terminatingruleid, t.terminatingruletype, t.action, t.terminatingrulematchdetails, t.httpsourcename, t.httpsourceid, t.rulegrouplist, t.ratebasedrulelist, t.nonterminatingmatchingrules, t.requestheadersinserted, t.responsecodesent, t.httprequest, t.labels, t.captcharesponse\nFROM (SELECT time, timestamp, formatversion, webaclid, terminatingruleid, terminatingruletype, action_fixed as action, terminatingrulematchdetails, httpsourcename, httpsourceid, rulegrouplist, ratebasedrulelist, nonterminatingmatchingrules, requestheadersinserted, responsecodesent, httprequest, labels, captcharesponse,\n    row_number() over (order by time ${sort_by}) as rn\n  FROM \"$__table\"\n  WHERE account_id IN (${account_id:sqlstring})\n\t\tAND region IN (${region:sqlstring}) \n\t\tAND action_fixed IN (${action:sqlstring}) \n\t\tAND terminatingRuleType IN (${terminatingruletype:sqlstring})\n\t\tAND webAclName IN (${webaclname:sqlstring}) \n\t\tAND httpSourceId IN (${httpsourceid:sqlstring}) \n\t\tAND terminatingRuleId IN (${terminatingruleid:sqlstring})\n\t\tAND httprequest.clientip LIKE '${clientip}%'\n\t\tAND $__unixEpochFilter(time / 1000)\n\t\tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\t\t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n  ) t \n  WHERE t.rn BETWEEN (${page_no:int} - 1) * ${page_size:int} + 1 AND ${page_no:int} * ${page_size:int};",
+          "refId": "Details",
+          "table": "waf"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "No": "No",
+              "action": "action",
+              "captcharesponse": "captchaResponse",
+              "clientip": "clientIp",
+              "formatversion": "formatVersion",
+              "host": "Host",
+              "httprequest": "httpRequest",
+              "httpsourceid": "httpSourceId",
+              "httpsourcename": "httpSourceName",
+              "labels": "labels",
+              "nonterminatingmatchingrules": "nonTerminatingMatchingRules",
+              "ratebasedrulelist": "rateBasedRuleList",
+              "requestheadersinserted": "requestHeadersInserted",
+              "responsecodesent": "responseCodeSent",
+              "rulegrouplist": "ruleGroupList",
+              "terminatingruleid": "terminatingRuleId",
+              "terminatingrulematchdetails": "terminatingRuleMatchDetails",
+              "terminatingruletype": "terminatingRuleType",
+              "time": "Time",
+              "timestamp": "Timestamp",
+              "uri": "uri",
+              "webaclid": "webaclId"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    }
+  ],
+  "refresh": "",
+  "revision": 1,
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "allValue": "SELECT account_id FROM \"$__table\" WHERE  event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH') \tOR event_hour = $__rawTimeFrom('yyyyMMdd00') GROUP BY account_id",
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "grafana-athena-datasource",
+          "uid": "Bn93a3_Vk"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Account Id",
+        "multi": true,
+        "name": "account_id",
+        "options": [],
+        "query": {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT account_id\nFROM \"$__table\"\nWHERE  event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\tOR event_hour = $__rawTimeFrom('yyyyMMdd00')\nGROUP BY account_id",
+          "refId": "Metrics",
+          "table": "waf_metrics"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "allValue": "SELECT region FROM \"$__table\" WHERE  event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH') \tOR event_hour = $__rawTimeFrom('yyyyMMdd00') GROUP BY region",
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "grafana-athena-datasource",
+          "uid": "Bn93a3_Vk"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Region",
+        "multi": true,
+        "name": "region",
+        "options": [],
+        "query": {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT region\nFROM \"$__table\"\nWHERE  event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\tOR event_hour = $__rawTimeFrom('yyyyMMdd00')\nGROUP BY region",
+          "refId": "Metrics",
+          "table": "waf_metrics"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "description": "",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Action",
+        "multi": true,
+        "name": "action",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "ALLOW",
+            "value": "ALLOW"
+          },
+          {
+            "selected": false,
+            "text": "BLOCK",
+            "value": "BLOCK"
+          },
+          {
+            "selected": false,
+            "text": "COUNT",
+            "value": "COUNT"
+          }
+        ],
+        "query": "ALLOW, BLOCK, COUNT, CAPTCHA, CHALLENGE",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "allValue": "SELECT webaclname FROM \"$__table\" WHERE account_id IN (${account_id:sqlstring}) \tAND region IN (${region:sqlstring}) \tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH') \t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00')) GROUP BY webaclname",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-athena-datasource",
+          "uid": "Bn93a3_Vk"
+        },
+        "definition": "",
+        "description": "",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Web ACL Name",
+        "multi": true,
+        "name": "webaclname",
+        "options": [],
+        "query": {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT webaclname\nFROM \"$__table\"\nWHERE account_id IN (${account_id:sqlstring})\n\tAND region IN (${region:sqlstring})\n\tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00'))\nGROUP BY webaclname\n\n\n\n",
+          "refId": "Metrics",
+          "table": "waf_metrics"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "hide": 0,
+        "includeAll": true,
+        "label": "Terminating Rule Type",
+        "multi": true,
+        "name": "terminatingruletype",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "RATE_BASED",
+            "value": "RATE_BASED"
+          },
+          {
+            "selected": false,
+            "text": "REGULAR",
+            "value": "REGULAR"
+          },
+          {
+            "selected": false,
+            "text": "GROUP",
+            "value": "GROUP"
+          },
+          {
+            "selected": false,
+            "text": "MANAGED_RULE_GROUP",
+            "value": "MANAGED_RULE_GROUP"
+          }
+        ],
+        "query": "RATE_BASED, REGULAR, GROUP, MANAGED_RULE_GROUP",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "allValue": "SELECT terminatingruleid FROM \"$__table\" WHERE account_id IN (${account_id:sqlstring}) \tAND region IN (${region:sqlstring}) \tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH') \t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00')) GROUP BY terminatingruleid",
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "grafana-athena-datasource",
+          "uid": "Bn93a3_Vk"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Terminating Rule Id",
+        "multi": true,
+        "name": "terminatingruleid",
+        "options": [],
+        "query": {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT terminatingruleid\nFROM \"$__table\"\nWHERE account_id IN (${account_id:sqlstring})\n\tAND region IN (${region:sqlstring})\n\tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00'))\nGROUP BY terminatingruleid\n\n\n",
+          "refId": "Metrics",
+          "table": "waf_metrics"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "allValue": "SELECT httpsourceid FROM \"$__table\" WHERE account_id IN (${account_id:sqlstring}) \tAND region IN (${region:sqlstring}) \tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH') \t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00')) GROUP BY httpsourceid",
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "grafana-athena-datasource",
+          "uid": "Bn93a3_Vk"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Source",
+        "multi": true,
+        "name": "httpsourceid",
+        "options": [],
+        "query": {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT httpsourceid\nFROM \"$__table\"\nWHERE account_id IN (${account_id:sqlstring})\n\tAND region IN (${region:sqlstring})\n\tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00'))\nGROUP BY httpsourceid\n\n",
+          "refId": "Metrics",
+          "table": "waf_metrics"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "hide": 0,
+        "label": "Client IP",
+        "name": "clientip",
+        "options": [
+          {
+            "selected": true,
+            "text": "",
+            "value": ""
+          }
+        ],
+        "query": "",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "1",
+          "value": "1"
+        },
+        "datasource": {
+          "type": "grafana-athena-datasource",
+          "uid": "Bn93a3_Vk"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Page No",
+        "multi": false,
+        "name": "page_no",
+        "options": [],
+        "query": {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT cast(page_no as varchar) as page_no\nFROM (\n\tSELECT sequence(1, count(1) / ${page_size:int} + 1, 1)\n  FROM \"$__table\"\n  WHERE account_id IN (${account_id:sqlstring})\n\t\tAND region IN (${region:sqlstring}) \n\t\tAND action_fixed IN (${action:sqlstring}) \n\t\tAND terminatingRuleType IN (${terminatingruletype:sqlstring})\n\t\tAND webAclName IN (${webaclname:sqlstring}) \n\t\tAND httpSourceId IN (${httpsourceid:sqlstring}) \n\t\tAND terminatingRuleId IN (${terminatingruleid:sqlstring})\n\t\tAND $__unixEpochFilter(time / 1000)\n\t\tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n\t) AS x (no)\nCROSS JOIN UNNEST(no) AS t (page_no)\n;",
+          "refId": "Details",
+          "table": "waf"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "1000",
+          "value": "1000"
+        },
+        "hide": 0,
+        "includeAll": false,
+        "label": "Page Size",
+        "multi": false,
+        "name": "page_size",
+        "options": [
+          {
+            "selected": false,
+            "text": "100",
+            "value": "100"
+          },
+          {
+            "selected": true,
+            "text": "1000",
+            "value": "1000"
+          },
+          {
+            "selected": false,
+            "text": "10000",
+            "value": "10000"
+          },
+          {
+            "selected": false,
+            "text": "50000",
+            "value": "50000"
+          }
+        ],
+        "query": "100, 1000, 10000, 50000",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "Asc",
+          "value": "Asc"
+        },
+        "hide": 0,
+        "includeAll": false,
+        "label": "Sort  by",
+        "multi": false,
+        "name": "sort_by",
+        "options": [
+          {
+            "selected": true,
+            "text": "Asc",
+            "value": "Asc"
+          },
+          {
+            "selected": false,
+            "text": "Desc",
+            "value": "Desc"
+          }
+        ],
+        "query": "Asc, Desc",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ]
+  },
+  "timezone": "",
+  "title": "waf-details",
+  "uid": "d27351cb-430d-44a4-8a6c-8f928e8a4917-00",
+  "version": 19,
+  "weekStart": ""
+}

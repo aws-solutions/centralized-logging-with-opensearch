@@ -13,23 +13,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import { INVALID } from "./const";
 import { format, parseISO } from "date-fns";
 import { formatWithOptions } from "date-fns/fp";
-import {
-  AppPipeline,
-  EngineType,
-  LogType,
-  MultiLineLogParser,
-  SchedulerType,
-  SyslogParser,
-} from "API";
-import { ExLogConf } from "pages/resources/common/LogConfigComp";
+import { AppPipeline, EngineType, SchedulerType, SubAccountLink } from "API";
 import i18n from "i18n";
 import { LogProcessorType, SelectProcessorType } from "reducer/selectProcessor";
 import { ServiceLogDetailProps } from "pages/dataInjection/serviceLog/ServiceLogDetail";
 
-const SPRINGBOOT_DEFAULT_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss,SSS";
 const stackPrefix = "CL";
 
 // Build Dashboard Link
@@ -186,467 +176,6 @@ export const humanFileSize = (bytes: any, si = false, dp = 1) => {
   return bytes.toFixed(dp) + " " + units[u];
 };
 
-const APACHE_LOG_REG_MAP: any = {
-  "%a": {
-    reg: "(?<client_addr>[0-9.-]+)",
-    key: "client_addr",
-  },
-  "%{c}a": {
-    reg: "(?<connect_addr>[0-9.-]+)",
-    key: "connect_addr",
-  },
-  "%A": {
-    reg: "(?<local_addr>[0-9.-]+)",
-    key: "local_addr",
-  },
-  "%B": {
-    reg: "(?<response_bytes>\\d+|-)",
-    key: "response_bytes",
-  },
-  "%b": {
-    reg: "(?<response_size_bytes>\\d+|-)",
-    key: "response_size_bytes",
-  },
-  "%D": {
-    reg: "(?<request_time_msec>\\d+|-)",
-    key: "request_time_msec",
-  },
-  "%f": {
-    reg: '(?<filename>(?:[^"]|\\")+)',
-    key: "filename",
-  },
-  "%h": {
-    reg: "(?<remote_addr>[0-9.-]+)",
-    key: "remote_addr",
-  },
-  "%H": {
-    reg: '(?<request_protocol_supple>(?:[^"]|\\")+)',
-    key: "request_protocol_supple",
-  },
-  "%k": {
-    reg: "(?<keep_alive>\\d+|-)",
-    key: "keep_alive",
-  },
-  "%l": {
-    reg: "(?<remote_ident>[\\w.-]+)",
-    key: "remote_ident",
-  },
-  "%L": {
-    reg: "(?<error_log>[\\w\\d-]+)",
-    key: "error_log",
-  },
-  "%m": {
-    reg: "(?<request_method_supple>[\\w.-]+)",
-    key: "request_method_supple",
-  },
-  "%p": {
-    reg: "(?<remote_port>\\d{1,5}|-)",
-    key: "remote_port",
-  },
-  "%P": {
-    reg: "(?<child_process>\\d+|-)",
-    key: "child_process",
-  },
-  "%q": {
-    reg: '(?<request_query>(?:[^"]|\\")+)?',
-    key: "request_query",
-  },
-  "%r": {
-    reg: '(?<request_method>(?:[^"]|\\")+)\\s(?<request_uri>(?:[^"]|\\")+)\\s(?<request_protocol>(?:[^"]|\\")+)',
-    key: "request",
-  },
-  "%R": {
-    reg: '(?<response_handler>(?:[^"]|\\")+)',
-    key: "response_handler",
-  },
-  "%s": {
-    reg: "(?<status>\\d{3}|-)",
-    key: "status",
-  },
-  "%>s": {
-    reg: "(?<status>\\d{3}|-)",
-    key: "status",
-  },
-  "%t": {
-    reg: "\\[(?<time_local>[^\\[\\]]+|-)\\]",
-    key: "time_local",
-  },
-  "%T": {
-    reg: "(?<request_time_sec>[0-9]*.?[0-9]+|-)",
-    key: "request_time_sec",
-  },
-  "%u": {
-    reg: "(?<remote_user>[\\w.-]+)",
-    key: "remote_user",
-  },
-  "%U": {
-    reg: '(?<request_uri_supple>(?:[^"]|\\")+)',
-    key: "request_uri_supple",
-  },
-  "%v": {
-    reg: '(?<server_name>(?:[^"]|\\")+)',
-    key: "server_name",
-  },
-  "%V": {
-    reg: '(?<server_name_canonical>(?:[^"]|\\")+)',
-    key: "server_name_canonical",
-  },
-  "%X": {
-    reg: "(?<status_completed>[X\\+-]{1})",
-    key: "status_completed",
-  },
-  "%I": {
-    reg: "(?<bytes_received>\\d+|-)",
-    key: "bytes_received",
-  },
-  "%O": {
-    reg: "(?<bytes_sent>\\d+|-)",
-    key: "bytes_sent",
-  },
-  "%S": {
-    reg: '(?<bytes_combination>(?:[^"]|\\")+)',
-    key: "bytes_combination",
-  },
-  "%{User-Agent}i": {
-    reg: '(?<http_user_agent>[^"]*)',
-    key: "http_user_agent",
-  },
-  "%{Referer}i": {
-    reg: '(?<http_referer>[^"]*)',
-    key: "http_referer",
-  },
-};
-
-export const buildRegexFromApacheLog = (logConfigString: string): string => {
-  console.info("================APACHE LOG REG START====================");
-
-  // 判断字符串是否以 log_format ***** ' 开头
-  const formatRegEx = /LogFormat\s+.*/;
-  const isValidFormat = formatRegEx.test(logConfigString);
-
-  if (!isValidFormat) {
-    console.log("log format is invalid.");
-    return INVALID;
-  }
-
-  // 去掉LogFormat开头的字符串
-  const withoutStartString = logConfigString.replace(/^LogFormat\s+/, "");
-
-  let logContentString = "";
-  const tmpContentArr: string[] = [];
-  const regex = /"([^"].+)"/gm; // 获取双引号（不含双引号）的内容
-  const str = withoutStartString;
-  let m;
-
-  while ((m = regex.exec(str)) !== null) {
-    // This is necessary to avoid infinite loops with zero-width matches
-    if (m.index === regex.lastIndex) {
-      regex.lastIndex++;
-    }
-    // The result can be accessed through the `m`-variable.
-    m.forEach((match, groupIndex) => {
-      // 只 append 引号里面的内容
-      if (groupIndex === 1) {
-        tmpContentArr.push(match);
-      }
-    });
-  }
-  logContentString = tmpContentArr.join("");
-  function replacPercentItems(match: any) {
-    if (APACHE_LOG_REG_MAP[match]) {
-      return APACHE_LOG_REG_MAP[match]?.reg;
-    } else {
-      const groupName = `?<${match.substring(1, match.length)}>`;
-      return `(${groupName}[^"]*)`;
-    }
-  }
-
-  const regExPercent = /%[^\\\][\s$"]*/gm;
-  const afterReplacePercent = logContentString.replace(
-    regExPercent,
-    replacPercentItems
-  );
-  const finalApacheReg = afterReplacePercent.replace(/\s/gm, "\\s+") + ".*";
-  console.info("finalApacheReg:", finalApacheReg);
-  return finalApacheReg;
-};
-
-export const buildRegexFromNginxLog = (
-  logConfigString: string,
-  hasGroup: boolean
-): string => {
-  console.info("================NGINX LOG REG START====================");
-  // 判断字符串是否以 log_format ***** ' 开头
-  const formatRegEx = /log_format\s+\w+\s+'.*/;
-  const isValidFormat = formatRegEx.test(logConfigString);
-
-  if (!isValidFormat) {
-    console.log("log format is invalid.");
-    return INVALID;
-  }
-
-  // 去掉log_format xxx开头的字符串
-  const withoutStartString = logConfigString.replace(
-    /^log_format\s+\w+\s+/,
-    ""
-  );
-
-  let logContentString = "";
-  const tmpContentArr: string[] = [];
-  const regex = /'(.*?)'/gm;
-  let m;
-  while ((m = regex.exec(withoutStartString)) !== null) {
-    // This is necessary to avoid infinite loops with zero-width matches
-    if (m.index === regex.lastIndex) {
-      regex.lastIndex++;
-    }
-    // The result can be accessed through the `m`-variable.
-    m.forEach((match, groupIndex) => {
-      // 只 append 引号里面的内容
-      if (groupIndex === 1) {
-        tmpContentArr.push(match);
-      }
-    });
-  }
-  logContentString = tmpContentArr.join("");
-  // 找出存在 双引号 "", 中括号 [], 这样分隔符的字段进行按需替换
-  const regSplit = /("[^"]+")|(\[[^[\]].+\])/gm;
-  // 替换以 $符号开头的变量
-  function replacDollarItems(match: any) {
-    let groupName = "";
-    if (hasGroup) {
-      groupName = `?<${match.substring(1, match.length)}>`;
-    }
-    if (match === `$request`) {
-      return `(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+`;
-    } else if (match.startsWith("$time")) {
-      return `(${groupName}\\d+/\\S+/\\d+:\\d+:\\d+:\\d+\\s+\\S+)`;
-    } else if (match.startsWith("$http")) {
-      return `(${groupName}[^"]*)`;
-    } else if (match.startsWith("$")) {
-      return `(${groupName}\\S+)`;
-    } else {
-      return `(${groupName}[^"]*)`;
-    }
-  }
-
-  // 匹配到以 $ 符号开头的
-  const regExDollar = /\$[^\\\][\s$"]*/gm;
-  function replaceSplitItems(match: any) {
-    match = match.replace("[", "\\[").replace("]", "\\]");
-    const tmpRegStr = match.replace(regExDollar, replacDollarItems);
-    return tmpRegStr;
-  }
-  const afterReplaceSplit = logContentString.replace(
-    regSplit,
-    replaceSplitItems
-  );
-  const afterReplaceDollar = afterReplaceSplit.replace(
-    regExDollar,
-    replacDollarItems
-  );
-  const finalNginxReg = afterReplaceDollar.replace(/\s/gm, "\\s+") + ".*";
-  console.info("finalNginxReg:", finalNginxReg);
-  return finalNginxReg;
-};
-
-export const replaceSpringbootTimeFormat = (srcTime: string) => {
-  let destTime = "";
-  if (srcTime) {
-    destTime = srcTime
-      .replaceAll("yyyy", "%Y")
-      .replaceAll("EEEE", "%A")
-      .replaceAll("EEE", "%A")
-      .replaceAll("SSS", "%L")
-      .replaceAll("yy", "%y")
-      .replaceAll("MM", "%m")
-      .replaceAll("HH", "%H")
-      .replaceAll("mm", "%M")
-      .replaceAll("ss", "%S")
-      .replaceAll("dd", "%d");
-  }
-  return destTime;
-};
-
-export const getLogFormatByUserLogConfig = (config: string): string => {
-  const withBraketReg = /(%d|%date){([^{}]+)}/g;
-  let m;
-  let tmpFormat = SPRINGBOOT_DEFAULT_TIME_FORMAT;
-  if ((m = withBraketReg.exec(config)) !== null) {
-    console.info("MMM:", m);
-    m.forEach((match, groupIndex) => {
-      if (groupIndex === 2) {
-        tmpFormat = match;
-      }
-    });
-  }
-  return tmpFormat;
-};
-
-// Syslog RegEx Generator
-const SYSLOG_KEY_REGEX_MAP: any = {
-  PRI: "[0-9]{1,5}",
-  HOSTNAME: "([^\\s]+)|-",
-  "APP-NAME": "([^\\s]+)|-",
-  PROCID: "([-0-9]+)|-",
-  MSGID: "([^\\s]+)|-",
-  TIMESTAMP: "[^\\s]+",
-  "STRUCTURED-DATA": "[^\\s]+",
-  "%BOM": "([^\\s+])|(\\s)|-",
-  MSG: ".+",
-};
-
-const handleReplaceEnterAndBrackets = (str: string) => {
-  // remove \n if at the last
-  if (str.endsWith("\\n")) {
-    str = str.replace(/\\n$/, "");
-  }
-  // if has the [ xxxx ]
-  const finalRegexStr = str.replace(/\[.+?\]/, () => {
-    return `(?<extradata>(\\[(.*)\\]|-))`;
-  });
-  return finalRegexStr;
-};
-
-export const buidSyslogRegexFromConfig = (userFormatStr: string) => {
-  let finalRegexStr = handleReplaceEnterAndBrackets(userFormatStr);
-  finalRegexStr = finalRegexStr.replace(/%([\w:-]+?)%/gi, (match, key) => {
-    // if the timestamp without specify format
-    if (key.toLowerCase() === "timestamp") {
-      return `(?<timestamp>\\w+\\s+\\d+ \\d+:\\d+:\\d+)`;
-    }
-
-    // if the key has :::
-    if (key.indexOf(":::") > 0) {
-      const splitArr = key.split(":::");
-      if (splitArr.length > 1) {
-        key = splitArr[0];
-        const format = splitArr[1];
-        // split timestamp when time has format
-        if (key.toLowerCase() === "timestamp" && format === "date-rfc3339") {
-          return `(?<time>[^\\s]+)`;
-        }
-      }
-    }
-
-    // transform group key to lower case
-    let groupKey = key.toLowerCase();
-    if (groupKey.indexOf("-") > 0) {
-      groupKey = groupKey.replace("-", "");
-    }
-
-    if (SYSLOG_KEY_REGEX_MAP[key.toUpperCase()]) {
-      return `(?<${groupKey}>${SYSLOG_KEY_REGEX_MAP[key.toUpperCase()]})`;
-    }
-
-    return `(?<${groupKey}>[^\\s]+)`;
-  });
-
-  return finalRegexStr;
-};
-
-// Spring Boot RegEx Generator
-const timeWordsNameArr = ["d", "date"];
-const loggerWordsArr = ["c", "lo", "logger"];
-const messageGroupNameArr = ["m", "msg", "message"];
-const levelGroupNameArr = ["p", "le", "level"];
-const LineGroupNameArr = ["L", "line"];
-const threadGroupNameArr = ["thread", "t"];
-
-const replaceTimeFormatToRegEx = (timeFormatStr: string): any => {
-  return timeFormatStr
-    .replaceAll("YYYY", "\\d{4}")
-    .replaceAll("yyyy", "\\d{4}")
-    .replaceAll("MMMM", "\\w{3,9}")
-    .replaceAll("EEEE", "\\w{6,9}")
-    .replaceAll("mmmm", "\\d{4}")
-    .replaceAll("YYY", "\\d{4}")
-    .replaceAll("EEE", "\\w{3}")
-    .replaceAll("yyy", "\\d{4}")
-    .replaceAll("DDDD", "\\d{4}")
-    .replaceAll("dddd", "\\d{4}")
-    .replaceAll("MMM", "\\w{3}")
-    .replaceAll("mmm", "\\d{3}")
-    .replaceAll("DDD", "\\d{3}")
-    .replaceAll("ddd", "\\d{3}")
-    .replaceAll("SSS", "\\d{3}")
-    .replaceAll("HHH", "\\w{3}")
-    .replaceAll("hhh", "\\d{3}")
-    .replaceAll("YY", "\\d{2}")
-    .replaceAll("EE", "\\w{3}")
-    .replaceAll("yy", "\\d{2}")
-    .replaceAll("MM", "\\d{2}")
-    .replaceAll("mm", "\\d{2}")
-    .replaceAll("DD", "\\d{2}")
-    .replaceAll("dd", "\\d{2}")
-    .replaceAll("HH", "\\d{2}")
-    .replaceAll("hh", "\\d{2}")
-    .replaceAll("SS", "\\d{1,3}")
-    .replaceAll("ss", "\\d{2}")
-    .replaceAll("Y", "\\d{4}")
-    .replaceAll("y", "\\d{4}")
-    .replaceAll("M", "\\d{1}")
-    .replaceAll("m", "\\d{1,2}")
-    .replaceAll("D", "\\d{1,2}")
-    .replaceAll("E", "\\w{3}")
-    .replaceAll("S", "\\d{1,3}")
-    .replaceAll("s", "\\d{1,2}");
-};
-
-export const buildSpringBootRegExFromConfig = (
-  logConfigString: string
-): { regexStr: string; timeRegexStr: string } => {
-  console.info("================SPRINGBOOT LOG REG START====================");
-  let springbootTimeRegEx = "";
-  // Replace With  %xx{xxxx} format
-  let finalaRegRegStr = logConfigString.replace(
-    /%(\w+)\{(.+?)\}/gi,
-    (match, key, str) => {
-      if (key === "X") {
-        // Customize Key, may be empty (space)
-        return `(?<${str}>\\S+|\\s?)`;
-      }
-      if (timeWordsNameArr.includes(key)) {
-        springbootTimeRegEx = replaceTimeFormatToRegEx(str);
-        return `(?<time>${springbootTimeRegEx})`;
-      }
-      return `(?<${key}>\\S+)`;
-    }
-  );
-
-  // Find and Replace double [ ] 转义
-  finalaRegRegStr = finalaRegRegStr.replaceAll("[", "\\[");
-  finalaRegRegStr = finalaRegRegStr.replaceAll("]", "?\\]");
-
-  // Replace % 开头，并且不含特殊字符
-  finalaRegRegStr = finalaRegRegStr.replace(/%([\w-]+)/gi, (match, key) => {
-    console.info("match with %xx");
-    key = key.replace(/[\W\d]+/, "");
-    // 找到特殊的需要处理的正则表达式，如message(%m)，换行(%n)
-    if (levelGroupNameArr.includes(key)) {
-      return "(?<level>\\s*[\\S]+\\s*)";
-    }
-    if (threadGroupNameArr.includes(key)) {
-      return "(?<thread>\\S+)";
-    }
-    if (LineGroupNameArr.includes(key)) {
-      return "(?<line>[\\w]+)";
-    }
-    if (messageGroupNameArr.includes(key)) {
-      return "(?<message>[\\s\\S]+)";
-    }
-    if (loggerWordsArr.includes(key)) {
-      return "(?<logger>.+)";
-    }
-    if (key === "n") {
-      return "";
-    }
-    return `(?<${key}>\\S+)`;
-  });
-
-  return { regexStr: finalaRegRegStr, timeRegexStr: springbootTimeRegEx };
-};
-
 export const domainIsValid = (domain: string): boolean => {
   const reg = /^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$/;
   return reg.test(String(domain).toLowerCase());
@@ -698,7 +227,7 @@ export const buildCfnLink = (region: string, stackArn: string): string => {
 
 export const buildESLink = (region: string, domainName: string): string => {
   if (region.startsWith("cn")) {
-    return `https://${region}.console.amazonaws.cn/esv3/home?region=${region}#opensearch/domains/${domainName}`;
+    return `https://${region}.console.amazonaws.cn/aos/home?region=${region}#opensearch/domains/${domainName}`;
   }
   return `https://${region}.console.aws.amazon.com/aos/home?region=${region}#opensearch/domains/${domainName}`;
 };
@@ -722,9 +251,9 @@ export const buildVPCLink = (region: string, vpcId: string): string => {
 
 export const buildSubnetLink = (region: string, subnetId: string): string => {
   if (region.startsWith("cn")) {
-    return `https://console.amazonaws.cn/vpc/home?region=${region}#subnets:subnetId=${subnetId}`;
+    return `https://${region}.console.amazonaws.cn/vpc/home?region=${region}#subnets:subnetId=${subnetId}`;
   }
-  return `https://console.aws.amazon.com/vpc/home?region=${region}#subnets:subnetId=${subnetId}`;
+  return `https://${region}.console.aws.amazon.com/vpc/home?region=${region}#subnets:subnetId=${subnetId}`;
 };
 
 export const buildVPCPeeringLink = (
@@ -732,16 +261,16 @@ export const buildVPCPeeringLink = (
   vpcPeeringId: string
 ): string => {
   if (region.startsWith("cn")) {
-    return `https://console.amazonaws.cn/vpc/home?region=${region}#PeeringConnectionDetails:VpcPeeringConnectionId=${vpcPeeringId}`;
+    return `https://${region}.console.amazonaws.cn/vpc/home?region=${region}#PeeringConnectionDetails:VpcPeeringConnectionId=${vpcPeeringId}`;
   }
-  return `https://console.aws.amazon.com/vpc/home?region=${region}#PeeringConnectionDetails:VpcPeeringConnectionId=${vpcPeeringId}`;
+  return `https://${region}.console.aws.amazon.com/vpc/home?region=${region}#PeeringConnectionDetails:VpcPeeringConnectionId=${vpcPeeringId}`;
 };
 
 export const buildNaclLink = (region: string, naclId: string): string => {
   if (region.startsWith("cn")) {
-    return `https://console.amazonaws.cn/vpc/home?region=${region}#NetworkAclDetails:networkAclId=${naclId}`;
+    return `https://${region}.console.amazonaws.cn/vpc/home?region=${region}#NetworkAclDetails:networkAclId=${naclId}`;
   }
-  return `https://console.aws.amazon.com/vpc/home?region=${region}#NetworkAclDetails:networkAclId=${naclId}`;
+  return `https://${region}.console.aws.amazon.com/vpc/home?region=${region}#NetworkAclDetails:networkAclId=${naclId}`;
 };
 
 export const buildRouteTableLink = (
@@ -749,9 +278,9 @@ export const buildRouteTableLink = (
   routeTableId: string
 ): string => {
   if (region.startsWith("cn")) {
-    return `https://console.amazonaws.cn/vpc/home?region=${region}#RouteTableDetails:RouteTableId=${routeTableId}`;
+    return `https://${region}.console.amazonaws.cn/vpc/home?region=${region}#RouteTableDetails:RouteTableId=${routeTableId}`;
   }
-  return `https://console.aws.amazon.com/vpc/home?region=${region}#RouteTableDetails:RouteTableId=${routeTableId}`;
+  return `https://${region}.console.aws.amazon.com/vpc/home?region=${region}#RouteTableDetails:RouteTableId=${routeTableId}`;
 };
 
 export const buildSGLink = (region: string, sgId: string): string => {
@@ -761,7 +290,7 @@ export const buildSGLink = (region: string, sgId: string): string => {
   return `https://${region}.console.aws.amazon.com/ec2/v2/home?region=${region}#SecurityGroup:securityGroupId=${sgId}`;
 };
 
-const getDirPrefixByPrefixStr = (prefix: string) => {
+export const getDirPrefixByPrefixStr = (prefix: string) => {
   if (prefix && prefix.indexOf("/") >= 0) {
     const slashPos = prefix.lastIndexOf("/");
     prefix = prefix.slice(0, slashPos + 1);
@@ -770,7 +299,7 @@ const getDirPrefixByPrefixStr = (prefix: string) => {
 };
 
 export function buildCreateS3Link(region: string) {
-  if (region.startsWith("cn")) {
+  if (region?.startsWith("cn")) {
     return `https://${region}.console.amazonaws.cn/s3/bucket/create?region=${region}`;
   }
   return `https://s3.console.aws.amazon.com/s3/bucket/create?region=${region}`;
@@ -862,9 +391,9 @@ export const buildLambdaLogStreamLink = (
 
 export const buildRDSLink = (region: string): string => {
   if (region.startsWith("cn")) {
-    return `https://console.amazonaws.cn/rds/home?region=${region}#databases:`;
+    return `https://${region}.console.amazonaws.cn/rds/home?region=${region}#databases:`;
   }
-  return `https://console.aws.amazon.com/rds/home?region=${region}#databases:`;
+  return `https://${region}.console.aws.amazon.com/rds/home?region=${region}#databases:`;
 };
 
 export const buildRoleLink = (roleId: string, region: string): string => {
@@ -940,11 +469,11 @@ export const buildCrossAccountTemplateLink = (
 export const buildSQSLink = (region: string, queueName: string): string => {
   const uri = `https://sqs.${region}.amazonaws.com.cn/`;
   if (region.startsWith("cn")) {
-    return `https://${region}.console.amazonaws.cn/sqs/v2/home?region=${region}#/queues/${encodeURIComponent(
+    return `https://${region}.console.amazonaws.cn/sqs/v3/home?region=${region}#/queues/${encodeURIComponent(
       uri
     )}${queueName}`;
   }
-  return `https://${region}.console.aws.amazon.com/sqs/v2/home?region=${region}#/queues/${encodeURIComponent(
+  return `https://${region}.console.aws.amazon.com/sqs/v3/home?region=${region}#/queues/${encodeURIComponent(
     uri
   )}${queueName}`;
 };
@@ -1025,43 +554,6 @@ export const buildOSILink = (region: string, osiName: string) => {
   return `https://${region}.${
     region.startsWith("cn") ? "console.amazonaws.cn" : "console.aws.amazon.com"
   }/aos/home?region=${region}#opensearch/ingestion-pipelines/${osiName}`;
-};
-
-export const getRegexAndTimeByConfigAndFormat = (
-  curConfig: ExLogConf,
-  format: string
-) => {
-  let tmpExp = "";
-  let tmpTimeExp = "";
-
-  if (curConfig.logType === LogType.Nginx) {
-    tmpExp = buildRegexFromNginxLog(format, true);
-  }
-  if (curConfig.logType === LogType.Apache) {
-    tmpExp = buildRegexFromApacheLog(format);
-  }
-  if (
-    curConfig.logType === LogType.Syslog &&
-    curConfig.syslogParser === SyslogParser.CUSTOM
-  ) {
-    tmpExp = buidSyslogRegexFromConfig(format);
-  }
-  if (
-    curConfig.logType === LogType.SingleLineText ||
-    (curConfig.logType === LogType.MultiLineText &&
-      curConfig.multilineLogParser === MultiLineLogParser.CUSTOM)
-  ) {
-    tmpExp = format;
-  }
-  if (
-    curConfig.logType === LogType.MultiLineText &&
-    curConfig.multilineLogParser === MultiLineLogParser.JAVA_SPRING_BOOT
-  ) {
-    const { regexStr, timeRegexStr } = buildSpringBootRegExFromConfig(format);
-    tmpExp = regexStr;
-    tmpTimeExp = timeRegexStr;
-  }
-  return { tmpExp, tmpTimeExp };
 };
 
 export function containsNonLatinCodepoints(str: string) {
@@ -1224,6 +716,14 @@ export const buildOSIParamsValue = (osiObj: SelectProcessorType) => {
   };
 };
 
+export const buildLambdaConcurrency = (osiObj: SelectProcessorType) => {
+  return ternary(
+    osiObj.logProcessorType === LogProcessorType.OSI,
+    "200",
+    osiObj.logProcessorConcurrency
+  );
+};
+
 export const buildOSIPipelineNameByPipelineId = (pipelineId: string) => {
   return `cl-${pipelineId.substring(0, 23)}`;
 };
@@ -1252,7 +752,36 @@ export const isEmpty = (value: any) => {
 
 export const defaultStr = (
   expectStr: string | null | undefined,
-  defaultValue?: string
+  defaultValue?: string | null
 ) => {
+  if (expectStr === "") {
+    return defaultValue ?? "";
+  }
   return expectStr ?? defaultValue ?? "";
+};
+
+export const defaultArray = (
+  expectArray: any[] | null | undefined,
+  defaultArray?: any[] | null
+) => {
+  if (!expectArray) {
+    return [];
+  }
+  return expectArray ?? defaultArray ?? [];
+};
+
+export const displayI18NMessage = (key: string) => {
+  if (key) {
+    return i18n.t(key);
+  }
+  return "";
+};
+
+export const linkAccountMissingFields = (account: SubAccountLink | null) => {
+  return (
+    !account?.subAccountFlbConfUploadingEventTopicArn ||
+    !account?.windowsAgentConfDoc ||
+    !account?.windowsAgentInstallDoc ||
+    !account?.agentStatusCheckDoc
+  );
 };

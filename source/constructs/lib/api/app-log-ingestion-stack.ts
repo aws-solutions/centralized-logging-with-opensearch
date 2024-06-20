@@ -16,6 +16,9 @@ limitations under the License.
 import * as path from 'path';
 import * as appsync from '@aws-cdk/aws-appsync-alpha';
 import {
+  NagSuppressions,
+} from 'cdk-nag';
+import {
   Aws,
   Fn,
   Duration,
@@ -37,6 +40,7 @@ import { AppIngestionFlowStack } from '../api/app-log-ingestion-flow';
 import { Ec2IamInstanceProfileStack } from '../api/ec2-iam-instance-profile';
 import { SharedPythonLayer } from '../layer/layer';
 import { addCfnNagSuppressRules } from '../main-stack';
+import { MicroBatchStack } from '../microbatch/main/services/amazon-services-stack';
 
 export interface AppLogIngestionStackProps {
   /**
@@ -92,6 +96,7 @@ export interface AppLogIngestionStackProps {
   readonly cwlAccessRole: iam.Role;
   readonly fluentBitLogGroupName: string;
   readonly flbConfUploadingEventQueue: sqs.Queue;
+  readonly microBatchStack: MicroBatchStack;
 }
 export class AppLogIngestionStack extends Construct {
   constructor(scope: Construct, id: string, props: AppLogIngestionStackProps) {
@@ -179,6 +184,110 @@ export class AppLogIngestionStack extends Construct {
         documentType: 'Command',
       }
     );
+    const downloadLogConfigDocumentForWindows = new CfnDocument(
+      this,
+      "Fluent-BitConfigDownloadingForWindows",
+      {
+        content: {
+          "schemaVersion": "2.2",
+          "description": "Execute scripts stored in a remote location. The following remote locations are currently supported: GitHub (public and private) and Amazon S3 (S3). The following script types are currently supported: #! support on Linux and file associations on Windows.",
+          "parameters": {
+            "executionTimeout": {
+              "default": "3600",
+              "description": "(Optional) The time in seconds for a command to complete before it is considered to have failed. Default is 3600 (1 hour). Maximum is 28800 (8 hours).",
+              "type": "String",
+              "allowedPattern": "([1-9][0-9]{0,3})|(1[0-9]{1,4})|(2[0-7][0-9]{1,3})|(28[0-7][0-9]{1,2})|(28800)"
+            },
+            "workingDirectory": {
+              "default": "",
+              "description": "(Optional) The path where the content will be downloaded and executed from on your instance.",
+              "maxChars": 4096,
+              "type": "String"
+            },
+            "INSTANCEID": {
+              "type": 'String',
+              "default": '',
+              "description": '(Required) Instance Id',
+            },
+            "commandLine": {
+              "default": "ReStart-Service fluent-bit",
+              "description": "(Required) Specify the command line to be executed. The following formats of commands can be run: 'pythonMainFile.py argument1 argument2', 'ansible-playbook -i \"localhost,\" -c local example.yml'",
+              "type": "String"
+            }
+          },
+          "mainSteps": [
+            {
+              "inputs": {
+                "sourceInfo": `{\"path\":\"https://${props.configFileBucket.bucketRegionalDomainName}/app_log_config/{{INSTANCEID}}/applog_parsers.conf\"}`,
+                "sourceType": "S3",
+                "destinationPath": "C:/fluent-bit/etc"
+              },
+              "name": "downloadFluentBitParserConfig",
+              "action": "aws:downloadContent"
+            },
+            {
+              "inputs": {
+                "sourceInfo": `{\"path\":\"https://${props.configFileBucket.bucketRegionalDomainName}/app_log_config/{{INSTANCEID}}/fluent-bit.conf\"}`,
+                "sourceType": "S3",
+                "destinationPath": "C:/fluent-bit/etc"
+              },
+              "name": "downloadFluentBitConfig",
+              "action": "aws:downloadContent"
+            },
+            {
+              "inputs": {
+                "workingDirectory": "{{ workingDirectory }}",
+                "timeoutSeconds": "{{ executionTimeout }}",
+                "runCommand": [
+                  "",
+                  "$directory = Convert-Path .",
+                  "$env:PATH += \";$directory\"",
+                  " {{ commandLine }}",
+                  "if ($?) {",
+                  "    exit $LASTEXITCODE",
+                  "} else {",
+                  "    exit 255",
+                  "}",
+                  ""
+                ]
+              },
+              "name": "runPowerShellScript",
+              "action": "aws:runPowerShellScript",
+              "precondition": {
+                "StringEquals": [
+                  "platformType",
+                  "Windows"
+                ]
+              }
+            },
+            {
+              "inputs": {
+                "workingDirectory": "{{ workingDirectory }}",
+                "timeoutSeconds": "{{ executionTimeout }}",
+                "runCommand": [
+                  "",
+                  "directory=$(pwd)",
+                  "export PATH=$PATH:$directory",
+                  " {{ commandLine }} ",
+                  ""
+                ]
+              },
+              "name": "runShellScript",
+              "action": "aws:runShellScript",
+              "precondition": {
+                "StringEquals": [
+                  "platformType",
+                  "Linux"
+                ]
+              }
+            }
+          ]
+        },
+        documentFormat: "JSON",
+        documentType: "Command",
+        updateMethod: "NewVersion",
+      }
+    );
 
     // Create a lambda layer with required python packages.
     const appLogIngestionLayer = new lambda.LayerVersion(
@@ -221,6 +330,7 @@ export class AppLogIngestionStack extends Construct {
           APP_LOG_INGESTION_TABLE_NAME: props.appLogIngestionTable.tableName,
           INSTANCE_TABLE_NAME: props.instanceTable.tableName,
           SSM_LOG_CONFIG_DOCUMENT_NAME: downloadLogConfigDocument.ref,
+          SSM_WINDOWS_LOG_CONFIG_DOCUMENT_NAME: downloadLogConfigDocumentForWindows.ref,
           CONFIG_FILE_S3_BUCKET_NAME: props.configFileBucket.bucketName,
           APP_PIPELINE_TABLE_NAME: props.appPipelineTable.tableName,
           INSTANCE_INGESTION_DETAIL_TABLE_NAME: props.instanceIngestionDetailTable.tableName,
@@ -355,13 +465,38 @@ export class AppLogIngestionStack extends Construct {
             'iam:ListAttachedRolePolicies',
           ],
           resources: [
-            `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/*`,
-            `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:instance-profile/*`,
             `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/${props.stackPrefix}-EKS-LogAgent-Role-*`,
             `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/*buffer-access*`,
             `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/*BufferAccessRole*`,
+          ],
+        }),
+
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            'iam:GetRole',
+            'iam:ListAttachedRolePolicies',
+          ],
+          resources: [
+            `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/*`,
+            `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:instance-profile/*`,
             props.Ec2IamInstanceProfile.Ec2IamInstanceProfileRole.roleArn,
           ],
+        }),
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            'iam:AttachRolePolicy',
+          ],
+          resources: [
+            `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:role/*`,
+            `arn:${Aws.PARTITION}:iam::${Aws.ACCOUNT_ID}:instance-profile/*`,
+          ],
+          conditions: {
+            StringEquals: {
+              "iam:PolicyARN": props.Ec2IamInstanceProfile.Ec2IamInstanceProfilePolicy.managedPolicyArn
+            }
+          }
         }),
 
         // Attach Policy to Role
@@ -426,6 +561,7 @@ export class AppLogIngestionStack extends Construct {
       logSourceTableArn: props.logSourceTable.tableArn,
       ingestionTableArn: props.appLogIngestionTable.tableArn,
       cfnFlowSMArn: props.cfnFlowSMArn,
+      microBatchStack: props.microBatchStack,
     });
 
     // Create a lambda to handle all appLogIngestion related APIs.
@@ -443,6 +579,7 @@ export class AppLogIngestionStack extends Construct {
         memorySize: 1024,
         environment: {
           SSM_LOG_CONFIG_DOCUMENT_NAME: downloadLogConfigDocument.ref,
+          SSM_WINDOWS_LOG_CONFIG_DOCUMENT_NAME: downloadLogConfigDocumentForWindows.ref,
           CONFIG_FILE_S3_BUCKET_NAME: props.configFileBucket.bucketName,
           CWL_MONITOR_ROLE_ARN: props.cwlAccessRole.roleArn,
           DEFAULT_OPEN_EXTRA_METADATA_FLAG: 'true',
@@ -521,6 +658,23 @@ export class AppLogIngestionStack extends Construct {
         actions: ['es:DescribeElasticsearchDomain', 'es:DescribeDomain'],
       })
     );
+    appLogIngestionHandler.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: [
+          "s3:GetBucketNotification",
+        ],
+        effect: iam.Effect.ALLOW,
+        resources: [
+          `arn:${Aws.PARTITION}:s3:::*`,
+        ],
+      })
+    );
+    NagSuppressions.addResourceSuppressions(appLogIngestionHandler, [
+      {
+        id: "AwsSolutions-IAM5",
+        reason: "The managed policy needs to use any resources.",
+      },
+    ]);
 
     props.centralAssumeRolePolicy.attachToRole(appLogIngestionHandler.role!);
 
@@ -618,10 +772,13 @@ export class AppLogIngestionStack extends Construct {
         memorySize: 1024,
         environment: {
           SSM_LOG_CONFIG_DOCUMENT_NAME: downloadLogConfigDocument.ref,
+          SSM_WINDOWS_LOG_CONFIG_DOCUMENT_NAME: downloadLogConfigDocumentForWindows.ref,
           INSTANCE_INGESTION_DETAIL_TABLE_NAME: props.instanceIngestionDetailTable.tableName,
+          INSTANCE_TABLE_NAME: props.instanceTable.tableName,
           SUB_ACCOUNT_LINK_TABLE_NAME: props.subAccountLinkTable.tableName,
           SOLUTION_VERSION: process.env.VERSION || 'v1.0.0',
           SOLUTION_ID: props.solutionId,
+          FLB_S3_ADDR: props.configFileBucket.bucketRegionalDomainName
         },
         description: `${Aws.STACK_NAME} - Async AppLogIngestion Resolver for instance ingestion distribution event`,
       }
@@ -647,7 +804,9 @@ export class AppLogIngestionStack extends Construct {
     props.instanceIngestionDetailTable.grantReadWriteData(
       ec2IngestionDistributionEventHandler
     );
-
+    props.instanceTable.grantReadWriteData(
+      ec2IngestionDistributionEventHandler
+    )
     ec2IngestionDistributionEventHandler.node.addDependency(
       downloadLogConfigDocument
     );
@@ -670,7 +829,6 @@ export class AppLogIngestionStack extends Construct {
         timeout: Duration.seconds(60),
         memorySize: 1024,
         environment: {
-          SSM_LOG_CONFIG_DOCUMENT_NAME: downloadLogConfigDocument.ref,
           CONFIG_FILE_S3_BUCKET_NAME: props.configFileBucket.bucketName,
           APP_PIPELINE_TABLE_NAME: props.appPipelineTable.tableName,
           APP_LOG_CONFIG_TABLE_NAME: props.logConfTable.tableName,
