@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 818,
+  "id": 1425,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -154,7 +154,7 @@
       {
         "allValue": "SELECT account_id FROM \"$__table\"  WHERE  event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH') \tOR event_hour = $__rawTimeFrom('yyyyMMdd00') GROUP BY account_id",
         "current": {
-          "selected": true,
+          "selected": false,
           "text": "All",
           "value": "$__all"
         },
@@ -529,7 +529,7 @@
   "timepicker": {},
   "timezone": "",
   "title": "cloudtrail-details",
-  "uid": "aafa0c26-5e4a-480a-a0ca-2950686c622e-00",
-  "version": 5,
+  "uid": "aafa1846-77a5-4c96-8bad-aaceb4f504f9",
+  "version": 2,
   "weekStart": ""
 }

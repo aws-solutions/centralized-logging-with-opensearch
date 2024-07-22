@@ -24,7 +24,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 983,
+  "id": 1410,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -44,7 +44,7 @@
     {
       "datasource": {
         "type": "grafana-athena-datasource",
-        "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+        "uid": "Bn93a3_Vk"
       },
       "description": "",
       "fieldConfig": {
@@ -78,296 +78,7 @@
           },
           "unit": "none"
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "time"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Time"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "timestamp"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Timestamp"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "type"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Request Type"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "elb"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "ELB ID"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "client_ip"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Client IP"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "client_port"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Client Port"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "target_ip"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Target Ip"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "target_port"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Target Port"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "request_processing_time"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Request Processing time"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "target_processing_time"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Target Processing time"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "response_processing_time"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Response Processing time"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "elb_status_code"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "ELB status code"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "target_status_code"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Target status code"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "received_bytes"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Received Bytes"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "sent_bytes"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Sent Bytes"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "request_verb"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "HTTP Method"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "request_url"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Request URL"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "request_host"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Request Host"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "request_path"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Request Path"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "request_proto"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Request protocol"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "user_agent"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "User Agent"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "ssl_cipher"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "SSL cipher"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "ssl_protocol"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "SSL protocol"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "target_group_arn"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Target Group Arn"
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 33,
@@ -405,7 +116,7 @@
           },
           "datasource": {
             "type": "grafana-athena-datasource",
-            "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+            "uid": "Bn93a3_Vk"
           },
           "format": 1,
           "rawSQL": "SELECT t.rn as No, t.time, t.timestamp, t.username, t.host, t.port, t.connection_id, t.query_id, t.operation, t.database, t.object, t.return_code, t.priority, t.subsystem, t.query_time, t.lock_time, t.rows_sent, t.rows_examined, t.db_cluster_identifier, t.db_instance_identifier, t.engine, t.engine_version, t.endpoint_address, t.endpoint_port, t.log_type\nFROM (\n\tSELECT time, timestamp, username, host, port, connection_id, query_id, operation, database, object, return_code, priority, subsystem, query_time, lock_time, rows_sent, rows_examined, db_cluster_identifier, db_instance_identifier, engine, engine_version, endpoint_address, endpoint_port, log_type\n    , row_number() over (order by time ${sort_by}) as rn\n  FROM \"$__table\"\n  WHERE log_type IN (${log_type:sqlstring}) \n\t  AND db_cluster_identifier IN (${cluster:sqlstring})\n    AND db_instance_identifier IN (${instance:sqlstring})\n    AND engine IN (${engine:sqlstring})\n    AND $__unixEpochFilter(time / 1000)\n    AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n        OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n  ) t \n  WHERE t.rn BETWEEN (${page_no:int} - 1) * ${page_size:int} + 1 AND ${page_no:int} * ${page_size:int};",
@@ -532,7 +243,7 @@
         },
         "datasource": {
           "type": "grafana-athena-datasource",
-          "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+          "uid": "Bn93a3_Vk"
         },
         "definition": "",
         "hide": 0,
@@ -573,7 +284,7 @@
         },
         "datasource": {
           "type": "grafana-athena-datasource",
-          "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+          "uid": "Bn93a3_Vk"
         },
         "definition": "",
         "hide": 0,
@@ -708,7 +419,7 @@
         },
         "datasource": {
           "type": "grafana-athena-datasource",
-          "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+          "uid": "Bn93a3_Vk"
         },
         "definition": "",
         "hide": 0,
@@ -821,8 +532,8 @@
     ]
   },
   "timezone": "",
-  "title": "rds-detail",
-  "uid": "bd707375-03ad-47e4-a931-7c8fc246c5cf",
-  "version": 7,
+  "title": "rds-details",
+  "uid": "f7d49b71-f0cf-4161-86ac-c339a18a728a",
+  "version": 2,
   "weekStart": ""
 }

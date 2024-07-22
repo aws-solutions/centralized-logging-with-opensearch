@@ -264,9 +264,9 @@ def get_light_engine_app_pipeline_logs(**args):
         execution_tasks["lastEvaluatedKey"] = response["LastEvaluatedKey"]
 
     for item in execution_tasks["items"]:
-        item[
-            "executionArn"
-        ] = f'arn:{current_partition}:states:{current_region}:{current_account_id}:execution:{state_machine_name}:{item["executionName"]}'
+        item["executionArn"] = (
+            f'arn:{current_partition}:states:{current_region}:{current_account_id}:execution:{state_machine_name}:{item["executionName"]}'
+        )
         item.pop("pipelineIndexKey", None)
 
     return execution_tasks
@@ -308,7 +308,7 @@ def create_light_engine_app_pipeline(**args):
     log_structure = args.get("logStructure", LogStructure.FLUENT_BIT_PARSED_JSON)
 
     stack_name = create_stack_name("AppPipe", pipeline_id)
-    
+
     app_pipeline_dao = AppPipelineDao(app_pipeline_table_name)
     log_config_dao = LogConfigDao(log_config_table_name)
 
@@ -334,10 +334,14 @@ def create_light_engine_app_pipeline(**args):
     verify_s3_bucket_prefix_overlap_for_event_notifications(
         s3_client, logging_bucket_name, s3_notification_prefix(logging_bucket_prefix)
     )
-    
+
     params["stagingBucketPrefix"] = logging_bucket_prefix
     app_pipeline.lightEngineParams = LightEngineParams(**params)
-    app_pipeline.bufferParams = set_kv_to_buffer_param(key='logBucketPrefix', value=logging_bucket_prefix, buffer_param=app_pipeline.bufferParams)
+    app_pipeline.bufferParams = set_kv_to_buffer_param(
+        key="logBucketPrefix",
+        value=logging_bucket_prefix,
+        buffer_param=app_pipeline.bufferParams,
+    )
 
     app_pipeline.bufferResourceArn = (
         f"arn:{current_partition}:s3:::{logging_bucket_name}"
@@ -477,10 +481,10 @@ def try_index_template(
         if r.status_code == 403:
             fallback_method_fn()
         elif r.status_code >= 400:
-            err = r.json()["error"]
+            err = r.json()
             raise APIException(
                 ErrorCode.VALUE_ERROR,
-                f"status_code: {r.status_code} reason: {err['reason']}",
+                f"status_code: {r.status_code} reason: {err}",
             )
 
 
@@ -539,14 +543,13 @@ def create_app_pipeline(**args):
         codec=app_pipeline.aosParams.codec,
         refresh_interval=app_pipeline.aosParams.refreshInterval,
     )
-
+    logger.info(index_template)
     try_index_template(
         app_pipeline.aosParams.opensearchEndpoint,
         index_prefix,
         index_template,
         fallback_method_fn=lambda: app_pipeline_dao.validate(app_pipeline, force=force),
     )
-
     index_template_gzip_base64 = dict_to_gzip_base64(index_template)
 
     parameters += app_pipeline_dao.get_stack_parameters(app_pipeline) + [
@@ -662,9 +665,11 @@ def create_app_pipeline(**args):
                     "ParameterKey": "configJSON",
                     "ParameterValue": json.dumps(
                         {
-                            "parser": "json"
-                            if log_config.logType == LogTypeEnum.JSON
-                            else "regex",
+                            "parser": (
+                                "json"
+                                if log_config.logType == LogTypeEnum.JSON
+                                else "regex"
+                            ),
                             "regex": log_config.regex,
                             "time_key": log_config.timeKey,
                             "time_format": get_time_format(log_config),

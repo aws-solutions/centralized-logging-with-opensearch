@@ -24,7 +24,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 1139,
+  "id": 1401,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -108,7 +108,7 @@
             "uid": "Bn93a3_Vk"
           },
           "format": 1,
-          "rawSQL": "SELECT sum(requests) as requests\n    , count(distinct remote_ip) as vistors\nFROM \"$__table\"\nWHERE bucket IN (${bucket:sqlstring}) \n    AND http_status_group IN (${http_status_group:sqlstring}) \n    AND $__unixEpochFilter(time / 1000)\n    AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n        OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n",
+          "rawSQL": "SELECT sum(requests) as requests\n    , count(distinct remote_ip) as visitors\nFROM \"$__table\"\nWHERE bucket IN (${bucket:sqlstring}) \n    AND http_status_group IN (${http_status_group:sqlstring}) \n    AND $__unixEpochFilter(time / 1000)\n    AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n        OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n",
           "refId": "Metrics",
           "table": "s3_metrics"
         }
@@ -194,7 +194,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Unique Vistors"
+              "options": "Unique Visitors"
             },
             "properties": [
               {
@@ -247,7 +247,7 @@
             "uid": "Bn93a3_Vk"
           },
           "format": 1,
-          "rawSQL": "SELECT $__unixEpochGroup(time / 1000, '${interval}') as time\n    , sum(case when http_status_group = '1xx' then requests else 0 end) as status_code_1xx\n    , sum(case when http_status_group = '2xx' then requests else 0 end) as status_code_2xx\n    , sum(case when http_status_group = '3xx' then requests else 0 end) as status_code_3xx\n    , sum(case when http_status_group = '4xx' then requests else 0 end) as status_code_4xx\n    , sum(case when http_status_group = '5xx' then requests else 0 end) as status_code_5xx\n    , sum(bytes_sent) as bytes_sent\n    , sum(object_size) as object_size\n    , sum(total_time) as total_time\n    , sum(turn_around_time) as turn_around_time\n    , sum(requests) as requests\n    , count(distinct remote_ip) as vistors\nFROM \"$__table\"\nWHERE bucket IN (${bucket:sqlstring}) \n    AND http_status_group IN (${http_status_group:sqlstring}) \n    AND $__unixEpochFilter(time / 1000)\n    AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n        OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\nGROUP BY $__unixEpochGroup(time / 1000, '${interval}');",
+          "rawSQL": "SELECT $__unixEpochGroup(time / 1000, '${interval}') as time\n    , sum(case when http_status_group = '1xx' then requests else 0 end) as status_code_1xx\n    , sum(case when http_status_group = '2xx' then requests else 0 end) as status_code_2xx\n    , sum(case when http_status_group = '3xx' then requests else 0 end) as status_code_3xx\n    , sum(case when http_status_group = '4xx' then requests else 0 end) as status_code_4xx\n    , sum(case when http_status_group = '5xx' then requests else 0 end) as status_code_5xx\n    , sum(bytes_sent) as bytes_sent\n    , sum(object_size) as object_size\n    , sum(total_time) as total_time\n    , sum(turn_around_time) as turn_around_time\n    , sum(requests) as requests\n    , count(distinct remote_ip) as visitors\nFROM \"$__table\"\nWHERE bucket IN (${bucket:sqlstring}) \n    AND http_status_group IN (${http_status_group:sqlstring}) \n    AND $__unixEpochFilter(time / 1000)\n    AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n        OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\nGROUP BY $__unixEpochGroup(time / 1000, '${interval}');",
           "refId": "Metrics",
           "table": "s3_metrics"
         }
@@ -276,6 +276,7 @@
             "indexByName": {},
             "renameByName": {
               "requests": "Requests",
+              "visitors": "Unique Visitors",
               "vistors": "Unique Vistors"
             }
           }
@@ -505,7 +506,7 @@
           "calcs": [
             "sum"
           ],
-          "fields": "/^vistors$/",
+          "fields": "/^visitors$/",
           "values": false
         },
         "text": {},
@@ -523,7 +524,7 @@
           "withTransforms": false
         }
       ],
-      "title": "Unique Vistors",
+      "title": "Unique Visitors",
       "transformations": [],
       "type": "stat"
     },
@@ -671,6 +672,7 @@
               "time": true,
               "total_time": true,
               "turn_around_time": true,
+              "visitors": true,
               "vistors": true
             },
             "indexByName": {
@@ -890,6 +892,7 @@
               "target_processing_time": true,
               "total_time": true,
               "turn_around_time": true,
+              "visitors": true,
               "vistors": true
             },
             "indexByName": {},
@@ -1284,6 +1287,7 @@
               "target_processing_time": true,
               "total_time": true,
               "turn_around_time": true,
+              "visitors": true,
               "vistors": true
             },
             "indexByName": {},
@@ -1361,21 +1365,6 @@
           "unit": "s"
         },
         "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Avg. Request Processing Time"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-blue",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
           {
             "matcher": {
               "id": "byName",
@@ -1499,6 +1488,7 @@
               "target_processing_time (sum)": true,
               "total_time": true,
               "turn_around_time": true,
+              "visitors": true,
               "vistors": true
             },
             "indexByName": {
@@ -1566,83 +1556,7 @@
           "mappings": [],
           "unit": "short"
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": "^1\\d{2}$"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "blue",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": "^2\\d{2}$"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "green",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": "^3\\d{2}$"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "orange",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": "^4\\d{2}$"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-red",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": "^5\\d{2}$"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "red",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 12,
@@ -1760,38 +1674,7 @@
           },
           "unit": "bytes"
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Total Received Bytes"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-purple",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Total Sent Bytes"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-blue",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 12,
@@ -1844,6 +1727,7 @@
               "time": true,
               "total_time": true,
               "turn_around_time": true,
+              "visitors": true,
               "vistors": true
             },
             "indexByName": {},
@@ -2021,6 +1905,7 @@
               "target_processing_time (sum)": true,
               "total_time": true,
               "turn_around_time": true,
+              "visitors": true,
               "vistors": true
             },
             "indexByName": {
@@ -2106,20 +1991,7 @@
           },
           "unit": "short"
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Object Size"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "bytes"
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 24,
@@ -2161,7 +2033,7 @@
           "table": "s3_metrics"
         }
       ],
-      "title": "* Top 20 Remote IPs",
+      "title": "* Top Remote IPs",
       "transformations": [
         {
           "id": "organize",
@@ -2171,7 +2043,7 @@
             "renameByName": {
               "key": "Key",
               "object_size": "Object Size",
-              "remote_ip": "Remote IP",
+              "remote_ip": "Remote IPs",
               "request_host": "Host",
               "request_path": "Path",
               "requests": "Count"
@@ -2218,20 +2090,7 @@
           },
           "unit": "short"
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Object Size"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "bytes"
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 12,
@@ -2273,7 +2132,7 @@
           "table": "s3"
         }
       ],
-      "title": "* Top 500 Request Keys",
+      "title": "* Top Request Keys",
       "transformations": [
         {
           "id": "organize",
@@ -2448,128 +2307,7 @@
           },
           "unit": "short"
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "client_ip"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Client IP"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "target_ip"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Target IP"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "elb_status_code"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "HTTP Status Code"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "request_verb"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "HTTP Method"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "request_host"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Host"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "request_path"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Path"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "ssl_protocol"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "SSL Protocol"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "user_agent"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "User Agent"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "requests (sum)"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Count"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Timestamp"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 213
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 12,
@@ -2864,7 +2602,7 @@
   },
   "timezone": "",
   "title": "s3-dashboard",
-  "uid": "ae06c6c9-0926-4cd3-b03a-01ed8b30e980",
-  "version": 2,
+  "uid": "b6941515-5502-452b-9a6b-9d09478a74e3",
+  "version": 6,
   "weekStart": ""
 }

@@ -46,7 +46,7 @@ import ButtonRefresh from "components/ButtonRefresh";
 import SelectPlatform from "./SelectPlatform";
 
 const PAGE_SIZE = 50;
-const REFRESH_INTERVAL = 180000; // 3 minutes to refresh
+const REFRESH_INTERVAL = 20000; // 20 seconds to refresh
 interface InstanceItemType {
   computerName: string;
   id: string;
@@ -112,11 +112,6 @@ const InstanceTable: React.FC<InstanceTableProps> = (
   const [instanceWithStatusList, setInstanceWithStatusList] = useState<
     InstanceWithStatusType[]
   >([]);
-
-  const [loadedInstanceList, setLoadedInstanceList] = useState<
-    InstanceItemType[]
-  >([]);
-
   const [loadingInstall, setLoadingInstall] = useState(false);
   const [tagFilter, setTagFilter] = useState<TagFilterInput[]>(
     defaultArray(defaultTagFilter, [])
@@ -135,6 +130,48 @@ const InstanceTable: React.FC<InstanceTableProps> = (
     InstanceWithStatusType[]
   >([]);
 
+  // refresh instance status
+  const refreshToGetInstanceStatus = async () => {
+    if (loadMoreIsClick && selectInstanceList.length <= 0) {
+      Alert(
+        defaultStr(t("resource:group.comp.selectInstance")),
+        defaultStr(t("oops")),
+        "warning"
+      );
+      setEnableAutoRefresh(false);
+      return;
+    }
+    let needUpdateInstances = instanceWithStatusList.map(
+      (element) => element.instanceId
+    );
+    if (selectInstanceList.length > 0) {
+      // refresh selected instances
+      needUpdateInstances = selectInstanceList.map(
+        (element) => element.instanceId
+      );
+    }
+    setLoadingRefresh(true);
+    const statusData = await appSyncRequestQuery(getInstanceAgentStatus, {
+      instanceIds: [...new Set(needUpdateInstances)],
+      accountId: accountId,
+    });
+    const instanceStatusResp: CommandResponse =
+      statusData.data.getInstanceAgentStatus;
+
+    const updatedInstances = instanceWithStatusList.map((instance) => {
+      const statusUpdate = instanceStatusResp.instanceAgentStatusList.find(
+        (status) => status.instanceId === instance.instanceId
+      );
+      if (statusUpdate) {
+        return { ...instance, status: statusUpdate.status };
+      }
+      return instance;
+    });
+    setInstanceWithStatusList(updatedInstances);
+    setLoadingRefresh(false);
+    console.info("statusData:", statusData);
+  };
+
   // Get All Instance Status
   const getAllInstanceWithStatus = async (
     refresh = false,
@@ -144,7 +181,6 @@ const InstanceTable: React.FC<InstanceTableProps> = (
       !refresh,
       () => {
         setLoadingData(true);
-        setLoadedInstanceList([]);
         setInstanceWithStatusList([]);
       },
       () => {
@@ -173,28 +209,29 @@ const InstanceTable: React.FC<InstanceTableProps> = (
       const instanceRespData: ListInstanceResponse =
         resInstanceData.data.listInstances;
       if (isLoadingMore) {
-        dataInstanceList = [
-          ...loadedInstanceList,
-          ...instanceRespData.instances,
-        ];
-        setLoadedInstanceList(dataInstanceList);
+        dataInstanceList = [...instanceRespData.instances];
       } else {
         dataInstanceList = instanceRespData.instances;
-        setLoadedInstanceList(instanceRespData.instances);
       }
       instanceListNextToken = instanceRespData.nextToken;
-      instanceIDs = dataInstanceList.map((instance) => instance.id);
+      instanceIDs = [...instanceRespData.instances].map(
+        (instance) => instance.id
+      );
     } else {
-      instanceIDs = instanceWithStatusList.map((instance) => instance.id);
+      if (refresh) {
+        // if has selected instance, get instance status by selected instance
+        if (selectInstanceList.length > 0) {
+          instanceIDs = selectInstanceList.map((instance) => instance.id);
+        } else {
+          // get all instance with status
+          instanceIDs = instanceWithStatusList.map((instance) => instance.id);
+        }
+      } else {
+        instanceIDs = instanceWithStatusList.map((instance) => instance.id);
+      }
     }
-    const statusCallResp = await appSyncRequestQuery(getInstanceAgentStatus, {
-      instanceIds: [...new Set(instanceIDs)],
-      accountId: accountId,
-    });
-    await new Promise((resolve) => setTimeout(resolve, 2000));
     const statusData = await appSyncRequestQuery(getInstanceAgentStatus, {
       instanceIds: [...new Set(instanceIDs)],
-      commandId: statusCallResp.data.getInstanceAgentStatus.commandId,
       accountId: accountId,
     });
 
@@ -246,7 +283,12 @@ const InstanceTable: React.FC<InstanceTableProps> = (
       }
     )();
 
-    setInstanceWithStatusList(tmpInstanceWithStatus);
+    if (!refresh || isLoadingMore) {
+      setInstanceWithStatusList((prev) => {
+        return [...prev, ...tmpInstanceWithStatus];
+      });
+    }
+
     setLoadingData(false);
     setLoadingRefresh(false);
     setCreateDisabled?.(false);
@@ -285,6 +327,7 @@ const InstanceTable: React.FC<InstanceTableProps> = (
   // Get instance group list when page rendered.
   useEffect(() => {
     setNextToken("");
+    setLoadMoreIsClick(false);
     setCreateDisabled?.(true);
     clearInterval(intervalId);
     getAllInstanceWithStatus();
@@ -299,9 +342,9 @@ const InstanceTable: React.FC<InstanceTableProps> = (
         t("applog:installAgent.lastUpdateTime") +
           formatLocalTime(new Date().toISOString())
       );
-      getAllInstanceWithStatus(true);
+      refreshToGetInstanceStatus();
       intervalId = setInterval(() => {
-        getAllInstanceWithStatus(true);
+        refreshToGetInstanceStatus();
         setLastUpdateTime(
           t("applog:installAgent.lastUpdateTime") +
             formatLocalTime(new Date().toISOString())
@@ -527,12 +570,14 @@ const InstanceTable: React.FC<InstanceTableProps> = (
                   btnType="icon"
                   disabled={loadingData || loadingRefresh || loadingInstall}
                   onClick={() => {
-                    getAllInstanceWithStatus(true);
+                    // click refresh
+                    refreshToGetInstanceStatus();
                   }}
                 >
                   <ButtonRefresh loading={loadingData || loadingRefresh} />
                 </Button>
                 <Button
+                  data-testid="install-agent-button"
                   btnType="primary"
                   loading={loadingInstall}
                   disabled={loadingData || loadingInstall}

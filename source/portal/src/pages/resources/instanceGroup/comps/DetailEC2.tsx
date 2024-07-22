@@ -89,19 +89,8 @@ const DetailEC2: React.FC<DetailEC2Props> = (props: DetailEC2Props) => {
           instanceSet: [instanceGroup.ec2?.instances[i]?.instanceId],
         });
 
-        // Get the agent status of this instance
-        const firstStatusCallResp = await appSyncRequestQuery(
-          getInstanceAgentStatus,
-          {
-            instanceIds: [instanceGroup.ec2?.instances[i]?.instanceId],
-            accountId: accountId,
-          }
-        );
-        // Delay for 2 seconds before get the instances status
-        await new Promise((resolve) => setTimeout(resolve, 2000));
         const statusData = await appSyncRequestQuery(getInstanceAgentStatus, {
           instanceIds: [instanceGroup.ec2?.instances[i]?.instanceId],
-          commandId: firstStatusCallResp.data.getInstanceAgentStatus.commandId,
           accountId: accountId,
         });
 

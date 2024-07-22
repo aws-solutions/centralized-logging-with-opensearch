@@ -186,3 +186,95 @@ echo /usr/local/openssl11/lib/ >> /etc/ld.so.conf
 ldconfig
 
 ```
+
+## I found that the OpenSearch data node's disk space was full, and then executed "delete index_prefix*" from the dev tools in the OpenSearch Dashboards. After execution, the index name suffix no longer contains the time format. What should I do to fix？
+
+!!! Warning "Note"
+
+    The following operation will delete the currently written index, resulting in data loss.
+
+1. Open the Centralized Logging with OpenSearch console, find the pipeline which has this issue and choose **View details**.
+2. Go to Monitoring > Lambda Processor, and click on the link(start with `/aws/lambda/CL-xxx`) under **Lambda Processor**.
+
+   ![](../images/trouble-shooting/lambda-link.png)
+
+3. Go to **Lambda** console > **Configuration** > **Concurrency**, choose **Edit**, select **Reserve concurrency** and set it to 0.
+
+   ![](../images/trouble-shooting/lambda-configuration-concurrency.png)
+
+   ![](../images/trouble-shooting/lambda-edit-concurrency.png)
+
+4. Open the OpenSearch Dashboards, go to **Dev Tools**, input `DELETE your_index_name` and click to send request.
+
+   ![](../images/trouble-shooting/aos-dev-tools.png)
+
+   ![](../images/trouble-shooting/delete_index.png)
+
+5. Input `GET _cat/indices/your_index_name` and click to send request. If **"status"** is 404 and **"type"** is index_not_found_exception in the returned result, it means success. Otherwise, please repeat step 4.
+
+   ![](../images/trouble-shooting/cat_index.png)
+
+6. Input `POST /your_index_name/_rollover` and click to send request.
+
+7. Go to **Lambda** console > **Configuration** > **Concurrency**, choose **Edit**, select **Reserve concurrency** and set it to the value you want, or select **Use unreserved account concurrency**, save.
+
+## Standard Operating Procedure for Proxy Stack Connection Problems
+
+### When I access OpenSearch dashboards through the proxy, the browser shows 504 gateway timeout
+
+##### Possible Root cause:
+   a. If instances keeps terminating and initializing
+
+      i. Wrong security Group
+
+   b. Instances are not keep terminating
+
+      i. VPC peering request not accepted
+
+      ii. Peering with the wrong VPC
+
+      iii. Route table has the wrong routes
+
+   c. Check if VPC Peering is working.
+
+### When I access OpenSearch dashboards through the proxy, the browser shows "Site can't be reached"
+
+   ![](../images/trouble-shooting/site_cannt_be_reached.png)
+
+##### Possible root cause:
+
+    1. Application Load Balancer is deployed inside private subnet
+
+    2. The proxy stack has just been re-deployed, it takes at least 15mins for DNS server to resolve the new Load Balancer endpoint address
+
+
+##### Solution:
+
+    1. ALB deploy location is wrong, just delete the proxy stack and create a new one
+
+    2. wait for 15 mins
+
+## I set the log collection path to /log_path/*.log, what will be the impact?
+
+!!! Warning "Note"
+
+    Normally we don't recommend using wildcard * as a prefix for matching logs. If there are hundreds, or even thousands of files in the directory, this will seriously affect the rate of FluentBit's log collection, and it is recommended that you can remove outdated files on a regular basis.
+
+## The log file names are the same for different systems, but the log path contains the system name in order to differentiate between the different systems. I wish to create a pipeline to handle this, how should I set the log path？
+
+!!! Info "Note"
+
+    #### Let's go through an example:
+
+     For example, we have 3 environments, dev, staging, prod. The log paths are /log_path/dev/jvm.log, /log_path/staging/jvm.log, and /log_path/prod/jvm.log. In this scenario if you wish to create only one pipeline, you can set the log path as follows:
+
+     ![](../images/trouble-shooting/log_path.png)
+
+     `/log_path/*/jvm.log`.
+
+## In EKS environment, I am using DaemonSet mode to collect logs, but my logs are not using standard output mode, how should I configure the Yaml file for deployment?
+
+As we know, if you create a pipeline and the selected log source is EKS in the CLO, the system will automatically generate the content in YAML format for you to assist you in creating the deployment file for you to deploy FluentBit. You can match the log path `/your_log_path/` in the YAML file and remove the `Parser              cri_regex`. Please refer to the following screenshot for details:
+
+![](../images/trouble-shooting/without_cri_log.png)
+

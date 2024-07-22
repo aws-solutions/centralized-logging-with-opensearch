@@ -24,7 +24,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 1013,
+  "id": 1420,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -494,7 +494,7 @@
   },
   "timezone": "",
   "title": "vpcflow-details",
-  "uid": "69474265-b72d-45e9-8465-6c4320e622ba-00",
-  "version": 1,
+  "uid": "e8ce35b5-d5e2-4e19-a2c0-e6b341fa3958",
+  "version": 2,
   "weekStart": ""
 }

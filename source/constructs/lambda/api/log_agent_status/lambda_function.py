@@ -1,23 +1,23 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-import json
-from enum import Enum
-from commonlib.logging import get_logger
 import os
 import concurrent.futures
 import time
+import boto3
+import requests
+import json
 
+from functools import partial
+from enum import Enum
+from commonlib.logging import get_logger
+from requests_aws4auth import AWS4Auth
 from commonlib import AWSConnection, handle_error, AppSyncRouter, LinkAccountHelper
 from commonlib.exception import APIException, ErrorCode
+from commonlib.utils import random_delay
 
 logger = get_logger(__name__)
 
-solution_version = os.environ.get("SOLUTION_VERSION", "v1.0.0")
-solution_id = os.environ.get("SOLUTION_ID", "SO8025")
-user_agent_config = {
-    "user_agent_extra": f"AwsSolution/{solution_id}/{solution_version}"
-}
 default_region = os.environ.get("AWS_REGION")
 
 conn = AWSConnection()
@@ -48,27 +48,77 @@ def lambda_handler(event, _):
 @router.route(field_name="getInstanceAgentStatus")
 def get_instance_agent_status(**args):
     logger.info(args)
-    instance_list = list(set(args.get("instanceIds", list())))
-    command_id = args.get("commandId")
+    instance_list = args.get("instanceIds", list())
     sub_account_id = args.get("accountId") or account_id
     region = args.get("region") or default_region
 
-    # If command_id is empty, send Curl command
-    # Else, get command invocation output
-    if command_id == None or command_id == "":
-        logger.info("Start instance status check")
-        response = send_status_check_command(
-            instance_list, sub_account_id=sub_account_id, region=region
-        )
-        logger.info("response: %s" % response)
+    if instance_list:
+        try:
+            response = send_status_check_command(
+                instance_list, sub_account_id=sub_account_id, region=region
+            )
+            response = get_status_check_command_invocation(
+                response["commandId"], sub_account_id=sub_account_id, region=region
+            )
+        except Exception as e:
+            logger.error(e)
+            response = {
+                "commandId": "",
+                "instanceAgentStatusList": [
+                    {
+                        "instanceId": id_,
+                        "status": "Unknown",
+                        "invocationOutput": str(e),
+                        "curlOutput": "",
+                    }
+                    for id_ in instance_list
+                ],
+            }
     else:
-        logger.info("Start status invocation check")
-        response = get_status_check_command_invocation(
-            command_id, sub_account_id=sub_account_id, region=region
-        )
-        logger.info("response: %s" % response)
+        response = {
+            "commandId": "",
+            "instanceAgentStatusList": [],
+        }
 
     return response
+
+
+def ssm_req_client(api: str, payload: dict, sts_role_arn=None):
+    svc = "ssm"
+    if sts_role_arn:
+        sts_client = boto3.client("sts")
+        response = sts_client.assume_role(
+            RoleArn=sts_role_arn, RoleSessionName="AssumedRoleSession"
+        )
+        # Get temporary credentials
+        credentials = response["Credentials"]
+
+        # Create a boto3 session using the temporary credentials
+        session = boto3.Session(
+            aws_access_key_id=credentials["AccessKeyId"],
+            aws_secret_access_key=credentials["SecretAccessKey"],
+            aws_session_token=credentials["SessionToken"],
+        )
+    else:
+        session = boto3.Session()
+
+    region_name = str(session.region_name)
+    aws_auth = AWS4Auth(
+        refreshable_credentials=session.get_credentials(),
+        region=region_name,
+        service=svc,
+    )
+    if "cn-" in region_name:
+        api_endpoint = f"https://{svc}.{session.region_name}.amazonaws.com.cn/"
+    else:
+        api_endpoint = f"https://{svc}.{session.region_name}.amazonaws.com/"
+
+    headers = {
+        "X-Amz-Target": api,
+        "Content-Type": "application/x-amz-json-1.1",
+    }
+    # Make HTTP POST request with AWS authentication and headers
+    return requests.post(api_endpoint, auth=aws_auth, json=payload, headers=headers)
 
 
 def send_status_check_command(
@@ -81,192 +131,168 @@ def send_status_check_command(
     if len(instance_list) == 0:
         return ",".join(command_id)
 
-    # Send the status query command by SSM
-    try:
-        link_account = account_helper.get_link_account(sub_account_id, region)
-        ssm = conn.get_client(
-            service_name="ssm",
-            region_name=region,
-            sts_role_arn=link_account.get("subAccountRoleArn"),
-        )
-        num = 30
-        for instances in [
-            instance_list[i : i + num] for i in range(0, len(instance_list), num)
-        ]:
-            response = ssm.send_command(
-                InstanceIds=instances,
-                MaxErrors="200",
-                DocumentName=link_account.get(
-                    "agentStatusCheckDoc", os.environ.get("AGENT_STATUS_CHECK_DOCUMENT")
-                ),
-                Parameters={
-                    "winCommandLine": [
-                        'Invoke-WebRequest -URi "http://127.0.0.1:2022/api/v1/health"-UseBasicParsing|Select -ExpandProperty Content',
-                    ],
-                    "linuxCommandLine": ["curl -s http://127.0.0.1:2022/api/v1/health"],
-                },
-            )
-            command_id.append(response["Command"]["CommandId"])
-    except Exception as e:
-        logger.error(e)
-        instance_agent_status_response = {
-            "commandId": "",
-            "instanceAgentStatusList": [
-                {
-                    "instanceId": str(instance_list[0]),
-                    "status": "Unknown",
-                    "invocationOutput": "EC2 not reachable!",
-                    "curlOutput": "",
-                }
-            ],
-        }
-        return instance_agent_status_response
-    instance_agent_status_response = {
-        "commandId": ",".join(command_id),
-        "instanceAgentStatusList": [],
-    }
-    return instance_agent_status_response
-
-
-def process_command_id_multithreaded(
-    command_id,
-    ssm,
-    res_list,
-    document_name=os.environ.get("AGENT_STATUS_CHECK_DOCUMENT"),
-):
-    """
-    Sub function to get the status of the command invocation
-    This function will be called concurrently by multiple threads.
-    """
-    time.sleep(2)
-    try:
-        instance_id = ""
-        status = ""
-        offline_instance_list = []
-        response = ssm.list_command_invocations(CommandId=command_id, Details=True)
-        invocation_list = response.get("CommandInvocations")
-        while "NextToken" in response:
-            response = ssm.list_command_invocations(
-                CommandId=command_id,
-                Details=True,
-                NextToken=response["NextToken"],
-            )
-            invocation_list.extend(response["CommandInvocations"])
-        for invocation in invocation_list:
-            instance_id = invocation.get("InstanceId")
-            logger.info("Get invocation from instance: %s", instance_id)
-            command_plugins = invocation.get("CommandPlugins")
-            if len(command_plugins) > 0:
-                win_flb_status = command_plugins[0].get("Output")
-                linux_flb_status = command_plugins[1].get("Output")
-                if ("fluent-bit" in win_flb_status) or (
-                    "fluent-bit" in linux_flb_status
-                ):
-                    logger.info("Instance %s is Online" % instance_id)
-                    status = "Online"
-                    invocation_output = "Fluent Bit installed and online."
-                    res_list.append(
-                        {
-                            "instanceId": instance_id,
-                            "status": status,
-                            "invocationOutput": invocation_output,
-                            "curlOutput": "",
-                        }
-                    )
-                else:
-                    offline_instance_list.append(instance_id)
-        response = ssm.send_command(
-            InstanceIds=offline_instance_list,
-            MaxErrors="200",
-            DocumentName=document_name,
-            Parameters={
-                "winCommandLine": [
-                    'if (Get-Command C:/fluent-bit/bin/fluent-bit -errorAction SilentlyContinue) { "1" } else { "0" }'
-                ],
-                "linuxCommandLine": ["ls /opt/fluent-bit/bin/fluent-bit  |wc -l"],
-            },
-        )
-        failure_reason_command_id = response["Command"]["CommandId"]
-        check_flb_installation(failure_reason_command_id, ssm, res_list)
-    except Exception as err:
-        logger.error(err)
-        raise APIException(
-            ErrorCode.UNKNOWN_ERROR, "Failed to get status check commandinvocation."
-        )
-
-
-def check_flb_installation(failure_reason_command_id, ssm, res_list):
-    time.sleep(2)
-    invocation_response = ssm.list_command_invocations(
-        CommandId=failure_reason_command_id, Details=True
-    )
-    invocation_list = invocation_response.get("CommandInvocations")
-    while "NextToken" in invocation_response:
-        invocation_response = ssm.list_command_invocations(
-            CommandId=failure_reason_command_id,
-            Details=True,
-            NextToken=invocation_response["NextToken"],
-        )
-        invocation_list.extend(invocation_response["CommandInvocations"])
-    for invocation in invocation_list:
-        instance_id = invocation.get("InstanceId")
-        logger.info("Get invocation from instance: %s", instance_id)
-        command_plugins = invocation.get("CommandPlugins")
-        if len(command_plugins) > 0:
-            win_flb_status = command_plugins[0].get("Output")
-            linux_flb_status = command_plugins[1].get("Output")
-            if ("1" in win_flb_status) or ("1" in linux_flb_status):
-                logger.info(
-                    "Instance %s has been distributed but not online" % instance_id
-                )
-                status = "Offline"
-                invocation_output = (
-                    "Fluent Bit installation succeeded, but unable to start!"
-                )
-            else:
-                logger.info("Instance %s is Offline" % instance_id)
-                status = "Offline"
-                invocation_output = "Fluent Bit not installed or installation failed!"
-            res_list.append(
-                {
-                    "instanceId": instance_id,
-                    "status": status,
-                    "invocationOutput": invocation_output,
-                    "curlOutput": "",
-                }
-            )
-
-
-def get_status_check_command_invocation(
-    command_id, sub_account_id=account_id, region=default_region
-):
-    res_list = []
-    instance_invocation_output_mapping = {
-        "commandId": command_id,
-        "instanceAgentStatusList": res_list,
-    }
-
     link_account = account_helper.get_link_account(sub_account_id, region)
-    agent_check_document = link_account.get(
-        "agentStatusCheckDoc", os.environ.get("AGENT_STATUS_CHECK_DOCUMENT")
-    )
     ssm = conn.get_client(
         service_name="ssm",
         region_name=region,
         sts_role_arn=link_account.get("subAccountRoleArn"),
     )
 
-    # Optimize query speed using multithreading
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        executor.map(
-            process_command_id_multithreaded,
-            command_id.split(","),
-            [ssm] * len(command_id.split(",")),
-            [res_list] * len(command_id.split(",")),
-            [agent_check_document],
+    def _do_send_command(instance_ids):
+        response = ssm.send_command(
+            InstanceIds=instance_ids,
+            TimeoutSeconds=30,
+            MaxErrors="200",
+            MaxConcurrency="100%",
+            DocumentName=link_account.get(
+                "agentStatusCheckDoc", os.environ.get("AGENT_STATUS_CHECK_DOCUMENT")
+            ),
+            Parameters={
+                "executionTimeout": ["3"],
+                "winCommandLine": [
+                    'Invoke-WebRequest -URi "http://127.0.0.1:2022/api/v1/health"-UseBasicParsing|Select -ExpandProperty Content',
+                ],
+                "linuxCommandLine": [
+                    'if ! curl -s http://127.0.0.1:2022/api/v1/health > /dev/null; then echo "Error: Failed to access health endpoint"; if [ -x "/opt/fluent-bit/bin/fluent-bit" ]; then if /opt/fluent-bit/bin/fluent-bit --version 2>&1 >/dev/null; then if systemctl is-active --quiet fluent-bit; then echo "Reason: fluent-bit config error"; else echo "Reason: fluent-bit service is not running"; fi; else echo "Reason: fluent-bit can not start"; fi; else echo "Reason: fluent-bit not installed"; fi; exit 1; fi'
+                ],
+            },
+        )
+        return response["Command"]["CommandId"]
+
+    # Send the status query command by SSM
+    num = 10  # This is batch size has the best performance
+    batches = [instance_list[i : i + num] for i in range(0, len(instance_list), num)]
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        # Use executor.map to submit tasks and collect results
+        command_id = list(executor.map(_do_send_command, batches))
+
+    return {
+        "commandId": ",".join(command_id),
+        "instanceAgentStatusList": [],
+    }
+
+
+def list_command_invocations(ssm_client, command_id, details=True, maxResults=50):
+    response = ssm_client.list_command_invocations(
+        CommandId=command_id,
+        Details=details,
+        MaxResults=maxResults,
+    )
+    for each in response["CommandInvocations"]:
+        yield each
+    while "NextToken" in response:
+        response = ssm_client.list_command_invocations(
+            CommandId=command_id,
+            NextToken=response["NextToken"],
+            Details=details,
+            MaxResults=maxResults,
+        )
+        for each in response["CommandInvocations"]:
+            yield each
+
+
+def handle_command_invocations(
+    ssm_client, command_id, max_retries=10, retry_delay=0.25
+):
+    """
+    Handles the list of command invocations for the specified AWS Systems Manager command.
+    If any of the invocations are in progress, it will retry the command until all invocations are completed or the maximum number of retries is reached.
+
+    Args:
+        ssm_client (boto3.client): An AWS Systems Manager client.
+        command_id (str): The ID of the command to handle.
+        max_retries (int, optional): The maximum number of times to retry the command. Defaults to 5.
+        retry_delay (float, optional): The number of seconds to wait between retries. Defaults to 0.5.
+
+    Returns:
+        list: The list of command invocations.
+    """
+    for _ in range(max_retries):
+        command_invocations = list(list_command_invocations(ssm_client, command_id))
+        in_progress_count = len(
+            list(
+                filter(lambda each: each["Status"] == "InProgress", command_invocations)
+            )
+        )
+        if len(command_invocations) and in_progress_count == 0:
+            return command_invocations
+
+        logger.info(
+            f"Retrying command {command_id} ({in_progress_count}/{len(command_invocations)} invocations in progress)"
+        )
+        time.sleep(retry_delay)
+        retry_delay *= 2  # Exponential backoff
+
+    raise TimeoutError(
+        f"Command {command_id} did not complete within {sum(2 ** i * retry_delay for i in range(max_retries))} seconds."
+    )
+
+
+def get_status_check_command_invocation(
+    command_id, sub_account_id=account_id, region=default_region
+):
+
+    link_account = account_helper.get_link_account(sub_account_id, region)
+    ssm = conn.get_client(
+        service_name="ssm",
+        region_name=region,
+        sts_role_arn=link_account.get("subAccountRoleArn"),
+    )
+
+    if not command_id:
+        return {
+            "commandId": "",
+            "instanceAgentStatusList": [],
+        }
+
+    cmd_ids = command_id.split(",")
+
+    def _cmd_plugins_output(invocation):
+        outputs = [
+            p["Output"]
+            for p in invocation["CommandPlugins"]
+            if "skip" not in p["Output"]
+        ]
+        if outputs:
+            return outputs[0].split("----------ERROR-------")[0].strip()
+        else:
+            return ""
+
+    def _get_agent_status(ssm, cmd_id):
+        status_map = {
+            "Success": "Online",
+            "Failed": "Offline",
+        }
+        return list(
+            map(
+                lambda each: {
+                    "instanceId": each["InstanceId"],
+                    "status": status_map.get(each["Status"], "Offline"),
+                    "invocationOutput": _cmd_plugins_output(each),
+                    "curlOutput": "",
+                },
+                handle_command_invocations(ssm, cmd_id),
+            )
         )
 
-    return instance_invocation_output_mapping
+    # Delay the function call to avoid ListCommandInvocations rate exceeded concurrently.
+    partial_handle_command = random_delay(max_delay=0.1)(
+        partial(_get_agent_status, ssm)
+    )
+
+    time.sleep(0.4)
+
+    # Create a ThreadPoolExecutor with 5 worker threads
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        # Use executor.map to submit tasks and collect results
+        status_list = []
+        for result in executor.map(partial_handle_command, cmd_ids):
+            status_list.extend(result)
+
+    return {
+        "commandId": command_id,
+        "instanceAgentStatusList": status_list,
+    }
 
 
 @router.route(field_name="requestInstallLogAgent")
@@ -420,7 +446,8 @@ def list_instances(**args):
     region = args.get("region", default_region)
     if max_results > 50 or max_results < 5:
         raise APIException(
-            "maxResults have to be more than 4 or less than or equal to 50"
+            ErrorCode.UNSUPPORTED_ACTION,
+            "maxResults have to be more than 4 or less than or equal to 50",
         )
 
     logger.info(
@@ -442,104 +469,47 @@ def list_instances(**args):
             filter_instance_ids = {"Key": "InstanceIds", "Values": instance_set}
             filters.append(filter_instance_ids)
 
-    try:
-        link_account = account_helper.get_link_account(_account_id, region)
-        ssm = conn.get_client(
-            service_name="ssm",
-            region_name=region,
-            sts_role_arn=link_account.get("subAccountRoleArn"),
-        )
-        # Get SSM resource
-        resp = ssm.describe_instance_information(
-            Filters=filters, MaxResults=max_results, NextToken=next_token
-        )
+    link_account = account_helper.get_link_account(_account_id, region)
+    resp = ssm_req_client(
+        "AmazonSSM.DescribeInstanceProperties",
+        {
+            "MaxResults": 50,
+            "FiltersWithOperator": filters,
+            **({"NextToken": next_token} if next_token else {}),
+        },
+        sts_role_arn=link_account.get("subAccountRoleArn"),
+    )
+    body = resp.json()
 
-        # Assume all items are returned in the scan request
-        instances = dict(
-            (
-                instance_info["InstanceId"],
+    if instance_set and not resp.ok:
+        return {
+            "instances": [
                 {
-                    "id": instance_info["InstanceId"],
-                    "platformType": instance_info["PlatformType"],
-                    "platformName": instance_info["PlatformName"],
-                    "ipAddress": instance_info["IPAddress"],
-                    "computerName": instance_info["ComputerName"],
+                    "id": id_,
+                    "platformType": "-",
+                    "platformName": "-",
+                    "ipAddress": "-",
+                    "computerName": "-",
                     "name": "-",
-                },
-            )
-            for instance_info in resp["InstanceInformationList"]
-        )
+                }
+                for id_ in instance_set
+            ],
+        }
 
-        instances = update_instance_name(
-            instances, account_id=_account_id, region=region
-        )
-    except Exception as e:
-        err_message = str(e)
-        trimed_message = err_message.split(":", 1)[1]
-        raise APIException(trimed_message)
-
-    if "NextToken" in resp:
-        next_token = resp["NextToken"]
-    else:
-        next_token = ""
+    # Assume all items are returned in the scan request
+    instances = [
+        {
+            "id": instance_info["InstanceId"],
+            "platformType": instance_info["PlatformType"],
+            "platformName": instance_info["PlatformName"],
+            "ipAddress": instance_info["IPAddress"],
+            "computerName": instance_info["ComputerName"],
+            "name": instance_info.get("Name", "-"),
+        }
+        for instance_info in body.get("InstanceProperties", [])
+    ]
 
     return {
-        "nextToken": next_token,
-        "instances": list(instances.values()),
+        "nextToken": body.get("NextToken", ""),
+        "instances": instances,
     }
-
-
-def update_instance_name(instances_info: dict, account_id: str, region: str):
-    link_account = account_helper.get_link_account(account_id, region)
-    ec2 = conn.get_client(
-        service_name="ec2",
-        region_name=region,
-        sts_role_arn=link_account.get("subAccountRoleArn"),
-    )
-    instances_description = ec2.describe_instances(
-        InstanceIds=list(instances_info.keys())
-    )
-    for reservation in instances_description.get("Reservations", []):
-        for description in reservation.get("Instances", []):
-            instance_name = list(
-                filter(lambda x: (x["Key"] == "Name"), description.get("Tags", []))
-            )
-            if instance_name == []:
-                instance_name == [{"Key": "Name", "Value": " "}]
-            if instance_name and description["InstanceId"] in instances_info:
-                instances_info[description["InstanceId"]]["name"] = instance_name[
-                    0
-                ].get("Value")
-
-    return instances_info
-
-
-def parse_ssm_instance_info(instance_info, account_id, region=default_region):
-    instance = {}
-    instance["id"] = instance_info["InstanceId"]
-    instance["platformName"] = instance_info["PlatformName"]
-    instance["ipAddress"] = instance_info["IPAddress"]
-    instance["computerName"] = instance_info["ComputerName"]
-    instance["name"] = "-"
-    # Get EC2 resource
-    link_account = account_helper.get_link_account(account_id, region)
-    ec2 = conn.get_client(
-        service_name="ec2",
-        region_name=region,
-        sts_role_arn=link_account.get("subAccountRoleArn"),
-    )
-    instance_tags = ec2.describe_tags(
-        Filters=[
-            {
-                "Name": "resource-id",
-                "Values": [
-                    instance_info["InstanceId"],
-                ],
-            },
-        ]
-    )
-    for tag in instance_tags["Tags"]:
-        if tag["Key"] == "Name":
-            instance["name"] = tag["Value"]
-            break
-    return instance

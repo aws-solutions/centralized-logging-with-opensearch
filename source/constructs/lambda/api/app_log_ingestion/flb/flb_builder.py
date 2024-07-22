@@ -8,7 +8,7 @@ import os
 from commonlib.logging import get_logger
 from typing import List
 import json
-from distutils.util import strtobool
+from commonlib.utils import strtobool
 from commonlib.model import (
     AppLogIngestion,
     LogConfig,
@@ -22,6 +22,7 @@ from commonlib.model import (
     GroupPlatformEnum,
 )
 from commonlib.dao import InstanceDao
+from commonlib import AWSConnection
 from commonlib.exception import APIException, ErrorCode
 from jinja2 import FileSystemLoader, Environment
 from flb.flb_model import FluentBitDataPipeline
@@ -53,6 +54,8 @@ http = urllib3.PoolManager()
 
 instance_table_name = os.environ.get("INSTANCE_TABLE_NAME")
 instance_dao = InstanceDao(table_name=instance_table_name)
+conn = AWSConnection()
+ssm_cli = conn.get_client("ssm", region_name=default_region)
 
 
 class FluentBitDataPipelineBuilder(object):
@@ -285,6 +288,63 @@ class Flb:
             return ec2_instance.platformType
         return GroupPlatformEnum.LINUX
 
+    def _get_flb_params(self):
+        log_level = ssm_cli.get_parameter(
+            Name=f"/{stack_prefix}/FLB/log_level", WithDecryption=True
+        )["Parameter"]["Value"]
+
+        flush = ssm_cli.get_parameter(
+            Name=f"/{stack_prefix}/FLB/flush", WithDecryption=True
+        )["Parameter"]["Value"]
+
+        mem_buf_limit = ssm_cli.get_parameter(
+            Name=f"/{stack_prefix}/FLB/mem_buf_limit", WithDecryption=True
+        )["Parameter"]["Value"]
+
+        buffer_chunk_size = ssm_cli.get_parameter(
+            Name=f"/{stack_prefix}/FLB/buffer_chunk_size", WithDecryption=True
+        )["Parameter"]["Value"]
+
+        buffer_max_size = ssm_cli.get_parameter(
+            Name=f"/{stack_prefix}/FLB/buffer_max_size", WithDecryption=True
+        )["Parameter"]["Value"]
+
+        buffer_size = ssm_cli.get_parameter(
+            Name=f"/{stack_prefix}/FLB/buffer_size", WithDecryption=True
+        )["Parameter"]["Value"]
+
+        retry_limit = ssm_cli.get_parameter(
+            Name=f"/{stack_prefix}/FLB/retry_limit", WithDecryption=True
+        )["Parameter"]["Value"]
+
+        store_dir_limit_size = ssm_cli.get_parameter(
+            Name=f"/{stack_prefix}/FLB/store_dir_limit_size", WithDecryption=True
+        )["Parameter"]["Value"]
+
+        storage_type = ssm_cli.get_parameter(
+            Name=f"/{stack_prefix}/FLB/storage_type",
+            WithDecryption=True,
+        )["Parameter"]["Value"]
+
+        storage_pause_on_chunks_overlimit = ssm_cli.get_parameter(
+            Name=f"/{stack_prefix}/FLB/storage_pause_on_chunks_overlimit",
+            WithDecryption=True,
+        )["Parameter"]["Value"]
+
+        flb_params = {
+            "log_level": log_level,
+            "flush": flush,
+            "mem_buf_limit": mem_buf_limit,
+            "buffer_chunk_size": buffer_chunk_size,
+            "buffer_max_size": buffer_max_size,
+            "buffer_size": buffer_size,
+            "retry_limit": retry_limit,
+            "store_dir_limit_size": store_dir_limit_size,
+            "storage_type": storage_type,
+            "storage_pause_on_chunks_overlimit": storage_pause_on_chunks_overlimit,
+        }
+        return flb_params
+
 
 class InstanceFlb(Flb):
     def __init__(self, sub_account_cwl_monitor_role_arn: str = cwl_monitor_role_arn):
@@ -303,11 +363,14 @@ class InstanceFlb(Flb):
     def get_flb_conf_content(self, content_type="parser"):
         instance_content = dict()
         if len(self._instance_flb_pipelines) > 0:
+            flb_params = self._get_flb_params()
             content_template = self._template_env.get_template(f"{content_type}.conf")
             for key, value in self._instance_flb_pipelines.items():
                 params = dict()
                 params["flb_data_pipelines"] = value
 
+                # Getting customized parameters from ssm
+                params["ssm_params"] = flb_params
                 # build cwl monitor param
                 params["region"] = default_region
                 params["stack_prefix"] = stack_prefix
@@ -371,6 +434,9 @@ class K8sFlb(Flb):
             template_file = f"./k8s-{self._eks_source.deploymentKind}.conf"
             k8s_template = self._template_env.get_template(template_file)
             params = dict()
+            # Getting customized parameters from ssm
+            params["ssm_params"] = self._get_flb_params()
+
             params["env"] = DeploymentEnvEnum.EKSCluster.value
             params["eks_cluster_name"] = self._eks_source.eksClusterName
             params["svc_acct_role"] = self._eks_source.logAgentRoleArn

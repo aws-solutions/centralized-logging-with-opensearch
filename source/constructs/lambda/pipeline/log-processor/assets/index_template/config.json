@@ -41,6 +41,10 @@
                                 "type": "keyword"
                             }
                         }
+                    },
+                    "AWS:ComplianceItem": {
+                        "type": "object",
+                        "enabled": false
                     }
                 }
             },

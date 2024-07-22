@@ -24,7 +24,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 1172,
+  "id": 1414,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -109,7 +109,7 @@
             "uid": "Bn93a3_Vk"
           },
           "format": 1,
-          "rawSQL": "SELECT sum(requests) as requests\n    , sum(case when action_fixed = 'ALLOW' then requests else 0 end) as allow_requests\n\t\t, sum(case when action_fixed = 'BLOCK' then requests else 0 end) as block_requests\n    , count(distinct clientip) as vistors\nFROM \"$__table\"\nWHERE account_id IN (${account_id:sqlstring})\n    AND region IN (${region:sqlstring})\n    AND action_fixed IN (${action:sqlstring}) \n    AND terminatingruletype IN (${terminatingruletype:sqlstring})\n    AND webaclname IN (${webaclname:sqlstring})\n    AND terminatingruleid IN (${terminatingruleid:sqlstring})\n    AND clientip LIKE '${clientip}%'\n    AND uri LIKE '${uri}%'\n    AND $__unixEpochFilter(time / 1000)\n    AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n        OR event_hour = $__rawTimeFrom('yyyyMMdd00'))",
+          "rawSQL": "SELECT sum(requests) as requests\n    , sum(case when action_fixed = 'ALLOW' then requests else 0 end) as allow_requests\n\t\t, sum(case when action_fixed = 'BLOCK' then requests else 0 end) as block_requests\n    , count(distinct clientip) as visitors\nFROM \"$__table\"\nWHERE account_id IN (${account_id:sqlstring})\n    AND region IN (${region:sqlstring})\n    AND action_fixed IN (${action:sqlstring}) \n    AND terminatingruletype IN (${terminatingruletype:sqlstring})\n    AND webaclname IN (${webaclname:sqlstring})\n    AND terminatingruleid IN (${terminatingruleid:sqlstring})\n    AND clientip LIKE '${clientip}%'\n    AND uri LIKE '${uri}%'\n    AND $__unixEpochFilter(time / 1000)\n    AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n        OR event_hour = $__rawTimeFrom('yyyyMMdd00'))",
           "refId": "Metrics",
           "table": "waf_metrics"
         }
@@ -300,7 +300,7 @@
           "calcs": [
             "sum"
           ],
-          "fields": "/^vistors$/",
+          "fields": "/^visitors$/",
           "values": false
         },
         "text": {},
@@ -318,7 +318,7 @@
           "refId": "A"
         }
       ],
-      "title": "Unique Vistors",
+      "title": "Unique Visitors",
       "transformations": [],
       "type": "stat"
     },
@@ -557,20 +557,7 @@
           "mappings": [],
           "unit": "locale"
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "webaclname"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "WebAclName"
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 9,
@@ -1354,7 +1341,7 @@
           "table": "waf_metrics"
         }
       ],
-      "title": "* Top 10 Host",
+      "title": "* Top Hosts",
       "transformations": [
         {
           "id": "organize",
@@ -1491,7 +1478,7 @@
           "refId": "A"
         }
       ],
-      "title": "Top 100 Request URIs",
+      "title": "Top Request URIs",
       "transformations": [
         {
           "id": "filterByValue",
@@ -1610,7 +1597,7 @@
           "refId": "A"
         }
       ],
-      "title": "Top 100 Client IPs",
+      "title": "Top Client IPs",
       "transformations": [
         {
           "id": "filterByValue",
@@ -1729,7 +1716,7 @@
           "refId": "A"
         }
       ],
-      "title": "Top 100 Labels",
+      "title": "Top Labels",
       "transformations": [
         {
           "id": "filterByValue",
@@ -1851,7 +1838,7 @@
           "withTransforms": false
         }
       ],
-      "title": "Top 5 Countries or Regions",
+      "title": "Top Countries or Regions",
       "transformations": [
         {
           "id": "filterByValue",
@@ -1985,7 +1972,7 @@
           "table": "waf"
         }
       ],
-      "title": "* Top 100 Terminating Rules",
+      "title": "* Top Terminating Rules",
       "transformations": [
         {
           "id": "organize",
@@ -2083,7 +2070,7 @@
           "table": "waf"
         }
       ],
-      "title": "* Top 100 Non-Terminating Rules",
+      "title": "* Top Non-Terminating Rules",
       "transformations": [
         {
           "id": "organize",
@@ -2352,6 +2339,16 @@
             "selected": false,
             "text": "COUNT",
             "value": "COUNT"
+          },
+          {
+            "selected": false,
+            "text": "CAPTCHA",
+            "value": "CAPTCHA"
+          },
+          {
+            "selected": false,
+            "text": "CHALLENGE",
+            "value": "CHALLENGE"
           }
         ],
         "query": "ALLOW, BLOCK, COUNT, CAPTCHA, CHALLENGE",
@@ -2626,7 +2623,7 @@
   },
   "timezone": "",
   "title": "waf-dashboard",
-  "uid": "c23e0d9b-bb16-4d77-a42d-7ee12c377eff",
+  "uid": "d09b6799-d5c0-4563-b3b1-690d6c2806aa",
   "version": 4,
   "weekStart": ""
 }

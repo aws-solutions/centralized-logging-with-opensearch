@@ -24,7 +24,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 982,
+  "id": 1409,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -44,7 +44,7 @@
     {
       "datasource": {
         "type": "grafana-athena-datasource",
-        "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+        "uid": "Bn93a3_Vk"
       },
       "fieldConfig": {
         "defaults": {
@@ -105,7 +105,7 @@
           },
           "datasource": {
             "type": "grafana-athena-datasource",
-            "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+            "uid": "Bn93a3_Vk"
           },
           "format": 1,
           "rawSQL": "SELECT db_cluster_identifier, db_instance_identifier, engine, concat_ws(': ', engine, engine_version) as engine_version, log_type, sum(requests) as requests, sum(avg_query_time) / sum(requests) as avg_query_time\nFROM \"$__table\"\nWHERE db_cluster_identifier IN (${cluster:sqlstring})\n    AND db_instance_identifier IN (${instance:sqlstring})\n    AND engine IN (${engine:sqlstring})\n    AND $__unixEpochFilter(time / 1000)\n    AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n        OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\nGROUP BY db_cluster_identifier, db_instance_identifier, engine, concat_ws(': ', engine, engine_version), log_type\n",
@@ -421,7 +421,7 @@
     {
       "datasource": {
         "type": "grafana-athena-datasource",
-        "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+        "uid": "Bn93a3_Vk"
       },
       "fieldConfig": {
         "defaults": {
@@ -588,7 +588,7 @@
           },
           "datasource": {
             "type": "grafana-athena-datasource",
-            "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+            "uid": "Bn93a3_Vk"
           },
           "format": 1,
           "rawSQL": "SELECT t.time, map_agg(t.log_type, t.requests) as data\nFROM (\n    SELECT $__unixEpochGroup(time / 1000, '${interval}') as time\n            , log_type\n            , sum(requests) as requests\n    FROM \"$__table\"\n    WHERE db_cluster_identifier IN (${cluster:sqlstring})\n        AND db_instance_identifier IN (${instance:sqlstring})\n        AND engine IN (${engine:sqlstring})\n        AND $__unixEpochFilter(time / 1000)\n        AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n            OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n    GROUP BY $__unixEpochGroup(time / 1000, '${interval}'), log_type\n) t\nGROUP BY t.time",
@@ -768,146 +768,12 @@
       "type": "piechart"
     },
     {
-      "datasource": {
-        "type": "datasource",
-        "uid": "-- Dashboard --"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "fixedColor": "dark-green",
-            "mode": "fixed"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 40,
-            "gradientMode": "opacity",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "noValue": "0",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "#EAB839",
-                "value": 1000
-              },
-              {
-                "color": "red",
-                "value": 2000
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 12,
-        "w": 24,
-        "x": 0,
-        "y": 25
-      },
-      "id": 93,
-      "options": {
-        "legend": {
-          "calcs": [
-            "lastNotNull",
-            "min",
-            "max",
-            "mean"
-          ],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "9.3.6",
-      "targets": [
-        {
-          "datasource": {
-            "type": "datasource",
-            "uid": "-- Dashboard --"
-          },
-          "panelId": 90,
-          "refId": "A",
-          "withTransforms": true
-        }
-      ],
-      "title": "Log Events History",
-      "transformations": [
-        {
-          "id": "sortBy",
-          "options": {
-            "fields": {},
-            "sort": [
-              {
-                "field": "time"
-              }
-            ]
-          }
-        },
-        {
-          "id": "calculateField",
-          "options": {
-            "alias": "Count",
-            "mode": "reduceRow",
-            "reduce": {
-              "include": [
-                "Audit",
-                "General",
-                "Query",
-                "SlowQuery",
-                "Error"
-              ],
-              "reducer": "sum"
-            },
-            "replaceFields": true
-          }
-        }
-      ],
-      "type": "timeseries"
-    },
-    {
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 37
+        "y": 25
       },
       "id": 54,
       "panels": [],
@@ -948,7 +814,7 @@
         "h": 12,
         "w": 5,
         "x": 0,
-        "y": 38
+        "y": 26
       },
       "id": 100,
       "options": {
@@ -1003,13 +869,13 @@
     {
       "datasource": {
         "type": "grafana-athena-datasource",
-        "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+        "uid": "Bn93a3_Vk"
       },
       "gridPos": {
         "h": 12,
         "w": 19,
         "x": 5,
-        "y": 38
+        "y": 26
       },
       "id": 104,
       "options": {
@@ -1050,7 +916,7 @@
           },
           "datasource": {
             "type": "grafana-athena-datasource",
-            "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+            "uid": "Bn93a3_Vk"
           },
           "format": 1,
           "rawSQL": "SELECT t.time\n    , map_agg(t.db_instance_identifier, t.requests) FILTER (WHERE t.db_instance_identifier IS NOT NULL AND t.db_instance_identifier != '') as db_instance_identifier\n    , map_agg(t.host, t.requests) FILTER (WHERE t.host IS NOT NULL AND t.host != '') as host\n    , map_agg(t.username, t.requests) FILTER (WHERE t.username IS NOT NULL AND t.username != '') as username\n    , map_agg(t.database, t.requests) FILTER (WHERE t.database IS NOT NULL AND t.database != '') as database\n    , map_agg(t.operation, t.requests) FILTER (WHERE t.operation IS NOT NULL AND t.operation != '') as operation\n    , sum(connection_ids_cnt) as connection_ids_cnt\nFROM (\n    SELECT $__unixEpochGroup(time / 1000, '${interval}') as time\n        , db_instance_identifier\n        , host\n        , username\n        , database\n        , operation\n        , cardinality(array_distinct(flatten(array_agg(connection_ids)))) as connection_ids_cnt\n        , sum(requests) as requests\n    FROM \"$__table\"\n    WHERE log_type = 'Audit'\n        AND db_cluster_identifier IN (${cluster:sqlstring})\n        AND db_instance_identifier IN (${instance:sqlstring})\n        AND engine IN (${engine:sqlstring})\n        AND $__unixEpochFilter(time / 1000)\n        AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n            OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n    GROUP BY $__unixEpochGroup(time / 1000, '${interval}'), db_instance_identifier, host, username, database, operation\n) t\nGROUP BY t.time\n",
@@ -1115,7 +981,7 @@
         "h": 12,
         "w": 5,
         "x": 0,
-        "y": 50
+        "y": 38
       },
       "id": 24,
       "options": {
@@ -1177,7 +1043,7 @@
         "h": 12,
         "w": 19,
         "x": 5,
-        "y": 50
+        "y": 38
       },
       "id": 28,
       "options": {
@@ -1297,7 +1163,7 @@
         "h": 12,
         "w": 24,
         "x": 0,
-        "y": 62
+        "y": 50
       },
       "id": 108,
       "options": {
@@ -1418,7 +1284,7 @@
         "h": 12,
         "w": 12,
         "x": 0,
-        "y": 74
+        "y": 62
       },
       "id": 102,
       "options": {
@@ -1539,7 +1405,7 @@
         "h": 12,
         "w": 12,
         "x": 12,
-        "y": 74
+        "y": 62
       },
       "id": 103,
       "options": {
@@ -1657,7 +1523,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 86
+        "y": 74
       },
       "id": 57,
       "panels": [],
@@ -1698,7 +1564,7 @@
         "h": 12,
         "w": 5,
         "x": 0,
-        "y": 87
+        "y": 75
       },
       "id": 105,
       "options": {
@@ -1753,13 +1619,13 @@
     {
       "datasource": {
         "type": "grafana-athena-datasource",
-        "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+        "uid": "Bn93a3_Vk"
       },
       "gridPos": {
         "h": 12,
         "w": 19,
         "x": 5,
-        "y": 87
+        "y": 75
       },
       "id": 106,
       "options": {
@@ -1800,7 +1666,7 @@
           },
           "datasource": {
             "type": "grafana-athena-datasource",
-            "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+            "uid": "Bn93a3_Vk"
           },
           "format": 1,
           "rawSQL": "SELECT t.time\n    , map_agg(t.db_instance_identifier, t.requests) FILTER (WHERE t.db_instance_identifier IS NOT NULL AND t.db_instance_identifier != '') as db_instance_identifier\n    , map_agg(t.operation, t.requests) FILTER (WHERE t.operation IS NOT NULL AND t.operation != '') as operation\n    , sum(thread_ids_cnt) as thread_ids_cnt\nFROM (\n    SELECT $__unixEpochGroup(time / 1000, '${interval}') as time\n        , db_instance_identifier\n        , operation\n        , cardinality(array_distinct(flatten(array_agg(connection_ids)))) as thread_ids_cnt\n        , sum(requests) as requests\n    FROM \"$__table\"\n    WHERE log_type = 'General'\n        AND db_cluster_identifier IN (${cluster:sqlstring})\n        AND db_instance_identifier IN (${instance:sqlstring})\n        AND engine IN (${engine:sqlstring})\n        AND $__unixEpochFilter(time / 1000)\n        AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n            OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n    GROUP BY $__unixEpochGroup(time / 1000, '${interval}'), db_instance_identifier, operation\n) t\nGROUP BY t.time\n",
@@ -1866,7 +1732,7 @@
         "h": 12,
         "w": 5,
         "x": 0,
-        "y": 99
+        "y": 87
       },
       "id": 107,
       "options": {
@@ -1928,7 +1794,7 @@
         "h": 12,
         "w": 19,
         "x": 5,
-        "y": 99
+        "y": 87
       },
       "id": 109,
       "options": {
@@ -2042,7 +1908,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 111
+        "y": 99
       },
       "id": 45,
       "panels": [],
@@ -2083,7 +1949,7 @@
         "h": 8,
         "w": 5,
         "x": 0,
-        "y": 112
+        "y": 100
       },
       "id": 96,
       "options": {
@@ -2138,7 +2004,7 @@
     {
       "datasource": {
         "type": "grafana-athena-datasource",
-        "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+        "uid": "Bn93a3_Vk"
       },
       "fieldConfig": {
         "defaults": {
@@ -2187,7 +2053,7 @@
         "h": 16,
         "w": 19,
         "x": 5,
-        "y": 112
+        "y": 100
       },
       "id": 99,
       "options": {
@@ -2216,12 +2082,12 @@
           },
           "datasource": {
             "type": "grafana-athena-datasource",
-            "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+            "uid": "Bn93a3_Vk"
           },
           "format": 1,
           "rawSQL": "SELECT time, db_cluster_identifier, db_instance_identifier, engine, engine_version, username, host, query_id, query_time, lock_time, rows_sent, rows_examined, object\nFROM \"$__table\"\nWHERE log_type = 'SlowQuery'\n    AND db_cluster_identifier IN (${cluster:sqlstring})\n    AND db_instance_identifier IN (${instance:sqlstring})\n    AND engine IN (${engine:sqlstring})\n    AND $__unixEpochFilter(time / 1000)\n    AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n        OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\nORDER BY time desc\nLIMIT 500",
           "refId": "Details",
-          "table": "rds"
+          "table": "rds_metrics"
         }
       ],
       "title": "* The Latest 500 Slow Query Events",
@@ -2314,7 +2180,7 @@
         "h": 8,
         "w": 5,
         "x": 0,
-        "y": 120
+        "y": 108
       },
       "id": 97,
       "options": {
@@ -2372,7 +2238,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 128
+        "y": 116
       },
       "id": 33,
       "panels": [],
@@ -2413,7 +2279,7 @@
         "h": 12,
         "w": 5,
         "x": 0,
-        "y": 129
+        "y": 117
       },
       "id": 113,
       "options": {
@@ -2468,13 +2334,13 @@
     {
       "datasource": {
         "type": "grafana-athena-datasource",
-        "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+        "uid": "Bn93a3_Vk"
       },
       "gridPos": {
         "h": 12,
         "w": 19,
         "x": 5,
-        "y": 129
+        "y": 117
       },
       "id": 116,
       "options": {
@@ -2515,7 +2381,7 @@
           },
           "datasource": {
             "type": "grafana-athena-datasource",
-            "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+            "uid": "Bn93a3_Vk"
           },
           "format": 1,
           "rawSQL": "SELECT t.time\n    , map_agg(t.db_instance_identifier, t.requests) FILTER (WHERE t.db_instance_identifier IS NOT NULL AND t.db_instance_identifier != '') as db_instance_identifier\n    , map_agg(t.return_code, t.requests) FILTER (WHERE t.return_code IS NOT NULL AND t.return_code != '') as return_code\n    , map_agg(concat_ws('|', t.priority, t.subsystem), t.requests) FILTER (WHERE t.priority IS NOT NULL AND t.priority != '') as priority\n    , sum(thread_ids_cnt) as thread_ids_cnt\nFROM (\n    SELECT $__unixEpochGroup(time / 1000, '${interval}') as time\n        , db_instance_identifier\n        , return_code\n        , priority\n        , subsystem\n        , cardinality(array_distinct(flatten(array_agg(connection_ids)))) as thread_ids_cnt\n        , sum(requests) as requests\n    FROM \"$__table\"\n    WHERE log_type = 'Error'\n        AND db_cluster_identifier IN (${cluster:sqlstring})\n        AND db_instance_identifier IN (${instance:sqlstring})\n        AND engine IN (${engine:sqlstring})\n        AND $__unixEpochFilter(time / 1000)\n        AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n            OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n    GROUP BY $__unixEpochGroup(time / 1000, '${interval}'), db_instance_identifier, return_code, priority, subsystem\n) t\nGROUP BY t.time\n",
@@ -2583,7 +2449,7 @@
         "h": 12,
         "w": 5,
         "x": 0,
-        "y": 141
+        "y": 129
       },
       "id": 112,
       "options": {
@@ -2645,7 +2511,7 @@
         "h": 12,
         "w": 19,
         "x": 5,
-        "y": 141
+        "y": 129
       },
       "id": 117,
       "options": {
@@ -2771,7 +2637,7 @@
         "h": 12,
         "w": 5,
         "x": 0,
-        "y": 153
+        "y": 141
       },
       "id": 115,
       "options": {
@@ -2828,7 +2694,7 @@
     {
       "datasource": {
         "type": "grafana-athena-datasource",
-        "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+        "uid": "Bn93a3_Vk"
       },
       "fieldConfig": {
         "defaults": {
@@ -2877,7 +2743,7 @@
         "h": 12,
         "w": 19,
         "x": 5,
-        "y": 153
+        "y": 141
       },
       "id": 114,
       "options": {
@@ -2906,12 +2772,12 @@
           },
           "datasource": {
             "type": "grafana-athena-datasource",
-            "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+            "uid": "Bn93a3_Vk"
           },
           "format": 1,
           "rawSQL": "SELECT time, db_cluster_identifier, db_instance_identifier, engine, engine_version, connection_id, return_code, priority, subsystem\nFROM \"$__table\"\nWHERE log_type = 'Error'\n    AND db_cluster_identifier IN (${cluster:sqlstring})\n    AND db_instance_identifier IN (${instance:sqlstring})\n    AND engine IN (${engine:sqlstring})\n    AND $__unixEpochFilter(time / 1000)\n    AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n        OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\nORDER BY time desc\nLIMIT 500",
           "refId": "Details",
-          "table": "rds"
+          "table": "rds_metrics"
         }
       ],
       "title": "* The Latest 500 Error Events",
@@ -2955,7 +2821,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 165
+        "y": 153
       },
       "id": 62,
       "panels": [],
@@ -2996,7 +2862,7 @@
         "h": 12,
         "w": 5,
         "x": 0,
-        "y": 166
+        "y": 154
       },
       "id": 118,
       "options": {
@@ -3051,13 +2917,13 @@
     {
       "datasource": {
         "type": "grafana-athena-datasource",
-        "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+        "uid": "Bn93a3_Vk"
       },
       "gridPos": {
         "h": 12,
         "w": 19,
         "x": 5,
-        "y": 166
+        "y": 154
       },
       "id": 120,
       "options": {
@@ -3098,7 +2964,7 @@
           },
           "datasource": {
             "type": "grafana-athena-datasource",
-            "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+            "uid": "Bn93a3_Vk"
           },
           "format": 1,
           "rawSQL": "SELECT t.time\n    , map_agg(t.db_instance_identifier, t.requests) FILTER (WHERE t.db_instance_identifier IS NOT NULL AND t.db_instance_identifier != '') as db_instance_identifier\n    , map_agg(t.host, t.requests) FILTER (WHERE t.host IS NOT NULL AND t.host != '') as host\n    , map_agg(t.username, t.requests) FILTER (WHERE t.username IS NOT NULL AND t.username != '') as username\n    , map_agg(t.database, t.requests) FILTER (WHERE t.database IS NOT NULL AND t.database != '') as database\n    , map_agg(t.operation, t.requests) FILTER (WHERE t.operation IS NOT NULL AND t.operation != '') as operation\n    , sum(connection_ids_cnt) as process_ids_cnt\nFROM (\n    SELECT $__unixEpochGroup(time / 1000, '${interval}') as time\n        , db_instance_identifier\n        , host\n        , username\n        , database\n        , operation\n        , cardinality(array_distinct(flatten(array_agg(connection_ids)))) as connection_ids_cnt\n        , sum(requests) as requests\n    FROM \"$__table\"\n    WHERE log_type = 'Query'\n        AND db_cluster_identifier IN (${cluster:sqlstring})\n        AND db_instance_identifier IN (${instance:sqlstring})\n        AND engine IN (${engine:sqlstring})\n        AND $__unixEpochFilter(time / 1000)\n        AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n            OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n    GROUP BY $__unixEpochGroup(time / 1000, '${interval}'), db_instance_identifier, host, username, database, operation\n) t\nGROUP BY t.time\n",
@@ -3165,7 +3031,7 @@
         "h": 12,
         "w": 5,
         "x": 0,
-        "y": 178
+        "y": 166
       },
       "id": 119,
       "options": {
@@ -3227,7 +3093,7 @@
         "h": 12,
         "w": 19,
         "x": 5,
-        "y": 178
+        "y": 166
       },
       "id": 122,
       "options": {
@@ -3344,7 +3210,7 @@
         "h": 12,
         "w": 24,
         "x": 0,
-        "y": 190
+        "y": 178
       },
       "id": 123,
       "options": {
@@ -3466,7 +3332,7 @@
         "h": 12,
         "w": 12,
         "x": 0,
-        "y": 202
+        "y": 190
       },
       "id": 124,
       "options": {
@@ -3588,7 +3454,7 @@
         "h": 12,
         "w": 12,
         "x": 12,
-        "y": 202
+        "y": 190
       },
       "id": 125,
       "options": {
@@ -3722,7 +3588,7 @@
         },
         "datasource": {
           "type": "grafana-athena-datasource",
-          "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+          "uid": "Bn93a3_Vk"
         },
         "definition": "",
         "hide": 0,
@@ -3763,7 +3629,7 @@
         },
         "datasource": {
           "type": "grafana-athena-datasource",
-          "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+          "uid": "Bn93a3_Vk"
         },
         "definition": "",
         "hide": 0,
@@ -3931,7 +3797,7 @@
   },
   "timezone": "",
   "title": "rds-dashboard",
-  "uid": "ea383380-4162-4201-b229-ded2362cfff5",
-  "version": 11,
+  "uid": "b0e5029a-0eee-49af-a500-51a3dcbf422a",
+  "version": 2,
   "weekStart": ""
 }

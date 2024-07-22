@@ -1564,6 +1564,7 @@ export const logConfigSlice = createSlice({
           const tmpList = convertJsonToRegexList(schema.properties);
           state.data.regexFieldSpecs = convertLogSpecList(tmpList);
           state.regexKeyList = tmpList;
+          state.data.timeKey = ""; // reset timekey when user parse log
           state.selectTimeKeyList = getTimeKeyList(tmpList);
         }
       } catch (error) {
