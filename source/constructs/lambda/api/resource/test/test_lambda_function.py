@@ -186,7 +186,7 @@ class TestVPC:
         assert len(resp) == 0
 
         resp2 = resource.put_resource_log_config(
-            vpc_id, dest_type="S3", dest_name="", log_format=""
+            vpc_id, dest_type="S3", dest_name="s3://log-bucket", log_format=""
         )
         print(resp2)
         assert resp2["destinationType"] == "S3"
@@ -320,11 +320,11 @@ class TestKeyPair:
         ec2 = boto3.client("ec2", region_name=region)
         ec2.create_key_pair(KeyName="testkey")
 
-    def setup(self):
+    def setup_method(self):
         self.mock_ec2.start()
         self.mock_sts.start()
 
-    def tearDown(self):
+    def teardown_method(self):
         self.mock_ec2.stop()
         self.mock_sts.stop()
 
@@ -380,13 +380,13 @@ class TestDistribution:
         )
         return resp
 
-    def setup(self):
+    def setup_method(self):
         self.mock_cloudfront.start()
         self.mock_sts.start()
         resp = self._create_distribution()
         self._distribution_id = resp["Distribution"]["Id"]
 
-    def tearDown(self):
+    def teardown_method(self):
         self.mock_cloudfront.stop()
         self.mock_sts.stop()
 
@@ -439,7 +439,7 @@ class TestTrail:
         )
         client.create_trail(Name="trail-us-west-2", S3BucketName="bucket-us-west-2")
 
-    def setup(self):
+    def setup_method(self):
         # start mock
         self.mock_cloudtrail.start()
         self.mock_s3.start()
@@ -447,7 +447,7 @@ class TestTrail:
         # create test data
         self._create_trail()
 
-    def tearDown(self):
+    def teardown_method(self):
         self.mock_cloudtrail.stop()
         self.mock_s3.stop()
         self.mock_sts.stop()
@@ -537,12 +537,12 @@ class TestRDS:
             VpcSecurityGroupIds=["sg-123456"],
         )
 
-    def setup(self):
+    def setup_method(self):
         self.mock_rds.start()
         self.mock_sts.start()
         self._create_rds()
 
-    def tearDown(self):
+    def teardown_method(self):
         self.mock_rds.stop()
         self.mock_sts.stop()
 
@@ -593,7 +593,7 @@ class TestLambda:
             Code={"ZipFile": self._get_zip()},
         )
 
-    def setup(self):
+    def setup_method(self):
         # start mock
         self.mock_lambda.start()
         self.mock_iam.start()
@@ -605,7 +605,7 @@ class TestLambda:
 
         self._lambda = Lambda()
 
-    def tearDown(self):
+    def teardown_method(self):
         self.mock_lambda.stop()
         self.mock_sts.stop()
         self.mock_iam.stop()
@@ -645,7 +645,7 @@ class TestELB:
         )
         return resp["LoadBalancers"][0]["LoadBalancerArn"]
 
-    def setup(self):
+    def setup_method(self):
         # start mock
         self.mock_ec2.start()
         self.mock_elb.start()
@@ -653,7 +653,7 @@ class TestELB:
         # create test data
         self.elb_arn = self._create_elb()
 
-    def tearDown(self):
+    def teardown_method(self):
         self.mock_ec2.stop()
         self.mock_elb.stop()
         self.mock_sts.stop()
@@ -685,7 +685,7 @@ class TestWAF:
     mock_s3 = mock_s3()
     mock_sts = mock_sts()
 
-    def setup(self):
+    def setup_method(self):
         self.mock_waf.start()
         self.mock_s3.start()
         self.mock_sts.start()
@@ -707,7 +707,7 @@ class TestWAF:
         self._waf = WAF()
         self._arn = resp["Summary"]["ARN"]
 
-    def tearDown(self):
+    def teardown_method(self):
         self.mock_waf.stop()
         self.mock_s3.stop()
         self.mock_sts.stop()

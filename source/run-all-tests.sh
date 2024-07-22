@@ -13,14 +13,42 @@
 [ "$DEBUG" == 'true' ] && set -x
 set -e
 
+t() {
+  # count elapsed time for a command
+  local start=$(date +%s)
+  $@
+  local exit_code=$?
+  echo >&2 "[$@] took ~$(($(date +%s)-${start})) seconds. exited with ${exit_code}"
+  return $exit_code
+}
+
 
 recreate_symbolic_link() {
 	source=$1
 	target=$2
 
-	if [ -e $target ]; then
-		unlink $target
+	echo "------------------------------------------------------------------------------"
+	echo "[Test] Create symbolic link, source: ${source}, target: ${target}"
+	echo "------------------------------------------------------------------------------"
+	
+	if [ ! -d $(dirname "$target") ]; then
+		echo 'Create target dir: '$(dirname "$target")'.'
+		mkdir -p $(dirname "$target")
 	fi
+
+	if [ -h $target ]; then
+        echo "Removing existing symlink: ${target}."
+        unlink $target
+	else
+		echo "Removing existing directory: ${target}."
+		rm -rf $target
+	fi
+
+	if [ -e $source ]; then
+		echo "Check source: ${source} exists."
+	fi
+
+	echo "Creating symlink: source -> ${source}, target -> ${target}."
 	ln -s $source $target
 }
 
@@ -53,9 +81,9 @@ setup_python_env() {
 
     echo "Installing python packages"
     # install test dependencies in the python virtual environment
-	pip install --upgrade pip pytest-xdist
-	pip3 install --no-cache-dir -r test/requirements-test.txt
-	pip3 install -e $source_dir/constructs/lambda/common-lib
+	t pip install --upgrade pip pytest-xdist
+	t pip3 install --no-cache-dir -r test/requirements-test.txt
+	t pip3 install -e $source_dir/constructs/lambda/common-lib
 	# pip3 install -r requirements.txt --target .
 
 	echo "deactivate virtual environment"
@@ -75,7 +103,7 @@ run_python_test() {
         rm -fr .venv-test
     fi
 
-	setup_python_env
+	t setup_python_env
 
 	echo "Initiating virtual environment"
 	source .venv-test/bin/activate
@@ -118,7 +146,7 @@ run_python_test_concurrently() {
         rm -fr .venv-test
     fi
 
-	setup_python_env
+	t setup_python_env
 
 	echo "Initiating virtual environment"
 	source .venv-test/bin/activate
@@ -235,10 +263,10 @@ if [ ! -e $source_dir/constructs/lambda/plugin/standard/assets/GeoLite2-City.mmd
   curl --create-dirs -o $source_dir/constructs/lambda/plugin/standard/assets/GeoLite2-City.mmdb https://aws-gcr-solutions-assets.s3.amazonaws.com/maxmind/GeoLite2-City.mmdb
 fi
 
-if [ ! -e $source_dir/constructs/lambda/microbatch/utils/enrichment/maxminddb/GeoLite2-City.mmdb ]; then
+if [ ! -e $source_dir/constructs/lambda/microbatch/s3_object_replication/enrichment/maxminddb/GeoLite2-City.mmdb ]; then
   echo "Copy MaxMind database file"
-  mkdir -p $source_dir/constructs/lambda/microbatch/utils/enrichment/maxminddb/
-  cp $source_dir/constructs/lambda/plugin/standard/assets/GeoLite2-City.mmdb $source_dir/constructs/lambda/microbatch/utils/enrichment/maxminddb/GeoLite2-City.mmdb
+  mkdir -p $source_dir/constructs/lambda/microbatch/s3_object_replication/enrichment/maxminddb/
+  cp $source_dir/constructs/lambda/plugin/standard/assets/GeoLite2-City.mmdb $source_dir/constructs/lambda/microbatch/s3_object_replication/enrichment/maxminddb/GeoLite2-City.mmdb
 fi
 
 # Run unit tests
@@ -248,8 +276,8 @@ coverage_reports_top_path=$source_dir/test/coverage-reports
 
 portal_dir=$source_dir/portal
 cd $portal_dir
-npm install --legacy-peer-deps
-npm run build
+t npm install --legacy-peer-deps
+t npm run build
 
 construct_dir=$source_dir/constructs
 
@@ -263,97 +291,77 @@ recreate_symbolic_link ../utils $construct_dir/lambda/microbatch/s3_object_migra
 recreate_symbolic_link ../utils $construct_dir/lambda/microbatch/s3_object_replication/utils
 recreate_symbolic_link ../utils $construct_dir/lambda/microbatch/s3_object_scanning/utils
 recreate_symbolic_link ../utils $construct_dir/lambda/microbatch/send_email/utils
+recreate_symbolic_link ../utils $construct_dir/lambda/microbatch/connector/utils
 
 # Create a process pool
 tests_to_run=()
 
 #Test the CDK project
-run_cdk_project_test $construct_dir
+t run_cdk_project_test $construct_dir
 tests_to_run+=($!)
 
 #Test the Frontend
-run_frontend_project_test $portal_dir
+t run_frontend_project_test $portal_dir
 tests_to_run+=($!)
 
 # Test the attached Lambda function
-run_python_test $construct_dir/lambda/common-lib common-lib &
+t run_python_test $construct_dir/lambda/common-lib common-lib &
 tests_to_run+=($!)
-run_python_test $construct_dir/lambda/custom-resource custom-resource &
+t run_python_test $construct_dir/lambda/custom-resource custom-resource &
 tests_to_run+=($!)
-run_python_test $construct_dir/lambda/main/cfnHelper cfnHelper &
+t run_python_test $construct_dir/lambda/main/cfnHelper cfnHelper &
 tests_to_run+=($!)
-run_python_test $construct_dir/lambda/main/sfnHelper sfnHelper &
+t run_python_test $construct_dir/lambda/main/sfnHelper sfnHelper &
 tests_to_run+=($!)
-run_python_test $construct_dir/lambda/pipeline/common/custom-resource custom-resource2 &
+t run_python_test $construct_dir/lambda/pipeline/common/custom-resource custom-resource2 &
 tests_to_run+=($!)
-run_python_test $construct_dir/lambda/pipeline/log-processor log-processor &
+t run_python_test $construct_dir/lambda/pipeline/log-processor log-processor &
 tests_to_run+=($!)
-run_python_test $construct_dir/lambda/plugin/standard plugin &
+t run_python_test $construct_dir/lambda/plugin/standard plugin &
 tests_to_run+=($!)
-run_python_test $construct_dir/lambda/api/resource resource-api &
+t run_python_test $construct_dir/lambda/api/resource resource-api &
 tests_to_run+=($!)
-run_python_test $construct_dir/lambda/api/pipeline svc-pipeline-api &
+t run_python_test $construct_dir/lambda/api/pipeline svc-pipeline-api &
 tests_to_run+=($!)
-run_python_test $construct_dir/lambda/api/log_agent_status log_agent_status &
+t run_python_test $construct_dir/lambda/api/log_agent_status log_agent_status &
 tests_to_run+=($!)
-run_python_test $construct_dir/lambda/api/app_log_ingestion app_log_ingestion &  
+t run_python_test $construct_dir/lambda/api/app_log_ingestion app_log_ingestion &  
 tests_to_run+=($!)
-run_python_test $construct_dir/lambda/api/log_source log_source &
+t run_python_test $construct_dir/lambda/api/log_source log_source &
 tests_to_run+=($!)
-run_python_test $construct_dir/lambda/api/log_conf log_conf &
+t run_python_test $construct_dir/lambda/api/log_conf log_conf &
 tests_to_run+=($!)
-run_python_test $construct_dir/lambda/api/app_pipeline app_pipeline &
+t run_python_test $construct_dir/lambda/api/app_pipeline app_pipeline &
 tests_to_run+=($!)
-run_python_test $construct_dir/lambda/api/cross_account cross_account &
+t run_python_test $construct_dir/lambda/api/cross_account cross_account &
 tests_to_run+=($!)
-run_python_test $construct_dir/lambda/api/cluster aos_cluster &
+t run_python_test $construct_dir/lambda/api/cluster aos_cluster &
 tests_to_run+=($!)
-run_python_test $construct_dir/lambda/api/pipeline_ingestion_flow pipeline_ingestion_flow &
+t run_python_test $construct_dir/lambda/api/pipeline_ingestion_flow pipeline_ingestion_flow &
 tests_to_run+=($!)
-run_python_test $construct_dir/lambda/api/cwl cloudwatch_api &
+t run_python_test $construct_dir/lambda/api/cwl cloudwatch_api &
 tests_to_run+=($!)
-run_python_test $construct_dir/lambda/api/alarm alarm_api &
+t run_python_test $construct_dir/lambda/api/alarm alarm_api &
 tests_to_run+=($!)
-run_python_test_concurrently $construct_dir/lambda/microbatch microbatch &
+t run_python_test_concurrently $construct_dir/lambda/microbatch microbatch &
 tests_to_run+=($!)
-run_python_test $construct_dir/ecr/s3-list-objects s3-list-objects &
+t run_python_test $construct_dir/ecr/s3-list-objects s3-list-objects &
 tests_to_run+=($!)
-run_python_test $construct_dir/lib/kinesis/lambda lambda &
+t run_python_test $construct_dir/lib/kinesis/lambda lambda &
 tests_to_run+=($!)
-run_python_test $construct_dir/lambda/api/grafana grafana &
+t run_python_test $construct_dir/lambda/api/grafana grafana &
 tests_to_run+=($!)
 
-for i in "${!tests_to_run[@]}"; do
-  test_pid=${tests_to_run[$i]}
-  wait "$test_pid"
-done
+function wait_all_python_test() {
+	for i in "${!tests_to_run[@]}"; do
+	test_pid=${tests_to_run[$i]}
+	wait "$test_pid"
+	done
+}
+
+t wait_all_python_test 
 
 echo "All tests completed successfully."
-
-# run_python_test $construct_dir/lambda/common-lib common-lib
-# run_python_test $construct_dir/lambda/custom-resource custom-resource
-# run_python_test $construct_dir/lambda/main/cfnHelper cfnHelper
-# run_python_test $construct_dir/lambda/main/sfnHelper sfnHelper
-# run_python_test $construct_dir/lambda/pipeline/service/log-processor svc-log-processor
-# run_python_test $construct_dir/lambda/pipeline/app/log-processor app-log-processor
-# run_python_test $construct_dir/lambda/pipeline/common/opensearch-helper opensearch-helper
-# run_python_test $construct_dir/lambda/pipeline/common/custom-resource custom-resource2
-# run_python_test $construct_dir/lambda/plugin/standard plugin
-
-# run_python_test $construct_dir/lambda/api/resource resource-api
-# run_python_test $construct_dir/lambda/api/pipeline svc-pipeline-api
-# run_python_test $construct_dir/lambda/api/log_agent_status log_agent_status  
-# run_python_test $construct_dir/lambda/api/app_log_ingestion app_log_ingestion  
-# run_python_test $construct_dir/lambda/api/log_source log_source
-# run_python_test $construct_dir/lambda/api/log_conf log_conf
-# run_python_test $construct_dir/lambda/api/app_pipeline app_pipeline
-# run_python_test $construct_dir/lambda/api/cross_account cross_account
-# run_python_test $construct_dir/lambda/api/cluster aos_cluster
-# run_python_test $construct_dir/lambda/api/pipeline_ingestion_flow pipeline_ingestion_flow
-# run_python_test $construct_dir/lambda/api/cwl cloudwatch_api
-# run_python_test $construct_dir/lambda/api/alarm alarm_api
-# run_python_test $construct_dir/ecr/s3-list-objects s3-list-objects
-# run_python_test $construct_dir/lib/kinesis/lambda lambda
 
 # Return to the source/ level
 cd $source_dir

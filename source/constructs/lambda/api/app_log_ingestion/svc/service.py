@@ -1,7 +1,7 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-import logging
+from commonlib.logging import get_logger
 import os
 import uuid
 from boto3.dynamodb.conditions import Attr
@@ -9,13 +9,17 @@ from svc.s3 import S3SourceHandler
 from svc.ec2 import EC2SourceHandler
 from svc.k8s import EKSSourceHandler
 from svc.syslog import SyslogSourceHandler
-from commonlib import ErrorCode, APIException
+from commonlib import AWSConnection, ErrorCode, APIException
 from commonlib.dao import (
     AppPipelineDao,
     LogConfigDao,
     LogSourceDao,
     AppLogIngestionDao,
     InstanceIngestionDetailDao,
+    s3_notification_prefix,
+)
+from commonlib.aws import (
+    verify_s3_bucket_prefix_overlap_for_event_notifications,
 )
 from commonlib.utils import paginate
 from commonlib.model import (
@@ -28,13 +32,13 @@ from commonlib.model import (
     Output,
     BufferTypeEnum,
     LogSourceTypeEnum,
+    LogTypeEnum,
     Param,
     StatusEnum,
 )
 from typing import List
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 app_pipeline_table_name = os.environ.get("APP_PIPELINE_TABLE_NAME")
 app_log_ingestion_table_name = os.environ.get("APP_LOG_INGESTION_TABLE_NAME")
@@ -52,6 +56,8 @@ log_source_dao = LogSourceDao(table_name=log_source_table_name)
 instance_ingestion_detail_dao = InstanceIngestionDetailDao(
     table_name=instance_ingestion_detail_table_name
 )
+current_region = os.environ.get("REGION")
+s3_client = AWSConnection().get_client("s3", current_region)
 
 
 class AppLogIngestionService:
@@ -84,6 +90,14 @@ class AppLogIngestionService:
         app_log_ingestion.sourceType = log_source.type
 
         if log_source.type == LogSourceTypeEnum.S3:
+            logging_bucket_name = log_source.s3.bucketName
+            logging_bucket_prefix = log_source.s3.keyPrefix
+            verify_s3_bucket_prefix_overlap_for_event_notifications(
+                s3_client,
+                logging_bucket_name,
+                s3_notification_prefix(logging_bucket_prefix),
+            )
+
             # call s3 ingestion
             s3_source = S3SourceHandler(ingestion_dao)
             s3_source.create_s3_ingestion(app_log_ingestion, log_source, app_pipeline)
@@ -100,7 +114,9 @@ class AppLogIngestionService:
             output_dict["roleArn"] = app_pipeline.bufferAccessRoleArn
             output_dict["roleName"] = app_pipeline.bufferAccessRoleName
             output_dict["name"] = app_pipeline.bufferType
-            output_params = app_pipeline.bufferParams
+            output_params = app_pipeline_dao.get_buffer_params(
+                app_pipeline=app_pipeline
+            )
             if app_pipeline.bufferType == BufferTypeEnum.NONE:
                 output_dict["name"] = "AOS"
                 output_dict["params"] = self.get_aos_params(app_pipeline.aosParams)
@@ -124,6 +140,8 @@ class AppLogIngestionService:
             # handle input
             input_dict = dict()
             input_dict["name"] = "tail"
+            if LogTypeEnum.WINDOWS_EVENT == log_config.logType:
+                input_dict["name"] = "winlog"
             app_log_ingestion.input = Input(**input_dict)
             if log_source.type == LogSourceTypeEnum.Syslog:
                 input_dict["name"] = "syslog"
@@ -132,14 +150,19 @@ class AppLogIngestionService:
 
                 # create NLB, syslog substack
                 syslog_source = SyslogSourceHandler(ingestion_dao)
-                syslog_source.create_syslog_substack(log_source, app_log_ingestion)
+                syslog_source.create_syslog_substack(
+                    log_source, app_log_ingestion, app_pipeline
+                )
                 # save ingestion, generate FluentBit conf & upload to s3
                 syslog_source.create_ingestion(log_source, app_log_ingestion)
 
             elif log_source.type == LogSourceTypeEnum.EC2:
                 # EC2
-                app_log_ingestion = ingestion_dao.save(app_log_ingestion)
                 ec2_source = EC2SourceHandler(ingestion_dao)
+                ec2_source.check_duplicated_win_event_log(
+                    log_source.sourceId, app_log_ingestion.appPipelineId
+                )
+                app_log_ingestion = ingestion_dao.save(app_log_ingestion)
                 ec2_source.create_ingestion(log_source, app_log_ingestion)
             else:
                 # With EKS scenario, we only save ingestion and attach assume role. When calling to view the EKS deployment yaml, we will call FluentBit service to generate configuration
@@ -197,7 +220,10 @@ class AppLogIngestionService:
                 ingestion_dao.update_app_log_ingestion(id, status=StatusEnum.INACTIVE)
             else:
                 s3_source = S3SourceHandler(ingestion_dao)
-                s3_source.delete_ingestion(log_source, app_log_ingestion)
+                app_pipeline: AppPipeline = app_pipeline_dao.get_app_pipeline(
+                    app_log_ingestion.appPipelineId
+                )
+                s3_source.delete_ingestion(app_pipeline, log_source, app_log_ingestion)
         else:
             raise APIException(
                 ErrorCode.UNSUPPORTED_ACTION,

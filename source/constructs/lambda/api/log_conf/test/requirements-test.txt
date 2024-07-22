@@ -1,9 +1,9 @@
 boto3
-moto
+moto<=4.2.13
 pytest
 pyyaml
 pytest-cov
 pytest-mock
 requests-mock
 requests_aws4auth
-pydantic==1.10.6 --no-binary=pydantic
+pydantic==1.10.14 --no-binary=pydantic

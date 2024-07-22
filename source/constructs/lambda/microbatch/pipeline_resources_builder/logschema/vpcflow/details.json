@@ -1,0 +1,500 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 1013,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "Bn93a3_Vk"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "green",
+            "mode": "fixed"
+          },
+          "custom": {
+            "align": "center",
+            "cellOptions": {
+              "type": "color-text"
+            },
+            "filterable": true,
+            "inspect": true
+          },
+          "mappings": [],
+          "min": -3,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 33,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 14,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": false,
+          "fields": [
+            "response_latency",
+            "response_length"
+          ],
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": []
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "datasource": {
+            "type": "grafana-athena-datasource",
+            "uid": "Bn93a3_Vk"
+          },
+          "format": 1,
+          "rawSQL": "SELECT t.rn as No, t.time, t.timestamp, t.version, t.\"account-id\", t.\"interface-id\", t.\"srcaddr\", t.\"dstaddr\", t.\"srcport\", t.\"dstport\", t.\"protocol\", t.\"packets\", t.\"bytes\", t.\"start\", t.\"end\", t.\"action\", t.\"log-status\", \n    t.\"vpc-id\", t.\"subnet-id\", t.\"instance-id\", t.\"tcp-flags\", t.\"type\", t.\"pkt-srcaddr\", t.\"pkt-dstaddr\", t.\"az-id\", t.\"sublocation-type\", t.\"sublocation-id\", t.\"pkt-src-aws-service\", t.\"pkt-dst-aws-service\", \n    t.\"flow-direction\", t.\"traffic-path\", t.\"account_id\", t.\"region\"\nFROM (SELECT time, timestamp, version, \"account-id\", \"interface-id\", \"srcaddr\", \"dstaddr\", \"srcport\", \"dstport\", \"protocol\", \"packets\", \"bytes\", \"start\", \"end\", \"action\", \"log-status\", \n    \"vpc-id\", \"subnet-id\", \"instance-id\", \"tcp-flags\", \"type\", \"pkt-srcaddr\", \"pkt-dstaddr\", \"az-id\", \"sublocation-type\", \"sublocation-id\", \"pkt-src-aws-service\", \"pkt-dst-aws-service\", \n    \"flow-direction\", \"traffic-path\", \"account_id\", \"region\",\n    row_number() over (order by time ${sort_by}) as rn\n  FROM \"$__table\"\n  WHERE \"account_id\" IN (${account_id:sqlstring}) \n    AND \"region\" IN (${region:sqlstring}) \n    AND \"vpc-id\" IN (${vpc_id:sqlstring}) \n    AND \"action\" IN (${action:sqlstring}) \n    AND \"flow-direction\" IN (${flow_direction:sqlstring})\n    AND \"type\" IN (${type:sqlstring})\n    AND $__unixEpochFilter(time / 1000)\n    AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n    OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n  ) t \n  WHERE t.rn BETWEEN (${page_no:int} - 1) * ${page_size:int} + 1 AND ${page_no:int} * ${page_size:int};",
+          "refId": "Details",
+          "table": "vpcflow"
+        }
+      ],
+      "transformations": [],
+      "type": "table"
+    }
+  ],
+  "refresh": "",
+  "revision": 1,
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "allValue": "SELECT \"account_id\" FROM \"$__table\" WHERE  event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH') \tOR event_hour = $__rawTimeFrom('yyyyMMdd00') GROUP BY \"account_id\"",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-athena-datasource",
+          "uid": "Bn93a3_Vk"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Account Id",
+        "multi": true,
+        "name": "account_id",
+        "options": [],
+        "query": {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT \"account_id\"\nFROM \"$__table\"\nWHERE  event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\tOR event_hour = $__rawTimeFrom('yyyyMMdd00')\nGROUP BY \"account_id\"",
+          "refId": "Metrics",
+          "table": "vpcflow_metrics"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "allValue": "SELECT \"region\" FROM \"$__table\" WHERE  event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH') \tOR event_hour = $__rawTimeFrom('yyyyMMdd00') GROUP BY \"region\"",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-athena-datasource",
+          "uid": "Bn93a3_Vk"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Region",
+        "multi": true,
+        "name": "region",
+        "options": [],
+        "query": {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT \"region\"\nFROM \"$__table\"\nWHERE  event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\tOR event_hour = $__rawTimeFrom('yyyyMMdd00')\nGROUP BY \"region\"",
+          "refId": "Metrics",
+          "table": "vpcflow_metrics"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "allValue": "SELECT \"vpc-id\" FROM \"$__table\" WHERE  event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH') \tOR event_hour = $__rawTimeFrom('yyyyMMdd00') GROUP BY \"vpc-id\"",
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "grafana-athena-datasource",
+          "uid": "Bn93a3_Vk"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": true,
+        "label": "VPC Id",
+        "multi": true,
+        "name": "vpc_id",
+        "options": [],
+        "query": {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT \"vpc-id\"\nFROM \"$__table\"\nWHERE  event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\tOR event_hour = $__rawTimeFrom('yyyyMMdd00')\nGROUP BY \"vpc-id\"",
+          "refId": "Metrics",
+          "table": "vpcflow_metrics"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "description": "",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Action",
+        "multi": true,
+        "name": "action",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "ACCEPT",
+            "value": "ACCEPT"
+          },
+          {
+            "selected": false,
+            "text": "REJECT",
+            "value": "REJECT"
+          },
+          {
+            "selected": false,
+            "text": "-",
+            "value": "-"
+          }
+        ],
+        "query": "ACCEPT, REJECT, -",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "hide": 0,
+        "includeAll": true,
+        "label": "Flow Direction",
+        "multi": true,
+        "name": "flow_direction",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "ingress",
+            "value": "ingress"
+          },
+          {
+            "selected": false,
+            "text": "egress",
+            "value": "egress"
+          },
+          {
+            "selected": false,
+            "text": "-",
+            "value": "-"
+          }
+        ],
+        "query": "ingress, egress, -",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "hide": 0,
+        "includeAll": true,
+        "label": "Type",
+        "multi": true,
+        "name": "type",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "IPv4",
+            "value": "IPv4"
+          },
+          {
+            "selected": false,
+            "text": "IPv6",
+            "value": "IPv6"
+          },
+          {
+            "selected": false,
+            "text": "EFA",
+            "value": "EFA"
+          },
+          {
+            "selected": false,
+            "text": "-",
+            "value": "-"
+          }
+        ],
+        "query": "IPv4, IPv6, EFA, -",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "1",
+          "value": "1"
+        },
+        "datasource": {
+          "type": "grafana-athena-datasource",
+          "uid": "Bn93a3_Vk"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Page No",
+        "multi": false,
+        "name": "page_no",
+        "options": [],
+        "query": {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT cast(page_no as varchar) as page_no\nFROM (\n\tSELECT sequence(1, count(1) / ${page_size:int} + 1, 1)\n  FROM \"$__table\"\n  WHERE $__unixEpochFilter(time / 1000)\n\t\tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n\t) AS x (no)\nCROSS JOIN UNNEST(no) AS t (page_no)\n;",
+          "refId": "Details",
+          "table": "vpcflow"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": "1000",
+          "value": "1000"
+        },
+        "hide": 0,
+        "includeAll": false,
+        "label": "Page Size",
+        "multi": false,
+        "name": "page_size",
+        "options": [
+          {
+            "selected": false,
+            "text": "100",
+            "value": "100"
+          },
+          {
+            "selected": true,
+            "text": "1000",
+            "value": "1000"
+          },
+          {
+            "selected": false,
+            "text": "10000",
+            "value": "10000"
+          },
+          {
+            "selected": false,
+            "text": "50000",
+            "value": "50000"
+          }
+        ],
+        "query": "100, 1000, 10000, 50000",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": "Desc",
+          "value": "Desc"
+        },
+        "hide": 0,
+        "includeAll": false,
+        "label": "Sort  by",
+        "multi": false,
+        "name": "sort_by",
+        "options": [
+          {
+            "selected": false,
+            "text": "Asc",
+            "value": "Asc"
+          },
+          {
+            "selected": true,
+            "text": "Desc",
+            "value": "Desc"
+          }
+        ],
+        "query": "Asc, Desc",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "timepicker": {
+    "hidden": false,
+    "refresh_intervals": [
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ]
+  },
+  "timezone": "",
+  "title": "vpcflow-details",
+  "uid": "69474265-b72d-45e9-8465-6c4320e622ba-00",
+  "version": 1,
+  "weekStart": ""
+}

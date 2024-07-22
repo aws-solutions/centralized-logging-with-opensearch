@@ -1,0 +1,46 @@
+{
+	"type": "object",
+	"properties": {
+		"time": {
+			"type": "big_int",
+			"expression": "FLOOR(\"time\" / 60000) * 60000"
+		},
+		"timestamp": {
+			"type": "timestamp",
+			"expression": "DATE_TRUNC('minute', \"timestamp\")"
+		},
+		"configurationitemstatus": {
+			"type": "string"
+		},
+		"resourcetype": {
+			"type": "string"
+		},
+		"resourceid": {
+			"type": "string"
+		},
+		"resourcename": {
+			"type": "string"
+		},
+		"requests": {
+			"type": "big_int",
+			"measure": true,
+			"expression": "CAST(COUNT(1) AS bigint)"
+		},
+		"account_id": {
+			"type": "string",
+			"partition": true
+		},
+		"region": {
+			"type": "string",
+			"partition": true
+		},
+		"event_hour": {
+			"type": "string",
+			"partition": true
+		},
+		"__execution_name__": {
+			"type": "string",
+			"partition": true
+		}
+	}
+}

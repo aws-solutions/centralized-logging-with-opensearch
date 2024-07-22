@@ -141,7 +141,9 @@ export class GrafanaStack extends Construct {
     grafanaLambdaDS.createResolver("updateGrafana", {
       typeName: "Mutation",
       fieldName: "updateGrafana",
-      requestMappingTemplate: MappingTemplate.lambdaRequest(),
+      requestMappingTemplate: MappingTemplate.fromFile(
+        path.join(__dirname, "../../graphql/vtl/grafana/UpdateGrafana.vtl")
+      ),
       responseMappingTemplate: MappingTemplate.lambdaResult(),
     });
 

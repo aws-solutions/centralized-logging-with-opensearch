@@ -6,7 +6,7 @@ import pytest
 
 
 class TestCloudFrontWithRT:
-    def setup(self):
+    def setup_method(self):
         from log_processor.log_parser import CloudFrontWithRT
 
         self.cf_with_rt = CloudFrontWithRT()
@@ -36,7 +36,7 @@ class TestCloudFrontWithRT:
 
 
 class TestELBWithS3:
-    def setup(self):
+    def setup_method(self):
         with open("./test/datafile/elb.log", encoding="utf-8") as f:
             self.data = f.readlines()
             from log_processor.log_parser import ELBWithS3
@@ -57,7 +57,7 @@ class TestELBWithS3:
 
 
 class TestCloudTrailWithS3:
-    def setup(self):
+    def setup_method(self):
         with open("./test/datafile/cloudtrail.log", encoding="utf-8") as f:
             self.data = f.readlines()
         from log_processor.log_parser import CloudTrailWithS3
@@ -78,7 +78,7 @@ class TestCloudTrailWithS3:
 
 
 class TestS3:
-    def setup(self):
+    def setup_method(self):
         with open("./test/datafile/s3.log", encoding="utf-8") as f:
             self.data = f.readlines()
         from log_processor.log_parser import S3WithS3
@@ -101,7 +101,7 @@ class TestS3:
 
 
 class TestCloudFront:
-    def setup(self):
+    def setup_method(self):
         with open("./test/datafile/cloudfront.log", encoding="utf-8") as f:
             self.data = f.readlines()
             assert len(self.data) == 4
@@ -125,7 +125,7 @@ class TestCloudFront:
 
 
 class TestWAF:
-    def setup(self):
+    def setup_method(self):
         with open("./test/datafile/waf.log", encoding="utf-8") as f:
             self.data = f.readlines()
             assert len(self.data) == 2
@@ -143,7 +143,7 @@ class TestWAF:
 
 
 class TestVPCFlow:
-    def setup(self):
+    def setup_method(self):
         with open("./test/datafile/vpcflow.log", encoding="utf-8") as f:
             self.data = f.readlines()
 
@@ -173,7 +173,7 @@ class TestVPCFlow:
 
 
 class TestConfig:
-    def setup(self):
+    def setup_method(self):
         from log_processor.log_parser import ConfigWithS3
 
         self.cfg = ConfigWithS3()
@@ -204,7 +204,7 @@ class TestConfig:
 
 
 class TestRDS:
-    def setup(self):
+    def setup_method(self):
         from log_processor.log_parser import RDSWithS3
 
         self.rds = RDSWithS3()
@@ -262,7 +262,7 @@ def test_log_entry():
 #     ):
 #         assert each.dict("t") == {"t": "2023-01-01T19:00:00", "a": 1, "b": 1}
 # class TestRegex:
-#     def setup(self):
+#     def setup_method(self):
 #         from log_processor.log_parser import Regex
 #
 #         self.regex = Regex()

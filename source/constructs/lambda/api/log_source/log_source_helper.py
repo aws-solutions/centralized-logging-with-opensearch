@@ -1,7 +1,7 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-import logging
+from commonlib.logging import get_logger
 import os
 
 from commonlib import AWSConnection
@@ -9,7 +9,7 @@ from commonlib.model import AppLogIngestion
 
 from boto3.dynamodb.conditions import Attr
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 app_ingestion_table_name = os.getenv("APP_LOG_INGESTION_TABLE_NAME")
 conn = AWSConnection()

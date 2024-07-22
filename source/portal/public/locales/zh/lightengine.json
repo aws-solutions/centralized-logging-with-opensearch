@@ -44,7 +44,7 @@
       "specifyLightEngine": "指定 Light Engine 配置",
       "configTitle": "配置 Light Engine",
       "sampleDashboardTitle": "样例看板",
-      "sampleDashboardDesc": "在 Grafana 看板中创建预定义的样例看板。",
+      "sampleDashboardDesc": "在 Grafana 中创建预定义的示例看板。",
       "grafanaPlaceholder": "选择一个 Grafana 服务器",
       "centralBucketTitle": "存放日志的 S3 桶",
       "centralBucketDesc": "该存储桶用于长期存储和管理准备好的数据，以供进行分析、报告和可视化。",
@@ -58,9 +58,9 @@
       "logArchiveExpTitle": "日志归档时间表",
       "logArchiveExpDesc": "定义日志归档时间表的表达式。更多信息和示例请查阅<0>基于 Cron 的日程安排</0>",
       "logMergerAgeTitle": "日志合并时间 (天)",
-      "logMergerAgeDesc": "小文件保留天数，默认值为7，表示会对存放了7天以上的日志进行小文件合并，可按需调整。",
+      "logMergerAgeDesc": "小文件保留天数，默认为7，表示存储超过7天的日志将合并到大文件中。 该值可以根据需要进行调整。",
       "logArchiveAgeTitle": "日志归档时间 (天)",
-      "logArchiveAgeDesc": "日志保留天数，默认值为30，表示会对存放了30天以上的日志进行归档删除，可按需调整.",
+      "logArchiveAgeDesc": "日志保留天数，默认值为30，表示存储超过30天的日志将被归档，根据S3桶生命周期预设，日志将在归档后3天内删除。 该值可以根据需要进行调整。",
       "errorGrafanaIdMissing": "请选择 Grafana ID.",
       "errorCentralBucketMissing": "请选择日志桶",
       "errorLogArchiveScheduleMissing": "请输入日志归档时间表",
@@ -70,7 +70,8 @@
       "errorLogArchiveAgeGteLogMergerAge": "日志合并时间须小于日志归档时间",
       "errorLogMergerAgeGteOne": "日志合并时间须大于等于 1 天",
       "errorLogProcessorScheduleExp": "日志处理频率的设定须大于 1 分钟",
-      "errorCronExpression": "请填写有效的正则表达式"
+      "errorCronExpression": "请填写有效的正则表达式",
+      "errorTableName": "表名称必须是字母、数字和下划线的组合，并且长度在 1 到 255 个字符之间。"
     }
   },
   "logging": {

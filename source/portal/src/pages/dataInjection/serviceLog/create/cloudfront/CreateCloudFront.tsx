@@ -17,63 +17,48 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import CreateStep from "components/CreateStep";
 import SpecifySettings from "./steps/SpecifySettings";
-import {
-  AOSInputValidRes,
-  checkOpenSearchInput,
-  covertParametersByKeyAndConditions,
-} from "../common/SpecifyCluster";
 import Button from "components/Button";
 
-import Breadcrumb from "components/Breadcrumb";
 import { appSyncRequestMutation } from "assets/js/request";
 import {
   createLightEngineServicePipeline,
   createServicePipeline,
 } from "graphql/mutations";
-import {
-  Codec,
-  DestinationType,
-  EngineType,
-  ServiceType,
-  MonitorInput,
-  DomainStatusCheckType,
-  DomainStatusCheckResponse,
-} from "API";
+import { DestinationType, ServiceType, MonitorInput } from "API";
 import {
   SupportPlugin,
-  WarmTransitionType,
   YesNo,
   AmplifyConfigType,
-  SERVICE_LOG_INDEX_SUFFIX,
   CloudFrontFieldType,
+  AnalyticEngineTypes,
 } from "types";
 import { OptionType } from "components/AutoComplete/autoComplete";
 import {
   CloudFrontFieldTypeList,
   CreateLogMethod,
+  DOMAIN_ALLOW_STATUS,
   FieldSortingArr,
   ServiceLogType,
 } from "assets/js/const";
-import HelpPanel from "components/HelpPanel";
-import SideMenu from "components/SideMenu";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import LogProcessing from "../common/LogProcessing";
 import {
   bucketNameIsValid,
+  buildLambdaConcurrency,
   buildOSIParamsValue,
+  defaultStr,
   splitStringToBucketAndPrefix,
 } from "assets/js/utils";
 import { SelectItem } from "components/Select/select";
 import { S3SourceType } from "../cloudtrail/steps/comp/SourceType";
 import { MONITOR_ALARM_INIT_DATA } from "assets/js/init";
 import AlarmAndTags from "../../../../pipelineAlarm/AlarmAndTags";
-import { covertSvcTaskToLightEngine } from "../common/ConfigLightEngine";
+import ConfigLightEngine, {
+  covertSvcTaskToLightEngine,
+} from "../common/ConfigLightEngine";
 import { Actions, RootState } from "reducer/reducers";
 import { useTags } from "assets/js/hooks/useTags";
-import SpecifyAnalyticsEngine, {
-  AnalyticEngineTypes,
-} from "../common/SpecifyAnalyticsEngine";
 import {
   CreateLightEngineActionTypes,
   validateLightEngine,
@@ -84,7 +69,7 @@ import { useAlarm } from "assets/js/hooks/useAlarm";
 import { ActionType } from "reducer/appReducer";
 import {
   CreateAlarmActionTypes,
-  validateAalrmInput,
+  validateAlarmInput,
 } from "reducer/createAlarm";
 import { useGrafana } from "assets/js/hooks/useGrafana";
 import SelectLogProcessor from "pages/comps/processor/SelectLogProcessor";
@@ -93,15 +78,24 @@ import {
   validateOCUInput,
 } from "reducer/selectProcessor";
 import { useSelectProcessor } from "assets/js/hooks/useSelectProcessor";
+import {
+  INIT_OPENSEARCH_DATA,
+  OpenSearchState,
+  convertOpenSearchTaskParameters,
+  indexPrefixChanged,
+  validateOpenSearch,
+  validateOpenSearchParams,
+} from "reducer/createOpenSearch";
+import { AppDispatch } from "reducer/store";
+import ConfigOpenSearch from "../common/ConfigOpenSearch";
+import { useOpenSearch } from "assets/js/hooks/useOpenSearch";
+import CommonLayout from "pages/layout/CommonLayout";
 
 const BASE_EXCLUDE_PARAMS = [
-  "esDomainId",
-  "cloudFrontObj",
   "taskType",
+  "cloudFrontObj",
   "manualBucketS3Path",
   "manualBucketName",
-  "warmEnable",
-  "coldEnable",
   "geoPlugin",
   "userAgentPlugin",
   "fieldType",
@@ -110,7 +104,6 @@ const BASE_EXCLUDE_PARAMS = [
   "s3SourceType",
   "successTextType",
   "tmpFlowList",
-  "rolloverSizeNotSupport",
 ];
 
 const EXCLUDE_PARAMS_S3 = [
@@ -134,31 +127,16 @@ export interface CloudFrontTaskProps {
   logSourceRegion: string;
   destinationType: string;
   params: {
-    // [index: string]: string | any;
-    engineType: string;
-    warmEnable: boolean;
-    coldEnable: boolean;
     logBucketName: string;
     cloudFrontObj: OptionType | null;
     taskType: string;
     manualBucketS3Path: string;
     manualBucketName: string;
     logBucketPrefix: string;
-    endpoint: string;
-    domainName: string;
-    esDomainId: string;
-    indexPrefix: string;
-    createDashboard: string;
-    vpcId: string;
-    subnetIds: string;
-    securityGroupId: string;
 
     geoPlugin: boolean;
     userAgentPlugin: boolean;
-    shardNumbers: string;
-    replicaNumbers: string;
 
-    // logType: string;
     userIsConfirmed: boolean;
     fieldType: string;
     customFields: string[]; // to convert fieldNames
@@ -168,21 +146,10 @@ export interface CloudFrontTaskProps {
     enableAutoScaling: string;
     maxCapacity: string;
 
-    enableRolloverByCapacity: boolean;
-    warmTransitionType: string;
-    warmAge: string;
-    coldAge: string;
-    retainAge: string;
-    rolloverSize: string;
-    indexSuffix: string;
-    codec: string;
-    refreshInterval: string;
     tmpFlowList: SelectItem[];
     s3SourceType: string;
     successTextType: string;
-
-    rolloverSizeNotSupport: boolean;
-  };
+  } & OpenSearchState;
   monitor: MonitorInput;
 }
 
@@ -194,30 +161,16 @@ const DEFAULT_TASK_VALUE: CloudFrontTaskProps = {
   logSourceRegion: "",
   destinationType: "",
   params: {
-    engineType: "",
-    warmEnable: false,
-    coldEnable: false,
     logBucketName: "",
     cloudFrontObj: null,
     taskType: CreateLogMethod.Automatic,
     manualBucketS3Path: "",
     manualBucketName: "",
     logBucketPrefix: "",
-    endpoint: "",
-    domainName: "",
-    esDomainId: "",
-    indexPrefix: "",
-    createDashboard: YesNo.Yes,
-    vpcId: "",
-    subnetIds: "",
-    securityGroupId: "",
 
     geoPlugin: false,
     userAgentPlugin: false,
-    shardNumbers: "1",
-    replicaNumbers: "1",
 
-    // logType: "",
     userIsConfirmed: false,
     fieldType: CloudFrontFieldType.ALL,
     customFields: [],
@@ -227,21 +180,10 @@ const DEFAULT_TASK_VALUE: CloudFrontTaskProps = {
     enableAutoScaling: YesNo.No,
     maxCapacity: "1",
 
-    enableRolloverByCapacity: true,
-    warmTransitionType: WarmTransitionType.IMMEDIATELY,
-    warmAge: "0",
-    coldAge: "60",
-    retainAge: "180",
-    rolloverSize: "30",
-    indexSuffix: SERVICE_LOG_INDEX_SUFFIX.yyyy_MM_dd,
-    codec: Codec.best_compression,
-    refreshInterval: "1s",
     tmpFlowList: [],
-
-    successTextType: "",
     s3SourceType: S3SourceType.NONE,
-
-    rolloverSizeNotSupport: false,
+    successTextType: "",
+    ...INIT_OPENSEARCH_DATA,
   },
   monitor: MONITOR_ALARM_INIT_DATA,
 };
@@ -269,23 +211,25 @@ const CreateCloudFront: React.FC = () => {
   const engineType =
     (searchParams.get("engineType") as AnalyticEngineTypes | null) ??
     AnalyticEngineTypes.OPENSEARCH;
+  const totalStep =
+    searchParams.get("engineType") === AnalyticEngineTypes.LIGHT_ENGINE ? 3 : 4;
+  const isLightEngine = useMemo(
+    () => engineType === AnalyticEngineTypes.LIGHT_ENGINE,
+    [engineType]
+  );
 
   const [curStep, setCurStep] = useState(0);
   const navigate = useNavigate();
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [cloudFrontPipelineTask, setCloudFrontPipelineTask] =
     useState<CloudFrontTaskProps>(DEFAULT_TASK_VALUE);
-  const [domainCheckStatus, setDomainCheckStatus] =
-    useState<DomainStatusCheckResponse>();
 
   const [autoS3EmptyError, setAutoS3EmptyError] = useState(false);
-  const [manualS3EmpryError, setManualS3EmpryError] = useState(false);
+  const [manualS3EmptyError, setManualS3EmptyError] = useState(false);
   const [manualS3PathInvalid, setManualS3PathInvalid] = useState(false);
-  const [esDomainEmptyError, setEsDomainEmptyError] = useState(false);
 
   const [nextStepDisable, setNextStepDisable] = useState(false);
   const [cloudFrontIsChanging, setCloudFrontIsChanging] = useState(false);
-  const [domainListIsLoading, setDomainListIsLoading] = useState(false);
 
   const [showConfirmError, setShowConfirmError] = useState(false);
   const [logTypeEmptyError, setLogTypeEmptyError] = useState(false);
@@ -293,22 +237,13 @@ const CreateCloudFront: React.FC = () => {
   const [shardNumError, setShardNumError] = useState(false);
   const [maxShardNumError, setMaxShardNumError] = useState(false);
 
-  const [aosInputValidRes, setAosInputValidRes] = useState<AOSInputValidRes>({
-    shardsInvalidError: false,
-    warmLogInvalidError: false,
-    coldLogInvalidError: false,
-    logRetentionInvalidError: false,
-    coldMustLargeThanWarm: false,
-    logRetentionMustThanColdAndWarm: false,
-    capacityInvalidError: false,
-    indexEmptyError: false,
-    indexNameFormatError: false,
-  });
   const tags = useTags();
   const monitor = useAlarm();
   const osiParams = useSelectProcessor();
   const lightEngine = useLightEngine();
   const grafana = useGrafana();
+  const openSearch = useOpenSearch();
+  const appDispatch = useDispatch<AppDispatch>();
 
   const sortCloudFrontArray = (arr: string[]) => {
     return arr.sort((a: string, b: string) => {
@@ -360,10 +295,16 @@ const CreateCloudFront: React.FC = () => {
   }, [lightEngine, cloudFrontPipelineTask, tags, monitor]);
 
   const confirmCreatePipeline = async () => {
+    cloudFrontPipelineTask.params = {
+      ...cloudFrontPipelineTask.params,
+      ...openSearch,
+    };
     const createPipelineParams: any = {};
     createPipelineParams.type = ServiceType.CloudFront;
     createPipelineParams.source = cloudFrontPipelineTask.source;
-    createPipelineParams.target = cloudFrontPipelineTask.target;
+    // Update domain name and engine type from openSearch
+    createPipelineParams.target = openSearch.domainName;
+    createPipelineParams.engine = openSearch.engineType;
     createPipelineParams.tags = tags;
     createPipelineParams.logSourceAccountId =
       cloudFrontPipelineTask.logSourceAccountId;
@@ -373,6 +314,8 @@ const CreateCloudFront: React.FC = () => {
 
     createPipelineParams.monitor = monitor.monitor;
     createPipelineParams.osiParams = buildOSIParamsValue(osiParams);
+    createPipelineParams.logProcessorConcurrency =
+      buildLambdaConcurrency(osiParams);
 
     // Set max capacity to min when auto scaling is false
     if (cloudFrontPipelineTask.params.enableAutoScaling === YesNo.No) {
@@ -383,9 +326,10 @@ const CreateCloudFront: React.FC = () => {
     let tmpParamList: any = [];
 
     if (cloudFrontPipelineTask.destinationType === DestinationType.S3) {
-      tmpParamList = covertParametersByKeyAndConditions(
+      tmpParamList = convertOpenSearchTaskParameters(
         cloudFrontPipelineTask,
-        EXCLUDE_PARAMS_S3
+        EXCLUDE_PARAMS_S3,
+        openSearch
       );
       // Add defaultCmkArnParam
       tmpParamList.push({
@@ -410,9 +354,10 @@ const CreateCloudFront: React.FC = () => {
     }
 
     if (cloudFrontPipelineTask.destinationType === DestinationType.KDS) {
-      tmpParamList = covertParametersByKeyAndConditions(
+      tmpParamList = convertOpenSearchTaskParameters(
         cloudFrontPipelineTask,
-        EXCLUDE_PARAMS_KDS
+        EXCLUDE_PARAMS_KDS,
+        openSearch
       );
       // Add fieldNames in parameters
       if (cloudFrontPipelineTask.params.fieldType === CloudFrontFieldType.ALL) {
@@ -476,829 +421,546 @@ const CreateCloudFront: React.FC = () => {
     [lightEngine, grafana]
   );
 
-  useEffect(() => {
-    console.info("cloudFrontPipelineTask:", cloudFrontPipelineTask);
-  }, [cloudFrontPipelineTask]);
+  const isOpenSearchValid = useMemo(
+    () => validateOpenSearchParams(openSearch),
+    [openSearch]
+  );
 
   const isNextDisabled = () => {
-    if (curStep === 2 && engineType === AnalyticEngineTypes.LIGHT_ENGINE) {
+    if (curStep === 2 && isLightEngine) {
       return false;
     }
     return (
       cloudFrontIsChanging ||
-      domainListIsLoading ||
+      openSearch.domainLoading ||
       nextStepDisable ||
       (curStep === 2 &&
-        domainCheckStatus?.status !== DomainStatusCheckType.PASSED) ||
+        !DOMAIN_ALLOW_STATUS.includes(
+          openSearch.domainCheckedStatus?.status
+        )) ||
       osiParams.serviceAvailableCheckedLoading
     );
   };
 
+  const checkAutomaticParams = () => {
+    if (cloudFrontPipelineTask.params.taskType === CreateLogMethod.Automatic) {
+      if (!cloudFrontPipelineTask.params.cloudFrontObj) {
+        setAutoS3EmptyError(true);
+        return false;
+      }
+      if (
+        cloudFrontPipelineTask.destinationType === DestinationType.KDS &&
+        !cloudFrontPipelineTask.params.userIsConfirmed
+      ) {
+        setShowConfirmError(true);
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const checkManualParams = () => {
+    if (cloudFrontPipelineTask.params.taskType === CreateLogMethod.Manual) {
+      if (!cloudFrontPipelineTask.params.logBucketName) {
+        setManualS3EmptyError(true);
+        return false;
+      }
+      if (
+        !cloudFrontPipelineTask.params.manualBucketS3Path
+          .toLowerCase()
+          .startsWith("s3") ||
+        !bucketNameIsValid(cloudFrontPipelineTask.params.logBucketName)
+      ) {
+        setManualS3PathInvalid(true);
+        return false;
+      }
+
+      // Manual creation method does not support Realtime
+      if (cloudFrontPipelineTask.destinationType === DestinationType.KDS) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const validateCloudFrontInput = () => {
+    if (nextStepDisable) {
+      return false;
+    }
+
+    if (!checkAutomaticParams()) {
+      return false;
+    }
+
+    if (!checkManualParams()) {
+      return false;
+    }
+
+    // show error when destination type is empty
+    if (!cloudFrontPipelineTask.destinationType) {
+      setLogTypeEmptyError(true);
+      return false;
+    }
+    // check realtime logs input
+    if (cloudFrontPipelineTask.destinationType === DestinationType.KDS) {
+      // Check sampling rate
+      if (
+        parseInt(cloudFrontPipelineTask.params.samplingRate) < 1 ||
+        parseInt(cloudFrontPipelineTask.params.samplingRate) > 100
+      ) {
+        setSamplingRateError(true);
+        return false;
+      }
+
+      // check min shard
+      if (
+        cloudFrontPipelineTask.params.minCapacity === "" ||
+        parseInt(cloudFrontPipelineTask.params.minCapacity) < 1
+      ) {
+        setShardNumError(true);
+        return false;
+      }
+      const intStartShardNum = parseInt(
+        cloudFrontPipelineTask.params.minCapacity
+      );
+      const intMaxShardNum = parseInt(
+        cloudFrontPipelineTask.params.maxCapacity
+      );
+
+      // check max shard
+      if (
+        cloudFrontPipelineTask.params.enableAutoScaling === YesNo.Yes &&
+        (intMaxShardNum <= 0 ||
+          Number.isNaN(intMaxShardNum) ||
+          intMaxShardNum <= intStartShardNum)
+      ) {
+        setMaxShardNumError(true);
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const validateAnalyticsEngine = () => {
+    if (isLightEngine) {
+      // validate light engine and display error message
+      if (!isLightEngineValid) {
+        dispatch({
+          type: CreateLightEngineActionTypes.VALIDATE_LIGHT_ENGINE,
+        });
+        return false;
+      }
+    } else if (!isOpenSearchValid) {
+      appDispatch(validateOpenSearch());
+      return false;
+    }
+    return true;
+  };
+
   return (
-    <div className="lh-main-content">
-      <SideMenu />
-      <div className="lh-container">
-        <div className="lh-content">
-          <div className="lh-create-log">
-            <Breadcrumb list={breadCrumbList} />
-            <div className="create-wrapper">
-              <div className="create-step">
-                <CreateStep
-                  list={[
-                    {
-                      name: t("servicelog:create.step.specifySetting"),
-                    },
-                    {
-                      name: t("servicelog:create.step.logProcessing"),
-                    },
-                    {
-                      name:
-                        engineType === AnalyticEngineTypes.OPENSEARCH
-                          ? t("servicelog:create.step.specifyDomain")
-                          : t("servicelog:create.step.specifyLightEngine"),
-                    },
+    <CommonLayout breadCrumbList={breadCrumbList}>
+      <div className="create-wrapper" data-testid="test-create-cloudfront">
+        <div className="create-step">
+          <CreateStep
+            list={[
+              {
+                name: t("servicelog:create.step.specifySetting"),
+              },
+              {
+                name: t("servicelog:create.step.logProcessing"),
+              },
+              {
+                name: isLightEngine
+                  ? t("servicelog:create.step.specifyLightEngine")
+                  : t("servicelog:create.step.specifyDomain"),
+              },
+              ...(!isLightEngine
+                ? [
                     {
                       name: t("processor.logProcessorSettings"),
                     },
-                    {
-                      name: t("servicelog:create.step.createTags"),
+                  ]
+                : []),
+              {
+                name: t("servicelog:create.step.createTags"),
+              },
+            ]}
+            activeIndex={curStep}
+          />
+        </div>
+        <div className="create-content m-w-800">
+          {curStep === 0 && (
+            <SpecifySettings
+              cloudFrontTask={cloudFrontPipelineTask}
+              setISChanging={(status) => {
+                setCloudFrontIsChanging(status);
+              }}
+              standardOnly={isLightEngine}
+              manualS3EmptyError={manualS3EmptyError}
+              manualS3PathInvalid={manualS3PathInvalid}
+              autoS3EmptyError={autoS3EmptyError}
+              showConfirmError={showConfirmError}
+              logTypeEmptyError={logTypeEmptyError}
+              samplingRateError={samplingRateError}
+              shardNumError={shardNumError}
+              maxShardNumError={maxShardNumError}
+              changeCrossAccount={(id) => {
+                setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
+                  return {
+                    ...prev,
+                    logSourceAccountId: id,
+                    destinationType: "",
+                  };
+                });
+              }}
+              changeLogType={(type) => {
+                setLogTypeEmptyError(false);
+                setNextStepDisable(false);
+                setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
+                  return {
+                    ...prev,
+                    destinationType: type,
+                  };
+                });
+              }}
+              changeFieldType={(type) => {
+                setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
+                  return {
+                    ...prev,
+                    params: {
+                      ...prev.params,
+                      fieldType: type,
                     },
-                  ]}
-                  activeIndex={curStep}
-                />
-              </div>
-              <div className="create-content m-w-800">
-                {curStep === 0 && (
-                  <SpecifySettings
-                    cloudFrontTask={cloudFrontPipelineTask}
-                    setISChanging={(status) => {
-                      setCloudFrontIsChanging(status);
-                    }}
-                    standardOnly={
-                      engineType === AnalyticEngineTypes.LIGHT_ENGINE
-                    }
-                    manualS3EmptyError={manualS3EmpryError}
-                    manualS3PathInvalid={manualS3PathInvalid}
-                    autoS3EmptyError={autoS3EmptyError}
-                    showConfirmError={showConfirmError}
-                    logTypeEmptyError={logTypeEmptyError}
-                    samplingRateError={samplingRateError}
-                    shardNumError={shardNumError}
-                    maxShardNumError={maxShardNumError}
-                    changeCrossAccount={(id) => {
-                      setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
-                        return {
-                          ...prev,
-                          logSourceAccountId: id,
-                          destinationType: "",
-                        };
-                      });
-                    }}
-                    changeLogType={(type) => {
-                      setLogTypeEmptyError(false);
-                      setNextStepDisable(false);
-                      setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
-                        return {
-                          ...prev,
-                          destinationType: type,
-                        };
-                      });
-                    }}
-                    changeFieldType={(type) => {
-                      setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            fieldType: type,
-                          },
-                        };
-                      });
-                    }}
-                    manualChangeBucket={(srcBucketName) => {
-                      setAosInputValidRes((prev) => {
-                        return {
-                          ...prev,
-                          indexEmptyError: false,
-                          indexNameFormatError: false,
-                        };
-                      });
-                      setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
-                        return {
-                          ...prev,
-                          source: srcBucketName,
-                          params: {
-                            ...prev.params,
-                            manualBucketName: srcBucketName,
-                            indexPrefix: srcBucketName.toLowerCase(),
-                          },
-                        };
-                      });
-                    }}
-                    changeTaskType={(taskType) => {
-                      setAutoS3EmptyError(false);
-                      setManualS3EmpryError(false);
-                      setCloudFrontPipelineTask({
-                        ...DEFAULT_TASK_VALUE,
-                        params: {
-                          ...DEFAULT_TASK_VALUE.params,
-                          taskType: taskType,
-                        },
-                      });
-                    }}
-                    changeCloudFrontObj={(cloudFrontObj) => {
-                      setAutoS3EmptyError(false);
-                      setAosInputValidRes((prev) => {
-                        return {
-                          ...prev,
-                          indexEmptyError: false,
-                          indexNameFormatError: false,
-                        };
-                      });
-                      setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
-                        return {
-                          ...prev,
-                          source: cloudFrontObj?.value || "",
-                          destinationType: "",
-                          params: {
-                            ...prev.params,
-                            indexPrefix:
-                              cloudFrontObj?.value?.toLowerCase() || "",
-                            cloudFrontObj: cloudFrontObj,
-                            userIsConfirmed: false,
-                            fieldType: CloudFrontFieldType.ALL,
-                            enableAutoScaling: YesNo.No,
-                            s3SourceType: "",
-                          },
-                        };
-                      });
-                    }}
-                    changeS3Bucket={(bucketName) => {
-                      setAosInputValidRes((prev) => {
-                        return {
-                          ...prev,
-                          indexEmptyError: false,
-                          indexNameFormatError: false,
-                        };
-                      });
-                      setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            logBucketName: bucketName,
-                          },
-                        };
-                      });
-                    }}
-                    changeLogPath={(logPath) => {
-                      if (
-                        cloudFrontPipelineTask.params.taskType ===
-                        CreateLogMethod.Manual
-                      ) {
-                        setManualS3EmpryError(false);
-                        setManualS3PathInvalid(false);
-                        const { bucket, prefix } =
-                          splitStringToBucketAndPrefix(logPath);
-                        setAosInputValidRes((prev) => {
-                          return {
-                            ...prev,
-                            indexEmptyError: false,
-                            indexNameFormatError: false,
-                          };
-                        });
-                        setCloudFrontPipelineTask(
-                          (prev: CloudFrontTaskProps) => {
-                            return {
-                              ...prev,
-                              params: {
-                                ...prev.params,
-                                manualBucketS3Path: logPath,
-                                logBucketName: bucket,
-                                logBucketPrefix: prefix,
-                              },
-                            };
-                          }
-                        );
-                      } else {
-                        setCloudFrontPipelineTask(
-                          (prev: CloudFrontTaskProps) => {
-                            return {
-                              ...prev,
-                              params: {
-                                ...prev.params,
-                                logBucketPrefix: logPath,
-                              },
-                            };
-                          }
-                        );
-                      }
-                    }}
-                    setNextStepDisableStatus={(status) => {
-                      setNextStepDisable(status);
-                    }}
-                    changeSamplingRate={(rate) => {
-                      setSamplingRateError(false);
-                      setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            samplingRate: rate,
-                          },
-                        };
-                      });
-                    }}
-                    changeCustomFields={(fileds) => {
-                      setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            customFields: fileds,
-                          },
-                        };
-                      });
-                    }}
-                    changeMinCapacity={(num) => {
-                      setShardNumError(false);
-                      setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            shardCount: num,
-                            minCapacity: num,
-                          },
-                        };
-                      });
-                    }}
-                    changeEnableAS={(enable) => {
-                      setMaxShardNumError(false);
-                      setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            enableAutoScaling: enable,
-                          },
-                        };
-                      });
-                    }}
-                    changeMaxCapacity={(num) => {
-                      setMaxShardNumError(false);
-                      setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            maxCapacity: num,
-                          },
-                        };
-                      });
-                    }}
-                    changeUserConfirm={(confirm) => {
-                      setShowConfirmError(false);
-                      setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            userIsConfirmed: confirm,
-                          },
-                        };
-                      });
-                    }}
-                    changeTmpFlowList={(list) => {
-                      setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            tmpFlowList: list,
-                          },
-                        };
-                      });
-                    }}
-                    changeS3SourceType={(type) => {
-                      setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            s3SourceType: type,
-                          },
-                        };
-                      });
-                    }}
-                    changeSuccessTextType={(type) => {
-                      setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            successTextType: type,
-                          },
-                        };
-                      });
-                    }}
-                  />
-                )}
-                {curStep === 1 && (
-                  <LogProcessing
-                    changePluginSelect={(plugin, enable) => {
-                      if (plugin === SupportPlugin.Geo) {
-                        setCloudFrontPipelineTask(
-                          (prev: CloudFrontTaskProps) => {
-                            return {
-                              ...prev,
-                              params: {
-                                ...prev.params,
-                                geoPlugin: enable,
-                              },
-                            };
-                          }
-                        );
-                      }
-                      if (plugin === SupportPlugin.UserAgent) {
-                        setCloudFrontPipelineTask(
-                          (prev: CloudFrontTaskProps) => {
-                            return {
-                              ...prev,
-                              params: {
-                                ...prev.params,
-                                userAgentPlugin: enable,
-                              },
-                            };
-                          }
-                        );
-                      }
-                    }}
-                    pipelineTask={cloudFrontPipelineTask}
-                  />
-                )}
-                {curStep === 2 && (
-                  <SpecifyAnalyticsEngine
-                    engineType={engineType}
-                    taskType={ServiceLogType.Amazon_CloudFront}
-                    pipelineTask={cloudFrontPipelineTask}
-                    esDomainEmptyError={esDomainEmptyError}
-                    changeLoadingDomain={(loading) => {
-                      setDomainListIsLoading(loading);
-                    }}
-                    aosInputValidRes={aosInputValidRes}
-                    changeShards={(shards) => {
-                      setAosInputValidRes((prev) => {
-                        return {
-                          ...prev,
-                          shardsInvalidError: false,
-                        };
-                      });
-                      setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            shardNumbers: shards,
-                          },
-                        };
-                      });
-                    }}
-                    changeReplicas={(replicas) => {
-                      setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            replicaNumbers: replicas,
-                          },
-                        };
-                      });
-                    }}
-                    changeBucketIndex={(indexPrefix) => {
-                      setAosInputValidRes((prev) => {
-                        return {
-                          ...prev,
-                          indexEmptyError: false,
-                          indexNameFormatError: false,
-                        };
-                      });
-                      setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            indexPrefix: indexPrefix,
-                          },
-                        };
-                      });
-                    }}
-                    changeOpenSearchCluster={(cluster) => {
-                      const NOT_SUPPORT_VERSION =
-                        cluster?.engine === EngineType.Elasticsearch ||
-                        parseFloat(cluster?.version || "") < 1.3;
-                      setEsDomainEmptyError(false);
-                      setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
-                        return {
-                          ...prev,
-                          target: cluster?.domainName || "",
-                          engine: cluster?.engine || "",
-                          params: {
-                            ...prev.params,
-                            engineType: cluster?.engine || "",
-                            domainName: cluster?.domainName || "",
-                            esDomainId: cluster?.id || "",
-                            endpoint: cluster?.endpoint || "",
-                            securityGroupId:
-                              cluster?.vpc?.securityGroupId || "",
-                            subnetIds: cluster?.vpc?.privateSubnetIds || "",
-                            vpcId: cluster?.vpc?.vpcId || "",
-                            warmEnable: cluster?.nodes?.warmEnabled || false,
-                            coldEnable: cluster?.nodes?.coldEnabled || false,
-                            rolloverSizeNotSupport: NOT_SUPPORT_VERSION,
-                            enableRolloverByCapacity: !NOT_SUPPORT_VERSION,
-                            rolloverSize: NOT_SUPPORT_VERSION ? "" : "30",
-                          },
-                        };
-                      });
-                    }}
-                    changeSampleDashboard={(yesNo) => {
-                      setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            createDashboard: yesNo,
-                          },
-                        };
-                      });
-                    }}
-                    changeWarnLogTransition={(value: string) => {
-                      setAosInputValidRes((prev) => {
-                        return {
-                          ...prev,
-                          warmLogInvalidError: false,
-                        };
-                      });
-                      setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            warmAge: value,
-                          },
-                        };
-                      });
-                    }}
-                    changeColdLogTransition={(value: string) => {
-                      setAosInputValidRes((prev) => {
-                        return {
-                          ...prev,
-                          coldLogInvalidError: false,
-                          coldMustLargeThanWarm: false,
-                        };
-                      });
-                      setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            coldAge: value,
-                          },
-                        };
-                      });
-                    }}
-                    changeLogRetention={(value: string) => {
-                      setAosInputValidRes((prev) => {
-                        return {
-                          ...prev,
-                          logRetentionInvalidError: false,
-                          logRetentionMustThanColdAndWarm: false,
-                        };
-                      });
-                      setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            retainAge: value,
-                          },
-                        };
-                      });
-                    }}
-                    changeIndexSuffix={(suffix: string) => {
-                      setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            indexSuffix: suffix,
-                          },
-                        };
-                      });
-                    }}
-                    changeEnableRollover={(enable: boolean) => {
-                      setAosInputValidRes((prev) => {
-                        return {
-                          ...prev,
-                          capacityInvalidError: false,
-                        };
-                      });
-                      setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            enableRolloverByCapacity: enable,
-                          },
-                        };
-                      });
-                    }}
-                    changeRolloverSize={(size: string) => {
-                      setAosInputValidRes((prev) => {
-                        return {
-                          ...prev,
-                          capacityInvalidError: false,
-                        };
-                      });
-                      setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            rolloverSize: size,
-                          },
-                        };
-                      });
-                    }}
-                    changeCompressionType={(codec: string) => {
-                      setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            codec: codec,
-                          },
-                        };
-                      });
-                    }}
-                    changeWarmSettings={(type: string) => {
-                      setAosInputValidRes((prev) => {
-                        return {
-                          ...prev,
-                          coldMustLargeThanWarm: false,
-                        };
-                      });
-                      setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            warmTransitionType: type,
-                          },
-                        };
-                      });
-                    }}
-                    domainCheckedStatus={domainCheckStatus}
-                    changeOSDomainCheckStatus={(status) => {
-                      setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
-                        return {
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            replicaNumbers: status.multiAZWithStandbyEnabled
-                              ? "2"
-                              : "1",
-                          },
-                        };
-                      });
-                      setDomainCheckStatus(status);
-                    }}
-                  />
-                )}
-                {curStep === 3 && (
-                  <div>
-                    <SelectLogProcessor supportOSI={false} />
-                  </div>
-                )}
-                {curStep === 4 && (
-                  <div>
-                    <AlarmAndTags
-                      engineType={engineType}
-                      pipelineTask={cloudFrontPipelineTask}
-                      osiParams={osiParams}
-                    />
-                  </div>
-                )}
-                <div className="button-action text-right">
-                  <Button
-                    btnType="text"
-                    onClick={() => {
-                      navigate("/log-pipeline/service-log/create");
-                    }}
-                  >
-                    {t("button.cancel")}
-                  </Button>
-                  {curStep > 0 && (
-                    <Button
-                      onClick={() => {
-                        setCurStep((curStep) => {
-                          return curStep - 1 < 0 ? 0 : curStep - 1;
-                        });
-                      }}
-                    >
-                      {t("button.previous")}
-                    </Button>
-                  )}
-
-                  {curStep < 4 && (
-                    <Button
-                      disabled={isNextDisabled()}
-                      btnType="primary"
-                      onClick={() => {
-                        if (curStep === 0) {
-                          if (nextStepDisable) {
-                            return;
-                          }
-                          if (
-                            cloudFrontPipelineTask.params.taskType ===
-                            CreateLogMethod.Automatic
-                          ) {
-                            if (!cloudFrontPipelineTask.params.cloudFrontObj) {
-                              setAutoS3EmptyError(true);
-                              return;
-                            }
-                          }
-                          if (
-                            cloudFrontPipelineTask.params.taskType ===
-                            CreateLogMethod.Automatic
-                          ) {
-                            if (
-                              cloudFrontPipelineTask.destinationType ===
-                                DestinationType.KDS &&
-                              !cloudFrontPipelineTask.params.userIsConfirmed
-                            ) {
-                              setShowConfirmError(true);
-                              return;
-                            }
-                          }
-                          if (
-                            cloudFrontPipelineTask.params.taskType ===
-                            CreateLogMethod.Manual
-                          ) {
-                            if (!cloudFrontPipelineTask.params.logBucketName) {
-                              setManualS3EmpryError(true);
-                              return;
-                            }
-                            if (
-                              !cloudFrontPipelineTask.params.manualBucketS3Path
-                                .toLowerCase()
-                                .startsWith("s3") ||
-                              !bucketNameIsValid(
-                                cloudFrontPipelineTask.params.logBucketName
-                              )
-                            ) {
-                              setManualS3PathInvalid(true);
-                              return;
-                            }
-
-                            // Manual creation method does not support Realtime
-                            if (
-                              cloudFrontPipelineTask.destinationType ===
-                              DestinationType.KDS
-                            ) {
-                              return;
-                            }
-                          }
-                          // show error when destination type is empty
-                          if (!cloudFrontPipelineTask.destinationType) {
-                            setLogTypeEmptyError(true);
-                            return;
-                          }
-                          // check realtime logs input
-                          if (
-                            cloudFrontPipelineTask.destinationType ===
-                            DestinationType.KDS
-                          ) {
-                            // Check sampling rate
-                            if (
-                              parseInt(
-                                cloudFrontPipelineTask.params.samplingRate
-                              ) < 1 ||
-                              parseInt(
-                                cloudFrontPipelineTask.params.samplingRate
-                              ) > 100
-                            ) {
-                              setSamplingRateError(true);
-                              return;
-                            }
-
-                            // check min shard
-                            if (
-                              cloudFrontPipelineTask.params.minCapacity ===
-                                "" ||
-                              parseInt(
-                                cloudFrontPipelineTask.params.minCapacity
-                              ) < 1
-                            ) {
-                              setShardNumError(true);
-                              return;
-                            }
-                            const intStartShardNum = parseInt(
-                              cloudFrontPipelineTask.params.minCapacity
-                            );
-                            const intMaxShardNum = parseInt(
-                              cloudFrontPipelineTask.params.maxCapacity
-                            );
-
-                            // check max shard
-                            if (
-                              cloudFrontPipelineTask.params
-                                .enableAutoScaling === YesNo.Yes &&
-                              (intMaxShardNum <= 0 ||
-                                Number.isNaN(intMaxShardNum) ||
-                                intMaxShardNum <= intStartShardNum)
-                            ) {
-                              setMaxShardNumError(true);
-                              return;
-                            }
-                          }
-                        }
-                        if (curStep === 2) {
-                          if (engineType === AnalyticEngineTypes.LIGHT_ENGINE) {
-                            // validate light engine and display error message
-                            if (!isLightEngineValid) {
-                              dispatch({
-                                type: CreateLightEngineActionTypes.VALIDATE_LIGHT_ENGINE,
-                              });
-                              return;
-                            }
-                          } else {
-                            if (!cloudFrontPipelineTask.params.domainName) {
-                              setEsDomainEmptyError(true);
-                              return;
-                            } else {
-                              setEsDomainEmptyError(false);
-                            }
-                            const validRes = checkOpenSearchInput(
-                              cloudFrontPipelineTask
-                            );
-                            setAosInputValidRes(validRes);
-                            if (Object.values(validRes).indexOf(true) >= 0) {
-                              return;
-                            }
-                            // Check domain connection status
-                            if (
-                              domainCheckStatus?.status !==
-                              DomainStatusCheckType.PASSED
-                            ) {
-                              return;
-                            }
-                          }
-                        }
-                        if (curStep === 3) {
-                          dispatch({
-                            type: SelectProcessorActionTypes.VALIDATE_OCU_INPUT,
-                          });
-                          if (!validateOCUInput(osiParams)) {
-                            return;
-                          }
-                        }
-                        setCurStep((curStep) => {
-                          return curStep + 1 > 4 ? 4 : curStep + 1;
-                        });
-                      }}
-                    >
-                      {t("button.next")}
-                    </Button>
-                  )}
-                  {curStep === 4 && (
-                    <Button
-                      loading={loadingCreate}
-                      btnType="primary"
-                      onClick={() => {
-                        if (!validateAalrmInput(monitor)) {
-                          dispatch({
-                            type: CreateAlarmActionTypes.VALIDATE_ALARM_INPUT,
-                          });
-                          return;
-                        }
-                        engineType === AnalyticEngineTypes.OPENSEARCH
-                          ? confirmCreatePipeline()
-                          : confirmCreateLightEnginePipeline();
-                      }}
-                    >
-                      {t("button.create")}
-                    </Button>
-                  )}
-                </div>
-              </div>
+                  };
+                });
+              }}
+              manualChangeBucket={(srcBucketName) => {
+                // dispatch update index prefix
+                appDispatch(indexPrefixChanged(srcBucketName.toLowerCase()));
+                setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
+                  return {
+                    ...prev,
+                    source: srcBucketName,
+                    params: {
+                      ...prev.params,
+                      manualBucketName: srcBucketName,
+                    },
+                  };
+                });
+              }}
+              changeTaskType={(taskType) => {
+                setAutoS3EmptyError(false);
+                setManualS3EmptyError(false);
+                setCloudFrontPipelineTask({
+                  ...DEFAULT_TASK_VALUE,
+                  params: {
+                    ...DEFAULT_TASK_VALUE.params,
+                    taskType: taskType,
+                  },
+                });
+              }}
+              changeCloudFrontObj={(cloudFrontObj) => {
+                setAutoS3EmptyError(false);
+                // dispatch update index prefix
+                appDispatch(
+                  indexPrefixChanged(cloudFrontObj?.value?.toLowerCase() ?? "")
+                );
+                setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
+                  return {
+                    ...prev,
+                    source: defaultStr(cloudFrontObj?.value),
+                    destinationType: "",
+                    params: {
+                      ...prev.params,
+                      cloudFrontObj: cloudFrontObj,
+                      userIsConfirmed: false,
+                      fieldType: CloudFrontFieldType.ALL,
+                      enableAutoScaling: YesNo.No,
+                      s3SourceType: "",
+                    },
+                  };
+                });
+              }}
+              changeS3Bucket={(bucketName) => {
+                setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
+                  return {
+                    ...prev,
+                    params: {
+                      ...prev.params,
+                      logBucketName: bucketName,
+                    },
+                  };
+                });
+              }}
+              changeLogPath={(logPath) => {
+                if (
+                  cloudFrontPipelineTask.params.taskType ===
+                  CreateLogMethod.Manual
+                ) {
+                  setManualS3EmptyError(false);
+                  setManualS3PathInvalid(false);
+                  const { bucket, prefix } =
+                    splitStringToBucketAndPrefix(logPath);
+                  setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
+                    return {
+                      ...prev,
+                      params: {
+                        ...prev.params,
+                        manualBucketS3Path: logPath,
+                        logBucketName: bucket,
+                        logBucketPrefix: prefix,
+                      },
+                    };
+                  });
+                } else {
+                  setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
+                    return {
+                      ...prev,
+                      params: {
+                        ...prev.params,
+                        logBucketPrefix: logPath,
+                      },
+                    };
+                  });
+                }
+              }}
+              setNextStepDisableStatus={(status) => {
+                setNextStepDisable(status);
+              }}
+              changeSamplingRate={(rate) => {
+                setSamplingRateError(false);
+                setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
+                  return {
+                    ...prev,
+                    params: {
+                      ...prev.params,
+                      samplingRate: rate,
+                    },
+                  };
+                });
+              }}
+              changeCustomFields={(fields) => {
+                setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
+                  return {
+                    ...prev,
+                    params: {
+                      ...prev.params,
+                      customFields: fields,
+                    },
+                  };
+                });
+              }}
+              changeMinCapacity={(num) => {
+                setShardNumError(false);
+                setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
+                  return {
+                    ...prev,
+                    params: {
+                      ...prev.params,
+                      shardCount: num,
+                      minCapacity: num,
+                    },
+                  };
+                });
+              }}
+              changeEnableAS={(enable) => {
+                setMaxShardNumError(false);
+                setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
+                  return {
+                    ...prev,
+                    params: {
+                      ...prev.params,
+                      enableAutoScaling: enable,
+                    },
+                  };
+                });
+              }}
+              changeMaxCapacity={(num) => {
+                setMaxShardNumError(false);
+                setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
+                  return {
+                    ...prev,
+                    params: {
+                      ...prev.params,
+                      maxCapacity: num,
+                    },
+                  };
+                });
+              }}
+              changeUserConfirm={(confirm) => {
+                setShowConfirmError(false);
+                setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
+                  return {
+                    ...prev,
+                    params: {
+                      ...prev.params,
+                      userIsConfirmed: confirm,
+                    },
+                  };
+                });
+              }}
+              changeTmpFlowList={(list) => {
+                setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
+                  return {
+                    ...prev,
+                    params: {
+                      ...prev.params,
+                      tmpFlowList: list,
+                    },
+                  };
+                });
+              }}
+              changeS3SourceType={(type) => {
+                setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
+                  return {
+                    ...prev,
+                    params: {
+                      ...prev.params,
+                      s3SourceType: type,
+                    },
+                  };
+                });
+              }}
+              changeSuccessTextType={(type) => {
+                setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
+                  return {
+                    ...prev,
+                    params: {
+                      ...prev.params,
+                      successTextType: type,
+                    },
+                  };
+                });
+              }}
+            />
+          )}
+          {curStep === 1 && (
+            <LogProcessing
+              changePluginSelect={(plugin, enable) => {
+                if (plugin === SupportPlugin.Geo) {
+                  setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
+                    return {
+                      ...prev,
+                      params: {
+                        ...prev.params,
+                        geoPlugin: enable,
+                      },
+                    };
+                  });
+                }
+                if (plugin === SupportPlugin.UserAgent) {
+                  setCloudFrontPipelineTask((prev: CloudFrontTaskProps) => {
+                    return {
+                      ...prev,
+                      params: {
+                        ...prev.params,
+                        userAgentPlugin: enable,
+                      },
+                    };
+                  });
+                }
+              }}
+              pipelineTask={cloudFrontPipelineTask}
+            />
+          )}
+          {curStep === 2 && (
+            <>
+              {isLightEngine ? (
+                <ConfigLightEngine />
+              ) : (
+                <ConfigOpenSearch taskType={ServiceLogType.Amazon_CloudFront} />
+              )}
+            </>
+          )}
+          {curStep === 3 && !isLightEngine && (
+            <div>
+              <SelectLogProcessor supportOSI={false} />
             </div>
+          )}
+          {curStep === totalStep && (
+            <div>
+              <AlarmAndTags
+                engineType={engineType}
+                pipelineTask={cloudFrontPipelineTask}
+                osiParams={osiParams}
+              />
+            </div>
+          )}
+          <div className="button-action text-right">
+            <Button
+              btnType="text"
+              onClick={() => {
+                navigate("/log-pipeline/service-log/create");
+              }}
+            >
+              {t("button.cancel")}
+            </Button>
+            {curStep > 0 && (
+              <Button
+                onClick={() => {
+                  setCurStep((curStep) => {
+                    return curStep - 1 < 0 ? 0 : curStep - 1;
+                  });
+                }}
+              >
+                {t("button.previous")}
+              </Button>
+            )}
+
+            {curStep < totalStep && (
+              <Button
+                disabled={isNextDisabled()}
+                btnType="primary"
+                onClick={() => {
+                  if (curStep === 0) {
+                    if (!validateCloudFrontInput()) {
+                      return;
+                    }
+                  }
+                  if (curStep === 2) {
+                    if (!validateAnalyticsEngine()) {
+                      return;
+                    }
+                  }
+                  if (curStep === 3) {
+                    dispatch({
+                      type: SelectProcessorActionTypes.VALIDATE_OCU_INPUT,
+                    });
+                    if (!validateOCUInput(osiParams)) {
+                      return;
+                    }
+                  }
+                  setCurStep((curStep) => {
+                    return curStep + 1 > totalStep ? totalStep : curStep + 1;
+                  });
+                }}
+              >
+                {t("button.next")}
+              </Button>
+            )}
+            {curStep === totalStep && (
+              <Button
+                loading={loadingCreate}
+                btnType="primary"
+                onClick={() => {
+                  if (!validateAlarmInput(monitor)) {
+                    dispatch({
+                      type: CreateAlarmActionTypes.VALIDATE_ALARM_INPUT,
+                    });
+                    return;
+                  }
+                  isLightEngine
+                    ? confirmCreateLightEnginePipeline()
+                    : confirmCreatePipeline();
+                }}
+              >
+                {t("button.create")}
+              </Button>
+            )}
           </div>
         </div>
       </div>
-      <HelpPanel />
-    </div>
+    </CommonLayout>
   );
 };
 

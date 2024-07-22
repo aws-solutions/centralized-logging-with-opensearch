@@ -1,7 +1,7 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-import logging
+from commonlib.logging import get_logger
 import os
 import re
 import sys
@@ -17,8 +17,7 @@ from commonlib import AWSConnection, LinkAccountHelper, retry
 from commonlib import get_bucket_location, create_log_group
 from commonlib.utils import get_partition, get_name_from_tags, get_resource_from_arn
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 conn = AWSConnection()
 
@@ -358,12 +357,7 @@ class VPC(Resource):
                 formatted_name = f'{flow["FlowLogId"]} ({name})'
 
                 # Use comma delimited log format
-                log_format = (
-                    flow["LogFormat"]
-                    .replace("${", "")
-                    .replace("}", "")
-                    .replace(" ", ",")
-                )
+                log_format = flow["LogFormat"]
 
                 if dest_type == "s3":
                     dest_name = (
@@ -405,20 +399,22 @@ class VPC(Resource):
     def put_resource_log_config(self, vpc_id, dest_type, dest_name, log_format):
         """Add Flow Logs configurations to VPC"""
         # Log format is not used by VPC Flow Logs.
-
-        default_log_format = (
-            "version,account-id,interface-id,srcaddr,dstaddr,srcport,"
-            "dstport,protocol,packets,bytes,start,end,action,log-status"
-        )
+        default_log_format = "${version} ${account-id} ${interface-id} ${srcaddr} ${dstaddr} ${srcport} ${dstport} ${protocol} ${packets} ${bytes} ${start} ${end} ${action} ${log-status}"
+        log_format = log_format or default_log_format
         if dest_type == "S3":
             # If destination name is empty,
             # Use default logging bucket
-            dest = dest_name if dest_name else f"s3://{self._default_logging_bucket}"
+            dest = (
+                dest_name
+                if dest_name
+                else f"s3://{self._default_logging_bucket}/vpcflowlogs/{vpc_id}/"
+            )
             default_name = f"{stack_prefix}-flowlogs-s3"
             resp = self._ec2.create_flow_logs(
                 ResourceIds=[vpc_id],
                 ResourceType="VPC",
                 TrafficType="ALL",
+                LogFormat=log_format,
                 LogDestinationType="s3",
                 LogDestination=dest.replace("s3://", f"arn:{self._partition}:s3:::"),
                 TagSpecifications=[
@@ -440,7 +436,7 @@ class VPC(Resource):
                 return {
                     "destinationType": "S3",
                     "destinationName": dest.rstrip("/") + self._default_prefix,
-                    "logFormat": default_log_format,
+                    "logFormat": log_format,
                     "name": default_name,
                     "region": self._region,
                 }
@@ -468,7 +464,7 @@ class VPC(Resource):
                 return {
                     "destinationType": "CloudWatch",
                     "destinationName": log_group_name,
-                    "logFormat": default_log_format,
+                    "logFormat": log_format,
                     "name": default_name,
                     "region": self._region,
                 }
@@ -797,14 +793,15 @@ class Distribution(Resource):
 
     def list(self, parent_id=""):
         result = []
-        response = self._cf.list_distributions(MaxItems="1000")
-
+        response = self._cf.list_distributions(MaxItems="100", Marker=parent_id)
+        maker = response["DistributionList"].get("NextMarker", "")
         for dist in response["DistributionList"].get("Items", []):
             result.append(
                 {
                     "id": dist["Id"],
                     "name": dist["DomainName"],
                     "description": dist["Comment"],
+                    "parentId": maker,
                 }
             )
         return result
@@ -932,9 +929,8 @@ class RDS(Resource):
     def _get_db_instances(self):
         result = []
         marker = ""
-        engines = ["mysql"]
+        engines = ["aurora-mysql", "aurora-postgresql", "mysql", "postgres"]
         # Default maximum items is 100
-        # Only supports mysql
         kwargs = {
             "MaxRecords": 100,
             "Filters": [{"Name": "engine", "Values": engines}],
@@ -948,7 +944,8 @@ class RDS(Resource):
                 result.append(
                     {
                         "id": db["DBInstanceIdentifier"],
-                        "name": f"{self._get_engine_desc(db['Engine'])} - {db['DBInstanceIdentifier']}",
+                        "name": f"{db['DBInstanceIdentifier']}[{self._get_engine_desc(db['Engine'])}]",
+                        "engine": db["Engine"],
                         "description": desc,
                     }
                 )
@@ -961,7 +958,7 @@ class RDS(Resource):
     def _get_db_clusters(self):
         result = []
         marker = ""
-        engines = ["aurora-mysql"]
+        engines = ["aurora-mysql", "aurora-postgresql"]
         # Default maximum items is 100
         # Only supports aurora (mysql)
         kwargs = {
@@ -977,7 +974,7 @@ class RDS(Resource):
                 result.append(
                     {
                         "id": db["DBClusterIdentifier"],
-                        "name": f"{self._get_engine_desc(db['Engine'])} - {db['DBClusterIdentifier']}",
+                        "name": f"{db['DBClusterIdentifier']}[{self._get_engine_desc(db['Engine'])}]",
                         "description": desc,
                     }
                 )
@@ -996,17 +993,20 @@ class RDS(Resource):
         return f"AWSLogs/{self._account_id}/RDS/{self._region}/{unique_id}/"
 
     def get_logging_bucket(self, id):
-        # for rds log pipeline, whether it is cross account or within the same account
-        # the S3 logging bucket used is the central bucket of the master account.
         return {
             "enabled": True,
-            "bucket": default_logging_bucket,
+            "bucket": self._default_logging_bucket,
             "prefix": self._default_prefix(id),
         }
 
     @staticmethod
     def _get_engine_desc(engine):
-        engine_list = {"mysql": "MySQL", "aurora-mysql": "Aurora MySQL"}
+        engine_list = {
+            "mysql": "MySQL",
+            "aurora-mysql": "Aurora MySQL",
+            "aurora-postgresql": "Aurora PostgreSQL",
+            "postgres": "PostgreSQL",
+        }
         return engine_list.get(engine)
 
 
@@ -1252,7 +1252,7 @@ class WAF(Resource):
     ):
         role_name = f"{stack_prefix}-RoleForKDF-{delivery_stream_name}"[:64]
 
-        logging.info(
+        logger.info(
             "create_s3_delivery_stream bucket_arn=%s s3_prefix=%s delivery_stream=%s",
             bucket_arn,
             s3_prefix,
@@ -1280,9 +1280,9 @@ class WAF(Resource):
         try:
             role = self._iam_client.get_role(RoleName=role_name)
 
-            logging.info("role: %s already exists", role_name)
+            logger.info("role: %s already exists", role_name)
         except self._iam_client.exceptions.NoSuchEntityException:
-            logging.info("role: %s not found, try creating a new one", role_name)
+            logger.info("role: %s not found, try creating a new one", role_name)
 
             role = self._iam_client.create_role(
                 RoleName=role_name,

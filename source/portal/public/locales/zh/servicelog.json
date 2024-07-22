@@ -277,7 +277,7 @@
     "ingestedFields": "摄取的字段",
     "ingestedFieldsDesc": "选择您要摄取到 OpenSearch 集群的 CloudFront 访问日志字段。",
     "enrichedFields": "丰富的字段",
-    "enrichedFieldsDesc": "使用附加信息丰富 CloudFront 标准日志。 例如，经度、纬度、城市、州、国家、操作系统等。系统使用开源库来丰富数据。",
+    "enrichedFieldsDesc": "用附加信息丰富标准日志。例如，经度、纬度、城市、州、国家、操作系统等。系统使用开源库来丰富数据。字段选择将影响仪表板数据展示。",
     "location": "定位",
     "osAgent": "操作系统/代理",
     "logType": "日志类型",

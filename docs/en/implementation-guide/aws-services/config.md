@@ -28,7 +28,7 @@ You can create a log ingestion into Amazon OpenSearch Service either by using th
 13. Add tags if needed.
 14. Choose **Create**.
 
-### Using the standalone CloudFormation Stack
+### Using the CloudFormation Stack
 This automated AWS CloudFormation template deploys the *Centralized Logging with OpenSearch - AWS Config Log Ingestion* solution in the AWS Cloud.
 
 |                      | Launch in AWS Console                                        | Download Template                                            |

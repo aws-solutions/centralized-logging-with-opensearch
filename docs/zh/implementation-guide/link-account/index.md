@@ -9,7 +9,7 @@
 - **成员账户**: 您拥有 AWS 服务或应用程序并希望从中提取日志的账户。
 
 成员账户中的 CloudFormation 堆栈具有最少的权限。日志通需要在成员账户中预置一些 AWS 资源来收集日志，并将采用 IAM 在成员账户中配置的角色以列出或创建资源。
-请参考 [架构](../architecture.md)部分了解更多详情。
+请参考 [架构](../architecture-overview/architecture.md)部分了解更多详情。
 
 ## 关联一个成员账户
 
@@ -40,8 +40,11 @@
     | Account Name                            | N/A                                    | 成员账号的名称。  |
     | Account ID                              | N/A                                    | 12位 AWS 数字账号。 |
     | Cross Account Role ARN                  | CrossAccountRoleARN                    |日志通 将通过消费这个角色来操作关联账号中的资源。|
-    | FluentBit Agent Installation Document   | AgentInstallDocument                   |日志通 将使用此 SSM 文档在成员账户中的 EC2 实例上安装 Fluent Bit 代理。 |
-    | FluentBit Agent Configuration Document  | AgentConfigDocument                    |日志通 将使用此 SSM 文档将 Fluent Bit 配置下发给 EC2 实例。 |
+    | Fluent Bit Agent Installation Document   | AgentInstallDocument                   |日志通 将使用此 SSM 文档在成员账户中的 EC2 实例上安装 Fluent Bit 代理。 |
+    | Fluent Bit Agent Configuration Document  | AgentConfigDocument                    |日志通 将使用此 SSM 文档将 Fluent Bit 配置下发给 EC2 实例。 |
+    | Fluent Bit for Windows 代理安装文档                | AgentInstallDocumentForWindows   | Fluent Bit for Windows 代理安装配置。 |
+    | Fluent Bit for Windows 代理配置文档                | AnentConfigDocumentForWindows   | Fluent Bit 代理配置文档. |
+    | Fluent Bit 状态检查文档                | AgentStatusCheckDocument   | Fluent Bit状态检查。 |
     | Cross Account S3 Bucket                 | CrossAccountS3Bucket                   | 您可以使用日志通 控制台启用一些 AWS 服务日志并将它们输出到 Amazon S3。 日志将存储在此帐户中。 |
     | Cross Account Stack ID                  | CrossAccountStackId                    | 成员账户中的 CloudFormation 堆栈 ID。|
     | Cross Account KMS Key                   | CrossAccountKMSKeyARN                  |日志通 将使用密钥管理服务 (KMS) 密钥来加密简单队列服务 (SQS)。 |

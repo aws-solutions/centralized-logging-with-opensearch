@@ -1,11 +1,10 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-import logging
-from commonlib.model import CRIEnum, EksSource
+from commonlib.logging import get_logger
+from commonlib.model import CRIEnum
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 
 class ConfigMap(object):

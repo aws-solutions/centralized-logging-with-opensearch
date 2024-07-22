@@ -2,13 +2,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import re
-import logging
+from commonlib.logging import get_logger
 import json
 import tempfile
 import boto3
 import requests
 import os
-
+from commonlib import AWSConnection
 
 from enum import Enum
 from abc import ABC, abstractmethod
@@ -17,13 +17,13 @@ from urllib.parse import quote
 from requests_aws4auth import AWS4Auth
 from commonlib.exception import APIException, ErrorCode
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 DEFAULT_TENANT = "global"
 
 default_region = os.environ.get("AWS_REGION")
-aos_cli = boto3.client("opensearch")
+conn = AWSConnection()
+aos_cli = conn.get_client("opensearch", default_region)
 domain_name = os.environ.get("DOMAIN_NAME")
 
 

@@ -226,6 +226,9 @@ const TablePanel: React.FC<TablePanelProps> = (props: TablePanelProps) => {
                 return (
                   <tr
                     onClick={() => {
+                      if (element.disable) {
+                        return;
+                      }
                       if (selectType === SelectType.RADIO) {
                         changeSelected([element]);
                         setDataList((prev: any) => {
@@ -269,6 +272,7 @@ const TablePanel: React.FC<TablePanelProps> = (props: TablePanelProps) => {
                           )}
                           {selectType === SelectType.RADIO && (
                             <input
+                              disabled={element.disable}
                               name="tableItem"
                               type="radio"
                               checked={

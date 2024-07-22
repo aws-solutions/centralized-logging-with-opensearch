@@ -50,7 +50,7 @@
     "tip1": "If you create an log source from an instance group, make sure you have attached these ",
     "tip2": "permissions",
     "tip3": " to the instances. This is NOT required if you create log source from Syslog or EKS cluster.",
-    "noLogging": "This log pipeline has no buffer layer, logs are sent drectly to OpenSearch domain from source, no log processor lambda was created, hence no logs to dispiay",
+    "noLogging": "This log pipeline has no buffer layer, logs are sent directly to OpenSearch domain from source, no log processor lambda was created, hence no logs to dispiay",
     "tab": {
       "ingestion": "Log Source",
       "sources": "Log Source",
@@ -174,10 +174,9 @@
       "maxShardNum": "Maximum Shard number",
       "maxShardNumDesc": "Specify maximum number of shards.",
       "maxShardNumError": "Max Shard Number must be greater than Shard number",
-      "duplicatedWithPrefix": "You have a log pipeline that used this index prefix.",
+      "overlapIndexError": "It looks like there is an active or deleted pipeline configured was overlap with the index you entered.  Please choose 'Edit' to update. ({{message}})",
       "overlapWithPrefix": "The index prefix overlaps with the index prefix you created earlier.",
-      "duplicatedWithInvalidPrefix": "You have a deleted log pipeline that used this index prefix. If you keep creating this log pipeline, your logs will get mixed up.",
-      "overlapWithInvalidPrefix": "The index prefix overlaps with the index prefix you removed earlier. If you continue to create this pipeline, your logs will get mixed up.",
+      "duplicatedIndexError": "It looks like there is an active or deleted pipeline configured with the index you entered. To proceed with creating this new pipeline and sending logs to the same index, please select 'Continue Create'. If you would like to use a different index prefix instead, please choose 'Edit' to update.",
       "s3StorageClass": "S3 storage class for prefix",
       "s3StorageClassDesc": "Select a storage class for the prefix that buffer your log data. "
     },
@@ -258,7 +257,8 @@
       "config": "Configuration",
       "configRequiredError": "Please select a Log Config",
       "inputLogPath": "Please input the log path",
-      "logPathMustBeginWithSlash": "Log path must begin with / slash"
+      "logPathMustBeginWithSlash": "Log path must begin with / (slash)",
+      "logPathMustBeginWithDriver": "Log path must begin with Driver (e.g. C:\\)"
     },
     "s3": {
       "ingestFromS3": "Ingest from Amazon Amazon S3",
@@ -441,7 +441,8 @@
       "li3": "Ingest syslog via UDP and TCP protocols.",
       "arch": {
         "title": "Architecture Diagram",
-        "desc": "The architecture diagram to ingest log data into Amazon OpenSearch domain."
+        "desc": "The architecture diagram to ingest log data into Amazon OpenSearch domain.",
+        "descLightEngine": "Architecture diagram for ingesting log data into Light Engine."
       },
       "step1": {
         "naviTitle": "Ingestion endpoint",
@@ -500,7 +501,8 @@
       "li3": "Parse logs with custom Log Config.",
       "arch": {
         "title": "Architecture Diagram",
-        "desc": "The architecture diagram to ingest log data into Amazon OpenSearch domain."
+        "desc": "The architecture diagram to ingest log data into Amazon OpenSearch domain.",
+        "descLightEngine": "Architecture diagram for ingesting log data into Light Engine."
       },
       "step1": {
         "naviTitle": "Source settings",
@@ -516,6 +518,7 @@
         "desc3": "Specify the interval for the ingestion job to execute.",
         "title4": "Compression format",
         "desc4": "Specify how the log files are compressed in S3",
+        "athenaFormat": "Refer to the Athena supported compression format, click <0>This guide</0> to learn more.",
         "onGoing": "On-going",
         "onGoingDesc": "The ingestion job will run when a new file is delivered to the specified S3 location",
         "oneTimeLoad": "One-time",
@@ -531,7 +534,8 @@
         "chooseALogConfig": "Choose a log config",
         "createNew": "Create new",
         "alert": "If you select a log config with filter enabled, filter in the log config will not take effect.",
-        "alertCanNotChangeLogConfig": "Note you can not change log config when add a new source into an existing pipeline, please review and ensure the existing log config can parse the new log source."
+        "alertCanNotChangeLogConfig": "Note you can not change log config when add a new source into an existing pipeline, please review and ensure the existing log config can parse the new log source.",
+        "alertLightEngine": "Light Engine - S3 as source not support multi-line log format"
       },
       "step3": {
         "naviTitle": "Log processor",

@@ -7,7 +7,7 @@ import maxminddb
 
 logger = logging.getLogger()
 
-SUPPORTED_LOG_TYPES = ["cloudfront", "elb", "nginx", "apache"]
+SUPPORTED_LOG_TYPES = ["cloudfront", "elb", "nginx", "apache", "iis"]
 
 
 def get_database_path():
@@ -20,6 +20,8 @@ def get_database_path():
 def _get_ip_field(log_type):
     if log_type.lower() == "cloudfront":
         return "c-ip"
+    elif log_type.lower() == "iis":
+        return "remote_ip"
     else:
         # Default to client_ip
         return "client_ip"

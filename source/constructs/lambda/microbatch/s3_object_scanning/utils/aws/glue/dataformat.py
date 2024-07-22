@@ -1,12 +1,7 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-from enum import Enum
-
-
-class CommonEnum(str, Enum):
-    def __str__(self,):
-        return self.value
+from utils.helpers import CommonEnum
 
 
 # see: https://docs.aws.amazon.com/athena/latest/ug/serde-reference.html

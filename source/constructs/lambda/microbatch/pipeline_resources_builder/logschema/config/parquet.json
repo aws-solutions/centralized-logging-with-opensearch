@@ -1,0 +1,116 @@
+{
+	"type": "object",
+	"properties": {
+		"time": {
+			"type": "big_int",
+			"expression": "CAST(to_unixtime(from_iso8601_timestamp(configurationitem.configurationItemCaptureTime)) * 1000 AS bigint)"
+		},
+		"timestamp": {
+			"type": "timestamp",
+			"expression": "from_iso8601_timestamp(configurationitem.configurationItemCaptureTime)"
+		},
+		"fileversion": {
+			"type": "string"
+		},
+		"configurationitemversion": {
+			"type": "string",
+			"expression": "configurationitem.configurationitemversion"
+		},
+		"configurationitemcapturetime": {
+			"type": "string",
+			"expression": "configurationitem.configurationitemcapturetime"
+		},
+		"configurationstateid": {
+			"type": "big_int",
+			"expression": "configurationitem.configurationstateid"
+		},
+		"awsaccountid": {
+			"type": "string",
+			"expression": "configurationitem.awsaccountid"
+		},
+		"configurationitemstatus": {
+			"type": "string",
+			"expression": "configurationitem.configurationitemstatus"
+		},
+		"resourcetype": {
+			"type": "string",
+			"expression": "configurationitem.resourcetype"
+		},
+		"resourceid": {
+			"type": "string",
+			"expression": "configurationitem.resourceid"
+		},
+		"resourcename": {
+			"type": "string",
+			"expression": "configurationitem.resourcename"
+		},
+		"arn": {
+			"type": "string",
+			"expression": "configurationitem.arn"
+		},
+		"awsregion": {
+			"type": "string",
+			"expression": "configurationitem.awsregion"
+		},
+		"availabilityzone": {
+			"type": "string",
+			"expression": "configurationitem.availabilityzone"
+		},
+		"configurationstatemd5hash": {
+			"type": "string",
+			"expression": "configurationitem.configurationstatemd5hash"
+		},
+		"configuration": {
+			"type": "string",
+			"expression": "configurationitem.configuration"
+		},
+		"supplementaryconfiguration": {
+			"type": "map",
+			"properties": {
+				"key": {
+					"type": "string"
+				},
+				"value": {
+					"type": "string"
+				}
+			},
+			"expression": "configurationitem.supplementaryconfiguration"
+		},
+		"tags": {
+			"type": "map",
+			"properties": {
+				"key": {
+					"type": "string"
+				},
+				"value": {
+					"type": "string"
+				}
+			},
+			"expression": "configurationitem.tags"
+		},
+		"resourcecreationtime": {
+			"type": "string",
+			"expression": "configurationitem.resourcecreationtime"
+		},
+		"account_id": {
+			"type": "string",
+			"partition": true,
+			"expression": "configurationitem.awsaccountid"
+		},
+		"region": {
+			"type": "string",
+			"partition": true,
+			"expression": "configurationitem.awsregion"
+		},
+		"event_hour": {
+			"type": "string",
+			"partition": true,
+			"expression": "DATE_FORMAT(from_iso8601_timestamp(configurationitem.configurationItemCaptureTime), '%Y%m%d%H')"
+		},
+		"__execution_name__": {
+			"type": "string",
+			"partition": true,
+			"expression": "'{{}}'"
+		}
+	}
+}

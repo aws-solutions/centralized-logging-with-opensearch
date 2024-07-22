@@ -32,6 +32,9 @@ class TestAthenaConnection:
         assert athena_connection.output_location == 's3://stagingbucket/athena-results/'
         assert athena_connection.assume_role_arn == 'arn:aws:iam::123456789012:role/AthenaPublicAccessRole'
         assert athena_connection.catalog == 'AwsDataCatalog'
+        assert athena_connection.table == ''
+        assert athena_connection.reuse is True
+        assert athena_connection.reuse_age == 5
 
         athena_connection = AthenaConnection(database='centralized',
                                              account_id='123456789012', 
@@ -39,10 +42,14 @@ class TestAthenaConnection:
                                              work_group='Primary', 
                                              assume_role_arn='arn:aws:iam::123456789012:role/AthenaPublicAccessRole',
                                              output_location='s3://stagingbucket/athena-results/',
-                                             catalog='DataCatalog')
-        athena_connection.uid = '1234567890'
+                                             catalog='DataCatalog',
+                                             uid='1234567890',
+                                             name='test_connection',
+                                             table='test',
+                                             reuse=False,
+                                             reuse_age=10)
         assert athena_connection.uid == '1234567890'
-        assert athena_connection.name == 'Athena-clo-123456789012-us-east-1'
+        assert athena_connection.name == 'test_connection'
         assert athena_connection.account_id == '123456789012'
         assert athena_connection.region == 'us-east-1'
         assert athena_connection.database == 'centralized'
@@ -50,6 +57,9 @@ class TestAthenaConnection:
         assert athena_connection.output_location == 's3://stagingbucket/athena-results/'
         assert athena_connection.assume_role_arn == 'arn:aws:iam::123456789012:role/AthenaPublicAccessRole'
         assert athena_connection.catalog == 'DataCatalog'
+        assert athena_connection.table == 'test'
+        assert athena_connection.reuse is False
+        assert athena_connection.reuse_age == 10
     
         
 class TestGrafanaClient:
@@ -177,8 +187,9 @@ class TestGrafanaClient:
  
         httpserver.clear()
         httpserver.expect_oneshot_request(uri='/api/folders', method='GET').respond_with_data(response_data=json.dumps([]))
-        httpserver.expect_oneshot_request(uri='/api/folders', method='POST').respond_with_data(response_data=json.dumps({'id': 19, 'uid': 'zypaSkX4k', 'title': 'clo', 'url': '/dashboards/f/zypaSkX4k/clo', 'hasAcl': False, 'canSave': True, 'canEdit': True, 'canAdmin': True, 'canDelete': True, 'createdBy': 'Anonymous', 'updatedBy': 'Anonymous','version': 1}))
-        httpserver.expect_oneshot_request(uri='/api/folders/zypaSkX4k', method='DELETE').respond_with_data(status=200)
+        httpserver.expect_oneshot_request(uri='/api/folders', method='POST').respond_with_data(response_data=json.dumps({'id': 19, 'uid': 'test-folder-permission', 'title': 'clo', 'url': '/dashboards/f/zypaSkX4k/clo', 'hasAcl': False, 'canSave': True, 'canEdit': True, 'canAdmin': True, 'canDelete': True, 'createdBy': 'Anonymous', 'updatedBy': 'Anonymous','version': 1}))
+        httpserver.expect_oneshot_request(uri='/api/folders/test-folder-permission', method='GET').respond_with_data(response_data=json.dumps({'id': 19, 'uid': 'test-folder-permission', 'title': 'clo', 'url': '/dashboards/f/test-folder-permission/clo', 'hasAcl': False, 'canSave': True, 'canEdit': True, 'canAdmin': True, 'canDelete': True, 'createdBy': 'Anonymous', 'updatedBy': 'Anonymous','version': 1}))
+        httpserver.expect_oneshot_request(uri='/api/folders/test-folder-permission', method='DELETE').respond_with_data(status=200)
         
         assert self.grafana_client.check_folder_permission() is True
         
@@ -238,6 +249,8 @@ class TestGrafanaClient:
         httpserver.expect_request(uri='/api/folders', method='POST').respond_with_data(response_data=json.dumps({'id': 19, 'uid': 'zypaSkX4k', 'title': 'clo', 'url': '/dashboards/f/zypaSkX4k/clo', 'hasAcl': False, 'canSave': True, 'canEdit': True, 'canAdmin': True, 'canDelete': True, 'createdBy': 'Anonymous', 'updatedBy': 'Anonymous','version': 1}))
         httpserver.expect_request(uri='/api/folders/zypaSkX4k', method='DELETE').respond_with_data(status=200)
         
+        httpserver.expect_oneshot_request(uri='/api/folders/test-folder-permission', method='GET').respond_with_data(response_data=json.dumps({'id': 19, 'uid': 'test-folder-permission', 'title': 'clo', 'url': '/dashboards/f/test-folder-permission/clo', 'hasAcl': False, 'canSave': True, 'canEdit': True, 'canAdmin': True, 'canDelete': True, 'createdBy': 'Anonymous', 'updatedBy': 'Anonymous','version': 1}))
+        httpserver.expect_oneshot_request(uri='/api/folders/test-folder-permission', method='DELETE').respond_with_data(status=200)
         httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(status=401)
         with pytest.raises(Exception) as exception_info:
             self.grafana_client.check_permission()
@@ -329,47 +342,87 @@ class TestGrafanaClient:
         assert athena_connection.catalog == 'AwsDataCatalog'
     
     def test_create_athena_datasource(self, httpserver: HTTPServer):
+        from utils.grafana import AthenaConnection
+        
         self.init_default_parameters(httpserver=httpserver)
         
         httpserver.expect_oneshot_request(uri='/api/datasources/name/Athena', method='GET').respond_with_data(response_data=json.dumps({'message': 'Data source not found'}), status=404)
         httpserver.expect_oneshot_request(uri='/api/datasources', method='POST').respond_with_data(response_data=json.dumps({'datasource': {'id': 98, 'uid': 'BasXA4g_ar', 'name': 'Athena', 'type': 'grafana-athena-datasource'}, 'id': 98, 'message': 'Datasource added', 'name': 'Athena'}))
     
-        response = self.grafana_client.create_athena_datasource(datasource_name='Athena', database='centralized', region='us-east-1', work_group='Primary', assume_role_arn='arn:aws:iam::123456789012:role/AthenaPublicAccessRole', output_location='s3://stagingbucket/athena-results/')
+        athena_connection = AthenaConnection(name='Athena', database='centralized', account_id='123456789012', region='us-east-1', work_group='Primary', assume_role_arn='arn:aws:iam::123456789012:role/AthenaPublicAccessRole', output_location='s3://stagingbucket/athena-results/')
+        response = self.grafana_client.create_athena_datasource(athena_connection=athena_connection)
         assert response['status'] == 200
         assert response['content']['uid'] == 'BasXA4g_ar'
         assert response['content']['message'] == 'Datasource added'
         
         httpserver.expect_oneshot_request(uri='/api/datasources', method='POST').respond_with_data(response_data=json.dumps({'datasource': {'id': 96, 'uid': 'g5Aeh9_Vk', 'name': 'Athena-clo-123456789012-us-east-1', 'type': 'grafana-athena-datasource'}, 'id': 96, 'message': 'Datasource updated', 'name': 'Athena-clo-123456789012-us-east-1'}))
 
-        response = self.grafana_client.create_athena_datasource(datasource_name='Athena-clo-123456789012-us-east-1', database='centralized', region='us-east-1', work_group='Primary', assume_role_arn='arn:aws:iam::123456789012:role/AthenaPublicAccessRole', output_location='s3://stagingbucket/athena-results/')
+        athena_connection = AthenaConnection(name='Athena', database='centralized', account_id='123456789012', region='us-east-1', work_group='Primary', assume_role_arn='arn:aws:iam::123456789012:role/AthenaPublicAccessRole', output_location='s3://stagingbucket/athena-results/')
+        response = self.grafana_client.create_athena_datasource(athena_connection=athena_connection)
         assert response['status'] == 200
         assert response['content']['uid'] == 'g5Aeh9_Vk'
         assert response['content']['message'] == 'Datasource updated'
     
     def test_replace_athena_connection_args_in_templates(self, httpserver: HTTPServer):
+        from utils.grafana import AthenaConnection
+        
         self.init_default_parameters(httpserver=httpserver)
         
         dashboard = {'templating': {}}
-        new_dashboard = self.grafana_client.replace_athena_connection_args_in_templates(datasource_uid='test',
-                                                                                   catalog='AwsDataCatalog',
-                                                                                   database='test_database', 
-                                                                                   region='us-east-2', 
-                                                                                   table='test_table', 
-                                                                                   dashboard=dashboard)
+        athena_connection_args = dict(Details=AthenaConnection(uid='test', catalog='AwsDataCatalog', database='test_database', account_id='123456789012', region='us-east-1', table='test_table', work_group='Primary', assume_role_arn='arn:aws:iam::123456789012:role/AthenaPublicAccessRole', output_location='s3://stagingbucket/athena-results/', reuse=True, reuse_age=30))
+        new_dashboard = self.grafana_client.replace_athena_connection_args_in_templates(dashboard=dashboard, athena_connection_args=athena_connection_args)
         assert new_dashboard == {'templating': {}}
         
         dashboard = {}
-        new_dashboard = self.grafana_client.replace_athena_connection_args_in_templates(datasource_uid='test',
-                                                                                   catalog='AwsDataCatalog',
-                                                                                   database='test_database', 
-                                                                                   region='us-east-2', 
-                                                                                   table='test_table', 
-                                                                                   dashboard=dashboard)
+        athena_connection_args = dict(Details=AthenaConnection(uid='test', catalog='AwsDataCatalog', database='test_database', account_id='123456789012', region='us-east-1', table='test_table', work_group='Primary', assume_role_arn='arn:aws:iam::123456789012:role/AthenaPublicAccessRole', output_location='s3://stagingbucket/athena-results/', reuse=True, reuse_age=30))
+        new_dashboard = self.grafana_client.replace_athena_connection_args_in_templates(dashboard=dashboard, athena_connection_args=athena_connection_args)
         assert new_dashboard == {}
         
         dashboard = {
             'templating': {
                 'list': [
+                    {
+                        "allValue": "SQL Statement",
+                        "current": {},
+                        "datasource": {
+                            "type": "grafana-athena-datasource",
+                            "uid": "DS_AMAZON_ATHENA"
+                        },
+                        "query": {
+                            "connectionArgs": {
+                            "catalog": "AwsDataCatalog",
+                            "database": "amazon_cl_centralized",
+                            "region": "__default",
+                            "resultReuseEnabled": True,
+                            "resultReuseMaxAgeInMinutes": 5
+                            },
+                            "format": 1,
+                            "rawSQL": "SQL Statement",
+                            "refId": "Metrics",
+                            "table": "waf_metrics"
+                        },
+                    },
+                    {
+                        "allValue": "SQL Statement",
+                        "current": {},
+                        "datasource": {
+                            "type": "grafana-athena-datasource",
+                            "uid": "DS_AMAZON_ATHENA"
+                        },
+                        "query": {
+                            "connectionArgs": {
+                            "catalog": "AwsDataCatalog",
+                            "database": "amazon_cl_centralized",
+                            "region": "__default",
+                            "resultReuseEnabled": True,
+                            "resultReuseMaxAgeInMinutes": 5
+                            },
+                            "format": 1,
+                            "rawSQL": "SQL Statement",
+                            "refId": "A",
+                            "table": "waf_metrics"
+                        },
+                    },
                     {
                         "allValue": "SQL Statement",
                         "current": {},
@@ -409,12 +462,9 @@ class TestGrafanaClient:
                 ]
             }
         }
-        new_dashboard = self.grafana_client.replace_athena_connection_args_in_templates(datasource_uid='test',
-                                                                                        catalog='AwsDataCatalog',
-                                                                                        database='test_database', 
-                                                                                        region='us-east-2', 
-                                                                                        table='test_table', 
-                                                                                        dashboard=dashboard)
+        athena_connection_args = dict(Metrics=AthenaConnection(uid='test', catalog='AwsDataCatalog', database='test_database', account_id='123456789012', region='us-east-1', table='test_table', work_group='Primary', assume_role_arn='arn:aws:iam::123456789012:role/AthenaPublicAccessRole', output_location='s3://stagingbucket/athena-results/', reuse=True, reuse_age=30))
+        new_dashboard = self.grafana_client.replace_athena_connection_args_in_templates(dashboard=dashboard, athena_connection_args=athena_connection_args)
+        
         assert new_dashboard['templating']['list'][0] == {
             'allValue': 'SQL Statement', 
             'current': {}, 
@@ -426,16 +476,58 @@ class TestGrafanaClient:
                 'connectionArgs': {
                     'catalog': 'AwsDataCatalog', 
                     'database': 'test_database', 
-                    'region': 'us-east-2', 
+                    'region': 'us-east-1', 
                     'resultReuseEnabled': True, 
-                    'resultReuseMaxAgeInMinutes': 5
+                    'resultReuseMaxAgeInMinutes': 30
                     }, 
                 'format': 1, 
                 'rawSQL': 'SQL Statement',
+                "refId": "Metrics",
                 'table': 'test_table'
                 }
             }
         assert new_dashboard['templating']['list'][1] == {
+            "allValue": "SQL Statement",
+            "current": {},
+            "datasource": {
+                "type": "grafana-athena-datasource",
+                "uid": "DS_AMAZON_ATHENA"
+            },
+            "query": {
+                "connectionArgs": {
+                "catalog": "AwsDataCatalog",
+                "database": "amazon_cl_centralized",
+                "region": "__default",
+                "resultReuseEnabled": True,
+                "resultReuseMaxAgeInMinutes": 5
+                },
+                "format": 1,
+                "rawSQL": "SQL Statement",
+                "refId": "A",
+                "table": "waf_metrics"
+            },
+        }
+        assert new_dashboard['templating']['list'][2] == {
+            "allValue": "SQL Statement",
+            "current": {},
+            "datasource": {
+                "type": "grafana-athena-datasource",
+                "uid": "DS_AMAZON_ATHENA"
+            },
+            "query": {
+                "connectionArgs": {
+                "catalog": "AwsDataCatalog",
+                "database": "amazon_cl_centralized",
+                "region": "__default",
+                "resultReuseEnabled": True,
+                "resultReuseMaxAgeInMinutes": 5
+                },
+                "format": 1,
+                "rawSQL": "SQL Statement",
+                "table": "waf_metrics"
+            },
+        }
+        assert new_dashboard['templating']['list'][3] == {
             "allValue": "SQL Statement",
             "datasource": {
                 "type": "grafana-bigquery-datasource",
@@ -455,6 +547,48 @@ class TestGrafanaClient:
         dashboard = {
             'templating': {
                 'list': [
+                    {
+                        "allValue": "SQL Statement",
+                        "current": {},
+                        "datasource": {
+                            "type": "grafana-athena-datasource",
+                            "uid": "DS_AMAZON_ATHENA"
+                        },
+                        "query": {
+                            "connectionArgs": {
+                            "catalog": "AwsDataCatalog",
+                            "database": "amazon_cl_centralized",
+                            "region": "__default",
+                            "resultReuseEnabled": False,
+                            "resultReuseMaxAgeInMinutes": 10
+                            },
+                            "format": 1,
+                            "rawSQL": "SQL Statement",
+                            "refId": "Metrics",
+                            "table": "waf_metrics"
+                        },
+                    },
+                    {
+                        "allValue": "SQL Statement",
+                        "current": {},
+                        "datasource": {
+                            "type": "grafana-athena-datasource",
+                            "uid": "DS_AMAZON_ATHENA"
+                        },
+                        "query": {
+                            "connectionArgs": {
+                            "catalog": "AwsDataCatalog",
+                            "database": "amazon_cl_centralized",
+                            "region": "__default",
+                            "resultReuseEnabled": False,
+                            "resultReuseMaxAgeInMinutes": 10
+                            },
+                            "format": 1,
+                            "rawSQL": "SQL Statement",
+                            "refId": "A",
+                            "table": "waf_metrics"
+                        },
+                    },
                     {
                         "allValue": "SQL Statement",
                         "current": {},
@@ -494,14 +628,9 @@ class TestGrafanaClient:
                 ]
             }
         }
-        new_dashboard = self.grafana_client.replace_athena_connection_args_in_templates(datasource_uid='test',
-                                                                                        catalog='AwsDataCatalog',
-                                                                                        database='test_database', 
-                                                                                        region='us-east-2', 
-                                                                                        table='test_table', 
-                                                                                        dashboard=dashboard,
-                                                                                        reuse=True,
-                                                                                        reuse_age=30)
+        athena_connection_args = dict(Metrics=AthenaConnection(uid='test', catalog='AwsDataCatalog', database='test_database', account_id='123456789012', region='us-east-1', table='test_table', work_group='Primary', assume_role_arn='arn:aws:iam::123456789012:role/AthenaPublicAccessRole', output_location='s3://stagingbucket/athena-results/', reuse=True, reuse_age=30))
+        new_dashboard = self.grafana_client.replace_athena_connection_args_in_templates(dashboard=dashboard, athena_connection_args=athena_connection_args)
+        
         assert new_dashboard['templating']['list'][0] == {
             'allValue': 'SQL Statement', 
             'current': {}, 
@@ -513,16 +642,58 @@ class TestGrafanaClient:
                 'connectionArgs': {
                     'catalog': 'AwsDataCatalog', 
                     'database': 'test_database', 
-                    'region': 'us-east-2', 
+                    'region': 'us-east-1', 
                     'resultReuseEnabled': True, 
                     'resultReuseMaxAgeInMinutes': 30
                     }, 
                 'format': 1, 
                 'rawSQL': 'SQL Statement',
+                "refId": "Metrics",
                 'table': 'test_table'
                 }
             }
         assert new_dashboard['templating']['list'][1] == {
+            "allValue": "SQL Statement",
+            "current": {},
+            "datasource": {
+                "type": "grafana-athena-datasource",
+                "uid": "DS_AMAZON_ATHENA"
+            },
+            "query": {
+                "connectionArgs": {
+                "catalog": "AwsDataCatalog",
+                "database": "amazon_cl_centralized",
+                "region": "__default",
+                "resultReuseEnabled": False,
+                "resultReuseMaxAgeInMinutes": 10
+                },
+                "format": 1,
+                "rawSQL": "SQL Statement",
+                "refId": "A",
+                "table": "waf_metrics"
+            },
+        }
+        assert new_dashboard['templating']['list'][2] == {
+            "allValue": "SQL Statement",
+            "current": {},
+            "datasource": {
+                "type": "grafana-athena-datasource",
+                "uid": "DS_AMAZON_ATHENA"
+            },
+            "query": {
+                "connectionArgs": {
+                "catalog": "AwsDataCatalog",
+                "database": "amazon_cl_centralized",
+                "region": "__default",
+                "resultReuseEnabled": False,
+                "resultReuseMaxAgeInMinutes": 10
+                },
+                "format": 1,
+                "rawSQL": "SQL Statement",
+                "table": "waf_metrics"
+            },
+        }
+        assert new_dashboard['templating']['list'][3] == {
             "allValue": "SQL Statement",
             "datasource": {
                 "type": "grafana-bigquery-datasource",
@@ -552,6 +723,7 @@ class TestGrafanaClient:
                         "query": {
                             "format": 1,
                             "rawSQL": "SQL Statement",
+                            "refId": "Metrics",
                             "table": "waf_metrics"
                         },
                     },
@@ -574,14 +746,8 @@ class TestGrafanaClient:
                 ]
             }
         }
-        new_dashboard = self.grafana_client.replace_athena_connection_args_in_templates(datasource_uid='test',
-                                                                                        catalog='AwsDataCatalog',
-                                                                                        database='test_database', 
-                                                                                        region='us-east-2', 
-                                                                                        table='test_table', 
-                                                                                        dashboard=dashboard,
-                                                                                        reuse=True,
-                                                                                        reuse_age=30)
+        athena_connection_args = dict(Metrics=AthenaConnection(uid='test', catalog='AwsDataCatalog', database='test_database', account_id='123456789012', region='us-east-1', table='test_table', work_group='Primary', assume_role_arn='arn:aws:iam::123456789012:role/AthenaPublicAccessRole', output_location='s3://stagingbucket/athena-results/', reuse=True, reuse_age=30))
+        new_dashboard = self.grafana_client.replace_athena_connection_args_in_templates(dashboard=dashboard, athena_connection_args=athena_connection_args)
         assert new_dashboard['templating']['list'][0] == {
             'allValue': 'SQL Statement', 
             'current': {}, 
@@ -592,6 +758,7 @@ class TestGrafanaClient:
             'query': {
                 'format': 1, 
                 'rawSQL': 'SQL Statement',
+                "refId": "Metrics",
                 'table': 'test_table'
                 }
             }
@@ -613,28 +780,20 @@ class TestGrafanaClient:
             }
     
     def test_replace_athena_connection_args_in_panels(self, httpserver: HTTPServer):
+        from utils.grafana import AthenaConnection
+        
         self.init_default_parameters(httpserver=httpserver)
         
         dashboard = {}
-        new_dashboard = self.grafana_client.replace_athena_connection_args_in_panels(datasource_uid='test',
-                                                                                     catalog='AwsDataCatalog',
-                                                                                     database='test_database', 
-                                                                                     region='us-east-2', 
-                                                                                     table='test_table', 
-                                                                                     dashboard=dashboard,
-                                                                                     reuse=True,
-                                                                                     reuse_age=30)
+        athena_connection_args = dict(Details=AthenaConnection(uid='test', catalog='AwsDataCatalog', database='test_database', account_id='123456789012', region='us-east-1', table='test_table', work_group='Primary', assume_role_arn='arn:aws:iam::123456789012:role/AthenaPublicAccessRole', output_location='s3://stagingbucket/athena-results/', reuse=True, reuse_age=30))
+        
+        new_dashboard = self.grafana_client.replace_athena_connection_args_in_panels(dashboard=dashboard, athena_connection_args=athena_connection_args)
         assert new_dashboard == {}
         
         dashboard = {'panels': []}
-        new_dashboard = self.grafana_client.replace_athena_connection_args_in_panels(datasource_uid='test',
-                                                                                     catalog='AwsDataCatalog',
-                                                                                     database='test_database', 
-                                                                                     region='us-east-2', 
-                                                                                     table='test_table', 
-                                                                                     dashboard=dashboard,
-                                                                                     reuse=True,
-                                                                                     reuse_age=30)
+        athena_connection_args = dict(Details=AthenaConnection(uid='test', catalog='AwsDataCatalog', database='test_database', account_id='123456789012', region='us-east-1', table='test_table', work_group='Primary', assume_role_arn='arn:aws:iam::123456789012:role/AthenaPublicAccessRole', output_location='s3://stagingbucket/athena-results/', reuse=True, reuse_age=30))
+        
+        new_dashboard = self.grafana_client.replace_athena_connection_args_in_panels(dashboard=dashboard, athena_connection_args=athena_connection_args)
         assert new_dashboard == {'panels': []}
         
         dashboard = {
@@ -659,141 +818,43 @@ class TestGrafanaClient:
                             },
                             "format":1,
                             "rawSQL":"SQL Statement",
-                            "refId":"A",
+                            "refId":"Metrics",
                             "table":"waf_metrics"
                         },
-                        {
-                            "datasource":{
-                                "type":"grafana-athena-datasource",
-                                "uid":"DS_AMAZON_ATHENA"
-                            },
-                            "format":1,
-                            "rawSQL":"SQL Statement",
-                            "refId":"A",
-                            "table":"waf_metrics"
-                        }
-                    ],
-                    "title":"Total Requests"
-                },
-                {
-                    "datasource":{
-                        "type":"datasource",
-                        "uid":"-- Dashboard --"
-                    },
-                    "targets":[
-                        {
-                            "datasource":{
-                                "type":"grafana-athena-datasource",
-                                "uid":"DS_AMAZON_ATHENA"
-                            },
-                            "panelId":1,
-                            "refId":"A",
-                            "withTransforms": True
-                        },
-                        {
-                            "datasource":{
-                                "type":"datasource",
-                                "uid":"-- Dashboard --"
-                            },
-                            "panelId":2,
-                            "refId":"A",
-                            "withTransforms": True
-                        }
-                    ],
-                    "title": "Requests History",
-                    "type": "barchart"
-                }
-            ]
-        }
-        
-        new_dashboard = self.grafana_client.replace_athena_connection_args_in_panels(datasource_uid='test',
-                                                                                     catalog='AwsDataCatalog',
-                                                                                     database='test_database', 
-                                                                                     region='us-east-2', 
-                                                                                     table='test_table', 
-                                                                                     dashboard=dashboard)
-        assert new_dashboard['panels'][0] == {
-            'datasource': {
-                'type': 'grafana-athena-datasource', 
-                'uid': 'test'
-                }, 
-            'targets': [
-                {
-                    'connectionArgs': {
-                        'catalog': 'AwsDataCatalog', 
-                        'database': 'test_database', 
-                        'region': 'us-east-2', 
-                        'resultReuseEnabled': True, 
-                        'resultReuseMaxAgeInMinutes': 5
-                        }, 
-                    'datasource': {
-                        'type': 'grafana-athena-datasource', 
-                        'uid': 'test'
-                        }, 
-                    'format': 1, 
-                    'rawSQL': 'SQL Statement', 
-                    'refId': 'A', 
-                    'table': 'test_table'
-                    },
-                {
-                    'datasource':{
-                        'type': 'grafana-athena-datasource',
-                        'uid': 'test'
-                    },
-                    'format': 1,
-                    'rawSQL': 'SQL Statement',
-                    'refId': 'A',
-                    'table': 'test_table'
-                    }
-                ], 
-            'title': 'Total Requests'
-            }
-        assert new_dashboard['panels'][1] == {
-            'datasource': {
-                'type': 'datasource', 
-                'uid': '-- Dashboard --'
-                }, 
-            'targets': [
-                {
-                    'datasource': {
-                        'type': 'grafana-athena-datasource',
-                        'uid': 'test'
-                    },
-                    'panelId': 1,
-                    'refId': 'A',
-                    'withTransforms': True,
-                    'table': 'test_table'
-                },
-                {
-                    'datasource': {
-                        'type': 'datasource', 
-                        'uid': '-- Dashboard --'
-                        }, 
-                    'panelId': 2,
-                    'refId': 'A',
-                    'withTransforms': True
-                    }
-                ], 
-            'title': 'Requests History', 
-            'type': 'barchart'
-            }
-        
-        dashboard = {
-            "panels":[
-                {
-                    "datasource":{
-                        "type":"grafana-athena-datasource",
-                        "uid":"DS_AMAZON_ATHENA"
-                    },
-                    "targets":[
                         {
                             "connectionArgs":{
                                 "catalog":"AwsDataCatalog",
                                 "database":"amazon_cl_centralized",
                                 "region":"__default",
-                                "resultReuseEnabled": False,
-                                "resultReuseMaxAgeInMinutes":10
+                                "resultReuseEnabled": True,
+                                "resultReuseMaxAgeInMinutes":5
                             },
+                            "datasource":{
+                                "type":"grafana-athena-datasource",
+                                "uid":"DS_AMAZON_ATHENA"
+                            },
+                            "format":1,
+                            "rawSQL":"SQL Statement",
+                            "refId":"A",
+                            "table":"waf_metrics"
+                        },
+                        {
+                            "connectionArgs":{
+                                "catalog":"AwsDataCatalog",
+                                "database":"amazon_cl_centralized",
+                                "region":"__default",
+                                "resultReuseEnabled": True,
+                                "resultReuseMaxAgeInMinutes":5
+                            },
+                            "datasource":{
+                                "type":"grafana-athena-datasource",
+                                "uid":"DS_AMAZON_ATHENA"
+                            },
+                            "format":1,
+                            "rawSQL":"SQL Statement",
+                            "table":"waf_metrics"
+                        },
+                        {
                             "datasource":{
                                 "type":"grafana-athena-datasource",
                                 "uid":"DS_AMAZON_ATHENA"
@@ -810,7 +871,6 @@ class TestGrafanaClient:
                             },
                             "format":1,
                             "rawSQL":"SQL Statement",
-                            "refId":"A",
                             "table":"waf_metrics"
                         }
                     ],
@@ -828,7 +888,7 @@ class TestGrafanaClient:
                                 "uid":"DS_AMAZON_ATHENA"
                             },
                             "panelId":1,
-                            "refId":"A",
+                            "refId":"Metrics",
                             "withTransforms": True
                         },
                         {
@@ -839,6 +899,14 @@ class TestGrafanaClient:
                             "panelId":2,
                             "refId":"A",
                             "withTransforms": True
+                        },
+                        {
+                            "datasource":{
+                                "type":"datasource",
+                                "uid":"-- Dashboard --"
+                            },
+                            "panelId":3,
+                            "withTransforms": True
                         }
                     ],
                     "title": "Requests History",
@@ -847,14 +915,8 @@ class TestGrafanaClient:
             ]
         }
         
-        new_dashboard = self.grafana_client.replace_athena_connection_args_in_panels(datasource_uid='test',
-                                                                                     catalog='AwsDataCatalog',
-                                                                                     database='test_database', 
-                                                                                     region='us-east-2', 
-                                                                                     table='test_table', 
-                                                                                     dashboard=dashboard,
-                                                                                     reuse=True,
-                                                                                     reuse_age=30)
+        athena_connection_args = dict(Metrics=AthenaConnection(uid='test', catalog='AwsDataCatalog', database='test_database', region='us-east-1', table='test_table', account_id='123456789012', work_group='Primary', assume_role_arn='arn:aws:iam::123456789012:role/AthenaPublicAccessRole', output_location='s3://stagingbucket/athena-results/', reuse=True, reuse_age=30))
+        new_dashboard = self.grafana_client.replace_athena_connection_args_in_panels(dashboard=dashboard, athena_connection_args=athena_connection_args)
         assert new_dashboard['panels'][0] == {
             'datasource': {
                 'type': 'grafana-athena-datasource', 
@@ -865,7 +927,7 @@ class TestGrafanaClient:
                     'connectionArgs': {
                         'catalog': 'AwsDataCatalog', 
                         'database': 'test_database', 
-                        'region': 'us-east-2', 
+                        'region': 'us-east-1', 
                         'resultReuseEnabled': True, 
                         'resultReuseMaxAgeInMinutes': 30
                         }, 
@@ -875,18 +937,279 @@ class TestGrafanaClient:
                         }, 
                     'format': 1, 
                     'rawSQL': 'SQL Statement', 
-                    'refId': 'A', 
+                    'refId': 'Metrics', 
                     'table': 'test_table'
                     },
                 {
+                    "connectionArgs":{
+                        "catalog":"AwsDataCatalog",
+                        "database":"amazon_cl_centralized",
+                        "region":"__default",
+                        "resultReuseEnabled": True,
+                        "resultReuseMaxAgeInMinutes":5
+                    },
+                    "datasource":{
+                        "type":"grafana-athena-datasource",
+                        "uid":"DS_AMAZON_ATHENA"
+                    },
+                    "format":1,
+                    "rawSQL":"SQL Statement",
+                    "refId":"A",
+                    "table":"waf_metrics"
+                },
+                {
+                    "connectionArgs":{
+                        "catalog":"AwsDataCatalog",
+                        "database":"amazon_cl_centralized",
+                        "region":"__default",
+                        "resultReuseEnabled": True,
+                        "resultReuseMaxAgeInMinutes":5
+                    },
+                    "datasource":{
+                        "type":"grafana-athena-datasource",
+                        "uid":"DS_AMAZON_ATHENA"
+                    },
+                    "format":1,
+                    "rawSQL":"SQL Statement",
+                    "table":"waf_metrics"
+                },
+                {
                     'datasource':{
                         'type': 'grafana-athena-datasource',
-                        'uid': 'test'
+                        'uid': 'DS_AMAZON_ATHENA'
                     },
                     'format': 1,
                     'rawSQL': 'SQL Statement',
                     'refId': 'A',
+                    'table': 'waf_metrics'
+                    },
+                {
+                    'datasource':{
+                        'type': 'grafana-athena-datasource',
+                        'uid': 'DS_AMAZON_ATHENA'
+                    },
+                    'format': 1,
+                    'rawSQL': 'SQL Statement',
+                    'table': 'waf_metrics'
+                    }
+                ], 
+            'title': 'Total Requests'
+            }
+        assert new_dashboard['panels'][1] == {
+            'datasource': {
+                'type': 'datasource', 
+                'uid': '-- Dashboard --'
+                }, 
+            'targets': [
+                {
+                    'datasource': {
+                        'type': 'grafana-athena-datasource',
+                        'uid': 'test'
+                    },
+                    'panelId': 1,
+                    'refId': 'Metrics',
+                    'withTransforms': True,
                     'table': 'test_table'
+                },
+                {
+                    'datasource': {
+                        'type': 'datasource', 
+                        'uid': '-- Dashboard --'
+                        }, 
+                    'panelId': 2,
+                    'refId': 'A',
+                    'withTransforms': True
+                    },
+                {
+                    'datasource': {
+                        'type': 'datasource', 
+                        'uid': '-- Dashboard --'
+                        }, 
+                    'panelId': 3,
+                    'withTransforms': True
+                    }
+                ], 
+            'title': 'Requests History', 
+            'type': 'barchart'
+            }
+        
+        dashboard = {
+            "panels":[
+                {
+                    "datasource":{
+                        "type":"grafana-athena-datasource",
+                        "uid":"DS_AMAZON_ATHENA"
+                    },
+                    "targets":[
+                        {
+                            "connectionArgs":{
+                                "catalog":"AwsDataCatalog",
+                                "database":"amazon_cl_centralized",
+                                "region":"__default",
+                                "resultReuseEnabled": False,
+                                "resultReuseMaxAgeInMinutes":10
+                            },
+                            "datasource":{
+                                "type":"grafana-athena-datasource",
+                                "uid":"DS_AMAZON_ATHENA"
+                            },
+                            "format":1,
+                            "rawSQL":"SQL Statement",
+                            "refId":"Metrics",
+                            "table":"waf_metrics"
+                        },
+                        {
+                            "connectionArgs":{
+                                "catalog":"AwsDataCatalog",
+                                "database":"amazon_cl_centralized",
+                                "region":"__default",
+                                "resultReuseEnabled": False,
+                                "resultReuseMaxAgeInMinutes":10
+                            },
+                            "datasource":{
+                                "type":"grafana-athena-datasource",
+                                "uid":"DS_AMAZON_ATHENA"
+                            },
+                            "format":1,
+                            "rawSQL":"SQL Statement",
+                            "refId":"A",
+                            "table":"waf_metrics"
+                        },
+                        {
+                            "connectionArgs":{
+                                "catalog":"AwsDataCatalog",
+                                "database":"amazon_cl_centralized",
+                                "region":"__default",
+                                "resultReuseEnabled": False,
+                                "resultReuseMaxAgeInMinutes":10
+                            },
+                            "datasource":{
+                                "type":"grafana-athena-datasource",
+                                "uid":"DS_AMAZON_ATHENA"
+                            },
+                            "format":1,
+                            "rawSQL":"SQL Statement",
+                            "table":"waf_metrics"
+                        },
+                        {
+                            "datasource":{
+                                "type":"grafana-athena-datasource",
+                                "uid":"DS_AMAZON_ATHENA"
+                            },
+                            "format":1,
+                            "rawSQL":"SQL Statement",
+                            "refId":"A",
+                            "table":"waf_metrics"
+                        }
+                    ],
+                    "title":"Total Requests"
+                },
+                {
+                    "datasource":{
+                        "type":"datasource",
+                        "uid":"-- Dashboard --"
+                    },
+                    "targets":[
+                        {
+                            "datasource":{
+                                "type":"grafana-athena-datasource",
+                                "uid":"DS_AMAZON_ATHENA"
+                            },
+                            "panelId":1,
+                            "refId":"Metrics",
+                            "withTransforms": True
+                        },
+                        {
+                            "datasource":{
+                                "type":"datasource",
+                                "uid":"-- Dashboard --"
+                            },
+                            "panelId":2,
+                            "refId":"A",
+                            "withTransforms": True
+                        },
+                        {
+                            "datasource":{
+                                "type":"datasource",
+                                "uid":"-- Dashboard --"
+                            },
+                            "panelId":3,
+                            "withTransforms": True
+                        }
+                    ],
+                    "title": "Requests History",
+                    "type": "barchart"
+                }
+            ]
+        }
+        
+        athena_connection_args = dict(Metrics=AthenaConnection(uid='test', catalog='AwsDataCatalog', database='test_database', region='us-east-1', table='test_table', account_id='123456789012', work_group='Primary', assume_role_arn='arn:aws:iam::123456789012:role/AthenaPublicAccessRole', output_location='s3://stagingbucket/athena-results/', reuse=True, reuse_age=30))
+        new_dashboard = self.grafana_client.replace_athena_connection_args_in_panels(dashboard=dashboard, athena_connection_args=athena_connection_args)
+        assert new_dashboard['panels'][0] == {
+            'datasource': {
+                'type': 'grafana-athena-datasource', 
+                'uid': 'test'
+                }, 
+            'targets': [
+                {
+                    'connectionArgs': {
+                        'catalog': 'AwsDataCatalog', 
+                        'database': 'test_database', 
+                        'region': 'us-east-1', 
+                        'resultReuseEnabled': True, 
+                        'resultReuseMaxAgeInMinutes': 30
+                        }, 
+                    'datasource': {
+                        'type': 'grafana-athena-datasource', 
+                        'uid': 'test'
+                        }, 
+                    'format': 1, 
+                    'rawSQL': 'SQL Statement', 
+                    'refId': 'Metrics', 
+                    'table': 'test_table'
+                    },
+                {
+                    "connectionArgs":{
+                        "catalog":"AwsDataCatalog",
+                        "database":"amazon_cl_centralized",
+                        "region":"__default",
+                        "resultReuseEnabled": False,
+                        "resultReuseMaxAgeInMinutes":10
+                    },
+                    "datasource":{
+                        "type":"grafana-athena-datasource",
+                        "uid":"DS_AMAZON_ATHENA"
+                    },
+                    "format":1,
+                    "rawSQL":"SQL Statement",
+                    "refId":"A",
+                    "table":"waf_metrics"
+                },
+                {
+                    "connectionArgs":{
+                        "catalog":"AwsDataCatalog",
+                        "database":"amazon_cl_centralized",
+                        "region":"__default",
+                        "resultReuseEnabled": False,
+                        "resultReuseMaxAgeInMinutes":10
+                    },
+                    "datasource":{
+                        "type":"grafana-athena-datasource",
+                        "uid":"DS_AMAZON_ATHENA"
+                    },
+                    "format":1,
+                    "rawSQL":"SQL Statement",
+                    "table":"waf_metrics"
+                },
+                {
+                    'datasource':{
+                        'type': 'grafana-athena-datasource',
+                        'uid': 'DS_AMAZON_ATHENA'
+                    },
+                    'format': 1,
+                    'rawSQL': 'SQL Statement',
+                    'refId': 'A',
+                    'table': 'waf_metrics'
                     },
                 ], 
             'title': 'Total Requests'
@@ -903,8 +1226,8 @@ class TestGrafanaClient:
                         'uid': 'test'
                     },
                     'panelId': 1,
-                    'refId': 'A',
                     'withTransforms': True,
+                    "refId":"Metrics",
                     'table': 'test_table'
                 },
                 {
@@ -915,13 +1238,23 @@ class TestGrafanaClient:
                     'panelId': 2,
                     'refId': 'A',
                     'withTransforms': True
-                    }
+                    },
+                {
+                    "datasource":{
+                        "type":"datasource",
+                        "uid":"-- Dashboard --"
+                    },
+                    "panelId":3,
+                    "withTransforms": True
+                }
                 ], 
             'title': 'Requests History', 
             'type': 'barchart'
             }
     
     def test_import_dashboard(self, httpserver: HTTPServer):
+        from utils.grafana import AthenaConnection
+        
         self.init_default_parameters(httpserver=httpserver)
         
         dashboard = {
@@ -949,9 +1282,9 @@ class TestGrafanaClient:
                             },
                             "format":1,
                             "rawSQL":"SQL Statement",
-                            "refId":"A",
+                            "refId":"Metrics",
                             "table":"waf_metrics"
-                        }
+                        },
                     ],
                     "title":"Total Requests"
                 }
@@ -975,6 +1308,7 @@ class TestGrafanaClient:
                             },
                             "format": 1,
                             "rawSQL": "SQL Statement",
+                            "refId":"Metrics",
                             "table": "waf_metrics"
                         },
                     }
@@ -985,19 +1319,22 @@ class TestGrafanaClient:
         httpserver.expect_oneshot_request(uri='/api/dashboards/uid/w0x1c_Y4k5', method='GET').respond_with_data(response_data=json.dumps({'message': 'Dashboard not found', 'traceID': ''}), status=404)
         httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}))
     
-        response = self.grafana_client.import_dashboard(dashboard=dashboard, overwrite=False)
+        athena_connection_args = dict(Metrics=AthenaConnection(uid='test', catalog='AwsDataCatalog', database='test_database', region='us-east-1', table='test_table', account_id='123456789012', work_group='Primary', assume_role_arn='arn:aws:iam::123456789012:role/AthenaPublicAccessRole', output_location='s3://stagingbucket/athena-results/', reuse=True, reuse_age=30))
+        response = self.grafana_client.import_dashboard(dashboard=dashboard, athena_connection_args=athena_connection_args, overwrite=False)
         assert response == {'status': 200, 'content': {'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}}
 
         httpserver.expect_oneshot_request(uri='/api/dashboards/uid/w0x1c_Y4k5', method='GET').respond_with_data(response_data=json.dumps({'message': 'Dashboard not found', 'traceID': ''}), status=404)
         httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}))
     
-        response = self.grafana_client.import_dashboard(dashboard=dashboard, overwrite=True)
+        athena_connection_args = dict(Metrics=AthenaConnection(uid='test', catalog='AwsDataCatalog', database='test_database', region='us-east-1', table='test_table', account_id='123456789012', work_group='Primary', assume_role_arn='arn:aws:iam::123456789012:role/AthenaPublicAccessRole', output_location='s3://stagingbucket/athena-results/', reuse=True, reuse_age=30))
+        response = self.grafana_client.import_dashboard(dashboard=dashboard, athena_connection_args=athena_connection_args, overwrite=True)
         assert response == {'status': 200, 'content': {'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}}
 
         httpserver.expect_oneshot_request(uri='/api/dashboards/uid/w0x1c_Y4k5', method='GET').respond_with_data(response_data=json.dumps({'message': 'Dashboard not found', 'traceID': ''}), status=404)
         httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}))
     
-        response = self.grafana_client.import_dashboard(dashboard=dashboard)
+        athena_connection_args = dict(Metrics=AthenaConnection(uid='test', catalog='AwsDataCatalog', database='test_database', region='us-east-1', table='test_table', account_id='123456789012', work_group='Primary', assume_role_arn='arn:aws:iam::123456789012:role/AthenaPublicAccessRole', output_location='s3://stagingbucket/athena-results/', reuse=True, reuse_age=30))
+        response = self.grafana_client.import_dashboard(dashboard=dashboard, athena_connection_args=athena_connection_args)
         assert response == {'status': 200, 'content': {'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}}
         
         httpserver.expect_oneshot_request(uri='/api/dashboards/uid/w0x1c_Y4k5', method='GET').respond_with_data(response_data=json.dumps({'message': 'Dashboard not found', 'traceID': ''}), status=404)
@@ -1005,25 +1342,29 @@ class TestGrafanaClient:
         httpserver.expect_oneshot_request(uri='/api/folders', method='GET').respond_with_data(response_data=json.dumps([{'id': 1, 'uid': 'q_XODzX4z', 'title': 'General'}, {'id': 19, 'uid': 'zypaSkX4k', 'title': 'clo'}]))
         httpserver.expect_oneshot_request(uri='/api/folders/zypaSkX4k', method='GET').respond_with_data(response_data=json.dumps({'id': 19, 'uid': 'zypaSkX4k', 'title': 'clo', 'url': '/dashboards/f/zypaSkX4k/clo', 'hasAcl': False, 'canSave': True, 'canEdit': True, 'canAdmin': True, 'canDelete': True, 'version': 1}))
         
-        response = self.grafana_client.import_dashboard(dashboard=dashboard, folder_title='clo')
+        athena_connection_args = dict(Metrics=AthenaConnection(uid='test', catalog='AwsDataCatalog', database='test_database', region='us-east-1', table='test_table', account_id='123456789012', work_group='Primary', assume_role_arn='arn:aws:iam::123456789012:role/AthenaPublicAccessRole', output_location='s3://stagingbucket/athena-results/', reuse=True, reuse_age=30))
+        response = self.grafana_client.import_dashboard(dashboard=dashboard, athena_connection_args=athena_connection_args, folder_title='clo')
         assert response == {'status': 200, 'content': {'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}}
         
         httpserver.expect_oneshot_request(uri='/api/dashboards/uid/w0x1c_Y4k5', method='GET').respond_with_data(response_data=json.dumps({'meta': {'type': 'db', 'title': 'Dashboards', 'uid': 'w0x1c_Y4k5', 'version': 4}}))
         httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}))
         
-        response = self.grafana_client.import_dashboard(dashboard=dashboard, overwrite=False)
+        athena_connection_args = dict(Metrics=AthenaConnection(uid='test', catalog='AwsDataCatalog', database='test_database', region='us-east-1', table='test_table', account_id='123456789012', work_group='Primary', assume_role_arn='arn:aws:iam::123456789012:role/AthenaPublicAccessRole', output_location='s3://stagingbucket/athena-results/', reuse=True, reuse_age=30))
+        response = self.grafana_client.import_dashboard(dashboard=dashboard, athena_connection_args=athena_connection_args, overwrite=False)
         assert response == {'status': 200, 'content': {'message': 'Dashboard is exist and overwrite is false.'}}
         
         httpserver.expect_oneshot_request(uri='/api/dashboards/uid/w0x1c_Y4k5', method='GET').respond_with_data(response_data=json.dumps({'meta': {'type': 'db', 'title': 'Dashboards', 'uid': 'w0x1c_Y4k5', 'version': 4}}))
         httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}))
     
-        response = self.grafana_client.import_dashboard(dashboard=dashboard, overwrite=True)
+        athena_connection_args = dict(Metrics=AthenaConnection(uid='test', catalog='AwsDataCatalog', database='test_database', region='us-east-1', table='test_table', account_id='123456789012', work_group='Primary', assume_role_arn='arn:aws:iam::123456789012:role/AthenaPublicAccessRole', output_location='s3://stagingbucket/athena-results/', reuse=True, reuse_age=30))
+        response = self.grafana_client.import_dashboard(dashboard=dashboard, athena_connection_args=athena_connection_args, overwrite=True)
         assert response == {'status': 200, 'content': {'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}}
 
         httpserver.expect_oneshot_request(uri='/api/dashboards/uid/w0x1c_Y4k5', method='GET').respond_with_data(response_data=json.dumps({'meta': {'type': 'db', 'title': 'Dashboards', 'uid': 'w0x1c_Y4k5', 'version': 4}}))
         httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}))
     
-        response = self.grafana_client.import_dashboard(dashboard=dashboard)
+        athena_connection_args = dict(Metrics=AthenaConnection(uid='test', catalog='AwsDataCatalog', database='test_database', region='us-east-1', table='test_table', account_id='123456789012', work_group='Primary', assume_role_arn='arn:aws:iam::123456789012:role/AthenaPublicAccessRole', output_location='s3://stagingbucket/athena-results/', reuse=True, reuse_age=30))
+        response = self.grafana_client.import_dashboard(dashboard=dashboard, athena_connection_args=athena_connection_args)
         assert response == {'status': 200, 'content': {'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}}
         
         httpserver.expect_oneshot_request(uri='/api/dashboards/uid/w0x1c_Y4k5', method='GET').respond_with_data(response_data=json.dumps({'meta': {'type': 'db', 'title': 'Dashboards', 'uid': 'w0x1c_Y4k5', 'version': 4}}))
@@ -1031,581 +1372,10 @@ class TestGrafanaClient:
         httpserver.expect_oneshot_request(uri='/api/folders', method='GET').respond_with_data(response_data=json.dumps([{'id': 1, 'uid': 'q_XODzX4z', 'title': 'General'}, {'id': 19, 'uid': 'zypaSkX4k', 'title': 'clo'}]))
         httpserver.expect_oneshot_request(uri='/api/folders/zypaSkX4k', method='GET').respond_with_data(response_data=json.dumps({'id': 19, 'uid': 'zypaSkX4k', 'title': 'clo', 'url': '/dashboards/f/zypaSkX4k/clo', 'hasAcl': False, 'canSave': True, 'canEdit': True, 'canAdmin': True, 'canDelete': True, 'version': 1}))
         
-        response = self.grafana_client.import_dashboard(dashboard=dashboard, folder_title='clo')
+        athena_connection_args = dict(Metrics=AthenaConnection(uid='test', catalog='AwsDataCatalog', database='test_database', region='us-east-1', table='test_table', account_id='123456789012', work_group='Primary', assume_role_arn='arn:aws:iam::123456789012:role/AthenaPublicAccessRole', output_location='s3://stagingbucket/athena-results/', reuse=True, reuse_age=30))
+        response = self.grafana_client.import_dashboard(dashboard=dashboard, athena_connection_args=athena_connection_args, folder_title='clo')
         assert response == {'status': 200, 'content': {'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}}
-        
-    def test_import_dashboard_for_services(self, httpserver: HTTPServer):
-        self.init_default_parameters(httpserver=httpserver)
-        athena_connection = self.grafana_client.update_athena_connection_uid(athena_connection=self.athena_connection)
-        
-        dashboard = {
-            "id": 1,
-            "uid": "w0x1c_Y4k5",
-            "title": "Dashboards",
-            "panels":[
-                {
-                    "datasource":{
-                        "type":"grafana-athena-datasource",
-                        "uid":"DS_AMAZON_ATHENA"
-                    },
-                    "targets":[
-                        {
-                            "connectionArgs":{
-                                "catalog":"AwsDataCatalog",
-                                "database":"amazon_cl_centralized",
-                                "region":"__default",
-                                "resultReuseEnabled": False,
-                                "resultReuseMaxAgeInMinutes":10
-                            },
-                            "datasource":{
-                                "type":"grafana-athena-datasource",
-                                "uid":"DS_AMAZON_ATHENA"
-                            },
-                            "format":1,
-                            "rawSQL":"SQL Statement",
-                            "refId":"A",
-                            "table":"waf_metrics"
-                        }
-                    ],
-                    "title":"Total Requests"
-                }
-            ],
-            'templating': {
-                'list': [
-                    {
-                        "allValue": "SQL Statement",
-                        "current": {},
-                        "datasource": {
-                            "type": "grafana-athena-datasource",
-                            "uid": "DS_AMAZON_ATHENA"
-                        },
-                        "query": {
-                            "connectionArgs": {
-                            "catalog": "AwsDataCatalog",
-                            "database": "amazon_cl_centralized",
-                            "region": "__default",
-                            "resultReuseEnabled": True,
-                            "resultReuseMaxAgeInMinutes": 5
-                            },
-                            "format": 1,
-                            "rawSQL": "SQL Statement",
-                            "table": "waf_metrics"
-                        },
-                    }
-                ]
-            }
-        }
-        
-        new_dashboard = {
-            "uid": "w0x1c_Y4k5",
-            "title": "Dashboards",
-            "panels":[
-                {
-                    "datasource":{
-                        "type":"grafana-athena-datasource",
-                        "uid":"g5Aeh9_Vk"
-                    },
-                    "targets":[
-                        {
-                            "connectionArgs":{
-                                "catalog":"AwsDataCatalog",
-                                "database":"centralized",
-                                "region":"us-east-1",
-                                "resultReuseEnabled": True,
-                                "resultReuseMaxAgeInMinutes":5
-                            },
-                            "datasource":{
-                                "type":"grafana-athena-datasource",
-                                "uid":"g5Aeh9_Vk"
-                            },
-                            "format":1,
-                            "rawSQL":"SQL Statement",
-                            "refId":"A",
-                            "table":"test_table"
-                        }
-                    ],
-                    "title":"Total Requests"
-                }
-            ],
-            'templating': {
-                'list': [
-                    {
-                        "allValue": "SQL Statement",
-                        "current": {},
-                        "datasource": {
-                            "type": "grafana-athena-datasource",
-                            "uid": "g5Aeh9_Vk"
-                        },
-                        "query": {
-                            "connectionArgs": {
-                            "catalog": "AwsDataCatalog",
-                            "database": "centralized",
-                            "region": "us-east-1",
-                            "resultReuseEnabled": True,
-                            "resultReuseMaxAgeInMinutes": 5
-                            },
-                            "format": 1,
-                            "rawSQL": "SQL Statement",
-                            "table": "test_table"
-                        },
-                    }
-                ]
-            }
-        }
-        
-        httpserver.expect_oneshot_request(uri='/api/dashboards/uid/w0x1c_Y4k5', method='GET').respond_with_data(response_data=json.dumps({'message': 'Dashboard not found', 'traceID': ''}), status=404)
-        httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}))
-    
-        response = self.grafana_client.import_dashboard_for_services(table='test_table', dashboard=dashboard, athena_connection=athena_connection)
-        assert response['status'] == 200
-        assert dashboard == new_dashboard
-        
-        httpserver.expect_oneshot_request(uri='/api/dashboards/uid/w0x1c_Y4k5', method='GET').respond_with_data(response_data=json.dumps({'message': 'Dashboard not found', 'traceID': ''}), status=404)
-        httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}))
-    
-        response = self.grafana_client.import_dashboard_for_services(table='test_table', dashboard=dashboard, athena_connection=athena_connection, overwrite=True)
-        assert response['status'] == 200
-        assert dashboard == new_dashboard
-        
-        httpserver.expect_oneshot_request(uri='/api/dashboards/uid/w0x1c_Y4k5', method='GET').respond_with_data(response_data=json.dumps({'message': 'Dashboard not found', 'traceID': ''}), status=404)
-        httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}))
-    
-        response = self.grafana_client.import_dashboard_for_services(table='test_table', dashboard=dashboard, athena_connection=athena_connection, overwrite=False)
-        assert response['status'] == 200
-        assert dashboard == new_dashboard
-        
-        httpserver.expect_oneshot_request(uri='/api/dashboards/uid/w0x1c_Y4k5', method='GET').respond_with_data(response_data=json.dumps({'message': 'Dashboard not found', 'traceID': ''}), status=404)
-        httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}))
-        httpserver.expect_oneshot_request(uri='/api/folders', method='GET').respond_with_data(response_data=json.dumps([{'id': 1, 'uid': 'q_XODzX4z', 'title': 'General'}, {'id': 19, 'uid': 'zypaSkX4k', 'title': 'clo'}]))
-        httpserver.expect_oneshot_request(uri='/api/folders/zypaSkX4k', method='GET').respond_with_data(response_data=json.dumps({'id': 19, 'uid': 'zypaSkX4k', 'title': 'clo', 'url': '/dashboards/f/zypaSkX4k/clo', 'hasAcl': False, 'canSave': True, 'canEdit': True, 'canAdmin': True, 'canDelete': True, 'version': 1}))
-        
-        response = self.grafana_client.import_dashboard_for_services(table='test_table', dashboard=dashboard, athena_connection=athena_connection, overwrite=True, folder_title='clo')
-        assert response['status'] == 200
-        assert dashboard == new_dashboard
-        
-        httpserver.expect_oneshot_request(uri='/api/dashboards/uid/w0x1c_Y4k5', method='GET').respond_with_data(response_data=json.dumps({'meta': {'type': 'db', 'title': 'Dashboards', 'uid': 'w0x1c_Y4k5', 'version': 4}}))
-        httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}))
-    
-        response = self.grafana_client.import_dashboard_for_services(table='test_table', dashboard=dashboard, athena_connection=athena_connection)
-        assert dashboard == new_dashboard
-        
-        httpserver.expect_oneshot_request(uri='/api/dashboards/uid/w0x1c_Y4k5', method='GET').respond_with_data(response_data=json.dumps({'meta': {'type': 'db', 'title': 'Dashboards', 'uid': 'w0x1c_Y4k5', 'version': 4}}))
-        httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}))
-    
-        response = self.grafana_client.import_dashboard_for_services(table='test_table', dashboard=dashboard, athena_connection=athena_connection, overwrite=False)
-        assert dashboard == new_dashboard
-        
-        httpserver.expect_oneshot_request(uri='/api/dashboards/uid/w0x1c_Y4k5', method='GET').respond_with_data(response_data=json.dumps({'meta': {'type': 'db', 'title': 'Dashboards', 'uid': 'w0x1c_Y4k5', 'version': 4}}))
-        httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}))
-    
-        response = self.grafana_client.import_dashboard_for_services(table='test_table', dashboard=dashboard, athena_connection=athena_connection, overwrite=True)
-        assert dashboard == new_dashboard
-        
-        httpserver.expect_oneshot_request(uri='/api/dashboards/uid/w0x1c_Y4k5', method='GET').respond_with_data(response_data=json.dumps({'meta': {'type': 'db', 'title': 'Dashboards', 'uid': 'w0x1c_Y4k5', 'version': 4}}))
-        httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}))
-        httpserver.expect_oneshot_request(uri='/api/folders', method='GET').respond_with_data(response_data=json.dumps([{'id': 1, 'uid': 'q_XODzX4z', 'title': 'General'}, {'id': 19, 'uid': 'zypaSkX4k', 'title': 'clo'}]))
-        httpserver.expect_oneshot_request(uri='/api/folders/zypaSkX4k', method='GET').respond_with_data(response_data=json.dumps({'id': 19, 'uid': 'zypaSkX4k', 'title': 'clo', 'url': '/dashboards/f/zypaSkX4k/clo', 'hasAcl': False, 'canSave': True, 'canEdit': True, 'canAdmin': True, 'canDelete': True, 'version': 1}))
-        
-        response = self.grafana_client.import_dashboard_for_services(table='test_table', dashboard=dashboard, athena_connection=athena_connection, overwrite=True, folder_title='clo')
-        assert response['status'] == 200
-        assert dashboard == new_dashboard
 
-    def test_import_details_for_services(self, httpserver: HTTPServer):
-        self.init_default_parameters(httpserver=httpserver)
-        athena_connection = self.grafana_client.update_athena_connection_uid(athena_connection=self.athena_connection)
-        
-        dashboard = {
-            "id": 1,
-            "uid": "w0x1c_Y4k5",
-            "title": "Dashboards",
-            "panels":[
-                {
-                    "datasource":{
-                        "type":"grafana-athena-datasource",
-                        "uid":"DS_AMAZON_ATHENA"
-                    },
-                    "targets":[
-                        {
-                            "connectionArgs":{
-                                "catalog":"AwsDataCatalog",
-                                "database":"amazon_cl_centralized",
-                                "region":"__default",
-                                "resultReuseEnabled": False,
-                                "resultReuseMaxAgeInMinutes":10
-                            },
-                            "datasource":{
-                                "type":"grafana-athena-datasource",
-                                "uid":"DS_AMAZON_ATHENA"
-                            },
-                            "format":1,
-                            "rawSQL":"SQL Statement",
-                            "refId":"A",
-                            "table":"waf_metrics"
-                        }
-                    ],
-                    "title":"Total Requests"
-                }
-            ],
-            'templating': {
-                'list': [
-                    {
-                        "allValue": "SQL Statement",
-                        "current": {},
-                        "datasource": {
-                            "type": "grafana-athena-datasource",
-                            "uid": "DS_AMAZON_ATHENA"
-                        },
-                        "query": {
-                            "connectionArgs": {
-                            "catalog": "AwsDataCatalog",
-                            "database": "amazon_cl_centralized",
-                            "region": "__default",
-                            "resultReuseEnabled": True,
-                            "resultReuseMaxAgeInMinutes": 5
-                            },
-                            "format": 1,
-                            "rawSQL": "SQL Statement",
-                            "table": "waf_metrics"
-                        },
-                    },
-                    {
-                        "current": {},
-                        "datasource": {
-                            "type": "grafana-athena-datasource",
-                            "uid": "DS_AMAZON_ATHENA"
-                        },
-                        "name": "page_no",
-                        "query": {
-                            "connectionArgs": {
-                                "catalog": "AwsDataCatalog",
-                                "database": "amazon_cl_centralized",
-                                "region": "__default",
-                                "resultReuseEnabled": True,
-                                "resultReuseMaxAgeInMinutes": 5
-                            },
-                        "format": 1,
-                        "rawSQL": "SQL Statement",
-                        "table": "waf"
-                        },
-                        "sort": 0,
-                        "type": "query"
-                    },
-                ]
-            }
-        }
-        
-        new_dashboard = {
-            "uid": "w0x1c_Y4k5",
-            "title": "Dashboards",
-            "panels":[
-                {
-                    "datasource":{
-                        "type":"grafana-athena-datasource",
-                        "uid":"g5Aeh9_Vk"
-                    },
-                    "targets":[
-                        {
-                            "connectionArgs":{
-                                "catalog":"AwsDataCatalog",
-                                "database":"centralized",
-                                "region":"us-east-1",
-                                "resultReuseEnabled": True,
-                                "resultReuseMaxAgeInMinutes":5
-                            },
-                            "datasource":{
-                                "type":"grafana-athena-datasource",
-                                "uid":"g5Aeh9_Vk"
-                            },
-                            "format":1,
-                            "rawSQL":"SQL Statement",
-                            "refId":"A",
-                            "table":"test_table"
-                        }
-                    ],
-                    "title":"Total Requests"
-                }
-            ],
-            'templating': {
-                'list': [
-                    {
-                        "allValue": "SQL Statement",
-                        "current": {},
-                        "datasource": {
-                            "type": "grafana-athena-datasource",
-                            "uid": "g5Aeh9_Vk"
-                        },
-                        "query": {
-                            "connectionArgs": {
-                            "catalog": "AwsDataCatalog",
-                            "database": "centralized",
-                            "region": "us-east-1",
-                            "resultReuseEnabled": True,
-                            "resultReuseMaxAgeInMinutes": 5
-                            },
-                            "format": 1,
-                            "rawSQL": "SQL Statement",
-                            "table": "test_table_page_no"
-                        },
-                    },
-                    {
-                        "current": {},
-                        "datasource": {
-                            "type": "grafana-athena-datasource",
-                            "uid": "g5Aeh9_Vk"
-                        },
-                        "name": "page_no",
-                        "query": {
-                            "connectionArgs": {
-                                "catalog": "AwsDataCatalog",
-                                "database": "centralized",
-                                "region": "us-east-1",
-                                "resultReuseEnabled": True,
-                                "resultReuseMaxAgeInMinutes": 5
-                            },
-                        "format": 1,
-                        "rawSQL": "SQL Statement",
-                        "table": "test_table"
-                        },
-                        "sort": 0,
-                        "type": "query"
-                    },
-                ]
-            }
-        }
-        
-        httpserver.expect_oneshot_request(uri='/api/dashboards/uid/w0x1c_Y4k5', method='GET').respond_with_data(response_data=json.dumps({'message': 'Dashboard not found', 'traceID': ''}), status=404)
-        httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}))
-    
-        response = self.grafana_client.import_details_for_services(table='test_table', metrics_table='test_table_page_no', dashboard=dashboard, athena_connection=athena_connection)
-        assert response['status'] == 200
-        assert dashboard == new_dashboard
-        
-        httpserver.expect_oneshot_request(uri='/api/dashboards/uid/w0x1c_Y4k5', method='GET').respond_with_data(response_data=json.dumps({'message': 'Dashboard not found', 'traceID': ''}), status=404)
-        httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}))
-    
-        response = self.grafana_client.import_details_for_services(table='test_table', metrics_table='test_table_page_no', dashboard=dashboard, athena_connection=athena_connection, overwrite=True)
-        assert response['status'] == 200
-        assert dashboard == new_dashboard
-        
-        httpserver.expect_oneshot_request(uri='/api/dashboards/uid/w0x1c_Y4k5', method='GET').respond_with_data(response_data=json.dumps({'message': 'Dashboard not found', 'traceID': ''}), status=404)
-        httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}))
-    
-        response = self.grafana_client.import_details_for_services(table='test_table', metrics_table='test_table_page_no', dashboard=dashboard, athena_connection=athena_connection, overwrite=False)
-        assert response['status'] == 200
-        assert dashboard == new_dashboard
-        
-        httpserver.expect_oneshot_request(uri='/api/dashboards/uid/w0x1c_Y4k5', method='GET').respond_with_data(response_data=json.dumps({'message': 'Dashboard not found', 'traceID': ''}), status=404)
-        httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}))
-        httpserver.expect_oneshot_request(uri='/api/folders', method='GET').respond_with_data(response_data=json.dumps([{'id': 1, 'uid': 'q_XODzX4z', 'title': 'General'}, {'id': 19, 'uid': 'zypaSkX4k', 'title': 'clo'}]))
-        httpserver.expect_oneshot_request(uri='/api/folders/zypaSkX4k', method='GET').respond_with_data(response_data=json.dumps({'id': 19, 'uid': 'zypaSkX4k', 'title': 'clo', 'url': '/dashboards/f/zypaSkX4k/clo', 'hasAcl': False, 'canSave': True, 'canEdit': True, 'canAdmin': True, 'canDelete': True, 'version': 1}))
-        
-        response = self.grafana_client.import_details_for_services(table='test_table', metrics_table='test_table_page_no', dashboard=dashboard, athena_connection=athena_connection, overwrite=True, folder_title='clo')
-        assert response['status'] == 200
-        assert dashboard == new_dashboard
-        
-        httpserver.expect_oneshot_request(uri='/api/dashboards/uid/w0x1c_Y4k5', method='GET').respond_with_data(response_data=json.dumps({'meta': {'type': 'db', 'title': 'Dashboards', 'uid': 'w0x1c_Y4k5', 'version': 4}}))
-        httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}))
-    
-        response = self.grafana_client.import_details_for_services(table='test_table', metrics_table='test_table_page_no', dashboard=dashboard, athena_connection=athena_connection)
-        assert dashboard == new_dashboard
-        
-        httpserver.expect_oneshot_request(uri='/api/dashboards/uid/w0x1c_Y4k5', method='GET').respond_with_data(response_data=json.dumps({'meta': {'type': 'db', 'title': 'Dashboards', 'uid': 'w0x1c_Y4k5', 'version': 4}}))
-        httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}))
-    
-        response = self.grafana_client.import_details_for_services(table='test_table', metrics_table='test_table_page_no', dashboard=dashboard, athena_connection=athena_connection, overwrite=False)
-        assert dashboard == new_dashboard
-        
-        httpserver.expect_oneshot_request(uri='/api/dashboards/uid/w0x1c_Y4k5', method='GET').respond_with_data(response_data=json.dumps({'meta': {'type': 'db', 'title': 'Dashboards', 'uid': 'w0x1c_Y4k5', 'version': 4}}))
-        httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}))
-    
-        response = self.grafana_client.import_details_for_services(table='test_table', metrics_table='test_table_page_no', dashboard=dashboard, athena_connection=athena_connection, overwrite=True)
-        assert dashboard == new_dashboard
-        
-        httpserver.expect_oneshot_request(uri='/api/dashboards/uid/w0x1c_Y4k5', method='GET').respond_with_data(response_data=json.dumps({'meta': {'type': 'db', 'title': 'Dashboards', 'uid': 'w0x1c_Y4k5', 'version': 4}}))
-        httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}))
-        httpserver.expect_oneshot_request(uri='/api/folders', method='GET').respond_with_data(response_data=json.dumps([{'id': 1, 'uid': 'q_XODzX4z', 'title': 'General'}, {'id': 19, 'uid': 'zypaSkX4k', 'title': 'clo'}]))
-        httpserver.expect_oneshot_request(uri='/api/folders/zypaSkX4k', method='GET').respond_with_data(response_data=json.dumps({'id': 19, 'uid': 'zypaSkX4k', 'title': 'clo', 'url': '/dashboards/f/zypaSkX4k/clo', 'hasAcl': False, 'canSave': True, 'canEdit': True, 'canAdmin': True, 'canDelete': True, 'version': 1}))
-        
-        response = self.grafana_client.import_details_for_services(table='test_table', metrics_table='test_table_page_no', dashboard=dashboard, athena_connection=athena_connection, overwrite=True, folder_title='clo')
-        assert response['status'] == 200
-        assert dashboard == new_dashboard
-    
-    def test_create_details_for_application(self, httpserver: HTTPServer):
-        self.init_default_parameters(httpserver=httpserver)
-        athena_connection = self.grafana_client.update_athena_connection_uid(athena_connection=self.athena_connection)
-        
-        dashboard = {
-            "id": 1,
-            "uid": "w0x1c_Y4k5",
-            "title": "Dashboards",
-            "panels":[
-                {
-                    "datasource":{
-                        "type":"grafana-athena-datasource",
-                        "uid":"DS_AMAZON_ATHENA"
-                    },
-                    "targets":[
-                        {
-                            "connectionArgs":{
-                                "catalog":"AwsDataCatalog",
-                                "database":"amazon_cl_centralized",
-                                "region":"__default",
-                                "resultReuseEnabled": False,
-                                "resultReuseMaxAgeInMinutes":10
-                            },
-                            "datasource":{
-                                "type":"grafana-athena-datasource",
-                                "uid":"DS_AMAZON_ATHENA"
-                            },
-                            "format":1,
-                            "rawSQL":"SQL Statement",
-                            "refId":"A",
-                            "table":"waf_metrics"
-                        }
-                    ],
-                    "title":"Total Requests"
-                }
-            ],
-            'templating': {
-                'list': [
-                    {
-                        "allValue": "SQL Statement",
-                        "current": {},
-                        "datasource": {
-                            "type": "grafana-athena-datasource",
-                            "uid": "DS_AMAZON_ATHENA"
-                        },
-                        "query": {
-                            "connectionArgs": {
-                            "catalog": "AwsDataCatalog",
-                            "database": "amazon_cl_centralized",
-                            "region": "__default",
-                            "resultReuseEnabled": True,
-                            "resultReuseMaxAgeInMinutes": 5
-                            },
-                            "format": 1,
-                            "rawSQL": "SQL Statement",
-                            "table": "waf_metrics"
-                        },
-                    }
-                ]
-            }
-        }
-        
-        new_dashboard = {
-            "uid": "w0x1c_Y4k5",
-            "title": "Dashboards",
-            "panels":[
-                {
-                    "datasource":{
-                        "type":"grafana-athena-datasource",
-                        "uid":"g5Aeh9_Vk"
-                    },
-                    "targets":[
-                        {
-                            "connectionArgs":{
-                                "catalog":"AwsDataCatalog",
-                                "database":"centralized",
-                                "region":"us-east-1",
-                                "resultReuseEnabled": True,
-                                "resultReuseMaxAgeInMinutes":5
-                            },
-                            "datasource":{
-                                "type":"grafana-athena-datasource",
-                                "uid":"g5Aeh9_Vk"
-                            },
-                            "format":1,
-                            "rawSQL":"SQL Statement",
-                            "refId":"A",
-                            "table":"test_table"
-                        }
-                    ],
-                    "title":"Total Requests"
-                }
-            ],
-            'templating': {
-                'list': [
-                    {
-                        "allValue": "SQL Statement",
-                        "current": {},
-                        "datasource": {
-                            "type": "grafana-athena-datasource",
-                            "uid": "g5Aeh9_Vk"
-                        },
-                        "query": {
-                            "connectionArgs": {
-                            "catalog": "AwsDataCatalog",
-                            "database": "centralized",
-                            "region": "us-east-1",
-                            "resultReuseEnabled": True,
-                            "resultReuseMaxAgeInMinutes": 5
-                            },
-                            "format": 1,
-                            "rawSQL": "SQL Statement",
-                            "table": "test_table"
-                        },
-                    }
-                ]
-            }
-        }
-        
-        httpserver.expect_oneshot_request(uri='/api/dashboards/uid/w0x1c_Y4k5', method='GET').respond_with_data(response_data=json.dumps({'message': 'Dashboard not found', 'traceID': ''}), status=404)
-        httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}))
-    
-        response = self.grafana_client.import_details_for_application(table='test_table', dashboard=dashboard, athena_connection=athena_connection)
-        assert response['status'] == 200
-        assert dashboard == new_dashboard
-        
-        httpserver.expect_oneshot_request(uri='/api/dashboards/uid/w0x1c_Y4k5', method='GET').respond_with_data(response_data=json.dumps({'message': 'Dashboard not found', 'traceID': ''}), status=404)
-        httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}))
-    
-        response = self.grafana_client.import_details_for_application(table='test_table', dashboard=dashboard, athena_connection=athena_connection, overwrite=True)
-        assert response['status'] == 200
-        assert dashboard == new_dashboard
-        
-        httpserver.expect_oneshot_request(uri='/api/dashboards/uid/w0x1c_Y4k5', method='GET').respond_with_data(response_data=json.dumps({'message': 'Dashboard not found', 'traceID': ''}), status=404)
-        httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}))
-    
-        response = self.grafana_client.import_details_for_application(table='test_table', dashboard=dashboard, athena_connection=athena_connection, overwrite=False)
-        assert response['status'] == 200
-        assert dashboard == new_dashboard
-        
-        httpserver.expect_oneshot_request(uri='/api/dashboards/uid/w0x1c_Y4k5', method='GET').respond_with_data(response_data=json.dumps({'message': 'Dashboard not found', 'traceID': ''}), status=404)
-        httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}))
-        httpserver.expect_oneshot_request(uri='/api/folders', method='GET').respond_with_data(response_data=json.dumps([{'id': 1, 'uid': 'q_XODzX4z', 'title': 'General'}, {'id': 19, 'uid': 'zypaSkX4k', 'title': 'clo'}]))
-        httpserver.expect_oneshot_request(uri='/api/folders/zypaSkX4k', method='GET').respond_with_data(response_data=json.dumps({'id': 19, 'uid': 'zypaSkX4k', 'title': 'clo', 'url': '/dashboards/f/zypaSkX4k/clo', 'hasAcl': False, 'canSave': True, 'canEdit': True, 'canAdmin': True, 'canDelete': True, 'version': 1}))
-        
-        response = self.grafana_client.import_details_for_application(table='test_table', dashboard=dashboard, athena_connection=athena_connection, overwrite=True, folder_title='clo')
-        assert response['status'] == 200
-        assert dashboard == new_dashboard
-        
-        httpserver.expect_oneshot_request(uri='/api/dashboards/uid/w0x1c_Y4k5', method='GET').respond_with_data(response_data=json.dumps({'meta': {'type': 'db', 'title': 'Dashboards', 'uid': 'w0x1c_Y4k5', 'version': 4}}))
-        httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}))
-    
-        response = self.grafana_client.import_details_for_application(table='test_table', dashboard=dashboard, athena_connection=athena_connection)
-        assert dashboard == new_dashboard
-        
-        httpserver.expect_oneshot_request(uri='/api/dashboards/uid/w0x1c_Y4k5', method='GET').respond_with_data(response_data=json.dumps({'meta': {'type': 'db', 'title': 'Dashboards', 'uid': 'w0x1c_Y4k5', 'version': 4}}))
-        httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}))
-    
-        response = self.grafana_client.import_details_for_application(table='test_table', dashboard=dashboard, athena_connection=athena_connection, overwrite=False)
-        assert dashboard == new_dashboard
-        
-        httpserver.expect_oneshot_request(uri='/api/dashboards/uid/w0x1c_Y4k5', method='GET').respond_with_data(response_data=json.dumps({'meta': {'type': 'db', 'title': 'Dashboards', 'uid': 'w0x1c_Y4k5', 'version': 4}}))
-        httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}))
-    
-        response = self.grafana_client.import_details_for_application(table='test_table', dashboard=dashboard, athena_connection=athena_connection, overwrite=True)
-        assert dashboard == new_dashboard
-        
-        httpserver.expect_oneshot_request(uri='/api/dashboards/uid/w0x1c_Y4k5', method='GET').respond_with_data(response_data=json.dumps({'meta': {'type': 'db', 'title': 'Dashboards', 'uid': 'w0x1c_Y4k5', 'version': 4}}))
-        httpserver.expect_oneshot_request(uri='/api/dashboards/db', method='POST').respond_with_data(response_data=json.dumps({'id': 7, 'status': 'success', 'uid': 'w0x1c_Y4k5', 'version': 1}))
-        httpserver.expect_oneshot_request(uri='/api/folders', method='GET').respond_with_data(response_data=json.dumps([{'id': 1, 'uid': 'q_XODzX4z', 'title': 'General'}, {'id': 19, 'uid': 'zypaSkX4k', 'title': 'clo'}]))
-        httpserver.expect_oneshot_request(uri='/api/folders/zypaSkX4k', method='GET').respond_with_data(response_data=json.dumps({'id': 19, 'uid': 'zypaSkX4k', 'title': 'clo', 'url': '/dashboards/f/zypaSkX4k/clo', 'hasAcl': False, 'canSave': True, 'canEdit': True, 'canAdmin': True, 'canDelete': True, 'version': 1}))
-        
-        response = self.grafana_client.import_details_for_application(table='test_table', dashboard=dashboard, athena_connection=athena_connection, overwrite=True, folder_title='clo')
-        assert response['status'] == 200
-        assert dashboard == new_dashboard
-        
 
 class TestGrafanaApi:
     

@@ -86,23 +86,24 @@ const KDSSettings: React.FC<KDSSettingsProps> = (props: KDSSettingsProps) => {
         />
       </FormItem>
 
-      <FormItem
-        optionTitle={t("servicelog:cloudfront.kdsMaxShard")}
-        optionDesc={t("servicelog:cloudfront.kdsMaxShardDesc")}
-        errorText={
-          maxShardNumError ? t("servicelog:cloudfront.maxShardNumError") : ""
-        }
-      >
-        <TextInput
-          disabled={pipelineTask.params.enableAutoScaling === YesNo.No}
-          className="m-w-45p"
-          type="number"
-          value={pipelineTask.params.maxCapacity}
-          onChange={(event) => {
-            changeMaxCapacity && changeMaxCapacity(event.target.value);
-          }}
-        />
-      </FormItem>
+      {pipelineTask.params.enableAutoScaling === YesNo.Yes && (
+        <FormItem
+          optionTitle={t("servicelog:cloudfront.kdsMaxShard")}
+          optionDesc={t("servicelog:cloudfront.kdsMaxShardDesc")}
+          errorText={
+            maxShardNumError ? t("servicelog:cloudfront.maxShardNumError") : ""
+          }
+        >
+          <TextInput
+            className="m-w-45p"
+            type="number"
+            value={pipelineTask.params.maxCapacity}
+            onChange={(event) => {
+              changeMaxCapacity && changeMaxCapacity(event.target.value);
+            }}
+          />
+        </FormItem>
+      )}
     </>
   );
 };

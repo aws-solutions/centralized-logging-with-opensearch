@@ -1,8 +1,7 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-import json
-import logging
+from commonlib.logging import get_logger
 import os
 
 from svc.ec2 import EC2SourceHandler
@@ -12,8 +11,7 @@ from commonlib.model import (
     LogSource,
 )
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 conn = AWSConnection()
 router = AppSyncRouter()
@@ -43,7 +41,7 @@ log_source_dao = LogSourceDao(table_name=log_source_table_name)
 
 @handle_error
 def lambda_handler(event, _):
-    # logger.info("Received event: " + json.dumps(event, indent=2))
+    # logger.info("Received event: " + json.dumps(event["arguments"], indent=2))
 
     instance_id = event["Records"][0]["dynamodb"]["Keys"]["id"]["S"]
     source_id = event["Records"][0]["dynamodb"]["Keys"]["sourceId"]["S"]

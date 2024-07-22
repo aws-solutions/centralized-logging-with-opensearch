@@ -7,8 +7,7 @@ import gzip
 import base64
 import random
 from typing import Iterator, Union
-from utils.aws.commonlib import AWSConnection
-from utils.logger import logger
+from utils.helpers import logger, AWSConnection
 
 
 class SQSClient:

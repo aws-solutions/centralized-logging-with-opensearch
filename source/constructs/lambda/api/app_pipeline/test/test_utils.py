@@ -6,13 +6,14 @@ import sys
 import copy
 import pytest
 from commonlib.dao import LogConfig
+from util.utils import build_iis_field_format
 from commonlib.model import (
     LogConfig,
     LogTypeEnum,
     RegularSpec,
     EngineType,
-    LogSourceTypeEnum,
-    AgentTypeEnum,
+    LogStructure,
+    IISLogParserEnum,
 )
 
 
@@ -188,6 +189,89 @@ TEST_ES_MAPPING = {
 }
 
 
+def test_make_index_template_contains_at_timestamp():
+    from util.utils import make_index_template
+
+    config = LogConfig(
+        version=0,
+        name="test-config",
+        logType=LogTypeEnum.JSON,
+        jsonSchema={
+            "type": "object",
+            "format": "",
+            "properties": {
+                "@timestamp": {
+                    "type": "date",
+                    "format": "%Y-%m-%dT%H:%M:%SZ",
+                    "timeKey": True,
+                },
+            },
+        },
+        regexFieldSpecs=[],
+    )
+
+    assert {
+        "index_patterns": ["test-json-*"],
+        "template": {
+            "settings": {
+                "index": {
+                    "number_of_shards": 5,
+                    "number_of_replicas": 1,
+                    "codec": "best_compression",
+                    "refresh_interval": "1s",
+                    "plugins": {
+                        "index_state_management": {"rollover_alias": "test-json"}
+                    },
+                }
+            },
+            "mappings": {"properties": {"@timestamp": {"type": "date"}}},
+        },
+    } == make_index_template(config, index_alias="test-json")
+
+    config = LogConfig(
+        version=0,
+        name="test-config",
+        logType=LogTypeEnum.JSON,
+        jsonSchema={
+            "type": "object",
+            "format": "",
+            "properties": {
+                "@timestamp": {
+                    "type": "date",
+                    "format": "%Y-%m-%dT%H:%M:%SZ",
+                    "timeKey": False,
+                },
+            },
+        },
+        regexFieldSpecs=[],
+    )
+
+    assert {
+        "index_patterns": ["test-json-*"],
+        "template": {
+            "settings": {
+                "index": {
+                    "number_of_shards": 5,
+                    "number_of_replicas": 1,
+                    "codec": "best_compression",
+                    "refresh_interval": "1s",
+                    "plugins": {
+                        "index_state_management": {"rollover_alias": "test-json"}
+                    },
+                }
+            },
+            "mappings": {
+                "properties": {
+                    "@timestamp": {
+                        "type": "date",
+                        "format": "yyyy-MM-dd'T'HH:mm:ss'Z' || yyyy-MM-dd'T'HH:mm:ss'Z' || yyyy-MM-dd'T'HH:mm:ss'Z'",
+                    }
+                }
+            },
+        },
+    } == make_index_template(config, index_alias="test-json")
+
+
 def test_make_index_template_json_schema():
     from util.utils import make_index_template
 
@@ -221,11 +305,48 @@ def test_make_index_template_json_schema():
 def test_make_index_template():
     from util.utils import make_index_template
 
+
     config = LogConfig(
         version=0,
         name="test-config",
         logType=LogTypeEnum.SINGLELINE_TEXT,
         regex="(?<log>.*)",
+        timeKey="@timestamp",
+        regexFieldSpecs=[
+            RegularSpec(key="name", type="string"),
+            RegularSpec(key="@timestamp", type="date", format="yyyy-MM-dd"),
+        ],
+    )
+
+    assert {
+        "index_patterns": ["app-singleline-*"],
+        "template": {
+            "settings": {
+                "index": {
+                    "number_of_shards": 5,
+                    "number_of_replicas": 1,
+                    "codec": "best_compression",
+                    "refresh_interval": "1s",
+                    "plugins": {
+                        "index_state_management": {"rollover_alias": "app-singleline"}
+                    },
+                }
+            },
+            "mappings": {
+                "properties": {
+                    "name": {"type": "string"},
+                    "@timestamp": {"type": "date"},
+                }
+            },
+        },
+    } == make_index_template(config, index_alias="app-singleline")
+
+    config = LogConfig(
+        version=0,
+        name="test-config",
+        logType=LogTypeEnum.SINGLELINE_TEXT,
+        regex="(?<log>.*)",
+        timeKey="time",
         regexFieldSpecs=[
             RegularSpec(key="name", type="string"),
             RegularSpec(key="time", type="date", format="yyyy-MM-dd"),
@@ -433,23 +554,24 @@ def test_strptime_to_joda():
     assert strptime_to_joda("abcde") == "'abcde'"
     assert strptime_to_joda("%Y-%G") == "yyyy-yyyy"
     assert strptime_to_joda("%Y-%i") == "yyyy-%'i'"
+    assert strptime_to_joda("") == ""
 
 
 def test_convert_time_key_format():
     from util.utils import convert_time_key_format
 
     time_key_format = convert_time_key_format(
-        fmt="%Y-%m-%d", agent_type=AgentTypeEnum.FLUENT_BIT
+        fmt="%Y-%m-%d", log_structure=LogStructure.FLUENT_BIT_PARSED_JSON
     )
     assert time_key_format == "yyyy-MM-dd''T''HH:mm:ss.SSSSSSSSSZ"
 
     time_key_format = convert_time_key_format(
-        fmt="%Y-%m-%d %H:%M:%S", agent_type=AgentTypeEnum.NONE
+        fmt="%Y-%m-%d %H:%M:%S", log_structure=LogStructure.RAW
     )
     assert time_key_format == "yyyy-MM-dd HH:mm:ss"
 
     time_key_format = convert_time_key_format(
-        fmt="%Y-%m-%dT%H:%M:%S.%f %z", agent_type=AgentTypeEnum.NONE
+        fmt="%Y-%m-%dT%H:%M:%S.%f %z", log_structure=LogStructure.RAW
     )
     assert time_key_format == "yyyy-MM-dd''T''HH:mm:ss.SSSSSSSSS Z"
 
@@ -520,7 +642,8 @@ def test_convert_json_schema_for_light_engine():
     }
 
     new_json_schema = convert_json_schema_data_type_for_light_engine(
-        json_schema=copy.deepcopy(json_schema), agent_type=AgentTypeEnum.FLUENT_BIT
+        json_schema=copy.deepcopy(json_schema),
+        log_structure=LogStructure.FLUENT_BIT_PARSED_JSON,
     )
     assert new_json_schema == {
         "type": "object",
@@ -555,7 +678,7 @@ def test_convert_json_schema_for_light_engine():
     }
 
     new_json_schema = convert_json_schema_data_type_for_light_engine(
-        json_schema=copy.deepcopy(json_schema), agent_type=AgentTypeEnum.NONE
+        json_schema=copy.deepcopy(json_schema), log_structure=LogStructure.RAW
     )
     assert new_json_schema == {
         "type": "object",
@@ -593,7 +716,7 @@ def test_convert_json_schema_for_light_engine():
         "type": "object",
         "format": "",
         "properties": {
-            "startTime": {"type": "date", "timeKey": True, "format": "%s"},
+            "startTime": {"type": "date", "timeKey": True, "format": "epoch_millis"},
             "method": {
                 "type": "text",
             },
@@ -601,15 +724,18 @@ def test_convert_json_schema_for_light_engine():
     }
 
     new_json_schema = convert_json_schema_data_type_for_light_engine(
-        json_schema=copy.deepcopy(json_schema), agent_type=AgentTypeEnum.FLUENT_BIT
+        json_schema=copy.deepcopy(json_schema),
+        log_structure=LogStructure.FLUENT_BIT_PARSED_JSON,
     )
     assert new_json_schema == {
         "type": "object",
         "properties": {
-            "startTime": {"type": "big_int", "timeKey": True},
-            "method": {
-                "type": "string",
+            "startTime": {
+                "type": "timestamp",
+                "timeKey": True,
+                "format": "yyyy-MM-dd''T''HH:mm:ss.SSSSSSSSSZ",
             },
+            "method": {"type": "string"},
         },
     }
 
@@ -650,7 +776,7 @@ def test_convert_json_schema():
 
     new_json_schema = convert_json_schema_data_type(
         json_schema=copy.deepcopy(json_schema),
-        agent_type=AgentTypeEnum.FLUENT_BIT,
+        log_structure=LogStructure.FLUENT_BIT_PARSED_JSON,
         engine_type=EngineType.LIGHT_ENGINE,
     )
     assert new_json_schema == {
@@ -686,7 +812,7 @@ def test_convert_json_schema():
 
     new_json_schema = convert_json_schema_data_type(
         json_schema=copy.deepcopy(json_schema),
-        agent_type=AgentTypeEnum.NONE,
+        log_structure=LogStructure.RAW,
         engine_type=EngineType.LIGHT_ENGINE,
     )
     assert new_json_schema == {
@@ -722,14 +848,14 @@ def test_convert_json_schema():
 
     new_json_schema = convert_json_schema_data_type(
         json_schema=copy.deepcopy(json_schema),
-        agent_type=AgentTypeEnum.FLUENT_BIT,
+        log_structure=LogStructure.FLUENT_BIT_PARSED_JSON,
         engine_type=EngineType.OPEN_SEARCH,
     )
     assert new_json_schema == json_schema
 
     new_json_schema = convert_json_schema_data_type(
         json_schema=copy.deepcopy(json_schema),
-        agent_type=AgentTypeEnum.NONE,
+        log_structure=LogStructure.RAW,
         engine_type=EngineType.OPEN_SEARCH,
     )
     assert new_json_schema == json_schema
@@ -738,7 +864,7 @@ def test_convert_json_schema():
         "type": "object",
         "format": "",
         "properties": {
-            "startTime": {"type": "date", "timeKey": True, "format": "%s"},
+            "startTime": {"type": "date", "timeKey": True, "format": "epoch_millis"},
             "method": {
                 "type": "text",
             },
@@ -746,45 +872,101 @@ def test_convert_json_schema():
     }
     new_json_schema = convert_json_schema_data_type(
         json_schema=copy.deepcopy(json_schema),
-        agent_type=AgentTypeEnum.FLUENT_BIT,
+        log_structure=LogStructure.FLUENT_BIT_PARSED_JSON,
         engine_type=EngineType.OPEN_SEARCH,
     )
     assert new_json_schema == json_schema
 
     new_json_schema = convert_json_schema_data_type(
         json_schema=copy.deepcopy(json_schema),
-        agent_type=AgentTypeEnum.NONE,
+        log_structure=LogStructure.RAW,
         engine_type=EngineType.OPEN_SEARCH,
     )
     assert new_json_schema == json_schema
 
     new_json_schema = convert_json_schema_data_type(
         json_schema=copy.deepcopy(json_schema),
-        agent_type=AgentTypeEnum.FLUENT_BIT,
+        log_structure=LogStructure.FLUENT_BIT_PARSED_JSON,
         engine_type=EngineType.LIGHT_ENGINE,
     )
     assert new_json_schema == {
         "type": "object",
         "properties": {
-            "startTime": {"type": "big_int", "timeKey": True},
-            "method": {
-                "type": "string",
+            "startTime": {
+                "type": "timestamp",
+                "timeKey": True,
+                "format": "yyyy-MM-dd''T''HH:mm:ss.SSSSSSSSSZ",
             },
+            "method": {"type": "string"},
         },
     }
 
     new_json_schema = convert_json_schema_data_type(
         json_schema=copy.deepcopy(json_schema),
-        agent_type=AgentTypeEnum.NONE,
+        log_structure=LogStructure.RAW,
         engine_type=EngineType.LIGHT_ENGINE,
     )
     assert new_json_schema == {
         "type": "object",
         "properties": {
-            "startTime": {"type": "big_int", "timeKey": True},
-            "method": {
-                "type": "string",
+            "startTime": {
+                "type": "timestamp",
+                "timeKey": True,
+                "format": "''epoch_millis''",
             },
+            "method": {"type": "string"},
+        },
+    }
+
+    json_schema = {
+        "type": "object",
+        "format": "",
+        "properties": {
+            "startTime": {
+                "type": "epoch_millis",
+                "timeKey": True,
+            },
+            "method": {
+                "type": "text",
+            },
+        },
+    }
+    new_json_schema = convert_json_schema_data_type(
+        json_schema=copy.deepcopy(json_schema),
+        log_structure=LogStructure.FLUENT_BIT_PARSED_JSON,
+        engine_type=EngineType.LIGHT_ENGINE,
+    )
+    assert new_json_schema == {
+        "type": "object",
+        "properties": {
+            "startTime": {"type": "big_int", "timeKey": True, "format": "epoch_millis"},
+            "method": {"type": "string"},
+        },
+    }
+
+    json_schema = {
+        "type": "object",
+        "format": "",
+        "properties": {
+            "startTime": {
+                "type": "epoch_second",
+                "timeKey": True,
+            },
+            "method": {
+                "type": "text",
+            },
+        },
+    }
+    new_json_schema = convert_json_schema_data_type(
+        json_schema=copy.deepcopy(json_schema),
+        log_structure=LogStructure.FLUENT_BIT_PARSED_JSON,
+        engine_type=EngineType.LIGHT_ENGINE,
+    )
+    assert new_json_schema == {
+        "type": "object",
+        "properties": {
+            "startTime": {"type": "big_int", "timeKey": True, "format": "epoch_second"},
+            "method": {"type": "string"},
         },
     }
 
@@ -974,7 +1156,7 @@ def test_get_json_schema():
     )
     assert get_json_schema(
         log_conf=json_log_conf,
-        agent_type=AgentTypeEnum.FLUENT_BIT,
+        log_structure=LogStructure.FLUENT_BIT_PARSED_JSON,
         engine_type=EngineType.LIGHT_ENGINE,
     ) == {
         "type": "object",
@@ -1032,7 +1214,7 @@ def test_get_json_schema():
 
     assert get_json_schema(
         log_conf=json_log_conf,
-        agent_type=AgentTypeEnum.NONE,
+        log_structure=LogStructure.RAW,
         engine_type=EngineType.LIGHT_ENGINE,
     ) == {
         "type": "object",
@@ -1091,7 +1273,7 @@ def test_get_json_schema():
     assert (
         get_json_schema(
             log_conf=json_log_conf,
-            agent_type=AgentTypeEnum.FLUENT_BIT,
+            log_structure=LogStructure.FLUENT_BIT_PARSED_JSON,
             engine_type=EngineType.OPEN_SEARCH,
         )
         == json_log_conf.jsonSchema
@@ -1099,7 +1281,7 @@ def test_get_json_schema():
 
     assert get_json_schema(
         log_conf=json_log_conf,
-        agent_type=AgentTypeEnum.NONE,
+        log_structure=LogStructure.RAW,
         engine_type=EngineType.OPEN_SEARCH,
     ) == {
         "type": "object",
@@ -1173,7 +1355,7 @@ def test_get_json_schema():
 
     assert get_json_schema(
         log_conf=apache_log_conf,
-        agent_type=AgentTypeEnum.FLUENT_BIT,
+        log_structure=LogStructure.FLUENT_BIT_PARSED_JSON,
         engine_type=EngineType.LIGHT_ENGINE,
     ) == {
         "type": "object",
@@ -1196,7 +1378,7 @@ def test_get_json_schema():
 
     assert get_json_schema(
         log_conf=apache_log_conf,
-        agent_type=AgentTypeEnum.NONE,
+        log_structure=LogStructure.RAW,
         engine_type=EngineType.LIGHT_ENGINE,
     ) == {
         "type": "object",
@@ -1219,7 +1401,7 @@ def test_get_json_schema():
 
     assert get_json_schema(
         log_conf=apache_log_conf,
-        agent_type=AgentTypeEnum.FLUENT_BIT,
+        log_structure=LogStructure.FLUENT_BIT_PARSED_JSON,
         engine_type=EngineType.OPEN_SEARCH,
     ) == {
         "type": "object",
@@ -1252,7 +1434,7 @@ def test_get_json_schema():
     )
     assert get_json_schema(
         log_conf=nginx_log_conf,
-        agent_type=AgentTypeEnum.FLUENT_BIT,
+        log_structure=LogStructure.FLUENT_BIT_PARSED_JSON,
         engine_type=EngineType.LIGHT_ENGINE,
     ) == {
         "type": "object",
@@ -1273,7 +1455,7 @@ def test_get_json_schema():
 
     assert get_json_schema(
         log_conf=nginx_log_conf,
-        agent_type=AgentTypeEnum.NONE,
+        log_structure=LogStructure.RAW,
         engine_type=EngineType.LIGHT_ENGINE,
     ) == {
         "type": "object",
@@ -1294,7 +1476,7 @@ def test_get_json_schema():
 
     assert get_json_schema(
         log_conf=nginx_log_conf,
-        agent_type=AgentTypeEnum.FLUENT_BIT,
+        log_structure=LogStructure.FLUENT_BIT_PARSED_JSON,
         engine_type=EngineType.OPEN_SEARCH,
     ) == {
         "type": "object",
@@ -1315,7 +1497,7 @@ def test_get_json_schema():
 
     assert get_json_schema(
         log_conf=nginx_log_conf,
-        agent_type=AgentTypeEnum.NONE,
+        log_structure=LogStructure.RAW,
         engine_type=EngineType.OPEN_SEARCH,
     ) == {
         "type": "object",
@@ -1355,7 +1537,7 @@ def test_get_json_schema():
 
     assert get_json_schema(
         log_conf=regex_field_specs_log_conf,
-        agent_type=AgentTypeEnum.FLUENT_BIT,
+        log_structure=LogStructure.FLUENT_BIT_PARSED_JSON,
         engine_type=EngineType.LIGHT_ENGINE,
     ) == {
         "type": "object",
@@ -1376,7 +1558,7 @@ def test_get_json_schema():
 
     assert get_json_schema(
         log_conf=regex_field_specs_log_conf,
-        agent_type=AgentTypeEnum.NONE,
+        log_structure=LogStructure.RAW,
         engine_type=EngineType.LIGHT_ENGINE,
     ) == {
         "type": "object",
@@ -1397,7 +1579,7 @@ def test_get_json_schema():
 
     assert get_json_schema(
         log_conf=regex_field_specs_log_conf,
-        agent_type=AgentTypeEnum.FLUENT_BIT,
+        log_structure=LogStructure.FLUENT_BIT_PARSED_JSON,
         engine_type=EngineType.LIGHT_ENGINE,
     ) == {
         "type": "object",
@@ -1418,7 +1600,7 @@ def test_get_json_schema():
 
     assert get_json_schema(
         log_conf=regex_field_specs_log_conf,
-        agent_type=AgentTypeEnum.NONE,
+        log_structure=LogStructure.RAW,
         engine_type=EngineType.LIGHT_ENGINE,
     ) == {
         "type": "object",
@@ -1439,7 +1621,7 @@ def test_get_json_schema():
 
     assert get_json_schema(
         log_conf=regex_field_specs_log_conf,
-        agent_type=AgentTypeEnum.FLUENT_BIT,
+        log_structure=LogStructure.FLUENT_BIT_PARSED_JSON,
         engine_type=EngineType.OPEN_SEARCH,
     ) == {
         "type": "object",
@@ -1460,7 +1642,7 @@ def test_get_json_schema():
 
     assert get_json_schema(
         log_conf=regex_field_specs_log_conf,
-        agent_type=AgentTypeEnum.NONE,
+        log_structure=LogStructure.RAW,
         engine_type=EngineType.OPEN_SEARCH,
     ) == {
         "type": "object",
@@ -1577,3 +1759,70 @@ def test_json_schema_to_es_mapping():
             },
         }
     )
+
+    # unix second time
+    assert {
+        "properties": {
+            "log": {
+                "type": "text",
+                "fields": {"keyword": {"type": "keyword", "ignore_above": 256}},
+            },
+            "timestamp": {"type": "date", "format": "epoch_second"},
+        }
+    } == json_schema_to_es_mapping(
+        {
+            "$schema": "https://json-schema.org/draft-07/schema#",
+            "title": "Generated schema for Root",
+            "type": "object",
+            "properties": {
+                "log": {"format": "", "type": "string"},
+                "timestamp": {"format": "", "timeKey": False, "type": "epoch_second"},
+            },
+        }
+    )
+
+    # unix millisecond time
+    assert {
+        "properties": {
+            "log": {
+                "type": "text",
+                "fields": {"keyword": {"type": "keyword", "ignore_above": 256}},
+            },
+            "timestamp": {"type": "date", "format": "epoch_millis"},
+        }
+    } == json_schema_to_es_mapping(
+        {
+            "$schema": "https://json-schema.org/draft-07/schema#",
+            "title": "Generated schema for Root",
+            "type": "object",
+            "properties": {
+                "log": {"format": "", "type": "string"},
+                "timestamp": {"format": "", "timeKey": False, "type": "epoch_millis"},
+            },
+        }
+    )
+
+
+@pytest.fixture
+def properties():
+    return {}
+
+
+def test_w3c(properties):
+    result = build_iis_field_format(properties, IISLogParserEnum.W3C)
+    assert result["geo_location"] == {"type": "geo_point"}
+    assert result["geo_iso_code"] == {"type": "keyword"}
+    assert result["geo_country"] == {"type": "keyword"}
+    assert result["geo_city"] == {"type": "keyword"}
+    assert result["ua_browser"] == {"type": "keyword"}
+    assert result["ua_browser_version"] == {"type": "keyword"}
+    assert result["ua_os"] == {"type": "keyword"}
+    assert result["ua_os_version"] == {"type": "keyword"}
+    assert result["ua_device"] == {"type": "keyword"}
+    assert result["ua_category"] == {"type": "keyword"}
+    assert result["url"] == {"type": "keyword"}
+
+
+def test_iis(properties):
+    result = build_iis_field_format(properties, IISLogParserEnum.IIS)
+    assert result["date"] == {"type": "keyword"}

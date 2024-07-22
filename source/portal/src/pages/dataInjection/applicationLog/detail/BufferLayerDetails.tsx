@@ -1,9 +1,9 @@
-import { AppPipeline, BufferType } from "API";
+import { AnalyticEngineType, AppPipeline, BufferType } from "API";
 import { buildKDSLink, buildS3Link, formatLocalTime } from "assets/js/utils";
 import ExtLink from "components/ExtLink";
 import HeaderPanel from "components/HeaderPanel";
 import ValueWithLabel from "components/ValueWithLabel";
-import React from "react";
+import React, { useMemo } from "react";
 import { AmplifyConfigType, S3_STORAGE_CLASS_OPTIONS } from "types";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -19,6 +19,11 @@ export default function BufferLayerDetails(props: BufferLayerDetailsProps) {
   const { t } = useTranslation();
   const amplifyConfig: AmplifyConfigType = useSelector(
     (state: RootState) => state.app.amplifyConfig
+  );
+
+  const isLightEngine = useMemo(
+    () => curPipeline?.engineType === AnalyticEngineType.LightEngine,
+    [curPipeline]
   );
 
   return (
@@ -101,39 +106,44 @@ export default function BufferLayerDetails(props: BufferLayerDetailsProps) {
                 </ValueWithLabel>
               </div>
               <div className="flex-1 border-left-c">
-                <ValueWithLabel
-                  label={t("applog:create.ingestSetting.bufferInt")}
-                >
-                  {getParamValueByKey(
-                    "uploadTimeout",
-                    curPipeline?.bufferParams
-                  ) + " seconds" || "-"}
-                </ValueWithLabel>
+                {!isLightEngine && (
+                  <ValueWithLabel
+                    label={t("applog:create.ingestSetting.bufferInt")}
+                  >
+                    {getParamValueByKey(
+                      "uploadTimeout",
+                      curPipeline?.bufferParams
+                    ) + " seconds" || "-"}
+                  </ValueWithLabel>
+                )}
               </div>
             </div>
-            <div className="flex value-label-span">
-              <div className="flex-1">
-                <ValueWithLabel
-                  label={t("applog:create.ingestSetting.bufferSize")}
-                >
-                  {getParamValueByKey(
-                    "maxFileSize",
-                    curPipeline?.bufferParams
-                  ) + " MB" || "-"}
-                </ValueWithLabel>
+
+            {!isLightEngine && (
+              <div className="flex value-label-span">
+                <div className="flex-1">
+                  <ValueWithLabel
+                    label={t("applog:create.ingestSetting.bufferSize")}
+                  >
+                    {getParamValueByKey(
+                      "maxFileSize",
+                      curPipeline?.bufferParams
+                    ) + " MB" || "-"}
+                  </ValueWithLabel>
+                </div>
+                <div className="flex-1 border-left-c">
+                  <ValueWithLabel
+                    label={t("applog:create.ingestSetting.compressionMethod")}
+                  >
+                    {getParamValueByKey(
+                      "compressionType",
+                      curPipeline?.bufferParams
+                    )}
+                  </ValueWithLabel>
+                </div>
+                <div className="flex-1 border-left-c"></div>
               </div>
-              <div className="flex-1 border-left-c">
-                <ValueWithLabel
-                  label={t("applog:create.ingestSetting.compressionMethod")}
-                >
-                  {getParamValueByKey(
-                    "compressionType",
-                    curPipeline?.bufferParams
-                  )}
-                </ValueWithLabel>
-              </div>
-              <div className="flex-1 border-left-c"></div>
-            </div>
+            )}
           </>
         )}
         {curPipeline?.bufferType === BufferType.KDS && (

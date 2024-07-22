@@ -13,7 +13,7 @@
     "createProxy": "创建访问代理"
   },
   "monitoring": {
-    "intro": "此标签页提供本日志管道下每条日志摄取链路的监控，方便您监控端到端的日志摄取。",
+    "intro": "此标签页提供本日志管道下每条日志摄取链路的监控（支持Linux实例），方便您监控端到端的日志摄取。",
     "monitoringCost": "监控模块价格",
     "flbAgents": "Fluent Bit日志收集代理",
     "syslog": "Syslog 日志监控"

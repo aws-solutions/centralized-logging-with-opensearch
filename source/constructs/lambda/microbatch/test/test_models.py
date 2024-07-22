@@ -4,10 +4,11 @@
 import os
 import sys
 import uuid
+import copy
 import pytest
+import datetime
 from decimal import Decimal
 from boto3.dynamodb.conditions import Attr
-from datetime import datetime, timezone
 from test.mock import mock_iam_context, mock_sqs_context, mock_ddb_context, default_environment_variables
 
 
@@ -23,7 +24,7 @@ class TestETLLogTable:
         
         execution_name = '84997646-56ba-44ac-bab9-5acc9820d007'
         task_id = '00000000-0000-0000-0000-000000000000'
-        start_time = datetime.now(timezone.utc).isoformat()
+        start_time = datetime.datetime.now(datetime.UTC).isoformat()
         item = {'API': 'Step Functions: StartExecution',
                 'parentTaskId': '',
                 'pipelineId': '189f73eb-1808-47e4-a9db-ee9c35100abe',
@@ -97,7 +98,7 @@ class TestETLLogTable:
         
         with pytest.raises(Exception) as exception_info:
             AWS_DDB_ETL_LOG.get(execution_name, no_exists_task_id, raise_if_not_found=True)
-        assert exception_info.value.args[1] == f"Key: {key}"
+        assert exception_info.value.args[0] == f"[Item is not found] Key: {key}"
 
     def test_update(self, mock_iam_context, mock_sqs_context, mock_ddb_context):
         from utils.models.etllog import ETLLogTable
@@ -106,7 +107,7 @@ class TestETLLogTable:
         
         execution_name = '1ebf165b-f846-4813-8cab-305be5c8ca7e'
         task_id = '00000000-0000-0000-0000-000000000000'
-        end_time = datetime.now(timezone.utc).isoformat()
+        end_time = datetime.datetime.now(datetime.UTC).isoformat()
         
         response = AWS_DDB_ETL_LOG.get(execution_name, task_id)
         assert response['status'] == 'Running'
@@ -169,7 +170,7 @@ class TestETLLogTable:
         parent_task_id = '6b10286b-c4b3-44ed-b4e8-c251a04b6a59'
         subtask1_task_id = '9d512f44-7626-49e2-a465-f450e93f6388'
         subtask2_task_id = 'bc73c25b-49c1-4d9f-a005-d0853809260d'
-        end_time = datetime.now(timezone.utc).isoformat()
+        end_time = datetime.datetime.now(datetime.UTC).isoformat()
         
         response = AWS_DDB_ETL_LOG.get_subtask_status_count(execution_name=execution_name, parent_task_id=parent_task_id, status='Running')
         assert response['taskCount'] == 2
@@ -337,12 +338,14 @@ class TestMetaTable:
             {'metaName': 'SendTemplateEmailSNSPublicPolicy', 'arn': 'arn:aws:iam::123456789012:policy/SendTemplateEmailSNSPublicPolicy', 'name': 'SendTemplateEmailSNSPublicPolicy', 'service': 'IAM', 'url': ''}, 
             {'metaName': 'EmailAddress', 'service': 'CloudFormation', 'type': 'Parameter', 'arn': '', 'name': 'EmailAddress', 'value': 'alejandro_rosalez@example.com'},
             {'metaName': 'StagingBucket', 'arn': 'arn:aws:s3:::staging-bucket', 'name': 'staging-bucket', 'service': 'S3', 'url': ''}, 
-            {'metaName': '949cc17d-38da-42d0-a030-4f0508a181b2', 'data': {'source': {'type': 'WAF', 'table': {'schema': '{}', 'dataFormat': '', 'tableProperties': '{}', 'serializationProperties': '{}'}}, 'destination': {'location': {'bucket': 'centralized-bucket', 'prefix': 'datalake'}, 'database': {'name': 'centralized'}, 'table': {'name': 'waf', 'schema': '{}'}, 'metrics': {'name': '', 'schema': '{}'}}, 'notification': {'service': 'SES', 'recipients': 'alejandro_rosalez@example.com,alejandro_rosalez@example.org'}, 'grafana': {'importDashboards': 'false', 'url': '', 'token': ''}, 'scheduler': {'service': 'scheduler', 'LogProcessor': {'schedule': 'rate(5 minutes)'}, 'LogMerger': {'schedule': 'cron(0 1 * * ? *)', 'age': Decimal('3')}, 'LogArchive': {'schedule': 'cron(0 2 * * ? *)', 'age': Decimal('7')}}, 'staging': {'prefix': 'AWSLogs/WAFLogs'}}, 'stack': {'lambda': {'replicate': 'arn:aws:lambda:us-east-1:123456789012:function:S3ObjectReplication-ZaIMYAiOjVzz'}, 'queue': {'logEventQueue': 'arn:aws:sqs:us-east-1:123456789012:LogEventQueue-Zvj0MU8DLnTp', 'logEventDLQ': 'arn:aws:sqs:us-east-1:123456789012:LogEventDLQ-PYjliv5vefCc'}, 'role': {'replicate': 'arn:aws:iam::123456789012:role/S3ObjectReplication-ZaIMYAiOjVzz'}}}, 
-            {'metaName': 'dddc2d66-ac99-48a5-834d-dc2d5b75069b', 'data': {'role': {'sts': ''}, 'source': {'bucket': 'logging-bucket', 'prefix': 'AWSLogs/123456789012/us-east-1/WAFLogs/'}}, 'pipelineId': '949cc17d-38da-42d0-a030-4f0508a181b2'}, 
-            {'metaName': '0616c38e-b31f-401e-a642-677849226c5b', 'data': {'source': {'type': 'fluent-bit', 'table': {'schema': '{"type":"object","properties":{"timestamp":{"type":"string","timeKey":true,"format":"YYYY-MM-dd\'\'T\'\'HH:mm:ss.SSSSSSSSSZ"},"correlationId":{"type":"string"},"processInfo":{"type":"object","properties":{"hostname":{"type":"string"},"domainId":{"type":"string"},"groupId":{"type":"string"},"groupName":{"type":"string"},"serviceId":{"type":"string","partition":true},"serviceName":{"type":"string"},"version":{"type":"string"}}},"transactionSummary":{"type":"object","properties":{"path":{"type":"string"},"protocol":{"type":"string"},"protocolSrc":{"type":"string"},"status":{"type":"string"},"serviceContexts":{"type":"array","items":{"type":"object","properties":{"service":{"type":"string"},"monitor":{"type":"boolean"},"client":{"type":"string"},"org":{},"app":{},"method":{"type":"string"},"status":{"type":"string"},"duration":{"type":"number"}}}}}}}}', 'dataFormat': 'json', 'tableProperties': '{}', 'serializationProperties': '{}'}}, 'destination': {'location': {'bucket': 'centralized-bucket', 'prefix': 'datalake'}, 'database': {'name': 'centralized'}, 'table': {'name': 'application', 'schema': '{}'}, 'metrics': {'name': '', 'schema': '{}'}}, 'notification': {'service': 'SES', 'recipients': 'alejandro_rosalez@example.com,alejandro_rosalez@example.org'}, 'grafana': {'importDashboards': 'false', 'url': '', 'token': ''}, 'scheduler': {'service': 'scheduler', 'LogProcessor': {'schedule': 'rate(5 minutes)'}, 'LogMerger': {'schedule': 'cron(0 1 * * ? *)', 'age': Decimal('3')}, 'LogArchive': {'schedule': 'cron(0 2 * * ? *)', 'age': Decimal('7')}}, 'staging': {'prefix': 'APPLogs/ServicesLogs'}}, 'stack': {'lambda': {'replicate': 'arn:aws:lambda:us-east-1:123456789012:function:S3ObjectReplication-ZaIMYAiOjVzz'}, 'queue': {'logEventQueue': 'arn:aws:sqs:us-east-1:123456789012:LogEventQueue-Zvj0MU8DLnTp', 'logEventDLQ': 'arn:aws:sqs:us-east-1:123456789012:LogEventDLQ-PYjliv5vefCc'}, 'role': {'replicate': 'arn:aws:iam::123456789012:role/S3ObjectReplication-ZaIMYAiOjVzz'}}}, 
-            {'metaName': '29df4748-3a26-4ccb-ab68-f62629a57cb5', 'data': {'role': {'sts': ''}, 'source': {'bucket': 'logging-bucket', 'prefix': 'AWSLogs/123456789012/us-east-1/WAFLogs/'}}, 'pipelineId': '0616c38e-b31f-401e-a642-677849226c5b'},
+            {'metaName': '949cc17d-38da-42d0-a030-4f0508a181b2', 'data': {'source': {'type': 'WAF', 'table': {'schema': '{}', 'dataFormat': '', 'tableProperties': '{}', 'serializationProperties': '{}'}}, 'destination': {'location': {'bucket': 'centralized-bucket', 'prefix': 'datalake'}, 'database': {'name': 'centralized'}, 'table': {'name': 'waf', 'schema': '{}'}, 'metrics': {'name': '', 'schema': '{}'}}, 'notification': {'service': 'SES', 'recipients': 'alejandro_rosalez@example.com,alejandro_rosalez@example.org'}, 'grafana': {'importDashboards': 'false', 'url': '', 'token': ''}, 'scheduler': {'service': 'scheduler', 'LogProcessor': {'schedule': 'rate(5 minutes)'}, 'LogMerger': {'schedule': 'cron(0 1 * * ? *)', 'age': Decimal('3')}, 'LogArchive': {'schedule': 'cron(0 2 * * ? *)', 'age': Decimal('7')}}, 'staging': {'prefix': 'AWSLogs/WAFLogs'}}, 'stack': {'lambda': {'replicate': 'arn:aws:lambda:us-east-1:123456789012:function:S3ObjectReplication-ZaIMYAiOjVzz'}, 'queue': {'logEventQueue': 'arn:aws:sqs:us-east-1:123456789012:LogEventQueue-Zvj0MU8DLnTp', 'logEventDLQ': 'arn:aws:sqs:us-east-1:123456789012:LogEventDLQ-PYjliv5vefCc'}, 'role': {'replicate': 'arn:aws:iam::123456789012:role/S3ObjectReplication-ZaIMYAiOjVzz'}}, 'type': 'Pipeline'}, 
+            {'metaName': 'dddc2d66-ac99-48a5-834d-dc2d5b75069b', 'data': {'role': {'sts': ''}, 'source': {'bucket': 'logging-bucket', 'prefix': 'AWSLogs/123456789012/us-east-1/WAFLogs/'}}, 'pipelineId': '949cc17d-38da-42d0-a030-4f0508a181b2', 'type': 'Ingestion'}, 
+            {'metaName': '0616c38e-b31f-401e-a642-677849226c5b', 'data': {'source': {'type': 'fluent-bit', 'table': {'schema': '{"type":"object","properties":{"timestamp":{"type":"string","timeKey":true,"format":"YYYY-MM-dd\'\'T\'\'HH:mm:ss.SSSSSSSSSZ"},"correlationId":{"type":"string"},"processInfo":{"type":"object","properties":{"hostname":{"type":"string"},"domainId":{"type":"string"},"groupId":{"type":"string"},"groupName":{"type":"string"},"serviceId":{"type":"string","partition":true},"serviceName":{"type":"string"},"version":{"type":"string"}}},"transactionSummary":{"type":"object","properties":{"path":{"type":"string"},"protocol":{"type":"string"},"protocolSrc":{"type":"string"},"status":{"type":"string"},"serviceContexts":{"type":"array","items":{"type":"object","properties":{"service":{"type":"string"},"monitor":{"type":"boolean"},"client":{"type":"string"},"org":{},"app":{},"method":{"type":"string"},"status":{"type":"string"},"duration":{"type":"number"}}}}}}}}', 'dataFormat': 'json', 'tableProperties': '{}', 'serializationProperties': '{}'}}, 'destination': {'location': {'bucket': 'centralized-bucket', 'prefix': 'datalake'}, 'database': {'name': 'centralized'}, 'table': {'name': 'application', 'schema': '{}'}, 'metrics': {'name': '', 'schema': '{}'}}, 'notification': {'service': 'SES', 'recipients': 'alejandro_rosalez@example.com,alejandro_rosalez@example.org'}, 'grafana': {'importDashboards': 'false', 'url': '', 'token': ''}, 'scheduler': {'service': 'scheduler', 'LogProcessor': {'schedule': 'rate(5 minutes)'}, 'LogMerger': {'schedule': 'cron(0 1 * * ? *)', 'age': Decimal('3')}, 'LogArchive': {'schedule': 'cron(0 2 * * ? *)', 'age': Decimal('7')}}, 'staging': {'prefix': 'APPLogs/ServicesLogs'}}, 'stack': {'lambda': {'replicate': 'arn:aws:lambda:us-east-1:123456789012:function:S3ObjectReplication-ZaIMYAiOjVzz'}, 'queue': {'logEventQueue': 'arn:aws:sqs:us-east-1:123456789012:LogEventQueue-Zvj0MU8DLnTp', 'logEventDLQ': 'arn:aws:sqs:us-east-1:123456789012:LogEventDLQ-PYjliv5vefCc'}, 'role': {'replicate': 'arn:aws:iam::123456789012:role/S3ObjectReplication-ZaIMYAiOjVzz'}}, 'type': 'Pipeline'}, 
+            {'metaName': '29df4748-3a26-4ccb-ab68-f62629a57cb5', 'data': {'role': {'sts': ''}, 'source': {'bucket': 'logging-bucket', 'prefix': 'AWSLogs/123456789012/us-east-1/WAFLogs/'}}, 'pipelineId': '0616c38e-b31f-401e-a642-677849226c5b', 'type': 'Ingestion'},
             {'metaName': 'PipelineResourcesBuilderRole', 'arn': 'arn:aws:iam::123456789012:role/PipelineResourcesBuilderRole', 'name': 'PipelineResourcesBuilderRole', 'service': 'IAM', 'url': ''}, 
             {'metaName': 'PipelineResourcesBuilderSchedulePolicy', 'arn': 'arn:aws:iam::123456789012:policy/PipelineResourcesBuilderSchedulePolicy', 'name': 'PipelineResourcesBuilderSchedulePolicy', 'service': 'IAM', 'url': ''},
+            {'metaName': 'SimpleEmailServiceTemplate', 'arn': '', 'name': 'SimpleEmailServiceTemplate', 'value': os.environ['SES_EMAIL_TEMPLATE'], 'service': 'SES', 'url': ''},
+            {'metaName': 'SimpleEmailServiceState','arn': '', 'name': 'SimpleEmailServiceState', 'service': 'CloudFormation', 'type': 'Parameter', 'url': '', 'value': 'ENABLED'},
             ]
         conditions = Attr('name').eq(log_processor_name)
         assert list(AWS_DDB_META.scan_item(filter=conditions)) == [{'metaName': 'LogProcessor', 'arn': 'arn:aws:states:us-east-1:123456789012:stateMachine:LogProcessor-jwEfndaqF0Yf', 'name': 'LogProcessor-jwEfndaqF0Yf', 'service': 'StepFunction', 'url': 'https://us-east-1.console.aws.amazon.com/states/home?region=us-east-1#/statemachines/view/arn:aws:states:us-east-1:123456789012:stateMachine:LogProcessor-jwEfndaqF0Yf'}, {'metaName': 'LogProcessorStartExecutionRole', 'arn': 'arn:aws:iam::123456789012:role/LogProcessor-jwEfndaqF0Yf', 'name': 'LogProcessor-jwEfndaqF0Yf', 'service': 'StepFunction', 'url': 'https://us-east-1.console.aws.amazon.com/iamv2/home?region=us-east-1#/roles/details/LogProcessor-jwEfndaqF0Yf'}]
@@ -356,7 +359,7 @@ class TestMetaTable:
         log_merger_name = os.environ["LOG_MERGER_NAME"]
         
         AWS_DDB_META = MetaTable()
-        assert AWS_DDB_META.scan_count() == 28
+        assert AWS_DDB_META.scan_count() == 30
         conditions = Attr('name').eq(log_processor_name)
         assert AWS_DDB_META.scan_count(filter=conditions) == 2
         
@@ -368,8 +371,45 @@ class TestMetaTable:
             'url': f'https://{aws_region}.console.aws.amazon.com/states/home?region={aws_region}#/statemachines/view/arn:aws:states:{aws_region}:{account_id}:stateMachine:{log_merger_name}',
         }
         AWS_DDB_META.put(meta_name=log_merger['metaName'], item=log_merger)
-        assert AWS_DDB_META.scan_count() == 28
+        assert AWS_DDB_META.scan_count() == 30
   
+    def test_check_shared_table_name_in_pipeline(self, mock_iam_context, mock_sqs_context, mock_ddb_context):
+        from utils.models.meta import MetaTable
+        
+        AWS_DDB_META = MetaTable()
+        
+        waf_pipeline_id = os.environ['WAF_PIPELINE_ID']
+        waf_pipeline_info = AWS_DDB_META.get(meta_name=waf_pipeline_id)
+        
+        assert AWS_DDB_META.check_shared_table_name_in_pipeline(meta_name='do-not-exists') is False
+        assert AWS_DDB_META.check_shared_table_name_in_pipeline(meta_name=waf_pipeline_id) is False
+        
+        pipeline_id = str(uuid.uuid4())
+        pipeline_info = copy.deepcopy(waf_pipeline_info)
+        AWS_DDB_META.put(meta_name=pipeline_id, item=pipeline_info)
+        assert AWS_DDB_META.check_shared_table_name_in_pipeline(meta_name=pipeline_id) is True
+    
+    def test_check_shared_database_location_in_pipeline(self, mock_iam_context, mock_sqs_context, mock_ddb_context):
+        from utils.models.meta import MetaTable
+        
+        AWS_DDB_META = MetaTable()
+        
+        waf_pipeline_id = os.environ['WAF_PIPELINE_ID']
+        waf_pipeline_info = AWS_DDB_META.get(meta_name=waf_pipeline_id)
+        
+        pipeline_id = str(uuid.uuid4())
+        pipeline_info = copy.deepcopy(waf_pipeline_info)
+        pipeline_info['data']['destination']['database']['name'] = 'unique_name'
+        AWS_DDB_META.put(meta_name=pipeline_id, item=pipeline_info)
+        
+        assert AWS_DDB_META.check_shared_database_location_in_pipeline(meta_name='do-not-exists') is False
+        assert AWS_DDB_META.check_shared_database_location_in_pipeline(meta_name=pipeline_id) is False
+        
+        pipeline_id = str(uuid.uuid4())
+        pipeline_info = copy.deepcopy(waf_pipeline_info)
+        AWS_DDB_META.put(meta_name=pipeline_id, item=pipeline_info)
+        assert AWS_DDB_META.check_shared_database_location_in_pipeline(meta_name=pipeline_id) is True
+        
     def test_etl_log_ttl_secs(self, mock_iam_context, mock_sqs_context, mock_ddb_context):
         from utils.models.meta import MetaTable
         

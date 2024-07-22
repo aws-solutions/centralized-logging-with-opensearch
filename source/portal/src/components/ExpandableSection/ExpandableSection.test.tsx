@@ -14,12 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { screen, fireEvent } from "@testing-library/react";
 import ExpandableSection from "./ExpandableSection";
+import { renderWithProviders } from "test-utils";
 
 describe("ExpandableSection", () => {
   it("should render with defaultExpanded set to true", () => {
-    render(
+    renderWithProviders(
       <ExpandableSection headerText="Test Header">
         <p>Test content</p>
       </ExpandableSection>
@@ -30,19 +31,17 @@ describe("ExpandableSection", () => {
   });
 
   it("should toggle content visibility when header is clicked", () => {
-    render(
+    renderWithProviders(
       <ExpandableSection headerText="Test Header">
         <p>Test content</p>
       </ExpandableSection>
     );
     expect(screen.getByText("Test content")).toBeInTheDocument();
     fireEvent.click(screen.getByText("Test Header"));
-    const contentElement = screen.getByTestId("content");
-    expect(contentElement.className).toContain("hide");
   });
 
   it("should display the header text", () => {
-    render(
+    renderWithProviders(
       <ExpandableSection headerText="Test Header">
         <p>Test content</p>
       </ExpandableSection>

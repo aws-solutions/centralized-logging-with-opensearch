@@ -22,6 +22,7 @@ import Modal from "components/Modal";
 import { appSyncRequestMutation } from "assets/js/request";
 import { deleteAlarmForOpenSearch } from "graphql/mutations";
 import { useTranslation } from "react-i18next";
+import { defaultStr } from "assets/js/utils";
 
 interface TagProps {
   domainInfo: DomainDetails | undefined | null;
@@ -98,8 +99,10 @@ const Alarms: React.FC<TagProps> = (props: TagProps) => {
                 <div key={`${alarm?.type}`} className="flex show-tag-list">
                   <div className="tag-key w-alarm">
                     {t(
-                      domainAlramList.find((item) => item.key === alarm?.type)
-                        ?.name || ""
+                      defaultStr(
+                        domainAlramList.find((item) => item.key === alarm?.type)
+                          ?.name
+                      )
                     )}
                   </div>
                   <div className="tag-value flex-1">

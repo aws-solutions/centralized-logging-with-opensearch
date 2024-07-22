@@ -19,7 +19,7 @@ def test_retry(mocker):
 
 
 class TestAppSyncRouter:
-    def setup(self):
+    def setup_method(self):
         self._router = AppSyncRouter()
 
         @self._router.route(field_name="add")
@@ -30,7 +30,7 @@ class TestAppSyncRouter:
         def _multiply(a, b):
             return a * b
 
-    def tearDown(self):
+    def teardown_method(self):
         pass
 
     def test_add(self):

@@ -3,26 +3,37 @@
 
 import os
 import re
+import json
+import gzip
+import base64
 import boto3
+from commonlib.dao import InstanceDao
 import pytest
 
 from moto import mock_dynamodb
+from moto.core import DEFAULT_ACCOUNT_ID as ACCOUNT_ID
 from boto3.dynamodb.conditions import Attr
 from commonlib.exception import APIException
 from commonlib.model import (
     AOSParams,
+    LogStructure,
+    LogTypeEnum,
     AppPipeline,
+    BufferParam,
+    BufferTypeEnum,
+    EngineType,
     FilterConfigMap,
     LogConfig,
+    LogSource,
     LogSourceTypeEnum,
     LogTypeEnum,
     MonitorDetail,
+    OpenSearchIngestionInput,
     PipelineAlarmStatus,
     GroupPlatformEnum,
     GroupTypeEnum,
     RegularSpec,
     StatusEnum,
-    ETLLog,
 )
 
 
@@ -37,6 +48,90 @@ def ddb_client():
     with mock_dynamodb():
         region = os.environ.get("AWS_REGION")
         ddb = boto3.resource("dynamodb", region_name=region)
+        # Mock cluster table
+        opensearch_domain_table_name = os.environ.get("CLUSTER_TABLE")
+        app_pipeline_table = ddb.create_table(
+            TableName=opensearch_domain_table_name,
+            KeySchema=[{"AttributeName": "id", "KeyType": "HASH"}],
+            AttributeDefinitions=[{"AttributeName": "id", "AttributeType": "S"}],
+            ProvisionedThroughput={"ReadCapacityUnits": 10, "WriteCapacityUnits": 10},
+        )
+        data_list = [
+            {
+                "id": "opensearch-1",
+                "accountId": ACCOUNT_ID,
+                "alarmStatus": "DISABLED",
+                "domainArn": f"arn:aws:es:us-west-2:{ACCOUNT_ID}:domain/may24",
+                "domainInfo": {
+                    "DomainStatus": {
+                        "VPCOptions": {
+                            "AvailabilityZones": ["us-west-2b"],
+                            "SecurityGroupIds": ["sg-0fc8398d4dc270f01"],
+                            "SubnetIds": ["subnet-0eb38879d66848a99"],
+                            "VPCId": "vpc-09d983bed6954836e",
+                        }
+                    }
+                },
+                "domainName": "may24",
+                "endpoint": "vpc-may24.us-west-2.es.amazonaws.com",
+                "engine": "OpenSearch",
+                "importedDt": "2023-05-24T08:47:11Z",
+                "proxyALB": "",
+                "proxyError": "",
+                "proxyInput": {},
+                "proxyStackId": f"arn:aws:cloudformation:us-west-2:{ACCOUNT_ID}:stack/CL-Proxy-f862f9f5/9bd7c7c0-fb87-11ed-912f-0aac039a8cd1",
+                "proxyStatus": "DISABLED",
+                "region": "us-west-2",
+                "resources": [
+                    {
+                        "name": "OpenSearchSecurityGroup",
+                        "status": "UPDATED",
+                        "values": ["sg-0fc8398d4dc270f01"],
+                    },
+                    {
+                        "name": "VPCPeering",
+                        "status": "CREATED",
+                        "values": ["pcx-0f756a20c2d967681"],
+                    },
+                    {
+                        "name": "OpenSearchRouteTables",
+                        "status": "UPDATED",
+                        "values": ["rtb-085e9e315daffeb47"],
+                    },
+                    {
+                        "name": "SolutionRouteTables",
+                        "status": "UPDATED",
+                        "values": ["rtb-0fd78aa9852632af9", "rtb-001b397b7e8eccb55"],
+                    },
+                ],
+                "status": "ACTIVE",
+                "tags": [],
+                "version": "2.5",
+                "vpc": {
+                    "privateSubnetIds": "subnet-081f8e7c722477a83,subnet-0c95536ae6b1cdb07",
+                    "securityGroupId": "sg-0d6567095a7667f7f",
+                    "vpcId": "vpc-03089a5f415c2be27",
+                },
+            },
+            {
+                "id": "opensearch-2",
+                "accountId": ACCOUNT_ID,
+                "alarmStatus": "DISABLED",
+                "domainArn": f"arn:aws:es:us-west-2:{ACCOUNT_ID}:domain/may23",
+                "domainName": "may23",
+                "endpoint": "vpc-may23.us-west-2.es.amazonaws.com",
+                "status": "INACTIVE",
+                "tags": [],
+                "version": "2.5",
+                "vpc": {
+                    "privateSubnetIds": "subnet-081f8e7c722477a83,subnet-0c95536ae6b1cdb07",
+                    "securityGroupId": "sg-0d6567095a7667f7f",
+                    "vpcId": "vpc-03089a5f415c2be27",
+                },
+            },
+        ]
+        init_table(app_pipeline_table, data_list)
+
         # Mock App Pipeline Table
         app_pipeline_table_name = os.environ.get("APP_PIPELINE_TABLE_NAME")
         app_pipeline_table = ddb.create_table(
@@ -70,6 +165,8 @@ def ddb_client():
                     },
                     "warmLogTransition": 0,
                 },
+                "processorFnName": "processorFnName",
+                "deliveryStreamName": "deliveryStreamName",
                 "bufferAccessRoleArn": "arn:aws:iam::123456789012:role/Solution-AppPipe-62a37-BufferAccessRoleDF53FD85-4BU06LEOL8JH",
                 "bufferAccessRoleName": "Solution-AppPipe-62a37-BufferAccessRoleDF53FD85-4BU06LEOL8JH",
                 "bufferParams": [
@@ -140,6 +237,7 @@ def ddb_client():
                     "backupBucketName": "solution-solutionloggingbucket0fa53b76-12cw0hl0kfnk6",
                     "errorLogPrefix": "error/",
                 },
+                "logStructue": "FLUENT_BIT_PARSED_JSON",
                 "tags": [],
             },
             {
@@ -173,6 +271,9 @@ def ddb_client():
                     {"paramKey": "maxCapacity", "paramValue": "5"},
                     {"paramKey": "logBucketPrefix", "paramValue": "prefix/"},
                     {"paramKey": "logBucketSuffix", "paramValue": ".suffix"},
+                    {"paramKey": "createDashboard", "paramValue": "Yes"},
+                    {"paramKey": "mskClusterArn", "paramValue": "mskClusterArn"},
+                    {"paramKey": "mskClusterName", "paramValue": "mskClusterName"},
                 ],
                 "bufferResourceArn": "arn:aws:kinesis:us-west-2:123456789012:stream/Solution-AppPipe-62a37-KDSBufferStream21B531A6-xhE79t2qh4um",
                 "bufferResourceName": "Solution-AppPipe-62a37-KDSBufferStream21B531A6-xhE79t2qh4um",
@@ -190,6 +291,81 @@ def ddb_client():
                     "errorLogPrefix": "error/",
                 },
                 "tags": [],
+            },
+            {
+                "pipelineId": "2406190a-bb74-407e-82cb-e441c4e9efe5",
+                "aosParams": {
+                    "codec": "best_compression",
+                    "coldLogTransition": "",
+                    "domainName": "solution-os",
+                    "engine": "OpenSearch",
+                    "failedLogBucket": "logging-bucket",
+                    "indexPrefix": "clo-app-s3s",
+                    "indexSuffix": "yyyy_MM_dd",
+                    "logRetention": "7d",
+                    "opensearchArn": "arn:aws:es:us-esat-1:123456789012:domain/solution-os",
+                    "opensearchEndpoint": "solution-os.us-east-1.es.amazonaws.com",
+                    "refreshInterval": "1s",
+                    "replicaNumbers": 1,
+                    "rolloverSize": "30gb",
+                    "shardNumbers": 1,
+                    "vpc": {
+                        "privateSubnetIds": "subnet-1,subnet-2",
+                        "publicSubnetIds": "",
+                        "securityGroupId": "sg-1",
+                        "vpcId": "vpc",
+                    },
+                    "warmLogTransition": "",
+                },
+                "bufferAccessRoleArn": "arn:aws:iam::123456789012:role/CL-buffer-access-2406190a",
+                "bufferAccessRoleName": "CL-buffer-access-2406190a",
+                "bufferParams": [
+                    {"paramKey": "logBucketName", "paramValue": "logging-bucket"},
+                    {
+                        "paramKey": "logBucketPrefix",
+                        "paramValue": "test/do-not-exists/",
+                    },
+                    {"paramKey": "logBucketSuffix", "paramValue": ""},
+                    {
+                        "paramKey": "defaultCmkArn",
+                        "paramValue": "arn:aws:kms:us-east-1:1234566789012:key/a545f45f-7dff-4273-ba2f-2013b737f462",
+                    },
+                    {"paramKey": "maxFileSize", "paramValue": "50"},
+                    {"paramKey": "uploadTimeout", "paramValue": "60"},
+                    {"paramKey": "compressionType", "paramValue": "GZIP"},
+                    {"paramKey": "s3StorageClass", "paramValue": "INTELLIGENT_TIERING"},
+                    {"paramKey": "createDashboard", "paramValue": "No"},
+                    {"paramKey": "isS3Source", "paramValue": "true"},
+                    {"paramKey": "enableS3Notification", "paramValue": "False"},
+                ],
+                "bufferResourceArn": "arn:aws:s3:::logging-bucket",
+                "bufferResourceName": "logging-bucket",
+                "bufferType": "S3",
+                "createdAt": "2023-11-20T07:09:49Z",
+                "engineType": "OpenSearch",
+                "error": "",
+                "helperLogGroupName": "",
+                "indexPrefix": "clo-app-s3s",
+                "logConfigId": "83e01c25-962e-4913-9e4c-755de304ff4a",
+                "logConfigVersionNumber": 1,
+                "logEventQueueName": "CL-sqs-2406190a-bb74-407e-82cb-e441c4e9efe5",
+                "logProcessorRoleArn": "arn:aws:iam::123456789012:role/CL-log-processor-2406190a",
+                "monitor": {
+                    "backupBucketName": "logging-bucket",
+                    "emails": "",
+                    "errorLogPrefix": "",
+                    "pipelineAlarmStatus": "DISABLED",
+                    "snsTopicArn": "",
+                    "snsTopicName": "",
+                    "status": "ENABLED",
+                },
+                "osHelperFnArn": "",
+                "processorLogGroupName": "/aws/lambda/CL-AppPipe-2406190a-LogProcessorFn",
+                "queueArn": "arn:aws:sqs:east-1:123456789012:CL-sqs-2406190a-bb74-407e-82cb-e441c4e9efe5",
+                "stackId": "arn:aws:cloudformation:us-east-1:123456789012:stack/CL-AppPipe-2406190a/ccd8c090-8773-11ee-9276-06b91d21373f",
+                "status": "ACTIVE",
+                "tags": [],
+                "updatedAt": "2023-11-20T07:09:49Z",
             },
         ]
         init_table(app_pipeline_table, data_list)
@@ -216,6 +392,16 @@ def ddb_client():
             {
                 "id": "i-0e3c99ac76e3c0ea2",
                 "sourceId": "84c6c37e-03db-4846-bb90-93e85bb1b272",
+                "createdAt": "2022-10-27T16:13:14Z",
+                "updatedAt": "2022-10-27T16:18:39Z",
+                "tags": [],
+                "status": "ACTIVE",
+                "accountId": "123456789012",
+                "region": "us-west-2",
+            },
+            {
+                "id": "i-helloworld",
+                "sourceId": "d7a18244-96b4-4cf0-9806-ebe1a12315d9",
                 "createdAt": "2022-10-27T16:13:14Z",
                 "updatedAt": "2022-10-27T16:18:39Z",
                 "tags": [],
@@ -430,7 +616,8 @@ def ddb_client():
                 "logEventQueueArn": "arn:aws:sqs:us-west-2:123456789012:CL-pipe-c34f2159-LogEventQueue-9SeRI7idCHFR",
                 "logEventQueueName": "CL-pipe-c34f2159-LogEventQueue-9SeRI7idCHFR",
                 "monitor": {
-                    "emails": ["your_email@example.com"],
+                    "status": "ENABLED",
+                    "emails": "your_email@example.com",
                     "pipelineAlarmStatus": "ENABLED",
                     "snsTopicArn": "arn:aws:sns:us-west-2:123456789012:CL_c34f2159",
                     "snsTopicName": "CL_c34f2159",
@@ -773,6 +960,83 @@ def get_log_source_table_name():
     return os.environ.get("LOG_SOURCE_TABLE_NAME")
 
 
+def get_opensearch_table_name():
+    return os.environ.get("CLUSTER_TABLE")
+
+
+def test_common_enum():
+    assert repr(LogTypeEnum.JSON) == "JSON"
+
+
+def test_regular_spec():
+    with pytest.raises(ValueError, match=r"format cannot be None"):
+        RegularSpec(key="time", type="date")
+
+
+def test_opensearch_domain_set_master_role_arn(ddb_client):
+    from commonlib.dao import OpenSearchDomainDao
+
+    dao = OpenSearchDomainDao(get_opensearch_table_name())
+    dao.set_master_role_arn("opensearch-1", "master-role")
+    lst = dao.list_domains()
+
+    assert len(lst) == 1
+    assert lst[0].id == "opensearch-1"
+    assert lst[0].masterRoleArn == "master-role"
+
+
+
+def test_opensearch_domain_list_domains(ddb_client):
+    from commonlib.dao import OpenSearchDomainDao
+
+    dao = OpenSearchDomainDao(get_opensearch_table_name())
+    lst = dao.list_domains()
+
+    assert len(lst) == 1
+    assert lst[0].id == "opensearch-1"
+    assert lst[0].masterRoleArn == None
+
+    lst = dao.list_domains(Attr("status").eq(StatusEnum.INACTIVE))
+
+    assert len(lst) == 1
+    assert lst[0].id == "opensearch-2"
+    assert lst[0].masterRoleArn == None
+
+
+def test_log_source_model():
+    with pytest.raises(ValueError):
+        LogSource(type=LogSourceTypeEnum.EC2)
+
+    with pytest.raises(ValueError):
+        LogSource(type=LogSourceTypeEnum.EKSCluster)
+
+    with pytest.raises(ValueError):
+        LogSource(type=LogSourceTypeEnum.Syslog)
+
+    with pytest.raises(ValueError):
+        LogSource(type=LogSourceTypeEnum.S3)
+
+
+def test_log_source_save(ddb_client):
+    from commonlib.dao import LogSourceDao
+
+    dao = LogSourceDao(get_log_source_table_name())
+    s = dao.get_log_source("84c6c37e-03db-4846-bb90-93e85bb1b27b")
+    dao.save(s)
+
+
+def test_log_source_enrich_log_source(ddb_client):
+    from commonlib.dao import LogSourceDao
+
+    dao = LogSourceDao(
+        get_log_source_table_name(),
+        InstanceDao(os.environ.get("INSTANCE_TABLE_NAME_2")),
+    )
+    ls = dao.get_log_source("d7a18244-96b4-4cf0-9806-ebe1a12315d9")
+    assert len(ls.ec2.instances) == 1
+    assert ls.ec2.instances[0].instanceId == "i-helloworld"
+
+
 def test_log_source_get_log_source(ddb_client):
     from commonlib.dao import LogSourceDao
 
@@ -845,6 +1109,14 @@ def test_list_log_configs(ddb_client):
     assert pipelines == []
 
 
+def test_save_log_config(ddb_client):
+    from commonlib.dao import LogConfigDao
+
+    dao = LogConfigDao(get_log_config_table_name())
+    p = dao.get_log_config("47b23378-4ec6-4584-b264-079c75ab2e5f")
+    dao.save(p)
+
+
 def test_get_log_config(ddb_client):
     from commonlib.dao import LogConfigDao
 
@@ -912,6 +1184,39 @@ def test_get_log_config_by_config_name(ddb_client):
     config_name = "non_existent_config"
     result_configs = dao.get_log_config_by_config_name(config_name)
     assert len(result_configs) == 0
+
+
+def test_get_instances_of_source_id(ddb_client):
+    from commonlib.dao import InstanceDao
+
+    dao = InstanceDao("mocked-instance-table-name-2")
+    res = dao.get_instances_of_source_id("84c6c37e-03db-4846-bb90-93e85bb1b271")
+
+    assert res[0].id == "i-0e3c99ac76e3c0ea1"
+
+
+def test_list_instances(ddb_client):
+    from commonlib.dao import InstanceDao
+
+    dao = InstanceDao("mocked-instance-table-name-2")
+    assert len(dao.list_instances()) == 3
+
+
+def test_get_instance(ddb_client):
+    from commonlib.dao import InstanceDao
+
+    dao = InstanceDao("mocked-instance-table-name-2")
+    i = dao.get_instance("i-0e3c99ac76e3c0ea1", "84c6c37e-03db-4846-bb90-93e85bb1b271")
+    assert i.id == "i-0e3c99ac76e3c0ea1"
+
+
+def test_get_instance_by_instance_id(ddb_client):
+    from commonlib.dao import InstanceDao
+
+    dao = InstanceDao("mocked-instance-table-name-2")
+    instances = dao.get_instance_by_instance_id("i-0e3c99ac76e3c0ea1")
+    assert len(instances) == 1
+    assert instances[0].id == "i-0e3c99ac76e3c0ea1"
 
 
 def test_get_instance_set_by_source_id(ddb_client):
@@ -1083,7 +1388,6 @@ def test_validate_index_prefix_overlap(ddb_client):
 
     # duplicate is not overlap
     dao.validate_index_prefix_overlap(p)
-    dao.validate_index_prefix_overlap(p)
 
 
 def test_app_pipeline_dao_list_app_pipelines(ddb_client):
@@ -1092,7 +1396,7 @@ def test_app_pipeline_dao_list_app_pipelines(ddb_client):
     dao = AppPipelineDao(os.environ.get("APP_PIPELINE_TABLE_NAME"))
     pipelines = dao.list_app_pipelines()
 
-    assert len(pipelines) == 1
+    assert len(pipelines) == 2
 
     p = pipelines[0]
 
@@ -1116,11 +1420,557 @@ def test_app_pipeline_dao_list_app_pipelines(ddb_client):
     assert pipelines == []
 
 
+def test_get_buffer_params(ddb_client):
+    from commonlib.dao import (
+        AppPipelineDao,
+        StatusEnum,
+        AppPipeline,
+        BufferTypeEnum,
+        LogConfig,
+        LogTypeEnum,
+    )
+    from commonlib.model import (
+        LightEngineParams,
+        MonitorDetail,
+        EngineType,
+        LogStructure,
+        PipelineMonitorStatus,
+    )
+
+    log_conf = LogConfig(
+        version=1,
+        name="json",
+        logType=LogTypeEnum.JSON,
+        regex="",
+        jsonSchema={},
+        regexFieldSpecs=[],
+        timeKey="",
+        timeOffset="",
+        timeKeyRegex="",
+        userLogFormat="",
+        userSampleLog="",
+    )
+    app_pipeline = AppPipeline(
+        bufferType=BufferTypeEnum.S3,
+        bufferAccessRoleArn="",
+        bufferAccessRoleName="",
+        bufferResourceArn="",
+        bufferResourceName="",
+        bufferParams=[
+            BufferParam(paramKey='logBucketBucket', paramValue='centralized-bucket'),
+            BufferParam(paramKey='logBucketPrefix', paramValue='/LightEngine/AppLogs/test/'),
+            ],
+        lightEngineParams=LightEngineParams(
+            stagingBucketPrefix="awslogs",
+            centralizedBucketName="centralized-bucket",
+            centralizedBucketPrefix="datalake",
+            centralizedTableName="test",
+            centralizedMetricsTableName="",
+            logProcessorSchedule="rate(5 minutes)",
+            logMergerSchedule="cron(0 1 * * ? *)",
+            logArchiveSchedule="cron(0 2 * * ? *)",
+            logMergerAge="1",
+            logArchiveAge="7",
+            importDashboards="false",
+            grafanaId="",
+            recipients="",
+        ),
+        logConfigId=log_conf.id,
+        logConfigVersionNumber=log_conf.version,
+        monitor=MonitorDetail(status=PipelineMonitorStatus.DISABLED),
+        engineType=EngineType.LIGHT_ENGINE,
+        logStructure=LogStructure.FLUENT_BIT_PARSED_JSON,
+        stackId="arn:aws:cloudformation:us-east-1:123456789012:stack/CL-AppPipe-c2d565b0/b2e8c620-8a8f-11ee-8d27-0e7ce14c05f5"
+    )
+    
+    dao = AppPipelineDao(app_pipeline.pipelineId)
+    params = dao.get_buffer_params(
+        app_pipeline=app_pipeline
+    )
+    assert params == [
+        BufferParam(paramKey='logBucketBucket', paramValue='centralized-bucket'), 
+        BufferParam(paramKey='logBucketPrefix', paramValue=f'LightEngine/AppLogs/test/year=%Y/month=%m/day=%d')
+        ]
+    
+    app_pipeline = AppPipeline(
+        bufferType=BufferTypeEnum.S3,
+        bufferAccessRoleArn="",
+        bufferAccessRoleName="",
+        bufferResourceArn="",
+        bufferResourceName="",
+        bufferParams=[
+            BufferParam(paramKey='logBucketBucket', paramValue='centralized-bucket'),
+            BufferParam(paramKey='logBucketPrefix', paramValue='AppLogs/test/year=%Y/month=%d/day=%d/'),
+            ],
+        lightEngineParams=LightEngineParams(
+            stagingBucketPrefix="awslogs",
+            centralizedBucketName="centralized-bucket",
+            centralizedBucketPrefix="datalake",
+            centralizedTableName="test",
+            centralizedMetricsTableName="",
+            logProcessorSchedule="rate(5 minutes)",
+            logMergerSchedule="cron(0 1 * * ? *)",
+            logArchiveSchedule="cron(0 2 * * ? *)",
+            logMergerAge="1",
+            logArchiveAge="7",
+            importDashboards="false",
+            grafanaId="",
+            recipients="",
+        ),
+        logConfigId=log_conf.id,
+        logConfigVersionNumber=log_conf.version,
+        monitor=MonitorDetail(status=PipelineMonitorStatus.DISABLED),
+        engineType=EngineType.OPEN_SEARCH,
+        logStructure=LogStructure.FLUENT_BIT_PARSED_JSON,
+    )
+    
+    dao = AppPipelineDao(app_pipeline.pipelineId)
+    params = dao.get_buffer_params(
+        app_pipeline=app_pipeline
+    )
+    assert params == [
+        BufferParam(paramKey='logBucketBucket', paramValue='centralized-bucket'), 
+        BufferParam(paramKey='logBucketPrefix', paramValue='AppLogs/test/year=%Y/month=%d/day=%d/')
+        ]
+
+    
+def test_app_pipeline_dao_get_light_engine_stack_parameters(ddb_client):
+    from commonlib.dao import (
+        AppPipelineDao,
+        StatusEnum,
+        AppPipeline,
+        BufferTypeEnum,
+        LogConfig,
+        LogTypeEnum,
+    )
+    from commonlib.model import (
+        LightEngineParams,
+        MonitorDetail,
+        EngineType,
+        LogStructure,
+        PipelineMonitorStatus,
+    )
+
+    log_conf = LogConfig(
+        version=1,
+        name="json",
+        logType=LogTypeEnum.JSON,
+        regex="",
+        jsonSchema={},
+        regexFieldSpecs=[],
+        timeKey="",
+        timeOffset="",
+        timeKeyRegex="",
+        userLogFormat="",
+        userSampleLog="",
+    )
+    app_pipeline = AppPipeline(
+        bufferType=BufferTypeEnum.S3,
+        bufferAccessRoleArn="",
+        bufferAccessRoleName="",
+        bufferResourceArn="",
+        bufferResourceName="",
+        bufferParams=[],
+        lightEngineParams=LightEngineParams(
+            stagingBucketPrefix="awslogs",
+            centralizedBucketName="centralized-bucket",
+            centralizedBucketPrefix="datalake",
+            centralizedTableName="test",
+            centralizedMetricsTableName="",
+            logProcessorSchedule="rate(5 minutes)",
+            logMergerSchedule="cron(0 1 * * ? *)",
+            logArchiveSchedule="cron(0 2 * * ? *)",
+            logMergerAge="1",
+            logArchiveAge="7",
+            importDashboards="false",
+            grafanaId="",
+            recipients="",
+        ),
+        logConfigId=log_conf.id,
+        logConfigVersionNumber=log_conf.version,
+        monitor=MonitorDetail(status=PipelineMonitorStatus.DISABLED),
+        engineType=EngineType.LIGHT_ENGINE,
+        logStructure=LogStructure.FLUENT_BIT_PARSED_JSON,
+    )
+
+    dao = AppPipelineDao(app_pipeline.pipelineId)
+    params = dao.get_light_engine_stack_parameters(
+        app_pipeline=app_pipeline,
+        log_config=log_conf,
+        grafana={"url": "http://127.0.0.1:3000", "token": "glsa_xxx"},
+    )
+    
+    assert params == [
+        {"ParameterKey": "stagingBucketPrefix", "ParameterValue": "awslogs"},
+        {
+            "ParameterKey": "centralizedBucketName",
+            "ParameterValue": "centralized-bucket",
+        },
+        {"ParameterKey": "centralizedBucketPrefix", "ParameterValue": "datalake"},
+        {"ParameterKey": "centralizedTableName", "ParameterValue": "test"},
+        {"ParameterKey": "centralizedMetricsTableName", "ParameterValue": ""},
+        {"ParameterKey": "logProcessorSchedule", "ParameterValue": "rate(5 minutes)"},
+        {"ParameterKey": "logMergerSchedule", "ParameterValue": "cron(0 1 * * ? *)"},
+        {"ParameterKey": "logArchiveSchedule", "ParameterValue": "cron(0 2 * * ? *)"},
+        {"ParameterKey": "logMergerAge", "ParameterValue": "1"},
+        {"ParameterKey": "logArchiveAge", "ParameterValue": "7"},
+        {"ParameterKey": "importDashboards", "ParameterValue": "false"},
+        {"ParameterKey": "recipients", "ParameterValue": ""},
+        {"ParameterKey": "sourceSchema", "ParameterValue": "{}"},
+        {"ParameterKey": "pipelineId", "ParameterValue": app_pipeline.pipelineId},
+        {"ParameterKey": "grafanaUrl", "ParameterValue": "http://127.0.0.1:3000"},
+        {"ParameterKey": "grafanaToken", "ParameterValue": "glsa_xxx"},
+    ]
+
+    assert params == [
+        {"ParameterKey": "stagingBucketPrefix", "ParameterValue": "awslogs"},
+        {
+            "ParameterKey": "centralizedBucketName",
+            "ParameterValue": "centralized-bucket",
+        },
+        {"ParameterKey": "centralizedBucketPrefix", "ParameterValue": "datalake"},
+        {"ParameterKey": "centralizedTableName", "ParameterValue": "test"},
+        {"ParameterKey": "centralizedMetricsTableName", "ParameterValue": ""},
+        {"ParameterKey": "logProcessorSchedule", "ParameterValue": "rate(5 minutes)"},
+        {"ParameterKey": "logMergerSchedule", "ParameterValue": "cron(0 1 * * ? *)"},
+        {"ParameterKey": "logArchiveSchedule", "ParameterValue": "cron(0 2 * * ? *)"},
+        {"ParameterKey": "logMergerAge", "ParameterValue": "1"},
+        {"ParameterKey": "logArchiveAge", "ParameterValue": "7"},
+        {"ParameterKey": "importDashboards", "ParameterValue": "false"},
+        {"ParameterKey": "recipients", "ParameterValue": ""},
+        {"ParameterKey": "sourceSchema", "ParameterValue": "{}"},
+        {"ParameterKey": "pipelineId", "ParameterValue": app_pipeline.pipelineId},
+        {"ParameterKey": "grafanaUrl", "ParameterValue": "http://127.0.0.1:3000"},
+        {"ParameterKey": "grafanaToken", "ParameterValue": "glsa_xxx"},
+    ]
+    
+    log_conf = LogConfig(
+        version=1,
+        name="json",
+        logType=LogTypeEnum.JSON,
+        regex="",
+        jsonSchema={},
+        regexFieldSpecs=[],
+        timeKey="",
+        timeOffset="",
+        timeKeyRegex="",
+        userLogFormat="",
+        userSampleLog="",
+    )
+    app_pipeline = AppPipeline(
+        bufferType=BufferTypeEnum.S3,
+        bufferAccessRoleArn="",
+        bufferAccessRoleName="",
+        bufferResourceArn="",
+        bufferResourceName="",
+        bufferParams=[],
+        lightEngineParams=LightEngineParams(
+            stagingBucketPrefix="awslogs",
+            centralizedBucketName="centralized-bucket",
+            centralizedBucketPrefix="datalake",
+            centralizedTableName="test",
+            centralizedMetricsTableName="",
+            logProcessorSchedule="rate(5 minutes)",
+            logMergerSchedule="cron(0 1 * * ? *)",
+            logArchiveSchedule="cron(0 2 * * ? *)",
+            logMergerAge="1",
+            logArchiveAge="7",
+            importDashboards="false",
+            grafanaId="",
+            recipients="",
+        ),
+        logConfigId=log_conf.id,
+        logConfigVersionNumber=log_conf.version,
+        monitor=MonitorDetail(status=PipelineMonitorStatus.DISABLED),
+        engineType=EngineType.LIGHT_ENGINE,
+        logStructure=LogStructure.RAW,
+    )
+
+    dao = AppPipelineDao(app_pipeline.pipelineId)
+    params = dao.get_light_engine_stack_parameters(
+        app_pipeline=app_pipeline,
+        log_config=log_conf,
+        grafana={"url": "http://127.0.0.1:3000", "token": "glsa_xxx"},
+    )
+
+    assert params == [
+        {"ParameterKey": "stagingBucketPrefix", "ParameterValue": "awslogs"},
+        {
+            "ParameterKey": "centralizedBucketName",
+            "ParameterValue": "centralized-bucket",
+        },
+        {"ParameterKey": "centralizedBucketPrefix", "ParameterValue": "datalake"},
+        {"ParameterKey": "centralizedTableName", "ParameterValue": "test"},
+        {"ParameterKey": "centralizedMetricsTableName", "ParameterValue": ""},
+        {"ParameterKey": "logProcessorSchedule", "ParameterValue": "rate(5 minutes)"},
+        {"ParameterKey": "logMergerSchedule", "ParameterValue": "cron(0 1 * * ? *)"},
+        {"ParameterKey": "logArchiveSchedule", "ParameterValue": "cron(0 2 * * ? *)"},
+        {"ParameterKey": "logMergerAge", "ParameterValue": "1"},
+        {"ParameterKey": "logArchiveAge", "ParameterValue": "7"},
+        {"ParameterKey": "importDashboards", "ParameterValue": "false"},
+        {"ParameterKey": "recipients", "ParameterValue": ""},
+        {"ParameterKey": "sourceSchema", "ParameterValue": "{}"},
+        {"ParameterKey": "pipelineId", "ParameterValue": app_pipeline.pipelineId},
+        {"ParameterKey": "grafanaUrl", "ParameterValue": "http://127.0.0.1:3000"},
+        {"ParameterKey": "grafanaToken", "ParameterValue": "glsa_xxx"},
+        {"ParameterKey": "sourceDataFormat", "ParameterValue": "Json"},
+    ]
+
+    assert params == [
+        {"ParameterKey": "stagingBucketPrefix", "ParameterValue": "awslogs"},
+        {
+            "ParameterKey": "centralizedBucketName",
+            "ParameterValue": "centralized-bucket",
+        },
+        {"ParameterKey": "centralizedBucketPrefix", "ParameterValue": "datalake"},
+        {"ParameterKey": "centralizedTableName", "ParameterValue": "test"},
+        {"ParameterKey": "centralizedMetricsTableName", "ParameterValue": ""},
+        {"ParameterKey": "logProcessorSchedule", "ParameterValue": "rate(5 minutes)"},
+        {"ParameterKey": "logMergerSchedule", "ParameterValue": "cron(0 1 * * ? *)"},
+        {"ParameterKey": "logArchiveSchedule", "ParameterValue": "cron(0 2 * * ? *)"},
+        {"ParameterKey": "logMergerAge", "ParameterValue": "1"},
+        {"ParameterKey": "logArchiveAge", "ParameterValue": "7"},
+        {"ParameterKey": "importDashboards", "ParameterValue": "false"},
+        {"ParameterKey": "recipients", "ParameterValue": ""},
+        {"ParameterKey": "sourceSchema", "ParameterValue": "{}"},
+        {"ParameterKey": "pipelineId", "ParameterValue": app_pipeline.pipelineId},
+        {"ParameterKey": "grafanaUrl", "ParameterValue": "http://127.0.0.1:3000"},
+        {"ParameterKey": "grafanaToken", "ParameterValue": "glsa_xxx"},
+        {"ParameterKey": "sourceDataFormat", "ParameterValue": "Json"},
+    ]
+
+    log_conf = LogConfig(
+        version=1,
+        name="singlelinetext",
+        logType=LogTypeEnum.SINGLELINE_TEXT,
+        regex="(?<time>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}.\\d{3}) (?<level>\\s*[\\S]+\\s*) \\[(?<thread>\\S+)?\\] (?<logger>.+) : (?<message>[\\s\\S]+)",
+        jsonSchema={},
+        regexFieldSpecs=[],
+        timeKey="",
+        timeOffset="",
+        timeKeyRegex="",
+        userLogFormat="",
+        userSampleLog="",
+    )
+    app_pipeline = AppPipeline(
+        bufferType=BufferTypeEnum.S3,
+        bufferAccessRoleArn="",
+        bufferAccessRoleName="",
+        bufferResourceArn="",
+        bufferResourceName="",
+        bufferParams=[],
+        lightEngineParams=LightEngineParams(
+            stagingBucketPrefix="awslogs",
+            centralizedBucketName="centralized-bucket",
+            centralizedBucketPrefix="datalake",
+            centralizedTableName="test",
+            centralizedMetricsTableName="",
+            logProcessorSchedule="rate(5 minutes)",
+            logMergerSchedule="cron(0 1 * * ? *)",
+            logArchiveSchedule="cron(0 2 * * ? *)",
+            logMergerAge="1",
+            logArchiveAge="7",
+            importDashboards="false",
+            grafanaId="",
+            recipients="",
+        ),
+        logConfigId=log_conf.id,
+        logConfigVersionNumber=log_conf.version,
+        monitor=MonitorDetail(status=PipelineMonitorStatus.DISABLED),
+        engineType=EngineType.LIGHT_ENGINE,
+        logStructure=LogStructure.FLUENT_BIT_PARSED_JSON,
+    )
+
+    dao = AppPipelineDao(app_pipeline.pipelineId)
+    params = dao.get_light_engine_stack_parameters(
+        app_pipeline=app_pipeline, log_config=log_conf
+    )
+    assert params == [
+        {"ParameterKey": "stagingBucketPrefix", "ParameterValue": "awslogs"},
+        {
+            "ParameterKey": "centralizedBucketName",
+            "ParameterValue": "centralized-bucket",
+        },
+        {"ParameterKey": "centralizedBucketPrefix", "ParameterValue": "datalake"},
+        {"ParameterKey": "centralizedTableName", "ParameterValue": "test"},
+        {"ParameterKey": "centralizedMetricsTableName", "ParameterValue": ""},
+        {"ParameterKey": "logProcessorSchedule", "ParameterValue": "rate(5 minutes)"},
+        {"ParameterKey": "logMergerSchedule", "ParameterValue": "cron(0 1 * * ? *)"},
+        {"ParameterKey": "logArchiveSchedule", "ParameterValue": "cron(0 2 * * ? *)"},
+        {"ParameterKey": "logMergerAge", "ParameterValue": "1"},
+        {"ParameterKey": "logArchiveAge", "ParameterValue": "7"},
+        {"ParameterKey": "importDashboards", "ParameterValue": "false"},
+        {"ParameterKey": "recipients", "ParameterValue": ""},
+        {"ParameterKey": "sourceSchema", "ParameterValue": "{}"},
+        {"ParameterKey": "pipelineId", "ParameterValue": app_pipeline.pipelineId},
+    ]
+    
+    log_conf = LogConfig(
+        version=1,
+        name="singlelinetext",
+        logType=LogTypeEnum.SINGLELINE_TEXT,
+        regex="(?<time>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}.\\d{3}) (?<level>\\s*[\\S]+\\s*) \\[(?<thread>\\S+)?\\] (?<logger>.+) : (?<message>[\\s\\S]+)",
+        jsonSchema={},
+        regexFieldSpecs=[],
+        timeKey="",
+        timeOffset="",
+        timeKeyRegex="",
+        userLogFormat="",
+        userSampleLog="",
+    )
+    app_pipeline = AppPipeline(
+        bufferType=BufferTypeEnum.S3,
+        bufferAccessRoleArn="",
+        bufferAccessRoleName="",
+        bufferResourceArn="",
+        bufferResourceName="",
+        bufferParams=[],
+        lightEngineParams=LightEngineParams(
+            stagingBucketPrefix="awslogs",
+            centralizedBucketName="centralized-bucket",
+            centralizedBucketPrefix="datalake",
+            centralizedTableName="test",
+            centralizedMetricsTableName="",
+            logProcessorSchedule="rate(5 minutes)",
+            logMergerSchedule="cron(0 1 * * ? *)",
+            logArchiveSchedule="cron(0 2 * * ? *)",
+            logMergerAge="1",
+            logArchiveAge="7",
+            importDashboards="false",
+            grafanaId="",
+            recipients="",
+        ),
+        logConfigId=log_conf.id,
+        logConfigVersionNumber=log_conf.version,
+        monitor=MonitorDetail(status=PipelineMonitorStatus.DISABLED),
+        engineType=EngineType.LIGHT_ENGINE,
+        logStructure=LogStructure.RAW,
+    )
+
+    dao = AppPipelineDao(app_pipeline.pipelineId)
+    params = dao.get_light_engine_stack_parameters(
+        app_pipeline=app_pipeline, log_config=log_conf
+    )
+    assert params == [
+        {"ParameterKey": "stagingBucketPrefix", "ParameterValue": "awslogs"},
+        {
+            "ParameterKey": "centralizedBucketName",
+            "ParameterValue": "centralized-bucket",
+        },
+        {"ParameterKey": "centralizedBucketPrefix", "ParameterValue": "datalake"},
+        {"ParameterKey": "centralizedTableName", "ParameterValue": "test"},
+        {"ParameterKey": "centralizedMetricsTableName", "ParameterValue": ""},
+        {"ParameterKey": "logProcessorSchedule", "ParameterValue": "rate(5 minutes)"},
+        {"ParameterKey": "logMergerSchedule", "ParameterValue": "cron(0 1 * * ? *)"},
+        {"ParameterKey": "logArchiveSchedule", "ParameterValue": "cron(0 2 * * ? *)"},
+        {"ParameterKey": "logMergerAge", "ParameterValue": "1"},
+        {"ParameterKey": "logArchiveAge", "ParameterValue": "7"},
+        {"ParameterKey": "importDashboards", "ParameterValue": "false"},
+        {"ParameterKey": "recipients", "ParameterValue": ""},
+        {"ParameterKey": "sourceSchema", "ParameterValue": "{}"},
+        {"ParameterKey": "pipelineId", "ParameterValue": app_pipeline.pipelineId},
+        {'ParameterKey': 'sourceDataFormat', 'ParameterValue': 'Regex'},
+        {
+            "ParameterKey": "sourceTableProperties",
+            "ParameterValue": '{"skip.header.line.count": "0"}',
+        },
+        {
+            "ParameterKey": "sourceSerializationProperties",
+            "ParameterValue": '{"input.regex": "(?<time>\\\\d{4}-\\\\d{2}-\\\\d{2} \\\\d{2}:\\\\d{2}:\\\\d{2}.\\\\d{3}) (?<level>\\\\s*[\\\\S]+\\\\s*) \\\\[(?<thread>\\\\S+)?\\\\] (?<logger>.+) : (?<message>[\\\\s\\\\S]+)"}',
+        },
+    ]
+    
+    json_schema = {'type': 'object', 'properties': {'pri': {'type': 'string'}, 'future_use_1': {'type': 'string'}, 'receive_time': {'type': 'timestamp', 'timeKey': True, 'format': "yyyy-MM-dd''T''HH:mm:ss.SSSSSSSSSZ"}, 'serial': {'type': 'string'}, 'type': {'type': 'string'}, 'subtype': {'type': 'string'}, 'future_use_2': {'type': 'string'}, 'time_generated': {'type': 'string'}, 'src': {'type': 'string'}, 'dst': {'type': 'string'}, 'natsrc': {'type': 'string'}, 'natdst': {'type': 'string'}, 'rule': {'type': 'string'}, 'srcuser': {'type': 'string'}, 'dstuser': {'type': 'string'}, 'app': {'type': 'string'}, 'vsys': {'type': 'string'}, 'from': {'type': 'string'}, 'to': {'type': 'string'}, 'inbound_if': {'type': 'string'}, 'outbound_if': {'type': 'string'}, 'logset': {'type': 'string'}, 'future_use_3': {'type': 'string'}, 'sessionid': {'type': 'string'}, 'repeatcnt': {'type': 'string'}, 'sport': {'type': 'string'}, 'dport': {'type': 'string'}, 'natsport': {'type': 'string'}, 'natdport': {'type': 'string'}, 'flags': {'type': 'string'}, 'proto': {'type': 'string'}, 'action': {'type': 'string'}, 'misc': {'type': 'string'}, 'threatid': {'type': 'string'}, 'category': {'type': 'string'}, 'severity': {'type': 'string'}, 'direction': {'type': 'string'}, 'seqno': {'type': 'string'}, 'actionflags': {'type': 'string'}, 'srcloc': {'type': 'string'}, 'dstloc': {'type': 'string'}, 'future_use_4': {'type': 'string'}, 'contenttype': {'type': 'string'}, 'pcap_id': {'type': 'string'}, 'filedigest': {'type': 'string'}, 'cloud': {'type': 'string'}, 'url_idx': {'type': 'string'}, 'user_agent': {'type': 'string'}, 'filetype': {'type': 'string'}, 'xff': {'type': 'string'}, 'referer': {'type': 'string'}, 'sender': {'type': 'string'}, 'subject': {'type': 'string'}, 'recipient': {'type': 'string'}, 'reportid': {'type': 'string'}, 'dg_hier_level_1': {'type': 'string'}, 'dg_hier_level_2': {'type': 'string'}, 'dg_hier_level_3': {'type': 'string'}, 'dg_hier_level_4': {'type': 'string'}, 'vsys_name': {'type': 'string'}, 'device_name': {'type': 'string'}, 'future_use_5': {'type': 'string'}, 'src_uuid': {'type': 'string'}, 'dst_uuid': {'type': 'string'}, 'http_method': {'type': 'string'}, 'tunnelid_or_imsi': {'type': 'string'}, 'monitortag_or_imei': {'type': 'string'}, 'parent_session_id': {'type': 'string'}, 'parent_start_time': {'type': 'string'}, 'tunnel': {'type': 'string'}, 'thr_category': {'type': 'string'}, 'future_use_6': {'type': 'string'}, 'contentver': {'type': 'string'}, 'assoc_id': {'type': 'string'}, 'chunks': {'type': 'string'}, 'ppid': {'type': 'string'}, 'http_headers': {'type': 'string'}, 'url_category_list': {'type': 'string'}, 'rule_uuid': {'type': 'string'}, 'http2_connection': {'type': 'string'}, 'dynusergroup_name': {'type': 'string'}, 'xff_ip': {'type': 'string'}, 'src_category': {'type': 'string'}, 'src_profile': {'type': 'string'}, 'src_model': {'type': 'string'}, 'src_vendor': {'type': 'string'}, 'src_osfamily': {'type': 'string'}, 'src_osversion': {'type': 'string'}, 'src_host': {'type': 'string'}, 'src_mac': {'type': 'string'}, 'dst_category': {'type': 'string'}, 'dst_profile': {'type': 'string'}, 'dst_model': {'type': 'string'}, 'dst_vendor': {'type': 'string'}, 'dst_osfamily': {'type': 'string'}, 'dst_osversion': {'type': 'string'}, 'dst_host': {'type': 'string'}, 'dst_mac': {'type': 'string'}, 'container_id': {'type': 'string'}, 'pod_namespace': {'type': 'string'}, 'pod_name': {'type': 'string'}, 'src_edl': {'type': 'string'}, 'dst_edl': {'type': 'string'}, 'hostid': {'type': 'string'}, 'serialnumber': {'type': 'string'}, 'src_dag': {'type': 'string'}, 'dst_dag': {'type': 'string'}, 'partial_hash': {'type': 'string'}, 'high_res_timestamp': {'type': 'string'}, 'reason': {'type': 'string'}, 'justification': {'type': 'string'}, 'nssai_sst': {'type': 'string'}, 'subcategory_of_app': {'type': 'string'}, 'category_of_app': {'type': 'string'}, 'technology_of_app': {'type': 'string'}, 'risk_of_app': {'type': 'string'}, 'characteristic_of_app': {'type': 'string'}, 'container_of_app': {'type': 'string'}, 'tunneled_app': {'type': 'string'}, 'is_saas_of_app': {'type': 'string'}, 'sanctioned_state_of_app': {'type': 'string'}}}
+    log_conf = LogConfig(
+        version=1,
+        name="singlelinetext",
+        logType=LogTypeEnum.SINGLELINE_TEXT,
+        regex=json.dumps(json_schema),
+        jsonSchema=json_schema,
+        regexFieldSpecs=[],
+        timeKey="",
+        timeOffset="",
+        timeKeyRegex="",
+        userLogFormat="",
+        userSampleLog="",
+    )
+    app_pipeline = AppPipeline(
+        bufferType=BufferTypeEnum.S3,
+        bufferAccessRoleArn="",
+        bufferAccessRoleName="",
+        bufferResourceArn="",
+        bufferResourceName="",
+        bufferParams=[
+            BufferParam(paramKey='skip.header.line.count', paramValue=json.dumps(json_schema))
+            ],
+        lightEngineParams=LightEngineParams(
+            stagingBucketPrefix="awslogs",
+            centralizedBucketName="centralized-bucket",
+            centralizedBucketPrefix="datalake",
+            centralizedTableName="test",
+            centralizedMetricsTableName="",
+            logProcessorSchedule="rate(5 minutes)",
+            logMergerSchedule="cron(0 1 * * ? *)",
+            logArchiveSchedule="cron(0 2 * * ? *)",
+            logMergerAge="1",
+            logArchiveAge="7",
+            importDashboards="false",
+            grafanaId="",
+            recipients="",
+        ),
+        logConfigId=log_conf.id,
+        logConfigVersionNumber=log_conf.version,
+        monitor=MonitorDetail(status=PipelineMonitorStatus.DISABLED),
+        engineType=EngineType.LIGHT_ENGINE,
+        logStructure=LogStructure.RAW,
+    )
+
+    dao = AppPipelineDao(app_pipeline.pipelineId)
+    params = dao.get_light_engine_stack_parameters(
+        app_pipeline=app_pipeline, log_config=log_conf
+    )
+    assert params == [
+        {"ParameterKey": "stagingBucketPrefix", "ParameterValue": "awslogs"},
+        {
+            "ParameterKey": "centralizedBucketName",
+            "ParameterValue": "centralized-bucket",
+        },
+        {"ParameterKey": "centralizedBucketPrefix", "ParameterValue": "datalake"},
+        {"ParameterKey": "centralizedTableName", "ParameterValue": "test"},
+        {"ParameterKey": "centralizedMetricsTableName", "ParameterValue": ""},
+        {"ParameterKey": "logProcessorSchedule", "ParameterValue": "rate(5 minutes)"},
+        {"ParameterKey": "logMergerSchedule", "ParameterValue": "cron(0 1 * * ? *)"},
+        {"ParameterKey": "logArchiveSchedule", "ParameterValue": "cron(0 2 * * ? *)"},
+        {"ParameterKey": "logMergerAge", "ParameterValue": "1"},
+        {"ParameterKey": "logArchiveAge", "ParameterValue": "7"},
+        {"ParameterKey": "importDashboards", "ParameterValue": "false"},
+        {"ParameterKey": "recipients", "ParameterValue": ""},
+        {"ParameterKey": "sourceSchema", "ParameterValue": base64.b64encode(gzip.compress(bytes(json.dumps(json_schema), encoding='utf-8'))).decode('utf-8')},
+        {"ParameterKey": "pipelineId", "ParameterValue": app_pipeline.pipelineId},
+        {'ParameterKey': 'sourceDataFormat', 'ParameterValue': 'Regex'},
+        {
+            "ParameterKey": "sourceTableProperties",
+            "ParameterValue": base64.b64encode(gzip.compress(bytes(json.dumps({"skip.header.line.count": json.dumps(json_schema)}), encoding='utf-8'))).decode('utf-8')
+        },
+        {
+            "ParameterKey": "sourceSerializationProperties",
+            "ParameterValue": base64.b64encode(gzip.compress(bytes(json.dumps({"input.regex": json.dumps(json_schema)}), encoding='utf-8'))).decode('utf-8'),
+        },
+    ]
+
+
 def check_items_in_list(list1, list2):
     for item in list1:
         if item not in list2:
             return False
     return True
+
+
+def params_to_dict(lst):
+    d = {}
+    for each in lst:
+        d[each["ParameterKey"]] = each["ParameterValue"]
+    return d
 
 
 def test_app_pipeline_dao_get_stack_parameters(ddb_client):
@@ -1139,9 +1989,93 @@ def test_app_pipeline_dao_get_stack_parameters(ddb_client):
         params,
     )
 
+    p.bufferType = BufferTypeEnum.NONE
+    params = params_to_dict(dao.get_stack_parameters(p))
+
+    assert "backupBucketName" not in params
+
+    p.bufferType = BufferTypeEnum.KDS
+    params = params_to_dict(dao.get_stack_parameters(p))
+
+    assert "shardCount" in params
+    assert "minCapacity" in params
+    assert "maxCapacity" in params
+    assert "createDashboard" in params
+
+    p.bufferType = BufferTypeEnum.MSK
+    params = params_to_dict(dao.get_stack_parameters(p))
+
+    assert "mskClusterArn" in params
+
+
+def test_app_pipeline_dao_validate_buffer_params(ddb_client):
+    from commonlib.dao import AppPipelineDao
+
+    dao = AppPipelineDao(os.environ.get("APP_PIPELINE_TABLE_NAME"))
+    p = dao.get_app_pipeline("3333")
+    p.bufferType = BufferTypeEnum.KDS
+    dao.validate_buffer_params(p)
+
+    with pytest.raises(APIException, match=r"Missing buffer parameters"):
+        p.bufferType = BufferTypeEnum.S3
+        dao.validate_buffer_params(p)
+
+
+def test_app_pipeline_dao_validate(ddb_client):
+    from commonlib.dao import AppPipelineDao
+
+    dao = AppPipelineDao(os.environ.get("APP_PIPELINE_TABLE_NAME"))
+    p = dao.get_app_pipeline("3333")
+    p.bufferType = BufferTypeEnum.KDS
+
+    with pytest.raises(Exception, match=r"DUPLICATED_WITH_INACTIVE_INDEX_PREFIX"):
+        dao.validate(p)
+
+    p.indexPrefix = "helloworld"
+
+    dao.validate(p)
+
+
+def test_app_pipeline_get_stack_name(ddb_client):
+    from commonlib.dao import AppPipelineDao
+
+    dao = AppPipelineDao(os.environ.get("APP_PIPELINE_TABLE_NAME"))
+    p = dao.get_app_pipeline("3333")
+    assert "AppLogS3Buffer" == dao.get_stack_name(p)
+
+    p.osiParams = OpenSearchIngestionInput(maxCapacity=10, minCapacity=10)
+    assert "AppLogS3BufferOSIProcessor" == dao.get_stack_name(p)
+
+    p.bufferType = BufferTypeEnum.MSK
+    assert "AppLogMSKBuffer" == dao.get_stack_name(p)
+
+    p.bufferType = BufferTypeEnum.KDS
+    assert "AppLogKDSBufferNoAutoScaling" == dao.get_stack_name(p)
+
+    p.bufferParams.insert(
+        0, BufferParam(paramKey="enableAutoScaling", paramValue="true")
+    )
+    assert "AppLogKDSBuffer" == dao.get_stack_name(p)
+
+    p.engineType = EngineType.LIGHT_ENGINE
+    p.logStructure = LogStructure.FLUENT_BIT_PARSED_JSON
+    assert "MicroBatchApplicationFluentBitPipeline" == dao.get_stack_name(p)
+
+    p.engineType = EngineType.LIGHT_ENGINE
+    p.logStructure = LogStructure.RAW
+    assert "MicroBatchApplicationS3Pipeline" == dao.get_stack_name(p)
+
+
+def test_app_pipeline_save(ddb_client):
+    from commonlib.dao import AppPipelineDao
+
+    dao = AppPipelineDao(os.environ.get("APP_PIPELINE_TABLE_NAME"))
+    p = dao.get_app_pipeline("62a37b50-72af-4a7b-9d4b-d859d538a19c")
+    dao.save(p)
+
 
 def test_app_pipeline_dao_get_app_pipeline(ddb_client):
-    from commonlib.dao import AppPipelineDao
+    from commonlib.dao import AppPipelineDao, LogStructure
 
     dao = AppPipelineDao(os.environ.get("APP_PIPELINE_TABLE_NAME"))
     p = dao.get_app_pipeline("62a37b50-72af-4a7b-9d4b-d859d538a19c")
@@ -1160,7 +2094,14 @@ def test_app_pipeline_dao_get_app_pipeline(ddb_client):
     ]
     assert p.bufferType == "KDS"
     assert p.status == "ACTIVE"
+    assert p.logStructure == LogStructure.FLUENT_BIT_PARSED_JSON
     # fmt: on
+
+    p = dao.get_app_pipeline("2406190a-bb74-407e-82cb-e441c4e9efe5")
+    assert p.logStructure == LogStructure.RAW
+
+    p = dao.get_app_pipeline("222222222222222")
+    assert p.logStructure == LogStructure.FLUENT_BIT_PARSED_JSON
 
     with pytest.raises(Exception, match=r"Can not find"):
         dao.get_app_pipeline("not-found")
@@ -1217,7 +2158,7 @@ def test_app_pipeline_dao_update_app_pipeline(ddb_client):
         "62a37b50-72af-4a7b-9d4b-d859d538a19c",
         **{
             "monitor.pipelineAlarmStatus": PipelineAlarmStatus.ENABLED,
-        }
+        },
     )
     p = dao.get_app_pipeline("62a37b50-72af-4a7b-9d4b-d859d538a19c")
     assert p.monitor.pipelineAlarmStatus == PipelineAlarmStatus.ENABLED
@@ -1282,6 +2223,14 @@ def get_app_log_ingestion_table_name():
     return os.environ.get("APP_LOG_INGESTION_TABLE_NAME")
 
 
+def test_applogingestiondao_save(ddb_client):
+    from commonlib.dao import AppLogIngestionDao
+
+    dao = AppLogIngestionDao(get_app_log_ingestion_table_name())
+    i = dao.get_app_log_ingestion("62a37b50-72af-4a7b-9d4b-d859d538a19c")
+    dao.save(i)
+
+
 def test_get_app_log_ingestions_by_source_id(ddb_client):
     from commonlib.dao import AppLogIngestionDao
 
@@ -1338,6 +2287,11 @@ def test_list_app_log_ingestions(ddb_client):
         Attr("status").eq(StatusEnum.ERROR)
     )
     assert app_log_ingestions == []
+
+    lst = dao.list_app_log_ingestions()
+    assert len(lst) == 1
+    for each in lst:
+        assert each.status != StatusEnum.INACTIVE
 
 
 def test_get_app_log_ingestion(ddb_client):
@@ -1610,6 +2564,10 @@ def test_save_instance_ingestion_detail(ddb_client):
         and instance_ingestion_details[0].status == StatusEnum.DISTRIBUTING
     )
 
+    lst = dao.list_instance_ingestion_details()
+    assert len(lst) == 1
+    assert lst[0].status == StatusEnum.DISTRIBUTING
+
 
 class TestETLLog:
     def init(self, ddb_client):
@@ -1780,3 +2738,240 @@ class TestETLLog:
                 "status": "Succeeded",
             },
         ]
+
+
+def test_svc_pipeline_dao(ddb_client):
+    from commonlib.dao import SvcPipelineDao, StatusEnum, BufferTypeEnum
+    from commonlib.model import (
+        SvcPipeline,
+        EngineType,
+        MonitorDetail,
+        PipelineMonitorStatus,
+        LightEngineParams,
+    )
+
+    dao = SvcPipelineDao(os.environ.get("SERVICE_PIPELINE_TABLE_NAME"))
+
+    svc_pipeline = SvcPipeline(
+        bufferResourceArn="",
+        bufferResourceName="",
+        deliveryStreamArn="",
+        deliveryStreamName="",
+        destinationType=BufferTypeEnum.S3,
+        engineType=EngineType.LIGHT_ENGINE,
+        error="",
+        helperLogGroupName="",
+        logEventQueueArn="",
+        logEventQueueName="",
+        logSourceAccountId="",
+        logSourceRegion="",
+        monitor=MonitorDetail(status=PipelineMonitorStatus.DISABLED),
+        parameters=[],
+        processorLogGroupName="",
+        lightEngineParams=LightEngineParams(
+            stagingBucketPrefix="awslogs",
+            centralizedBucketName="centralized-bucket",
+            centralizedBucketPrefix="datalake",
+            centralizedTableName="test",
+            centralizedMetricsTableName="",
+            logProcessorSchedule="rate(5 minutes)",
+            logMergerSchedule="cron(0 1 * * ? *)",
+            logArchiveSchedule="cron(0 2 * * ? *)",
+            logMergerAge="1",
+            logArchiveAge="7",
+            importDashboards="false",
+            grafanaId="",
+            recipients="",
+        ),
+        source="",
+        stackId="",
+        stackName="",
+        target="",
+        type="",
+    )
+    dao.save(service_pipeline=svc_pipeline)
+
+    pipelines = dao.list_svc_pipelines()
+
+    assert len(pipelines) == 2
+
+    p = pipelines[0]
+
+    # fmt: off
+    assert p.id == "c34f2159-34e4-4410-976b-9a565adef81b"
+    assert p.destinationType == "S3"
+    assert p.engineType == "OpenSearch"
+    assert p.status == "ACTIVE"
+    
+    p = pipelines[1]
+    assert p.id == svc_pipeline.id
+    assert p.destinationType == "S3"
+    assert p.engineType == "LightEngine"
+    # fmt: on
+
+    pipelines = dao.list_svc_pipelines(Attr("status").eq(StatusEnum.ERROR))
+    assert pipelines == []
+
+    pipelines = dao.get_svc_pipeline(id=svc_pipeline.id)
+    assert pipelines.id == svc_pipeline.id
+    assert pipelines.destinationType == "S3"
+    assert pipelines.engineType == "LightEngine"
+
+    dao.update_svc_pipeline(id=svc_pipeline.id, **{"error": "Failed"})
+    pipelines = dao.get_svc_pipeline(id=svc_pipeline.id)
+    assert pipelines.error == "Failed"
+
+
+def test_svc_pipeline_dao_get_light_engine_stack_parameters(ddb_client):
+    from commonlib.dao import SvcPipelineDao, StatusEnum, BufferTypeEnum
+    from commonlib.model import (
+        SvcPipeline,
+        EngineType,
+        MonitorDetail,
+        PipelineMonitorStatus,
+        LightEngineParams,
+    )
+
+    dao = SvcPipelineDao(os.environ.get("SERVICE_PIPELINE_TABLE_NAME"))
+
+    svc_pipeline = SvcPipeline(
+        bufferResourceArn="",
+        bufferResourceName="",
+        deliveryStreamArn="",
+        deliveryStreamName="",
+        destinationType=BufferTypeEnum.S3,
+        engineType=EngineType.LIGHT_ENGINE,
+        error="",
+        helperLogGroupName="",
+        logEventQueueArn="",
+        logEventQueueName="",
+        logSourceAccountId="",
+        logSourceRegion="",
+        monitor=MonitorDetail(status=PipelineMonitorStatus.DISABLED),
+        parameters=[],
+        processorLogGroupName="",
+        lightEngineParams=LightEngineParams(
+            stagingBucketPrefix="awslogs",
+            centralizedBucketName="centralized-bucket",
+            centralizedBucketPrefix="datalake",
+            centralizedTableName="test",
+            centralizedMetricsTableName="",
+            logProcessorSchedule="rate(5 minutes)",
+            logMergerSchedule="cron(0 1 * * ? *)",
+            logArchiveSchedule="cron(0 2 * * ? *)",
+            logMergerAge="1",
+            logArchiveAge="7",
+            importDashboards="false",
+            grafanaId="",
+            recipients="",
+        ),
+        source="",
+        stackId="",
+        stackName="",
+        target="",
+        type="waf",
+    )
+    dao.save(service_pipeline=svc_pipeline)
+
+    params = dao.get_light_engine_stack_parameters(
+        service_pipeline=svc_pipeline,
+        grafana={"url": "http://127.0.0.1:3000", "token": "glsa_xxx"},
+    )
+
+    assert params == [
+        {"ParameterKey": "stagingBucketPrefix", "ParameterValue": "awslogs"},
+        {
+            "ParameterKey": "centralizedBucketName",
+            "ParameterValue": "centralized-bucket",
+        },
+        {"ParameterKey": "centralizedBucketPrefix", "ParameterValue": "datalake"},
+        {"ParameterKey": "centralizedTableName", "ParameterValue": "test"},
+        {"ParameterKey": "logProcessorSchedule", "ParameterValue": "rate(5 minutes)"},
+        {"ParameterKey": "logMergerSchedule", "ParameterValue": "cron(0 1 * * ? *)"},
+        {"ParameterKey": "logArchiveSchedule", "ParameterValue": "cron(0 2 * * ? *)"},
+        {"ParameterKey": "logMergerAge", "ParameterValue": "1"},
+        {"ParameterKey": "logArchiveAge", "ParameterValue": "7"},
+        {"ParameterKey": "importDashboards", "ParameterValue": "false"},
+        {"ParameterKey": "recipients", "ParameterValue": ""},
+        {"ParameterKey": "pipelineId", "ParameterValue": svc_pipeline.id},
+        {"ParameterKey": "notificationService", "ParameterValue": "SNS"},
+        {"ParameterKey": "grafanaUrl", "ParameterValue": "http://127.0.0.1:3000"},
+        {"ParameterKey": "grafanaToken", "ParameterValue": "glsa_xxx"},
+    ]
+
+    svc_pipeline = SvcPipeline(
+        bufferResourceArn="",
+        bufferResourceName="",
+        deliveryStreamArn="",
+        deliveryStreamName="",
+        destinationType=BufferTypeEnum.S3,
+        engineType=EngineType.LIGHT_ENGINE,
+        error="",
+        helperLogGroupName="",
+        logEventQueueArn="",
+        logEventQueueName="",
+        logSourceAccountId="",
+        logSourceRegion="",
+        monitor=MonitorDetail(status=PipelineMonitorStatus.DISABLED),
+        parameters=[],
+        processorLogGroupName="",
+        lightEngineParams=LightEngineParams(
+            stagingBucketPrefix="awslogs",
+            centralizedBucketName="centralized-bucket",
+            centralizedBucketPrefix="datalake",
+            centralizedTableName="test",
+            centralizedMetricsTableName="",
+            logProcessorSchedule="rate(5 minutes)",
+            logMergerSchedule="cron(0 1 * * ? *)",
+            logArchiveSchedule="cron(0 2 * * ? *)",
+            logMergerAge="1",
+            logArchiveAge="7",
+            importDashboards="false",
+            grafanaId="",
+            recipients="",
+            enrichmentPlugins="geo_ip,user_agent",
+        ),
+        source="",
+        stackId="",
+        stackName="",
+        target="",
+        type="elb",
+    )
+    dao.save(service_pipeline=svc_pipeline)
+
+    params = dao.get_light_engine_stack_parameters(service_pipeline=svc_pipeline)
+
+    assert params == [
+        {"ParameterKey": "stagingBucketPrefix", "ParameterValue": "awslogs"},
+        {
+            "ParameterKey": "centralizedBucketName",
+            "ParameterValue": "centralized-bucket",
+        },
+        {"ParameterKey": "centralizedBucketPrefix", "ParameterValue": "datalake"},
+        {"ParameterKey": "centralizedTableName", "ParameterValue": "test"},
+        {"ParameterKey": "logProcessorSchedule", "ParameterValue": "rate(5 minutes)"},
+        {"ParameterKey": "logMergerSchedule", "ParameterValue": "cron(0 1 * * ? *)"},
+        {"ParameterKey": "logArchiveSchedule", "ParameterValue": "cron(0 2 * * ? *)"},
+        {"ParameterKey": "logMergerAge", "ParameterValue": "1"},
+        {"ParameterKey": "logArchiveAge", "ParameterValue": "7"},
+        {"ParameterKey": "importDashboards", "ParameterValue": "false"},
+        {"ParameterKey": "recipients", "ParameterValue": ""},
+        {"ParameterKey": "pipelineId", "ParameterValue": svc_pipeline.id},
+        {"ParameterKey": "notificationService", "ParameterValue": "SNS"},
+        {"ParameterKey": "enrichmentPlugins", "ParameterValue": "geo_ip,user_agent"},
+    ]
+
+
+def test_set_kv_to_buffer_param():
+    from commonlib.utils import set_kv_to_buffer_param
+    from commonlib.model import BufferParam
+    
+    buffer_params = [BufferParam(paramKey='logBucketPrefix', paramValue='prefix')]
+    
+    new_buffer_params = set_kv_to_buffer_param(key='logBucketPrefix', value='new_prefix', buffer_param=buffer_params)
+    assert buffer_params == [BufferParam(paramKey='logBucketPrefix', paramValue='new_prefix')]
+    assert new_buffer_params == [BufferParam(paramKey='logBucketPrefix', paramValue='new_prefix')]
+    
+    buffer_params = [BufferParam(paramKey='logBucketPrefix', paramValue='prefix')]
+    new_buffer_params = set_kv_to_buffer_param(key='new', value='value', buffer_param=buffer_params)
+    assert new_buffer_params == [BufferParam(paramKey='logBucketPrefix', paramValue='prefix'), BufferParam(paramKey='new', paramValue='value')]

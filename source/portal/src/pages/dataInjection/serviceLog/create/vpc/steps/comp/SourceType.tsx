@@ -17,23 +17,37 @@ import React, { useState, useEffect } from "react";
 import FormItem from "components/FormItem";
 import Select from "components/Select";
 import { useTranslation } from "react-i18next";
-import { AmplifyConfigType, CWL_SOURCE_LIST } from "types";
+import {
+  AmplifyConfigType,
+  AnalyticEngineTypes,
+  CWL_LOG_S3,
+  CWL_SOURCE_LIST,
+} from "types";
 import { VpcLogTaskProps } from "../../CreateVPC";
 import { appSyncRequestQuery } from "assets/js/request";
 import { getResourceLogConfigs } from "graphql/queries";
 import { DestinationType, ResourceLogConf, ResourceType } from "API";
-import { CLOUDWATCH_PRICING_LINK, CreateLogMethod } from "assets/js/const";
+import {
+  CLOUDWATCH_PRICING_LINK,
+  CreateLogMethod,
+  VPC_FLOW_LOG_SELECT_ALL_FIELDS,
+} from "assets/js/const";
 import LoadingText from "components/LoadingText";
 import TextInput from "components/TextInput";
 import AutoEnableLogging from "../../../common/AutoEnableLogging";
 import { SelectItem } from "components/Select/select";
-import { splitStringToBucketAndPrefix } from "assets/js/utils";
+import {
+  defaultStr,
+  splitStringToBucketAndPrefix,
+  ternary,
+} from "assets/js/utils";
 import { useSelector } from "react-redux";
 import { AlertType } from "components/Alert/alert";
 import KDSSettings from "../../../common/KDSSettings";
 import { RootState } from "reducer/reducers";
 
 interface SourceTypeProps {
+  engineType: AnalyticEngineTypes;
   vpcLogTask: VpcLogTaskProps;
   changeSourceType: (type: string) => void;
   changeManualS3: (s3: string) => void;
@@ -71,6 +85,7 @@ export enum VPCLogSourceType {
 
 const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
   const {
+    engineType,
     vpcLogTask,
     changeSourceType,
     changeManualS3,
@@ -114,23 +129,24 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
     const tmpS3SourceList: SelectItem[] = [];
     const tmpCWLSourceList: SelectItem[] = [];
     const resSourceList = resData?.data?.getResourceLogConfigs;
-    if (resSourceList && resSourceList.length > 0) {
+    if (resSourceList?.length > 0) {
       resSourceList.forEach((element: ResourceLogConf) => {
+        const sourceObj = {
+          name: defaultStr(element.name),
+          value: defaultStr(element.destinationName),
+          description: defaultStr(element.logFormat),
+          optTitle: defaultStr(element.region),
+        };
         if (element.destinationType === DestinationType.S3) {
-          tmpS3SourceList.push({
-            name: element.name || "",
-            value: element.destinationName,
-            description: element.logFormat || "",
-            optTitle: element.region || "",
-          });
-        }
-        if (element.destinationType === DestinationType.CloudWatch) {
-          tmpCWLSourceList.push({
-            name: element.name || "",
-            value: element.destinationName,
-            description: element.logFormat || "",
-            optTitle: element.region || "",
-          });
+          if (engineType === AnalyticEngineTypes.LIGHT_ENGINE) {
+            if (element.logFormat === VPC_FLOW_LOG_SELECT_ALL_FIELDS) {
+              tmpS3SourceList.push(sourceObj);
+            }
+          } else {
+            tmpS3SourceList.push(sourceObj);
+          }
+        } else {
+          tmpCWLSourceList.push(sourceObj);
         }
       });
     }
@@ -143,7 +159,7 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
   };
 
   useEffect(() => {
-    if (vpcLogTask.params.vpcLogObj && vpcLogTask.params.vpcLogObj.value) {
+    if (vpcLogTask.params.vpcLogObj?.value) {
       getVpcLoggingConfig(vpcLogTask.params.vpcLogObj.value);
     }
   }, [vpcLogTask.params.vpcLogObj]);
@@ -188,7 +204,9 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
         if (vpcLogTask.params.cwlFlowList.length === 1) {
           changeVpcLogSourceType(VPCLogSourceType.ONE_CWL);
           changeVPCFLowLog(vpcLogTask.params.cwlFlowList[0]?.value);
-          changeLogFormat(vpcLogTask.params.cwlFlowList[0]?.description || "");
+          changeLogFormat(
+            defaultStr(vpcLogTask.params.cwlFlowList[0]?.description)
+          );
         } else {
           changeVpcLogSourceType(VPCLogSourceType.MULTI_CWL);
         }
@@ -224,9 +242,22 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
     }
   }, [vpcLogTask.params.logSource]);
 
-  useEffect(() => {
-    console.info("vpcLogTaskvpcLogTaskvpcLogTask:", vpcLogTask);
-  }, [vpcLogTask]);
+  const buildLogSourceSuccessText = () => {
+    return (
+      (vpcLogTask.destinationType === DestinationType.S3 &&
+      vpcLogTask.params.vpcLogSourceType ===
+        VPCLogSourceType.MULTI_S3_SAME_REGION
+        ? t("servicelog:vpc.savedTips") + vpcLogTask.params.logSource
+        : "") ||
+      (vpcLogTask.destinationType === DestinationType.CloudWatch &&
+      vpcLogTask.params.vpcLogSourceType === VPCLogSourceType.MULTI_CWL &&
+      vpcLogTask.params.logSource
+        ? `${t("servicelog:vpc.logCWLEnabled1")} ${
+            vpcLogTask.params.logSource
+          } ${t("servicelog:vpc.logCWLEnabled2")}`
+        : "")
+    );
+  };
 
   return (
     <>
@@ -257,7 +288,11 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
           }
           placeholder={t("servicelog:vpc.chooseLogSource")}
           className="m-w-45p"
-          optionList={CWL_SOURCE_LIST}
+          optionList={
+            engineType === AnalyticEngineTypes.LIGHT_ENGINE
+              ? CWL_LOG_S3
+              : CWL_SOURCE_LIST
+          }
           value={vpcLogTask.destinationType}
           onChange={(event) => {
             changeSourceType(event.target.value);
@@ -327,27 +362,12 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
               <FormItem
                 optionTitle={t("servicelog:vpc.selectFlowLog")}
                 optionDesc={t("servicelog:vpc.selectFlowLogDesc")}
-                successText={
-                  (vpcLogTask.destinationType === DestinationType.S3 &&
-                  vpcLogTask.params.vpcLogSourceType ===
-                    VPCLogSourceType.MULTI_S3_SAME_REGION
-                    ? t("servicelog:vpc.savedTips") +
-                      vpcLogTask.params.logSource
-                    : "") ||
-                  (vpcLogTask.destinationType === DestinationType.CloudWatch &&
-                  vpcLogTask.params.vpcLogSourceType ===
-                    VPCLogSourceType.MULTI_CWL &&
-                  vpcLogTask.params.logSource
-                    ? `${t("servicelog:vpc.logCWLEnabled1")} ${
-                        vpcLogTask.params.logSource
-                      } ${t("servicelog:vpc.logCWLEnabled2")}`
-                    : "")
-                }
-                errorText={
-                  vpcFlowLogEmptyError
-                    ? t("servicelog:vpc.selectVPCFlowLog")
-                    : ""
-                }
+                successText={buildLogSourceSuccessText()}
+                errorText={ternary(
+                  vpcFlowLogEmptyError,
+                  t("servicelog:vpc.selectVPCFlowLog"),
+                  undefined
+                )}
               >
                 <Select
                   placeholder={t("servicelog:vpc.selectFlowLog")}
@@ -357,9 +377,11 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
                   onChange={(event) => {
                     changeVPCFLowLog(event.target.value);
                     changeLogFormat(
-                      vpcLogTask?.params?.tmpFlowList?.find(
-                        (element) => element.value === event.target.value
-                      )?.description || ""
+                      defaultStr(
+                        vpcLogTask?.params?.tmpFlowList?.find(
+                          (element) => element.value === event.target.value
+                        )?.description
+                      )
                     );
                   }}
                 />
@@ -372,7 +394,7 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
             <AutoEnableLogging
               alertType={AlertType.Warning}
               resourceType={ResourceType.VPC}
-              resourceName={vpcLogTask.params.vpcLogObj?.value || ""}
+              resourceName={defaultStr(vpcLogTask.params.vpcLogObj?.value)}
               destName=""
               destType={DestinationType.S3}
               changeEnableTmpFlowList={(list) => {
@@ -381,8 +403,8 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
               }}
               changeLogBucketAndPrefix={(bucket, prefix, enabled) => {
                 console.info("enabled:", enabled);
-                changeBucket(bucket || "");
-                changeLogPath(prefix || "");
+                changeBucket(bucket);
+                changeLogPath(prefix);
                 changeVpcLogSourceType(VPCLogSourceType.ONE_S3_SAME_REGION);
               }}
               changeEnableStatus={(enable) => {
@@ -429,11 +451,11 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
                 <FormItem
                   optionTitle={t("servicelog:vpc.flowLogLocation")}
                   optionDesc={t("servicelog:vpc.flowLogLocationDesc")}
-                  errorText={
-                    vpcFlowLogEmptyError
-                      ? t("servicelog:vpc.vpcLogLocationError")
-                      : ""
-                  }
+                  errorText={ternary(
+                    vpcFlowLogEmptyError,
+                    t("servicelog:vpc.vpcLogLocationError"),
+                    undefined
+                  )}
                 >
                   <TextInput
                     placeholder={`arn:aws:logs:${amplifyConfig.aws_project_region}:123456789012:log-group`}
@@ -453,13 +475,13 @@ const SourceType: React.FC<SourceTypeProps> = (props: SourceTypeProps) => {
               shardNumError={shardNumError}
               maxShardNumError={maxShardNumError}
               changeMinCapacity={(num) => {
-                changeMinCapacity && changeMinCapacity(num);
+                changeMinCapacity?.(num);
               }}
               changeEnableAS={(enable) => {
-                changeEnableAS && changeEnableAS(enable);
+                changeEnableAS?.(enable);
               }}
               changeMaxCapacity={(num) => {
-                changeMaxCapacity && changeMaxCapacity(num);
+                changeMaxCapacity?.(num);
               }}
             />
           )}

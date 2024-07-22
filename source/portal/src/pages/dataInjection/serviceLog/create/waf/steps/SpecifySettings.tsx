@@ -32,12 +32,11 @@ import { InfoBarTypes } from "reducer/appReducer";
 import { useTranslation } from "react-i18next";
 import AutoEnableLogging from "../../common/AutoEnableLogging";
 import { buildWAFLink, splitStringToBucketAndPrefix } from "assets/js/utils";
-import { AmplifyConfigType } from "types";
+import { AmplifyConfigType, AnalyticEngineTypes } from "types";
 import { useSelector } from "react-redux";
 import CrossAccountSelect from "pages/comps/account/CrossAccountSelect";
 import IngestOptionSelect, { IngestOption } from "./IngestOptionSelect";
 import SampleSchedule from "./SampleSchedule";
-import { AnalyticEngineTypes } from "../../common/SpecifyAnalyticsEngine";
 import { RootState } from "reducer/reducers";
 
 export enum WAF_TYPE {

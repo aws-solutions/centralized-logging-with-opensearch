@@ -30,9 +30,9 @@ interface HeaderPanelProps {
   marginBottom?: number;
 }
 
-export const HeaderPanel: React.FC<HeaderPanelProps> = (
-  props: HeaderPanelProps
-) => {
+export const HeaderPanel: React.FC<
+  HeaderPanelProps & React.HTMLAttributes<HTMLDivElement>
+> = (props: HeaderPanelProps & React.HTMLAttributes<HTMLDivElement>) => {
   const {
     infoType,
     title,
@@ -42,11 +42,15 @@ export const HeaderPanel: React.FC<HeaderPanelProps> = (
     children,
     contentNoPadding,
     marginBottom,
+    ...restProps
   } = props;
 
-  // btn, btn-lg, btn-primary
   return (
-    <div className="gsui-header-panel" style={{ marginBottom: marginBottom }}>
+    <div
+      {...restProps}
+      className="gsui-header-panel"
+      style={{ marginBottom: marginBottom }}
+    >
       <div className="header">
         <div className="header-title">
           <div className="sub-title">

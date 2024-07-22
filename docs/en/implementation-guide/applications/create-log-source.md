@@ -1,13 +1,13 @@
 You need to create a log source first before collecting application logs. Centralized Logging with OpenSearch supports the following log sources:
 
-* [Amazon EC2 instance group](#amazon-ec2-instance-group)
+* [Amazon Instance Group](#amazon-ec2-instance-group)
 * [Amazon EKS cluster](#amazon-eks-cluster)
 * [Amazon S3](#amazon-s3)
 * [Syslog](#syslog)
 
 For more information, see [concepts](./index.md#concepts).
 
-## Amazon EC2 Instance Group
+## Amazon Instance Group
 
 An instance group represents a group of EC2 Linux instances, which enables the solution to associate a [Log Config](./index.md#log-config) with multiple EC2 instances quickly. Centralized Logging with OpenSearch uses [Systems Manager Agent(SSM Agent)][ssm-agent]{target="_blank"} to install/configure Fluent Bit agent, and sends log data to [Kinesis Data Streams][kds]{target="_blank"}.
 
@@ -106,12 +106,12 @@ After log analytics pipeline is created, it has one log source. You can choose t
 1. Sign in to the Centralized Logging with OpenSearch Console.
 
 2. In the left sidebar, under **Log Analytics Pipelines**, choose **Application Log**.
-   
-3. Choose the log pipeline by clicking its **ID**。
 
-4. Choose **Create a source**. 
+3. Choose the log pipeline by clicking its **ID**.
 
-5. Follow the instructions in [Amazon EC2 instance group](#amazon-ec2-instance-group), [Amazon EKS cluster](#amazon-eks-cluster), [Amazon S3](#amazon-s3), or [Syslog](#syslog) to create a log source according to your need. 
+4. Choose **Create a source**.
+
+5. Follow the instructions in [Amazon Instance Group](#amazon-ec2-instance-group), [Amazon EKS cluster](#amazon-eks-cluster), [Amazon S3](#amazon-s3), or [Syslog](#syslog) to create a log source according to your need.
 
 
 

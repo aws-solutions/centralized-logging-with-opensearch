@@ -296,6 +296,22 @@ def get_ec2_source():
     return mock_ec2_log_source
 
 
+def get_win_event_applog_ingestion_list():
+    mock_log_Ingestion = AppLogIngestion(
+        id="1",
+        accountId="accountI1",
+        region="us-east-1",
+        appPipelineId="appPipelineId1",
+        sourceId="sourceId1",
+        sourceType=LogSourceTypeEnum.EC2,
+        logConfig=get_log_config(),
+        autoAddPermission=True,
+    )
+    mock_ingestion_list = [mock_log_Ingestion]
+
+    return mock_ingestion_list
+
+
 def get_s3_source():
     mock_s3_log_source = LogSource(
         sourceId="sourceId1",
@@ -400,6 +416,10 @@ def test_create_app_log_ingestion(mocker):
         "svc.service.log_source_dao.get_log_source", return_value=get_s3_source()
     )
     mocker.patch("svc.service.S3SourceHandler.create_s3_ingestion", return_value=None)
+    mocker.patch(
+        "svc.service.verify_s3_bucket_prefix_overlap_for_event_notifications",
+        return_value=None,
+    )
     ingestion_svc.create_app_log_ingestion(mock_app_log_ingestion)
 
     # create syslog source with aos
@@ -464,6 +484,12 @@ def test_create_app_log_ingestion(mocker):
     # create ec2 source with aos
     mocker.patch(
         "svc.service.log_source_dao.get_log_source", return_value=get_ec2_source()
+    )
+    mocker.patch("svc.service.EC2SourceHandler.create_ingestion", return_value=None)
+
+    mocker.patch(
+        "flb.distribution.AppLogIngestionDao.get_app_log_ingestions_by_pipeline_id",
+        return_value=get_win_event_applog_ingestion_list(),
     )
     mocker.patch("svc.service.EC2SourceHandler.create_ingestion", return_value=None)
     ingestion_svc.create_app_log_ingestion(mock_app_log_ingestion)
@@ -539,6 +565,17 @@ def test_delete_app_log_ingestion(mocker):
     # deletes s3 source
     mocker.patch(
         "svc.service.log_source_dao.get_log_source", return_value=get_s3_source()
+    )
+    mocker.patch(
+        "svc.service.app_pipeline_dao.get_app_pipeline",
+        return_value=AppPipeline(
+            **{
+                "pipelineId": "appPipelineId1",
+                "logConfigId": "logConfigId1",
+                "logConfigVersionNumber": 1,
+                "monitor": {"status": "DISABLED"},
+            }
+        ),
     )
     mock_app_log_ingestion.status = StatusEnum.ACTIVE
     ingestion_svc.delete_app_log_ingestion(mock_app_log_ingestion.id)

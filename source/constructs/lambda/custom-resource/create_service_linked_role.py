@@ -2,13 +2,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import boto3
-import logging
+from commonlib.logging import get_logger
 import time
 
 iam = boto3.client("iam")
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 
 def lambda_handler(event, _):

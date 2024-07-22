@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-import logging
+from commonlib.logging import get_logger
 import os
 import sys
 import uuid
@@ -15,11 +15,11 @@ from commonlib.account import LinkAccountHelper
 from commonlib.dao import InstanceDao, LogSourceDao
 from commonlib.utils import paginate
 from commonlib.exception import APIException, ErrorCode
-from commonlib.model import StatusEnum
+from commonlib.model import StatusEnum, GroupPlatformEnum
 
 from util.eks import EksClusterUtil
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 log_source_table_name = os.getenv("LOG_SOURCE_TABLE_NAME")
@@ -152,10 +152,16 @@ class EC2LogSource(LogSource):
             )
         instances = ec2_source_info.pop("instances", [])
         source_id = super().create_log_source(**args)
-        self._batch_add_instances(source_id, instances)
+        self._batch_add_instances(
+            source_id,
+            ec2_source_info.get("groupPlatform", GroupPlatformEnum.LINUX),
+            instances,
+        )
         return source_id
 
-    def _batch_add_instances(self, source_id, instances):
+    def _batch_add_instances(
+        self, source_id, group_platform: GroupPlatformEnum, instances
+    ):
         log_source = self._dao.get_log_source(id=source_id)
         existed_instances = []
         new_add_instances = []
@@ -166,6 +172,7 @@ class EC2LogSource(LogSource):
 
             instance["id"] = instance["instanceId"]
             instance["sourceId"] = source_id
+            instance["platformType"] = group_platform
             instance["createdAt"] = datetime.utcnow().strftime(data_format)
             instance["updatedAt"] = instance["createdAt"]
             del instance["instanceId"]
@@ -217,7 +224,9 @@ class EC2LogSource(LogSource):
 
         # Depends on whether action is ADD or REMOVE
         if args["action"] == "ADD":
-            self._batch_add_instances(source_id, instances)
+            self._batch_add_instances(
+                source_id, item["ec2"]["groupPlatform"], instances
+            )
         else:
             self._batch_delete_instances(source_id, instances)
 

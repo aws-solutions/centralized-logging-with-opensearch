@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import json
-import logging
+from commonlib.logging import get_logger
 import os
 from datetime import datetime
 from boto3.dynamodb.conditions import Attr
@@ -15,8 +15,7 @@ from commonlib.utils import paginate
 from commonlib.dao import LogConfigDao
 
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 conn = AWSConnection()
 router = AppSyncRouter()
@@ -28,7 +27,7 @@ dao = LogConfigDao(log_config_table_name)
 
 @handle_error
 def lambda_handler(event, _):
-    logger.info("Received event: " + json.dumps(event, indent=2))
+    logger.info("Received event: " + json.dumps(event["arguments"], indent=2))
     return router.resolve(event)
 
 

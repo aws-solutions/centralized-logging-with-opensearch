@@ -19,21 +19,26 @@ import HeaderPanel from "components/HeaderPanel";
 import Tiles from "components/Tiles";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { AnalyticEngineTypes } from "../serviceLog/create/common/SpecifyAnalyticsEngine";
 import { AppLogSourceType, ServiceLogType } from "assets/js/const";
 import { PipelineType } from "API";
 import { ServicePipelineDesc } from "../serviceLog/create/common/desc/ServicePipelineDesc";
-import { AppPipelineDesc } from "../applicationLog/common/AppPipelineDesc";
+import AppPipelineDesc from "../applicationLog/common/AppPipelineDesc";
+import { AnalyticEngineTypes } from "types";
 
 const LIGHT_ENGINE_SUPPORTED_LOG_TYPES = [
   ServiceLogType.Amazon_WAF,
   ServiceLogType.Amazon_CloudFront,
   ServiceLogType.Amazon_ELB,
+  ServiceLogType.Amazon_CloudTrail,
+  ServiceLogType.Amazon_VPCLogs,
+  ServiceLogType.Amazon_RDS,
 ] as string[];
 
 const LIGHT_ENGINE_SUPPORTED_APP_LOG_TYPES = [
   AppLogSourceType.EC2,
   AppLogSourceType.EKS,
+  AppLogSourceType.SYSLOG,
+  AppLogSourceType.S3,
 ] as string[];
 
 export interface SelectAnalyticsEngineProps {
@@ -90,7 +95,10 @@ export const SelectAnalyticsEngine = ({
           engineType={engineType}
         />
       ) : (
-        <AppPipelineDesc type={appLogType ?? AppLogSourceType.EC2} engineType={engineType} />
+        <AppPipelineDesc
+          type={appLogType ?? AppLogSourceType.EC2}
+          engineType={engineType}
+        />
       )}
     </HeaderPanel>
   );

@@ -7,21 +7,22 @@ import Alert from "components/Alert";
 import ConfigDetailComps from "pages/resources/logConfig/ConfigDetailComps";
 import { useTranslation } from "react-i18next";
 import { LogSourceType } from "API";
+import LoadingText from "components/LoadingText";
 
-export interface UnmodifiableLogConfigSelector {
+export interface UnmodifiableLogConfigSelectorProps {
   configId: string;
-  configVersion?: number | 0;
+  configVersion?: number;
   title: string;
   desc: string;
-  error?: string | "";
+  error?: string;
   hideRefreshButton?: boolean;
   hideViewDetailButton?: boolean;
   hideDetail?: boolean;
   logType?: LogSourceType;
 }
-export function UnmodifiableLogConfigSelector(
-  props: UnmodifiableLogConfigSelector
-) {
+const UnmodifiableLogConfigSelector: React.FC<
+  UnmodifiableLogConfigSelectorProps
+> = (props: UnmodifiableLogConfigSelectorProps) => {
   const { t } = useTranslation();
   const [loadingConfig, setLoadingConfig] = useState(true);
   const [viewDetailsLink, setViewDetailsLink] = useState("");
@@ -66,13 +67,14 @@ export function UnmodifiableLogConfigSelector(
           optionList={[]}
           value={""}
           placeholder={logConfigName}
-          hasRefresh={props.hideRefreshButton ? false : true}
+          hasRefresh={!props.hideRefreshButton}
           viewDetailsLink={
             props.hideViewDetailButton ? undefined : viewDetailsLink
           }
         />
+        <div className="mt-10">{loadingConfig && <LoadingText />}</div>
       </FormItem>
-      <div className="mt-10 m-w-75p">
+      <div className="mt-10 m-w-75p" data-testid="unmodifiable-config-comp">
         {props.logType === LogSourceType.S3 && (
           <Alert content={t("applog:logSourceDesc.s3.step2.alert")} />
         )}
@@ -89,4 +91,6 @@ export function UnmodifiableLogConfigSelector(
       )}
     </>
   );
-}
+};
+
+export default UnmodifiableLogConfigSelector;

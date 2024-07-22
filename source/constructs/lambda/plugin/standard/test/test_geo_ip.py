@@ -11,7 +11,7 @@ def test_get_database_path():
 
 
 class TestPlugin:
-    def setup(self):
+    def setup_method(self):
         os.environ["ENV"] = "LOCAL"
 
     def test_process_cloudfront(self):

@@ -14,6 +14,7 @@ Centralized Logging with OpenSearch provides two types of authentication, [Cogni
 | US West (N. California)                   | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
 | US West (Oregon)                          | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
 | Canada (Central)                          | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
+| Canada (Calgary)                          | :material-close-thick:{ .icon_cross }  | :material-check-bold:{ .icon_check }  |
 | Africa (Cape Town)                        | :material-close-thick:{ .icon_cross } | :material-check-bold:{ .icon_check } |
 | Asia Pacific (Hong Kong)                  | :material-close-thick:{ .icon_cross } | :material-check-bold:{ .icon_check } |
 | Asia Pacific (Mumbai)                     | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
@@ -22,14 +23,20 @@ Centralized Logging with OpenSearch provides two types of authentication, [Cogni
 | Asia Pacific (Singapore)                  | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
 | Asia Pacific (Sydney)                     | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
 | Asia Pacific (Tokyo)                      | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
-| Middle East (Bahrain)                     | :material-check-bold:{ .icon_cross }  | :material-check-bold:{ .icon_check }  |
+| Asia Pacific (Hyderabad)                  | :material-close-thick:{ .icon_cross }  | :material-check-bold:{ .icon_check }  |
+| Asia Pacific (Jakarta)                    | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
+| Asia Pacific (Melbourne)                  | :material-close-thick:{ .icon_cross }  | :material-check-bold:{ .icon_check }  |
+| Israel (Tel Aviv)                         | :material-close-thick:{ .icon_cross }  | :material-check-bold:{ .icon_check }  |
+| Middle East (Bahrain)                     | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
+| Middle East (UAE)                         | :material-close-thick:{ .icon_cross } | :material-check-bold:{ .icon_check } |
 | Europe (Frankfurt)                        | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
 | Europe (Ireland)                          | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
 | Europe (London)                           | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
 | Europe (Milan)                            | :material-close-thick:{ .icon_cross } | :material-check-bold:{ .icon_check } |
 | Europe (Paris)                            | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
 | Europe (Stockholm)                        | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
-| Middle East (Bahrain)                     | :material-check-bold:{ .icon_check } | :material-check-bold:{ .icon_check } |
+| Europe (Spain)                            | :material-close-thick:{ .icon_cross }  | :material-check-bold:{ .icon_check }  |
+| Europe (Zurich)                           | :material-close-thick:{ .icon_cross }  | :material-check-bold:{ .icon_check }  |
 | South America (Sao Paulo)                 | :material-check-bold:{ .icon_check }  | :material-check-bold:{ .icon_check }  |
 | China (Beijing) Region Operated by Sinnet | :material-close-thick:{ .icon_cross } | :material-check-bold:{ .icon_check }  |
 | China (Ningxia) Regions operated by NWCD  | :material-close-thick:{ .icon_cross } | :material-check-bold:{ .icon_check }  |

@@ -1,0 +1,106 @@
+{
+	"type": "object",
+	"properties": {
+		"time": {
+			"type": "big_int",
+			"expression": "CAST(to_unixtime(parse_datetime(timestamp, 'dd/MMM/yyyy:HH:mm:ss Z')) * 1000 AS bigint)"
+		},
+		"timestamp": {
+			"type": "timestamp",
+			"expression": "parse_datetime(timestamp, 'dd/MMM/yyyy:HH:mm:ss Z')"
+		},
+		"bucket_owner": {
+			"type": "string"
+		},
+		"bucket": {
+			"type": "string"
+		},
+		"remote_ip": {
+			"type": "string"
+		},
+		"requester": {
+			"type": "string"
+		},
+		"request_id": {
+			"type": "string"
+		},
+		"operation": {
+			"type": "string"
+		},
+		"key": {
+			"type": "string"
+		},
+		"request_uri": {
+			"type": "string"
+		},
+		"http_status_group": {
+			"type": "string",
+			"expression": "CASE WHEN http_status BETWEEN 100 AND 199 THEN '1xx' WHEN http_status BETWEEN 200 AND 299 THEN '2xx' WHEN http_status BETWEEN 300 AND 399 THEN '3xx' WHEN http_status BETWEEN 400 AND 499 THEN '4xx' WHEN http_status BETWEEN 500 AND 599 THEN '5xx' ELSE '-' END"
+		},
+		"http_status": {
+			"type": "integer"
+		},
+		"error_code": {
+			"type": "string"
+		},
+		"bytes_sent": {
+			"type": "double",
+			"expression": "case when bytes_sent = '-' then 0.0 else cast(bytes_sent as double) end"
+		},
+		"object_size": {
+			"type": "double",
+			"expression": "case when object_size = '-' then 0.0 else cast(object_size as double) end"
+		},
+		"total_time": {
+			"type": "double",
+			"expression": "case when total_time = '-' then 0.0 else cast(total_time as double) end"
+		},
+		"turn_around_time": {
+			"type": "double",
+			"expression": "case when turn_around_time = '-' then 0.0 else cast(turn_around_time as double) end"
+		},
+		"referrer": {
+			"type": "string"
+		},
+		"user_agent": {
+			"type": "string"
+		},
+		"version_id": {
+			"type": "string"
+		},
+		"host_id": {
+			"type": "string"
+		},
+		"signature_version": {
+			"type": "string"
+		},
+		"cipher_suite": {
+			"type": "string"
+		},
+		"authentication_type": {
+			"type": "string"
+		},
+		"host_header": {
+			"type": "string"
+		},
+		"tls_version": {
+			"type": "string"
+		},
+		"access_point_arn": {
+			"type": "string"
+		},
+		"acl_required": {
+			"type": "string"
+		},
+		"event_hour": {
+			"type": "string",
+			"partition": true,
+			"expression": "date_format(parse_datetime(timestamp, 'dd/MMM/yyyy:HH:mm:ss Z'), '%Y%m%d%H')"
+		},
+		"__execution_name__": {
+			"type": "string",
+			"partition": true,
+			"expression": "'{{}}'"
+		}
+	}
+}

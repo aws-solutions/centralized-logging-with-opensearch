@@ -3,15 +3,15 @@
 
 import os
 import json
-import logging
+from commonlib.logging import get_logger
 from io import StringIO
 import csv
 import boto3
 from datetime import datetime
 from pathlib import Path
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
+
 default_region = os.environ.get("AWS_REGION")
 failed_log_bucket_name = os.environ.get("BACKUP_BUCKET_NAME")
 s3_local = boto3.resource("s3", region_name=default_region)

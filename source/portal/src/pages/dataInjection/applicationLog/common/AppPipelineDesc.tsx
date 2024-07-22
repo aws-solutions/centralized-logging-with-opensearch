@@ -16,15 +16,17 @@
 
 import IMAGE_SL_Amazon_EC2 from "assets/images/type/amazon_ec2.svg";
 import IMAGE_SL_Amazon_EKS from "assets/images/type/amazon_eks.svg";
-import IMAGE_SL_Amazon_EC2_LIGHT_ENGINE from "assets/images/type/amazon_ec2_light_engine_arch.svg";
-import IMAGE_SL_Amazon_EKS_LIGHT_ENGINE from "assets/images/type/amazon_eks_light_engine_arch.svg";
+import IMAGE_SL_Amazon_EC2_LIGHT_ENGINE from "assets/images/type/amazon_ec2_light_engine_arch.png";
+import IMAGE_SL_Amazon_EKS_LIGHT_ENGINE from "assets/images/type/amazon_eks_light_engine_arch.png";
 import IMAGE_SL_Amazon_S3_2 from "assets/images/type/amazon_s3_2.svg";
 import IMAGE_SL_SYSLOG from "assets/images/type/syslog.svg";
 import IMAGE_SL_SYSLOG_ARCH from "assets/images/type/syslog_arch.svg";
+import IMAGE_SL_SYSLOG_ARCH_LIGHT_ENGINE from "assets/images/type/syslog_arch_light_engine.png";
 import IMAGE_SL_Amazon_EKS_ARCH from "assets/images/type/amazon_eks_arch.svg";
 import IMAGE_SL_Amazon_EC2_ARCH from "assets/images/type/amazon_ec2_arch.svg";
 import IMAGE_SL_Amazon_S3_ARCH_ONE_TIME from "assets/images/type/s3-source-one-time.svg";
 import IMAGE_SL_Amazon_S3_ARCH_ON_GOING from "assets/images/type/s3-source-on-going.svg";
+import IMAGE_SL_Amazon_S3_ARCH_ON_GOING_LIGHT_ENGINE from "assets/images/type/s3-source-on-going-light-engine.png";
 
 import { AppLogSourceType } from "assets/js/const";
 import React, { useMemo, useState } from "react";
@@ -32,7 +34,7 @@ import React, { useMemo, useState } from "react";
 import ExtLink from "components/ExtLink";
 import { useTranslation } from "react-i18next";
 import { AntTab, AntTabs, TabPanel } from "components/Tab";
-import { AnalyticEngineTypes } from "pages/dataInjection/serviceLog/create/common/SpecifyAnalyticsEngine";
+import { AnalyticEngineTypes } from "types";
 
 export const AppLogSourceMap = {
   [AppLogSourceType.EC2]: {
@@ -62,7 +64,7 @@ export const AppLogSourceMap = {
     descLink: { href: "", i18nKey: "" },
     img: IMAGE_SL_SYSLOG,
     archImg: IMAGE_SL_SYSLOG_ARCH,
-    lightEngineImg: "",
+    lightEngineImg: IMAGE_SL_SYSLOG_ARCH_LIGHT_ENGINE,
     disabled: false,
   },
   [AppLogSourceType.S3]: {
@@ -81,14 +83,17 @@ interface AppPipelineDescProps {
   engineType: AnalyticEngineTypes;
 }
 
-export const AppPipelineDesc = (props: AppPipelineDescProps) => {
+const AppPipelineDesc: React.FC<AppPipelineDescProps> = (
+  props: AppPipelineDescProps
+) => {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState("onGoing");
   const { type, engineType } = props;
   const isLightEngine = useMemo(
     () => engineType === AnalyticEngineTypes.LIGHT_ENGINE,
     [engineType]
   );
+
   return (
     <div>
       <div className="ingest-desc-title">
@@ -134,37 +139,58 @@ export const AppPipelineDesc = (props: AppPipelineDescProps) => {
       )}
       {type === AppLogSourceType.S3 && (
         <React.Fragment>
-          <AntTabs
-            value={activeTab}
-            onChange={(event, newTab) => {
-              setActiveTab(newTab);
-            }}
-          >
-            <AntTab label={t("applog:logSourceDesc.s3.step1.onGoing")} />
-            <AntTab label={t("applog:logSourceDesc.s3.step1.oneTimeLoad")} />
-          </AntTabs>
-          <TabPanel value={activeTab} index={0}>
+          {!isLightEngine ? (
+            <>
+              <AntTabs
+                value={activeTab}
+                onChange={(event, newTab) => {
+                  setActiveTab(newTab);
+                }}
+              >
+                <AntTab
+                  label={t("applog:logSourceDesc.s3.step1.onGoing")}
+                  value="onGoing"
+                />
+                <AntTab
+                  label={t("applog:logSourceDesc.s3.step1.oneTimeLoad")}
+                  value="oneTime"
+                />
+              </AntTabs>
+              <TabPanel value={activeTab} index="onGoing">
+                <div className="mt-10">
+                  <img
+                    className="img-border"
+                    alt="architecture"
+                    width="80%"
+                    src={IMAGE_SL_Amazon_S3_ARCH_ON_GOING}
+                  />
+                </div>
+              </TabPanel>
+              <TabPanel value={activeTab} index="oneTime">
+                <div className="mt-10">
+                  <img
+                    className="img-border"
+                    alt="architecture"
+                    width="80%"
+                    src={IMAGE_SL_Amazon_S3_ARCH_ONE_TIME}
+                  />
+                </div>
+              </TabPanel>
+            </>
+          ) : (
             <div className="mt-10">
               <img
                 className="img-border"
                 alt="architecture"
                 width="80%"
-                src={IMAGE_SL_Amazon_S3_ARCH_ON_GOING}
+                src={IMAGE_SL_Amazon_S3_ARCH_ON_GOING_LIGHT_ENGINE}
               />
             </div>
-          </TabPanel>
-          <TabPanel value={activeTab} index={1}>
-            <div className="mt-10">
-              <img
-                className="img-border"
-                alt="architecture"
-                width="80%"
-                src={IMAGE_SL_Amazon_S3_ARCH_ONE_TIME}
-              />
-            </div>
-          </TabPanel>
+          )}
         </React.Fragment>
       )}
     </div>
   );
 };
+
+export default AppPipelineDesc;

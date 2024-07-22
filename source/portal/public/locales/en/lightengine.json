@@ -44,13 +44,13 @@
       "specifyLightEngine": "Specify Light Engine configuration",
       "configTitle": "Config Light Engine",
       "sampleDashboardTitle": "Sample dashboard",
-      "sampleDashboardDesc": "Create a predefined sample dashboard in a Grafana dashboard.",
+      "sampleDashboardDesc": "Create a predefined sample dashboard in Grafana.",
       "grafanaPlaceholder": "Select a Grafana",
       "centralBucketTitle": "S3 bucket for log location",
       "centralBucketDesc": "This bucket is used for long-term storage and management of data for analytical, reporting, and visualization purposes.",
       "centralBucketPlaceholder": "Select a Amazon S3 bucket",
       "centralTableTitle": "Log table name",
-      "centralTableDesc": "The name of the table used to store logs.",
+      "centralTableDesc": "Define the table name in the Data Catalog for the logs.",
       "logProcessorExpTitle": "Log process frequency",
       "logProcessorExpDesc": "Enter a value and the unit of time to run the schedule. For more information and examples, see <0>Rate-based schedules</0>",
       "logMergerExpTitle": "Log merge schedule",
@@ -58,9 +58,9 @@
       "logArchiveExpTitle": "Log archive schedule",
       "logArchiveExpDesc": "The expression that defines when the log archive runs. For more information and examples, see <0>Cron-based schedules</0>",
       "logMergerAgeTitle": "Logs merge (days)",
-      "logMergerAgeDesc": "Small file retention days, with a default value of 7, indicates that logs stored for more than 7 days will be merged into small files. This value can be adjusted as needed.",
+      "logMergerAgeDesc": "Small file retention days, with a default value of 7, indicates that logs stored for more than 7 days will be merged to large files. This value can be adjusted as needed.",
       "logArchiveAgeTitle": "Logs archive (days)",
-      "logArchiveAgeDesc": "Log retention days, with a default value of 30, indicates that logs stored for more than 30 days will be archived and deleted. This value can be adjusted as needed.",
+      "logArchiveAgeDesc": "Log retention days, with a default value of 30, indicates that logs stored for more than 30 days will be archived, and according to S3 bucket lifecycle pre-setting, the logs will be deleted in 3 days after archived. This value can be adjusted as needed.",
       "errorGrafanaIdMissing": "Grafana ID is required.",
       "errorCentralBucketMissing": "log bucket is required",
       "errorLogArchiveScheduleMissing": "Log archive schedule is required",
@@ -70,7 +70,8 @@
       "errorLogArchiveAgeGteLogMergerAge": "Log merge time should be less than log archive time",
       "errorLogMergerAgeGteOne": "Log merger age should be greater or equal to 1 day",
       "errorLogProcessorScheduleExp": "Log processor schedule should be more than 1 minute.",
-      "errorCronExpression": "Please provide a valid Cron expression."
+      "errorCronExpression": "Please provide a valid Cron expression.",
+      "errorTableName": "Table name must be a combination of letters, numbers, and underscores, and must be between 1 and 255 characters."
     }
   },
   "logging": {

@@ -21,13 +21,10 @@
       "version": "detect"
     }
   },
-  "plugins": [
-    "react",
-    "react-hooks",
-    "@typescript-eslint"
-  ],
+  "plugins": ["react", "react-hooks", "@typescript-eslint", "import"],
   "rules": {
     "eqeqeq": "warn",
+    "import/no-duplicates": "error",
     "@typescript-eslint/no-explicit-any": "off"
   }
 }

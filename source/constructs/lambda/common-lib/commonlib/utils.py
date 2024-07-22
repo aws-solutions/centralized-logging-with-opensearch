@@ -6,9 +6,11 @@ import os
 import re
 import uuid
 import json
-import logging
+from typing import List
+from .model import BufferParam
+from .logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def create_stack_name(pattern, id):
@@ -99,7 +101,7 @@ def exec_sfn_flow(
     sfn_client, state_machine_arn: str, flow_id: str, action="START", args=None
 ):
     """Helper function to execute a step function flow"""
-    logging.info(f"Execute Step Function Flow: {state_machine_arn}")
+    logger.info(f"Execute Step Function Flow: {state_machine_arn}")
 
     if args is None:
         args = {}
@@ -115,3 +117,21 @@ def exec_sfn_flow(
         stateMachineArn=state_machine_arn,
         input=json.dumps(input_args),
     )
+
+def get_kv_from_buffer_param(key: str, buffer_param: List[BufferParam]) -> str:
+    for p in buffer_param:
+        if p.paramKey == key:
+            return p.paramValue
+    return ""
+
+def set_kv_to_buffer_param(key: str, value: str, buffer_param: List[BufferParam]) -> List[BufferParam]:
+    has_key = False
+    
+    for p in buffer_param:
+        if p.paramKey == key:
+            p.paramValue = value
+            has_key = True
+
+    if has_key is False:
+        buffer_param.append(BufferParam(paramKey=key, paramValue=value))
+    return buffer_param

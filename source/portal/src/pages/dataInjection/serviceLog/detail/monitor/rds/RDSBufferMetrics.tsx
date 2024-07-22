@@ -22,23 +22,28 @@ import MonitorMetrics from "pages/comps/monitor/MonitorMetrics";
 const RDSBufferMetrics: React.FC<ServiceMetricProps> = (
   props: ServiceMetricProps
 ) => {
-  const { pipelineInfo, startDate, endDate, refreshCount } = props;
+  const { pipelineInfo, startDate, endDate, refreshCount, isLightEngine } =
+    props;
   const RDSBufferMetricsChartList = [
-    {
-      title: MetricName.KDFIncomingBytes,
-      graphTitle: MetricName.KDFIncomingBytes,
-      yUnit: "Bytes",
-    },
-    {
-      title: MetricName.KDFIncomingRecords,
-      graphTitle: MetricName.KDFIncomingRecords,
-      yUnit: "Count",
-    },
-    {
-      title: MetricName.KDFDeliveryToS3Bytes,
-      graphTitle: MetricName.KDFDeliveryToS3Bytes,
-      yUnit: "Bytes",
-    },
+    ...(isLightEngine
+      ? [
+          {
+            title: MetricName.KDFIncomingBytes,
+            graphTitle: MetricName.KDFIncomingBytes,
+            yUnit: "Bytes",
+          },
+          {
+            title: MetricName.KDFIncomingRecords,
+            graphTitle: MetricName.KDFIncomingRecords,
+            yUnit: "Count",
+          },
+          {
+            title: MetricName.KDFDeliveryToS3Bytes,
+            graphTitle: MetricName.KDFDeliveryToS3Bytes,
+            yUnit: "Bytes",
+          },
+        ]
+      : []),
     {
       title: MetricName.SQSNumberOfMessagesSent,
       graphTitle: MetricName.SQSNumberOfMessagesSent,

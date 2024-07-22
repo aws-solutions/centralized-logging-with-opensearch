@@ -60,10 +60,21 @@ const defaultChildNode: TreeNode = {
   timeKey: false,
 };
 
+const getJSONPropertyType = (value: string | number, defaultType: string) => {
+  if (defaultType === "number") {
+    if (value.toString().includes(".")) {
+      return "float";
+    } else {
+      return "integer";
+    }
+  }
+  return defaultType;
+};
+
 function schemaToTree(schema: Schema, jsonData: any, key = "root"): TreeNode {
   const treeNode: TreeNode = {
     key,
-    type: schema.type,
+    type: getJSONPropertyType(jsonData, schema.type),
     value: jsonData,
     format: schema.format ?? "",
     timeKey: schema.timeKey,

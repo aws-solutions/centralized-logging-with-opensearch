@@ -75,6 +75,7 @@ export class PortalStack extends Construct {
   readonly portalBucket: s3.Bucket;
   readonly portalUrl: string;
   readonly cloudFrontDistributionId: string;
+  readonly webUILoggingBucket: s3.Bucket;
 
   constructor(scope: Construct, id: string, props: PortalProps) {
     super(scope, id);
@@ -85,7 +86,14 @@ export class PortalStack extends Construct {
         Fn.conditionEquals(Aws.REGION, 'af-south-1'),
         Fn.conditionEquals(Aws.REGION, 'eu-south-1'),
         Fn.conditionEquals(Aws.REGION, 'me-south-1'),
-        Fn.conditionEquals(Aws.REGION, 'me-central-1')
+        Fn.conditionEquals(Aws.REGION, 'me-central-1'),
+        Fn.conditionEquals(Aws.REGION, 'ap-south-2'),
+        Fn.conditionEquals(Aws.REGION, 'ap-southeast-3'),
+        Fn.conditionEquals(Aws.REGION, 'ap-southeast-4'),
+        Fn.conditionEquals(Aws.REGION, 'il-central-1'),
+        Fn.conditionEquals(Aws.REGION, 'ca-west-1'),
+        Fn.conditionEquals(Aws.REGION, 'eu-south-2'),
+        Fn.conditionEquals(Aws.REGION, 'eu-central-2'),
       ),
     });
 
@@ -200,6 +208,7 @@ export class PortalStack extends Construct {
       },
     ]);
     this.portalBucket = portal.s3Bucket as s3.Bucket;
+    this.webUILoggingBucket = portal.s3LoggingBucket as s3.Bucket;
     const portalDist = portal.cloudFrontWebDistribution.node
       .defaultChild as cloudfront.CfnDistribution;
 

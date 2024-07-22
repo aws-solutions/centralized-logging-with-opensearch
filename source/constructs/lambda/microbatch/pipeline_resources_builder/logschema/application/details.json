@@ -1,0 +1,249 @@
+{
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": {
+            "type": "grafana",
+            "uid": "-- Grafana --"
+          },
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "target": {
+            "limit": 100,
+            "matchAny": false,
+            "tags": [],
+            "type": "dashboard"
+          },
+          "type": "dashboard"
+        }
+      ]
+    },
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 0,
+    "id": 714,
+    "links": [],
+    "liveNow": false,
+    "panels": [
+      {
+        "datasource": {
+          "type": "grafana-athena-datasource",
+          "uid": "Bn93a3_Vk"
+        },
+        "description": "",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "fixedColor": "green",
+              "mode": "fixed"
+            },
+            "custom": {
+              "align": "center",
+              "cellOptions": {
+                "type": "color-text"
+              },
+              "filterable": true,
+              "inspect": true
+            },
+            "mappings": [],
+            "min": -3,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            },
+            "unit": "none"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 33,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "id": 14,
+        "options": {
+          "cellHeight": "sm",
+          "footer": {
+            "countRows": false,
+            "enablePagination": false,
+            "fields": [
+              "response_latency",
+              "response_length"
+            ],
+            "reducer": [
+              "sum"
+            ],
+            "show": false
+          },
+          "showHeader": true,
+          "sortBy": []
+        },
+        "pluginVersion": "10.0.0",
+        "targets": [
+          {
+            "connectionArgs": {
+              "catalog": "__default",
+              "database": "__default",
+              "region": "__default",
+              "resultReuseEnabled": true,
+              "resultReuseMaxAgeInMinutes": 5
+            },
+            "datasource": {
+              "type": "grafana-athena-datasource",
+              "uid": "Bn93a3_Vk"
+            },
+            "format": 1,
+            "rawSQL": "SELECT t.*\nFROM (SELECT row_number() over (order by time ${sort_by}) as \"No.\", *\n  FROM \"$__table\"\n  WHERE $__unixEpochFilter(time / 1000)\n\t\tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n  ) t \nWHERE t.\"No.\" BETWEEN (${page_no:int} - 1) * ${page_size:int} + 1 AND ${page_no:int} * ${page_size:int};",
+            "refId": "Details",
+            "table": "cl_app_le_apache"
+          }
+        ],
+        "transformations": [],
+        "type": "table"
+      }
+    ],
+    "refresh": "",
+    "revision": 1,
+    "schemaVersion": 38,
+    "style": "dark",
+    "tags": [],
+    "templating": {
+      "list": [
+        {
+          "current": {
+            "selected": false,
+            "text": "1",
+            "value": "1"
+          },
+          "datasource": {
+            "type": "grafana-athena-datasource",
+            "uid": "Bn93a3_Vk"
+          },
+          "definition": "",
+          "hide": 0,
+          "includeAll": false,
+          "label": "Page No",
+          "multi": false,
+          "name": "page_no",
+          "options": [],
+          "query": {
+            "connectionArgs": {
+              "catalog": "__default",
+              "database": "__default",
+              "region": "__default",
+              "resultReuseEnabled": true,
+              "resultReuseMaxAgeInMinutes": 5
+            },
+            "format": 1,
+            "rawSQL": "SELECT cast(page_no as varchar) as page_no\nFROM (\n\tSELECT sequence(1, count(1) / ${page_size:int} + 1, 1)\n  FROM \"$__table\"\n  WHERE $__unixEpochFilter(time / 1000)\n\t\tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n\t) AS x (no)\nCROSS JOIN UNNEST(no) AS t (page_no)\n;",
+            "refId": "Details",
+            "table": "cl_app_le_apache"
+          },
+          "refresh": 1,
+          "regex": "",
+          "skipUrlSync": false,
+          "sort": 0,
+          "type": "query"
+        },
+        {
+          "current": {
+            "selected": true,
+            "text": "1000",
+            "value": "1000"
+          },
+          "hide": 0,
+          "includeAll": false,
+          "label": "Page Size",
+          "multi": false,
+          "name": "page_size",
+          "options": [
+            {
+              "selected": false,
+              "text": "100",
+              "value": "100"
+            },
+            {
+              "selected": true,
+              "text": "1000",
+              "value": "1000"
+            },
+            {
+              "selected": false,
+              "text": "10000",
+              "value": "10000"
+            },
+            {
+              "selected": false,
+              "text": "50000",
+              "value": "50000"
+            }
+          ],
+          "query": "100, 1000, 10000, 50000",
+          "queryValue": "",
+          "skipUrlSync": false,
+          "type": "custom"
+        },
+        {
+          "current": {
+            "selected": false,
+            "text": "Asc",
+            "value": "Asc"
+          },
+          "hide": 0,
+          "includeAll": false,
+          "label": "Sort  by",
+          "multi": false,
+          "name": "sort_by",
+          "options": [
+            {
+              "selected": true,
+              "text": "Asc",
+              "value": "Asc"
+            },
+            {
+              "selected": false,
+              "text": "Desc",
+              "value": "Desc"
+            }
+          ],
+          "query": "Asc, Desc",
+          "queryValue": "",
+          "skipUrlSync": false,
+          "type": "custom"
+        }
+      ]
+    },
+    "time": {
+      "from": "now-30m",
+      "to": "now"
+    },
+    "timepicker": {
+      "hidden": false,
+      "refresh_intervals": [
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ]
+    },
+    "timezone": "",
+    "title": "cl_app_le_apache-details",
+    "uid": "68d6a00d-6b30-4ef8-b35e-8377fc637b31-00",
+    "version": 2,
+    "weekStart": ""
+  }

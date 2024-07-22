@@ -33,7 +33,7 @@ export enum SNSCreateMethod {
   ChooseCreateTopic = "chooseCreateTopic",
 }
 
-const initState: AlarmStateType = {
+export const initState: AlarmStateType = {
   isConfirmed: false,
   snsObj: null,
   topicCheckOption: SNSCreateMethod.ChooseExistTopic,
@@ -108,7 +108,7 @@ export type CreateAlarmActions =
   | SetFieldError
   | ValidateAlarmInput;
 
-const validateExistSNS = (state: CreateAlarmState) => {
+export const validateExistSNS = (state: CreateAlarmState) => {
   if (
     state.isConfirmed &&
     state.topicCheckOption === SNSCreateMethod.ChooseExistTopic
@@ -120,7 +120,7 @@ const validateExistSNS = (state: CreateAlarmState) => {
   return "";
 };
 
-const validateSNSTopicName = (state: CreateAlarmState) => {
+export const validateSNSTopicName = (state: CreateAlarmState) => {
   if (
     state.isConfirmed &&
     state.topicCheckOption === SNSCreateMethod.ChooseCreateTopic
@@ -132,7 +132,7 @@ const validateSNSTopicName = (state: CreateAlarmState) => {
   return "";
 };
 
-const validSNSEmail = (state: CreateAlarmState) => {
+export const validSNSEmail = (state: CreateAlarmState) => {
   if (
     state.isConfirmed &&
     state.topicCheckOption === SNSCreateMethod.ChooseCreateTopic
@@ -144,7 +144,7 @@ const validSNSEmail = (state: CreateAlarmState) => {
   return "";
 };
 
-export const validateAalrmInput = (state: CreateAlarmState) =>
+export const validateAlarmInput = (state: CreateAlarmState) =>
   validateExistSNS(state) === "" &&
   validateSNSTopicName(state) === "" &&
   validSNSEmail(state) === "";

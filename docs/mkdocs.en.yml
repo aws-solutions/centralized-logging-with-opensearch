@@ -10,11 +10,14 @@ nav:
           - Overview: index.md
           - Features and benefits: implementation-guide/solution-overview/features.md
           - Use cases: implementation-guide/solution-overview/use-cases.md
+          - Concepts: implementation-guide/solution-overview/concepts.md
       - Architecture overview:
-          - Architecture diagram: implementation-guide/architecture.md
+          - Architecture diagram: implementation-guide/architecture-overview/architecture.md
           - AWS Well-Architected pillars: implementation-guide/architecture-overview/well-architected-pillars.md
       - Architecture details:
-          - Solution components: implementation-guide/architecture-details/solution-components.md
+          - Service log analytics pipeline: implementation-guide/architecture-details/service-log-analytics-pipeline.md
+          - Application log analytics pipeline: implementation-guide/architecture-details/application-log-analytics-pipeline.md
+          - Light Engine: implementation-guide/architecture-details/light-engine.md
           - AWS services in this solution: implementation-guide/architecture-details/services-in-this-solution.md
       - Plan your deployment:
           - Cost: implementation-guide/plan-deployment/cost.md
@@ -37,18 +40,18 @@ nav:
           - Domain alarms: implementation-guide/domains/alarms.md
       - AWS Services logs:
           - Overview: implementation-guide/aws-services/index.md
-          - Amazon CloudTrail: implementation-guide/aws-services/cloudtrail.md
+          - AWS CloudTrail: implementation-guide/aws-services/cloudtrail.md
           - Amazon S3: implementation-guide/aws-services/s3.md
           - Amazon RDS/Aurora: implementation-guide/aws-services/rds.md
           - Amazon CloudFront: implementation-guide/aws-services/cloudfront.md
           - AWS Lambda: implementation-guide/aws-services/lambda.md
-          - Elastic Load Balancing: implementation-guide/aws-services/elb.md
+          - Application Load Balancer: implementation-guide/aws-services/elb.md
           - AWS WAF: implementation-guide/aws-services/waf.md
           - VPC Flow Log: implementation-guide/aws-services/vpc.md
           - AWS Config: implementation-guide/aws-services/config.md     
       - Applications logs:
           - Overview: implementation-guide/applications/index.md
-          - EC2 instance group: implementation-guide/applications/ec2-pipeline.md
+          - Instance Group: implementation-guide/applications/ec2-pipeline.md
           - EKS cluster: implementation-guide/applications/eks-pipeline.md
           - S3: implementation-guide/applications/s3-pipeline.md
           - Syslog: implementation-guide/applications/syslog-pipeline.md
@@ -61,6 +64,7 @@ nav:
           - Monitoring: implementation-guide/monitoring.md
       - FAQ: implementation-guide/faq.md
       - Troubleshooting: implementation-guide/trouble-shooting.md
+      - Upgrade the solution: implementation-guide/update.md
       - Uninstall the solution: implementation-guide/uninstall.md
       - Additional resources:
           - Grafana: implementation-guide/resources/grafana.md

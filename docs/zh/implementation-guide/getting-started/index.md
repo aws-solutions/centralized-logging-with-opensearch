@@ -1,6 +1,6 @@
 # 快速入门
 
-[部署解决方案](../deployment/index.md)后，您可以先阅读本章，快速了解如何利用日志通进行日志摄取（以 Amazon CloudTrail 日志为例）和日志可视化。
+[部署解决方案](../deployment/index.md)后，您可以先阅读本章，快速了解如何利用日志通进行日志摄取（以 AWS CloudTrail 日志为例）和日志可视化。
 
 您也可以选择开始 [集群管理](../domains/index.md) ，并创建 [AWS 服务日志分析管道](../aws-services/index.md)和[应用日志分析管道](../applications/index.md)。
 

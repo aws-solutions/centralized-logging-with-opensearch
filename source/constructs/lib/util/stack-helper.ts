@@ -13,8 +13,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import { Construct } from "constructs";
-import { CfnElement } from "aws-cdk-lib";
+import { Construct, IConstruct } from "constructs";
+import { CfnElement, CfnResource, IAspect } from "aws-cdk-lib";
+import * as fs from 'fs';
+import * as path from 'path';
 
 type ConstructParam = [scope: Construct, id: string, props?: any];
 
@@ -30,9 +32,9 @@ export const constructFactory =
   <T extends Construct, P extends ConstructParam>(
     ConstructClass: new (...p: P) => T
   ) =>
-  (...params: P): T => {
-    return new ConstructClass(...params);
-  };
+    (...params: P): T => {
+      return new ConstructClass(...params);
+    };
 
 /**
  * This High Order function constructs a new instance of a given class with a fixed logical ID for use
@@ -47,11 +49,34 @@ export const constructWithFixedLogicalId =
   <T extends Construct, P extends ConstructParam>(
     ConstructClass: new (...p: P) => T
   ) =>
-  (...params: P): T => {
-    const construct = new ConstructClass(...params);
-    const cfnElement = construct.node.defaultChild as CfnElement;
-    // Make the logical ID in CFN template fixed
-    cfnElement.overrideLogicalId(params[1]);
+    (...params: P): T => {
+      const construct = new ConstructClass(...params);
+      const cfnElement = construct.node.defaultChild as CfnElement;
+      // Make the logical ID in CFN template fixed
+      cfnElement.overrideLogicalId(params[1]);
 
-    return construct;
-  };
+      return construct;
+    };
+
+export class UseS3BucketNotificationsWithRetryAspects implements IAspect {
+  public visit(node: IConstruct): void {
+    if (
+      node instanceof CfnResource &&
+      node.cfnResourceType === "AWS::Lambda::Function"
+    ) {
+      const code = fs.readFileSync(path.join(__dirname, '../../lambda/custom-resource/put_s3_bucket_notification_with_retry.py'), 'utf8');
+      node.addPropertyOverride("Code.ZipFile", code);
+    }
+  }
+}
+
+export class EnforceUnmanagedS3BucketNotificationsAspects implements IAspect {
+  public visit(node: IConstruct): void {
+    if (
+      node instanceof CfnResource &&
+      node.cfnResourceType === "Custom::S3BucketNotifications"
+    ) {
+      node.addPropertyOverride("Managed", false);
+    }
+  }
+}

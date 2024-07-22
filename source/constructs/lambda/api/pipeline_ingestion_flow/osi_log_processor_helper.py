@@ -2,20 +2,16 @@
 # SPDX-License-Identifier: Apache-2.0
 import os
 import json
-import logging
+from commonlib.logging import get_logger
 from datetime import datetime
 from commonlib.dao import (
     AppPipelineDao,
     StatusEnum,
 )
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
-
 from commonlib import AWSConnection, AppSyncRouter
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 log_type = os.environ.get("LOG_TYPE")
 log_processor_name = os.environ["LOG_PROCESSOR_NAME"]
@@ -36,13 +32,16 @@ update_expression = "SET #s = :status, #createdAt= :uDt"
 created_at = "#createdAt"
 status = ":status"
 
-lambda_payload = {
-    "action": "CHECK"
-}
+lambda_payload = {"action": "CHECK"}
+
 
 def lambda_handler(event, _):
-    logger.info(f"event is {event}")
-    if log_type == "ELB" or log_type == "WAF" or log_type == "CloudTrail" or log_type == "VPCFlow":
+    if (
+        log_type == "ELB"
+        or log_type == "WAF"
+        or log_type == "CloudTrail"
+        or log_type == "VPCFlow"
+    ):
         svc_pipeline_table = dynamodb.Table(svc_pipeline_table_name)
         svc_pipeline_table.update_item(
             Key={"id": osi_pipeline_id},
@@ -57,28 +56,26 @@ def lambda_handler(event, _):
             },
         )
     else:
-        app_pipeline_dao.update_app_pipeline(osi_pipeline_id, status=StatusEnum.CREATING)
+        app_pipeline_dao.update_app_pipeline(
+            osi_pipeline_id, status=StatusEnum.CREATING
+        )
     response = fn.invoke(
         FunctionName=log_processor_name,
-        InvocationType='RequestResponse',
-        LogType='Tail',
+        InvocationType="RequestResponse",
+        LogType="Tail",
         Payload=json.dumps(lambda_payload),
     )
     payload = response["Payload"].read()
     logger.info(f"response payload is {payload}")
     if payload == b'"Ok"':
-        return {
-            "result": "OK",
-            "action": "START"
-        }
+        return {"result": "OK", "action": "START"}
     else:
-        if 'retryTime' in event:
-            retry_time = int(event['retryTime']) + 1
+        if "retryTime" in event:
+            retry_time = int(event["retryTime"]) + 1
         else:
             retry_time = 1
         return {
             "action": "UPDATE",
             "result": "LogProcessorFn failed to create resources in AOS",
-            "retryTime": str(retry_time)
+            "retryTime": str(retry_time),
         }
-    

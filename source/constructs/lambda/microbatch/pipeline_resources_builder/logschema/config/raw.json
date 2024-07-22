@@ -1,0 +1,83 @@
+{
+	"type": "object",
+	"properties": {
+		"fileversion": {
+			"type": "string"
+		},
+		"configsnapshotid": {
+			"type": "string"
+		},
+		"configurationitems": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"configurationitemversion": {
+						"type": "string"
+					},
+					"configurationitemcapturetime": {
+						"type": "string"
+					},
+					"configurationstateid": {
+						"type": "big_int"
+					},
+					"awsaccountid": {
+						"type": "string"
+					},
+					"configurationitemstatus": {
+						"type": "string"
+					},
+					"resourcetype": {
+						"type": "string"
+					},
+					"resourceid": {
+						"type": "string"
+					},
+					"resourcename": {
+						"type": "string"
+					},
+					"arn": {
+						"type": "string"
+					},
+					"awsregion": {
+						"type": "string"
+					},
+					"availabilityzone": {
+						"type": "string"
+					},
+					"configurationstatemd5hash": {
+						"type": "string"
+					},
+					"configuration": {
+						"type": "string"
+					},
+					"supplementaryconfiguration": {
+						"type": "map",
+						"properties": {
+							"key": {
+								"type": "string"
+							},
+							"value": {
+								"type": "string"
+							}
+						}
+					},
+					"tags": {
+						"type": "map",
+						"properties": {
+							"key": {
+								"type": "string"
+							},
+							"value": {
+								"type": "string"
+							}
+						}
+					},
+					"resourcecreationtime": {
+						"type": "string"
+					}
+				}
+			}
+		}
+	}
+}

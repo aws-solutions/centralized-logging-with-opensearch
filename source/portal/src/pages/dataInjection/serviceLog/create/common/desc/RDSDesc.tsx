@@ -13,14 +13,24 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React from "react";
+import React, { useMemo } from "react";
 import ExtLink from "components/ExtLink";
-import RDSArch from "assets/images/desc/rdsArch.png";
+import RDSArch from "assets/images/desc/rdsArch.webp";
+import RDSLightEngineArch from "assets/images/desc/rdsArchLightEngine.webp";
 import { RDS_LOG_LINK } from "assets/js/const";
 import { useTranslation } from "react-i18next";
+import { AnalyticEngineTypes } from "types";
 
-const RDSDesc: React.FC = () => {
+export interface RDSDescProps {
+  engineType: AnalyticEngineTypes;
+}
+
+const RDSDesc: React.FC<RDSDescProps> = ({ engineType }: RDSDescProps) => {
   const { t } = useTranslation();
+  const isLightEngine = useMemo(
+    () => engineType === AnalyticEngineTypes.LIGHT_ENGINE,
+    [engineType]
+  );
   return (
     <div>
       <div className="ingest-desc-title">
@@ -29,18 +39,20 @@ const RDSDesc: React.FC = () => {
       <div className="ingest-desc-desc">
         {t("servicelog:rds.desc.ingest")}
         <ExtLink to={RDS_LOG_LINK}>{t("servicelog:rds.desc.rdsLog")}</ExtLink>
-        {t("intoDomain")}
+        {isLightEngine ? t("intoLightEngine") : t("intoDomain")}
       </div>
       <div className="ingest-desc-title">
         {t("servicelog:rds.desc.archName")}
       </div>
-      <div className="ingest-desc-desc">{t("archDesc")}</div>
+      <div className="ingest-desc-desc">
+        {isLightEngine ? t("lightEngineArchDesc") : t("archDesc")}
+      </div>
       <div className="mt-10">
         <img
           className="img-border"
           alt="architecture"
           width="80%"
-          src={RDSArch}
+          src={isLightEngine ? RDSLightEngineArch : RDSArch}
         />
       </div>
     </div>

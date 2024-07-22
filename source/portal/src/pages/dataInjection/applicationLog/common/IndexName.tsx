@@ -25,7 +25,7 @@ interface IndexNameProps {
   value: string;
   setValue: React.Dispatch<React.SetStateAction<string>>;
   validator?: Validator;
-  error?: string
+  error?: string;
 }
 
 const IndexName: React.FC<IndexNameProps> = (props: IndexNameProps) => {

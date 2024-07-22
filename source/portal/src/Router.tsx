@@ -67,6 +67,7 @@ import "@aws-amplify/ui-react/styles.css";
 import { GrafanaList } from "pages/lightEngine/grafana/GrafanaList";
 import { ImportGrafana } from "pages/lightEngine/grafana/importGrafana/ImportGrafana";
 import { UpdateGrafana } from "pages/lightEngine/grafana/importGrafana/UpdateGrafana";
+import CommonLayout from "pages/layout/CommonLayout";
 
 const AppRouter: React.FC = () => {
   const { t } = useTranslation();
@@ -278,16 +279,14 @@ const AppRouter: React.FC = () => {
           <Route
             path="*"
             element={
-              <div className="lh-main-content">
-                <div className="lh-container pd-20">
-                  <div className="not-found">
-                    <h1>{t("pageNotFound")}</h1>
-                    <Link to="/">
-                      <Button>{t("home")}</Button>
-                    </Link>
-                  </div>
+              <CommonLayout hideHelper hideMenu>
+                <div className="not-found">
+                  <h1>{t("pageNotFound")}</h1>
+                  <Link to="/">
+                    <Button>{t("home")}</Button>
+                  </Link>
                 </div>
-              </div>
+              </CommonLayout>
             }
           />
         </Routes>

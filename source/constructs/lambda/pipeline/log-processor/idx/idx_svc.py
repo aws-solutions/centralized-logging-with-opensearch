@@ -1,27 +1,28 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-import logging
+from commonlib.logging import get_logger
+from commonlib import AWSConnection
 import os
 import time
 import json
 import gzip
 import base64
 from datetime import datetime, date
-import boto3
 from botocore.exceptions import ClientError
 from idx.opensearch_client import OpenSearchUtil
 from commonlib.exception import APIException, ErrorCode
 
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 default_region = os.environ.get("AWS_REGION")
+conn = AWSConnection()
 
 TOTAL_RETRIES = 2
 SLEEP_INTERVAL = 10
 DEFAULT_BULK_BATCH_SIZE = "10000"
+batch_size = int(os.environ.get("BULK_BATCH_SIZE", DEFAULT_BULK_BATCH_SIZE))
 BULK_ACTION = "index"
 
 log_type = os.environ.get("LOG_TYPE", "").lower()
@@ -46,7 +47,7 @@ endpoint = os.environ.get("ENDPOINT")
 create_dashboard = os.environ.get("CREATE_DASHBOARD", "No")
 INDEX_TEMPLATE_GZIP_BASE64 = os.environ.get("INDEX_TEMPLATE_GZIP_BASE64", "")
 
-lambda_client = boto3.client("lambda", region_name=default_region)
+lambda_client = conn.get_client("lambda", default_region)
 function_name = os.environ.get("FUNCTION_NAME")
 
 init_master_role_job = int(os.environ.get("INIT_MASTER_ROLE_JOB", "0"))
@@ -90,6 +91,9 @@ class AosIdxService:
                 break
             logger.error("%s failed: %s", func_name, response.text)
             if response.status_code == 403 or response.status_code == 409:
+                logger.info(
+                    "Please add access to OpenSearch for this Lambda and rerun this"
+                )
                 if response.status_code == 403:
                     self.map_backend_role()
                 raise APIException(
@@ -98,6 +102,11 @@ class AosIdxService:
                 )
 
             if retry >= total_retry:
+                logger.info(
+                    "%s failed after %d retries, please manually create it",
+                    func_name,
+                    retry,
+                )
                 logger.info(
                     "the last response code is %d, the last response content is %s",
                     response.status_code,
@@ -108,6 +117,7 @@ class AosIdxService:
                     f"Lambda has called AOS {total_retry} times, the message will be re-consumed and then retried. ",
                 )
 
+            logger.info(f"Sleep {sleep_interval} seconds and retry...")
             retry += 1
             time.sleep(sleep_interval)
 
@@ -186,7 +196,7 @@ class AosIdxService:
         try:
             return json.loads(gzip.decompress(base64.b64decode(s)))
         except Exception as e:
-            logging.warn("Error decoding gzip base64 json string: %s", e)
+            logger.warning("Error decoding gzip base64 json string: %s", e)
             return None
 
     def _get_index_template(self):
@@ -223,7 +233,8 @@ class AosIdxService:
 
     def _import_saved_objects(self):
         if create_dashboard.lower() == "yes" or (
-            log_type in ["cloudfront", "cloudtrail", "s3", "elb", "nginx", "apache"]
+            log_type
+            in ["cloudfront", "cloudtrail", "s3", "elb", "nginx", "apache", "iis"]
         ):
             logger.info(
                 "Import saved objects for type %s with prefix %s",
@@ -341,6 +352,7 @@ class AosIdxService:
                 )
 
             logger.error("Bulk load failed: %s", response.text)
+            logger.info("Sleep 10 seconds and retry...")
             retry += 1
             time.sleep(SLEEP_INTERVAL)
 

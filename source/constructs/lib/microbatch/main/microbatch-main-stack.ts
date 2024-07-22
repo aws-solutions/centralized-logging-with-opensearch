@@ -40,7 +40,7 @@ export class MicroBatchMainStack extends Stack {
     let solutionId = props.solutionId;
     let stackPrefix = props.stackPrefix;
 
-    this.templateOptions.description = `(${solutionId}) - ${solutionDesc} Solution. Template version ${VERSION}`;
+    this.templateOptions.description = `(${solutionId}-cla) - ${solutionDesc} Solution. Template version ${VERSION}`;
 
     const emailAddressParameter = new CfnParameter(this, "emailAddress", {
       type: "String",
@@ -136,5 +136,6 @@ export class MicroBatchMainStack extends Stack {
       CMKArn: CMKArn,
       SESState: SESStateParameter.valueAsString,
     });
+
   }
 }

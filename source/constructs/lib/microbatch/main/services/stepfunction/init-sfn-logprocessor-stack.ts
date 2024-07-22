@@ -190,6 +190,14 @@ export class InitStepFunctionLogProcessorStack extends Construct {
         resultPath: sfn.JsonPath.DISCARD,
       });
 
+      putStepFunctionTaskToDynamoDB.addRetry({
+        interval: Duration.seconds(10),
+        maxAttempts: 5,
+        maxDelay: Duration.seconds(120),
+        backoffRate: 2,
+        jitterStrategy: sfn.JitterType.FULL,
+      });
+
       const updateStepFunctionTaskToFailed = new tasks.DynamoUpdateItem(this, "Update task status of Step Function to Failed", {
         table: microBatchDDBStack.ETLLogTable,
         key: {
@@ -205,6 +213,14 @@ export class InitStepFunctionLogProcessorStack extends Construct {
           ":endTime": tasks.DynamoAttributeValue.fromString(sfn.JsonPath.stringAt("$$.State.EnteredTime")),
         },
         resultPath: sfn.JsonPath.DISCARD,
+      });
+      
+      updateStepFunctionTaskToFailed.addRetry({
+        interval: Duration.seconds(10),
+        maxAttempts: 5,
+        maxDelay: Duration.seconds(120),
+        backoffRate: 2,
+        jitterStrategy: sfn.JitterType.FULL,
       });
 
       const updateStepFunctionTaskToCompleted = new tasks.DynamoUpdateItem(this, "Update task status of Step Function to Succeeded", {
@@ -224,6 +240,14 @@ export class InitStepFunctionLogProcessorStack extends Construct {
         resultPath: sfn.JsonPath.DISCARD,
       });
 
+      updateStepFunctionTaskToCompleted.addRetry({
+        interval: Duration.seconds(10),
+        maxAttempts: 5,
+        maxDelay: Duration.seconds(120),
+        backoffRate: 2,
+        jitterStrategy: sfn.JitterType.FULL,
+      });
+
       const S3MigrationTaskFromStagingToArchive = new tasks.LambdaInvoke(this, "Step 1: Migration S3 Objects from Staging to Archive", {
         lambdaFunction: microBatchLambdaStack.S3ObjectScanningStack.S3ObjectScanning,
         integrationPattern: sfn.IntegrationPattern.WAIT_FOR_TASK_TOKEN,
@@ -234,8 +258,11 @@ export class InitStepFunctionLogProcessorStack extends Construct {
             "dstPath.$": "States.Format('{}/{}', $.metadata.s3.archivePath, $$.Execution.Name)",
             "sqsName": microBatchSQSStack.S3ObjectMigrationQ.queueName,
             "keepPrefix": true,
-            "size": 500,
+            "merge": false,
             "deleteOnSuccess": true,
+            "maxRecords": 15000,
+            "maxObjectFilesNumPerCopyTask": 50,
+            "maxObjectFilesSizePerCopyTask": "10GiB",
             "sourceType.$": "$.metadata.sourceType",
             "enrichmentPlugins.$": "$.metadata.enrichmentPlugins",
             taskToken: sfn.JsonPath.taskToken,
@@ -274,15 +301,44 @@ export class InitStepFunctionLogProcessorStack extends Construct {
         }),
       });
 
-      const createTmpTableInAthena = new tasks.LambdaInvoke(this, 'Step 2.1: Create tmp table in Athena', {
+      const executionInputFormatter = new tasks.LambdaInvoke(this, 'Step 2: Execution input formatting...', {
+        lambdaFunction: microBatchLambdaStack.ETLHelperStack.ETLHelper,
+        payload: sfn.TaskInput.fromObject({
+          "API": "Step Functions: ExecutionInputFormatter",
+          "parameters": {
+            "input": {
+              "metadata.$": "$.metadata"
+            },
+          },
+          "executionName.$": "$$.Execution.Name",
+          "taskId.$": "States.UUID()",
+          taskToken: sfn.JsonPath.taskToken,
+          "extra": {
+            "parentTaskId": mainTaskId,
+            "pipelineId.$": "$.metadata.pipelineId",
+            "stateMachineName.$": "$$.StateMachine.Name",
+            "stateName.$": "$$.State.Name",
+          },
+        }),
+        retryOnServiceExceptions: false,
+        integrationPattern: sfn.IntegrationPattern.WAIT_FOR_TASK_TOKEN,
+        resultSelector: {
+          "metadata.$": "$.metadata"
+        },
+        resultPath: "$.input",
+      });
+
+      const createTmpTableInAthena = new tasks.LambdaInvoke(this, 'Step 3.1: Create tmp table in Athena', {
         lambdaFunction: microBatchLambdaStack.ETLHelperStack.ETLHelper,
         payload: sfn.TaskInput.fromObject({
           "API": "Athena: StartQueryExecution",
           "executionName.$": "$$.Execution.Name",
           "taskId.$": "States.UUID()",
-          queryString: sfn.JsonPath.stringAt("States.Format($.metadata.athena.statements.create, $$.Execution.Name, States.Format('{}/{}', $.metadata.s3.archivePath, $$.Execution.Name))"),
-          "workGroup": microBatchAthenaStack.microBatchAthenaWorkGroup.name,
-          "outputLocation": `s3://${stagingBucket.bucketName}/athena-results`,
+          "parameters": {
+            "queryString.$": "$.input.metadata.athena.statements.create",
+            "workGroup": microBatchAthenaStack.microBatchAthenaWorkGroup.name,
+            "outputLocation": `s3://${stagingBucket.bucketName}/athena-results`,
+          },
           "extra": {
             "parentTaskId": mainTaskId,
             "pipelineId.$": "$.metadata.pipelineId",
@@ -296,11 +352,11 @@ export class InitStepFunctionLogProcessorStack extends Construct {
         resultPath: sfn.JsonPath.DISCARD,
       });
 
-      const insertIntoDeltaFromTmpTableInAthena = new tasks.StepFunctionsStartExecution(this, "Step 2.2: Insert into delta from tmp table in Athena", {
+      const insertIntoDeltaFromTmpTableInAthena = new tasks.StepFunctionsStartExecution(this, "Step 3.2: Insert into delta from tmp table in Athena", {
         stateMachine: AthenaWorkflowStack.AthenaWorkflow,
         integrationPattern: sfn.IntegrationPattern.RUN_JOB,
         input: sfn.TaskInput.fromObject({
-          "queryString": sfn.JsonPath.stringAt("States.Format($.metadata.athena.statements.insert, $$.Execution.Name, $$.Execution.Name)",),
+          "queryString.$": "$.input.metadata.athena.statements.insert",
           "workGroup": microBatchAthenaStack.microBatchAthenaWorkGroup.name,
           "executionName.$": "$$.Execution.Name",
           "extra": {
@@ -315,15 +371,17 @@ export class InitStepFunctionLogProcessorStack extends Construct {
         resultPath: sfn.JsonPath.DISCARD,
       });
 
-      const droppingTmpTableInAthena = new tasks.LambdaInvoke(this, 'Step 2.3: Dropping tmp table in Athena', {
+      const droppingTmpTableInAthena = new tasks.LambdaInvoke(this, 'Step 3.3: Dropping tmp table in Athena', {
         lambdaFunction: microBatchLambdaStack.ETLHelperStack.ETLHelper,
         payload: sfn.TaskInput.fromObject({
           "API": "Athena: StartQueryExecution",
           "executionName.$": "$$.Execution.Name",
           "taskId.$": "States.UUID()",
-          queryString: sfn.JsonPath.stringAt("States.Format($.metadata.athena.statements.drop, $$.Execution.Name)"),
-          "workGroup": microBatchAthenaStack.microBatchAthenaWorkGroup.name,
-          "outputLocation": `s3://${stagingBucket.bucketName}/athena-results`,
+          "parameters": {
+            "queryString.$": "$.input.metadata.athena.statements.drop",
+            "workGroup": microBatchAthenaStack.microBatchAthenaWorkGroup.name,
+            "outputLocation": `s3://${stagingBucket.bucketName}/athena-results`,
+          },
           "extra": {
             "parentTaskId": mainTaskId,
             "pipelineId.$": "$.metadata.pipelineId",
@@ -337,11 +395,11 @@ export class InitStepFunctionLogProcessorStack extends Construct {
         resultPath: sfn.JsonPath.DISCARD,
       });
 
-      const measuringKPIsInAthena = new tasks.StepFunctionsStartExecution(this, "Step 2.4: Measuring KPIs in Athena - Optional", {
+      const measuringKPIsInAthena = new tasks.StepFunctionsStartExecution(this, "Step 3.4: Measuring KPIs in Athena - Optional", {
         stateMachine: AthenaWorkflowStack.AthenaWorkflow,
         integrationPattern: sfn.IntegrationPattern.RUN_JOB,
         input: sfn.TaskInput.fromObject({
-          "queryString": sfn.JsonPath.stringAt("States.Format($.aggregate, $$.Execution.Name)"),
+          "queryString.$": "$.aggregate",
           "workGroup": microBatchAthenaStack.microBatchAthenaWorkGroup.name,
           "executionName.$": "$$.Execution.Name",
           "extra": {
@@ -358,7 +416,7 @@ export class InitStepFunctionLogProcessorStack extends Construct {
 
       const measuringKPIsMap = new sfn.Map(this, 'Measuring KPIs Map', {
         maxConcurrency: 1,
-        itemsPath: sfn.JsonPath.stringAt('$.metadata.athena.statements.aggregate'),
+        itemsPath: sfn.JsonPath.stringAt('$.input.metadata.athena.statements.aggregate'),
         parameters: {
           "metadata.$": "$.metadata",
           "aggregate.$": "$$.Map.Item.Value"
@@ -368,27 +426,28 @@ export class InitStepFunctionLogProcessorStack extends Construct {
 
       const isNeedAggregate = new sfn.Choice(this, 'Has errors or need aggregate?')
         .when(sfn.Condition.isPresent("$.errors"), sendFailureNotification)
-        .when(sfn.Condition.isPresent("$.metadata.athena.statements.aggregate"), measuringKPIsMap)
+        .when(sfn.Condition.isPresent("$.input.metadata.athena.statements.aggregate"), measuringKPIsMap)
         .otherwise(updateStepFunctionTaskToCompleted);
 
       const stagingHasData = new sfn.Choice(this, 'Staging has Data?')
-        .when(sfn.Condition.booleanEquals("$.results.staging.hasObjects", true), createTmpTableInAthena)
+        .when(sfn.Condition.booleanEquals("$.results.staging.hasObjects", true), executionInputFormatter)
         .otherwise(updateStepFunctionTaskToCompleted);
 
       putStepFunctionTaskToDynamoDB.next(S3MigrationTaskFromStagingToArchive);
       S3MigrationTaskFromStagingToArchive.addCatch(sendFailureNotification, {resultPath: "$.errors.S3MigrationTaskFromStagingToArchive"});
       S3MigrationTaskFromStagingToArchive.next(stagingHasData);
 
-      createTmpTableInAthena.next(insertIntoDeltaFromTmpTableInAthena).next(droppingTmpTableInAthena);
+      executionInputFormatter.next(createTmpTableInAthena).next(insertIntoDeltaFromTmpTableInAthena).next(droppingTmpTableInAthena);
       droppingTmpTableInAthena.next(isNeedAggregate);
 
+      executionInputFormatter.addCatch(sendFailureNotification, {resultPath: "$.errors.executionInputFormatting"});
       createTmpTableInAthena.addCatch(droppingTmpTableInAthena, {resultPath: "$.errors.createTmpTableInAthena"});
 
       insertIntoDeltaFromTmpTableInAthena.addCatch(droppingTmpTableInAthena, {resultPath: "$.errors.insertIntoDeltaFromTmpTableInAthena"});
       droppingTmpTableInAthena.addCatch(sendFailureNotification, {resultPath: "$.errors.droppingTmpTableInAthena"});
  
       measuringKPIsMap.addCatch(sendFailureNotification, {resultPath: "$.errors.measuringKPIsMap"});
-      measuringKPIsMap.iterator(measuringKPIsInAthena).next(updateStepFunctionTaskToCompleted);
+      measuringKPIsMap.itemProcessor(measuringKPIsInAthena).next(updateStepFunctionTaskToCompleted);
       sendFailureNotification.next(updateStepFunctionTaskToFailed).next(jobFailed);
 
       // Create a Step Function for LogProcessor

@@ -28,51 +28,36 @@ import { appSyncRequestQuery } from "assets/js/request";
 import { listResources } from "graphql/queries";
 import { Resource, ResourceType } from "API";
 import { SelectItem } from "components/Select/select";
-import { OptionType } from "components/AutoComplete/autoComplete";
 import ExtLink from "components/ExtLink";
 import {
   AmplifyConfigType,
   S3_STORAGE_CLASS_OPTIONS,
-  ApplicationLogType,
+  AnalyticEngineTypes,
 } from "types";
 import ExtButton from "components/ExtButton";
-import { useSelector } from "react-redux";
-import { buildCreateS3Link } from "assets/js/utils";
+import { useDispatch, useSelector } from "react-redux";
+import { buildCreateS3Link, displayI18NMessage } from "assets/js/utils";
 import { RootState } from "reducer/reducers";
 import ExpandableSection from "components/ExpandableSection";
-import { AnalyticEngineTypes } from "pages/dataInjection/serviceLog/create/common/SpecifyAnalyticsEngine";
+import { AppDispatch } from "reducer/store";
+import {
+  bufferIntervalChanged,
+  bufferSizeChanged,
+  bufferCompressionTypeChanged,
+  logBucketChanged,
+  logBucketPrefixChanged,
+  s3StorageClassChanged,
+} from "reducer/configBufferS3";
 
 interface BufferS3Props {
-  applicationLog: ApplicationLogType;
-  s3BucketEmptyError: boolean;
-  s3PrefixError: boolean;
-  bufferSizeError: boolean;
-  bufferIntervalError: boolean;
   engineType?: AnalyticEngineTypes;
-  changeS3BufferBucket: (bucket: OptionType | null) => void;
-  changeS3BufferPrefix: (prefix: string) => void;
-  changeS3BufferBufferSize: (size: string) => void;
-  changeS3BufferTimeout: (timeout: string) => void;
-  changeS3CompressionType: (type: string) => void;
-  changeS3StorageClass: (storage: string) => void;
 }
 
 const BufferS3: React.FC<BufferS3Props> = (props: BufferS3Props) => {
   const { t } = useTranslation();
-  const {
-    applicationLog,
-    s3BucketEmptyError,
-    s3PrefixError,
-    bufferSizeError,
-    bufferIntervalError,
-    changeS3BufferBucket,
-    changeS3BufferPrefix,
-    changeS3BufferBufferSize,
-    changeS3BufferTimeout,
-    changeS3CompressionType,
-    changeS3StorageClass,
-    engineType = AnalyticEngineTypes.OPENSEARCH,
-  } = props;
+  const { engineType = AnalyticEngineTypes.OPENSEARCH } = props;
+  const s3Buffer = useSelector((state: RootState) => state.s3Buffer);
+  const dispatch = useDispatch<AppDispatch>();
   const [loadingS3List, setLoadingS3List] = useState(false);
   const [s3BucketOptionList, setS3BucketOptionList] = useState<SelectItem[]>(
     []
@@ -122,11 +107,7 @@ const BufferS3: React.FC<BufferS3Props> = (props: BufferS3Props) => {
             ? t("applog:create.ingestSetting.s3BucketPrefixLightEngineDesc")
             : t("applog:create.ingestSetting.s3BucketDesc")
         }
-        errorText={
-          s3BucketEmptyError
-            ? t("applog:create.ingestSetting.selectS3Bucket")
-            : ""
-        }
+        errorText={displayI18NMessage(s3Buffer.logBucketError)}
       >
         <div className="flex m-w-75p">
           <div className="flex-1">
@@ -136,14 +117,14 @@ const BufferS3: React.FC<BufferS3Props> = (props: BufferS3Props) => {
               placeholder={t("servicelog:s3.selectBucket") || ""}
               loading={loadingS3List}
               optionList={s3BucketOptionList}
-              value={applicationLog.s3BufferBucketObj}
+              value={s3Buffer.s3BufferBucketObj}
               onChange={(event: React.ChangeEvent<HTMLInputElement>, data) => {
-                changeS3BufferBucket(data);
+                dispatch(logBucketChanged(data));
               }}
             />
           </div>
           <div className="ml-10">
-            <ExtButton to={buildCreateS3Link(amplifyConfig.aws_appsync_region)}>
+            <ExtButton to={buildCreateS3Link(amplifyConfig.aws_project_region)}>
               {t("applog:create.ingestSetting.create")}
             </ExtButton>
           </div>
@@ -164,18 +145,14 @@ const BufferS3: React.FC<BufferS3Props> = (props: BufferS3Props) => {
                   S3_BUFFER_PREFIX +
                   t("applog:create.ingestSetting.s3BucketPrefixDesc2")
                 }
-                errorText={
-                  s3PrefixError
-                    ? t("applog:create.ingestSetting.s3PrefixInvalid")
-                    : ""
-                }
+                errorText={displayI18NMessage(s3Buffer.logBucketPrefixError)}
               >
                 <TextInput
                   placeholder={S3_BUFFER_PREFIX}
                   className="m-w-75p"
-                  value={applicationLog.s3BufferParams.logBucketPrefix}
+                  value={s3Buffer.data.logBucketPrefix}
                   onChange={(event) => {
-                    changeS3BufferPrefix(event.target.value);
+                    dispatch(logBucketPrefixChanged(event.target.value));
                   }}
                 />
               </FormItem>
@@ -184,20 +161,16 @@ const BufferS3: React.FC<BufferS3Props> = (props: BufferS3Props) => {
             <FormItem
               optionTitle={t("applog:create.ingestSetting.bufferSize")}
               optionDesc={t("applog:create.ingestSetting.bufferSizeDesc")}
-              errorText={
-                bufferSizeError
-                  ? t("applog:create.ingestSetting.bufferSizeError")
-                  : ""
-              }
+              errorText={displayI18NMessage(s3Buffer.bufferSizeError)}
             >
               <div className="flex">
                 <div>
                   <TextInput
                     type="number"
                     placeholder="50"
-                    value={applicationLog.s3BufferParams.maxFileSize}
+                    value={s3Buffer.data.maxFileSize}
                     onChange={(event) => {
-                      changeS3BufferBufferSize(event.target.value);
+                      dispatch(bufferSizeChanged(event.target.value));
                     }}
                   />
                 </div>
@@ -208,20 +181,16 @@ const BufferS3: React.FC<BufferS3Props> = (props: BufferS3Props) => {
             <FormItem
               optionTitle={t("applog:create.ingestSetting.bufferInt")}
               optionDesc={t("applog:create.ingestSetting.bufferIntDesc")}
-              errorText={
-                bufferIntervalError
-                  ? t("applog:create.ingestSetting.bufferIntError")
-                  : ""
-              }
+              errorText={displayI18NMessage(s3Buffer.bufferIntervalError)}
             >
               <div className="flex">
                 <div>
                   <TextInput
                     type="number"
                     placeholder="60"
-                    value={applicationLog.s3BufferParams.uploadTimeout}
+                    value={s3Buffer.data.uploadTimeout}
                     onChange={(event) => {
-                      changeS3BufferTimeout(event.target.value);
+                      dispatch(bufferIntervalChanged(event.target.value));
                     }}
                   />
                 </div>
@@ -241,9 +210,9 @@ const BufferS3: React.FC<BufferS3Props> = (props: BufferS3Props) => {
               <Select
                 className="m-w-75p"
                 optionList={S3_STORAGE_CLASS_OPTIONS}
-                value={applicationLog.s3BufferParams.s3StorageClass}
+                value={s3Buffer.data.s3StorageClass}
                 onChange={(event) => {
-                  changeS3StorageClass(event.target.value);
+                  dispatch(s3StorageClassChanged(event.target.value));
                 }}
               />
             </FormItem>
@@ -257,9 +226,9 @@ const BufferS3: React.FC<BufferS3Props> = (props: BufferS3Props) => {
                 placeholder={t("applog:create.ingestSetting.compressChoose")}
                 className="m-w-75p"
                 optionList={COMPRESS_TYPE}
-                value={applicationLog.s3BufferParams.compressionType}
+                value={s3Buffer.data.compressionType}
                 onChange={(event) => {
-                  changeS3CompressionType(event.target.value);
+                  dispatch(bufferCompressionTypeChanged(event.target.value));
                 }}
               />
             </FormItem>

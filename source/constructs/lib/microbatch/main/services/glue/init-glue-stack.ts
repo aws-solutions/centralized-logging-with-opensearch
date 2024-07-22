@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import { Construct } from "constructs";
-import { RemovalPolicy, aws_ssm as ssm } from "aws-cdk-lib";
+import { Aws, RemovalPolicy, CfnOutput } from "aws-cdk-lib";
 import { Database } from "@aws-cdk/aws-glue-alpha";
 
 export interface  InitGlueProps {
@@ -48,14 +48,11 @@ export class InitGlueStack extends Construct {
 
       this.microBatchTmpDatabase.applyRemovalPolicy(RemovalPolicy.DESTROY);
 
-      const SSMCentralizedDatabaseArn = new ssm.StringParameter(this, 'SSMCentralizedDatabaseArn', {
-        parameterName: '/MicroBatch/CentralizedDatabaseArn',
-        stringValue: this.microBatchCentralizedDatabase.databaseArn,
-      });
-
-      // Override the logical ID
-      const cfnSSMCentralizedDatabaseArn = SSMCentralizedDatabaseArn.node.defaultChild as ssm.CfnParameter;
-      cfnSSMCentralizedDatabaseArn.overrideLogicalId("SSMCentralizedDatabaseArn");
+      new CfnOutput(this, 'CentralizedDatabaseArn', {
+        description: 'Centralized Database Arn',
+        value: this.microBatchCentralizedDatabase.databaseArn,
+        exportName: `${Aws.STACK_NAME}::CentralizedDatabaseArn`,
+      }).overrideLogicalId('CentralizedDatabaseArn');
 
     }
 }

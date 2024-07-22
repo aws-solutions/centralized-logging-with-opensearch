@@ -53,6 +53,7 @@ export const createServicePipeline = /* GraphQL */ `
     $destinationType: DestinationType!
     $osiParams: OpenSearchIngestionInput
     $monitor: MonitorInput
+    $logProcessorConcurrency: String!
   ) {
     createServicePipeline(
       type: $type
@@ -65,6 +66,7 @@ export const createServicePipeline = /* GraphQL */ `
       destinationType: $destinationType
       osiParams: $osiParams
       monitor: $monitor
+      logProcessorConcurrency: $logProcessorConcurrency
     )
   }
 `;
@@ -176,6 +178,7 @@ export const createLogConfig = /* GraphQL */ `
     $logType: LogType!
     $syslogParser: SyslogParser
     $multilineLogParser: MultiLineLogParser
+    $iisLogParser: IISlogParser
     $filterConfigMap: ProcessorFilterRegexInput
     $regex: String
     $jsonSchema: AWSJSON
@@ -191,6 +194,7 @@ export const createLogConfig = /* GraphQL */ `
       logType: $logType
       syslogParser: $syslogParser
       multilineLogParser: $multilineLogParser
+      iisLogParser: $iisLogParser
       filterConfigMap: $filterConfigMap
       regex: $regex
       jsonSchema: $jsonSchema
@@ -216,6 +220,7 @@ export const updateLogConfig = /* GraphQL */ `
     $logType: LogType!
     $syslogParser: SyslogParser
     $multilineLogParser: MultiLineLogParser
+    $iisLogParser: IISlogParser
     $filterConfigMap: ProcessorFilterRegexInput
     $regex: String
     $jsonSchema: AWSJSON
@@ -233,6 +238,7 @@ export const updateLogConfig = /* GraphQL */ `
       logType: $logType
       syslogParser: $syslogParser
       multilineLogParser: $multilineLogParser
+      iisLogParser: $iisLogParser
       filterConfigMap: $filterConfigMap
       regex: $regex
       jsonSchema: $jsonSchema
@@ -249,6 +255,7 @@ export const createAppPipeline = /* GraphQL */ `
   mutation CreateAppPipeline(
     $bufferType: BufferType!
     $bufferParams: [BufferInput]
+    $parameters: [ParameterInput]
     $aosParams: AOSParameterInput!
     $logConfigId: ID!
     $logConfigVersionNumber: Int!
@@ -256,10 +263,12 @@ export const createAppPipeline = /* GraphQL */ `
     $force: Boolean
     $osiParams: OpenSearchIngestionInput
     $tags: [TagInput]
+    $logProcessorConcurrency: String!
   ) {
     createAppPipeline(
       bufferType: $bufferType
       bufferParams: $bufferParams
+      parameters: $parameters
       aosParams: $aosParams
       logConfigId: $logConfigId
       logConfigVersionNumber: $logConfigVersionNumber
@@ -267,6 +276,7 @@ export const createAppPipeline = /* GraphQL */ `
       force: $force
       osiParams: $osiParams
       tags: $tags
+      logProcessorConcurrency: $logProcessorConcurrency
     )
   }
 `;
@@ -279,6 +289,7 @@ export const createLightEngineAppPipeline = /* GraphQL */ `
     $monitor: MonitorInput
     $force: Boolean
     $tags: [TagInput]
+    $logStructure: LogStructure
   ) {
     createLightEngineAppPipeline(
       params: $params
@@ -288,6 +299,7 @@ export const createLightEngineAppPipeline = /* GraphQL */ `
       monitor: $monitor
       force: $force
       tags: $tags
+      logStructure: $logStructure
     )
   }
 `;
@@ -387,6 +399,9 @@ export const createSubAccountLink = /* GraphQL */ `
     $subAccountRoleArn: String!
     $agentInstallDoc: String!
     $agentConfDoc: String!
+    $windowsAgentInstallDoc: String!
+    $windowsAgentConfDoc: String!
+    $agentStatusCheckDoc: String!
     $subAccountBucketName: String!
     $subAccountStackId: String!
     $subAccountKMSKeyArn: String!
@@ -401,6 +416,9 @@ export const createSubAccountLink = /* GraphQL */ `
       subAccountRoleArn: $subAccountRoleArn
       agentInstallDoc: $agentInstallDoc
       agentConfDoc: $agentConfDoc
+      windowsAgentInstallDoc: $windowsAgentInstallDoc
+      windowsAgentConfDoc: $windowsAgentConfDoc
+      agentStatusCheckDoc: $agentStatusCheckDoc
       subAccountBucketName: $subAccountBucketName
       subAccountStackId: $subAccountStackId
       subAccountKMSKeyArn: $subAccountKMSKeyArn
@@ -415,11 +433,19 @@ export const updateSubAccountLink = /* GraphQL */ `
     $subAccountId: String!
     $region: String
     $subAccountFlbConfUploadingEventTopicArn: String!
+    $windowsAgentInstallDoc: String!
+    $windowsAgentConfDoc: String!
+    $agentStatusCheckDoc: String!
+    $agentInstallDoc: String!
   ) {
     updateSubAccountLink(
       subAccountId: $subAccountId
       region: $region
       subAccountFlbConfUploadingEventTopicArn: $subAccountFlbConfUploadingEventTopicArn
+      windowsAgentInstallDoc: $windowsAgentInstallDoc
+      windowsAgentConfDoc: $windowsAgentConfDoc
+      agentStatusCheckDoc: $agentStatusCheckDoc
+      agentInstallDoc: $agentInstallDoc
     )
   }
 `;

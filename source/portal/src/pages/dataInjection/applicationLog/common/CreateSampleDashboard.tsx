@@ -24,17 +24,20 @@ interface CreateSampleDashboardProps {
   logType: LogType | null | undefined;
   createDashboard: string;
   changeSampleDashboard: (yesNo: string) => void;
+  showCreateSample?: boolean;
 }
 
 const CreateSampleDashboard: React.FC<CreateSampleDashboardProps> = (
   props: CreateSampleDashboardProps
 ) => {
-  const { logType, createDashboard, changeSampleDashboard } = props;
+  const { logType, createDashboard, showCreateSample, changeSampleDashboard } =
+    props;
   const { t } = useTranslation();
-
   return (
     <div>
-      {logType === LogType.Nginx || logType === LogType.Apache ? (
+      {logType === LogType.Nginx ||
+      logType === LogType.Apache ||
+      showCreateSample ? (
         <>
           <hr />
           <FormItem

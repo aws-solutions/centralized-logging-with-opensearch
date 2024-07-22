@@ -2,13 +2,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-import logging
 import time
 from functools import partial, wraps
 from commonlib.exception import APIException, ErrorCode
+from .logging import get_logger
 
-logger = logging.getLogger(__name__)
-
+logger = get_logger(__name__)
 
 def handle_error(func):
     """Decorator for exception handling"""

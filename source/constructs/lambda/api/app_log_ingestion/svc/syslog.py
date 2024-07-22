@@ -1,19 +1,19 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-import logging
+from commonlib.logging import get_logger
 import os
 from typing import List
 from commonlib import AWSConnection, LinkAccountHelper
-from commonlib.model import LogSource, AppLogIngestion, StatusEnum
+from commonlib.model import LogSource, AppPipeline, AppLogIngestion, StatusEnum
+from commonlib.dao import AppPipelineDao
 from flb.distribution import FlbHandler
 from commonlib.utils import create_stack_name
 from util.utils import exec_sfn_flow
 from botocore.exceptions import ClientError
 from boto3.dynamodb.conditions import Attr
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 conn = AWSConnection()
 elb = conn.get_client("elbv2")
 sfn = conn.get_client("stepfunctions")
@@ -25,7 +25,11 @@ state_machine_arn = os.environ.get("STATE_MACHINE_ARN")
 
 failed_log_bucket = os.environ.get("CONFIG_FILE_S3_BUCKET_NAME")
 
+app_pipeline_table_name = os.environ.get("APP_PIPELINE_TABLE_NAME")
 log_source_table_name = os.environ.get("LOG_SOURCE_TABLE_NAME")
+
+app_pipeline_dao = AppPipelineDao(table_name=app_pipeline_table_name)
+
 # link account
 sub_account_link_table_name = os.environ.get("SUB_ACCOUNT_LINK_TABLE_NAME")
 account_helper = LinkAccountHelper(sub_account_link_table_name)
@@ -68,7 +72,7 @@ class SyslogSourceHandler(FlbHandler):
         return syslog_nlb_arn, syslog_nlb_dns_name
 
     def create_ingestion(
-        self, log_source: LogSource, app_log_ingestion: AppLogIngestion
+        self, log_source: LogSource, app_log_ingestion: AppLogIngestion, 
     ):
         # save ingestion
         app_log_ingestion.status = StatusEnum.DISTRIBUTING
@@ -92,7 +96,7 @@ class SyslogSourceHandler(FlbHandler):
         )
 
     def create_syslog_substack(
-        self, log_source: LogSource, app_log_ingestion: AppLogIngestion
+        self, log_source: LogSource, app_log_ingestion: AppLogIngestion, app_pipeline: AppPipeline,
     ):
         """Create a syslog substack"""
         logger.info("create syslog substack")
@@ -113,6 +117,7 @@ class SyslogSourceHandler(FlbHandler):
         sfn_args = {
             "stackName": stack_name,
             "pattern": "SyslogtoECSStack",
+            "engineType": app_pipeline.engineType,
             "deployAccountId": _deploy_account_id,
             "deployRegion": _deploy_region,
             "parameters": [
@@ -195,6 +200,8 @@ class SyslogSourceHandler(FlbHandler):
         self._ingestion_dao.delete_with_log_source(
             app_log_ingestion, log_source_table_name, log_source
         )
+        app_pipeline_id = app_log_ingestion.appPipelineId
+        app_pipeline: AppPipeline = app_pipeline_dao.get_app_pipeline(app_pipeline_id)
         ingestion_list: List[
             AppLogIngestion
         ] = self._ingestion_dao.list_app_log_ingestions(
@@ -206,6 +213,8 @@ class SyslogSourceHandler(FlbHandler):
         if stack_id:
             args = {
                 "stackId": stack_id,
+                "engineType": app_pipeline.engineType,
+                "pattern": "SyslogtoECSStack",
                 "deployAccountId": log_source.accountId,  # Syslog will be in the same account and region
                 "deployRegion": log_source.region,
             }

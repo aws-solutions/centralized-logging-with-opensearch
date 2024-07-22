@@ -52,6 +52,7 @@ export enum InfoBarTypes {
   APACHE_SAMPLE_LOG_PARSING = "APACHE_SAMPLE_LOG_PARSING",
   LOG_CONFIG_PATH = "LOG_CONFIG_PATH",
   LOG_CONFIG_PATH_EKS = "LOG_CONFIG_PATH_EKS",
+  LOG_CONFIG_PATH_WINDOWS = "LOG_CONFIG_PATH_WINDOWS",
   APACHE_LOG_FORMAT = "APACHE_LOG_FORMAT",
   REGEX_LOG_FORMAT = "REGEX_LOG_FORMAT",
   INSTANCE_GROUP_CREATION_METHOD = "INSTANCE_GROUP_CREATION_METHOD",
@@ -93,6 +94,7 @@ export const InfoBarTitleMap: any = {
   NGINX_SAMPLE_LOG_PARSING: "info:nginxLogParsing.name",
   APACHE_SAMPLE_LOG_PARSING: "info:apacheLogParsing.name",
   LOG_CONFIG_PATH: "info:logConfigPath.name",
+  LOG_CONFIG_PATH_WINDOWS: "info:logConfigPath.name",
   LOG_CONFIG_PATH_EKS: "info:logConfigPath.name",
   APACHE_LOG_FORMAT: "info:apacheLogFormat.name",
   REGEX_LOG_FORMAT: "info:regExLogFormat.name",
@@ -123,8 +125,7 @@ const initialState: AppStateProps = {
   userEmail: "",
   domainMap: {},
   amplifyConfig: {},
-  openSideMenu:
-    localStorage.getItem(SIDE_BAR_OPEN_STORAGE_ID) === "close" ? false : true,
+  openSideMenu: localStorage.getItem(SIDE_BAR_OPEN_STORAGE_ID) !== "close",
   showInfoBar: false,
   infoBarType: undefined,
 };

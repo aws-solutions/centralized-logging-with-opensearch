@@ -19,18 +19,16 @@ import { Link, useNavigate } from "react-router-dom";
 import Pagination from "@material-ui/lab/Pagination";
 import Button from "components/Button";
 import { TablePanel } from "components/TablePanel";
-import Breadcrumb from "components/Breadcrumb";
 import { SelectType } from "components/TablePanel/tablePanel";
 import { LogConfig as LogConf } from "API";
 import Modal from "components/Modal";
-import HelpPanel from "components/HelpPanel";
-import SideMenu from "components/SideMenu";
 import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
 import { listLogConfigs } from "graphql/queries";
 import { deleteLogConfig } from "graphql/mutations";
-import { formatLocalTime } from "assets/js/utils";
+import { defaultStr, formatLocalTime } from "assets/js/utils";
 import { useTranslation } from "react-i18next";
 import ButtonRefresh from "components/ButtonRefresh";
+import CommonLayout from "pages/layout/CommonLayout";
 
 const PAGE_SIZE = 10;
 
@@ -133,136 +131,127 @@ const LogConfig: React.FC = () => {
   };
 
   return (
-    <div className="lh-main-content">
-      <SideMenu />
-      <div className="lh-container">
-        <div className="lh-content">
-          <div className="service-log">
-            <Breadcrumb list={breadCrumbList} />
-            <div className="table-data">
-              <TablePanel
-                trackId="id"
-                title={t("resource:config.list.config")}
-                changeSelected={(item) => {
-                  console.info("item:", item);
-                  setSelectedLogConfig(item);
+    <CommonLayout breadCrumbList={breadCrumbList}>
+      <div className="table-data">
+        <TablePanel
+          trackId="id"
+          title={t("resource:config.list.config")}
+          changeSelected={(item) => {
+            console.info("item:", item);
+            setSelectedLogConfig(item);
+          }}
+          loading={loadingData}
+          selectType={SelectType.RADIO}
+          columnDefinitions={[
+            {
+              id: "Name",
+              header: t("resource:config.list.name"),
+              cell: (e: LogConf) => renderConfigName(e),
+            },
+            {
+              id: "Type",
+              header: t("resource:config.list.type"),
+              cell: (e: LogConf) => {
+                return e.logType;
+              },
+            },
+            {
+              width: 170,
+              id: "created",
+              header: t("resource:config.list.created"),
+              cell: (e: LogConf) => {
+                return formatLocalTime(defaultStr(e?.createdAt));
+              },
+            },
+          ]}
+          items={logConfigList}
+          actions={
+            <div>
+              <Button
+                btnType="icon"
+                disabled={loadingData}
+                onClick={() => {
+                  if (curPage === 1) {
+                    getLogConfigList();
+                  } else {
+                    setCurPage(1);
+                  }
                 }}
-                loading={loadingData}
-                selectType={SelectType.RADIO}
-                columnDefinitions={[
-                  {
-                    id: "Name",
-                    header: t("resource:config.list.name"),
-                    cell: (e: LogConf) => renderConfigName(e),
-                  },
-                  {
-                    id: "Type",
-                    header: t("resource:config.list.type"),
-                    cell: (e: LogConf) => {
-                      return e.logType;
-                    },
-                  },
-                  {
-                    width: 170,
-                    id: "created",
-                    header: t("resource:config.list.created"),
-                    cell: (e: LogConf) => {
-                      return formatLocalTime(e?.createdAt || "");
-                    },
-                  },
-                ]}
-                items={logConfigList}
-                actions={
-                  <div>
-                    <Button
-                      btnType="icon"
-                      disabled={loadingData}
-                      onClick={() => {
-                        if (curPage === 1) {
-                          getLogConfigList();
-                        } else {
-                          setCurPage(1);
-                        }
-                      }}
-                    >
-                      <ButtonRefresh loading={loadingData} />
-                    </Button>
-                    <Button
-                      disabled={disabledDetail}
-                      onClick={() => {
-                        clickToReviewDetail();
-                      }}
-                    >
-                      {t("button.viewDetail")}
-                    </Button>
-                    <Button
-                      disabled={disabledDelete}
-                      onClick={() => {
-                        removeLogConfig();
-                      }}
-                    >
-                      {t("button.delete")}
-                    </Button>
-                    <Button
-                      btnType="primary"
-                      onClick={() => {
-                        navigate("/resources/log-config/create");
-                      }}
-                    >
-                      {t("button.createLogConfig")}
-                    </Button>
-                  </div>
-                }
-                pagination={
-                  <Pagination
-                    count={Math.ceil(totoalCount / PAGE_SIZE)}
-                    page={curPage}
-                    onChange={handlePageChange}
-                    size="small"
-                  />
-                }
-              />
+              >
+                <ButtonRefresh loading={loadingData} />
+              </Button>
+              <Button
+                disabled={disabledDetail}
+                onClick={() => {
+                  clickToReviewDetail();
+                }}
+              >
+                {t("button.viewDetail")}
+              </Button>
+              <Button
+                disabled={disabledDelete}
+                onClick={() => {
+                  removeLogConfig();
+                }}
+              >
+                {t("button.delete")}
+              </Button>
+              <Button
+                btnType="primary"
+                onClick={() => {
+                  navigate("/resources/log-config/create");
+                }}
+              >
+                {t("button.createLogConfig")}
+              </Button>
             </div>
-          </div>
-          <Modal
-            title={t("resource:config.delete")}
-            fullWidth={false}
-            isOpen={openDeleteModel}
-            closeModal={() => {
-              setOpenDeleteModel(false);
-            }}
-            actions={
-              <div className="button-action no-pb text-right">
-                <Button
-                  btnType="text"
-                  disabled={loadingDelete}
-                  onClick={() => {
-                    setOpenDeleteModel(false);
-                  }}
-                >
-                  {t("button.cancel")}
-                </Button>
-                <Button
-                  loading={loadingDelete}
-                  btnType="primary"
-                  onClick={() => {
-                    confimRemoveLogConfig();
-                  }}
-                >
-                  {t("button.delete")}
-                </Button>
-              </div>
-            }
-          >
-            <div className="modal-content">
-              {t("resource:config.deleteTips")}
-              <b>{`${curTipsLogConfig?.name}`}</b> {"?"}
-            </div>
-          </Modal>
-        </div>
+          }
+          pagination={
+            <Pagination
+              count={Math.ceil(totoalCount / PAGE_SIZE)}
+              page={curPage}
+              onChange={handlePageChange}
+              size="small"
+            />
+          }
+        />
       </div>
-      <HelpPanel />
-    </div>
+      <Modal
+        title={t("resource:config.delete")}
+        fullWidth={false}
+        isOpen={openDeleteModel}
+        closeModal={() => {
+          setOpenDeleteModel(false);
+        }}
+        actions={
+          <div className="button-action no-pb text-right">
+            <Button
+              btnType="text"
+              disabled={loadingDelete}
+              onClick={() => {
+                setOpenDeleteModel(false);
+              }}
+            >
+              {t("button.cancel")}
+            </Button>
+            <Button
+              loading={loadingDelete}
+              btnType="primary"
+              onClick={() => {
+                confimRemoveLogConfig();
+              }}
+            >
+              {t("button.delete")}
+            </Button>
+          </div>
+        }
+      >
+        <div className="modal-content">
+          {t("resource:config.deleteTips")}
+          <b>{`${curTipsLogConfig?.name}`}</b> {"?"}
+        </div>
+      </Modal>
+    </CommonLayout>
   );
 };
 

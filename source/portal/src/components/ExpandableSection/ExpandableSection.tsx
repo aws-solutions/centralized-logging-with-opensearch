@@ -13,28 +13,41 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import React, { ReactElement, useState } from "react";
+import React, { ReactElement, useEffect, useState } from "react";
 import ArrowDropDownIcon from "@material-ui/icons/ArrowDropDown";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "reducer/store";
+import { showAdvancedSettingChanged } from "reducer/createOpenSearch";
 
 interface ExpandableSectionProps {
   defaultExpanded?: boolean;
   headerText: string;
   children: ReactElement;
+  isOpenSearch?: boolean;
 }
 
 const ExpandableSection: React.FC<ExpandableSectionProps> = (
   props: ExpandableSectionProps
 ) => {
-  const { defaultExpanded, headerText, children } = props;
+  const { defaultExpanded, headerText, children, isOpenSearch } = props;
+  const dispatch = useDispatch<AppDispatch>();
   const [showAdvanceSetting, setShowAdvanceSetting] = useState(
     defaultExpanded ?? true
   );
+  useEffect(() => {
+    setShowAdvanceSetting(defaultExpanded ?? true);
+  }, [defaultExpanded]);
+
   return (
     <div className="gsui-expendable-section">
       <div className="addtional-settings">
         <span
+          role="none"
           onClick={() => {
             setShowAdvanceSetting(!showAdvanceSetting);
+            if (isOpenSearch) {
+              dispatch(showAdvancedSettingChanged(!showAdvanceSetting));
+            }
           }}
         >
           <i className="icon">

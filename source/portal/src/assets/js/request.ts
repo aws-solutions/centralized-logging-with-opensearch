@@ -15,7 +15,7 @@ limitations under the License.
 */
 /* eslint-disable no-async-promise-executor */
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import Swal from "sweetalert2";
+import { Alert } from "assets/js/alert";
 
 import { createAuthLink } from "aws-appsync-auth-link";
 import { createSubscriptionHandshakeLink } from "aws-appsync-subscription-link";
@@ -32,13 +32,20 @@ import cloneDeep from "lodash.clonedeep";
 import { decodeResData, encodeParams } from "./xss";
 import i18n from "i18n";
 
-const IGNORE_ERROR_CODE: string[] = [ErrorCode.AccountNotFound];
+const IGNORE_ERROR_CODE: string[] = [
+  ErrorCode.AccountNotFound,
+  ErrorCode.DUPLICATED_INDEX_PREFIX,
+  ErrorCode.DUPLICATED_WITH_INACTIVE_INDEX_PREFIX,
+  ErrorCode.OVERLAP_INDEX_PREFIX,
+  ErrorCode.OVERLAP_WITH_INACTIVE_INDEX_PREFIX,
+];
 
 // Remove Error Code From Error Message
 export const refineErrorMessage = (message: string) => {
   let errorCode = "";
   if (message.trim().startsWith("[")) {
     const groups = message.match(/\[(\S+)\]/);
+    console.info("groups:", groups);
     errorCode = groups && groups.length >= 2 ? groups[1] : "";
     message = message.replace(/\[\S+\]/, "");
   }
@@ -114,23 +121,19 @@ export const appSyncRequestQuery = (query: any, params?: any): any => {
     } catch (error) {
       const showError: any = error;
       if (showError?.networkError?.statusCode === 401) {
-        Swal.fire({
-          title: "Please sign in again",
-          text: "You were signed out of your account. Please press Reload to sign in again.",
-          icon: "warning",
-          confirmButtonText: "Reload",
-        }).then((result) => {
-          if (result.isConfirmed) {
-            window.location.reload();
-          }
-        });
+        Alert(
+          i18n.t("signin.reSignInDesc"),
+          i18n.t("signin.reSignIn"),
+          "warning",
+          true
+        );
         return;
       }
       const { errorCode, message } = refineErrorMessage(
         showError.message || showError.errors?.[0].message
       );
       if (!IGNORE_ERROR_CODE.includes(errorCode)) {
-        Swal.fire("Oops...", message, "error");
+        Alert(message);
       }
       reject(error);
     }
@@ -172,7 +175,7 @@ export const appSyncRequestMutation = (mutation: any, params?: any): any => {
         showError.message || showError.errors?.[0].message
       );
       if (!IGNORE_ERROR_CODE.includes(errorCode)) {
-        Swal.fire("Oops...", message, "error");
+        Alert(message);
       }
       reject(error);
     }

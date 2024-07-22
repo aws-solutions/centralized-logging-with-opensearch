@@ -29,7 +29,7 @@ The solution has the following features:
 
 Deploying this solution with the default parameters builds the following environment in the AWS Cloud.
 
-![Architecture](architecture.png)
+![Architecture](docs/images/architecture/arch.png)
 
 
 ## Deployment
@@ -42,16 +42,3 @@ Please follow the [Implementation Guide](https://docs.aws.amazon.com/solutions/l
 Please follow the [Customization Guide](CUSTOM_BUILD.md) for custom build.
 
 
-## Collection of operational metrics
-
-This solution collects anonymous operational metrics to help AWS improve the quality and features of the solution. For more information, including how to disable this capability, please see the [implementation guide](https://docs.aws.amazon.com/solutions/latest/centralized-logging-with-opensearch/collection-of-operational-metrics.html).
-
-***
-
-Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-
-Licensed under the Apache License Version 2.0 (the "License"). You may not use this file except in compliance with the License. A copy of the License is located at
-
-    http://www.apache.org/licenses/
-
-or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.

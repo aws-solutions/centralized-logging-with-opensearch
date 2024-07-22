@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import "source-map-support/register";
-import { App, Aspects, Stack, Tags } from "aws-cdk-lib";
+import { App, Aspects, CfnCondition, Fn, IAspect, Stack, Tags } from "aws-cdk-lib";
 import {
   AwsSolutionsChecks,
   NagPackSuppression,
@@ -37,9 +37,16 @@ import { MicroBatchAwsServicesAlbPipelineStack } from '../lib/microbatch/pipelin
 import { MicroBatchAwsServicesCloudFrontPipelineStack } from '../lib/microbatch/pipeline/aws-services-cloudfront-stack';
 import { MicroBatchAwsServicesCloudTrailPipelineStack } from '../lib/microbatch/pipeline/aws-services-cloudtrail-stack';
 import { MicroBatchAwsServicesVpcFlowPipelineStack } from '../lib/microbatch/pipeline/aws-services-vpcflow-stack';
+import { MicroBatchAwsServicesRDSPipelineStack } from '../lib/microbatch/pipeline/aws-services-rds-stack';
+import { MicroBatchAwsServicesS3PipelineStack } from '../lib/microbatch/pipeline/aws-services-s3-stack';
+import { MicroBatchAwsServicesSESPipelineStack } from '../lib/microbatch/pipeline/aws-services-ses-stack';
 import { MicroBatchApplicationFluentBitPipelineStack } from '../lib/microbatch/pipeline/application-fluent-bit-stack';
 import { MicroBatchApplicationS3PipelineStack } from '../lib/microbatch/pipeline/application-s3-stack';
 import { MicroBatchLogIngestionStack } from '../lib/microbatch/pipeline/init-log-ingestion';
+import { IConstruct } from "constructs";
+import { CfnFunction, Function } from 'aws-cdk-lib/aws-lambda';
+
+process.env.STACK_PREFIX = process.env.STACK_PREFIX || "CL"
 
 const app = new App();
 
@@ -302,7 +309,7 @@ Aspects.of(app).add(new AwsSolutionsChecks());
 // Athena version
 
 const MicroBatch = new MicroBatchMainStack(app, 'MicroBatch', {
-  stackPrefix: 'CL',
+  stackPrefix: process.env.STACK_PREFIX,
   ...baseProps,
 });
 
@@ -326,7 +333,7 @@ NagSuppressions.addResourceSuppressions(MicroBatch, [
 
 
 const MicroBatchFromExistingVPC = new MicroBatchMainStack(app, 'MicroBatchFromExistingVPC', {
-  stackPrefix: 'CL',
+  stackPrefix: process.env.STACK_PREFIX,
   existingVPC: true,
   ...baseProps,
 });
@@ -482,6 +489,69 @@ NagSuppressions.addResourceSuppressions(MicroBatchAwsServicesVpcFlowPipeline, [
 
 Tags.of(MicroBatchAwsServicesVpcFlowPipeline).add('Application', `${solutionName}`);
 
+const MicroBatchAwsServicesRDSPipeline = new MicroBatchAwsServicesRDSPipelineStack(app, 'MicroBatchAwsServicesRDSPipeline', {
+  ...baseProps,
+});
+
+NagSuppressions.addResourceSuppressions(MicroBatchAwsServicesRDSPipeline, [
+  {
+    id: "AwsSolutions-IAM5",
+    reason: "some policies need to get dynamic resources",
+  },
+  {
+    id: "AwsSolutions-IAM4",
+    reason: "these policies is used by CDK Customer Resource lambda",
+  },
+  {
+    id: "AwsSolutions-L1",
+    reason: "not applicable to use the latest lambda runtime version",
+  },
+], true);
+
+Tags.of(MicroBatchAwsServicesRDSPipeline).add('Application', `${solutionName}`);
+
+const MicroBatchAwsServicesS3Pipeline = new MicroBatchAwsServicesS3PipelineStack(app, 'MicroBatchAwsServicesS3Pipeline', {
+  ...baseProps,
+});
+
+NagSuppressions.addResourceSuppressions(MicroBatchAwsServicesS3Pipeline, [
+  {
+    id: "AwsSolutions-IAM5",
+    reason: "some policies need to get dynamic resources",
+  },
+  {
+    id: "AwsSolutions-IAM4",
+    reason: "these policies is used by CDK Customer Resource lambda",
+  },
+  {
+    id: "AwsSolutions-L1",
+    reason: "not applicable to use the latest lambda runtime version",
+  },
+], true);
+
+Tags.of(MicroBatchAwsServicesS3Pipeline).add('Application', `${solutionName}`);
+
+const MicroBatchAwsServicesSESPipeline = new MicroBatchAwsServicesSESPipelineStack(app, 'MicroBatchAwsServicesSESPipeline', {
+  ...baseProps,
+});
+
+NagSuppressions.addResourceSuppressions(MicroBatchAwsServicesSESPipeline, [
+  {
+    id: "AwsSolutions-IAM5",
+    reason: "some policies need to get dynamic resources",
+  },
+  {
+    id: "AwsSolutions-IAM4",
+    reason: "these policies is used by CDK Customer Resource lambda",
+  },
+  {
+    id: "AwsSolutions-L1",
+    reason: "not applicable to use the latest lambda runtime version",
+  },
+], true);
+
+Tags.of(MicroBatchAwsServicesSESPipeline).add('Application', `${solutionName}`);
+
 const MicroBatchApplicationFluentBitPipeline = new MicroBatchApplicationFluentBitPipelineStack(app, 'MicroBatchApplicationFluentBitPipeline', {
   ...baseProps,
 });
@@ -524,3 +594,41 @@ NagSuppressions.addResourceSuppressions(MicroBatchApplicationS3Pipeline, [
 ], true);
 
 Tags.of(MicroBatchApplicationS3Pipeline).add('Application', `${solutionName}`);
+
+class CNLambdaFunctionAspect implements IAspect {
+
+  private conditionCache: { [key: string]: CfnCondition } = {};
+
+  public visit(node: IConstruct): void {
+    if (node instanceof Function) {
+      const func = node.node.defaultChild as CfnFunction;
+      if (func.loggingConfig) {
+        func.addPropertyOverride('LoggingConfig',
+          Fn.conditionIf(this.awsChinaCondition(Stack.of(node)).logicalId,
+            Fn.ref('AWS::NoValue'), {
+            LogFormat: (func.loggingConfig as CfnFunction.LoggingConfigProperty).logFormat,
+            ApplicationLogLevel: (func.loggingConfig as CfnFunction.LoggingConfigProperty).applicationLogLevel,
+            LogGroup: (func.loggingConfig as CfnFunction.LoggingConfigProperty).logGroup,
+            SystemLogLevel: (func.loggingConfig as CfnFunction.LoggingConfigProperty).systemLogLevel,
+          }));
+      }
+    }
+  }
+
+  private awsChinaCondition(stack: Stack): CfnCondition {
+    const conditionName = 'AWSCNCondition';
+    // Check if the resource already exists
+    const existingResource = this.conditionCache[stack.artifactId];
+
+    if (existingResource) {
+      return existingResource;
+    } else {
+      const awsCNCondition = new CfnCondition(stack, conditionName, {
+        expression: Fn.conditionEquals('aws-cn', stack.partition),
+      });
+      this.conditionCache[stack.artifactId] = awsCNCondition;
+      return awsCNCondition;
+    }
+  }
+}
+Aspects.of(app).add(new CNLambdaFunctionAspect());

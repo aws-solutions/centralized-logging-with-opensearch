@@ -10,12 +10,15 @@ nav:
           - 概览: index.md
           - 特性和收益: implementation-guide/solution-overview/features.md
           - 应用场景: implementation-guide/solution-overview/use-cases.md
+          - 概念: implementation-guide/solution-overview/concepts.md
       - 架构概览:
-          - 架构图: implementation-guide/architecture.md
+          - 架构图: implementation-guide/architecture-overview/architecture.md
           - AWS Well-Architected 支柱: implementation-guide/architecture-overview/well-architected-pillars.md
       - 架构细节:
-          - 解决方案组件: implementation-guide/architecture-details/solution-components.md
-          - AWS 服务: implementation-guide/architecture-details/services-in-this-solution.md
+          - AWS 服务日志分析管道: implementation-guide/architecture-details/service-log-analytics-pipeline.md
+          - 应用程序日志分析管道: implementation-guide/architecture-details/application-log-analytics-pipeline.md
+          - Light Engine: implementation-guide/architecture-details/light-engine.md
+          - 此解决方案中的 AWS 服务: implementation-guide/architecture-details/services-in-this-solution.md
       - 计划部署:
           - 价格: implementation-guide/plan-deployment/cost.md
           - 安全: implementation-guide/plan-deployment/security.md
@@ -37,7 +40,7 @@ nav:
           - 告警: implementation-guide/domains/alarms.md
       - AWS 服务日志:
           - 概览: implementation-guide/aws-services/index.md
-          - Amazon CloudTrail: implementation-guide/aws-services/cloudtrail.md
+          - AWS CloudTrail: implementation-guide/aws-services/cloudtrail.md
           - Amazon S3: implementation-guide/aws-services/s3.md
           - Amazon RDS/Aurora: implementation-guide/aws-services/rds.md
           - Amazon CloudFront: implementation-guide/aws-services/cloudfront.md
@@ -61,6 +64,7 @@ nav:
           - 监控: implementation-guide/monitoring.md
       - 常见问题: implementation-guide/faq.md
       - 故障排查: implementation-guide/trouble-shooting.md
+      - 升级解决方案: implementation-guide/update.md
       - 卸载解决方案: implementation-guide/uninstall.md
       - 额外资源:
           - Grafana: implementation-guide/resources/grafana.md

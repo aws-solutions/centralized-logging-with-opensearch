@@ -2,13 +2,16 @@
   "name": "日志通",
   "title": "日志通控制台",
   "version": "版本号",
+  "newVersion": "发现日志通有新版本 ({{latestVersionNumber}}) 可用。请升级到最新版本。",
   "signin": {
     "signInToSolution": "登录到日志通",
     "email": "邮箱地址 *",
     "inputEmail": "输入您的邮箱地址",
     "password": "密码 *",
     "inputPassword": "输入您的密码",
-    "signIn": "登录"
+    "signIn": "登录",
+    "reSignIn": "请重新登录",
+    "reSignInDesc": "您已退出帐户。请点击“重新加载”重新登录。"
   },
   "header": {
     "name": "亚马逊云科技解决方案",
@@ -95,7 +98,7 @@
     "changeIndex": "修改索引名称",
     "linkAnAccount": "链接成员账户",
     "link": "链接",
-    "forceCreate": "继续创建",
+    "continueCreate": "继续创建",
     "createSameAccountIngestion": "创建同帐户摄取",
     "upgrade": "升级",
     "addCondition": "添加条件",
@@ -107,7 +110,8 @@
     "viewDetails": "查看细节",
     "viewDomain": "查看域",
     "addNewItem": "添加新属性",
-    "saveAndValidate": "保存并验证"
+    "saveAndValidate": "保存并验证",
+    "reload": "重新加载"
   },
   "status": {
     "unknown": "未知",
@@ -284,7 +288,13 @@
     "maxError": "最大值无效",
     "max": "最大值",
     "minMaxTips": "最小和最大容量必须是1到96之间的正数。对于有状态的管道（例如，使用 service_map 或 aggregate 处理器的管道）的最大容量限制为48。",
-    "disabledEnrich": "丰富的字段不适用于 OSI 类型"
+    "disabledEnrich": "丰富的字段不适用于 OSI 类型",
+    "lambdaConcurrency": "AWS Lambda 并发",
+    "configConcurrency": "Lambda 并发配置",
+    "configConcurrencyDesc": "编辑并发数，不能超过非预留账户并发量。<0>配置预留并发数</0>。默认情况下 0 表示对您的函数当前正在处理的正在进行的请求没有限制。",
+    "accountConcurrency": "非预留账户并发: ",
+    "concurrencyRequiredError": "并发数不能为空",
+    "concurrencyMinError": "非预留账户并发数不能小于100"
   },
   "seconds": "秒",
   "yes": "是",
@@ -335,12 +345,18 @@
     "filePathNotBegin": "文件路径不能以 /(斜线) 开头",
     "filePathContainStar": "文件路径最多只能包含一个 *",
     "syslogParserError": "请选择 syslog 解析器",
-    "instanceAlreadyExists":"您选择的这些实例已经添加过："
+    "multilineParserError": "请选择多行文本解析器",
+    "iisParserError": "请选择 IIS 解析器",
+    "instanceAlreadyExists": "您选择的这些实例已经添加过：",
+    "inputTimeKeyFormat": "请输入时间字段格式",
+    "overlappedPrefixWithS3Bucket": "输入的前缀不能跟事件通知中的前缀重叠，请重新输入",
+    "s3BucketCheckFailed": "检测S3存储桶失败，请确认是否正确"
   },
   "moreDetailsGoToCloudformation": "请前往Cloudformation事件获取更多详细信息",
   "page": "页面",
   "pageNotFound": "没找到页面",
   "home": "首页",
   "clear": "清除",
-  "alert": "更新提醒"
+  "alert": "更新提醒",
+  "warning": "警告"
 }

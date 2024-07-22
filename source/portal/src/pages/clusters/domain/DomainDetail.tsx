@@ -22,24 +22,21 @@ import { AntTabs, AntTab, TabPanel } from "components/Tab";
 import Overview from "./detail/Overview";
 import NetWork from "./detail/Network";
 import AccessProxy from "./detail/AccessProxy";
-import Breadcrumb from "components/Breadcrumb";
 import { appSyncRequestQuery } from "assets/js/request";
 import { getDomainDetails } from "graphql/queries";
 import { DomainDetails, StackStatus } from "API";
-import LoadingText from "components/LoadingText";
 import { useSelector } from "react-redux";
 import { InfoBarTypes } from "reducer/appReducer";
 import {
   buildAlarmLink,
   buildDashboardLink,
   buildESLink,
+  defaultStr,
   humanFileSize,
 } from "assets/js/utils";
 import Status from "components/Status/Status";
 import { AmplifyConfigType } from "types";
 import Alarms from "./detail/Alarms";
-import HelpPanel from "components/HelpPanel";
-import SideMenu from "components/SideMenu";
 import PagePanel from "components/PagePanel";
 import { Button } from "components/Button/button";
 import { useTranslation } from "react-i18next";
@@ -47,6 +44,7 @@ import { AUTO_REFRESH_INT } from "assets/js/const";
 import { RootState } from "reducer/reducers";
 import Tags from "pages/dataInjection/common/Tags";
 import ButtonRefresh from "components/ButtonRefresh";
+import CommonLayout from "pages/layout/CommonLayout";
 
 const ESDomainDetail: React.FC = () => {
   const { id } = useParams();
@@ -56,8 +54,8 @@ const ESDomainDetail: React.FC = () => {
   const { t } = useTranslation();
   const [loadingData, setLoadingData] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState(0);
-  const changeTab = (event: any, newTab: number) => {
+  const [activeTab, setActiveTab] = useState("overview");
+  const changeTab = (event: any, newTab: string) => {
     console.info("newTab:", newTab);
     setActiveTab(newTab);
   };
@@ -70,7 +68,7 @@ const ESDomainDetail: React.FC = () => {
       link: "/clusters/opensearch-domains",
     },
     {
-      name: curDomain?.domainName || "",
+      name: defaultStr(curDomain?.domainName),
     },
   ];
 
@@ -82,7 +80,7 @@ const ESDomainDetail: React.FC = () => {
     }
     try {
       const resData: any = await appSyncRequestQuery(getDomainDetails, {
-        id: decodeURIComponent(id || ""),
+        id: decodeURIComponent(defaultStr(id)),
         metrics: true,
       });
       console.info("resData:", resData);
@@ -106,193 +104,180 @@ const ESDomainDetail: React.FC = () => {
   }, []);
 
   return (
-    <div className="lh-main-content">
-      <SideMenu />
-      <div className="lh-container">
-        <div className="lh-content">
-          <Breadcrumb list={breadCrumbList} />
-          {loadingData ? (
-            <LoadingText text="" />
-          ) : (
-            <PagePanel
-              title={curDomain?.domainName || ""}
-              actions={
-                <div>
-                  <Button
-                    btnType="icon"
-                    disabled={isRefreshing || loadingData}
-                    onClick={() => {
-                      getDomainById(true);
-                    }}
-                  >
-                    <ButtonRefresh loading={isRefreshing} />
-                  </Button>
-                </div>
-              }
+    <CommonLayout breadCrumbList={breadCrumbList} loadingData={loadingData}>
+      <PagePanel
+        title={defaultStr(curDomain?.domainName)}
+        actions={
+          <div>
+            <Button
+              btnType="icon"
+              disabled={isRefreshing || loadingData}
+              onClick={() => {
+                getDomainById(true);
+              }}
             >
-              <div className="service-log">
-                <div>
-                  <HeaderPanel title={t("cluster:detail.config")}>
-                    <div className="flex value-label-span">
-                      <div className="flex-1">
-                        <ValueWithLabel label={t("cluster:detail.domain")}>
-                          <ExtLink
-                            to={buildESLink(
-                              amplifyConfig.aws_project_region,
-                              curDomain?.domainName || ""
-                            )}
-                          >
-                            {curDomain?.domainName}
-                          </ExtLink>
-                        </ValueWithLabel>
-                        <ValueWithLabel label={t("cluster:detail.searchDoc")}>
-                          <div>{curDomain?.metrics?.searchableDocs}</div>
-                        </ValueWithLabel>
-                      </div>
-                      <div className="flex-1 border-left-c">
-                        <ValueWithLabel label={t("cluster:detail.freeSpace")}>
-                          <div>
-                            {humanFileSize(
-                              (curDomain?.metrics?.freeStorageSpace || 0) *
-                                1024 *
-                                1024
-                            )}
-                          </div>
-                        </ValueWithLabel>
-                        <ValueWithLabel label={t("cluster:detail.region")}>
-                          <div>{`${amplifyConfig.aws_project_region}`}</div>
-                        </ValueWithLabel>
-                      </div>
-                      <div className="flex-1 border-left-c">
-                        <ValueWithLabel label={t("cluster:detail.version")}>
-                          <div>{`${curDomain?.engine}_${curDomain?.version}`}</div>
-                        </ValueWithLabel>
-                        <ValueWithLabel
-                          label={t("cluster:detail.alarms.name")}
-                          infoType={InfoBarTypes.ALARMS}
-                        >
-                          <div>
-                            {curDomain?.alarmStatus ===
-                              StackStatus.DISABLED && (
-                              <Link
-                                to={`/clusters/opensearch-domains/detail/${
-                                  curDomain?.domainName
-                                }/${encodeURIComponent(
-                                  curDomain?.id || ""
-                                )}/create-alarm`}
-                              >
-                                {t("cluster:detail.enable")}
-                              </Link>
-                            )}
-                            {curDomain?.alarmStatus === StackStatus.ENABLED && (
-                              <ExtLink
-                                to={buildAlarmLink(
-                                  amplifyConfig.aws_project_region
-                                )}
-                              >
-                                {t("cluster:detail.cloudWatchAlarm")}
-                              </ExtLink>
-                            )}
-                            {curDomain?.alarmStatus !== StackStatus.DISABLED &&
-                              curDomain?.alarmStatus !==
-                                StackStatus.ENABLED && (
-                                <Status status={curDomain?.alarmStatus || ""} />
-                              )}
-                          </div>
-                        </ValueWithLabel>
-                      </div>
-                      <div className="flex-1 border-left-c">
-                        <ValueWithLabel label={t("cluster:detail.health")}>
-                          <div>
-                            <Status status={curDomain?.metrics?.health || ""} />
-                          </div>
-                          {/* <Status status="Yellow" /> */}
-                        </ValueWithLabel>
-                        <ValueWithLabel
-                          label={t("cluster:detail.proxy.name")}
-                          infoType={InfoBarTypes.ACCESS_PROXY}
-                        >
-                          <div>
-                            {curDomain?.proxyStatus ===
-                              StackStatus.DISABLED && (
-                              <Link
-                                to={`/clusters/opensearch-domains/detail/${
-                                  curDomain?.domainName
-                                }/${encodeURIComponent(
-                                  curDomain?.id
-                                )}/access-proxy`}
-                              >
-                                {t("cluster:detail.enable")}
-                              </Link>
-                            )}
-                            {curDomain?.proxyStatus === StackStatus.ENABLED && (
-                              <ExtLink
-                                to={buildDashboardLink(
-                                  curDomain.engine || "",
-                                  curDomain.proxyALB || "",
-                                  curDomain?.proxyInput?.customEndpoint || ""
-                                )}
-                              >
-                                {t("cluster:detail.link")}
-                              </ExtLink>
-                            )}
-                            {curDomain?.proxyStatus !== StackStatus.DISABLED &&
-                              curDomain?.proxyStatus !==
-                                StackStatus.ENABLED && (
-                                <Status status={curDomain?.proxyStatus || ""} />
-                              )}
-                          </div>
-                        </ValueWithLabel>
-                      </div>
-                    </div>
-                  </HeaderPanel>
+              <ButtonRefresh loading={isRefreshing} />
+            </Button>
+          </div>
+        }
+      >
+        <div className="service-log">
+          <div>
+            <HeaderPanel title={t("cluster:detail.config")}>
+              <div className="flex value-label-span">
+                <div className="flex-1">
+                  <ValueWithLabel label={t("cluster:detail.domain")}>
+                    <ExtLink
+                      to={buildESLink(
+                        amplifyConfig.aws_project_region,
+                        defaultStr(curDomain?.domainName)
+                      )}
+                    >
+                      {curDomain?.domainName}
+                    </ExtLink>
+                  </ValueWithLabel>
+                  <ValueWithLabel label={t("cluster:detail.searchDoc")}>
+                    <div>{curDomain?.metrics?.searchableDocs}</div>
+                  </ValueWithLabel>
                 </div>
-                <div>
-                  <AntTabs
-                    value={activeTab}
-                    onChange={(event, newTab) => {
-                      changeTab(event, newTab);
-                    }}
+                <div className="flex-1 border-left-c">
+                  <ValueWithLabel label={t("cluster:detail.freeSpace")}>
+                    <div>
+                      {humanFileSize(
+                        (curDomain?.metrics?.freeStorageSpace ?? 0) *
+                          1024 *
+                          1024
+                      )}
+                    </div>
+                  </ValueWithLabel>
+                  <ValueWithLabel label={t("cluster:detail.region")}>
+                    <div>{`${amplifyConfig.aws_project_region}`}</div>
+                  </ValueWithLabel>
+                </div>
+                <div className="flex-1 border-left-c">
+                  <ValueWithLabel label={t("cluster:detail.version")}>
+                    <div>{`${curDomain?.engine}_${curDomain?.version}`}</div>
+                  </ValueWithLabel>
+                  <ValueWithLabel
+                    label={t("cluster:detail.alarms.name")}
+                    infoType={InfoBarTypes.ALARMS}
                   >
-                    <AntTab label={t("cluster:detail.tab.overview")} />
-                    <AntTab label={t("cluster:detail.tab.proxy")} />
-                    <AntTab label={t("cluster:detail.tab.alarms")} />
-                    <AntTab label={t("cluster:detail.tab.network")} />
-                    <AntTab label={t("cluster:detail.tab.tags")} />
-                  </AntTabs>
-                  <TabPanel value={activeTab} index={0}>
-                    <Overview domainInfo={curDomain} />
-                  </TabPanel>
-                  <TabPanel value={activeTab} index={1}>
-                    <AccessProxy
-                      domainInfo={curDomain}
-                      reloadDetailInfo={() => {
-                        getDomainById();
-                      }}
-                    />
-                  </TabPanel>
-                  <TabPanel value={activeTab} index={2}>
-                    <Alarms
-                      reloadDetailInfo={() => {
-                        getDomainById();
-                      }}
-                      domainInfo={curDomain}
-                    />
-                  </TabPanel>
-                  <TabPanel value={activeTab} index={3}>
-                    <NetWork domainInfo={curDomain} />
-                  </TabPanel>
-                  <TabPanel value={activeTab} index={4}>
-                    <Tags tags={curDomain?.tags} />
-                  </TabPanel>
+                    <div>
+                      {curDomain?.alarmStatus === StackStatus.DISABLED && (
+                        <Link
+                          to={`/clusters/opensearch-domains/detail/${
+                            curDomain?.domainName
+                          }/${encodeURIComponent(
+                            curDomain?.id || ""
+                          )}/create-alarm`}
+                        >
+                          {t("cluster:detail.enable")}
+                        </Link>
+                      )}
+                      {curDomain?.alarmStatus === StackStatus.ENABLED && (
+                        <ExtLink
+                          to={buildAlarmLink(amplifyConfig.aws_project_region)}
+                        >
+                          {t("cluster:detail.cloudWatchAlarm")}
+                        </ExtLink>
+                      )}
+                      {curDomain?.alarmStatus !== StackStatus.DISABLED &&
+                        curDomain?.alarmStatus !== StackStatus.ENABLED && (
+                          <Status status={defaultStr(curDomain?.alarmStatus)} />
+                        )}
+                    </div>
+                  </ValueWithLabel>
+                </div>
+                <div className="flex-1 border-left-c">
+                  <ValueWithLabel label={t("cluster:detail.health")}>
+                    <div>
+                      <Status status={defaultStr(curDomain?.metrics?.health)} />
+                    </div>
+                    {/* <Status status="Yellow" /> */}
+                  </ValueWithLabel>
+                  <ValueWithLabel
+                    label={t("cluster:detail.proxy.name")}
+                    infoType={InfoBarTypes.ACCESS_PROXY}
+                  >
+                    <div>
+                      {curDomain?.proxyStatus === StackStatus.DISABLED && (
+                        <Link
+                          to={`/clusters/opensearch-domains/detail/${
+                            curDomain?.domainName
+                          }/${encodeURIComponent(curDomain?.id)}/access-proxy`}
+                        >
+                          {t("cluster:detail.enable")}
+                        </Link>
+                      )}
+                      {curDomain?.proxyStatus === StackStatus.ENABLED && (
+                        <ExtLink
+                          to={buildDashboardLink(
+                            defaultStr(curDomain.engine),
+                            defaultStr(curDomain.proxyALB),
+                            defaultStr(curDomain?.proxyInput?.customEndpoint)
+                          )}
+                        >
+                          {t("cluster:detail.link")}
+                        </ExtLink>
+                      )}
+                      {curDomain?.proxyStatus !== StackStatus.DISABLED &&
+                        curDomain?.proxyStatus !== StackStatus.ENABLED && (
+                          <Status status={defaultStr(curDomain?.proxyStatus)} />
+                        )}
+                    </div>
+                  </ValueWithLabel>
                 </div>
               </div>
-            </PagePanel>
-          )}
+            </HeaderPanel>
+          </div>
+          <div>
+            <AntTabs
+              value={activeTab}
+              onChange={(event, newTab) => {
+                changeTab(event, newTab);
+              }}
+            >
+              <AntTab
+                label={t("cluster:detail.tab.overview")}
+                value="overview"
+              />
+              <AntTab
+                label={t("cluster:detail.tab.proxy")}
+                value="accessProxy"
+              />
+              <AntTab label={t("cluster:detail.tab.alarms")} value="alarms" />
+              <AntTab label={t("cluster:detail.tab.network")} value="network" />
+              <AntTab label={t("cluster:detail.tab.tags")} value="tags" />
+            </AntTabs>
+            <TabPanel value={activeTab} index="overview">
+              <Overview domainInfo={curDomain} />
+            </TabPanel>
+            <TabPanel value={activeTab} index="accessProxy">
+              <AccessProxy
+                domainInfo={curDomain}
+                reloadDetailInfo={() => {
+                  getDomainById();
+                }}
+              />
+            </TabPanel>
+            <TabPanel value={activeTab} index="alarms">
+              <Alarms
+                reloadDetailInfo={() => {
+                  getDomainById();
+                }}
+                domainInfo={curDomain}
+              />
+            </TabPanel>
+            <TabPanel value={activeTab} index="network">
+              <NetWork domainInfo={curDomain} />
+            </TabPanel>
+            <TabPanel value={activeTab} index="tags">
+              <Tags tags={curDomain?.tags} />
+            </TabPanel>
+          </div>
         </div>
-      </div>
-      <HelpPanel />
-    </div>
+      </PagePanel>
+    </CommonLayout>
   );
 };
 

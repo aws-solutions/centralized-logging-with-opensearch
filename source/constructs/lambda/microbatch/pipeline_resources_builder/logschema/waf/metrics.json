@@ -1,0 +1,78 @@
+{
+	"type": "object",
+	"properties": {
+		"time": {
+			"type": "big_int",
+			"expression": "FLOOR(\"time\" / 60000) * 60000"
+		},
+		"timestamp": {
+			"type": "timestamp",
+			"expression": "DATE_TRUNC('minute', \"timestamp\")"
+		},
+		"action": {
+			"type": "string"
+		},
+		"action_fixed": {
+			"type": "string"
+		},
+		"webaclid": {
+			"type": "string"
+		},
+		"webaclname": {
+			"type": "string"
+		},
+		"terminatingruleid": {
+			"type": "string"
+		},
+		"terminatingruletype": {
+			"type": "string"
+		},
+		"httpsourceid": {
+			"type": "string"
+		},
+		"httpmethod": {
+			"type": "string"
+		},
+		"country": {
+			"type": "string"
+		},
+		"clientip": {
+			"type": "string"
+		},
+		"host": {
+			"type": "string"
+		},
+		"uri": {
+			"type": "string"
+		},
+		"labels": {
+			"type": "array",
+			"items": {
+				"type": "string"
+			},
+			"measure": true,
+			"expression": "ARRAY_DISTINCT(FLATTEN(ARRAY_AGG(TRANSFORM(labels, x -> x.name)) FILTER (WHERE labels != ARRAY[])))"
+		},
+		"requests": {
+			"type": "big_int",
+			"measure": true,
+			"expression": "CAST(COUNT(1) AS bigint)"
+		},
+		"account_id": {
+			"type": "string",
+			"partition": true
+		},
+		"region": {
+			"type": "string",
+			"partition": true
+		},
+		"event_hour": {
+			"type": "string",
+			"partition": true
+		},
+		"__execution_name__": {
+			"type": "string",
+			"partition": true
+		}
+	}
+}

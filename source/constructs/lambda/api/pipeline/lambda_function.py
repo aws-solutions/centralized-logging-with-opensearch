@@ -2,23 +2,31 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import json
-import logging
+from commonlib.logging import get_logger
 import os
 import uuid
 from datetime import datetime
-
 from boto3.dynamodb.conditions import Attr
 
 from commonlib import AWSConnection, handle_error, AppSyncRouter
 from commonlib import DynamoDBUtil, LinkAccountHelper
 from commonlib.dao import SvcPipelineDao, ETLLogDao
-from commonlib.model import PipelineMonitorStatus, PipelineAlarmStatus, EngineType, SvcPipeline, LightEngineParams, BufferTypeEnum, MonitorDetail
+from commonlib.model import (
+    PipelineMonitorStatus,
+    PipelineAlarmStatus,
+    EngineType,
+    SvcPipeline,
+    LightEngineParams,
+    BufferTypeEnum,
+    MonitorDetail,
+)
 from commonlib.exception import APIException, ErrorCode
 from commonlib.utils import paginate, create_stack_name
+from commonlib.aws import (
+    verify_s3_bucket_prefix_overlap_for_event_notifications,
+)
 
-
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 conn = AWSConnection()
 router = AppSyncRouter()
@@ -27,7 +35,7 @@ pipeline_table_name = os.environ.get("PIPELINE_TABLE")
 pipeline_table_arn = os.environ.get("PIPELINR_TABLE_ARN")
 ddb_util = DynamoDBUtil(pipeline_table_name)
 
-etl_log_table_name = os.environ['ETLLOG_TABLE']
+etl_log_table_name = os.environ["ETLLOG_TABLE"]
 
 grafana_table_name = os.environ.get("GRAFANA_TABLE")
 grafana_ddb_util = DynamoDBUtil(grafana_table_name)
@@ -54,27 +62,46 @@ def lambda_handler(event, _):
 
 def get_value_through_parameter_key(key: str, parameters: list) -> str:
     for param in parameters:
-        if param['parameterKey'] == key:
-            return param['parameterValue']
+        if param["parameterKey"] == key:
+            return param["parameterValue"]
     return ""
 
 
 def get_glue_table_info(service_pipeline: SvcPipeline) -> dict:
     glue_table_info = {}
-    
+
     import_dashboards = service_pipeline.lightEngineParams.importDashboards.lower()
-    if import_dashboards == 'true':
-        grafana_info = grafana_ddb_util.get_item(key={'id':service_pipeline.lightEngineParams.grafanaId})
-    
-    centralized_database_name = meta_ddb_util.get_item(key={'metaName':'CentralizedDatabase'})['name']
+    if import_dashboards == "true":
+        grafana_info = grafana_ddb_util.get_item(
+            key={"id": service_pipeline.lightEngineParams.grafanaId}
+        )
+
+    centralized_database_name = meta_ddb_util.get_item(
+        key={"metaName": "CentralizedDatabase"}
+    )["name"]
     centralized_table_name = service_pipeline.lightEngineParams.centralizedTableName
-    
+
     table_and_dashboard_four_tuple = (
-        ('table', centralized_table_name, f'{service_pipeline.id}-00', f'{centralized_table_name}-details'),
-        ('metric', f'{centralized_table_name}_metrics', f'{service_pipeline.id}-01', f'{centralized_table_name}-dashboard')
+        (
+            "table",
+            centralized_table_name,
+            f"{service_pipeline.id}-00",
+            f"{centralized_table_name}-details",
+        ),
+        (
+            "metric",
+            f"{centralized_table_name}_metrics",
+            f"{service_pipeline.id}-01",
+            f"{centralized_table_name}-dashboard",
+        ),
     )
-    
-    for key, table_name, dashboard_uid, dashboard_name in table_and_dashboard_four_tuple:
+
+    for (
+        key,
+        table_name,
+        dashboard_uid,
+        dashboard_name,
+    ) in table_and_dashboard_four_tuple:
         try:
             if not table_name:
                 continue
@@ -85,72 +112,88 @@ def get_glue_table_info(service_pipeline: SvcPipeline) -> dict:
             glue_table_info[key] = {
                 "databaseName": centralized_database_name,
                 "tableName": table_name,
-                "location": response['Table']['StorageDescriptor']['Location'],
-                "classification": response['Table']['Parameters'].get('classification', 'parquet')
+                "location": response["Table"]["StorageDescriptor"]["Location"],
+                "classification": response["Table"]["Parameters"].get(
+                    "classification", "parquet"
+                ),
             }
-            if import_dashboards == 'true':
-                glue_table_info[key]['dashboardName'] = dashboard_name
-                glue_table_info[key]['dashboardLink'] = f"{grafana_info['url'].rstrip('/')}/d/{dashboard_uid}"
+            if import_dashboards == "true":
+                glue_table_info[key]["dashboardName"] = dashboard_name
+                glue_table_info[key][
+                    "dashboardLink"
+                ] = f"{grafana_info['url'].rstrip('/')}/d/{dashboard_uid}"
         except Exception as e:
             logger.warning(e)
-    
+
     return glue_table_info
 
 
 def get_scheduler_expression(name: str, group: str, client) -> str:
     try:
-        if client._service_model._service_name == 'events':
-            return client.describe_rule(Name=name, EventBusName=group)['ScheduleExpression']
-        elif client._service_model._service_name == 'scheduler':
-            return client.get_schedule(GroupName=group, Name=name)['ScheduleExpression']
+        if client._service_model._service_name == "events":
+            return client.describe_rule(Name=name, EventBusName=group)[
+                "ScheduleExpression"
+            ]
+        elif client._service_model._service_name == "scheduler":
+            return client.get_schedule(GroupName=group, Name=name)["ScheduleExpression"]
     except Exception as e:
         logger.warning(e)
-    return ''
+    return ""
 
 
-def get_schedules_info(service_pipeline: SvcPipeline) -> list:    
-    schedules_info = [] 
-    available_services = meta_ddb_util.get_item(key={'metaName':'AvailableServices'})['value']
+def get_schedules_info(service_pipeline: SvcPipeline) -> list:
+    schedules_info = []
+    available_services = meta_ddb_util.get_item(key={"metaName": "AvailableServices"})[
+        "value"
+    ]
 
-    if 'scheduler' in available_services:
-        scheduler_type = 'EventBridgeScheduler'
-        scheduler = conn.get_client('scheduler')
+    if "scheduler" in available_services:
+        scheduler_type = "EventBridgeScheduler"
+        scheduler = conn.get_client("scheduler")
     else:
-        scheduler_type = 'EventBridgeEvents'
-        scheduler = conn.get_client('events')
-        
-    for meta_name, schedule_name in (('LogProcessor', 'LogProcessor'), 
-                                     ('LogMerger', 'LogMerger'), 
-                                     ('LogMerger', 'LogMergerForMetrics'), 
-                                     ('LogArchive', 'LogArchive'), 
-                                     ('LogArchive', 'LogArchiveForMetrics')):
-        meta_schedule = meta_ddb_util.get_item(key={'metaName':meta_name})
-        if scheduler_type == 'EventBridgeScheduler':
+        scheduler_type = "EventBridgeEvents"
+        scheduler = conn.get_client("events")
+
+    for meta_name, schedule_name in (
+        ("LogProcessor", "LogProcessor"),
+        ("LogMerger", "LogMerger"),
+        ("LogMerger", "LogMergerForMetrics"),
+        ("LogArchive", "LogArchive"),
+        ("LogArchive", "LogArchiveForMetrics"),
+    ):
+        meta_schedule = meta_ddb_util.get_item(key={"metaName": meta_name})
+        if scheduler_type == "EventBridgeScheduler":
             name = schedule_name
             group = service_pipeline.id
         else:
-            name = f'{schedule_name}-{service_pipeline.lightEngineParams.centralizedTableName}'
-            group = 'default'
-        schedule_expression = get_scheduler_expression(name=name, group=group, client=scheduler)
+            name = f"{schedule_name}-{service_pipeline.id}"
+            group = "default"
+        schedule_expression = get_scheduler_expression(
+            name=name, group=group, client=scheduler
+        )
         schedule = {
             "type": schedule_name,
             "stateMachine": {
-                "arn": meta_schedule['arn'],
-                "name": meta_schedule['name']
+                "arn": meta_schedule["arn"],
+                "name": meta_schedule["name"],
             },
             "scheduler": {
                 "type": scheduler_type,
                 "group": group,
                 "name": name,
-                "expression": schedule_expression
-            }
+                "expression": schedule_expression,
+            },
         }
-        if meta_name == 'LogMerger':
-            schedule['scheduler']['age'] = service_pipeline.lightEngineParams.logMergerAge
-        elif meta_name == 'LogArchive':
-            schedule['scheduler']['age'] = service_pipeline.lightEngineParams.logArchiveAge
-            
-        if schedule_expression != '':
+        if meta_name == "LogMerger":
+            schedule["scheduler"][
+                "age"
+            ] = service_pipeline.lightEngineParams.logMergerAge
+        elif meta_name == "LogArchive":
+            schedule["scheduler"][
+                "age"
+            ] = service_pipeline.lightEngineParams.logArchiveAge
+
+        if schedule_expression != "":
             schedules_info.append(schedule)
     return schedules_info
 
@@ -160,26 +203,33 @@ def get_light_engine_service_pipeline_logs(**args):
     pipeline_id = args["pipelineId"]
     state_machine_name = args["stateMachineName"]
     schedule_type = args["type"]
-    pipeline_index_key = f'{pipeline_id}:{schedule_type}:00000000-0000-0000-0000-000000000000'
-    
+    pipeline_index_key = (
+        f"{pipeline_id}:{schedule_type}:00000000-0000-0000-0000-000000000000"
+    )
+
     etl_log_dao = ETLLogDao(etl_log_table_name)
-    response = etl_log_dao.query_execution_logs(pipeline_index_key=pipeline_index_key, 
-                                                start_time=args.get('startTime'),
-                                                end_time=args.get('endTime'),
-                                                status=args.get('status'),
-                                                limit=args.get('limit', 10),
-                                                last_evaluated_key=args.get('lastEvaluatedKey'))
-    
+    response = etl_log_dao.query_execution_logs(
+        pipeline_index_key=pipeline_index_key,
+        start_time=args.get("startTime"),
+        end_time=args.get("endTime"),
+        status=args.get("status"),
+        limit=args.get("limit", 10),
+        last_evaluated_key=args.get("lastEvaluatedKey"),
+    )
+
     execution_tasks = {}
-    execution_tasks['items'] = response['Items']
-    if response.get('LastEvaluatedKey'):
-        execution_tasks['lastEvaluatedKey'] = response['LastEvaluatedKey']
-        
-    for item in execution_tasks['items']:
-        item['executionArn'] = f'arn:{current_partition}:states:{current_region}:{current_account_id}:execution:{state_machine_name}:{item["executionName"]}'
-        item.pop('pipelineIndexKey', None)
-    
+    execution_tasks["items"] = response["Items"]
+    if response.get("LastEvaluatedKey"):
+        execution_tasks["lastEvaluatedKey"] = response["LastEvaluatedKey"]
+
+    for item in execution_tasks["items"]:
+        item[
+            "executionArn"
+        ] = f'arn:{current_partition}:states:{current_region}:{current_account_id}:execution:{state_machine_name}:{item["executionName"]}'
+        item.pop("pipelineIndexKey", None)
+
     return execution_tasks
+
 
 @router.route(field_name="getLightEngineServicePipelineDetail")
 def get_light_engine_service_pipeline_detail(**args):
@@ -187,20 +237,43 @@ def get_light_engine_service_pipeline_detail(**args):
         "analyticsEngine": {
             "engineType": EngineType.LIGHT_ENGINE,
         },
-        "schedules": []
+        "schedules": [],
     }
-    
+
     pipeline_id = args.get("pipelineId")
     if not pipeline_id:
-        raise KeyError(f'Missing required parameter: pipelineId.')
-    
+        raise KeyError(f"Missing required parameter: pipelineId.")
+
     svc_pipeline_dao = SvcPipelineDao(pipeline_table_name)
     svc_pipeline = svc_pipeline_dao.get_svc_pipeline(id=pipeline_id)
-    
-    service_pipeline_detail['analyticsEngine'].update(get_glue_table_info(service_pipeline=svc_pipeline))
-    service_pipeline_detail['schedules'] = get_schedules_info(service_pipeline=svc_pipeline)
-    
+
+    service_pipeline_detail["analyticsEngine"].update(
+        get_glue_table_info(service_pipeline=svc_pipeline)
+    )
+    service_pipeline_detail["schedules"] = get_schedules_info(
+        service_pipeline=svc_pipeline
+    )
+
     return service_pipeline_detail
+
+
+def verify_s3_bucket_prefix_overlap(
+    log_source_account_assume_role,
+    service_type,
+    logging_bucket_name,
+    logging_bucket_prefix,
+):
+    s3_client = conn.get_client(
+        "s3",
+        current_region,
+        sts_role_arn=log_source_account_assume_role,
+    )
+    if service_type.lower() in ("lambda", "rds"):
+        s3_client = conn.get_client("s3", current_region)
+
+    verify_s3_bucket_prefix_overlap_for_event_notifications(
+        s3_client, logging_bucket_name, logging_bucket_prefix
+    )
 
 
 @router.route(field_name="createServicePipeline")
@@ -214,6 +287,7 @@ def create_service_pipeline(**args):
     service_type = args["type"]
     source = args["source"]
     target = args["target"]
+    log_processor_concurrency = args["logProcessorConcurrency"]
     monitor = args.get("monitor") or {"status": PipelineMonitorStatus.ENABLED}
     osi_params = args.get("osiParams")
     destination_type = args["destinationType"]
@@ -229,6 +303,13 @@ def create_service_pipeline(**args):
         {
             "parameterKey": "logSourceAccountId",
             "parameterValue": account_id,
+        }
+    )
+
+    args["parameters"].append(
+        {
+            "parameterKey": "logProcessorConcurrency",
+            "parameterValue": log_processor_concurrency,
         }
     )
 
@@ -255,19 +336,30 @@ def create_service_pipeline(**args):
     )
 
     enable_autoscaling = "no"
+    logging_bucket_name = ""
+    logging_bucket_prefix = ""
     for p in args["parameters"]:
         if p["parameterKey"] == "enableAutoScaling":
             enable_autoscaling = p["parameterValue"]
             continue
+        if p["parameterKey"] == "logBucketName":
+            logging_bucket_name = p["parameterValue"]
+        if p["parameterKey"] == "logBucketPrefix":
+            logging_bucket_prefix = p["parameterValue"]
         params.append(
             {
                 "ParameterKey": p["parameterKey"],
                 "ParameterValue": p["parameterValue"],
             }
         )
-
-    if osi_params != None: 
-        if (osi_params["maxCapacity"] != 0 and osi_params["minCapacity"] != 0):
+    verify_s3_bucket_prefix_overlap(
+        log_source_account_assume_role,
+        service_type,
+        logging_bucket_name,
+        logging_bucket_prefix,
+    )
+    if osi_params is not None:
+        if osi_params["maxCapacity"] != 0 and osi_params["minCapacity"] != 0:
             params.append(
                 {
                     "ParameterKey": "maxCapacity",
@@ -286,13 +378,16 @@ def create_service_pipeline(**args):
                     "ParameterValue": pipeline_table_arn,
                 }
             )
-            params.append({
+            params.append(
+                {
                     "ParameterKey": "osiPipelineName",
                     "ParameterValue": pipeline_id,
                 }
             )
 
-    pattern = _get_pattern_by_buffer(service_type, destination_type, enable_autoscaling, osi_params)
+    pattern = _get_pattern_by_buffer(
+        service_type, destination_type, enable_autoscaling, osi_params
+    )
 
     sfn_args = {
         "stackName": stack_name,
@@ -300,6 +395,10 @@ def create_service_pipeline(**args):
         "parameters": params,
         "engineType": EngineType.OPEN_SEARCH,
     }
+
+    tag = args.get("tags", [])
+
+    sfn_args["tag"] = tag
 
     # Start the pipeline flow
     exec_sfn_flow(id=pipeline_id, action="START", args=sfn_args)
@@ -323,6 +422,7 @@ def create_service_pipeline(**args):
     ddb_util.put_item(item)
     return pipeline_id
 
+
 @router.route(field_name="createLightEngineServicePipeline")
 def create_light_engine_service_pipeline(**args):
     """Create a service pipeline deployment for light engine"""
@@ -335,7 +435,7 @@ def create_light_engine_service_pipeline(**args):
     source = args["source"]
     account_id = args.get("logSourceAccountId") or account_helper.default_account_id
     region = args.get("logSourceRegion") or account_helper.default_region
-    
+
     account = account_helper.get_link_account(account_id, region)
     log_source_account_assume_role = account.get("subAccountRoleArn", "")
 
@@ -347,25 +447,59 @@ def create_light_engine_service_pipeline(**args):
         if monitor_detail.snsTopicArn:
             sns_arn = monitor_detail.snsTopicArn
         else:
-            sns_arn =f"arn:{current_partition}:sns:{current_region}:{current_account_id}:{monitor_detail.snsTopicName}_{pipeline_id[:8]}"
+            sns_arn = f"arn:{current_partition}:sns:{current_region}:{current_account_id}:{monitor_detail.snsTopicName}_{pipeline_id[:8]}"
 
     light_engine_params = LightEngineParams(
         stagingBucketPrefix=get_staging_bucket_prefix(service_type, stack_name),
-        centralizedBucketName=get_value_through_parameter_key(key='centralizedBucketName', parameters=parameters),
-        centralizedBucketPrefix=get_value_through_parameter_key(key='centralizedBucketPrefix', parameters=parameters),
-        centralizedTableName=get_value_through_parameter_key(key='centralizedTableName', parameters=parameters),
-        logProcessorSchedule=get_value_through_parameter_key(key='logProcessorSchedule', parameters=parameters),
-        logMergerSchedule=get_value_through_parameter_key(key='logMergerSchedule', parameters=parameters),
-        logArchiveSchedule=get_value_through_parameter_key(key='logArchiveSchedule', parameters=parameters),
-        logMergerAge=get_value_through_parameter_key(key='logMergerAge', parameters=parameters),
-        logArchiveAge=get_value_through_parameter_key(key='logArchiveAge', parameters=parameters),
-        importDashboards=get_value_through_parameter_key(key='importDashboards', parameters=parameters),
-        grafanaId=get_value_through_parameter_key(key='grafanaId', parameters=parameters),
+        centralizedBucketName=get_value_through_parameter_key(
+            key="centralizedBucketName", parameters=parameters
+        ),
+        centralizedBucketPrefix=get_value_through_parameter_key(
+            key="centralizedBucketPrefix", parameters=parameters
+        ),
+        centralizedTableName=get_value_through_parameter_key(
+            key="centralizedTableName", parameters=parameters
+        ),
+        logProcessorSchedule=get_value_through_parameter_key(
+            key="logProcessorSchedule", parameters=parameters
+        ),
+        logMergerSchedule=get_value_through_parameter_key(
+            key="logMergerSchedule", parameters=parameters
+        ),
+        logArchiveSchedule=get_value_through_parameter_key(
+            key="logArchiveSchedule", parameters=parameters
+        ),
+        logMergerAge=get_value_through_parameter_key(
+            key="logMergerAge", parameters=parameters
+        ),
+        logArchiveAge=get_value_through_parameter_key(
+            key="logArchiveAge", parameters=parameters
+        ),
+        importDashboards=get_value_through_parameter_key(
+            key="importDashboards", parameters=parameters
+        ),
+        grafanaId=get_value_through_parameter_key(
+            key="grafanaId", parameters=parameters
+        ),
         recipients=sns_arn,
     )
     if service_type.lower() in ("elb", "cloudfront"):
-        light_engine_params.enrichmentPlugins = get_value_through_parameter_key(key='enrichmentPlugins', parameters=parameters)
-        
+        light_engine_params.enrichmentPlugins = get_value_through_parameter_key(
+            key="enrichmentPlugins", parameters=parameters
+        )
+    logging_bucket_name = get_value_through_parameter_key(
+        key="logBucketName", parameters=parameters
+    )
+    logging_bucket_prefix = get_value_through_parameter_key(
+        key="logBucketPrefix", parameters=parameters
+    )
+    verify_s3_bucket_prefix_overlap(
+        log_source_account_assume_role,
+        service_type,
+        logging_bucket_name,
+        logging_bucket_prefix,
+    )
+    context = get_value_through_parameter_key(key="context", parameters=parameters)
     svc_pipeline_dao = SvcPipelineDao(pipeline_table_name)
     svc_pipeline = SvcPipeline(
         id=pipeline_id,
@@ -387,21 +521,22 @@ def create_light_engine_service_pipeline(**args):
         grafana = grafana_ddb_util.get_item(
             {"id": svc_pipeline.lightEngineParams.grafanaId}
         )
-    
+
     sfn_parameters = svc_pipeline_dao.get_light_engine_stack_parameters(
         service_pipeline=svc_pipeline, grafana=grafana
     )
-    
+
     pattern = _get_light_engine_pattern(service_type)
 
     ingestion = {
-            "id": str(uuid.uuid4()),
-            "role": log_source_account_assume_role,
-            "pipelineId": pipeline_id,
-            "bucket": args["ingestion"]["bucket"],
-            "prefix": args["ingestion"]["prefix"],
-        }
-    
+        "id": str(uuid.uuid4()),
+        "role": log_source_account_assume_role,
+        "pipelineId": pipeline_id,
+        "bucket": args["ingestion"]["bucket"],
+        "prefix": args["ingestion"]["prefix"],
+        "context": context or "{}",
+    }
+
     sfn_args = {
         "stackName": stack_name,
         "pattern": pattern,
@@ -410,9 +545,13 @@ def create_light_engine_service_pipeline(**args):
         "ingestion": ingestion,
     }
 
+    tag = args.get("tags", [])
+
+    sfn_args["tag"] = tag
+
     # Start the pipeline flow
     exec_sfn_flow(id=pipeline_id, action="START", args=sfn_args)
-    
+
     svc_pipeline_dao.save(svc_pipeline)
     return svc_pipeline.id
 
@@ -491,8 +630,15 @@ def list_pipelines(page=1, count=20):
     }
 
 
-def _get_pattern_by_buffer(service_type, destination_type, enable_autoscaling="no", osi_params=None):
-    if (osi_params != None and osi_params["maxCapacity"] != 0 and osi_params["minCapacity"] != 0 and destination_type == "S3"):
+def _get_pattern_by_buffer(
+    service_type, destination_type, enable_autoscaling="no", osi_params=None
+):
+    if (
+        osi_params != None
+        and osi_params["maxCapacity"] != 0
+        and osi_params["minCapacity"] != 0
+        and destination_type == "S3"
+    ):
         match service_type:
             case "CloudTrail":
                 return "CloudTrailLogOSIProcessor"
@@ -517,18 +663,28 @@ def _get_pattern_by_buffer(service_type, destination_type, enable_autoscaling="n
     else:
         return service_type
 
+
 def _get_light_engine_pattern(service_type):
     if service_type == "WAF":
         return "MicroBatchAwsServicesWafPipeline"
-    if service_type == "CloudFront":
+    elif service_type == "CloudFront":
         return "MicroBatchAwsServicesCloudFrontPipeline"
-    if service_type == "ELB":
+    elif service_type == "ELB":
         return "MicroBatchAwsServicesAlbPipeline"
+    elif service_type == "CloudTrail":
+        return "MicroBatchAwsServicesCloudTrailPipeline"
+    elif service_type == "VPC":
+        return "MicroBatchAwsServicesVpcFlowPipeline"
+    elif service_type == "RDS":
+        return "MicroBatchAwsServicesRDSPipeline"
+    elif service_type == "S3":
+        return "MicroBatchAwsServicesS3Pipeline"
     else:
         return service_type
-    
+
+
 def get_staging_bucket_prefix(service_type: str, stack_name: str):
-    return f"AWSLogs/{service_type}Logs/{stack_name}"
+    return f"LightEngine/AWSLogs/{service_type}Logs/{stack_name}"
 
 
 def get_error_export_info(pipeline_item: dict):

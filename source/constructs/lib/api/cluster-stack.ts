@@ -78,6 +78,7 @@ export interface ClusterStackProps {
 
   readonly solutionId: string;
   readonly stackPrefix: string;
+  readonly aosMasterRole: iam.Role;
 }
 export class ClusterStack extends Construct {
   readonly clusterTable: ddb.Table;
@@ -144,11 +145,12 @@ export class ClusterStack extends Construct {
       ),
       runtime: lambda.Runtime.PYTHON_3_11,
       handler: 'lambda_function.lambda_handler',
-      timeout: Duration.seconds(60),
+      timeout: Duration.minutes(3),
       memorySize: 1024,
       layers: [clusterLayer, SharedPythonLayer.getInstance(this)],
       environment: {
         PARTITION: Aws.PARTITION,
+        OPENSEARCH_MASTER_ROLE_ARN: props.aosMasterRole.roleArn,
         CLUSTER_TABLE: this.clusterTable.tableName,
         APP_PIPELINE_TABLE_NAME: props.appPipelineTable.tableName,
         SVC_PIPELINE_TABLE: props.svcPipelineTable.tableName,
@@ -179,6 +181,7 @@ export class ClusterStack extends Construct {
             'es:DescribeElasticsearchDomain',
             'es:UpdateElasticsearchDomainConfig',
             'es:DescribeDomainConfig',
+            'es:UpdateDomainConfig',
           ],
         }),
         new iam.PolicyStatement({
@@ -228,6 +231,14 @@ export class ClusterStack extends Construct {
             'ec2:DescribeSubnets',
             'ec2:DescribeNetworkAcls',
             'ec2:DescribeRouteTables',
+          ],
+        }),
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          resources: ['*'],
+          actions: [
+            'kms:DescribeCustomKeyStores',
+            'kms:DescribeKey',
           ],
         }),
       ],

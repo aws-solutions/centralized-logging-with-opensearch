@@ -1,18 +1,19 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
-import logging
+from commonlib.logging import get_logger
 import boto3
 from datetime import datetime, timedelta
 
 
-logger = logging.getLogger()
+logger = get_logger(__name__)
 
 cw_metric_map = {
-    "m1": {"metric_name": "FreeStorageSpace", "stat": "Minimum"},
+    "m1": {"metric_name": "FreeStorageSpace", "stat": "Sum"},
     "m2": {"metric_name": "SearchableDocuments", "stat": "Maximum"},
     "m3": {"metric_name": "ClusterStatus.green", "stat": "Maximum"},
     "m4": {"metric_name": "ClusterStatus.yellow", "stat": "Maximum"},
     "m5": {"metric_name": "ClusterStatus.red", "stat": "Maximum"},
+    "m6": {"metric_name": "ClusterIndexWritesBlocked", "stat": "Maximum"},
 }
 
 
@@ -120,6 +121,8 @@ def _parse_result(domain_list, metric_result):
         elif metric_id == "m4" and metric["Values"][0] != 0.0:
             metric_data.get(domain_name)["health"] = "YELLOW"
         elif metric_id == "m5" and metric["Values"][0] != 0.0:
+            metric_data.get(domain_name)["health"] = "RED"
+        elif metric_id == "m6" and metric["Values"][0] != 0.0:
             metric_data.get(domain_name)["health"] = "RED"
         else:
             logger.error("Unknown metric")

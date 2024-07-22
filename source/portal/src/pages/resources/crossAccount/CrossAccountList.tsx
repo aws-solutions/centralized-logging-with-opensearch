@@ -14,22 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React, { useState, useEffect } from "react";
-import Breadcrumb from "components/Breadcrumb";
-import SideMenu from "components/SideMenu";
 import { useTranslation } from "react-i18next";
 import { SelectType, TablePanel } from "components/TablePanel";
 import Button from "components/Button";
 import { SubAccountLink } from "API";
 import { Link, useNavigate } from "react-router-dom";
 import { Pagination } from "@material-ui/lab";
-import HelpPanel from "components/HelpPanel";
 import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
 import { listSubAccountLinks } from "graphql/queries";
 import { deleteSubAccountLink } from "graphql/mutations";
 import Modal from "components/Modal";
-import { formatLocalTime } from "assets/js/utils";
+import { defaultStr, formatLocalTime } from "assets/js/utils";
 import { handleErrorMessage } from "assets/js/alert";
 import ButtonRefresh from "components/ButtonRefresh";
+import CommonLayout from "pages/layout/CommonLayout";
 
 const PAGE_SIZE = 10;
 
@@ -122,137 +120,128 @@ const CrossAccountList: React.FC = () => {
   };
 
   return (
-    <div className="lh-main-content">
-      <SideMenu />
-      <div className="lh-container">
-        <div className="lh-content">
-          <div className="service-log">
-            <Breadcrumb list={breadCrumbList} />
-            <div className="table-data">
-              <TablePanel
-                trackId="subAccountId"
-                title={t("resource:crossAccount.list.accounts")}
-                changeSelected={(item) => {
-                  setSelectedAccount(item);
+    <CommonLayout breadCrumbList={breadCrumbList}>
+      <div className="table-data">
+        <TablePanel
+          trackId="subAccountId"
+          title={t("resource:crossAccount.list.accounts")}
+          changeSelected={(item) => {
+            setSelectedAccount(item);
+          }}
+          loading={loadingData}
+          selectType={SelectType.RADIO}
+          columnDefinitions={[
+            {
+              // width: 110,
+              id: "ID",
+              header: t("resource:crossAccount.list.accountName"),
+              cell: (e: SubAccountLink) => renderAccountId(e),
+            },
+            {
+              id: "Name",
+              header: t("resource:crossAccount.list.accountId"),
+              cell: (e: SubAccountLink) => {
+                return e.subAccountId;
+              },
+            },
+            {
+              id: "Role",
+              header: t("resource:crossAccount.list.iamRole"),
+              cell: (e: SubAccountLink) => {
+                return e.subAccountRoleArn;
+              },
+            },
+            {
+              width: 170,
+              id: "created",
+              header: t("resource:crossAccount.list.created"),
+              cell: (e: SubAccountLink) => {
+                return formatLocalTime(defaultStr(e?.createdAt));
+              },
+            },
+          ]}
+          items={crossAccountList}
+          actions={
+            <div>
+              <Button
+                btnType="icon"
+                disabled={loadingData}
+                onClick={() => {
+                  if (curPage === 1) {
+                    getCrossAccountList();
+                  } else {
+                    setCurPage(1);
+                  }
                 }}
-                loading={loadingData}
-                selectType={SelectType.RADIO}
-                columnDefinitions={[
-                  {
-                    // width: 110,
-                    id: "ID",
-                    header: t("resource:crossAccount.list.accountName"),
-                    cell: (e: SubAccountLink) => renderAccountId(e),
-                  },
-                  {
-                    id: "Name",
-                    header: t("resource:crossAccount.list.accountId"),
-                    cell: (e: SubAccountLink) => {
-                      return e.subAccountId;
-                    },
-                  },
-                  {
-                    id: "Role",
-                    header: t("resource:crossAccount.list.iamRole"),
-                    cell: (e: SubAccountLink) => {
-                      return e.subAccountRoleArn;
-                    },
-                  },
-                  {
-                    width: 170,
-                    id: "created",
-                    header: t("resource:crossAccount.list.created"),
-                    cell: (e: SubAccountLink) => {
-                      return formatLocalTime(e?.createdAt || "");
-                    },
-                  },
-                ]}
-                items={crossAccountList}
-                actions={
-                  <div>
-                    <Button
-                      btnType="icon"
-                      disabled={loadingData}
-                      onClick={() => {
-                        if (curPage === 1) {
-                          getCrossAccountList();
-                        } else {
-                          setCurPage(1);
-                        }
-                      }}
-                    >
-                      <ButtonRefresh loading={loadingData} fontSize="small" />
-                    </Button>
+              >
+                <ButtonRefresh loading={loadingData} fontSize="small" />
+              </Button>
 
-                    <Button
-                      disabled={disabledDelete}
-                      onClick={() => {
-                        removeCrossAccount();
-                      }}
-                    >
-                      {t("button.remove")}
-                    </Button>
+              <Button
+                disabled={disabledDelete}
+                onClick={() => {
+                  removeCrossAccount();
+                }}
+              >
+                {t("button.remove")}
+              </Button>
 
-                    <Button
-                      btnType="primary"
-                      onClick={() => {
-                        navigate("/resources/cross-account/link");
-                      }}
-                    >
-                      {t("button.linkAnAccount")}
-                    </Button>
-                  </div>
-                }
-                pagination={
-                  <Pagination
-                    count={Math.ceil(totoalCount / PAGE_SIZE)}
-                    page={curPage}
-                    onChange={handlePageChange}
-                    size="small"
-                  />
-                }
-              />
+              <Button
+                btnType="primary"
+                onClick={() => {
+                  navigate("/resources/cross-account/link");
+                }}
+              >
+                {t("button.linkAnAccount")}
+              </Button>
             </div>
-          </div>
-          <Modal
-            title={t("resource:crossAccount.list.removeLink")}
-            fullWidth={false}
-            isOpen={openDeleteModel}
-            closeModal={() => {
-              setOpenDeleteModel(false);
-            }}
-            actions={
-              <div className="button-action no-pb text-right">
-                <Button
-                  btnType="text"
-                  disabled={loadingDelete}
-                  onClick={() => {
-                    setOpenDeleteModel(false);
-                  }}
-                >
-                  {t("button.cancel")}
-                </Button>
-                <Button
-                  loading={loadingDelete}
-                  btnType="primary"
-                  onClick={() => {
-                    confirmRemoveCrossAccount();
-                  }}
-                >
-                  {t("button.remove")}
-                </Button>
-              </div>
-            }
-          >
-            <div className="modal-content">
-              {t("resource:crossAccount.list.removeLinkTips")}
-              <b>{`${curAccount?.subAccountName}`}</b> {"?"}
-            </div>
-          </Modal>
-        </div>
+          }
+          pagination={
+            <Pagination
+              count={Math.ceil(totoalCount / PAGE_SIZE)}
+              page={curPage}
+              onChange={handlePageChange}
+              size="small"
+            />
+          }
+        />
       </div>
-      <HelpPanel />
-    </div>
+      <Modal
+        title={t("resource:crossAccount.list.removeLink")}
+        fullWidth={false}
+        isOpen={openDeleteModel}
+        closeModal={() => {
+          setOpenDeleteModel(false);
+        }}
+        actions={
+          <div className="button-action no-pb text-right">
+            <Button
+              btnType="text"
+              disabled={loadingDelete}
+              onClick={() => {
+                setOpenDeleteModel(false);
+              }}
+            >
+              {t("button.cancel")}
+            </Button>
+            <Button
+              loading={loadingDelete}
+              btnType="primary"
+              onClick={() => {
+                confirmRemoveCrossAccount();
+              }}
+            >
+              {t("button.remove")}
+            </Button>
+          </div>
+        }
+      >
+        <div className="modal-content">
+          {t("resource:crossAccount.list.removeLinkTips")}
+          <b>{`${curAccount?.subAccountName}`}</b> {"?"}
+        </div>
+      </Modal>
+    </CommonLayout>
   );
 };
 

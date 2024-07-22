@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import os
-import logging
 
 from commonlib import AWSConnection
 from commonlib.dao import PipelineAlarmDao, DynamoDBUtil
@@ -14,11 +13,11 @@ from commonlib.model import (
     LogSourceTypeEnum,
     EngineType,
 )
+from commonlib.logging import get_logger
 
 from boto3.dynamodb.conditions import Attr
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger('alarm.util')
 
 conn = AWSConnection()
 

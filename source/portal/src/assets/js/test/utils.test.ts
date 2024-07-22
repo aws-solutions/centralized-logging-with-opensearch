@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { EngineType } from "API";
+import { EngineType, SchedulerType } from "API";
 import {
   IsJsonString,
   bucketNameIsValid,
@@ -29,6 +29,42 @@ import {
   buildEC2LInk,
   buildKDSLink,
   buildKDFLink,
+  buildCfnLink,
+  buildESLink,
+  buildESCloudWatchLink,
+  buildVPCLink,
+  buildSubnetLink,
+  buildVPCPeeringLink,
+  buildNaclLink,
+  buildRouteTableLink,
+  buildSGLink,
+  getDirPrefixByPrefixStr,
+  buildCreateS3Link,
+  buildS3Link,
+  buildS3LinkFromS3URI,
+  buildTrailLink,
+  buildConfigLink,
+  buildCloudFrontLink,
+  buildLambdaLink,
+  buildLambdaLogStreamLink,
+  buildRDSLink,
+  buildRoleLink,
+  buildAlarmLink,
+  buildWAFLink,
+  buildELBLink,
+  buildKeyPairsLink,
+  buildEKSLink,
+  buildASGLink,
+  buildCrossAccountTemplateLink,
+  buildSQSLink,
+  buildNLBLinkByDNS,
+  buildLambdaCWLGroupLink,
+  buildGlueTableLink,
+  buildGlueDatabaseLink,
+  buildSchedulerLink,
+  buildStepFunctionExecutionLink,
+  generateEc2Permissions,
+  getAWSPartition,
   combineReducers,
   ternary,
   hasSamePrefix,
@@ -36,6 +72,9 @@ import {
   buildOSIPipelineNameByPipelineId,
   isOSIPipeline,
   defaultStr,
+  domainIsValid,
+  buildOSILink,
+  containsNonLatinCodepoints,
 } from "../utils";
 import { LogProcessorType } from "reducer/selectProcessor";
 
@@ -382,6 +421,825 @@ describe("buildKDFLink", () => {
   });
 });
 
+describe("buildCfnLink", () => {
+  it("should build the CloudFormation link for standard AWS regions", () => {
+    const region = "us-example-1";
+    const stackName = "myStack";
+    const link = buildCfnLink(region, stackName);
+    expect(link).toBe(
+      `https://${region}.console.aws.amazon.com/cloudformation/home?region=${region}#/stacks/stackinfo?stackId=${stackName}`
+    );
+  });
+
+  it("should build the CloudFormation link for China regions", () => {
+    const region = "cn-example-1";
+    const stackName = "myStack";
+    const link = buildCfnLink(region, stackName);
+    expect(link).toBe(
+      `https://${region}.console.amazonaws.cn/cloudformation/home?region=${region}#/stacks/stackinfo?stackId=${stackName}`
+    );
+  });
+});
+
+describe("buildESLink", () => {
+  it("should build the ES link for standard AWS regions", () => {
+    const region = "us-example-1";
+    const domainName = "myDomain";
+    const link = buildESLink(region, domainName);
+    expect(link).toBe(
+      `https://${region}.console.aws.amazon.com/aos/home?region=${region}#opensearch/domains/myDomain`
+    );
+  });
+
+  it("should build the ES link for China regions", () => {
+    const region = "cn-example-1";
+    const domainName = "myDomain";
+    const link = buildESLink(region, domainName);
+    expect(link).toBe(
+      `https://${region}.console.amazonaws.cn/aos/home?region=${region}#opensearch/domains/myDomain`
+    );
+  });
+});
+
+describe("buildESCloudWatchLink", () => {
+  it("should build the ES CloudWatch link for standard AWS regions", () => {
+    const region = "us-example-1";
+    const domainName = "myDomain";
+    const link = buildESCloudWatchLink(region, domainName);
+    expect(link).toBe(
+      `https://${region}.console.aws.amazon.com/cloudwatch/home?region=${region}#dashboards:name=myDomain`
+    );
+  });
+
+  it("should build the ES CloudWatch link for China regions", () => {
+    const region = "cn-example-1";
+    const domainName = "myDomain";
+    const link = buildESCloudWatchLink(region, domainName);
+    expect(link).toBe(
+      `https://${region}.console.amazonaws.cn/cloudwatch/home?region=${region}#dashboards:name=myDomain`
+    );
+  });
+});
+
+describe("buildVPCLink", () => {
+  it("should build the VPC link for standard AWS regions", () => {
+    const region = "us-example-1";
+    const vpcId = "vpc-1234567890abcdef0";
+    const link = buildVPCLink(region, vpcId);
+    expect(link).toBe(
+      `https://${region}.console.aws.amazon.com/vpc/home?region=${region}#vpcs:VpcId=${vpcId}`
+    );
+  });
+
+  it("should build the VPC link for China regions", () => {
+    const region = "cn-example-1";
+    const vpcId = "vpc-1234567890abcdef0";
+    const link = buildVPCLink(region, vpcId);
+    expect(link).toBe(
+      `https://${region}.console.amazonaws.cn/vpc/home?region=${region}#vpcs:VpcId=${vpcId}`
+    );
+  });
+});
+
+describe("buildSubnetLink", () => {
+  it("should build the subnet link for standard AWS regions", () => {
+    const region = "us-example-1";
+    const subnetId = "subnet-1234567890abcdef0";
+    const link = buildSubnetLink(region, subnetId);
+    expect(link).toBe(
+      `https://${region}.console.aws.amazon.com/vpc/home?region=${region}#subnets:subnetId=${subnetId}`
+    );
+  });
+
+  it("should build the subnet link for China regions", () => {
+    const region = "cn-example-1";
+    const subnetId = "subnet-1234567890abcdef0";
+    const link = buildSubnetLink(region, subnetId);
+    expect(link).toBe(
+      `https://${region}.console.amazonaws.cn/vpc/home?region=${region}#subnets:subnetId=${subnetId}`
+    );
+  });
+});
+
+describe("buildVPCPeeringLink", () => {
+  it("should build the VPC peering link for standard AWS regions", () => {
+    const region = "us-example-1";
+    const vpcPeeringId = "pcx-1234567890abcdef0";
+    const link = buildVPCPeeringLink(region, vpcPeeringId);
+    expect(link).toBe(
+      `https://${region}.console.aws.amazon.com/vpc/home?region=${region}#PeeringConnectionDetails:VpcPeeringConnectionId=${vpcPeeringId}`
+    );
+  });
+
+  it("should build the VPC peering link for China regions", () => {
+    const region = "cn-example-1";
+    const vpcPeeringId = "pcx-1234567890abcdef0";
+    const link = buildVPCPeeringLink(region, vpcPeeringId);
+    expect(link).toBe(
+      `https://${region}.console.amazonaws.cn/vpc/home?region=${region}#PeeringConnectionDetails:VpcPeeringConnectionId=${vpcPeeringId}`
+    );
+  });
+});
+
+describe("buildNaclLink", () => {
+  it("should build the NACL link for standard AWS regions", () => {
+    const region = "us-example-1";
+    const naclId = "acl-1234567890abcdef0";
+    const link = buildNaclLink(region, naclId);
+    expect(link).toBe(
+      `https://${region}.console.aws.amazon.com/vpc/home?region=${region}#NetworkAclDetails:networkAclId=${naclId}`
+    );
+  });
+
+  it("should build the NACL link for China regions", () => {
+    const region = "cn-example-1";
+    const naclId = "acl-1234567890abcdef0";
+    const link = buildNaclLink(region, naclId);
+    expect(link).toBe(
+      `https://${region}.console.amazonaws.cn/vpc/home?region=${region}#NetworkAclDetails:networkAclId=${naclId}`
+    );
+  });
+});
+
+describe("buildRouteTableLink", () => {
+  it("should build the route table link for standard AWS regions", () => {
+    const region = "us-example-1";
+    const routeTableId = "rtb-1234567890abcdef0";
+    const link = buildRouteTableLink(region, routeTableId);
+    expect(link).toBe(
+      `https://${region}.console.aws.amazon.com/vpc/home?region=${region}#RouteTableDetails:RouteTableId=${routeTableId}`
+    );
+  });
+
+  it("should build the route table link for China regions", () => {
+    const region = "cn-example-1";
+    const routeTableId = "rtb-1234567890abcdef0";
+    const link = buildRouteTableLink(region, routeTableId);
+    expect(link).toBe(
+      `https://${region}.console.amazonaws.cn/vpc/home?region=${region}#RouteTableDetails:RouteTableId=${routeTableId}`
+    );
+  });
+});
+
+describe("buildSGLink", () => {
+  it("should build the security group link for standard AWS regions", () => {
+    const region = "us-example-1";
+    const sgId = "sg-1234567890abcdef0";
+    const link = buildSGLink(region, sgId);
+    expect(link).toBe(
+      `https://${region}.console.aws.amazon.com/ec2/v2/home?region=${region}#SecurityGroup:securityGroupId=${sgId}`
+    );
+  });
+
+  it("should build the security group link for China regions", () => {
+    const region = "cn-example-1";
+    const sgId = "sg-1234567890abcdef0";
+    const link = buildSGLink(region, sgId);
+    expect(link).toBe(
+      `https://${region}.console.amazonaws.cn/ec2/v2/home?region=${region}#SecurityGroup:securityGroupId=${sgId}`
+    );
+  });
+});
+
+describe("getDirPrefixByPrefixStr", () => {
+  it("should return the correct directory prefix for a simple prefix", () => {
+    const prefix = "my-folder/my-sub-folder";
+    const dirPrefix = getDirPrefixByPrefixStr(prefix);
+    expect(dirPrefix).toBe("my-folder/");
+  });
+
+  it("should return the correct directory prefix for a prefix with a trailing slash", () => {
+    const prefix = "my-folder/my-sub-folder/";
+    const dirPrefix = getDirPrefixByPrefixStr(prefix);
+    expect(dirPrefix).toBe("my-folder/my-sub-folder/");
+  });
+
+  it("should return an empty string for an empty prefix", () => {
+    const prefix = "";
+    const dirPrefix = getDirPrefixByPrefixStr(prefix);
+    expect(dirPrefix).toBe("");
+  });
+});
+
+describe("buildCreateS3Link", () => {
+  it("should build the S3 link for standard AWS regions", () => {
+    const region = "us-example-1";
+    const link = buildCreateS3Link(region);
+    expect(link).toBe(
+      `https://s3.console.aws.amazon.com/s3/bucket/create?region=${region}`
+    );
+  });
+
+  it("should build the S3 link for China regions", () => {
+    const region = "cn-example-1";
+    const link = buildCreateS3Link(region);
+    expect(link).toBe(
+      `https://cn-example-1.console.amazonaws.cn/s3/bucket/create?region=${region}`
+    );
+  });
+});
+
+describe("buildS3Link", () => {
+  it("should build the S3 link for standard AWS regions", () => {
+    const region = "us-example-1";
+    const bucketName = "my-bucket";
+    const link = buildS3Link(region, bucketName);
+    expect(link).toBe(
+      `https://s3.console.aws.amazon.com/s3/buckets/${bucketName}`
+    );
+  });
+
+  it("should build the S3 link for China regions", () => {
+    const region = "cn-example-1";
+    const bucketName = "my-bucket";
+    const link = buildS3Link(region, bucketName);
+    expect(link).toBe(`https://console.amazonaws.cn/s3/buckets/${bucketName}`);
+  });
+
+  it("should build the S3 link with a prefix for standard regeions", () => {
+    const region = "us-example-1";
+    const bucketName = "my-bucket";
+    const prefix = "my-folder/my-sub-folder";
+    const link = buildS3Link(region, bucketName, prefix);
+    expect(link).toBe(
+      `https://s3.console.aws.amazon.com/s3/buckets/${bucketName}?region=${region}&prefix=my-folder/`
+    );
+  });
+
+  it("should build the S3 link with a prefix for China regions", () => {
+    const region = "cn-example-1";
+    const bucketName = "my-bucket";
+    const prefix = "my-folder/my-sub-folder";
+    const link = buildS3Link(region, bucketName, prefix);
+    expect(link).toBe(
+      `https://console.amazonaws.cn/s3/buckets/${bucketName}?region=${region}&prefix=my-folder/`
+    );
+  });
+});
+
+describe("buildS3LinkFromS3URI", () => {
+  it("should return an empty string for an empty S3 URI", () => {
+    const region = "us-example-1";
+    const bucketName = "";
+    const link = buildS3LinkFromS3URI(region, bucketName);
+    expect(link).toBe("");
+  });
+
+  it("should build the S3 link for standard AWS regions", () => {
+    const region = "us-example-1";
+    const bucketName = "my-bucket";
+    const link = buildS3LinkFromS3URI(region, bucketName);
+    expect(link).toBe(
+      `https://s3.console.aws.amazon.com/s3/buckets/${bucketName}?region=${region}&prefix=/`
+    );
+  });
+
+  it("should build the S3 link for China regions", () => {
+    const region = "cn-example-1";
+    const bucketName = "my-bucket";
+    const link = buildS3LinkFromS3URI(region, bucketName);
+    expect(link).toBe(
+      `https://console.amazonaws.cn/s3/buckets/${bucketName}?region=${region}&prefix=/`
+    );
+  });
+});
+
+describe("buildTrailLink", () => {
+  it("should build the CloudTrail link for standard AWS regions", () => {
+    const region = "us-example-1";
+    const link = buildTrailLink(region);
+    expect(link).toBe(
+      `https://${region}.console.aws.amazon.com/cloudtrail/home?region=${region}#/trails`
+    );
+  });
+
+  it("should build the CloudTrail link for China regions", () => {
+    const region = "cn-example-1";
+    const link = buildTrailLink(region);
+    expect(link).toBe(
+      `https://${region}.console.amazonaws.cn/cloudtrail/home?region=${region}#/trails`
+    );
+  });
+});
+
+describe("buildConfigLink", () => {
+  it("should build the Config link for standard AWS regions", () => {
+    const region = "us-example-1";
+    const link = buildConfigLink(region);
+    expect(link).toBe(
+      `https://${region}.console.aws.amazon.com/config/home?region=${region}#/dashboard`
+    );
+  });
+
+  it("should build the Config link for China regions", () => {
+    const region = "cn-example-1";
+    const link = buildConfigLink(region);
+    expect(link).toBe(
+      `https://${region}.console.amazonaws.cn/config/home?region=${region}#/dashboard`
+    );
+  });
+});
+
+describe("buildCloudFrontLink", () => {
+  it("should build the CloudFront link for standard AWS regions", () => {
+    const region = "us-example-1";
+    const distributionId = "E1234567890ABC";
+    const link = buildCloudFrontLink(region, distributionId);
+    expect(link).toBe(
+      `https://console.aws.amazon.com/cloudfront/v3/home?region=${region}#/distributions/${distributionId}`
+    );
+  });
+
+  it("should build the CloudFront link for China regions", () => {
+    const region = "cn-example-1";
+    const distributionId = "E1234567890ABC";
+    const link = buildCloudFrontLink(region, distributionId);
+    expect(link).toBe(
+      `https://console.amazonaws.cn/cloudfront/v3/home?region=${region}#/distributions/${distributionId}`
+    );
+  });
+});
+
+describe("buildLambdaLink", () => {
+  it("should build the Lambda link for standard AWS regions", () => {
+    const region = "us-example-1";
+    const functionName = "myLambdaFunction";
+    const link = buildLambdaLink(region, functionName);
+    expect(link).toBe(
+      `https://${region}.console.aws.amazon.com/lambda/home?region=${region}#/functions/${functionName}?tab=code`
+    );
+  });
+
+  it("should build the Lambda link for China regions", () => {
+    const region = "cn-example-1";
+    const functionName = "myLambdaFunction";
+    const link = buildLambdaLink(region, functionName);
+    expect(link).toBe(
+      `https://${region}.console.amazonaws.cn/lambda/home?region=${region}#/functions/${functionName}?tab=code`
+    );
+  });
+});
+
+describe("buildLambdaLogStreamLink", () => {
+  it("should build the Lambda log stream link for standard AWS regions", () => {
+    const region = "us-example-1";
+    const functionName = "myLambdaFunction";
+    const streamName = "myLogStream";
+    const link = buildLambdaLogStreamLink(region, functionName, streamName);
+    expect(link).toBe(
+      `https://${region}.console.aws.amazon.com/cloudwatch/home?region=${region}#logsV2:log-groups/log-group/${functionName}/log-events/${streamName}`
+    );
+  });
+
+  it("should build the Lambda log stream link for China regions", () => {
+    const region = "cn-example-1";
+    const functionName = "myLambdaFunction";
+    const streamName = "myLogStream";
+    const link = buildLambdaLogStreamLink(region, functionName, streamName);
+    expect(link).toBe(
+      `https://${region}.console.amazonaws.cn/cloudwatch/home?region=${region}#logsV2:log-groups/log-group/${functionName}/log-events/${streamName}`
+    );
+  });
+});
+
+describe("buildRDSLink", () => {
+  it("should build the RDS link for standard AWS regions", () => {
+    const region = "us-example-1";
+    const link = buildRDSLink(region);
+    expect(link).toBe(
+      `https://${region}.console.aws.amazon.com/rds/home?region=${region}#databases:`
+    );
+  });
+
+  it("should build the RDS link for China regions", () => {
+    const region = "cn-example-1";
+    const link = buildRDSLink(region);
+    expect(link).toBe(
+      `https://${region}.console.amazonaws.cn/rds/home?region=${region}#databases:`
+    );
+  });
+});
+
+describe("buildRoleLink", () => {
+  it("should build the IAM role link for standard AWS regions", () => {
+    const region = "us-example-1";
+    const roleName = "myRole";
+    const link = buildRoleLink(roleName, region);
+    expect(link).toBe(
+      `https://console.aws.amazon.com/iam/home?#/roles/${roleName}`
+    );
+  });
+
+  it("should build the IAM role link for China regions", () => {
+    const region = "cn-example-1";
+    const roleName = "myRole";
+    const link = buildRoleLink(roleName, region);
+    expect(link).toBe(
+      `https://console.amazonaws.cn/iam/home?#/roles/${roleName}`
+    );
+  });
+});
+
+describe("buildAlarmLink", () => {
+  it("should build the CloudWatch alarm link for standard AWS regions", () => {
+    const region = "us-example-1";
+    const link = buildAlarmLink(region);
+    expect(link).toBe(
+      `https://console.aws.amazon.com/cloudwatch/home?region=${region}#alarmsV2:`
+    );
+  });
+
+  it("should build the CloudWatch alarm link for China regions", () => {
+    const region = "cn-example-1";
+    const link = buildAlarmLink(region);
+    expect(link).toBe(
+      `https://console.amazonaws.cn/cloudwatch/home?region=${region}#alarmsV2:`
+    );
+  });
+});
+
+describe("buildWAFLink", () => {
+  it("should build the WAF link for standard AWS regions", () => {
+    const region = "us-example-1";
+    const link = buildWAFLink(region);
+    expect(link).toBe(
+      `https://console.aws.amazon.com/wafv2/homev2/web-acls?region=${region}`
+    );
+  });
+
+  it("should build the WAF link when webACLScope is CLOUDFRONT", () => {
+    const region = "us-example-1";
+    const link = buildWAFLink(region, "CLOUDFRONT");
+    expect(link).toBe(
+      `https://console.aws.amazon.com/wafv2/homev2/web-acls?region=global`
+    );
+  });
+
+  it("should build the WAF link for China regions", () => {
+    const region = "cn-example-1";
+    const link = buildWAFLink(region);
+    expect(link).toBe(
+      `https://console.amazonaws.cn/wafv2/homev2/web-acls?region=${region}`
+    );
+  });
+});
+
+describe("buildELBLink", () => {
+  it("should build the ELB link for standard AWS regions", () => {
+    const region = "us-example-1";
+    const link = buildELBLink(region);
+    expect(link).toBe(
+      `https://${region}.console.aws.amazon.com/ec2/v2/home?region=${region}#LoadBalancers`
+    );
+  });
+
+  it("should build the ELB link for China regions", () => {
+    const region = "cn-example-1";
+    const link = buildELBLink(region);
+    expect(link).toBe(
+      `https://${region}.console.amazonaws.cn/ec2/v2/home?region=${region}#LoadBalancers`
+    );
+  });
+});
+
+describe("buildKeyPairsLink", () => {
+  it("should build the key pairs link for standard AWS regions", () => {
+    const region = "us-example-1";
+    const link = buildKeyPairsLink(region);
+    expect(link).toBe(
+      `https://${region}.console.aws.amazon.com/ec2/v2/home?region=${region}#KeyPairs:`
+    );
+  });
+
+  it("should build the key pairs link for China regions", () => {
+    const region = "cn-example-1";
+    const link = buildKeyPairsLink(region);
+    expect(link).toBe(
+      `https://${region}.console.amazonaws.cn/ec2/v2/home?region=${region}#KeyPairs:`
+    );
+  });
+});
+
+describe("buildEKSLink", () => {
+  it("should build the EKS link for standard AWS regions", () => {
+    const region = "us-example-1";
+    const link = buildEKSLink(region);
+    expect(link).toBe(
+      `https://${region}.console.aws.amazon.com/eks/home?region=${region}#/clusters`
+    );
+  });
+
+  it("should build the EKS link for China regions", () => {
+    const region = "cn-example-1";
+    const link = buildEKSLink(region);
+    expect(link).toBe(
+      `https://${region}.console.amazonaws.cn/eks/home?region=${region}#/clusters`
+    );
+  });
+});
+
+describe("buildASGLink", () => {
+  it("should build the ASG link for standard AWS regions", () => {
+    const region = "us-example-1";
+    const asgName = "myASG";
+    const link = buildASGLink(region, asgName);
+    expect(link).toBe(
+      `https://${region}.console.aws.amazon.com/ec2/home?region=${region}#AutoScalingGroupDetails:id=${asgName}`
+    );
+  });
+
+  it("should build the ASG link for China regions", () => {
+    const region = "cn-example-1";
+    const asgName = "myASG";
+    const link = buildASGLink(region, asgName);
+    expect(link).toBe(
+      `https://${region}.console.amazonaws.cn/ec2/home?region=${region}#AutoScalingGroupDetails:id=${asgName}`
+    );
+  });
+});
+
+describe("buildCrossAccountTemplateLink", () => {
+  it("should build the cross account template link for standard AWS regions", () => {
+    const region = "us-example-1";
+    const solutionVersion = "v1.0.0";
+    const templateBucket = "myTemplateBucket";
+    const solutionName = "solutionName";
+    const link = buildCrossAccountTemplateLink(
+      region,
+      solutionVersion,
+      templateBucket,
+      solutionName
+    );
+    expect(link).toBe(
+      `https://${templateBucket}.s3.amazonaws.com/${solutionName}/${solutionVersion}/CrossAccount.template`
+    );
+  });
+
+  it("should build the cross account template link for China regions", () => {
+    const region = "cn-example-1";
+    const solutionVersion = "v1.0.1";
+    const templateBucket = "myTemplateBucket";
+    const solutionName = "myTemplate";
+    const link = buildCrossAccountTemplateLink(
+      region,
+      solutionVersion,
+      templateBucket,
+      solutionName
+    );
+    expect(link).toBe(
+      `https://${templateBucket}.s3.amazonaws.com/${solutionName}/${solutionVersion}/CrossAccount.template`
+    );
+  });
+});
+
+describe("buildSQSLink", () => {
+  it("should build the SQS link for standard AWS regions", () => {
+    const region = "us-example-1";
+    const sqsName = "mySQS";
+    const link = buildSQSLink(region, sqsName);
+    expect(link).toBe(
+      `https://${region}.console.aws.amazon.com/sqs/v3/home?region=${region}#/queues/${encodeURIComponent(
+        `https://sqs.${region}.amazonaws.com.cn/`
+      )}${sqsName}`
+    );
+  });
+
+  it("should build the SQS link for China regions", () => {
+    const region = "cn-example-1";
+    const sqsName = "mySQS";
+    const link = buildSQSLink(region, sqsName);
+    expect(link).toBe(
+      `https://${region}.console.amazonaws.cn/sqs/v3/home?region=${region}#/queues/${encodeURIComponent(
+        `https://sqs.${region}.amazonaws.com.cn/`
+      )}${sqsName}`
+    );
+  });
+});
+
+describe("buildNLBLinkByDNS", () => {
+  it("should build the NLB link for standard AWS regions", () => {
+    const region = "us-example-1";
+    const dnsName = "myDNSName";
+    const link = buildNLBLinkByDNS(region, dnsName);
+    expect(link).toBe(
+      `https://${region}.console.aws.amazon.com/ec2/home?region=${region}#LoadBalancers:dnsName=${dnsName}`
+    );
+  });
+
+  it("should build the NLB link for China regions", () => {
+    const region = "cn-example-1";
+    const dnsName = "myDNSName";
+    const link = buildNLBLinkByDNS(region, dnsName);
+    expect(link).toBe(
+      `https://${region}.console.amazonaws.cn/ec2/home?region=${region}#LoadBalancers:dnsName=${dnsName}`
+    );
+  });
+});
+
+describe("buildLambdaCWLGroupLink", () => {
+  it("should build the Lambda CWL group link for China regions", () => {
+    const region = "cn-example-1";
+    const groupName = "/aws-glue/test";
+    const link = buildLambdaCWLGroupLink(region, groupName);
+    expect(link).toBe(
+      `https://${region}.console.amazonaws.cn/cloudwatch/home?region=${region}#logsV2:log-groups/log-group/$252Faws-glue$252Ftest`
+    );
+  });
+});
+
+describe("buildGlueTableLink", () => {
+  it("should build the Glue table link for standard AWS regions", () => {
+    const region = "us-example-1";
+    const dbName = "myDB";
+    const tableName = "myTable";
+    const link = buildGlueTableLink(region, dbName, tableName);
+    expect(link).toBe(
+      `https://${region}.console.aws.amazon.com/glue/home?region=${region}#/v2/data-catalog/tables/view/${tableName}?database=${dbName}`
+    );
+  });
+
+  it("should build the Glue table link for China regions", () => {
+    const region = "cn-example-1";
+    const dbName = "myDB";
+    const tableName = "myTable";
+    const link = buildGlueTableLink(region, dbName, tableName);
+    expect(link).toBe(
+      `https://${region}.console.amazonaws.cn/glue/home?region=${region}#/v2/data-catalog/tables/view/${tableName}?database=${dbName}`
+    );
+  });
+});
+
+describe("buildGlueDatabaseLink", () => {
+  it("should build the Glue database link for standard AWS regions", () => {
+    const region = "us-example-1";
+    const dbName = "myDB";
+    const link = buildGlueDatabaseLink(region, dbName);
+    expect(link).toBe(
+      `https://${region}.console.aws.amazon.com/glue/home?region=${region}#/v2/data-catalog/databases/view/${dbName}`
+    );
+  });
+
+  it("should build the Glue database link for China regions", () => {
+    const region = "cn-example-1";
+    const dbName = "myDB";
+    const link = buildGlueDatabaseLink(region, dbName);
+    expect(link).toBe(
+      `https://${region}.console.amazonaws.cn/glue/home?region=${region}#/v2/data-catalog/databases/view/${dbName}`
+    );
+  });
+});
+
+describe("buildSchedulerLink", () => {
+  it("should build the Scheduler link for standard AWS regions", () => {
+    const region = "us-example-1";
+    const type = SchedulerType.EventBridgeScheduler;
+    const group = "myGroup";
+    const name = "myName";
+    const link = buildSchedulerLink(region, type, group, name);
+    expect(link).toBe(
+      `https://${region}.console.aws.amazon.com/scheduler/home?region=${region}#schedules/${group}/${name}`
+    );
+  });
+
+  it("should build the Scheduler link for China regions", () => {
+    const region = "cn-example-1";
+    const type = SchedulerType.EventBridgeScheduler;
+    const group = "myGroup";
+    const name = "myName";
+    const link = buildSchedulerLink(region, type, group, name);
+    expect(link).toBe(
+      `https://${region}.console.amazonaws.cn/scheduler/home?region=${region}#schedules/${group}/${name}`
+    );
+  });
+});
+
+describe("buildStepFunctionExecutionLink", () => {
+  it("should build the Step Function execution link for standard AWS regions", () => {
+    const region = "us-example-1";
+    const executionArn =
+      "arn:aws:states:us-east-1:1234567890:execution:myStateMachine:myExecution";
+    const link = buildStepFunctionExecutionLink(region, executionArn);
+    expect(link).toBe(
+      `https://${region}.console.aws.amazon.com/states/home?region=${region}#/v2/executions/details/${executionArn}`
+    );
+  });
+
+  it("should build the Step Function execution link for China regions", () => {
+    const region = "cn-example-1";
+    const executionArn =
+      "arn:aws-cn:states:cn-north-1:1234567890:execution:myStateMachine:myExecution";
+    const link = buildStepFunctionExecutionLink(region, executionArn);
+    expect(link).toBe(
+      `https://${region}.console.amazonaws.cn/states/home?region=${region}#/v2/executions/details/${executionArn}`
+    );
+  });
+});
+
+describe("generateEc2Permissions", () => {
+  // Common variables
+  const awsPartition = "aws";
+  const accountId = "123456789012";
+  const getObjectResources = ["arn:aws:s3:::example-bucket/*"];
+
+  // Helper function to parse and validate JSON
+  const parsePolicy = (policyStr: string) => {
+    let policy;
+    try {
+      policy = JSON.parse(policyStr);
+    } catch (error) {
+      throw new Error("Returned policy is not valid JSON");
+    }
+    return policy;
+  };
+
+  it("should generate valid JSON policy", () => {
+    const policyStr = generateEc2Permissions(
+      awsPartition,
+      accountId,
+      getObjectResources
+    );
+    const policy = parsePolicy(policyStr);
+    expect(policy).toHaveProperty("Version", "2012-10-17");
+    expect(policy).toHaveProperty("Statement");
+    expect(Array.isArray(policy.Statement)).toBe(true);
+  });
+
+  it("should correctly incorporate awsPartition and accountId in ARNs", () => {
+    const policyStr = generateEc2Permissions(
+      awsPartition,
+      accountId,
+      getObjectResources
+    );
+    const policy = parsePolicy(policyStr);
+    const assumeRoleStatement = policy.Statement.find(
+      (s: any) => s.Sid === "AssumeRoleInMainAccount"
+    );
+    expect(assumeRoleStatement.Resource[0]).toContain(awsPartition);
+    expect(assumeRoleStatement.Resource[0]).toContain(accountId);
+  });
+
+  it("should correctly include getObjectResources", () => {
+    const policyStr = generateEc2Permissions(
+      awsPartition,
+      accountId,
+      getObjectResources
+    );
+    const policy = parsePolicy(policyStr);
+    const s3GetObjectStatement = policy.Statement.find(
+      (s: any) => s.Action === "s3:GetObject"
+    );
+    expect(s3GetObjectStatement.Resource).toEqual(getObjectResources);
+  });
+});
+
+describe("getAWSPartition", () => {
+  it('should return "aws-cn" for regions starting with "cn"', () => {
+    expect(getAWSPartition("cn-north-1")).toBe("aws-cn");
+    expect(getAWSPartition("cn-northwest-1")).toBe("aws-cn");
+  });
+
+  it('should return "aws" for other regions', () => {
+    expect(getAWSPartition("us-east-1")).toBe("aws");
+    expect(getAWSPartition("eu-west-1")).toBe("aws");
+  });
+
+  it('should return "aws" for empty or undefined inputs', () => {
+    expect(getAWSPartition("")).toBe("aws");
+  });
+});
+
+describe("buildOSILink", () => {
+  it("should build the OSI link for standard AWS regions", () => {
+    const region = "us-example-1";
+    const osiName = "myOSI";
+    const link = buildOSILink(region, osiName);
+    expect(link).toBe(
+      `https://${region}.console.aws.amazon.com/aos/home?region=${region}#opensearch/ingestion-pipelines/myOSI`
+    );
+  });
+
+  it("should build the OSI link for China regions", () => {
+    const region = "cn-example-1";
+    const osiName = "myOSI";
+    const link = buildOSILink(region, osiName);
+    expect(link).toBe(
+      `https://${region}.console.amazonaws.cn/aos/home?region=${region}#opensearch/ingestion-pipelines/myOSI`
+    );
+  });
+});
+
+describe("containsNonLatinCodepoints", () => {
+  it("should return false for a string with only latin codepoints", () => {
+    const str = "Hello world";
+    expect(containsNonLatinCodepoints(str)).toBe(false);
+  });
+
+  it("should return true for a string with non-latin codepoints", () => {
+    const str = "你好世界";
+    expect(containsNonLatinCodepoints(str)).toBe(true);
+  });
+});
+
 describe("combineReducers", () => {
   // Mock reducers
   const firstReducer = jest
@@ -572,7 +1430,7 @@ describe("buildOSIPipelineNameByPipelineId", () => {
 
 describe("isOSIPipeline", () => {
   it("should return false if pipeline is undefined", () => {
-    const result = isOSIPipeline(undefined);
+    const result = isOSIPipeline();
     expect(result).toBe(false);
   });
 
@@ -671,11 +1529,24 @@ describe("isEmpty", () => {
     });
 
     it("returns the default value if the input is an empty string and default value is provided", () => {
-      expect(defaultStr("", "default")).toBe("");
+      expect(defaultStr("", "default")).toBe("default");
     });
 
     it("returns the default value if the input is just whitespace", () => {
       expect(defaultStr("  ", "default")).toBe("  ");
+    });
+  });
+
+  describe("domainIsValid", () => {
+    it("should return true for a valid domain", () => {
+      const domain = "www.amazon.com";
+      const result = domainIsValid(domain);
+      expect(result).toBe(true);
+    });
+    it("should return false for an invalid domain", () => {
+      const domain = "test-error-domain";
+      const result = domainIsValid(domain);
+      expect(result).toBe(false);
     });
   });
 });

@@ -1,10 +1,10 @@
 boto3
-moto
+moto<=4.2.13
 pytest
 pyyaml
 pytest-cov
 pytest-mock
 requests-mock
-moto[awslambda]
+moto[awslambda]<=4.2.13
 requests_aws4auth
 ipaddr

@@ -20,24 +20,24 @@ import {
   LogAgentStatus,
   LogSourceType,
   LogSourceUpdateAction,
+  EC2GroupPlatform,
 } from "API";
 import { SelectType, TablePanel } from "components/TablePanel";
 import Status from "components/Status/Status";
-import { DEFAULT_AGENT_VERSION } from "assets/js/const";
+import { getFLBVersionByType } from "assets/js/const";
 import { useTranslation } from "react-i18next";
-import { buildEC2LInk } from "assets/js/utils";
+import { buildEC2LInk, defaultStr } from "assets/js/utils";
 import Button from "components/Button";
 import { AmplifyConfigType } from "types";
 import { useSelector } from "react-redux";
 import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
 import { getInstanceAgentStatus, listInstances } from "graphql/queries";
 import { updateLogSource } from "graphql/mutations";
-import Swal from "sweetalert2";
 import Modal from "components/Modal";
 import InstanceTable, {
   InstanceWithStatusType,
 } from "pages/resources/common/InstanceTable";
-import { handleErrorMessage } from "assets/js/alert";
+import { Alert, handleErrorMessage } from "assets/js/alert";
 import { RootState } from "reducer/reducers";
 import ButtonRefresh from "components/ButtonRefresh";
 
@@ -73,18 +73,18 @@ const DetailEC2: React.FC<DetailEC2Props> = (props: DetailEC2Props) => {
 
   const getAllInstanceDetailAndStatus = async () => {
     if (
-      instanceGroup &&
       instanceGroup.ec2?.instances &&
       instanceGroup.ec2?.instances.length > 0
     ) {
       const tmpInstanceInfoList: InstanceWithStatusType[] = [];
       setLoadingRefresh(true);
       for (let i = 0; i < instanceGroup.ec2?.instances.length; i++) {
+        const accountId = defaultStr(instanceGroup?.accountId);
         // Get a single instance info
         const dataInstanceInfo = await appSyncRequestQuery(listInstances, {
           maxResults: 50,
           nextToken: "",
-          accountId: instanceGroup?.accountId || "",
+          accountId: accountId,
           region: amplifyConfig.aws_project_region,
           instanceSet: [instanceGroup.ec2?.instances[i]?.instanceId],
         });
@@ -94,7 +94,7 @@ const DetailEC2: React.FC<DetailEC2Props> = (props: DetailEC2Props) => {
           getInstanceAgentStatus,
           {
             instanceIds: [instanceGroup.ec2?.instances[i]?.instanceId],
-            accountId: instanceGroup?.accountId || "",
+            accountId: accountId,
           }
         );
         // Delay for 2 seconds before get the instances status
@@ -102,7 +102,7 @@ const DetailEC2: React.FC<DetailEC2Props> = (props: DetailEC2Props) => {
         const statusData = await appSyncRequestQuery(getInstanceAgentStatus, {
           instanceIds: [instanceGroup.ec2?.instances[i]?.instanceId],
           commandId: firstStatusCallResp.data.getInstanceAgentStatus.commandId,
-          accountId: instanceGroup?.accountId || "",
+          accountId: accountId,
         });
 
         const instanceStatusList =
@@ -123,7 +123,7 @@ const DetailEC2: React.FC<DetailEC2Props> = (props: DetailEC2Props) => {
     }
   };
 
-  // Rmove Instance from instanc group
+  // Remove Instance from instance group
   const confirmRemoveInstance = async () => {
     console.info("removeInstanceList", removeInstanceList);
     try {
@@ -154,11 +154,7 @@ const DetailEC2: React.FC<DetailEC2Props> = (props: DetailEC2Props) => {
   const confirmAddInstance = async () => {
     // Check Instance Selected
     if (checkedInstanceList.length <= 0) {
-      Swal.fire(
-        t("oops") || "",
-        t("resource:group.create.selectInstance") || "",
-        "warning"
-      );
+      Alert(t("resource:group.create.selectInstance"), t("oops"), "warning");
       return;
     }
 
@@ -174,11 +170,7 @@ const DetailEC2: React.FC<DetailEC2Props> = (props: DetailEC2Props) => {
 
     // If agent online count
     if (agentOnlineCount <= 0 || agentOnlineCount < instanceStatusArr.length) {
-      Swal.fire(
-        t("oops") || "",
-        t("resource:group.create.selectStatus") || "",
-        "warning"
-      );
+      Alert(t("resource:group.create.selectStatus"), t("oops"), "warning");
       return;
     }
 
@@ -224,7 +216,10 @@ const DetailEC2: React.FC<DetailEC2Props> = (props: DetailEC2Props) => {
     return (
       <a
         target="_blank"
-        href={buildEC2LInk(amplifyConfig.aws_project_region, data?.id || "")}
+        href={buildEC2LInk(
+          amplifyConfig.aws_project_region,
+          defaultStr(data?.id)
+        )}
         rel="noreferrer"
       >
         {data.id}
@@ -233,11 +228,11 @@ const DetailEC2: React.FC<DetailEC2Props> = (props: DetailEC2Props) => {
   };
 
   const renderStatus = (data: InstanceWithStatusType) => {
-    return <Status status={data.status || ""} />;
+    return <Status status={defaultStr(data.status)} />;
   };
 
   return (
-    <div>
+    <div data-testid="test-detail-ec2">
       <TablePanel
         trackId="id"
         title={t("instances") + `(${instanceInfoList.length})`}
@@ -252,7 +247,7 @@ const DetailEC2: React.FC<DetailEC2Props> = (props: DetailEC2Props) => {
             id: "Name",
             header: t("resource:group.detail.list.name"),
             cell: (e: InstanceWithStatusType) => {
-              return e.name || t("unknown");
+              return defaultStr(e.name, t("unknown"));
             },
           },
           {
@@ -264,14 +259,14 @@ const DetailEC2: React.FC<DetailEC2Props> = (props: DetailEC2Props) => {
             id: "ip",
             header: t("resource:group.detail.list.primaryIP"),
             cell: (e: InstanceWithStatusType) => {
-              return e.ipAddress || t("unknown");
+              return defaultStr(e.ipAddress, t("unknown"));
             },
           },
           {
             id: "agent",
             header: t("resource:group.detail.list.agent"),
             cell: () => {
-              return DEFAULT_AGENT_VERSION;
+              return getFLBVersionByType(instanceGroup.ec2?.groupPlatform);
             },
           },
           {
@@ -285,6 +280,7 @@ const DetailEC2: React.FC<DetailEC2Props> = (props: DetailEC2Props) => {
           <div>
             {!props.disableAddInstance && (
               <Button
+                data-testid="test-add-instance"
                 disabled={loadingInstance}
                 btnType="primary"
                 onClick={() => {
@@ -349,16 +345,19 @@ const DetailEC2: React.FC<DetailEC2Props> = (props: DetailEC2Props) => {
           </div>
         }
       >
-        <div className="plr-10">
+        <div className="plr-10" data-testid="test-instance-table">
           <InstanceTable
-            accountId={instanceGroup?.accountId || ""}
+            platform={
+              instanceGroup.ec2?.groupPlatform ?? EC2GroupPlatform.Linux
+            }
+            disableChangePlatform
+            accountId={defaultStr(instanceGroup?.accountId)}
             changeInstanceSet={(sets) => {
               setCheckedInstanceList(sets);
             }}
             setCreateDisabled={(disable) => {
               console.info(disable);
             }}
-            // defaultDisabledIds={instanceGroup.ec2?.instances || []}
           />
         </div>
       </Modal>

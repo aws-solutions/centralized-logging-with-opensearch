@@ -1,4 +1,4 @@
 boto3
-moto
+moto<=4.2.13
 pytest
 pytest-cov

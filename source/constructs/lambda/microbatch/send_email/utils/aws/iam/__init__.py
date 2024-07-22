@@ -5,12 +5,11 @@ import time
 import json
 import random
 from typing import Union
-from utils.aws.commonlib import AWSConnection
-from utils.logger import logger
+from utils.helpers import logger, AWSConnection
 
 
 class IAMClient:
-    """Amazon EvenBridge Scheduler Client, used to interact with Amazon EventBridge Scheduler."""
+    """Amazon IAM Client, used to interact with Amazon IAM."""
 
     def __init__(self):
         conn = AWSConnection()
@@ -218,27 +217,47 @@ class IAMClient:
         """
         return self._iam_client.update_assume_role_policy(RoleName=role_name, PolicyDocument=json.dumps(policy_document))
 
-    def add_service_principal_to_assume_role_policy(self, role_name: str, service_principal: str) -> dict:
+    def add_service_principal_to_assume_role_policy(self, role_name: str, service_principal: str, tries: int = 3) -> dict:
         """Using this API, you can add a service principal to assume role policy of role.
         
         :param role_name (str): The name of the role.
         :param service_principal (dict): The service principal name. e.g ec2.amazonaws.com
+        :param tries (int): The maximum number of attempts. default: 3, -1 (infinite).
         
         Returns:
             dict: response
         """
-        role_info = self.get_role(role_name=role_name)
-        assume_role_policy_document = role_info['Role']['AssumeRolePolicyDocument']
-        
-        statement = {
-            'Effect': 'Allow', 
-            'Principal': {
-                'Service': service_principal
-                }, 
-            'Action': 'sts:AssumeRole'
-            }
-        if statement not in assume_role_policy_document['Statement']:
-            assume_role_policy_document['Statement'].append(statement)
-            
-        return self.update_assume_role_policy(role_name=role_name, policy_document=assume_role_policy_document)
- 
+        tries = 1 if tries == 0 else tries
+        exception = None
+        response = {}
+
+        while tries:
+            try:
+                role_info = self.get_role(role_name=role_name)
+                assume_role_policy_document = role_info['Role']['AssumeRolePolicyDocument']
+                
+                statement = {
+                    'Effect': 'Allow', 
+                    'Principal': {
+                        'Service': service_principal
+                        }, 
+                    'Action': 'sts:AssumeRole'
+                    }
+                if statement in assume_role_policy_document['Statement']:
+                    exception = None
+                    break
+                
+                assume_role_policy_document['Statement'].append(statement)
+                response = self.update_assume_role_policy(role_name=role_name, policy_document=assume_role_policy_document)
+                exception = None
+            except Exception as e:
+                exception = e
+                delay = random.uniform(0.0, 30.0)
+                logger.warning(f'Add service principal to assume role policy failed, retrying in {delay} seconds...')
+                time.sleep(delay)
+                tries -= 1
+
+        if exception is not None:
+            raise exception
+        return response
+

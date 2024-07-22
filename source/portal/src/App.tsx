@@ -86,7 +86,7 @@ const App: React.FC = () => {
   useEffect(() => {
     document.title = t("title");
     if (window.performance) {
-      if (performance.getEntriesByType("navigation")[0]?.type === "reload") {
+      if (performance.getEntriesByType("navigation")?.[0]?.type === "reload") {
         const timeStamp = new Date().getTime();
         setLoadingConfig(true);
         Axios.get(`/aws-exports.json?timestamp=${timeStamp}`).then((res) => {

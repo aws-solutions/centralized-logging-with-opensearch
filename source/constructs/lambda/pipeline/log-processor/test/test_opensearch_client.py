@@ -10,7 +10,7 @@ default_region = os.environ.get("AWS_REGION")
 
 
 class TestOpenSearch:
-    def setup(self):
+    def setup_method(self):
         self.index_prefix = "mylogs"
         self.endpoint = "vpc-dev-abc.us-east-1.es.amazonaws.com"
         self.log_type = "ELB"

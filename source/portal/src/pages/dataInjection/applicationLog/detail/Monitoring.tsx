@@ -49,6 +49,7 @@ import { RootState } from "reducer/reducers";
 import { PIPLINE_MONITORING_COST_LINK } from "assets/js/const";
 import Alert from "components/Alert";
 import OSIProcessorMetric from "pages/dataInjection/common/OSIProcessorMetrics";
+import { isWindowsLog } from "reducer/createLogConfig";
 
 interface MonitoringProps {
   pipelineInfo: AppPipeline | undefined;
@@ -122,7 +123,8 @@ const Monitoring: React.FC<MonitoringProps> = (props: MonitoringProps) => {
                   />
                 </div>
               </div>
-              {(sourceSet.has(LogSourceType.EC2) ||
+              {((sourceSet.has(LogSourceType.EC2) &&
+                !isWindowsLog(pipelineInfo.logConfig?.logType)) ||
                 sourceSet.has(LogSourceType.EKSCluster)) && (
                 <ExpandableSection
                   headerText={t("common:monitoring.logSource")}

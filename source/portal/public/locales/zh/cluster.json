@@ -170,6 +170,7 @@
       "checkDomainInProgressDesc": "验证所选域是否可以导入到此解决方案中",
       "checkDomainPassDesc": "所选域满足导入此解决方案的要求。",
       "checkDomainErrorDesc": "所选域不满足一项或多项要求，请更改域配置或选择其他域。",
+      "checkDomainWarningDesc": "所选域配置存在警告信息，请确认后再继续。",
       "engineVersion": "引擎版本： ",
       "engineType": "引擎类型： ",
       "solutionPrivateSubnetWithNat": "检测解决方案是否具有使用 NAT 的私有子网： ",

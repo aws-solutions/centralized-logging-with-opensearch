@@ -134,7 +134,7 @@ def ddb_client():
                     "filterConfigMap": {"enabled": False, "filters": []},
                     "logType": "Syslog",
                     "name": "syslog-ui-dev-01",
-                    "regex": "^\\<(?<pri>[0-9]{1,5})\\>1 (?<time>[^ ]+) (?<host>[^ ]+) (?<ident>[^ ]+) (?<pid>[-0-9]+) (?<msgid>[^ ]+) (?<extradata>(\\[(.*)\\]|-)) (?<message>.+)$",
+                    "regex": "^\\<(?<pri>[0-9]{1,5})\\>1 (?<time>[^ ]+) (?<host>[^ ]+) (?<ident>[^ ]+) (?<pid>[-0-9]+) (?<msgid>[^ ]+) ?<extradata>\\[.*\\]|-) (?<message>.+)$",
                     "regexFieldSpecs": [],
                     "status": "ACTIVE",
                     "syslogParser": "RFC5424",

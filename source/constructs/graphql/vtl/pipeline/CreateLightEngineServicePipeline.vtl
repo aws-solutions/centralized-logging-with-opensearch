@@ -13,6 +13,9 @@
     $util.validate($util.matches("^.{0,2048}$", $param.parameterValue), "Invalid Parameter Value")
 #end
 
+$util.validate($util.matches("^[\w\s_.:\/=+\-@]{1,1024}$", $ctx.args.source), "Invalid Source Name")
+$util.validate($util.matches("^\d{12}$", $util.defaultIfNullOrEmpty($ctx.args.logSourceAccountId, '123456789012')), "Invalid Log Source Account ID")
+$util.validate($util.matches("^(?!(.*--))(?!(.*-$))[a-z0-9]([a-z0-9-]){0,62}$", $util.defaultIfNullOrEmpty($ctx.args.logSourceRegion,'us-west-2')), "Invalid Log Source Region Name")
 
 #foreach( $param in $ctx.args.parameters )
     #if( $param.parameterKey == "StagingBucketName" )

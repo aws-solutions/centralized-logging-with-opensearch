@@ -3,6 +3,7 @@
 
 import json
 import pytest
+import copy
 
 import os
 import boto3
@@ -42,7 +43,10 @@ def test_invalid_id():
 
 @pytest.fixture
 def test_invalid_event():
-    return {"Hello": "World"}
+    return {
+        "Hello": "World",
+        "arguments": {},
+    }
 
 
 @pytest.fixture
@@ -108,7 +112,7 @@ def ddb_client():
                     "filterConfigMap": {"enabled": False, "filters": []},
                     "logType": "Syslog",
                     "name": "syslog-ui-dev-01",
-                    "regex": "^\\<(?<pri>[0-9]{1,5})\\>1 (?<time>[^ ]+) (?<host>[^ ]+) (?<ident>[^ ]+) (?<pid>[-0-9]+) (?<msgid>[^ ]+) (?<extradata>(\\[(.*)\\]|-)) (?<message>.+)$",
+                    "regex": "^\\<(?<pri>[0-9]{1,5})\\>1 (?<time>[^ ]+) (?<host>[^ ]+) (?<ident>[^ ]+) (?<pid>[-0-9]+) (?<msgid>[^ ]+) (?<extradata>[.*]|-) (?<message>.+)$",
                     "regexFieldSpecs": [],
                     "status": "ACTIVE",
                     "syslogParser": "RFC5424",
@@ -211,6 +215,27 @@ def test_lambda_function(
     assert item["status"] == "ACTIVE"
 
 
+def test_lambda_function_create_event_for_light_engine(
+    ddb_client,
+    test_create_event,
+):
+    import app_ingestion_flow
+
+    # run lambda
+    app_ingestion_flow.lambda_handler(test_create_event, None)
+    test_create_event["engineType"] = "LightEngine"
+
+    region = os.environ.get("AWS_REGION")
+    ddb = boto3.resource("dynamodb", region_name=region)
+    source_table = ddb.Table(os.environ["LOG_SOURCE_TABLE"])
+
+    response = source_table.get_item(
+        Key={"sourceId": "19833bcc-d334-4bde-bf4e-217f9df80940"}
+    )
+    item = response["Item"]
+    assert item["status"] == "ACTIVE"
+
+
 def test_lambda_function_delete_event(
     ddb_client,
     test_delete_event,
@@ -230,6 +255,27 @@ def test_lambda_function_delete_event(
     assert item["status"] == "INACTIVE"
 
 
+def test_lambda_function_delete_event_for_light_engine(
+    ddb_client,
+    test_delete_event,
+):
+    import app_ingestion_flow
+
+    # run lambda
+    app_ingestion_flow.lambda_handler(test_delete_event, None)
+    test_delete_event["engineType"] = "LightEngine"
+
+    region = os.environ.get("AWS_REGION")
+    ddb = boto3.resource("dynamodb", region_name=region)
+    source_table = ddb.Table(os.environ["LOG_SOURCE_TABLE"])
+
+    response = source_table.get_item(
+        Key={"sourceId": "19833bcc-d334-4bde-bf4e-217f9df80940"}
+    )
+    item = response["Item"]
+    assert item["status"] == "INACTIVE"
+
+
 def test_lambda_function_error_event(
     ddb_client,
     cfn_client,
@@ -237,6 +283,29 @@ def test_lambda_function_error_event(
 ):
     import app_ingestion_flow
 
+    # run lambda
+    app_ingestion_flow.lambda_handler(test_error_event, None)
+    region = os.environ.get("AWS_REGION")
+    ddb = boto3.resource("dynamodb", region_name=region)
+    source_table = ddb.Table(os.environ["LOG_SOURCE_TABLE"])
+
+    response = source_table.get_item(
+        Key={"sourceId": "19833bcc-d334-4bde-bf4e-217f9df80940"}
+    )
+    item = response["Item"]
+    assert item["status"] == "ERROR"
+
+
+def test_lambda_function_error_event_for_light_engine(
+    ddb_client,
+    cfn_client,
+    test_error_event,
+):
+    import app_ingestion_flow
+
+    test_error_event["engineType"] = "LightEngine"
+    test_error_event["pattern"] = "S3SourceStack"
+    test_error_event["result"]["Error"] = "NoSuchBucket"
     # run lambda
     app_ingestion_flow.lambda_handler(test_error_event, None)
     region = os.environ.get("AWS_REGION")

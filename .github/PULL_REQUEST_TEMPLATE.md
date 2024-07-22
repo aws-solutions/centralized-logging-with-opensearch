@@ -1,9 +1,14 @@
 
-----
+_Issue #, if available:_
+
+_Description of changes:_
+
 
 ### All Submissions:
 
-* [ ] Have you followed the guidelines in our [Contributing guide?](https://github.com/awslabs/log-hub/blob/main/CONTRIBUTING.md)
+* [ ] Have you followed the guidelines in our [Contributing guide?](https://github.com/aws-solutions/centralized-logging-with-opensearch/blob/main/CONTRIBUTING.md)
 
 
-*By submitting this pull request, I confirm that my contribution is made under the terms of the Apache-2.0 license*
+
+*By submitting this pull request, I confirm that you can use, modify, copy, and redistribute this contribution, under the
+terms of your choice.*

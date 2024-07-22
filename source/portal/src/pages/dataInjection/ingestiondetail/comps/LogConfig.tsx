@@ -23,13 +23,11 @@ import ConfigDetailComps from "pages/resources/logConfig/ConfigDetailComps";
 import { useTranslation } from "react-i18next";
 
 interface LogConfigProps {
-  hideLogPath?: boolean;
-  logPath?: string;
   configId?: string;
 }
 
 const LogConfig: React.FC<LogConfigProps> = (props: LogConfigProps) => {
-  const { configId, hideLogPath, logPath } = props;
+  const { configId } = props;
   const { t } = useTranslation();
   const [loadingData, setLoadingData] = useState(false);
   const [curConfig, setCurConfig] = useState<ExLogConf>();
@@ -63,12 +61,7 @@ const LogConfig: React.FC<LogConfigProps> = (props: LogConfigProps) => {
           <LoadingText />
         ) : (
           <div>
-            <ConfigDetailComps
-              hideLogPath={hideLogPath}
-              hideBasicInfo={false}
-              logPath={logPath}
-              curLogConfig={curConfig}
-            />
+            <ConfigDetailComps hideBasicInfo={false} curLogConfig={curConfig} />
           </div>
         )}
       </HeaderPanel>

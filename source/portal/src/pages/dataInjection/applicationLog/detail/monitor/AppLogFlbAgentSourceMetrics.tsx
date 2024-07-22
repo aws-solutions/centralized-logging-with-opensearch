@@ -17,6 +17,7 @@ limitations under the License.
 import React from "react";
 import { AppPipeline, PipelineType, MetricName } from "API";
 import MonitorMetrics from "pages/comps/monitor/MonitorMetrics";
+import { defaultStr } from "assets/js/utils";
 
 interface AppLogFlbAgentSourceMetricsProps {
   pipelineInfo?: AppPipeline;
@@ -69,7 +70,7 @@ const AppLogFlbAgentSourceMetrics: React.FC<
   return (
     <MonitorMetrics
       type={PipelineType.APP}
-      taskId={pipelineInfo?.pipelineId || ""}
+      taskId={defaultStr(pipelineInfo?.pipelineId)}
       metrics={AppLogFLBAgentSourceMetricsChartList}
       startTime={startDate}
       endTime={endDate}

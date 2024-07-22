@@ -1,32 +1,20 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-import json
-import logging
 import os
+import json
+from commonlib.decorator import retry
+from commonlib.exception import APIException, ErrorCode
+from commonlib.logging import get_logger
+from commonlib.aws import AWSConnection
+from commonlib.dao import OpenSearchDomainDao
 from uuid import uuid4
 
-import boto3
-from botocore import config
-from boto3.dynamodb.conditions import Attr
-
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 solution_version = os.environ.get("SOLUTION_VERSION")
 solution_name = os.environ.get("SOLUTION_NAME")
 template_bucket = os.environ.get("TEMPLATE_OUTPUT_BUCKET")
-
-solution_id = os.environ.get("SOLUTION_ID", "SO8025")
-user_agent_config = {
-    "user_agent_extra": f"AwsSolution/{solution_id}/{solution_version}"
-}
-default_config = config.Config(**user_agent_config)
-default_region = os.environ.get("AWS_REGION")
-
-s3 = boto3.resource("s3", region_name=default_region, config=default_config)
-ddb = boto3.resource("dynamodb", region_name=default_region, config=default_config)
-
 bucket_name = os.environ.get("WEB_BUCKET_NAME")
 api_endpoint = os.environ.get("API_ENDPOINT")
 user_pool_id = os.environ.get("USER_POOL_ID")
@@ -40,12 +28,47 @@ if custom_domain and not custom_domain.startswith("https://"):
 cloudfront_url = os.environ.get("CLOUDFRONT_URL")
 region = os.environ.get("AWS_REGION")
 default_logging_bucket = os.environ.get("DEFAULT_LOGGING_BUCKET")
+access_logging_bucket = os.environ.get("ACCESS_LOGGING_BUCKET")
+
 default_cmk_arn = os.environ.get("DEFAULT_CMK_ARN")
 
 CLOUDFRONT_DISTRIBUTION_ID = os.environ.get("CLOUDFRONT_DISTRIBUTION_ID")
+OPENSEARCH_MASTER_ROLE_ARN = os.environ["OPENSEARCH_MASTER_ROLE_ARN"]
+OPENSEARCH_DOMAIN_TABLE = os.environ["OPENSEARCH_DOMAIN_TABLE"]
 
-cloudfront = boto3.client("cloudfront")
-iam = boto3.client("iam")
+conn = AWSConnection()
+s3 = conn.get_client("s3", client_type="resource")
+ddb = conn.get_client("dynamodb", client_type="resource")
+cloudfront = conn.get_client("cloudfront")
+iam = conn.get_client("iam")
+aos = conn.get_client("opensearch")
+
+
+def is_advanced_security_enabled_safe(aos_client, domain_name: str) -> bool:
+    try:
+        resp = aos_client.describe_domain_config(DomainName=domain_name)
+        return resp["DomainConfig"]["AdvancedSecurityOptions"]["Options"]["Enabled"]
+    except Exception as e:
+        logger.exception(e)
+    return False
+
+
+@retry(retries=5, delays=3, backoff=2)
+def set_master_user_arn(aos_client, domain_name, master_role_arn: str):
+    resp = aos_client.update_domain_config(
+        DomainName=domain_name,
+        AdvancedSecurityOptions={
+            "MasterUserOptions": {
+                "MasterUserARN": master_role_arn,
+            },
+        },
+    )
+    status_code = resp["ResponseMetadata"]["HTTPStatusCode"]
+    if status_code >= 300:
+        raise APIException(
+            ErrorCode.UNKNOWN_ERROR,
+            "Failed to add backend role {role_arn} to domain {domain_name}, status: {status_code}",
+        )
 
 
 def lambda_handler(event, _):
@@ -54,22 +77,27 @@ def lambda_handler(event, _):
     config_str = get_config_str()
     write_to_s3(config_str)
 
-    upgrade_data()
+    set_master_user_arn_for_aos_domains()
 
     cloudfront_invalidate(CLOUDFRONT_DISTRIBUTION_ID, ["/*"])
 
+    enable_s3_bucket_access_logging()
     return "OK"
 
 
-def upgrade_data():
-    """Perform actions on updating backend data during upgrade"""
-    """
-    upgrade_eks_kind_table()
-    upgrade_app_pipeline_table()
-    upgrade_pipeline_table()
-    upgrade_central_assume_role_policy()
-    """
-    pass
+def set_master_user_arn_for_aos_domains():
+    aos_dao = OpenSearchDomainDao(OPENSEARCH_DOMAIN_TABLE)
+    for domain in aos_dao.list_domains():
+        if not domain.masterRoleArn and is_advanced_security_enabled_safe(
+            aos, domain.domainName
+        ):
+            logger.info(
+                f"Set master user arn {OPENSEARCH_MASTER_ROLE_ARN} to {domain.domainName}"
+            )
+            set_master_user_arn(aos, domain.domainName, OPENSEARCH_MASTER_ROLE_ARN)
+
+            logger.info(f"Recording master role for domain: {domain.id}")
+            aos_dao.set_master_role_arn(domain.id, OPENSEARCH_MASTER_ROLE_ARN)
 
 
 def get_config_str():
@@ -112,3 +140,18 @@ def cloudfront_invalidate(distribution_id, distribution_paths):
     )
 
     return invalidation_resp["Invalidation"]["Id"]
+
+
+def enable_s3_bucket_access_logging():
+    s3_client = conn.get_client("s3")
+    logger.info("Enabling server access logging for default logging bucket")
+    logging_config = {
+        "LoggingEnabled": {
+            "TargetBucket": access_logging_bucket,
+            "TargetPrefix": f"{default_logging_bucket}/",
+        }
+    }
+    s3_client.put_bucket_logging(
+        Bucket=default_logging_bucket, BucketLoggingStatus=logging_config
+    )
+    logger.info("Enabled server access logging for default logging bucket.")

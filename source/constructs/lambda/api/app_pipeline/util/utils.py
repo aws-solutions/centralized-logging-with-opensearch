@@ -5,16 +5,22 @@ import os
 import re
 import json
 import copy
-from string import Template
-from commonlib.model import LogConfig, LogTypeEnum, EngineType, AgentTypeEnum
+import collections
+from commonlib.model import (
+    LogConfig,
+    LogTypeEnum,
+    EngineType,
+    LogStructure,
+    IISLogParserEnum,
+)
 
 
 __CURRENT_PATH__ = os.path.dirname(os.path.abspath(__file__))
 
-DEFAULT_JSON_SCHEMA = {"type": "object", "properties": {}}
+DEFAULT_JSON_SCHEMA = {"type": "object", "properties": collections.OrderedDict()}
 
 NGINX_MAPPING_PROPS = {
-    "@timestamp": {"type": "alias", "path": "time_local"}, # NOSONAR
+    "@timestamp": {"type": "alias", "path": "time_local"},  # NOSONAR
     "file_name": {"type": "text"},
     "remote_addr": {"type": "ip"},
     "remote_user": {"type": "text"},
@@ -80,7 +86,7 @@ def convert_data_type_to_es_type(t: str):
     return DATA_TYPE_TO_ES_TYPE_MAPPING.get(t, t)
 
 
-def json_schema_to_es_mapping(json_schema: dict, parent_key: str = ""):
+def json_schema_to_es_mapping(json_schema: dict, parent_key: str = ""):  # NOSONAR
     es_mapping = {}
 
     if json_schema.get("type") == "object":
@@ -91,10 +97,11 @@ def json_schema_to_es_mapping(json_schema: dict, parent_key: str = ""):
             pk = parent_key + "." + key if parent_key else key
             if value.get("timeKey"):
                 es_mapping["properties"][key] = {"type": "date"}
-                es_mapping["properties"]["@timestamp"] = {
-                    "type": "alias",
-                    "path": pk,
-                }
+                if pk != "@timestamp":
+                    es_mapping["properties"]["@timestamp"] = {
+                        "type": "alias",
+                        "path": pk,
+                    }
             else:
                 es_mapping["properties"][key] = json_schema_to_es_mapping(value, pk)
 
@@ -106,22 +113,31 @@ def json_schema_to_es_mapping(json_schema: dict, parent_key: str = ""):
         the_type = es_mapping["type"] = convert_data_type_to_es_type(
             json_schema.get("type", "")
         )
-        if the_type == "date":
-            joda_format = strptime_to_joda(json_schema.get("format"))
-            es_mapping["format"] = " || ".join(
-                [
-                    joda_format.replace("SSSSSS", "SSS"),
-                    joda_format,
-                    joda_format.replace("SSSSSS", "SSSSSSSSS"),
-                ]
-            )
-        elif the_type == "text":
-            es_mapping["fields"] = {"keyword": {"type": "keyword", "ignore_above": 256}}
-
+        transform_es_mapping(the_type, es_mapping, json_schema)
     return es_mapping
 
 
-def make_index_template(
+def transform_es_mapping(type: str, es_mapping: dict, json_schema: dict):
+    if type == "date":
+        joda_format = strptime_to_joda(json_schema.get("format"))
+        es_mapping["format"] = " || ".join(
+            [
+                joda_format.replace("SSSSSS", "SSS"),
+                joda_format,
+                joda_format.replace("SSSSSS", "SSSSSSSSS"),
+            ]
+        )
+    elif type == "text":
+        es_mapping["fields"] = {"keyword": {"type": "keyword", "ignore_above": 256}}
+    elif type == "epoch_second":
+        es_mapping["format"] = "epoch_second"
+        es_mapping["type"] = "date"
+    elif type == "epoch_millis":
+        es_mapping["format"] = "epoch_millis"
+        es_mapping["type"] = "date"
+
+
+def make_index_template(  # NOSONAR
     log_config: LogConfig,
     index_alias: str = "",
     number_of_shards: int = 5,
@@ -142,13 +158,21 @@ def make_index_template(
             key = spec.key
             val = {"type": spec.type}
             if spec.format:
-                properties["@timestamp"] = {"type": "alias", "path": key}
+                if log_config.timeKey == key and key != "@timestamp":
+                    properties["@timestamp"] = {"type": "alias", "path": key}
+                elif key == "time" and (
+                    log_config.iisLogParser == IISLogParserEnum.W3C
+                    or log_config.iisLogParser == IISLogParserEnum.IIS
+                ):
+                    val = {"type": spec.type, "format": "hour_minute_second"}
             # NOTICE: We don't put format into index template.
             # Because the format in log config is strptime style("%Y-%m-%d %H:%M:%S"),
             # which is different from OpenSearch java style format(yyyy-MM-dd HH:mm:ss).
             # To make sure OpenSearch can handle datetime format currently. We will ensure
             # FluentBit marshal time key into iso8601 standard format before sending into OpenSearch.
             properties[key] = val
+        properties = build_iis_field_format(properties, log_config.iisLogParser)
+
         mappings = {"properties": properties}
 
     template = {
@@ -172,26 +196,45 @@ def make_index_template(
     return template
 
 
+def build_iis_field_format(properties, iis_log_parser: IISLogParserEnum):
+    prop = properties
+    if iis_log_parser == IISLogParserEnum.W3C:
+        prop["geo_location"] = {"type": "geo_point"}
+        prop["geo_iso_code"] = {"type": "keyword"}
+        prop["geo_country"] = {"type": "keyword"}
+        prop["geo_city"] = {"type": "keyword"}
+        prop["ua_browser"] = {"type": "keyword"}
+        prop["ua_browser_version"] = {"type": "keyword"}
+        prop["ua_os"] = {"type": "keyword"}
+        prop["ua_os_version"] = {"type": "keyword"}
+        prop["ua_device"] = {"type": "keyword"}
+        prop["ua_category"] = {"type": "keyword"}
+        prop["url"] = {"type": "keyword"}
+    if iis_log_parser == IISLogParserEnum.IIS:
+        prop["date"] = {"type": "keyword"}
+    return prop
+
+
 def strptime_to_joda(strptime_pattern):  # NOSONAR
     conversion = {
-        r'%a': 'E',
-        r'%A': 'E',
-        r'%b': 'MMM',
-        r'%B': 'MMM',
-        r'%c': 'E MMM dd HH:mm:ss yyyy',
-        r'%C': 'CC',
-        r'%d': 'dd',
-        r'%D': 'MM/dd/yy',
-        r'%e': 'dd',
+        r"%a": "E",
+        r"%A": "E",
+        r"%b": "MMM",
+        r"%B": "MMM",
+        r"%c": "E MMM dd HH:mm:ss yyyy",
+        r"%C": "CC",
+        r"%d": "dd",
+        r"%D": "MM/dd/yy",
+        r"%e": "dd",
         # r'%E': '',
-        r'%f': 'SSSSSSSSS',
-        r'%F': 'yyyy-MM-dd',
-        r'%G': 'yyyy',
-        r'%g': 'yy',
-        r'%h': 'MMM',
-        r'%H': 'HH',
-        r'%I': 'hh',
-        r'%j': 'DDD',
+        r"%f": "SSSSSSSSS",
+        r"%F": "yyyy-MM-dd",
+        r"%G": "yyyy",
+        r"%g": "yy",
+        r"%h": "MMM",
+        r"%H": "HH",
+        r"%I": "hh",
+        r"%j": "DDD",
         # r'%k': '',
         r"%L": "SSSSSS",
         r"%m": "MM",
@@ -203,22 +246,22 @@ def strptime_to_joda(strptime_pattern):  # NOSONAR
         r"%r": "hh:mm:ss aa",
         r"%R": "HH:mm",
         # r'%s': '',
-        r'%S': 'ss',
-        r'%t': '\t',
-        r'%T': 'HH:mm:ss',
-        r'%u': 'e',
-        r'%U': 'w',
-        r'%V': 'w',
-        r'%w': 'e',
-        r'%W': 'ww',
-        r'%x': 'MM/dd/yy',
-        r'%X': 'HH:mm:ss',
-        r'%y': 'yy',
-        r'%Y': 'yyyy',
-        r'%z': 'Z',
-        r'%Z': 'z',
-        r'%+': 'E MMM dd HH:mm:ss yyyy',
-        r'%%': '%'
+        r"%S": "ss",
+        r"%t": "\t",
+        r"%T": "HH:mm:ss",
+        r"%u": "e",
+        r"%U": "w",
+        r"%V": "w",
+        r"%w": "e",
+        r"%W": "ww",
+        r"%x": "MM/dd/yy",
+        r"%X": "HH:mm:ss",
+        r"%y": "yy",
+        r"%Y": "yyyy",
+        r"%z": "Z",
+        r"%Z": "z",
+        r"%+": "E MMM dd HH:mm:ss yyyy",
+        r"%%": "%",
     }
 
     joda_pattern = ""
@@ -254,8 +297,8 @@ def strptime_to_joda(strptime_pattern):  # NOSONAR
     return joda_pattern
 
 
-def convert_time_key_format(fmt: str, agent_type: AgentTypeEnum) -> str:
-    if agent_type == AgentTypeEnum.FLUENT_BIT:
+def convert_time_key_format(fmt: str, log_structure: LogStructure) -> str:
+    if log_structure == LogStructure.FLUENT_BIT_PARSED_JSON:
         return "yyyy-MM-dd''T''HH:mm:ss.SSSSSSSSSZ"
     else:
         return strptime_to_joda(strptime_pattern=fmt).replace("'", "''")
@@ -275,7 +318,7 @@ def pop_invalid_key(json_schema: dict):
 
 
 def convert_json_schema_data_type_for_light_engine(
-    json_schema: dict, agent_type: AgentTypeEnum
+    json_schema: dict, log_structure: LogStructure
 ) -> dict:
     """Find time key in Json Schema, search down the time key field layer by layer (ignore array and map type),
         and then search the sub-level after the current layer is searched,  and return if the first time key field is found.
@@ -293,37 +336,43 @@ def convert_json_schema_data_type_for_light_engine(
         properties = pop_invalid_key(json_schema=properties)
 
         if properties["type"] in ("object", "map"):
-            json_schema["properties"][
-                name
-            ] = convert_json_schema_data_type_for_light_engine(
-                json_schema=properties, agent_type=agent_type
+            json_schema["properties"][name] = (
+                convert_json_schema_data_type_for_light_engine(
+                    json_schema=properties, log_structure=log_structure
+                )
             )
         elif properties["type"] == "array":
             if properties["items"]["type"] in ("object", "map"):
                 properties["items"] = convert_json_schema_data_type_for_light_engine(
-                    json_schema=properties["items"], agent_type=agent_type
+                    json_schema=properties["items"], log_structure=log_structure
                 )
-            else:
-                properties["items"]["type"] = covert_data_type_from_aos_to_athena(
-                    aos_type=properties["items"]["type"]
-                )
+                continue
+            properties["items"]["type"] = covert_data_type_from_aos_to_athena(
+                aos_type=properties["items"]["type"]
+            )
         else:
-            properties['type'] = covert_data_type_from_aos_to_athena(aos_type=properties['type'])
-            if properties.get('timeKey') is True and properties['format'] == r'%s':
-                properties['type'] = 'big_int'
-                properties.pop('format', None)
-            elif properties.get('timeKey') is True:
-                properties['format'] = convert_time_key_format(fmt=properties['format'], agent_type=agent_type)
-            elif properties['type'] == 'timestamp':
-                properties['format'] = convert_time_key_format(fmt=properties['format'], agent_type=AgentTypeEnum.NONE)
-        
+            original_type = properties["type"]
+            properties["type"] = covert_data_type_from_aos_to_athena(
+                aos_type=properties["type"]
+            )
+            if properties.get("timeKey") is True and properties["type"] == "big_int":
+                properties["format"] = original_type
+            elif properties.get("timeKey") is True:
+                properties["format"] = convert_time_key_format(
+                    fmt=properties["format"], log_structure=log_structure
+                )
+            elif properties["type"] == "timestamp" and properties.get("format"):
+                properties["format"] = convert_time_key_format(
+                    fmt=properties["format"], log_structure=LogStructure.RAW
+                )
+
     return json_schema
 
 
 def convert_json_schema_data_type(
     json_schema: dict,
     engine_type: EngineType = EngineType.LIGHT_ENGINE,
-    agent_type: AgentTypeEnum = AgentTypeEnum.FLUENT_BIT,
+    log_structure: LogStructure = LogStructure.FLUENT_BIT_PARSED_JSON,
 ) -> dict:
     """_summary_
 
@@ -334,7 +383,7 @@ def convert_json_schema_data_type(
     new_json_schema = copy.deepcopy(json_schema)
     if engine_type == EngineType.LIGHT_ENGINE:
         new_json_schema = convert_json_schema_data_type_for_light_engine(
-            json_schema=new_json_schema, agent_type=agent_type
+            json_schema=new_json_schema, log_structure=log_structure
         )
 
     return new_json_schema
@@ -365,11 +414,9 @@ def generate_json_schema_for_apache(user_log_format: str) -> dict:
     if match is None:
         raise ValueError(f"Incorrect user log format: {user_log_format}")
 
-    for format_string in apache_format_string_mapping.keys():
-        if format_string in match.group(0):
-            json_schema["properties"].update(
-                apache_format_string_mapping[format_string]
-            )
+    for field_name in re.findall(r"%(?:\{[^}]+\})?[\w>]+", user_log_format):
+        if field_name in apache_format_string_mapping.keys():
+            json_schema["properties"].update(apache_format_string_mapping[field_name])
 
     return json_schema
 
@@ -392,7 +439,7 @@ def generate_json_schema_for_nginx(user_log_format: str) -> dict:
 def get_json_schema(
     log_conf: LogConfig,
     engine_type: EngineType = EngineType.LIGHT_ENGINE,
-    agent_type: AgentTypeEnum = AgentTypeEnum.FLUENT_BIT,
+    log_structure: LogStructure = LogStructure.FLUENT_BIT_PARSED_JSON,
 ) -> dict:
     json_schema = copy.deepcopy(DEFAULT_JSON_SCHEMA)
 
@@ -409,7 +456,7 @@ def get_json_schema(
         return convert_json_schema_data_type(
             json_schema=json_schema,
             engine_type=engine_type,
-            agent_type=AgentTypeEnum.NONE,
+            log_structure=LogStructure.RAW,
         )
     elif log_conf.logType == "Apache":
         json_schema = generate_json_schema_for_apache(
@@ -418,9 +465,12 @@ def get_json_schema(
         return convert_json_schema_data_type(
             json_schema=json_schema,
             engine_type=engine_type,
-            agent_type=AgentTypeEnum.NONE,
+            log_structure=LogStructure.RAW,
         )
 
+    if log_conf.logType == LogTypeEnum.WINDOWS_EVENT:
+        log_structure = LogStructure.RAW
+
     return convert_json_schema_data_type(
-        json_schema=json_schema, engine_type=engine_type, agent_type=agent_type
+        json_schema=json_schema, engine_type=engine_type, log_structure=log_structure
     )

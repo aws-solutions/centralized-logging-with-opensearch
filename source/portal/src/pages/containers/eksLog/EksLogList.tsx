@@ -14,23 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 /* eslint-disable react/display-name */
-import { formatLocalTime } from "assets/js/utils";
-import Breadcrumb from "components/Breadcrumb";
+import { defaultStr, formatLocalTime } from "assets/js/utils";
 import Button from "components/Button";
-import SideMenu from "components/SideMenu";
 import { SelectType, TablePanel } from "components/TablePanel";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import Pagination from "@material-ui/lab/Pagination";
 import Modal from "components/Modal";
-import HelpPanel from "components/HelpPanel";
 import { listLogSources } from "graphql/queries";
 import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
 import { LogSourceType, LogSource } from "API";
 import { deleteLogSource } from "graphql/mutations";
 import { handleErrorMessage } from "assets/js/alert";
 import ButtonRefresh from "components/ButtonRefresh";
+import CommonLayout from "pages/layout/CommonLayout";
 
 const PAGE_SIZE = 10;
 
@@ -137,143 +135,134 @@ const EksLogList: React.FC = () => {
   };
 
   return (
-    <div className="lh-main-content">
-      <SideMenu />
-      <div className="lh-container">
-        <div className="lh-content">
-          <div className="service-log">
-            <Breadcrumb list={breadCrumbList} />
-            <div className="table-data">
-              <TablePanel
-                trackId="sourceId"
-                title={t("ekslog:clusters")}
-                changeSelected={(item) => {
-                  console.info("item:", item);
-                  setSelectedEksLog(item);
+    <CommonLayout breadCrumbList={breadCrumbList}>
+      <div className="table-data">
+        <TablePanel
+          trackId="sourceId"
+          title={t("ekslog:clusters")}
+          changeSelected={(item) => {
+            console.info("item:", item);
+            setSelectedEksLog(item);
+          }}
+          loading={loadingData}
+          selectType={SelectType.RADIO}
+          columnDefinitions={[
+            {
+              id: "ClusterName",
+              header: t("ekslog:list.clusterName"),
+              cell: (e: LogSource) => renderClusterName(e),
+            },
+            {
+              id: "Account",
+              header: t("ekslog:list.account"),
+              cell: (e: LogSource) => {
+                return defaultStr(e?.accountId);
+              },
+            },
+            {
+              id: "Pattern",
+              header: t("ekslog:list.pattern"),
+              cell: (e: LogSource) => {
+                return e.eks?.deploymentKind;
+              },
+            },
+            {
+              width: 170,
+              id: "createdTime",
+              header: t("ekslog:list.created"),
+              cell: (e: LogSource) => {
+                return formatLocalTime(defaultStr(e?.createdAt));
+              },
+            },
+          ]}
+          items={eksLogList}
+          actions={
+            <div>
+              <Button
+                btnType="icon"
+                disabled={loadingData}
+                onClick={() => {
+                  if (curPage === 1) {
+                    getEksLogList();
+                  } else {
+                    setCurPage(1);
+                  }
                 }}
-                loading={loadingData}
-                selectType={SelectType.RADIO}
-                columnDefinitions={[
-                  {
-                    id: "ClusterName",
-                    header: t("ekslog:list.clusterName"),
-                    cell: (e: LogSource) => renderClusterName(e),
-                  },
-                  {
-                    id: "Account",
-                    header: t("ekslog:list.account"),
-                    cell: (e: LogSource) => {
-                      return e.accountId || "-";
-                    },
-                  },
-                  {
-                    id: "Pattern",
-                    header: t("ekslog:list.pattern"),
-                    cell: (e: LogSource) => {
-                      return e.eks?.deploymentKind;
-                    },
-                  },
-                  {
-                    width: 170,
-                    id: "createdTime",
-                    header: t("ekslog:list.created"),
-                    cell: (e: LogSource) => {
-                      return formatLocalTime(e?.createdAt || "");
-                    },
-                  },
-                ]}
-                items={eksLogList}
-                actions={
-                  <div>
-                    <Button
-                      btnType="icon"
-                      disabled={loadingData}
-                      onClick={() => {
-                        if (curPage === 1) {
-                          getEksLogList();
-                        } else {
-                          setCurPage(1);
-                        }
-                      }}
-                    >
-                      <ButtonRefresh loading={loadingData} />
-                    </Button>
-                    <Button
-                      disabled={disabledDetail}
-                      onClick={() => {
-                        clickToReviewDetail();
-                      }}
-                    >
-                      {t("button.viewDetail")}
-                    </Button>
-                    <Button
-                      disabled={disabledDelete}
-                      onClick={() => {
-                        removeEksLog();
-                      }}
-                    >
-                      {t("button.remove")}
-                    </Button>
-                    <Button
-                      btnType="primary"
-                      onClick={() => {
-                        navigate("/containers/eks-log/create");
-                      }}
-                    >
-                      {t("button.importEksCluster")}
-                    </Button>
-                  </div>
-                }
-                pagination={
-                  <Pagination
-                    count={Math.ceil(totoalCount / PAGE_SIZE)}
-                    page={curPage}
-                    onChange={handlePageChange}
-                    size="small"
-                  />
-                }
-              />
+              >
+                <ButtonRefresh loading={loadingData} />
+              </Button>
+              <Button
+                disabled={disabledDetail}
+                onClick={() => {
+                  clickToReviewDetail();
+                }}
+              >
+                {t("button.viewDetail")}
+              </Button>
+              <Button
+                disabled={disabledDelete}
+                onClick={() => {
+                  removeEksLog();
+                }}
+              >
+                {t("button.remove")}
+              </Button>
+              <Button
+                btnType="primary"
+                onClick={() => {
+                  navigate("/containers/eks-log/create");
+                }}
+              >
+                {t("button.importEksCluster")}
+              </Button>
             </div>
-          </div>
-          <Modal
-            title={t("ekslog:delete")}
-            fullWidth={false}
-            isOpen={openDeleteModel}
-            closeModal={() => {
-              setOpenDeleteModel(false);
-            }}
-            actions={
-              <div className="button-action no-pb text-right">
-                <Button
-                  btnType="text"
-                  disabled={loadingDelete}
-                  onClick={() => {
-                    setOpenDeleteModel(false);
-                  }}
-                >
-                  {t("button.cancel")}
-                </Button>
-                <Button
-                  loading={loadingDelete}
-                  btnType="primary"
-                  onClick={() => {
-                    confimRemoveEksLog();
-                  }}
-                >
-                  {t("button.delete")}
-                </Button>
-              </div>
-            }
-          >
-            <div className="modal-content">
-              {t("ekslog:deleteTips")}
-              <b>{`${curEksLog?.eks?.eksClusterName}`}</b> {"?"}
-            </div>
-          </Modal>
-        </div>
+          }
+          pagination={
+            <Pagination
+              count={Math.ceil(totoalCount / PAGE_SIZE)}
+              page={curPage}
+              onChange={handlePageChange}
+              size="small"
+            />
+          }
+        />
       </div>
-      <HelpPanel />
-    </div>
+      <Modal
+        title={t("ekslog:delete")}
+        fullWidth={false}
+        isOpen={openDeleteModel}
+        closeModal={() => {
+          setOpenDeleteModel(false);
+        }}
+        actions={
+          <div className="button-action no-pb text-right">
+            <Button
+              btnType="text"
+              disabled={loadingDelete}
+              onClick={() => {
+                setOpenDeleteModel(false);
+              }}
+            >
+              {t("button.cancel")}
+            </Button>
+            <Button
+              loading={loadingDelete}
+              btnType="primary"
+              onClick={() => {
+                confimRemoveEksLog();
+              }}
+            >
+              {t("button.delete")}
+            </Button>
+          </div>
+        }
+      >
+        <div className="modal-content">
+          {t("ekslog:deleteTips")}
+          <b>{`${curEksLog?.eks?.eksClusterName}`}</b> {"?"}
+        </div>
+      </Modal>
+    </CommonLayout>
   );
 };
 

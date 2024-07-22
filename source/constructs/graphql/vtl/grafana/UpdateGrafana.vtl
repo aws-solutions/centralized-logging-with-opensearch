@@ -1,0 +1,5 @@
+$util.validate($util.matches("^[a-zA-Z0-9-_]{1,128}$", $ctx.args.id), "Invalid id.")
+$util.validate($util.matches("^[a-zA-Z0-9-_]{1,128}$", $ctx.args.token), "Invalid token. The token convention must follow ^[a-zA-Z0-9-_]{1,128}$")
+$util.validate($util.matches("^(http(s)?:\/\/.)[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$", $ctx.args.url), "Invalid url")
+
+{"version": "2017-02-28", "operation": "Invoke", "payload": $util.toJson($ctx)}

@@ -26,6 +26,9 @@ import IMAGE_SL_Amazon_Config from "assets/images/type/amazon_config.svg";
 import {
   AlarmType,
   CompressionType,
+  DomainStatusCheckType,
+  EC2GroupPlatform,
+  IISlogParser,
   LogConfFilterCondition,
   LogType,
   MultiLineLogParser,
@@ -36,10 +39,19 @@ import { OptionType } from "components/AutoComplete/autoComplete";
 export const INVALID = "invalid";
 export const AUTO_REFRESH_INT = 8000;
 
-export const SLUTION_REPO_NAME = "centralized-logging-with-opensearch";
+export const MAX_INPUT_LENGTH = 128;
 
-export const DEFAULT_AGENT_VERSION = "FluentBit 1.9.10";
-export const DEFAULT_PLATFORM = "Linux";
+export const SOLUTION_REPO_NAME = "centralized-logging-with-opensearch";
+
+export const LINUX_FLB_AGENT_VERSION = "FluentBit 1.9.10";
+export const WINDOWS_FLB_AGENT_VERSION = "FluentBit 3.0.4 (Community)";
+
+export const getFLBVersionByType = (type?: EC2GroupPlatform) => {
+  return type === EC2GroupPlatform.Windows
+    ? WINDOWS_FLB_AGENT_VERSION
+    : LINUX_FLB_AGENT_VERSION;
+};
+
 export const ASG_SELECTION = "Auto Scaling group";
 export const DEFAULT_INSTANCE_SELECTION = "Manual";
 
@@ -68,8 +80,13 @@ export const RDS_LOG_GROUP_SUFFIX_AUDIT = "/audit";
 export const EN_LANGUAGE_LIST = ["en", "en_US", "en-US", "en_GB"];
 export const ZH_LANGUAGE_LIST = ["zh", "zh_CN", "zh-CN", "zh_TW"];
 
+export const DOMAIN_ALLOW_STATUS: any = [
+  DomainStatusCheckType.PASSED,
+  DomainStatusCheckType.WARNING,
+];
+
 export const GITHUB_LINK =
-  "https://github.com/aws-solutions/" + SLUTION_REPO_NAME;
+  "https://github.com/aws-solutions/" + SOLUTION_REPO_NAME;
 export const URL_FEEDBACK = GITHUB_LINK + "/issues";
 
 export const WORKSHOP_DOCS_LINK =
@@ -205,6 +222,12 @@ export const CLOUDWATCH_ALARM_LINK =
 
 export const OSI_PIPELINE_LINK =
   "https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ingestion.html";
+
+export const ATHENA_FORMAT_LINK =
+  "https://docs.aws.amazon.com/athena/latest/ug/compression-formats.html";
+
+export const LAMBDA_CONCURRENCY_DOC_LINK =
+  "https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html";
 
 export enum ServiceLogType {
   Amazon_S3 = "Amazon_S3",
@@ -405,7 +428,6 @@ export type AlarmParamType = {
 };
 
 export const FB_TYPE_LIST = [
-  { name: "null", value: "null" },
   { name: "boolean", value: "boolean" },
   { name: "byte", value: "byte" },
   { name: "short", value: "short" },
@@ -421,6 +443,11 @@ export const FB_TYPE_LIST = [
   { name: "date", value: "date" },
   { name: "ip", value: "ip" },
   { name: "string", value: "string" },
+  { name: "epoch_millis", value: "epoch_millis" },
+  { name: "epoch_second", value: "epoch_second" },
+  { name: "map", value: "map" },
+  { name: "object", value: "object" },
+  { name: "array", value: "array" },
 ];
 
 export const LOG_CONFIG_TYPE_LIST = [
@@ -430,6 +457,8 @@ export const LOG_CONFIG_TYPE_LIST = [
   { name: "resource:config.type.syslog", value: LogType.Syslog },
   { name: "resource:config.type.singleLine", value: LogType.SingleLineText },
   { name: "resource:config.type.multiLine", value: LogType.MultiLineText },
+  { name: "resource:config.type.windowsEvent", value: LogType.WindowsEvent },
+  { name: "resource:config.type.iis", value: LogType.IIS },
 ];
 
 export const SYSLOG_CONFIG_TYPE_LIST = [
@@ -447,6 +476,12 @@ export const SYS_LOG_PARSER_LIST = [
   { name: "RFC5424", value: SyslogParser.RFC5424 },
   { name: "RFC3164", value: SyslogParser.RFC3164 },
   { name: "Custom", value: SyslogParser.CUSTOM },
+];
+
+export const IIS_LOG_PARSER_LIST = [
+  { name: "W3C", value: IISlogParser.W3C },
+  { name: "IIS", value: IISlogParser.IIS },
+  { name: "NCSA", value: IISlogParser.NCSA },
 ];
 
 export const domainAlramList: AlarmParamType[] = [
@@ -672,9 +707,6 @@ export const PROTOCOL_LIST = [
 export const S3_BUFFER_PREFIX =
   "AppLogs/<index-prefix>/year=%Y/month=%m/day=%d/";
 
-export const RFC3164_DEFAULT_REGEX = `^\\<(?<pri>[0-9]+)\\>(?<time>[^ ]* {1,2}[^ ]* [^ ]*) (?<host>[^ ]*) (?<ident>[a-zA-Z0-9_\\/\\.\\-]*)(?:\\[(?<pid>[0-9]+)\\])?(?:[^\\:]*\\:)? *(?<message>.*)$`;
-export const RFC5424_DEFAULT_REGEX = `^\\<(?<pri>[0-9]{1,5})\\>1 (?<time>[^ ]+) (?<host>[^ ]+) (?<ident>[^ ]+) (?<pid>[-0-9]+) (?<msgid>[^ ]+) (?<extradata>(\\[(.*)\\]|-)) (?<message>.+)$`;
-
 export const NOT_SUPPORT_KDS_AUTO_SCALING_REGION = ["cn-northwest-1"];
 
 export const CloudFrontFieldTypeList = [
@@ -797,3 +829,137 @@ export const PROXY_INSTANCE_TYPE_AND_NUMBER_LIST = [
 ];
 
 export const TOPIC_NAME_REGEX = /^[a-zA-Z0-9-_]{1,128}$/;
+
+export const APACHE_LOG_REG_MAP: any = {
+  "%a": {
+    reg: "(?<client_addr>[0-9.-]+)",
+    key: "client_addr",
+  },
+  "%{c}a": {
+    reg: "(?<connect_addr>[0-9.-]+)",
+    key: "connect_addr",
+  },
+  "%A": {
+    reg: "(?<local_addr>[0-9.-]+)",
+    key: "local_addr",
+  },
+  "%B": {
+    reg: "(?<response_bytes>\\d+|-)",
+    key: "response_bytes",
+  },
+  "%b": {
+    reg: "(?<response_size_bytes>\\d+|-)",
+    key: "response_size_bytes",
+  },
+  "%D": {
+    reg: "(?<request_time_msec>\\d+|-)",
+    key: "request_time_msec",
+  },
+  "%f": {
+    reg: '(?<filename>(?:[^"]|\\")+)',
+    key: "filename",
+  },
+  "%h": {
+    reg: "(?<remote_addr>[0-9.-]+)",
+    key: "remote_addr",
+  },
+  "%H": {
+    reg: '(?<request_protocol_supple>(?:[^"]|\\")+)',
+    key: "request_protocol_supple",
+  },
+  "%k": {
+    reg: "(?<keep_alive>\\d+|-)",
+    key: "keep_alive",
+  },
+  "%l": {
+    reg: "(?<remote_ident>[\\w.-]+)",
+    key: "remote_ident",
+  },
+  "%L": {
+    reg: "(?<error_log>[\\w\\d-]+)",
+    key: "error_log",
+  },
+  "%m": {
+    reg: "(?<request_method_supple>[\\w.-]+)",
+    key: "request_method_supple",
+  },
+  "%p": {
+    reg: "(?<remote_port>\\d{1,5}|-)",
+    key: "remote_port",
+  },
+  "%P": {
+    reg: "(?<child_process>\\d+|-)",
+    key: "child_process",
+  },
+  "%q": {
+    reg: '(?<request_query>(?:[^"]|\\")+)?',
+    key: "request_query",
+  },
+  "%r": {
+    reg: '(?<request_method>(?:[^"]|\\")+)\\s(?<request_uri>(?:[^"]|\\")+)\\s(?<request_protocol>(?:[^"]|\\")+)',
+    key: "request",
+  },
+  "%R": {
+    reg: '(?<response_handler>(?:[^"]|\\")+)',
+    key: "response_handler",
+  },
+  "%s": {
+    reg: "(?<status>\\d{3}|-)",
+    key: "status",
+  },
+  "%>s": {
+    reg: "(?<status>\\d{3}|-)",
+    key: "status",
+  },
+  "%t": {
+    reg: "\\[(?<time_local>[^\\[\\]]+|-)\\]",
+    key: "time_local",
+  },
+  "%T": {
+    reg: "(?<request_time_sec>[0-9]*.?[0-9]+|-)",
+    key: "request_time_sec",
+  },
+  "%u": {
+    reg: "(?<remote_user>[\\w.-]+)",
+    key: "remote_user",
+  },
+  "%U": {
+    reg: '(?<request_uri_supple>(?:[^"]|\\")+)',
+    key: "request_uri_supple",
+  },
+  "%v": {
+    reg: '(?<server_name>(?:[^"]|\\")+)',
+    key: "server_name",
+  },
+  "%V": {
+    reg: '(?<server_name_canonical>(?:[^"]|\\")+)',
+    key: "server_name_canonical",
+  },
+  "%X": {
+    reg: "(?<status_completed>[X\\+-]{1})",
+    key: "status_completed",
+  },
+  "%I": {
+    reg: "(?<bytes_received>\\d+|-)",
+    key: "bytes_received",
+  },
+  "%O": {
+    reg: "(?<bytes_sent>\\d+|-)",
+    key: "bytes_sent",
+  },
+  "%S": {
+    reg: '(?<bytes_combination>(?:[^"]|\\")+)',
+    key: "bytes_combination",
+  },
+  "%{User-Agent}i": {
+    reg: '(?<http_user_agent>[^"]*)',
+    key: "http_user_agent",
+  },
+  "%{Referer}i": {
+    reg: '(?<http_referer>[^"]*)',
+    key: "http_referer",
+  },
+};
+
+export const VPC_FLOW_LOG_SELECT_ALL_FIELDS =
+  "${account-id} ${action} ${az-id} ${bytes} ${dstaddr} ${dstport} ${end} ${flow-direction} ${instance-id} ${interface-id} ${log-status} ${packets} ${pkt-dst-aws-service} ${pkt-dstaddr} ${pkt-src-aws-service} ${pkt-srcaddr} ${protocol} ${region} ${srcaddr} ${srcport} ${start} ${sublocation-id} ${sublocation-type} ${subnet-id} ${tcp-flags} ${traffic-path} ${type} ${version} ${vpc-id}";

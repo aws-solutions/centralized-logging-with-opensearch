@@ -18,7 +18,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { InfoBarTypes } from "reducer/appReducer";
 import TextInput from "components/TextInput";
-import { LogSourceType } from "API";
+import { EC2GroupPlatform, LogSourceType } from "API";
 import { Validator } from "pages/comps/Validator";
 import { useAutoValidation } from "assets/js/hooks/useAutoValidation";
 
@@ -27,19 +27,45 @@ interface LogPathInputProps {
   setValue: React.Dispatch<React.SetStateAction<string>>;
   validator: Validator;
   logSourceType?: LogSourceType;
+  instanceGroupPlatform?: EC2GroupPlatform | null;
 }
 
-export default function LogPathInput(props: LogPathInputProps) {
+const LogPathInput: React.FC<LogPathInputProps> = (
+  props: LogPathInputProps
+) => {
   useAutoValidation(props.validator, [props.value]);
   const { t } = useTranslation();
+
+  const getPathPlaceholder = () => {
+    if (
+      props.logSourceType === LogSourceType.EC2 &&
+      props.instanceGroupPlatform === EC2GroupPlatform.Windows
+    ) {
+      return "C:\\inetpub\\logs\\LogFiles\\W3SVC4\\*.log";
+    } else if (props.logSourceType === LogSourceType.EKSCluster) {
+      return "/var/log/containers/<application_name>-*_<namespace>_<container_name>-*";
+    } else {
+      return "/var/log/app1/*.log, /var/log/app2/*.log";
+    }
+  };
+
+  const getInfoType = () => {
+    if (props.logSourceType === LogSourceType.EKSCluster) {
+      return InfoBarTypes.LOG_CONFIG_PATH_EKS;
+    } else if (
+      props.logSourceType === LogSourceType.EC2 &&
+      props.instanceGroupPlatform === EC2GroupPlatform.Windows
+    ) {
+      return InfoBarTypes.LOG_CONFIG_PATH_WINDOWS;
+    } else {
+      return InfoBarTypes.LOG_CONFIG_PATH;
+    }
+  };
+
   return (
     <div className="mt-20">
       <FormItem
-        infoType={
-          props.logSourceType === LogSourceType.EKSCluster
-            ? InfoBarTypes.LOG_CONFIG_PATH_EKS
-            : InfoBarTypes.LOG_CONFIG_PATH
-        }
+        infoType={getInfoType()}
         optionTitle={t("applog:list.logPath")}
         optionDesc={
           props.logSourceType === LogSourceType.EKSCluster
@@ -52,11 +78,7 @@ export default function LogPathInput(props: LogPathInputProps) {
           <div style={{ flex: 1 }}>
             <TextInput
               value={props.value}
-              placeholder={
-                props.logSourceType === LogSourceType.EKSCluster
-                  ? "/var/log/containers/<application_name>-*_<namespace>_<container_name>-*"
-                  : "/var/log/app1/*.log, /var/log/app2/*.log"
-              }
+              placeholder={getPathPlaceholder()}
               onChange={(e) => {
                 props.setValue(e.target.value);
               }}
@@ -66,4 +88,6 @@ export default function LogPathInput(props: LogPathInputProps) {
       </FormItem>
     </div>
   );
-}
+};
+
+export default LogPathInput;

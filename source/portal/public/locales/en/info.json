@@ -20,7 +20,7 @@
     "createAlarm": "Create OpenSearch Alarms"
   },
   "monitoring": {
-    "intro": "This tab provides key metrics of each components within the log ingestion pipeline, making it easy for you to monitor the end-to-end log ingestion status. Please note, enabling monitoring will incur additional cost, please refer to the following link for cost estimation.",
+    "intro": "This tab provides key metrics of each components within the log ingestion pipeline, making it easy for you to monitor the end-to-end log ingestion status(Linux instance supported). Please note, enabling monitoring will incur additional cost, please refer to the following link for cost estimation.",
     "monitoringCost": "Monitoring Cost",
     "flbAgents": "Fluent Bit agents",
     "syslog": "Syslog metrics"

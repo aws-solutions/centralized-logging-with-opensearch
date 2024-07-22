@@ -32,10 +32,12 @@ import {
   aws_ec2 as ec2,
   aws_sqs as sqs,
   aws_s3_notifications as s3n,
+  IAspect,
+  Aspects,
 } from 'aws-cdk-lib';
 import { Vpc } from 'aws-cdk-lib/aws-ec2';
 import { NagSuppressions } from 'cdk-nag';
-import { Construct } from 'constructs';
+import { Construct, IConstruct } from 'constructs';
 import { APIStack } from './api/api-stack';
 import { AuthStack } from './main/auth-stack';
 
@@ -44,6 +46,7 @@ import { EcsClusterStack } from './main/ecs-cluster-stack';
 import { PortalStack } from './main/portal-stack';
 import { VpcStack } from './main/vpc-stack';
 import { MicroBatchStack } from './microbatch/main/services/amazon-services-stack';
+import { EnforceUnmanagedS3BucketNotificationsAspects, UseS3BucketNotificationsWithRetryAspects } from './util/stack-helper';
 
 const { VERSION } = process.env;
 
@@ -226,7 +229,6 @@ export class MainStack extends Stack {
     }
 
     let vpc = undefined;
-    let subnetIds = undefined;
 
     if (props?.existingVpc) {
       const vpcId = new CfnParameter(this, 'vpcId', {
@@ -266,8 +268,6 @@ export class MainStack extends Stack {
         publicSubnetIds: publicSubnetIds.valueAsList,
         privateSubnetIds: privateSubnetIds.valueAsList,
       });
-
-      subnetIds = privateSubnetIds.valueAsList;
     }
 
     const vpcStack = new VpcStack(this, `${stackPrefix}Vpc`, {
@@ -363,7 +363,7 @@ export class MainStack extends Stack {
         retentionPeriod: Duration.days(14),
         deadLetterQueue: {
           queue: flbConfUploadingEventDLQ,
-          maxReceiveCount: 30,
+          maxReceiveCount: 3,
         },
         encryption: sqs.QueueEncryption.KMS,
         dataKeyReuse: Duration.minutes(5),
@@ -399,6 +399,28 @@ export class MainStack extends Stack {
         objectOwnership: s3.ObjectOwnership.OBJECT_WRITER,
         versioned: true,
         enforceSSL: true,
+        notificationsHandlerRole: new iam.Role(this, 'NotiRole', {
+          assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
+          description: 'A role for s3 bucket notification lambda',
+          managedPolicies: [
+            iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
+          ],
+          inlinePolicies: {
+            BucketNotification: iam.PolicyDocument.fromJson({
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:PutBucketNotification",
+                    "s3:GetBucketNotification"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }),
+          },
+        }),
         lifecycleRules: [
           {
             transitions: [
@@ -470,14 +492,40 @@ export class MainStack extends Stack {
             elbRootAccountArn: 'arn:aws-cn:iam::037604701340:root',
           },
           'me-central-1': {
-            elbRootAccountArn: 'arn:aws-cn:iam::127311923021:root',
+            elbRootAccountArn: 'arn:aws:iam::127311923021:root',
+          },
+          'ap-south-2': {
+            elbRootAccountArn: 'arn:aws:iam::127311923021:root',
+          },
+          'ap-southeast-4': {
+            elbRootAccountArn: 'arn:aws:iam::127311923021:root',
+          },
+          'il-central-1': {
+            elbRootAccountArn: 'arn:aws:iam::127311923021:root',
+          },
+          'ca-west-1': {
+            elbRootAccountArn: 'arn:aws:iam::127311923021:root',
+          },
+          'eu-south-2': {
+            elbRootAccountArn: 'arn:aws:iam::127311923021:root',
+          },
+          'eu-central-2': {
+            elbRootAccountArn: 'arn:aws:iam::127311923021:root',
           },
         },
       }
     );
 
     const isNewRegion = new CfnCondition(this, 'IsNewRegion', {
-      expression: Fn.conditionEquals(Aws.REGION, 'me-central-1'),
+      expression: Fn.conditionOr(
+        Fn.conditionEquals(Aws.REGION, 'me-central-1'),
+        Fn.conditionEquals(Aws.REGION, 'ap-south-2'),
+        Fn.conditionEquals(Aws.REGION, 'ap-southeast-4'),
+        Fn.conditionEquals(Aws.REGION, 'il-central-1'),
+        Fn.conditionEquals(Aws.REGION, 'ca-west-1'),
+        Fn.conditionEquals(Aws.REGION, 'eu-south-2'),
+        Fn.conditionEquals(Aws.REGION, 'eu-central-2'),
+      ),
     });
     loggingBucket.addToResourcePolicy(
       iam.PolicyStatement.fromJson({
@@ -545,6 +593,18 @@ export class MainStack extends Stack {
       },
     ]);
 
+    if (loggingBucket.policy) {
+      Aspects.of(this).add(
+        new AddS3BucketNotificationsDependency(loggingBucket.policy.node.defaultChild as CfnResource)
+      );
+    }
+
+    const notificationHandler = Stack.of(this).node.tryFindChild('BucketNotificationsHandler050a0587b7544547bf325f094a3db834');
+    if (notificationHandler) {
+      Aspects.of(notificationHandler).add(new UseS3BucketNotificationsWithRetryAspects())
+    }
+    Aspects.of(this).add(new EnforceUnmanagedS3BucketNotificationsAspects());
+
     // init MicroBatch Stack
     microBatchStack = new MicroBatchStack(this, 'MicroBatchStack', {
       solutionId: solutionId,
@@ -559,14 +619,20 @@ export class MainStack extends Stack {
 
     microBatchStack.microBatchLambdaStack.MetadataWriterStack.MetadataWriter.node.addDependency(vpcStack.vpc.selectSubnets({ subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }).internetConnectivityEstablished);
 
+    const openSearchMasterRole = new iam.Role(this, 'OpenSearchMasterRole', {
+      assumedBy: new iam.AccountPrincipal(Aws.ACCOUNT_ID),
+    });
+
     // Create the Appsync API stack
     const apiStack = new APIStack(this, 'API', {
+      aosMasterRole: openSearchMasterRole,
       oidcClientId: this.oidcClientId,
       oidcProvider: this.oidcProvider,
       userPoolId: this.userPoolId,
       userPoolClientId: this.userPoolClientId,
       vpc: vpcStack.vpc,
-      subnetIds: subnetIds ? subnetIds : vpcStack.subnetIds,
+      subnetIds: vpcStack.vpc.privateSubnets.map(subnet => subnet.subnetId),
+      processSg: vpcStack.processSg,
       processSgId: vpcStack.processSg.securityGroupId,
       authType: this.authType,
       defaultLoggingBucket: loggingBucket,
@@ -598,9 +664,30 @@ export class MainStack extends Stack {
     });
     portalStack.node.addDependency(sqsCMKKey);
 
+
+    portalStack.webUILoggingBucket.addToResourcePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        principals: [new iam.ServicePrincipal('logging.s3.amazonaws.com')],
+        actions: ['s3:PutObject'],
+        resources: [
+          `arn:${Aws.PARTITION}:s3:::${portalStack.webUILoggingBucket.bucketName}/*`,
+        ],
+        conditions: {
+          StringEquals: {
+            "aws:SourceAccount": `${Aws.ACCOUNT_ID}`,
+          },
+          ArnLike: {
+            "aws:SourceArn": loggingBucket.bucketArn,
+          }
+        },
+      })
+    );
+
     // Perform actions during solution deployment or update
     const crStack = new CustomResourceStack(this, 'CR', {
-      apiEndpoint: apiStack.apiEndpoint,
+      apiStack: apiStack,
+      openSearchMasterRoleArn: openSearchMasterRole.roleArn,
       oidcProvider: this.oidcProvider,
       oidcClientId: this.oidcClientId,
       portalBucketName: portalStack.portalBucket.bucketName,
@@ -612,6 +699,7 @@ export class MainStack extends Stack {
       defaultLoggingBucket: loggingBucket.bucketName,
       cmkKeyArn: sqsCMKKey.keyArn,
       authenticationType: this.authType,
+      webUILoggingBucket: portalStack.webUILoggingBucket.bucketName,
     });
 
     // Allow init config function to put aws-exports.json to portal bucket
@@ -655,4 +743,19 @@ export class MainStack extends Stack {
       default: label,
     };
   };
+}
+
+class AddS3BucketNotificationsDependency implements IAspect {
+  public constructor(
+    private deps: CfnResource
+  ) { }
+
+  public visit(node: IConstruct): void {
+    if (
+      node instanceof CfnResource &&
+      node.cfnResourceType === "Custom::S3BucketNotifications"
+    ) {
+      node.addDependency(this.deps);
+    }
+  }
 }

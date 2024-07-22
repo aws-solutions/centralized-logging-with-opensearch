@@ -3,7 +3,7 @@
 
 import datetime
 import json
-import logging
+from commonlib.logging import get_logger
 import re
 import sys
 import threading
@@ -20,8 +20,7 @@ from typing import Iterable
 
 from log_processor.protocol import get_protocal_code
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 log_format = os.environ.get("LOG_FORMAT")
 
 
@@ -162,7 +161,7 @@ class ELBWithS3(LogType):
             pattern = (
                 "([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*):([0-9]*) ([^ ]*)[:-]([0-9]*) ([-.0-9]*) "
                 '([-.0-9]*) ([-.0-9]*) (|[-0-9]*) (-|[-0-9]*) ([-0-9]*) ([-0-9]*) "([^ ]*) ([^ ]*) '
-                '(- |[^ ]*)" "([^"]*)" ([A-Z0-9-]+) ([A-Za-z0-9.-]*) ([^ ]*) "([^"]*)" "([^"]*)" '
+                '(- |[^ ]*)" "([^"]*)" ([\w-]+) ([A-Za-z0-9.-]*) ([^ ]*) "([^"]*)" "([^"]*)" '
                 '"([^"]*)" ([-.0-9]*) ([^ ]*) "([^"]*)" "([^"]*)" "([^ ]*)" "([^ ]+?)" '
                 '"([^ ]+)" "([^ ]*)" "([^ ]*)"'
             )
@@ -370,15 +369,17 @@ class S3WithS3(LogType):
         "authentication_type",
         "host_header",
         "tls_version",
+        "access_point_arn",
+        "acl_required",
     ]
 
     def parse(self, lines: Iterable[str]) -> dict:
         for line in lines:
             json_record = {}
             pattern = (
-                '([^ ]*) ([^ ]*) \\[(.*?)\\] ([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*) ("[^"]*"|-) '
-                '(-|[0-9]*) ([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*) ("[^"]*"|-) ([^ ]*)(?: ([^ ]*) '
-                "([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*))?.*$"
+                '^([^ ]*) ([^ ]*) \\[(.*?)\\] ([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*) ("[^"]*"|-) '
+                '(-|[0-9]*) ([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*) ("[^"]*"|-) ([^ ]*)'
+                "(?: ([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*) ([^ ]*) (-|Yes))?.*$"
             )
             result = re.match(pattern, line)
             if result:
@@ -937,7 +938,7 @@ class LogEntry(dict):
         self._time_key = ""
 
     def set_time(self, time_key: str, time_format: str, time_offset: str = ""):
-        if time_key not in self:
+        if time_key not in self or (not time_format):
             return
 
         time_format = time_format.replace("%L", "%f")
@@ -1082,11 +1083,28 @@ class NginxWithFLB(JSONWithFLB):
     _format = "nginx"
 
 
+class IISWithFLB(JSONWithFLB):
+    """An implementation of LogType for IIS Logs"""
+
+    _format = "iis"
+
+
+class WindowsEventWithFLB(JSONWithFLB):
+    """An implementation of LogType for WindowEvent Logs"""
+
+    _format = "windowsevent"
+
+
 class ApacheWithS3(Regex):
     """An implementation of LogType for Apache Logs"""
 
     _format = "apache"
 
+
+class IISWithS3(Regex):
+    """An implementation of LogType for IIS Logs"""
+
+    _format = "iis"
 
 class SingleLineTextWithS3(Regex):
     """An implementation of LogType for SingleLineText Logs"""

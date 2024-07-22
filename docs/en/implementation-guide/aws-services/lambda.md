@@ -19,7 +19,7 @@ You can create a log ingestion into Amazon OpenSearch Service either by using th
 9. Choose **Yes** for **Sample dashboard** if you want to ingest an associated templated Amazon OpenSearch Service dashboard.
 10. You can change the **Index Prefix** of the target Amazon OpenSearch Service index if needed. The default prefix is the Lambda function name.
 11. In the **Log Lifecycle** section, input the number of days to manage the Amazon OpenSearch Service index lifecycle. The Centralized Logging with OpenSearch will create the associated [Index State Management (ISM)](https://opensearch.org/docs/latest/im-plugin/ism/index/) policy automatically for this pipeline.
-12. Choose **Next**.
+12. In the **Log processor settings** section, choose **Log processor type**, and configure the Lambda concurrency if needed, then choose **Next**.
 13. Add tags if needed.
 14. Choose **Create**.
 

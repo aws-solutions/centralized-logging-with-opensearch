@@ -2,14 +2,13 @@
 # SPDX-License-Identifier: Apache-2.0
 import os
 import json
-import logging
+from commonlib.logging import get_logger
 
 from commonlib import AWSConnection
 from commonlib.model import PipelineAlarmStatus, PipelineType, PipelineMonitorStatus
 from util.pipeline_helper import StackErrorHelper
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 conn = AWSConnection()
 
@@ -19,7 +18,7 @@ pipeline_table = dynamodb.Table(pipeline_table_name)
 
 
 def lambda_handler(event, _):
-    # logger.info("Received event: " + json.dumps(event, indent=2))
+    # logger.info("Received event: " + json.dumps(event["event"], indent=2))
     try:
         args = event["args"]
         result = event["result"]

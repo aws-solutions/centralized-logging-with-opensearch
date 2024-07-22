@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import { Construct } from "constructs";
-import { aws_stepfunctions as sfn, aws_stepfunctions_tasks as tasks, aws_iam as iam, aws_s3 as s3 } from "aws-cdk-lib";
+import { Duration, aws_stepfunctions as sfn, aws_stepfunctions_tasks as tasks, aws_iam as iam, aws_s3 as s3 } from "aws-cdk-lib";
 import { NagSuppressions } from "cdk-nag";
 import { InitLambdaStack } from "../lambda/init-lambda-stack";
 import { InitAthenaStack } from "../athena/init-athena-stack";
@@ -63,10 +63,8 @@ export class InitStepFunctionLogArchiveStack extends Construct {
             resources: [
               `${microBatchLambdaStack.S3ObjectScanningStack.S3ObjectScanning.functionArn}`,
               `${microBatchLambdaStack.S3ObjectScanningStack.S3ObjectScanning.functionArn}:*`,
-              `${microBatchLambdaStack.ETLDateTransformStack.ETLDateTransform.functionArn}`,
-              `${microBatchLambdaStack.ETLDateTransformStack.ETLDateTransform.functionArn}:*`,
-              `${microBatchLambdaStack.BatchUpdatePartitionStack.BatchUpdatePartition.functionArn}`,
-              `${microBatchLambdaStack.BatchUpdatePartitionStack.BatchUpdatePartition.functionArn}:*`,
+              `${microBatchLambdaStack.ETLHelperStack.ETLHelper.functionArn}`,
+              `${microBatchLambdaStack.ETLHelperStack.ETLHelper.functionArn}:*`,
               `${microBatchLambdaStack.SendTemplateEmailStack.SendTemplateEmail.functionArn}`,
               `${microBatchLambdaStack.SendTemplateEmailStack.SendTemplateEmail.functionArn}:*`,
             ],
@@ -144,6 +142,14 @@ export class InitStepFunctionLogArchiveStack extends Construct {
         resultPath: sfn.JsonPath.DISCARD,
       });
 
+      putStepFunctionTaskToDynamoDB.addRetry({
+        interval: Duration.seconds(10),
+        maxAttempts: 5,
+        maxDelay: Duration.seconds(120),
+        backoffRate: 2,
+        jitterStrategy: sfn.JitterType.FULL,
+      });
+      
       const updateStepFunctionTaskToFailed = new tasks.DynamoUpdateItem(this, "Update task status of Step Function to Failed", {
         table: microBatchDDBStack.ETLLogTable,
         key: {
@@ -159,6 +165,14 @@ export class InitStepFunctionLogArchiveStack extends Construct {
           ":endTime": tasks.DynamoAttributeValue.fromString(sfn.JsonPath.stringAt("$$.State.EnteredTime")),
         },
         resultPath: sfn.JsonPath.DISCARD,
+      });
+
+      updateStepFunctionTaskToFailed.addRetry({
+        interval: Duration.seconds(10),
+        maxAttempts: 5,
+        maxDelay: Duration.seconds(120),
+        backoffRate: 2,
+        jitterStrategy: sfn.JitterType.FULL,
       });
 
       const updateStepFunctionTaskToCompleted = new tasks.DynamoUpdateItem(this, "Update task status of Step Function to Succeeded", {
@@ -177,13 +191,32 @@ export class InitStepFunctionLogArchiveStack extends Construct {
         },
         resultPath: sfn.JsonPath.DISCARD,
       });
+      
+      updateStepFunctionTaskToCompleted.addRetry({
+        interval: Duration.seconds(10),
+        maxAttempts: 5,
+        maxDelay: Duration.seconds(120),
+        backoffRate: 2,
+        jitterStrategy: sfn.JitterType.FULL,
+      });
 
       const convertStartTimeToArchiveDate = new tasks.LambdaInvoke(this, "Convert Execution.StartTime to Archive date", {
-        lambdaFunction: microBatchLambdaStack.ETLDateTransformStack.ETLDateTransform,
+        lambdaFunction: microBatchLambdaStack.ETLHelperStack.ETLHelper,
         payload: sfn.TaskInput.fromObject({
-          "date.$": "$$.Execution.StartTime",
-          "format": "%Y-%m-%dT%H:%M:%S.%f%z",
-          "intervalDays.$": "$.metadata.athena.intervalDays"
+          "API": "ETL: DateTransform",
+          "executionName.$": "$$.Execution.Name",
+          "taskId.$": "States.UUID()",
+          "parameters": {
+            "dateString.$": "$$.Execution.StartTime",
+            "format": "%Y-%m-%dT%H:%M:%S.%f%z",
+            "intervalDays.$": "$.metadata.athena.intervalDays",
+          },
+          "extra": {
+            "parentTaskId": mainTaskId,
+            "pipelineId.$": "$.metadata.pipelineId",
+            "stateMachineName.$": "$$.StateMachine.Name",
+            "stateName.$": "$$.State.Name",
+          },
         }),
         retryOnServiceExceptions: false,
         resultSelector: {
@@ -201,9 +234,11 @@ export class InitStepFunctionLogArchiveStack extends Construct {
           "dstPath.$": "States.Format('{}/{}/{}={}', $.metadata.s3.archivePath, $$.Execution.Name, $.metadata.athena.firstPartitionKey, $.results.migrationDate.date)",
           "sqsName": microBatchSQSStack.S3ObjectMigrationQ.queueName,
           "keepPrefix": true,
-          "size": 500,
-          "deleteOnSuccess": true,
           "merge": false,
+          "deleteOnSuccess": true,
+          "maxRecords": -1,
+          "maxObjectFilesNumPerCopyTask": 1000,
+          "maxObjectFilesSizePerCopyTask": "10GiB",
           taskToken: sfn.JsonPath.taskToken,
           "extra": {
             "pipelineId.$": "$.metadata.pipelineId",
@@ -221,23 +256,26 @@ export class InitStepFunctionLogArchiveStack extends Construct {
       });
 
       const dropPartitionForHistoryTable = new tasks.LambdaInvoke(this, "Step 2: Batch Drop Partitions for History Data", {
-        lambdaFunction: microBatchLambdaStack.BatchUpdatePartitionStack.BatchUpdatePartition,
+        lambdaFunction: microBatchLambdaStack.ETLHelperStack.ETLHelper,
         payload: sfn.TaskInput.fromObject({
+          "API": "Athena: BatchUpdatePartition",
           "executionName.$": "$$.Execution.Name",
-          "action": "DROP",
-          "database.$": "$.metadata.athena.database",
-          "tableName.$": "$.metadata.athena.tableName",
-          "location.$": "States.Format('{}/{}', $.metadata.s3.archivePath, $$.Execution.Name)",
-          "partitionPrefix.$": "States.Format('{}={}', $.metadata.athena.firstPartitionKey, $.results.migrationDate.date)",
-          "workGroup": microBatchAthenaStack.microBatchAthenaWorkGroup.name,
-          "outputLocation": `s3://${stagingBucket.bucketName}/athena-results`,
+          "taskId.$": "States.UUID()",
+          "parameters": {
+            "action": "DROP",
+            "database.$": "$.metadata.athena.database",
+            "tableName.$": "$.metadata.athena.tableName",
+            "location.$": "States.Format('{}/{}', $.metadata.s3.archivePath, $$.Execution.Name)",
+            "partitionPrefix.$": "States.Format('{}={}', $.metadata.athena.firstPartitionKey, $.results.migrationDate.date)",
+            "workGroup": microBatchAthenaStack.microBatchAthenaWorkGroup.name,
+            "outputLocation": `s3://${stagingBucket.bucketName}/athena-results`,
+          },
           "extra": {
+            "parentTaskId": mainTaskId,
             "pipelineId.$": "$.metadata.pipelineId",
             "stateMachineName.$": "$$.StateMachine.Name",
             "stateName.$": "$$.State.Name",
-            "parentTaskId": mainTaskId,
-            "API": "Lambda: Invoke"
-          }
+          },
         }),
         retryOnServiceExceptions: false,
         resultPath: sfn.JsonPath.DISCARD,

@@ -1,0 +1,3652 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 1014,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 19,
+      "panels": [],
+      "title": "Overview (updates based on top time selection)",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "Bn93a3_Vk"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "fixed"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 5,
+        "x": 0,
+        "y": 1
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "/^requests$/",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "datasource": {
+            "type": "grafana-athena-datasource",
+            "uid": "Bn93a3_Vk"
+          },
+          "format": 1,
+          "rawSQL": "SELECT $__unixEpochGroup(time / 1000, '${interval}') as time\n    , sum(case when action = 'ACCEPT' then requests else 0 END) as accept_requests\n    , sum(case when action = 'REJECT' then requests else 0 END) as reject_requests\n    , sum(case when action = 'ACCEPT' then bytes else 0 END) as accept_bytes\n    , sum(case when action = 'REJECT' then bytes else 0 END) as reject_bytes\n    , sum(case when action = 'ACCEPT' then packets else 0 END) as accept_packets\n    , sum(case when action = 'REJECT' then packets else 0 END) as reject_packets\n    , sum(bytes) as bytes\n    , sum(packets) as packets\n    , sum(requests) as requests\nFROM \"$__table\"\nWHERE \"account_id\" IN (${account_id:sqlstring}) \n    AND \"region\" IN (${region:sqlstring}) \n    AND \"vpc-id\" IN (${vpc_id:sqlstring}) \n    AND \"action\" IN (${action:sqlstring}) \n    AND \"flow-direction\" IN (${flow_direction:sqlstring})\n    AND \"type\" IN (${type:sqlstring})\n    AND $__unixEpochFilter(time / 1000)\n    AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n        OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\nGROUP BY $__unixEpochGroup(time / 1000, '${interval}')\nORDER BY time ASC\n",
+          "refId": "Metrics",
+          "table": "vpcflow_metrics"
+        }
+      ],
+      "title": "* Total Requests",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "accept": true,
+              "bytes": true,
+              "packets": true,
+              "reject": true,
+              "time": true
+            },
+            "indexByName": {},
+            "renameByName": {}
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 40,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ACCEPT"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "REJECT"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 16,
+        "w": 13,
+        "x": 5,
+        "y": 1
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "max",
+            "min",
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 2,
+          "refId": "A",
+          "withTransforms": false
+        }
+      ],
+      "title": "Requests History",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "accept_bytes": true,
+              "accept_packets": true,
+              "bytes": true,
+              "packets": true,
+              "reject_bytes": true,
+              "reject_packets": true,
+              "requests": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "accept_bytes": "",
+              "accept_requests": "ACCEPT",
+              "reject_requests": "REJECT"
+            }
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "Bn93a3_Vk"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 16,
+        "w": 6,
+        "x": 18,
+        "y": 1
+      },
+      "id": 45,
+      "options": {
+        "displayLabels": [
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "datasource": {
+            "type": "grafana-athena-datasource",
+            "uid": "Bn93a3_Vk"
+          },
+          "format": 1,
+          "rawSQL": "SELECT \"vpc-id\", \"subnet-id\", \"flow-direction\", \"traffic-path\", \"type\", \"protocol\", \"pkt-src-aws-service\", \"pkt-dst-aws-service\", sum(packets) as packets, sum(bytes) as bytes, sum(requests) as requests\nFROM \"$__table\"\nWHERE \"account_id\" IN (${account_id:sqlstring}) \n    AND \"region\" IN (${region:sqlstring}) \n    AND \"vpc-id\" IN (${vpc_id:sqlstring}) \n    AND \"action\" IN (${action:sqlstring}) \n    AND \"flow-direction\" IN (${flow_direction:sqlstring})\n    AND \"type\" IN (${type:sqlstring})\n    AND $__unixEpochFilter(time / 1000)\n    AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n        OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\nGROUP BY \"vpc-id\", \"subnet-id\", \"flow-direction\", \"traffic-path\", \"type\", \"protocol\", \"pkt-src-aws-service\", \"pkt-dst-aws-service\"",
+          "refId": "Metrics",
+          "table": "vpcflow_metrics"
+        }
+      ],
+      "title": "* Requests By VPC Id",
+      "transformations": [
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "elb_status_code": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "requests": {
+                "aggregations": [
+                  "sum"
+                ],
+                "operation": "aggregate"
+              },
+              "terminatingruleid": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "time": {
+                "aggregations": []
+              },
+              "vpc-id": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "webaclname": {
+                "aggregations": []
+              }
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "desc": false,
+                "field": "requests (sum)"
+              }
+            ]
+          }
+        },
+        {
+          "id": "rowsToFields",
+          "options": {
+            "mappings": [
+              {
+                "fieldName": "requests (sum)",
+                "handlerKey": "field.value"
+              },
+              {
+                "fieldName": "vpc-id",
+                "handlerKey": "field.name"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "fixed"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 5,
+        "x": 0,
+        "y": 9
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 2,
+          "refId": "A",
+          "withTransforms": false
+        }
+      ],
+      "title": "Total Requests By Action",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "accept_bytes": true,
+              "accept_packets": true,
+              "bytes": true,
+              "packets": true,
+              "reject_bytes": true,
+              "reject_packets": true,
+              "requests": true,
+              "time": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "accept_requests": "ACCEPT",
+              "reject_requests": "REJECT"
+            }
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "dark-green",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 40,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ACCEPT"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "REJECT"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 0,
+        "y": 17
+      },
+      "id": 27,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 2,
+          "refId": "A",
+          "withTransforms": false
+        }
+      ],
+      "title": "Total Bytes By Action",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "accept_packets": true,
+              "accept_requests": true,
+              "bytes": true,
+              "packets": true,
+              "reject_packets": true,
+              "reject_requests": true,
+              "requests": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "accept_bytes": "ACCEPT",
+              "bytes": "",
+              "reject_bytes": "REJECT"
+            }
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "dark-green",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 40,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ACCEPT"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "REJECT"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 12,
+        "y": 17
+      },
+      "id": 68,
+      "options": {
+        "legend": {
+          "calcs": [
+            "firstNotNull",
+            "min",
+            "max",
+            "lastNotNull"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 2,
+          "refId": "A",
+          "withTransforms": false
+        }
+      ],
+      "title": "Total Packets By Action",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "ALLOW": false,
+              "accept": true,
+              "accept_bytes": true,
+              "accept_requests": true,
+              "bytes": true,
+              "packets": true,
+              "reject": true,
+              "reject_bytes": true,
+              "reject_requests": true,
+              "requests": true
+            },
+            "indexByName": {
+              "1xx": 1,
+              "2xx": 2,
+              "3xx": 3,
+              "4xx": 4,
+              "5xx": 5,
+              "time\\elb_status_code_group": 0
+            },
+            "renameByName": {
+              "1xx": "1xx",
+              "2xx": "2xx",
+              "3xx": "3xx",
+              "4xx": "4xx",
+              "5xx": "5xx",
+              "ALLOW": "allowed",
+              "BLOCK": "blocked",
+              "accept_packets": "ACCEPT",
+              "bytes (sum)": "bytes",
+              "reject_bytes": "",
+              "reject_packets": "REJECT",
+              "time": "time",
+              "time\\action": "time",
+              "time\\elb_status_code_group": "time",
+              "time\\http_status_code": "time"
+            }
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "fixed"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 6,
+        "x": 0,
+        "y": 29
+      },
+      "id": 48,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/.*/",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 45,
+          "refId": "A",
+          "withTransforms": false
+        }
+      ],
+      "title": "Bytes By Flow Direction",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "-"
+                  }
+                },
+                "fieldName": "flow-direction"
+              }
+            ],
+            "match": "all",
+            "type": "exclude"
+          }
+        },
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "action": {
+                "aggregations": []
+              },
+              "bytes": {
+                "aggregations": [
+                  "sum"
+                ],
+                "operation": "aggregate"
+              },
+              "flow-direction": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "requests": {
+                "aggregations": [
+                  "sum"
+                ]
+              },
+              "type": {
+                "aggregations": []
+              }
+            }
+          }
+        },
+        {
+          "id": "rowsToFields",
+          "options": {
+            "mappings": [
+              {
+                "fieldName": "flow-direction",
+                "handlerKey": "field.name"
+              },
+              {
+                "fieldName": "bytes (sum)",
+                "handlerKey": "field.value"
+              }
+            ]
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "egress": "Egress",
+              "ingress": "Ingress"
+            }
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 6,
+        "x": 6,
+        "y": 29
+      },
+      "id": 49,
+      "options": {
+        "displayLabels": [
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 45,
+          "refId": "A"
+        }
+      ],
+      "title": "Requests by Flow Direction",
+      "transformations": [
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "elb_status_code": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "flow-direction": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "requests": {
+                "aggregations": [
+                  "sum"
+                ],
+                "operation": "aggregate"
+              },
+              "terminatingruleid": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "time": {
+                "aggregations": []
+              },
+              "vpc-id": {
+                "aggregations": []
+              },
+              "webaclname": {
+                "aggregations": []
+              }
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "desc": false,
+                "field": "requests (sum)"
+              }
+            ]
+          }
+        },
+        {
+          "id": "rowsToFields",
+          "options": {
+            "mappings": [
+              {
+                "fieldName": "requests (sum)",
+                "handlerKey": "field.value"
+              },
+              {
+                "fieldName": "flow-direction",
+                "handlerKey": "field.name"
+              }
+            ]
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "-": "-",
+              "egress": "Egress",
+              "ingress": "Ingress"
+            }
+          }
+        }
+      ],
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "fixed"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 6,
+        "x": 12,
+        "y": 29
+      },
+      "id": 67,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/.*/",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 45,
+          "refId": "A",
+          "withTransforms": false
+        }
+      ],
+      "title": "Requests By Flow Direction",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "-"
+                  }
+                },
+                "fieldName": "flow-direction"
+              }
+            ],
+            "match": "all",
+            "type": "exclude"
+          }
+        },
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "action": {
+                "aggregations": []
+              },
+              "bytes": {
+                "aggregations": [
+                  "sum"
+                ]
+              },
+              "flow-direction": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "requests": {
+                "aggregations": [
+                  "sum"
+                ],
+                "operation": "aggregate"
+              },
+              "type": {
+                "aggregations": []
+              }
+            }
+          }
+        },
+        {
+          "id": "rowsToFields",
+          "options": {
+            "mappings": [
+              {
+                "fieldName": "flow-direction",
+                "handlerKey": "field.name"
+              },
+              {
+                "fieldName": "requests (sum)",
+                "handlerKey": "field.value"
+              }
+            ]
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "egress": "Egress",
+              "ingress": "Ingress"
+            }
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 6,
+        "x": 18,
+        "y": 29
+      },
+      "id": 51,
+      "options": {
+        "displayLabels": [
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 45,
+          "refId": "A"
+        }
+      ],
+      "title": "Requests By Type",
+      "transformations": [
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "elb_status_code": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "requests": {
+                "aggregations": [
+                  "sum"
+                ],
+                "operation": "aggregate"
+              },
+              "terminatingruleid": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "time": {
+                "aggregations": []
+              },
+              "type": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "vpc-id": {
+                "aggregations": []
+              },
+              "webaclname": {
+                "aggregations": []
+              }
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "desc": false,
+                "field": "requests (sum)"
+              }
+            ]
+          }
+        },
+        {
+          "id": "rowsToFields",
+          "options": {
+            "mappings": [
+              {
+                "fieldName": "requests (sum)",
+                "handlerKey": "field.value"
+              },
+              {
+                "fieldName": "type",
+                "handlerKey": "field.name"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "green",
+            "mode": "fixed"
+          },
+          "custom": {
+            "align": "center",
+            "cellOptions": {
+              "type": "color-text"
+            },
+            "filterable": true,
+            "inspect": true
+          },
+          "mappings": [],
+          "min": -3,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 15,
+        "w": 6,
+        "x": 0,
+        "y": 41
+      },
+      "id": 10,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 64,
+          "refId": "A"
+        }
+      ],
+      "title": "Top Source Bytes",
+      "transformations": [
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "bytes": {
+                "aggregations": [
+                  "sum"
+                ],
+                "operation": "aggregate"
+              },
+              "flow-direction": {
+                "aggregations": []
+              },
+              "request_host": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "request_path": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "requests": {
+                "aggregations": [
+                  "sum"
+                ]
+              },
+              "srcaddr": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "time": {
+                "aggregations": []
+              },
+              "webaclid": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "webaclname": {
+                "aggregations": [],
+                "operation": "groupby"
+              }
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "bytes (sum)": " Bytes",
+              "flow-direction": "FlowDirection",
+              "srcaddr": "Address"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "desc": true,
+                "field": " Bytes"
+              }
+            ]
+          }
+        },
+        {
+          "id": "limit",
+          "options": {
+            "limitField": 10
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "green",
+            "mode": "fixed"
+          },
+          "custom": {
+            "align": "center",
+            "cellOptions": {
+              "type": "color-text"
+            },
+            "filterable": true,
+            "inspect": true
+          },
+          "mappings": [],
+          "min": -3,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "request_host"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Host"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 15,
+        "w": 6,
+        "x": 6,
+        "y": 41
+      },
+      "id": 54,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 64,
+          "refId": "A"
+        }
+      ],
+      "title": "Top Destination Bytes",
+      "transformations": [
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "bytes": {
+                "aggregations": [
+                  "sum"
+                ],
+                "operation": "aggregate"
+              },
+              "dstaddr": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "request_host": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "request_path": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "requests": {
+                "aggregations": [
+                  "sum"
+                ]
+              },
+              "srcaddr": {
+                "aggregations": []
+              },
+              "time": {
+                "aggregations": []
+              },
+              "webaclid": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "webaclname": {
+                "aggregations": [],
+                "operation": "groupby"
+              }
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "bytes (sum)": " Bytes",
+              "dstaddr": "Address",
+              "srcaddr": "Address"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "desc": true,
+                "field": " Bytes"
+              }
+            ]
+          }
+        },
+        {
+          "id": "limit",
+          "options": {
+            "limitField": 10
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "green",
+            "mode": "fixed"
+          },
+          "custom": {
+            "align": "center",
+            "cellOptions": {
+              "type": "color-text"
+            },
+            "filterable": true,
+            "inspect": true
+          },
+          "mappings": [],
+          "min": -3,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 15,
+        "w": 6,
+        "x": 12,
+        "y": 41
+      },
+      "id": 55,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 64,
+          "refId": "A"
+        }
+      ],
+      "title": "Top Source Requests",
+      "transformations": [
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "bytes": {
+                "aggregations": [
+                  "sum"
+                ]
+              },
+              "request_host": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "request_path": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "requests": {
+                "aggregations": [
+                  "sum"
+                ],
+                "operation": "aggregate"
+              },
+              "srcaddr": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "time": {
+                "aggregations": []
+              },
+              "webaclid": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "webaclname": {
+                "aggregations": [],
+                "operation": "groupby"
+              }
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "bytes (sum)": " Bytes",
+              "requests (sum)": "Total Requests",
+              "srcaddr": "Address"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "desc": true,
+                "field": "Total Requests"
+              }
+            ]
+          }
+        },
+        {
+          "id": "limit",
+          "options": {
+            "limitField": 10
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "green",
+            "mode": "fixed"
+          },
+          "custom": {
+            "align": "center",
+            "cellOptions": {
+              "type": "color-text"
+            },
+            "filterable": true,
+            "inspect": true
+          },
+          "mappings": [],
+          "min": -3,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 15,
+        "w": 6,
+        "x": 18,
+        "y": 41
+      },
+      "id": 56,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 64,
+          "refId": "A"
+        }
+      ],
+      "title": "Top Destination Requests",
+      "transformations": [
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "bytes": {
+                "aggregations": [
+                  "sum"
+                ]
+              },
+              "dstaddr": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "request_host": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "request_path": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "requests": {
+                "aggregations": [
+                  "sum"
+                ],
+                "operation": "aggregate"
+              },
+              "srcaddr": {
+                "aggregations": []
+              },
+              "time": {
+                "aggregations": []
+              },
+              "webaclid": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "webaclname": {
+                "aggregations": [],
+                "operation": "groupby"
+              }
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "bytes (sum)": " Bytes",
+              "dstaddr": "Address",
+              "requests (sum)": "Total Requests",
+              "srcaddr": "Address"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "desc": true,
+                "field": "Total Requests"
+              }
+            ]
+          }
+        },
+        {
+          "id": "limit",
+          "options": {
+            "limitField": 10
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 15,
+        "w": 6,
+        "x": 0,
+        "y": 56
+      },
+      "id": 57,
+      "options": {
+        "displayLabels": [
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 45,
+          "refId": "A"
+        }
+      ],
+      "title": "Requests by Protocol",
+      "transformations": [
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "elb_status_code": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "protocol": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "requests": {
+                "aggregations": [
+                  "sum"
+                ],
+                "operation": "aggregate"
+              },
+              "terminatingruleid": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "time": {
+                "aggregations": []
+              },
+              "type": {
+                "aggregations": []
+              },
+              "vpc-id": {
+                "aggregations": []
+              },
+              "webaclname": {
+                "aggregations": []
+              }
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "desc": false,
+                "field": "requests (sum)"
+              }
+            ]
+          }
+        },
+        {
+          "id": "rowsToFields",
+          "options": {
+            "mappings": [
+              {
+                "fieldName": "requests (sum)",
+                "handlerKey": "field.value"
+              },
+              {
+                "fieldName": "protocol",
+                "handlerKey": "field.name"
+              }
+            ]
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "1": false
+            },
+            "indexByName": {},
+            "renameByName": {
+              "0": "HOPOPT",
+              "1": "ICMP",
+              "2": "IGMP",
+              "3": "GGP",
+              "4": "IPv4",
+              "5": "ST",
+              "6": "TCP",
+              "7": "CBT",
+              "8": "EGP",
+              "9": "IGP",
+              "10": "BBN-RCC-MON",
+              "11": "NVP-II",
+              "12": "PUP",
+              "13": "ARGUS (deprecated)",
+              "14": "EMCON",
+              "15": "XNET",
+              "16": "CHAOS",
+              "17": "UDP",
+              "18": "MUX",
+              "19": "DCN-MEAS",
+              "20": "HMP",
+              "21": "PRM",
+              "22": "XNS-IDP",
+              "23": "TRUNK-1",
+              "24": "TRUNK-2",
+              "25": "LEAF-1",
+              "26": "LEAF-2",
+              "27": "RDP",
+              "28": "IRTP",
+              "29": "ISO-TP4",
+              "30": "NETBLT",
+              "31": "MFE-NSP",
+              "32": "MERIT-INP",
+              "33": "DCCP",
+              "34": "3PC",
+              "35": "IDPR",
+              "36": "XTP",
+              "37": "DDP",
+              "38": "IDPR-CMTP",
+              "39": "TP++",
+              "40": "IL",
+              "41": "IPv6",
+              "42": "SDRP",
+              "43": "IPv6-Route",
+              "44": "IPv6-Frag",
+              "45": "IDRP",
+              "46": "RSVP",
+              "47": "GRE",
+              "48": "DSR",
+              "49": "BNA",
+              "50": "ESP",
+              "51": "AH",
+              "52": "I-NLSP",
+              "53": "SWIPE (deprecated)",
+              "54": "NARP",
+              "55": "Min-IPv4",
+              "56": "TLSP",
+              "57": "SKIP",
+              "58": "IPv6-ICMP",
+              "59": "IPv6-NoNxt",
+              "60": "IPv6-Opts",
+              "61": "any host internal protocol",
+              "62": "CFTP",
+              "63": "any local network",
+              "64": "SAT-EXPAK",
+              "65": "KRYPTOLAN",
+              "66": "RVD",
+              "67": "IPPC",
+              "68": "any distributed file system",
+              "69": "SAT-MON",
+              "70": "VISA",
+              "71": "IPCV",
+              "72": "CPNX",
+              "73": "CPHB",
+              "74": "WSN",
+              "75": "PVP",
+              "76": "BR-SAT-MON",
+              "77": "SUN-ND",
+              "78": "WB-MON",
+              "79": "WB-EXPAK",
+              "80": "ISO-IP",
+              "81": "VMTP",
+              "82": "SECURE-VMTP",
+              "83": "VINES",
+              "84": "IPTM",
+              "85": "NSFNET-IGP",
+              "86": "DGP",
+              "87": "TCF",
+              "88": "EIGRP",
+              "89": "OSPFIGP",
+              "90": "Sprite-RPC",
+              "91": "LARP",
+              "92": "MTP",
+              "93": "AX.25",
+              "94": "IPIP",
+              "95": "MICP (deprecated)",
+              "96": "SCC-SP",
+              "97": "ETHERIP",
+              "98": "ENCAP",
+              "99": "any private encryption scheme",
+              "100": "GMTP",
+              "101": "IFMP",
+              "102": "PNNI",
+              "103": "PIM",
+              "104": "ARIS",
+              "105": "SCPS",
+              "106": "QNX",
+              "107": "A/N",
+              "108": "IPComp",
+              "109": "SNP",
+              "110": "Compaq-Peer",
+              "111": "IPX-in-IP",
+              "112": "VRRP",
+              "113": "PGM",
+              "114": "any 0-hop protocol",
+              "115": "L2TP",
+              "116": "DDX",
+              "117": "IATP",
+              "118": "STP",
+              "119": "SRP",
+              "120": "UTI",
+              "121": "SMP",
+              "122": "SM (deprecated)",
+              "123": "PTP",
+              "124": "ISIS over IPv4",
+              "125": "FIRE",
+              "126": "CRTP",
+              "127": "CRUDP",
+              "128": "SSCOPMCE",
+              "129": "IPLT",
+              "130": "SPS",
+              "131": "PIPE",
+              "132": "SCTP",
+              "133": "FC",
+              "134": "RSVP-E2E-IGNORE",
+              "135": "Mobility Header",
+              "136": "UDPLite",
+              "137": "MPLS-in-IP",
+              "138": "manet",
+              "139": "HIP",
+              "140": "Shim6",
+              "141": "WESP",
+              "142": "ROHC",
+              "143": "Ethernet",
+              "144": "AGGFRAG",
+              "145": "NSH",
+              "146": "",
+              "null": "-"
+            }
+          }
+        }
+      ],
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 15,
+        "w": 6,
+        "x": 6,
+        "y": 56
+      },
+      "id": 65,
+      "options": {
+        "displayLabels": [
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 45,
+          "refId": "A"
+        }
+      ],
+      "title": "Requests by Subnet",
+      "transformations": [
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "elb_status_code": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "protocol": {
+                "aggregations": []
+              },
+              "requests": {
+                "aggregations": [
+                  "sum"
+                ],
+                "operation": "aggregate"
+              },
+              "subnet-id": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "terminatingruleid": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "time": {
+                "aggregations": []
+              },
+              "type": {
+                "aggregations": []
+              },
+              "vpc-id": {
+                "aggregations": []
+              },
+              "webaclname": {
+                "aggregations": []
+              }
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "desc": false,
+                "field": "requests (sum)"
+              }
+            ]
+          }
+        },
+        {
+          "id": "rowsToFields",
+          "options": {
+            "mappings": [
+              {
+                "fieldName": "requests (sum)",
+                "handlerKey": "field.value"
+              },
+              {
+                "fieldName": "subnet-id",
+                "handlerKey": "field.name"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 15,
+        "w": 6,
+        "x": 12,
+        "y": 56
+      },
+      "id": 58,
+      "options": {
+        "displayLabels": [
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 45,
+          "refId": "A"
+        }
+      ],
+      "title": "Requests From AWS Services",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "-"
+                  }
+                },
+                "fieldName": "pkt-src-aws-service"
+              }
+            ],
+            "match": "all",
+            "type": "exclude"
+          }
+        },
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "bytes": {
+                "aggregations": [
+                  "sum"
+                ]
+              },
+              "elb_status_code": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "pkt-src-aws-service": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "protocol": {
+                "aggregations": []
+              },
+              "requests": {
+                "aggregations": [
+                  "sum"
+                ],
+                "operation": "aggregate"
+              },
+              "terminatingruleid": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "time": {
+                "aggregations": []
+              },
+              "type": {
+                "aggregations": []
+              },
+              "vpc-id": {
+                "aggregations": []
+              },
+              "webaclname": {
+                "aggregations": []
+              }
+            }
+          }
+        },
+        {
+          "id": "rowsToFields",
+          "options": {
+            "mappings": [
+              {
+                "fieldName": "requests (sum)",
+                "handlerKey": "field.value"
+              },
+              {
+                "fieldName": "pkt-src-aws-service",
+                "handlerKey": "field.name"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 15,
+        "w": 6,
+        "x": 18,
+        "y": 56
+      },
+      "id": 66,
+      "options": {
+        "displayLabels": [
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 45,
+          "refId": "A"
+        }
+      ],
+      "title": "Requests To AWS Services",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "-"
+                  }
+                },
+                "fieldName": "pkt-dst-aws-service"
+              }
+            ],
+            "match": "all",
+            "type": "exclude"
+          }
+        },
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "bytes": {
+                "aggregations": [
+                  "sum"
+                ]
+              },
+              "elb_status_code": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "pkt-dst-aws-service": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "pkt-src-aws-service": {
+                "aggregations": []
+              },
+              "protocol": {
+                "aggregations": []
+              },
+              "requests": {
+                "aggregations": [
+                  "sum"
+                ],
+                "operation": "aggregate"
+              },
+              "terminatingruleid": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "time": {
+                "aggregations": []
+              },
+              "type": {
+                "aggregations": []
+              },
+              "vpc-id": {
+                "aggregations": []
+              },
+              "webaclname": {
+                "aggregations": []
+              }
+            }
+          }
+        },
+        {
+          "id": "rowsToFields",
+          "options": {
+            "mappings": [
+              {
+                "fieldName": "requests (sum)",
+                "handlerKey": "field.value"
+              },
+              {
+                "fieldName": "pkt-dst-aws-service",
+                "handlerKey": "field.name"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "Bn93a3_Vk"
+      },
+      "gridPos": {
+        "h": 28,
+        "w": 12,
+        "x": 0,
+        "y": 71
+      },
+      "id": 64,
+      "options": {
+        "baidu": {
+          "callback": "bmapReady",
+          "key": ""
+        },
+        "editor": {
+          "format": "auto",
+          "height": 600
+        },
+        "gaode": {
+          "key": "",
+          "plugin": "AMap.Scale,AMap.ToolBar"
+        },
+        "getOption": "const series = new Array();\n\ndata.series.map((s) => {\n  const flowDirections = s.fields.find((f) => f.name === 'flow-direction').values.buffer || s.fields.find((f) => f.name === 'flow-direction').values;\n  const srcAddrs = s.fields.find((f) => f.name === 'srcaddr').values.buffer || s.fields.find((f) => f.name === 'srcaddr').values;\n  const dstAddrs = s.fields.find((f) => f.name === 'dstaddr').values.buffer || s.fields.find((f) => f.name === 'dstaddr').values;\n  const values = s.fields.find((f) => f.name === 'bytes_percent (mean)').values.buffer || s.fields.find((f) => f.name === 'bytes_percent (mean)').values;\n\n  const serieLinks = {};\n  const existingNodes = [];\n  const uniqueFlowDirection = Array.from(new Set(flowDirections));\n  uniqueFlowDirection.map((d, i) => {\n    series.splice(i, 1, {\n      name: d,\n      data: [],\n      links: [],\n    });\n    serieLinks[i] = {};\n    existingNodes.splice(i, 1, []);\n  });\n\n  values.map((value, i) => {\n    let direction = flowDirections[i];\n    let srcAddr = srcAddrs[i];\n    let dstAddr = dstAddrs[i];\n\n    const seriesIdx = uniqueFlowDirection.indexOf(direction);\n    const links = serieLinks[seriesIdx]\n\n    if (srcAddr in links && dstAddr in links) {\n      const edgesInSrc = links[srcAddr]\n      const edgesInDst = links[dstAddr]\n\n      if (dstAddr in edgesInSrc) {\n        edgesInSrc[dstAddr] = edgesInSrc[dstAddr] + value\n      } else if (edgesInDst[srcAddr]) {\n        edgesInDst[srcAddr] = edgesInDst[srcAddr] + value\n      } else {\n        edgesInSrc[dstAddr] = value\n      }\n    } else if (srcAddr in links || dstAddr in links) {\n      if (dstAddr in links) {\n        [srcAddr, dstAddr] = [dstAddr, srcAddr]\n      }\n\n      const edgesInSrc = links[srcAddr]\n\n      if (dstAddr in edgesInSrc) {\n        edgesInSrc[dstAddr] = edgesInSrc[dstAddr] + value\n      } else {\n        edgesInSrc[dstAddr] = value\n      }\n    } else {\n      links[srcAddr] = { [dstAddr]: value }\n    };\n\n\n  });\n\n  for (const [serieIdx, links] of Object.entries(serieLinks)) {\n    for (const [srcAddr, edgesInSrc] of Object.entries(links)) {\n      if (existingNodes[serieIdx].indexOf(srcAddr) == -1) {\n        series[serieIdx].data.push({\n          name: srcAddr,\n        });\n\n        existingNodes[serieIdx].push(srcAddr);\n      };\n\n      for (const [dstAddr, value] of Object.entries(edgesInSrc)) {\n        if (existingNodes[serieIdx].indexOf(dstAddr) == -1) {\n          series[serieIdx].data.push({\n            name: dstAddr,\n          });\n\n          existingNodes[serieIdx].push(dstAddr);\n        };\n\n        series[serieIdx].links.push({\n          source: srcAddr,\n          target: dstAddr,\n          value: (value * 100).toFixed(2),\n        });\n      }\n    };\n  }\n});\n\nreturn {\n  legend: {\n    data: series.map(a => a.name),\n    selectedMode: 'single',\n  },\n  tooltip: {\n    trigger: 'item',\n    triggerOn: 'mousemove',\n    formatter: function (params) {\n      // console.info(params);\n      var name = params.name;\n      var value = params.value;\n      return name + ': ' + value + ' %';\n    },\n  },\n  series: series.map((d) => {\n    return {\n      name: d.name,\n      type: 'sankey',\n      data: d.data,\n      links: d.links,\n      emphasis: {\n        focus: 'adjacency'\n      },\n      levels: [\n        {\n          depth: 0,\n          itemStyle: {\n            color: '#fbb4ae'\n          },\n          lineStyle: {\n            color: 'source',\n            opacity: 0.6\n          }\n        },\n        {\n          depth: 1,\n          itemStyle: {\n            color: '#b3cde3'\n          },\n          lineStyle: {\n            color: 'source',\n            opacity: 0.6\n          }\n        },\n        {\n          depth: 2,\n          itemStyle: {\n            color: '#ccebc5'\n          },\n          lineStyle: {\n            color: 'source',\n            opacity: 0.6\n          }\n        },\n        {\n          depth: 3,\n          itemStyle: {\n            color: '#decbe4'\n          },\n          lineStyle: {\n            color: 'source',\n            opacity: 0.6\n          }\n        }\n      ],\n      lineStyle: {\n        curveness: 0.5\n      }\n    }\n  }),\n}",
+        "google": {
+          "callback": "gmapReady",
+          "key": ""
+        },
+        "map": "none",
+        "renderer": "canvas",
+        "themeEditor": {
+          "config": "{}",
+          "height": 400,
+          "name": "default"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "datasource": {
+            "type": "grafana-athena-datasource",
+            "uid": "Bn93a3_Vk"
+          },
+          "format": 1,
+          "rawSQL": "SELECT \n    \"flow-direction\",\n    \"srcaddr\", \n    \"dstaddr\", \n    sum(packets) as packets, \n    sum(bytes) as bytes, \n    count(1) as requests,\n    sum(sum(bytes)) over() as all_bytes\nFROM \"$__table\"\nWHERE \"account_id\" IN (${account_id:sqlstring}) \n    AND \"region\" IN (${region:sqlstring}) \n    AND \"vpc-id\" IN (${vpc_id:sqlstring}) \n    AND \"action\" IN (${action:sqlstring}) \n    AND \"flow-direction\" IN (${flow_direction:sqlstring})\n    AND \"flow-direction\" != '-'\n    AND \"type\" IN (${type:sqlstring})\n    AND $__unixEpochFilter(time / 1000)\n    AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n        OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\nGROUP BY \"flow-direction\", \"srcaddr\", \"dstaddr\"\n",
+          "refId": "Metrics",
+          "table": "vpcflow_metrics"
+        }
+      ],
+      "title": "* Top N Network Flow",
+      "transformations": [
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "bytes_percent",
+            "binary": {
+              "left": "bytes",
+              "operator": "/",
+              "reducer": "sum",
+              "right": "all_bytes"
+            },
+            "mode": "binary",
+            "reduce": {
+              "reducer": "sum"
+            }
+          }
+        },
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "action": {
+                "aggregations": []
+              },
+              "allowed": {
+                "aggregations": [
+                  "sum"
+                ],
+                "operation": "aggregate"
+              },
+              "blocked": {
+                "aggregations": [
+                  "sum"
+                ],
+                "operation": "aggregate"
+              },
+              "bytes": {
+                "aggregations": [
+                  "sum"
+                ]
+              },
+              "bytes_percen": {
+                "aggregations": [
+                  "mean"
+                ],
+                "operation": "aggregate"
+              },
+              "bytes_percent": {
+                "aggregations": [
+                  "mean"
+                ],
+                "operation": "aggregate"
+              },
+              "client_ip": {
+                "aggregations": [
+                  "distinctCount"
+                ],
+                "operation": "aggregate"
+              },
+              "dstaddr": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "flow-direction": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "http_status_code": {
+                "aggregations": []
+              },
+              "requests": {
+                "aggregations": []
+              },
+              "srcaddr": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "time": {
+                "aggregations": [],
+                "operation": "groupby"
+              }
+            }
+          }
+        },
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "-"
+                  }
+                },
+                "fieldName": "srcaddr"
+              },
+              {
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "-"
+                  }
+                },
+                "fieldName": "dstaddr"
+              }
+            ],
+            "match": "any",
+            "type": "exclude"
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "desc": true,
+                "field": "bytes_percent (mean)"
+              }
+            ]
+          }
+        },
+        {
+          "id": "limit",
+          "options": {
+            "limitField": 200
+          }
+        }
+      ],
+      "type": "volkovlabs-echarts-panel"
+    },
+    {
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "Bn93a3_Vk"
+      },
+      "description": "The data is calculated based on the UTC time zone, not the browser's time zone. If your current time zone differs from UTC, you need to perform a time zone conversion.",
+      "gridPos": {
+        "h": 13,
+        "w": 12,
+        "x": 12,
+        "y": 71
+      },
+      "id": 63,
+      "options": {
+        "baidu": {
+          "callback": "bmapReady",
+          "key": ""
+        },
+        "editor": {
+          "format": "auto",
+          "height": 600
+        },
+        "gaode": {
+          "key": "",
+          "plugin": "AMap.Scale,AMap.ToolBar"
+        },
+        "getOption": "\nconst xAxis = [];\nconst yAxis = [];\nconst graph = [];\n\ndata.series.map((s) => {\n  const rows = s.fields.find((f) => f.type === 'string').values.buffer || s.fields.find((f) => f.type === 'string').values;\n  const fields = s.fields.filter((f) => f.type === 'number');\n\n  rows.map((d) => {\n    xAxis.push(d);\n  });\n\n  fields.map((d, i) => {\n    yAxis.push(d.name);\n    d.values.map((v, j) => {\n      graph.push([j, i, (v * 100).toFixed(0)])\n    })\n  });\n\n});\n\nreturn {\n  tooltip: {\n    position: 'top',\n    formatter: function (param) {\n      return `Bytes: ${param.data[2]} %`\n    }\n  },\n  grid: {\n    height: '50%',\n    top: '10%'\n  },\n  xAxis: {\n    type: 'category',\n    data: xAxis,\n    splitArea: {\n      show: true\n    },\n    axisLabel: {\n      formatter: function (value) {\n        hourMapping = [\n          '12a', '1a', '2a', '3a', '4a', '5a', '6a',\n          '7a', '8a', '9a', '10a', '11a',\n          '12p', '1p', '2p', '3p', '4p', '5p',\n          '6p', '7p', '8p', '9p', '10p', '11p'\n        ]\n        return hourMapping[value];\n      }\n    }\n  },\n  yAxis: {\n    type: 'category',\n    data: yAxis,\n    splitArea: {\n      show: true\n    },\n    axisLabel: {\n      formatter: function (value) {\n        weekMapping = [\n          undefined, 'Monday', 'Tuesday', 'Wednesday',\n          'Thursday', 'Friday', 'Saturday', 'Sunday'\n        ]\n        return weekMapping[value];\n      }\n    }\n  },\n  visualMap: {\n    min: 0,\n    max: 10,\n    calculable: true,\n    orient: 'horizontal',\n    left: 'center',\n    bottom: '15%'\n  },\n  series: [\n    {\n      name: 'Punch Card',\n      type: 'heatmap',\n      data: graph,\n      label: {\n        show: true\n      },\n      emphasis: {\n        itemStyle: {\n          shadowBlur: 10,\n          shadowColor: 'rgba(0, 0, 0, 0.5)'\n        }\n      }\n    }\n  ]\n};",
+        "google": {
+          "callback": "gmapReady",
+          "key": ""
+        },
+        "map": "none",
+        "renderer": "canvas",
+        "themeEditor": {
+          "config": "{}",
+          "height": 400,
+          "name": "default"
+        }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "datasource": {
+            "type": "grafana-athena-datasource",
+            "uid": "Bn93a3_Vk"
+          },
+          "format": 1,
+          "rawSQL": "SELECT \n  hour(timestamp) as hour,\n\tday_of_week(timestamp) as day_of_week,\n\tsum(packets) as packets, \n\tsum(bytes) as bytes, \n\tcount(1) as requests,\n\tsum(sum(bytes)) over() as all_bytes\nFROM \"$__table\"\nWHERE \"account_id\" IN (${account_id:sqlstring}) \n\tAND \"region\" IN (${region:sqlstring}) \n\tAND \"vpc-id\" IN (${vpc_id:sqlstring}) \n\tAND \"action\" IN (${action:sqlstring}) \n\tAND \"flow-direction\" IN (${flow_direction:sqlstring})\n\tAND \"flow-direction\" != '-'\n\tAND \"type\" IN (${type:sqlstring})\n\tAND $__unixEpochFilter(time / 1000)\n  AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\tOR event_hour = $__rawTimeFrom('yyyyMMdd00'))\nGROUP BY hour(timestamp), day_of_week(timestamp)\nORDER BY day_of_week(timestamp) asc, hour(timestamp) asc",
+          "refId": "Metrics",
+          "table": "vpcflow_metrics"
+        }
+      ],
+      "title": "* Heat Map",
+      "transformations": [
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "all_bytes": {
+                "aggregations": [
+                  "mean"
+                ],
+                "operation": "aggregate"
+              },
+              "bytes": {
+                "aggregations": [
+                  "sum"
+                ],
+                "operation": "aggregate"
+              },
+              "day_of_week": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "dstaddr": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "hour": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "requests": {
+                "aggregations": [
+                  "sum"
+                ]
+              },
+              "srcaddr": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "subnet-id": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "timestamp": {
+                "aggregations": [],
+                "operation": "groupby"
+              }
+            }
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "bytes_percent",
+            "binary": {
+              "left": "bytes (sum)",
+              "operator": "/",
+              "reducer": "sum",
+              "right": "all_bytes (mean)"
+            },
+            "mode": "binary",
+            "reduce": {
+              "reducer": "sum"
+            },
+            "replaceFields": false
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "desc": false,
+                "field": "hour"
+              }
+            ]
+          }
+        },
+        {
+          "id": "groupingToMatrix",
+          "options": {
+            "columnField": "day_of_week",
+            "emptyValue": "empty",
+            "rowField": "hour",
+            "valueField": "bytes_percent"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {
+              "1": 1,
+              "2": 2,
+              "3": 3,
+              "hour\\day_of_week": 0
+            },
+            "renameByName": {
+              "1": "Monday",
+              "2": "Tuesday",
+              "3": "Wednesday",
+              "4": "Thursday",
+              "5": "Friday",
+              "6": "Saturday",
+              "7": "Sunday",
+              "hour\\day_of_week": "hour"
+            }
+          }
+        }
+      ],
+      "type": "volkovlabs-echarts-panel"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "The path that egress traffic takes to the destination. To determine whether the traffic is egress traffic, check the flow-direction field. The possible values are as follows. If none of the values apply, the field is set to -.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "percentage",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "#EAB839",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 15,
+        "w": 12,
+        "x": 12,
+        "y": 84
+      },
+      "id": 59,
+      "options": {
+        "displayMode": "gradient",
+        "minVizHeight": 10,
+        "minVizWidth": 0,
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "text": {
+          "titleSize": 16
+        },
+        "valueMode": "color"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 45,
+          "refId": "A"
+        }
+      ],
+      "title": "Egress Traffic Path",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "egress"
+                  }
+                },
+                "fieldName": "flow-direction"
+              }
+            ],
+            "match": "all",
+            "type": "include"
+          }
+        },
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "bytes": {
+                "aggregations": [
+                  "sum"
+                ]
+              },
+              "elb_status_code": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "flow-direction": {
+                "aggregations": []
+              },
+              "pkt-dst-aws-service": {
+                "aggregations": []
+              },
+              "pkt-src-aws-service": {
+                "aggregations": []
+              },
+              "protocol": {
+                "aggregations": []
+              },
+              "requests": {
+                "aggregations": [
+                  "sum"
+                ],
+                "operation": "aggregate"
+              },
+              "terminatingruleid": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "time": {
+                "aggregations": []
+              },
+              "traffic-path": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "type": {
+                "aggregations": []
+              },
+              "vpc-id": {
+                "aggregations": []
+              },
+              "webaclname": {
+                "aggregations": []
+              }
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "desc": true,
+                "field": "traffic-path"
+              }
+            ]
+          }
+        },
+        {
+          "id": "rowsToFields",
+          "options": {
+            "mappings": [
+              {
+                "fieldName": "requests (sum)",
+                "handlerKey": "field.value"
+              },
+              {
+                "fieldName": "traffic-path",
+                "handlerKey": "field.name"
+              }
+            ]
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "1": "Through another resource in the same VPC, including resources that create a network interface in the VPC",
+              "2": "Through an internet gateway or a gateway VPC endpoint",
+              "3": "Through a virtual private gateway",
+              "4": "Through an intra-region VPC peering connection",
+              "5": "Through an inter-region VPC peering connection",
+              "6": "Through a local gateway",
+              "7": "Through a gateway VPC endpoint (Nitro-based instances only)",
+              "8": "Through an internet gateway (Nitro-based instances only)"
+            }
+          }
+        }
+      ],
+      "type": "bargauge"
+    }
+  ],
+  "refresh": "5m",
+  "revision": 1,
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "allValue": "SELECT \"account_id\" FROM \"$__table\" WHERE  event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH') \tOR event_hour = $__rawTimeFrom('yyyyMMdd00') GROUP BY \"account_id\"",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-athena-datasource",
+          "uid": "Bn93a3_Vk"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Account Id",
+        "multi": true,
+        "name": "account_id",
+        "options": [],
+        "query": {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT \"account_id\"\nFROM \"$__table\"\nWHERE  event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\tOR event_hour = $__rawTimeFrom('yyyyMMdd00')\nGROUP BY \"account_id\"",
+          "refId": "Metrics",
+          "table": "vpcflow_metrics"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "allValue": "SELECT \"region\" FROM \"$__table\" WHERE  event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH') \tOR event_hour = $__rawTimeFrom('yyyyMMdd00') GROUP BY \"region\"",
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "grafana-athena-datasource",
+          "uid": "Bn93a3_Vk"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Region",
+        "multi": true,
+        "name": "region",
+        "options": [],
+        "query": {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT \"region\"\nFROM \"$__table\"\nWHERE  event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\tOR event_hour = $__rawTimeFrom('yyyyMMdd00')\nGROUP BY \"region\"",
+          "refId": "Metrics",
+          "table": "vpcflow_metrics"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "allValue": "SELECT \"vpc-id\" FROM \"$__table\" WHERE  event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH') \tOR event_hour = $__rawTimeFrom('yyyyMMdd00') GROUP BY \"vpc-id\"",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-athena-datasource",
+          "uid": "Bn93a3_Vk"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": true,
+        "label": "VPC Id",
+        "multi": true,
+        "name": "vpc_id",
+        "options": [],
+        "query": {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT \"vpc-id\"\nFROM \"$__table\"\nWHERE  event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\tOR event_hour = $__rawTimeFrom('yyyyMMdd00')\nGROUP BY \"vpc-id\"",
+          "refId": "Metrics",
+          "table": "vpcflow_metrics"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "hide": 0,
+        "includeAll": true,
+        "label": "Action",
+        "multi": true,
+        "name": "action",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "ACCEPT",
+            "value": "ACCEPT"
+          },
+          {
+            "selected": false,
+            "text": "REJECT",
+            "value": "REJECT"
+          },
+          {
+            "selected": false,
+            "text": "-",
+            "value": "-"
+          }
+        ],
+        "query": "ACCEPT, REJECT, -",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "description": "",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Flow Direction",
+        "multi": true,
+        "name": "flow_direction",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "ingress",
+            "value": "ingress"
+          },
+          {
+            "selected": false,
+            "text": "egress",
+            "value": "egress"
+          },
+          {
+            "selected": false,
+            "text": "-",
+            "value": "-"
+          }
+        ],
+        "query": "ingress, egress, -",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "hide": 0,
+        "includeAll": true,
+        "label": "Type",
+        "multi": true,
+        "name": "type",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "IPv4",
+            "value": "IPv4"
+          },
+          {
+            "selected": false,
+            "text": "IPv6",
+            "value": "IPv6"
+          },
+          {
+            "selected": false,
+            "text": "EFA",
+            "value": "EFA"
+          },
+          {
+            "selected": false,
+            "text": "-",
+            "value": "-"
+          }
+        ],
+        "query": "IPv4, IPv6, EFA, -",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "auto": true,
+        "auto_count": 100,
+        "auto_min": "1m",
+        "current": {
+          "selected": false,
+          "text": "auto",
+          "value": "$__auto_interval_interval"
+        },
+        "hide": 0,
+        "label": "Interval",
+        "name": "interval",
+        "options": [
+          {
+            "selected": true,
+            "text": "auto",
+            "value": "$__auto_interval_interval"
+          },
+          {
+            "selected": false,
+            "text": "1m",
+            "value": "1m"
+          },
+          {
+            "selected": false,
+            "text": "10m",
+            "value": "10m"
+          },
+          {
+            "selected": false,
+            "text": "30m",
+            "value": "30m"
+          },
+          {
+            "selected": false,
+            "text": "1h",
+            "value": "1h"
+          },
+          {
+            "selected": false,
+            "text": "6h",
+            "value": "6h"
+          },
+          {
+            "selected": false,
+            "text": "12h",
+            "value": "12h"
+          },
+          {
+            "selected": false,
+            "text": "1d",
+            "value": "1d"
+          },
+          {
+            "selected": false,
+            "text": "7d",
+            "value": "7d"
+          },
+          {
+            "selected": false,
+            "text": "14d",
+            "value": "14d"
+          },
+          {
+            "selected": false,
+            "text": "30d",
+            "value": "30d"
+          }
+        ],
+        "query": "1m,10m,30m,1h,6h,12h,1d,7d,14d,30d",
+        "queryValue": "",
+        "refresh": 2,
+        "skipUrlSync": false,
+        "type": "interval"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ]
+  },
+  "timezone": "",
+  "title": "vpcflow-dashboard",
+  "uid": "69474265-b72d-45e9-8465-6c4320e622ba-01",
+  "version": 2,
+  "weekStart": ""
+}

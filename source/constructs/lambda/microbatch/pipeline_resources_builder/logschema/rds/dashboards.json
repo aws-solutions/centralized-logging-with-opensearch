@@ -1,0 +1,3937 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 982,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 19,
+      "panels": [],
+      "title": "Overview (updates based on top time selection)",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "fixed"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 0,
+        "y": 1
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "/^requests$/",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "datasource": {
+            "type": "grafana-athena-datasource",
+            "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+          },
+          "format": 1,
+          "rawSQL": "SELECT db_cluster_identifier, db_instance_identifier, engine, concat_ws(': ', engine, engine_version) as engine_version, log_type, sum(requests) as requests, sum(avg_query_time) / sum(requests) as avg_query_time\nFROM \"$__table\"\nWHERE db_cluster_identifier IN (${cluster:sqlstring})\n    AND db_instance_identifier IN (${instance:sqlstring})\n    AND engine IN (${engine:sqlstring})\n    AND $__unixEpochFilter(time / 1000)\n    AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n        OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\nGROUP BY db_cluster_identifier, db_instance_identifier, engine, concat_ws(': ', engine, engine_version), log_type\n",
+          "refId": "Metrics",
+          "table": "rds_metrics"
+        }
+      ],
+      "title": "* Total Log Events",
+      "transformations": [],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "fixed"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 6,
+        "y": 1
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "distinctCount"
+          ],
+          "fields": "/^db_cluster_identifier$/",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 2,
+          "refId": "A",
+          "withTransforms": false
+        }
+      ],
+      "title": "Unique Cluster Identifier",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": ""
+                  }
+                },
+                "fieldName": "db_cluster_identifier"
+              }
+            ],
+            "match": "all",
+            "type": "exclude"
+          }
+        },
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "db_cluster_identifier": {
+                "aggregations": [],
+                "operation": "groupby"
+              }
+            }
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "fixed"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 12,
+        "y": 1
+      },
+      "id": 89,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "distinctCount"
+          ],
+          "fields": "/^db_instance_identifier$/",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 2,
+          "refId": "A",
+          "withTransforms": false
+        }
+      ],
+      "title": "Unique Instance Identifier",
+      "transformations": [
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "db_instance_identifier": {
+                "aggregations": [],
+                "operation": "groupby"
+              }
+            }
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "palette-classic-by-name"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 6,
+        "x": 18,
+        "y": 1
+      },
+      "id": 91,
+      "options": {
+        "displayLabels": [
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 2,
+          "refId": "A"
+        }
+      ],
+      "title": "Engine",
+      "transformations": [
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "db_cluster_identifier": {
+                "aggregations": [
+                  "distinctCount"
+                ]
+              },
+              "db_instance_identifier": {
+                "aggregations": [
+                  "distinctCount"
+                ],
+                "operation": "aggregate"
+              },
+              "engine": {
+                "aggregations": [
+                  "distinctCount"
+                ],
+                "operation": "groupby"
+              }
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "db_cluster_identifier (distinctCount)": "db_instance_identifier",
+              "db_instance_identifier (distinctCount)": "Count",
+              "engine": ""
+            }
+          }
+        },
+        {
+          "id": "rowsToFields",
+          "options": {
+            "mappings": [
+              {
+                "fieldName": "engine",
+                "handlerKey": "field.name"
+              },
+              {
+                "fieldName": "Count",
+                "handlerKey": "field.value"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 1000
+              },
+              {
+                "color": "red",
+                "value": 2000
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Audit"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "General"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Error"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "General"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Query"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 16,
+        "w": 18,
+        "x": 0,
+        "y": 9
+      },
+      "id": 90,
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.8,
+        "fullHighlight": true,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "orientation": "auto",
+        "showValue": "auto",
+        "stacking": "normal",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xField": "time",
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 100
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "datasource": {
+            "type": "grafana-athena-datasource",
+            "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+          },
+          "format": 1,
+          "rawSQL": "SELECT t.time, map_agg(t.log_type, t.requests) as data\nFROM (\n    SELECT $__unixEpochGroup(time / 1000, '${interval}') as time\n            , log_type\n            , sum(requests) as requests\n    FROM \"$__table\"\n    WHERE db_cluster_identifier IN (${cluster:sqlstring})\n        AND db_instance_identifier IN (${instance:sqlstring})\n        AND engine IN (${engine:sqlstring})\n        AND $__unixEpochFilter(time / 1000)\n        AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n            OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n    GROUP BY $__unixEpochGroup(time / 1000, '${interval}'), log_type\n) t\nGROUP BY t.time",
+          "refId": "Metrics",
+          "table": "rds_metrics"
+        }
+      ],
+      "title": "* Log Events History By Type",
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "kvp",
+            "jsonPaths": [],
+            "keepTime": true,
+            "replace": true,
+            "source": "data"
+          }
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "destinationType": "number",
+                "targetField": "Query"
+              },
+              {
+                "destinationType": "number",
+                "targetField": "Audit"
+              },
+              {
+                "destinationType": "number",
+                "targetField": "General"
+              },
+              {
+                "destinationType": "number",
+                "targetField": "SlowQuery"
+              },
+              {
+                "destinationType": "number",
+                "targetField": "Error"
+              }
+            ],
+            "fields": {}
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "time"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "barchart"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "palette-classic-by-name"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 6,
+        "x": 18,
+        "y": 13
+      },
+      "id": 38,
+      "options": {
+        "displayLabels": [
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 2,
+          "refId": "A"
+        }
+      ],
+      "title": "Engine Version",
+      "transformations": [
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "db_instance_identifier": {
+                "aggregations": [
+                  "distinctCount"
+                ],
+                "operation": "aggregate"
+              },
+              "engine": {
+                "aggregations": []
+              },
+              "engine_version": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "requests": {
+                "aggregations": [
+                  "sum"
+                ]
+              },
+              "status_code_group": {
+                "aggregations": [],
+                "operation": "groupby"
+              }
+            }
+          }
+        },
+        {
+          "disabled": true,
+          "id": "rowsToFields",
+          "options": {
+            "mappings": [
+              {
+                "fieldName": "engine_version",
+                "handlerKey": "field.name"
+              },
+              {
+                "fieldName": "db_instance_identifier (distinctCount)",
+                "handlerKey": "field.value"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "dark-green",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 40,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 1000
+              },
+              {
+                "color": "red",
+                "value": 2000
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 25
+      },
+      "id": 93,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "min",
+            "max",
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 90,
+          "refId": "A",
+          "withTransforms": true
+        }
+      ],
+      "title": "Log Events History",
+      "transformations": [
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "time"
+              }
+            ]
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "Count",
+            "mode": "reduceRow",
+            "reduce": {
+              "include": [
+                "Audit",
+                "General",
+                "Query",
+                "SlowQuery",
+                "Error"
+              ],
+              "reducer": "sum"
+            },
+            "replaceFields": true
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 37
+      },
+      "id": 54,
+      "panels": [],
+      "title": "Audit - MySQL",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "fixed"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 5,
+        "x": 0,
+        "y": 38
+      },
+      "id": 100,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "/^requests$/",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 2,
+          "refId": "A"
+        }
+      ],
+      "title": "Total Audit Events",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "Audit"
+                  }
+                },
+                "fieldName": "log_type"
+              }
+            ],
+            "match": "all",
+            "type": "include"
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 19,
+        "x": 5,
+        "y": 38
+      },
+      "id": 104,
+      "options": {
+        "baidu": {
+          "callback": "bmapReady",
+          "key": ""
+        },
+        "editor": {
+          "format": "auto",
+          "height": 600
+        },
+        "gaode": {
+          "key": "",
+          "plugin": "AMap.Scale,AMap.ToolBar"
+        },
+        "getOption": "function shortFormatter(number) {\n  if (number < 1000) {\n    return number;\n  } else if (number >= 1000 && number < 1_000_000) {\n    return (number / 1000).toFixed(0) + \" K\";\n  } else if (number >= 1_000_000 && number < 1_000_000_000) {\n    return (number / 1_000_000).toFixed(0) + \" M\";\n  } else if (number >= 1_000_000_000 && number < 1_000_000_000_000) {\n    return (number / 1_000_000_000).toFixed(0) + \" B\";\n  } else if (number >= 1_000_000_000_000 && number < 1_000_000_000_000_000) {\n    return (number / 1_000_000_000_000).toFixed(0) + \" T\";\n  }\n}\n\nconst series = data.series.reduce((outer, { fields }) => {\n  const series_map = fields.reduce((inner, v) => {\n    inner[v.name] = v;\n    return inner\n  }, {});\n\n  const { time, ...rest } = series_map;\n  outer['time'] = time\n  outer['series'] = []\n  Object.entries(rest).forEach(([k, v]) => {\n    const option = {\n      name: v.state.displayName,\n      type: 'line',\n      symbol: 'none',\n      sampling: 'lttb',\n      animation: false,\n      // animationDuration: 5000,\n      // endLabel: {\n      //   show: true,\n      //   formatter: function (params) {\n      //     return k + ': ' + params.value;\n      //   }\n      // },\n      // itemStyle: {\n      //   color: 'rgb(255, 70, 131)'\n      // },\n      // areaStyle: {\n      //   color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [\n      //     {\n      //       offset: 0,\n      //       color: 'rgb(255, 158, 68)'\n      //     },\n      //     {\n      //       offset: 1,\n      //       color: 'rgb(255, 70, 131)'\n      //     }\n      //   ])\n      // },\n      data: v.values\n    };\n    outer['series'].push(option)\n  })\n  return outer\n}, {});\n\nreturn {\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: {\n      type: 'cross'\n    }\n    // trigger: 'axis',\n    // axisPointer: {\n    //   type: 'cross'\n    // },\n    // backgroundColor: 'rgba(255, 255, 255, 0.8)',\n    // position: function (pos, params, el, elRect, size) {\n    //   var obj = { top: 10 };\n    //   obj[['left', 'right'][+(pos[0] < size.viewSize[0] / 2)]] = 30;\n    //   return obj;\n    // },\n    // extraCssText: 'width: 170px'\n  },\n  grid: {\n    bottom: \"3%\",\n    containLabel: true,\n    left: \"1%\",\n    right: \"3%\"\n  },\n  // legend: {\n  // type: 'scroll',\n  // orient: 'vertical',\n  // right: 10,\n  // top: 20,\n  // bottom: 20,\n  //   data: series.series.map((v) => v.name),\n  // },\n  xAxis: {\n    type: 'category',\n    boundaryGap: false,\n    data: series.time.values,\n    interval: 3,\n  },\n  yAxis: {\n    type: 'value',\n    boundaryGap: [0, '100%'],\n    axisLabel: {\n      interval: 'auto',\n      formatter: function (value) {\n        return shortFormatter(value);\n      }\n    }\n  },\n  series: series.series\n};",
+        "google": {
+          "callback": "gmapReady",
+          "key": ""
+        },
+        "map": "none",
+        "renderer": "canvas",
+        "themeEditor": {
+          "config": "{}",
+          "height": 400,
+          "name": "default"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "datasource": {
+            "type": "grafana-athena-datasource",
+            "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+          },
+          "format": 1,
+          "rawSQL": "SELECT t.time\n    , map_agg(t.db_instance_identifier, t.requests) FILTER (WHERE t.db_instance_identifier IS NOT NULL AND t.db_instance_identifier != '') as db_instance_identifier\n    , map_agg(t.host, t.requests) FILTER (WHERE t.host IS NOT NULL AND t.host != '') as host\n    , map_agg(t.username, t.requests) FILTER (WHERE t.username IS NOT NULL AND t.username != '') as username\n    , map_agg(t.database, t.requests) FILTER (WHERE t.database IS NOT NULL AND t.database != '') as database\n    , map_agg(t.operation, t.requests) FILTER (WHERE t.operation IS NOT NULL AND t.operation != '') as operation\n    , sum(connection_ids_cnt) as connection_ids_cnt\nFROM (\n    SELECT $__unixEpochGroup(time / 1000, '${interval}') as time\n        , db_instance_identifier\n        , host\n        , username\n        , database\n        , operation\n        , cardinality(array_distinct(flatten(array_agg(connection_ids)))) as connection_ids_cnt\n        , sum(requests) as requests\n    FROM \"$__table\"\n    WHERE log_type = 'Audit'\n        AND db_cluster_identifier IN (${cluster:sqlstring})\n        AND db_instance_identifier IN (${instance:sqlstring})\n        AND engine IN (${engine:sqlstring})\n        AND $__unixEpochFilter(time / 1000)\n        AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n            OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n    GROUP BY $__unixEpochGroup(time / 1000, '${interval}'), db_instance_identifier, host, username, database, operation\n) t\nGROUP BY t.time\n",
+          "refId": "Metrics",
+          "table": "rds_metrics"
+        }
+      ],
+      "title": "* Time History By Connection Id (Exclude null values)",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "connection_ids_cnt": false,
+              "database": true,
+              "db_instance_identifier": true,
+              "host": true,
+              "operation": true,
+              "username": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "connection_ids_cnt": "Count",
+              "username": ""
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "time"
+              }
+            ]
+          }
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "dateFormat": "YYYY-MM-DD HH:mm:ss",
+                "destinationType": "string",
+                "targetField": "time"
+              }
+            ],
+            "fields": {}
+          }
+        }
+      ],
+      "type": "volkovlabs-echarts-panel"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "",
+      "gridPos": {
+        "h": 12,
+        "w": 5,
+        "x": 0,
+        "y": 50
+      },
+      "id": 24,
+      "options": {
+        "baidu": {
+          "callback": "bmapReady",
+          "key": ""
+        },
+        "editor": {
+          "format": "auto",
+          "height": 600
+        },
+        "gaode": {
+          "key": "",
+          "plugin": "AMap.Scale,AMap.ToolBar"
+        },
+        "getOption": "function sum(values) {\n  return values.reduce((accumulator, currentValue) => {\n    const numericValue = typeof currentValue === \"string\" ? parseFloat(currentValue) : currentValue;\n    return accumulator + numericValue;\n  }, 0);\n};\n\nconst series = data.series.map((s) => {\n  const _data = s.fields.map((field) => {\n    return { value: sum(field.values), name: field.name }\n  });\n\n  return {\n    type: 'pie',\n    radius: ['40%', '70%'],\n    avoidLabelOverlap: false,\n    itemStyle: {\n      borderRadius: 5,\n      // borderColor: '#fff',\n      borderWidth: 2\n    },\n    label: {\n      show: false,\n      position: 'center',\n      // formatter: '{b}: {c} ({d}%)'\n      // formatter: ['{b| {b}}', '{c| {c}}'].join('\\n'),\n    },\n    emphasis: {\n      label: {\n        show: true,\n        fontSize: '40',\n        fontWeight: 'bold'\n      }\n    },\n    labelLine: {\n      show: false\n    },\n    data: _data\n  }\n});\n\nreturn {\n  tooltip: {\n    trigger: 'item',\n    formatter(params) {\n      return `${params.marker}${params.name}<span style=\"float: right; margin-left: 20px\"><b>${params.value.toLocaleString()}</b> (${params.percent}%)</span>`;\n    }\n  },\n  legend: {\n    top: '5%',\n    left: 'center'\n  },\n  series: series\n};",
+        "google": {
+          "callback": "gmapReady",
+          "key": ""
+        },
+        "map": "none",
+        "renderer": "canvas",
+        "themeEditor": {
+          "config": "{}",
+          "height": 400,
+          "name": "default"
+        }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 104,
+          "refId": "A"
+        }
+      ],
+      "title": "Log Event By Operation",
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "kvp",
+            "replace": true,
+            "source": "operation"
+          }
+        }
+      ],
+      "type": "volkovlabs-echarts-panel"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 19,
+        "x": 5,
+        "y": 50
+      },
+      "id": 28,
+      "options": {
+        "baidu": {
+          "callback": "bmapReady",
+          "key": ""
+        },
+        "editor": {
+          "format": "auto",
+          "height": 600
+        },
+        "gaode": {
+          "key": "",
+          "plugin": "AMap.Scale,AMap.ToolBar"
+        },
+        "getOption": "function shortFormatter(number) {\n  if (number < 1000) {\n    return number;\n  } else if (number >= 1000 && number < 1_000_000) {\n    return (number / 1000).toFixed(0) + \" K\";\n  } else if (number >= 1_000_000 && number < 1_000_000_000) {\n    return (number / 1_000_000).toFixed(0) + \" M\";\n  } else if (number >= 1_000_000_000 && number < 1_000_000_000_000) {\n    return (number / 1_000_000_000).toFixed(0) + \" B\";\n  } else if (number >= 1_000_000_000_000 && number < 1_000_000_000_000_000) {\n    return (number / 1_000_000_000_000).toFixed(0) + \" T\";\n  }\n}\n\nconst series = data.series.reduce((outer, { fields }) => {\n  const series_map = fields.reduce((inner, v) => {\n    inner[v.name] = v;\n    return inner\n  }, {});\n\n  const { time, ...rest } = series_map;\n  outer['time'] = time\n  outer['series'] = []\n  Object.entries(rest).forEach(([k, v]) => {\n    const option = {\n      name: v.state.displayName,\n      type: 'line',\n      symbol: 'none',\n      sampling: 'lttb',\n      animation: false,\n      // animationDuration: 5000,\n      // endLabel: {\n      //   show: true,\n      //   formatter: function (params) {\n      //     return k + ': ' + params.value;\n      //   }\n      // },\n      // itemStyle: {\n      //   color: 'rgb(255, 70, 131)'\n      // },\n      // areaStyle: {\n      //   color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [\n      //     {\n      //       offset: 0,\n      //       color: 'rgb(255, 158, 68)'\n      //     },\n      //     {\n      //       offset: 1,\n      //       color: 'rgb(255, 70, 131)'\n      //     }\n      //   ])\n      // },\n      data: v.values\n    };\n    outer['series'].push(option)\n  })\n  return outer\n}, {});\n\nreturn {\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: {\n      type: 'cross'\n    }\n    // trigger: 'axis',\n    // axisPointer: {\n    //   type: 'cross'\n    // },\n    // backgroundColor: 'rgba(255, 255, 255, 0.8)',\n    // position: function (pos, params, el, elRect, size) {\n    //   var obj = { top: 10 };\n    //   obj[['left', 'right'][+(pos[0] < size.viewSize[0] / 2)]] = 30;\n    //   return obj;\n    // },\n    // extraCssText: 'width: 170px'\n  },\n  grid: {\n    bottom: \"3%\",\n    containLabel: true,\n    left: \"1%\",\n    right: \"3%\"\n  },\n  // legend: {\n  // type: 'scroll',\n  // orient: 'vertical',\n  // right: 10,\n  // top: 20,\n  // bottom: 20,\n  //   data: series.series.map((v) => v.name),\n  // },\n  xAxis: {\n    type: 'category',\n    boundaryGap: false,\n    data: series.time.values,\n    interval: 3,\n  },\n  yAxis: {\n    type: 'value',\n    boundaryGap: [0, '100%'],\n    axisLabel: {\n      interval: 'auto',\n      formatter: function (value) {\n        return shortFormatter(value);\n      }\n    }\n  },\n  series: series.series\n};",
+        "google": {
+          "callback": "gmapReady",
+          "key": ""
+        },
+        "map": "none",
+        "renderer": "canvas",
+        "themeEditor": {
+          "config": "{}",
+          "height": 400,
+          "name": "default"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 104,
+          "refId": "A"
+        }
+      ],
+      "title": "Time History Per Host (Exclude null values)",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "connection_ids_cnt": true,
+              "database": true,
+              "db_instance_identifier": true,
+              "operation": true,
+              "username": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "connection_ids_cnt": "",
+              "username": ""
+            }
+          }
+        },
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "isNotNull",
+                  "options": {}
+                },
+                "fieldName": "host"
+              }
+            ],
+            "match": "all",
+            "type": "include"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "kvp",
+            "keepTime": true,
+            "replace": true,
+            "source": "host"
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "time"
+              }
+            ]
+          }
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "dateFormat": "YYYY-MM-DD HH:mm:ss",
+                "destinationType": "string",
+                "targetField": "time"
+              }
+            ],
+            "fields": {}
+          }
+        }
+      ],
+      "type": "volkovlabs-echarts-panel"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 62
+      },
+      "id": 108,
+      "options": {
+        "baidu": {
+          "callback": "bmapReady",
+          "key": ""
+        },
+        "editor": {
+          "format": "auto",
+          "height": 600
+        },
+        "gaode": {
+          "key": "",
+          "plugin": "AMap.Scale,AMap.ToolBar"
+        },
+        "getOption": "function shortFormatter(number) {\n  if (number < 1000) {\n    return number;\n  } else if (number >= 1000 && number < 1_000_000) {\n    return (number / 1000).toFixed(0) + \" K\";\n  } else if (number >= 1_000_000 && number < 1_000_000_000) {\n    return (number / 1_000_000).toFixed(0) + \" M\";\n  } else if (number >= 1_000_000_000 && number < 1_000_000_000_000) {\n    return (number / 1_000_000_000).toFixed(0) + \" B\";\n  } else if (number >= 1_000_000_000_000 && number < 1_000_000_000_000_000) {\n    return (number / 1_000_000_000_000).toFixed(0) + \" T\";\n  }\n}\n\nconst series = data.series.reduce((outer, { fields }) => {\n  const series_map = fields.reduce((inner, v) => {\n    inner[v.name] = v;\n    return inner\n  }, {});\n\n  const { time, ...rest } = series_map;\n  outer['time'] = time\n  outer['series'] = []\n  Object.entries(rest).forEach(([k, v]) => {\n    const option = {\n      name: v.state.displayName,\n      type: 'line',\n      symbol: 'none',\n      sampling: 'lttb',\n      animation: false,\n      // animationDuration: 5000,\n      // endLabel: {\n      //   show: true,\n      //   formatter: function (params) {\n      //     return k + ': ' + params.value;\n      //   }\n      // },\n      // itemStyle: {\n      //   color: 'rgb(255, 70, 131)'\n      // },\n      // areaStyle: {\n      //   color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [\n      //     {\n      //       offset: 0,\n      //       color: 'rgb(255, 158, 68)'\n      //     },\n      //     {\n      //       offset: 1,\n      //       color: 'rgb(255, 70, 131)'\n      //     }\n      //   ])\n      // },\n      data: v.values\n    };\n    outer['series'].push(option)\n  })\n  return outer\n}, {});\n\nreturn {\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: {\n      type: 'cross'\n    }\n    // trigger: 'axis',\n    // axisPointer: {\n    //   type: 'cross'\n    // },\n    // backgroundColor: 'rgba(255, 255, 255, 0.8)',\n    // position: function (pos, params, el, elRect, size) {\n    //   var obj = { top: 10 };\n    //   obj[['left', 'right'][+(pos[0] < size.viewSize[0] / 2)]] = 30;\n    //   return obj;\n    // },\n    // extraCssText: 'width: 170px'\n  },\n  grid: {\n    bottom: \"3%\",\n    containLabel: true,\n    left: \"1%\",\n    right: \"3%\"\n  },\n  // legend: {\n  // type: 'scroll',\n  // orient: 'vertical',\n  // right: 10,\n  // top: 20,\n  // bottom: 20,\n  //   data: series.series.map((v) => v.name),\n  // },\n  xAxis: {\n    type: 'category',\n    boundaryGap: false,\n    data: series.time.values,\n    interval: 3,\n  },\n  yAxis: {\n    type: 'value',\n    boundaryGap: [0, '100%'],\n    axisLabel: {\n      interval: 'auto',\n      formatter: function (value) {\n        return shortFormatter(value);\n      }\n    }\n  },\n  series: series.series\n};",
+        "google": {
+          "callback": "gmapReady",
+          "key": ""
+        },
+        "map": "none",
+        "renderer": "canvas",
+        "themeEditor": {
+          "config": "{}",
+          "height": 400,
+          "name": "default"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 104,
+          "refId": "A"
+        }
+      ],
+      "title": "Time History Per Instance (Exclude null values)",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "connection_ids_cnt": true,
+              "database": true,
+              "db_instance_identifier": false,
+              "host": true,
+              "operation": true,
+              "username": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "connection_ids_cnt": "",
+              "username": ""
+            }
+          }
+        },
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "isNotNull",
+                  "options": {}
+                },
+                "fieldName": "db_instance_identifier"
+              }
+            ],
+            "match": "all",
+            "type": "include"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "kvp",
+            "keepTime": true,
+            "replace": true,
+            "source": "db_instance_identifier"
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "time"
+              }
+            ]
+          }
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "dateFormat": "YYYY-MM-DD HH:mm:ss",
+                "destinationType": "string",
+                "targetField": "time"
+              }
+            ],
+            "fields": {}
+          }
+        }
+      ],
+      "type": "volkovlabs-echarts-panel"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 0,
+        "y": 74
+      },
+      "id": 102,
+      "options": {
+        "baidu": {
+          "callback": "bmapReady",
+          "key": ""
+        },
+        "editor": {
+          "format": "auto",
+          "height": 600
+        },
+        "gaode": {
+          "key": "",
+          "plugin": "AMap.Scale,AMap.ToolBar"
+        },
+        "getOption": "function shortFormatter(number) {\n  if (number < 1000) {\n    return number;\n  } else if (number >= 1000 && number < 1_000_000) {\n    return (number / 1000).toFixed(0) + \" K\";\n  } else if (number >= 1_000_000 && number < 1_000_000_000) {\n    return (number / 1_000_000).toFixed(0) + \" M\";\n  } else if (number >= 1_000_000_000 && number < 1_000_000_000_000) {\n    return (number / 1_000_000_000).toFixed(0) + \" B\";\n  } else if (number >= 1_000_000_000_000 && number < 1_000_000_000_000_000) {\n    return (number / 1_000_000_000_000).toFixed(0) + \" T\";\n  }\n}\n\nconst series = data.series.reduce((outer, { fields }) => {\n  const series_map = fields.reduce((inner, v) => {\n    inner[v.name] = v;\n    return inner\n  }, {});\n\n  const { time, ...rest } = series_map;\n  outer['time'] = time\n  outer['series'] = []\n  Object.entries(rest).forEach(([k, v]) => {\n    const option = {\n      name: v.state.displayName,\n      type: 'line',\n      symbol: 'none',\n      sampling: 'lttb',\n      animation: false,\n      // animationDuration: 5000,\n      // endLabel: {\n      //   show: true,\n      //   formatter: function (params) {\n      //     return k + ': ' + params.value;\n      //   }\n      // },\n      // itemStyle: {\n      //   color: 'rgb(255, 70, 131)'\n      // },\n      // areaStyle: {\n      //   color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [\n      //     {\n      //       offset: 0,\n      //       color: 'rgb(255, 158, 68)'\n      //     },\n      //     {\n      //       offset: 1,\n      //       color: 'rgb(255, 70, 131)'\n      //     }\n      //   ])\n      // },\n      data: v.values\n    };\n    outer['series'].push(option)\n  })\n  return outer\n}, {});\n\nreturn {\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: {\n      type: 'cross'\n    }\n    // trigger: 'axis',\n    // axisPointer: {\n    //   type: 'cross'\n    // },\n    // backgroundColor: 'rgba(255, 255, 255, 0.8)',\n    // position: function (pos, params, el, elRect, size) {\n    //   var obj = { top: 10 };\n    //   obj[['left', 'right'][+(pos[0] < size.viewSize[0] / 2)]] = 30;\n    //   return obj;\n    // },\n    // extraCssText: 'width: 170px'\n  },\n  grid: {\n    bottom: \"3%\",\n    containLabel: true,\n    left: \"1%\",\n    right: \"3%\"\n  },\n  // legend: {\n  // type: 'scroll',\n  // orient: 'vertical',\n  // right: 10,\n  // top: 20,\n  // bottom: 20,\n  //   data: series.series.map((v) => v.name),\n  // },\n  xAxis: {\n    type: 'category',\n    boundaryGap: false,\n    data: series.time.values,\n    interval: 3,\n  },\n  yAxis: {\n    type: 'value',\n    boundaryGap: [0, '100%'],\n    axisLabel: {\n      interval: 'auto',\n      formatter: function (value) {\n        return shortFormatter(value);\n      }\n    }\n  },\n  series: series.series\n};",
+        "google": {
+          "callback": "gmapReady",
+          "key": ""
+        },
+        "map": "none",
+        "renderer": "canvas",
+        "themeEditor": {
+          "config": "{}",
+          "height": 400,
+          "name": "default"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 28,
+          "refId": "A"
+        }
+      ],
+      "title": "Time History Per Username (Exclude null values)",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "connection_ids_cnt": true,
+              "database": true,
+              "db_instance_identifier": true,
+              "host": true,
+              "operation": true,
+              "username": false
+            },
+            "indexByName": {},
+            "renameByName": {
+              "connection_ids_cnt": "",
+              "username": ""
+            }
+          }
+        },
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "isNotNull",
+                  "options": {}
+                },
+                "fieldName": "username"
+              }
+            ],
+            "match": "all",
+            "type": "include"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "kvp",
+            "keepTime": true,
+            "replace": true,
+            "source": "username"
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "time"
+              }
+            ]
+          }
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "dateFormat": "YYYY-MM-DD HH:mm:ss",
+                "destinationType": "string",
+                "targetField": "time"
+              }
+            ],
+            "fields": {}
+          }
+        }
+      ],
+      "type": "volkovlabs-echarts-panel"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 12,
+        "y": 74
+      },
+      "id": 103,
+      "options": {
+        "baidu": {
+          "callback": "bmapReady",
+          "key": ""
+        },
+        "editor": {
+          "format": "auto",
+          "height": 600
+        },
+        "gaode": {
+          "key": "",
+          "plugin": "AMap.Scale,AMap.ToolBar"
+        },
+        "getOption": "function shortFormatter(number) {\n  if (number < 1000) {\n    return number;\n  } else if (number >= 1000 && number < 1_000_000) {\n    return (number / 1000).toFixed(0) + \" K\";\n  } else if (number >= 1_000_000 && number < 1_000_000_000) {\n    return (number / 1_000_000).toFixed(0) + \" M\";\n  } else if (number >= 1_000_000_000 && number < 1_000_000_000_000) {\n    return (number / 1_000_000_000).toFixed(0) + \" B\";\n  } else if (number >= 1_000_000_000_000 && number < 1_000_000_000_000_000) {\n    return (number / 1_000_000_000_000).toFixed(0) + \" T\";\n  }\n}\n\nconst series = data.series.reduce((outer, { fields }) => {\n  const series_map = fields.reduce((inner, v) => {\n    inner[v.name] = v;\n    return inner\n  }, {});\n\n  const { time, ...rest } = series_map;\n  outer['time'] = time\n  outer['series'] = []\n  Object.entries(rest).forEach(([k, v]) => {\n    const option = {\n      name: v.state.displayName,\n      type: 'line',\n      symbol: 'none',\n      sampling: 'lttb',\n      animation: false,\n      // animationDuration: 5000,\n      // endLabel: {\n      //   show: true,\n      //   formatter: function (params) {\n      //     return k + ': ' + params.value;\n      //   }\n      // },\n      // itemStyle: {\n      //   color: 'rgb(255, 70, 131)'\n      // },\n      // areaStyle: {\n      //   color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [\n      //     {\n      //       offset: 0,\n      //       color: 'rgb(255, 158, 68)'\n      //     },\n      //     {\n      //       offset: 1,\n      //       color: 'rgb(255, 70, 131)'\n      //     }\n      //   ])\n      // },\n      data: v.values\n    };\n    outer['series'].push(option)\n  })\n  return outer\n}, {});\n\nreturn {\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: {\n      type: 'cross'\n    }\n    // trigger: 'axis',\n    // axisPointer: {\n    //   type: 'cross'\n    // },\n    // backgroundColor: 'rgba(255, 255, 255, 0.8)',\n    // position: function (pos, params, el, elRect, size) {\n    //   var obj = { top: 10 };\n    //   obj[['left', 'right'][+(pos[0] < size.viewSize[0] / 2)]] = 30;\n    //   return obj;\n    // },\n    // extraCssText: 'width: 170px'\n  },\n  grid: {\n    bottom: \"3%\",\n    containLabel: true,\n    left: \"1%\",\n    right: \"3%\"\n  },\n  // legend: {\n  // type: 'scroll',\n  // orient: 'vertical',\n  // right: 10,\n  // top: 20,\n  // bottom: 20,\n  //   data: series.series.map((v) => v.name),\n  // },\n  xAxis: {\n    type: 'category',\n    boundaryGap: false,\n    data: series.time.values,\n    interval: 3,\n  },\n  yAxis: {\n    type: 'value',\n    boundaryGap: [0, '100%'],\n    axisLabel: {\n      interval: 'auto',\n      formatter: function (value) {\n        return shortFormatter(value);\n      }\n    }\n  },\n  series: series.series\n};",
+        "google": {
+          "callback": "gmapReady",
+          "key": ""
+        },
+        "map": "none",
+        "renderer": "canvas",
+        "themeEditor": {
+          "config": "{}",
+          "height": 400,
+          "name": "default"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 28,
+          "refId": "A"
+        }
+      ],
+      "title": "Time History Per Database (Exclude null values)",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "connection_ids_cnt": true,
+              "database": false,
+              "db_instance_identifier": true,
+              "host": true,
+              "operation": true,
+              "username": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "connection_ids_cnt": "",
+              "username": ""
+            }
+          }
+        },
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "isNotNull",
+                  "options": {}
+                },
+                "fieldName": "database"
+              }
+            ],
+            "match": "all",
+            "type": "include"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "kvp",
+            "keepTime": true,
+            "replace": true,
+            "source": "database"
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "time"
+              }
+            ]
+          }
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "dateFormat": "YYYY-MM-DD HH:mm:ss",
+                "destinationType": "string",
+                "targetField": "time"
+              }
+            ],
+            "fields": {}
+          }
+        }
+      ],
+      "type": "volkovlabs-echarts-panel"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 86
+      },
+      "id": 57,
+      "panels": [],
+      "title": "General - MySQL",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "fixed"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 5,
+        "x": 0,
+        "y": 87
+      },
+      "id": 105,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "/^requests$/",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 2,
+          "refId": "A"
+        }
+      ],
+      "title": "Total General Events",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "General"
+                  }
+                },
+                "fieldName": "log_type"
+              }
+            ],
+            "match": "all",
+            "type": "include"
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 19,
+        "x": 5,
+        "y": 87
+      },
+      "id": 106,
+      "options": {
+        "baidu": {
+          "callback": "bmapReady",
+          "key": ""
+        },
+        "editor": {
+          "format": "auto",
+          "height": 600
+        },
+        "gaode": {
+          "key": "",
+          "plugin": "AMap.Scale,AMap.ToolBar"
+        },
+        "getOption": "function shortFormatter(number) {\n  if (number < 1000) {\n    return number;\n  } else if (number >= 1000 && number < 1_000_000) {\n    return (number / 1000).toFixed(0) + \" K\";\n  } else if (number >= 1_000_000 && number < 1_000_000_000) {\n    return (number / 1_000_000).toFixed(0) + \" M\";\n  } else if (number >= 1_000_000_000 && number < 1_000_000_000_000) {\n    return (number / 1_000_000_000).toFixed(0) + \" B\";\n  } else if (number >= 1_000_000_000_000 && number < 1_000_000_000_000_000) {\n    return (number / 1_000_000_000_000).toFixed(0) + \" T\";\n  }\n}\n\nconst series = data.series.reduce((outer, { fields }) => {\n  const series_map = fields.reduce((inner, v) => {\n    inner[v.name] = v;\n    return inner\n  }, {});\n\n  const { time, ...rest } = series_map;\n  outer['time'] = time\n  outer['series'] = []\n  Object.entries(rest).forEach(([k, v]) => {\n    const option = {\n      name: v.state.displayName,\n      type: 'line',\n      symbol: 'none',\n      sampling: 'lttb',\n      animation: false,\n      // animationDuration: 5000,\n      // endLabel: {\n      //   show: true,\n      //   formatter: function (params) {\n      //     return k + ': ' + params.value;\n      //   }\n      // },\n      // itemStyle: {\n      //   color: 'rgb(255, 70, 131)'\n      // },\n      // areaStyle: {\n      //   color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [\n      //     {\n      //       offset: 0,\n      //       color: 'rgb(255, 158, 68)'\n      //     },\n      //     {\n      //       offset: 1,\n      //       color: 'rgb(255, 70, 131)'\n      //     }\n      //   ])\n      // },\n      data: v.values\n    };\n    outer['series'].push(option)\n  })\n  return outer\n}, {});\n\nreturn {\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: {\n      type: 'cross'\n    }\n    // trigger: 'axis',\n    // axisPointer: {\n    //   type: 'cross'\n    // },\n    // backgroundColor: 'rgba(255, 255, 255, 0.8)',\n    // position: function (pos, params, el, elRect, size) {\n    //   var obj = { top: 10 };\n    //   obj[['left', 'right'][+(pos[0] < size.viewSize[0] / 2)]] = 30;\n    //   return obj;\n    // },\n    // extraCssText: 'width: 170px'\n  },\n  grid: {\n    bottom: \"3%\",\n    containLabel: true,\n    left: \"1%\",\n    right: \"3%\"\n  },\n  // legend: {\n  // type: 'scroll',\n  // orient: 'vertical',\n  // right: 10,\n  // top: 20,\n  // bottom: 20,\n  //   data: series.series.map((v) => v.name),\n  // },\n  xAxis: {\n    type: 'category',\n    boundaryGap: false,\n    data: series.time.values,\n    interval: 3,\n  },\n  yAxis: {\n    type: 'value',\n    boundaryGap: [0, '100%'],\n    axisLabel: {\n      interval: 'auto',\n      formatter: function (value) {\n        return shortFormatter(value);\n      }\n    }\n  },\n  series: series.series\n};",
+        "google": {
+          "callback": "gmapReady",
+          "key": ""
+        },
+        "map": "none",
+        "renderer": "canvas",
+        "themeEditor": {
+          "config": "{}",
+          "height": 400,
+          "name": "default"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "datasource": {
+            "type": "grafana-athena-datasource",
+            "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+          },
+          "format": 1,
+          "rawSQL": "SELECT t.time\n    , map_agg(t.db_instance_identifier, t.requests) FILTER (WHERE t.db_instance_identifier IS NOT NULL AND t.db_instance_identifier != '') as db_instance_identifier\n    , map_agg(t.operation, t.requests) FILTER (WHERE t.operation IS NOT NULL AND t.operation != '') as operation\n    , sum(thread_ids_cnt) as thread_ids_cnt\nFROM (\n    SELECT $__unixEpochGroup(time / 1000, '${interval}') as time\n        , db_instance_identifier\n        , operation\n        , cardinality(array_distinct(flatten(array_agg(connection_ids)))) as thread_ids_cnt\n        , sum(requests) as requests\n    FROM \"$__table\"\n    WHERE log_type = 'General'\n        AND db_cluster_identifier IN (${cluster:sqlstring})\n        AND db_instance_identifier IN (${instance:sqlstring})\n        AND engine IN (${engine:sqlstring})\n        AND $__unixEpochFilter(time / 1000)\n        AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n            OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n    GROUP BY $__unixEpochGroup(time / 1000, '${interval}'), db_instance_identifier, operation\n) t\nGROUP BY t.time\n",
+          "refId": "Metrics",
+          "table": "rds_metrics"
+        }
+      ],
+      "title": "* Time History By Thread Id (Exclude null values)",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "connection_ids_cnt": false,
+              "database": true,
+              "db_instance_identifier": true,
+              "host": true,
+              "operation": true,
+              "username": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "connection_ids_cnt": "",
+              "thread_ids_cnt": "Count",
+              "username": ""
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "time"
+              }
+            ]
+          }
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "dateFormat": "YYYY-MM-DD HH:mm:ss",
+                "destinationType": "string",
+                "targetField": "time"
+              }
+            ],
+            "fields": {}
+          }
+        }
+      ],
+      "type": "volkovlabs-echarts-panel"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "",
+      "gridPos": {
+        "h": 12,
+        "w": 5,
+        "x": 0,
+        "y": 99
+      },
+      "id": 107,
+      "options": {
+        "baidu": {
+          "callback": "bmapReady",
+          "key": ""
+        },
+        "editor": {
+          "format": "auto",
+          "height": 600
+        },
+        "gaode": {
+          "key": "",
+          "plugin": "AMap.Scale,AMap.ToolBar"
+        },
+        "getOption": "function sum(values) {\n  return values.reduce((accumulator, currentValue) => {\n    const numericValue = typeof currentValue === \"string\" ? parseFloat(currentValue) : currentValue;\n    return accumulator + numericValue;\n  }, 0);\n};\n\nconst series = data.series.map((s) => {\n  const _data = s.fields.map((field) => {\n    return { value: sum(field.values), name: field.name }\n  });\n\n  return {\n    type: 'pie',\n    radius: ['40%', '70%'],\n    avoidLabelOverlap: false,\n    itemStyle: {\n      borderRadius: 5,\n      // borderColor: '#fff',\n      borderWidth: 2\n    },\n    label: {\n      show: false,\n      position: 'center'\n    },\n    emphasis: {\n      label: {\n        show: true,\n        fontSize: '40',\n        fontWeight: 'bold'\n      }\n    },\n    labelLine: {\n      show: false\n    },\n    data: _data\n  }\n});\n\nreturn {\n  tooltip: {\n    trigger: 'item',\n    formatter(params) {\n      return `${params.marker}${params.name}<span style=\"float: right; margin-left: 20px\"><b>${params.value.toLocaleString()}</b> (${params.percent}%)</span>`;\n    }\n  },\n  legend: {\n    top: '5%',\n    left: 'center'\n  },\n  series: series\n};",
+        "google": {
+          "callback": "gmapReady",
+          "key": ""
+        },
+        "map": "none",
+        "renderer": "canvas",
+        "themeEditor": {
+          "config": "{}",
+          "height": 400,
+          "name": "default"
+        }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 106,
+          "refId": "A"
+        }
+      ],
+      "title": "Log Event By Operation",
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "kvp",
+            "replace": true,
+            "source": "operation"
+          }
+        }
+      ],
+      "type": "volkovlabs-echarts-panel"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 19,
+        "x": 5,
+        "y": 99
+      },
+      "id": 109,
+      "options": {
+        "baidu": {
+          "callback": "bmapReady",
+          "key": ""
+        },
+        "editor": {
+          "format": "auto",
+          "height": 600
+        },
+        "gaode": {
+          "key": "",
+          "plugin": "AMap.Scale,AMap.ToolBar"
+        },
+        "getOption": "\nfunction shortFormatter(number) {\n  if (number < 1000) {\n    return number;\n  } else if (number >= 1000 && number < 1_000_000) {\n    return (number / 1000).toFixed(0) + \" K\";\n  } else if (number >= 1_000_000 && number < 1_000_000_000) {\n    return (number / 1_000_000).toFixed(0) + \" M\";\n  } else if (number >= 1_000_000_000 && number < 1_000_000_000_000) {\n    return (number / 1_000_000_000).toFixed(0) + \" B\";\n  } else if (number >= 1_000_000_000_000 && number < 1_000_000_000_000_000) {\n    return (number / 1_000_000_000_000).toFixed(0) + \" T\";\n  }\n}\n\nconst series = data.series.reduce((outer, { fields }) => {\n  const series_map = fields.reduce((inner, v) => {\n    inner[v.name] = v;\n    return inner\n  }, {});\n\n  const { time, ...rest } = series_map;\n  outer['time'] = time\n  outer['series'] = []\n  Object.entries(rest).forEach(([k, v]) => {\n    const option = {\n      name: v.state.displayName,\n      type: 'line',\n      symbol: 'none',\n      sampling: 'lttb',\n      animation: false,\n      // animationDuration: 5000,\n      // endLabel: {\n      //   show: true,\n      //   formatter: function (params) {\n      //     return k + ': ' + params.value;\n      //   }\n      // },\n      // itemStyle: {\n      //   color: 'rgb(255, 70, 131)'\n      // },\n      // areaStyle: {\n      //   color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [\n      //     {\n      //       offset: 0,\n      //       color: 'rgb(255, 158, 68)'\n      //     },\n      //     {\n      //       offset: 1,\n      //       color: 'rgb(255, 70, 131)'\n      //     }\n      //   ])\n      // },\n      data: v.values\n    };\n    outer['series'].push(option)\n  })\n  return outer\n}, {});\n\nreturn {\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: {\n      type: 'cross'\n    }\n    // trigger: 'axis',\n    // axisPointer: {\n    //   type: 'cross'\n    // },\n    // backgroundColor: 'rgba(255, 255, 255, 0.8)',\n    // position: function (pos, params, el, elRect, size) {\n    //   var obj = { top: 10 };\n    //   obj[['left', 'right'][+(pos[0] < size.viewSize[0] / 2)]] = 30;\n    //   return obj;\n    // },\n    // extraCssText: 'width: 170px'\n  },\n  grid: {\n    bottom: \"3%\",\n    containLabel: true,\n    left: \"1%\",\n    right: \"3%\"\n  },\n  // legend: {\n  // type: 'scroll',\n  // orient: 'vertical',\n  // right: 10,\n  // top: 20,\n  // bottom: 20,\n  //   data: series.series.map((v) => v.name),\n  // },\n  xAxis: {\n    type: 'category',\n    boundaryGap: false,\n    data: series.time.values,\n    interval: 3,\n  },\n  yAxis: {\n    type: 'value',\n    boundaryGap: [0, '100%'],\n    axisLabel: {\n      interval: 'auto',\n      formatter: function (value) {\n        return shortFormatter(value);\n      }\n    }\n  },\n  series: series.series\n};",
+        "google": {
+          "callback": "gmapReady",
+          "key": ""
+        },
+        "map": "none",
+        "renderer": "canvas",
+        "themeEditor": {
+          "config": "{}",
+          "height": 400,
+          "name": "default"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 106,
+          "refId": "A"
+        }
+      ],
+      "title": "Time History Per Instance (Exclude null values)",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "operation": true,
+              "thread_ids_cnt": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "connection_ids_cnt": "Count",
+              "time": ""
+            }
+          }
+        },
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "isNotNull",
+                  "options": {}
+                },
+                "fieldName": "db_instance_identifier"
+              }
+            ],
+            "match": "all",
+            "type": "include"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "kvp",
+            "keepTime": true,
+            "replace": true,
+            "source": "db_instance_identifier"
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "time"
+              }
+            ]
+          }
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "dateFormat": "YYYY-MM-DD HH:mm:ss",
+                "destinationType": "string",
+                "targetField": "time"
+              }
+            ],
+            "fields": {}
+          }
+        }
+      ],
+      "type": "volkovlabs-echarts-panel"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 111
+      },
+      "id": 45,
+      "panels": [],
+      "title": "Slow Query - MySQL",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "fixed"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 5,
+        "x": 0,
+        "y": 112
+      },
+      "id": 96,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "/^requests$/",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 2,
+          "refId": "A"
+        }
+      ],
+      "title": "Total Slow Query Events",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "SlowQuery"
+                  }
+                },
+                "fieldName": "log_type"
+              }
+            ],
+            "match": "all",
+            "type": "include"
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "align": "center",
+            "cellOptions": {
+              "type": "color-text"
+            },
+            "filterable": true,
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Rows Examined"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 136
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 16,
+        "w": 19,
+        "x": 5,
+        "y": 112
+      },
+      "id": 99,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": true,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": []
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "datasource": {
+            "type": "grafana-athena-datasource",
+            "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+          },
+          "format": 1,
+          "rawSQL": "SELECT time, db_cluster_identifier, db_instance_identifier, engine, engine_version, username, host, query_id, query_time, lock_time, rows_sent, rows_examined, object\nFROM \"$__table\"\nWHERE log_type = 'SlowQuery'\n    AND db_cluster_identifier IN (${cluster:sqlstring})\n    AND db_instance_identifier IN (${instance:sqlstring})\n    AND engine IN (${engine:sqlstring})\n    AND $__unixEpochFilter(time / 1000)\n    AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n        OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\nORDER BY time desc\nLIMIT 500",
+          "refId": "Details",
+          "table": "rds"
+        }
+      ],
+      "title": "* The Latest 500 Slow Query Events",
+      "transformations": [
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "destinationType": "time",
+                "targetField": "time"
+              }
+            ],
+            "fields": {}
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {
+              "account_id": 1,
+              "action": 14,
+              "clientip": 11,
+              "country": 9,
+              "first_label": 12,
+              "hostname": 10,
+              "httpmethod": 8,
+              "httpsourceid": 7,
+              "region": 2,
+              "requests": 15,
+              "terminatingruleid": 5,
+              "terminatingruletype": 6,
+              "time": 0,
+              "uri": 13,
+              "webaclid": 3,
+              "webaclname": 4
+            },
+            "renameByName": {
+              "db_cluster_identifier": "DB Cluster Identifier",
+              "db_instance_identifier": "DB Instance Identifier",
+              "engine": "Engine",
+              "engine_version": " Engine Version",
+              "host": "Host",
+              "lock_time": "Lock TIme",
+              "object": "Object",
+              "query_id": "Query Id",
+              "query_time": "Query TIme",
+              "rows_examined": "Rows Examined",
+              "rows_sent": "Rows Sent",
+              "time": "Time",
+              "username": "User Name"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "fixed"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 5,
+        "x": 0,
+        "y": 120
+      },
+      "id": 97,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "/^avg_query_time$/",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 2,
+          "refId": "A"
+        }
+      ],
+      "title": "Avg. Slow Query Duration",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "SlowQuery"
+                  }
+                },
+                "fieldName": "log_type"
+              }
+            ],
+            "match": "all",
+            "type": "include"
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 128
+      },
+      "id": 33,
+      "panels": [],
+      "title": "Error - MySQL",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "fixed"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 5,
+        "x": 0,
+        "y": 129
+      },
+      "id": 113,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "/^requests$/",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 2,
+          "refId": "A"
+        }
+      ],
+      "title": "Total Error Events",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "Error"
+                  }
+                },
+                "fieldName": "log_type"
+              }
+            ],
+            "match": "all",
+            "type": "include"
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 19,
+        "x": 5,
+        "y": 129
+      },
+      "id": 116,
+      "options": {
+        "baidu": {
+          "callback": "bmapReady",
+          "key": ""
+        },
+        "editor": {
+          "format": "auto",
+          "height": 600
+        },
+        "gaode": {
+          "key": "",
+          "plugin": "AMap.Scale,AMap.ToolBar"
+        },
+        "getOption": "function shortFormatter(number) {\n  if (number < 1000) {\n    return number;\n  } else if (number >= 1000 && number < 1_000_000) {\n    return (number / 1000).toFixed(0) + \" K\";\n  } else if (number >= 1_000_000 && number < 1_000_000_000) {\n    return (number / 1_000_000).toFixed(0) + \" M\";\n  } else if (number >= 1_000_000_000 && number < 1_000_000_000_000) {\n    return (number / 1_000_000_000).toFixed(0) + \" B\";\n  } else if (number >= 1_000_000_000_000 && number < 1_000_000_000_000_000) {\n    return (number / 1_000_000_000_000).toFixed(0) + \" T\";\n  }\n}\n\nconst series = data.series.reduce((outer, { fields }) => {\n  const series_map = fields.reduce((inner, v) => {\n    inner[v.name] = v;\n    return inner\n  }, {});\n\n  const { time, ...rest } = series_map;\n  outer['time'] = time\n  outer['series'] = []\n  Object.entries(rest).forEach(([k, v]) => {\n    const option = {\n      name: v.state.displayName,\n      type: 'line',\n      symbol: 'none',\n      sampling: 'lttb',\n      animation: false,\n      // animationDuration: 5000,\n      // endLabel: {\n      //   show: true,\n      //   formatter: function (params) {\n      //     return k + ': ' + params.value;\n      //   }\n      // },\n      // itemStyle: {\n      //   color: 'rgb(255, 70, 131)'\n      // },\n      // areaStyle: {\n      //   color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [\n      //     {\n      //       offset: 0,\n      //       color: 'rgb(255, 158, 68)'\n      //     },\n      //     {\n      //       offset: 1,\n      //       color: 'rgb(255, 70, 131)'\n      //     }\n      //   ])\n      // },\n      data: v.values\n    };\n    outer['series'].push(option)\n  })\n  return outer\n}, {});\n\nreturn {\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: {\n      type: 'cross'\n    }\n    // trigger: 'axis',\n    // axisPointer: {\n    //   type: 'cross'\n    // },\n    // backgroundColor: 'rgba(255, 255, 255, 0.8)',\n    // position: function (pos, params, el, elRect, size) {\n    //   var obj = { top: 10 };\n    //   obj[['left', 'right'][+(pos[0] < size.viewSize[0] / 2)]] = 30;\n    //   return obj;\n    // },\n    // extraCssText: 'width: 170px'\n  },\n  grid: {\n    bottom: \"3%\",\n    containLabel: true,\n    left: \"1%\",\n    right: \"3%\"\n  },\n  // legend: {\n  // type: 'scroll',\n  // orient: 'vertical',\n  // right: 10,\n  // top: 20,\n  // bottom: 20,\n  //   data: series.series.map((v) => v.name),\n  // },\n  xAxis: {\n    type: 'category',\n    boundaryGap: false,\n    data: series.time.values,\n    interval: 3,\n  },\n  yAxis: {\n    type: 'value',\n    boundaryGap: [0, '100%'],\n    axisLabel: {\n      interval: 'auto',\n      formatter: function (value) {\n        return shortFormatter(value);\n      }\n    }\n  },\n  series: series.series\n};",
+        "google": {
+          "callback": "gmapReady",
+          "key": ""
+        },
+        "map": "none",
+        "renderer": "canvas",
+        "themeEditor": {
+          "config": "{}",
+          "height": 400,
+          "name": "default"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "datasource": {
+            "type": "grafana-athena-datasource",
+            "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+          },
+          "format": 1,
+          "rawSQL": "SELECT t.time\n    , map_agg(t.db_instance_identifier, t.requests) FILTER (WHERE t.db_instance_identifier IS NOT NULL AND t.db_instance_identifier != '') as db_instance_identifier\n    , map_agg(t.return_code, t.requests) FILTER (WHERE t.return_code IS NOT NULL AND t.return_code != '') as return_code\n    , map_agg(concat_ws('|', t.priority, t.subsystem), t.requests) FILTER (WHERE t.priority IS NOT NULL AND t.priority != '') as priority\n    , sum(thread_ids_cnt) as thread_ids_cnt\nFROM (\n    SELECT $__unixEpochGroup(time / 1000, '${interval}') as time\n        , db_instance_identifier\n        , return_code\n        , priority\n        , subsystem\n        , cardinality(array_distinct(flatten(array_agg(connection_ids)))) as thread_ids_cnt\n        , sum(requests) as requests\n    FROM \"$__table\"\n    WHERE log_type = 'Error'\n        AND db_cluster_identifier IN (${cluster:sqlstring})\n        AND db_instance_identifier IN (${instance:sqlstring})\n        AND engine IN (${engine:sqlstring})\n        AND $__unixEpochFilter(time / 1000)\n        AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n            OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n    GROUP BY $__unixEpochGroup(time / 1000, '${interval}'), db_instance_identifier, return_code, priority, subsystem\n) t\nGROUP BY t.time\n",
+          "refId": "Metrics",
+          "table": "rds_metrics"
+        }
+      ],
+      "title": "* Time History By Thread Id (Exclude null values)",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "connection_ids_cnt": false,
+              "database": true,
+              "db_instance_identifier": true,
+              "host": true,
+              "operation": true,
+              "priority": true,
+              "return_code": true,
+              "username": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "connection_ids_cnt": "",
+              "thread_ids_cnt": "Count",
+              "username": ""
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "time"
+              }
+            ]
+          }
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "dateFormat": "YYYY-MM-DD HH:mm:ss",
+                "destinationType": "string",
+                "targetField": "time"
+              }
+            ],
+            "fields": {}
+          }
+        }
+      ],
+      "type": "volkovlabs-echarts-panel"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "",
+      "gridPos": {
+        "h": 12,
+        "w": 5,
+        "x": 0,
+        "y": 141
+      },
+      "id": 112,
+      "options": {
+        "baidu": {
+          "callback": "bmapReady",
+          "key": ""
+        },
+        "editor": {
+          "format": "auto",
+          "height": 600
+        },
+        "gaode": {
+          "key": "",
+          "plugin": "AMap.Scale,AMap.ToolBar"
+        },
+        "getOption": "function sum(values) {\n  return values.reduce((accumulator, currentValue) => {\n    const numericValue = typeof currentValue === \"string\" ? parseFloat(currentValue) : currentValue;\n    return accumulator + numericValue;\n  }, 0);\n};\n\nconst series = data.series.map((s) => {\n  const _data = s.fields.map((field) => {\n    return { value: sum(field.values), name: field.name }\n  });\n\n  return {\n    type: 'pie',\n    radius: ['40%', '70%'],\n    avoidLabelOverlap: false,\n    itemStyle: {\n      borderRadius: 5,\n      // borderColor: '#fff',\n      borderWidth: 2\n    },\n    label: {\n      show: false,\n      position: 'center'\n    },\n    emphasis: {\n      label: {\n        show: true,\n        fontSize: '40',\n        fontWeight: 'bold'\n      }\n    },\n    labelLine: {\n      show: false\n    },\n    data: _data\n  }\n});\n\nreturn {\n  tooltip: {\n    trigger: 'item',\n    formatter(params) {\n      return `${params.marker}${params.name}<span style=\"float: right; margin-left: 20px\"><b>${params.value.toLocaleString()}</b> (${params.percent}%)</span>`;\n    }\n  },\n  legend: {\n    top: '5%',\n    left: 'center'\n  },\n  series: series\n};",
+        "google": {
+          "callback": "gmapReady",
+          "key": ""
+        },
+        "map": "none",
+        "renderer": "canvas",
+        "themeEditor": {
+          "config": "{}",
+          "height": 400,
+          "name": "default"
+        }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 116,
+          "refId": "A"
+        }
+      ],
+      "title": "Log Event By Return Code",
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "kvp",
+            "replace": true,
+            "source": "return_code"
+          }
+        }
+      ],
+      "type": "volkovlabs-echarts-panel"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 19,
+        "x": 5,
+        "y": 141
+      },
+      "id": 117,
+      "options": {
+        "baidu": {
+          "callback": "bmapReady",
+          "key": ""
+        },
+        "editor": {
+          "format": "auto",
+          "height": 600
+        },
+        "gaode": {
+          "key": "",
+          "plugin": "AMap.Scale,AMap.ToolBar"
+        },
+        "getOption": "function shortFormatter(number) {\n  if (number < 1000) {\n    return number;\n  } else if (number >= 1000 && number < 1_000_000) {\n    return (number / 1000).toFixed(0) + \" K\";\n  } else if (number >= 1_000_000 && number < 1_000_000_000) {\n    return (number / 1_000_000).toFixed(0) + \" M\";\n  } else if (number >= 1_000_000_000 && number < 1_000_000_000_000) {\n    return (number / 1_000_000_000).toFixed(0) + \" B\";\n  } else if (number >= 1_000_000_000_000 && number < 1_000_000_000_000_000) {\n    return (number / 1_000_000_000_000).toFixed(0) + \" T\";\n  }\n}\n\nconst series = data.series.reduce((outer, { fields }) => {\n  const series_map = fields.reduce((inner, v) => {\n    inner[v.name] = v;\n    return inner\n  }, {});\n\n  const { time, ...rest } = series_map;\n  outer['time'] = time\n  outer['series'] = []\n  Object.entries(rest).forEach(([k, v]) => {\n    const option = {\n      name: v.state.displayName,\n      type: 'line',\n      symbol: 'none',\n      sampling: 'lttb',\n      animation: false,\n      // animationDuration: 5000,\n      // endLabel: {\n      //   show: true,\n      //   formatter: function (params) {\n      //     return k + ': ' + params.value;\n      //   }\n      // },\n      // itemStyle: {\n      //   color: 'rgb(255, 70, 131)'\n      // },\n      // areaStyle: {\n      //   color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [\n      //     {\n      //       offset: 0,\n      //       color: 'rgb(255, 158, 68)'\n      //     },\n      //     {\n      //       offset: 1,\n      //       color: 'rgb(255, 70, 131)'\n      //     }\n      //   ])\n      // },\n      data: v.values\n    };\n    outer['series'].push(option)\n  })\n  return outer\n}, {});\n\nreturn {\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: {\n      type: 'cross'\n    }\n    // trigger: 'axis',\n    // axisPointer: {\n    //   type: 'cross'\n    // },\n    // backgroundColor: 'rgba(255, 255, 255, 0.8)',\n    // position: function (pos, params, el, elRect, size) {\n    //   var obj = { top: 10 };\n    //   obj[['left', 'right'][+(pos[0] < size.viewSize[0] / 2)]] = 30;\n    //   return obj;\n    // },\n    // extraCssText: 'width: 170px'\n  },\n  grid: {\n    bottom: \"3%\",\n    containLabel: true,\n    left: \"1%\",\n    right: \"3%\"\n  },\n  // legend: {\n  // type: 'scroll',\n  // orient: 'vertical',\n  // right: 10,\n  // top: 20,\n  // bottom: 20,\n  //   data: series.series.map((v) => v.name),\n  // },\n  xAxis: {\n    type: 'category',\n    boundaryGap: false,\n    data: series.time.values,\n    interval: 3,\n  },\n  yAxis: {\n    type: 'value',\n    boundaryGap: [0, '100%'],\n    axisLabel: {\n      interval: 'auto',\n      formatter: function (value) {\n        return shortFormatter(value);\n      }\n    }\n  },\n  series: series.series\n};",
+        "google": {
+          "callback": "gmapReady",
+          "key": ""
+        },
+        "map": "none",
+        "renderer": "canvas",
+        "themeEditor": {
+          "config": "{}",
+          "height": 400,
+          "name": "default"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 116,
+          "refId": "A"
+        }
+      ],
+      "title": "Time History Per Instance (Exclude null values)",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "connection_ids_cnt": false,
+              "database": true,
+              "db_instance_identifier": false,
+              "host": true,
+              "operation": true,
+              "priority": true,
+              "return_code": true,
+              "thread_ids_cnt": true,
+              "username": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "connection_ids_cnt": "",
+              "thread_ids_cnt": "Count",
+              "username": ""
+            }
+          }
+        },
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "isNotNull",
+                  "options": {}
+                },
+                "fieldName": "db_instance_identifier"
+              }
+            ],
+            "match": "all",
+            "type": "include"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "kvp",
+            "keepTime": true,
+            "replace": true,
+            "source": "db_instance_identifier"
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "time"
+              }
+            ]
+          }
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "dateFormat": "YYYY-MM-DD HH:mm:ss",
+                "destinationType": "string",
+                "targetField": "time"
+              }
+            ],
+            "fields": {}
+          }
+        }
+      ],
+      "type": "volkovlabs-echarts-panel"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "",
+      "gridPos": {
+        "h": 12,
+        "w": 5,
+        "x": 0,
+        "y": 153
+      },
+      "id": 115,
+      "options": {
+        "baidu": {
+          "callback": "bmapReady",
+          "key": ""
+        },
+        "editor": {
+          "format": "auto",
+          "height": 600
+        },
+        "gaode": {
+          "key": "",
+          "plugin": "AMap.Scale,AMap.ToolBar"
+        },
+        "getOption": "\nfunction sum(values) {\n  return values.reduce((accumulator, currentValue) => {\n    const numericValue = typeof currentValue === \"string\" ? parseFloat(currentValue) : currentValue;\n    return accumulator + numericValue;\n  }, 0);\n};\n\nconst series = data.series.reduce((outer, { fields }) => {\n  const series_map = fields.reduce((inner, v) => {\n    key = v.name.split(\"|\")\n\n    if (!(key[0] in inner)) {\n      inner[key[0]] = {};\n    }\n\n    inner[key[0]][key[1]] = sum(v.values);\n\n    return inner\n  }, {});\n\n  option_inner = {\n    type: 'pie',\n    selectedMode: 'single',\n    radius: ['10%', '30%'],\n    label: {\n      position: 'inner'\n    },\n    labelLine: {\n      show: false\n    },\n    data: []\n  }\n\n  option_outer = {\n    type: 'pie',\n    selectedMode: 'single',\n    radius: ['40%', '55%'],\n    data: []\n  }\n\n  Object.entries(series_map).forEach(([inner_k, inner_v]) => {\n    let inner_value = 0\n\n    Object.entries(inner_v).forEach(([outer_k, outer_v]) => {\n      inner_value += outer_v\n\n      option_outer.data.push({ value: outer_v, name: outer_k })\n    })\n    option_inner.data.push({ value: inner_value, name: inner_k })\n  })\n\n  outer.push(option_inner)\n  outer.push(option_outer)\n  return outer\n}, []);\n\nreturn {\n  tooltip: {\n    trigger: 'item',\n    formatter(params) {\n      return `${params.marker}${params.name}<span style=\"float: right; margin-left: 20px\"><b>${params.value.toLocaleString()}</b> (${params.percent}%)</span>`;\n    }\n  },\n  calculable: false,\n  series: series\n};",
+        "google": {
+          "callback": "gmapReady",
+          "key": ""
+        },
+        "map": "none",
+        "renderer": "canvas",
+        "themeEditor": {
+          "config": "{}",
+          "height": 400,
+          "name": "default"
+        }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 116,
+          "refId": "A"
+        }
+      ],
+      "title": "Log Event By Priority",
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "kvp",
+            "keepTime": false,
+            "replace": true,
+            "source": "priority"
+          }
+        }
+      ],
+      "type": "volkovlabs-echarts-panel"
+    },
+    {
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "align": "center",
+            "cellOptions": {
+              "type": "color-text"
+            },
+            "filterable": true,
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Rows Examined"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 136
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 19,
+        "x": 5,
+        "y": 153
+      },
+      "id": 114,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": true,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": []
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "datasource": {
+            "type": "grafana-athena-datasource",
+            "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+          },
+          "format": 1,
+          "rawSQL": "SELECT time, db_cluster_identifier, db_instance_identifier, engine, engine_version, connection_id, return_code, priority, subsystem\nFROM \"$__table\"\nWHERE log_type = 'Error'\n    AND db_cluster_identifier IN (${cluster:sqlstring})\n    AND db_instance_identifier IN (${instance:sqlstring})\n    AND engine IN (${engine:sqlstring})\n    AND $__unixEpochFilter(time / 1000)\n    AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n        OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\nORDER BY time desc\nLIMIT 500",
+          "refId": "Details",
+          "table": "rds"
+        }
+      ],
+      "title": "* The Latest 500 Error Events",
+      "transformations": [
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "destinationType": "time",
+                "targetField": "time"
+              }
+            ],
+            "fields": {}
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "connection_id": "Thread Id",
+              "db_cluster_identifier": "DB Cluster Identifier",
+              "db_instance_identifier": "DB Instance Identifier",
+              "engine": "Engine",
+              "engine_version": "Engine Version",
+              "priority": "Priority",
+              "return_code": "Return Code",
+              "subsystem": "Subsystem",
+              "time": "Time"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 165
+      },
+      "id": 62,
+      "panels": [],
+      "title": "Query - Postgres",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "fixed"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 5,
+        "x": 0,
+        "y": 166
+      },
+      "id": 118,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "/^requests$/",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 2,
+          "refId": "A"
+        }
+      ],
+      "title": "Total Query Events",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "Query"
+                  }
+                },
+                "fieldName": "log_type"
+              }
+            ],
+            "match": "all",
+            "type": "include"
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 19,
+        "x": 5,
+        "y": 166
+      },
+      "id": 120,
+      "options": {
+        "baidu": {
+          "callback": "bmapReady",
+          "key": ""
+        },
+        "editor": {
+          "format": "auto",
+          "height": 600
+        },
+        "gaode": {
+          "key": "",
+          "plugin": "AMap.Scale,AMap.ToolBar"
+        },
+        "getOption": "function shortFormatter(number) {\n  if (number < 1000) {\n    return number;\n  } else if (number >= 1000 && number < 1_000_000) {\n    return (number / 1000).toFixed(0) + \" K\";\n  } else if (number >= 1_000_000 && number < 1_000_000_000) {\n    return (number / 1_000_000).toFixed(0) + \" M\";\n  } else if (number >= 1_000_000_000 && number < 1_000_000_000_000) {\n    return (number / 1_000_000_000).toFixed(0) + \" B\";\n  } else if (number >= 1_000_000_000_000 && number < 1_000_000_000_000_000) {\n    return (number / 1_000_000_000_000).toFixed(0) + \" T\";\n  }\n}\n\nconst series = data.series.reduce((outer, { fields }) => {\n  const series_map = fields.reduce((inner, v) => {\n    inner[v.name] = v;\n    return inner\n  }, {});\n\n  const { time, ...rest } = series_map;\n  outer['time'] = time\n  outer['series'] = []\n  Object.entries(rest).forEach(([k, v]) => {\n    const option = {\n      name: v.state.displayName,\n      type: 'line',\n      symbol: 'none',\n      sampling: 'lttb',\n      animation: false,\n      // animationDuration: 5000,\n      // endLabel: {\n      //   show: true,\n      //   formatter: function (params) {\n      //     return k + ': ' + params.value;\n      //   }\n      // },\n      // itemStyle: {\n      //   color: 'rgb(255, 70, 131)'\n      // },\n      // areaStyle: {\n      //   color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [\n      //     {\n      //       offset: 0,\n      //       color: 'rgb(255, 158, 68)'\n      //     },\n      //     {\n      //       offset: 1,\n      //       color: 'rgb(255, 70, 131)'\n      //     }\n      //   ])\n      // },\n      data: v.values\n    };\n    outer['series'].push(option)\n  })\n  return outer\n}, {});\n\nreturn {\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: {\n      type: 'cross'\n    }\n    // trigger: 'axis',\n    // axisPointer: {\n    //   type: 'cross'\n    // },\n    // backgroundColor: 'rgba(255, 255, 255, 0.8)',\n    // position: function (pos, params, el, elRect, size) {\n    //   var obj = { top: 10 };\n    //   obj[['left', 'right'][+(pos[0] < size.viewSize[0] / 2)]] = 30;\n    //   return obj;\n    // },\n    // extraCssText: 'width: 170px'\n  },\n  grid: {\n    bottom: \"3%\",\n    containLabel: true,\n    left: \"1%\",\n    right: \"3%\"\n  },\n  // legend: {\n  // type: 'scroll',\n  // orient: 'vertical',\n  // right: 10,\n  // top: 20,\n  // bottom: 20,\n  //   data: series.series.map((v) => v.name),\n  // },\n  xAxis: {\n    type: 'category',\n    boundaryGap: false,\n    data: series.time.values,\n    interval: 3,\n  },\n  yAxis: {\n    type: 'value',\n    boundaryGap: [0, '100%'],\n    axisLabel: {\n      interval: 'auto',\n      formatter: function (value) {\n        return shortFormatter(value);\n      }\n    }\n  },\n  series: series.series\n};",
+        "google": {
+          "callback": "gmapReady",
+          "key": ""
+        },
+        "map": "none",
+        "renderer": "canvas",
+        "themeEditor": {
+          "config": "{}",
+          "height": 400,
+          "name": "default"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "datasource": {
+            "type": "grafana-athena-datasource",
+            "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+          },
+          "format": 1,
+          "rawSQL": "SELECT t.time\n    , map_agg(t.db_instance_identifier, t.requests) FILTER (WHERE t.db_instance_identifier IS NOT NULL AND t.db_instance_identifier != '') as db_instance_identifier\n    , map_agg(t.host, t.requests) FILTER (WHERE t.host IS NOT NULL AND t.host != '') as host\n    , map_agg(t.username, t.requests) FILTER (WHERE t.username IS NOT NULL AND t.username != '') as username\n    , map_agg(t.database, t.requests) FILTER (WHERE t.database IS NOT NULL AND t.database != '') as database\n    , map_agg(t.operation, t.requests) FILTER (WHERE t.operation IS NOT NULL AND t.operation != '') as operation\n    , sum(connection_ids_cnt) as process_ids_cnt\nFROM (\n    SELECT $__unixEpochGroup(time / 1000, '${interval}') as time\n        , db_instance_identifier\n        , host\n        , username\n        , database\n        , operation\n        , cardinality(array_distinct(flatten(array_agg(connection_ids)))) as connection_ids_cnt\n        , sum(requests) as requests\n    FROM \"$__table\"\n    WHERE log_type = 'Query'\n        AND db_cluster_identifier IN (${cluster:sqlstring})\n        AND db_instance_identifier IN (${instance:sqlstring})\n        AND engine IN (${engine:sqlstring})\n        AND $__unixEpochFilter(time / 1000)\n        AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n            OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n    GROUP BY $__unixEpochGroup(time / 1000, '${interval}'), db_instance_identifier, host, username, database, operation\n) t\nGROUP BY t.time\n",
+          "refId": "Metrics",
+          "table": "rds_metrics"
+        }
+      ],
+      "title": "* Time History By Process Id (Exclude null values)",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "connection_ids_cnt": false,
+              "database": true,
+              "db_instance_identifier": true,
+              "host": true,
+              "operation": true,
+              "username": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "connection_ids_cnt": "",
+              "process_ids_cnt": "Count",
+              "thread_ids_cnt": "Count",
+              "username": ""
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "time"
+              }
+            ]
+          }
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "dateFormat": "YYYY-MM-DD HH:mm:ss",
+                "destinationType": "string",
+                "targetField": "time"
+              }
+            ],
+            "fields": {}
+          }
+        }
+      ],
+      "type": "volkovlabs-echarts-panel"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "",
+      "gridPos": {
+        "h": 12,
+        "w": 5,
+        "x": 0,
+        "y": 178
+      },
+      "id": 119,
+      "options": {
+        "baidu": {
+          "callback": "bmapReady",
+          "key": ""
+        },
+        "editor": {
+          "format": "auto",
+          "height": 600
+        },
+        "gaode": {
+          "key": "",
+          "plugin": "AMap.Scale,AMap.ToolBar"
+        },
+        "getOption": "function sum(values) {\n  return values.reduce((accumulator, currentValue) => {\n    const numericValue = typeof currentValue === \"string\" ? parseFloat(currentValue) : currentValue;\n    return accumulator + numericValue;\n  }, 0);\n};\n\nconst series = data.series.map((s) => {\n  const _data = s.fields.map((field) => {\n    return { value: sum(field.values), name: field.name }\n  });\n\n  return {\n    type: 'pie',\n    radius: ['40%', '70%'],\n    avoidLabelOverlap: false,\n    itemStyle: {\n      borderRadius: 5,\n      // borderColor: '#fff',\n      borderWidth: 2\n    },\n    label: {\n      show: false,\n      position: 'center'\n    },\n    emphasis: {\n      label: {\n        show: true,\n        fontSize: '40',\n        fontWeight: 'bold'\n      }\n    },\n    labelLine: {\n      show: false\n    },\n    data: _data\n  }\n});\n\nreturn {\n  tooltip: {\n    trigger: 'item',\n    formatter(params) {\n      return `${params.marker}${params.name}<span style=\"float: right; margin-left: 20px\"><b>${params.value.toLocaleString()}</b> (${params.percent}%)</span>`;\n    }\n  },\n  legend: {\n    top: '5%',\n    left: 'center'\n  },\n  series: series\n};",
+        "google": {
+          "callback": "gmapReady",
+          "key": ""
+        },
+        "map": "none",
+        "renderer": "canvas",
+        "themeEditor": {
+          "config": "{}",
+          "height": 400,
+          "name": "default"
+        }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 120,
+          "refId": "A"
+        }
+      ],
+      "title": "Log Event By Operation",
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "kvp",
+            "replace": true,
+            "source": "operation"
+          }
+        }
+      ],
+      "type": "volkovlabs-echarts-panel"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 19,
+        "x": 5,
+        "y": 178
+      },
+      "id": 122,
+      "options": {
+        "baidu": {
+          "callback": "bmapReady",
+          "key": ""
+        },
+        "editor": {
+          "format": "auto",
+          "height": 600
+        },
+        "gaode": {
+          "key": "",
+          "plugin": "AMap.Scale,AMap.ToolBar"
+        },
+        "getOption": "function shortFormatter(number) {\n  if (number < 1000) {\n    return number;\n  } else if (number >= 1000 && number < 1_000_000) {\n    return (number / 1000).toFixed(0) + \" K\";\n  } else if (number >= 1_000_000 && number < 1_000_000_000) {\n    return (number / 1_000_000).toFixed(0) + \" M\";\n  } else if (number >= 1_000_000_000 && number < 1_000_000_000_000) {\n    return (number / 1_000_000_000).toFixed(0) + \" B\";\n  } else if (number >= 1_000_000_000_000 && number < 1_000_000_000_000_000) {\n    return (number / 1_000_000_000_000).toFixed(0) + \" T\";\n  }\n}\n\nconst series = data.series.reduce((outer, { fields }) => {\n  const series_map = fields.reduce((inner, v) => {\n    inner[v.name] = v;\n    return inner\n  }, {});\n\n  const { time, ...rest } = series_map;\n  outer['time'] = time\n  outer['series'] = []\n  Object.entries(rest).forEach(([k, v]) => {\n    const option = {\n      name: v.state.displayName,\n      type: 'line',\n      symbol: 'none',\n      sampling: 'lttb',\n      animation: false,\n      // animationDuration: 5000,\n      // endLabel: {\n      //   show: true,\n      //   formatter: function (params) {\n      //     return k + ': ' + params.value;\n      //   }\n      // },\n      // itemStyle: {\n      //   color: 'rgb(255, 70, 131)'\n      // },\n      // areaStyle: {\n      //   color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [\n      //     {\n      //       offset: 0,\n      //       color: 'rgb(255, 158, 68)'\n      //     },\n      //     {\n      //       offset: 1,\n      //       color: 'rgb(255, 70, 131)'\n      //     }\n      //   ])\n      // },\n      data: v.values\n    };\n    outer['series'].push(option)\n  })\n  return outer\n}, {});\n\nreturn {\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: {\n      type: 'cross'\n    }\n    // trigger: 'axis',\n    // axisPointer: {\n    //   type: 'cross'\n    // },\n    // backgroundColor: 'rgba(255, 255, 255, 0.8)',\n    // position: function (pos, params, el, elRect, size) {\n    //   var obj = { top: 10 };\n    //   obj[['left', 'right'][+(pos[0] < size.viewSize[0] / 2)]] = 30;\n    //   return obj;\n    // },\n    // extraCssText: 'width: 170px'\n  },\n  grid: {\n    bottom: \"3%\",\n    containLabel: true,\n    left: \"1%\",\n    right: \"3%\"\n  },\n  // legend: {\n  // type: 'scroll',\n  // orient: 'vertical',\n  // right: 10,\n  // top: 20,\n  // bottom: 20,\n  //   data: series.series.map((v) => v.name),\n  // },\n  xAxis: {\n    type: 'category',\n    boundaryGap: false,\n    data: series.time.values,\n    interval: 3,\n  },\n  yAxis: {\n    type: 'value',\n    boundaryGap: [0, '100%'],\n    axisLabel: {\n      interval: 'auto',\n      formatter: function (value) {\n        return shortFormatter(value);\n      }\n    }\n  },\n  series: series.series\n};",
+        "google": {
+          "callback": "gmapReady",
+          "key": ""
+        },
+        "map": "none",
+        "renderer": "canvas",
+        "themeEditor": {
+          "config": "{}",
+          "height": 400,
+          "name": "default"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 120,
+          "refId": "A"
+        }
+      ],
+      "title": "Time History Per Host (Exclude null values)",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "database": true,
+              "db_instance_identifier": true,
+              "operation": true,
+              "process_ids_cnt": true,
+              "username": true
+            },
+            "indexByName": {},
+            "renameByName": {}
+          }
+        },
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "isNotNull",
+                  "options": {}
+                },
+                "fieldName": "host"
+              }
+            ],
+            "match": "all",
+            "type": "include"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "kvp",
+            "keepTime": true,
+            "replace": true,
+            "source": "host"
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "time"
+              }
+            ]
+          }
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "dateFormat": "YYYY-MM-DD HH:mm:ss",
+                "destinationType": "string",
+                "targetField": "time"
+              }
+            ],
+            "fields": {}
+          }
+        }
+      ],
+      "type": "volkovlabs-echarts-panel"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 190
+      },
+      "id": 123,
+      "options": {
+        "baidu": {
+          "callback": "bmapReady",
+          "key": ""
+        },
+        "editor": {
+          "format": "auto",
+          "height": 600
+        },
+        "gaode": {
+          "key": "",
+          "plugin": "AMap.Scale,AMap.ToolBar"
+        },
+        "getOption": "function shortFormatter(number) {\n  if (number < 1000) {\n    return number;\n  } else if (number >= 1000 && number < 1_000_000) {\n    return (number / 1000).toFixed(0) + \" K\";\n  } else if (number >= 1_000_000 && number < 1_000_000_000) {\n    return (number / 1_000_000).toFixed(0) + \" M\";\n  } else if (number >= 1_000_000_000 && number < 1_000_000_000_000) {\n    return (number / 1_000_000_000).toFixed(0) + \" B\";\n  } else if (number >= 1_000_000_000_000 && number < 1_000_000_000_000_000) {\n    return (number / 1_000_000_000_000).toFixed(0) + \" T\";\n  }\n}\n\nconst series = data.series.reduce((outer, { fields }) => {\n  const series_map = fields.reduce((inner, v) => {\n    inner[v.name] = v;\n    return inner\n  }, {});\n\n  const { time, ...rest } = series_map;\n  outer['time'] = time\n  outer['series'] = []\n  Object.entries(rest).forEach(([k, v]) => {\n    const option = {\n      name: v.state.displayName,\n      type: 'line',\n      symbol: 'none',\n      sampling: 'lttb',\n      animation: false,\n      // animationDuration: 5000,\n      // endLabel: {\n      //   show: true,\n      //   formatter: function (params) {\n      //     return k + ': ' + params.value;\n      //   }\n      // },\n      // itemStyle: {\n      //   color: 'rgb(255, 70, 131)'\n      // },\n      // areaStyle: {\n      //   color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [\n      //     {\n      //       offset: 0,\n      //       color: 'rgb(255, 158, 68)'\n      //     },\n      //     {\n      //       offset: 1,\n      //       color: 'rgb(255, 70, 131)'\n      //     }\n      //   ])\n      // },\n      data: v.values\n    };\n    outer['series'].push(option)\n  })\n  return outer\n}, {});\n\nreturn {\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: {\n      type: 'cross'\n    }\n    // trigger: 'axis',\n    // axisPointer: {\n    //   type: 'cross'\n    // },\n    // backgroundColor: 'rgba(255, 255, 255, 0.8)',\n    // position: function (pos, params, el, elRect, size) {\n    //   var obj = { top: 10 };\n    //   obj[['left', 'right'][+(pos[0] < size.viewSize[0] / 2)]] = 30;\n    //   return obj;\n    // },\n    // extraCssText: 'width: 170px'\n  },\n  grid: {\n    bottom: \"3%\",\n    containLabel: true,\n    left: \"1%\",\n    right: \"3%\"\n  },\n  // legend: {\n  // type: 'scroll',\n  // orient: 'vertical',\n  // right: 10,\n  // top: 20,\n  // bottom: 20,\n  //   data: series.series.map((v) => v.name),\n  // },\n  xAxis: {\n    type: 'category',\n    boundaryGap: false,\n    data: series.time.values,\n    interval: 3,\n  },\n  yAxis: {\n    type: 'value',\n    boundaryGap: [0, '100%'],\n    axisLabel: {\n      interval: 'auto',\n      formatter: function (value) {\n        return shortFormatter(value);\n      }\n    }\n  },\n  series: series.series\n};",
+        "google": {
+          "callback": "gmapReady",
+          "key": ""
+        },
+        "map": "none",
+        "renderer": "canvas",
+        "themeEditor": {
+          "config": "{}",
+          "height": 400,
+          "name": "default"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 120,
+          "refId": "A"
+        }
+      ],
+      "title": "Time History Per Instance (Exclude null values)",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "connection_ids_cnt": true,
+              "database": true,
+              "db_instance_identifier": false,
+              "host": true,
+              "operation": true,
+              "process_ids_cnt": true,
+              "username": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "connection_ids_cnt": "",
+              "username": ""
+            }
+          }
+        },
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "isNotNull",
+                  "options": {}
+                },
+                "fieldName": "db_instance_identifier"
+              }
+            ],
+            "match": "all",
+            "type": "include"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "kvp",
+            "keepTime": true,
+            "replace": true,
+            "source": "db_instance_identifier"
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "time"
+              }
+            ]
+          }
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "dateFormat": "YYYY-MM-DD HH:mm:ss",
+                "destinationType": "string",
+                "targetField": "time"
+              }
+            ],
+            "fields": {}
+          }
+        }
+      ],
+      "type": "volkovlabs-echarts-panel"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 0,
+        "y": 202
+      },
+      "id": 124,
+      "options": {
+        "baidu": {
+          "callback": "bmapReady",
+          "key": ""
+        },
+        "editor": {
+          "format": "auto",
+          "height": 600
+        },
+        "gaode": {
+          "key": "",
+          "plugin": "AMap.Scale,AMap.ToolBar"
+        },
+        "getOption": "function shortFormatter(number) {\n  if (number < 1000) {\n    return number;\n  } else if (number >= 1000 && number < 1_000_000) {\n    return (number / 1000).toFixed(0) + \" K\";\n  } else if (number >= 1_000_000 && number < 1_000_000_000) {\n    return (number / 1_000_000).toFixed(0) + \" M\";\n  } else if (number >= 1_000_000_000 && number < 1_000_000_000_000) {\n    return (number / 1_000_000_000).toFixed(0) + \" B\";\n  } else if (number >= 1_000_000_000_000 && number < 1_000_000_000_000_000) {\n    return (number / 1_000_000_000_000).toFixed(0) + \" T\";\n  }\n}\n\nconst series = data.series.reduce((outer, { fields }) => {\n  const series_map = fields.reduce((inner, v) => {\n    inner[v.name] = v;\n    return inner\n  }, {});\n\n  const { time, ...rest } = series_map;\n  outer['time'] = time\n  outer['series'] = []\n  Object.entries(rest).forEach(([k, v]) => {\n    const option = {\n      name: v.state.displayName,\n      type: 'line',\n      symbol: 'none',\n      sampling: 'lttb',\n      animation: false,\n      // animationDuration: 5000,\n      // endLabel: {\n      //   show: true,\n      //   formatter: function (params) {\n      //     return k + ': ' + params.value;\n      //   }\n      // },\n      // itemStyle: {\n      //   color: 'rgb(255, 70, 131)'\n      // },\n      // areaStyle: {\n      //   color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [\n      //     {\n      //       offset: 0,\n      //       color: 'rgb(255, 158, 68)'\n      //     },\n      //     {\n      //       offset: 1,\n      //       color: 'rgb(255, 70, 131)'\n      //     }\n      //   ])\n      // },\n      data: v.values\n    };\n    outer['series'].push(option)\n  })\n  return outer\n}, {});\n\nreturn {\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: {\n      type: 'cross'\n    }\n    // trigger: 'axis',\n    // axisPointer: {\n    //   type: 'cross'\n    // },\n    // backgroundColor: 'rgba(255, 255, 255, 0.8)',\n    // position: function (pos, params, el, elRect, size) {\n    //   var obj = { top: 10 };\n    //   obj[['left', 'right'][+(pos[0] < size.viewSize[0] / 2)]] = 30;\n    //   return obj;\n    // },\n    // extraCssText: 'width: 170px'\n  },\n  grid: {\n    bottom: \"3%\",\n    containLabel: true,\n    left: \"1%\",\n    right: \"3%\"\n  },\n  // legend: {\n  // type: 'scroll',\n  // orient: 'vertical',\n  // right: 10,\n  // top: 20,\n  // bottom: 20,\n  //   data: series.series.map((v) => v.name),\n  // },\n  xAxis: {\n    type: 'category',\n    boundaryGap: false,\n    data: series.time.values,\n    interval: 3,\n  },\n  yAxis: {\n    type: 'value',\n    boundaryGap: [0, '100%'],\n    axisLabel: {\n      interval: 'auto',\n      formatter: function (value) {\n        return shortFormatter(value);\n      }\n    }\n  },\n  series: series.series\n};",
+        "google": {
+          "callback": "gmapReady",
+          "key": ""
+        },
+        "map": "none",
+        "renderer": "canvas",
+        "themeEditor": {
+          "config": "{}",
+          "height": 400,
+          "name": "default"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 120,
+          "refId": "A"
+        }
+      ],
+      "title": "Time History Per Username (Exclude null values)",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "connection_ids_cnt": true,
+              "database": true,
+              "db_instance_identifier": true,
+              "host": true,
+              "operation": true,
+              "process_ids_cnt": true,
+              "username": false
+            },
+            "indexByName": {},
+            "renameByName": {
+              "connection_ids_cnt": "",
+              "username": ""
+            }
+          }
+        },
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "isNotNull",
+                  "options": {}
+                },
+                "fieldName": "username"
+              }
+            ],
+            "match": "all",
+            "type": "include"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "kvp",
+            "keepTime": true,
+            "replace": true,
+            "source": "username"
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "time"
+              }
+            ]
+          }
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "dateFormat": "YYYY-MM-DD HH:mm:ss",
+                "destinationType": "string",
+                "targetField": "time"
+              }
+            ],
+            "fields": {}
+          }
+        }
+      ],
+      "type": "volkovlabs-echarts-panel"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 12,
+        "y": 202
+      },
+      "id": 125,
+      "options": {
+        "baidu": {
+          "callback": "bmapReady",
+          "key": ""
+        },
+        "editor": {
+          "format": "auto",
+          "height": 600
+        },
+        "gaode": {
+          "key": "",
+          "plugin": "AMap.Scale,AMap.ToolBar"
+        },
+        "getOption": "function shortFormatter(number) {\n  if (number < 1000) {\n    return number;\n  } else if (number >= 1000 && number < 1_000_000) {\n    return (number / 1000).toFixed(0) + \" K\";\n  } else if (number >= 1_000_000 && number < 1_000_000_000) {\n    return (number / 1_000_000).toFixed(0) + \" M\";\n  } else if (number >= 1_000_000_000 && number < 1_000_000_000_000) {\n    return (number / 1_000_000_000).toFixed(0) + \" B\";\n  } else if (number >= 1_000_000_000_000 && number < 1_000_000_000_000_000) {\n    return (number / 1_000_000_000_000).toFixed(0) + \" T\";\n  }\n}\n\nconst series = data.series.reduce((outer, { fields }) => {\n  const series_map = fields.reduce((inner, v) => {\n    inner[v.name] = v;\n    return inner\n  }, {});\n\n  const { time, ...rest } = series_map;\n  outer['time'] = time\n  outer['series'] = []\n  Object.entries(rest).forEach(([k, v]) => {\n    const option = {\n      name: v.state.displayName,\n      type: 'line',\n      symbol: 'none',\n      sampling: 'lttb',\n      animation: false,\n      // animationDuration: 5000,\n      // endLabel: {\n      //   show: true,\n      //   formatter: function (params) {\n      //     return k + ': ' + params.value;\n      //   }\n      // },\n      // itemStyle: {\n      //   color: 'rgb(255, 70, 131)'\n      // },\n      // areaStyle: {\n      //   color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [\n      //     {\n      //       offset: 0,\n      //       color: 'rgb(255, 158, 68)'\n      //     },\n      //     {\n      //       offset: 1,\n      //       color: 'rgb(255, 70, 131)'\n      //     }\n      //   ])\n      // },\n      data: v.values\n    };\n    outer['series'].push(option)\n  })\n  return outer\n}, {});\n\nreturn {\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: {\n      type: 'cross'\n    }\n    // trigger: 'axis',\n    // axisPointer: {\n    //   type: 'cross'\n    // },\n    // backgroundColor: 'rgba(255, 255, 255, 0.8)',\n    // position: function (pos, params, el, elRect, size) {\n    //   var obj = { top: 10 };\n    //   obj[['left', 'right'][+(pos[0] < size.viewSize[0] / 2)]] = 30;\n    //   return obj;\n    // },\n    // extraCssText: 'width: 170px'\n  },\n  grid: {\n    bottom: \"3%\",\n    containLabel: true,\n    left: \"1%\",\n    right: \"3%\"\n  },\n  // legend: {\n  // type: 'scroll',\n  // orient: 'vertical',\n  // right: 10,\n  // top: 20,\n  // bottom: 20,\n  //   data: series.series.map((v) => v.name),\n  // },\n  xAxis: {\n    type: 'category',\n    boundaryGap: false,\n    data: series.time.values,\n    interval: 3,\n  },\n  yAxis: {\n    type: 'value',\n    boundaryGap: [0, '100%'],\n    axisLabel: {\n      interval: 'auto',\n      formatter: function (value) {\n        return shortFormatter(value);\n      }\n    }\n  },\n  series: series.series\n};",
+        "google": {
+          "callback": "gmapReady",
+          "key": ""
+        },
+        "map": "none",
+        "renderer": "canvas",
+        "themeEditor": {
+          "config": "{}",
+          "height": 400,
+          "name": "default"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 120,
+          "refId": "A"
+        }
+      ],
+      "title": "Time History Per Database (Exclude null values)",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "connection_ids_cnt": true,
+              "database": false,
+              "db_instance_identifier": true,
+              "host": true,
+              "operation": true,
+              "process_ids_cnt": true,
+              "username": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "connection_ids_cnt": "",
+              "username": ""
+            }
+          }
+        },
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "isNotNull",
+                  "options": {}
+                },
+                "fieldName": "database"
+              }
+            ],
+            "match": "all",
+            "type": "include"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "kvp",
+            "keepTime": true,
+            "replace": true,
+            "source": "database"
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "time"
+              }
+            ]
+          }
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "dateFormat": "YYYY-MM-DD HH:mm:ss",
+                "destinationType": "string",
+                "targetField": "time"
+              }
+            ],
+            "fields": {}
+          }
+        }
+      ],
+      "type": "volkovlabs-echarts-panel"
+    }
+  ],
+  "refresh": "5m",
+  "revision": 1,
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "allValue": "SELECT db_cluster_identifier FROM \"$__table\" WHERE event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH') \tOR event_hour = $__rawTimeFrom('yyyyMMdd00') GROUP BY db_cluster_identifier",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-athena-datasource",
+          "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Cluster",
+        "multi": true,
+        "name": "cluster",
+        "options": [],
+        "query": {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT db_cluster_identifier\nFROM \"$__table\"\nWHERE event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\tOR event_hour = $__rawTimeFrom('yyyyMMdd00')\nGROUP BY db_cluster_identifier",
+          "refId": "Metrics",
+          "table": "rds_metrics"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "allValue": "SELECT db_instance_identifier FROM \"$__table\" WHERE event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH') \tOR event_hour = $__rawTimeFrom('yyyyMMdd00') GROUP BY db_instance_identifier",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-athena-datasource",
+          "uid": "bfa528ea-aa15-4e45-bb35-40c8315f3332"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Instance",
+        "multi": true,
+        "name": "instance",
+        "options": [],
+        "query": {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT db_instance_identifier\nFROM \"$__table\"\nWHERE event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\tOR event_hour = $__rawTimeFrom('yyyyMMdd00')\nGROUP BY db_instance_identifier",
+          "refId": "Metrics",
+          "table": "rds_metrics"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "hide": 0,
+        "includeAll": true,
+        "label": "Engine",
+        "multi": true,
+        "name": "engine",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "aurora-mysql",
+            "value": "aurora-mysql"
+          },
+          {
+            "selected": false,
+            "text": "aurora-postgresql",
+            "value": "aurora-postgresql"
+          },
+          {
+            "selected": false,
+            "text": "mysql",
+            "value": "mysql"
+          },
+          {
+            "selected": false,
+            "text": "postgres",
+            "value": "postgres"
+          }
+        ],
+        "query": "aurora-mysql, aurora-postgresql, mysql, postgres",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "auto": true,
+        "auto_count": 100,
+        "auto_min": "1m",
+        "current": {
+          "selected": false,
+          "text": "auto",
+          "value": "$__auto_interval_interval"
+        },
+        "hide": 0,
+        "label": "Interval",
+        "name": "interval",
+        "options": [
+          {
+            "selected": true,
+            "text": "auto",
+            "value": "$__auto_interval_interval"
+          },
+          {
+            "selected": false,
+            "text": "1m",
+            "value": "1m"
+          },
+          {
+            "selected": false,
+            "text": "10m",
+            "value": "10m"
+          },
+          {
+            "selected": false,
+            "text": "30m",
+            "value": "30m"
+          },
+          {
+            "selected": false,
+            "text": "1h",
+            "value": "1h"
+          },
+          {
+            "selected": false,
+            "text": "6h",
+            "value": "6h"
+          },
+          {
+            "selected": false,
+            "text": "12h",
+            "value": "12h"
+          },
+          {
+            "selected": false,
+            "text": "1d",
+            "value": "1d"
+          },
+          {
+            "selected": false,
+            "text": "7d",
+            "value": "7d"
+          },
+          {
+            "selected": false,
+            "text": "14d",
+            "value": "14d"
+          },
+          {
+            "selected": false,
+            "text": "30d",
+            "value": "30d"
+          }
+        ],
+        "query": "1m,10m,30m,1h,6h,12h,1d,7d,14d,30d",
+        "queryValue": "",
+        "refresh": 2,
+        "skipUrlSync": false,
+        "type": "interval"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ]
+  },
+  "timezone": "",
+  "title": "rds-dashboard",
+  "uid": "ea383380-4162-4201-b229-ded2362cfff5",
+  "version": 11,
+  "weekStart": ""
+}

@@ -3,7 +3,7 @@
 
 本文将指导您如何从 EC2 实例组提取日志，并创建日志管道。
 
-## 创建日志管道（Amazon OpenSearch）
+## 创建日志管道（OpenSearch Engine）
 
 ### 请确认您已经完成
 1. [导入 Amazon OpenSearch Service 域](../domains/import.md)。
@@ -13,10 +13,10 @@
 1. 登录日志通控制台。
 
 2. 在左侧边栏中的 **日志分析管道** 下，选择**应用日志**。
-   
+
 3. 单击 **创建日志管道**。
 
-4. 单击 **实例组** 作为日志源, 选择**Amazon OpenSearch**，并选择 **下一步**.
+4. 单击 **实例组** 作为日志源, 选择**Amazon OpenSearch**，并选择 **下一步**。
 
 5. 选择您已创建的实例组，如果你还没有闯将实例组， 在右上角选择选择 **创建实例组** , 然后根据 [创建实例组](./create-log-source.md#amazon-ec2-instance-group) 的文档来创建实例组。 完成后, 选择 **刷新** 并选择最新创建的实例组.
 
@@ -37,9 +37,9 @@
 
 您已为日志分析管道创建日志源。 现在您可以使用 Amazon EC2 实例组作为日志源对日志分析管道进行进一步配置。
 
-1. 输入 **日志路径** 指定要收集的日志的位置。
-   
-2. 选择之前设置中创建的日志配置，点击 **下一步**。如果您没有从下拉列表中找到所需的日志配置，请选择 **创建新的**, 并参考 [日志配置](./create-log-config.md).
+1. 选择之前设置中创建的**日志配置**。如果您没有从下拉列表中找到所需的日志配置，请选择 **创建新的**, 并参考 [日志配置](./create-log-config.md).
+
+2. 输入**日志路径**，指定要收集的日志的位置。 您可以使用 `,` 分隔多个路径，点击 **下一步**。
 
 3. 在 **索引名称** 中小写指定。
 
@@ -73,6 +73,7 @@
 7. 在 **日志生命周期** 部分，输入天数以管理Amazon OpenSearch Service索引生命周期。与OpenSearch一起的中央化日志将为这个管道自动创建关联的 [索引状态管理(ISM)](https://opensearch.org/docs/latest/im-plugin/ism/index/) 政策。
 
 13. 在 **选择日志处理器** 部分中，请选择日志处理器。
+     - 当选择 Lambda 作为日志处理器时，您可以根据需要配置 Lambda 并发数。
      - （可选）这些[区域](https://aws.amazon.com/about-aws/whats-new/2023/04/amazon-opensearch-service-ingestion/)现在支持 OSI 作为日志处理器。 当选择 OSI 时，请输入 OCU 的最小和最大数量。 请参阅[此处](https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ingestion.html#ingestion-scaling) 的更多信息。
 14. 选择**下一步**。
 
@@ -92,7 +93,7 @@
 1. 登录日志通控制台。
 
 2. 在左侧边栏中的 **日志分析管道** 下，选择**应用日志**。
-   
+
 3. 单击 **创建日志管道**。
 
 4. 单击 **实例组** 作为日志源, 选择**Light Engine**，并选择 **下一步**.
@@ -116,9 +117,9 @@
 
 您已为日志分析管道创建日志源。 现在您可以使用 Amazon EC2 实例组作为日志源对日志分析管道进行进一步配置。
 
-1. 输入 **日志路径** 指定要收集的日志的位置。
-   
-2. 选择之前设置中创建的日志配置，点击 **下一步**。如果您没有从下拉列表中找到所需的日志配置，请选择 **创建新的**, 并参考 [日志配置](./create-log-config.md).
+1. 选择之前设置中创建的**日志配置**。如果您没有从下拉列表中找到所需的日志配置，请选择 **创建新的**, 并参考 [日志配置](./create-log-config.md).
+
+2. 输入**日志路径**，指定要收集的日志的位置。 您可以使用 `,` 分隔多个路径，点击 **下一步**。
 
 4. 在 **缓冲区** 部分中，选择 **S3**。
 
@@ -131,7 +132,6 @@
     | 缓冲间隔                      | 60秒                                              | 日志代理将日志交付给S3的最大间隔。有关更多信息，请查看 [数据交付频率](https://docs.aws.amazon.com/firehose/latest/dev/basic-deliver.html#frequency)。 |
     | 数据记录的压缩                  | `Gzip`                                           | 日志代理在将它们交付给S3桶之前会压缩记录。                                   |
 
-    
 
 5. 选择 **下一步**。
 
@@ -167,4 +167,5 @@
 [vpc-connectivity]: https://docs.aws.amazon.com/whitepapers/latest/building-scalable-secure-multi-vpc-network-infrastructure/vpc-to-vpc-connectivity.html
 [ec2-user-data]: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html#user-data-shell-scripts
 [instance-refresh]: https://docs.aws.amazon.com/autoscaling/ec2/userguide/asg-instance-refresh.html
-
+[launch-template]: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html
+[launch-configuration]: https://docs.aws.amazon.com/autoscaling/ec2/userguide/launch-configurations.html

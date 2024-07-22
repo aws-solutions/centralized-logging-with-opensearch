@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import { Construct } from "constructs";
-import { RemovalPolicy, aws_dynamodb as ddb, aws_ssm as ssm } from "aws-cdk-lib";
+import { Aws, RemovalPolicy, CfnOutput, aws_dynamodb as ddb } from "aws-cdk-lib";
 import { InitKMSStack } from "../kms/init-kms-stack";
 
 export interface  InitDynamoDBProps {
@@ -80,14 +80,11 @@ export class InitDynamoDBStack extends Construct {
       const cfnMetadataTable = this.MetaTable.node.defaultChild as ddb.CfnTable;
       cfnMetadataTable.overrideLogicalId('Metadata');
 
-      const SSMMetadataTableArn = new ssm.StringParameter(this, 'SSMMetadataTableArn', {
-        parameterName: '/MicroBatch/MetadataTableArn',
-        stringValue: this.MetaTable.tableArn,
-      });
-
-      // Override the logical ID
-      const cfnSSMMetadataTableArn = SSMMetadataTableArn.node.defaultChild as ssm.CfnParameter;
-      cfnSSMMetadataTableArn.overrideLogicalId("MetadataTableArn");
+      new CfnOutput(this, 'MetadataTableArn', {
+        description: 'Metadata Table Arn',
+        value: this.MetaTable.tableArn,
+        exportName: `${Aws.STACK_NAME}::MetadataTableArn`,
+      }).overrideLogicalId('MetadataTableArn');
 
     }
 }

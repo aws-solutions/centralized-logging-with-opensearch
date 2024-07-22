@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import { Construct } from "constructs";
-import { Aws, aws_sns as sns, aws_sns_subscriptions as subscriptions } from "aws-cdk-lib";
+import { Aws, CfnOutput, aws_sns as sns, aws_sns_subscriptions as subscriptions } from "aws-cdk-lib";
 import { InitKMSStack } from "../kms/init-kms-stack";
 
 export interface  InitSNSProps {
@@ -35,7 +35,7 @@ export class InitSNSStack extends Construct {
       let microBatchKMSStack = props.microBatchKMSStack;
 
       this.SNSReceiveStatesFailedTopic = new sns.Topic(this,'ReceiveStatesFailedTopic', {
-        topicName: `${Aws.STACK_NAME}-ReceiveStatesFailedTopic`,
+        topicName: `${Aws.STACK_NAME.substring(0, 30)}-ReceiveStatesFailedTopic`,
         masterKey: microBatchKMSStack.encryptionKey,
       });
 
@@ -44,7 +44,7 @@ export class InitSNSStack extends Construct {
       cfnSNSReceiveStatesFailedTopic.overrideLogicalId("ReceiveStatesFailedTopic");
 
       this.SNSSendEmailTopic = new sns.Topic(this,'SendEmailTopic', {
-        topicName: `${Aws.STACK_NAME}-SendEmailTopic`,
+        topicName: `${Aws.STACK_NAME.substring(0, 30)}-SendEmailTopic`,
         masterKey: microBatchKMSStack.encryptionKey,
       });
 
@@ -53,6 +53,12 @@ export class InitSNSStack extends Construct {
       cfnSNSSendEmailTopic.overrideLogicalId("SendEmailTopic");
 
       this.SNSSendEmailTopic.addSubscription(new subscriptions.EmailSubscription(emailAddress));
+
+      new CfnOutput(this, 'SendEmailTopicArn', {
+        description: 'Send Email Topic Arn',
+        value: this.SNSSendEmailTopic.topicArn,
+        exportName: `${Aws.STACK_NAME}::SendEmailTopicArn`,
+      }).overrideLogicalId('SendEmailTopicArn');
     
     };
 }

@@ -21,7 +21,6 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import CreateStep from "components/CreateStep";
-import Breadcrumb from "components/Breadcrumb";
 import {
   appSyncRequestMutation,
   appSyncRequestQuery,
@@ -36,52 +35,47 @@ import {
   BufferType,
   CreateAppLogIngestionMutationVariables,
   CreateAppPipelineMutationVariables,
-  DomainDetails,
-  EngineType,
   LogSource,
-  LogType,
   PipelineAlarmStatus,
-  ErrorCode,
   AppPipeline,
   CreatePipelineAlarmMutationVariables,
   PipelineType,
-  DomainStatusCheckType,
-  DomainStatusCheckResponse,
-  CompressionType,
   SubAccountLink,
+  LogSourceType,
+  LogType,
+  EC2GroupPlatform,
+  IISlogParser,
 } from "API";
 import {
-  WarmTransitionType,
   AmplifyConfigType,
   YesNo,
   ApplicationLogType,
+  AnalyticEngineTypes,
+  SupportPlugin,
 } from "types";
-import HelpPanel from "components/HelpPanel";
-import SideMenu from "components/SideMenu";
 import { ActionType, InfoBarTypes } from "reducer/appReducer";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import {
+  buildLambdaConcurrency,
   buildOSIParamsValue,
   checkIndexNameValidate,
-  defaultStr,
+  linkAccountMissingFields,
+  ternary,
 } from "assets/js/utils";
 import Button from "components/Button";
 import HeaderPanel from "components/HeaderPanel";
-import SpecifyDomain from "../steps/SpecifyDomain";
 import PagePanel from "components/PagePanel";
-import { CovertObjToParameterKeyValue } from "assets/js/applog";
 import ChooseInstanceGroupTable from "./ChooseInstanceGroupTable";
 import PermissionsModeSelector, {
   AUTO,
   MANUAL,
 } from "./PermissionsModeSelector";
 import ExpandableSection from "components/ExpandableSection";
-import { LogConfigSelector } from "../../common/LogConfigSelector";
+import LogConfigSelector from "../../common/LogConfigSelector";
 import LogPathInput from "../../common/LogPathInput";
 import ChooseBufferLayer from "./ChooseBufferLayer";
 import CreateSampleDashboard from "../../common/CreateSampleDashboard";
-import Swal from "sweetalert2";
 import { getAppPipeline } from "graphql/queries";
 import IndexName from "../../common/IndexName";
 import { Validator } from "pages/comps/Validator";
@@ -89,17 +83,15 @@ import { buildInitPipelineData } from "assets/js/init";
 import AlarmAndTags from "pages/pipelineAlarm/AlarmAndTags";
 import { Actions, RootState } from "reducer/reducers";
 import { useTags } from "assets/js/hooks/useTags";
-import { UnmodifiableLogConfigSelector } from "../../common/UnmodifiableLogConfigSelector";
+import UnmodifiableLogConfigSelector from "../../common/UnmodifiableLogConfigSelector";
 import Permission from "../../detail/Permission";
-import cloneDeep from "lodash.clonedeep";
 import {
   CreateAlarmActionTypes,
-  validateAalrmInput,
+  validateAlarmInput,
 } from "reducer/createAlarm";
 import { useAlarm } from "assets/js/hooks/useAlarm";
 import { Dispatch } from "redux";
 import { useLightEngine } from "assets/js/hooks/useLightEngine";
-import { AnalyticEngineTypes } from "pages/dataInjection/serviceLog/create/common/SpecifyAnalyticsEngine";
 import ConfigLightEngine from "pages/dataInjection/serviceLog/create/common/ConfigLightEngine";
 import {
   CreateLightEngineActionTypes,
@@ -108,12 +100,44 @@ import {
 import { createLightEngineApplicationPipeline } from "assets/js/helpers/lightEngineHelper";
 import SelectLogProcessor from "pages/comps/processor/SelectLogProcessor";
 import {
+  LogProcessorType,
   SelectProcessorActionTypes,
   validateOCUInput,
 } from "reducer/selectProcessor";
 import { useSelectProcessor } from "assets/js/hooks/useSelectProcessor";
 import { useGrafana } from "assets/js/hooks/useGrafana";
 import UpdateSubAccountModal from "pages/comps/account/UpdateSubAccountModal";
+import ConfigOpenSearch from "pages/dataInjection/serviceLog/create/common/ConfigOpenSearch";
+import { useOpenSearch } from "assets/js/hooks/useOpenSearch";
+import {
+  convertOpenSearchStateToAppLogOpenSearchParam,
+  indexPrefixChanged,
+  isIndexDuplicated,
+  isIndexPrefixOverlap,
+  validateOpenSearch,
+  validateOpenSearchParams,
+} from "reducer/createOpenSearch";
+import { AppDispatch } from "reducer/store";
+import {
+  convertS3BufferParameters,
+  logBucketPrefixChanged,
+  setLogBucketAndCMKArn,
+  validateS3Buffer,
+  validateS3BufferParams,
+} from "reducer/configBufferS3";
+import { useS3Buffer } from "assets/js/hooks/useS3Buffer";
+import {
+  convertKDSBufferParameters,
+  validateKDSBuffer,
+  validateKDSBufferParams,
+} from "reducer/configBufferKDS";
+import { useKDSBuffer } from "assets/js/hooks/useKDSBuffer";
+import { ExLogConf } from "pages/resources/common/LogConfigComp";
+import CommonLayout from "pages/layout/CommonLayout";
+import { DOMAIN_ALLOW_STATUS } from "assets/js/const";
+import { isWindowsEvent, isWindowsIISLog } from "reducer/createLogConfig";
+import EnrichedFields from "pages/dataInjection/common/EnrichFields";
+import IndexPrefixHandler from "../../common/IndexPrefixHandler";
 
 const AppLogCreateEC2: React.FC = () => {
   const { t } = useTranslation();
@@ -145,22 +169,6 @@ const AppLogCreateEC2: React.FC = () => {
   const [curApplicationLog, setCurApplicationLog] =
     useState<ApplicationLogType>(buildInitPipelineData(amplifyConfig));
 
-  const [domainListIsLoading, setDomainListIsLoading] = useState(false);
-  const [warmLogInvalidError, setWarmLogInvalidError] = useState(false);
-  const [coldLogInvalidError, setColdLogInvalidError] = useState(false);
-  const [logRetentionInvalidError, setLogRetentionInvalidError] =
-    useState(false);
-  const [shardsError, setShardsError] = useState(false);
-  const [coldMustLargeThanWarm, setColdMustLargeThanWarm] = useState(false);
-  const [logRetentionMustThanColdAndWarm, setLogRetentionMustThanColdAndWarm] =
-    useState(false);
-  const [rolloverSizeError, setRolloverSizeError] = useState(false);
-  const [shardInvalidError, setShardInvalidError] = useState(false);
-  const [maxShardInvalidError, setMaxShardInvalidError] = useState(false);
-  const [s3BucketEmptyError, setS3BucketEmptyError] = useState(false);
-  const [s3PrefixError, setS3PrefixError] = useState(false);
-  const [bufferSizeError, setBufferSizeError] = useState(false);
-  const [bufferIntervalError, setBufferIntervalError] = useState(false);
   const [notConfirmNetworkError, setNotConfirmNetworkError] = useState(false);
 
   const [currentInstanceGroups, setCurrentInstanceGroups] = useState<
@@ -174,20 +182,25 @@ const AppLogCreateEC2: React.FC = () => {
   const [shouldCreateDashboard, setShouldCreateDashboard] = useState<string>(
     YesNo.Yes
   );
-  const [domainCheckStatus, setDomainCheckStatus] =
-    useState<DomainStatusCheckResponse>();
   const [subAccountInfo, setSubAccountInfo] = useState<SubAccountLink | null>(
     null
   );
   const [subAccountList, setSubAccountList] = useState<SubAccountLink[]>([]);
   const [needUpdateSubAccount, setNeedUpdateSubAccount] = useState(false);
 
+  const [currentIndexOverlap, setCurrentIndexOverlap] = useState(false);
+  const [currentIndexDuplicated, setCurrentIndexDuplicated] = useState(false);
+  const [indexErrorMessage, setIndexErrorMessage] = useState("");
+
   const tags = useTags();
   const monitor = useAlarm();
   const lightEngine = useLightEngine();
   const osiParams = useSelectProcessor();
   const grafana = useGrafana();
-  console.log(lightEngine);
+  const openSearch = useOpenSearch();
+  const s3Buffer = useS3Buffer();
+  const kdsBuffer = useKDSBuffer();
+  const appDispatch = useDispatch<AppDispatch>();
   const [searchParams] = useSearchParams();
   const engineType =
     (searchParams.get("engineType") as AnalyticEngineTypes | null) ??
@@ -197,16 +210,52 @@ const AppLogCreateEC2: React.FC = () => {
     [engineType]
   );
 
+  const isWindowsEventConfig = useMemo(() => {
+    if (!logConfigJSON) {
+      return false;
+    }
+    return isWindowsEvent(JSON.parse(logConfigJSON)?.logType);
+  }, [logConfigJSON]);
+
+  const isWindowsIISLogWithW3CConfig = useMemo(() => {
+    if (!logConfigJSON) {
+      return false;
+    }
+    return (
+      JSON.parse(logConfigJSON)?.logType === LogType.IIS &&
+      JSON.parse(logConfigJSON)?.iisLogParser === IISlogParser.W3C
+    );
+  }, [logConfigJSON]);
+
+  const isSupportEnrichField = () => {
+    return (
+      isWindowsIISLogWithW3CConfig &&
+      !isLightEngine &&
+      curApplicationLog.bufferType !== BufferType.None &&
+      osiParams.logProcessorType === LogProcessorType.LAMBDA
+    );
+  };
+
+  const isWindowsInstanceGroup = useMemo(() => {
+    if (currentInstanceGroups.length === 0) {
+      return false;
+    }
+    return (
+      currentInstanceGroups?.[0]?.ec2?.groupPlatform ===
+      EC2GroupPlatform.Windows
+    );
+  }, [currentInstanceGroups]);
+
   const instanceGroupValidator = new Validator(() => {
     // check sub account has upload event sns
-    const curInstanceGroupAccountId = currentInstanceGroups[0].accountId;
+    const curInstanceGroupAccountId = currentInstanceGroups[0]?.accountId;
     const curInstanceGroupAccountInfo = subAccountList.find(
       (element) => element.subAccountId === curInstanceGroupAccountId
     );
     if (
       subAccountList.length > 0 &&
       curInstanceGroupAccountInfo &&
-      !curInstanceGroupAccountInfo.subAccountFlbConfUploadingEventTopicArn
+      linkAccountMissingFields(curInstanceGroupAccountInfo)
     ) {
       setSubAccountInfo(curInstanceGroupAccountInfo);
       setNeedUpdateSubAccount(true);
@@ -215,25 +264,47 @@ const AppLogCreateEC2: React.FC = () => {
       setNeedUpdateSubAccount(false);
     }
     if (currentInstanceGroups.length === 0) {
-      throw new Error("Instance groups cannot be empty");
+      throw new Error(t("error.instanceGroupEmpty"));
     }
   });
 
+  const isWindowsDrivePath = (str: string) => {
+    const regex = /^[A-Za-z]:\\/;
+    return regex.test(str);
+  };
+
   const logPathValidator = new Validator(() => {
+    if (isWindowsEventConfig) {
+      return true;
+    }
     if (!logPath) {
       throw new Error(t("applog:ingestion.applyConfig.inputLogPath") || "");
     }
 
-    if (!logPath.startsWith("/")) {
+    if (
+      currentInstanceGroups?.[0]?.ec2?.groupPlatform ===
+        EC2GroupPlatform.Linux &&
+      !logPath.startsWith("/")
+    ) {
       throw new Error(
         t("applog:ingestion.applyConfig.logPathMustBeginWithSlash") || ""
+      );
+    }
+
+    if (
+      currentInstanceGroups?.[0]?.ec2?.groupPlatform ===
+        EC2GroupPlatform.Windows &&
+      !isWindowsDrivePath(logPath)
+    ) {
+      throw new Error(
+        t("applog:ingestion.applyConfig.logPathMustBeginWithDriver") || ""
       );
     }
   });
 
   const logConfigValidator = new Validator(() => {
     if (!logConfigJSON) {
-      throw new Error(t("error.instanceGroupEmpty"));
+      throw new Error(t("applog:logSourceDesc.eks.step2.selectConfig"));
     }
   });
   const indexNameValidator = new Validator(() => {
@@ -244,150 +315,29 @@ const AppLogCreateEC2: React.FC = () => {
       throw new Error(t("error.invalidIndexName"));
     }
   });
+
   const openSearchInputValidator = new Validator(() => {
-    // check number of shards
-    if (parseInt(curApplicationLog.aosParams.shardNumbers) <= 0) {
-      setShardsError(true);
+    if (!validateOpenSearchParams(openSearch)) {
+      appDispatch(validateOpenSearch());
       throw new Error();
     }
-
-    if (parseInt(curApplicationLog.aosParams.warmLogTransition) < 0) {
-      setWarmLogInvalidError(true);
-      throw new Error();
-    }
-    if (parseInt(curApplicationLog.aosParams.coldLogTransition) < 0) {
-      setColdLogInvalidError(true);
-      throw new Error();
-    }
-
-    if (curApplicationLog.warmTransitionType === WarmTransitionType.BY_DAYS) {
-      if (
-        parseInt(curApplicationLog.aosParams.coldLogTransition) <
-        parseInt(curApplicationLog.aosParams.warmLogTransition)
-      ) {
-        setColdMustLargeThanWarm(true);
-        throw new Error();
-      }
-    }
-
-    if (curApplicationLog.warmTransitionType === WarmTransitionType.BY_DAYS) {
-      if (
-        parseInt(curApplicationLog.aosParams.coldLogTransition) <
-        parseInt(curApplicationLog.aosParams.warmLogTransition)
-      ) {
-        if (
-          (curApplicationLog.warmEnable &&
-            parseInt(curApplicationLog.aosParams.logRetention) <
-              parseInt(curApplicationLog.aosParams.warmLogTransition)) ||
-          (curApplicationLog.coldEnable &&
-            parseInt(curApplicationLog.aosParams.logRetention) <
-              parseInt(curApplicationLog.aosParams.coldLogTransition))
-        ) {
-          setLogRetentionMustThanColdAndWarm(true);
-          throw new Error();
-        }
-      }
-    } else {
-      if (
-        curApplicationLog.coldEnable &&
-        parseInt(curApplicationLog.aosParams.logRetention) <
-          parseInt(curApplicationLog.aosParams.coldLogTransition)
-      ) {
-        setLogRetentionMustThanColdAndWarm(true);
-        throw new Error();
-      }
-    }
-
-    if (parseInt(curApplicationLog.aosParams.logRetention) < 0) {
-      setLogRetentionInvalidError(true);
-      throw new Error();
-    }
-
-    // check rollover size
-    if (
-      curApplicationLog.enableRolloverByCapacity &&
-      parseFloat(curApplicationLog.aosParams.rolloverSize) <= 0
-    ) {
-      setRolloverSizeError(true);
-      throw new Error();
-    }
-
-    // Check domain connection status
-    if (domainCheckStatus?.status !== DomainStatusCheckType.PASSED) {
-      throw new Error();
-    }
-
     return true;
   });
 
   const bufferLayerValidator = new Validator(() => {
     // Check KDS Input when buffer type is KDS
     if (curApplicationLog.bufferType === BufferType.KDS) {
-      if (
-        curApplicationLog.kdsBufferParams.minCapacity === "" ||
-        parseInt(curApplicationLog.kdsBufferParams.minCapacity) <= 0
-      ) {
-        setShardInvalidError(true);
+      if (!validateKDSBufferParams(kdsBuffer)) {
+        appDispatch(validateKDSBuffer());
         throw new Error();
-      } else {
-        setShardInvalidError(false);
-      }
-      const intStartShardNum = parseInt(
-        curApplicationLog.kdsBufferParams.minCapacity
-      );
-      const intMaxShardNum = parseInt(
-        curApplicationLog.kdsBufferParams.maxCapacity
-      );
-      if (
-        curApplicationLog.kdsBufferParams.enableAutoScaling === "true" &&
-        (intMaxShardNum <= 0 ||
-          Number.isNaN(intMaxShardNum) ||
-          intMaxShardNum <= intStartShardNum)
-      ) {
-        setMaxShardInvalidError(true);
-        throw new Error();
-      } else {
-        setMaxShardInvalidError(false);
       }
     }
 
     // Check S3 Input when buffer type is S3
     if (curApplicationLog.bufferType === BufferType.S3) {
-      if (!curApplicationLog.s3BufferBucketObj) {
-        setS3BucketEmptyError(true);
+      if (!validateS3BufferParams(s3Buffer)) {
+        appDispatch(validateS3Buffer());
         throw new Error();
-      } else {
-        setS3BucketEmptyError(false);
-      }
-
-      if (
-        curApplicationLog.s3BufferParams.logBucketPrefix &&
-        (curApplicationLog.s3BufferParams.logBucketPrefix === "/" ||
-          !curApplicationLog.s3BufferParams.logBucketPrefix.endsWith("/"))
-      ) {
-        setS3PrefixError(true);
-        throw new Error();
-      } else {
-        setS3PrefixError(false);
-      }
-
-      if (
-        parseInt(curApplicationLog.s3BufferParams.maxFileSize) < 1 ||
-        parseInt(curApplicationLog.s3BufferParams.maxFileSize) > 50
-      ) {
-        setBufferSizeError(true);
-        throw new Error();
-      } else {
-        setBufferSizeError(false);
-      }
-      if (
-        parseInt(curApplicationLog.s3BufferParams.uploadTimeout) < 1 ||
-        parseInt(curApplicationLog.s3BufferParams.uploadTimeout) > 86400
-      ) {
-        setBufferIntervalError(true);
-        throw new Error();
-      } else {
-        setBufferIntervalError(false);
       }
     }
 
@@ -420,6 +370,94 @@ const AppLogCreateEC2: React.FC = () => {
     }
   });
 
+  const onlyCreateIngestion = async () => {
+    const ingestionRes = await appSyncRequestMutation(createAppLogIngestion, {
+      sourceId: currentInstanceGroups[0].sourceId,
+      appPipelineId: state?.pipelineId,
+      logPath: logPath,
+      autoAddPermission: permissionsMode === AUTO,
+    } as CreateAppLogIngestionMutationVariables);
+
+    console.log("ingestionRes", ingestionRes);
+
+    // Trigger the pipeline alarm system to update the alarm on new ingestion
+    const resPipelineData = await appSyncRequestQuery(getAppPipeline, {
+      id: state?.pipelineId,
+    });
+    const tmpPipelineData: AppPipeline = resPipelineData?.data?.getAppPipeline;
+    if (
+      tmpPipelineData.monitor?.pipelineAlarmStatus ===
+      PipelineAlarmStatus.ENABLED
+    ) {
+      await appSyncRequestMutation(createPipelineAlarm, {
+        pipelineId: state?.pipelineId,
+        pipelineType: PipelineType.APP,
+        snsTopicArn: tmpPipelineData.monitor.snsTopicArn,
+      } as CreatePipelineAlarmMutationVariables);
+    }
+    setLoadingCreate(false);
+    navigate("/log-pipeline/application-log/detail/" + state?.pipelineId);
+  };
+
+  const createApplicationPipeline = async (
+    createPipelineParams: CreateAppPipelineMutationVariables,
+    logConfigObj: ExLogConf,
+    isForce: boolean
+  ) => {
+    let appPipelineId: string;
+    if (engineType === AnalyticEngineTypes.LIGHT_ENGINE) {
+      appPipelineId = await createLightEngineApplicationPipeline(
+        lightEngine,
+        s3Buffer,
+        logConfigObj,
+        monitor,
+        tags,
+        isForce
+      );
+    } else {
+      const createRes = await appSyncRequestMutation(
+        createAppPipeline,
+        createPipelineParams
+      );
+
+      console.info("createRes:", createRes);
+      appPipelineId = createRes.data.createAppPipeline;
+    }
+
+    await appSyncRequestMutation(createAppLogIngestion, {
+      sourceId: currentInstanceGroups[0].sourceId,
+      appPipelineId,
+      tags,
+      logPath: logPath,
+      autoAddPermission: permissionsMode === AUTO,
+    } as CreateAppLogIngestionMutationVariables);
+    setLoadingCreate(false);
+    navigate("/log-pipeline/application-log");
+  };
+
+  const buildBufferParametersByBufferType = (logType: LogType) => {
+    if (curApplicationLog.bufferType === BufferType.S3) {
+      return convertS3BufferParameters(
+        s3Buffer,
+        logType,
+        shouldCreateDashboard
+      );
+    }
+    if (curApplicationLog.bufferType === BufferType.KDS) {
+      return convertKDSBufferParameters(
+        kdsBuffer,
+        logType,
+        shouldCreateDashboard
+      );
+    }
+    return [];
+  };
+
+  const closeIndexHandlerModal = () => {
+    setCurrentIndexDuplicated(false);
+    setCurrentIndexOverlap(false);
+  };
+
   useEffect(() => {
     if (
       currentInstanceGroups.length > 0 &&
@@ -433,6 +471,23 @@ const AppLogCreateEC2: React.FC = () => {
     dispatch({ type: ActionType.CLOSE_SIDE_MENU });
   }, []);
 
+  useEffect(() => {
+    if (amplifyConfig.default_logging_bucket && amplifyConfig.default_cmk_arn) {
+      appDispatch(setLogBucketAndCMKArn(amplifyConfig));
+    }
+  }, [amplifyConfig]);
+
+  const isWindowsLogConfig = () => {
+    if (logConfigJSON) {
+      const tmpConfig: ExLogConf = JSON.parse(logConfigJSON);
+      return (
+        isWindowsIISLog(tmpConfig.logType) || isWindowsEvent(tmpConfig.logType)
+      );
+    } else {
+      return false;
+    }
+  };
+
   const stepComps = [
     {
       name: t("applog:logSourceDesc.ec2.step1.naviTitle"),
@@ -440,10 +495,17 @@ const AppLogCreateEC2: React.FC = () => {
         <PagePanel title={t("applog:logSourceDesc.ec2.step1.title")}>
           <ChooseInstanceGroupTable
             value={currentInstanceGroups}
-            setValue={setCurrentInstanceGroups}
+            setValue={(instanceGroup) => {
+              // reset log config if create pipeline
+              if (!state) {
+                setLogConfigJSON("");
+              }
+              setCurrentInstanceGroups(instanceGroup);
+            }}
             validator={instanceGroupValidator}
+            isIngestion={!!state}
+            isWindowsLog={isWindowsLogConfig()}
           />
-
           <HeaderPanel title={t("applog:logSourceDesc.ec2.step1.permissions")}>
             <PermissionsModeSelector
               disableAuto={
@@ -475,13 +537,6 @@ const AppLogCreateEC2: React.FC = () => {
           title={t("applog:logSourceDesc.s3.step2.title")}
           desc={state ? "" : t("applog:logSourceDesc.eks.step2.titleDesc")}
         >
-          <HeaderPanel title={t("resource:config.common.logPath")}>
-            <LogPathInput
-              value={logPath}
-              setValue={setLogPath}
-              validator={logPathValidator}
-            />
-          </HeaderPanel>
           <HeaderPanel title={t("applog:logSourceDesc.s3.step2.panelName")}>
             {state ? (
               <UnmodifiableLogConfigSelector
@@ -501,11 +556,15 @@ const AppLogCreateEC2: React.FC = () => {
                 createNewLink="/resources/log-config/create"
                 validator={logConfigValidator}
                 forceLogConfig={undefined}
+                engineType={engineType}
+                logType={LogSourceType.EC2}
+                isWindowsInstanceGroup={isWindowsInstanceGroup}
               />
             )}
             <>
               {!state && !isLightEngine && (
                 <CreateSampleDashboard
+                  showCreateSample={isWindowsIISLogWithW3CConfig}
                   createDashboard={shouldCreateDashboard}
                   logType={
                     logConfigJSON ? JSON.parse(logConfigJSON).logType : ""
@@ -517,6 +576,21 @@ const AppLogCreateEC2: React.FC = () => {
               )}
             </>
           </HeaderPanel>
+          <>
+            {logConfigJSON && !isWindowsEventConfig && (
+              <HeaderPanel title={t("resource:config.common.logPath")}>
+                <LogPathInput
+                  value={logPath}
+                  setValue={setLogPath}
+                  validator={logPathValidator}
+                  logSourceType={LogSourceType.EC2}
+                  instanceGroupPlatform={
+                    currentInstanceGroups?.[0]?.ec2?.groupPlatform
+                  }
+                />
+              </HeaderPanel>
+            )}
+          </>
         </PagePanel>
       ),
       validators: [logConfigValidator, logPathValidator],
@@ -533,16 +607,18 @@ const AppLogCreateEC2: React.FC = () => {
               <IndexName
                 value={curApplicationLog.aosParams.indexPrefix}
                 setValue={(value) => {
+                  appDispatch(indexPrefixChanged(value as string));
+                  appDispatch(
+                    logBucketPrefixChanged(
+                      `AppLogs/${value}/year=%Y/month=%m/day=%d/`
+                    )
+                  );
                   setCurApplicationLog((prev) => {
                     return {
                       ...prev,
                       aosParams: {
                         ...prev.aosParams,
                         indexPrefix: value as string,
-                      },
-                      s3BufferParams: {
-                        ...prev.s3BufferParams,
-                        logBucketPrefix: `AppLogs/${value}/year=%Y/month=%m/day=%d/`,
                       },
                     };
                   });
@@ -558,12 +634,6 @@ const AppLogCreateEC2: React.FC = () => {
           >
             <ChooseBufferLayer
               engineType={engineType}
-              maxShardNumInvalidError={maxShardInvalidError}
-              s3BucketEmptyError={s3BucketEmptyError}
-              s3PrefixError={s3PrefixError}
-              bufferSizeError={bufferSizeError}
-              bufferIntervalError={bufferIntervalError}
-              shardNumInvalidError={shardInvalidError}
               notConfirmNetworkError={notConfirmNetworkError}
               applicationLog={curApplicationLog}
               setApplicationLog={setCurApplicationLog}
@@ -583,177 +653,7 @@ const AppLogCreateEC2: React.FC = () => {
       element: isLightEngine ? (
         <ConfigLightEngine />
       ) : (
-        <SpecifyDomain
-          applicationLog={curApplicationLog}
-          changeOpenSearchCluster={(cluster: DomainDetails | undefined) => {
-            const NOT_SUPPORT_VERSION =
-              cluster?.engine === EngineType.Elasticsearch ||
-              parseFloat(cluster?.version || "") < 1.3;
-            setCurApplicationLog((prev) => {
-              return {
-                ...prev,
-                openSearchId: defaultStr(cluster?.id),
-                warmEnable: cluster?.nodes?.warmEnabled || false,
-                coldEnable: cluster?.nodes?.coldEnabled || false,
-                rolloverSizeNotSupport: NOT_SUPPORT_VERSION,
-                enableRolloverByCapacity: !NOT_SUPPORT_VERSION,
-                aosParams: {
-                  ...prev.aosParams,
-                  rolloverSize: NOT_SUPPORT_VERSION ? "" : "30",
-                  domainName: defaultStr(cluster?.domainName),
-                  opensearchArn: defaultStr(cluster?.domainArn),
-                  opensearchEndpoint: defaultStr(cluster?.endpoint),
-                  engine: defaultStr(cluster?.engine),
-                  vpc: {
-                    privateSubnetIds: defaultStr(
-                      cluster?.vpc?.privateSubnetIds
-                    ),
-                    publicSubnetIds: defaultStr(cluster?.vpc?.publicSubnetIds),
-                    securityGroupId: defaultStr(cluster?.vpc?.securityGroupId),
-                    vpcId: defaultStr(cluster?.vpc?.vpcId),
-                  },
-                },
-              };
-            });
-          }}
-          changeWarnLogTransition={function (value: string): void {
-            setWarmLogInvalidError(false);
-            setCurApplicationLog((prev) => {
-              return {
-                ...prev,
-                aosParams: {
-                  ...prev.aosParams,
-                  warmLogTransition: value,
-                },
-              };
-            });
-          }}
-          changeColdLogTransition={function (value: string): void {
-            setColdLogInvalidError(false);
-            setColdMustLargeThanWarm(false);
-            setCurApplicationLog((prev) => {
-              return {
-                ...prev,
-                aosParams: {
-                  ...prev.aosParams,
-                  coldLogTransition: value,
-                },
-              };
-            });
-          }}
-          changeLogRetention={function (value: string): void {
-            setLogRetentionInvalidError(false);
-            setLogRetentionMustThanColdAndWarm(false);
-            setCurApplicationLog((prev) => {
-              return {
-                ...prev,
-                aosParams: {
-                  ...prev.aosParams,
-                  logRetention: value,
-                },
-              };
-            });
-          }}
-          changeLoadingDomain={(loading) => {
-            setDomainListIsLoading(loading);
-          }}
-          changeShards={function (shards: string): void {
-            setShardsError(false);
-            setCurApplicationLog((prev) => {
-              return {
-                ...prev,
-                aosParams: {
-                  ...prev.aosParams,
-                  shardNumbers: shards,
-                },
-              };
-            });
-          }}
-          changeReplicas={function (replicas: string): void {
-            setCurApplicationLog((prev) => {
-              return {
-                ...prev,
-                aosParams: {
-                  ...prev.aosParams,
-                  replicaNumbers: replicas,
-                },
-              };
-            });
-          }}
-          changeIndexSuffix={function (suffix: string): void {
-            setCurApplicationLog((prev) => {
-              return {
-                ...prev,
-                aosParams: {
-                  ...prev.aosParams,
-                  indexSuffix: suffix,
-                },
-              };
-            });
-          }}
-          changeEnableRollover={function (enable: boolean): void {
-            setRolloverSizeError(false);
-            setCurApplicationLog((prev) => {
-              return {
-                ...prev,
-                enableRolloverByCapacity: enable,
-              };
-            });
-          }}
-          changeRolloverSize={function (size: string): void {
-            setRolloverSizeError(false);
-            setCurApplicationLog((prev) => {
-              return {
-                ...prev,
-                aosParams: {
-                  ...prev.aosParams,
-                  rolloverSize: size,
-                },
-              };
-            });
-          }}
-          changeCompressionType={function (codec: string): void {
-            setCurApplicationLog((prev) => {
-              return {
-                ...prev,
-                aosParams: {
-                  ...prev.aosParams,
-                  codec: codec,
-                },
-              };
-            });
-          }}
-          changeWarmSettings={function (type: string): void {
-            setColdMustLargeThanWarm(false);
-            setCurApplicationLog((prev) => {
-              return {
-                ...prev,
-                warmTransitionType: type,
-              };
-            });
-          }}
-          domainCheckedStatus={domainCheckStatus}
-          changeOSDomainCheckStatus={(status) => {
-            setCurApplicationLog((prev) => {
-              return {
-                ...prev,
-                aosParams: {
-                  ...prev.aosParams,
-                  replicaNumbers: status.multiAZWithStandbyEnabled ? "2" : "1",
-                },
-              };
-            });
-            setDomainCheckStatus(status);
-          }}
-          esDomainEmptyError={false}
-          warmLogInvalidError={warmLogInvalidError}
-          coldLogInvalidError={coldLogInvalidError}
-          logRetentionInvalidError={logRetentionInvalidError}
-          shardsInvalidError={shardsError}
-          coldMustLargeThanWarm={coldMustLargeThanWarm}
-          logRetentionMustThanColdAndWarm={logRetentionMustThanColdAndWarm}
-          rolloverSizeError={rolloverSizeError}
-        />
+        <ConfigOpenSearch taskType={LogSourceType.EC2} />
       ),
       validators: [
         isLightEngine ? lightEngineValidator : openSearchInputValidator,
@@ -761,14 +661,45 @@ const AppLogCreateEC2: React.FC = () => {
     },
     {
       name: t("processor.logProcessorSettings"),
-      disabled: !!state,
+      disabled: !!state || engineType === AnalyticEngineTypes.LIGHT_ENGINE,
       element: (
-        <SelectLogProcessor
-          supportOSI={
-            curApplicationLog.bufferType === BufferType.S3 &&
-            engineType === AnalyticEngineTypes.OPENSEARCH
-          }
-        />
+        <>
+          <SelectLogProcessor
+            supportOSI={
+              curApplicationLog.bufferType === BufferType.S3 &&
+              engineType === AnalyticEngineTypes.OPENSEARCH
+            }
+          />
+          {isSupportEnrichField() && (
+            <EnrichedFields
+              pipelineTask={curApplicationLog}
+              changePluginSelect={(plugin, enable) => {
+                if (plugin === SupportPlugin.Geo) {
+                  setCurApplicationLog((prev: ApplicationLogType) => {
+                    return {
+                      ...prev,
+                      params: {
+                        ...prev.params,
+                        geoPlugin: enable,
+                      },
+                    };
+                  });
+                }
+                if (plugin === SupportPlugin.UserAgent) {
+                  setCurApplicationLog((prev: ApplicationLogType) => {
+                    return {
+                      ...prev,
+                      params: {
+                        ...prev.params,
+                        userAgentPlugin: enable,
+                      },
+                    };
+                  });
+                }
+              }}
+            />
+          )}
+        </>
       ),
       validators: [selectProcessorValidator],
     },
@@ -787,298 +718,177 @@ const AppLogCreateEC2: React.FC = () => {
   ].filter((each) => !each.disabled);
 
   const confirmCreatePipeline = async (isForce = false) => {
-    const p = {
-      rolloverSize: curApplicationLog.enableRolloverByCapacity
-        ? curApplicationLog.aosParams.rolloverSize + "gb"
-        : "",
-      warmLogTransition: (() => {
-        const userInputWarmAge = curApplicationLog.aosParams.warmLogTransition;
-        if (curApplicationLog.warmEnable && userInputWarmAge) {
-          if (
-            curApplicationLog.warmTransitionType ===
-            WarmTransitionType.IMMEDIATELY
-          ) {
-            return "1s";
-          } else if (userInputWarmAge !== "0") {
-            return userInputWarmAge + "d";
-          }
-        }
-        return "";
-      })(),
-      coldLogTransition: (() => {
-        const userInputCodeAge = curApplicationLog.aosParams.coldLogTransition;
-        if (
-          curApplicationLog.coldEnable &&
-          userInputCodeAge &&
-          userInputCodeAge !== "0"
-        ) {
-          return userInputCodeAge + "d";
-        }
-        return "";
-      })(),
-      logRetention: (() => {
-        const userInputRetainAge = curApplicationLog.aosParams.logRetention;
-        if (userInputRetainAge && userInputRetainAge !== "0") {
-          return userInputRetainAge + "d";
-        }
-        return "";
-      })(),
-    };
-
     if (curApplicationLog.kdsBufferParams.enableAutoScaling !== "true") {
       curApplicationLog.kdsBufferParams.maxCapacity =
         curApplicationLog.kdsBufferParams.minCapacity;
     }
-
     const logConfigObj = JSON.parse(logConfigJSON);
     const logConfigId = logConfigObj.id;
     const logConfigVersionNumber = logConfigObj.version;
 
+    // Add Plugin in parameters
+    const parameters = [];
+    const pluginList = [];
+    if (curApplicationLog.params.geoPlugin) {
+      pluginList.push(SupportPlugin.Geo);
+    }
+    if (curApplicationLog.params.userAgentPlugin) {
+      pluginList.push(SupportPlugin.UserAgent);
+    }
+    if (pluginList.length > 0 && isSupportEnrichField()) {
+      parameters.push({
+        parameterKey: "enrichmentPlugins",
+        parameterValue: pluginList.join(","),
+      });
+    }
+
     const createPipelineParams: CreateAppPipelineMutationVariables = {
       bufferType: curApplicationLog.bufferType as BufferType,
       aosParams: {
-        ...(curApplicationLog.aosParams as any),
-        ...p,
-      },
+        ...convertOpenSearchStateToAppLogOpenSearchParam(openSearch),
+        failedLogBucket: amplifyConfig.default_logging_bucket,
+      } as any,
       logConfigId: logConfigId,
       logConfigVersionNumber: parseInt(logConfigVersionNumber, 10),
-      bufferParams: CovertObjToParameterKeyValue(
-        (() => {
-          if (curApplicationLog.bufferType === BufferType.S3) {
-            return Object.assign(cloneDeep(curApplicationLog.s3BufferParams), {
-              compressionType:
-                curApplicationLog.s3BufferParams.compressionType ===
-                CompressionType.NONE
-                  ? undefined
-                  : curApplicationLog.s3BufferParams.compressionType,
-              createDashboard: [LogType.Nginx, LogType.Apache].includes(
-                logConfigObj.logType
-              )
-                ? shouldCreateDashboard
-                : YesNo.No,
-            });
-          } else if (curApplicationLog.bufferType === BufferType.KDS) {
-            return Object.assign(cloneDeep(curApplicationLog.kdsBufferParams), {
-              createDashboard: [LogType.Nginx, LogType.Apache].includes(
-                logConfigObj.logType
-              )
-                ? shouldCreateDashboard
-                : YesNo.No,
-            });
-          }
-          return {};
-        })()
-      ),
+      bufferParams: buildBufferParametersByBufferType(logConfigObj.logType),
       monitor: monitor.monitor,
       osiParams: buildOSIParamsValue(osiParams),
+      logProcessorConcurrency: buildLambdaConcurrency(osiParams),
       tags,
       force: isForce,
+      parameters,
     };
 
-    try {
-      setLoadingCreate(true);
-
-      const isCreateIngestionOnly = !!state;
-
-      if (isCreateIngestionOnly) {
-        const ingestionRes = await appSyncRequestMutation(
-          createAppLogIngestion,
-          {
-            sourceId: currentInstanceGroups[0].sourceId,
-            appPipelineId: state.pipelineId,
-            logPath: logPath,
-            autoAddPermission: permissionsMode === AUTO,
-          } as CreateAppLogIngestionMutationVariables
+    setLoadingCreate(true);
+    const isCreateIngestionOnly = !!state;
+    if (isCreateIngestionOnly) {
+      onlyCreateIngestion();
+    } else {
+      try {
+        await createApplicationPipeline(
+          createPipelineParams,
+          logConfigObj,
+          isForce
         );
-
-        console.log("ingestionRes", ingestionRes);
-
-        // Trigger the pipeline alarm system to update the alarm on new ingestion
-        const resPipelineData = await appSyncRequestQuery(getAppPipeline, {
-          id: state.pipelineId,
-        });
-        const tmpPipelineData: AppPipeline =
-          resPipelineData?.data?.getAppPipeline;
-        if (
-          tmpPipelineData.monitor?.pipelineAlarmStatus ===
-          PipelineAlarmStatus.ENABLED
-        ) {
-          await appSyncRequestMutation(createPipelineAlarm, {
-            pipelineId: state.pipelineId,
-            pipelineType: PipelineType.APP,
-            snsTopicArn: tmpPipelineData.monitor.snsTopicArn,
-          } as CreatePipelineAlarmMutationVariables);
-        }
+      } catch (error: any) {
+        const { errorCode, message } = refineErrorMessage(error.message);
         setLoadingCreate(false);
-        navigate("/log-pipeline/application-log/detail/" + state?.pipelineId);
-      } else {
-        let appPipelineId: string;
-        if (engineType === AnalyticEngineTypes.LIGHT_ENGINE) {
-          appPipelineId = await createLightEngineApplicationPipeline(
-            lightEngine,
-            curApplicationLog,
-            logConfigObj,
-            monitor,
-            tags,
-            isForce
-          );
-        } else {
-          const createRes = await appSyncRequestMutation(
-            createAppPipeline,
-            createPipelineParams
-          );
-
-          console.info("createRes:", createRes);
-          appPipelineId = createRes.data.createAppPipeline;
+        console.error(error.message);
+        if (isIndexPrefixOverlap(errorCode)) {
+          setCurrentIndexOverlap(true);
+          setIndexErrorMessage(message);
         }
-
-        await appSyncRequestMutation(createAppLogIngestion, {
-          sourceId: currentInstanceGroups[0].sourceId,
-          appPipelineId,
-          tags,
-          logPath: logPath,
-          autoAddPermission: permissionsMode === AUTO,
-        } as CreateAppLogIngestionMutationVariables);
-        setLoadingCreate(false);
-        navigate("/log-pipeline/application-log");
+        if (isIndexDuplicated(errorCode)) {
+          setCurrentIndexDuplicated(true);
+        }
       }
-    } catch (error: any) {
-      const { errorCode, message } = refineErrorMessage(error.message);
-      if (
-        errorCode === ErrorCode.OVERLAP_WITH_INACTIVE_INDEX_PREFIX ||
-        errorCode === ErrorCode.OVERLAP_INDEX_PREFIX
-      ) {
-        Swal.fire({
-          icon: "error",
-          title: "Oops...",
-          cancelButtonColor: "#ec7211",
-          showCancelButton: true,
-          confirmButtonText: t("button.cancel") || "",
-          cancelButtonText: t("button.changeIndex") || "",
-          text:
-            (errorCode === ErrorCode.OVERLAP_WITH_INACTIVE_INDEX_PREFIX
-              ? t("applog:create.ingestSetting.overlapWithInvalidPrefix")
-              : t("applog:create.ingestSetting.overlapWithPrefix")) +
-            `(${message})`,
-        }).then((result) => {
-          if (result.isDismissed) {
-            setCurrentStep(2);
-          }
-        });
-      }
-      if (
-        errorCode === ErrorCode.DUPLICATED_WITH_INACTIVE_INDEX_PREFIX ||
-        errorCode === ErrorCode.DUPLICATED_INDEX_PREFIX
-      ) {
-        Swal.fire({
-          icon: "error",
-          title: "Oops...",
-          cancelButtonColor: "#ec7211",
-          showCancelButton: true,
-          showDenyButton: true,
-          confirmButtonText: t("button.cancel") || "",
-          denyButtonText: t("button.forceCreate") || "",
-          cancelButtonText: t("button.changeIndex") || "",
-          text:
-            errorCode === ErrorCode.DUPLICATED_WITH_INACTIVE_INDEX_PREFIX
-              ? t("applog:create.ingestSetting.duplicatedWithInvalidPrefix")
-              : t("applog:create.ingestSetting.duplicatedWithPrefix"),
-        }).then((result) => {
-          if (result.isDismissed) {
-            setCurrentStep(2);
-          } else if (result.isDenied) {
-            confirmCreatePipeline(true);
-          }
-        });
-      }
-      setLoadingCreate(false);
-      console.error(error.message);
     }
   };
 
   const isNextDisabled = () => {
     return (
-      domainListIsLoading ||
+      openSearch.domainLoading ||
       (currentStep === 3 &&
         !isLightEngine &&
-        domainCheckStatus?.status !== DomainStatusCheckType.PASSED) ||
+        !DOMAIN_ALLOW_STATUS.includes(
+          openSearch.domainCheckedStatus?.status
+        )) ||
       osiParams.serviceAvailableCheckedLoading
     );
   };
 
   return (
-    <div className="lh-main-content">
-      <SideMenu />
-      <div className="lh-container">
-        <div className="lh-content">
-          <div className="lh-create-log">
-            <Breadcrumb list={breadCrumbList} />
-            <div className="create-wrapper">
-              <div className="create-step">
-                <CreateStep list={stepComps} activeIndex={currentStep} />
-              </div>
-              <div className="create-content m-w-75p">
-                {stepComps[currentStep].element}
-                <div className="button-action text-right">
-                  <Button
-                    btnType="text"
-                    onClick={() => {
-                      navigate("/log-pipeline/application-log");
-                    }}
-                  >
-                    {t("button.cancel")}
-                  </Button>
-                  {currentStep > 0 && (
-                    <Button
-                      onClick={() => {
-                        setCurrentStep(Math.max(currentStep - 1, 0));
-                      }}
-                    >
-                      {t("button.previous")}
-                    </Button>
-                  )}
-                  {currentStep < stepComps.length - 1 && (
-                    <Button
-                      btnType="primary"
-                      disabled={isNextDisabled()}
-                      onClick={() => {
-                        if (
-                          stepComps[currentStep].validators
-                            .map((each) => each.validate())
-                            .every(Boolean)
-                        ) {
-                          setCurrentStep(
-                            Math.min(currentStep + 1, stepComps.length)
-                          );
-                        }
-                      }}
-                    >
-                      {t("button.next")}
-                    </Button>
-                  )}
-                  {currentStep === stepComps.length - 1 && (
-                    <Button
-                      loading={loadingCreate}
-                      btnType="primary"
-                      onClick={() => {
-                        if (!validateAalrmInput(monitor)) {
-                          dispatch({
-                            type: CreateAlarmActionTypes.VALIDATE_ALARM_INPUT,
-                          });
-                          return;
-                        }
-                        confirmCreatePipeline();
-                      }}
-                    >
-                      {t("button.create")}
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
+    <CommonLayout breadCrumbList={breadCrumbList}>
+      <div className="create-wrapper">
+        <div className="create-step" data-testid="test-create-app-ec2">
+          <CreateStep list={stepComps} activeIndex={currentStep} />
+        </div>
+        <div className="create-content m-w-75p">
+          {stepComps[currentStep].element}
+          <div className="button-action text-right">
+            <Button
+              btnType="text"
+              onClick={() => {
+                navigate("/log-pipeline/application-log");
+              }}
+            >
+              {t("button.cancel")}
+            </Button>
+            {currentStep > 0 && (
+              <Button
+                onClick={() => {
+                  setCurrentStep(Math.max(currentStep - 1, 0));
+                }}
+              >
+                {t("button.previous")}
+              </Button>
+            )}
+            {currentStep < stepComps.length - 1 && (
+              <Button
+                btnType="primary"
+                disabled={isNextDisabled()}
+                onClick={() => {
+                  if (
+                    stepComps[currentStep].validators
+                      .map((each) => each.validate())
+                      .every(Boolean)
+                  ) {
+                    setCurrentStep(Math.min(currentStep + 1, stepComps.length));
+                  }
+                }}
+              >
+                {t("button.next")}
+              </Button>
+            )}
+            {currentStep === stepComps.length - 1 && (
+              <Button
+                loading={loadingCreate}
+                btnType="primary"
+                onClick={() => {
+                  if (!validateAlarmInput(monitor)) {
+                    dispatch({
+                      type: CreateAlarmActionTypes.VALIDATE_ALARM_INPUT,
+                    });
+                    return;
+                  }
+                  if (
+                    !stepComps[currentStep].validators
+                      .map((each) => each.validate())
+                      .every(Boolean)
+                  ) {
+                    return;
+                  }
+                  confirmCreatePipeline();
+                }}
+              >
+                {t("button.create")}
+              </Button>
+            )}
           </div>
         </div>
       </div>
+      <IndexPrefixHandler
+        openModal={currentIndexDuplicated || currentIndexOverlap}
+        alertContent={ternary(
+          currentIndexDuplicated,
+          t("applog:create.ingestSetting.duplicatedIndexError"),
+          t("applog:create.ingestSetting.overlapIndexError", {
+            message: indexErrorMessage,
+          })
+        )}
+        showContinue={currentIndexDuplicated}
+        clickCancel={() => {
+          closeIndexHandlerModal();
+        }}
+        clickConfirm={() => {
+          confirmCreatePipeline(true);
+          closeIndexHandlerModal();
+        }}
+        clickEditIndex={() => {
+          closeIndexHandlerModal();
+          setCurrentStep(2);
+        }}
+      />
       <UpdateSubAccountModal
         accountInfo={subAccountInfo}
         showModal={needUpdateSubAccount}
@@ -1086,8 +896,7 @@ const AppLogCreateEC2: React.FC = () => {
           setNeedUpdateSubAccount(false);
         }}
       />
-      <HelpPanel />
-    </div>
+    </CommonLayout>
   );
 };
 

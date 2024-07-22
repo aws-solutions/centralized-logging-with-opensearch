@@ -18,25 +18,23 @@ import CreateStep from "components/CreateStep";
 import SelectDomain from "./steps/SelectDomain";
 import ConfigNetwork from "./steps/ConfigNetwork";
 import Button from "components/Button";
-import Breadcrumb from "components/Breadcrumb";
 import { appSyncRequestMutation, appSyncRequestQuery } from "assets/js/request";
 import { importDomain } from "graphql/mutations";
 import { useNavigate } from "react-router-dom";
-import { DomainRelevantResource, DomainStatusCheckType, ESVPCInfo } from "API";
+import { DomainRelevantResource, ESVPCInfo } from "API";
 import { ActionType } from "reducer/appReducer";
 import { useDispatch, useSelector } from "react-redux";
 import { AmplifyConfigType } from "types";
 import { getDomainVpc, validateVpcCidr } from "graphql/queries";
 import { SelectItem } from "components/Select/select";
-import HelpPanel from "components/HelpPanel";
-import SideMenu from "components/SideMenu";
 import { useTranslation } from "react-i18next";
-import { CreateLogMethod } from "assets/js/const";
+import { CreateLogMethod, DOMAIN_ALLOW_STATUS } from "assets/js/const";
 import ImportDomain from "./steps/ImportDomain";
 import { Actions, RootState } from "reducer/reducers";
 import { CreateTags } from "pages/dataInjection/common/CreateTags";
 import { Dispatch } from "redux";
 import { useTags } from "assets/js/hooks/useTags";
+import CommonLayout from "pages/layout/CommonLayout";
 export interface ImportedDomainType {
   showVPCAlert: boolean;
   creationMethod: string;
@@ -176,238 +174,227 @@ const ImportOpenSearchCluster: React.FC = () => {
 
   useEffect(() => {
     console.info("domainStatus:", importedCluster.domainStatus);
-    if (importedCluster.domainStatus === DomainStatusCheckType.PASSED) {
+    if (DOMAIN_ALLOW_STATUS.includes(importedCluster.domainStatus)) {
       getDomainVPCInfoByName(importedCluster.domainName);
     }
   }, [importedCluster.domainStatus]);
 
   return (
-    <div className="lh-main-content">
-      <SideMenu />
-      <div className="lh-container">
-        <div className="lh-content">
-          <div className="lh-import-cluster">
-            <Breadcrumb list={breadCrumbList} />
-            <div className="create-wrapper">
-              <div className="create-step">
-                <CreateStep
-                  list={[
-                    {
-                      name: t("cluster:import.step.selectDomain"),
+    <CommonLayout breadCrumbList={breadCrumbList}>
+      <div className="create-wrapper">
+        <div className="create-step">
+          <CreateStep
+            list={[
+              {
+                name: t("cluster:import.step.selectDomain"),
+              },
+              {
+                name: t("cluster:import.step.configNetwork"),
+              },
+              {
+                name: t("cluster:import.step.createTags"),
+              },
+              {
+                name: t("cluster:import.step.importDomain"),
+              },
+            ]}
+            activeIndex={curStep}
+          />
+        </div>
+        <div className="create-content m-w-1024">
+          {curStep === 0 && (
+            <SelectDomain
+              disableSelect={loadingVPC}
+              importedCluster={importedCluster}
+              emptyError={domainEmptyError}
+              changeDomain={(domain) => {
+                console.info("domain:domain:", domain);
+                setDomainEmptyError(false);
+                setImportedCluster((prev: ImportedDomainType) => {
+                  return { ...prev, domainName: domain };
+                });
+              }}
+              changeDomainStatus={(status: string) => {
+                setImportedCluster((prev: ImportedDomainType) => {
+                  return { ...prev, domainStatus: status };
+                });
+              }}
+            />
+          )}
+          {curStep === 1 && (
+            <ConfigNetwork
+              esVPCInfo={esVPCInfo}
+              importedCluster={importedCluster}
+              changeVpc={(vpcId) => {
+                console.info("vpcId:vpcId:vpcId:", vpcId);
+                setImportedCluster((prev: ImportedDomainType) => {
+                  return {
+                    ...prev,
+                    vpc: {
+                      ...prev.vpc,
+                      vpcId: vpcId,
+                      privateSubnetIds: "",
+                      securityGroupId: "",
                     },
-                    {
-                      name: t("cluster:import.step.configNetwork"),
+                  };
+                });
+              }}
+              changeSubnet={(subnetIds) => {
+                setImportedCluster((prev: ImportedDomainType) => {
+                  return {
+                    ...prev,
+                    vpc: {
+                      ...prev.vpc,
+                      privateSubnetIds: subnetIds,
+                      publicSubnetIds: "",
                     },
-                    {
-                      name: t("cluster:import.step.createTags"),
-                    },
-                    {
-                      name: t("cluster:import.step.importDomain"),
-                    },
-                  ]}
-                  activeIndex={curStep}
-                />
-              </div>
-              <div className="create-content m-w-1024">
-                {curStep === 0 && (
-                  <SelectDomain
-                    disableSelect={loadingVPC}
-                    importedCluster={importedCluster}
-                    emptyError={domainEmptyError}
-                    changeDomain={(domain) => {
-                      console.info("domain:domain:", domain);
-                      setDomainEmptyError(false);
-                      setImportedCluster((prev: ImportedDomainType) => {
-                        return { ...prev, domainName: domain };
-                      });
-                    }}
-                    changeDomainStatus={(status: string) => {
-                      setImportedCluster((prev: ImportedDomainType) => {
-                        return { ...prev, domainStatus: status };
-                      });
-                    }}
-                  />
-                )}
-                {curStep === 1 && (
-                  <ConfigNetwork
-                    esVPCInfo={esVPCInfo}
-                    importedCluster={importedCluster}
-                    changeVpc={(vpcId) => {
-                      console.info("vpcId:vpcId:vpcId:", vpcId);
-                      setImportedCluster((prev: ImportedDomainType) => {
-                        return {
-                          ...prev,
-                          vpc: {
-                            ...prev.vpc,
-                            vpcId: vpcId,
-                            privateSubnetIds: "",
-                            securityGroupId: "",
-                          },
-                        };
-                      });
-                    }}
-                    changeSubnet={(subnetIds) => {
-                      setImportedCluster((prev: ImportedDomainType) => {
-                        return {
-                          ...prev,
-                          vpc: {
-                            ...prev.vpc,
-                            privateSubnetIds: subnetIds,
-                            publicSubnetIds: "",
-                          },
-                        };
-                      });
-                    }}
-                    changeSecurityGroup={(sgId) => {
-                      setImportedCluster((prev: ImportedDomainType) => {
-                        return {
-                          ...prev,
-                          vpc: { ...prev.vpc, securityGroupId: sgId },
-                        };
-                      });
-                    }}
-                    changeVPCList={(list) => {
-                      setImportedCluster((prev: ImportedDomainType) => {
-                        return {
-                          ...prev,
-                          logProcessVpcOptionList: list,
-                        };
-                      });
-                    }}
-                    changeSubnetList={(list) => {
-                      setImportedCluster((prev: ImportedDomainType) => {
-                        return {
-                          ...prev,
-                          logProcessSubnetOptionList: list,
-                        };
-                      });
-                    }}
-                    changeSGList={(list) => {
-                      setImportedCluster((prev: ImportedDomainType) => {
-                        return {
-                          ...prev,
-                          logProcessSecGroupList: list,
-                        };
-                      });
-                    }}
-                    changeVPCAlert={(show) => {
-                      setImportedCluster((prev: ImportedDomainType) => {
-                        return {
-                          ...prev,
-                          showVPCAlert: show,
-                        };
-                      });
-                    }}
-                    changeCreationMethod={(method) => {
-                      setImportedCluster((prev: ImportedDomainType) => {
-                        return {
-                          ...prev,
-                          creationMethod: method,
-                        };
-                      });
-                    }}
-                  />
-                )}
-                {curStep === 2 && <CreateTags />}
-                {curStep === 3 && (
-                  <ImportDomain
-                    importedCluster={importedCluster}
-                    importedRes={domainRelatedResources}
-                  />
-                )}
-                <div className="button-action text-right">
-                  <Button
-                    btnType="text"
-                    onClick={() => {
-                      navigate("/clusters/opensearch-domains");
-                    }}
-                  >
-                    {t("button.cancel")}
-                  </Button>
-                  {curStep > 0 && curStep < 3 && (
-                    <Button
-                      onClick={() => {
-                        setCurStep((curStep) => {
-                          return curStep - 1 < 0 ? 0 : curStep - 1;
-                        });
-                      }}
-                    >
-                      {t("button.previous")}
-                    </Button>
-                  )}
+                  };
+                });
+              }}
+              changeSecurityGroup={(sgId) => {
+                setImportedCluster((prev: ImportedDomainType) => {
+                  return {
+                    ...prev,
+                    vpc: { ...prev.vpc, securityGroupId: sgId },
+                  };
+                });
+              }}
+              changeVPCList={(list) => {
+                setImportedCluster((prev: ImportedDomainType) => {
+                  return {
+                    ...prev,
+                    logProcessVpcOptionList: list,
+                  };
+                });
+              }}
+              changeSubnetList={(list) => {
+                setImportedCluster((prev: ImportedDomainType) => {
+                  return {
+                    ...prev,
+                    logProcessSubnetOptionList: list,
+                  };
+                });
+              }}
+              changeSGList={(list) => {
+                setImportedCluster((prev: ImportedDomainType) => {
+                  return {
+                    ...prev,
+                    logProcessSecGroupList: list,
+                  };
+                });
+              }}
+              changeVPCAlert={(show) => {
+                setImportedCluster((prev: ImportedDomainType) => {
+                  return {
+                    ...prev,
+                    showVPCAlert: show,
+                  };
+                });
+              }}
+              changeCreationMethod={(method) => {
+                setImportedCluster((prev: ImportedDomainType) => {
+                  return {
+                    ...prev,
+                    creationMethod: method,
+                  };
+                });
+              }}
+            />
+          )}
+          {curStep === 2 && <CreateTags />}
+          {curStep === 3 && (
+            <ImportDomain
+              importedCluster={importedCluster}
+              importedRes={domainRelatedResources}
+            />
+          )}
+          <div className="button-action text-right">
+            <Button
+              btnType="text"
+              onClick={() => {
+                navigate("/clusters/opensearch-domains");
+              }}
+            >
+              {t("button.cancel")}
+            </Button>
+            {curStep > 0 && curStep < 3 && (
+              <Button
+                onClick={() => {
+                  setCurStep((curStep) => {
+                    return curStep - 1 < 0 ? 0 : curStep - 1;
+                  });
+                }}
+              >
+                {t("button.previous")}
+              </Button>
+            )}
 
-                  {curStep < 2 && (
-                    <Button
-                      disabled={
-                        importedCluster.domainStatus !==
-                        DomainStatusCheckType.PASSED
-                      }
-                      btnType="primary"
-                      loading={loadingNext}
-                      onClick={() => {
-                        if (!importedCluster.domainName) {
-                          setDomainEmptyError(true);
-                          setCurStep(0);
-                        } else {
-                          // Check the domain status
-                          if (
-                            curStep === 0 &&
-                            importedCluster.domainStatus !==
-                              DomainStatusCheckType.PASSED
-                          ) {
-                            return;
-                          }
-                          if (
-                            curStep === 1 &&
-                            importedCluster.creationMethod ===
-                              CreateLogMethod.Automatic
-                          ) {
-                            checkCIDRConflict();
-                          } else {
-                            setCurStep((curStep) => {
-                              return curStep > 2 ? 2 : curStep + 1;
-                            });
-                          }
-                        }
-                      }}
-                    >
-                      {t("button.next")}
-                    </Button>
-                  )}
-                  {curStep === 2 && (
-                    <Button
-                      loading={loadingCreate}
-                      btnType="primary"
-                      onClick={() => {
-                        setCurStep(3);
-                        confirmImportDomain();
-                      }}
-                    >
-                      {t("button.import")}
-                    </Button>
-                  )}
-                  {curStep === 3 && (
-                    <Button
-                      disabled={disableViewButton}
-                      loading={loadingCreate}
-                      btnType="primary"
-                      onClick={() => {
-                        navigate(
-                          `/clusters/opensearch-domains/detail/${domainId}`
-                        );
-                      }}
-                    >
-                      {t("button.viewDomain")}
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
+            {curStep < 2 && (
+              <Button
+                disabled={
+                  !DOMAIN_ALLOW_STATUS.includes(importedCluster.domainStatus)
+                }
+                btnType="primary"
+                loading={loadingNext}
+                onClick={() => {
+                  if (!importedCluster.domainName) {
+                    setDomainEmptyError(true);
+                    setCurStep(0);
+                  } else {
+                    // Check the domain status
+                    if (
+                      curStep === 0 &&
+                      !DOMAIN_ALLOW_STATUS.includes(
+                        importedCluster.domainStatus
+                      )
+                    ) {
+                      return;
+                    }
+                    if (
+                      curStep === 1 &&
+                      importedCluster.creationMethod ===
+                        CreateLogMethod.Automatic
+                    ) {
+                      checkCIDRConflict();
+                    } else {
+                      setCurStep((curStep) => {
+                        return curStep > 2 ? 2 : curStep + 1;
+                      });
+                    }
+                  }
+                }}
+              >
+                {t("button.next")}
+              </Button>
+            )}
+            {curStep === 2 && (
+              <Button
+                loading={loadingCreate}
+                btnType="primary"
+                onClick={() => {
+                  setCurStep(3);
+                  confirmImportDomain();
+                }}
+              >
+                {t("button.import")}
+              </Button>
+            )}
+            {curStep === 3 && (
+              <Button
+                disabled={disableViewButton}
+                loading={loadingCreate}
+                btnType="primary"
+                onClick={() => {
+                  navigate(`/clusters/opensearch-domains/detail/${domainId}`);
+                }}
+              >
+                {t("button.viewDomain")}
+              </Button>
+            )}
           </div>
         </div>
       </div>
-      <HelpPanel />
-    </div>
+    </CommonLayout>
   );
 };
 

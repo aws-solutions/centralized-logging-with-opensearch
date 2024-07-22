@@ -63,7 +63,7 @@ export class InitDynamoDBDataStack extends Construct {
 
       const metadataWriterProvider = new cr.Provider(this, 'MetadataWriterProvider', {
         onEventHandler: microBatchLambdaStack.MetadataWriterStack.MetadataWriter,
-        providerFunctionName: `${Aws.STACK_NAME}-MetadataWriterProvider`,
+        providerFunctionName: `${Aws.STACK_NAME.substring(0, 30)}-MetadataWriterProvider`,
       });
 
       const metadata: any[] = [];
@@ -83,6 +83,14 @@ export class InitDynamoDBDataStack extends Construct {
         arn: '',
         name: 'SimpleEmailServiceState',
         value: SESState,
+      });
+      metadata.push({
+        metaName: 'SimpleEmailServiceTemplate',
+        service: 'SES',
+        type: 'Template',
+        arn: '',
+        name: 'SimpleEmailServiceTemplate',
+        value: `${Aws.STACK_NAME.substring(0, 30)}-SESEmailTemplate`,
       });
       metadata.push({
         metaName: 'AccountId',
@@ -205,14 +213,6 @@ export class InitDynamoDBDataStack extends Construct {
         arn: microBatchLambdaStack.S3ObjectMigrationStack.S3ObjectMigrationRole.roleArn,
         name: microBatchLambdaStack.S3ObjectMigrationStack.S3ObjectMigrationRole.roleName,
         url: `https://${Aws.REGION}.console.aws.amazon.com/iamv2/home?region=${Aws.REGION}#/roles/details/${microBatchLambdaStack.S3ObjectMigrationStack.S3ObjectMigrationRole.roleName}`
-      });
-      metadata.push({
-        metaName: 'BatchUpdatePartitionRole',
-        service: 'IAM',
-        type: 'Role',
-        arn: microBatchLambdaStack.BatchUpdatePartitionStack.BatchUpdatePartitionRole.roleArn,
-        name: microBatchLambdaStack.BatchUpdatePartitionStack.BatchUpdatePartitionRole.roleName,
-        url: `https://${Aws.REGION}.console.aws.amazon.com/iamv2/home?region=${Aws.REGION}#/roles/details/${microBatchLambdaStack.BatchUpdatePartitionStack.BatchUpdatePartitionRole.roleName}`
       });
       metadata.push({
         metaName: 'AthenaPublicAccessRole',

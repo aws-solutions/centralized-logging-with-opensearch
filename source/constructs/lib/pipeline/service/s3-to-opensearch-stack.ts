@@ -42,10 +42,11 @@ import { CfnQueue } from "aws-cdk-lib/aws-sqs";
 import { NagSuppressions } from "cdk-nag";
 import { Construct, IConstruct } from "constructs";
 import { CWLMetricStack, MetricSourceType } from "../common/cwl-metric-stack";
-import { constructFactory } from "../../util/stack-helper";
+import { UseS3BucketNotificationsWithRetryAspects, constructFactory } from "../../util/stack-helper";
 import {
   S3toOpenSearchStackProps,
 } from "./s3-to-opensearch-common-stack";
+import { SharedPythonLayer } from "../../layer/layer";
 
 /**
  * cfn-nag suppression rule interface
@@ -370,7 +371,7 @@ export class S3toOpenSearchStack extends Construct {
       retentionPeriod: Duration.days(14),
       deadLetterQueue: {
         queue: logEventDLQ,
-        maxReceiveCount: 30,
+        maxReceiveCount: 3,
       },
       encryption: sqs.QueueEncryption.KMS,
       dataKeyReuse: Duration.minutes(5),
@@ -423,7 +424,11 @@ export class S3toOpenSearchStack extends Construct {
       new InjectS3NotificationCondition(isEnableS3Notification)
     );
 
-
+    // TODO: Workaround since cdk>=v2.116.0 builtin custom resource lambda has an issue that will lead to remove all existing s3 bucket notifications. Remove this once the cdk issue is fixed.
+    const notificationHandler = Stack.of(this).node.tryFindChild('BucketNotificationsHandler050a0587b7544547bf325f094a3db834');
+    if (notificationHandler) {
+      Aspects.of(notificationHandler).add(new UseS3BucketNotificationsWithRetryAspects())
+    }
 
     logEventQueue.addToResourcePolicy(
       new iam.PolicyStatement({
@@ -473,6 +478,7 @@ export class S3toOpenSearchStack extends Construct {
         ),
         memorySize: 256,
         timeout: Duration.seconds(60),
+        layers: [SharedPythonLayer.getInstance(this)],
         environment: {
           STACK_ID: Aws.STACK_ID,
           STACK_NAME: Aws.STACK_NAME,

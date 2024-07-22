@@ -11,6 +11,7 @@
             }
         ]
     },
+    "arguments": {},
     "result": {
         "stackId": "arn:aws:cloudformation:us-west-2:123456789012:stack/Solution-AppPipe-2e536/14c52fd0-5f46-11ed-b4e9-065e187d83f7",
         "stackStatus": "CREATE_COMPLETE",

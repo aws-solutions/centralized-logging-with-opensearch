@@ -14,14 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import React, { useMemo, useState } from "react";
-import WAFArch from "assets/images/desc/wafArch.png";
-import wafSamplingArch from "assets/images/desc/wafSamplingArch.png";
-import wafLightEngineArch from "assets/images/desc/wafLightEngineArch.png";
+import WAFArch from "assets/images/desc/wafArch.webp";
+import wafSamplingArch from "assets/images/desc/wafSamplingArch.webp";
+import wafLightEngineArch from "assets/images/desc/wafLightEngineArch.webp";
 import ExtLink from "components/ExtLink";
 import { WAF_ACCESS_LOG_LINK } from "assets/js/const";
 import { useTranslation } from "react-i18next";
 import { AntTab, AntTabs, TabPanel } from "components/Tab";
-import { AnalyticEngineTypes } from "../SpecifyAnalyticsEngine";
+import { AnalyticEngineTypes } from "types";
 
 export interface WAFDescProps {
   engineType: AnalyticEngineTypes;
@@ -29,7 +29,7 @@ export interface WAFDescProps {
 
 const WAFDesc = ({ engineType }: WAFDescProps) => {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState("fullRequest");
   const isLightEngine = useMemo(
     () => engineType === AnalyticEngineTypes.LIGHT_ENGINE,
     [engineType]
@@ -60,10 +60,16 @@ const WAFDesc = ({ engineType }: WAFDescProps) => {
               setActiveTab(newTab);
             }}
           >
-            <AntTab label={t("servicelog:waf.fullRequest")} />
-            <AntTab label={t("servicelog:waf.sampledRequest")} />
+            <AntTab
+              label={t("servicelog:waf.fullRequest")}
+              value="fullRequest"
+            />
+            <AntTab
+              label={t("servicelog:waf.sampledRequest")}
+              value="wafSampling"
+            />
           </AntTabs>
-          <TabPanel value={activeTab} index={0}>
+          <TabPanel value={activeTab} index="fullRequest">
             <div className="mt-10">
               <img
                 className="img-border"
@@ -73,7 +79,7 @@ const WAFDesc = ({ engineType }: WAFDescProps) => {
               />
             </div>
           </TabPanel>
-          <TabPanel value={activeTab} index={1}>
+          <TabPanel value={activeTab} index="wafSampling">
             <div className="mt-10">
               <img
                 className="img-border"
