@@ -47,6 +47,7 @@ def default_environment_variables():
     os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
     os.environ["SOLUTION_VERSION"] = "v1.0.0"
     os.environ["SOLUTION_ID"] = "SO8025"
+    os.environ["AGENT_STATUS_CHECK_DOCUMENT"] = "AGENT_STATUS_CHECK_DOCUMENT"
     os.environ["INSTANCEMETA_TABLE"] = "mocked-solution-instance-table"
     os.environ["AGENTSTATUS_TABLE"] = "mocked-solution-agent-status-table"
     os.environ["SUB_ACCOUNT_LINK_TABLE_NAME"] = "mocked-sub-account-link-table-name"

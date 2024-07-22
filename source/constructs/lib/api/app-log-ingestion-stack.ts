@@ -426,7 +426,7 @@ export class AppLogIngestionStack extends Construct {
         new iam.PolicyStatement({
           sid: 'EC2SSMPolicy',
           effect: iam.Effect.ALLOW,
-          actions: ['ssm:SendCommand', 'ssm:GetParameters'],
+          actions: ['ssm:SendCommand', 'ssm:GetParameters', 'ssm:GetParameter'],
           resources: [
             `arn:${Aws.PARTITION}:ec2:*:${Aws.ACCOUNT_ID}:instance/*`,
             `arn:${Aws.PARTITION}:ssm:*:${Aws.ACCOUNT_ID}:parameter/*`,
@@ -666,6 +666,14 @@ export class AppLogIngestionStack extends Construct {
         effect: iam.Effect.ALLOW,
         resources: [
           `arn:${Aws.PARTITION}:s3:::*`,
+        ],
+      })
+    );
+    appLogIngestionHandler.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ['ssm:GetParameter'],
+        resources: [
+          `arn:${Aws.PARTITION}:ssm:${Aws.REGION}:${Aws.ACCOUNT_ID}:parameter/${props.stackPrefix}/FLB/*`,
         ],
       })
     );

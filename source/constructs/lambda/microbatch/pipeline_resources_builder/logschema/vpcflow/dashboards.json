@@ -24,7 +24,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 1014,
+  "id": 1419,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -1427,7 +1427,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1575,7 +1576,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1585,20 +1587,7 @@
           },
           "unit": "bytes"
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "request_host"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Host"
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 15,
@@ -1736,7 +1725,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1881,7 +1871,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -3121,7 +3112,8 @@
             "mode": "percentage",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "#EAB839",
@@ -3646,7 +3638,7 @@
   },
   "timezone": "",
   "title": "vpcflow-dashboard",
-  "uid": "69474265-b72d-45e9-8465-6c4320e622ba-01",
+  "uid": "b8e05962-e8af-443c-8e30-0fe14c11f075",
   "version": 2,
   "weekStart": ""
 }

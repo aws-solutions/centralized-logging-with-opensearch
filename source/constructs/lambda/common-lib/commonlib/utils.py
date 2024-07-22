@@ -6,6 +6,10 @@ import os
 import re
 import uuid
 import json
+import time
+import random
+
+from functools import wraps
 from typing import List
 from .model import BufferParam
 from .logging import get_logger
@@ -118,13 +122,17 @@ def exec_sfn_flow(
         input=json.dumps(input_args),
     )
 
+
 def get_kv_from_buffer_param(key: str, buffer_param: List[BufferParam]) -> str:
     for p in buffer_param:
         if p.paramKey == key:
             return p.paramValue
     return ""
 
-def set_kv_to_buffer_param(key: str, value: str, buffer_param: List[BufferParam]) -> List[BufferParam]:
+
+def set_kv_to_buffer_param(
+    key: str, value: str, buffer_param: List[BufferParam]
+) -> List[BufferParam]:
     has_key = False
     
     for p in buffer_param:
@@ -135,3 +143,35 @@ def set_kv_to_buffer_param(key: str, value: str, buffer_param: List[BufferParam]
     if has_key is False:
         buffer_param.append(BufferParam(paramKey=key, paramValue=value))
     return buffer_param
+
+
+def strtobool(val):
+    """Convert a string representation of truth to true (1) or false (0).
+
+    True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
+    are 'n', 'no', 'f', 'false', 'off', and '0'.  Raises ValueError if
+    'val' is anything else.
+    """
+    val = val.lower()
+    if val in ("y", "yes", "t", "true", "on", "1"):
+        return 1
+    elif val in ("n", "no", "f", "false", "off", "0"):
+        return 0
+    else:
+        raise ValueError("invalid truth value %r" % (val,))
+
+
+def random_delay(max_delay):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            # Generate a random sleep duration between 0 and the specified maximum delay
+            sleep_duration = random.uniform(0, max_delay)
+            # Sleep for the randomly generated duration
+            time.sleep(sleep_duration)
+            # Call the original function with the provided arguments and return its result
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator

@@ -24,7 +24,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 693,
+  "id": 1413,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -395,7 +395,7 @@
             "uid": "Bn93a3_Vk"
           },
           "format": 1,
-          "rawSQL": "SELECT t.rn as No, t.time, t.timestamp, t.elb, t.type, t.client_ip, t.client_port, t.target_ip, t.target_port, t.request_processing_time, t.target_processing_time, t.response_processing_time, t.elb_status_code, t.target_status_code, t.received_bytes, t.sent_bytes, t.request_verb, t.request_url, t.request_host, t.request_path, t.request_proto, t.user_agent, t.ssl_cipher, t.ssl_protocol, t.target_group_arn, t.trace_id, t.domain_name, t.chosen_cert_arn, t.matched_rule_priority, t.request_creation_time, t.actions_executed, t.redirect_url, t.lambda_error_reason, t.target_port_list, t.target_status_code_list, t.classification, t.classification_reason, t.enrichment\nFROM (SELECT time, timestamp, elb, type, client_ip, client_port, target_ip, target_port, request_processing_time, target_processing_time, response_processing_time, elb_status_code, target_status_code, received_bytes, sent_bytes, request_verb, request_url, request_host, request_path, request_proto, user_agent, ssl_cipher, ssl_protocol, target_group_arn, trace_id, domain_name, chosen_cert_arn, matched_rule_priority, request_creation_time, actions_executed, redirect_url, lambda_error_reason, target_port_list, target_status_code_list, classification, classification_reason, enrichment,\n    row_number() over (order by time ${sort_by}) as rn\n  FROM \"$__table\"\n  WHERE elb IN (${elb:sqlstring}) \n\t\tAND type IN (${type:sqlstring}) \n\t\tAND elb_status_code_group IN (${elb_status_code_group:sqlstring}) \n\t\tAND target_group_arn IN (${target_group_arn:sqlstring}) \n\t\tAND request_verb IN (${http_method:sqlstring})\n\t\tAND client_ip LIKE '${client_ip}%'\n\t\tAND $__unixEpochFilter(time / 1000)\n\t\tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n  ) t \n  WHERE t.rn BETWEEN (${page_no:int} - 1) * ${page_size:int} + 1 AND ${page_no:int} * ${page_size:int};",
+          "rawSQL": "SELECT t.rn as No, t.time, t.timestamp, t.elb, t.type, t.client_ip, t.client_port, t.target_ip, t.target_port, t.request_processing_time, t.target_processing_time, t.response_processing_time, t.elb_status_code, t.target_status_code, t.received_bytes, t.sent_bytes, t.request_verb, t.request_url, t.request_host, t.request_path, t.request_proto, t.user_agent, t.ssl_cipher, t.ssl_protocol, t.target_group_arn, t.trace_id, t.domain_name, t.chosen_cert_arn, t.matched_rule_priority, t.request_creation_time, t.actions_executed, t.redirect_url, t.lambda_error_reason, t.target_port_list, t.target_status_code_list, t.classification, t.classification_reason, t.conn_trace_id, t.enrichment\nFROM (SELECT time, timestamp, elb, type, client_ip, client_port, target_ip, target_port, request_processing_time, target_processing_time, response_processing_time, elb_status_code, target_status_code, received_bytes, sent_bytes, request_verb, request_url, request_host, request_path, request_proto, user_agent, ssl_cipher, ssl_protocol, target_group_arn, trace_id, domain_name, chosen_cert_arn, matched_rule_priority, request_creation_time, actions_executed, redirect_url, lambda_error_reason, target_port_list, target_status_code_list, classification, classification_reason, conn_trace_id, enrichment,\n    row_number() over (order by time ${sort_by}) as rn\n  FROM \"$__table\"\n  WHERE elb IN (${elb:sqlstring}) \n\t\tAND type IN (${type:sqlstring}) \n\t\tAND elb_status_code_group IN (${elb_status_code_group:sqlstring}) \n\t\tAND target_group_arn IN (${target_group_arn:sqlstring}) \n\t\tAND request_verb IN (${http_method:sqlstring})\n\t\tAND client_ip LIKE '${client_ip}%'\n\t\tAND $__unixEpochFilter(time / 1000)\n\t\tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n  ) t \n  WHERE t.rn BETWEEN (${page_no:int} - 1) * ${page_size:int} + 1 AND ${page_no:int} * ${page_size:int};",
           "refId": "Details",
           "table": "alb"
         }
@@ -458,6 +458,7 @@
               "chosen_cert_arn": "Chosen cert Arn",
               "classification": "Classification",
               "classification_reason": "Classification reason",
+              "conn_trace_id": "Connection Trace Id",
               "domain_name": "Domain Name",
               "elb_status_code": "",
               "lambda_error_reason": "Lambda error reason",
@@ -484,7 +485,7 @@
       {
         "allValue": "SELECT elb FROM \"$__table\" WHERE  event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH') \tOR event_hour = $__rawTimeFrom('yyyyMMdd00') GROUP BY elb",
         "current": {
-          "selected": true,
+          "selected": false,
           "text": "All",
           "value": "$__all"
         },
@@ -869,7 +870,7 @@
   },
   "timezone": "",
   "title": "alb-details",
-  "uid": "89a88fac-a6a2-4187-98e8-7fbe7df49ed5-00",
-  "version": 3,
+  "uid": "df250c61-0bc3-424c-bf1a-aa9c3dee9db5",
+  "version": 1,
   "weekStart": ""
 }

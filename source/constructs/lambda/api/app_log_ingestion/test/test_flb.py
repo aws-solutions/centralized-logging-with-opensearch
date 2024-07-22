@@ -5,8 +5,78 @@ import os
 import sys
 from commonlib.model import AppLogIngestion, EksSource, CRIEnum, DeploymentKindEnum
 from typing import List
+from moto import mock_ssm
+import boto3
+import pytest
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+@pytest.fixture(autouse=True)
+def mock_ssm_context():
+    with mock_ssm():
+        stack_prefix = "CL"
+        ssm_client = boto3.client("ssm")
+        ssm_client.put_parameter(
+            Name=f"/{stack_prefix}/FLB/log_level",
+            Value="1",
+            Type="String",
+        )
+        ssm_client.put_parameter(
+            Name=f"/{stack_prefix}/FLB/flush",
+            Value="5",
+            Type="String",
+        )
+
+        ssm_client.put_parameter(
+            Name=f"/{stack_prefix}/FLB/mem_buf_limit",
+            Value="30M",
+            Type="String",
+        )
+
+        ssm_client.put_parameter(
+            Name=f"/{stack_prefix}/FLB/buffer_chunk_size",
+            Value="512k",
+            Type="String",
+        )
+
+        ssm_client.put_parameter(
+            Name=f"/{stack_prefix}/FLB/buffer_max_size",
+            Value="5M",
+            Type="String",
+        )
+
+        ssm_client.put_parameter(
+            Name=f"/{stack_prefix}/FLB/buffer_size",
+            Value="0",
+            Type="String",
+        )
+
+        ssm_client.put_parameter(
+            Name=f"/{stack_prefix}/FLB/retry_limit",
+            Value="False",
+            Type="String",
+        )
+
+        ssm_client.put_parameter(
+            Name=f"/{stack_prefix}/FLB/store_dir_limit_size",
+            Value="0",
+            Type="String",
+        )
+
+        ssm_client.put_parameter(
+            Name=f"/{stack_prefix}/FLB/storage_type",
+            Value="filesystem",
+            Type="String",
+        )
+
+        ssm_client.put_parameter(
+            Name=f"/{stack_prefix}/FLB/storage_pause_on_chunks_overlimit",
+            Value="off",
+            Type="String",
+        )
+
+        yield
 
 
 def get_mock_app_log_ingestion1():
@@ -209,7 +279,7 @@ def get_mock_app_log_ingestion4():
     return mock_app_log_ingestion4
 
 
-def test_ingestion():
+def test_ingestion(mock_ssm_context):
     from flb.flb_builder import InstanceFlb
 
     ingestion_list1: List[AppLogIngestion] = [
@@ -238,7 +308,7 @@ def test_ingestion():
         # print(f"{instance_parser_content}")
 
 
-def test_k8s_ingestion():
+def test_k8s_ingestion(mock_ssm_context):
     # testing k8s
     from flb.flb_builder import K8sFlb
 

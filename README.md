@@ -10,7 +10,6 @@ The Centralized Logging with OpenSearch solution provides comprehensive log mana
   - [Architecture](#architecture)
   - [Deployment](#deployment)
   - [Customization](#customization)
-  - [Collection of operational metrics](#collection-of-operational-metrics)
 
 
 ## Solution Overview

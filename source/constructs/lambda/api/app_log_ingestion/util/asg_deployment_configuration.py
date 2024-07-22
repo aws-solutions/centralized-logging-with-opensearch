@@ -13,7 +13,7 @@ from commonlib import LinkAccountHelper
 from commonlib.dao import AppLogIngestionDao, LogSourceDao
 from commonlib.model import LogSource, GroupPlatformEnum
 
-from distutils.util import strtobool
+from commonlib.utils import strtobool
 
 logger = get_logger(__name__)
 

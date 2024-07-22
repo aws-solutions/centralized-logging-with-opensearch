@@ -549,6 +549,7 @@ export class InitLogPipelineCfnParameters extends Construct {
     const grafanaTokenParameter = new CfnParameter(this, "grafanaToken", {
       type: "String",
       default: "",
+      noEcho: true,
       description:
         "Service account token created in Grafana. e.g. glsa_oSS1v9Hs3A3ho67uuLuq4VbzZyy.",
     });

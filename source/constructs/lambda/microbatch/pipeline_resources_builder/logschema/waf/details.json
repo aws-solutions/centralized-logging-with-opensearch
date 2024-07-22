@@ -24,7 +24,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 999,
+  "id": 1416,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -106,7 +106,7 @@
             "uid": "Bn93a3_Vk"
           },
           "format": 1,
-          "rawSQL": "SELECT t.rn as No, t.time, t.timestamp, t.formatversion, t.webaclid, t.httprequest.clientip, case when filter(t.httprequest.headers, x -> lower(x.name) = 'host' ) = ARRAY[] then '' else filter(t.httprequest.headers, x -> lower(x.name) = 'host' )[1].value end as host, t.httprequest.uri, t.terminatingruleid, t.terminatingruletype, t.action, t.terminatingrulematchdetails, t.httpsourcename, t.httpsourceid, t.rulegrouplist, t.ratebasedrulelist, t.nonterminatingmatchingrules, t.requestheadersinserted, t.responsecodesent, t.httprequest, t.labels, t.captcharesponse\nFROM (SELECT time, timestamp, formatversion, webaclid, terminatingruleid, terminatingruletype, action_fixed as action, terminatingrulematchdetails, httpsourcename, httpsourceid, rulegrouplist, ratebasedrulelist, nonterminatingmatchingrules, requestheadersinserted, responsecodesent, httprequest, labels, captcharesponse,\n    row_number() over (order by time ${sort_by}) as rn\n  FROM \"$__table\"\n  WHERE account_id IN (${account_id:sqlstring})\n\t\tAND region IN (${region:sqlstring}) \n\t\tAND action_fixed IN (${action:sqlstring}) \n\t\tAND terminatingRuleType IN (${terminatingruletype:sqlstring})\n\t\tAND webAclName IN (${webaclname:sqlstring}) \n\t\tAND httpSourceId IN (${httpsourceid:sqlstring}) \n\t\tAND terminatingRuleId IN (${terminatingruleid:sqlstring})\n\t\tAND httprequest.clientip LIKE '${clientip}%'\n\t\tAND $__unixEpochFilter(time / 1000)\n\t\tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\t\t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n  ) t \n  WHERE t.rn BETWEEN (${page_no:int} - 1) * ${page_size:int} + 1 AND ${page_no:int} * ${page_size:int};",
+          "rawSQL": "SELECT t.rn as No, t.time, t.timestamp, t.formatversion, t.webaclid, t.clientip, t.host, t.uri, t.terminatingruleid, t.terminatingruletype, t.action, t.terminatingrulematchdetails, t.httpsourcename, t.httpsourceid, t.rulegrouplist, t.ratebasedrulelist, t.nonterminatingmatchingrules, t.requestheadersinserted, t.responsecodesent, t.httprequest, t.labels, t.captcharesponse, t.ja3fingerprint\nFROM (SELECT time, timestamp, formatversion, webaclid, clientip, host, uri, terminatingruleid, terminatingruletype, action_fixed as action, terminatingrulematchdetails, httpsourcename, httpsourceid, rulegrouplist, ratebasedrulelist, nonterminatingmatchingrules, requestheadersinserted, responsecodesent, httprequest, labels, captcharesponse, ja3fingerprint\n    , row_number() over (order by time ${sort_by}) as rn\n  FROM \"$__table\"\n  WHERE account_id IN (${account_id:sqlstring})\n\t\tAND region IN (${region:sqlstring}) \n\t\tAND action_fixed IN (${action:sqlstring}) \n\t\tAND terminatingRuleType IN (${terminatingruletype:sqlstring})\n\t\tAND webAclName IN (${webaclname:sqlstring}) \n\t\tAND httpSourceId IN (${httpsourceid:sqlstring}) \n\t\tAND terminatingRuleId IN (${terminatingruleid:sqlstring})\n\t\tAND clientip LIKE '${clientip}%'\n\t\tAND $__unixEpochFilter(time / 1000)\n\t\tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\t\t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n  ) t \n  WHERE t.rn BETWEEN (${page_no:int} - 1) * ${page_size:int} + 1 AND ${page_no:int} * ${page_size:int};",
           "refId": "Details",
           "table": "waf"
         }
@@ -127,6 +127,7 @@
               "httprequest": "httpRequest",
               "httpsourceid": "httpSourceId",
               "httpsourcename": "httpSourceName",
+              "ja3fingerprint": "JA3Fingerprint",
               "labels": "labels",
               "nonterminatingmatchingrules": "nonTerminatingMatchingRules",
               "ratebasedrulelist": "rateBasedRuleList",
@@ -158,8 +159,12 @@
         "allValue": "SELECT account_id FROM \"$__table\" WHERE  event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH') \tOR event_hour = $__rawTimeFrom('yyyyMMdd00') GROUP BY account_id",
         "current": {
           "selected": false,
-          "text": "All",
-          "value": "$__all"
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
         },
         "datasource": {
           "type": "grafana-athena-datasource",
@@ -195,8 +200,12 @@
         "allValue": "SELECT region FROM \"$__table\" WHERE  event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH') \tOR event_hour = $__rawTimeFrom('yyyyMMdd00') GROUP BY region",
         "current": {
           "selected": false,
-          "text": "All",
-          "value": "$__all"
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
         },
         "datasource": {
           "type": "grafana-athena-datasource",
@@ -230,7 +239,7 @@
       },
       {
         "current": {
-          "selected": true,
+          "selected": false,
           "text": [
             "All"
           ],
@@ -264,6 +273,16 @@
             "selected": false,
             "text": "COUNT",
             "value": "COUNT"
+          },
+          {
+            "selected": false,
+            "text": "CAPTCHA",
+            "value": "CAPTCHA"
+          },
+          {
+            "selected": false,
+            "text": "CHALLENGE",
+            "value": "CHALLENGE"
           }
         ],
         "query": "ALLOW, BLOCK, COUNT, CAPTCHA, CHALLENGE",
@@ -315,7 +334,7 @@
       },
       {
         "current": {
-          "selected": true,
+          "selected": false,
           "text": [
             "All"
           ],
@@ -363,9 +382,13 @@
       {
         "allValue": "SELECT terminatingruleid FROM \"$__table\" WHERE account_id IN (${account_id:sqlstring}) \tAND region IN (${region:sqlstring}) \tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH') \t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00')) GROUP BY terminatingruleid",
         "current": {
-          "selected": false,
-          "text": "All",
-          "value": "$__all"
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
         },
         "datasource": {
           "type": "grafana-athena-datasource",
@@ -400,9 +423,13 @@
       {
         "allValue": "SELECT httpsourceid FROM \"$__table\" WHERE account_id IN (${account_id:sqlstring}) \tAND region IN (${region:sqlstring}) \tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH') \t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00')) GROUP BY httpsourceid",
         "current": {
-          "selected": false,
-          "text": "All",
-          "value": "$__all"
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
         },
         "datasource": {
           "type": "grafana-athena-datasource",
@@ -574,7 +601,7 @@
   },
   "timezone": "",
   "title": "waf-details",
-  "uid": "d27351cb-430d-44a4-8a6c-8f928e8a4917-00",
-  "version": 19,
+  "uid": "a12139d9-8621-4f4a-8d85-757da22a9918",
+  "version": 3,
   "weekStart": ""
 }

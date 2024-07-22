@@ -47,6 +47,7 @@ def lambda_handler(event, _):
             getattr(sys.modules[__name__], func_name)(event)
 
     except Exception as e:
+        logger.error(e, exc_info=True)
         if not (plugins or log_type in ("ELB", "CloudFront")) and "Records" in event:
             for event_record in event["Records"]:
                 change_sqs_message_visibility(event_record)

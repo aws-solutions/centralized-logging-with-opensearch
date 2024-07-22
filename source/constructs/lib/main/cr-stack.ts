@@ -207,6 +207,16 @@ export class CustomResourceStack extends Construct {
         resources: ["*"],
       })
     );
+    this.initConfigFn.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: [
+          'kms:DescribeCustomKeyStores',
+          'kms:DescribeKey',
+        ],
+        resources: ['*'],
+      })
+    );
     props.apiStack.clusterStack.clusterTable.grantReadWriteData(this.initConfigFn);
 
     const CRLambdaProvider = new cr.Provider(this, "CRLambdaProvider", {

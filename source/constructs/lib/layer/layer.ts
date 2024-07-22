@@ -59,7 +59,7 @@ export class SharedPythonLayer extends lambda.LayerVersion {
                 'cp -rvf /asset-input /tmp/ws/',
                 'cd /tmp/ws/asset-input',
                 'python3 -m build -s -o /tmp/ws/dist/',
-                'pip3 install /tmp/ws/dist/commonlib-0.1.0.tar.gz -t /asset-output/python',
+                'pip3 install /tmp/ws/dist/commonlib-0.1.0.tar.gz -t /asset-output/python --no-binary=pydantic',
                 'deactivate',
               ].join(' && '),
             ],

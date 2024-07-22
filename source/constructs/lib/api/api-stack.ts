@@ -31,6 +31,7 @@ import { CrossAccountStack } from './cross-account-stack';
 
 import { CloudWatchStack } from './cwl-stack';
 import { Ec2IamInstanceProfileStack } from './ec2-iam-instance-profile';
+import { FluentBitConfigStack } from './fluent-bit-config-stack';
 import { InstanceStack } from './instance-stack';
 import { LogConfStack } from './log-conf-stack';
 import { LogSourceStack } from './log-source-stack';
@@ -446,6 +447,10 @@ export class APIStack extends Construct {
         microBatchStack: props.microBatchStack,
       }
     );
+    //Create the FluentBit Configuration stack
+    /* NOSONAR */ new FluentBitConfigStack(this, 'FluentBitConfigAPI', {
+      stackPrefix: props.stackPrefix,
+    });
     NagSuppressions.addResourceSuppressions(
       pipelineAlarmStack,
       [

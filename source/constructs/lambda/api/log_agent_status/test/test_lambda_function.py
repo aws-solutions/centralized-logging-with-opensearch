@@ -120,6 +120,60 @@ def ec2_client():
 def test_lambda_handler_without_accountId(mocker, no_commandId_event, sts_client, ssm_client):
     import lambda_function
 
+    mocker.patch(
+        "lambda_function.list_command_invocations",
+        return_value=[
+            {
+                "CommandId": "c7ecda18-e2df-42ef-89f4-473dcded543b",
+                "InstanceId": "i-0b9dc8f8e3b6abdfd",
+                "InstanceName": "ip-172-31-37-105.us-west-2.compute.internal",
+                "Comment": "",
+                "DocumentName": "LogHub-APIInstanceAPIFluentBitStatusCheckDocumentFBD1F175-BgmD1GzjYINT",
+                "DocumentVersion": "$DEFAULT",
+                "Status": "Failed",
+                "StatusDetails": "Failed",
+                "StandardOutputUrl": "",
+                "StandardErrorUrl": "",
+                "CommandPlugins": [
+                    {
+                        "Name": "runPowerShellScript",
+                        "Status": "Success",
+                        "StatusDetails": "Success",
+                        "ResponseCode": 0,
+                        "Output": "Step execution skipped due to unsatisfied preconditions: '\"StringEquals\": [platformType, Windows]'. Step name: runPowerShellScript",
+                        "StandardOutputUrl": "",
+                        "StandardErrorUrl": "",
+                        "OutputS3Region": "us-west-2",
+                        "OutputS3BucketName": "",
+                        "OutputS3KeyPrefix": "",
+                    },
+                    {
+                        "Name": "runShellScript",
+                        "Status": "Failed",
+                        "StatusDetails": "Failed",
+                        "ResponseCode": 1,
+                        "Output": "Error: Failed to access health endpoint\nError: fluent-bit not installed\n\n----------ERROR-------\nfailed to run commands: exit status 1",
+                        "StandardOutputUrl": "",
+                        "StandardErrorUrl": "",
+                        "OutputS3Region": "us-west-2",
+                        "OutputS3BucketName": "",
+                        "OutputS3KeyPrefix": "",
+                    },
+                ],
+                "ServiceRole": "",
+                "NotificationConfig": {
+                    "NotificationArn": "",
+                    "NotificationEvents": [],
+                    "NotificationType": "",
+                },
+                "CloudWatchOutputConfig": {
+                    "CloudWatchLogGroupName": "",
+                    "CloudWatchOutputEnabled": False,
+                },
+            }
+        ],
+    )
+
     lambda_function.lambda_handler(no_commandId_event, None)
 
 def test_requestInstallLogAgent(mocker, sts_client, ssm_client):

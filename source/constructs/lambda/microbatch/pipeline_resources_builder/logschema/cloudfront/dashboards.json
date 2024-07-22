@@ -24,7 +24,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 965,
+  "id": 1411,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -44,7 +44,7 @@
     {
       "datasource": {
         "type": "grafana-athena-datasource",
-        "uid": "d55528cb-9590-462d-812e-119df3b2e665"
+        "uid": "Bn93a3_Vk"
       },
       "fieldConfig": {
         "defaults": {
@@ -105,10 +105,10 @@
           },
           "datasource": {
             "type": "grafana-athena-datasource",
-            "uid": "d55528cb-9590-462d-812e-119df3b2e665"
+            "uid": "Bn93a3_Vk"
           },
           "format": 1,
-          "rawSQL": "SELECT sum(requests) as requests\n\t, count(distinct \"c-ip\") as vistors\nFROM \"$__table\"\nWHERE \"cs-host\" IN (${host:sqlstring}) \n\tAND \"cs-protocol\" IN (${http_protocol:sqlstring}) \n\tAND \"cs-method\" IN (${http_method:sqlstring})\n\tAND \"sc-status-group\" IN (${status_code_group:sqlstring})\n\tAND \"hit-cache\" IN (${hit_cache:raw}) \n\tAND \"back-to-origin\" IN (${back_to_origin:raw}) \n\tAND \"time-taken-in-second\" >= ${responce_latency}\n\tAND $__unixEpochFilter(time / 1000)\n\tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n",
+          "rawSQL": "SELECT sum(requests) as requests\n\t, count(distinct \"c-ip\") as visitors\nFROM \"$__table\"\nWHERE \"cs-host\" IN (${host:sqlstring}) \n\tAND \"cs-protocol\" IN (${http_protocol:sqlstring}) \n\tAND \"cs-method\" IN (${http_method:sqlstring})\n\tAND \"sc-status-group\" IN (${status_code_group:sqlstring})\n\tAND \"hit-cache\" IN (${hit_cache:raw}) \n\tAND \"back-to-origin\" IN (${back_to_origin:raw}) \n\tAND \"time-taken-in-second\" >= ${responce_latency}\n\tAND $__unixEpochFilter(time / 1000)\n\tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n",
           "refId": "Metrics",
           "table": "cloudfront_metrics"
         }
@@ -120,7 +120,7 @@
     {
       "datasource": {
         "type": "grafana-athena-datasource",
-        "uid": "d55528cb-9590-462d-812e-119df3b2e665"
+        "uid": "Bn93a3_Vk"
       },
       "fieldConfig": {
         "defaults": {
@@ -259,7 +259,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "requests"
+              "options": "Requests"
             },
             "properties": [
               {
@@ -309,10 +309,10 @@
           },
           "datasource": {
             "type": "grafana-athena-datasource",
-            "uid": "d55528cb-9590-462d-812e-119df3b2e665"
+            "uid": "Bn93a3_Vk"
           },
           "format": 1,
-          "rawSQL": "SELECT $__unixEpochGroup(time / 1000, '${interval}') as time, \n\tsum(case when \"sc-status-group\" = '1xx' then requests else 0 end) as \"status_code_1xx\",\n\tsum(case when \"sc-status-group\" = '2xx' then requests else 0 end) as \"status_code_2xx\",\n\tsum(case when \"sc-status-group\" = '3xx' then requests else 0 end) as \"status_code_3xx\",\n\tsum(case when \"sc-status-group\" = '4xx' then requests else 0 end) as \"status_code_4xx\",\n\tsum(case when \"sc-status-group\" = '5xx' then requests else 0 end) as \"status_code_5xx\",\n\tsum(\"time-taken\") as time_taken, \n\tsum(\"time-to-first-byte\") as time_to_first_byte, \n\tsum(\"cs-bytes\") as request_bytes, \n\tsum(\"sc-bytes\") as response_bytes,\n\tsum(requests) as requests,\n\tcount(distinct \"c-ip\") as vistors\nFROM \"$__table\"\nWHERE \"cs-host\" IN (${host:sqlstring}) \n\tAND \"cs-protocol\" IN (${http_protocol:sqlstring}) \n\tAND \"cs-method\" IN (${http_method:sqlstring})\n\tAND \"sc-status-group\" IN (${status_code_group:sqlstring})\n\tAND \"hit-cache\" IN (${hit_cache:raw}) \n\tAND \"back-to-origin\" IN (${back_to_origin:raw}) \n\tAND \"time-taken-in-second\" >= ${responce_latency}\n\tAND $__unixEpochFilter(time / 1000)\n\tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00'))\nGROUP BY $__unixEpochGroup(time / 1000, '${interval}');",
+          "rawSQL": "SELECT $__unixEpochGroup(time / 1000, '${interval}') as time, \n\tsum(case when \"sc-status-group\" = '1xx' then requests else 0 end) as \"status_code_1xx\",\n\tsum(case when \"sc-status-group\" = '2xx' then requests else 0 end) as \"status_code_2xx\",\n\tsum(case when \"sc-status-group\" = '3xx' then requests else 0 end) as \"status_code_3xx\",\n\tsum(case when \"sc-status-group\" = '4xx' then requests else 0 end) as \"status_code_4xx\",\n\tsum(case when \"sc-status-group\" = '5xx' then requests else 0 end) as \"status_code_5xx\",\n\tsum(\"time-taken\") as time_taken, \n\tsum(\"time-to-first-byte\") as time_to_first_byte, \n\tsum(\"cs-bytes\") as request_bytes, \n\tsum(\"sc-bytes\") as response_bytes,\n\tsum(requests) as requests,\n\tcount(distinct \"c-ip\") as visitors\nFROM \"$__table\"\nWHERE \"cs-host\" IN (${host:sqlstring}) \n\tAND \"cs-protocol\" IN (${http_protocol:sqlstring}) \n\tAND \"cs-method\" IN (${http_method:sqlstring})\n\tAND \"sc-status-group\" IN (${status_code_group:sqlstring})\n\tAND \"hit-cache\" IN (${hit_cache:raw}) \n\tAND \"back-to-origin\" IN (${back_to_origin:raw}) \n\tAND \"time-taken-in-second\" >= ${responce_latency}\n\tAND $__unixEpochFilter(time / 1000)\n\tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00'))\nGROUP BY $__unixEpochGroup(time / 1000, '${interval}');",
           "refId": "Metrics",
           "table": "cloudfront_metrics"
         }
@@ -337,6 +337,7 @@
             "indexByName": {},
             "renameByName": {
               "requests": "Requests",
+              "visitors": "Unique Visitors",
               "vistors": "Vistors"
             }
           }
@@ -358,7 +359,7 @@
     {
       "datasource": {
         "type": "grafana-athena-datasource",
-        "uid": "d55528cb-9590-462d-812e-119df3b2e665"
+        "uid": "Bn93a3_Vk"
       },
       "fieldConfig": {
         "defaults": {
@@ -423,7 +424,7 @@
           },
           "datasource": {
             "type": "grafana-athena-datasource",
-            "uid": "d55528cb-9590-462d-812e-119df3b2e665"
+            "uid": "Bn93a3_Vk"
           },
           "format": 1,
           "rawSQL": "SELECT \"cs-method\" as http_method, \"cs-protocol-version\" as http_version\n\t, \"sc-status-group\" as status_code_group, \"cs-protocol\" as request_protocol\n\t, \"x-edge-location\" as x_edge_location, \"x-edge-result-type\" as x_edge_result_type\n\t, sum(requests) as requests\n\t,\tsum(\"time-taken\") as time_taken\n\t, sum(\"time-to-first-byte\") as time_to_first_byte\n\t, sum(\"cs-bytes\") as request_bytes\n\t, sum(\"sc-bytes\") as response_bytes\nFROM \"$__table\"\nWHERE \"cs-host\" IN (${host:sqlstring}) \n\tAND \"cs-protocol\" IN (${http_protocol:sqlstring}) \n\tAND \"cs-method\" IN (${http_method:sqlstring})\n\tAND \"sc-status-group\" IN (${status_code_group:sqlstring})\n\tAND \"hit-cache\" IN (${hit_cache:raw}) \n\tAND \"back-to-origin\" IN (${back_to_origin:raw}) \n\tAND \"time-taken-in-second\" >= ${responce_latency}\n\tAND $__unixEpochFilter(time / 1000)\n\tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00'))\nGROUP BY \"cs-method\", \"cs-protocol-version\"\n\t, \"cs-uri-stem\", \"sc-status-group\", \"cs-protocol\"\n\t, \"x-edge-location\", \"x-edge-result-type\"\n",
@@ -548,7 +549,7 @@
           "calcs": [
             "sum"
           ],
-          "fields": "/^vistors$/",
+          "fields": "/^visitors$/",
           "values": false
         },
         "text": {},
@@ -566,7 +567,7 @@
           "withTransforms": true
         }
       ],
-      "title": "Unique Vistors",
+      "title": "Unique Visitors",
       "transformations": [],
       "type": "stat"
     },
@@ -953,6 +954,7 @@
               "status_code_": false,
               "time_taken": true,
               "time_to_first_byte": true,
+              "visitors": true,
               "vistors": true
             },
             "indexByName": {
@@ -1463,7 +1465,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "avg_first_byte_latency"
+              "options": "Avg. First byte Latency"
             },
             "properties": [
               {
@@ -1478,7 +1480,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "avg_response_latency"
+              "options": "Avg. Response Latency"
             },
             "properties": [
               {
@@ -1539,7 +1541,7 @@
               "integration_latency (sum)": true,
               "request_bytes": true,
               "request_processing_time (sum)": true,
-              "requests": false,
+              "requests": true,
               "requests (sum)": true,
               "response_bytes": true,
               "response_latency (sum)": true,
@@ -1553,6 +1555,7 @@
               "target_processing_time (sum)": true,
               "time_taken (sum)": true,
               "time_to_first_byte (sum)": true,
+              "visitors": true,
               "vistors": true
             },
             "indexByName": {
@@ -1578,9 +1581,12 @@
               "avg_response_latency (mean)": "avg_response_latency",
               "avg_response_processing_time": "avg_response_processing_time",
               "avg_target_processing_time": "avg_target_processing_time",
+              "request_bytes": "",
               "time": "time",
               "time\\action": "time",
-              "time\\http_status_code": "time"
+              "time\\http_status_code": "time",
+              "time_taken": "",
+              "time_to_first_byte": ""
             }
           }
         },
@@ -1632,11 +1638,16 @@
           "options": {
             "excludeByName": {
               "requests": true,
-              "time_taken": true,
-              "time_to_first_byte": true
+              "time_taken": false,
+              "time_to_first_byte": false
             },
             "indexByName": {},
-            "renameByName": {}
+            "renameByName": {
+              "Avg. First byte Latency": "Avg. First byte Latency",
+              "Avg. Response Latency": "Avg. Response Latency",
+              "time_taken": "Avg. Response Latency",
+              "time_to_first_byte": "Avg. First byte Latency"
+            }
           }
         }
       ],
@@ -2153,6 +2164,7 @@
               "target_processing_time (sum)": true,
               "time_taken": true,
               "time_to_first_byte": true,
+              "visitors": true,
               "vistors": true
             },
             "indexByName": {
@@ -2363,7 +2375,7 @@
     {
       "datasource": {
         "type": "grafana-athena-datasource",
-        "uid": "d55528cb-9590-462d-812e-119df3b2e665"
+        "uid": "Bn93a3_Vk"
       },
       "fieldConfig": {
         "defaults": {
@@ -2493,7 +2505,7 @@
           },
           "datasource": {
             "type": "grafana-athena-datasource",
-            "uid": "d55528cb-9590-462d-812e-119df3b2e665"
+            "uid": "Bn93a3_Vk"
           },
           "format": 1,
           "rawSQL": "SELECT $__unixEpochGroup(time / 1000, '${interval}') as time\n    , \"x-edge-result-type\" as x_edge_result_type\n    , sum(requests) as requests\n    , sum(\"sc-bytes\") as response_bytes\n    , sum(case when \"time-taken-in-second\" >= 1 then requests else 0 end) as lantency_greater_1_requests\n    , sum(case when \"time-taken-in-second\" >= 1 then \"sc-bytes\" else 0 end) as lantency_greater_1_response_bytes\n    , sum(case when \"sc-status-group\" IN ('3xx', '4xx', '5xx') then requests else 0 end) as error_requests\n    , sum(case when \"hit-cache\" = true then requests else 0 end) as hit_cache_requests\n    , sum(case when \"hit-cache\" = true and \"sc-status-group\" IN ('3xx', '4xx', '5xx') then requests else 0 end) as hit_cache_error_requests\n    , sum(case when \"hit-cache\" = true then \"sc-bytes\" else 0 end) as hit_cache_response_bytes\n    , sum(case when \"back-to-origin\" = true then requests else 0 end) as back_to_origin_requests\n    , sum(case when \"back-to-origin\" = true and \"sc-status-group\" IN ('3xx', '4xx', '5xx') then requests else 0 end) as back_to_origin_error_requests\n    , sum(case when \"back-to-origin\" = true then \"sc-bytes\" else 0 end) as back_to_origin_response_bytes\n    , sum(\"time-taken\") as responce_latency\n    , sum(case when \"time-taken-in-second\" >= 1 then \"time-taken\" else 0 end) as lantency_greater_1_response_latency\n    , sum(case when \"sc-status-group\" IN ('3xx', '4xx', '5xx') then \"time-taken\" else 0 end) as error_responce_latency\n    , sum(case when \"hit-cache\" = true then \"time-taken\" else 0 end) as hit_cache_latency\n    , sum(case when \"hit-cache\" = true and \"sc-status-group\" IN ('3xx', '4xx', '5xx') then \"time-taken\" else 0 end) as hit_cache_error_latency\n    , sum(case when \"back-to-origin\" = true then \"time-taken\" else 0 end) as back_to_origin_latency\n    , sum(case when \"back-to-origin\" = true and \"sc-status-group\" IN ('3xx', '4xx', '5xx') then \"time-taken\" else 0 end) as back_to_origin_error_latency\nFROM \"$__table\"\nWHERE \"cs-host\" IN (${host:sqlstring}) \n\tAND \"cs-protocol\" IN (${http_protocol:sqlstring}) \n\tAND \"cs-method\" IN (${http_method:sqlstring})\n\tAND \"sc-status-group\" IN (${status_code_group:sqlstring})\n\tAND \"hit-cache\" IN (${hit_cache:raw}) \n\tAND \"back-to-origin\" IN (${back_to_origin:raw}) \n\tAND \"time-taken-in-second\" >= ${responce_latency}\n\tAND $__unixEpochFilter(time / 1000)\n\tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00'))\ngroup by $__unixEpochGroup(time / 1000, '${interval}'), \"x-edge-result-type\";",
@@ -2674,7 +2686,7 @@
     {
       "datasource": {
         "type": "grafana-athena-datasource",
-        "uid": "d55528cb-9590-462d-812e-119df3b2e665"
+        "uid": "Bn93a3_Vk"
       },
       "description": "",
       "fieldConfig": {
@@ -2742,7 +2754,7 @@
           },
           "datasource": {
             "type": "grafana-athena-datasource",
-            "uid": "d55528cb-9590-462d-812e-119df3b2e665"
+            "uid": "Bn93a3_Vk"
           },
           "format": 1,
           "rawSQL": "SELECT *\nFROM (\n\tSELECT \"cs-uri-stem\", 'Traffic' AS \"type\", SUM(\"sc-bytes\") AS value, row_number() OVER (ORDER BY SUM(\"sc-bytes\") DESC) AS rn\n\tFROM \"$__table\"\n\tWHERE \"cs-host\" IN (${host:sqlstring}) \n\t\tAND \"cs-protocol\" IN (${http_protocol:sqlstring}) \n\t\tAND \"cs-method\" IN (${http_method:sqlstring})\n\t\tAND \"sc-status-group\" IN (${status_code_group:sqlstring})\n\t\tAND \"hit-cache\" IN (${hit_cache:raw}) \n\t\tAND \"back-to-origin\" IN (${back_to_origin:raw}) \n\t\tAND \"time-taken-in-second\" >= ${responce_latency}\n\t\tAND $__unixEpochFilter(time / 1000)\n\t\tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\t\t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n\tGROUP BY \"cs-uri-stem\"\n\tUNION ALL\n\tSELECT \"cs-uri-stem\", 'Request' AS \"type\", SUM(\"requests\") AS value, row_number() OVER (ORDER BY SUM(\"requests\") DESC) AS rn\n\tFROM \"$__table\"\n\tWHERE \"cs-host\" IN (${host:sqlstring}) \n\t\tAND \"cs-protocol\" IN (${http_protocol:sqlstring}) \n\t\tAND \"cs-method\" IN (${http_method:sqlstring})\n\t\tAND \"sc-status-group\" IN (${status_code_group:sqlstring})\n\t\tAND \"hit-cache\" IN (${hit_cache:raw}) \n\t\tAND \"back-to-origin\" IN (${back_to_origin:raw}) \n\t\tAND \"time-taken-in-second\" >= ${responce_latency}\n\t\tAND $__unixEpochFilter(time / 1000)\n\t\tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\t\t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n\tGROUP BY \"cs-uri-stem\"\n) t\nWHERE t.rn <= 20;",
@@ -2884,7 +2896,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Avg. Requests Latency"
+              "options": "Avg. Response Latency"
             },
             "properties": [
               {
@@ -3122,7 +3134,7 @@
               "avg_integration_latency (mean)": "avg_integration_latency",
               "avg_origin_latency": "Avg. Origin Requests Latency",
               "avg_request_processing_time": "avg_request_processing_time",
-              "avg_response_latency": "Avg. Requests Latency",
+              "avg_response_latency": "Avg. Response Latency",
               "avg_response_latency (mean)": "avg_response_latency",
               "avg_response_processing_time": "avg_response_processing_time",
               "avg_target_processing_time": "avg_target_processing_time",
@@ -4531,7 +4543,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "latency_greater_1_requests_rate"
+              "options": "Response Latency (>= 1 sec) rate"
             },
             "properties": [
               {
@@ -6012,7 +6024,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "hit_cache_rate"
+              "options": "Cache hit rate"
             },
             "properties": [
               {
@@ -6967,7 +6979,7 @@
     {
       "datasource": {
         "type": "grafana-athena-datasource",
-        "uid": "d55528cb-9590-462d-812e-119df3b2e665"
+        "uid": "Bn93a3_Vk"
       },
       "fieldConfig": {
         "defaults": {
@@ -7045,7 +7057,7 @@
           },
           "datasource": {
             "type": "grafana-athena-datasource",
-            "uid": "d55528cb-9590-462d-812e-119df3b2e665"
+            "uid": "Bn93a3_Vk"
           },
           "format": 1,
           "rawSQL": "SELECT ua_os, ua_device, ua_browser, ua_category, geo_iso_code, geo_country, geo_city\n\t, sum(requests) as requests\nFROM \"$__table\"\nWHERE \"cs-host\" IN (${host:sqlstring}) \n\tAND \"cs-protocol\" IN (${http_protocol:sqlstring}) \n\tAND \"cs-method\" IN (${http_method:sqlstring})\n\tAND \"sc-status-group\" IN (${status_code_group:sqlstring})\n\tAND \"hit-cache\" IN (${hit_cache:raw}) \n\tAND \"back-to-origin\" IN (${back_to_origin:raw}) \n\tAND \"time-taken-in-second\" >= ${responce_latency}\n\tAND $__unixEpochFilter(time / 1000)\n\tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00'))\nGROUP BY ua_os, ua_device, ua_browser, ua_category, geo_iso_code, geo_country, geo_city",
@@ -8112,7 +8124,7 @@
         },
         "datasource": {
           "type": "grafana-athena-datasource",
-          "uid": "d55528cb-9590-462d-812e-119df3b2e665"
+          "uid": "Bn93a3_Vk"
         },
         "definition": "",
         "hide": 0,
@@ -8512,7 +8524,7 @@
   },
   "timezone": "",
   "title": "cloudfront-dashboard",
-  "uid": "e327f913-75da-4986-8a3a-6c3b531b19fe-01",
-  "version": 2,
+  "uid": "a5b562c1-f6a9-4ad8-8ca5-2fa07658b6c3",
+  "version": 3,
   "weekStart": ""
 }

@@ -108,7 +108,7 @@
             "uid": "Bn93a3_Vk"
           },
           "format": 1,
-          "rawSQL": "SELECT sum(requests) as requests\n    , count(distinct client_ip) as vistors\n    , sum(case when elb_status_code_group = '1xx' then requests else 0 end) as status_code_1xx\n    , sum(case when elb_status_code_group = '2xx' then requests else 0 end) as status_code_2xx\n    , sum(case when elb_status_code_group = '3xx' then requests else 0 end) as status_code_3xx\n    , sum(case when elb_status_code_group = '4xx' then requests else 0 end) as status_code_4xx\n    , sum(case when elb_status_code_group = '5xx' then requests else 0 end) as status_code_5xx\n    , sum(received_bytes) as received_bytes\n    , sum(sent_bytes) as sent_bytes\n    , avg(avg_request_processing_time) filter (where avg_request_processing_time is not null) as avg_request_processing_time\n    , avg(avg_target_processing_time) filter (where avg_target_processing_time is not null) as avg_target_processing_time\n    , avg(avg_response_processing_time) filter (where avg_response_processing_time is not null) as avg_response_processing_time\nFROM \"$__table\"\nWHERE request_host IN (${host:sqlstring}) \n    AND type IN (${type:sqlstring}) \n    AND elb_status_code_group IN (${elb_status_code_group:sqlstring}) \n    AND target_group_arn IN (${target_group_arn:sqlstring}) \n    AND request_verb IN (${http_method:sqlstring})\n    AND request_path LIKE '${request_path}%'\n    AND $__unixEpochFilter(time / 1000)\n    AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n        OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n",
+          "rawSQL": "SELECT sum(requests) as requests\n    , count(distinct client_ip) as visitors\n    , sum(case when elb_status_code_group = '1xx' then requests else 0 end) as status_code_1xx\n    , sum(case when elb_status_code_group = '2xx' then requests else 0 end) as status_code_2xx\n    , sum(case when elb_status_code_group = '3xx' then requests else 0 end) as status_code_3xx\n    , sum(case when elb_status_code_group = '4xx' then requests else 0 end) as status_code_4xx\n    , sum(case when elb_status_code_group = '5xx' then requests else 0 end) as status_code_5xx\n    , sum(received_bytes) as received_bytes\n    , sum(sent_bytes) as sent_bytes\n    , avg(avg_request_processing_time) filter (where avg_request_processing_time is not null) as avg_request_processing_time\n    , avg(avg_target_processing_time) filter (where avg_target_processing_time is not null) as avg_target_processing_time\n    , avg(avg_response_processing_time) filter (where avg_response_processing_time is not null) as avg_response_processing_time\nFROM \"$__table\"\nWHERE request_host IN (${host:sqlstring}) \n    AND type IN (${type:sqlstring}) \n    AND elb_status_code_group IN (${elb_status_code_group:sqlstring}) \n    AND target_group_arn IN (${target_group_arn:sqlstring}) \n    AND request_verb IN (${http_method:sqlstring})\n    AND request_path LIKE '${request_path}%'\n    AND $__unixEpochFilter(time / 1000)\n    AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n        OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n",
           "refId": "Metrics",
           "table": "alb_metrics"
         }
@@ -194,7 +194,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Unique Vistors"
+              "options": "Unique Visitors"
             },
             "properties": [
               {
@@ -247,7 +247,7 @@
             "uid": "Bn93a3_Vk"
           },
           "format": 1,
-          "rawSQL": "SELECT $__unixEpochGroup(time / 1000, '${interval}') as time\n    , sum(case when elb_status_code_group = '1xx' then requests else 0 end) as status_code_1xx\n    , sum(case when elb_status_code_group = '2xx' then requests else 0 end) as status_code_2xx\n    , sum(case when elb_status_code_group = '3xx' then requests else 0 end) as status_code_3xx\n    , sum(case when elb_status_code_group = '4xx' then requests else 0 end) as status_code_4xx\n    , sum(case when elb_status_code_group = '5xx' then requests else 0 end) as status_code_5xx\n    , sum(received_bytes) as received_bytes\n    , sum(sent_bytes) as sent_bytes\n    , avg(avg_request_processing_time) as avg_request_processing_time\n    , avg(avg_target_processing_time) as avg_target_processing_time\n    , avg(avg_response_processing_time) as avg_response_processing_time\n    , sum(requests) as requests\n    , count(distinct client_ip) as vistors\nFROM \"$__table\"\nWHERE request_host IN (${host:sqlstring}) \n    AND type IN (${type:sqlstring}) \n    AND elb_status_code_group IN (${elb_status_code_group:sqlstring}) \n    AND target_group_arn IN (${target_group_arn:sqlstring}) \n    AND request_verb IN (${http_method:sqlstring})\n    AND request_path LIKE '${request_path}%'\n    AND $__unixEpochFilter(time / 1000)\n    AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n        OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\nGROUP BY $__unixEpochGroup(time / 1000, '${interval}');",
+          "rawSQL": "SELECT $__unixEpochGroup(time / 1000, '${interval}') as time\n    , sum(case when elb_status_code_group = '1xx' then requests else 0 end) as status_code_1xx\n    , sum(case when elb_status_code_group = '2xx' then requests else 0 end) as status_code_2xx\n    , sum(case when elb_status_code_group = '3xx' then requests else 0 end) as status_code_3xx\n    , sum(case when elb_status_code_group = '4xx' then requests else 0 end) as status_code_4xx\n    , sum(case when elb_status_code_group = '5xx' then requests else 0 end) as status_code_5xx\n    , sum(received_bytes) as received_bytes\n    , sum(sent_bytes) as sent_bytes\n    , avg(avg_request_processing_time) as avg_request_processing_time\n    , avg(avg_target_processing_time) as avg_target_processing_time\n    , avg(avg_response_processing_time) as avg_response_processing_time\n    , sum(requests) as requests\n    , count(distinct client_ip) as visitors\nFROM \"$__table\"\nWHERE request_host IN (${host:sqlstring}) \n    AND type IN (${type:sqlstring}) \n    AND elb_status_code_group IN (${elb_status_code_group:sqlstring}) \n    AND target_group_arn IN (${target_group_arn:sqlstring}) \n    AND request_verb IN (${http_method:sqlstring})\n    AND request_path LIKE '${request_path}%'\n    AND $__unixEpochFilter(time / 1000)\n    AND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n        OR event_hour = $__rawTimeFrom('yyyyMMdd00'))\nGROUP BY $__unixEpochGroup(time / 1000, '${interval}');",
           "refId": "Metrics",
           "table": "alb_metrics"
         }
@@ -275,6 +275,7 @@
             "indexByName": {},
             "renameByName": {
               "requests": "Requests",
+              "visitors": "Unique Visitors",
               "vistors": "Unique Vistors"
             }
           }
@@ -500,7 +501,7 @@
           "calcs": [
             "sum"
           ],
-          "fields": "/^vistors$/",
+          "fields": "/^visitors$/",
           "values": false
         },
         "text": {},
@@ -518,7 +519,7 @@
           "withTransforms": false
         }
       ],
-      "title": "Unique Vistors",
+      "title": "Unique Visitors",
       "transformations": [],
       "type": "stat"
     },
@@ -596,6 +597,21 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "2xx"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
           }
         ]
       },
@@ -647,9 +663,10 @@
               "response_processing_time": true,
               "sent_bytes": true,
               "status_code_1xx": true,
-              "status_code_2xx": true,
+              "status_code_2xx": false,
               "target_processing_time": true,
               "time": true,
+              "visitors": true,
               "vistors": true
             },
             "indexByName": {
@@ -667,7 +684,7 @@
               "5xx": "5xx",
               "received_bytes": "",
               "status_code_1xx": "",
-              "status_code_2xx": "",
+              "status_code_2xx": "2xx",
               "status_code_3xx": "3xx",
               "status_code_4xx": "4xx",
               "status_code_5xx": "5xx"
@@ -951,6 +968,7 @@
               "status_code_4xx": true,
               "status_code_5xx": true,
               "target_processing_time": true,
+              "visitors": true,
               "vistors": true
             },
             "indexByName": {},
@@ -1247,6 +1265,7 @@
               "status_code_4xx": true,
               "status_code_5xx": true,
               "target_processing_time": true,
+              "visitors": true,
               "vistors": true
             },
             "indexByName": {},
@@ -1524,6 +1543,7 @@
               "status_code_5xx": true,
               "target_processing_time": true,
               "target_processing_time (sum)": true,
+              "visitors": true,
               "vistors": true
             },
             "indexByName": {
@@ -1589,83 +1609,7 @@
           "mappings": [],
           "unit": "short"
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": "^1\\d{2}$"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "blue",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": "^2\\d{2}$"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "green",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": "^3\\d{2}$"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "orange",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": "^4\\d{2}$"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "red",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": "^5\\d{2}$"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-red",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 12,
@@ -1874,6 +1818,7 @@
               "status_code_5xx": true,
               "target_processing_time": true,
               "time": true,
+              "visitors": true,
               "vistors": true
             },
             "indexByName": {},
@@ -1964,7 +1909,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "sent_bytes"
+              "options": "Sent Bytes"
             },
             "properties": [
               {
@@ -1979,7 +1924,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "received_bytes"
+              "options": "Received Bytes"
             },
             "properties": [
               {
@@ -2049,6 +1994,7 @@
               "status_code_5xx": true,
               "target_processing_time": true,
               "target_processing_time (sum)": true,
+              "visitors": true,
               "vistors": true
             },
             "indexByName": {
@@ -4394,6 +4340,6 @@
   "timezone": "",
   "title": "alb-dashboard",
   "uid": "b7490261-da6c-40c4-b6f4-fd5bb170502e",
-  "version": 9,
+  "version": 10,
   "weekStart": ""
 }

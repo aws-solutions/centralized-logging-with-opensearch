@@ -48,7 +48,7 @@ class AWSConnection:
 
         self._default_config = config.Config(
             connect_timeout=30,
-            retries={"max_attempts": 1},
+            retries={"max_attempts": 2},
             user_agent_extra=user_agent_extra,
         )
         self._default_region = os.environ.get("AWS_REGION")

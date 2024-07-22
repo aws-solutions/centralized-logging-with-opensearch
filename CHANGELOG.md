@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.1] - 2024-07-22
+
+### Added
+
+- Optimised instance list performance. #76
+- Added support for using Unix epoch time format as the time key for single line text log type.
+
+### Fixed
+
+- Fixed an issue that missing time key when editing JSON config. #296
+- Fixed an issue that upgrading to v2.2.0 failed due to missing CMK permissions. #297
+
 ## [2.2.0] - 2024-06-20
 
 ### Added
@@ -26,7 +38,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where the system could not read properties of undefined ('accountId') when the Next button was clicked without selecting an Instance Group. #236
 - Fixed an issue where logs were not received when using the solution-provisioned staging bucket in Light Engine. #237
 - Fixed a permissions issue in the LogMerger State Machine within Light Engine: The S3ObjectMigration Lambda failed due to insufficient KMS permissions on the analytics S3 bucket. #272
+- Fixed a bug that the maximum number of distributions that can be displayed is 100 when creating pipeline. #278
 - Fixed a bug that prevented instances from being listed when switching accounts on the Instance Group list page. #291
+- Fixed a bug where creating a Log Conf with JSON type, if the field type select float, can not create the index template. #293
+
 
 ## [2.1.2] - 2024-03-19
 

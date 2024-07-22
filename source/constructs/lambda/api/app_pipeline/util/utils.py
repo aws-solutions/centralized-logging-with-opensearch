@@ -156,15 +156,24 @@ def make_index_template(  # NOSONAR
         properties = {}
         for spec in log_config.regexFieldSpecs:
             key = spec.key
-            val = {"type": spec.type}
-            if spec.format:
-                if log_config.timeKey == key and key != "@timestamp":
-                    properties["@timestamp"] = {"type": "alias", "path": key}
-                elif key == "time" and (
+            if spec.type == "epoch_millis":
+                val = {"type": "date", "format": "epoch_millis"}
+            elif spec.type == "epoch_second":
+                val = {"type": "date", "format": "epoch_second"}
+            else:
+                val = {"type": spec.type}
+            if log_config.timeKey == key and key != "@timestamp":
+                properties["@timestamp"] = {"type": "alias", "path": key}
+
+            if (
+                spec.format
+                and key == "time"
+                and (
                     log_config.iisLogParser == IISLogParserEnum.W3C
                     or log_config.iisLogParser == IISLogParserEnum.IIS
-                ):
-                    val = {"type": spec.type, "format": "hour_minute_second"}
+                )
+            ):
+                val = {"type": spec.type, "format": "hour_minute_second"}
             # NOTICE: We don't put format into index template.
             # Because the format in log config is strptime style("%Y-%m-%d %H:%M:%S"),
             # which is different from OpenSearch java style format(yyyy-MM-dd HH:mm:ss).

@@ -1,639 +1,626 @@
 {
-    "annotations": {
-      "list": [
-        {
-          "builtIn": 1,
-          "datasource": {
-            "type": "grafana",
-            "uid": "-- Grafana --"
-          },
-          "enable": true,
-          "hide": true,
-          "iconColor": "rgba(0, 211, 255, 1)",
-          "name": "Annotations & Alerts",
-          "target": {
-            "limit": 100,
-            "matchAny": false,
-            "tags": [],
-            "type": "dashboard"
-          },
-          "type": "dashboard"
-        }
-      ]
-    },
-    "editable": true,
-    "fiscalYearStartMonth": 0,
-    "graphTooltip": 0,
-    "id": 964,
-    "links": [],
-    "liveNow": false,
-    "panels": [
+  "annotations": {
+    "list": [
       {
+        "builtIn": 1,
         "datasource": {
-          "type": "grafana-athena-datasource",
-          "uid": "d55528cb-9590-462d-812e-119df3b2e665"
+          "type": "grafana",
+          "uid": "-- Grafana --"
         },
-        "description": "",
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "fixedColor": "green",
-              "mode": "fixed"
-            },
-            "custom": {
-              "align": "center",
-              "cellOptions": {
-                "type": "color-text"
-              },
-              "filterable": true,
-              "inspect": true
-            },
-            "mappings": [],
-            "min": -3,
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "red",
-                  "value": 80
-                }
-              ]
-            },
-            "unit": "none"
-          },
-          "overrides": [
-            {
-              "matcher": {
-                "id": "byName",
-                "options": "cs-referer"
-              },
-              "properties": [
-                {
-                  "id": "custom.width",
-                  "value": 264
-                }
-              ]
-            }
-          ]
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
         },
-        "gridPos": {
-          "h": 33,
-          "w": 24,
-          "x": 0,
-          "y": 0
-        },
-        "id": 2,
-        "options": {
-          "cellHeight": "sm",
-          "footer": {
-            "countRows": false,
-            "enablePagination": false,
-            "fields": [
-              "response_latency",
-              "response_length"
-            ],
-            "reducer": [
-              "sum"
-            ],
-            "show": false
-          },
-          "showHeader": true,
-          "sortBy": []
-        },
-        "pluginVersion": "10.0.0",
-        "targets": [
-          {
-            "connectionArgs": {
-              "catalog": "__default",
-              "database": "__default",
-              "region": "__default",
-              "resultReuseEnabled": true,
-              "resultReuseMaxAgeInMinutes": 5
-            },
-            "datasource": {
-              "type": "grafana-athena-datasource",
-              "uid": "d55528cb-9590-462d-812e-119df3b2e665"
-            },
-            "format": 1,
-            "rawSQL": "SELECT t.rn as No, t.\"time\", t.\"timestamp\", t.\"x-edge-location\", t.\"sc-bytes\", t.\"c-ip\" , t.\"cs-method\", t.\"cs-host\", t.\"cs-uri-stem\", t.\"sc-status\"\n\t, t.\"cs-referer\", t.\"cs-user-agent\", t.\"cs-uri-query\", t.\"cs-cookie\", t.\"x-edge-result-type\"\n\t, t.\"x-edge-request-id\", t.\"x-host-header\", t.\"cs-protocol\", t.\"cs-bytes\"\n\t, t.\"time-taken\", t.\"x-forwarded-for\", t.\"ssl-protocol\", t.\"ssl-cipher\", t.\"x-edge-response-result-type\"\n\t, t.\"cs-protocol-version\", t.\"fle-status\", t.\"fle-encrypted-fields\", t.\"c-port\", t.\"time-to-first-byte\"\n\t, t.\"x-edge-detailed-result-type\", t.\"sc-content-type\", t.\"sc-content-len\", t.\"sc-range-start\", t.\"sc-range-end\"\n\t, t.\"hit-cache\", t.\"back-to-origin\", t.\"enrichment\"\nFROM (SELECT \"time\", \"timestamp\", \"x-edge-location\", \"sc-bytes\", \"c-ip\" , \"cs-method\", \"cs-host\", \"cs-uri-stem\", \"sc-status\"\n\t\t, \"cs-referer\", \"cs-user-agent\", \"cs-uri-query\", \"cs-cookie\", \"x-edge-result-type\"\n\t\t, \"x-edge-request-id\", \"x-host-header\", \"cs-protocol\", \"cs-bytes\"\n\t\t, \"time-taken\", \"x-forwarded-for\", \"ssl-protocol\", \"ssl-cipher\", \"x-edge-response-result-type\"\n\t\t, \"cs-protocol-version\", \"fle-status\", \"fle-encrypted-fields\", \"c-port\", \"time-to-first-byte\"\n\t\t, \"x-edge-detailed-result-type\", \"sc-content-type\", \"sc-content-len\", \"sc-range-start\", \"sc-range-end\"\n\t\t, \"hit-cache\", \"back-to-origin\", \"enrichment\", row_number() over (order by \"time\" ${sort_by}) as rn\n  FROM \"$__table\"\n\tWHERE \"cs-host\" IN (${host:sqlstring}) \n\t\tAND \"cs-protocol\" IN (${http_protocol:sqlstring}) \n\t\tAND \"cs-method\" IN (${http_method:sqlstring})\n\t\tAND \"sc-status-group\" IN (${status_code_group:sqlstring})\n\t\tAND \"hit-cache\" IN (${hit_cache:raw}) \n\t\tAND \"back-to-origin\" IN (${back_to_origin:raw}) \n\t\tAND \"time-taken-in-second\" >= ${responce_latency}\n\t\tAND $__unixEpochFilter(time / 1000)\n\t\tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\t\t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n  ) t \n  WHERE t.rn BETWEEN (${page_no:int} - 1) * ${page_size:int} + 1 AND ${page_no:int} * ${page_size:int};",
-            "refId": "Details",
-            "table": "cloudfront"
-          }
-        ],
-        "transformations": [
-          {
-            "id": "organize",
-            "options": {
-              "excludeByName": {
-                "authorize_status": true,
-                "authorizer_request_id": false,
-                "domain_prefix": true,
-                "identity": true,
-                "request_time_epoch": true,
-                "resource_id": true,
-                "resource_path": true,
-                "time": true,
-                "user_arn": true
-              },
-              "indexByName": {
-                "No": 0,
-                "account_id": 12,
-                "api_id": 2,
-                "api_key": 43,
-                "api_key_id": 4,
-                "api_key_name": 5,
-                "api_name": 40,
-                "api_protocol_type": 41,
-                "api_usage_plan_name": 6,
-                "authorize_status": 13,
-                "authorizer_latency": 15,
-                "authorizer_request_id": 33,
-                "authorizer_status": 14,
-                "aws_endpoint_request_id": 34,
-                "client_ip": 11,
-                "domain_name": 7,
-                "domain_prefix": 28,
-                "error_message": 22,
-                "extended_request_id": 35,
-                "http_method": 9,
-                "integration_latency": 16,
-                "integration_status": 17,
-                "path": 8,
-                "principal_id": 32,
-                "protocol": 10,
-                "request_id": 36,
-                "request_time_epoch": 37,
-                "resource_id": 38,
-                "resource_path": 39,
-                "response_latency": 18,
-                "response_length": 21,
-                "response_type": 20,
-                "stage": 3,
-                "status_code": 19,
-                "status_code_group": 42,
-                "time": 1,
-                "user": 29,
-                "user_agent": 30,
-                "user_arn": 31,
-                "waf_latency": 23,
-                "waf_response_code": 25,
-                "waf_status_code": 24,
-                "webacl_arn": 26,
-                "xray_trace_id": 27
-              },
-              "renameByName": {}
-            }
-          }
-        ],
-        "type": "table"
+        "type": "dashboard"
       }
-    ],
-    "refresh": "",
-    "revision": 1,
-    "schemaVersion": 38,
-    "style": "dark",
-    "tags": [],
-    "templating": {
-      "list": [
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 1412,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "Bn93a3_Vk"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "green",
+            "mode": "fixed"
+          },
+          "custom": {
+            "align": "center",
+            "cellOptions": {
+              "type": "color-text"
+            },
+            "filterable": true,
+            "inspect": true
+          },
+          "mappings": [],
+          "min": -3,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 33,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": false,
+          "fields": [
+            "response_latency",
+            "response_length"
+          ],
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": []
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
         {
-          "allValue": "SELECT \"cs-host\" FROM \"$__table\" WHERE event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH') \tOR event_hour = $__rawTimeFrom('yyyyMMdd00') GROUP BY \"cs-host\"",
-          "current": {
-            "selected": false,
-            "text": "All",
-            "value": "$__all"
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
           },
           "datasource": {
             "type": "grafana-athena-datasource",
-            "uid": "d55528cb-9590-462d-812e-119df3b2e665"
+            "uid": "Bn93a3_Vk"
           },
-          "definition": "",
-          "hide": 0,
-          "includeAll": true,
-          "label": "Distribution",
-          "multi": true,
-          "name": "host",
-          "options": [],
-          "query": {
-            "connectionArgs": {
-              "catalog": "__default",
-              "database": "__default",
-              "region": "__default",
-              "resultReuseEnabled": true,
-              "resultReuseMaxAgeInMinutes": 5
-            },
-            "format": 1,
-            "rawSQL": "SELECT \"cs-host\"\nFROM \"$__table\"\nWHERE event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\tOR event_hour = $__rawTimeFrom('yyyyMMdd00')\nGROUP BY \"cs-host\"",
-            "refId": "Metrics",
-            "table": "cloudfront_metrics"
-          },
-          "refresh": 2,
-          "regex": "",
-          "skipUrlSync": false,
-          "sort": 0,
-          "type": "query"
-        },
+          "format": 1,
+          "rawSQL": "SELECT t.rn as No, t.\"time\", t.\"timestamp\", t.\"x-edge-location\", t.\"sc-bytes\", t.\"c-ip\" , t.\"cs-method\", t.\"cs-host\", t.\"cs-uri-stem\", t.\"sc-status\"\n\t, t.\"cs-referer\", t.\"cs-user-agent\", t.\"cs-uri-query\", t.\"cs-cookie\", t.\"x-edge-result-type\"\n\t, t.\"x-edge-request-id\", t.\"x-host-header\", t.\"cs-protocol\", t.\"cs-bytes\"\n\t, t.\"time-taken\", t.\"x-forwarded-for\", t.\"ssl-protocol\", t.\"ssl-cipher\", t.\"x-edge-response-result-type\"\n\t, t.\"cs-protocol-version\", t.\"fle-status\", t.\"fle-encrypted-fields\", t.\"c-port\", t.\"time-to-first-byte\"\n\t, t.\"x-edge-detailed-result-type\", t.\"sc-content-type\", t.\"sc-content-len\", t.\"sc-range-start\", t.\"sc-range-end\"\n\t, t.\"hit-cache\", t.\"back-to-origin\", t.\"enrichment\"\nFROM (SELECT \"time\", \"timestamp\", \"x-edge-location\", \"sc-bytes\", \"c-ip\" , \"cs-method\", \"cs-host\", \"cs-uri-stem\", \"sc-status\"\n\t\t, \"cs-referer\", \"cs-user-agent\", \"cs-uri-query\", \"cs-cookie\", \"x-edge-result-type\"\n\t\t, \"x-edge-request-id\", \"x-host-header\", \"cs-protocol\", \"cs-bytes\"\n\t\t, \"time-taken\", \"x-forwarded-for\", \"ssl-protocol\", \"ssl-cipher\", \"x-edge-response-result-type\"\n\t\t, \"cs-protocol-version\", \"fle-status\", \"fle-encrypted-fields\", \"c-port\", \"time-to-first-byte\"\n\t\t, \"x-edge-detailed-result-type\", \"sc-content-type\", \"sc-content-len\", \"sc-range-start\", \"sc-range-end\"\n\t\t, \"hit-cache\", \"back-to-origin\", \"enrichment\", row_number() over (order by \"time\" ${sort_by}) as rn\n  FROM \"$__table\"\n\tWHERE \"cs-host\" IN (${host:sqlstring}) \n\t\tAND \"cs-protocol\" IN (${http_protocol:sqlstring}) \n\t\tAND \"cs-method\" IN (${http_method:sqlstring})\n\t\tAND \"sc-status-group\" IN (${status_code_group:sqlstring})\n\t\tAND \"hit-cache\" IN (${hit_cache:raw}) \n\t\tAND \"back-to-origin\" IN (${back_to_origin:raw}) \n\t\tAND \"time-taken-in-second\" >= ${responce_latency}\n\t\tAND $__unixEpochFilter(time / 1000)\n\t\tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\t\t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n  ) t \n  WHERE t.rn BETWEEN (${page_no:int} - 1) * ${page_size:int} + 1 AND ${page_no:int} * ${page_size:int};",
+          "refId": "Details",
+          "table": "cloudfront"
+        }
+      ],
+      "transformations": [
         {
-          "current": {
-            "selected": true,
-            "text": [
-              "All"
-            ],
-            "value": [
-              "$__all"
-            ]
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "authorize_status": true,
+              "authorizer_request_id": false,
+              "domain_prefix": true,
+              "identity": true,
+              "request_time_epoch": true,
+              "resource_id": true,
+              "resource_path": true,
+              "time": true,
+              "user_arn": true
+            },
+            "indexByName": {
+              "No": 0,
+              "account_id": 12,
+              "api_id": 2,
+              "api_key": 43,
+              "api_key_id": 4,
+              "api_key_name": 5,
+              "api_name": 40,
+              "api_protocol_type": 41,
+              "api_usage_plan_name": 6,
+              "authorize_status": 13,
+              "authorizer_latency": 15,
+              "authorizer_request_id": 33,
+              "authorizer_status": 14,
+              "aws_endpoint_request_id": 34,
+              "client_ip": 11,
+              "domain_name": 7,
+              "domain_prefix": 28,
+              "error_message": 22,
+              "extended_request_id": 35,
+              "http_method": 9,
+              "integration_latency": 16,
+              "integration_status": 17,
+              "path": 8,
+              "principal_id": 32,
+              "protocol": 10,
+              "request_id": 36,
+              "request_time_epoch": 37,
+              "resource_id": 38,
+              "resource_path": 39,
+              "response_latency": 18,
+              "response_length": 21,
+              "response_type": 20,
+              "stage": 3,
+              "status_code": 19,
+              "status_code_group": 42,
+              "time": 1,
+              "user": 29,
+              "user_agent": 30,
+              "user_arn": 31,
+              "waf_latency": 23,
+              "waf_response_code": 25,
+              "waf_status_code": 24,
+              "webacl_arn": 26,
+              "xray_trace_id": 27
+            },
+            "renameByName": {}
+          }
+        }
+      ],
+      "type": "table"
+    }
+  ],
+  "refresh": "",
+  "revision": 1,
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "allValue": "SELECT \"cs-host\" FROM \"$__table\" WHERE event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH') \tOR event_hour = $__rawTimeFrom('yyyyMMdd00') GROUP BY \"cs-host\"",
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "grafana-athena-datasource",
+          "uid": "Bn93a3_Vk"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Distribution",
+        "multi": true,
+        "name": "host",
+        "options": [],
+        "query": {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
           },
-          "hide": 0,
-          "includeAll": true,
-          "label": "HTTP Protocol",
-          "multi": true,
-          "name": "http_protocol",
-          "options": [
-            {
-              "selected": true,
-              "text": "All",
-              "value": "$__all"
-            },
-            {
-              "selected": false,
-              "text": "http",
-              "value": "http"
-            },
-            {
-              "selected": false,
-              "text": "https",
-              "value": "https"
-            },
-            {
-              "selected": false,
-              "text": "ws",
-              "value": "ws"
-            },
-            {
-              "selected": false,
-              "text": "wss",
-              "value": "wss"
-            }
+          "format": 1,
+          "rawSQL": "SELECT \"cs-host\"\nFROM \"$__table\"\nWHERE event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\tOR event_hour = $__rawTimeFrom('yyyyMMdd00')\nGROUP BY \"cs-host\"",
+          "refId": "Metrics",
+          "table": "cloudfront_metrics"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
           ],
-          "query": "http, https, ws, wss",
-          "queryValue": "",
-          "skipUrlSync": false,
-          "type": "custom"
+          "value": [
+            "$__all"
+          ]
         },
-        {
-          "current": {
+        "hide": 0,
+        "includeAll": true,
+        "label": "HTTP Protocol",
+        "multi": true,
+        "name": "http_protocol",
+        "options": [
+          {
             "selected": true,
-            "text": [
-              "All"
-            ],
-            "value": [
-              "$__all"
-            ]
+            "text": "All",
+            "value": "$__all"
           },
-          "hide": 0,
-          "includeAll": true,
-          "label": "HTTP Method",
-          "multi": true,
-          "name": "http_method",
-          "options": [
-            {
-              "selected": true,
-              "text": "All",
-              "value": "$__all"
-            },
-            {
-              "selected": false,
-              "text": "GET",
-              "value": "GET"
-            },
-            {
-              "selected": false,
-              "text": "PUT",
-              "value": "PUT"
-            },
-            {
-              "selected": false,
-              "text": "POST",
-              "value": "POST"
-            },
-            {
-              "selected": false,
-              "text": "DELETE",
-              "value": "DELETE"
-            },
-            {
-              "selected": false,
-              "text": "HEAD",
-              "value": "HEAD"
-            },
-            {
-              "selected": false,
-              "text": "PATCH",
-              "value": "PATCH"
-            },
-            {
-              "selected": false,
-              "text": "OPTIONS",
-              "value": "OPTIONS"
-            }
-          ],
-          "query": "GET, PUT, POST, DELETE, HEAD, PATCH, OPTIONS",
-          "queryValue": "",
-          "skipUrlSync": false,
-          "type": "custom"
-        },
-        {
-          "current": {
+          {
             "selected": false,
-            "text": [
-              "All"
-            ],
-            "value": [
-              "$__all"
-            ]
+            "text": "http",
+            "value": "http"
           },
-          "description": "",
-          "hide": 0,
-          "includeAll": true,
-          "label": "HTTP Status Code",
-          "multi": true,
-          "name": "status_code_group",
-          "options": [
-            {
-              "selected": true,
-              "text": "All",
-              "value": "$__all"
-            },
-            {
-              "selected": false,
-              "text": "1xx",
-              "value": "1xx"
-            },
-            {
-              "selected": false,
-              "text": "2xx",
-              "value": "2xx"
-            },
-            {
-              "selected": false,
-              "text": "3xx",
-              "value": "3xx"
-            },
-            {
-              "selected": false,
-              "text": "4xx",
-              "value": "4xx"
-            },
-            {
-              "selected": false,
-              "text": "5xx",
-              "value": "5xx"
-            },
-            {
-              "selected": false,
-              "text": "-",
-              "value": "-"
-            }
-          ],
-          "query": "1xx, 2xx, 3xx, 4xx, 5xx, -",
-          "queryValue": "",
-          "skipUrlSync": false,
-          "type": "custom"
-        },
-        {
-          "current": {
-            "selected": true,
-            "text": [
-              "All"
-            ],
-            "value": [
-              "$__all"
-            ]
-          },
-          "hide": 0,
-          "includeAll": true,
-          "label": "Hit Cache",
-          "multi": true,
-          "name": "hit_cache",
-          "options": [
-            {
-              "selected": true,
-              "text": "All",
-              "value": "$__all"
-            },
-            {
-              "selected": false,
-              "text": "true",
-              "value": "true"
-            },
-            {
-              "selected": false,
-              "text": "false",
-              "value": "false"
-            }
-          ],
-          "query": "true, false",
-          "queryValue": "",
-          "skipUrlSync": false,
-          "type": "custom"
-        },
-        {
-          "current": {
-            "selected": true,
-            "text": [
-              "All"
-            ],
-            "value": [
-              "$__all"
-            ]
-          },
-          "hide": 0,
-          "includeAll": true,
-          "label": "Back to Origin",
-          "multi": true,
-          "name": "back_to_origin",
-          "options": [
-            {
-              "selected": true,
-              "text": "All",
-              "value": "$__all"
-            },
-            {
-              "selected": false,
-              "text": "true",
-              "value": "true"
-            },
-            {
-              "selected": false,
-              "text": "false",
-              "value": "false"
-            }
-          ],
-          "query": "true, false",
-          "queryValue": "",
-          "skipUrlSync": false,
-          "type": "custom"
-        },
-        {
-          "current": {
+          {
             "selected": false,
+            "text": "https",
+            "value": "https"
+          },
+          {
+            "selected": false,
+            "text": "ws",
+            "value": "ws"
+          },
+          {
+            "selected": false,
+            "text": "wss",
+            "value": "wss"
+          }
+        ],
+        "query": "http, https, ws, wss",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "hide": 0,
+        "includeAll": true,
+        "label": "HTTP Method",
+        "multi": true,
+        "name": "http_method",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "GET",
+            "value": "GET"
+          },
+          {
+            "selected": false,
+            "text": "PUT",
+            "value": "PUT"
+          },
+          {
+            "selected": false,
+            "text": "POST",
+            "value": "POST"
+          },
+          {
+            "selected": false,
+            "text": "DELETE",
+            "value": "DELETE"
+          },
+          {
+            "selected": false,
+            "text": "HEAD",
+            "value": "HEAD"
+          },
+          {
+            "selected": false,
+            "text": "PATCH",
+            "value": "PATCH"
+          },
+          {
+            "selected": false,
+            "text": "OPTIONS",
+            "value": "OPTIONS"
+          }
+        ],
+        "query": "GET, PUT, POST, DELETE, HEAD, PATCH, OPTIONS",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "description": "",
+        "hide": 0,
+        "includeAll": true,
+        "label": "HTTP Status Code",
+        "multi": true,
+        "name": "status_code_group",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "1xx",
+            "value": "1xx"
+          },
+          {
+            "selected": false,
+            "text": "2xx",
+            "value": "2xx"
+          },
+          {
+            "selected": false,
+            "text": "3xx",
+            "value": "3xx"
+          },
+          {
+            "selected": false,
+            "text": "4xx",
+            "value": "4xx"
+          },
+          {
+            "selected": false,
+            "text": "5xx",
+            "value": "5xx"
+          },
+          {
+            "selected": false,
+            "text": "-",
+            "value": "-"
+          }
+        ],
+        "query": "1xx, 2xx, 3xx, 4xx, 5xx, -",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "hide": 0,
+        "includeAll": true,
+        "label": "Hit Cache",
+        "multi": true,
+        "name": "hit_cache",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "true",
+            "value": "true"
+          },
+          {
+            "selected": false,
+            "text": "false",
+            "value": "false"
+          }
+        ],
+        "query": "true, false",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "hide": 0,
+        "includeAll": true,
+        "label": "Back to Origin",
+        "multi": true,
+        "name": "back_to_origin",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "true",
+            "value": "true"
+          },
+          {
+            "selected": false,
+            "text": "false",
+            "value": "false"
+          }
+        ],
+        "query": "true, false",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "0",
+          "value": "0"
+        },
+        "hide": 0,
+        "includeAll": false,
+        "label": "Responce Latency >=",
+        "multi": false,
+        "name": "responce_latency",
+        "options": [
+          {
+            "selected": true,
             "text": "0",
             "value": "0"
           },
-          "hide": 0,
-          "includeAll": false,
-          "label": "Responce Latency >=",
-          "multi": false,
-          "name": "responce_latency",
-          "options": [
-            {
-              "selected": true,
-              "text": "0",
-              "value": "0"
-            },
-            {
-              "selected": false,
-              "text": "1",
-              "value": "1"
-            },
-            {
-              "selected": false,
-              "text": "2",
-              "value": "2"
-            },
-            {
-              "selected": false,
-              "text": "3",
-              "value": "3"
-            }
-          ],
-          "query": "0, 1, 2, 3",
-          "queryValue": "",
-          "skipUrlSync": false,
-          "type": "custom"
-        },
-        {
-          "current": {
+          {
             "selected": false,
             "text": "1",
             "value": "1"
           },
-          "datasource": {
-            "type": "grafana-athena-datasource",
-            "uid": "d55528cb-9590-462d-812e-119df3b2e665"
-          },
-          "definition": "",
-          "hide": 0,
-          "includeAll": false,
-          "label": "Page No",
-          "multi": false,
-          "name": "page_no",
-          "options": [],
-          "query": {
-            "connectionArgs": {
-              "catalog": "__default",
-              "database": "__default",
-              "region": "__default",
-              "resultReuseEnabled": true,
-              "resultReuseMaxAgeInMinutes": 5
-            },
-            "format": 1,
-            "rawSQL": "SELECT cast(page_no as varchar) as page_no\nFROM (\n\tSELECT sequence(1, count(1) / ${page_size:int} + 1, 1)\n  FROM \"$__table\"\n  WHERE \"cs-host\" IN (${host:sqlstring}) \n\t\tAND \"cs-protocol\" IN (${http_protocol:sqlstring}) \n\t\tAND \"cs-method\" IN (${http_method:sqlstring})\n\t\tAND \"sc-status-group\" IN (${status_code_group:sqlstring})\n\t\tAND \"hit-cache\" IN (${hit_cache:raw}) \n\t\tAND \"back-to-origin\" IN (${back_to_origin:raw}) \n\t\tAND \"time-taken-in-second\" >= ${responce_latency}\n\t\tAND $__unixEpochFilter(time / 1000)\n\t\tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\t\t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n\t) AS x (no)\nCROSS JOIN UNNEST(no) AS t (page_no)\n;",
-            "refId": "Details",
-            "table": "cloudfront"
-          },
-          "refresh": 2,
-          "regex": "",
-          "skipUrlSync": false,
-          "sort": 0,
-          "type": "query"
-        },
-        {
-          "current": {
+          {
             "selected": false,
+            "text": "2",
+            "value": "2"
+          },
+          {
+            "selected": false,
+            "text": "3",
+            "value": "3"
+          }
+        ],
+        "query": "0, 1, 2, 3",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "1",
+          "value": "1"
+        },
+        "datasource": {
+          "type": "grafana-athena-datasource",
+          "uid": "Bn93a3_Vk"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Page No",
+        "multi": false,
+        "name": "page_no",
+        "options": [],
+        "query": {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT cast(page_no as varchar) as page_no\nFROM (\n\tSELECT sequence(1, count(1) / ${page_size:int} + 1, 1)\n  FROM \"$__table\"\n  WHERE \"cs-host\" IN (${host:sqlstring}) \n\t\tAND \"cs-protocol\" IN (${http_protocol:sqlstring}) \n\t\tAND \"cs-method\" IN (${http_method:sqlstring})\n\t\tAND \"sc-status-group\" IN (${status_code_group:sqlstring})\n\t\tAND \"hit-cache\" IN (${hit_cache:raw}) \n\t\tAND \"back-to-origin\" IN (${back_to_origin:raw}) \n\t\tAND \"time-taken-in-second\" >= ${responce_latency}\n\t\tAND $__unixEpochFilter(time / 1000)\n\t\tAND (event_hour BETWEEN  $__rawTimeFrom('yyyyMMddHH') AND  $__rawTimeTo('yyyyMMddHH')\n\t\t\tOR event_hour = $__rawTimeFrom('yyyyMMdd00'))\n\t) AS x (no)\nCROSS JOIN UNNEST(no) AS t (page_no)\n;",
+          "refId": "Details",
+          "table": "cloudfront"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "100",
+          "value": "100"
+        },
+        "hide": 0,
+        "includeAll": false,
+        "label": "Page Size",
+        "multi": false,
+        "name": "page_size",
+        "options": [
+          {
+            "selected": true,
             "text": "100",
             "value": "100"
           },
-          "hide": 0,
-          "includeAll": false,
-          "label": "Page Size",
-          "multi": false,
-          "name": "page_size",
-          "options": [
-            {
-              "selected": true,
-              "text": "100",
-              "value": "100"
-            },
-            {
-              "selected": false,
-              "text": "1000",
-              "value": "1000"
-            },
-            {
-              "selected": false,
-              "text": "10000",
-              "value": "10000"
-            },
-            {
-              "selected": false,
-              "text": "50000",
-              "value": "50000"
-            }
-          ],
-          "query": "100, 1000, 10000, 50000",
-          "skipUrlSync": false,
-          "type": "custom"
-        },
-        {
-          "current": {
+          {
             "selected": false,
+            "text": "1000",
+            "value": "1000"
+          },
+          {
+            "selected": false,
+            "text": "10000",
+            "value": "10000"
+          },
+          {
+            "selected": false,
+            "text": "50000",
+            "value": "50000"
+          }
+        ],
+        "query": "100, 1000, 10000, 50000",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "Asc",
+          "value": "Asc"
+        },
+        "hide": 0,
+        "includeAll": false,
+        "label": "Sort  by",
+        "multi": false,
+        "name": "sort_by",
+        "options": [
+          {
+            "selected": true,
             "text": "Asc",
             "value": "Asc"
           },
-          "hide": 0,
-          "includeAll": false,
-          "label": "Sort  by",
-          "multi": false,
-          "name": "sort_by",
-          "options": [
-            {
-              "selected": true,
-              "text": "Asc",
-              "value": "Asc"
-            },
-            {
-              "selected": false,
-              "text": "Desc",
-              "value": "Desc"
-            }
-          ],
-          "query": "Asc, Desc",
-          "skipUrlSync": false,
-          "type": "custom"
-        }
-      ]
-    },
-    "time": {
-      "from": "now-30m",
-      "to": "now"
-    },
-    "timepicker": {
-      "refresh_intervals": [
-        "5m",
-        "15m",
-        "30m",
-        "1h",
-        "2h",
-        "1d"
-      ]
-    },
-    "timezone": "",
-    "title": "cloudfront-details",
-    "uid": "e327f913-75da-4986-8a3a-6c3b531b19fe-00",
-    "version": 2,
-    "weekStart": ""
-  }
+          {
+            "selected": false,
+            "text": "Desc",
+            "value": "Desc"
+          }
+        ],
+        "query": "Asc, Desc",
+        "skipUrlSync": false,
+        "type": "custom"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ]
+  },
+  "timezone": "",
+  "title": "cloudfront-details",
+  "uid": "f7811fee-028b-4c24-b6df-b6fa7b30cb50",
+  "version": 2,
+  "weekStart": ""
+}

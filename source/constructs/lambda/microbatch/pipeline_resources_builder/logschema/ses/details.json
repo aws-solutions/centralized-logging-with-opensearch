@@ -24,7 +24,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 1224,
+  "id": 1423,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -780,7 +780,7 @@
   },
   "timezone": "",
   "title": "ses-details",
-  "uid": "fa0d7be7-c74b-456c-ab93-75039672883a",
-  "version": 5,
+  "uid": "d0a54198-ef9c-487b-9dae-ddb7d0ac720c",
+  "version": 2,
   "weekStart": ""
 }
