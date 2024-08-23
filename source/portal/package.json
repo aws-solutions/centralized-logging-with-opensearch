@@ -24,7 +24,7 @@
     "aws-amplify": "^5.3.12",
     "aws-appsync-auth-link": "^3.0.7",
     "aws-appsync-subscription-link": "^3.1.2",
-    "axios": "^1.6.0",
+    "axios": "^1.7.4",
     "classnames": "^2.3.2",
     "date-fns": "^2.30.0",
     "graphql-tag": "^2.12.6",

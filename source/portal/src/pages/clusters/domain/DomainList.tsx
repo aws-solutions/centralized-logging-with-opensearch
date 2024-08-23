@@ -72,7 +72,7 @@ const ESDomainList: React.FC = () => {
   const [curTipsDomain, setCurTipsDomain] = useState<ImportedDomain>();
   const [openDeleteModel, setOpenDeleteModel] = useState(false);
   const [loadingDelete, setLoadingDelete] = useState(false);
-  const [reverseOrKeep, setReverseOrKeep] = useState<string>("unset");
+  const [reverseOrKeep, setReverseOrKeep] = useState<string>("keep");
   const [removeCancel, setRemoveCancel] = useState(false);
   const [removeErrorMessage, setRemoveErrorMessage] = useState<string>();
   const [domainRelatedResources, setDomainRelatedResources] = useState<
@@ -136,8 +136,23 @@ const ESDomainList: React.FC = () => {
       });
       const domainRelevantResource: DomainRelevantResource[] =
         resData.data.getDomainDetails.resources;
-      console.info("domainRelevantResource: ", domainRelevantResource);
-      setDomainRelatedResources(domainRelevantResource);
+      // handle resource contains null
+      const filteredDomainRelevantResources: DomainRelevantResource[] = [];
+      if (domainRelevantResource.length > 0) {
+        domainRelevantResource.forEach((element: DomainRelevantResource) => {
+          const valueHasNotNone = element?.values?.every(
+            (e) => e !== null && e !== "" && e !== "null"
+          );
+          if (
+            element?.values &&
+            element?.values.length > 0 &&
+            valueHasNotNone
+          ) {
+            filteredDomainRelevantResources.push({ ...element });
+          }
+        });
+      }
+      setDomainRelatedResources(filteredDomainRelevantResources);
       setLoadingResources(false);
     } catch (error) {
       setLoadingResources(false);
@@ -364,7 +379,8 @@ const ESDomainList: React.FC = () => {
               loading={loadingDelete}
               btnType="primary"
               disabled={
-                selectedDomains.length === 1 && reverseOrKeep === "unset"
+                (selectedDomains.length === 1 && reverseOrKeep === "unset") ||
+                loadingResources
               }
               onClick={() => {
                 if (!removeCancel) {
@@ -429,20 +445,7 @@ const ESDomainList: React.FC = () => {
           )}
           <div className="mt-10">
             {/* For old version (v1.x), not allow customer to choose reverse changes */}
-            {!removeCancel && domainRelatedResources && (
-              <div key="reverse">
-                <label>
-                  <input
-                    type="radio"
-                    value="reverse"
-                    checked={reverseOrKeep === "reverse"}
-                    onChange={handleReverseChange}
-                  />
-                  &nbsp;{t("cluster:domain.chooseReverse")}
-                </label>
-              </div>
-            )}
-            {!removeCancel && (
+            {!removeCancel && domainRelatedResources.length > 0 && (
               <div key="keep">
                 <label>
                   <input
@@ -452,6 +455,19 @@ const ESDomainList: React.FC = () => {
                     onChange={handleReverseChange}
                   />
                   &nbsp;{t("cluster:domain.chooseKeep")}
+                </label>
+              </div>
+            )}
+            {!removeCancel && domainRelatedResources.length > 0 && (
+              <div key="reverse">
+                <label>
+                  <input
+                    type="radio"
+                    value="reverse"
+                    checked={reverseOrKeep === "reverse"}
+                    onChange={handleReverseChange}
+                  />
+                  &nbsp;{t("cluster:domain.chooseReverse")}
                 </label>
               </div>
             )}

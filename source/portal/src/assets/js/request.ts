@@ -120,7 +120,15 @@ export const appSyncRequestQuery = (query: any, params?: any): any => {
       resolve(decodedResData);
     } catch (error) {
       const showError: any = error;
-      if (showError?.networkError?.statusCode === 401) {
+      const headerElement = document.getElementById("cloSignedHeader");
+      // escape GetMetricHistoryData for 401 error
+      const r = /query\s(\w+)\s*\(/g;
+      const res: any = r.exec(query);
+      if (
+        res?.[1] !== "GetMetricHistoryData" &&
+        headerElement &&
+        showError?.networkError?.statusCode === 401
+      ) {
         Alert(
           i18n.t("signin.reSignInDesc"),
           i18n.t("signin.reSignIn"),

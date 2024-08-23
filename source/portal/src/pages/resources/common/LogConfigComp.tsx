@@ -41,6 +41,7 @@ import {
   getRegexTitle,
   iisLogParserChanged,
   isJSONType,
+  isNginxOrApache,
   isWindowsEvent,
   multiLineParserChanged,
   regexChanged,
@@ -308,9 +309,12 @@ const LogConfigComp = (props: LogConfigCompProps) => {
                       }}
                     />
                   )}
-                  <div className="input-tip">
-                    {t("resource:config.common.regName") + logConfig.data.regex}
-                  </div>
+                  {!isNginxOrApache(logConfig.data.logType) && (
+                    <div className="input-tip">
+                      {t("resource:config.common.regName") +
+                        logConfig.data.regex}
+                    </div>
+                  )}
                 </div>
               </FormItem>
             )}

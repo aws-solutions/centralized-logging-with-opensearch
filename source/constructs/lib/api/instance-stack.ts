@@ -374,7 +374,7 @@ export class InstanceStack extends Construct {
         runtime: lambda.Runtime.PYTHON_3_11,
         handler: 'lambda_function.lambda_handler',
         timeout: Duration.minutes(5),
-        memorySize: 4096,
+        memorySize: 1024,
         logFormat: "JSON",
         applicationLogLevel: "INFO",
         systemLogLevel: "WARN",

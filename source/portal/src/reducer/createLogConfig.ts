@@ -305,6 +305,8 @@ export const LOG_CONFIG_TYPE_MAP: LogFormatMapType = {
     sampleLogInfoType: InfoBarTypes.APACHE_SAMPLE_LOG_PARSING,
     inputType: "textarea",
     placeholder: 'LogFormat "%h %l ...',
+    regexTitle: "resource:config.common.regexFormat",
+    regexDescription: "resource:config.common.regexFormatDescNginxApache",
   },
   [LogType.Nginx]: {
     formatInfoType: InfoBarTypes.NGINX_LOG_FORMAT,
@@ -313,6 +315,8 @@ export const LOG_CONFIG_TYPE_MAP: LogFormatMapType = {
     sampleLogInfoType: InfoBarTypes.NGINX_SAMPLE_LOG_PARSING,
     inputType: "textarea",
     placeholder: "log_format main ...",
+    regexTitle: "resource:config.common.regexFormat",
+    regexDescription: "resource:config.common.regexFormatDescNginxApache",
   },
   [LogType.Syslog]: {
     formatTitle: "resource:config.common.syslogFormat",
@@ -420,7 +424,7 @@ export const getRegexInfoType = (
 
 export const getRegexTitle = (logType: LogType, parser: ParserType): string => {
   if (!logType) return "";
-  if (isSingleLineText(logType)) {
+  if (isSingleLineText(logType) || isNginxOrApache(logType)) {
     return defaultStr(LOG_CONFIG_TYPE_MAP[logType].regexTitle);
   }
   return parser ? defaultStr(LOG_CONFIG_PARSER_MAP[parser].regexTitle) : "";
@@ -431,7 +435,7 @@ export const getRegexDescription = (
   parser: ParserType
 ): string => {
   if (!logType) return "";
-  if (isSingleLineText(logType)) {
+  if (isSingleLineText(logType) || isNginxOrApache(logType)) {
     return defaultStr(LOG_CONFIG_TYPE_MAP[logType].regexDescription);
   }
   return parser
@@ -592,10 +596,11 @@ export const buildRegexFromNginxLog = (
     if (hasGroup) {
       groupName = `?<${match.substring(1, match.length)}>`;
     }
+    console.info("match:match:", match);
     if (match === `$request`) {
       return `(?<request_method>\\S+)\\s+(?<request_uri>\\S+)\\s+\\S+`;
     } else if (match.startsWith("$time")) {
-      return `(${groupName}\\d+/\\S+/\\d+:\\d+:\\d+:\\d+\\s+\\S+)`;
+      return `(${groupName}\\d+\\/\\S+\\/\\d+:\\d+:\\d+:\\d+\\s+\\S+)`;
     } else if (match.startsWith("$http")) {
       return `(${groupName}[^"]*)`;
     } else if (match.startsWith("$")) {
@@ -608,7 +613,7 @@ export const buildRegexFromNginxLog = (
   // 匹配到以 $ 符号开头的
   const regExDollar = /\$[^\\\][\s$"]*/gm;
   function replaceSplitItems(match: any) {
-    match = match.replace("[", "\\[").replace("]", "\\]");
+    match = match.replaceAll("[", "\\[").replaceAll("]", "\\]");
     return match.replace(regExDollar, replaceDollarItems);
   }
   const afterReplaceSplit = logContentString.replace(
@@ -1068,9 +1073,6 @@ export const validateRegex = (state: LogConfigState) => {
 
 export const validateSampleLog = (state: LogConfigState) => {
   // do not validate sample log if the type is apache or nginx
-  if (isNginxOrApache(state.data.logType)) {
-    return "";
-  }
   if (!state.data.userSampleLog?.trim()) {
     if (state.data.logType === LogType.JSON) {
       return "resource:config.parsing.sampleLogJSONDesc";
@@ -1200,8 +1202,9 @@ const handleFormatChangeForNginx = (
   const regexStr = buildRegexFromNginxLog(action.payload, true);
   if (action.payload && regexStr === INVALID) {
     state.logFormatError = "resource:config.common.nginxFormatInvalid";
+    state.data.regex = "";
   } else {
-    state.data.regex = regexStr;
+    state.data.regex = regexStr === INVALID ? "" : regexStr;
   }
 };
 
@@ -1212,8 +1215,9 @@ const handleFormatChangeForApache = (
   const regexStr = buildRegexFromApacheLog(action.payload);
   if (action.payload && regexStr === INVALID) {
     state.logFormatError = "resource:config.common.apacheFormatError";
+    state.data.regex = "";
   } else {
-    state.data.regex = regexStr;
+    state.data.regex = regexStr === INVALID ? "" : regexStr;
   }
 };
 
@@ -1333,7 +1337,7 @@ export const logConfigSlice = createSlice({
       }
       if (isNginxOrApache(action.payload.logType)) {
         state.showLogFormat = true;
-        state.showRegex = false;
+        state.showRegex = true;
       } else {
         state.showLogFormat = false;
         if (isSingleLineText(action.payload.logType)) {
@@ -1451,7 +1455,9 @@ export const logConfigSlice = createSlice({
       state.logFormatError = "";
       if (state.data.logType === LogType.Nginx) {
         handleFormatChangeForNginx(state, action);
+        state.showRegex = true;
       } else if (state.data.logType === LogType.Apache) {
+        state.showRegex = true;
         handleFormatChangeForApache(state, action);
       } else if (
         state.data.logType === LogType.Syslog &&

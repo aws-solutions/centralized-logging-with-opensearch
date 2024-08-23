@@ -331,6 +331,11 @@ class Flb:
             WithDecryption=True,
         )["Parameter"]["Value"]
 
+        storage_total_limit_size = ssm_cli.get_parameter(
+            Name=f"/{stack_prefix}/FLB/storage_total_limit_size",
+            WithDecryption=True,
+        )["Parameter"]["Value"]
+
         flb_params = {
             "log_level": log_level,
             "flush": flush,
@@ -342,6 +347,7 @@ class Flb:
             "store_dir_limit_size": store_dir_limit_size,
             "storage_type": storage_type,
             "storage_pause_on_chunks_overlimit": storage_pause_on_chunks_overlimit,
+            "storage_total_limit_size": storage_total_limit_size,
         }
         return flb_params
 

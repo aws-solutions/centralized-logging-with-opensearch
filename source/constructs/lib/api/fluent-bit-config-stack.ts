@@ -67,7 +67,7 @@ export class FluentBitConfigStack extends Construct {
         });
         new ssm.StringParameter(this, "FlbBufferSizeParameter", { //NOSONAR
             parameterName: `/${props.stackPrefix}/FLB/buffer_size`,
-            description: "Set the buffer size for HTTP client when reading responses from Kubernetes API server. A value of 0 results in no limit, and the buffer will expand as-needed.",
+            description: "Set the buffer size for HTTP client when reading responses from Kubernetes API server and the buffer size to read data in INPUT plugin. A value of 0 results in no limit, and the buffer will expand as-needed.",
             stringValue: "0",
         });
         new ssm.StringParameter(this, "FlbRetryLimitParameter", { //NOSONAR
@@ -89,6 +89,11 @@ export class FluentBitConfigStack extends Construct {
             parameterName: `/${props.stackPrefix}/FLB/storage_pause_on_chunks_overlimit`,
             description: "This parameter is to specifies if file storage is to be paused when reaching the chunk limit. Default is off",
             stringValue: "off",
+        });
+        new ssm.StringParameter(this, "FlbStorageTotalLimitSizeParameter", { //NOSONAR
+            parameterName: `/${props.stackPrefix}/FLB/storage_total_limit_size`,
+            description: "This parameter is to limit the maximum number of Chunks in the filesystem for the current output logical destination. Default is 500M",
+            stringValue: "500M",
         });
 
 

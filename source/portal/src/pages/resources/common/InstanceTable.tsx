@@ -47,7 +47,7 @@ import SelectPlatform from "./SelectPlatform";
 
 const PAGE_SIZE = 50;
 const REFRESH_INTERVAL = 20000; // 20 seconds to refresh
-interface InstanceItemType {
+export interface InstanceItemType {
   computerName: string;
   id: string;
   ipAddress: string;
@@ -55,19 +55,19 @@ interface InstanceItemType {
   platformName: string;
 }
 
-interface ListInstanceResponse {
+export interface ListInstanceResponse {
   instances: InstanceItemType[];
   nextToken: string;
 }
 
-interface InstanceStatusType {
+export interface InstanceStatusType {
   curlOutput: string;
   instanceId: string;
   invocationOutput: string;
   status: string;
 }
 
-interface CommandResponse {
+export interface CommandResponse {
   commandId: string;
   instanceAgentStatusList: InstanceStatusType[];
 }

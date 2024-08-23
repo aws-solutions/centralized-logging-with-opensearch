@@ -36,6 +36,7 @@ import {
   SyslogParser,
 } from "API";
 import { OptionType } from "components/AutoComplete/autoComplete";
+import { StatusType } from "components/Status/Status";
 export const INVALID = "invalid";
 export const AUTO_REFRESH_INT = 8000;
 
@@ -46,7 +47,13 @@ export const SOLUTION_REPO_NAME = "centralized-logging-with-opensearch";
 export const LINUX_FLB_AGENT_VERSION = "FluentBit 1.9.10";
 export const WINDOWS_FLB_AGENT_VERSION = "FluentBit 3.0.4 (Community)";
 
-export const getFLBVersionByType = (type?: EC2GroupPlatform) => {
+export const getFLBVersionByType = (
+  type?: EC2GroupPlatform,
+  status?: StatusType
+) => {
+  if (status === StatusType.Unknown) {
+    return "-";
+  }
   return type === EC2GroupPlatform.Windows
     ? WINDOWS_FLB_AGENT_VERSION
     : LINUX_FLB_AGENT_VERSION;

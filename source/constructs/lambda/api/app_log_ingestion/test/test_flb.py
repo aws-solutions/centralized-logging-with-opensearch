@@ -76,6 +76,12 @@ def mock_ssm_context():
             Type="String",
         )
 
+        ssm_client.put_parameter(
+            Name=f"/{stack_prefix}/FLB/storage_total_limit_size",
+            Value="off",
+            Type="String",
+        )
+
         yield
 
 

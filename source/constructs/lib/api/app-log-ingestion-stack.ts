@@ -122,11 +122,6 @@ export class AppLogIngestionStack extends Construct {
           description:
             'Download Fluent-Bit config file and reboot the Fluent-Bit',
           parameters: {
-            ARCHITECTURE: {
-              type: "String",
-              default: "",
-              description: "(Required) Machine Architecture"
-            },
             INSTANCEID: {
               type: 'String',
               default: '',
@@ -146,7 +141,7 @@ export class AppLogIngestionStack extends Construct {
               name: "updateFluentBitVersion",
               inputs: {
                 runCommand: [
-                  `[ -e /opt/fluent-bit/bin/fluent-bit ] && [ -z \"$(/opt/fluent-bit/bin/fluent-bit -V | grep '${FluentBitVersion}')\" ] && curl -o /opt/fluent-bit{{ARCHITECTURE}}.tar.gz 'https://${flb_s3_addr}/clo/${process.env.VERSION}/aws-for-fluent-bit/fluent-bit{{ARCHITECTURE}}.tar.gz' && tar xzvf /opt/fluent-bit{{ARCHITECTURE}}.tar.gz -C /opt/ --exclude=fluent-bit/etc; echo 0`
+                  `ARCHITECTURE=''; if [ \"$(uname -m)\" = \"aarch64\" ]; then ARCHITECTURE='-arm64'; fi; [ -e /opt/fluent-bit/bin/fluent-bit ] && [ -z \"$(/opt/fluent-bit/bin/fluent-bit -V | grep '${FluentBitVersion}')\" ] && curl -o /opt/fluent-bit$ARCHITECTURE.tar.gz https://${flb_s3_addr}/clo/${process.env.VERSION}/aws-for-fluent-bit/fluent-bit$ARCHITECTURE.tar.gz && tar xzvf /opt/fluent-bit$ARCHITECTURE.tar.gz -C /opt/ --exclude=fluent-bit/etc; echo 0`
                 ]
               },
             },

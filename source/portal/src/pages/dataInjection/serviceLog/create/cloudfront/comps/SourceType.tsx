@@ -248,7 +248,9 @@ const SourceType: React.FC<LogTypeProps> = (props: LogTypeProps) => {
           placeholder={t("servicelog:cloudfront.selectLogType")}
           className="m-w-45p"
           optionList={
-            cloudFrontTask.logSourceAccountId || region.startsWith("cn") || standardOnly
+            cloudFrontTask.logSourceAccountId ||
+            region.startsWith("cn") ||
+            standardOnly
               ? CLOUDFRONT_LOG_STANDARD
               : CLOUDFRONT_LOG_TYPE
           }
@@ -351,13 +353,21 @@ const SourceType: React.FC<LogTypeProps> = (props: LogTypeProps) => {
                       }
                     >
                       <TextInput
-                        type="numnber"
+                        type="number"
                         placeholder={t("servicelog:cloudfront.enterSR")}
                         className="m-w-45p"
                         value={cloudFrontTask.params.samplingRate}
                         onChange={(event) => {
-                          changeSamplingRate &&
-                            changeSamplingRate(event.target.value);
+                          const newValue = event.target.value;
+                          if (/^\d*$/.test(newValue)) {
+                            const number = parseInt(newValue, 10);
+                            if (
+                              (number >= 1 && number <= 100) ||
+                              newValue === ""
+                            ) {
+                              changeSamplingRate?.(event.target.value);
+                            }
+                          }
                         }}
                       />
                     </FormItem>

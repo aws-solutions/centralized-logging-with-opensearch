@@ -39,13 +39,13 @@ export const ConfigServer = (
 
   const changeUrl = (url: string) => {
     if (url.length <= MAX_INPUT_LENGTH) {
-      dispatch(grafana.actions.urlChanged(url));
+      dispatch(grafana.actions.urlChanged(url.trim()));
     }
   };
 
   const changeToken = (token: string) => {
     if (token.length <= MAX_INPUT_LENGTH) {
-      dispatch(grafana.actions.tokenChanged(token));
+      dispatch(grafana.actions.tokenChanged(token.trim()));
     }
   };
 
