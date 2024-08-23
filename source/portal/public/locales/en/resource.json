@@ -160,6 +160,7 @@
       "apacheFormatError": "The specified format is invalid, a standard APACHE configuration file usually begins with LogFormat.",
       "regexFormat": "Regular Expression",
       "regexFormatDesc": "Input the regular expression to parse the log.",
+      "regexFormatDescNginxApache": "Input the regular expression to parse the log. Please do not change the regular expression match group name (log field).",
       "sampleParsing": "Sample log parsing",
       "parser": "Parser",
       "parserDesc": "Select the supported parser.",

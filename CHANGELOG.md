@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.2] - 2024-08-23
+
+### Changed
+
+- Support editing the auto-generated Regular Expression of Nginx and Apache log in the Log Config. #301
+- Adjusted the error logs from info level to error level in the log-processor function. #305
+
+### Fixed
+
+- Fixed failed to retrieve instance status due to too many instances in the Instance Group details page. #298
+- Remove the redundant sign in alert dialog modal when user session expired. #303
+- Fixed the Grafana url validation failed with spaces when import a Grafana Server. #304
+
 ## [2.2.1] - 2024-07-22
 
 ### Added

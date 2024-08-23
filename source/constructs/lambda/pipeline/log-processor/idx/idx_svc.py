@@ -91,10 +91,13 @@ class AosIdxService:
                 break
             logger.error("%s failed: %s", func_name, response.text)
             if response.status_code == 403 or response.status_code == 409:
-                logger.info(
-                    "Please add access to OpenSearch for this Lambda and rerun this"
-                )
+                logger.info("Please add access to OpenSearch for this Lambda")
                 if response.status_code == 403:
+                    logger.error(
+                        "the last response code is %d, the last response content is %s",
+                        response.status_code,
+                        response.content,
+                    )
                     self.map_backend_role()
                 raise APIException(
                     ErrorCode.UNKNOWN_ERROR,
@@ -107,7 +110,7 @@ class AosIdxService:
                     func_name,
                     retry,
                 )
-                logger.info(
+                logger.error(
                     "the last response code is %d, the last response content is %s",
                     response.status_code,
                     response.content,

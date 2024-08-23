@@ -23,7 +23,7 @@ import {
   EC2GroupPlatform,
 } from "API";
 import { SelectType, TablePanel } from "components/TablePanel";
-import Status from "components/Status/Status";
+import Status, { StatusType } from "components/Status/Status";
 import { getFLBVersionByType } from "assets/js/const";
 import { useTranslation } from "react-i18next";
 import { buildEC2LInk, defaultStr } from "assets/js/utils";
@@ -35,6 +35,7 @@ import { getInstanceAgentStatus, listInstances } from "graphql/queries";
 import { updateLogSource } from "graphql/mutations";
 import Modal from "components/Modal";
 import InstanceTable, {
+  CommandResponse,
   InstanceWithStatusType,
 } from "pages/resources/common/InstanceTable";
 import { Alert, handleErrorMessage } from "assets/js/alert";
@@ -60,7 +61,6 @@ const DetailEC2: React.FC<DetailEC2Props> = (props: DetailEC2Props) => {
     InstanceWithStatusType[]
   >([]);
   const [loadingInstance, setLoadingInstance] = useState(false);
-  const [loadingRefresh, setLoadingRefresh] = useState(false);
 
   const [removeInstanceList, setRemoveInstanceList] = useState<Instance[]>([]);
   const [checkedInstanceList, setCheckedInstanceList] = useState<
@@ -72,43 +72,83 @@ const DetailEC2: React.FC<DetailEC2Props> = (props: DetailEC2Props) => {
   const [loadingAdd, setLoadingAdd] = useState(false);
 
   const getAllInstanceDetailAndStatus = async () => {
+    setLoadingInstance(true);
+    setInstanceInfoList([]);
     if (
       instanceGroup.ec2?.instances &&
       instanceGroup.ec2?.instances.length > 0
     ) {
-      const tmpInstanceInfoList: InstanceWithStatusType[] = [];
-      setLoadingRefresh(true);
-      for (let i = 0; i < instanceGroup.ec2?.instances.length; i++) {
-        const accountId = defaultStr(instanceGroup?.accountId);
-        // Get a single instance info
+      const instanceIds = instanceGroup.ec2.instances.map(
+        (instance) => instance?.instanceId
+      );
+      const chunkSize = 50;
+      // // split instanceIds into chunks
+      const instanceChunks: (string | undefined)[][] = [];
+      for (let i = 0; i < instanceIds.length; i += chunkSize) {
+        instanceChunks.push(instanceIds.slice(i, i + chunkSize));
+      }
+      const allInstanceInfo: InstanceWithStatusType[] = [];
+      for (const chunk of instanceChunks) {
+        // Get all instance info
         const dataInstanceInfo = await appSyncRequestQuery(listInstances, {
           maxResults: 50,
           nextToken: "",
-          accountId: accountId,
+          accountId: instanceGroup?.accountId,
           region: amplifyConfig.aws_project_region,
-          instanceSet: [instanceGroup.ec2?.instances[i]?.instanceId],
+          instanceSet: chunk,
+        });
+        const instanceWithStatusList: InstanceWithStatusType[] =
+          dataInstanceInfo.data?.listInstances?.instances;
+        // available instance list
+        const availableInstanceList = instanceWithStatusList?.map(
+          (item) => item.id
+        );
+        // update instanceWithStatus with unknown
+        const instanceWithUnknownList: InstanceWithStatusType[] = [];
+        chunk.forEach((chunkId) => {
+          const avaInstance = instanceWithStatusList?.find(
+            (item) => item.id === chunkId
+          );
+          if (avaInstance) {
+            instanceWithUnknownList.push(avaInstance);
+          } else {
+            instanceWithUnknownList.push({
+              computerName: "-",
+              id: chunkId,
+              ipAddress: "-",
+              name: "-",
+              platformName: "-",
+              status: StatusType.Unknown,
+            });
+          }
         });
 
+        // Get all instance status
         const statusData = await appSyncRequestQuery(getInstanceAgentStatus, {
-          instanceIds: [instanceGroup.ec2?.instances[i]?.instanceId],
-          accountId: accountId,
+          instanceIds: availableInstanceList,
+          accountId: instanceGroup?.accountId,
         });
-
-        const instanceStatusList =
-          statusData.data.getInstanceAgentStatus.instanceAgentStatusList;
-
-        // Update tmpInstanceInfoList with instanceStatus
-        tmpInstanceInfoList.push({
-          ...(dataInstanceInfo.data.listInstances?.instances?.[0] || {
-            id: instanceGroup.ec2?.instances[i]?.instanceId,
-          }),
-          status: dataInstanceInfo.data.listInstances?.instances?.[0]
-            ? instanceStatusList[0].status
-            : "Unknown",
+        const instanceStatusResp: CommandResponse =
+          statusData.data.getInstanceAgentStatus;
+        const updatedInstances = instanceWithUnknownList?.map((instance) => {
+          const statusUpdate = instanceStatusResp.instanceAgentStatusList.find(
+            (status) => status.instanceId === instance.id
+          );
+          if (statusUpdate) {
+            return {
+              ...instance,
+              status: statusUpdate.status,
+              invocationOutput: statusUpdate.invocationOutput,
+            };
+          }
+          return instance;
         });
+        if (updatedInstances) {
+          allInstanceInfo.push(...updatedInstances);
+        }
       }
-      setLoadingRefresh(false);
-      setInstanceInfoList(tmpInstanceInfoList);
+      setInstanceInfoList(allInstanceInfo);
+      setLoadingInstance(false);
     }
   };
 
@@ -194,10 +234,7 @@ const DetailEC2: React.FC<DetailEC2Props> = (props: DetailEC2Props) => {
       instanceGroup.ec2?.instances.length > 0
     ) {
       setLoadingInstance(true);
-      getAllInstanceDetailAndStatus().then(() => {
-        setLoadingInstance(false);
-        getAllInstanceDetailAndStatus();
-      });
+      getAllInstanceDetailAndStatus();
     }
   }, [instanceGroup.ec2?.instances]);
 
@@ -254,8 +291,11 @@ const DetailEC2: React.FC<DetailEC2Props> = (props: DetailEC2Props) => {
           {
             id: "agent",
             header: t("resource:group.detail.list.agent"),
-            cell: () => {
-              return getFLBVersionByType(instanceGroup.ec2?.groupPlatform);
+            cell: (e) => {
+              return getFLBVersionByType(
+                instanceGroup.ec2?.groupPlatform,
+                e.status
+              );
             },
           },
           {
@@ -292,18 +332,18 @@ const DetailEC2: React.FC<DetailEC2Props> = (props: DetailEC2Props) => {
             )}
             <Button
               btnType="icon"
-              disabled={loadingData || loadingRefresh}
+              disabled={loadingData || loadingInstance}
               onClick={() => {
-                console.info("refresh click");
                 getAllInstanceDetailAndStatus();
               }}
             >
-              <ButtonRefresh loading={loadingRefresh} />
+              <ButtonRefresh loading={loadingInstance} />
             </Button>
           </div>
         }
         pagination={<div></div>}
       />
+
       <Modal
         title={t("resource:group.detail.addInstances")}
         fullWidth={true}

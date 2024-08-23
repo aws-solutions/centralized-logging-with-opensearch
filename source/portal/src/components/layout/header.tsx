@@ -37,7 +37,7 @@ const LHeader: React.FC<SignedInAppProps> = (props: SignedInAppProps) => {
   };
 
   return (
-    <header className="lh-header">
+    <header id="cloSignedHeader" className="lh-header">
       <div className="logo">{t("header.name")}</div>
       {
         <div className="user">
@@ -45,6 +45,7 @@ const LHeader: React.FC<SignedInAppProps> = (props: SignedInAppProps) => {
           {amplifyConfig.aws_appsync_authenticationType ===
             AppSyncAuthType.OPEN_ID && (
             <span
+              role="none"
               data-testid="signout"
               className="cp sign-out"
               onClick={() => {

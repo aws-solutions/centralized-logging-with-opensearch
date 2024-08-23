@@ -160,6 +160,7 @@
       "apacheFormatError": "指定的格式无效，标准的 Apache 配置文件通常以 LogFormat 开头。",
       "regexFormat": "正则表达式",
       "regexFormatDesc": "输入日志的正则表达式。",
+      "regexFormatDescNginxApache": "输入正则表达式来解析日志。请不要更改正则表达式匹配组名称（日志字段）。",
       "sampleParsing": "示例日志解析",
       "parser": "解析器",
       "parserDesc": "选择支持的解析器。",

@@ -257,9 +257,6 @@ export class OpenSearchInitStack extends Construct {
       vpc: props.vpc,
       vpcSubnets: { subnetType: SubnetType.PRIVATE_WITH_EGRESS },
       securityGroups: [props.securityGroup],
-      logFormat: "JSON",
-      applicationLogLevel: "ERROR",
-      systemLogLevel: "WARN",
       environment: Object.assign(
         {
           ENDPOINT: props.endpoint,
@@ -320,7 +317,7 @@ export class OpenSearchInitStack extends Construct {
           SOURCE: props.source,
           WRITE_IDX_DATA: props.writeIdxData || "True",
           NO_BUFFER_ACCESS_ROLE_ARN: props.noBufferAccessRoleArn || "",
-          // EVENT_BRIDGE_RULE_NAME: props.eventBridgeRuleName || "",
+          POWERTOOLS_LOG_LEVEL: "ERROR",
         },
         props.env),
       layers: [SharedPythonLayer.getInstance(this), pipeLayer],

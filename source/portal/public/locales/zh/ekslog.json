@@ -61,7 +61,7 @@
     },
     "daemonsetGuide": {
       "alert": "",
-      "alertDesc": "请确保您所创建的所有的摄取都处于已创建状态，然后再继续执行以下步骤。此过程中的所有步骤都是将 Fluent Bit 代理部署为 DaemonSet。 默认情况下，使用命名空间 'logging'",
+      "alertDesc": "请确保您所创建的所有的摄取都处于已创建状态，然后再继续执行以下步骤。此过程中的所有步骤都是将 Fluent Bit 代理部署为 DaemonSet。 默认情况下，使用命名空间 'logging'. 请注意, 如果 Yaml 文件发生了变更，那么您需要重启相关的 FluentBit Pod。",
       "step1": "您需要将以下所有内容复制并粘贴到文件 ~/fluent-bit-logging.yaml 中",
       "step2": "使用 kubectl 命令将 fluent-bit 部署为 DaemonSet。",
       "createIngestion": "请先创建一个摄取"

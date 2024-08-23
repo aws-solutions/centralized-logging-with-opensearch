@@ -46,7 +46,7 @@ export const UpdateGrafana: React.FC = () => {
     const url = queryParams.get("url");
     const name = queryParams.get("name");
     dispatch(grafana.actions.nameChanged(decodeURIComponent(name ?? "")));
-    dispatch(grafana.actions.urlChanged(decodeURIComponent(url ?? "")));
+    dispatch(grafana.actions.urlChanged(decodeURIComponent(url?.trim() ?? "")));
   }, [location.search]);
 
   const navigate = useNavigate();

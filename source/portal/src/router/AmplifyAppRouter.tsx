@@ -36,7 +36,10 @@ const AmplifyAppRouter: React.FC = () => {
       window.localStorage.removeItem(AMPLIFY_CONFIG_JSON);
       window.location.reload();
     } else if (payload?.event === "tokenRefresh_failure") {
-      Alert(t("signin.reSignInDesc"), t("signin.reSignIn"), "warning", true);
+      const headerElement = document.getElementById("cloSignedHeader");
+      if (headerElement) {
+        Alert(t("signin.reSignInDesc"), t("signin.reSignIn"), "warning", true);
+      }
     } else {
       Auth?.currentAuthenticatedUser()
         .then((authData: any) => {

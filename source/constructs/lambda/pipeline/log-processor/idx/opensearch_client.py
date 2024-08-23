@@ -120,9 +120,9 @@ class OpenSearchUtil:
             response = requests.put(
                 url, auth=self._awsauth, json=policy_doc, timeout=30
             )
-            logger.info("--> update ism policy response code %d", response.status_code)
+            logger.error("--> update ism policy response code %d", response.status_code)
             return response
-        logger.info(
+        logger.error(
             "the last response code is %d, the last response content is %s",
             response.status_code,
             response.content,
@@ -348,6 +348,12 @@ class OpenSearchUtil:
                 status_code = resp["ResponseMetadata"]["HTTPStatusCode"]
                 logger.info("Response status: %d", status_code)
                 if status_code not in (200, 201):
+                    logger.error(
+                        "Add backend role %s to domain %s, response status: %d",
+                        role_arn,
+                        domain_name,
+                        status_code,
+                    )
                     raise APIException(
                         ErrorCode.UNKNOWN_ERROR,
                         "Failed to add backend role {role_arn} to domain {domain_name}",

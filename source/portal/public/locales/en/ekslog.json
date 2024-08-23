@@ -61,7 +61,7 @@
     },
     "daemonsetGuide": {
       "alert": "",
-      "alertDesc": "Please ensure that all log source(s) you have created are in the Created state before proceeding with the following steps. All steps in this procedure are to deploy Fluent Bit agent as a DaemonSet. By default, the namespace \"logging\" is used",
+      "alertDesc": "Please ensure that all log source(s) you have created are in the Created state before proceeding with the following steps. All steps in this procedure are to deploy Fluent Bit agent as a DaemonSet. By default, the namespace \"logging\" is used. If the YAML file changes, you need to restart the relevant FluentBit Pods.",
       "step1": "You will need to copy and paste all the content below in a file ~/fluent-bit-logging.yaml",
       "step2": "Use the kubectl command to deploy fluent-bit as DaemonSet.",
       "createIngestion": "Please create an log source first"
