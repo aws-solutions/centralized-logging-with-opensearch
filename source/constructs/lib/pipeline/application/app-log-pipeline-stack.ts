@@ -696,7 +696,7 @@ export class AppPipelineStack extends SolutionStack {
             ],
             effect: iam.Effect.ALLOW,
             resources: [
-              `arn:${Aws.PARTITION}:es:${Aws.REGION}:${Aws.ACCOUNT_ID}:domain/${domainName.valueAsString}`,
+              `arn:${Aws.PARTITION}:es:${Aws.REGION}:${Aws.ACCOUNT_ID}:domain/${domainName.valueAsString}/*`,
             ],
           }),
         ],
